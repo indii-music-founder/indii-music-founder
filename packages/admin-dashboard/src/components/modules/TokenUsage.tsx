@@ -102,7 +102,7 @@ export const TokenUsage: React.FC = () => {
   if (authRequired) {
     return (
       <Panel
-        icon={<AlertTriangle className="w-6 h-6 text-orange-400" />}
+        icon={<AlertTriangle className="w-6 h-6 text-[#ffb800]" />}
         title="Admin authentication required"
         subtitle="The usage API requires an @indii.music admin token. Store a valid Firebase ID token under localStorage key 'indii_admin_token' to view real spend."
         action={
@@ -122,13 +122,13 @@ export const TokenUsage: React.FC = () => {
   if (error) {
     return (
       <Panel
-        icon={<AlertTriangle className="w-6 h-6 text-red-400" />}
+        icon={<AlertTriangle className="w-6 h-6 text-red-500" />}
         title="Couldn't load usage data"
         subtitle={error}
         action={
           <button
             onClick={() => load(false)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-sm font-medium cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/20 text-sm font-medium cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -144,13 +144,13 @@ export const TokenUsage: React.FC = () => {
       <div className="space-y-6">
         <div className="grid grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-[#1A1A1D] border border-white/5 p-6 rounded-2xl">
+            <div key={i} className="bg-[#1f222a] border border-white/5 p-6 rounded-2xl">
               <div className="h-4 w-20 bg-white/10 rounded animate-pulse mb-4" />
               <div className="h-8 w-28 bg-white/10 rounded animate-pulse" />
             </div>
           ))}
         </div>
-        <div className="bg-[#121214] border border-white/5 rounded-3xl p-8 h-64 animate-pulse" />
+        <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl p-8 h-64 animate-pulse" />
       </div>
     );
   }
@@ -159,7 +159,7 @@ export const TokenUsage: React.FC = () => {
   if (!data || data.totalRequests === 0) {
     return (
       <Panel
-        icon={<Activity className="w-6 h-6 text-blue-400" />}
+        icon={<Activity className="w-6 h-6 text-[#4bd5ee]" />}
         title="No AI usage recorded yet"
         subtitle={
           data
@@ -184,10 +184,10 @@ export const TokenUsage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between bg-[#121214] border border-white/5 p-6 rounded-3xl">
+      <div className="flex items-center justify-between bg-[#0d0d0d] border border-white/5 p-6 rounded-3xl">
         <div>
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <BarChart3 className="text-blue-400 w-6 h-6" />
+            <BarChart3 className="text-[#4bd5ee] w-6 h-6" />
             AI Token Usage &amp; Cost
           </h3>
           <p className="text-sm text-white/40 mt-1">
@@ -206,16 +206,16 @@ export const TokenUsage: React.FC = () => {
 
       {/* Summary stats */}
       <div className="grid grid-cols-4 gap-6">
-        <Stat icon={<DollarSign className="w-5 h-5" />} label="Total cost" value={usd(data.totalCostUsd)} accent="text-green-400" />
-        <Stat icon={<Cpu className="w-5 h-5" />} label="Total tokens" value={compact(data.totalTokens)} accent="text-blue-400" />
-        <Stat icon={<Activity className="w-5 h-5" />} label="Requests" value={compact(data.totalRequests)} accent="text-purple-400" />
-        <Stat icon={<Users className="w-5 h-5" />} label="Avg / user" value={usd(data.averageCostPerUserUsd)} accent="text-orange-400" />
+        <Stat icon={<DollarSign className="w-5 h-5" />} label="Total cost" value={usd(data.totalCostUsd)} accent="text-green-500" />
+        <Stat icon={<Cpu className="w-5 h-5" />} label="Total tokens" value={compact(data.totalTokens)} accent="text-[#4bd5ee]" />
+        <Stat icon={<Activity className="w-5 h-5" />} label="Requests" value={compact(data.totalRequests)} accent="text-purple-500" />
+        <Stat icon={<Users className="w-5 h-5" />} label="Avg / user" value={usd(data.averageCostPerUserUsd)} accent="text-[#ffb800]" />
       </div>
 
       {/* Cost by model */}
-      <div className="bg-[#121214] border border-white/5 rounded-3xl p-8">
+      <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl p-8">
         <h4 className="text-lg font-bold tracking-tight mb-6 flex items-center gap-2">
-          <Cpu className="text-blue-400 w-5 h-5" />
+          <Cpu className="text-[#4bd5ee] w-5 h-5" />
           Cost by model
         </h4>
         <div className="space-y-4">
@@ -223,11 +223,11 @@ export const TokenUsage: React.FC = () => {
             <div key={m.model} className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-mono text-white/70">{m.model}</span>
-                <span className="font-bold text-green-400">{usd(m.costUsd)}</span>
+                <span className="font-bold text-green-500">{usd(m.costUsd)}</span>
               </div>
               <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                  className="h-full bg-gradient-to-r from-[#2e2efe] to-purple-600 rounded-full"
                   style={{ width: `${Math.max(2, (m.costUsd / maxModelCost) * 100)}%` }}
                 />
               </div>
@@ -242,9 +242,9 @@ export const TokenUsage: React.FC = () => {
       </div>
 
       {/* Spend by user */}
-      <div className="bg-[#121214] border border-white/5 rounded-3xl p-8">
+      <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl p-8">
         <h4 className="text-lg font-bold tracking-tight mb-6 flex items-center gap-2">
-          <Users className="text-orange-400 w-5 h-5" />
+          <Users className="text-[#ffb800] w-5 h-5" />
           Spend by user
         </h4>
         <div className="space-y-2">
@@ -256,7 +256,7 @@ export const TokenUsage: React.FC = () => {
               <div className="flex-1 font-mono text-sm text-white/70 truncate">{u.userId}</div>
               <div className="w-24 text-right text-xs text-white/30 font-mono">{compact(u.tokensUsed)} tok</div>
               <div className="w-20 text-right text-xs text-white/30 font-mono">{compact(u.requestCount)} req</div>
-              <div className="w-24 text-right text-sm font-bold text-green-400">{usd(u.costUsd)}</div>
+              <div className="w-24 text-right text-sm font-bold text-green-500">{usd(u.costUsd)}</div>
             </div>
           ))}
         </div>
@@ -271,8 +271,8 @@ const Stat: React.FC<{ icon: React.ReactNode; label: string; value: string; acce
   value,
   accent,
 }) => (
-  <div className="bg-[#1A1A1D] border border-white/5 p-6 rounded-2xl relative overflow-hidden group hover:border-white/10 transition-all">
-    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-[40px] pointer-events-none" />
+  <div className="bg-[#1f222a] border border-white/5 p-6 rounded-2xl relative overflow-hidden group hover:border-white/10 transition-all">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-[#2e2efe]/5 rounded-full blur-[40px] pointer-events-none" />
     <div className={`flex items-center gap-2 ${accent} mb-3 relative z-10`}>
       {icon}
       <span className="text-xs font-bold uppercase tracking-widest text-white/40">{label}</span>

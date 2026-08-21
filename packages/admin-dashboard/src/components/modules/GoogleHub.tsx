@@ -402,8 +402,8 @@ export const GoogleHub: React.FC = () => {
 
   if (checkingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] bg-[#121214]/80 border border-white/5 rounded-3xl">
-        <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
+      <div className="flex items-center justify-center min-h-[400px] bg-[#0d0d0d]/80 border border-white/5 rounded-3xl">
+        <RefreshCw className="w-6 h-6 animate-spin text-[#4bd5ee]" />
       </div>
     );
   }
@@ -411,29 +411,29 @@ export const GoogleHub: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Panel */}
-      <div className="flex items-center justify-between bg-[#121214]/80 backdrop-blur-md border border-white/5 p-6 rounded-3xl">
+      <div className="flex items-center justify-between bg-[#0d0d0d]/80 backdrop-blur-md border border-white/5 p-6 rounded-3xl">
         <div>
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Globe className="text-cyan-400 w-6 h-6 animate-pulse-subtle" />
+            <Globe className="text-[#4bd5ee] w-6 h-6 animate-pulse-subtle" />
             Google Workspace Business Hub
           </h3>
           <p className="text-sm text-white/40 mt-1">Direct integration with indii.music corporate Workspace resources.</p>
         </div>
         <div className="flex items-center gap-4">
           {!linkStatusKnown ? (
-            <div className="flex items-center gap-2.5 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
-              <div className="w-2 h-2 rounded-full bg-orange-400" />
-              <span className="text-xs font-bold text-orange-400">Status unknown</span>
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-[#ffb800]/10 border border-[#ffb800]/20 rounded-xl">
+              <div className="w-2 h-2 rounded-full bg-[#ffb800]" />
+              <span className="text-xs font-bold text-[#ffb800]">Status unknown</span>
             </div>
           ) : authorized ? (
-            <div className="flex items-center gap-2.5 px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-xs font-bold text-cyan-400">Workspace Connected</span>
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-[#4bd5ee]/10 border border-[#4bd5ee]/20 rounded-xl">
+              <div className="w-2 h-2 rounded-full bg-[#4bd5ee] animate-pulse" />
+              <span className="text-xs font-bold text-[#4bd5ee]">Workspace Connected</span>
             </div>
           ) : (
             <button 
               onClick={handleLinkAccount}
-              className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-[0_0_15px_rgba(6,182,212,0.35)] flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 bg-gradient-to-r from-[#4bd5ee] to-[#2e2efe] hover:from-[#4bd5ee] hover:to-[#00f0ff] text-white font-bold text-sm rounded-xl transition-all shadow-[0_0_15px_rgba(75,213,238,0.35)] flex items-center gap-2 cursor-pointer"
             >
               <ExternalLink className="w-4 h-4" />
               Link Workspace Account
@@ -443,7 +443,7 @@ export const GoogleHub: React.FC = () => {
       </div>
 
       {/* Subtab selection headers */}
-      <div className="flex bg-[#121214]/50 border border-white/5 rounded-2xl p-1 max-w-md">
+      <div className="flex bg-[#0d0d0d]/50 border border-white/5 rounded-2xl p-1 max-w-md">
         {[
           { id: 'gmail', label: 'Gmail Client', icon: <Mail className="w-4 h-4" /> },
           { id: 'calendar', label: 'Google Calendar', icon: <CalendarIcon className="w-4 h-4" /> },
@@ -469,10 +469,10 @@ export const GoogleHub: React.FC = () => {
       </div>
 
       {/* Main module contents */}
-      <div className="bg-[#121214]/80 backdrop-blur-md border border-white/5 rounded-3xl p-8 min-h-[400px] relative">
+      <div className="bg-[#0d0d0d]/80 backdrop-blur-md border border-white/5 rounded-3xl p-8 min-h-[400px] relative">
         {/* Error Alert Banner */}
         {error && (
-          <div className="mb-6 flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-xs text-red-400">
+          <div className="mb-6 flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-xs text-red-500">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="font-semibold">Operation Error</p>
@@ -484,13 +484,13 @@ export const GoogleHub: React.FC = () => {
         {/* Loader Overlays */}
         {loadingData && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center rounded-3xl z-10">
-            <RefreshCw className="w-8 h-8 animate-spin text-cyan-400" />
+            <RefreshCw className="w-8 h-8 animate-spin text-[#4bd5ee]" />
           </div>
         )}
 
         {!linkStatusKnown ? (
           <div className="flex flex-col items-center justify-center text-center py-16 min-h-[300px]">
-            <AlertTriangle className="w-12 h-12 text-orange-400/40 mb-4" />
+            <AlertTriangle className="w-12 h-12 text-[#ffb800]/40 mb-4" />
             <p className="text-white/85 font-semibold text-base">Workspace link status unavailable</p>
             <p className="text-white/40 text-xs mt-2 max-w-md leading-relaxed">
               The backend could not be reached to check whether a Google Workspace account is
@@ -506,14 +506,14 @@ export const GoogleHub: React.FC = () => {
           </div>
         ) : !authorized ? (
           <div className="flex flex-col items-center justify-center text-center py-16 min-h-[300px]">
-            <Globe className="w-12 h-12 text-cyan-400/30 mb-4" />
+            <Globe className="w-12 h-12 text-[#4bd5ee]/30 mb-4" />
             <p className="text-white/85 font-semibold text-base">Google Workspace Not Linked</p>
             <p className="text-white/40 text-xs mt-2 max-w-md leading-relaxed">
               Please link your corporate admin Workspace account to retrieve live Gmail messages, Calendar agenda schedules, and Drive document catalogs.
             </p>
             <button 
               onClick={handleLinkAccount}
-              className="mt-6 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-[0_0_15px_rgba(6,182,212,0.25)] flex items-center gap-2 cursor-pointer"
+              className="mt-6 px-5 py-2.5 bg-gradient-to-r from-[#4bd5ee] to-[#2e2efe] hover:from-[#4bd5ee] hover:to-[#00f0ff] text-white font-bold text-xs rounded-xl transition-all shadow-[0_0_15px_rgba(75,213,238,0.25)] flex items-center gap-2 cursor-pointer"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Link Workspace Account
@@ -521,7 +521,7 @@ export const GoogleHub: React.FC = () => {
           </div>
         ) : dataUnavailable ? (
           <div className="flex flex-col items-center justify-center text-center py-16 min-h-[300px]">
-            <AlertTriangle className="w-12 h-12 text-red-400/40 mb-4" />
+            <AlertTriangle className="w-12 h-12 text-red-500/40 mb-4" />
             <p className="text-white/85 font-semibold text-base">Workspace data unavailable</p>
             <p className="text-white/40 text-xs mt-2 max-w-md leading-relaxed">
               The selected Workspace service did not return a valid result. No empty-state claim is
@@ -568,7 +568,7 @@ export const GoogleHub: React.FC = () => {
                     <p className="text-sm text-white/80 whitespace-pre-line leading-relaxed">{selectedEmail.snippet}</p>
                     {selectedEmail.isAiDraft && (
                       <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
-                        <p className="text-xs font-bold text-purple-400 mb-2 uppercase tracking-wider">AI Compose Draft Preview</p>
+                        <p className="text-xs font-bold text-purple-500 mb-2 uppercase tracking-wider">AI Compose Draft Preview</p>
                         <p className="text-xs text-white/70">{selectedEmail.snippet}</p>
                       </div>
                     )}
@@ -591,7 +591,7 @@ export const GoogleHub: React.FC = () => {
                           <div className="flex items-center gap-3">
                             <span className="font-semibold text-xs text-white/90 truncate max-w-[200px]">{email.from}</span>
                             {email.isAiDraft && (
-                              <span className="px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded text-[9px] font-bold">
+                              <span className="px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 text-purple-500 rounded text-[9px] font-bold">
                                 Draft
                               </span>
                             )}
@@ -691,7 +691,7 @@ export const GoogleHub: React.FC = () => {
                       >
                         <div className="space-y-2">
                           <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-                            <FileText className="w-5 h-5 text-cyan-400" />
+                            <FileText className="w-5 h-5 text-[#4bd5ee]" />
                           </div>
                           <h5 className="font-bold text-xs text-white/90 truncate" title={file.name}>
                             {file.name}
@@ -715,7 +715,7 @@ export const GoogleHub: React.FC = () => {
       {/* Compose Email Modal */}
       {showComposeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <form onSubmit={handleSendEmail} className="bg-[#121214] border border-white/10 rounded-3xl p-8 max-w-xl w-full space-y-6 relative overflow-hidden">
+          <form onSubmit={handleSendEmail} className="bg-[#0d0d0d] border border-white/10 rounded-3xl p-8 max-w-xl w-full space-y-6 relative overflow-hidden">
             <h4 className="text-lg font-bold tracking-tight">Compose Outbound Correspondence</h4>
             <div className="space-y-4">
               <div>
@@ -762,7 +762,7 @@ export const GoogleHub: React.FC = () => {
               </button>
               <button 
                 type="submit"
-                className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-[#4bd5ee] hover:bg-[#4bd5ee] rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 Transmit
@@ -775,7 +775,7 @@ export const GoogleHub: React.FC = () => {
       {/* Schedule Event Modal */}
       {showEventModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <form onSubmit={handleCreateEvent} className="bg-[#121214] border border-white/10 rounded-3xl p-8 max-w-xl w-full space-y-6 relative overflow-hidden">
+          <form onSubmit={handleCreateEvent} className="bg-[#0d0d0d] border border-white/10 rounded-3xl p-8 max-w-xl w-full space-y-6 relative overflow-hidden">
             <h4 className="text-lg font-bold tracking-tight">Schedule Calendar Event</h4>
             <div className="space-y-4">
               <div>
@@ -832,7 +832,7 @@ export const GoogleHub: React.FC = () => {
               </button>
               <button 
                 type="submit"
-                className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-[#4bd5ee] hover:bg-[#4bd5ee] rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add Event
@@ -845,7 +845,7 @@ export const GoogleHub: React.FC = () => {
       {/* Upload File Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <form onSubmit={handleUploadFile} className="bg-[#121214] border border-white/10 rounded-3xl p-8 max-w-xl w-full space-y-6 relative overflow-hidden">
+          <form onSubmit={handleUploadFile} className="bg-[#0d0d0d] border border-white/10 rounded-3xl p-8 max-w-xl w-full space-y-6 relative overflow-hidden">
             <h4 className="text-lg font-bold tracking-tight">Upload Metadata Document</h4>
             <div className="space-y-4">
               <div>
@@ -881,7 +881,7 @@ export const GoogleHub: React.FC = () => {
               </button>
               <button 
                 type="submit"
-                className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-[#4bd5ee] hover:bg-[#4bd5ee] rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 Upload

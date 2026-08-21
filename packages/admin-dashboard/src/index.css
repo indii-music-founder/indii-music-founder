@@ -1,7 +1,14 @@
 @import "tailwindcss";
 
+/* Founder-site font pairing: Inter for UI, JetBrains Mono for data/code.
+   Same stack as founder.indii.music (Google Fonts loaded in index.html). */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
 :root {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   color-scheme: dark;
   background-color: #030303;
 }
@@ -44,7 +51,7 @@ body {
 
 /* Glassmorphism primitives */
 .glass-panel {
-  background: rgba(18, 18, 22, 0.65);
+  background: rgba(13, 13, 13, 0.65);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.08);

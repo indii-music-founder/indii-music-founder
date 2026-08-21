@@ -103,18 +103,18 @@ export const NexusMonitor: React.FC = () => {
   const health: { tone: string; dot: string; label: string } = loading
     ? { tone: 'text-white/40', dot: 'bg-white/30', label: 'Checking…' }
     : error
-      ? { tone: 'text-red-400', dot: 'bg-red-500', label: 'Status unavailable' }
+      ? { tone: 'text-red-500', dot: 'bg-red-500', label: 'Status unavailable' }
       : dns && dns.spf === 'verified' && dns.dkim === 'verified' && dns.dmarc === 'verified'
         ? { tone: 'text-green-500', dot: 'bg-green-500', label: 'All records verified' }
-        : { tone: 'text-orange-400', dot: 'bg-orange-500', label: 'Records unverified' };
+        : { tone: 'text-[#ffb800]', dot: 'bg-[#ffb800]', label: 'Records unverified' };
 
   return (
     <div className="space-y-6">
       {/* Header Panel */}
-      <div className="flex items-center justify-between bg-[#121214] border border-white/5 p-6 rounded-3xl">
+      <div className="flex items-center justify-between bg-[#0d0d0d] border border-white/5 p-6 rounded-3xl">
         <div>
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Globe className="text-blue-400 w-6 h-6" />
+            <Globe className="text-[#4bd5ee] w-6 h-6" />
             DNS &amp; System Propagation Status
           </h3>
           <p className="text-sm text-white/40 mt-1">Real-time validation of indii.music apex zone records and system events.</p>
@@ -135,11 +135,11 @@ export const NexusMonitor: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-3 gap-6 animate-pulse">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-[#1A1A1D] border border-white/5 p-6 rounded-2xl h-36" />
+            <div key={i} className="bg-[#1f222a] border border-white/5 p-6 rounded-2xl h-36" />
           ))}
         </div>
       ) : error ? (
-        <div className="p-8 bg-red-500/5 border border-red-500/10 rounded-2xl text-red-400 text-sm font-semibold text-center">
+        <div className="p-8 bg-red-500/5 border border-red-500/10 rounded-2xl text-red-500 text-sm font-semibold text-center">
           {error}
         </div>
       ) : (
@@ -149,8 +149,8 @@ export const NexusMonitor: React.FC = () => {
             { label: 'DKIM Keys', val: dns?.dkim },
             { label: 'DMARC Policy', val: dns?.dmarc }
           ].map((record, i) => (
-            <div key={i} className="bg-[#1A1A1D] border border-white/5 p-6 rounded-2xl relative overflow-hidden group hover:border-white/10 transition-all">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-[40px] pointer-events-none group-hover:bg-blue-500/10 transition-colors" />
+            <div key={i} className="bg-[#1f222a] border border-white/5 p-6 rounded-2xl relative overflow-hidden group hover:border-white/10 transition-all">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#2e2efe]/5 rounded-full blur-[40px] pointer-events-none group-hover:bg-[#2e2efe]/10 transition-colors" />
               
               <div className="flex items-start justify-between mb-4 relative z-10">
                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
@@ -158,8 +158,8 @@ export const NexusMonitor: React.FC = () => {
                 </div>
                 <span className={`px-2 py-1 text-xs font-bold rounded-lg border uppercase tracking-wider ${
                   record.val === 'verified'
-                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                    : 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                    ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                    : 'bg-[#ffb800]/10 text-[#ffb800] border-[#ffb800]/20'
                 }`}>
                   {record.val || 'Unverified'}
                 </span>
@@ -172,15 +172,15 @@ export const NexusMonitor: React.FC = () => {
         </div>
       )}
       
-      <div className="bg-[#121214] border border-white/5 rounded-3xl p-8">
+      <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl p-8">
         <h4 className="text-lg font-bold tracking-tight mb-6 flex items-center gap-2">
-          <Activity className="text-blue-400 w-5 h-5" />
+          <Activity className="text-[#4bd5ee] w-5 h-5" />
           Recent DNS &amp; Webhook Events
         </h4>
         
         {loading ? (
           <div className="p-12 flex justify-center">
-            <RefreshCw className="w-6 h-6 animate-spin text-blue-400" />
+            <RefreshCw className="w-6 h-6 animate-spin text-[#4bd5ee]" />
           </div>
         ) : logs.length === 0 ? (
           <p className="text-white/35 text-sm text-center py-6">No recent events recorded.</p>
@@ -190,7 +190,7 @@ export const NexusMonitor: React.FC = () => {
               <div key={i} className="flex items-center gap-6 group p-4 hover:bg-white/5 rounded-2xl transition-colors border border-transparent hover:border-white/5">
                 <div className="w-24 text-xs text-white/20 font-mono shrink-0">{log.time}</div>
                 <div className="flex-1 text-sm text-white/70 group-hover:text-white transition-colors truncate">{log.msg}</div>
-                <div className={`text-xs font-bold shrink-0 ${log.status === 'Success' ? 'text-green-500' : 'text-orange-500'}`}>{log.status}</div>
+                <div className={`text-xs font-bold shrink-0 ${log.status === 'Success' ? 'text-green-500' : 'text-[#ffb800]'}`}>{log.status}</div>
               </div>
             ))}
           </div>

@@ -56,8 +56,8 @@ export const LoginScreen: React.FC = () => {
       <div className="flex h-screen items-center justify-center bg-[#030303] text-white">
         <div className="text-center space-y-6">
           <div className="relative flex items-center justify-center">
-            <div className="absolute w-16 h-16 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
-            <Loader2 className="w-10 h-10 animate-spin text-blue-500 relative z-10" />
+            <div className="absolute w-16 h-16 bg-[#2e2efe]/20 rounded-full blur-xl animate-pulse" />
+            <Loader2 className="w-10 h-10 animate-spin text-[#2e2efe] relative z-10" />
           </div>
           <p className="text-sm font-medium text-white/60 tracking-wider">Establishing secure connection...</p>
         </div>
@@ -103,8 +103,8 @@ export const LoginScreen: React.FC = () => {
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-[#030303] text-white font-sans relative overflow-hidden">
       {/* Dynamic Ambient Background Blobs */}
-      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-blue-600/15 to-purple-600/5 rounded-full blur-[140px] pointer-events-none animate-float-1" />
-      <div className="absolute bottom-[-15%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-purple-600/10 to-blue-600/5 rounded-full blur-[140px] pointer-events-none animate-float-2" />
+      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-[#2e2efe]/15 to-purple-600/5 rounded-full blur-[140px] pointer-events-none animate-float-1" />
+      <div className="absolute bottom-[-15%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-purple-600/10 to-[#2e2efe]/5 rounded-full blur-[140px] pointer-events-none animate-float-2" />
 
       <div className="relative z-10 w-full max-w-[420px] p-6">
         <div className="glass-panel rounded-3xl p-8 space-y-8 relative overflow-hidden">
@@ -113,8 +113,8 @@ export const LoginScreen: React.FC = () => {
 
           {/* Logo / Title */}
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/15 relative group">
-              <div className="absolute inset-0 bg-blue-500/20 blur-md rounded-2xl opacity-100 group-hover:opacity-100 transition-opacity" />
+            <div className="w-12 h-12 bg-gradient-to-br from-[#2e2efe] via-[#2e2efe] to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-[#2e2efe]/15 relative group">
+              <div className="absolute inset-0 bg-[#2e2efe]/20 blur-md rounded-2xl opacity-100 group-hover:opacity-100 transition-opacity" />
               <ShieldCheck className="text-white w-6 h-6 relative z-10" />
             </div>
             <div className="space-y-1">
@@ -135,9 +135,9 @@ export const LoginScreen: React.FC = () => {
               {linkSent ? (
                 <div className="space-y-5">
                   <div className="flex flex-col items-center text-center p-6 bg-green-500/5 border border-green-500/10 rounded-2xl space-y-3">
-                    <CheckCircle2 className="w-10 h-10 text-green-400" />
+                    <CheckCircle2 className="w-10 h-10 text-green-500" />
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-green-400">Verification Link Sent</p>
+                      <p className="text-sm font-semibold text-green-500">Verification Link Sent</p>
                       <p className="text-xs text-white/50 leading-relaxed">
                         We sent a secure link to <span className="text-white/90 font-medium font-mono">{sentEmail}</span>. Click the link to complete sign in.
                       </p>
@@ -171,7 +171,7 @@ export const LoginScreen: React.FC = () => {
                   </div>
 
                   {error && (
-                    <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-xl p-3.5 text-xs text-red-400">
+                    <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-xl p-3.5 text-xs text-red-500">
                       <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                       <span>{error}</span>
                     </div>
@@ -180,7 +180,7 @@ export const LoginScreen: React.FC = () => {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.98] disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-blue-500/10 cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-[#2e2efe] to-[#2e2efe] hover:from-[#2e2efe] hover:to-[#4bd5ee] active:scale-[0.98] disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-[#2e2efe]/10 cursor-pointer"
                   >
                     {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Magic Link'}
                   </button>

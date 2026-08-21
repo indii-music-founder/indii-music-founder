@@ -64,8 +64,8 @@ const App: React.FC = () => {
 
   if (checking) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#0A0A0B] text-white">
-        <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+      <div className="flex h-screen items-center justify-center bg-[#090909] text-white">
+        <Loader2 className="w-6 h-6 animate-spin text-[#4bd5ee]" />
       </div>
     );
   }
@@ -77,8 +77,8 @@ const App: React.FC = () => {
   // Signed in but NOT an admin domain — honest refusal, with a way out.
   if (user && !user.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#0A0A0B] text-white">
-        <ShieldCheck className="w-10 h-10 text-red-400" />
+      <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#090909] text-white">
+        <ShieldCheck className="w-10 h-10 text-red-500" />
         <p className="text-white/80 font-semibold">This account is not an indii admin.</p>
         <p className="text-white/40 text-sm">{user.email}</p>
         <button
@@ -98,31 +98,31 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
   const [activeModule, setActiveModule] = useState('Token Usage');
 
   const modules = [
-    { name: 'Token Usage', icon: <BarChart3 className="w-5 h-5" />, color: 'text-blue-400' },
-    { name: 'Founders Portal', icon: <Users className="w-5 h-5" />, color: 'text-orange-400' },
-    { name: 'Inbox & Messaging', icon: <Mail className="w-5 h-5" />, color: 'text-purple-400' },
-    { name: 'Google Workspace Hub', icon: <Globe className="w-5 h-5" />, color: 'text-cyan-400' },
-    { name: 'DDEX Deliveries', icon: <ShieldCheck className="w-5 h-5" />, color: 'text-green-400' },
-    { name: 'Nexus System Monitor', icon: <Activity className="w-5 h-5" />, color: 'text-rose-400' },
+    { name: 'Token Usage', icon: <BarChart3 className="w-5 h-5" />, color: 'text-[#4bd5ee]' },
+    { name: 'Founders Portal', icon: <Users className="w-5 h-5" />, color: 'text-[#ffb800]' },
+    { name: 'Inbox & Messaging', icon: <Mail className="w-5 h-5" />, color: 'text-purple-500' },
+    { name: 'Google Workspace Hub', icon: <Globe className="w-5 h-5" />, color: 'text-[#4bd5ee]' },
+    { name: 'DDEX Deliveries', icon: <ShieldCheck className="w-5 h-5" />, color: 'text-green-500' },
+    { name: 'Nexus System Monitor', icon: <Activity className="w-5 h-5" />, color: 'text-[#fe2e9a]' },
   ];
 
   return (
-    <div className="flex h-screen bg-[#050506] text-white font-sans selection:bg-blue-500/30 overflow-hidden relative">
+    <div className="flex h-screen bg-[#050505] text-white font-sans selection:bg-[#2e2efe]/30 overflow-hidden relative">
       {/* Dynamic Ambient Background Blobs */}
-      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-blue-600/5 to-purple-600/0 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-[-15%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-purple-600/5 to-blue-600/0 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-[#2e2efe]/5 to-purple-600/0 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-[-15%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-purple-600/5 to-[#2e2efe]/0 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Sidebar */}
-      <aside className="w-72 bg-[#09090b]/80 backdrop-blur-xl border-r border-white/5 flex flex-col z-10 relative">
+      <aside className="w-72 bg-[#090909]/80 backdrop-blur-xl border-r border-white/5 flex flex-col z-10 relative">
         <div className="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
         
         <div className="p-8 flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 relative">
-            <div className="absolute inset-0 bg-blue-500/10 blur-sm rounded-xl" />
+          <div className="w-10 h-10 bg-gradient-to-br from-[#2e2efe] via-[#2e2efe] to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-[#2e2efe]/20 relative">
+            <div className="absolute inset-0 bg-[#2e2efe]/10 blur-sm rounded-xl" />
             <ShieldCheck className="text-white w-5 h-5 relative z-10" />
           </div>
           <div>
-            <h1 className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/80">indii<span className="text-blue-400 font-semibold">OS</span></h1>
+            <h1 className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/80">indii<span className="text-[#4bd5ee] font-semibold">OS</span></h1>
             <p className="text-[9px] text-white/30 uppercase tracking-widest font-bold">Admin Nexus</p>
           </div>
         </div>
@@ -144,7 +144,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
               </div>
               <span className="font-semibold text-xs tracking-wide">{module.name}</span>
               {activeModule === module.name && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#2e2efe] shadow-[0_0_8px_rgba(46,46,254,0.8)]" />
               )}
             </button>
           ))}
@@ -152,7 +152,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
 
         <div className="p-6 border-t border-white/5 bg-black/10">
           <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 border border-white/5 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/5 flex items-center justify-center">
               <Users className="w-4 h-4 text-white/60" />
             </div>
             <div className="min-w-0 flex-1">
@@ -162,7 +162,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
             <button
               onClick={onSignOut}
               title="Sign out"
-              className="p-2 bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 rounded-lg text-white/30 hover:text-red-400 cursor-pointer transition-all"
+              className="p-2 bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 rounded-lg text-white/30 hover:text-red-500 cursor-pointer transition-all"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -173,11 +173,11 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
         {/* Background Gradients */}
-        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#2e2efe]/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-purple-600/5 rounded-full blur-[120px] pointer-events-none" />
 
         {/* Header */}
-        <header className="h-20 border-b border-white/5 flex items-center justify-between px-10 bg-[#0A0A0B]/80 backdrop-blur-md z-10">
+        <header className="h-20 border-b border-white/5 flex items-center justify-between px-10 bg-[#090909]/80 backdrop-blur-md z-10">
           <div className="flex items-center gap-4">
             <LayoutDashboard className="w-5 h-5 text-white/20" />
             <h2 className="text-lg font-semibold tracking-tight">{activeModule}</h2>
@@ -189,7 +189,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
             </div>
             <div className="relative">
               <Bell className="w-5 h-5 text-white/40 hover:text-white cursor-pointer transition-colors" />
-              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0A0A0B]" />
+              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#090909]" />
             </div>
             <div className="h-8 w-[1px] bg-white/5" />
             <Database className="w-5 h-5 text-white/40 hover:text-white cursor-pointer transition-colors" />

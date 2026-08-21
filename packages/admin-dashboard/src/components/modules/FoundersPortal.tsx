@@ -81,10 +81,10 @@ export const FoundersPortal: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between bg-[#121214] border border-white/5 p-6 rounded-3xl">
+      <div className="flex items-center justify-between bg-[#0d0d0d] border border-white/5 p-6 rounded-3xl">
         <div>
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="text-orange-400 w-6 h-6" />
+            <Users className="text-[#ffb800] w-6 h-6" />
             Founders Portal
           </h3>
           <p className="text-sm text-white/40 mt-1">Live founders roster from the activation ledger.</p>
@@ -93,33 +93,33 @@ export const FoundersPortal: React.FC = () => {
 
       {authRequired ? (
         <Panel
-          icon={<AlertTriangle className="w-6 h-6 text-orange-400" />}
+          icon={<AlertTriangle className="w-6 h-6 text-[#ffb800]" />}
           title="Admin authentication required"
           subtitle="The founders API requires an @indii.music admin token. Store a valid Firebase ID token under localStorage key 'indii_admin_token'."
         />
       ) : error ? (
         <Panel
-          icon={<AlertTriangle className="w-6 h-6 text-red-400" />}
+          icon={<AlertTriangle className="w-6 h-6 text-red-500" />}
           title="Couldn't load founders"
           subtitle={error}
         />
       ) : loading ? (
-        <div className="bg-[#121214] border border-white/5 rounded-3xl p-8 h-64 animate-pulse" />
+        <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl p-8 h-64 animate-pulse" />
       ) : (
         <>
           {/* Seat count — real */}
           <div className="grid grid-cols-2 gap-6">
-            <div className="bg-[#1A1A1D] border border-white/5 p-6 rounded-2xl">
+            <div className="bg-[#1f222a] border border-white/5 p-6 rounded-2xl">
               <div className="flex items-center gap-3 mb-2">
-                <Crown className="w-5 h-5 text-orange-400" />
+                <Crown className="w-5 h-5 text-[#ffb800]" />
                 <h4 className="font-bold text-white/70">Founders activated</h4>
               </div>
               <p className="text-3xl font-bold text-white">{count}</p>
               <p className="text-xs text-white/40 mt-1">of {maxSeats} seats</p>
             </div>
-            <div className="bg-[#1A1A1D] border border-white/5 p-6 rounded-2xl">
+            <div className="bg-[#1f222a] border border-white/5 p-6 rounded-2xl">
               <div className="flex items-center gap-3 mb-2">
-                <Users className="w-5 h-5 text-blue-400" />
+                <Users className="w-5 h-5 text-[#4bd5ee]" />
                 <h4 className="font-bold text-white/70">Seats remaining</h4>
               </div>
               <p className="text-3xl font-bold text-white">{Math.max(0, maxSeats - count)}</p>
@@ -130,12 +130,12 @@ export const FoundersPortal: React.FC = () => {
           {/* Roster — real, or honest empty state */}
           {count === 0 ? (
             <Panel
-              icon={<Users className="w-6 h-6 text-orange-400" />}
+              icon={<Users className="w-6 h-6 text-[#ffb800]" />}
               title="No founders activated yet"
               subtitle="Founders will appear here the moment they activate a Founders Pass. Nothing here is placeholder data."
             />
           ) : (
-            <div className="bg-[#121214] border border-white/5 rounded-3xl overflow-hidden">
+            <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl overflow-hidden">
               <div className="p-6 border-b border-white/5">
                 <h4 className="text-lg font-bold tracking-tight">Roster</h4>
               </div>
@@ -153,7 +153,7 @@ export const FoundersPortal: React.FC = () => {
                     {data!.founders.map((f) => (
                       <tr key={f.uid} className="hover:bg-white/[0.02] transition-colors">
                         <td className="px-6 py-4">
-                          <span className="px-2 py-1 bg-orange-500/10 text-orange-400 rounded text-[10px] font-bold border border-orange-500/20">
+                          <span className="px-2 py-1 bg-[#ffb800]/10 text-[#ffb800] rounded text-[10px] font-bold border border-[#ffb800]/20">
                             #{f.seat === 11 ? 'ii' : f.seat ?? '—'}
                           </span>
                         </td>

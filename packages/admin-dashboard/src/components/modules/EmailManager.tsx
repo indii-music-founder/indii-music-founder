@@ -100,10 +100,10 @@ export const EmailManager: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Panel */}
-      <div className="flex items-center justify-between bg-[#121214] border border-white/5 p-6 rounded-3xl">
+      <div className="flex items-center justify-between bg-[#0d0d0d] border border-white/5 p-6 rounded-3xl">
         <div>
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Mail className="text-purple-400 w-6 h-6" />
+            <Mail className="text-purple-500 w-6 h-6" />
             Consolidated Messaging Hub
           </h3>
           <p className="text-sm text-white/40 mt-1">Monitor corporate routing rules, mail logs, and verify AI agent drafts.</p>
@@ -120,7 +120,7 @@ export const EmailManager: React.FC = () => {
       </div>
 
       {/* Tab selectors */}
-      <div className="flex bg-[#121214]/50 border border-white/5 rounded-2xl p-1 max-w-sm">
+      <div className="flex bg-[#0d0d0d]/50 border border-white/5 rounded-2xl p-1 max-w-sm">
         {[
           { id: 'inbox', label: 'Inbox Logs' },
           { id: 'drafts', label: 'AI Review Queue' },
@@ -145,7 +145,7 @@ export const EmailManager: React.FC = () => {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-xs text-red-400">
+        <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-xs text-red-500">
           <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -153,7 +153,7 @@ export const EmailManager: React.FC = () => {
 
       {/* Content Body */}
       {selectedMsg ? (
-        <div className="bg-[#121214] border border-white/5 rounded-3xl p-8 space-y-6">
+        <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl p-8 space-y-6">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <button 
               onClick={() => setSelectedMsg(null)}
@@ -181,7 +181,7 @@ export const EmailManager: React.FC = () => {
           {selectedMsg.isAiDraft && (
             <div className="p-6 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-between gap-6 animate-pulse-subtle">
               <div className="space-y-1">
-                <p className="text-sm font-bold text-purple-400">Human-In-The-Loop Verification</p>
+                <p className="text-sm font-bold text-purple-500">Human-In-The-Loop Verification</p>
                 <p className="text-xs text-purple-300/70">
                   This response was drafted by the indii Conductor agent. Approve to transmit this message.
                 </p>
@@ -202,7 +202,7 @@ export const EmailManager: React.FC = () => {
           )}
         </div>
       ) : activeTab === 'aliases' ? (
-        <div className="bg-[#121214] border border-white/5 rounded-3xl overflow-hidden">
+        <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -230,8 +230,8 @@ export const EmailManager: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${alias.status === 'Active' ? 'bg-green-500' : 'bg-orange-500 animate-pulse'}`} />
-                        <span className={`text-xs font-bold ${alias.status === 'Active' ? 'text-green-500' : 'text-orange-500'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${alias.status === 'Active' ? 'bg-green-500' : 'bg-[#ffb800] animate-pulse'}`} />
+                        <span className={`text-xs font-bold ${alias.status === 'Active' ? 'text-green-500' : 'text-[#ffb800]'}`}>
                           {alias.status}
                         </span>
                       </div>
@@ -248,10 +248,10 @@ export const EmailManager: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="bg-[#121214] border border-white/5 rounded-3xl overflow-hidden min-h-[300px] flex flex-col justify-between">
+        <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl overflow-hidden min-h-[300px] flex flex-col justify-between">
           {loading ? (
             <div className="flex-1 flex items-center justify-center p-20">
-              <RefreshCw className="w-8 h-8 animate-spin text-purple-400" />
+              <RefreshCw className="w-8 h-8 animate-spin text-purple-500" />
             </div>
           ) : filteredMessages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-20">
@@ -271,7 +271,7 @@ export const EmailManager: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-bold text-white/60 truncate max-w-[200px]">{msg.from}</span>
                       {msg.isAiDraft && (
-                        <span className="px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded text-[9px] font-bold">
+                        <span className="px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 text-purple-500 rounded text-[9px] font-bold">
                           Awaiting Approval
                         </span>
                       )}
@@ -289,7 +289,7 @@ export const EmailManager: React.FC = () => {
                           e.stopPropagation();
                           handleApproveDraft(msg.id);
                         }}
-                        className="py-1 px-2.5 bg-purple-500/10 hover:bg-purple-500/25 border border-purple-500/20 rounded-lg text-[10px] font-bold text-purple-400 transition-all cursor-pointer flex items-center gap-1"
+                        className="py-1 px-2.5 bg-purple-500/10 hover:bg-purple-500/25 border border-purple-500/20 rounded-lg text-[10px] font-bold text-purple-500 transition-all cursor-pointer flex items-center gap-1"
                       >
                         <CheckCircle2 className="w-3 h-3" />
                         Quick Approve
@@ -304,11 +304,11 @@ export const EmailManager: React.FC = () => {
       )}
       
       {activeTab === 'aliases' && (
-        <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-6 flex items-start gap-4">
-          <ShieldAlert className="w-6 h-6 text-orange-400 shrink-0" />
+        <div className="bg-[#ffb800]/10 border border-[#ffb800]/20 rounded-2xl p-6 flex items-start gap-4">
+          <ShieldAlert className="w-6 h-6 text-[#ffb800] shrink-0" />
           <div>
-            <h4 className="text-sm font-bold text-orange-400 mb-1">DNS Propagation Warning</h4>
-            <p className="text-sm text-orange-400/80">
+            <h4 className="text-sm font-bold text-[#ffb800] mb-1">DNS Propagation Warning</h4>
+            <p className="text-sm text-[#ffb800]/80">
               Google Workspace MX records are still propagating globally. Email routing may experience up to 48 hours of intermittent delays. Wait for propagation to complete before relying on these aliases for production critical flows.
             </p>
           </div>

@@ -103,10 +103,10 @@ export const DDEXTracker: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Panel */}
-      <div className="flex items-center justify-between bg-[#121214] border border-white/5 p-6 rounded-3xl">
+      <div className="flex items-center justify-between bg-[#0d0d0d] border border-white/5 p-6 rounded-3xl">
         <div>
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <ShieldCheck className="text-green-400 w-6 h-6 animate-pulse-subtle" />
+            <ShieldCheck className="text-green-500 w-6 h-6 animate-pulse-subtle" />
             DDEX Delivery Tracker
           </h3>
           <p className="text-sm text-white/40 mt-1">Monitor XML metadata delivery to DSPs via the indii.music direct pipeline.</p>
@@ -118,7 +118,7 @@ export const DDEXTracker: React.FC = () => {
           </div>
           <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10">
             <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Failure Rate</p>
-            <p className={`text-lg font-bold ${stats.failed > 0 ? 'text-red-400' : 'text-white/50'}`}>
+            <p className={`text-lg font-bold ${stats.failed > 0 ? 'text-red-500' : 'text-white/50'}`}>
               {failureRate}
             </p>
           </div>
@@ -133,7 +133,7 @@ export const DDEXTracker: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="bg-[#1A1A1D] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
+        <div className="bg-[#1f222a] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
           <div className="flex items-center gap-4 mb-4 relative z-10">
             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
               <HardDrive className="w-5 h-5 text-white/60" />
@@ -153,7 +153,7 @@ export const DDEXTracker: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-[#1A1A1D] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
+        <div className="bg-[#1f222a] border border-white/5 p-6 rounded-2xl relative overflow-hidden group">
           <div className="flex items-center gap-4 mb-4 relative z-10">
             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
               <Share2 className="w-5 h-5 text-white/60" />
@@ -164,7 +164,7 @@ export const DDEXTracker: React.FC = () => {
             </div>
           </div>
           <div className="flex items-baseline gap-2 relative z-10">
-            <span className={`text-3xl font-bold ${stats.processing > 0 ? 'text-blue-400' : ''}`}>
+            <span className={`text-3xl font-bold ${stats.processing > 0 ? 'text-[#4bd5ee]' : ''}`}>
               {stats.processing}
             </span>
             <span className="text-xs text-white/40 font-bold">
@@ -176,17 +176,17 @@ export const DDEXTracker: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-[#121214] border border-white/5 rounded-3xl overflow-hidden">
+      <div className="bg-[#0d0d0d] border border-white/5 rounded-3xl overflow-hidden">
         <div className="p-6 border-b border-white/5 flex items-center justify-between">
           <h4 className="text-lg font-bold tracking-tight">Delivery Queue</h4>
         </div>
         
         {loading ? (
           <div className="p-12 flex items-center justify-center">
-            <RefreshCw className="w-8 h-8 animate-spin text-green-400" />
+            <RefreshCw className="w-8 h-8 animate-spin text-green-500" />
           </div>
         ) : error ? (
-          <div className="p-12 text-center text-red-400 font-semibold text-sm">
+          <div className="p-12 text-center text-red-500 font-semibold text-sm">
             {error}
           </div>
         ) : deliveries.length === 0 ? (
@@ -228,7 +228,7 @@ export const DDEXTracker: React.FC = () => {
                         {delivery.status === 'Failed' && <AlertCircle className="w-4 h-4 text-red-500" />}
                         <span className={`text-xs font-bold ${
                           delivery.status === 'Delivered' ? 'text-green-500' : 
-                          delivery.status === 'Processing' ? 'text-blue-500 animate-pulse' : 
+                          delivery.status === 'Processing' ? 'text-[#2e2efe] animate-pulse' : 
                           delivery.status === 'Failed' ? 'text-red-500' :
                           'text-white/50'
                         }`}>
