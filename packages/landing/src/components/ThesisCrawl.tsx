@@ -2,7 +2,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useAnimationFrame, useMotionValue } from 'framer-motion';
-import { Volume2, VolumeX, X, Play, Pause, Info, ArrowRight, RotateCcw, Download } from 'lucide-react';
+import { Volume2, VolumeX, X, Play, Pause, Info, ArrowRight, RotateCcw, Download, ChevronsDown, ChevronsUp } from 'lucide-react';
 import { getStudioUrl } from '../lib/auth';
 import { loadSoundtrackSource } from '../lib/soundtrack';
 
@@ -15,6 +15,15 @@ const INTRO_TEXT_MS = 6000;
 const LOGO_REVEAL_MS = 3800;
 const CRAWL_START_MS = INTRO_TEXT_MS + LOGO_REVEAL_MS;
 const CRAWL_PIXELS_PER_SECOND = 36;
+// Speed ladder for the HUD stepper: slower (vestibular-safe) through faster.
+const SPEED_LADDER: number[] = [0.5, 0.75, 1, 1.5, 2];
+const SPEED_LABELS: Record<number, string> = {
+  0.5: '0.5x SLOWEST',
+  0.75: '0.75x SLOW',
+  1: '1.0x NORMAL',
+  1.5: '1.5x FAST',
+  2: '2.0x FASTER',
+};
 const THESIS_SOUNDTRACK_SOURCES = [
   '/audio/indii-thesis-theme.mp3',
   '/audio/indii-thesis-theme.m4a',
@@ -173,7 +182,7 @@ function ThesisContent() {
 
 export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
   const [isPlaying, setIsPlaying] = useState(!PREFERS_REDUCED_MOTION);
-  const [speed, setSpeed] = useState(1); // 1 = normal, 2 = fast, 4 = warp
+  const [speed, setSpeed] = useState(1); // crawl multiplier; SPEED_LADDER 0.5–2.0
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [introStep, setIntroStep] = useState(PREFERS_REDUCED_MOTION ? 2 : 0); // 0: blue text, 1: logo, 2: crawl
   const [isComplete, setIsComplete] = useState(false);
@@ -616,16 +625,34 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                   >
                     {isPlaying ? <Pause size={14} /> : <Play size={14} />}
                   </button>
-                  <button
-                    onClick={() => setSpeed(speed === 1 ? 0.75 : speed === 0.75 ? 0.5 : 1)}
-                    className={`px-3 py-1 text-[10px] font-mono font-bold rounded-full transition-all ${
-                      speed < 1 
-                        ? 'bg-amber-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.3)]' 
-                        : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    {speed === 1 ? '1.0x NORMAL' : speed === 0.75 ? '0.75x SLOW' : '0.5x SLOWEST'}
-                  </button>
+                  <div className="flex items-center gap-1 rounded-full bg-black/30 border border-white/5 px-1">
+                    <button
+                      onClick={() => setSpeed(SPEED_LADDER[Math.max(0, SPEED_LADDER.indexOf(speed) - 1)])}
+                      disabled={speed <= SPEED_LADDER[0]}
+                      aria-label="Go slower"
+                      title="Slow the crawl"
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronsDown size={13} />
+                    </button>
+                    <span
+                      className={`px-1 text-[10px] font-mono font-bold tracking-wide ${
+                        speed === 1 ? 'text-gray-400' : 'text-amber-400'
+                      }`}
+                      aria-live="polite"
+                    >
+                      {SPEED_LABELS[speed] ?? `${speed}x`}
+                    </span>
+                    <button
+                      onClick={() => setSpeed(SPEED_LADDER[Math.min(SPEED_LADDER.length - 1, SPEED_LADDER.indexOf(speed) + 1)])}
+                      disabled={speed >= SPEED_LADDER[SPEED_LADDER.length - 1]}
+                      aria-label="Go faster"
+                      title="Speed up the crawl"
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronsUp size={13} />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
