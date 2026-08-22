@@ -25,6 +25,14 @@ vi.mock('motion/react', () => ({
 // Mock @/services/firebase
 vi.mock('@/services/firebase', () => ({
     functions: {},
+    db: {},
+}));
+
+// Mock Firestore reads for the seat counter — absent doc means no bar renders,
+// which keeps every legacy assertion focused on its own behavior.
+vi.mock('firebase/firestore', () => ({
+    doc: vi.fn(() => 'mock-doc-ref'),
+    getDoc: vi.fn().mockResolvedValue({ exists: () => false }),
 }));
 
 // Mock founderFunnel tracking service
@@ -68,6 +76,20 @@ describe('FoundersPortal Component', () => {
         expect(screen.getByText('Access Denied')).toBeInTheDocument();
         expect(screen.getByText(/Your account is not currently verified as a Founder/)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Become a Founder' })).toBeInTheDocument();
+    });
+
+    it('shows the real seat milestone from Firestore — never a padded number', async () => {
+        const { getDoc } = await import('firebase/firestore');
+        vi.mocked(getDoc).mockResolvedValue({
+            exists: () => true,
+            data: () => ({ remainingSeats: 8 }), // 3 claimed
+        } as never);
+        (useStore as any).setState({
+            userProfile: { id: 'user123', isFounder: false },
+        });
+
+        render(<FoundersPortal />);
+        await screen.findByText('3 of 11 founder seats claimed · 8 open');
     });
 
     it('navigates to checkout if non-founder clicks Become a Founder', () => {

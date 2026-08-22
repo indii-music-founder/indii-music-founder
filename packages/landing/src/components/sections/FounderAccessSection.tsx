@@ -77,6 +77,8 @@ interface FounderAccessSectionProps {
 
 export default function FounderAccessSection({ studioUrl, trackPreview }: FounderAccessSectionProps) {
   const { remaining, loaded } = useFounderSeatsRemaining();
+  // Milestone framing: real numbers only — progress toward the hard 11-seat cap.
+  const claimed = Math.max(0, Math.min(FOUNDERS_TOTAL_SEATS, FOUNDERS_TOTAL_SEATS - remaining));
   return (
     <section id="founder-access" data-system-section="founder-access" className="relative z-20 w-full overflow-hidden border-t border-amber-400/25 bg-black">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(245,158,11,0.18),transparent_34%)]" />
@@ -115,8 +117,24 @@ export default function FounderAccessSection({ studioUrl, trackPreview }: Founde
                 <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/45">One-time purchase</div>
                 <div className="mt-2 text-5xl font-black tracking-[-0.055em] text-white">$2,500</div>
                 {loaded && (
-                  <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.18em] text-amber-400/80" aria-live="polite">
-                    {remaining > 0 ? `${remaining} of 11 seats remaining` : 'All 11 founder seats claimed'}
+                  <div className="mt-3" aria-live="polite">
+                    <div
+                      className="h-1.5 w-full overflow-hidden rounded-full bg-white/10"
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={FOUNDERS_TOTAL_SEATS}
+                      aria-valuenow={claimed}
+                      aria-label="Founder seats claimed"
+                    >
+                      <div
+                        className="h-full rounded-full bg-linear-to-r from-amber-500 to-amber-300 transition-[width] duration-700"
+                        style={{ width: `${(claimed / FOUNDERS_TOTAL_SEATS) * 100}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.18em] text-amber-400/80">
+                      {claimed} of {FOUNDERS_TOTAL_SEATS} founder seats claimed
+                      {remaining > 0 ? ` · ${remaining} open` : ' · cohort complete'}
+                    </div>
                   </div>
                 )}
               </div>

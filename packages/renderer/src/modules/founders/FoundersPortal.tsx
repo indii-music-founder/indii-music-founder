@@ -5,9 +5,43 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Download, Monitor, Apple, ArrowLeft, Loader2, Key, Mail } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/services/firebase';
+import { functions, db } from '@/services/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import InboxTab from '@/modules/agent/components/InboxTab';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
+
+/** Seats per the Founders Agreement (1 internal + 10 paid) — mirrors the landing page. */
+const FOUNDERS_TOTAL_SEATS = 11;
+
+/**
+ * Milestone seat bar — same live Firestore source (founders_meta/summary) as
+ * the marketing site, so both surfaces always agree. Real numbers only; the
+ * hard cap itself is the pitch.
+ */
+function FounderSeatsBar({ claimed }: { claimed: number }) {
+    const remaining = FOUNDERS_TOTAL_SEATS - claimed;
+    return (
+        <div className="mt-5 text-left" aria-live="polite">
+            <div
+                className="h-1.5 w-full overflow-hidden rounded-full bg-white/10"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={FOUNDERS_TOTAL_SEATS}
+                aria-valuenow={claimed}
+                aria-label="Founder seats claimed"
+            >
+                <div
+                    className="h-full rounded-full bg-linear-to-r from-amber-500 to-amber-300 transition-[width] duration-700"
+                    style={{ width: `${(claimed / FOUNDERS_TOTAL_SEATS) * 100}%` }}
+                />
+            </div>
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-400/80">
+                {claimed} of {FOUNDERS_TOTAL_SEATS} founder seats claimed
+                {remaining > 0 ? ` · ${remaining} open` : ' · cohort complete'}
+            </p>
+        </div>
+    );
+}
 
 export default function FoundersPortal() {
     const { userProfile, setModule } = useStore(
@@ -22,6 +56,22 @@ export default function FoundersPortal() {
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'downloads' | 'inbox'>('downloads');
     const hasTrackedPortalView = useRef(false);
+    // Live seat progress from the same Firestore doc the marketing site reads.
+    const [seatsClaimed, setSeatsClaimed] = useState<number | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getDoc(doc(db, 'founders_meta', 'summary'))
+            .then((snap) => {
+                if (cancelled || !snap.exists()) return;
+                const data = snap.data() as { remainingSeats?: number };
+                if (typeof data.remainingSeats === 'number') {
+                    setSeatsClaimed(Math.max(0, Math.min(FOUNDERS_TOTAL_SEATS, FOUNDERS_TOTAL_SEATS - data.remainingSeats)));
+                }
+            })
+            .catch((err: unknown) => Logger.warn('FoundersPortal', 'Seat counter unavailable', err));
+        return () => { cancelled = true; };
+    }, []);
 
     const isFounder = userProfile?.subscriptionTier === 'founder' || userProfile?.tier === 'founder' || userProfile?.isFounder === true;
 
@@ -110,6 +160,7 @@ export default function FoundersPortal() {
                         >
                             Become a Founder
                         </button>
+                        {seatsClaimed !== null && <FounderSeatsBar claimed={seatsClaimed} />}
                     </div>
                 ) : (
                     <>
