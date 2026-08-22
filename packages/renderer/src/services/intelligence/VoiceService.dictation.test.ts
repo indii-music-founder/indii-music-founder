@@ -132,6 +132,34 @@ describe('VoiceService.startDictation', () => {
         expect(onError).toHaveBeenCalledWith('not-allowed');
     });
 
+    it('does not report the expected aborted error that follows an intentional stop', async () => {
+        const svc = await loadService();
+        const onError = vi.fn();
+        const onEnd = vi.fn();
+        svc.startDictation({ onError, onEnd });
+
+        svc.stopDictation();
+        lastInstance().onerror!({ error: 'aborted' });
+        expect(onError).not.toHaveBeenCalled();
+
+        // The session still ends cleanly through onend.
+        lastInstance().onend!();
+        expect(onEnd).toHaveBeenCalledTimes(1);
+    });
+
+    it('treats silence (no-speech) as a natural end, never as a failure', async () => {
+        const svc = await loadService();
+        const onError = vi.fn();
+        const onEnd = vi.fn();
+        svc.startDictation({ onError, onEnd });
+
+        lastInstance().onerror!({ error: 'no-speech' });
+        expect(onError).not.toHaveBeenCalled();
+
+        lastInstance().onend!();
+        expect(onEnd).toHaveBeenCalledTimes(1);
+    });
+
     it('returns false when speech recognition is unavailable', async () => {
         delete (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
         const svc = await loadService();

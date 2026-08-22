@@ -440,6 +440,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 onMicError={handleMicError}
                                 isAutoSendArmed={() => autoSendArmedRef.current}
                                 disabled={!voiceSupported}
+                                accent={isIndiiMode ? 'indii' : 'glass'}
                                 sizeVariant={isDocked ? 'docked' : isMobile ? 'mobile' : 'default'}
                             />
                         </PromptInputAction>

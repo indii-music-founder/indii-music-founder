@@ -172,6 +172,25 @@ describe('TalkButton', () => {
         expect(screen.getByTestId('talk-button').getAttribute('data-face')).toBe('idle');
     });
 
+    it('swallows late engine errors after release (Chrome aborts on stop)', () => {
+        vi.setSystemTime(3_000_000);
+        renderButton('');
+        fireEvent.click(screen.getByTestId('talk-button'));
+        const handlers = captured[0]!;
+        act(() => handlers.onFinal!('my sent take'));
+
+        vi.setSystemTime(3_000_600);
+        fireEvent.click(screen.getByTestId('talk-button'));
+        expect(onRelease).toHaveBeenCalledTimes(1);
+
+        // The engine's late 'aborted' error arrives after the session ended.
+        act(() => handlers.onError!('aborted'));
+
+        expect(onMicError).not.toHaveBeenCalled();
+        // The input must NOT be reverted — the take was already sent.
+        expect(onLiveText).not.toHaveBeenCalledWith('');
+    });
+
     it('shows the Stop face while the agent is busy and wires the existing stop behavior', () => {
         render(
             <TalkButton

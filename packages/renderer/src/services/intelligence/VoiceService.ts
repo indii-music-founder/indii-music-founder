@@ -38,6 +38,7 @@ export class VoiceService {
     private recognition: SpeechRecognitionInstance | null = null;
     private isListening: boolean = false;
     private isDictating: boolean = false;
+    private stopRequested: boolean = false;
 
     private get synthesis(): SpeechSynthesis | null {
         if (typeof window === 'undefined') return null;
@@ -116,6 +117,9 @@ export class VoiceService {
         this.recognition.interimResults = true;
 
         let finalTranscript = '';
+        // Chrome fires onerror('aborted') as a normal consequence of stop() —
+        // and 'no-speech' when the user stays quiet. Neither is a failure.
+        this.stopRequested = false;
 
         this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
             let interim = '';
@@ -132,6 +136,9 @@ export class VoiceService {
             handlers.onInterim?.(interim.trim());
         };
         this.recognition.onerror = (event: { error: unknown }) => {
+            const code = String(event.error ?? '');
+            if (this.stopRequested && code === 'aborted') return; // expected after stop()
+            if (code === 'no-speech' || code === 'aborted') return; // silence ends via onend
             handlers.onError?.(event.error);
         };
         this.recognition.onend = () => {
@@ -157,6 +164,7 @@ export class VoiceService {
      */
     stopDictation() {
         if (this.recognition && this.isDictating) {
+            this.stopRequested = true;
             this.recognition.stop();
         }
     }

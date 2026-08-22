@@ -47,6 +47,8 @@ export interface TalkButtonProps {
     /** Parent tracks typing-during-listen; consulted at release time only. */
     isAutoSendArmed: () => boolean;
     disabled?: boolean;
+    /** Color family for the idle face: indii green, or the neutral glass pill. */
+    accent?: 'indii' | 'glass';
     sizeVariant?: 'default' | 'docked' | 'mobile';
     className?: string;
 }
@@ -72,6 +74,7 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
     onMicError,
     isAutoSendArmed,
     disabled = false,
+    accent = 'glass',
     sizeVariant = 'default',
     className,
 }) => {
@@ -119,6 +122,9 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
                 onNaturalEnd(finalText);
             },
             onError: (error) => {
+                // Late engine noise after an intentional release/cancel must not
+                // revert the input or raise a toast (Chrome aborts on stop()).
+                if (!startedAtRef.current) return;
                 onLiveText(baseTextRef.current);
                 endSession();
                 onMicError(error);
@@ -179,7 +185,12 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
         }
     }, [face, onStopAgent, handleRelease, handleStart]);
 
-    const padClass = sizeVariant === 'docked' ? 'p-1.5' : sizeVariant === 'mobile' ? 'p-2 min-w-[32px] w-8 h-8 rounded-lg' : 'p-2';
+    const padClass = sizeVariant === 'docked'
+        ? 'p-1.5 rounded-lg'
+        : sizeVariant === 'mobile'
+            ? 'p-2 min-w-[32px] w-8 h-8 rounded-lg'
+            : 'gap-2 px-4 h-9 rounded-full text-xs';
+    const showLabel = sizeVariant === 'default';
     const iconSize = sizeVariant === 'docked' ? 16 : 18;
 
     const ariaLabel =
@@ -189,6 +200,8 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
                 ? 'Release to send'
                 : 'Voice Input';
 
+    const label = face === 'busy' ? 'Stop' : face === 'listening' ? 'Release' : 'Talk';
+
     return (
         <button
             onClick={handleClick}
@@ -197,11 +210,14 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
             data-face={face}
             aria-label={ariaLabel}
             className={cn(
-                'flex items-center justify-center rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                // Studio talkback treatment: a real button, not a bare icon.
+                // Red = live/on-air, matching the previous Stop affordance.
+                'flex items-center justify-center font-bold shadow-lg transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white',
                 padClass,
-                face === 'busy' && 'text-red-400 bg-red-400/10 hover:bg-red-400/20',
-                face === 'listening' && 'text-red-400 bg-red-400/15 hover:bg-red-400/25',
-                face === 'idle' && 'text-gray-400 hover:bg-white/10 hover:text-gray-200',
+                accent === 'indii' && face === 'idle' && 'bg-green-600 hover:bg-green-500 shadow-green-500/20',
+                accent !== 'indii' && face === 'idle' && 'bg-white/20 hover:bg-white/30 border border-white/10',
+                (face === 'listening' || face === 'busy') && 'bg-red-600 hover:bg-red-500 shadow-red-500/30',
+                face === 'listening' && 'animate-pulse',
                 disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent',
                 className
             )}
@@ -209,8 +225,9 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
             {face === 'busy' ? (
                 <Square size={iconSize - 4} fill="currentColor" />
             ) : (
-                <Mic size={iconSize} className={cn(face === 'listening' && 'animate-pulse')} />
+                <Mic size={iconSize} className={cn(face === 'listening' && 'animate-none')} />
             )}
+            {showLabel && <span>{label}</span>}
         </button>
     );
 };
