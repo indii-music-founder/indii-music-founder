@@ -517,6 +517,7 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                               * ISSUE-1267.
                               */}
                             <div
+                                data-module-scroller
                                 className="@container flex-1 overflow-y-auto relative z-10 custom-scrollbar"
                                 style={{
                                     paddingBottom: `calc(${isAnyPhone ? '88px' : '0px'} + var(--consent-banner-space, 0px))`,

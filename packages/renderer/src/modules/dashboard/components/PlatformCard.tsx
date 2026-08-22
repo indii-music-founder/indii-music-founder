@@ -4,6 +4,7 @@ import { useStore } from '@/core/store';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
 import { useIsFounderTier } from '@/hooks/useIsFounderTier';
+import { scrollModuleScrollerToTopAfterPaint } from '@/utils/scrollModuleScroller';
 
 const DISMISS_KEY = 'indii_platform_card_dismissed';
 
@@ -55,6 +56,9 @@ export function PlatformCard() {
         } catch {
             /* private mode: dismissal lives for the session only */
         }
+        // Collapse shifts the layout — bring the indii logo / dashboard title
+        // back into view.
+        scrollModuleScrollerToTopAfterPaint();
     };
 
     // Founders already own what this card sells — it never renders for them.

@@ -9,6 +9,7 @@ import { useStore } from '@/core/store';
 import { PlatformCard } from './components/PlatformCard';
 import { useTranslation } from 'react-i18next';
 import { useIsFounderTier } from '@/hooks/useIsFounderTier';
+import { scrollModuleScrollerToTopAfterPaint } from '@/utils/scrollModuleScroller';
 
 const BANNER_DISMISS_KEY = 'indii_founders_banner_dismissed';
 
@@ -68,6 +69,9 @@ export default function Dashboard() {
         } catch {
             /* private mode: dismissal lives for the session only */
         }
+        // Collapsing shifts the layout — land the view back on the indii logo
+        // and the "My Dashboard" title instead of wherever mid-scroll we were.
+        scrollModuleScrollerToTopAfterPaint();
     };
     const { isAnyPhone } = useMobile();
     const setModule = useStore(state => state.setModule);
