@@ -10,6 +10,14 @@ import { emitSystemPulse } from '../../three/signals';
 /** Total seats per the Founders Agreement (1 internal + 10 paid). */
 const FOUNDERS_TOTAL_SEATS = 11;
 
+/**
+ * Studio link that lands directly on the Founders Pass paywall
+ * (the studio honors ?module=<id> deep links after sign-in).
+ */
+function buildPaywallUrl(studioUrl: string): string {
+  return `${studioUrl}${studioUrl.includes('?') ? '&' : '?'}module=founders-checkout`;
+}
+
 interface FounderSeatsState {
   remaining: number;
   loaded: boolean;
@@ -125,7 +133,7 @@ export default function FounderAccessSection({ studioUrl, trackPreview }: Founde
             </div>
 
             <a
-              href={studioUrl}
+              href={buildPaywallUrl(studioUrl)}
               rel="noopener noreferrer"
               onClick={() => {
                 trackPreview('founder_access');

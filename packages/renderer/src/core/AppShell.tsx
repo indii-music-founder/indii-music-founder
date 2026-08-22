@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef } from 'react';
 import { MotionConfig } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
@@ -27,6 +27,7 @@ import NewProjectModal from '@/modules/dashboard/components/NewProjectModal';
 import { BiometricGate } from './components/auth/BiometricGate';
 import { ResponsiveLayoutProvider } from '@/providers/ResponsiveLayoutProvider';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
+import { readModuleDeepLinkFromLocation } from '@/utils/moduleDeepLink';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { MODULE_DISPLAY_NAMES, STANDALONE_MODULES, type ModuleId } from './constants';
@@ -228,6 +229,43 @@ function useOnboardingRedirect() {
     }, [user, authLoading, currentModule, setModule, userProfile]);
 }
 
+/**
+ * Honors a ?module=<id> deep link (e.g. the founder site's "Secure Founder
+ * Access" button → founders-checkout paywall). Applies once the user is
+ * authenticated; anonymous visitors keep the normal gate → login flow and the
+ * link still lands them after sign-in. The founder-preview onboarding path
+ * keeps priority — a pending walkthrough is never skipped by the deep link.
+ */
+function useModuleDeepLink() {
+    const { user, authLoading, currentModule, setModule, userProfile } = useStore(
+        useShallow(s => ({
+            user: s.user,
+            authLoading: s.authLoading,
+            currentModule: s.currentModule,
+            setModule: s.setModule,
+            userProfile: s.userProfile,
+        }))
+    );
+
+    const deepLinkRef = useRef<ReturnType<typeof readModuleDeepLinkFromLocation> | undefined>(undefined);
+    if (deepLinkRef.current === undefined) {
+        deepLinkRef.current = readModuleDeepLinkFromLocation();
+    }
+
+    useEffect(() => {
+        const target = deepLinkRef.current;
+        if (!target || authLoading || !user || user.isAnonymous) return;
+        const onboardingPending =
+            userProfile?.id === 'pending' ||
+            (typeof window !== 'undefined' && localStorage.getItem('indii_founder_preview_pending') === 'true');
+        if (onboardingPending) return; // walkthrough first; link stays armed for next visit
+        if (currentModule !== target) {
+            setModule(target);
+        }
+        deepLinkRef.current = null;
+    }, [user, authLoading, userProfile, currentModule, setModule]);
+}
+
 function GuestGate({ onUpgrade }: { onUpgrade: () => void }) {
     return (
         <div className="flex flex-col items-center justify-center h-full gap-6 text-gray-400 px-6 text-center">
@@ -389,6 +427,7 @@ function ModuleRenderer({
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcutsModal }: any) {
     useOnboardingRedirect();
+    useModuleDeepLink();
 
     const { subscription, loading: subLoading } = useSubscription();
 
