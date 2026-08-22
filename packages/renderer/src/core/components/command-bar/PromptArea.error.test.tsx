@@ -25,12 +25,14 @@ vi.mock('@/services/agent/registry', () => ({
   },
 }));
 
-// Mock VoiceService
 vi.mock('@/services/intelligence/VoiceService', () => ({
   voiceService: {
     isSupported: () => true,
     startListening: vi.fn(),
     stopListening: vi.fn(),
+    startDictation: vi.fn(() => true),
+    stopDictation: vi.fn(),
+    isDictatingActive: () => false,
   },
 }));
 
@@ -101,12 +103,9 @@ describe('PromptArea Error Resilience', () => {
     // Verify store update
     expect(useTestStore.getState().commandBarInput).toBe('Draft a critical contract');
 
-    // 4. User clicks Send
-    const runBtn = screen.getByTestId('command-bar-run-btn');
-    expect(runBtn).not.toBeDisabled();
-
+    // 4. User submits via Enter — send lives inside TalkButton now
     await act(async () => {
-      fireEvent.click(runBtn);
+      fireEvent.keyDown(screen.getByTestId('main-prompt-input'), { key: 'Enter', shiftKey: false });
     });
 
     // 5. Assert: Error Toast
@@ -120,6 +119,6 @@ describe('PromptArea Error Resilience', () => {
 
     // 7. Assert: Loading state cleared
     expect(screen.queryByTestId('run-loader')).not.toBeInTheDocument();
-    expect(runBtn).not.toBeDisabled();
+    expect(screen.getByTestId('talk-button').getAttribute('data-face')).toBe('idle');
   });
 });

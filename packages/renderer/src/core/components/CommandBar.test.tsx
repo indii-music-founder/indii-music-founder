@@ -39,6 +39,9 @@ vi.mock('@/services/intelligence/VoiceService', () => ({
         isSupported: vi.fn(() => false),
         startListening: vi.fn(),
         stopListening: vi.fn(),
+        startDictation: vi.fn(() => true),
+        stopDictation: vi.fn(),
+        isDictatingActive: () => false,
     }
 }));
 
@@ -249,8 +252,8 @@ describe('CommandBar', () => {
         // Test sending message in Indii mode
         const input = screen.getByPlaceholderText('Launch a campaign, audit security, or ask anything...');
         fireEvent.change(input, { target: { value: 'Hello Indii' } });
-        const submitButton = screen.getByTestId('command-bar-run-btn');
-        fireEvent.click(submitButton);
+        // Send lives inside TalkButton now — Enter submits typed text
+        fireEvent.keyDown(input, { key: 'Enter' });
 
         await waitFor(() => {
             expect(agentService.sendMessage).toHaveBeenCalledWith('Hello Indii', undefined, undefined);
@@ -271,8 +274,8 @@ describe('CommandBar', () => {
         const input = screen.getByPlaceholderText(/Message Road Manager/i);
         fireEvent.change(input, { target: { value: 'Hello agent' } });
 
-        const submitButton = document.querySelector('button[aria-label="Run command"]');
-        fireEvent.click(submitButton!);
+        // Send lives inside TalkButton now — Enter submits typed text
+        fireEvent.keyDown(input, { key: 'Enter' });
 
         await waitFor(() => {
             expect(agentService.sendMessage).toHaveBeenCalledWith('Hello agent', undefined, 'road');

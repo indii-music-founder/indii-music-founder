@@ -9,14 +9,35 @@ interface SpeechRecognitionInstance {
     lang: string;
     start: () => void;
     stop: () => void;
-    onresult: ((event: { results: { transcript: string }[][] }) => void) | null;
+    onresult: ((event: SpeechRecognitionEventLike) => void) | null;
     onerror: ((event: { error: unknown }) => void) | null;
     onend: (() => void) | null;
+}
+
+interface SpeechRecognitionResultLike {
+    0: { transcript: string };
+    isFinal: boolean;
+}
+
+interface SpeechRecognitionEventLike {
+    resultIndex: number;
+    results: { length: number; [index: number]: SpeechRecognitionResultLike };
+}
+
+interface DictationHandlers {
+    /** Cumulative FINAL transcript recognized so far (stable prefix). */
+    onFinal?: (finalTranscript: string) => void;
+    /** Unstable in-progress tail for the current phrase (empty when none). */
+    onInterim?: (interimTranscript: string) => void;
+    /** Recognition session ended (stop requested, silence timeout, or error). */
+    onEnd?: () => void;
+    onError?: (error: unknown) => void;
 }
 
 export class VoiceService {
     private recognition: SpeechRecognitionInstance | null = null;
     private isListening: boolean = false;
+    private isDictating: boolean = false;
 
     private get synthesis(): SpeechSynthesis | null {
         if (typeof window === 'undefined') return null;
@@ -47,7 +68,7 @@ export class VoiceService {
 
         this.isListening = true;
 
-        this.recognition.onresult = (event: { results: { transcript: string }[][] }) => {
+        this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
             const transcript = event.results[0]![0]!.transcript;
             onResult(transcript);
             this.isListening = false;
@@ -75,6 +96,73 @@ export class VoiceService {
             this.recognition.stop();
             this.isListening = false;
         }
+    }
+
+    /**
+     * Continuous talkback-style dictation: keeps listening across phrases and
+     * streams interim results while the user speaks. Unlike startListening
+     * (single-shot, final-only), this session stays open until stopDictation()
+     * or a recognition timeout — the TalkButton release model depends on it.
+     *
+     * Returns false when speech recognition is unavailable in this browser.
+     */
+    startDictation(handlers: DictationHandlers): boolean {
+        if (!this.recognition) return false;
+        if (this.isDictating) return true;
+
+        // Reuse the single recognition instance; flip it into continuous mode
+        // for the session. The legacy single-shot path restores its own config.
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+
+        let finalTranscript = '';
+
+        this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const result = event.results[i]!;
+                const transcript = result[0]!.transcript;
+                if (result.isFinal) {
+                    finalTranscript += transcript;
+                } else {
+                    interim += transcript;
+                }
+            }
+            handlers.onFinal?.(finalTranscript);
+            handlers.onInterim?.(interim.trim());
+        };
+        this.recognition.onerror = (event: { error: unknown }) => {
+            handlers.onError?.(event.error);
+        };
+        this.recognition.onend = () => {
+            const wasDictating = this.isDictating;
+            this.isDictating = false;
+            if (wasDictating) handlers.onEnd?.();
+        };
+
+        this.isDictating = true;
+        try {
+            this.recognition.start();
+            return true;
+        } catch (e: unknown) {
+            this.isDictating = false;
+            handlers.onError?.(e);
+            return false;
+        }
+    }
+
+    /**
+     * Gracefully ends dictation: stop() lets the engine flush any pending final
+     * result, and the onend handler clears the flag and notifies subscribers.
+     */
+    stopDictation() {
+        if (this.recognition && this.isDictating) {
+            this.recognition.stop();
+        }
+    }
+
+    isDictatingActive() {
+        return this.isDictating;
     }
 
     async speak(text: string, voiceName?: string) {

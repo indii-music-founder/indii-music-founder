@@ -3,9 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommandBar from './CommandBar';
 
 // Use vi.hoisted for mocked functions accessed in mock factory
-const { mockStartListening, mockStopListening } = vi.hoisted(() => ({
+const { mockStartListening, mockStopListening, mockStartDictation } = vi.hoisted(() => ({
     mockStartListening: vi.fn(),
     mockStopListening: vi.fn(),
+    mockStartDictation: vi.fn(() => true),
 }));
 
 // --- REACTIVE STORE MOCK ---
@@ -100,6 +101,9 @@ vi.mock('@/services/intelligence/VoiceService', () => ({
         isSupported: vi.fn(() => true),
         startListening: mockStartListening,
         stopListening: mockStopListening,
+        startDictation: mockStartDictation,
+        stopDictation: vi.fn(),
+        isDictatingActive: () => false,
     }
 }));
 
@@ -161,9 +165,9 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         const input = screen.getByTestId('main-prompt-input') ?? screen.queryByPlaceholderText(/launch a campaign/i);
         expect(input).toBeInTheDocument();
 
-        // 2. Verify "Send" (Run) button is visible
-        const runButton = screen.getByRole('button', { name: /run command/i });
-        expect(runButton).toBeVisible();
+        // 2. Verify TalkButton (mic + send combined) is visible
+        const talkButton = screen.getByTestId('talk-button');
+        expect(talkButton).toBeVisible();
 
         // 3. The mode toggle is always present (indii/agent toggle replaced delegate menu)
         const modeToggle = screen.queryByRole('button', { name: /change agent mode/i });
@@ -189,7 +193,7 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         // Simulate touch/click interaction
         fireEvent.click(voiceButton);
 
-        // Verify voice service was triggered
-        expect(mockStartListening).toHaveBeenCalled();
+        // Verify voice service was triggered — TalkButton opens a dictation session
+        expect(mockStartDictation).toHaveBeenCalled();
     });
 });

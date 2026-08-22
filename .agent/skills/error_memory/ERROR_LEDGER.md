@@ -2059,3 +2059,12 @@ committing.
 - BUG: During LazySection debugging I narrated "my theory is wrong" while actually tracing real IO callbacks and rects. The founder explicitly forbids working in the theoretical realm: no theories, no assumptions, no "I assumed". Every claim, fix, probe, and report must be grounded in observed evidence (real logs, real DOM state, real responses, real code paths) and stated as such.
 - FIX: When something behaves unexpectedly: (1) collect the actual evidence first (instrument the real code path, dump the real state), (2) describe only what was observed, (3) change code only against that evidence, (4) verify the change against live state.
 - PREVENTION: Never use the words theory/hypothesis/assume/guess in debugging or reports. If a fact is not yet proven, state that it is unproven and gather the proof. This overrides convenience and prior patterns.
+
+## 2026-08-21 TalkButton: `Date.now` Once-Queues Eaten by React Scheduler (fake-timer fix)
+
+- SEVERITY: Medium (tests fail non-deterministically; wrong fix would weaken the jitter guard)
+- FILE: `packages/renderer/src/core/components/command-bar/TalkButton.test.tsx`, `PromptArea.test.tsx`
+- ERROR: Release-click assertions failed with 0 calls even though the flow was correct. Debug probe showed THREE extra `Date.now()` calls per `fireEvent.click` originating from React's act/scheduler internals, not the component.
+- CAUSE: `vi.spyOn(Date,'now').mockReturnValueOnce(...)` queues are consumed FIFO by ANY caller. Component code and framework internals share the same queue, so per-call `Once` stubs desynchronize from the component's own reads.
+- FIX: Use `vi.useFakeTimers()` + `vi.setSystemTime(t)` around click sequences. Fake timers give every caller one consistent clock: advance with `setSystemTime` between clicks and assert on deltas. Never sequence wall-clock `Once` stubs across user events in RTL tests.
+- PREVENTION: Any duration/throttle guard tested via simulated events must run under fake timers. If a test needs elapsed time, move the clock (`setSystemTime`), never pre-script individual `Date.now()` return values.

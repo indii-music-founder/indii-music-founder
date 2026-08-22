@@ -27,6 +27,9 @@ vi.mock('@/services/intelligence/VoiceService', () => ({
     isSupported: () => true,
     startListening: vi.fn(),
     stopListening: vi.fn(),
+    startDictation: vi.fn(() => true),
+    stopDictation: vi.fn(),
+    isDictatingActive: () => false,
   },
 }));
 
@@ -91,7 +94,7 @@ describe('PromptArea Accessibility', () => {
     const attachBtn = screen.getByRole('button', { name: /attach files/i });
     expect(attachBtn).toBeInTheDocument();
 
-    // 2. Dictate Button
+    // 2. TalkButton (mic + send combined) — idle face announces Voice Input
     const dictateBtn = screen.getByRole('button', { name: /voice input/i });
     expect(dictateBtn).toBeInTheDocument();
 
@@ -104,15 +107,17 @@ describe('PromptArea Accessibility', () => {
     const dockBtn = screen.getByRole('button', { name: /detach from agent/i });
     expect(dockBtn).toBeInTheDocument();
 
-    // 5. Send/Run Button — aria-label is "Run command" (tooltip is "Send Message (Enter)")
-    const runBtn = screen.getByRole('button', { name: /run command/i });
-    expect(runBtn).toBeInTheDocument();
+    // 5. Send/Run button no longer exists — send lives inside TalkButton
+    // (release-to-send) and typed text sends via Enter. The stop face replaces
+    // the talkback face while the agent is busy.
+    expect(screen.queryByRole('button', { name: /run command/i })).not.toBeInTheDocument();
+    expect(dictateBtn.getAttribute('data-face')).toBe('idle');
 
     // Check for focus-visible classes
     // Expected classes: focus-visible:ring-2
     // We expect these to be MISSING initially.
 
-    const buttonsToCheck = [attachBtn, dictateBtn, dockBtn, modeToggleBtn, runBtn];
+    const buttonsToCheck = [attachBtn, dictateBtn, dockBtn, modeToggleBtn];
 
     // We assert that they DO NOT have the classes yet (to confirm reproduction of "issue")
     // Or we can just try to assert they DO have them and let it fail.

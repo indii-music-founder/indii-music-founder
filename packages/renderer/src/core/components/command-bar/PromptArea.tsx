@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect, type MutableRefObject } from 'react';
-import { ArrowRight, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Square } from 'lucide-react';
+import { Paperclip, ChevronUp, PanelTopClose, PanelTopOpen, Database } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { entryCommandService } from '@/services/commands/EntryCommandService';
@@ -21,6 +21,7 @@ import {
 
 import { AttachmentList } from './AttachmentList';
 import { TypeaheadMenu, type TypeaheadContext } from './TypeaheadMenu';
+import { TalkButton } from './TalkButton';
 import { logger } from '@/utils/logger';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
@@ -36,7 +37,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const [isLocalProcessing, setIsLocalProcessing] = useState(false);
 
-    const [isListening, setIsListening] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const _cameraInputRef = useRef<HTMLInputElement>(null);
@@ -140,6 +140,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const [typeaheadContext, setTypeaheadContext] = useState<TypeaheadContext>(null);
 
     const handleInputValueChange = useCallback((value: string) => {
+        // Any manual keystroke over a live talkback session disarms auto-send:
+        // the release then only stops the mic and keeps the text for review.
+        autoSendArmedRef.current = false;
         setCommandBarInput(value);
 
         // Find last word matching @, #, or /
@@ -167,22 +170,33 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
 
 
-    const handleMicClick = useCallback(() => {
-        if (isListening) {
-            voiceService.stopListening();
-            setIsListening(false);
-        } else {
-            if (voiceService.isSupported()) {
-                setIsListening(true);
-                voiceService.startListening((text) => {
-                    setCommandBarInput(commandBarInput + (commandBarInput ? ' ' : '') + text);
-                    setIsListening(false);
-                }, () => setIsListening(false));
-            } else {
-                toast.error("Voice input not supported in this browser.");
-            }
-        }
-    }, [isListening, toast, commandBarInput, setCommandBarInput]);
+    // ─── Talkback (TalkButton) wiring ─────────────────────────────────────────
+    // One button on the left: click to talk, click again to release-and-send.
+    // Typing over a live session disarms auto-send so a half-edited thought is
+    // never fired; the release then only stops the mic and keeps the text.
+    const voiceSupported = useMemo(() => voiceService.isSupported(), []);
+    const autoSendArmedRef = useRef(false);
+
+    const handleVoiceLiveText = useCallback((combined: string) => {
+        setCommandBarInput(combined);
+    }, [setCommandBarInput]);
+
+    const handleTalkNaturalEnd = useCallback((finalText: string) => {
+        // Engine closed on its own (silence/timeout): keep the take, never send.
+        setCommandBarInput(finalText);
+    }, [setCommandBarInput]);
+
+    const handleMicError = useCallback((error: unknown) => {
+        // Engines and wrappers disagree on the error shape: string, or {error}.
+        const raw = typeof error === 'object' && error !== null && 'error' in error
+            ? (error as { error?: unknown }).error
+            : error;
+        const denied = String(raw ?? '').includes('not-allowed') || String(raw ?? '').includes('service-not-allowed');
+        toast.error(denied
+            ? 'Microphone access was denied. Enable it in your browser settings to talk.'
+            : 'Voice input failed. Try again.');
+        logger.warn('PromptArea: talkback error', error);
+    }, [toast]);
 
 
 
@@ -228,10 +242,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         ));
     }, []);
 
-    const handleSubmit = useCallback(async (e?: React.FormEvent) => {
+    const handleSubmit = useCallback(async (e?: React.FormEvent, overrideText?: string) => {
         try {
             e?.preventDefault();
-            const input = commandBarInput || '';
+            const input = overrideText ?? (commandBarInput || '');
             if (!input.trim() && (commandBarAttachments?.length ?? 0) === 0) {
                 return;
             }
@@ -335,11 +349,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         }
     }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isLocalProcessing, isIndiiMode, isBoardroom, setCommandBarInput, setCommandBarAttachments]);
 
+    const handleTalkRelease = useCallback(({ text, autoSend }: { text: string; autoSend: boolean }) => {
+        setCommandBarInput(text);
+        const hasAttachments = (commandBarAttachments?.length ?? 0) > 0;
+        if (autoSend && (text.trim() || hasAttachments)) {
+            void handleSubmit(undefined, text);
+        }
+    }, [commandBarAttachments, handleSubmit, setCommandBarInput]);
+
     const actionButtonBase = "flex items-center justify-center rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
-    const submitButtonBase = "flex items-center justify-center transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none text-white";
-    const submitButtonSize = (!isMobile && !isDocked) 
-        ? "gap-2 px-4 py-2 rounded-xl text-xs font-bold" 
-        : (isDocked ? "min-w-[28px] w-7 h-7 rounded-lg p-0" : "min-w-[32px] w-8 h-8 rounded-lg p-0");
 
     const kbButtonClasses = isKnowledgeBaseEnabled
         ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
@@ -405,6 +423,27 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
                 <PromptInputActions className="px-2 pb-2">
                     <div className="flex items-center gap-1.5 flex-1">
+                        {/* TalkButton — studio talkback: leftmost control, mic + send combined. */}
+                        <PromptInputAction tooltip={
+                            (isLocalProcessing || isAgentProcessing)
+                                ? "Stop Agent (Esc)"
+                                : "Voice Input"
+                        }>
+                            <TalkButton
+                                value={commandBarInput}
+                                isAgentBusy={isLocalProcessing || isAgentProcessing}
+                                onStopAgent={stopAgent}
+                                onLiveText={handleVoiceLiveText}
+                                onSessionStart={() => { autoSendArmedRef.current = true; }}
+                                onRelease={handleTalkRelease}
+                                onNaturalEnd={handleTalkNaturalEnd}
+                                onMicError={handleMicError}
+                                isAutoSendArmed={() => autoSendArmedRef.current}
+                                disabled={!voiceSupported}
+                                sizeVariant={isDocked ? 'docked' : isMobile ? 'mobile' : 'default'}
+                            />
+                        </PromptInputAction>
+
                         {!isMobile && (
                             <div className="flex items-center gap-0.5">
                                 <input
@@ -430,24 +469,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 </PromptInputAction>
                             </div>
                         )}
-
-                        <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
-                            <button
-                                onClick={handleMicClick}
-                                className={cn(
-                                    actionButtonBase,
-                                    isDocked ? "p-1.5" : "p-2",
-                                    isListening
-                                        ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
-                                        : "text-gray-400 hover:bg-white/10 hover:text-gray-200"
-                                )}
-                                aria-label={isListening ? "Stop listening" : "Voice Input"}
-                            >
-                                <Mic size={isDocked ? 16 : 18} className={isListening ? "animate-pulse" : ""} />
-                            </button>
-                        </PromptInputAction>
-
-
 
                         <PromptInputAction tooltip={isKnowledgeBaseEnabled ? "Knowledge Base Active" : "Connect Knowledge Base"}>
                             <button
@@ -538,51 +559,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </div>
                         )}
 
-                        {isLocalProcessing || isAgentProcessing ? (
-                            <PromptInputAction tooltip="Stop Agent (Esc)">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        stopAgent();
-                                    }}
-                                    aria-label="Stop agent"
-                                    className={cn(
-                                        submitButtonBase,
-                                        submitButtonSize,
-                                        "bg-red-600 hover:bg-red-500 shadow-red-500/30 animate-pulse"
-                                    )}
-                                    data-testid="command-bar-stop-btn"
-                                >
-                                    <Square size={isDocked ? 12 : 14} fill="currentColor" />
-                                    {(!isMobile && !isDocked) && <span className="ml-0.5">Stop</span>}
-                                </button>
-                            </PromptInputAction>
-                        ) : (
-                            (() => {
-                                const themeClasses = isIndiiMode
-                                    ? "bg-green-600 hover:bg-green-500 shadow-green-500/20"
-                                    : "bg-white/20 hover:bg-white/30 border border-white/10";
-
-                                return (
-                                    <PromptInputAction tooltip="Send Message (Enter)">
-                                        <button
-                                            onClick={(e) => handleSubmit(e)}
-                                            disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0)}
-                                            aria-label="Run command"
-                                            className={cn(
-                                                submitButtonBase,
-                                                submitButtonSize,
-                                                themeClasses
-                                            )}
-                                            data-testid="command-bar-run-btn"
-                                        >
-                                            <ArrowRight size={isDocked ? 14 : 16} />
-                                            {(!isMobile && !isDocked) && <span className="ml-0.5">Run</span>}
-                                        </button>
-                                    </PromptInputAction>
-                                );
-                            })()
-                        )}
+                        {/* Send/Stop moved into TalkButton (left side) — talkback model.
+                            Enter still sends typed text. */}
                     </div>
                 </PromptInputActions>
             </PromptInput>

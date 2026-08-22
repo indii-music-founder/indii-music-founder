@@ -128,6 +128,9 @@ vi.mock('@/services/intelligence/VoiceService', () => ({
         isSupported: vi.fn(() => false),
         startListening: vi.fn(),
         stopListening: vi.fn(),
+        startDictation: vi.fn(() => true),
+        stopDictation: vi.fn(),
+        isDictatingActive: () => false,
     }
 }));
 
@@ -205,22 +208,16 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
         render(<CommandBar />);
 
         const input = screen.getByPlaceholderText(/Launch a campaign/i) as HTMLTextAreaElement;
-        const submitBtn = screen.getByTestId('command-bar-run-btn');
 
         // 1. Enter text
         fireEvent.change(input, { target: { value: 'Analyze Q3 Data' } });
 
-        await waitFor(() => {
-            expect(submitBtn).toBeEnabled();
-        });
+        // 2. Submit via Enter — send lives inside TalkButton now; its stop face replaces the mic faces while busy
+        fireEvent.keyDown(input, { key: 'Enter' });
 
-        // 2. Submit — run button is replaced by stop button when isProcessing=true
-        fireEvent.click(submitBtn);
-
-        // When processing, the stop button appears and the run button is unmounted
         await waitFor(() => {
             expect(screen.getByTestId('command-bar-stop-btn')).toBeInTheDocument();
-            expect(screen.queryByTestId('command-bar-run-btn')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('talk-button')).not.toBeInTheDocument();
         });
     });
 
@@ -233,13 +230,10 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
         render(<CommandBar />);
 
         const input = screen.getByPlaceholderText(/Launch a campaign/i);
-        const submitBtn = screen.getByTestId('command-bar-run-btn');
 
         fireEvent.change(input, { target: { value: 'Bad request' } });
 
-        await waitFor(() => expect(submitBtn).toBeEnabled());
-
-        fireEvent.click(submitBtn);
+        fireEvent.keyDown(input, { key: 'Enter' });
 
         await waitFor(() => {
             expect(mockToast.error).toHaveBeenCalledWith("Failed to send message.");
@@ -250,13 +244,10 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
         render(<CommandBar />);
 
         const input = screen.getByPlaceholderText(/Launch a campaign/i) as HTMLTextAreaElement;
-        const submitBtn = screen.getByTestId('command-bar-run-btn');
 
         fireEvent.change(input, { target: { value: 'Fast clear' } });
 
-        await waitFor(() => expect(submitBtn).toBeEnabled());
-
-        fireEvent.click(submitBtn);
+        fireEvent.keyDown(input, { key: 'Enter' });
 
         // PromptArea clears it immediately
         expect(input.value).toBe('');

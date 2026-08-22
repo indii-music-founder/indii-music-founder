@@ -1,0 +1,218 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Mic, Square } from 'lucide-react';
+import { voiceService } from '@/services/intelligence/VoiceService';
+import { cn } from '@/lib/utils';
+
+/**
+ * TalkButton — the studio-talkback control for the chat overlay.
+ *
+ * One button, four faces:
+ *   IDLE      → Mic. Click opens the talkback channel (continuous dictation).
+ *   LISTENING → pulsing Mic; interim words stream into the input live.
+ *               Click again = "release": stop the mic and hand the take to
+ *               the caller to send. Esc cancels and reverts the take.
+ *   BUSY      → the agent is working; shows the Stop face instead.
+ *
+ * The release never fires a half-edited thought: the parent disarms
+ * auto-send the moment the user types over a live session (see
+ * `isAutoSendArmed`), and a sub-300ms click is treated as jitter, not intent.
+ */
+
+export type TalkFace = 'idle' | 'listening' | 'busy';
+
+export interface TalkReleaseResult {
+    /** Base text + finalized transcript (+ interim tail) at the moment of release. */
+    text: string;
+    /** True when no manual edit disarmed auto-send during the session. */
+    autoSend: boolean;
+}
+
+export interface TalkButtonProps {
+    /** Current full input text — captured as the base when a session opens. */
+    value: string;
+    /** Agent is working → render the Stop face instead of the mic faces. */
+    isAgentBusy?: boolean;
+    /** Called when the Stop face is clicked (existing stopAgent behavior). */
+    onStopAgent?: () => void;
+    /** Live combined text (base + transcript so far) while listening. */
+    onLiveText: (combined: string) => void;
+    /** A dictation session actually opened (mic granted, engine running). */
+    onSessionStart?: () => void;
+    /** User released the talkback (second click). */
+    onRelease: (result: TalkReleaseResult) => void;
+    /** Recognition ended on its own (silence/timeout) without a release click. */
+    onNaturalEnd: (finalText: string) => void;
+    /** Mic permission or capture failure — parent owns user-facing toast. */
+    onMicError: (error: unknown) => void;
+    /** Parent tracks typing-during-listen; consulted at release time only. */
+    isAutoSendArmed: () => boolean;
+    disabled?: boolean;
+    sizeVariant?: 'default' | 'docked' | 'mobile';
+    className?: string;
+}
+
+/** Minimum listen duration before a second click counts as an intentional release. */
+const MIN_LISTEN_MS = 300;
+
+export const combineTranscript = (base: string, final: string, interim: string): string => {
+    const spoken = [final.trim(), interim.trim()].filter(Boolean).join(' ');
+    const trimmedBase = base.trim();
+    if (!spoken) return trimmedBase;
+    return trimmedBase ? `${trimmedBase} ${spoken}` : spoken;
+};
+
+export const TalkButton: React.FC<TalkButtonProps> = ({
+    value,
+    isAgentBusy = false,
+    onStopAgent,
+    onLiveText,
+    onSessionStart,
+    onRelease,
+    onNaturalEnd,
+    onMicError,
+    isAutoSendArmed,
+    disabled = false,
+    sizeVariant = 'default',
+    className,
+}) => {
+    const [isListening, setIsListening] = useState(false);
+    const startedAtRef = useRef(0);
+    const baseTextRef = useRef('');
+    const finalRef = useRef('');
+    const interimRef = useRef('');
+
+    const face: TalkFace = isAgentBusy ? 'busy' : isListening ? 'listening' : 'idle';
+
+    // Leaving the surface with an open talkback channel must never leak a live mic.
+    useEffect(() => {
+        return () => {
+            voiceService.stopDictation();
+        };
+    }, []);
+
+    const endSession = useCallback(() => {
+        setIsListening(false);
+        finalRef.current = '';
+        interimRef.current = '';
+    }, []);
+
+    const handleStart = useCallback(() => {
+        if (!voiceService.isSupported()) return;
+        baseTextRef.current = value;
+        finalRef.current = '';
+        interimRef.current = '';
+        startedAtRef.current = Date.now();
+        const started = voiceService.startDictation({
+            onFinal: (finalText) => {
+                finalRef.current = finalText;
+                onLiveText(combineTranscript(baseTextRef.current, finalText, interimRef.current));
+            },
+            onInterim: (interim) => {
+                interimRef.current = interim;
+                onLiveText(combineTranscript(baseTextRef.current, finalRef.current, interim));
+            },
+            onEnd: () => {
+                // Natural close: silence timeout or engine stop outside a release click.
+                if (!startedAtRef.current) return;
+                const finalText = combineTranscript(baseTextRef.current, finalRef.current, '');
+                endSession();
+                onNaturalEnd(finalText);
+            },
+            onError: (error) => {
+                onLiveText(baseTextRef.current);
+                endSession();
+                onMicError(error);
+            },
+        });
+        if (started) {
+            onSessionStart?.();
+            setIsListening(true);
+        }
+    }, [value, onLiveText, onSessionStart, onNaturalEnd, onMicError, endSession]);
+
+    const handleRelease = useCallback(() => {
+        const listenedMs = Date.now() - startedAtRef.current;
+        voiceService.stopDictation();
+
+        // Jitter guard: a near-instant second click is not a deliberate release.
+        if (listenedMs < MIN_LISTEN_MS) {
+            onLiveText(baseTextRef.current);
+            startedAtRef.current = 0; // suppress the pending onEnd natural-end report
+            endSession();
+            return;
+        }
+        const text = combineTranscript(baseTextRef.current, finalRef.current, interimRef.current);
+        startedAtRef.current = 0;
+        endSession();
+        onRelease({ text, autoSend: isAutoSendArmed() });
+    }, [onLiveText, onRelease, isAutoSendArmed, endSession]);
+
+    const handleCancel = useCallback(() => {
+        voiceService.stopDictation();
+        startedAtRef.current = 0;
+        onLiveText(baseTextRef.current); // revert the draft take entirely
+        endSession();
+    }, [onLiveText, endSession]);
+
+    // Esc while the talkback is open cancels without sending.
+    useEffect(() => {
+        if (!isListening) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                handleCancel();
+            }
+        };
+        window.addEventListener('keydown', onKeyDown, true);
+        return () => window.removeEventListener('keydown', onKeyDown, true);
+    }, [isListening, handleCancel]);
+
+    const handleClick = useCallback(() => {
+        if (face === 'busy') {
+            onStopAgent?.();
+            return;
+        }
+        if (face === 'listening') {
+            handleRelease();
+        } else {
+            handleStart();
+        }
+    }, [face, onStopAgent, handleRelease, handleStart]);
+
+    const padClass = sizeVariant === 'docked' ? 'p-1.5' : sizeVariant === 'mobile' ? 'p-2 min-w-[32px] w-8 h-8 rounded-lg' : 'p-2';
+    const iconSize = sizeVariant === 'docked' ? 16 : 18;
+
+    const ariaLabel =
+        face === 'busy'
+            ? 'Stop agent'
+            : face === 'listening'
+                ? 'Release to send'
+                : 'Voice Input';
+
+    return (
+        <button
+            onClick={handleClick}
+            disabled={disabled}
+            data-testid={face === 'busy' ? 'command-bar-stop-btn' : 'talk-button'}
+            data-face={face}
+            aria-label={ariaLabel}
+            className={cn(
+                'flex items-center justify-center rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                padClass,
+                face === 'busy' && 'text-red-400 bg-red-400/10 hover:bg-red-400/20',
+                face === 'listening' && 'text-red-400 bg-red-400/15 hover:bg-red-400/25',
+                face === 'idle' && 'text-gray-400 hover:bg-white/10 hover:text-gray-200',
+                disabled && 'opacity-40 cursor-not-allowed hover:bg-transparent',
+                className
+            )}
+        >
+            {face === 'busy' ? (
+                <Square size={iconSize - 4} fill="currentColor" />
+            ) : (
+                <Mic size={iconSize} className={cn(face === 'listening' && 'animate-pulse')} />
+            )}
+        </button>
+    );
+};
+
+export default TalkButton;
