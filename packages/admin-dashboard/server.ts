@@ -449,10 +449,13 @@ app.get('/api/google/oauth/callback', async (req, res) => {
       linkedBy: initiatingAdminUid,
       updatedAt: new Date().toISOString(),
     });
-    res.redirect('http://localhost:5174/?google_linked=true');
+    // Relative redirect resolves against whichever origin served the dashboard
+    // (same-origin static in production, the Vite proxy in local dev).
+    res.redirect('/?google_linked=true');
   } catch (error) {
     console.error('OAuth callback failed:', error);
-    res.status(500).send(`Google OAuth Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
+    // Generic body on a public route — internal error text is recon fodder.
+    res.status(500).send('Google OAuth authentication failed.');
   }
 });
 

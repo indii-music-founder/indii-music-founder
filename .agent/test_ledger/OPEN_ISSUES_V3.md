@@ -2514,3 +2514,55 @@ From the image-generation pipeline audit (3258c8c6): PLP char refs, PLP/cover-ar
 Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Image jobId reconciliation** — when the image callable rejects after the gateway committed (resultUris persisted), the result is lost and a retry pays again; images have no waitForJob equivalent (videos do). Needs a gateway job-receipt contract + client resume path.
 - Dead branches: ImageGenerationService legacy data.images path (gateway returns resultUris only); EditingService.generateStoryChain inlineData skip. Documented, not removed (asset-deletion fail-safe).
+
+### ISSUE-1396: TalkButton cross-talk when two chat inputs are mounted at once
+
+- **Status:** ✅ FIXED 2026-08-22 — session-owner model: VoiceService notifies the previous owner via onSuperseded and rebinds all handlers to the newest session (engine never restarts); TalkButton stands down to idle without touching the input. Tests in both layers (supersede wiring + component stand-down).
+- **Severity:** 🟡 HIGH (UX correctness; niche co-existence, guaranteed confusion when hit)
+- **Module:** renderer / command-bar (TalkButton + VoiceService)
+- **Discovered:** 2026-08-22 full-spectrum anomaly audit (founder-directed sweep)
+- **Evidence:** `VoiceService.ts` line ~111: `if (this.isDictating) return true;` — `startDictation` reports success WITHOUT rebinding handlers when a session is already live. `VoiceService` is a singleton; `AppShell.tsx` mounts `RightPanel` (line ~500, `showChrome && isDesktop`) and `ChatOverlay` (line ~543, `isAgentOpen`) independently, and both render `PromptArea` → two TalkButtons can be alive together.
+- **Impact:** Click Talk in the overlay, then Talk in the docked panel: the second button shows "listening" but every interim word streams into the FIRST input; releasing either kills the other's session. Old single-shot mic degraded gracefully (stop+steal); dictation mode makes the mismatch visible.
+- **Fix (suggested):** session-owner model — either (a) rebind handlers on steal so the newest click owns the mic, or (b) expose `voiceService.isDictatingActive()` and render other TalkButtons disabled with a "Mic in use" tooltip while a session is live.
+- **Acceptance:** With RightPanel open and ChatOverlay open, starting talk in one surface shows the other disabled (or steals cleanly), and no transcript ever lands in the wrong input.
+
+### ISSUE-1397: Google Workspace OAuth post-link redirect hardcoded to localhost
+
+- **Status:** ✅ FIXED 2026-08-22 — success redirect is now relative ('/?google_linked=true'), resolving against whichever origin served the dashboard (same-origin static in prod, Vite proxy in dev).
+- **Severity:** 🟡 HIGH in production (feature dead-end), LOW locally
+- **Module:** admin-dashboard server (`/api/google/oauth/callback`)
+- **Discovered:** 2026-08-22 full-spectrum anomaly audit
+- **Evidence:** `server.ts` line ~452: `res.redirect('http://localhost:5174/?google_linked=true');` — hardcoded. The callback URI itself honors `GOOGLE_REDIRECT_URI` (lines ~356/395), but the success redirect does not.
+- **Impact:** In any deployed environment, completing Google Workspace linking bounces the admin's browser to a dead localhost page. The token save succeeds, but the UX reports failure.
+- **Fix (suggested):** derive from an env (`ADMIN_WEB_ORIGIN`, already partially modeled by `ADMIN_ALLOWED_ORIGINS`) or redirect to the dashboard route relative to the request origin.
+- **Acceptance:** Completing OAuth on a deployed origin lands back on the admin UI with linked=true.
+
+### ISSUE-1398: Unauthenticated OAuth callback leaks raw error details
+
+- **Status:** ✅ FIXED 2026-08-22 — detail goes to server logs only; public 500 body is the generic 'Google OAuth authentication failed.'
+- **Severity:** 🟢 LOW-MEDIUM (info disclosure)
+- **Module:** admin-dashboard server
+- **Discovered:** 2026-08-22 full-spectrum anomaly audit
+- **Evidence:** `server.ts` ~458: catch path returns `res.status(500).send(error.message ...)` on an un-gated public route.
+- **Impact:** Anyone probing the endpoint receives internal error text (token exchange failures, config state) useful for recon.
+- **Fix (suggested):** log the detail server-side; return a generic "OAuth authentication failed" page.
+- **Acceptance:** Error responses carry no library/internal messages.
+
+### ISSUE-1399: Admin magic-link email delivery unproven
+
+- **Status:** 🟡 PARTIAL — 2026-08-22: admin-API sendOobCode(EMAIL_SIGNIN) returned HTTP 200 GetOobConfirmationCodeResponse for wiil@indii.music — Firebase accepted and dispatched. Remaining unknown is downstream mail filtering (spam/sender reputation), which only an inbox check can close.
+- **Severity:** 🟡 MEDIUM (blocks founder access if real)
+- **Module:** Firebase Identity Toolkit / admin-dashboard login
+- **Discovered:** 2026-08-22 founder reported no email after "link sent"
+- **Evidence:** `accounts:lookup` confirms wiil@indii.music exists, verified, god_mode ✓, recent token refresh. The oob-code audit endpoint returns 404 on this project, so dispatch could not be confirmed via API.
+- **Impact:** If emails are genuinely not sending (template/sender/quota), the founder is locked out of the secret back end.
+- **Fix (suggested):** check spam for noreply@indii-music-founder.firebaseapp.com; then verify via Cloud Logging email-send entries or one successful real sign-in; consider custom SMTP/domain sender if default is filtered.
+- **Acceptance:** Founder completes one real magic-link sign-in, or root cause of non-delivery is documented.
+
+### Audit clean-passes (2026-08-22, recorded so they aren't re-flagged)
+
+- Secrets: no live credential-shaped strings in source (only obviously-fake test fixtures).
+- XSS: exactly one `dangerouslySetInnerHTML` (AgentCanvasPanel), DOMPurify-sanitized.
+- Admin API: every data route behind `requireAdminAuth`; both webhooks behind `requireWebhookSecret`; new access-log route gated.
+- console.log: confined to test files (98 hits, zero in production paths).
+- recordAccess throttle Map growth bounded by identity count (fine at current scale).
