@@ -3,6 +3,9 @@ import { Monitor, Globe, Check, Lock, Cpu, HardDrive, Radio, Upload, Headphones,
 import { useStore } from '@/core/store';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
+import { useIsFounderTier } from '@/hooks/useIsFounderTier';
+
+const DISMISS_KEY = 'indii_platform_card_dismissed';
 
 const isElectron = typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>).electronAPI;
 
@@ -33,7 +36,29 @@ function StatusDot({ status }: { status: boolean | 'limited' }) {
 export function PlatformCard() {
     const { t } = useTranslation();
     const setModule = useStore(state => state.setModule);
-    const [dismissed, setDismissed] = useState(false);
+    // Founders already own what this card sells — never show it to them, and
+    // remember a free user's dismissal across refreshes instead of re-pitching
+    // on every visit.
+    const isFounderTier = useIsFounderTier();
+    const [dismissed, setDismissed] = useState(() => {
+        try {
+            return localStorage.getItem(DISMISS_KEY) === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const dismiss = () => {
+        setDismissed(true);
+        try {
+            localStorage.setItem(DISMISS_KEY, 'true');
+        } catch {
+            /* private mode: dismissal lives for the session only */
+        }
+    };
+
+    // Founders already own what this card sells — it never renders for them.
+    if (isFounderTier) return null;
 
     // If already running in Electron, show a confirmation card instead
     if (isElectron) {
@@ -99,7 +124,7 @@ export function PlatformCard() {
 
                     {/* Dismiss button — top right */}
                     <button
-                        onClick={() => setDismissed(true)}
+                        onClick={dismiss}
                         className="absolute top-2.5 right-3 z-20 p-1.5 text-gray-500 hover:text-gray-200 transition-colors rounded-lg hover:bg-white/10"
                         aria-label={t('dashboard.dismiss')}
                     >

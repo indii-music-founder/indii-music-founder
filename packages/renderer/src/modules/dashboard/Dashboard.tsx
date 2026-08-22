@@ -8,6 +8,9 @@ import { useMobile } from '@/hooks/useMobile';
 import { useStore } from '@/core/store';
 import { PlatformCard } from './components/PlatformCard';
 import { useTranslation } from 'react-i18next';
+import { useIsFounderTier } from '@/hooks/useIsFounderTier';
+
+const BANNER_DISMISS_KEY = 'indii_founders_banner_dismissed';
 
 /**
  * Premium Mesh Background for Dashboard
@@ -48,7 +51,24 @@ function DashboardMeshBackground() {
 
 export default function Dashboard() {
     const { t } = useTranslation();
-    const [bannerDismissed, setBannerDismissed] = useState(false);
+    // Founders/paid seats already own what this banner sells — it never renders
+    // for them. Free users can dismiss it, and the dismissal survives refreshes.
+    const isFounderTier = useIsFounderTier();
+    const [bannerDismissed, setBannerDismissed] = useState(() => {
+        try {
+            return localStorage.getItem(BANNER_DISMISS_KEY) === 'true';
+        } catch {
+            return false;
+        }
+    });
+    const dismissBanner = () => {
+        setBannerDismissed(true);
+        try {
+            localStorage.setItem(BANNER_DISMISS_KEY, 'true');
+        } catch {
+            /* private mode: dismissal lives for the session only */
+        }
+    };
     const { isAnyPhone } = useMobile();
     const setModule = useStore(state => state.setModule);
 
@@ -59,7 +79,7 @@ export default function Dashboard() {
 
                 {/* Founders Round Investment Banner */}
                 <AnimatePresence>
-                    {!bannerDismissed && (
+                    {!isFounderTier && !bannerDismissed && (
                         <motion.div
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -108,7 +128,7 @@ export default function Dashboard() {
                                         <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                     </button>
                                     <button
-                                        onClick={() => setBannerDismissed(true)}
+                                        onClick={dismissBanner}
                                         className="p-2 text-gray-400 hover:text-white transition-colors rounded-xl hover:bg-white/5 border border-transparent hover:border-white/10"
                                         aria-label={t('dashboard.dismiss')}
                                     >
