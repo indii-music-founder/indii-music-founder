@@ -32,8 +32,6 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 });
 
 import {
-    cacheRemotePairingToken,
-    getCachedRemotePairingToken,
     isFreshDesktopState,
     isFreshStudioState,
     isPrivateIP,
@@ -223,29 +221,6 @@ describe('RemoteRelayService - cancelCommand (ISSUE-989)', () => {
     });
 });
 
-describe('RemoteRelayService - local pairing token cache', () => {
-    it('caches a URL passcode for reconnect auth', () => {
-        localStorage.clear();
-
-        expect(getCachedRemotePairingToken('?passcode=abc123')).toBe('abc123');
-        expect(localStorage.getItem('indii_p2p_passcode')).toBe('abc123');
-    });
-
-    it('falls back to the cached passcode when the URL no longer has one', () => {
-        localStorage.clear();
-        cacheRemotePairingToken('stored-token');
-
-        expect(getCachedRemotePairingToken('')).toBe('stored-token');
-    });
-
-    it('ignores empty passcodes', () => {
-        localStorage.clear();
-
-        expect(cacheRemotePairingToken('   ')).toBeNull();
-        expect(localStorage.getItem('indii_p2p_passcode')).toBeNull();
-    });
-});
-
 describe('RemoteRelayService - relayTimestampToMillis', () => {
     it('handles numeric timestamps', () => {
         expect(relayTimestampToMillis(123456789)).toBe(123456789);
@@ -363,6 +338,65 @@ describe('RemoteRelayService - isFreshDesktopState', () => {
     });
 });
 
+describe('RemoteRelayService - heartbeat-advance freshness (cache-hit forgery fix)', () => {
+    const now = Date.now();
+    const createStudioState = (heartbeatMillis: number): DesktopState => ({
+        currentModule: 'dashboard',
+        isAgentProcessing: false,
+        activeSessionId: 'session-123',
+        online: true,
+        role: 'studio',
+        studioInstanceId: 'studio-window-1',
+        listenerReady: true,
+        timestamp: Timestamp.fromMillis(heartbeatMillis),
+    });
+
+    it('rejects a stale online doc re-delivered from the Firestore cache on (re)subscribe', () => {
+        // The exact Controller symptom: Studio died hours ago leaving
+        // online:true; every subscription's first snapshot re-serves that doc.
+        // A fresh receipt stamp used to certify it "connected" for a full
+        // stale window — now only a witnessed heartbeat advance may do that.
+        const staleHeartbeat = createStudioState(now - 10 * 60_000);
+        expect(isFreshDesktopState(staleHeartbeat, now)).toBe(false);
+        expect(isFreshStudioState(staleHeartbeat, now)).toBe(false);
+        expect(studioStateFreshnessRemainingMs(staleHeartbeat, now)).toBe(0);
+    });
+
+    it('accepts a genuinely recent first snapshot without an advance witness', () => {
+        expect(isFreshDesktopState(createStudioState(now - 10_000), now)).toBe(true);
+    });
+
+    it('lets a witnessed heartbeat advance rescue heavy phone-clock skew', () => {
+        // Heartbeat looks 151s old by wall clock (e.g. phone clock ahead), but
+        // this subscription watched the timestamp VALUE change 5s ago — local
+        // monotonic evidence beats skew-distorted wall clocks.
+        const rescued = {
+            ...createStudioState(now - 151_000),
+            _heartbeatAdvancedAtMs: now - 5_000,
+        };
+        expect(isFreshDesktopState(rescued, now)).toBe(true);
+        expect(isFreshStudioState(rescued, now)).toBe(true);
+    });
+
+    it('expires the freshness lease from the advance receipt, not wall-clock age', () => {
+        // The scheduled stale edge must mirror the predicate: 120s of LOCAL
+        // time since the last witnessed advance, independent of skew.
+        const rescued = {
+            ...createStudioState(now - 151_000),
+            _heartbeatAdvancedAtMs: now - _DESKTOP_HEARTBEAT_STALE_MS + 1000,
+        };
+        expect(isFreshDesktopState(rescued, now)).toBe(true);
+        expect(studioStateFreshnessRemainingMs(rescued, now)).toBe(1000);
+
+        const expired = {
+            ...createStudioState(now - 151_000),
+            _heartbeatAdvancedAtMs: now - _DESKTOP_HEARTBEAT_STALE_MS - 1000,
+        };
+        expect(isFreshDesktopState(expired, now)).toBe(false);
+        expect(studioStateFreshnessRemainingMs(expired, now)).toBe(0);
+    });
+});
+
 describe('RemoteRelayService - Studio executor lease (ISSUE-1025)', () => {
     const now = Date.now();
     const baseState: DesktopState = {
@@ -405,32 +439,6 @@ describe('RemoteRelayService - Studio executor lease (ISSUE-1025)', () => {
         expect(studioStateFreshnessRemainingMs(studioState, now)).toBe(150_000);
         expect(studioStateFreshnessRemainingMs(studioState, now + 149_999)).toBe(1);
         expect(studioStateFreshnessRemainingMs(studioState, now + 150_001)).toBe(0);
-    });
-});
-
-describe('RemoteRelayService - local state subscription fanout', () => {
-    it('keeps each P2P subscriber independent when another subscriber unmounts', () => {
-        const service = remoteRelayService as unknown as {
-            localStateCallbacks: Set<(state: DesktopState | null) => void>;
-        };
-        service.localStateCallbacks.clear();
-        const first = vi.fn();
-        const second = vi.fn();
-        const unsubscribeFirst = remoteRelayService.onDesktopState(first);
-        const unsubscribeSecond = remoteRelayService.onDesktopState(second);
-        const state = { online: true } as DesktopState;
-
-        service.localStateCallbacks.forEach(callback => callback(state));
-        expect(first).toHaveBeenCalledWith(state);
-        expect(second).toHaveBeenCalledWith(state);
-
-        unsubscribeFirst();
-        service.localStateCallbacks.forEach(callback => callback(null));
-        expect(first).toHaveBeenCalledTimes(1);
-        expect(second).toHaveBeenLastCalledWith(null);
-
-        unsubscribeSecond();
-        expect(service.localStateCallbacks.size).toBe(0);
     });
 });
 

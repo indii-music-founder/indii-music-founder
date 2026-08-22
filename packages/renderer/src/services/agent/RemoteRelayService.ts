@@ -42,7 +42,6 @@ import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
-import type { RemoteMobilePayload } from '@/types/electron';
 
 
 // ---------------------------------------------------------------------------
@@ -127,8 +126,16 @@ export interface DesktopState {
      * Offline. Absent/false in the web/PWA build (no Electron tray).
      */
     sleepMode?: boolean;
-    /** Populated locally by onSnapshot to decouple freshness from server clock skew. */
-    _localReceivedAtMs?: number;
+    /**
+     * Local monotonic receipt time of the most recent ADVANCE of the server
+     * heartbeat timestamp within this subscription. Set by onDesktopState only
+     * when the doc's `timestamp` value changes — never on the initial
+     * cache-hit snapshot, whose content may be hours old. Because it is
+     * measured with the local clock against local events, it is immune to
+     * phone↔server clock skew and is the authoritative freshness signal once
+     * at least one live heartbeat has been observed.
+     */
+    _heartbeatAdvancedAtMs?: number;
 }
 
 export type RemoteExecutionTarget = 'cloud' | 'studio';
@@ -212,15 +219,6 @@ export interface AgentDispatchTask {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function isRemoteMobileMessage(payload: unknown): payload is RemoteMobilePayload {
-    if (!payload || typeof payload !== 'object') return false;
-    const message = payload as Record<string, unknown>;
-    if (typeof message.type !== 'string') return false;
-    if (message.command === undefined) return true;
-    if (!message.command || typeof message.command !== 'object') return false;
-    return typeof (message.command as Record<string, unknown>).text === 'string';
-}
-
 function getUserId(): string | null {
     return getRealAuthenticatedUserId(auth.currentUser);
 }
@@ -269,7 +267,6 @@ function getDispatchQueueRef() {
  */
 const FEED_PAGE_SIZE = 50;
 const FEED_RECENCY_HOURS = 24;
-const LOCAL_P2P_PASSCODE_KEY = 'indii_p2p_passcode';
 // Background browser tabs throttle setTimeout/setInterval to ~once per minute, so the
 // desktop's 5s heartbeat loop collapses to ~60s whenever the studio tab is not focused
 // (the common case while driving from a phone). A 15s window made the phone flap between
@@ -321,16 +318,26 @@ export function isFreshDesktopState(
     staleMs = DESKTOP_HEARTBEAT_STALE_MS
 ): boolean {
     if (!state?.online) return false;
-    
-    // If we have a local receipt timestamp, use it directly to avoid clock skew entirely
-    if (state._localReceivedAtMs) {
-        return now - state._localReceivedAtMs <= staleMs;
-    }
 
     const timestamp = relayTimestampToMillis(state.timestamp);
     if (timestamp === 0) return false;
-    
-    // Fallback: Account for local clock skew between phone and server.
+
+    // Once a live heartbeat advance has been witnessed in this subscription,
+    // its local receipt time is authoritative: pure wall-clock comparisons
+    // against the server timestamp would misjudge a healthy heartbeat when the
+    // phone clock drifts, while advancement is skew-proof.
+    const advancedAt = state._heartbeatAdvancedAtMs;
+    if (typeof advancedAt === 'number') {
+        return now - advancedAt <= staleMs;
+    }
+
+    // No advance witnessed yet (first snapshot of a subscription). The doc's
+    // own heartbeat age must hold on its own — this is what prevents a stale
+    // `online:true` doc served from the Firestore cache on every (re)subscribe
+    // from masquerading as a fresh heartbeat for a full stale window.
+    // Absolute form: a timestamp far in the future means heavy phone-clock
+    // lag, which deserves the same distrust as an old one; a witnessed
+    // advance (above) is what earns trust back under skew.
     return Math.abs(now - timestamp) <= staleMs + DESKTOP_HEARTBEAT_CLOCK_SKEW_TOLERANCE_MS;
 }
 
@@ -363,11 +370,14 @@ export function studioStateFreshnessRemainingMs(
     staleMs = DESKTOP_HEARTBEAT_STALE_MS
 ): number {
     if (!isFreshStudioState(state, now, staleMs)) return 0;
-    
-    if (state?._localReceivedAtMs) {
-        return Math.max(0, state._localReceivedAtMs + staleMs - now);
+
+    // Mirror isFreshDesktopState exactly so a scheduled stale timer cannot
+    // fire on a different boundary than the predicate it re-checks.
+    const advancedAt = state?._heartbeatAdvancedAtMs;
+    if (typeof advancedAt === 'number') {
+        return Math.max(0, advancedAt + staleMs - now);
     }
-    
+
     const timestamp = relayTimestampToMillis(state?.timestamp);
     return Math.max(
         0,
@@ -375,110 +385,11 @@ export function studioStateFreshnessRemainingMs(
     );
 }
 
-export function cacheRemotePairingToken(token: string | null | undefined): string | null {
-    const normalized = token?.trim();
-    if (!normalized) return null;
-
-    try {
-        localStorage.setItem(LOCAL_P2P_PASSCODE_KEY, normalized);
-    } catch (error) {
-        logger.debug('[RemoteRelay] Unable to cache local P2P passcode:', error);
-    }
-
-    return normalized;
-}
-
-export function getCachedRemotePairingToken(search = typeof window !== 'undefined' ? window.location.search : ''): string | null {
-    const urlToken = cacheRemotePairingToken(new URLSearchParams(search).get('passcode'));
-    if (urlToken) return urlToken;
-
-    try {
-        return localStorage.getItem(LOCAL_P2P_PASSCODE_KEY);
-    } catch {
-        return null;
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
 
 class RemoteRelayService {
-    private localWs: WebSocket | null = null;
-    private localMessageCallbacks: Map<string, (data: RemoteResponse) => void> = new Map();
-    private localStateCallbacks = new Set<(state: DesktopState | null) => void>();
-    private wsRetryCount = 0;
-
-    constructor() {
-        if (typeof process !== 'undefined' && process.env.VITEST) {
-            return;
-        }
-        if (typeof window !== 'undefined' && typeof WebSocket !== 'undefined') {
-            const isLocalServer = window.location.port === '3333' || isPrivateIP(window.location.hostname);
-            if (isLocalServer) {
-                this.initLocalWebSocket();
-            }
-        }
-    }
-
-    private initLocalWebSocket() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}`;
-        logger.info(`[RemoteRelay] Connecting local P2P WebSocket to ${wsUrl}`);
-        
-        try {
-            const ws = new WebSocket(wsUrl);
-            ws.onopen = () => {
-                logger.info('[RemoteRelay] Local P2P WebSocket connected');
-                this.localWs = ws;
-                this.wsRetryCount = 0; // reset on success
-                const passcode = getCachedRemotePairingToken();
-                if (passcode) {
-                    ws.send(JSON.stringify({ type: 'auth', token: passcode }));
-                }
-            };
-            ws.onmessage = (event) => {
-                try {
-                    const parsed = JSON.parse(event.data);
-                    if (parsed.type === 'response' && parsed.response) {
-                        const callback = this.localMessageCallbacks.get(parsed.response.commandId);
-                        if (callback) {
-                            callback({
-                                ...parsed.response,
-                                timestamp: Timestamp.fromMillis(parsed.response.timestamp)
-                            });
-                        }
-                    } else if (parsed.type === 'sync' && parsed.payload) {
-                        for (const callback of this.localStateCallbacks) {
-                            callback({
-                                ...parsed.payload,
-                                timestamp: Timestamp.now()
-                            });
-                        }
-                    }
-                } catch (err) {
-                    logger.error('[RemoteRelay] P2P message parse error', err);
-                }
-            };
-            ws.onclose = (event) => {
-                this.localWs = null;
-                if (event.code === 4001) {
-                    logger.warn('[RemoteRelay] Local P2P WebSocket authentication failed (code 4001). Will not retry.');
-                    return;
-                }
-                const delay = Math.min(1000 * Math.pow(2, this.wsRetryCount), 30000);
-                this.wsRetryCount++;
-                logger.info(`[RemoteRelay] Local P2P WebSocket closed. Code: ${event.code}. Retrying in ${delay}ms...`);
-                setTimeout(() => this.initLocalWebSocket(), delay);
-            };
-        } catch (err) {
-            logger.error('[RemoteRelay] Local P2P WebSocket creation failed', err);
-            const delay = Math.min(1000 * Math.pow(2, this.wsRetryCount), 30000);
-            this.wsRetryCount++;
-            logger.info(`[RemoteRelay] Scheduling retry in ${delay}ms after constructor error.`);
-            setTimeout(() => this.initLocalWebSocket(), delay);
-        }
-    }
 
     // -----------------------------------------------------------------------
     // PHONE SIDE
@@ -494,24 +405,6 @@ class RemoteRelayService {
         executionTarget?: RemoteExecutionTarget
     ): Promise<string | null> {
         const resolvedExecutionTarget = executionTarget ?? resolveRemoteCommandExecutionTarget({ text });
-        // P2P WebSocket send path
-        if (this.localWs && this.localWs.readyState === 1 /* OPEN */) {
-            const commandId = `p2p-${Math.random().toString(36).substring(2)}`;
-            const payload = {
-                type: 'command',
-                command: {
-                    id: commandId,
-                    text,
-                    targetAgentId,
-                    metadata,
-                    executionTarget: resolvedExecutionTarget,
-                },
-                ts: Date.now()
-            };
-            this.localWs.send(JSON.stringify(payload));
-            logger.info(`[RemoteRelay] 📱 Local P2P Command sent via WebSocket: ${commandId}`);
-            return commandId;
-        }
 
         const ref = getCommandsRef();
         if (!ref) {
@@ -597,33 +490,25 @@ class RemoteRelayService {
         commandId: string,
         callback: (response: RemoteResponse) => void
     ): Unsubscribe {
-        let unsubFirestore: Unsubscribe = () => {};
         const ref = getResponsesRef();
-        if (ref) {
-            const q = query(
-                ref,
-                where('commandId', '==', commandId)
-            );
+        if (!ref) return () => {};
 
-            unsubFirestore = onSnapshot(q, (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added' || change.type === 'modified') {
-                        const data = change.doc.data() as RemoteResponse;
-                        data.id = change.doc.id;
-                        callback(data);
-                    }
-                });
-            }, (error) => {
-                logger.error('[RemoteRelay] Response listener error:', error);
+        const q = query(
+            ref,
+            where('commandId', '==', commandId)
+        );
+
+        return onSnapshot(q, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added' || change.type === 'modified') {
+                    const data = change.doc.data() as RemoteResponse;
+                    data.id = change.doc.id;
+                    callback(data);
+                }
             });
-        }
-
-        this.localMessageCallbacks.set(commandId, callback);
-
-        return () => {
-            unsubFirestore();
-            this.localMessageCallbacks.delete(commandId);
-        };
+        }, (error) => {
+            logger.error('[RemoteRelay] Response listener error:', error);
+        });
     }
 
     /**
@@ -698,12 +583,25 @@ class RemoteRelayService {
         onError?: (error: unknown) => void,
     ): Unsubscribe {
         let unsubFirestore: Unsubscribe = () => {};
+        // Heartbeat-advance tracking for THIS subscription. The first snapshot
+        // (often the local Firestore cache) only establishes the baseline — it
+        // must never certify freshness by itself, because its content can be
+        // hours old. Only a later event whose server timestamp VALUE changed
+        // proves a live heartbeat, and that observation is stamped with the
+        // local monotonic clock so phone↔server skew cannot distort it.
+        let lastSeenHeartbeatMs = -1;
         const ref = getRelayRef();
         if (ref) {
             unsubFirestore = onSnapshot(ref, (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.data({ serverTimestamps: 'estimate' }) as DesktopState;
-                    data._localReceivedAtMs = Date.now();
+                    const heartbeatMs = relayTimestampToMillis(data.timestamp);
+                    if (heartbeatMs > 0) {
+                        if (lastSeenHeartbeatMs !== -1 && heartbeatMs !== lastSeenHeartbeatMs) {
+                            data._heartbeatAdvancedAtMs = Date.now();
+                        }
+                        lastSeenHeartbeatMs = heartbeatMs;
+                    }
                     callback(data);
                 } else {
                     callback(null);
@@ -714,11 +612,8 @@ class RemoteRelayService {
             });
         }
 
-        this.localStateCallbacks.add(callback);
-
         return () => {
             unsubFirestore();
-            this.localStateCallbacks.delete(callback);
         };
     }
 
@@ -736,7 +631,7 @@ class RemoteRelayService {
         let unsubFirestore: Unsubscribe = () => {};
         const ref = getCommandsRef();
         if (!ref) {
-            logger.warn('[RemoteRelay] No Firestore auth — fallback to local WebSocket listener only');
+            logger.warn('[RemoteRelay] No Firestore auth — command listener inactive');
         } else {
             logger.info('[RemoteRelay] 🖥️ Starting Firestore command listener...');
             unsubFirestore = onSnapshot(ref, (snapshot) => {
@@ -754,32 +649,8 @@ class RemoteRelayService {
             });
         }
 
-        // Local P2P WebSocket fallback listener
-        let localUnsub: (() => void) | null = null;
-        const api = window.electronAPI;
-        if (api?.remote?.onMessageFromMobile) {
-            logger.info('[RemoteRelay] 🖥️ Starting P2P Local WebSocket IPC listener...');
-            localUnsub = api.remote.onMessageFromMobile((payload: RemoteMobilePayload) => {
-                if (!isRemoteMobileMessage(payload)) return;
-                if (payload && payload.type === 'command' && payload.command) {
-                    logger.info(`[RemoteRelay] 📥 P2P Local command received over WebSocket: ${payload.command.text}`);
-                    callback({
-                        id: payload.command.id || `p2p-${Date.now()}`,
-                        text: payload.command.text,
-                        targetAgentId: payload.command.targetAgentId,
-                        metadata: payload.command.metadata,
-                        executionTarget: payload.command.executionTarget,
-                        timestamp: Timestamp.fromMillis(payload.ts || Date.now()),
-                        status: 'pending',
-                        createdAt: Timestamp.fromMillis(payload.ts || Date.now()),
-                    });
-                }
-            });
-        }
-
         return () => {
             unsubFirestore();
-            if (localUnsub) localUnsub();
         };
     }
 
@@ -788,7 +659,7 @@ class RemoteRelayService {
      */
     async markCommandCompleted(commandId: string): Promise<void> {
         const uid = getUserId();
-        if (!uid || commandId.startsWith('p2p-')) return;
+        if (!uid) return;
 
         try {
             if (isFirebaseE2EMockEnabled()) return;
@@ -965,20 +836,6 @@ class RemoteRelayService {
     ): Promise<void> {
         const response = serializeRemoteResponse({ commandId, text, agentId, isStreaming, imageUrls, videoUrls, boardroomMessageId });
 
-        // P2P Local WebSocket broadcast fallback
-        const api = window.electronAPI;
-        if (api?.remote?.broadcast) {
-            api.remote.broadcast({
-                type: 'response',
-                response: {
-                    ...response,
-                    timestamp: Date.now()
-                }
-            });
-        }
-
-        if (commandId.startsWith('p2p-')) return;
-
         // Firestore rejects undefined values (no ignoreUndefinedProperties) —
         // every optional field must be added conditionally, never spread in
         // unconditionally like boardroomMessageId previously was.
@@ -991,16 +848,6 @@ class RemoteRelayService {
      * Push desktop state (desktop side).
      */
     async pushDesktopState(state: Omit<DesktopState, 'timestamp'>): Promise<void> {
-        // P2P Local WebSocket broadcast fallback
-        const api = window.electronAPI;
-        if (api?.remote?.broadcast) {
-            api.remote.broadcast({
-                type: 'sync',
-                payload: state,
-                ts: Date.now()
-            });
-        }
-
         if (isFirebaseE2EMockEnabled()) return;
         const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
         await studioExecutorLeaseService.publishPresence(state);

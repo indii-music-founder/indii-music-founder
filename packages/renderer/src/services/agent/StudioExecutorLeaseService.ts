@@ -1,5 +1,10 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
+import {
+    recordPresencePublishAttempt,
+    recordPresencePublishFailure,
+    recordPresencePublishSuccess,
+} from './studioRelayHealth';
 
 const KEYCHAIN_ID = 'studio-executor-enrollment-v1';
 export const REMOTE_RELAY_PROTOCOL_VERSION = 1;
@@ -39,14 +44,24 @@ class StudioExecutorLeaseService {
     }
 
     async publishPresence(state: Record<string, unknown>): Promise<void> {
-        const lease = await this.getLease();
-        const publish = httpsCallable(functions, 'publishStudioPresence');
-        await publish({
-            deviceId: lease.deviceId,
-            leaseToken: lease.leaseToken,
-            protocolVersion: REMOTE_RELAY_PROTOCOL_VERSION,
-            state,
-        });
+        // Record what the heartbeat loop actually observed so the Settings UI
+        // can report real relay health instead of a structural capability
+        // check. Errors re-throw — callers already handle them per beat.
+        recordPresencePublishAttempt();
+        try {
+            const lease = await this.getLease();
+            const publish = httpsCallable(functions, 'publishStudioPresence');
+            await publish({
+                deviceId: lease.deviceId,
+                leaseToken: lease.leaseToken,
+                protocolVersion: REMOTE_RELAY_PROTOCOL_VERSION,
+                state,
+            });
+            recordPresencePublishSuccess();
+        } catch (error) {
+            recordPresencePublishFailure(error);
+            throw error;
+        }
     }
 
     async releasePresence(studioInstanceId: string): Promise<void> {

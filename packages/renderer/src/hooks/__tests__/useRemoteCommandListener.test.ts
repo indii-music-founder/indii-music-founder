@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildLiveMomentNote, isLocalP2PCommand, isValidCoordinate, shouldProcessStudioCommand } from '../useRemoteCommandListener';
+import { buildLiveMomentNote, isLocalP2PCommand, isValidCoordinate, shouldProcessStudioCommand, shouldReportQueuedChatToRemote } from '../useRemoteCommandListener';
 
 describe('buildLiveMomentNote', () => {
     it('trims the captured text and derives a team-ready title from the first line', () => {
@@ -63,5 +63,22 @@ describe('isLocalP2PCommand (ISSUE-1025)', () => {
     it('keeps synthetic WebSocket commands out of the Firestore claim/completion path', () => {
         expect(isLocalP2PCommand('p2p-remote-123')).toBe(true);
         expect(isLocalP2PCommand('firestore-command-123')).toBe(false);
+    });
+});
+
+describe('shouldReportQueuedChatToRemote (desktop-busy honesty)', () => {
+    it('reports queued when sendMessage returned without a new response and the desktop is still busy', () => {
+        // The exact false-"Done." scenario: the request was queued behind an
+        // active desktop run — that state must reach the phone, not a fake
+        // completion.
+        expect(shouldReportQueuedChatToRemote(false, true)).toBe(true);
+    });
+
+    it('does not report queued when a fresh agent response exists', () => {
+        expect(shouldReportQueuedChatToRemote(true, true)).toBe(false);
+    });
+
+    it('does not report queued when the desktop settled before sendMessage returned', () => {
+        expect(shouldReportQueuedChatToRemote(false, false)).toBe(false);
     });
 });

@@ -35,18 +35,29 @@ import {
 export class AgentService {
     private isProcessing = false;
     /**
-     * Single-slot queue for messages typed while a previous run is still
-     * finishing in the background (its timeout fired but the flow kept
-     * executing). The latest message is dispatched when the run settles —
-     * otherwise the timeout isolation change would silently drop user input
-     * for up to a full run duration.
+     * True while a run is active. Remote relay callers read this after
+     * sendMessage() returns to distinguish "your request ran" from "your
+     * request was queued behind an active run" so they can answer honestly
+     * instead of reporting a completion that has not happened.
      */
-    private pendingSend: {
+    get isAgentBusy(): boolean {
+        return this.isProcessing;
+    }
+    /**
+     * Bounded FIFO queue for messages typed while a previous run is still
+     * finishing in the background (its timeout fired but the flow kept
+     * executing). Queued messages are dispatched in order when the run
+     * settles — otherwise the timeout isolation change would silently drop
+     * user input for up to a full run duration. This was a single slot, which
+     * silently discarded every queued message except the most recent one.
+     */
+    private static readonly MAX_PENDING_SENDS = 25;
+    private pendingSends: {
         text: string;
         attachments?: { mimeType: string; base64: string }[];
         forcedAgentId?: string;
         options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api', originalBrief?: string };
-    } | null = null;
+    }[] = [];
     private isWarmedUp = false;
     private contextPipeline: ContextPipeline;
     private orchestrator: AgentOrchestrator;
@@ -203,7 +214,7 @@ export class AgentService {
         this.isProcessing = false;
         // A queued message belongs to the previous account's session — it must
         // never be dispatched after a boundary switch.
-        this.pendingSend = null;
+        this.pendingSends = [];
     }
 
     private shouldCacheCompletedResponse(
@@ -247,8 +258,12 @@ export class AgentService {
             // A previous run may legitimately still be finishing in the
             // background after its timeout. Keep the message instead of
             // dropping it; it is dispatched when that run settles.
+            if (this.pendingSends.length >= AgentService.MAX_PENDING_SENDS) {
+                logger.warn('[AgentService] Pending-send queue full — rejecting newest message');
+                throw new Error('Agent queue is full. Wait for the current task to finish.');
+            }
             logger.warn('[AgentService] sendMessage queued: previous run still processing');
-            this.pendingSend = { text, attachments, forcedAgentId, options };
+            this.pendingSends.push({ text, attachments, forcedAgentId, options });
             return;
         }
         this.isProcessing = true;
@@ -539,11 +554,14 @@ export class AgentService {
                         logger.error('[AgentService] Failed to reset processing state in getStore:', e);
                     });
                 }
-                const pending = this.pendingSend;
-                this.pendingSend = null;
-                if (pending) {
+                const pending = this.pendingSends;
+                this.pendingSends = [];
+                for (const queued of pending) {
                     logger.info('[AgentService] Dispatching queued message after previous run settled.');
-                    void this.sendMessage(pending.text, pending.attachments, pending.forcedAgentId, pending.options);
+                    // Fire-and-forget on purpose: each drained message re-enters
+                    // sendMessage, which either runs it now or re-queues it if
+                    // another sender claimed the lock first.
+                    void this.sendMessage(queued.text, queued.attachments, queued.forcedAgentId, queued.options);
                 }
             };
             if (flowSettled || !flowPromise) {

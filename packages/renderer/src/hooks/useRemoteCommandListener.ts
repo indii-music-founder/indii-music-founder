@@ -118,6 +118,16 @@ export function isLocalP2PCommand(commandId: string): boolean {
 }
 
 /**
+ * Pure decision for the remote chat completion path. `sendMessage()` queues
+ * silently and returns when the desktop agent is mid-run; with no new model
+ * message to relay, that state must be reported as QUEUED, never as a
+ * completed "Done." — the old fallback answered a request that had not run.
+ */
+export function shouldReportQueuedChatToRemote(hasNewAgentResponse: boolean, desktopBusyAfterSend: boolean): boolean {
+    return !hasNewAgentResponse && desktopBusyAfterSend;
+}
+
+/**
  * Pure preflight for the `computer_task` dispatch branch (CE-4, ISSUE-1113). Extracted so
  * the two guard conditions — desktop capability present, goal non-empty — are unit-testable
  * without mounting the full hook. Returns an error string, or null when the task may proceed
@@ -519,49 +529,68 @@ function useFirestoreRelay(enabled: boolean) {
         pushStateImmediate();
     }, [enabled, currentModule, isAgentProcessing, activeSessionId, isSleeping]);
 
+    /**
+     * sendMessage() queues silently and returns when the desktop agent is
+     * mid-run. Marking a dispatch task 'completed' in that case sent the
+     * phone a terminal receipt for work that had not happened — and the
+     * ISSUE-983 caller treats 'completed' as "the note exists", clearing the
+     * user's only local copy. Throw instead so the task fails loudly and
+     * the capture is kept on the phone.
+     */
+    const assertDesktopWasFreeToRun = () => {
+        if (agentService.isAgentBusy) {
+            throw new Error('Desktop Studio is mid-task — this request was queued there instead of completing. Check the desktop app or try again shortly.');
+        }
+    };
+
     const processSingleCommand = async (command: RemoteCommand & { id: string }) => {
         if (isProcessing.current) return;
-        if (!shouldProcessStudioCommand(command)) {
-            logger.info(`[RemoteRelay/Firestore] ⏭️ Command ${command.id} belongs to the cloud executor`);
-            return;
-        }
-
-        // Atomic claim: try to flip pending → processing. First one wins.
-        const localP2PCommand = isLocalP2PCommand(command.id);
-        const uid = getRealAuthenticatedUserId(auth.currentUser);
-        if (!localP2PCommand && !uid) return;
-        let claimed = localP2PCommand;
-        if (!localP2PCommand) {
-            if (!uid) return;
-            try {
-                const { studioExecutorLeaseService } = await import('@/services/agent/StudioExecutorLeaseService');
-                claimed = await studioExecutorLeaseService.claimCommand(command.id, studioInstanceIdRef.current!);
-            } catch (err) {
-                logger.warn('[RemoteRelay] Atomic claim failed:', err);
+        // Take the queue lock synchronously, BEFORE the first await. The
+        // atomic claim below is itself an async cloud call; releasing the
+        // guard across it let two near-simultaneous snapshot events pass the
+        // busy check and execute concurrently.
+        isProcessing.current = true;
+        let processingTimeout: ReturnType<typeof setTimeout> | null = null;
+        try {
+            if (!shouldProcessStudioCommand(command)) {
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Command ${command.id} belongs to the cloud executor`);
                 return;
             }
-        }
 
-        if (!claimed) {
-            writeDiagnostic('command_skipped_not_claimed', { commandId: command.id });
-            logger.info(`[RemoteRelay/Firestore] ⏭️ Command ${command.id} already claimed`);
-            return;
-        }
+            // Atomic claim: try to flip pending → processing. First one wins.
+            const localP2PCommand = isLocalP2PCommand(command.id);
+            const uid = getRealAuthenticatedUserId(auth.currentUser);
+            if (!localP2PCommand && !uid) return;
+            let claimed = localP2PCommand;
+            if (!localP2PCommand) {
+                try {
+                    const { studioExecutorLeaseService } = await import('@/services/agent/StudioExecutorLeaseService');
+                    claimed = await studioExecutorLeaseService.claimCommand(command.id, studioInstanceIdRef.current!);
+                } catch (err) {
+                    logger.warn('[RemoteRelay] Atomic claim failed:', err);
+                    return;
+                }
+            }
 
-        // Any accepted phone command is also a wake signal. Firestore keeps the
-        // queue durable while Studio rests in the tray; surface the window and
-        // clear sleep before executing the requested action.
-        wakeDesktop();
-        isProcessing.current = true;
+            if (!claimed) {
+                writeDiagnostic('command_skipped_not_claimed', { commandId: command.id });
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Command ${command.id} already claimed`);
+                return;
+            }
 
-        // Safety: auto-unlock so one stuck command can't block the relay
-        // forever. BUT agent runs legitimately take up to 5-10 minutes —
-        // unlocking while `AgentService` is still processing would let the
-        // next command claim the queue, have `sendMessage` silently no-op
-        // against the busy guard, and get a stale or misleading response.
-        // Only unlock once the store reports the agent run has settled; keep
-        // re-checking while it is genuinely active.
-        const processingTimeout = setTimeout(() => {
+            // Any accepted phone command is also a wake signal. Firestore keeps the
+            // queue durable while Studio rests in the tray; surface the window and
+            // clear sleep before executing the requested action.
+            wakeDesktop();
+
+            // Safety: auto-unlock so one stuck command can't block the relay
+            // forever. BUT agent runs legitimately take up to 5-10 minutes —
+            // unlocking while `AgentService` is still processing would let the
+            // next command claim the queue, have `sendMessage` silently no-op
+            // against the busy guard, and get a stale or misleading response.
+            // Only unlock once the store reports the agent run has settled; keep
+            // re-checking while it is genuinely active.
+            processingTimeout = setTimeout(() => {
             if (!isProcessing.current) return;
             if (useStore.getState().isAgentProcessing) {
                 logger.info('[RemoteRelay/Firestore] ⏳ Command still executing in AgentService — extending processing lock.');
@@ -886,6 +915,26 @@ function useFirestoreRelay(enabled: boolean) {
                 );
 
                 const response = findLatestRemoteAgentResponse(startedAt);
+
+                // sendMessage() queues and returns silently when the desktop
+                // is mid-run. Reporting the literal fallback below in that
+                // case told the phone "Done." while nothing had executed —
+                // and the queued run later produced no relay response at all.
+                // When no new model message exists AND the desktop is still
+                // busy, say exactly what happened instead.
+                if (shouldReportQueuedChatToRemote(!!response, agentService.isAgentBusy)) {
+                    logger.info('[RemoteRelay/Firestore] 💬 Chat queued behind an active desktop agent run');
+                    writeDiagnostic('agent_chat_queued_desktop_busy', { commandId: command.id });
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        '⏳ Queued — your desktop Studio was mid-task. This message will run there when the current task finishes; its reply will appear in the desktop app.',
+                        command.targetAgentId || 'generalist',
+                        false
+                    );
+                    await remoteRelayService.markCommandCompleted(command.id);
+                    return;
+                }
+
                 await remoteRelayService.sendResponse(
                     command.id,
                     response?.text?.trim() || 'Done.',
@@ -907,7 +956,11 @@ function useFirestoreRelay(enabled: boolean) {
                 false
             );
             await remoteRelayService.markCommandCompleted(command.id);
+        }
         } finally {
+            // Single release point: every exit path of processSingleCommand —
+            // early guard return, unclaimed command, route completion, or a
+            // thrown route error — passes through here exactly once.
             if (processingTimeout) clearTimeout(processingTimeout);
             isProcessing.current = false;
             // Scan for any missed/backlogged commands
@@ -1046,6 +1099,7 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
                         await agentService.sendMessage(text, undefined, 'generalist', {
                             source: 'mobile-remote'
                         });
+                        assertDesktopWasFreeToRun();
                         await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
                         break;
                     }
@@ -1078,6 +1132,7 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
                         await agentService.sendMessage(text, undefined, 'generalist', {
                             source: 'mobile-remote'
                         });
+                        assertDesktopWasFreeToRun();
                         await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
                         break;
                     }

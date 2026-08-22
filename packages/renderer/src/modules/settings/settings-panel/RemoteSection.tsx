@@ -16,6 +16,11 @@ import { Smartphone, QrCode, Copy, Check, RefreshCw, Info, Wifi, FolderPlus, Tra
 import { SectionHeader, SettingRow } from './SettingsShared';
 import { auth } from '@/services/firebase';
 import { isPrivateIP } from '@/services/agent/RemoteRelayService';
+import {
+    classifyStudioRelayHealth,
+    getStudioRelayHealth,
+    type StudioRelayVerdict,
+} from '@/services/agent/studioRelayHealth';
 import { logger } from '@/utils/logger';
 import { desktopFileIndexService, type ApprovedAssetFolder } from '@/services/agent/DesktopFileIndexService';
 import { buildMobileRemotePairingUrl } from '@/modules/mobile-remote/routing';
@@ -31,6 +36,8 @@ const CODE_TTL_MS = 5 * 60 * 1000; // matches auth_handoffs expiry in functions/
  */
 const isElectronStudio = typeof window !== 'undefined' && !!window.electronAPI;
 
+const RELAY_HEALTH_POLL_MS = 1000;
+
 const RemoteSection: React.FC = () => {
     const moduleColor = getColorForModule('settings');
     const [code, setCode] = useState<string | null>(null);
@@ -43,6 +50,21 @@ const RemoteSection: React.FC = () => {
     const [assetFolderError, setAssetFolderError] = useState<string | null>(null);
     const [assetFolderBusy, setAssetFolderBusy] = useState(false);
     const expiryTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Live view of what the presence loop actually observed. The heartbeat
+    // itself lives in useRemoteCommandListener; this only mirrors its result
+    // so "Ready" can never mean "structurally capable but silently failing".
+    const [relayVerdict, setRelayVerdict] = useState<StudioRelayVerdict>(() =>
+        classifyStudioRelayHealth(getStudioRelayHealth())
+    );
+
+    useEffect(() => {
+        if (!isElectronStudio) return;
+        const poll = setInterval(() => {
+            setRelayVerdict(classifyStudioRelayHealth(getStudioRelayHealth()));
+        }, RELAY_HEALTH_POLL_MS);
+        return () => clearInterval(poll);
+    }, []);
 
     const clearExpiryTimer = () => {
         if (expiryTimer.current) {
@@ -306,7 +328,32 @@ const RemoteSection: React.FC = () => {
                         {isElectronStudio ? 'Ready' : 'Not available in browser'}
                     </span>
                 </SettingRow>
+
+                {isElectronStudio && (
+                    <SettingRow
+                        icon={Wifi}
+                        label="Cloud Relay Heartbeat"
+                        description={relayVerdict.detail}
+                    >
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${relayVerdict.status === 'live'
+                            ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+                            : relayVerdict.status === 'failing'
+                                ? 'text-red-400 bg-red-500/10 border border-red-500/20'
+                                : 'text-slate-500 bg-slate-800/60 border border-slate-700/50'
+                            }`}>
+                            {relayVerdict.status === 'live' ? 'Live' : relayVerdict.status === 'failing' ? 'Failing' : 'Idle'}
+                        </span>
+                    </SettingRow>
+                )}
             </div>
+
+            {isElectronStudio && relayVerdict.status === 'failing' && (
+                <p className="mt-3 text-xs text-red-300/90 bg-red-500/5 p-3 rounded-lg border border-red-500/15 leading-relaxed">
+                    <strong className="font-semibold">Your phone cannot see this Studio right now.</strong>{' '}
+                    Presence publishes are failing: {relayVerdict.detail} Check your sign-in and network, then restart the
+                    desktop app. If this persists, the cloud functions may need redeploying.
+                </p>
+            )}
 
             {!isElectronStudio && (
                 <p className="mt-3 text-xs text-amber-300/90 bg-amber-500/5 p-3 rounded-lg border border-amber-500/15 leading-relaxed">
