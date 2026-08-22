@@ -121,6 +121,12 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
                 endSession();
                 onNaturalEnd(finalText);
             },
+            onSuperseded: () => {
+                // Another chat surface took the shared mic. Stand down quietly —
+                // this session's draft belongs to that surface now.
+                startedAtRef.current = 0;
+                endSession();
+            },
             onError: (error) => {
                 // Late engine noise after an intentional release/cancel must not
                 // revert the input or raise a toast (Chrome aborts on stop()).

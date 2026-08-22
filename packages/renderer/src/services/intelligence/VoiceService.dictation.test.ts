@@ -176,4 +176,40 @@ describe('VoiceService.startDictation', () => {
         expect(lastInstance()).toBe(firstInstance);
         expect(firstInstance.start).toHaveBeenCalledTimes(1);
     });
+
+    it('supersedes the previous owner when another surface starts dictating', async () => {
+        const svc = await loadService();
+        const firstFinal = vi.fn();
+        const firstSuperseded = vi.fn();
+        svc.startDictation({ onFinal: firstFinal, onSuperseded: firstSuperseded });
+
+        // A second surface (e.g. the docked panel while the overlay is live) takes over.
+        const secondFinal = vi.fn();
+        const secondSuperseded = vi.fn();
+        expect(svc.startDictation({ onFinal: secondFinal, onSuperseded: secondSuperseded })).toBe(true);
+
+        expect(firstSuperseded).toHaveBeenCalledTimes(1);
+        expect(secondSuperseded).not.toHaveBeenCalled();
+
+        // Events now flow ONLY to the new owner.
+        lastInstance().onresult!(makeEvent([
+            { transcript: 'fresh take ', isFinal: true },
+        ]));
+        expect(firstFinal).not.toHaveBeenCalled();
+        expect(secondFinal).toHaveBeenCalledWith('fresh take ');
+        expect(lastInstance().start).toHaveBeenCalledTimes(1); // engine never restarted
+    });
+
+    it('after supersession, engine end does not notify the deposed owner', async () => {
+        const svc = await loadService();
+        const firstEnd = vi.fn();
+        const firstSuperseded = vi.fn();
+        svc.startDictation({ onEnd: firstEnd, onSuperseded: firstSuperseded });
+        svc.startDictation({ onEnd: vi.fn() });
+
+        lastInstance().onend!();
+        expect(firstEnd).not.toHaveBeenCalled();
+        expect(firstSuperseded).toHaveBeenCalledTimes(1);
+        expect(svc.isDictatingActive()).toBe(false);
+    });
 });

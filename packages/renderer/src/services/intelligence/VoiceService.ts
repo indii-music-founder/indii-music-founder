@@ -32,6 +32,8 @@ interface DictationHandlers {
     /** Recognition session ended (stop requested, silence timeout, or error). */
     onEnd?: () => void;
     onError?: (error: unknown) => void;
+    /** Another surface started dictating and took over the shared engine. */
+    onSuperseded?: () => void;
 }
 
 export class VoiceService {
@@ -39,6 +41,7 @@ export class VoiceService {
     private isListening: boolean = false;
     private isDictating: boolean = false;
     private stopRequested: boolean = false;
+    private activeHandlers: DictationHandlers | null = null;
 
     private get synthesis(): SpeechSynthesis | null {
         if (typeof window === 'undefined') return null;
@@ -109,7 +112,15 @@ export class VoiceService {
      */
     startDictation(handlers: DictationHandlers): boolean {
         if (!this.recognition) return false;
-        if (this.isDictating) return true;
+
+        // Session-owner model: several chat surfaces can mount a TalkButton at
+        // once (floating overlay + docked panel). The newest click owns the
+        // shared engine; the previous owner is told to stand down.
+        if (this.isDictating && this.activeHandlers && this.activeHandlers !== handlers) {
+            this.activeHandlers.onSuperseded?.();
+        }
+        this.activeHandlers = handlers;
+        this.stopRequested = false;
 
         // Reuse the single recognition instance; flip it into continuous mode
         // for the session. The legacy single-shot path restores its own config.
@@ -119,7 +130,6 @@ export class VoiceService {
         let finalTranscript = '';
         // Chrome fires onerror('aborted') as a normal consequence of stop() —
         // and 'no-speech' when the user stays quiet. Neither is a failure.
-        this.stopRequested = false;
 
         this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
             let interim = '';
@@ -144,18 +154,22 @@ export class VoiceService {
         this.recognition.onend = () => {
             const wasDictating = this.isDictating;
             this.isDictating = false;
+            this.activeHandlers = null;
             if (wasDictating) handlers.onEnd?.();
         };
 
-        this.isDictating = true;
-        try {
-            this.recognition.start();
-            return true;
-        } catch (e: unknown) {
-            this.isDictating = false;
-            handlers.onError?.(e);
-            return false;
+        if (!this.isDictating) {
+            this.isDictating = true;
+            try {
+                this.recognition.start();
+            } catch (e: unknown) {
+                this.isDictating = false;
+                this.activeHandlers = null;
+                handlers.onError?.(e);
+                return false;
+            }
         }
+        return true; // engine running with THIS session's handlers bound
     }
 
     /**

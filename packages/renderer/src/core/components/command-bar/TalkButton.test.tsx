@@ -18,6 +18,7 @@ type Handlers = {
     onInterim?: (t: string) => void;
     onEnd?: () => void;
     onError?: (e: unknown) => void;
+    onSuperseded?: () => void;
 };
 
 describe('TalkButton', () => {
@@ -210,6 +211,53 @@ describe('TalkButton', () => {
 
         fireEvent.click(stopBtn);
         expect(onStopAgent).toHaveBeenCalledTimes(1);
+    });
+
+    it('stands down when another surface takes the shared mic (no cross-talk)', () => {
+        const aLive = vi.fn();
+        const bLive = vi.fn();
+        const aRelease = vi.fn();
+        const bRelease = vi.fn();
+        render(
+            <>
+                <TalkButton
+                    value="overlay draft"
+                    onLiveText={aLive}
+                    onRelease={aRelease}
+                    onNaturalEnd={onNaturalEnd}
+                    onMicError={onMicError}
+                    isAutoSendArmed={isAutoSendArmed}
+                />
+                <TalkButton
+                    value="panel text"
+                    onLiveText={bLive}
+                    onRelease={bRelease}
+                    onNaturalEnd={onNaturalEnd}
+                    onMicError={onMicError}
+                    isAutoSendArmed={isAutoSendArmed}
+                />
+            </>
+        );
+        const [btnA, btnB] = screen.getAllByTestId('talk-button');
+
+        // Overlay opens the talkback channel first.
+        fireEvent.click(btnA);
+        const handlersA = captured[0]!;
+        act(() => handlersA.onInterim!(' streamed words'));
+
+        // Docked panel takes over; the real VoiceService notifies A via
+        // onSuperseded (proven in VoiceService.dictation.test.ts).
+        fireEvent.click(btnB);
+        act(() => handlersA.onSuperseded!());
+
+        // A stood down quietly — no release, no revert, no toast.
+        expect(btnA.getAttribute('data-face')).toBe('idle');
+        expect(aRelease).not.toHaveBeenCalled();
+        expect(onMicError).not.toHaveBeenCalled();
+
+        // Speech flows only to the new owner — never into A's input.
+        act(() => captured[1]!.onInterim!('hello from panel'));
+        expect(bLive).toHaveBeenLastCalledWith('panel text hello from panel');
     });
 
     it('renders disabled without a click path when speech is unsupported', () => {
