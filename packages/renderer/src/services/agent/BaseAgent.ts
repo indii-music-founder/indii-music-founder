@@ -233,6 +233,31 @@ export class BaseAgent implements SpecializedAgent {
                     return toolError(error instanceof Error ? error.message : 'Could not search local assets.', 'LOCAL_ASSET_SEARCH_UNAVAILABLE');
                 }
             },
+            // Notes module access (declared in SUPERPOWER_TOOLS so every agent
+            // — including remote-driven conversations — can persist to and
+            // read back the creator's notes).
+            save_note: async (args: Record<string, unknown>) => {
+                const { NotesTools } = await importWithRetry(() => import('./tools/NotesTools'));
+                return await NotesTools.save_note({
+                    title: typeof args.title === 'string' ? args.title : undefined,
+                    content: typeof args.content === 'string' ? args.content : '',
+                });
+            },
+            save_media_note: async (args: Record<string, unknown>) => {
+                const { NotesTools } = await importWithRetry(() => import('./tools/NotesTools'));
+                return await NotesTools.save_media_note({
+                    url: typeof args.url === 'string' ? args.url : '',
+                    noteId: typeof args.noteId === 'string' ? args.noteId : undefined,
+                    description: typeof args.description === 'string' ? args.description : undefined,
+                });
+            },
+            list_notes: async (args: Record<string, unknown>) => {
+                const { NotesTools } = await importWithRetry(() => import('./tools/NotesTools'));
+                return await NotesTools.list_notes({
+                    query: typeof args.query === 'string' ? args.query : undefined,
+                    limit: typeof args.limit === 'number' ? args.limit : undefined,
+                });
+            },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             delegate_task: async ({ targetAgentId, task }: DelegateTaskArgs, context, _toolContext?: ToolExecutionContext) => {
                 // Phase 2: Check for delegation loops

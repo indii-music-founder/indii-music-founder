@@ -1,263 +1,88 @@
-# Session Checkpoint — Performance Engineering (2026-08-20, DSH agent)
+# Session Checkpoint — Remote Control System Repair (2026-08-22, DSH agent)
 
-**Updated:** 2026-08-20 (session close)
+**Updated:** 2026-08-22 (session close, round 2)
 **Branch:** `main` — local == origin/main (0/0).
 
-## Shipped (pushed to origin/main, CI green, production deployed)
+## Shipped round 2 — phone reaches files / notes / boardroom (same day)
 
-1. **`7e47e7d05` perf(web): cut startup JS by ~640KB and minify the deploy build**
-   - Lazy MCP SDK (McpClientService) + lazy pdfjs (DocumentAnnotator)
-   - vite/electron chunk config: preload-helper + @babel/runtime carve-outs,
-     driver.js/react-virtuoso out of eager vendor-ui, messaging carve-out,
-     `hoistTransitiveImports: false` (kills ~640KB of hoisted startup vendor JS)
-   - electron.vite.config.ts: minify + console drop (deploy path previously
-     shipped UNMINIFIED bundles — entry 3,253kB → 1,750kB)
-   - index.html: removed unused Google Fonts preconnects; defer bootstrap.js
-   - CI run 32375459143: success (incl. deploy-production)
-2. **`825e0ef44` perf: lazy-load landing sections (SEO safeguards) + defer Sentry**
-   - Landing: below-the-fold sections via LazySection (IntersectionObserver 900px,
-     hash targeting, crawler-UA instant render); ~154kB out of critical bundle
-   - page.preservation.test.tsx rewritten to assert the deferred contract
-     (forced IO stub — jsdom 26 ships its own; pre-warmed lazy chunks)
-   - SentryService: lazy facade — @sentry/react loads via requestIdleCallback
-     after first paint; all exports await one dynamic import; FinanceService
-     switched to facade (was the only entry-level direct importer)
-   - docs/PERFORMANCE_SW_PLAN.md: service-worker/offline follow-up plan (approved
-     as separate task, NO code yet)
-   - CI run 32388085318: success (incl. deploy-production)
+**Commit: fix(remote): phone-side mode targeting, full boardroom relay, notes tools for every agent**
+(Foundation: `851e656a1` earlier this session — freshness honesty, truthful busy
+responses, dead P2P removal, live relay health; CI 32600606995 green.)
 
-## Measured results (local Playwright, cold loads)
+Founder bottom line: desktop execution stays the brain; the phone must reach
+the user's files, notes, and boardroom through it. Audit found files already
+wired (`browse_local_files` in SUPERPOWER_TOOLS + DesktopFileIndexService) but
+two capabilities silently degraded:
 
-- Studio login JS transfer: 1.91MB → 1.12MB (−41%); heap 22→15-16MB; entry
-  2,031 → 1,341kB (vite build); Sentry/vendor-three/video/recharts/pdfjs no
-  longer fetched at startup; long tasks ~1×55-65ms
-- Landing: FCP ~430-730ms, LCP ~700-990ms (clean runs; machine-noise variance
-  observed), long tasks 39 → 12-24; sections load near-viewport; 3D shell
-  deferred past load
+1. **Mode targeting was decorative.** AgentChat sent no mode; executeFlow
+   routed by the desktop's own conversationMode/directTarget/department
+   state. Now the Controller sends `metadata.conversationMode`, the relay
+   validates it and passes `conversationModeOverride`/`targetOverride`
+   through sendMessage; desktop-initiated behavior unchanged. Firestore
+   rules metadata allowlist extended (enum-checked) — the old allowlist
+   would have permission-denied every phone chat write.
+2. **Boardroom was truncated to its last speaker.** Relay now forwards ALL
+   final agent messages (cap 12), each attributed + rateable on the phone.
+3. **Notes were unreachable from chat.** save_note/save_media_note/list_notes
+   declared in SUPERPOWER_TOOLS, implemented in BaseAgent.functions,
+   risk-registered. `list_notes` is new (read-only, snippet-only).
 
-## Repo notes
+Evidence: full monorepo Vitest 6,683 passed / 0 failed (incl. 15 new tests
+across notes tools, mode resolution, transcript collection, rules metadata);
+typecheck green; lint 0 errors; production build green; rules test extended
+for the new metadata key (emulator suites run in CI).
 
-- Concurrent agent(s) active on main during session; they overwrote
-  landing/src/page.tsx twice — the lazy-section change was re-applied and is
-  confirmed in 825e0ef44 (their docs commit 386c6067b acknowledges it).
-- Cancelled CI runs 32387868463 + 32387799453 are covered by green run
-  32388085318 (ancestors of 825e0ef44). Failed run 32385428073 (deploy-prod,
-  Firebase 429 quota blip) also covered by the same green run.
+## Known follow-ups (NOT done, deliberately out of scope)
+
+- Real two-device validation (iPhone ↔ Electron) still required before
+  claiming end-to-end smoothness on hardware — unit/local evidence is
+  structural+local only. REMOTE_RELAY_TEST_PLAN scenarios 4-7 unrun.
+- Hybrid cloud fallback (cloud answers when desktop offline) remains a
+  product decision, deliberately not built.
+- Orphaned preload IPC (`remote.onMessageFromMobile` / `remote.broadcast`)
+  could be removed from packages/main/preload.ts + electron.d.ts.
 - Unrelated in-flight working-tree files (NOT mine, do not commit):
-  envelope.json fixture, agentSessionSlice.ts, CreativeCanvas.tsx (+test/hook),
-  AgentService.ts, AgentGraphService.ts (AgentService has trailing-whitespace
-  diff-check warnings).
+  envelope.json fixture, archive/Music/Machine Code.mp3 (untracked), docs/video/ (untracked).
 
-## Pending / next steps
 
-- Service-worker/offline caching: implement per docs/PERFORMANCE_SW_PLAN.md
-  (P1 studio shell precache → P4 measurement) when scheduled.
-- Optional follow-ups documented in the perf report: AppShell markdown stack
-  split, i18n locale lazy-load (P3), CSS audit.
+- Unrelated in-flight working-tree files (NOT mine, do not commit):
+  envelope.json fixture, archive/Music/Machine Code.mp3 (untracked), docs/video/ (untracked).
 
----
+## Shipped round 1 (earlier this session) — `851e656a1`, CI 32600606995 green, production deployed
 
-*Previous session content preserved below.*
+**`851e656a1` fix(remote): honest presence freshness, truthful busy responses, dead P2P removal, live relay health**
 
-# Session Checkpoint — First-Customer Readiness: Live Bug Hunt & Fixes (2026-08-18)
+1. **Presence freshness forgery (the "pairs but won't hold" flapping).**
+   `onDesktopState` stamped `_localReceivedAtMs = Date.now()` on every snapshot
+   and `isFreshDesktopState` trusted that stamp over the doc's server heartbeat
+   timestamp. Firestore re-serves cached doc content as the first snapshot of
+   EVERY subscription (mount / manual retry / each auto-reconnect resubscribe),
+   so an `online:true` doc with a hours-old heartbeat certified as "connected"
+   for a fresh 120s window per resubscribe. Replaced with heartbeat-ADVANCE
+   tracking (`_heartbeatAdvancedAtMs`): only a snapshot whose server timestamp
+   VALUE changed witnesses a live beat, measured on the local monotonic clock;
+   without a witness, the doc's own age (+30s skew tolerance) must hold alone.
+   `studioStateFreshnessRemainingMs` mirrors the same boundary.
+2. **False completions under desktop busyness.** Chat route answered
+   sendMessage's silent queue-and-return with a literal "Done."; single-slot
+   `pendingSend` discarded older queued messages; the relay command lock was
+   taken only after an awaited cloud claim; dispatch tasks were marked
+   completed while merely queued. Now: explicit QUEUED response, bounded FIFO
+   queue in AgentService, synchronous lock with one release point,
+   `assertDesktopWasFreeToRun` fails captures loudly so the phone keeps them.
+3. **Dead LAN P2P WebSocket transport removed** (renderer side). Preload API
+   left intact (follow-up hygiene).
+4. **Settings now shows real Cloud Relay Heartbeat state** via new
+   `studioRelayHealth.ts` — "Ready" no longer means merely "Electron bridge exists".
 
-**Updated:** 2026-08-19 20:55 UTC
-**Branch:** `main` — pushed through `63a93d22b` (ISSUE-1377 memory embeddings); CI #291 deploying. Variation fix (ISSUE-1382) LIVE (generateimagev3 rev 00301-hek 20:24).
-**ISSUE-1382 (variations — founder-live 18:46):** 'All variation requests failed' — reference parts built as {type:'image', mime_type, data} which the @google/genai SDK does NOT recognize as a Part (needs inlineData/text/fileData) → malformed request → Vertex 400. References NEVER worked on the generateContent fallback. Fixed to {inlineData:{mimeType,data}} (Omni path unchanged — its own Step schema). Reference upload PROVEN healthy (22,761-byte PNG @ 18:46:10) — part shape was the sole defect.
-**ISSUE-1377 (memory embeddings):** client memory pipeline used browser embeddings that fail-closed by design → semantic recall silently empty. New batchEmbedText callable + both client call sites wired; 60/60 tests.
-**Previous round state:** video E2E proven (job SUjgH7P8GLPBT1YEQpkn, mp4 in storage); video metering added (ISSUE-1381, committed aeb1dadc7).
-**Founder real-world list unchanged:** Stripe mock key + prices (1372), 30/39 mock secrets (1373), ~~Founder seat #1 commit~~ **1374 RESOLVED 2026-08-20 (founder: no seat needed — seat #1 is the reserved internal i-i Founder seat; FOUNDERS array is for paid seats #2-#11 only; see ledger)**, e2e App Check CI token, Meta/desktop/registrations.
-**Open:** guided-chat 'Create Video' widget 400 observed once during the 14:53 network-flaky window — recheck on next repro; probe profile session restore degraded (auth timeout loop) — the debug token + recovery (clear app-check db) works intermittently.
-**Branch:** `main` — pushed through `5209ad436` (ISSUE-1375 navigation); CI #284 deploying (carries: ISSUE-1369 durable index + ISSUE-1375 nav). ISSUE-1371 Export LIVE; ISSUE-1370 aspect LIVE.
-**ISSUE-1369 saga CLOSED:** index listed in `packages/firebase/firestore.indexes.json` (97 entries, `3b0fc1a48`) — the deploy-managed file is the single source of truth (`firebase deploy --only firestore:indexes --force` deletes anything unlisted; it ate the REST-created index twice). Live check 02:45: capability query 200 + docs.
-**ISSUE-1375 nav LIVE in #284:** view-mode history (studio↔canvas back/forward, cap 30, undo semantics) + `goBackModule` + CreativeNavbar cluster (ArrowLeft=page back; chevrons=view back/forward; disabled at bounds). openImageInStudio routes through setViewMode('canvas') so Boardroom imports get Back for free. 24/24 touched tests.
-**Founder real-world tasks (documented, proof in ledger):** ISSUE-1372 Stripe mock key + missing price IDs; ISSUE-1373 30/39 mock secrets; ISSUE-1374 RESOLVED (2026-08-20, founder direction — founder is the reserved internal seat #1, no FOUNDERS entry/token needed; GITHUB_TOKEN_FOUNDERS still required for future paid seats #2-#11). e2e App Check debug token (console task).
-**NEW FINDINGS this round:**
-1. **Index-vanish root cause (ISSUE-1369 re-opened then durably fixed):** CI's `firebase deploy --only firestore:indexes --force` reads `packages/firebase/firestore.indexes.json` (EXISTS — my earlier 'no file' claim was wrong, checked repo root) and DELETES live indexes not listed ("Deleting 1 indexes" deleted the REST-created creative_jobs index in CI #281 at 01:27). Capability query broke again (~01:50); index recreated via REST (02:00) and the FILE now lists it (97) so every deploy keeps it. Verify query after next deploy.
-2. **Composite-index audit (server):** all 11 where+orderBy chains + multi-where chains checked against the file/live lists — ONLY creative_jobs was missing (now added). Single-field orderBy auto-served. Audit method + result documented in ledger.
-3. **ISSUE-1372 (founder task):** STRIPE_SECRET_KEY = `MOCK_KEY_DO_NOT_USE`; no STRIPE_PRICE_* env → PRO/STUDIO checkout disabled, one-time checkout would 401. Founder tier=founder has no subscription doc (granted via GitHub/admin flow, not Stripe).
-4. **ISSUE-1373 (founder task):** 30/39 secrets are mock/placeholder (Stripe, Resend, Meta, Spotify, TikTok, Twitter, Microsoft, PandaDoc, Telegram, Inngest, ClickHouse, Apollo, Clearbit, Google OAuth, Shopify webhook). REAL: Arcjet, Gemini, GitHub token, Maps, MCP, Printful, RESEND_FROM_EMAIL. Full table in ledger.
-5. **e2e flake root:** staging e2e has no App Check debug token → headless browsers throttle App Check → boot hangs → the /tax-form-upload 15s flake. Hardened to 30s (CI #278/281 passed). Deeper fix (register CI debug token in console + inject) is a founder console task — documented.
-**FIX CONFIRMED LIVE (prior rounds):** rate limit (276), 120s timeout (277), undefined-strip (279), capability index (recreated 02:00 — verify after #282 deploy), aspect-ratio (281), Export (282 deploying).
-**Branch:** `main` — pushed through `f3c9060bb`; CI #281 SUCCESS. ISSUE-1370 aspect-ratio fix LIVE (entry `index-CPpmyS15.js`, `naturalWidth` ×6 in bundle). All prior fixes live: rate limit (276), 120s timeout (277), undefined-strip (279), capability index (REST, no code).
-**FOUNDER STATUS:** green light to hard-refresh and test the Boardroom→Studio transfer with a 16:9 image — should keep its shape on the work mat now.
-**BACKFILL DONE (founder-approved):** 14 creative_jobs docs restored for Aug 18 generations 01:15–23:20Z (real prompts from history records; verified 200s). Earlier session claim "0 history docs for 23:16–23:20" was WRONG (query flaw) — all 16 history docs always existed; the strip had the images.
-**ISSUE-1369 (no code change, live fix):** `creative_jobs` composite index (userId ASC, createdAt DESC) did NOT exist → getCapabilitySnapshot query threw FAILED_PRECONDITION → caught → capability evidence = `unverified` (1359 fix was incomplete). Index `CICAgITsmpEK` created via REST, READY 00:47Z; query verified returning backfilled + new jobs. DO NOT introduce firestore.indexes.json without enumerating all 96 existing indexes (CI `--force` deletes unlisted ones).
-**ISSUE-1370 (CI #281):** Boardroom→Studio imports preserve source aspect (readNaturalDimensions; 512×512 fallback only when undecodable).
-**OPEN BACKLOG:** ISSUE-1158/1159/1168/1169/1354 need live-proof; Stripe tier price IDs missing (`[Stripe] Missing price ID for STRIPE_PRICE_*` logged at every function boot — checkout for those tiers disabled).
+Evidence: focused remote suites 102/102 (8 new regression tests); full
+monorepo Vitest 6,672 passed / 0 failed; typecheck green; lint 0 errors;
+production build green. ERROR_LEDGER entries 2026-08-21 (cache-hit forgery;
+silent-queue false completions) and 2026-08-22 (partially-reachable bottom line).
 
-## ISSUE-1368 — ROOT CAUSE CLOSED (log-proven from founder's 23:16Z request)
-- **Bug:** `Cannot use "undefined" as a Firestore value (found in field "sessionId")` — agent-driven generations omit `sessionId`; Firestore rejects the whole creative_jobs doc; completion update fails `5 NOT_FOUND`. Video record had the same class (`cameraPhysics: undefined`).
-- **Fix:** `safeDbSet`/`safeDbUpdate` JSON-strip undefined (no sentinels in gateway — audited). Exported + 2 regressions; gateway 48/48; firebase typecheck clean. Committed `f5eef5629`, CI #278 deploying.
-- **Evening evidence:** 5 usage records 23:16-23:20Z (recordUsage LIVE — meters now populate) + 6 outputs in GCS (`1787094984890`…`1787095257563`) + 0 creative_jobs docs + 0 history docs for those jobs. The 20:20Z generation DID persist history (jobId 4KEwfcXApA2NgmuNiZZg, https download URL with token) — client-side path works when the stream survives.
-- **Why images were invisible:** the 25s client stream cap aborted agent turns mid-tool; server finished the image (usage recorded) but the tool result never reached the client (no addToHistory → no strip). 120s fix (CI #277) is LIVE — a refresh + retry should now display the image in the strip even before CI #278.
-- **Boardroom strip data source:** `generatedHistory` store ← `addToHistory` (client) + `StorageService.subscribeToHistory` (history collection, orgId+userId+timestamp desc, limit 50). NOT creative_jobs. creative_jobs feeds AssetObserver + getCapabilitySnapshot (agent evidence).
-- **Backfill option (un-started, needs founder OK):** write history docs for tonight's 6 orphaned outputs (id=jobId from completion logs, https download URL via Storage API token, prompt='Boardroom Asset' placeholder, timestamp from filename).
-**FOUNDER DIRECTIVE (memorized, applies to ALL work):** NEVER GUESS. Every claim, fix, probe, or report must be proven from actual state (real logs, real storage, real responses, real code) or be provable on demand. "I assumed" is a defect. Recorded in `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-08-18 entry).
+## Prior session (2026-08-20, performance engineering) — superseded context
 
-## Round 2026-08-18 (17:27-21:40 UTC): founder blocked in Boardroom — image never made
-
-### ISSUE-1366 (committed `5aedeaa17`, deployed in-flight)
-- **Proven from logs:** 6 swarm stream calls in 32s (20:27:13-45Z) tripped `RATE_LIMITS.generation` 10/min; 429 at 20:27:45 described as "temporarily at capacity"; LoopDetector killed the retry.
-- **Fix:** generation limit 10→30 req/min; 429 message now honest ("Too many AI requests in the last minute… wait ~60s"); client fallback + image_gen test updated.
-
-### ISSUE-1365 silent-swallow sweep (committed `5d8169069`, deployed in-flight)
-- `AgentExecutor` trace-progress write, `DistributionService` metadata snapshot, `BaseAgent` audit events, `activateFounderPass` GitHub retry-queue write — all `.catch(() => {})` now log code+reason.
-
-### creative_jobs root-cause hunt — NEW EVIDENCE (still open)
-- **10 image completions today; only 1 (00:36Z `EtdSxNXSf8EH6cRT3TMd`) has a creative_jobs doc.** Jobs 01:15-01:40Z (5×) and 20:20-20:27Z (4×, incl. founder's blocked `ipE7Lvx8X7FUm00MrbeX`) are 404.
-- **Excluded:** IAM (compute SA probe-write to creative_jobs succeeded 21:17Z, probe doc deleted), region (all 195 fns us-central1), billing (enabled), code regression (break happened MID-revision 00287-hud between 00:36 and 01:15 — no deploy), named-DB drift (getDb = plain admin.firestore()).
-- **Signature:** Vertex ✓, Storage upload ✓, Firestore reads ✓, Firestore WRITES ✗ from function runtime. Root cause still unproven — **the 961cfac28 gateway (live since 20:28:41Z) now logs safeDbSet/safeDbUpdate code+reason; the NEXT generation will reveal it.** Verify immediately after founder's next Boardroom image request.
-
-### Google APIs/Maps audit — COMPLETE, all proven
-- Image/video: `aiplatform.googleapis.com` + `firebasevertexai` + `generativelanguage` enabled; deployed `generateImageV3` env `MEDIA_PROVIDER=vertex`; live completion logs show `provider: 'vertex'` + outputCount; model `gemini-3.1-flash-image` runs (via generateContent fallback; interactions.create unsupported for this model — expected).
-- Maps: live bundle contains key **`AIzaSyA-Cf95…` = "Google Maps Desktop Key" (8bff1ea7)**, restricted to exactly the APIs the app uses (`maps-backend`, `places`, `geocoding-backend`). Live tests: JS API load HTTP 200, Geocoding returns real data, Static Maps 403 by design (not whitelisted, app doesn't use it). TourMap loads `maps/api/js?key=…&libraries=places`. CI injects key from `secrets.VITE_GOOGLE_MAPS_API_KEY` + `VITE_ENABLE_GOOGLE_MAPS=true`.
-
-### Region consolidation — COMPLETE, all proven
-- 195 deployed functions, ALL us-central1; 0 in us-west1/europe-west1/us-east1/asia-east1. Client: single `getFunctions(app)` client; `functionsWest1` is a pure alias (`functionsWest1 = functions`, firebase.ts:276) — west1 imports are NOT a bug.
-
-### Flowchart re-sync — COMPLETE (committed `c68386ba9`, un-pushed)
-- `docs/flowcharts/api_endpoints.md` now covers 195/195 deployed functions (verified by diff): 56 previously undocumented endpoints added (55 client + 2 internal), `processISWCMapping` → deployed alias `processISWCMappingV2`. Client-reachable 116→171, internal 23→24.
-
-### Headless probe limitation discovered
-- Headless Chromium on the probe profile cannot pass App Check (403 → 24h throttle persisted in profile's firebase-app-check-database). **The recon runs throttled App Check in `/tmp/pw-indii-probe` for ~24h** (initial-throttle). Session data intact on disk (uid + refresh token in leveldb) but the app falls through to login without a valid App Check token. Do NOT relaunch headless against the profile today; the founder's real browser is the only valid live-test vehicle now.
-
-## Still pending (founder-gated — needs real accounts/credentials)
-1. **Desktop signing secrets** (ISSUE-1163/992): Apple Developer ID + notarization, Windows cert — no signed DMG/EXE until then. Web app NOT blocked.
-2. **Meta Business account + App Review** (ISSUE-1173): PLP ad delivery fail-closed until credentials exist.
-3. **Founder registrations** (ISSUE-1121): ISRC prefix ($95), GS1/UPC, PRO+IPI, ISWC, MLC, SoundExchange, Copyright Office.
-
-### ISSUE-1367 (committed `010f84620`, CI #277 deploying) — 25s client stream timeout kills agent turns
-- **Founder-live evidence:** CD "AI Request timed out after 25000ms… I have cancelled the pending generation"; **generateImageV3 received ZERO requests in that window** (log-proven) — the reasoning stream aborted before the image tool fired.
-- **Code proof:** the 25s `setTimeout` wraps the WHOLE stream (rate-limiter queue wait + pre-flight + tokens; `cleanupRequestLifecycle` runs only after the response settles) while `generateContentStream` allows 300s server-side (index.ts:1084). Mismatch.
-- **Fix:** default client timeout 25s → 120s at both call sites (generateContent + stream paths); `options.timeout` overrides intact. Tests 153/153, typecheck clean.
-- **Founder's transcript also shows the OLD "at capacity" 429** — from before CI #276 landed; the honest message is now live.
-
-## Next steps (ordered)
-1. CI #277 (timeout fix) to land ~30 min → then founder hard-refreshes + retries the Dii wordmark request.
-2. IMMEDIATELY pull `generateimagev3` runtime logs: either `[creativeGateway] Firestore set/update failed` with code+reason (creative_jobs root cause at last) or a successful doc write.
-3. Check `creative_jobs/{jobId}` + `usage` collection after the generation (recordUsage should populate; baseline was 33 docs, newest 2026-05-22).
-4. Confirm the founder's image renders in the Boardroom asset strip with no misleading errors.
-
----
-
-## Checkpoint 2026-08-19 ~23:35 UTC — ISSUE-1390 commit in flight
-
-- **Founder:** "Failed to create file/folder" after painting + no way back to canvas from creative editor. TWO defects fixed + ONE pipeline defect fixed:
-  1. Rules suspicion **ruled out with proof** — emulator repro against live ruleset: painting-save write ALLOWS for verified user, DENIES only for anonymous. Founder's failure = client session state; now `describeFileSystemError` gives session-aware messages instead of a dead-end alert; guest/demo sessions skip doomed file-sync writes (ISSUE-1194 pattern).
-  2. Editor overlay had NO exit on mobile (rail X is desktop-only) — added "← Canvas" button in CanvasHeader (all breakpoints) + Escape handler.
-  3. **Deploy integrity:** CI #293 exited 0 while 7 functions failed with HTTP 429 — generateImageV3 STILL rev 00301-hek (20:24), per-API variation fix NOT live. deploy.yml now retries 429s (2×, 90s) and exits 1 if any function fails to update.
-- Tests: rules repro wired into `test:rules`; renderer +10 tests; all green. Committing next.
-- **After push:** watch #294 → verify generateImageV3 revision rotates past 00301-hek → tell founder to retest Variations (fast + pro), painting save, and the new Canvas back button.
-
-## Checkpoint 2026-08-20 ~00:10 UTC — ISSUE-1390 LIVE + ISSUE-1383 pushed
-
-- **ISSUE-1390 shipped (5b8a3fdb9, CI #294 GREEN):** editor exit button (CanvasHeader "← Canvas", all breakpoints) + Escape closes editor; session-aware file-save errors (guest → sign-in message, permission-denied → session expired, network → retry); guest/demo sessions skip doomed file-node syncs. Rules ruled out with emulator proof.
-- **generateImageV3 ROTATED: rev 00302-xed (00:01:29)** — deployed source verified: `interactionInput` (Step: type/mime_type/data) routed to interactions.create; `generateContentInput` (inlineData) routed to generateContent. **The per-API variation fix is now truly LIVE.** Founder's 22:33 failures were on the old build (00301-hek).
-- **Deploy-integrity fix live in pipeline:** deploy.yml tees functions-deploy log; retries 429-quota failures twice (90s backoff); exits 1 on any `failed to (update|create) function` — a stale deploy can never look green again (this exact silent failure is what kept 00301-hek serving).
-- **ISSUE-1383 pushed (452368b42, CI #295 deploying):** generateContentStream now records chat_tokens into the usage ledger from usageMetadata.totalTokenCount (max-seen) after SETTLED — non-blocking; getUsageStats already sums it. Root cause proven: nothing ever wrote chat_tokens; user_usage_stats has no writer; client stream path never tracked.
-- **Founder to retest (they're on the new build after hard refresh):** 1) Variations on any canvas image (fast + pro); 2) painting save (should now give actionable messages if session degrades); 3) the "← Canvas" button + Escape to exit the editor.
-
----
-
-## Session close 2026-08-20 ~13:20 UTC — /end reconciliation
-
-- **Delivered this session (all live-verified):**
-  - ISSUE-1390: editor exit + session-aware save errors + fail-loud function deploys (5b8a3fdb9, #294 green)
-  - ISSUE-1383: chat_tokens metering live (452368b42, #295 green; usage ledger writing)
-  - ISSUE-1391: removeChild crash guard, "Creative Canvas" rename, Send to Canvas handoff, hosting cache fix (97c91c010 + 3e1f88233, #296/#297 green; cache headers verified live)
-  - ISSUE-1392 + ISSUE-1158: TTS routed through generateContent; full audio E2E proven live (ad5084ab0, #298 green; 200 + WAV + idempotent replay)
-  - ISSUE-1393: retention daemon + webhook dispatcher wired, placements index live (8513fc6cd → #299 red → 2179e43a9 lazy-db fix → #300 green; all 4 functions deployed, index READY, query OK live)
-  - Ledger closes: 322345d2c, 6a9ccc8ec
-- **Tree state:** my scope fully committed; 97 unrelated dirty files belong to the OTHER agent's in-progress landing redesign (.perf-*.mjs, landing sections/components) + their staged stripe/brand work — preserved untouched. Other agent's commit b981c7d68 (async hardening sweep) on main, CI in progress.
-- **Standing verification targets:** generateImageV3 rev must stay ≥ 00302-xed; generateAudioV3 rev 00291-nex (TTS fixed); hosting cache headers: / no-cache, assets immutable.
-- **Next session:** pick up any founder retest feedback; recheck "Create Video" widget 400; ISSUE-1372/1373/1374 remain founder-gated.
-
----
-
-## Checkpoint 2026-08-20 — landing transformation shipped + second pass (founder-authorized)
-
-- **Delivered & LIVE (prior session):** `4ed4ddca4` — the founder.indii.music WebGL
-  transformation (system-network experience: 8 lifecycle nodes assembling with
-  scroll, section energy rhythm, conductor hub, loop-close ring at Founder
-  Access, adaptive quality tiers FALLBACK→HIGH with frame-time downgrade,
-  thesis-audio bridge, section extraction, dead-code/asset purge, SEO asset
-  fixes, a11y overhaul incl. vestibular-safe thesis transcript). CI green
-  (32375459143 incl. deploy-production); verified live: main bundle
-  `index-eqyn0d0m.js`, three chunk `ExperienceShell-cug6nkTl.js` 200, og-image 200.
-- **Second pass (this session, pending push):**
-  - `public/audio/indii-thesis-theme.mp3` — founder's techno track "What To
-    Come" (`archive/Music/What To Come.wav`, ~116 BPM four-on-the-floor,
-    proven by sub-bass onset-interval analysis: dominant interval ~515 ms)
-    transcoded to 48 kHz / 192 kbps MP3 (~3.1 MB). Audio E2E proven: banner
-    click → file plays → bridge attaches → network levels move (bass 1.0 /
-    mid .56 / high .29), zero errors. Loop seam measured: no click; level
-    drops back to the quiet intro on loop (documented in
-    `public/audio/README.txt`).
-  - Reduced-motion hero: scroll-linked scale/y now identity when
-    `prefers-reduced-motion` (opacity only); subtle idle camera drift (~30s
-    period) added to the network rig.
-  - Debug hook now also exposes `audio`/`audioActive` (DEV-only).
-- **LazySection deferral — final status: SHIPPED (825e0ef44), accepted after
-  measurement.** Measured facts (Playwright trace of the built page): the
-  zero-height wrappers DO collapse to one document position (~1345px), so
-  every observer reports intersecting and all sections mount at load — the
-  code-split chunks therefore load at ~500ms regardless of scroll, and the
-  page height grows 1,579px → 14,822px at ~500ms. The growth is entirely
-  below the fold (hero position unchanged), so there is no visible layout
-  shift and no UX regression; the deferral benefit is negligible but the
-  chunk splitting + SEO safeguards are harmless and their tests pass
-  (39/39). Earlier "REJECTED" draft was based on a visible-CLS concern that
-  measurement disproved — do not reopen; if the mechanism is ever replaced,
-  reserve real placeholder heights so the observers fire at true positions.
-- **Open threads:** founder retest feedback on studio (per prior session-close);
-  ISSUE-1372/1373/1374 founder-gated; optional: real thesis theme replacement.
-
----
-
-## Session close 2026-08-20 ~16:20 UTC — landing second pass complete + ISSUE-1374 resolved
-
-- **Landing (delivered, CI green 32388085318, live):**
-  - `a8ee5873a` — thesis soundtrack = founder's techno track "What To Come"
-    (116 BPM 4/4, identified by beat-grid analysis; transcoded to
-    `public/audio/indii-thesis-theme.mp3` 192kbps; audio E2E proven; loop seam
-    documented in `public/audio/README.txt`), reduced-motion hero transforms,
-    idle camera drift, DEV-only debug audio exposure.
-  - `386c6067b` — HANDOFF: LazySection final status (shipped via `825e0ef44`,
-    accepted after measurement: below-fold growth at ~500ms, no visible CLS).
-  - Founders program link: the landing's $2,500 Founder Access section matches
-    `AGREEMENT_TERMS.price_usd` and `reserved_internal_seats` — no drift.
-- **ISSUE-1374 RESOLVED (founder direction):** founder is seat #1 = the
-  reserved internal i-i Founder seat; `FOUNDERS` array is the append-only
-  record of PAID seats (#2-#11) and needs no founder entry; GITHUB_TOKEN_FOUNDERS
-  remains required (and blocked on ISSUE-1373) for future paid seats.
-  Ledger entry updated with resolution + remaining scope.
-- **Founder-gated backlog (unchanged, needs founder):** 1372 Stripe real keys +
-  price IDs; 1373 30/39 real secrets; e2e App Check debug token (console);
-  Meta/desktop/registrations; studio retest feedback; "Create Video" 400 recheck.
-- **Next session:** pick up founder-gated items above; landing needs only a
-  founder's visual pass + optional final seamless theme loop.
-
----
-
-## Checkpoint 2026-08-20 ~21:22 UTC — founders decisions shipped; G5 backfill BLOCKED on credentials
-
-- **Shipped + live (9ae273e9c, CI 32433350083 green):** G1 hybrid payment UI
-  (FoundersCheckout "Prefer an alternative payment" block — live-verified in
-  chunk FoundersCheckout-Bg4mbqpD.js); G2 founders Firestore rules (emulator
-  suite 248 green) + landing live seat counter; G8 public founders offer
-  (live-verified on ?public=true). G3/G4/G6 deferred per founder decisions.
-  G2 checkout deep-link deferred: studio has no module deep-link routing;
-  needs a renderer-core change under concurrent edit.
-- **G5 BLOCKED (founder action required, since round 1):** the backfill
-  script packages/firebase/scripts/backfill-founder-seat.ts is ready
-  (idempotency-guarded, self-verifying; writes founders/{uid} +
-  subscriptions/{uid} + users/{uid} + entitlements + founders_meta for
-  founder g2AcFApNZvQKYlGg0LQuVADCFoO2 as seat 1 "wiil" with a real
-  verification hash, plus an honest founder_github_commit_queue entry for
-  the deferred GitHub commit). Google requires reauth on this machine:
-  `gcloud auth application-default login` (browser flow). Verified round
-  1/2/3: ADC mtime unchanged, print-access-token fails invalid_rapt, both
-  firebase CLI ADCs also stale. After the founder runs the command:
-  `cd packages/firebase && npx tsx scripts/backfill-founder-seat.ts`,
-  verify the readback, then record the hash/seat in the ledger.
+Shipped then: `7e47e7d05` perf(web) startup-JS cut (~640KB, minified deploy
+build), `825e0ef44` perf lazy landing sections + deferred Sentry. Measured:
+studio login JS transfer 1.91MB → 1.12MB; landing FCP ~430-730ms. Details in
+git history; CI runs 32375459143 + 32388085318 green at the time.

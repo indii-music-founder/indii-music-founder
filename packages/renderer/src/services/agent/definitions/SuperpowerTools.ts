@@ -82,6 +82,42 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         parameters: { type: 'OBJECT', properties: {} }
     },
     {
+        name: 'save_note',
+        description: 'Save a text note to the creator\'s Notes module (ideas, decisions, summaries, transcriptions). Use whenever the creator asks to remember or note something.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                title: { type: 'STRING', description: 'Short note title. Optional; a timestamped default is used when omitted.' },
+                content: { type: 'STRING', description: 'The note body text.' },
+            },
+            required: ['content']
+        }
+    },
+    {
+        name: 'save_media_note',
+        description: 'Attach a stored media URL (image, audio, video) to the Notes module, optionally into an existing note.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                url: { type: 'STRING', description: 'Stored media URL to attach.' },
+                noteId: { type: 'STRING', description: 'Existing note ID to append to. Omit to create a new media note.' },
+                description: { type: 'STRING', description: 'What the media shows or contains.' },
+            },
+            required: ['url']
+        }
+    },
+    {
+        name: 'list_notes',
+        description: 'Read the creator\'s saved notes (most recent first), optionally filtering by words in the title, body, or tags. Use before claiming nothing is noted down.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                query: { type: 'STRING', description: 'Words to match in note titles, bodies, or tags.' },
+                limit: { type: 'NUMBER', description: 'Max notes to return (1-25, default 10).' },
+            },
+        }
+    },
+    {
         name: 'browse_local_files',
         description: 'Search metadata from folders the creator previously approved in the open Studio app. Returns names and relative paths only; never file contents or absolute paths.',
         parameters: {

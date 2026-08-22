@@ -92,7 +92,9 @@ describe('AgentChat Standby dispatch', () => {
             expect(mocks.sendCommand).toHaveBeenCalledWith(
                 'Wake up and open the session',
                 undefined,
-                undefined,
+                // The Controller must tell the desktop which mode THIS surface
+                // selected; the desktop no longer routes by its own UI state.
+                expect.objectContaining({ conversationMode: 'boardroom' }),
                 'studio'
             );
         });

@@ -22,7 +22,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { agentService } from '@/services/agent/AgentService';
+import { agentService, resolveRemoteConversationMode } from '@/services/agent/AgentService';
 import { entryCommandService } from '@/services/commands/EntryCommandService';
 import {
     remoteRelayService,
@@ -215,21 +215,25 @@ export function resolveShowMeResponse(history: HistoryItem[] | undefined): ShowM
     };
 }
 
-function findLatestRemoteAgentResponse(startedAt: number): AgentMessage | undefined {
+/**
+ * All final model messages produced at-or-after `startedAt`, oldest first.
+ * A boardroom run appends ONE message per seated agent; relaying only the
+ * last one silently dropped the rest of the discussion from the phone.
+ */
+export function collectRemoteAgentResponses(startedAt: number): AgentMessage[] {
     const state = useStore.getState();
-    const messages = state.conversationMode === 'boardroom'
-        ? state.agentHistory
-        : state.agentHistory;
-
-    return [...messages]
-        .reverse()
-        .find(message =>
+    return state.agentHistory
+        .filter(message =>
             message.role === 'model' &&
             Boolean(message.text?.trim()) &&
             message.timestamp >= startedAt &&
             !message.isStreaming
-        );
+        )
+        .sort((a, b) => a.timestamp - b.timestamp);
 }
+
+/** Upper bound on relayed responses per command so a large seated boardroom cannot fan out unbounded Firestore writes. */
+export const MAX_REMOTE_AGENT_RESPONSES = 12;
 
 // ---------------------------------------------------------------------------
 // Vite HTTP Relay Fallback (for dev mode without auth)
@@ -907,14 +911,23 @@ function useFirestoreRelay(enabled: boolean) {
                     return;
                 }
 
+                const remoteMode = resolveRemoteConversationMode(command.metadata?.conversationMode);
                 await agentService.sendMessage(
                     text,
                     undefined,
                     command.targetAgentId,
-                    { source: 'mobile-remote' }
+                    {
+                        source: 'mobile-remote',
+                        // The Controller picks Boardroom / Department / Direct +
+                        // target in its own UI; without this override the run
+                        // followed whatever mode the desktop last used.
+                        ...(remoteMode
+                            ? { conversationModeOverride: remoteMode, targetOverride: command.targetAgentId }
+                            : {}),
+                    }
                 );
 
-                const response = findLatestRemoteAgentResponse(startedAt);
+                const responses = collectRemoteAgentResponses(startedAt);
 
                 // sendMessage() queues and returns silently when the desktop
                 // is mid-run. Reporting the literal fallback below in that
@@ -922,7 +935,7 @@ function useFirestoreRelay(enabled: boolean) {
                 // and the queued run later produced no relay response at all.
                 // When no new model message exists AND the desktop is still
                 // busy, say exactly what happened instead.
-                if (shouldReportQueuedChatToRemote(!!response, agentService.isAgentBusy)) {
+                if (shouldReportQueuedChatToRemote(responses.length > 0, agentService.isAgentBusy)) {
                     logger.info('[RemoteRelay/Firestore] 💬 Chat queued behind an active desktop agent run');
                     writeDiagnostic('agent_chat_queued_desktop_busy', { commandId: command.id });
                     await remoteRelayService.sendResponse(
@@ -935,16 +948,35 @@ function useFirestoreRelay(enabled: boolean) {
                     return;
                 }
 
-                await remoteRelayService.sendResponse(
-                    command.id,
-                    response?.text?.trim() || 'Done.',
-                    response?.agentId || command.targetAgentId || 'generalist',
-                    false,
-                    undefined,
-                    response?.id
-                );
+                // A boardroom run produces one message per seated agent — relay
+                // ALL of them so the phone sees the full discussion, each bubble
+                // attributed to its agent (and rateable), not just the last
+                // speaker. Single-agent runs produce exactly one, unchanged.
+                if (responses.length > MAX_REMOTE_AGENT_RESPONSES) {
+                    logger.warn(`[RemoteRelay/Firestore] Relaying first ${MAX_REMOTE_AGENT_RESPONSES} of ${responses.length} agent responses for ${command.id}`);
+                }
+                const relayed = responses.slice(0, MAX_REMOTE_AGENT_RESPONSES);
+                for (const response of relayed) {
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        response.text.trim(),
+                        response.agentId || command.targetAgentId || 'generalist',
+                        false,
+                        undefined,
+                        response.id
+                    );
+                }
+
+                if (relayed.length === 0) {
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        'Done.',
+                        command.targetAgentId || 'generalist',
+                        false
+                    );
+                }
                 await remoteRelayService.markCommandCompleted(command.id);
-                writeDiagnostic('agent_chat_done', { commandId: command.id });
+                writeDiagnostic('agent_chat_done', { commandId: command.id, responsesRelayed: relayed.length });
                 return;
             }
         } catch (error: unknown) {

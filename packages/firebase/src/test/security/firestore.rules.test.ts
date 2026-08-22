@@ -1585,6 +1585,34 @@ describe('Firestore Security Rules', () => {
             ));
         });
 
+        it('accepts the Controller conversation-mode hint and rejects unknown modes or keys in metadata', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const commands = collection(db, 'users', ALICE_UID, 'remote-relay-commands');
+            const base = {
+                text: 'Boardroom: how do we price this release?',
+                status: 'pending',
+                executionTarget: 'studio',
+                timestamp: Timestamp.now(),
+                createdAt: Timestamp.now(),
+            };
+
+            for (const mode of ['boardroom', 'department', 'direct']) {
+                await assertSucceeds(setDoc(
+                    doc(commands, `mode-${mode}`),
+                    { ...base, metadata: { conversationMode: mode, source: 'mobile-remote' } }
+                ));
+            }
+            await assertFails(setDoc(
+                doc(commands, 'mode-invalid'),
+                { ...base, metadata: { conversationMode: 'orchestrated' } }
+            ));
+            await assertFails(setDoc(
+                doc(commands, 'metadata-polluted'),
+                { ...base, metadata: { conversationMode: 'boardroom', isAdmin: true } }
+            ));
+        });
+
         it('allows cancellation to change only status, never the queued payload', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();

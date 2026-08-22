@@ -303,7 +303,13 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             const commandId = await remoteRelayService.sendCommand(
                 userText,
                 targetAgentId,
-                entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : undefined,
+                {
+                    // The desktop must route by what THIS surface selected
+                    // (Boardroom / Department / Direct), not by whatever mode
+                    // the desktop Studio last had open.
+                    conversationMode: selectedMode,
+                    ...(entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : {}),
+                },
                 'studio'
             );
             if (!commandId) throw new Error('Failed to send command');

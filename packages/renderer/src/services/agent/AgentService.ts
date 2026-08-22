@@ -29,6 +29,26 @@ import {
 } from '@/services/persona/PersonaResponseMetadata';
 
 /**
+ * Per-send options. `conversationModeOverride` + `targetOverride` exist for
+ * remote-originated sends: the phone picks Boardroom / Department / Direct +
+* agent in ITS UI, and without an explicit override the run silently followed
+ * whatever mode the desktop Studio happened to be sitting in.
+ */
+export interface AgentSendOptions {
+    source?: 'desktop' | 'mobile-remote' | 'background' | 'api';
+    originalBrief?: string;
+    /** Remote mode selection; validated against the three concrete T1 modes before use. */
+    conversationModeOverride?: 'boardroom' | 'department' | 'direct';
+    /** Agent (direct) or department id chosen by the remote sender. */
+    targetOverride?: string;
+}
+
+/** Guard so a malformed relay payload can never select an execution path. */
+export function resolveRemoteConversationMode(raw: unknown): AgentSendOptions['conversationModeOverride'] | undefined {
+    return raw === 'boardroom' || raw === 'department' || raw === 'direct' ? raw : undefined;
+}
+
+/**
  * AgentService is the primary entry point for agent-related operations.
  * It manages the lifecycle of user messages, context resolution, orchestration, and execution.
  */
@@ -56,7 +76,7 @@ export class AgentService {
         text: string;
         attachments?: { mimeType: string; base64: string }[];
         forcedAgentId?: string;
-        options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api', originalBrief?: string };
+        options?: AgentSendOptions;
     }[] = [];
     private isWarmedUp = false;
     private contextPipeline: ContextPipeline;
@@ -252,7 +272,7 @@ export class AgentService {
         text: string,
         attachments?: { mimeType: string; base64: string }[],
         forcedAgentId?: string,
-        options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api', originalBrief?: string }
+        options?: AgentSendOptions
     ): Promise<void> {
         if (this.isProcessing) {
             // A previous run may legitimately still be finishing in the
@@ -412,7 +432,7 @@ export class AgentService {
             // outer cleanup never runs while the run is still live — that
             // would kill the Stop button and allow a second concurrent run.
             flowSettled = false;
-            flowPromise = this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId, executionSignal).then(() => {
+            flowPromise = this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId, executionSignal, options).then(() => {
                 const currentState = store.getState();
                 const resultMsg = isBoardroomMode 
                     ? (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId)
@@ -583,13 +603,16 @@ export class AgentService {
         context: AgentContext,
         responseId: string,
         forcedAgentId?: string,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        options?: AgentSendOptions
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
         const { updateAgentMessage } = state;
-        const conversationMode = state.conversationMode;
-        
+        // Remote sends carry the sender's chosen mode; everything else keeps
+        // following the desktop UI's own conversation mode.
+        const conversationMode = options?.conversationModeOverride ?? state.conversationMode;
+
         // Auto is a UI routing mode, not an agent-to-agent communication
         // permission. Concrete execution paths assign their existing T1 mode.
         context.conversationMode = conversationMode === 'orchestrated' ? undefined : conversationMode;
@@ -614,12 +637,14 @@ export class AgentService {
 
         if (conversationMode === 'department') {
             logger.debug('[AgentService] Routing to department flow');
-            await this.handleDepartmentFlow(text, attachments, context, responseId, signal);
+            await this.handleDepartmentFlow(text, attachments, context, responseId, signal, options);
             return;
         }
 
         if (conversationMode === 'direct') {
-            const targetAgentId = state.directTargetAgentId || 'generalist';
+            // A remote sender's explicitly chosen agent wins over whatever the
+            // desktop UI last targeted directly.
+            const targetAgentId = (options?.targetOverride ?? state.directTargetAgentId) || 'generalist';
             if (state.activeAgentProvider === 'direct' && targetAgentId === 'generalist') {
                 logger.debug('[AgentService] Routing to direct chat flow (provider override) for generalist');
                 await this.handleDirectChatFlow(text, attachments, context, responseId);
@@ -804,11 +829,14 @@ export class AgentService {
         attachments: { mimeType: string; base64: string }[] | undefined,
         context: AgentContext,
         responseId: string,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        options?: AgentSendOptions
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
-        const { updateAgentMessage, activeDepartmentId } = state;
+        const { updateAgentMessage } = state;
+        // Remote sends carry the department the sender picked in their own UI.
+        const activeDepartmentId = options?.targetOverride ?? state.activeDepartmentId;
 
         if (!activeDepartmentId) {
             updateAgentMessage(responseId, { text: '❌ No department selected.' });

@@ -321,11 +321,12 @@ service cloud.firestore {
 
     function isValidRemoteRelayMetadata(metadata) {
       return metadata is map &&
-        metadata.keys().hasOnly(['aspectRatio', 'type', 'entryCommandId', 'source']) &&
+        metadata.keys().hasOnly(['aspectRatio', 'type', 'entryCommandId', 'source', 'conversationMode']) &&
         (!('aspectRatio' in metadata) || isValidString(metadata.aspectRatio, 1, 16)) &&
         (!('type' in metadata) || isValidString(metadata.type, 1, 64)) &&
         (!('entryCommandId' in metadata) || isValidString(metadata.entryCommandId, 1, 80)) &&
-        (!('source' in metadata) || isValidString(metadata.source, 1, 40));
+        (!('source' in metadata) || isValidString(metadata.source, 1, 40)) &&
+        (!('conversationMode' in metadata) || metadata.conversationMode in ['boardroom', 'department', 'direct']);
     }
 
     function isValidRemoteRelayCommand(data) {
