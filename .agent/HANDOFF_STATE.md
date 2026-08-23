@@ -32,6 +32,10 @@ across notes tools, mode resolution, transcript collection, rules metadata);
 typecheck green; lint 0 errors; production build green; rules test extended
 for the new metadata key (emulator suites run in CI).
 
+## Next up (PLANNED, not started)
+
+**`docs/REMOTE_EXECUTOR_CORE_PLAN.md`** — founder directive (2026-08-22, adopted as plan of record): separate remote-executor lifecycle from React renderer lifecycle via StudioExecutorCore + StudioExecutionAdapter, then move the Core to the smallest safe background runtime. Phased, test-first, single-executor invariant. The doc includes §19 evidence annotations from this session: verified claims (audio proxy boundary, no existing utilityProcess infra), corrections for same-day shipped work that moved its premises (freshness contract, lease-gated writes, lock/queue shapes), and a defined Phase-1 first work package.
+
 ## Known follow-ups (NOT done, deliberately out of scope)
 
 - Real two-device validation (iPhone ↔ Electron) still required before
