@@ -622,6 +622,9 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         const session: Partial<Stripe.Checkout.Session> = {
             id: 'cs_mkt_001',
             payment_status: 'paid',
+            // Fulfillment authority (P0 fix): the paid amount must equal the
+            // server-reserved price, so the fixture carries the real amount.
+            amount_total: 999,
             metadata: {
                 type: 'marketplace_purchase',
                 reservationId: 'res-1',
@@ -650,6 +653,10 @@ describe('Stripe Webhook Handler (WO-8)', () => {
                     exists: true,
                     data: () => ({
                         status: 'reserved',
+                        // Fulfillment authority (P0 fix): the reservation is
+                        // bound to the Stripe session that created it, exactly
+                        // as createMarketplaceCheckout persists it.
+                        stripeSessionId: 'cs_mkt_001',
                         buyerId: 'buyer-1',
                         sellerId: 'seller-1',
                         productId: 'prod-1',
