@@ -928,7 +928,7 @@ Summary: **A ≈ 17 items** form a coherent Core; **B/C ≈ 7** belong behind th
 |---|---|---|
 | command receipt | GAP-G1 | subscription wiring untested; testable via Core `start()/stop()` post-extraction |
 | cloud vs studio filtering | ✅ | `shouldProcessStudioCommand` + `resolveRemoteCommandExecutionTarget` truth tables |
-| atomic claiming (commands) | ✅ verdict mapping / GAP-G2 transaction | lease suite asserts callable delegation; server transaction untested (see G2) |
+| atomic claiming (commands) | ✅ both sides | renderer lease suite asserts callable delegation; server transaction semantics now pinned in `issueStudioExecutorLease.test.ts` (G2 closed) |
 | duplicate-listener protection | GAP-G1 | `isProcessing` closure-internal |
 | Studio lease behavior | ✅ | lease suite: cache floor, expiry re-issue, browser refusal, payload shapes |
 | heartbeat/presence freshness | ✅ predicates / GAP-G1 loop | advance-forgery + skew tests; loop emission structural |
@@ -948,7 +948,7 @@ Summary: **A ≈ 17 items** form a coherent Core; **B/C ≈ 7** belong behind th
 
 **Gap classes:**
 - **G1 — harness gaps:** untestable until the Core exposes `start()/stop()` lifecycle (Phase 2 makes them testable by design). Nine items.
-- **G2 — cloud-side:** the six lease callables in `packages/firebase/src/functions/remote/` have NO unit tests. The renderer suite pins client payloads; server-side lease validation/expiry/ownership logic is unpinned. Recommend a `packages/firebase` callable test suite as its own follow-up unit (out of Phase-1 renderer scope, flagged per §11).
+- **G2 — cloud-side: CLOSED (2026-08-22).** `packages/firebase/src/functions/remote/issueStudioExecutorLease.test.ts` now pins all six callables server-side: auth gates, deviceId/enrollmentSecret/instanceId schema, keychain-secret hashing (raw secret never persisted), token rotation with createdAt preservation, lease expiry/token-mismatch rejection, protocol-version precondition, presence projection defaults + slice caps, instance-scoped release (never clobbers a newer Studio takeover), claim gating on pending+studio-target only, response ownership + sanitizer caps + isFinal logic, completion ownership + no-op off `processing`, and registration posture (`us-central1`, app-check disabled).
 
 ### 20.3 Phase-1 exit check (§19.4)
 
