@@ -169,7 +169,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes --draft=false 2>/dev/null || true
+          # ISSUE-1163 prevention (4): idempotency made explicit. The old
+          # `gh release create ... 2>/dev/null || true` swallowed EVERY failure
+          # (auth, permissions, network) across 3 concurrent matrix legs — not
+          # just the benign "already exists" race. Failures now surface.
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists (created by a concurrent matrix leg) — reusing it."
+          else
+            if ! gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes --draft=false; then
+              # Concurrent-leg race: the other leg created it between view and create.
+              gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null
+            fi
+          fi
 
           shopt -s nullglob
           FILES=(dist-electron/*.dmg dist-electron/*.dmg.blockmap dist-electron/*-mac.zip dist-electron/*-mac.zip.blockmap \
@@ -288,3 +299,51 @@ jobs:
         if: always()
         shell: bash
         run: rm -f $HOME/gcloud-key.json
+
+  # ISSUE-1163 prevention (1+2): FEED-LEVEL verification. The per-runner
+  # "Verify updater manifest was published" step only proves THIS leg's asset
+  # landed on the tag's own release. It cannot see the failure mode where the
+  # STABLE channel resolves to some other release (prerelease-flipped tags,
+  # empty legacy releases like v1.50.0) — leaving every installed client 404ing
+  # on its manifest with a green release run. This job runs ONCE, after all
+  # three matrix legs have published, and asserts what users actually consume.
+  verify-update-feed:
+    name: Verify stable update feed resolves to this tag
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stable feed must resolve to this tag, with assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          LATEST_TAG=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
+          ASSET_COUNT=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.assets | length')
+          echo "Stable channel resolves to: $LATEST_TAG ($ASSET_COUNT assets)"
+          if [ "$LATEST_TAG" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Stable update feed resolves to '$LATEST_TAG', not this tag '$GITHUB_REF_NAME'. Installed clients will keep updating to (or failing on) the wrong release. If this tag is intentionally a prerelease, repair/flip the real stable release instead of bypassing this gate."
+            exit 1
+          fi
+          if [ "$ASSET_COUNT" -eq 0 ]; then
+            echo "::error::Stable-channel latest release '$LATEST_TAG' has ZERO assets (the v1.50.0 failure mode). electron-updater will 404 on every manifest and every desktop client will show 'cannot check for updates'."
+            exit 1
+          fi
+
+      - name: All three manifests live at this tag's version
+        run: |
+          set -euo pipefail
+          EXPECTED_VERSION="${GITHUB_REF_NAME#v}"
+          for MANIFEST in latest-mac.yml latest.yml latest-linux.yml; do
+            URL="https://github.com/$GITHUB_REPOSITORY/releases/latest/download/$MANIFEST"
+            if ! MANIFEST_BODY=$(curl -fsSL "$URL"); then
+              echo "::error::$URL not reachable (non-200). Stable clients cannot check for updates."
+              exit 1
+            fi
+            FOUND_VERSION=$(printf '%s' "$MANIFEST_BODY" | tr -d '\r' | grep '^version:' | head -n 1 | sed 's/^version:[[:space:]]*//')
+            echo "$MANIFEST -> version $FOUND_VERSION"
+            if [ "$FOUND_VERSION" != "$EXPECTED_VERSION" ]; then
+              echo "::error::$MANIFEST serves version '$FOUND_VERSION' but this tag is '$EXPECTED_VERSION'. The stable feed is pointing clients at the wrong build."
+              exit 1
+            fi
+          done
+          echo "Stable update feed verified: all three manifests serve $EXPECTED_VERSION."

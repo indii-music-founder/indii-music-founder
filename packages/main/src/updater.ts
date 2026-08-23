@@ -48,7 +48,12 @@ export function formatUpdaterErrorMessage(err: unknown): string {
         lowerMessage.includes("does not have a valid semver version: 'undefined'");
 
     if (isMissingManifest) {
-        return `${RELEASE_DISPLAY_NAME} cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again.`;
+        // ISSUE-1163 prevention (5): the old string handed end users publisher
+        // instructions ("Publish a repaired release with latest-mac.yml...").
+        // Technical detail goes to the log for maintainers; the user gets an
+        // honest, non-jargonic status.
+        log.error(`[Updater] Update feed is serving a broken release (missing updater manifest). Technical detail: ${message}`);
+        return 'Updates are temporarily unavailable. Your current version keeps working \u2014 please try again later.';
     }
 
     return message;

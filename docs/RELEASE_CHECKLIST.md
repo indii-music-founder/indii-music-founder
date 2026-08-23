@@ -29,6 +29,19 @@ new macOS release can ship at all** until real signing secrets are added.
 - [ ] Once a verified signed release exists, decide whether to leave
       `v1.64.6`/`v1.64.5` as prerelease permanently or delete them.
 
+### Incident-pull runbook — verify the stable feed after ANY release surgery (ISSUE-1163)
+
+Flipping a release to prerelease, deleting a release, or publishing a new one changes which
+release the stable updater channel resolves to. The 2026-07-10 pull correctly stopped serving
+broken installers but silently left every desktop client unable to check for updates, because
+the resolved fallback (`v1.50.0`) had zero assets. CI now gates this on every tag
+(`release.yml` job `verify-update-feed`), but any MANUAL release surgery must re-run the same
+checks immediately afterwards:
+
+- [ ] `curl -fsSL https://github.com/indii-music-founder/indii-music-founder/releases/latest/download/latest-mac.yml` returns 200 — repeat for `latest.yml` and `latest-linux.yml`
+- [ ] Each manifest's `version:` field equals the newest signed-and-verified release
+- [ ] `gh api repos/indii-music-founder/indii-music-founder/releases/latest --jq '.assets | length'` is greater than 0
+
 ## Human Action Items — Desktop Signing & Notarization
 
 These are real-world account/certificate tasks that an agent cannot complete
