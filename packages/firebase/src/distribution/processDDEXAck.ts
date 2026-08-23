@@ -97,6 +97,16 @@ export const processDDEXAck = onObjectFinalized({
         return;
     }
 
+    // Never process archived ACKs. Successful processing MOVES the file to
+    // ddex-acks/processed/, and a same-bucket move fires a new
+    // onObjectFinalized for the destination — without this guard the moved
+    // copy still matches the prefix above and reprocesses (and moves again)
+    // forever, duplicating release updates and storage charges per delivery.
+    if (filePath.includes('processed/')) {
+        logger.info(`[processDDEXAck] Skipping archived ACK: ${filePath}`);
+        return;
+    }
+
     // Only process XML files
     if (!filePath.endsWith('.xml') && !filePath.endsWith('.ack')) {
         logger.info(`[processDDEXAck] Skipping non-XML file: ${filePath}`);

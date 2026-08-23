@@ -8,6 +8,13 @@ export const videoJobFirestoreOrchestrator = onDocumentWritten(
     document: 'videoJobs/{jobId}',
     region: 'us-central1',
     memory: '512MiB',
+    // This trigger awaits executeVideoJob inline (submit + poll loop +
+    // download/upload). Without an explicit deadline the Gen2 default of 60s
+    // kills real generations mid-poll, stranding `processing` jobs while the
+    // provider keeps running — and the reaper then VOIDs a reservation the
+    // provider is still billing. 540s mirrors the maximum poll horizon with
+    // headroom for the download/upload tail.
+    timeoutSeconds: 540,
   },
   async (event) => {
     const snapshot = event.data;

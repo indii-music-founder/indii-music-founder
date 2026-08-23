@@ -97,6 +97,19 @@ describe('executeVideoJob — v2 CloudEvent contract', () => {
         expect(mocks.generateVideoDirect).not.toHaveBeenCalled();
     });
 
+    it('skips typed jobs owned by dedicated workers (long_form, render_stitch)', async () => {
+        // Long-form is owned by the Inngest daisychain; without the type stamp
+        // + gate, the legacy worker started a SECOND billable Veo run racing it.
+        await invoke(cloudEvent({ status: 'queued', userId: 'u1', prompt: 'p', type: 'long_form', isLongForm: true }));
+        expect(mocks.generateVideoDirect).not.toHaveBeenCalled();
+
+        // Render-stitch docs carry no prompt; the legacy worker used to
+        // auto-fail them (a terminal write) before the stitch pipeline ran.
+        await invoke(cloudEvent({ status: 'queued', userId: 'u1', type: 'render_stitch' }));
+        expect(mocks.generateVideoDirect).not.toHaveBeenCalled();
+        expect(mocks.docSet).not.toHaveBeenCalled();
+    });
+
     it('fails the job closed when required fields are missing, without generating', async () => {
         await invoke(cloudEvent({ status: 'queued', prompt: 'p' })); // no userId
         expect(mocks.generateVideoDirect).not.toHaveBeenCalled();

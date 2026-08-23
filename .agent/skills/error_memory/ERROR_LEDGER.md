@@ -2092,3 +2092,35 @@ committing.
 - ERROR: Three silent capability gaps. (1) The Controller's mode picker was decorative: AgentChat sent no mode, executeFlow routed by the DESKTOP's own conversationMode/directTargetAgentId/activeDepartmentId, so a phone Boardroom broadcast or "Direct → Finance" followed whatever the desktop UI last used. (2) A boardroom run appends one model message per seated agent, but the relay forwarded only the LAST message via findLatestRemoteAgentResponse — the rest of the discussion never reached the phone. (3) NotesTools (save/save_media) existed but were declared in ZERO tool pools and absent from BaseAgent.functions, so chat agents could not save or list notes on ANY surface; captures worked only because they bypassed chat.
 - FIX: Phone now sends `metadata.conversationMode`; relay validates it (`resolveRemoteConversationMode`) and passes `conversationModeOverride` + `targetOverride` through sendMessage options; executeFlow/handleDepartmentFlow prefer overrides, desktop-initiated behavior unchanged. Relay forwards ALL final agent messages (capped at 12), each attributed and rateable. save_note/save_media_note/list_notes declared in SUPERPOWER_TOOLS (every agent), implemented in BaseAgent.functions, risk-registry entries added. Firestore rules metadata allowlist extended with the enum-checked conversationMode key BEFORE shipping (old allowlist would have permission-denied every phone chat).
 - PREVENTION: When a surface offers a choice, transmit it end-to-end and test that the receiving side honors it — UI-only state on a remote controller is a lie. New server-side capabilities need their tool declaration, function implementation, risk entry, AND rules schema shipped together; an unlisted metadata key is a production write failure, not a soft degradation.
+
+## 2026-08-22 (audit) Payment metadata spread let clients override webhook routing — $0.01 minted arbitrary credits
+
+- SEVERITY: Critical
+- FILES: `packages/firebase/src/subscription/createOneTimeCheckout.ts`, `packages/firebase/src/stripe/webhookHandler.ts`
+- ERROR: `createOneTimeCheckout` built session metadata as `{ userId, type: 'one_time', ...clientMetadata }` — the CLIENT spread came AFTER the server-set discriminator. The webhook routes fulfillment purely on `session.metadata.type`, so a client could pay $0.01 through the generic one-time path carrying `metadata:{type:'micro_transaction', credits:'1000000'}` and mint a million credits, or `type:'marketplace_purchase'` + a foreign reservationId to complete a full-price purchase. The micro handler also trusted `metadata.credits` with zero price verification, and marketplace completion never checked the reservation's bound session.
+- FIX: Reserved keys (`type`, `userId`) are stripped from client metadata in the callable and server values are stamped LAST. Defense in depth in the webhook: the micro handler re-retrieves the live Stripe session and requires exactly one line item at STRIPE_PRICE_CREDIT_PACK with quantity == credits before touching `user_credits`; marketplace completion requires `reservation.stripeSessionId === session.id` AND `amount_total === reservation.priceCents`. Regression tests: `createOneTimeCheckout.test.ts`, `webhookHandler.fulfillment-guards.test.ts`.
+- PREVENTION: KNOWN-REGRESSION of "payment metadata is never the authority itself" (2026-08-08) — the specific mechanism was a spread ORDER bug. Never spread client-supplied objects over server discriminators; stamp server values last, or better, never accept reserved keys at all. Every webhook branch must re-derive entitlements from provider state, not from metadata the client could influence.
+
+## 2026-08-22 (audit) Storage trigger moved files into a sub-prefix of its own watch path → infinite self-retrigger
+
+- SEVERITY: High (runaway cost + duplicated release updates per DDEX ACK)
+- FILES: `packages/firebase/src/distribution/processDDEXAck.ts`
+- ERROR: The trigger guarded on `filePath.startsWith('ddex-acks/')` then archived success by moving the file to `ddex-acks/processed/…`. A same-bucket `File.move` copies+deletes, firing a NEW onObjectFinalized for the destination — which still matched the guard, so every successfully processed ACK looped forever (parse → audit write → release update → move deeper).
+- FIX: Early-return when `filePath.includes('processed/')`. Regression test: `processDDEXAck.test.ts` asserts the moved-copy event is ignored before any download.
+- PREVENTION: A trigger's archive/destination path must live OUTSIDE its own event filter, or the filter must exclude the archive prefix explicitly. Any handler that writes/moves objects under a pattern it also subscribes to must prove the write cannot re-fire itself.
+
+## 2026-08-22 (audit) Shared videoJobs collection: legacy worker double-ran long-form jobs and auto-failed render_stitch jobs
+
+- SEVERITY: High (double billable Veo generations; stitch pipeline born terminal-failed)
+- FILES: `packages/firebase/src/index.ts`
+- ERROR: The legacy executeVideoJob skip gate only excluded `workerVersion === 'gateway-video-v3' || type === 'video'`. Long-form job docs carried neither field (only `isLongForm: true`) yet were ALSO dispatched to the Inngest daisychain → two workers generated one job (duplicate provider spend, racing status writes). Render-stitch docs carry `type:'render_stitch'` but no `prompt`, so the legacy worker immediately wrote terminal `failed` before the stitch pipeline started.
+- FIX: Long-form docs now stamped `type:'long_form'`; legacy gate widened to skip ANY typed/versioned job (`data.type !== undefined || data.workerVersion === 'gateway-video-v3'`). Untyped unversioned triggerVideoJob records remain the legacy worker's exclusive owners. Regression tests extended in `executeVideoJob.cloudevent.test.ts`.
+- PREVENTION: A shared trigger collection needs an explicit OWNERSHIP FIELD convention enforced by every writer and checked by one gate ("no owner fields = legacy"). Adding a new producer to a shared collection requires auditing EVERY existing trigger that matches the collection pattern.
+
+## 2026-08-22 (audit) Firestore trigger awaiting a multi-minute pipeline without an explicit timeoutSeconds
+
+- SEVERITY: High (every real video generation killed mid-poll; reservation VOIDed while provider kept billing)
+- FILES: `packages/firebase/src/functions/creative/videoJobOrchestrator.ts`
+- ERROR: `videoJobFirestoreOrchestrator` awaited `executeVideoJob` inline (submit + up to 90×5s polls + download/upload) with options `{document, region, memory}` only. Gen2 default timeout is 60s, so any generation longer than ~60s died mid-poll, stranding `processing` jobs; the reaper then VOIDED the cost reservation while the provider operation kept running.
+- FIX: Explicit `timeoutSeconds: 540` matching the poll horizon's ceiling plus tail headroom.
+- PREVENTION: Any function that AWAITS long work inline must declare its deadline explicitly — never inherit platform defaults. Better: keep triggers thin and dispatch long work to Cloud Tasks/Inngest with their own deadlines (see `dispatchSessionProxyJob`'s `dispatchDeadline: 1800`).

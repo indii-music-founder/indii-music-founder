@@ -543,11 +543,14 @@ export const executeVideoJob = onDocumentCreated(
             logger.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
             return;
         }
-        // Versioned gateway jobs are owned exclusively by the Gen2
-        // videoJobFirestoreOrchestrator. The legacy worker handles only
-        // unversioned triggerVideoJob records.
-        if (data.workerVersion === 'gateway-video-v3' || data.type === 'video') {
-            logger.log(`[executeVideoJob] Skipping versioned gateway job ${jobId}.`);
+        // Typed or versioned jobs are owned by their dedicated workers
+        // (videoJobFirestoreOrchestrator for gateway-video-v3, the Inngest
+        // daisychain for long_form, the stitch pipeline for render_stitch).
+        // The legacy worker handles ONLY untyped, unversioned triggerVideoJob
+        // records — anything else it touches it either duplicates (long-form:
+        // a second billable Veo run) or auto-fails (render_stitch: no prompt).
+        if (data.workerVersion === 'gateway-video-v3' || data.type !== undefined) {
+            logger.log(`[executeVideoJob] Skipping job ${jobId} owned by a dedicated worker (type=${String(data.type ?? '')}, version=${String(data.workerVersion ?? '')}).`);
             return;
         }
 
@@ -676,6 +679,10 @@ export const triggerLongFormVideoJob = onCall(
                 orgId: orgId || "personal",
                 prompt: prompts[0], // Main prompt
                 status: "queued",
+                // Typed jobs are excluded from the legacy executeVideoJob
+                // worker (see its skip gate); long-form generation is owned
+                // exclusively by the Inngest daisychain dispatched below.
+                type: "long_form",
                 isLongForm: true,
                 totalSegments: prompts.length,
                 completedSegments: 0,

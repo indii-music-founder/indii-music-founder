@@ -44,6 +44,20 @@ export const createOneTimeCheckout = onCall({
         throw new HttpsError('invalid-argument', 'At least one item is required.');
     }
 
+    // SECURITY: client metadata may never override the server-set routing
+    // discriminator (`type`) or identity (`userId`). The webhook routes
+    // fulfillment purely on session.metadata.type, so letting a client spread
+    // those keys would let a $0.01 one-time payment mint credits or complete
+    // marketplace purchases. Reserved keys are stripped here and the server
+    // values are stamped LAST in the session metadata below so they always win.
+    const RESERVED_METADATA_KEYS = ['type', 'userId'];
+    const safeClientMetadata: Record<string, string> = {};
+    for (const [key, value] of Object.entries(metadata ?? {})) {
+        if (typeof value === 'string' && !RESERVED_METADATA_KEYS.includes(key)) {
+            safeClientMetadata[key] = value;
+        }
+    }
+
     try {
         const lineItems: any[] = items.map((item) => ({
             price_data: {
@@ -88,15 +102,15 @@ export const createOneTimeCheckout = onCall({
             automatic_tax: { enabled: true },
             payment_intent_data: {
                 metadata: {
+                    ...safeClientMetadata,
                     userId,
                     type: 'one_time',
-                    ...metadata,
                 },
             },
             metadata: {
+                ...safeClientMetadata,
                 userId,
                 type: 'one_time',
-                ...metadata,
             },
             client_reference_id: userId,
         });

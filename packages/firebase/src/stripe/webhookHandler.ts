@@ -42,9 +42,40 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
 
   const userId = session.metadata?.userId;
   const credits = parseInt(session.metadata?.credits || '0', 10);
-  
+
   if (!userId || isNaN(credits) || credits <= 0) {
     logger.error('[handleMicroTransaction] Invalid metadata for micro-transaction');
+    return;
+  }
+
+  // SECURITY (defense in depth): metadata alone is never authority for
+  // minting credits. A genuine credit-pack session was created by
+  // createMicroTransaction with exactly one line item priced at the
+  // configured STRIPE_PRICE_CREDIT_PACK and quantity == credits. Re-read the
+  // session from Stripe and require that shape before touching user_credits,
+  // so a forged or mis-routed session can never mint arbitrary credits.
+  const expectedPriceId = process.env.STRIPE_PRICE_CREDIT_PACK;
+  if (!expectedPriceId) {
+    logger.error('[handleMicroTransaction] STRIPE_PRICE_CREDIT_PACK is not configured — refusing to credit');
+    return;
+  }
+  let lineItems: Stripe.LineItem[] = [];
+  try {
+    const liveSession = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ['line_items'],
+    });
+    lineItems = liveSession.line_items?.data ?? [];
+  } catch (error: unknown) {
+    logger.error(`[handleMicroTransaction] Failed to re-retrieve session ${session.id} from Stripe — refusing to credit`, {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+  const singleLineItem = lineItems.length === 1 ? lineItems[0] : undefined;
+  if (!singleLineItem || singleLineItem.price?.id !== expectedPriceId || singleLineItem.quantity !== credits) {
+    logger.error(
+      `[handleMicroTransaction] Session ${session.id} does not match the configured credit pack (items=${lineItems.length}, price=${singleLineItem?.price?.id ?? 'none'}, qty=${singleLineItem?.quantity ?? 'n/a'}, credits=${credits}) — refusing to credit`,
+    );
     return;
   }
 
@@ -295,6 +326,23 @@ async function handleMarketplacePurchaseCompleted(session: Stripe.Checkout.Sessi
     // Idempotent: duplicate webhook delivery for an already-completed reservation is a no-op.
     if (reservation.status === 'completed') {
       logger.info(`[handleMarketplacePurchaseCompleted] Reservation ${reservationId} already completed — skipping`);
+      return;
+    }
+
+    // SECURITY (defense in depth): the reservation must be bound to THIS
+    // Stripe session, and the paid amount must equal the server-reserved
+    // price. A forged checkout carrying someone else's reservationId (or an
+    // underpaid session) must never complete that reservation.
+    if (reservation.stripeSessionId !== session.id) {
+      logger.error(
+        `[handleMarketplacePurchaseCompleted] Reservation ${reservationId} is bound to Stripe session ${maskId(String(reservation.stripeSessionId ?? ''))}, not ${maskId(session.id)} — refusing`,
+      );
+      return;
+    }
+    if (Number(session.amount_total) !== Number(reservation.priceCents)) {
+      logger.error(
+        `[handleMarketplacePurchaseCompleted] Paid amount ${String(session.amount_total)} != reserved ${String(reservation.priceCents)} for reservation ${reservationId} — refusing`,
+      );
       return;
     }
 
