@@ -42,5 +42,14 @@ export default tseslint.config(
         rules: {
             '@typescript-eslint/no-explicit-any': 'off',
         },
+    },
+    {
+        // Phase 4 guard (REMOTE_EXECUTOR_CORE_PLAN): the executor Core must
+        // stay host-portable — no DOM/browser globals in the class or contract
+        // files. Host bindings live in studioExecutorCore.wiring.ts instead.
+        files: ['**/services/remote/StudioExecutorCore.ts', '**/services/remote/studioExecutorContracts.ts'],
+        rules: {
+            'no-restricted-globals': ['error', 'document', 'window'],
+        },
     }
 );

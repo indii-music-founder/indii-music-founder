@@ -20,17 +20,7 @@
  */
 
 import { logger } from '@/utils/logger';
-import { auth } from '@/services/firebase';
-import { db } from '@/services/firebase';
-import { getRealAuthenticatedUserId } from '@/utils/authGuards';
-import { doc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
-import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import type { RemoteCommand } from '@/services/agent/RemoteRelayService';
-import { remoteRelayService } from '@/services/agent/RemoteRelayService';
-import { studioExecutorLeaseService } from '@/services/agent/StudioExecutorLeaseService';
-import { resolveRemoteCommandExecutionTarget } from '@/services/agent/RemoteRelayService';
-import { parseRemoteCommand } from '@/hooks/remoteCommandSecurity';
-import { createRendererExecutionAdapter } from './rendererExecutionAdapter';
 import {
     HEARTBEAT_INTERVAL_MS,
     PROCESSING_RECHECK_MS,
@@ -98,17 +88,15 @@ export class StudioExecutorCore {
     }
 
     private armHeartbeat(): void {
-        // Background tabs throttle the 5s loop to ~1/min, so the phone can briefly see a
-        // stale heartbeat. Push immediately when the tab regains visibility so the phone
-        // reconnects instantly instead of waiting for the next throttled tick.
-        const onVisible = () => {
-            if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-                void this.publishPresence();
-            }
-        };
-        if (typeof document !== 'undefined') {
-            document.addEventListener('visibilitychange', onVisible);
-            this.unsubscribers.push(() => document.removeEventListener('visibilitychange', onVisible));
+        // Background hosts throttle the 5s loop to ~1/min, so the phone can briefly see a
+        // stale heartbeat. Push immediately when the host regains visibility so the phone
+        // reconnects instantly instead of waiting for the next throttled tick. Visibility
+        // sourcing is host-injected: this class has zero document/window references.
+        const unsubscribeVisibility = this.deps.subscribeVisibility?.(() => {
+            void this.publishPresence();
+        });
+        if (unsubscribeVisibility) {
+            this.unsubscribers.push(unsubscribeVisibility);
         }
 
         void this.publishPresence();
@@ -413,50 +401,3 @@ export class StudioExecutorCore {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Default wiring — binds the Core to the real transports and the renderer
-// adapter. Kept out of the class so unit tests can inject fakes freely.
-// ---------------------------------------------------------------------------
-
-async function defaultScanPending(uid: string): Promise<Array<RemoteCommand & { id: string }>> {
-    const cmdsRef = collection(db, 'users', uid, 'remote-relay-commands');
-    const q = query(cmdsRef, where('status', '==', 'pending'));
-    const querySnap = await getDocs(q);
-    return querySnap.docs.map(docSnap => ({ ...(docSnap.data() as RemoteCommand), id: docSnap.id }));
-}
-
-function defaultWriteDiagnostic(stage: string, details?: Record<string, unknown>): Promise<void> {
-    const uid = getRealAuthenticatedUserId(auth.currentUser);
-    if (!uid) return Promise.resolve();
-    if (isFirebaseE2EMockEnabled()) return Promise.resolve();
-
-    try {
-        return setDoc(doc(db, 'users', uid, 'remote-relay', 'diagnostics'), {
-            stage,
-            timestamp: serverTimestamp(),
-            uid: uid.substring(0, 8),
-            ...details,
-        }, { merge: true }).catch(() => undefined);
-    } catch {
-        return Promise.resolve();
-    }
-}
-
-/** Assembles a production-wired Core: real relay, real lease claims, renderer adapter. */
-export function createDefaultStudioExecutorCore(): StudioExecutorCore {
-    const deps: ExecutorCoreDeps = {
-        relay: remoteRelayService,
-        lease: { claim: (id, instance) => studioExecutorLeaseService.claimCommand(id, instance) },
-        adapter: createRendererExecutionAdapter(),
-        shouldProcess: (command) => resolveRemoteCommandExecutionTarget(command) === 'studio',
-        parse: (text) => parseRemoteCommand(text),
-        getUserId: () => getRealAuthenticatedUserId(auth.currentUser),
-        scanPending: async () => {
-            const uid = getRealAuthenticatedUserId(auth.currentUser);
-            if (!uid) return [];
-            return defaultScanPending(uid);
-        },
-        writeDiagnostic: defaultWriteDiagnostic,
-    };
-    return new StudioExecutorCore(deps);
-}

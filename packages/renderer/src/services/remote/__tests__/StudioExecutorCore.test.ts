@@ -170,16 +170,28 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         });
     });
 
-    it('pushes an extra heartbeat the moment the tab regains visibility', async () => {
-        const { core, relay } = build();
+    it('pushes an extra heartbeat when the host signals visibility regained', async () => {
+        let fireVisibility: (() => void) | null = null;
+        const subscribeVisibility = vi.fn((cb: () => void) => {
+            fireVisibility = cb;
+            return () => {
+                fireVisibility = null;
+            };
+        });
+        const relay = makeRelay();
+        const { adapter } = makeAdapter();
+        const deps = makeDeps(relay, adapter, { subscribeVisibility });
+        const core = new StudioExecutorCore(deps);
         core.start();
         expect(relay.relay.pushDesktopState).toHaveBeenCalledTimes(1);
+        expect(subscribeVisibility).toHaveBeenCalledTimes(1);
 
-        document.dispatchEvent(new Event('visibilitychange'));
-
-        // Visibility handler runs synchronously on the event; the push resolves async.
+        fireVisibility!();
         await vi.advanceTimersByTimeAsync(0);
         expect(relay.relay.pushDesktopState.mock.calls.length).toBeGreaterThanOrEqual(2);
+
+        await core.stop();
+        expect(fireVisibility).toBeNull(); // host subscription disposed by stop()
     });
 
     it('stop() clears every timer, removes listeners, and releases presence exactly once', async () => {

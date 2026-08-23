@@ -983,3 +983,18 @@ The nine G1 harness gaps are now testable and tested via `start()/stop()` agains
 
 - Core still registers a `document.visibilitychange` listener (owned + disposed by `stop()`), uses `setInterval/setTimeout`, and reads nothing from window beyond that listener — exactly one browser assumption remains to remove.
 - Default wiring (`createDefaultStudioExecutorCore`) statically imports Firebase transports; the class itself stays DI-clean so the Phase 6 runtime decision can swap transports without touching logic.
+
+---
+
+## 22. PHASE 4 RESULT — CORE IS BROWSER-FREE (2026-08-23)
+
+The single remaining browser assumption (the `document.visibilitychange` listener) is gone from the Core:
+
+- Visibility sourcing is now an injected host hook (`ExecutorCoreDeps.subscribeVisibility`); the Core calls it and disposes it in `stop()`. It has **zero `document`/`window` references**.
+- Browser bindings moved to their sanctioned home: new host module `studioExecutorCore.wiring.ts` owns `createDefaultStudioExecutorCore()` plus all Firebase singleton access, the Firestore backlog scan, diagnostics sink, and the DOM visibility implementation.
+- Enforcement is mechanical, not aspirational: ESLint now hard-errors on `document`/`window` identifiers inside `StudioExecutorCore.ts` and `studioExecutorContracts.ts`.
+- Hook import updated to the wiring module; class stays DI-clean.
+
+Evidence: renderer typecheck green; scoped ESLint clean incl. the new guard; Core suite 16/16; full ten-suite remote parity set 155/155.
+
+**Remaining phases:** 5 (capability/presence model — extend `publishStudioPresence` projection + `DesktopState`, small), 6–7 (runtime selection + move — needs a dependency-evidence pass over `wiring.ts`, which now isolates every host touchpoint), 8–9 (UI-wake handoff + cutover). Phases 6+ are the first that change process boundaries and should start from a fresh session with the founder's runtime decision.

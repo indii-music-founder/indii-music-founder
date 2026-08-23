@@ -134,6 +134,12 @@ export interface ExecutorCoreDeps {
     scanPending: () => Promise<Array<RemoteCommand & { id: string }>>;
     /** Diagnostics sink (Firestore doc merge). */
     writeDiagnostic: (stage: string, details?: Record<string, unknown>) => Promise<void>;
+    /**
+     * Host-provided visibility hook (browser wiring supplies
+     * document.visibilitychange; background runtimes supply their own or omit).
+     * The Core itself must never touch `document`/`window`.
+     */
+    subscribeVisibility?: (cb: () => void) => () => void;
     now?: () => number;
 }
 

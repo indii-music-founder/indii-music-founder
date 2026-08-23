@@ -22,7 +22,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import { createDefaultStudioExecutorCore, StudioExecutorCore } from '@/services/remote/StudioExecutorCore';
+import { createDefaultStudioExecutorCore } from '@/services/remote/studioExecutorCore.wiring';
+import type { StudioExecutorCore } from '@/services/remote/StudioExecutorCore';
 import { isAnonymousOrDemoUser } from '@/utils/authGuards';
 
 // Compatibility re-exports — implementations moved to the executor modules.
