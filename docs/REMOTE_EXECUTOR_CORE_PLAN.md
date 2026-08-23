@@ -883,3 +883,73 @@ The directive was drafted against a pre-audit snapshot. Since then, on `main`:
 ### 19.4 Suggested first work package (when implementation starts)
 
 Phase 1 only: produce the §14 responsibility classification as a checked-in doc (file-by-file dependency table for `useRemoteCommandListener.ts` + `StudioExecutorLeaseService` + `useAutoSleep`), diff §13's checklist against existing suites, and add the missing characterization tests. No production code changes. Exit criterion: the classification table is complete and every §13 item is either covered by a named test or listed as a gap with an owner test file.
+
+---
+
+## 20. PHASE 1 RESULT — RESPONSIBILITY CLASSIFICATION & CHARACTERIZATION DIFF (2026-08-22)
+
+Phase 1 executed per §19.4: classification complete, §13 checklist diffed against the live inventory, characterization tests added where exported surfaces allowed. **Zero production-code changes** (test files + this doc only). New coverage: `StudioExecutorLeaseService.test.ts` 1→8 tests, `RemoteRelayService.test.ts` +3 dispatch-receipt tests.
+
+### 20.1 Responsibility classification (Category A executor-core / B execution-layer / C renderer-UI / D Electron-native / E cloud-owned)
+
+| # | Responsibility | Cat | Current home | Notes for extraction |
+|---|---|---|---|---|
+| 1 | Auth gating (onAuthStateChanged, guest/demo exclusion) | A | hook | security-relevant; moves with Core |
+| 2 | Executor-surface gating (Controller never executes) | A | `routing.ts` via `App.tsx` | keep at mount boundary |
+| 3 | Heartbeat loop (5s) + visibilitychange immediate push | A | hook effect | **browser-coupled — the Phase 4 target** |
+| 4 | Immediate presence push on state change | A | hook effect | reads refs, no React APIs otherwise |
+| 5 | Presence payload (role/listenerReady/studioInstanceId/sleepMode) | A | hook | schema lives server-side in `publishStudioPresence` |
+| 6 | Presence publication via executor lease | A→D→E | `RemoteRelayService`→`StudioExecutorLeaseService`→callables | keychain enrollment is D; server projection is E |
+| 7 | `releaseStudioPresence` on unmount | A lifecycle | hook cleanup | instance-scoped guard server-side |
+| 8 | Command subscription + text/target filtering | A | hook | rules-validated writes |
+| 9 | Atomic command claim | A→E | hook→`claimStudioCommand` | lease-gated transaction |
+| 10 | `isLocalP2PCommand` legacy guard | A legacy | hook | defense only; no p2p producer since P2P removal |
+| 11 | `wakeDesktop` (setIsSleeping + `window.show`) | **C** | hook callback | §19.3.3: adapter decision, not Core |
+| 12 | Processing lock (synchronous) + timeout recheck loop | A | hook closure | closure-internal timers — extraction must own them |
+| 13 | `parseRemoteCommand` rejection → response | A | hook | validation itself in `remoteCommandSecurity.ts` |
+| 14 | [WAKE]/[NAVIGATE]/[GENERATE_IMAGE]/[GENERATE_VIDEO]/[SHOW]/[AGENT_ACTION]/[DAW_CONTROL]/[MEDIA_PLAYBACK] routes | B/C | inline `processSingleCommand` | store/UI/Image/VideoGeneration deps |
+| 15 | Chat route (EntryCommandService → AgentService → collect responses → queued honesty) | B | hook | mode override validated A-side |
+| 16 | Dispatch-task subscription + atomic claim | A | hook | |
+| 17 | Dispatch handlers (live_moment, direct notes, venue pin, agent fallback, computer_task guards) | B/C | hook | `addNote`/`addUserPin`/window.electronAPI.computer |
+| 18 | `updateDispatchTaskStatus` receipts | A | hook | |
+| 19 | `scanAndProcessPendingCommands` backlog sweep | A | hook | |
+| 20 | `writeDiagnostic` Firestore telemetry | A | hook | |
+| 21 | `cleanupOld` 30-min pruning | A | hook | |
+| 22 | Keychain enrollment (get/save) | D | `window.electronAPI.credentials` | **hard Phase-6 input: Core needs this in any runtime** |
+| 23 | Lease issue/cache/reissue | A | `StudioExecutorLeaseService` | 60s cache floor, tested |
+| 24 | `useHttpRelayFallback` | legacy | hook (disabled) | deletion candidate at cutover |
+| 25 | Auto-sleep idle detection → `setIsSleeping` | C | `useAutoSleep` | sleepMode *publication* is A (row 5); ownership decision per §19.3.4 |
+
+Summary: **A ≈ 17 items** form a coherent Core; **B/C ≈ 7** belong behind the Adapter; **D** is the keychain bridge; **E** is the server trust boundary. No responsibility resists classification — the §3 two-category thesis holds.
+
+### 20.2 §13 checklist diff (named test or GAP)
+
+| §13 item | Status | Evidence |
+|---|---|---|
+| command receipt | GAP-G1 | subscription wiring untested; testable via Core `start()/stop()` post-extraction |
+| cloud vs studio filtering | ✅ | `shouldProcessStudioCommand` + `resolveRemoteCommandExecutionTarget` truth tables |
+| atomic claiming (commands) | ✅ verdict mapping / GAP-G2 transaction | lease suite asserts callable delegation; server transaction untested (see G2) |
+| duplicate-listener protection | GAP-G1 | `isProcessing` closure-internal |
+| Studio lease behavior | ✅ | lease suite: cache floor, expiry re-issue, browser refusal, payload shapes |
+| heartbeat/presence freshness | ✅ predicates / GAP-G1 loop | advance-forgery + skew tests; loop emission structural |
+| listenerReady | ✅ | `isFreshStudioState` tests |
+| pending-command recovery | GAP-G1 | `scanAndProcessPendingCommands` not exported |
+| backlog recovery after restart | GAP-G1 | structural |
+| dispatch claiming | ✅ | ISSUE-984 transaction test (`claimDispatchTask`) |
+| task completion/failure receipts | ✅ | new `updateDispatchTaskStatus` tests (pickedUpAt/completedAt/error/result, no-auth no-op) |
+| processing timeout recovery | GAP-G1 | closure timers |
+| response publishing | ✅ | `serializeRemoteResponse` + `publishResponse` payload test |
+| computer_task security | ✅ guards / GAP-G1 flow | `validateComputerTaskDispatch` + guard order; lease-check flow needs harness |
+| approval behavior (DigitalHandshake) | N/A here | enforced in executor/tools layer; must not regress (§11) |
+| Studio wake behavior | GAP-G1 | renderer-dependent (row 11) |
+| cleanup | PARTIAL | unmount release GAP-G1; rules-level protections tested in rules suite |
+| executor restart durability | GAP-G1 | structural |
+| durable pending work | ✅ | `cancelCommand` ISSUE-989 tests |
+
+**Gap classes:**
+- **G1 — harness gaps:** untestable until the Core exposes `start()/stop()` lifecycle (Phase 2 makes them testable by design). Nine items.
+- **G2 — cloud-side:** the six lease callables in `packages/firebase/src/functions/remote/` have NO unit tests. The renderer suite pins client payloads; server-side lease validation/expiry/ownership logic is unpinned. Recommend a `packages/firebase` callable test suite as its own follow-up unit (out of Phase-1 renderer scope, flagged per §11).
+
+### 20.3 Phase-1 exit check (§19.4)
+
+Classification table: complete. §13 diff: every item covered-by-named-test or classified GAP with owning class. Production code: unchanged (test files + docs only). **Phase 1 exit criterion met. Phase 2 (extract StudioExecutorCore in-renderer) is the next unit and should consume G1 as its test-first target list.**

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
     currentUser: null as { uid: string } | null,
     addDoc: vi.fn(),
     runTransaction: vi.fn(),
+    updateDoc: vi.fn(),
 }));
 
 vi.mock('@/utils/e2eMode', () => ({
@@ -27,6 +28,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         doc: vi.fn(() => ({ __doc: true })),
         addDoc: mocks.addDoc,
         runTransaction: mocks.runTransaction,
+        updateDoc: mocks.updateDoc,
         serverTimestamp: vi.fn(() => 'server-timestamp'),
     };
 });
@@ -457,5 +459,43 @@ describe('RemoteRelayService - command ownership (ISSUE-1025)', () => {
 
     it('assigns unmarked chat to Cloud instead of letting Cloud and Studio race', () => {
         expect(resolveRemoteCommandExecutionTarget({ text: 'Hi Boardroom' })).toBe('cloud');
+    });
+});
+
+describe('RemoteRelayService - updateDispatchTaskStatus (dispatch receipt contract)', () => {
+    beforeEach(() => {
+        mocks.currentUser = { uid: 'user-abc123' };
+        mocks.updateDoc.mockReset();
+        mocks.updateDoc.mockResolvedValue(undefined);
+    });
+
+    it('marks processing with a pickedUpAt server timestamp', async () => {
+        await remoteRelayService.updateDispatchTaskStatus('task-1', 'processing');
+
+        expect(mocks.updateDoc).toHaveBeenCalledTimes(1);
+        const [, payload] = mocks.updateDoc.mock.calls[0];
+        expect(payload).toEqual({ status: 'processing', pickedUpAt: 'server-timestamp' });
+    });
+
+    it('stamps completedAt for terminal statuses and carries error/result receipts', async () => {
+        await remoteRelayService.updateDispatchTaskStatus('task-2', 'failed', { code: 'EXECUTION_ERROR', message: 'boom' });
+        expect(mocks.updateDoc.mock.calls[0][1]).toEqual({
+            status: 'failed',
+            completedAt: 'server-timestamp',
+            error: { code: 'EXECUTION_ERROR', message: 'boom' },
+        });
+
+        await remoteRelayService.updateDispatchTaskStatus('task-3', 'completed', undefined, { noteId: 'note-9' });
+        expect(mocks.updateDoc.mock.calls[1][1]).toEqual({
+            status: 'completed',
+            completedAt: 'server-timestamp',
+            result: { noteId: 'note-9' },
+        });
+    });
+
+    it('writes nothing when unauthenticated — no anonymous status mutations', async () => {
+        mocks.currentUser = null;
+        await remoteRelayService.updateDispatchTaskStatus('task-4', 'completed');
+        expect(mocks.updateDoc).not.toHaveBeenCalled();
     });
 });
