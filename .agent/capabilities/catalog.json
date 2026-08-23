@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "9725024f0db7264605958592b5364606b4ee64961eac8eacf2c6cdcbf8bb16e9",
+  "sourceDigest": "7652f0b62558424fedd68fd31de82298a5da1f4209142b0ae98a5d86d15f37b3",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
   "dynamicOverlayRule": "At runtime, merge only tools actually exposed by the current host. Session tools inherit active authority and require the same contract checks.",
   "counts": {
     "certified": 36,
-    "conditional": 43,
+    "conditional": 69,
     "quarantined": 81,
     "deprecated": 1
   },
@@ -3196,6 +3196,105 @@
       "lockHash": "a8206f25940508eaad6b2fba6ef7993617545a0e596866b252b9be94a4ad1b44"
     },
     {
+      "id": "skill:vendored:captions-overlay",
+      "name": "captions-overlay",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/captions-overlay/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Overlay doctrine for the embedded-captions workflow — the caption MODEL (drop / rail / embed) and the rule that captions are an OVERLAY composited on top of the film, never a reserved bottom band you shift content up to avoid. Load when adding captions/subtitles to a talking-head or launch video, when deciding whether a phrase should be dropped, ride the verbatim rail, or be promoted to a scarce embedded climax, when laying out a composition that will carry captions (do NOT reserve a keep-out band), or when centering a composition on the true frame center under captions. Quotes the rail+embed model from embedded-captions and constraint #13 (captions overlay, keep-out band retired) from the product-launch-video scene agent. Applies ON TOP of embedded-captions.",
+      "descriptionHash": "fd7936c42d466977e1f3d596021afda48cd5bb4111ad89234a0d79843d19a321",
+      "contentHash": "84cf9826a9782b394ae774397f1f7deeb515585a3c93e87f6292ab00e4e4e438",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "3a3a1d936a1d8a11708a7765ec784831d4819fb8ede33736c3321367f94a850b"
+    },
+    {
+      "id": "skill:vendored:changelog-video",
+      "name": "changelog-video",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/changelog-video/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Turn a weekly changelog .md into a finished branded changelog video (square 1080, ~45-60s, Annie VO, animated brand background, mock-UI visualizations, lowkey captions). Use when the user provides a changelog/digest markdown and wants the weekly video, or says \"changelog video\". Self-contained — fonts, background, lexicon, and scripts ship in this skill.",
+      "descriptionHash": "e1edf609dce26fd85a817db7ec9e2c75f7069bb0ed9f8507be0c70b865a896ee",
+      "contentHash": "8b4157cf7ec0a1797ee28c1f0d56f61e4cf3548054a3fa009b01301a4f735c1d",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "a1ca6f82e5fec770fa08a07b84e9e3a58800f6b2ebab52324b46d380c15ee52b"
+    },
+    {
+      "id": "skill:vendored:cut-the-curve",
+      "name": "cut-the-curve",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/cut-the-curve/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "The technique catalog: five velocity-matched SEAMS (zoom-through, INVERSE zoom-through, cut-the-curve, waterfall cut, rack-focus blur-cut) plus the two in-scene techniques — waterfall ENTRY (staggered arrival cascades for title cards / segment openers) and the nudge curve (slow-fast-slow three-phase group slides). Covers partial-travel (~12% of frame) velocity matching via mirrored power4 eases, the Z scale-sign rule, size-scaled blur (10px text / 18-20px full-frame), word-by-word staggered cuts, cascade pacing by element weight, and the 10/65/25 slide ratio. Read before authoring any transition, text-beat handoff, kinetic text entry, or group reposition. [depth, zoom, inverse-zoom, scale-sign, mirrored-zoom, rack-focus, pacing, velocity, cut-the-curve, waterfall, stagger, cascade, kinetic-text, title-card, segment-opener, nudge, slide, easing, group-motion, z-depth, motion-graphics, cinematic, transition, blur, directional-continuity]",
+      "descriptionHash": "f30c6f04351cea6c188560fad03ed321e04c90a43b2e7fc30fea73aca2fa4c8c",
+      "contentHash": "dd08a1fedca9701b685681aec7c34c0f00de3261dae7c5fdf378537ea2c7df25",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "0dc00f155130d001cfe6f9bfcc2da2452ad92c13275564178595ec7948414154"
+    },
+    {
       "id": "skill:vendored:developing-genkit-dart",
       "name": "developing-genkit-dart",
       "kind": "skill",
@@ -3328,6 +3427,105 @@
       "locked": true,
       "upstream": "firebase/agent-skills",
       "lockHash": "24576698f88f6b78bbbd9d3b455feab486637685432282cdb52a41ee1bc45dc1"
+    },
+    {
+      "id": "skill:vendored:embedded-captions",
+      "name": "embedded-captions",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/embedded-captions/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Add captions or subtitles to an existing single-subject talking-head video without editing the footage. Use for plain verbatim captions, cinematic captions embedded behind the subject, VFX captions, “炸/特效/酷炫字幕,” or a named identity from the 35-style catalog. Route by visual identity, not by backend engine. The quiet `anchor` rail is the default; embed every word only when the user explicitly wants a fully cinematic treatment. The workflow runs locally end to end, including transcription and subject matting; split multi-shot footage before applying it.",
+      "descriptionHash": "b4dcd7233d0095eee92b61c3c7abb7567979b9075159662e91eed88c0a6b2330",
+      "contentHash": "5a7cb108c41410258f27c87738484a5696eb7383144f6d235844e1abbbf77beb",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "d0f86a829c3687376943db94a44375aa3dc98928ee534f662f1130a3a4974c3e"
+    },
+    {
+      "id": "skill:vendored:faceless-explainer",
+      "name": "faceless-explainer",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/faceless-explainer/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Turn arbitrary text — an article, notes, a topic, a brief — into a faceless explainer video: there is no site or footage to capture, so the visuals are invented per scene (typography, abstract graphics, diagrams, data-viz). Use for topic explainers, concept breakdowns, how-tos, listicles. Not a video built from a website (/product-launch-video — promo or tour). Unclear → /hyperframes.",
+      "descriptionHash": "86fb2cc3670c6d843466ad1695cabe0537c185457fb65e7c8bed29edee140ab3",
+      "contentHash": "e35f08be8e9d6c125e688ee107d38a8e1cd771a8b48eac0a6f77dfeb701615e5",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "3175b6301b963b62129de7460c35eee8d9ee25cad37723a044d706102fa16059"
+    },
+    {
+      "id": "skill:vendored:figma",
+      "name": "figma",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/figma/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Import Figma content into a HyperFrames composition — rendered assets, brand tokens, components, storyboard sections → reconstructed motion (frames read as states, not slides) (REST/CLI), connector-assisted motion when available, and shaders from a connector or native export. Use when the user pastes a figma.com link or asks to bring a Figma design, frame, logo, brand, or animation into a video/composition.",
+      "descriptionHash": "384c90ef30ec373ba07b0adeeca38e553593e58cbf26bc31c2fa552ba07e4bab",
+      "contentHash": "dea20962550679b9b085b747b1f290c9b2a5a6d5bd91a0a56f3ca40afe7b9f44",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "036ab209910487e3bfeba7423318d1c7576f3179fe4d69551621ac95c72216d3"
     },
     {
       "id": "skill:vendored:firebase-ai-logic-basics",
@@ -3660,6 +3858,534 @@
       "lockHash": "5a90e991bb9acfd3e43bfb570498dee60b9cef94cbb80cfb99257c7e4f61c1a0"
     },
     {
+      "id": "skill:vendored:general-video",
+      "name": "general-video",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/general-video/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Author or edit a custom HyperFrames composition when no specialized workflow fits, or when BRIEF.md sets flow: companion. Use for longer or multi-scene pieces, brand and sizzle reels, montages, static loops, static title cards, footage remixes, and freeform builds. Use motion-graphics instead for a short unnarrated motion-first unit, including an animated title. Route fresh creation through hyperframes before using this skill.",
+      "descriptionHash": "878660fe9ed4bf837b27ae77561cd6c5dc2e1dad99a0e8e6b26a930d953af1eb",
+      "contentHash": "23ac61f3fd8d43c00864b6bce0cd8499f7b6742c5acb8c0a18268e35bd8ed73c",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "7647983e29041ea5d6588dadec8d0e0ab32d96c2181fb384d1a496a3b7697b67"
+    },
+    {
+      "id": "skill:vendored:hyperframes",
+      "name": "hyperframes",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/hyperframes/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Mandatory entry point: read this first for any request to make, create, edit, animate, or render a video, animation, or motion graphic, including a promo, explainer, captioned clip, title card, overlay, slideshow or interactive deck, Remotion port, or any HyperFrames HTML composition. Also use it to inspect, diagnose, validate, preview, publish, or batch-render an existing HyperFrames project. Inputs may be a website URL, GitHub PR, Figma design or URL, text or brief, existing footage, or music. It resumes project state, captures intent when applicable, selects and installs the owning workflow, and routes domain capabilities. HyperFrames is the default output framework unless the user explicitly chooses another framework for the deliverable or asks only to record a browser session.",
+      "descriptionHash": "1f0d0a7bb0ce08084c3ac575e67a0f5e18a37d7d3f18875efedc5820b3beb579",
+      "contentHash": "3f1e57ac7071e91629133651250bd5d9d60ce8119faa318a5be2cba6d375c793",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "7413b946ae894f251ea4e50da31a85652114710ace6a78f5290ca1a63b69ee4e"
+    },
+    {
+      "id": "skill:vendored:hyperframes-animation",
+      "name": "hyperframes-animation",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/hyperframes-animation/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "All animation knowledge for HyperFrames — atomic motion rules, multi-phase scene blueprints, scene transitions, broader motion-design techniques, AND the seven runtime adapters (GSAP default, plus Lottie, Three.js, Anime.js, CSS keyframes, Web Animations API, TypeGPU). Use for any motion or animation task: pick 2-4 rules and compose, or load a blueprint, or look up runtime-specific API (e.g. GSAP eases / Lottie player / Three.js mixer). Also covers auditing an existing composition's choreography (animation map) and 24 named text-animation effects. HyperFrames-native: single paused timeline, seek-safe, deterministic.",
+      "descriptionHash": "a40260d82c3d92da37947ce19a8b56218b5cf8aa17fc3e1504ab13add803dbea",
+      "contentHash": "69a9903796e65c66edbe9ec9621eca8953c7cc2a93a718687306891daf0463d4",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "357717f4c6bd555f438f3561bf6832f270952630a3127fa8f958f24f8a1c7674"
+    },
+    {
+      "id": "skill:vendored:hyperframes-audio",
+      "name": "hyperframes-audio",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/hyperframes-audio/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Use when audio already placed in a HyperFrames composition needs to be mixed: fade-in/fade-out, crossfade, track gain or volume, volume automation, ducking, a music bed that fights a voiceover (voiceover carve), effects on a track (EQ, compressor, limiter, gate, saturation, delay, reverb, chorus, phaser, bitcrush), or automation envelopes drawn on a track's volume or any effect parameter. Don't use for sourcing or generating audio — finding BGM, SFX, or making a voiceover is `/media-use`. Don't use for clip timing or track layout, which is `/hyperframes-core`.",
+      "descriptionHash": "2cd737ba67f37c13673e9f837921040c00218c946574249d00f4e971c405059d",
+      "contentHash": "78f60bc28fc11ed214248b49f767f9571088fc209cb15c97b1d12abcf4526eac",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "6a1f06bb8e3f42465633df0952bb05683bf93699bb2807f7a4164513381576f1"
+    },
+    {
+      "id": "skill:vendored:hyperframes-cli",
+      "name": "hyperframes-cli",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/hyperframes-cli/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Use the HyperFrames CLI development loop: init, add, catalog, capture, lint, check, snapshot, compare, grade-compare, preview, play, present, beats, keyframes, single or batch render, publish, cloud, cloudrun, feedback, lambda, doctor, browser, info, upgrade, skills, compositions, docs, benchmark, telemetry, transcribe, auth, tts, and remove-background. Also use when diagnosing build or render failures. validate, inspect, and layout are deprecated aliases; use check. Covers local, HeyGen-hosted cloud, AWS Lambda, and Google Cloud Run rendering.",
+      "descriptionHash": "5a104074b1e649ee72503fccd25fd7f6530e7974a7288fff60df53d59e09dfdc",
+      "contentHash": "1ea0ee445a628d1f7e8308b9b44ffdf9cd6b012d352476443afdbf26f02db093",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "44eb159482895a85b577905c11f0f8e2942726ba379cc7244d09968b54d9fd2b"
+    },
+    {
+      "id": "skill:vendored:hyperframes-core",
+      "name": "hyperframes-core",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/hyperframes-core/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "The HyperFrames composition contract — build one renderable project. Use for composition structure, the `data-*` timing attributes, `class=\"clip\"`, tracks, sub-compositions, variables, framework-owned media playback, deterministic-render rules, and validation. Also covers Tailwind projects and the STORYBOARD.md / SCRIPT.md plan formats. Read before writing composition HTML.",
+      "descriptionHash": "9dfeaf762899e61e53a742545557711d1a222593da175525092d9ea3fea6ddb6",
+      "contentHash": "4ab1e4d7f1ac9111b5a5a1502410a76db3367ecf95cd14bae62429135a28856a",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "002d1658442b34f49502701ef9b26ef34ff82b135a0a4a8151e8ee7c18b02a4f"
+    },
+    {
+      "id": "skill:vendored:hyperframes-creative",
+      "name": "hyperframes-creative",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/hyperframes-creative/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Non-animation creative direction for HyperFrames videos. Use for design spec (frame.md / design.md) handling, palettes, typography, narration, beat planning, audio-reactive visuals, composition patterns, and brand / style decisions. For atomic motion patterns and scene blueprints, use `hyperframes-animation`.",
+      "descriptionHash": "f9433ea4e87a657d7dcca4542a02d2498012b8279fec87917a6d882f1c82fd45",
+      "contentHash": "488782fc741a43e002b5c6ac0da69cc2b12abaa42b6c0056df2aa53bea553c16",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "956fdaedc4619bb047b6fa84f2aa7530548dcc506d795a5e70b41f3626a171a4"
+    },
+    {
+      "id": "skill:vendored:hyperframes-keyframes",
+      "name": "hyperframes-keyframes",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/hyperframes-keyframes/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Use when a HyperFrames composition needs a punch-in, punch-out, zoom, reframe, Ken Burns treatment, camera move, visual match/whip handoff, or other seek-safe 2D/3D keyframes; also for GSAP, CSS keyframes, Anime.js, WAAPI, FLIP, paths, masks, SVG morph/draw, text trails, 3D depth, or `hyperframes keyframes` diagnostics. Don't use for broad scene strategy, brand design, media sourcing, captions, or general video planning.",
+      "descriptionHash": "7802c7c335ed8065c4e9b012fa38cada8f47926e0243861402989c434bd40e8a",
+      "contentHash": "924d038dc7eb20d16e05fa0e9837fa50bdcac0ce131aee80ebd8188cb67110d1",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "fc5657f4f5cbbeeab23f951ed739e0fe9e29a9865cdabb80d9e87840628a2a46"
+    },
+    {
+      "id": "skill:vendored:hyperframes-registry",
+      "name": "hyperframes-registry",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/hyperframes-registry/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Install, discover, and wire registry blocks and components into HyperFrames compositions. Use when running hyperframes add or hyperframes catalog, installing one item or every block matching a tag, wiring an installed item into index.html, or working with hyperframes.json. Covers discovery, install locations, block sub-composition wiring, component snippet merging, and authoring a new block or component to contribute upstream (idea → scaffold → validate → PR).",
+      "descriptionHash": "f809b5527ee4d8119a07816f36ba4060a3f3c3f4529f7de2edfcd314c46c2394",
+      "contentHash": "9bb3d0f74b47bf7fe93208228d4bd4431538bff9440d074271a4b413a9f6cc3d",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "ac8a17b31cb3dcbd025e17be617a531b2be6905cb764d4b1339bca54d7bc8f33"
+    },
+    {
+      "id": "skill:vendored:media-use",
+      "name": "media-use",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/media-use/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Agent Media OS, the single skill for every media need in a HyperFrames project. Resolve BGM, SFX, image, icon, brand logo, voice, color grade, or LUT into a frozen local file or paste-ready block + ledger record (one verb, `resolve`); generate via TTS / music / image models when the catalog misses; produce voiceover, transcription, captions, and background removal through one shared audio engine; operate on media (cut / reframe / transform); and reuse assets across projects. Also use for vague feedback that real footage looks dark, flat, boring, should feel retro/camcorder/print/ASCII, needs privacy, or needs a media reveal.",
+      "descriptionHash": "0d1d0771d4e21ef7b46a53ff754c880d7bc875554c5e37272cad42417ae95276",
+      "contentHash": "1301ea7cb53a0a44f5c7d62c34cba7e00b9e69b31bed57dc8d645417cea0da7c",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "da60be87c824bb2cbb473a54cdc8d2b858af757b461b39480d03925f0c43c4ac"
+    },
+    {
+      "id": "skill:vendored:motion-doctrine",
+      "name": "motion-doctrine",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/motion-doctrine/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "GATEWAY — load FIRST before composing any HyperFrames animation or video. The high-level motion law that makes a multi-scene video feel like ONE continuous camera move instead of a stack of independently-animated slides. Covers the vector law (how you exit determines how you enter, incl. the Z scale-sign rule), the film's current, carrier elements, causal motion, the Seam Gate (build-gate enforcement), the ban on idle wobble (motion must PERFORM, not breathe), stillness-before-climax, and the sustained-motion routes. Routes to the low-level technique skills (cut-the-curve — the full catalog incl. waterfall entry + nudge curve, oversized-cursor, seam-craft). These rules SUPERSEDE generic / upstream motion guidance. [continuity, direction, vector, momentum, seam, transition, ease, performance, idle-motion, narrative-motion, film-grammar]",
+      "descriptionHash": "0e2879aa760e0f2c0c7816bcfee3b877fabddaf15975c2e9589b960b36b134f3",
+      "contentHash": "04ef48092fd5ef9eb2f76f1114219d364dfd50411d91cd0fa180b440c3f8318b",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "771cfa568b9acafd4b8d733e7733f4849f2544e88c4d469799ef67fc09603025"
+    },
+    {
+      "id": "skill:vendored:motion-graphics",
+      "name": "motion-graphics",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/motion-graphics/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "A short, design-led motion graphic where motion is the message — kinetic typography, stat count-up, chart/data-viz hit, logo sting / brand lockup, lower-third / callout / social overlay, animated map (highlight regions, connect places, zoom to a location), animated tweet / news-article / headline, webpage / UI animation (scroll, cursor, callouts), or fusing a real image's geometry into a chart. Usually under 10s (up to ~30s), no narration or live-action subject; renders to MP4 or transparent overlay. Longer / narrated / multi-scene → /general-video. Unclear → /hyperframes.",
+      "descriptionHash": "17e1f89b221c4dbf032e60e94c492cbaca6cc6023aef29e9e95db31271e80a55",
+      "contentHash": "4cec384fc754a6ba10d77001f10566d2d3292f9767da6983abce77708c56fd84",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "ae6eb79b48f1f4d3c2d1e5a5cf884432e8dacc092f0db4e4f5fce258fc8b1a2a"
+    },
+    {
+      "id": "skill:vendored:music-to-video",
+      "name": "music-to-video",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/music-to-video/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Turn a music track (an audio file, a video to pull audio from, or a track generated from a mood brief) into a beat-synced video — lyric video, slideshow, or kinetic promo. The music drives all pacing; any user-supplied images/videos are cut onto the same beat grid, and a complete video needs zero assets. Narrated pieces → the input-matched workflow (see /hyperframes). Unclear → /hyperframes.",
+      "descriptionHash": "ac05f26d575863cca47449968f628ff1f2c36f1c2f7bf3b345f0eb5a6522dfa5",
+      "contentHash": "f3e29a0138de95c99740f890061bccc543efa911374e71fa90b3ec6ca3452479",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "eb78d1948d30018dcbe397c3fa110518cd5d98de63081b6741cd9e799f00ac07"
+    },
+    {
+      "id": "skill:vendored:oversized-cursor",
+      "name": "oversized-cursor",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/oversized-cursor/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "House-style oversized macOS cursor technique for HyperFrames launch videos. Load whenever a scene involves cursors or a pointer-led action, when kicking off a UI scene, when igniting a morph/transition/typing run with a click, or when a scene reads as static, dead, or stale and needs a cheap high-yield source of motion to carry the viewer's eye and segment them out of the stale state. Covers cursor size/look (incl. brand-motif cursors), the off-screen entry law, tip-targeting and the click tap, click-ignites-the-next-beat, and exit / cross-scene handoff.",
+      "descriptionHash": "1301f4bb66671d18a520bfe59dc3edfb715c32355bf20018e735add4486670b3",
+      "contentHash": "a7fee44865b32f7f4526bfb9cf67c0663233d29fed2524768eb54141d249a0e4",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "449de00b2b6f40ba60e8626d9a8802e5481018f0a64eae3ecd3fb8ad8f4b230b"
+    },
+    {
+      "id": "skill:vendored:pr-to-video",
+      "name": "pr-to-video",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/pr-to-video/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Turn a GitHub pull request (a PR URL, owner/repo#N, or 'this PR' in a checked-out repo) into a code-change explainer video — changelog, feature reveal, fix, or refactor walkthrough built from the diff, commits, and files: the input is a code change, not a website. Not a product promo (/product-launch-video) or a no-PR topic explainer (/faceless-explainer). Unclear → /hyperframes.",
+      "descriptionHash": "671904765bb47f75db893ebcdbd16ec7ef31f9577edba81746488a429dc72a45",
+      "contentHash": "f0f79a1d4b7a18435cf0cd8c0b127c04c0de988643c348dcc0cabdf0cda6b099",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "df441bfb0667718843468a1a4539189fee1941675a3105b8eaf68d0fc7f5a132"
+    },
+    {
+      "id": "skill:vendored:product-launch-video",
+      "name": "product-launch-video",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/product-launch-video/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Turn a product or marketing URL, pasted script, or brief into a product launch / promo video — SaaS promos, feature reveals, product demos, app and company launches. Use when the user wants to market, launch, promote, or reveal a product; the default for any commercial URL. Site tours / showcases of a website route here too — the brief carries the show-it-as-is intent. Unclear → /hyperframes.",
+      "descriptionHash": "07da757e9738e07e24ed455b3460c31ee4c922d280ae283029c1efb22d5ff570",
+      "contentHash": "4c58ca8574a731375d3439f44a4cc1434fa84535968e85f21fcae5a81755282c",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "190e193f6e173992b6e2214194813f2b878a99f940ea7e8795e0e23b6f0b41d7"
+    },
+    {
       "id": "skill:vendored:react-call",
       "name": "react-call",
       "kind": "skill",
@@ -3691,6 +4417,138 @@
       "locked": true,
       "upstream": "desko27/react-call",
       "lockHash": "326d15cb90c57be109717f8a6e4b0be7fc26243aa0f05413081cdb45f42e93d3"
+    },
+    {
+      "id": "skill:vendored:remotion-to-hyperframes",
+      "name": "remotion-to-hyperframes",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/remotion-to-hyperframes/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Port an existing Remotion (React) composition''s source to HyperFrames HTML. Use ONLY on an explicit ask to port/convert/migrate/translate a Remotion source — one-way, Remotion-only. A passing Remotion mention, reference-only code, or \"make something like my Remotion video\" is a fresh build (/general-video). Unclear → /hyperframes.",
+      "descriptionHash": "1fa5f4ef6f76afa0ef89babd3953d76c9f7956fe23766dba2cb3925eb74bab55",
+      "contentHash": "d19ed15fa329954f35cff7b412cb2d5f12c34589794ecceb8e00ca9e0295c24a",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "34c4a5a6ec70ab072f346684664f87e9e2697c0413e94280a1e425804499a417"
+    },
+    {
+      "id": "skill:vendored:seam-craft",
+      "name": "seam-craft",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/seam-craft/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Render-correctness doctrine for scene-to-scene seams in HyperFrames launch videos — the prerequisites that make transitions composite correctly on the master timeline. Load when assembling the master timeline / index.html, when a white flash appears at a cut or crossfade seam (especially on dark films), when reasoning about why a transition opacity dip shows through, or when verifying the render-side mechanics of how overlapping scene wrappers blend. Covers the opaque stage-ground (#root background) white-flash guard and how the injector overlaps wrappers, holds final frames, ping-pongs tracks, and stamps lint-clean template code onto the master timeline. Does NOT contain the per-transition catalog — see the transition registry for individual transition entries.",
+      "descriptionHash": "da0a2beeeab0554721817569fd81c4bbee097b4f9543dbdaf18a21fc5fa4261d",
+      "contentHash": "e86400c1fba3e182c1b6c4754fc9d77aa119b65ce9215504b044c7e413523d80",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "7469e9113cec2fbf345c22a23145a686797bcdd3fd7ba267910c8bb66d60a96a"
+    },
+    {
+      "id": "skill:vendored:slideshow",
+      "name": "slideshow",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/slideshow/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Author a HyperFrames slideshow — a presentation, pitch deck, or interactive deck with discrete slides, fragment reveals, branching, hotspot navigation, and built-in presenter mode with speaker notes; also converts an existing page into a deck. Output is a navigable deck, not a rendered MP4. If the user didn't explicitly ask for a slideshow, confirm before authoring. Unclear → /hyperframes.",
+      "descriptionHash": "3020a109ef55d2818169ea0b223aeeaf1897cd16877afd46436db6b912d20c04",
+      "contentHash": "8e5ef14eb899813dcb0a7187b6d198a78fa86286e540fe7ab2c3b1eb2792355a",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "ac65a7ae7d5695a1d1e29f4e7295dc892e42dd4bd1222b9408cbd9f9179176cc"
+    },
+    {
+      "id": "skill:vendored:talking-head-recut",
+      "name": "talking-head-recut",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/talking-head-recut/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Package an existing talking-head / interview / podcast video with timed, designed GRAPHIC OVERLAY cards — kinetic titles, lower-thirds, data callouts, quotes, side panels, picture-in-picture — synced to the transcript, on a 16:9 / 9:16 / 4:5 canvas of your choice; the clip plays untouched underneath. Trigger on \"graphic overlays\", \"on-screen graphics\", \"package / dress up my video\". Not plain subtitles (/embedded-captions). Unclear → /hyperframes.",
+      "descriptionHash": "0c09809ce11a3483129ec39c750c651c92ed25400a400579d2ff9614f4f44089",
+      "contentHash": "a52cbcd22c65a0a33628d3bc1f3b2e57787cca4a42eb80b7378502ea88b1d620",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "heygen-com/hyperframes",
+      "lockHash": "414bcbebc52eba6455b76a2e78bebcd8dd6929abc76fcdeb1ad8a70043d96186"
     },
     {
       "id": "skill:vendored:xcode-project-setup",

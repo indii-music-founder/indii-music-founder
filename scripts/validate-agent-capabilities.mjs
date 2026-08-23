@@ -156,7 +156,8 @@ function validateSelectableSafety(entry, failures) {
   }
 
   for (const [index, line] of contents.split('\n').entries()) {
-    if (!/^\s*(?:git\s+)?push\b/.test(line.replace(/^\s*[-*]\s*/, ''))) continue;
+    const instruction = line.replace(/^\s*[-*]\s*/, '');
+    if (!/^\s*git\s+push\b/.test(instruction)) continue;
     if (line.includes('git push origin HEAD:main') || /block|prevent|forbid|never/i.test(line)) continue;
     failures.push(`${entry.id}:${index + 1}: ambiguous push instruction`);
   }
