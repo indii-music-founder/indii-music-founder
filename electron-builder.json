@@ -15,14 +15,6 @@
       "filter": [
         "**/*"
       ]
-    },
-    {
-      "from": "dist-sidecar",
-      "to": "sidecar",
-      "filter": [
-        "agent_sidecar",
-        "agent_sidecar.exe"
-      ]
     }
   ],
   "linux": {
