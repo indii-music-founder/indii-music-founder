@@ -55,10 +55,9 @@ export function resolveRemoteConversationMode(raw: unknown): AgentSendOptions['c
 export class AgentService {
     private isProcessing = false;
     /**
-     * True while a run is active. Remote relay callers read this after
-     * sendMessage() returns to distinguish "your request ran" from "your
-     * request was queued behind an active run" so they can answer honestly
-     * instead of reporting a completion that has not happened.
+     * True while a run is active. Callers that need to distinguish accepted
+     * from queued work must use sendMessage()'s explicit return disposition;
+     * this mutable snapshot is only for preflight UI/dispatch guards.
      */
     get isAgentBusy(): boolean {
         return this.isProcessing;
@@ -273,7 +272,7 @@ export class AgentService {
         attachments?: { mimeType: string; base64: string }[],
         forcedAgentId?: string,
         options?: AgentSendOptions
-    ): Promise<void> {
+    ): Promise<'queued' | void> {
         if (this.isProcessing) {
             // A previous run may legitimately still be finishing in the
             // background after its timeout. Keep the message instead of
@@ -284,7 +283,7 @@ export class AgentService {
             }
             logger.warn('[AgentService] sendMessage queued: previous run still processing');
             this.pendingSends.push({ text, attachments, forcedAgentId, options });
-            return;
+            return 'queued';
         }
         this.isProcessing = true;
 

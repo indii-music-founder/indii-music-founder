@@ -25,23 +25,8 @@ export function shouldProcessStudioCommand(command: Pick<RemoteCommand, 'text' |
     return resolveRemoteCommandExecutionTarget(command) === 'studio';
 }
 
-/** Legacy local-socket command ids (no producer since the P2P removal; defense for stale docs). */
-export function isLocalP2PCommand(commandId: string): boolean {
-    return commandId.startsWith('p2p-');
-}
-
 /** Upper bound on relayed responses per command so a large seated boardroom cannot fan out unbounded Firestore writes. */
 export const MAX_REMOTE_AGENT_RESPONSES = 12;
-
-/**
- * Pure decision for the remote chat completion path. `sendMessage()` queues
- * silently and returns when the desktop agent is mid-run; with no new model
- * message to relay, that state must be reported as QUEUED, never as a
- * completed "Done." — the old fallback answered a request that had not run.
- */
-export function shouldReportQueuedChatToRemote(hasNewAgentResponse: boolean, desktopBusyAfterSend: boolean): boolean {
-    return !hasNewAgentResponse && desktopBusyAfterSend;
-}
 
 /** One relayed agent reply: content plus attribution/artifacts for the phone feed. */
 export interface RemoteRelayReply {

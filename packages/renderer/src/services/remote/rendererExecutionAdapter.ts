@@ -20,7 +20,6 @@ import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import type { HistoryItem } from '@/core/types/history';
 import {
     MAX_REMOTE_AGENT_RESPONSES,
-    shouldReportQueuedChatToRemote,
     type RelayRespond,
     type StudioExecutionAdapter,
 } from './studioExecutorContracts';
@@ -307,7 +306,7 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
                     };
                 }
 
-                await agentService.sendMessage(
+                const sendDisposition = await agentService.sendMessage(
                     text,
                     undefined,
                     command.targetAgentId,
@@ -326,15 +325,15 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
                     }
                 );
 
-                const responses = collectRemoteAgentResponses(startedAt);
-
-                if (shouldReportQueuedChatToRemote(responses.length > 0, agentService.isAgentBusy)) {
+                if (sendDisposition === 'queued') {
                     logger.info('[RemoteAdapter] 💬 Chat queued behind an active desktop agent run');
                     return {
                         relays: [],
                         queuedBehindActiveRun: true,
                     };
                 }
+
+                const responses = collectRemoteAgentResponses(startedAt);
 
                 const relays = responses.slice(0, MAX_REMOTE_AGENT_RESPONSES).map(response => ({
                     text: response.text.trim(),
@@ -359,9 +358,9 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
     const executeDispatchTask: StudioExecutionAdapter['executeDispatchTask'] = async ({ task }) => {
         // ISSUE-983 contract: sendMessage queues silently when busy; marking a
         // capture 'completed' in that state cleared the phone's only copy.
-        const assertDesktopWasFreeToRun = () => {
+        const assertDesktopIsFree = () => {
             if (agentService.isAgentBusy) {
-                throw new Error('Desktop Studio is mid-task — this request was queued there instead of completing. Check the desktop app or try again shortly.');
+                throw new Error('Desktop Studio is mid-task — this request was not queued. Check the desktop app or try again shortly.');
             }
         };
 
@@ -407,8 +406,8 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
                 }
 
                 logger.info(`[RemoteAdapter] Dispatching to Agent Service: "${text}"`);
+                assertDesktopIsFree();
                 await agentService.sendMessage(text, undefined, 'generalist', { source: 'mobile-remote' });
-                assertDesktopWasFreeToRun();
                 await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
                 return;
             }
@@ -427,8 +426,8 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
 
                 const instruction = buildComputerTaskInstruction(task);
                 logger.info(`[RemoteAdapter] 🖱️ Dispatching computer_task to Agent Service: "${task.payload.goal}"`);
+                assertDesktopIsFree();
                 await agentService.sendMessage(instruction, undefined, 'generalist', { source: 'mobile-remote' });
-                assertDesktopWasFreeToRun();
                 await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
                 return;
             }

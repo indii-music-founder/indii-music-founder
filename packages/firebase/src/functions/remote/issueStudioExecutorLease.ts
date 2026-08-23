@@ -138,7 +138,7 @@ export const claimStudioCommand = onCall({ region: 'us-central1', enforceAppChec
 
 export const publishStudioResponse = onCall({ region: 'us-central1', enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
-  const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; text?: unknown; agentId?: unknown; imageUrls?: unknown; isStreaming?: unknown; boardroomMessageId?: unknown };
+  const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; text?: unknown; agentId?: unknown; imageUrls?: unknown; videoUrls?: unknown; isStreaming?: unknown; boardroomMessageId?: unknown };
   const { deviceId } = await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
   if (typeof input.commandId !== 'string' || typeof input.text !== 'string' || input.text.length > 20_000) {
     throw new HttpsError('invalid-argument', 'Invalid Studio response.');
@@ -153,6 +153,7 @@ export const publishStudioResponse = onCall({ region: 'us-central1', enforceAppC
     text: input.text,
     ...(typeof input.agentId === 'string' ? { agentId: input.agentId.slice(0, 100) } : {}),
     ...(Array.isArray(input.imageUrls) ? { imageUrls: input.imageUrls.filter(url => typeof url === 'string').slice(0, 20) } : {}),
+    ...(Array.isArray(input.videoUrls) ? { videoUrls: input.videoUrls.filter(url => typeof url === 'string').slice(0, 20) } : {}),
     ...(typeof input.boardroomMessageId === 'string' ? { boardroomMessageId: input.boardroomMessageId.slice(0, 128) } : {}),
     isStreaming: input.isStreaming === true,
     isFinal: input.isStreaming !== true,

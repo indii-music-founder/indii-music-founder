@@ -107,6 +107,7 @@ describe('StudioExecutorLeaseService', () => {
             text: 'Done — rendered two variants.',
             agentId: 'creative',
             imageUrls: ['https://cdn.example/a.png'],
+            videoUrls: ['https://cdn.example/a.mp4'],
             isStreaming: false,
             boardroomMessageId: 'bm-77',
         });
@@ -118,6 +119,7 @@ describe('StudioExecutorLeaseService', () => {
             text: 'Done — rendered two variants.',
             agentId: 'creative',
             imageUrls: ['https://cdn.example/a.png'],
+            videoUrls: ['https://cdn.example/a.mp4'],
             isStreaming: false,
             boardroomMessageId: 'bm-77',
         }));

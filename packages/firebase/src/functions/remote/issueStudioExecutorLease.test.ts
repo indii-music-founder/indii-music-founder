@@ -68,7 +68,7 @@ const mocks = vi.hoisted(() => {
         SERVER_TS,
         db,
         handlersByWrapper: new WeakMap<object, CallHandler>(),
-        callConfigs: new Map<string, Record<string, unknown>>(),
+        callConfigs: new WeakMap<object, Record<string, unknown>>(),
         makeSnap: (path: string, exists: boolean, data: Record<string, unknown> = {}) => {
             snapshots.set(path, { exists, data });
         },
@@ -93,7 +93,7 @@ vi.mock('firebase-functions/v2/https', () => {
         onCall: (opts: Record<string, unknown>, handler: (req: unknown) => Promise<unknown>) => {
             const wrapper = (req: unknown) => handler(req);
             mocks.handlersByWrapper.set(wrapper, handler);
-            if (typeof opts?.region === 'string') mocks.callConfigs.set(String(opts.region), opts);
+            mocks.callConfigs.set(wrapper, opts);
             void opts;
             return wrapper;
         },
@@ -150,8 +150,11 @@ describe('callable registration posture', () => {
         const exports = Object.values(remote);
         expect(exports).toHaveLength(6);
 
-        for (const [, cfg] of mocks.callConfigs) {
-            expect(cfg).toMatchObject({ region: 'us-central1', enforceAppCheck: false });
+        for (const callable of exports) {
+            expect(mocks.callConfigs.get(callable as object)).toMatchObject({
+                region: 'us-central1',
+                enforceAppCheck: false,
+            });
         }
         // Every export captured a handler (nothing fell through the mock).
         expect(exports.every(fn => mocks.handlersByWrapper.has(fn as object))).toBe(true);
@@ -465,6 +468,7 @@ describe('publishStudioResponse', () => {
             text: 'Done.',
             agentId: 'a'.repeat(150),
             imageUrls: ['ok-1', 42 as unknown as string, 'ok-2'],
+            videoUrls: ['clip-1', 42 as unknown as string, 'clip-2'],
             boardroomMessageId: 'b'.repeat(300),
             isStreaming: false,
         }));
@@ -475,6 +479,7 @@ describe('publishStudioResponse', () => {
             text: 'Done.',
             agentId: 'a'.repeat(100),
             imageUrls: ['ok-1', 'ok-2'],
+            videoUrls: ['clip-1', 'clip-2'],
             boardroomMessageId: 'b'.repeat(128),
             isStreaming: false,
             isFinal: true,
@@ -496,6 +501,7 @@ describe('publishStudioResponse', () => {
         expect(write?.data).toMatchObject({ isStreaming: true, isFinal: false });
         expect(write?.data).not.toHaveProperty('agentId');
         expect(write?.data).not.toHaveProperty('imageUrls');
+        expect(write?.data).not.toHaveProperty('videoUrls');
     });
 });
 

@@ -39,9 +39,8 @@ export {
 export type { ShowMeResponse } from '@/services/remote/rendererExecutionAdapter';
 export {
     MAX_REMOTE_AGENT_RESPONSES,
-    shouldReportQueuedChatToRemote,
 } from '@/services/remote/studioExecutorContracts';
-export { shouldProcessStudioCommand, isLocalP2PCommand } from '@/services/remote/studioExecutorContracts';
+export { shouldProcessStudioCommand } from '@/services/remote/studioExecutorContracts';
 
 export function useRemoteCommandListener(executorSurfaceEnabled = true): void {
     const { user } = useStore(useShallow(state => ({ user: state.user })));

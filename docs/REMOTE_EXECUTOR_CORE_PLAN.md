@@ -858,8 +858,8 @@ These annotations verify, correct, and extend the directive against the tree as 
 The directive was drafted against a pre-audit snapshot. Since then, on `main`:
 
 - **Presence freshness is honest.** `onDesktopState` no longer stamps `_localReceivedAtMs` on every snapshot; freshness derives from witnessed heartbeat-ADVANCE (`_heartbeatAdvancedAtMs`, local monotonic clock) or the doc's own server-timestamp age. Any extraction must preserve this contract — `isFreshDesktopState` / `studioStateFreshnessRemainingMs` in `RemoteRelayService.ts` and the Controller's stale-timer mirroring in `MobileRemote.tsx`.
-- **The processing lock is now synchronous** and released in a single `finally`; `AgentService` queues are a bounded FIFO with an `isAgentBusy` getter; the relay reports QUEUED honestly (`shouldReportQueuedChatToRemote`) and dispatch tasks fail loudly via `assertDesktopWasFreeToRun`. Category A's "processing serialization / timeouts" items have newer, tested shapes than the directive describes.
-- **All desktop writes flow through executor-lease Cloud Functions** (`publishStudioPresence`, `claimStudioCommand`, `publishStudioResponse`, `completeStudioCommand`, `releaseStudioPresence`, `issueStudioExecutorLease`). A background runtime inheriting the Core must hold the SAME Electron keychain enrollment (`StudioExecutorLeaseService.getLease` requires `window.electronAPI.credentials`) — this is a hard dependency-graph input for the Phase 6 runtime decision, not a detail.
+- **The processing lock is now synchronous** and released in a single `finally`; `AgentService` queues are a bounded FIFO whose `sendMessage()` result explicitly distinguishes queued work; the relay preserves that QUEUED disposition, and dispatch tasks reject before enqueueing when Studio is busy. Category A's "processing serialization / timeouts" items have newer, tested shapes than the directive describes.
+- **All desktop writes flow through executor-lease Cloud Functions** (`publishStudioPresence`, `claimStudioCommand`, `publishStudioResponse`, `completeStudioCommand`, `releaseStudioPresence`, `issueStudioExecutorLease`). A hypothetical background runtime would need the same Electron keychain enrollment, but that dependency analysis is historical: the product decision in §23 closes Phases 6–9 as out of scope.
 - **Phone-side contracts to keep stable:** command metadata schema is rules-validated (`isValidRemoteRelayMetadata` now includes enum-checked `conversationMode`); `executionTarget` gating (`shouldProcessStudioCommand`); response docs with per-agent `agentId`/`boardroomMessageId` (full boardroom relay, cap 12); `DesktopState` fields incl. `sleepMode`, `listenerReady`, `studioInstanceId`.
 - **Notes/files/boardroom reachability** (the founder's bottom line) now works through the existing hook path; the extraction must not regress it — `NotesTools` are declared in `SUPERPOWER_TOOLS`, implemented in `BaseAgent.functions`, risk-registered.
 
@@ -964,7 +964,7 @@ Phases 2 AND 3 delivered together (inseparable for behavioral parity). Still ins
 
 | File | Role |
 |---|---|
-| `services/remote/studioExecutorContracts.ts` | The boundary: `StudioExecutionAdapter`, `RelayTransport`, `LeaseClaimer`, `ExecutorCoreDeps` interfaces; pure deciders (`shouldReportQueuedChatToRemote`, `shouldProcessStudioCommand`, `isLocalP2PCommand`, `MAX_REMOTE_AGENT_RESPONSES`). The Core imports only this file for contracts. |
+| `services/remote/studioExecutorContracts.ts` | The boundary: `StudioExecutionAdapter`, `RelayTransport`, `LeaseClaimer`, `ExecutorCoreDeps` interfaces; pure ownership helpers and `MAX_REMOTE_AGENT_RESPONSES`. The Core imports only this file for contracts. |
 | `services/remote/StudioExecutorCore.ts` | Category-A owner, React-free class with explicit `start()/stop()`: presence heartbeat (+visibility immediate push), command/dispatch subscriptions, ownership filtering, atomic claims, synchronous lock, 120s/30s watchdog, response/completion publishing, QUEUED honesty, backlog sweeps at start + after every command, diagnostics stages (names preserved), 30-min cleanup cadence, instance-scoped presence release on stop. |
 | `services/remote/rendererExecutionAdapter.ts` | Category-B/C implementation binding the Core to the existing layer verbatim: all command routes, dispatch handlers, wake, presence snapshot, boardroom transcript collection, queued-detection. No duplicated services or tools. |
 | `hooks/useRemoteCommandListener.ts` | Now a mount boundary: auth/surface gating + `core.start()`/`stop()`; every previously exported symbol re-exported (zero external import churn). Disabled legacy HTTP relay deleted (dead since its flag was hardcoded false). |
@@ -977,7 +977,7 @@ Phases 2 AND 3 delivered together (inseparable for behavioral parity). Still ins
 
 ### G1 closure status
 
-The nine G1 harness gaps are now testable and tested via `start()/stop()` against fake transports (16 new Core cases): heartbeat cadence, visibility push, deterministic teardown + single release, no-publish-no-release, receipt→claim→wake→delegate→relay→complete→sweep, cloud-skip pre-claim, busy-defer with post-completion recovery, watchdog extension while genuinely busy then unlock-on-settle, QUEUED reporting, full boardroom relay + honest `Done.` fallback, route-throw error honesty, rejected-command warning without delegation, dispatch claim/wake/receipt/failure, restart recovery with backlog rescan, unclaimed skip, device-schema instance ids.
+The nine G1 harness gaps are now testable and tested via `start()/stop()` against fake transports (20 current Core cases): heartbeat cadence, visibility push, deterministic teardown + single release, no-publish-no-release, receipt→claim→wake→delegate→relay→complete→sweep, cloud-skip pre-claim, busy-defer with post-completion recovery, command-scoped watchdog retention until the route promise settles, stale-watchdog cancellation, explicit QUEUED reporting, full boardroom relay + honest `Done.` fallback, route-throw error honesty, rejected-command warning without delegation, dispatch claim/wake/receipt/failure, restart recovery with backlog rescan, no post-stop backlog sweep, post-skip/post-claim-error recovery, mandatory lease claims for every command id, and device-schema instance ids.
 
 ### Deliberate carry-over to Phase 4
 
@@ -1014,4 +1014,19 @@ Closed alongside Phase 5: the orphaned P2P IPC surface (`preload.remote`, `Remot
 
 Evidence: renderer + firebase-tests + main typechecks green; scoped ESLint clean; remote suite set 162/162 incl. a new server-side capabilities-coercion test and an updated Core heartbeat assertion.
 
-**Remaining:** Phases 6–9 (background runtime selection + move + UI-wake handoff + cutover) — unchanged, still gated on the founder's runtime decision and real two-device validation.
+**Scope decision:** Phases 6–9 are closed as out of scope. The accepted tandem product requires the Electron Studio to remain the executor while it is running; background execution after the app quits is not an acceptance requirement. No background-runtime implementation or app-quit capability is claimed. Genuine two-device validation remains required for production-real acceptance.
+
+---
+
+## 24. QUEUE-INVARIANT AUDIT CLOSURE (2026-08-23)
+
+The independent audit found lifecycle races that single-command characterization tests missed. The bounded closure now pins these invariants:
+
+- every local queue-lock acquisition releases on every exit, including cloud-owned, unauthenticated, unclaimed, and lease-error paths;
+- watchdogs are command-scoped, cancelled when their command settles, and never unlock an unresolved route merely because `AgentService` reports idle;
+- `AgentService.sendMessage()` returns an explicit `queued` disposition, which the adapter and Core preserve instead of re-sampling mutable busy state;
+- dispatch tasks reject before enqueueing when Studio is already busy, preventing a failed phone receipt from also creating a hidden desktop duplicate;
+- every Firestore command id wins the same server lease claim; the removed LAN P2P transport has no legacy claim bypass;
+- response publication preserves both image and video result URLs through the lease callable.
+
+Structural/local tests prove these contracts. The physical phone↔Mac checklist remains the only valid production-real proof of the complete customer path.

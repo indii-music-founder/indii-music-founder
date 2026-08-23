@@ -124,40 +124,46 @@ export class StudioExecutorCore {
     }
 
     /**
-     * Safety: auto-unlock so one stuck command can't block the relay forever.
-     * BUT agent runs legitimately take up to 5-10 minutes — unlocking while
-     * the agent is still active would let the next command claim the queue
-     * and get a stale response. Only unlock once the adapter reports the run
-     * settled; keep re-checking while it is genuinely active.
+     * Diagnose a long-running command without weakening serialization. The
+     * route promise is the ownership boundary: an AgentService busy flag can
+     * settle before direct generation or adapter work finishes, so a timer
+     * must never release the queue lock. The returned disposer makes this
+     * watchdog command-scoped and prevents stale timers affecting later work.
      */
-    private armWatchdog(commandId: string): void {
-        const recheck = () => {
-            if (!this.processing) return;
-            if (this.deps.adapter.isAgentBusy()) {
-                void this.writeDiagnostic('processing_timeout_extended', { commandId });
-                const t = setTimeout(recheck, PROCESSING_RECHECK_MS);
-                this.watchdogTimers.add(t);
-                return;
-            }
-            this.processing = false;
-            void this.writeDiagnostic('processing_timeout_reset', { commandId });
-            void this.scanAndProcessPendingCommands();
+    private armWatchdog(commandId: string): () => void {
+        let cancelled = false;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+
+        const schedule = (delayMs: number) => {
+            timer = setTimeout(() => {
+                if (timer !== null) this.watchdogTimers.delete(timer);
+                timer = null;
+                if (cancelled || !this.processing) return;
+
+                const agentBusy = this.deps.adapter.isAgentBusy();
+                logger.info(
+                    agentBusy
+                        ? '[ExecutorCore] ⏳ Command still executing in AgentService — retaining processing lock.'
+                        : '[ExecutorCore] ⏳ Command route remains unresolved — retaining processing lock.',
+                );
+                void this.writeDiagnostic(
+                    agentBusy ? 'processing_timeout_extended' : 'processing_timeout_route_unresolved',
+                    { commandId },
+                );
+                schedule(PROCESSING_RECHECK_MS);
+            }, delayMs);
+            this.watchdogTimers.add(timer);
         };
-        const t = setTimeout(() => {
-            this.watchdogTimers.delete(t);
-            if (!this.processing) return;
-            if (this.deps.adapter.isAgentBusy()) {
-                logger.info('[ExecutorCore] ⏳ Command still executing in AgentService — extending processing lock.');
-                void this.writeDiagnostic('processing_timeout_extended', { commandId });
-                const r = setTimeout(recheck, PROCESSING_RECHECK_MS);
-                this.watchdogTimers.add(r);
-                return;
+
+        schedule(PROCESSING_TIMEOUT_MS);
+        return () => {
+            cancelled = true;
+            if (timer !== null) {
+                clearTimeout(timer);
+                this.watchdogTimers.delete(timer);
+                timer = null;
             }
-            this.processing = false;
-            void this.writeDiagnostic('processing_timeout_reset', { commandId });
-            void this.scanAndProcessPendingCommands();
-        }, PROCESSING_TIMEOUT_MS);
-        this.watchdogTimers.add(t);
+        };
     }
 
     async processSingleCommand(command: RemoteCommand & { id: string }): Promise<void> {
@@ -167,24 +173,22 @@ export class StudioExecutorCore {
         // across it let two near-simultaneous commands pass the busy check.
         this.processing = true;
         let claimedByThisCall = false;
+        let disarmWatchdog: (() => void) | null = null;
         try {
             if (!this.deps.shouldProcess(command)) {
                 logger.info(`[ExecutorCore] ⏭️ Command ${command.id} belongs to the cloud executor`);
                 return;
             }
 
-            const localP2PCommand = command.id.startsWith('p2p-');
             const uid = this.deps.getUserId();
-            if (!localP2PCommand && !uid) return;
+            if (!uid) return;
 
-            let claimed = localP2PCommand;
-            if (!localP2PCommand) {
-                try {
-                    claimed = await this.deps.lease.claim(command.id, this.studioInstanceId!);
-                } catch (err) {
-                    logger.warn('[ExecutorCore] Atomic claim failed:', err);
-                    return;
-                }
+            let claimed = false;
+            try {
+                claimed = await this.deps.lease.claim(command.id, this.studioInstanceId!);
+            } catch (err) {
+                logger.warn('[ExecutorCore] Atomic claim failed:', err);
+                return;
             }
             if (!claimed) {
                 void this.writeDiagnostic('command_skipped_not_claimed', { commandId: command.id });
@@ -197,7 +201,7 @@ export class StudioExecutorCore {
             // the queue durable while Studio rests in the tray.
             this.deps.adapter.wakeStudio();
 
-            this.armWatchdog(command.id);
+            disarmWatchdog = this.armWatchdog(command.id);
 
             logger.info(`[ExecutorCore] 📱→🖥️ Processing command: "${command.text?.substring(0, 50)}"`);
             void this.writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50) });
@@ -289,6 +293,7 @@ export class StudioExecutorCore {
                 logger.warn('[ExecutorCore] Completion publish also failed:', completeErr)
             );
         } finally {
+            disarmWatchdog?.();
             // Every exit must release the synchronous queue guard. A lost or
             // failed lease claim otherwise leaves this executor wedged forever.
             this.processing = false;
@@ -301,7 +306,7 @@ export class StudioExecutorCore {
 
     async scanAndProcessPendingCommands(): Promise<void> {
         const uid = this.deps.getUserId();
-        if (!uid || this.processing) return;
+        if (!this.running || !uid || this.processing) return;
 
         try {
             const pending = await this.deps.scanPending();

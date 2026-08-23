@@ -322,6 +322,22 @@ describe('AgentService Boardroom capability intent dispatch', () => {
         ]);
     });
 
+    it('returns an explicit queued disposition when an active run owns the send lock', async () => {
+        const service = new AgentService(vi.fn(async ({ response }) => ({ text: response.text })));
+        const internals = service as unknown as {
+            isProcessing: boolean;
+            pendingSends: Array<{ text: string }>;
+        };
+        internals.isProcessing = true;
+
+        await expect(service.sendMessage('Run after the current task.', undefined, 'generalist', {
+            source: 'mobile-remote',
+        })).resolves.toBe('queued');
+        expect(internals.pendingSends).toEqual([
+            expect.objectContaining({ text: 'Run after the current task.' }),
+        ]);
+    });
+
     it('finalizes a department-head response through the same production seam', async () => {
         const messages = [{ id: 'response-department', role: 'model', text: '', timestamp: Date.now() }];
         const state = {

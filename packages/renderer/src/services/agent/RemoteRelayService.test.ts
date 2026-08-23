@@ -200,13 +200,13 @@ describe('RemoteRelayService - cancelCommand (ISSUE-989)', () => {
         expect(txUpdate).not.toHaveBeenCalled();
     });
 
-    it('returns false for a nonexistent command (e.g. a synthetic P2P id with no Firestore doc)', async () => {
+    it('returns false for a nonexistent command', async () => {
         mocks.runTransaction.mockImplementation(async (_db, updateFn) => {
             const tx = { get: vi.fn().mockResolvedValue({ exists: () => false, data: () => undefined }), update: vi.fn() };
             return updateFn(tx);
         });
 
-        expect(await remoteRelayService.cancelCommand('p2p-abc123')).toBe(false);
+        expect(await remoteRelayService.cancelCommand('missing-command-id')).toBe(false);
     });
 
     it('returns false (not throw) when the transaction itself fails', async () => {

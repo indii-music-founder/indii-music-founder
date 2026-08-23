@@ -80,7 +80,7 @@ class StudioExecutorLeaseService {
         return result.data.claimed;
     }
 
-    async publishResponse(response: { commandId: string; text: string; agentId?: string; imageUrls?: string[]; isStreaming: boolean; boardroomMessageId?: string }): Promise<void> {
+    async publishResponse(response: { commandId: string; text: string; agentId?: string; imageUrls?: string[]; videoUrls?: string[]; isStreaming: boolean; boardroomMessageId?: string }): Promise<void> {
         const lease = await this.getLease();
         const publish = httpsCallable(functions, 'publishStudioResponse');
         await publish({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, ...response });

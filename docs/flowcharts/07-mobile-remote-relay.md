@@ -35,10 +35,13 @@ graph TD
     end
 
     subgraph STUDIO["Studio desktop"]
+        GUARD["Acquire synchronous local queue guard"]
         CLAIM["Atomically claim one pending phone command"]
+        RELEASE["Release guard; await a later relay event"]
         WAKE["Wake Studio after every successful claim"]
         PARSE["Parse and route the remote command"]
         EXECUTE["Execute the selected Studio action"]
+        WATCHDOG["Retain lock while route promise is unresolved"]
         COMPLETE["Publish response and terminal command status"]
         IDENTITY["Ignore stale timer and async completions that no longer own the active request"]
     end
@@ -66,11 +69,14 @@ graph TD
 
     CONTROLS --> COMMAND
     COMMAND --> RULES
-    RULES --> CLAIM
+    RULES --> GUARD
+    GUARD --> CLAIM
+    CLAIM -->|"Lost or failed"| RELEASE
     CLAIM --> WAKE
     WAKE --> PARSE
     PARSE --> EXECUTE
-    EXECUTE --> IDENTITY
+    EXECUTE --> WATCHDOG
+    WATCHDOG --> IDENTITY
     IDENTITY --> COMPLETE
     COMPLETE --> RESPONSE
     RESPONSE --> CONTROLS
@@ -83,7 +89,7 @@ graph TD
     class AUTH,PAIRED,LOCKED,CONTROLS,SNAPSHOT,FRESH,ACTIVE,EDGE,GRACE,STANDBY,RETRY,VISIBLE,SETTLE,MANUAL mobile
     class STATE,LOCAL,FANOUT,COMMAND,RESPONSE relay
     class CLAIM,WAKE,PARSE,EXECUTE,COMPLETE studio
-    class RULES,IDENTITY guard
+    class RULES,GUARD,RELEASE,WATCHDOG,IDENTITY guard
 ```
 
 ## Transition Breakdown
@@ -96,3 +102,4 @@ graph TD
 6. **Relay writes are narrow and owner-bound.** Firestore rules validate the command and settings schemas, reject oversized or polluted payloads, and allow cancellation to change status only. The desktop uses a lease-backed transaction so only one Studio can claim a pending command.
 7. **Every successful phone claim wakes Studio.** Wake-up occurs before parsing and action routing, including commands recovered from backlog scans, so sleep does not silently strand valid work.
 8. **Async completion preserves ownership.** Generation timers, cancellation, and media playback capture request identity. A completion updates UI state only while it still owns the active operation, preventing older work from erasing or overwriting a newer command.
+9. **Queue ownership lasts until real settlement.** The local guard is released on every pre-execution exit, but a claimed route retains it until its execution promise settles. Watchdog timers are command-scoped diagnostics and cannot unlock unresolved or later work.

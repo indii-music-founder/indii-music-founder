@@ -9,8 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     HEARTBEAT_INTERVAL_MS,
+    PROCESSING_RECHECK_MS,
     PROCESSING_TIMEOUT_MS,
-    shouldReportQueuedChatToRemote,
     type ExecutorCoreDeps,
     type RemoteCommand,
     type StudioExecutionAdapter,
@@ -292,11 +292,11 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         expect(vi.mocked(adapter.executeCommand).mock.calls.some(([c]) => c.command.id === 'second')).toBe(true);
     });
 
-    it('watchdog keeps the lock while the agent is genuinely busy, unlocks after settle', async () => {
+    it('watchdog never releases the lock while the command route is unresolved', async () => {
         let busy = true;
         let releaseRoute: (() => void) | null = null;
         const scanPending = vi.fn(async () => []);
-        const { core, relay, adapter } = build({ scanPending });
+        const { core, relay, adapter, deps } = build({ scanPending });
         vi.mocked(adapter.isAgentBusy).mockImplementation(() => busy);
         vi.mocked(adapter.executeCommand).mockImplementationOnce(
             () => new Promise(resolve => {
@@ -315,15 +315,49 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         await vi.advanceTimersByTimeAsync(1_000);
         expect(relay.completions).toEqual([]);
 
-        // Agent settles; the next 30s recheck releases the lock and sweeps.
+        // AgentService may report settled before the route promise itself
+        // resolves (for example a long direct image/video route). The Core
+        // must retain serialization until executeCommand actually settles.
         busy = false;
-        await vi.advanceTimersByTimeAsync(30_000);
+        await vi.advanceTimersByTimeAsync(PROCESSING_RECHECK_MS);
+        await relay.emitCommand(cmd({ id: 'must-wait', text: 'second command' }));
+        expect(deps.lease.claim).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(adapter.executeCommand)).toHaveBeenCalledTimes(1);
 
         releaseRoute!();
         await done;
 
+        await relay.emitCommand(cmd({ id: 'after-settle', text: 'now safe' }));
+
         expect(relay.completions).toContain('slow-nav');
+        expect(vi.mocked(adapter.executeCommand)).toHaveBeenCalledTimes(2);
         expect(vi.mocked(adapter.isAgentBusy).mock.calls.length).toBeGreaterThan(0);
+    });
+
+    it('cancels each completed command watchdog so it cannot unlock a later command', async () => {
+        let releaseSecond: (() => void) | null = null;
+        const { core, relay, adapter, deps } = build();
+
+        core.start();
+        await relay.emitCommand(cmd({ id: 'first-fast', text: 'quick' }));
+        await vi.advanceTimersByTimeAsync(PROCESSING_TIMEOUT_MS / 2);
+
+        vi.mocked(adapter.executeCommand).mockImplementationOnce(
+            () => new Promise(resolve => {
+                releaseSecond = () => resolve({ relays: [{ text: 'second done' }], queuedBehindActiveRun: false });
+            }),
+        );
+        const second = relay.emitCommand(cmd({ id: 'second-slow', text: 'slow' }));
+
+        // Cross the first command's original watchdog deadline. If that stale
+        // timer survived, it would clear the second command's processing lock.
+        await vi.advanceTimersByTimeAsync(PROCESSING_TIMEOUT_MS / 2);
+        await relay.emitCommand(cmd({ id: 'third-too-early', text: 'wait' }));
+        expect(deps.lease.claim).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(adapter.executeCommand)).toHaveBeenCalledTimes(2);
+
+        releaseSecond!();
+        await second;
     });
 
     it('reports QUEUED when the chat was parked behind an active desktop run', async () => {
@@ -364,8 +398,6 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         await relay.emitCommand(cmd({ id: 'silent', text: 'nothing' }));
         expect(relay.responses.filter(r => r.id === 'silent').map(r => r.text)).toEqual(['Done.']);
 
-        // Contract sanity: the decider itself.
-        expect(shouldReportQueuedChatToRemote(false, true)).toBe(true);
     });
 
     it('answers route throws with an honest error response and still completes', async () => {
@@ -441,6 +473,29 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         expect(vi.mocked(adapter.executeCommand).mock.calls.some(([c]) => c.command.id === 'backlog-1')).toBe(true);
     });
 
+    it('does not sweep or start new work after stop while an accepted route settles', async () => {
+        let releaseRoute: (() => void) | null = null;
+        const scanPending = vi.fn(async () => []);
+        const { core, relay, adapter } = build({ scanPending });
+        vi.mocked(adapter.executeCommand).mockImplementationOnce(
+            () => new Promise(resolve => {
+                releaseRoute = () => resolve({ relays: [{ text: 'finished safely' }], queuedBehindActiveRun: false });
+            }),
+        );
+
+        core.start();
+        const accepted = relay.emitCommand(cmd({ id: 'finish-during-stop', text: 'keep ownership' }));
+        await vi.advanceTimersByTimeAsync(0);
+        await core.stop();
+
+        releaseRoute!();
+        await accepted;
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(relay.completions).toContain('finish-during-stop');
+        expect(scanPending).toHaveBeenCalledTimes(1); // startup only
+    });
+
     it('releases the processing lock after an unclaimed command', async () => {
         const lease = { claim: vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true) };
         const { core, relay, adapter } = build({ lease });
@@ -470,6 +525,16 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         expect(vi.mocked(adapter.executeCommand)).toHaveBeenCalledTimes(1);
         expect(vi.mocked(adapter.executeCommand).mock.calls[0]![0].command.id).toBe('next');
         expect(relay.completions).toContain('next');
+    });
+
+    it('requires every command id, including legacy p2p-shaped ids, to win the server lease claim', async () => {
+        const { core, relay, adapter, deps } = build();
+
+        core.start();
+        await relay.emitCommand(cmd({ id: 'p2p-shaped-but-firestore-owned', text: 'claim me' }));
+
+        expect(deps.lease.claim).toHaveBeenCalledWith('p2p-shaped-but-firestore-owned', core.instanceId);
+        expect(vi.mocked(adapter.executeCommand)).toHaveBeenCalledTimes(1);
     });
 
     it('instance ids satisfy the server-side device schema', () => {
