@@ -953,3 +953,33 @@ Summary: **A ≈ 17 items** form a coherent Core; **B/C ≈ 7** belong behind th
 ### 20.3 Phase-1 exit check (§19.4)
 
 Classification table: complete. §13 diff: every item covered-by-named-test or classified GAP with owning class. Production code: unchanged (test files + docs only). **Phase 1 exit criterion met. Phase 2 (extract StudioExecutorCore in-renderer) is the next unit and should consume G1 as its test-first target list.**
+
+---
+
+## 21. PHASE 2–3 RESULT — CORE EXTRACTED, ADAPTER BOUND (2026-08-23)
+
+Phases 2 AND 3 delivered together (inseparable for behavioral parity). Still inside the renderer process by design; Phase 4+ unchanged in scope.
+
+### New modules
+
+| File | Role |
+|---|---|
+| `services/remote/studioExecutorContracts.ts` | The boundary: `StudioExecutionAdapter`, `RelayTransport`, `LeaseClaimer`, `ExecutorCoreDeps` interfaces; pure deciders (`shouldReportQueuedChatToRemote`, `shouldProcessStudioCommand`, `isLocalP2PCommand`, `MAX_REMOTE_AGENT_RESPONSES`). The Core imports only this file for contracts. |
+| `services/remote/StudioExecutorCore.ts` | Category-A owner, React-free class with explicit `start()/stop()`: presence heartbeat (+visibility immediate push), command/dispatch subscriptions, ownership filtering, atomic claims, synchronous lock, 120s/30s watchdog, response/completion publishing, QUEUED honesty, backlog sweeps at start + after every command, diagnostics stages (names preserved), 30-min cleanup cadence, instance-scoped presence release on stop. |
+| `services/remote/rendererExecutionAdapter.ts` | Category-B/C implementation binding the Core to the existing layer verbatim: all command routes, dispatch handlers, wake, presence snapshot, boardroom transcript collection, queued-detection. No duplicated services or tools. |
+| `hooks/useRemoteCommandListener.ts` | Now a mount boundary: auth/surface gating + `core.start()`/`stop()`; every previously exported symbol re-exported (zero external import churn). Disabled legacy HTTP relay deleted (dead since its flag was hardcoded false). |
+
+### Behavioral parity evidence
+
+- Full monorepo Vitest: **6,791 passed / 0 failed** (was 6,683 before Phase 2; delta = new tests only).
+- All ten pre-existing remote suites pass unmodified through the compat re-exports.
+- Production build green; repo-wide typecheck green; scoped ESLint clean.
+
+### G1 closure status
+
+The nine G1 harness gaps are now testable and tested via `start()/stop()` against fake transports (16 new Core cases): heartbeat cadence, visibility push, deterministic teardown + single release, no-publish-no-release, receipt→claim→wake→delegate→relay→complete→sweep, cloud-skip pre-claim, busy-defer with post-completion recovery, watchdog extension while genuinely busy then unlock-on-settle, QUEUED reporting, full boardroom relay + honest `Done.` fallback, route-throw error honesty, rejected-command warning without delegation, dispatch claim/wake/receipt/failure, restart recovery with backlog rescan, unclaimed skip, device-schema instance ids.
+
+### Deliberate carry-over to Phase 4
+
+- Core still registers a `document.visibilitychange` listener (owned + disposed by `stop()`), uses `setInterval/setTimeout`, and reads nothing from window beyond that listener — exactly one browser assumption remains to remove.
+- Default wiring (`createDefaultStudioExecutorCore`) statically imports Firebase transports; the class itself stays DI-clean so the Phase 6 runtime decision can swap transports without touching logic.
