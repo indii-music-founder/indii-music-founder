@@ -137,3 +137,38 @@ Shipped then: `7e47e7d05` perf(web) startup-JS cut (~640KB, minified deploy
 build), `825e0ef44` perf lazy landing sections + deferred Sentry. Measured:
 studio login JS transfer 1.91MB → 1.12MB; landing FCP ~430-730ms. Details in
 git history; CI runs 32375459143 + 32388085318 green at the time.
+
+---
+
+# Session Close — Remote Executor Core, Phases 1–4 + G2 + desktop build (2026-08-23, DSH agent)
+
+**Final state of the remote-control objective. All code pushed to `origin/main`, exact-SHA CI green, production deployed.**
+
+## Delivered this session (remote-control line), in order
+
+| SHA | What | CI |
+|---|---|---|
+| `851e656a1` | Freshness honesty (heartbeat-advance, kills cache-hit forgery), truthful QUEUED responses, bounded FIFO queue, synchronous lock, dead P2P removal, Settings relay-health row | 32600606995 ✅ |
+| `2d83e43eb` | Phone mode targeting (conversationMode + rules), full boardroom relay, notes tools into every agent pool | 32605992330 ✅ |
+| `9e075d2e9` | Plan Phase 1: A–E responsibility classification + §13 characterization diff | 32609197216 (22/22 pre-build green; cancelled by concurrency, superseded by successor 32609582951 ✅) |
+| `689d5f05c` | G2 closed: 25 server-side tests for all six lease callables | 32611290137 ✅ |
+| `8119b0be2` | Phases 2–3: StudioExecutorCore (framework-free) + rendererExecutionAdapter extracted; hook → mount boundary | 32643303277 ✅ |
+| `cba87a0a9` | Phase 4: Core browser-free (injected visibility hook, host wiring module, ESLint document/window ban) | 32645854514 ✅ |
+
+Plan of record: `docs/REMOTE_EXECUTOR_CORE_PLAN.md` — §20 Phase 1, §21 Phases 2–3, §22 Phase 4; Phase 5 (capability presence) and 6–9 (runtime move) remain, scoped there.
+
+Full suite green at each delivery point (final: 6,791 passed / 0 failed).
+
+## Desktop build (manual, unsigned)
+
+`dist-electron/indii.music-1.65.0-arm64.dmg` (271 MB) + matching zip + unpacked `indii.music.app`, all v1.65.0, built from a CLEAN `npm ci` worktree at `cba87a0a9` (excludes other-agent WIP). DMG mount-verified. **Unsigned/un-notarized** (no Apple creds): first launch = right-click → Open; auto-updater will NOT accept it. Old Aug-10 artifacts archived under `dist-electron/_archive-2026-08-10/`.
+
+## NOT done / honest limits
+
+- Real two-device (iPhone ↔ Electron) validation is still unperformed — evidence is structural + local + CI only.
+- Phase 5–9 (capability presence, background-runtime move) deliberately deferred.
+- A verification brief for an independent second agent was handed to the founder this session.
+
+## Shared-tree note
+
+The working tree carries a large in-progress video-studio refactor by the other agent (Remotion removal, `ElectronRenderService`, `packages/main/src/services/{video,media}`, cspell, electron.vite.config, package.json/lock, etc.) — uncommitted, NOT mine, left untouched. Local full-suite/typecheck is contaminated by that state; authoritative proof is the per-SHA CI runs above.
