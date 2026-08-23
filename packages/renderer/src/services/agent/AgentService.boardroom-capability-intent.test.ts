@@ -240,6 +240,88 @@ describe('AgentService Boardroom capability intent dispatch', () => {
         });
     });
 
+    it('ignores remote routing overrides on desktop-originated sends', async () => {
+        const messages = [{ id: 'response-desktop', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'direct',
+            directTargetAgentId: 'legal',
+            activeAgentProvider: 'agents',
+            agentHistory: messages,
+            updateAgentMessage: vi.fn(),
+        };
+        const service = new AgentService(vi.fn(async ({ response }) => ({ text: response.text })));
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            executeFlow: (
+                text: string,
+                attachments: undefined,
+                context: AgentContext,
+                responseId: string,
+                forcedAgentId: undefined,
+                signal: undefined,
+                options: { source: 'desktop'; conversationModeOverride: 'boardroom'; targetOverride: string },
+            ) => Promise<void>;
+        }).executeFlow(
+            'Use the desktop route.',
+            undefined,
+            {},
+            'response-desktop',
+            undefined,
+            undefined,
+            { source: 'desktop', conversationModeOverride: 'boardroom', targetOverride: 'finance' },
+        );
+
+        expect(capturedExecutions).toEqual([
+            expect.objectContaining({
+                agentId: 'legal',
+                context: expect.objectContaining({ conversationMode: 'direct' }),
+            }),
+        ]);
+    });
+
+    it('honors routing overrides on mobile-remote sends', async () => {
+        const messages = [{ id: 'response-remote', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'direct',
+            directTargetAgentId: 'legal',
+            activeAgentProvider: 'agents',
+            agentHistory: messages,
+            updateAgentMessage: vi.fn(),
+        };
+        const service = new AgentService(vi.fn(async ({ response }) => ({ text: response.text })));
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            executeFlow: (
+                text: string,
+                attachments: undefined,
+                context: AgentContext,
+                responseId: string,
+                forcedAgentId: undefined,
+                signal: undefined,
+                options: { source: 'mobile-remote'; conversationModeOverride: 'direct'; targetOverride: string },
+            ) => Promise<void>;
+        }).executeFlow(
+            'Use the phone route.',
+            undefined,
+            {},
+            'response-remote',
+            undefined,
+            undefined,
+            { source: 'mobile-remote', conversationModeOverride: 'direct', targetOverride: 'finance' },
+        );
+
+        expect(capturedExecutions).toEqual([
+            expect.objectContaining({
+                agentId: 'finance',
+                context: expect.objectContaining({ conversationMode: 'direct' }),
+            }),
+        ]);
+    });
+
     it('finalizes a department-head response through the same production seam', async () => {
         const messages = [{ id: 'response-department', role: 'model', text: '', timestamp: Date.now() }];
         const state = {

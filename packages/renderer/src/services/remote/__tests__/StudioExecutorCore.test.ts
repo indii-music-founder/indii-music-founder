@@ -328,7 +328,9 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
 
     it('reports QUEUED when the chat was parked behind an active desktop run', async () => {
         const { core, relay, adapter } = build();
-        vi.mocked(adapter.isAgentBusy).mockReturnValue(true);
+        // The adapter captured this outcome while the prior run was active.
+        // By the time Core receives it, the live busy flag may already be false.
+        vi.mocked(adapter.isAgentBusy).mockReturnValue(false);
         vi.mocked(adapter.executeCommand).mockResolvedValue({ relays: [], queuedBehindActiveRun: true });
 
         core.start();
@@ -338,6 +340,7 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         expect(final).toHaveLength(1);
         expect(final[0]!.text).toContain('Queued');
         expect(relay.completions).toContain('q1');
+        expect(adapter.isAgentBusy).not.toHaveBeenCalled();
     });
 
     it('relays every boardroom reply oldest-first and falls back to Done. only when free with zero output', async () => {
@@ -438,16 +441,35 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         expect(vi.mocked(adapter.executeCommand).mock.calls.some(([c]) => c.command.id === 'backlog-1')).toBe(true);
     });
 
-    it('unclaimed commands are skipped without touching the adapter', async () => {
-        const lease = { claim: vi.fn(async () => false) };
+    it('releases the processing lock after an unclaimed command', async () => {
+        const lease = { claim: vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true) };
         const { core, relay, adapter } = build({ lease });
 
         core.start();
         await relay.emitCommand(cmd({ id: 'stolen', text: 'hi' }));
+        await relay.emitCommand(cmd({ id: 'next', text: 'still works' }));
 
-        expect(lease.claim).toHaveBeenCalled();
-        expect(vi.mocked(adapter.executeCommand)).not.toHaveBeenCalled();
+        expect(lease.claim).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(adapter.executeCommand)).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(adapter.executeCommand).mock.calls[0]![0].command.id).toBe('next');
         expect(relay.completions).not.toContain('stolen');
+        expect(relay.completions).toContain('next');
+    });
+
+    it('releases the processing lock after a lease claim error', async () => {
+        const lease = {
+            claim: vi.fn().mockRejectedValueOnce(new Error('lease offline')).mockResolvedValueOnce(true),
+        };
+        const { core, relay, adapter } = build({ lease });
+
+        core.start();
+        await relay.emitCommand(cmd({ id: 'retry-later', text: 'hi' }));
+        await relay.emitCommand(cmd({ id: 'next', text: 'still works' }));
+
+        expect(lease.claim).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(adapter.executeCommand)).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(adapter.executeCommand).mock.calls[0]![0].command.id).toBe('next');
+        expect(relay.completions).toContain('next');
     });
 
     it('instance ids satisfy the server-side device schema', () => {
