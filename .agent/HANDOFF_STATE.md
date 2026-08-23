@@ -1,3 +1,50 @@
+# Session Checkpoint — Backend P0 Audit Fixes (2026-08-22, DSH agent)
+
+**Updated:** 2026-08-22 (session close)
+**Branch:** `main` — `990751782`, local == origin/main, CI run 32609582951 GREEN (incl. production deploy).
+
+## Shipped — four confirmed audit P0s fixed + regression-tested
+
+Full-spectrum backend health audit (read-only; report in session transcript) found 4 P0s,
+15+ P1s, ~30 P2s across money paths / async reliability / rules. The P0s shipped as
+`8201df89f` (+ fixture follow-up `990751782`), path-scoped commits, foreign work untouched:
+
+1. **P0-A credit minting:** `createOneTimeCheckout` metadata spread let clients override
+   webhook routing (`type`) → $0.01 minted arbitrary credits / completed marketplace
+   purchases. Reserved keys stripped server-side; webhook micro-handler now re-verifies the
+   live Stripe line item against STRIPE_PRICE_CREDIT_PACK × credits; marketplace completion
+   requires stripeSessionId binding + amount_total match. Tests: `createOneTimeCheckout.test.ts`,
+   `webhookHandler.fulfillment-guards.test.ts`; stale fixture in `stripeWebhook.test.ts` updated to real contract.
+2. **P0-B DDEX self-retrigger:** ACKs moved into `ddex-acks/processed/` re-fired the same
+   trigger forever. Guard skips archived paths. Test: `processDDEXAck.test.ts`.
+3. **P0-C orchestrator deadline:** `videoJobFirestoreOrchestrator` awaited multi-minute Veo
+   pipeline at Gen2 default 60s → jobs stranded while provider billed. Now `timeoutSeconds: 540`.
+4. **P0-D videoJobs ownership:** long-form docs stamped `type:'long_form'`; legacy worker gate
+   skips ANY typed/versioned job (was double-generating long-form, auto-failing render_stitch).
+   Tests extended in `executeVideoJob.cloudevent.test.ts`.
+
+Evidence: firebase strict tsc clean; root typecheck/lint 0 errors; firebase suite 964/0;
+vite build green; repo pre-commit gates green ×2. ERROR_LEDGER: 4 new entries appended.
+NOTE: 3 rules suites fail locally without the Firestore emulator (documented fail-closed);
+green in CI.
+
+## Known follow-ups from the audit (NOT done — prioritized list)
+
+- **P1 batch:** paid Stripe tiers never materialized as server entitlements (paying customers
+  budgeted as FREE); client-controlled trialDays; video under-reservation warn-only;
+  pod_printfulCreateOrder has no payment gate; no refund/dispute webhook handlers;
+  subscription webhook out-of-order guard; revenue collection client-mutable (rules);
+  /users/{uid}/tmp storage unbounded; six scheduled workers swallow top-level errors;
+  claim-less processWebhookQueue; BigQuery export cursor starvation; knowledge task queue
+  dead retries; timeline milestone duplicate window; video reaper resubmits billable jobs;
+  cleanupOrphanedVideos can delete live outputs; >500-op batch failures; ISRC phantom uniqueness.
+- Full P1/P2 details with file:line citations live in this session's transcript only —
+  consider persisting to `.agent/test_ledger/OPEN_ISSUES_V3.md` before context is lost.
+- Deployed-config verifications outstanding: gcloud timeout revision for the orchestrator,
+  Printful store auto-submission setting.
+
+---
+
 # Session Checkpoint — Remote Control System Repair (2026-08-22, DSH agent)
 
 **Updated:** 2026-08-22 (session close, round 2)
