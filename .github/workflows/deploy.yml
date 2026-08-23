@@ -129,6 +129,16 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
+      - name: Expose pinned FFmpeg tools
+        shell: bash
+        run: |
+          media_tools="$RUNNER_TEMP/indii-media-tools"
+          mkdir -p "$media_tools"
+          ln -sf "$(node -p "require('ffmpeg-static')")" "$media_tools/ffmpeg"
+          ln -sf "$(node -p "require('ffprobe-static').path")" "$media_tools/ffprobe"
+          chmod +x "$media_tools/ffmpeg" "$media_tools/ffprobe"
+          echo "$media_tools" >> "$GITHUB_PATH"
+
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:

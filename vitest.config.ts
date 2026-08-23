@@ -30,6 +30,10 @@ export default defineConfig({
       '**/node_modules/**',
       '.claude/**',
       '.agent/**',
+      // Vendored agent skills ship their own upstream test suites. They are
+      // installer payload, not application tests, and may assume the source
+      // repository's private fixtures/tooling.
+      '.agents/**',
       'landing-page/**',
       '_archive_legacy/**',
       'tests/**',
