@@ -232,6 +232,17 @@ async function deleteStorageOutputs(uris: string[]): Promise<void> {
   }));
 }
 
+/**
+ * Firestore rejects any document or update containing `undefined` values
+ * ("Cannot use 'undefined' as a Firestore value"). Gateway records are plain
+ * JSON — no FieldValue sentinels — so an undefined-stripping JSON round-trip is
+ * the canonical cleanup before every creative_jobs/videoJobs write. Missing
+ * optional fields must never invalidate the write.
+ */
+function stripUndefined<T>(data: T): T {
+  return JSON.parse(JSON.stringify(data)) as T;
+}
+
 export async function safeDbSet(
   jobId: string,
   data: Record<string, unknown>,
@@ -239,15 +250,12 @@ export async function safeDbSet(
 ) {
   try {
     // ISSUE-1365/1368: Firestore rejects documents containing `undefined`
-    // values ("Cannot use 'undefined' as a Firestore value"). The image job
-    // record carries optional `sessionId` (absent on agent-driven Boardroom
-    // generations) and the video record has optional staged fields plus an
-    // explicit `cameraPhysics: undefined` — so every such write failed and
-    // was silently discarded before 961cfac28, leaving the Boardroom with no
-    // record of successful generations. Strip undefined values (gateway
-    // records are plain JSON — no FieldValue sentinels) so a missing
-    // optional field can never invalidate the write.
-    const clean = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+    // values. The image job record carries optional `sessionId` (absent on
+    // agent-driven Boardroom generations) and the video record has optional
+    // staged fields plus an explicit `cameraPhysics: undefined` — so every
+    // such write failed and was silently discarded before 961cfac28, leaving
+    // the Boardroom with no record of successful generations.
+    const clean = stripUndefined(data);
     await getDb().collection(collection).doc(jobId).set(clean);
   } catch (error) {
     // ISSUE-1365: this catch previously discarded the error entirely, so the
@@ -273,7 +281,7 @@ export async function safeDbUpdate(
   try {
     // ISSUE-1365/1368: same undefined-strip as safeDbSet — an update carrying
     // an undefined field is also an invalid Firestore document.
-    const clean = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+    const clean = stripUndefined(data);
     await getDb().collection(collection).doc(jobId).update(clean);
   } catch (error) {
     // ISSUE-1365: same non-swallowing fix as safeDbSet — the underlying
@@ -291,7 +299,7 @@ export async function safeDbUpdate(
 async function syncVideoJobUpdate(jobId: string, data: Record<string, unknown>) {
   // ISSUE-1380: same undefined-strip as safeDbUpdate — the direct videoJobs
   // write must never reject on an absent optional field.
-  const clean = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+  const clean = stripUndefined(data);
   await getDb().collection('videoJobs').doc(jobId).update(clean);
   await safeDbUpdate(jobId, data, 'creative_jobs');
 }
@@ -2001,7 +2009,9 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
 
     // Omni interaction IDs are required for secure stateful edits, so the job
     // record is part of the transaction boundary rather than best-effort telemetry.
-    await getDb().collection('creative_jobs').doc(jobId).set(initialJob);
+    // Optional fields (parentId, previousInteractionId, previousJobId) may be
+    // absent — Firestore rejects undefined values, so strip them first.
+    await getDb().collection('creative_jobs').doc(jobId).set(stripUndefined(initialJob));
     const ai = getOmniAiClient();
     const sourceVideo = data.referenceVideoUri && !data.previousInteractionId
       ? await uploadOwnedVideoToGeminiFiles(ai, userId, data.referenceVideoUri)
@@ -2054,7 +2064,7 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
       },
     );
 
-    await getDb().collection('creative_jobs').doc(jobId).update({
+    await getDb().collection('creative_jobs').doc(jobId).update(stripUndefined({
       status: 'completed',
       resultUri: outputUri,
       interactionId: finished.id,
@@ -2076,7 +2086,7 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
         usage: finished.usage,
       },
       completedAt: new Date().toISOString()
-    });
+    }));
     outputCompleted = true;
     // ISSUE-1365: usage accounting — video minutes must appear in the
     // settings meters. The record type is 'video' with seconds as amount

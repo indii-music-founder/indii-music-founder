@@ -2579,3 +2579,26 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - Admin API: every data route behind `requireAdminAuth`; both webhooks behind `requireWebhookSecret`; new access-log route gated.
 - console.log: confined to test files (98 hits, zero in production paths).
 - recordAccess throttle Map growth bounded by identity count (fine at current scale).
+
+---
+
+### Cloud session 2026-08-23 — ISSUE-1365 root cause confirmed, ISSUE-1168 verified, OAuth consent finding
+
+**ISSUE-1365 follow-up — root cause confirmed from production logs (founder-run console review):**
+- Production `generateImageV3` logs show the initial `creative_jobs` set failing because `sessionId` is `undefined`, and the subsequent update failing with `code: 5 / NOT_FOUND` because the document was never created. This is the exact pre-`f5eef5629` failure signature.
+- Conclusion: the repo already contains the undefined-strip for `safeDbSet`/`safeDbUpdate` (`f5eef5629`, ISSUE-1368). The deployed `generateImageV3` revision is stale relative to that fix. **This is now a deploy problem, not a re-code problem.**
+- Hardening this session: added a `stripUndefined` helper to `gateway.ts` and applied it to the two remaining raw `creative_jobs` writes in `generateOmniRemixV3` — the initial `set(initialJob)` and the completion `update({...})` — both carried optional fields (`parentId`, `previousInteractionId`, `previousJobId`, `providerInputFileName`) that could be `undefined` and would hit the identical failure. These are transaction-boundary writes and must throw on failure, so they are stripped and kept as direct writes (not routed through non-blocking safe helpers).
+- Validation: `tsc -b packages/firebase` clean; eslint clean on `gateway.ts`; `gateway.test.ts` 54/54.
+- **Remaining:** deploy current `generateImageV3` (and `generateOmniRemixV3`) to production; founder generates one image; confirm `creative_jobs/{jobId}` + usage doc now exist.
+
+**ISSUE-1168 — console verification (founder):** alert policy “AI generation billing/quota exhaustion (RESOURCE_EXHAUSTED)” exists and is attached to notification channel “Founder email (William)”. No test notification was sent; the underlying email address is hidden on the policy page. Residual acceptance item stands: deliver one real test alert email to the founder.
+
+### ISSUE-1400: OAuth consent screen is Testing, not In production, with zero test users configured
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (YouTube/Gmail OAuth restricted until addressed)
+- **Module:** GCP OAuth consent screen / integrations
+- **Evidence:** Founder verified 2026-08-23 in GCP Console — publishing status “Testing”; zero test users configured. YouTube upload + Gmail scopes therefore only work for explicitly added test users, and sensitive-scope tokens expire every 7 days for testing users.
+- **Impact:** Any founder/customer flow using Google OAuth (YouTube upload, Gmail) is unusable for real users.
+- **Fix:** EITHER add the founder as a test user now (fast, keeps Testing status for dev), OR complete OAuth consent-screen verification and publish to production (required before public offer; Google review may be required for sensitive scopes). Then re-test the YouTube upload + Gmail flows.
+- **Acceptance:** Founder completes the YouTube upload OAuth flow (or Gmail) as a non-test-user account without Google warning; consent screen shows “In production”.
