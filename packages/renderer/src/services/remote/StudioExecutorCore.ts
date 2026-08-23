@@ -26,7 +26,6 @@ import {
     PROCESSING_RECHECK_MS,
     PROCESSING_TIMEOUT_MS,
     RELAY_CLEANUP_INTERVAL_MS,
-    shouldReportQueuedChatToRemote,
     type ExecutorCoreDeps,
     type ParsedRemoteCommand,
 } from './studioExecutorContracts';
@@ -237,7 +236,7 @@ export class StudioExecutorCore {
             if (parsed.kind === 'chat') {
                 result = await this.deps.adapter.executeCommand({ command, parsed, respond });
 
-                if (shouldReportQueuedChatToRemote(result.relays.length > 0, this.deps.adapter.isAgentBusy())) {
+                if (result.queuedBehindActiveRun) {
                     logger.info('[ExecutorCore] 💬 Chat queued behind an active desktop agent run');
                     void this.writeDiagnostic('agent_chat_queued_desktop_busy', { commandId: command.id });
                     await this.deps.relay.sendResponse(command.id, QUEUED_NOTICE, command.targetAgentId || 'generalist', false);
@@ -290,11 +289,13 @@ export class StudioExecutorCore {
                 logger.warn('[ExecutorCore] Completion publish also failed:', completeErr)
             );
         } finally {
-            // Single release point; sweep the backlog on every exit path.
-            if (claimedByThisCall) {
-                this.processing = false;
-            }
-            void this.scanAndProcessPendingCommands();
+            // Every exit must release the synchronous queue guard. A lost or
+            // failed lease claim otherwise leaves this executor wedged forever.
+            this.processing = false;
+            // Only a command owned by this executor needs a follow-up sweep.
+            // On claim failure, an immediate rescan can hot-loop the same
+            // still-pending command while the lease service is unavailable.
+            if (claimedByThisCall) void this.scanAndProcessPendingCommands();
         }
     }
 

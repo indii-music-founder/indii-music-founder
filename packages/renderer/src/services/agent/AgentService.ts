@@ -611,7 +611,10 @@ export class AgentService {
         const { updateAgentMessage } = state;
         // Remote sends carry the sender's chosen mode; everything else keeps
         // following the desktop UI's own conversation mode.
-        const conversationMode = options?.conversationModeOverride ?? state.conversationMode;
+        const isMobileRemote = options?.source === 'mobile-remote';
+        const conversationMode = isMobileRemote
+            ? options.conversationModeOverride ?? state.conversationMode
+            : state.conversationMode;
 
         // Auto is a UI routing mode, not an agent-to-agent communication
         // permission. Concrete execution paths assign their existing T1 mode.
@@ -644,7 +647,9 @@ export class AgentService {
         if (conversationMode === 'direct') {
             // A remote sender's explicitly chosen agent wins over whatever the
             // desktop UI last targeted directly.
-            const targetAgentId = (options?.targetOverride ?? state.directTargetAgentId) || 'generalist';
+            const targetAgentId = (
+                isMobileRemote ? options.targetOverride ?? state.directTargetAgentId : state.directTargetAgentId
+            ) || 'generalist';
             if (state.activeAgentProvider === 'direct' && targetAgentId === 'generalist') {
                 logger.debug('[AgentService] Routing to direct chat flow (provider override) for generalist');
                 await this.handleDirectChatFlow(text, attachments, context, responseId);
@@ -836,7 +841,9 @@ export class AgentService {
         const state = useStore.getState();
         const { updateAgentMessage } = state;
         // Remote sends carry the department the sender picked in their own UI.
-        const activeDepartmentId = options?.targetOverride ?? state.activeDepartmentId;
+        const activeDepartmentId = options?.source === 'mobile-remote'
+            ? options.targetOverride ?? state.activeDepartmentId
+            : state.activeDepartmentId;
 
         if (!activeDepartmentId) {
             updateAgentMessage(responseId, { text: '❌ No department selected.' });
