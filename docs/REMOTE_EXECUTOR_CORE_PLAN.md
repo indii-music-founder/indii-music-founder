@@ -998,3 +998,20 @@ The single remaining browser assumption (the `document.visibilitychange` listene
 Evidence: renderer typecheck green; scoped ESLint clean incl. the new guard; Core suite 16/16; full ten-suite remote parity set 155/155.
 
 **Remaining phases:** 5 (capability/presence model — extend `publishStudioPresence` projection + `DesktopState`, small), 6–7 (runtime selection + move — needs a dependency-evidence pass over `wiring.ts`, which now isolates every host touchpoint), 8–9 (UI-wake handoff + cutover). Phases 6+ are the first that change process boundaries and should start from a fresh session with the founder's runtime decision.
+
+---
+
+## 23. PHASE 5 RESULT — CAPABILITY-AWARE PRESENCE (2026-08-23)
+
+Presence now advertises what the Studio can DO, not just that it exists.
+
+- `StudioCapabilities` (`agent`/`computer`/`audio`/`daw`/`ui`) added to `DesktopState` and computed by the renderer adapter from actual host surfaces (`electronAPI.computer/audio/daw`, `sleepMode` → ui).
+- `publishStudioPresence` projects the five keys server-side with boolean coercion and unknown-key stripping — a Controller cannot inflate its own capabilities through the state payload.
+- `StudioExecutorCore` forwards the snapshot into every heartbeat.
+- `SettingsView` renders a "Studio capabilities" chip row; unavailable capabilities grey out with an honest explanation. Offline still shows the existing Active/Sleeping/Offline card unchanged.
+
+Closed alongside Phase 5: the orphaned P2P IPC surface (`preload.remote`, `RemoteMobilePayload`, and the two stale main-process channel allowlist entries) — proven dead (no handler, no renderer caller) and removed.
+
+Evidence: renderer + firebase-tests + main typechecks green; scoped ESLint clean; remote suite set 162/162 incl. a new server-side capabilities-coercion test and an updated Core heartbeat assertion.
+
+**Remaining:** Phases 6–9 (background runtime selection + move + UI-wake handoff + cutover) — unchanged, still gated on the founder's runtime decision and real two-device validation.

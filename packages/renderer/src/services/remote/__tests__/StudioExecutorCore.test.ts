@@ -96,6 +96,7 @@ function makeAdapter(over: Partial<StudioExecutionAdapter> = {}) {
             isAgentProcessing: false,
             activeSessionId: 'sess-1',
             sleepMode: false,
+            capabilities: { agent: true, computer: true, audio: true, daw: false, ui: true },
         })),
         executeCommand: vi.fn(async () => ({ relays: [{ text: 'ok' }], queuedBehindActiveRun: false })),
         executeDispatchTask: vi.fn(async () => undefined),
@@ -167,6 +168,7 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
             studioInstanceId: core.instanceId,
             currentModule: 'dashboard',
             sleepMode: false,
+            capabilities: { agent: true, computer: true, audio: true, daw: false, ui: true },
         });
     });
 

@@ -80,6 +80,7 @@ export class StudioExecutorCore {
                 role: 'studio',
                 studioInstanceId: this.studioInstanceId,
                 listenerReady: true,
+                capabilities: snapshot.capabilities,
             });
             this.hasPublishedPresence = true;
         } catch (error: unknown) {

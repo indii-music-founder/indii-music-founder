@@ -507,7 +507,7 @@ if (!gotTheLock) {
         // Item 373: IPC channel allowlist audit — log any unregistered channels on startup
         const KNOWN_IPC_CHANNELS = new Set([
             'get-platform', 'get-app-version', 'privacy:toggle-protection',
-            'system:select-file', 'system:select-directory', 'system:get-directory-contents', 'system:search-approved-assets', 'system:get-gpu-info', 'system:getMobileRemoteInfo',
+            'system:select-file', 'system:select-directory', 'system:get-directory-contents', 'system:search-approved-assets', 'system:get-gpu-info',
             'auth:logout', 'credentials:save', 'credentials:get', 'credentials:delete', 'credentials:list',
             'audio:analyze', 'audio:lookup-metadata', 'audio:transcode', 'audio:master',
             'net:fetch-url', 'net:fetch-url-base64',
@@ -525,7 +525,7 @@ if (!gotTheLock) {
             'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
             'daw:start', 'daw:stop', 'daw:get-state',
             'video:render', 'video:open-folder', 'video:save-asset', 'video:get-default-path',
-            'power:get-state', 'mobile-remote:stop',
+            'power:get-state',
             'updater:check', 'updater:install', 'updater:set-channel', 'updater:set-source', 'updater:get-config',
             'scheduler:register', 'scheduler:cancel', 'scheduler:set-enabled', 'scheduler:status', 'scheduler:get',
             'test:browser-agent', 'show-notification',

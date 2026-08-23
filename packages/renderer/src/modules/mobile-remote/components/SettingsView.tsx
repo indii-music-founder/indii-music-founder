@@ -181,6 +181,48 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                 )}
             </motion.div>
 
+            {/* ─── Studio Capabilities (Phase 5) ──────────────────────── */}
+            {status !== 'offline' && desktopState?.capabilities && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.03 }}
+                    className="rounded-[24px] bg-[#030303] border border-white/10 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                >
+                    <p className="text-[11px] font-bold text-[#8e8e93] uppercase tracking-widest mb-3">
+                        Studio capabilities
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {([
+                            ['agent', 'Agents'],
+                            ['computer', 'Computer control'],
+                            ['audio', 'Local audio'],
+                            ['daw', 'DAW'],
+                            ['ui', 'Screen'],
+                        ] as const).map(([key, label]) => {
+                            const available = desktopState.capabilities![key];
+                            return (
+                                <span
+                                    key={key}
+                                    className={cn(
+                                        'px-2.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border',
+                                        available
+                                            ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                                            : 'text-[#636366] bg-white/[0.03] border-white/5 line-through'
+                                    )}
+                                >
+                                    {label}
+                                </span>
+                            );
+                        })}
+                    </div>
+                    <p className="text-[10px] text-[#636366] leading-relaxed mt-3">
+                        Unavailable capabilities stay greyed out — your Studio is reachable but that
+                        operation needs the desktop app or isn't supported here.
+                    </p>
+                </motion.div>
+            )}
+
             {/* ─── Sleep Mode ─────────────────────────────────────────── */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}

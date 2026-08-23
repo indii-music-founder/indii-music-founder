@@ -206,18 +206,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
         uploadFile: (file: number[], filename: string) => ipcRenderer.invoke('web3:pinata-upload', { file, filename })
     },
 
-    // IndiiRemote
-    remote: {
-        onMessageFromMobile: (callback: (data: unknown) => void) => {
-            const handler = (_event: unknown, data: unknown) => callback(data);
-            ipcRenderer.on('indii-remote:message-from-mobile', handler);
-            return () => ipcRenderer.removeListener('indii-remote:message-from-mobile', handler);
-        },
-        broadcast: (payload: unknown) => ipcRenderer.send('mobile-remote:broadcast', payload),
-        getMobileRemoteInfo: () => ipcRenderer.invoke('system:getMobileRemoteInfo'),
-        stop: () => ipcRenderer.invoke('mobile-remote:stop'),
-    },
-
     // Auto-Updater
     updater: {
         check: () => ipcRenderer.invoke('updater:check'),

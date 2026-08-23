@@ -13,11 +13,12 @@
  */
 
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
-import { resolveRemoteCommandExecutionTarget, type AgentDispatchTask, type RemoteCommand } from '@/services/agent/RemoteRelayService';
+import { resolveRemoteCommandExecutionTarget, type AgentDispatchTask, type RemoteCommand, type StudioCapabilities } from '@/services/agent/RemoteRelayService';
 import type { ParsedRemoteCommand } from '@/hooks/remoteCommandSecurity';
 
 export type { AgentDispatchTask, RemoteCommand };
 export type { ParsedRemoteCommand };
+export type { StudioCapabilities };
 
 /** Controller and cloud-owned commands must never be claimed by a Studio. */
 export function shouldProcessStudioCommand(command: Pick<RemoteCommand, 'text' | 'executionTarget'>): boolean {
@@ -86,6 +87,7 @@ export interface StudioExecutionAdapter {
         isAgentProcessing: boolean;
         activeSessionId: string;
         sleepMode: boolean;
+        capabilities: StudioCapabilities;
     };
     /**
      * Execute a claimed, validated command. Transport (responses, completion)

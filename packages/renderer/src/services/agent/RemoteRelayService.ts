@@ -121,6 +121,11 @@ export interface DesktopState {
     /** Public compatibility marker; executor credentials are never projected here. */
     protocolVersion?: number;
     /**
+     * Capability advertisement (Phase 5). Server-projected from the executor
+     * lease holder; the Controller never writes it.
+     */
+    capabilities?: StudioCapabilities;
+    /**
      * True when the desktop is in sleep mode (window hidden to tray, still
      * listening to the relay queue). Lets the phone show Sleeping vs Active vs
      * Offline. Absent/false in the web/PWA build (no Electron tray).
@@ -139,6 +144,25 @@ export interface DesktopState {
 }
 
 export type RemoteExecutionTarget = 'cloud' | 'studio';
+
+/**
+ * Capabilities the Studio executor advertises so the phone can tell
+ * "executor online" apart from "this specific operation is unavailable".
+ * Absent/false is always safe: the Controller treats an unknown capability
+ * as unavailable rather than assuming the heartbeat implies it.
+ */
+export interface StudioCapabilities {
+    /** Agent pipeline available (listenerReady implies this on a Studio). */
+    agent: boolean;
+    /** Electron computer-control surface present. */
+    computer: boolean;
+    /** Local audio engine (analysis/transcode/master) present. */
+    audio: boolean;
+    /** DAW bridge present. */
+    daw: boolean;
+    /** Renderer UI available (false while asleep-to-tray). */
+    ui: boolean;
+}
 
 const LEGACY_STUDIO_COMMAND_PREFIXES = [
     '[GENERATE_IMAGE]',

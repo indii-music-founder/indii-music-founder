@@ -3,18 +3,6 @@
 import * as DistributionTypes from './distribution';
 import * as SchedulerTypes from '../services/scheduler/types';
 
-/** Shape of the payload delivered by the Electron P2P IPC bridge to the renderer. */
-export interface RemoteMobilePayload {
-    type: string;
-    ts?: number;
-    command?: {
-        id?: string;
-        text: string;
-        targetAgentId?: string;
-        metadata?: Record<string, unknown>;
-        executionTarget?: 'cloud' | 'studio';
-    };
-}
 export interface AuthTokenData {
     idToken: string;
     accessToken?: string | null;

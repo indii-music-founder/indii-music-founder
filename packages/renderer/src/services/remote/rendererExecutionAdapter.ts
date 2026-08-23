@@ -444,11 +444,21 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
         isAgentBusy: () => agentService.isAgentBusy,
         presenceSnapshot: () => {
             const s = useStore.getState();
+            const api = typeof window !== 'undefined' ? window.electronAPI : undefined;
             return {
                 currentModule: s.currentModule || 'dashboard',
                 isAgentProcessing: s.isAgentProcessing,
                 activeSessionId: s.activeSessionId || '',
                 sleepMode: s.isSleeping,
+                // Phase 5 capability advertisement: presence ≠ capability.
+                // Only surfaces that actually exist on this host advertise true.
+                capabilities: {
+                    agent: true,
+                    computer: !!api?.computer,
+                    audio: !!api?.audio,
+                    daw: !!api?.daw,
+                    ui: !s.isSleeping,
+                },
             };
         },
         executeCommand,

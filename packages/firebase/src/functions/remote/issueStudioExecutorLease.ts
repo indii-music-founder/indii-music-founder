@@ -70,6 +70,18 @@ export const publishStudioPresence = onCall({ region: 'us-central1', enforceAppC
   const state = input.state || {};
   const studioInstanceId = typeof state.studioInstanceId === 'string' ? state.studioInstanceId : '';
   if (!DEVICE_ID.test(studioInstanceId)) throw new HttpsError('invalid-argument', 'Invalid Studio instance.');
+
+  // Phase 5 capability advertisement: presence is projected server-side from
+  // the lease holder. Accept only the five known boolean keys, coerce to
+  // boolean, and drop anything else so a Controller can never inflate its own
+  // capabilities through the state payload.
+  const CAPABILITY_KEYS = ['agent', 'computer', 'audio', 'daw', 'ui'] as const;
+  const rawCaps = (state.capabilities && typeof state.capabilities === 'object' ? state.capabilities : {}) as Record<string, unknown>;
+  const capabilities: Record<string, boolean> = {};
+  for (const key of CAPABILITY_KEYS) {
+    capabilities[key] = rawCaps[key] === true;
+  }
+
   await admin.firestore().doc(`users/${request.auth.uid}/remote-relay/state`).set({
     currentModule: typeof state.currentModule === 'string' ? state.currentModule.slice(0, 80) : 'dashboard',
     isAgentProcessing: state.isAgentProcessing === true,
@@ -81,6 +93,7 @@ export const publishStudioPresence = onCall({ region: 'us-central1', enforceAppC
     executorDeviceId: input.deviceId,
     protocolVersion: REMOTE_RELAY_PROTOCOL_VERSION,
     listenerReady: true,
+    capabilities,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
   return { ok: true };

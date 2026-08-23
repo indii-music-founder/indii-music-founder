@@ -312,6 +312,23 @@ describe('publishStudioPresence', () => {
         });
     });
 
+    it('projects capabilities with boolean coercion and drops unknown keys (Phase 5)', async () => {
+        enroll();
+        await presence()(req({
+            deviceId: DEVICE_ID,
+            leaseToken: 'the-real-token',
+            protocolVersion: 1,
+            state: {
+                studioInstanceId: INSTANCE,
+                capabilities: { agent: true, computer: 1, audio: 'yes', daw: false, ui: true, sudo: true },
+            },
+        }));
+
+        const write = mocks.writes.find(w => w.path === statePath);
+        expect(write?.data['capabilities']).toEqual({ agent: true, computer: false, audio: false, daw: false, ui: true });
+        expect(write?.data['capabilities']).not.toHaveProperty('sudo');
+    });
+
     it('applies safe defaults for absent fields and slices overlong strings', async () => {
         enroll();
         await presence()(req({
