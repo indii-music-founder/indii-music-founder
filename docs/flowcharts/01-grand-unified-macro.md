@@ -232,7 +232,7 @@ graph TB
     subgraph CREATIVE_PIPELINE ["🎨 Creative Production Pipeline"]
         direction LR
         CANVAS["Fabric.js Canvas<br/>(Image Editor)"]
-        REMOTION["Remotion<br/>(Video Renderer)"]
+        REMOTION["HyperFrames<br/>(Video Renderer)"]
         THREE_JS["Three.js<br/>(3D Stage Builder)"]
         PROMPT_BUILDER["Prompt Builder<br/>(AI Generation)"]
         IMG_GEN["Image Generation<br/>(Nano Banana)"]

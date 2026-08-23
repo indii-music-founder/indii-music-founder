@@ -1,1 +1,3 @@
 *.pdf binary
+.agents/skills/** -whitespace
+packages/main/src/services/video/hyperframes/__fixtures__/gsap.min.js -whitespace

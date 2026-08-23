@@ -377,15 +377,20 @@ export const setupDistributionHandlers = () => {
             // Output: { total_tracks, has_isrcs, has_upcs, exclusive_rights, rights_evidence }
             // Fail-closed: an empty track list or any track without explicit
             // exclusive_rights === true aggregates to false (never vacuous true).
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const dataObj = data as any;
-            const tracks = Array.isArray(dataObj?.tracks) ? dataObj.tracks : [];
-            const rightsEvidence = dataObj?.rights_evidence as Record<string, unknown> | undefined;
+            const dataObj = typeof data === 'object' && data !== null
+                ? data as { tracks?: unknown; rights_evidence?: unknown }
+                : {};
+            const tracks = Array.isArray(dataObj.tracks)
+                ? dataObj.tracks.filter((track): track is Record<string, unknown> => (
+                    typeof track === 'object' && track !== null
+                ))
+                : [];
+            const rightsEvidence = dataObj.rights_evidence;
             const aggregatedData = {
                 total_tracks: tracks.length,
-                has_isrcs: tracks.some((t: any) => !!t.isrc),
-                has_upcs: tracks.some((t: any) => !!t.upc),
-                exclusive_rights: tracks.length > 0 && tracks.every((t: any) => t.exclusive_rights === true),
+                has_isrcs: tracks.some((track) => Boolean(track.isrc)),
+                has_upcs: tracks.some((track) => Boolean(track.upc)),
+                exclusive_rights: tracks.length > 0 && tracks.every((track) => track.exclusive_rights === true),
                 ...(rightsEvidence !== undefined && typeof rightsEvidence === 'object'
                     ? { rights_evidence: rightsEvidence }
                     : {}),

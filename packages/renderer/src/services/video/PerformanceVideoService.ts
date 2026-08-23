@@ -88,7 +88,7 @@ export class PerformanceVideoService {
    *  1. Analyze the song (BPM, duration, structure)
    *  2. Mint or use artist image
    *  3. Generate performance clips per scene (beat-aligned)
-   *  4. Assemble Remotion project with clips on track 1 + song as Audio
+   *  4. Assemble timeline project with clips on track 1 + song as Audio
    *  5. Render to video
    */
   async generate(opts: PerformanceVideoOptions): Promise<PerformanceVideoResult> {
@@ -135,8 +135,8 @@ export class PerformanceVideoService {
       );
       logger.info('[PerformanceVideo] Generated', sceneUrls.length, 'scene clips');
 
-      // Step 4: Build Remotion project
-      const project = this.buildRemotionProject(
+      // Step 4: Build timeline project
+      const project = this.buildTimelineProject(
         sceneUrls,
         masterAsset,
         scenes,
@@ -144,7 +144,7 @@ export class PerformanceVideoService {
         masterAsset.masterFingerprint,
         opts.isrc
       );
-      logger.info('[PerformanceVideo] Built Remotion project:', {
+      logger.info('[PerformanceVideo] Built timeline project:', {
         durationInFrames: project.durationInFrames,
         fps: project.fps,
         clipCount: project.clips.length,
@@ -264,9 +264,9 @@ export class PerformanceVideoService {
   }
 
   /**
-   * Build a Remotion VideoProject from scene clips and the original song.
+   * Build an IndiiVideoProject from scene clips and the original song.
    */
-  private buildRemotionProject(
+  private buildTimelineProject(
     sceneUrls: string[],
     masterAsset: MasterAudioReference,
     scenes: Array<{ prompt: string; durationSec: number }>,
@@ -348,7 +348,7 @@ export class PerformanceVideoService {
   }
 
   /**
-   * Call the renderVideo Cloud Function to compose the Remotion project into an mp4.
+   * Call the renderVideo Cloud Function to compose the timeline project into an mp4.
    *
    * ISSUE-994 fix: the callable requires `{ compositionId, inputProps: { project } }`
    * (a bare `{ project }` fails its own `inputProps.project` validation) and only

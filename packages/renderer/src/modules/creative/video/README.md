@@ -7,7 +7,7 @@ The Video Studio is a production-grade idea-to-render pipeline for AI video synt
 - **Veo 3.1 Integration:** High-resolution (1080p/4K) video synthesis with support for temporal consistency and cinematic physics.
 - **The Director (QA Hub):** A specialized interface for reviewing, regenerating, and upscaling AI samples before final delivery.
 - **Multimodal Prompting:** Combine text prompts with reference images (image-to-video) or input videos (video-to-video) for precise control.
-- **Remotion Integration:** Local preview and timeline scrubbing for generated assets before cloud rendering.
+- **Artifact Preview:** Local and cloud render artifacts play in a plain video element; timeline edits invalidate stale previews.
 
 ## 🏗️ Architecture
 - **`VideoGenerationService`**: Manages the polling-based asynchronous lifecycle of Vertex AI video jobs.

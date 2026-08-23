@@ -98,6 +98,7 @@ describe('VideoEditor Integration', () => {
     const mockSetIsPlaying = vi.fn();
     const mockSetCurrentTime = vi.fn();
     const mockSetSelectedClipId = vi.fn();
+    const mockSetPreviewArtifactUrl = vi.fn();
     const mockAddToHistory = vi.fn();
 
     const mockToast = {
@@ -142,6 +143,7 @@ describe('VideoEditor Integration', () => {
             setIsPlaying: mockSetIsPlaying,
             setCurrentTime: mockSetCurrentTime,
             setSelectedClipId: mockSetSelectedClipId,
+            setPreviewArtifactUrl: mockSetPreviewArtifactUrl,
             isPlaying: false,
             currentTime: 0,
             isPopoutActive: false,
@@ -225,6 +227,7 @@ describe('VideoEditor Integration', () => {
             expect(httpsCallable).toHaveBeenCalled();
             expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('Cloud render complete'));
             expect(mockToast.error).not.toHaveBeenCalled();
+            expect(mockSetPreviewArtifactUrl).toHaveBeenCalledWith('https://storage.example/private-render.mp4');
             expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
                 id: 'export_r1',
                 url: 'https://storage.example/private-render.mp4',

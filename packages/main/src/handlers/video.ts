@@ -167,7 +167,14 @@ export function registerVideoHandlers() {
         }
     });
 
-    ipcMain.handle('video:render', async (event, config: { compositionId: string; outputLocation: string }) => {
+    ipcMain.handle('video:render', async (
+        event,
+        config: {
+            compositionId: string;
+            outputLocation: string;
+            inputProps?: { project?: import('@indii/shared').IndiiVideoProject };
+        },
+    ) => {
         try {
             validateSender(event);
             const { outputLocation } = config;

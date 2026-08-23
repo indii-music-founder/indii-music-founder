@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { previewPause, previewPlay, previewSeekToFrame } from '../previewTransport';
 import { useShallow } from 'zustand/react/shallow';
-import { PlayerRef } from '@remotion/player';
 import { useVideoEditorStore, VideoClip, syncChannel } from '@/modules/creative/video/store/videoEditorStore';
 import { HistoryItem } from '@/core/store/slices/creative';
 import { useToast } from '@/core/context/ToastContext';
@@ -15,10 +15,11 @@ import { RenderService } from '@/services/video/RenderService';
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
         project, setProject, updateClip, addClip, removeClip,
-        addTrack, removeTrack, setIsPlaying, setCurrentTime,
-        setSelectedClipId, selectedClipId
+        addTrack, removeTrack, setIsPlaying, setCurrentTime, currentTime,
+        setSelectedClipId, selectedClipId, setPreviewArtifactUrl,
     } = useVideoEditorStore(useShallow(state => ({
         project: state.project,
+        currentTime: state.currentTime,
         setProject: state.setProject,
         updateClip: state.updateClip,
         addClip: state.addClip,
@@ -28,10 +29,10 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         setIsPlaying: state.setIsPlaying,
         setCurrentTime: state.setCurrentTime,
         setSelectedClipId: state.setSelectedClipId,
-        selectedClipId: state.selectedClipId
+        selectedClipId: state.selectedClipId,
+        setPreviewArtifactUrl: state.setPreviewArtifactUrl,
     })));
 
-    const playerRef = useRef<PlayerRef>(null);
     const initializedRef = useRef(false);
     const toast = useToast();
 
@@ -78,13 +79,12 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         // to avoid re-rendering the whole editor
         const unsub = useVideoEditorStore.subscribe((state, prevState) => {
             if (state.isPlaying !== prevState.isPlaying) {
-                if (playerRef.current) {
-                    if (state.isPlaying) {
-                        playerRef.current.play();
-                    } else {
-                        playerRef.current.pause();
-                    }
-                } else if (state.isPopoutActive) {
+                if (state.isPlaying) {
+                    void previewPlay();
+                } else {
+                    previewPause();
+                }
+                if (state.isPopoutActive) {
                     syncChannel?.postMessage({ type: 'SYNC_ACTION', action: state.isPlaying ? 'play' : 'pause' });
                 }
             }
@@ -123,10 +123,9 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     const handlePlayPause = useCallback(() => setIsPlaying(!useVideoEditorStore.getState().isPlaying), [setIsPlaying]);
 
     const handleSeek = useCallback((frame: number) => {
-        if (playerRef.current) {
-            playerRef.current.seekTo(frame);
-            setCurrentTime(frame);
-        } else if (useVideoEditorStore.getState().isPopoutActive) {
+        previewSeekToFrame(frame, project.fps);
+        setCurrentTime(frame);
+        if (useVideoEditorStore.getState().isPopoutActive) {
             syncChannel?.postMessage({ type: 'SYNC_ACTION', action: 'seek', frame });
             setCurrentTime(frame);
         }
@@ -188,6 +187,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             );
 
             if (receipt.asset?.url) {
+                setPreviewArtifactUrl(receipt.asset.url);
                 toast.success('Cloud render complete!');
                 // Auto-save to generatedHistory
                 state.addToHistory({
@@ -242,6 +242,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                 inputProps: { project }
             });
 
+            setPreviewArtifactUrl(`file://${resultLocation}`);
             toast.success(`Render complete: ${resultLocation}`);
 
             // Auto-save output to generatedHistory globally
@@ -314,10 +315,12 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         }
     };
 
+    const previewArtifactUrl = useVideoEditorStore(useShallow(state => state.previewArtifactUrl));
+
     return {
         project,
-        playerRef,
-        activeTab,
+        currentTime,
+        previewArtifactUrl,        activeTab,
         setActiveTab,
         selectedClipIdState: selectedClipId,
         setSelectedClipIdState: setSelectedClipId,

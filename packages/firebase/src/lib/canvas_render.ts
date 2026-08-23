@@ -2,7 +2,7 @@
  * Canvas render Inngest consumer (P6, ISSUE-1100).
  *
  * Consumes `mcp/render.requested` events dispatched by the
- * queue_remotion_render MCP tool. Composes a looping canvas MP4 from the
+ * queue_video_render MCP tool. Composes a looping canvas MP4 from the
  * release's own cover art synced to a clip of the artist's own uploaded
  * audio via fluent-ffmpeg. NO music generation — audio is strictly the
  * artist's own upload ([[no-music-generation-ever]]).

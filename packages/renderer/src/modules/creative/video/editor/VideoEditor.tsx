@@ -20,7 +20,8 @@ interface VideoEditorProps {
 export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const {
         project,
-        playerRef,
+        previewArtifactUrl,
+        currentTime,
         activeTab,
         setActiveTab,
         selectedClipIdState,
@@ -183,7 +184,8 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                         />
                         <div className="flex-1 flex items-center justify-center relative">
                             <VideoPreview
-                                playerRef={playerRef}
+                                artifactUrl={previewArtifactUrl}
+                                seekRequest={{ frame: currentTime, nonce: currentTime }}
                                 project={project}
                                 onFrameUpdate={handleFrameUpdate}
                             />

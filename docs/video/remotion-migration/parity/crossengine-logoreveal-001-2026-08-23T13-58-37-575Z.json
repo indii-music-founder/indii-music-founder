@@ -1,0 +1,83 @@
+{
+  "fixtureId": "crossengine-logoreveal-001",
+  "ranAtIso": "2026-08-23T13:58:37.575Z",
+  "verdict": "within-threshold",
+  "thresholds": {
+    "minIdentityRatio": 1,
+    "minSsim": 0.9
+  },
+  "sideA": {
+    "label": "LEGACY(Remotion)",
+    "videoPath": "/var/folders/h5/_k0rmph56n571tfjcqf1ldbh0000gp/T/parity-logo-TQM9x4/legacy.mp4",
+    "probe": {
+      "durationUs": 5056000,
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "hasVideo": true,
+      "hasAudio": true,
+      "videoCodec": "h264",
+      "audioCodec": "aac"
+    }
+  },
+  "sideB": {
+    "label": "NEW(ported GSAP)",
+    "videoPath": "/var/folders/h5/_k0rmph56n571tfjcqf1ldbh0000gp/T/parity-logo-TQM9x4/new.mp4",
+    "probe": {
+      "durationUs": 5000000,
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "hasVideo": true,
+      "hasAudio": false,
+      "videoCodec": "h264"
+    }
+  },
+  "metadataDelta": {
+    "durationUsDelta": 56000,
+    "dimensionsMatch": true,
+    "fpsMatch": true
+  },
+  "frames": {
+    "totalCompared": 30,
+    "matchedFrames": 0,
+    "mismatchedIndexes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29
+    ],
+    "missingAlignment": 0,
+    "identityRatio": 0
+  },
+  "ssim": {
+    "score": 0.972032,
+    "rawLine": "SSIM Y:0.964550 (14.503801) U:0.991633 (20.774365) V:0.982361 (17.535348) All:0.972032 (15.533420)\n[out#0/null @ 0x9d3018840] video:61KiB audio:948KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown"
+  }
+}

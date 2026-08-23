@@ -51,6 +51,11 @@ describe('useVideoEditor — destructive track removal', () => {
                     { id: 'c2', type: 'video', startFrame: 30, durationInFrames: 30, trackId: TRACK_WITH_CLIPS, name: 'Take 2' },
                 ],
             },
+            previewArtifactUrl: null,
+        });
+        Object.defineProperty(window, 'electronAPI', {
+            configurable: true,
+            value: undefined,
         });
     });
 
@@ -114,5 +119,23 @@ describe('useVideoEditor — destructive track removal', () => {
 
         expect(editorMocks.httpsCallable).not.toHaveBeenCalled();
         expect(editorMocks.toast.error).toHaveBeenCalledWith(expect.stringContaining('secure media library'));
+    });
+
+    it('populates the preview artifact after a real local render result', async () => {
+        Object.defineProperty(window, 'electronAPI', {
+            configurable: true,
+            value: {
+                selectDirectory: vi.fn(async () => '/tmp/exports'),
+                video: { render: vi.fn(async () => '/tmp/exports/video-result.mp4') },
+            },
+        });
+        const { result } = renderHook(() => useVideoEditor());
+
+        await act(async () => {
+            await result.current.handleDownloadMP4();
+        });
+
+        expect(useVideoEditorStore.getState().previewArtifactUrl)
+            .toBe('file:///tmp/exports/video-result.mp4');
     });
 });

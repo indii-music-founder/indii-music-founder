@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<title>LogoReveal port</title>
+<script src="./gsap.min.js"></script>
+<style>
+  body { margin:0; background:#0A0A12; }
+  #root { position:relative; width:1920px; height:1080px; overflow:hidden;
+          background:#0A0A12; display:grid; place-items:center;
+          font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter','Helvetica Neue',sans-serif; }
+  .clip { position:absolute; }
+  #ambient { width:600px; height:600px; border-radius:50%;
+             background:radial-gradient(circle, rgba(0,229,204,0.13) 0%, transparent 70%); opacity:0; }
+  #pulse { width:280px; height:280px; border-radius:70px; border:3px solid #00E5CC;
+           box-shadow:0 0 40px rgba(0,229,204,0.4), inset 0 0 40px rgba(0,229,204,0.13);
+           transform:scale(0.8); opacity:0; }
+  #logo-col { position:relative; display:flex; flex-direction:column; align-items:center; gap:30px; }
+  svg { filter:drop-shadow(0 0 0 rgba(0,229,204,0)); }
+  #wordmark { color:#fff; font-size:72px; font-weight:700; letter-spacing:2px;
+              opacity:0; transform:translateY(20px); }
+  #tagline { color:rgba(255,255,255,0.75); font-size:26px; font-weight:400;
+             opacity:0; transform:translateY(15px); }
+</style></head>
+<body>
+<div id="root" data-composition-id="logoreveal" data-start="0"
+     data-width="1920" data-height="1080" data-duration="5">
+
+  <div id="ambient" class="clip" data-start="0" data-duration="5" data-track-index="1"></div>
+  <div id="pulse" class="clip" data-start="0" data-duration="5" data-track-index="2"></div>
+
+  <div id="logo-col" class="clip" data-start="0" data-duration="5" data-track-index="3">
+    <svg id="mark" width="280" height="280" viewBox="0 0 512 512" fill="none"
+         style="transform:scale(0);opacity:0;">
+      <defs>
+        <linearGradient id="outer-grad" x1="0" y1="0" x2="512" y2="512">
+          <stop offset="0%" stop-color="#00E5CC"/><stop offset="100%" stop-color="#00B8D4"/>
+        </linearGradient>
+        <linearGradient id="ii-grad" x1="0" y1="0" x2="512" y2="512">
+          <stop offset="0%" stop-color="#00E5CC"/><stop offset="100%" stop-color="#00B8D4"/>
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="128" fill="url(#outer-grad)"/>
+      <rect id="inner-panel" x="48" y="48" width="416" height="416" rx="96"
+            fill="#0C0C1A" opacity="0" style="transform-origin:256px 256px;"/>
+      <!-- left i -->
+      <circle id="dot-l" cx="200" cy="155" r="26" fill="url(#ii-grad)" opacity="0"/>
+      <rect id="bar-l" x="174" y="205" width="52" height="180" rx="26"
+            fill="url(#ii-grad)" opacity="0"/>
+      <!-- right i -->
+      <circle id="dot-r" cx="312" cy="155" r="26" fill="url(#ii-grad)" opacity="0"/>
+      <rect id="bar-r" x="286" y="205" width="52" height="180" rx="26"
+            fill="url(#ii-grad)" opacity="0"/>
+    </svg>
+    <div id="wordmark">indii</div>
+    <div id="tagline">The Independent Creative Engine</div>
+  </div>
+</div>
+<script>
+  window.__timelines = window.__timelines || {};
+  const tl = gsap.timeline({ paused: true });
+  const f = n => n / 30;
+
+  // ambient glow 0-30
+  tl.to("#ambient", { opacity: 0.3, duration: f(30), ease: "none" }, 0);
+
+  // outer square spring entrance 15-50 (Remotion spring ≈ back.out)
+  tl.fromTo("#mark", { scale: 0 }, { scale: 1, duration: f(45), ease: "back.out(1.9)" }, f(15));
+  tl.to("#mark", { opacity: 1, duration: f(10), ease: "none" }, f(15));
+  // inner panel 35-65
+  tl.to("#inner-panel", { opacity: 1, scale: 1.06, duration: f(10), ease: "power2.out" }, f(35))
+    .to("#inner-panel", { scale: 1, duration: f(20), ease: "power2.out" }, f(45));
+
+  // left bar 50-80 / dot 55-85
+  tl.to("#bar-l", { opacity: 1, duration: f(8), ease: "none" }, f(50));
+  tl.fromTo("#bar-l", { y: 80 }, { y: 0, duration: f(22), ease: "back.out(1.7)" }, f(50));
+  tl.to("#dot-l", { opacity: 1, duration: f(8), ease: "none" }, f(55));
+  tl.fromTo("#dot-l", { y: -60 }, { y: 0, duration: f(20), ease: "bounce.out" }, f(55));
+
+  // right bar 60-90 / dot 65-95 (10-frame stagger)
+  tl.to("#bar-r", { opacity: 1, duration: f(8), ease: "none" }, f(60));
+  tl.fromTo("#bar-r", { y: 80 }, { y: 0, duration: f(22), ease: "back.out(1.7)" }, f(60));
+  tl.to("#dot-r", { opacity: 1, duration: f(8), ease: "none" }, f(65));
+  tl.fromTo("#dot-r", { y: -60 }, { y: 0, duration: f(20), ease: "bounce.out" }, f(65));
+
+  // glow pulse ring 80-110
+  tl.to("#pulse", { scale: 1.6, duration: f(30), ease: "none" }, f(80));
+  tl.to("#pulse", { opacity: 0.6, duration: f(15), ease: "none" }, f(80))
+    .to("#pulse", { opacity: 0, duration: f(15), ease: "none" }, f(95));
+
+  // wordmark 100-120 · tagline 115-135
+  tl.to("#wordmark", { opacity: 1, y: 0, duration: f(20), ease: "power3.out" }, f(100));
+  tl.to("#tagline", { opacity: 1, y: 0, duration: f(20), ease: "power3.out" }, f(115));
+
+  window.__timelines["logoreveal"] = tl;
+</script>
+</body></html>

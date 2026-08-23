@@ -2,7 +2,7 @@ export { draftDspMetadata } from './draftDspMetadata.js';
 export { generatePlaylistPitch } from './generatePlaylistPitch.js';
 export { scheduleCampaignWaterfall } from './scheduleCampaignWaterfall.js';
 export { fetchBrandKit } from './fetchBrandKit.js';
-export { queueRemotionRender } from './queueRemotionRender.js';
+export { queueVideoRender } from './queueVideoRender.js';
 export { auditAssetResolutions } from './auditAssetResolutions.js';
 export { registerSplitSheet } from './registerSplitSheet.js';
 export { draftCwrRegistration } from './draftCwrRegistration.js';

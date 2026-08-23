@@ -2,11 +2,11 @@ import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
 import { AudioWaveform } from './AudioWaveform';
-import * as mediaUtils from '@remotion/media-utils';
+import * as audioPeaks from '@/utils/audioPeaks';
 
 // Mock getAudioData
-vi.mock('@remotion/media-utils', () => ({
-    getAudioData: vi.fn(),
+vi.mock('@/utils/audioPeaks', () => ({
+    fetchAudioData: vi.fn(),
 }));
 
 describe('AudioWaveform', () => {
@@ -21,7 +21,7 @@ describe('AudioWaveform', () => {
             isRemote: false,
         };
 
-        const getAudioDataSpy = vi.mocked(mediaUtils.getAudioData).mockResolvedValue(mockAudioData as any);
+        const getAudioDataSpy = vi.mocked(audioPeaks.fetchAudioData).mockResolvedValue(mockAudioData as any);
 
         // Initial render
         const { rerender } = render(
@@ -56,7 +56,7 @@ describe('AudioWaveform', () => {
             resultId: 'test-id',
             isRemote: false,
         };
-        const getAudioDataSpy = vi.mocked(mediaUtils.getAudioData).mockResolvedValue(mockAudioData as any);
+        const getAudioDataSpy = vi.mocked(audioPeaks.fetchAudioData).mockResolvedValue(mockAudioData as any);
         getAudioDataSpy.mockClear();
 
         const { rerender } = render(

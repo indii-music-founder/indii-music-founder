@@ -25,7 +25,6 @@ const rendererProdSchema = z.object({
     message: "Missing VITE_FUNCTIONS_URL"
   }),
   VITE_FUNCTIONS_REGION: z.string().optional().default("us-central1"),
-  VITE_REMOTION_GCP_REGION: z.string().optional().default("us-central1"),
   
   // Firebase
   VITE_FIREBASE_API_KEY: z.string().min(1, "Missing VITE_FIREBASE_API_KEY"),
@@ -56,9 +55,6 @@ const rendererProdSchema = z.object({
 }, {
   message: "VITE_FUNCTIONS_URL must match VITE_FUNCTIONS_REGION",
   path: ["VITE_FUNCTIONS_URL"],
-}).refine(data => !isProd || (data.VITE_REMOTION_GCP_REGION || "us-central1") === "us-central1", {
-  message: "VITE_REMOTION_GCP_REGION must be us-central1",
-  path: ["VITE_REMOTION_GCP_REGION"],
 });
 
 // Helper to check Firebase function secrets/env

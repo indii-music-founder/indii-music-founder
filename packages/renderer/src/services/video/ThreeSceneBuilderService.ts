@@ -88,7 +88,7 @@ export class ThreeSceneBuilderService {
     }
 
     /**
-     * Prepares the scene for Remotion rendering.
+     * Prepares the scene for pipeline rendering.
      * Bundles assets and configurations into a serializable manifest.
      */
     async exportSceneManifest(sceneId: string): Promise<string> {

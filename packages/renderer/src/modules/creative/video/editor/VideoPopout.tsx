@@ -1,96 +1,69 @@
 import React, { useEffect } from 'react';
 import { useVideoEditorStore } from '../store/videoEditorStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Player } from '@remotion/player';
-import { MyComposition } from '../remotion/MyComposition';
 
 /**
- * A standalone viewer intended to be opened in a separate window via ScreenControlService.
- * It listens to BroadcastChannel to sync state from the main editor window.
+ * Standalone viewer for a second window (ScreenControlService).
+ * Plays the rendered artifact; BroadcastChannel-synced transport.
  */
 export default function VideoPopout() {
-    const { project, setProject } = useVideoEditorStore(
-        useShallow((state) => ({ project: state.project, setProject: state.setProject }))
+    const { project, artifactUrl, setProject, setPreviewArtifactUrl } = useVideoEditorStore(
+        useShallow((state) => ({
+            project: state.project,
+            artifactUrl: state.previewArtifactUrl,
+            setProject: state.setProject,
+            setPreviewArtifactUrl: state.setPreviewArtifactUrl,
+        }))
     );
-    const playerRef = React.useRef<import('@remotion/player').PlayerRef>(null);
+    const videoRef = React.useRef<HTMLVideoElement | null>(null);
 
     useEffect(() => {
-        // Only set up BroadcastChannel in the browser environment
         if (typeof window === 'undefined') return;
 
         const channel = new BroadcastChannel('indii-video-editor-sync');
         channel.onmessage = (event) => {
             if (event.data?.type === 'SYNC_PROJECT') {
                 setProject(event.data.project);
+                setPreviewArtifactUrl(
+                    typeof event.data.artifactUrl === 'string' ? event.data.artifactUrl : null,
+                );
             } else if (event.data?.type === 'SYNC_ACTION') {
                 const action = event.data.action;
-                if (!playerRef.current) return;
-
+                const el = videoRef.current;
+                if (!el) return;
+                const fps = project.fps || 30;
                 if (action === 'play') {
-                    playerRef.current.play();
+                    void el.play().catch(() => undefined);
                 } else if (action === 'pause') {
-                    playerRef.current.pause();
+                    el.pause();
                 } else if (action === 'seek' && typeof event.data.frame === 'number') {
-                    playerRef.current.seekTo(event.data.frame);
+                    el.currentTime = Math.max(0, event.data.frame / fps);
                 }
             }
         };
 
-        // Let the main window know the popout just opened to request current state
         channel.postMessage({ type: 'POPOUT_OPENED' });
+        return () => channel.close();
+    }, [project.fps, setPreviewArtifactUrl, setProject]);
 
-        // Send a heartbeat every 2 s so the main window can detect a crash
-        const heartbeatTimer = setInterval(() => {
-            channel.postMessage({ type: 'HEARTBEAT' });
-        }, 2000);
-
-        const handleUnload = () => {
-            channel.postMessage({ type: 'POPOUT_CLOSED' });
-        };
-        window.addEventListener('beforeunload', handleUnload);
-
-        return () => {
-            clearInterval(heartbeatTimer);
-            window.removeEventListener('beforeunload', handleUnload);
-            channel.close();
-        };
-    }, [setProject]);
-
-    // Use the actual aspect ratio from the project settings
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const aspectRatio = project.width / project.height;
 
     return (
-        <div className="w-screen h-screen bg-black flex flex-col items-center justify-center p-8 overflow-hidden select-none">
-            <div
-                className="relative shadow-2xl bg-[#0d1117] rounded-xl overflow-hidden ring-1 ring-white/10"
-                style={{
-                    width: '100%',
-                    maxWidth: '100%',
-                    aspectRatio: `${project.width} / ${project.height}`
-                }}
-            >
-                <div className="absolute top-4 left-4 z-50 bg-black/60 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full font-mono ring-1 ring-white/20 select-none">
-                    indii Popout Director ({project.width}x{project.height})
-                </div>
-
-                <Player
-                    ref={playerRef}
-                    component={MyComposition}
-                    inputProps={{ project }}
-                    durationInFrames={Math.max(1, project.durationInFrames)}
-                    fps={project.fps}
-                    compositionWidth={project.width}
-                    compositionHeight={project.height}
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                    }}
-                    controls
-                    autoPlay
+        <div className="w-screen h-screen bg-black flex items-center justify-center">
+            {artifactUrl ? (
+                <video
+                    ref={videoRef}
+                    src={artifactUrl}
                     loop
+                    playsInline
+                    data-testid="popout-video"
+                    style={{ maxWidth: '100%', maxHeight: '100%', aspectRatio }}
                 />
-            </div>
+            ) : (
+                <div className="text-gray-600 font-mono text-xs uppercase tracking-widest">
+                    No rendered artifact — render in the editor first
+                </div>
+            )}
         </div>
     );
 }

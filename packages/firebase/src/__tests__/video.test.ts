@@ -570,6 +570,41 @@ describe('Video Functions', () => {
             expect(renderMaster.resolve).not.toHaveBeenCalled();
         });
 
+        it('fails closed for composed cloud projects before reservation or provider dispatch', async () => {
+            const context: any = {
+                auth: { uid: 'user123', token: { email_verified: true } },
+                rawRequest: { method: 'POST', headers: {} },
+            };
+
+            await expect((renderVideo as any)({
+                ...context,
+                data: {
+                    inputProps: {
+                        project: {
+                            width: 1920,
+                            height: 1080,
+                            fps: 30,
+                            durationInFrames: 90,
+                            tracks: [{ id: 'title-track', type: 'text', name: 'Title' }],
+                            clips: [{
+                                id: 'title',
+                                type: 'text',
+                                text: 'Cloud composition is approval-gated',
+                                trackId: 'title-track',
+                                startFrame: 0,
+                                durationInFrames: 90,
+                            }],
+                        },
+                    },
+                },
+            })).rejects.toMatchObject({ code: 'failed-precondition' });
+
+            expect(mocks.checkBudget).not.toHaveBeenCalled();
+            expect(mocks.firestore.set).not.toHaveBeenCalled();
+            expect(mocks.inngest.send).not.toHaveBeenCalled();
+            expect(renderMaster.resolve).not.toHaveBeenCalled();
+        });
+
         it('should process job correctly', async () => {
             // Setup mock for firestore get to return job data
             mocks.firestore.get.mockResolvedValue({

@@ -150,7 +150,6 @@ export default defineConfig({
             '@shared': resolve(repoRoot, 'packages/shared/src'),
             'react': resolve(repoRoot, 'node_modules/react'),
             'react-dom': resolve(repoRoot, 'node_modules/react-dom'),
-            '@remotion/renderer': resolve(__dirname, 'src/services/video/remotion-mock.ts'),
         },
     },
     server: {
@@ -183,7 +182,6 @@ export default defineConfig({
                                     dep.includes('vendor-tesseract') ||
                                     dep.includes('vendor-reactflow') ||
                                     dep.includes('vendor-yjs') ||
-                                    dep.includes('vendor-remotion') ||
                                     dep.includes('vendor-driver') ||
                                     dep.includes('vendor-virtuoso') ||
                                     dep.includes('vendor-firebase-messaging');
@@ -203,9 +201,7 @@ export default defineConfig({
         // (kept here for documentation; actual drop config lives below)
         rollupOptions: {
             external: [
-                '@remotion/renderer',
-                '@remotion/cloudrun',
-                'fs',
+                                                'fs',
                 'path',
                 'child_process',
                 'util'
@@ -277,9 +273,6 @@ export default defineConfig({
                     }
                     if (pkg === 'yjs' || pkg === 'y-websocket' || pkg === 'y-protocols') {
                         return 'vendor-yjs';
-                    }
-                    if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
-                        return 'vendor-remotion';
                     }
                     // Internationalization (i18n)
                     if (pkg === 'i18next' || pkg === 'react-i18next' || pkg.startsWith('i18next-')) {

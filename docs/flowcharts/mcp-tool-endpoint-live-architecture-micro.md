@@ -34,7 +34,7 @@ graph TD
     subgraph Tools ["11 Real Tool Handlers (mcp/tools/*)"]
         Legal["Legal: register_split_sheet,<br/>draft_cwr_registration,<br/>audit_sample_clearance"]
         Finance["Finance: calculate_recoupment,<br/>stage_stripe_payouts"]
-        Creative["Creative: queue_remotion_render,<br/>audit_asset_resolutions"]
+        Creative["Creative: queue_video_render,<br/>audit_asset_resolutions"]
         Publicist["Publicist: schedule_campaign_waterfall,<br/>generate_playlist_pitch"]
         Brand["Brand: fetch_brand_kit"]
         Distro["Distribution: draft_dsp_metadata_xml"]

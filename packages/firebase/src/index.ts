@@ -4,6 +4,8 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import { BigQuery } from "@google-cloud/bigquery";
+import { decisionToJobMetadata, planRenderRoute } from '@indii/shared';
+import type { IndiiVideoProject } from '@indii/shared';
 
 // Initialize Firebase Admin immediately to prevent race conditions during import analysis
 admin.initializeApp();
@@ -853,6 +855,31 @@ export const renderVideo = onCall(
                     requestedProjectId,
                 );
             }
+            let routeDecision;
+            try {
+                routeDecision = planRenderRoute({
+                    project: project as Pick<IndiiVideoProject, 'clips' | 'tracks'>,
+                });
+            } catch (error) {
+                throw new HttpsError(
+                    'invalid-argument',
+                    error instanceof Error ? error.message : 'The video project cannot be routed.',
+                );
+            }
+            if (routeDecision.route === 'composed_visual') {
+                throw new HttpsError(
+                    'failed-precondition',
+                    'Cloud composition rendering is not active yet. Use the desktop local renderer or obtain approval to activate the HyperFrames Cloud Run worker.',
+                    decisionToJobMetadata(routeDecision),
+                );
+            }
+            if (routeDecision.op === 'trim') {
+                throw new HttpsError(
+                    'failed-precondition',
+                    'Cloud source-range trimming is not active yet. Use the desktop local renderer.',
+                    decisionToJobMetadata(routeDecision),
+                );
+            }
             // Preview URLs are not Transcoder authority. Resolve only canonical
             // project-bucket media owned by this authenticated caller.
             const bucketName = admin.storage().bucket().name;
@@ -913,6 +940,7 @@ export const renderVideo = onCall(
                 clipCount: segmentUrls.length,
                 costReservationId,
                 timelineDurationSeconds,
+                ...decisionToJobMetadata(routeDecision),
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
@@ -944,7 +972,8 @@ export const renderVideo = onCall(
                         resolution: `${project.width}x${project.height}`,
                         timelineDurationSeconds,
                         aspectRatio: project.width > project.height ? "16:9" : "9:16" // Rough approximation
-                    }
+                    },
+                    route: decisionToJobMetadata(routeDecision),
                 },
                 user: { id: userId }
             });

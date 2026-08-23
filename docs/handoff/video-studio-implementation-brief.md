@@ -6,7 +6,7 @@ This brief is the repo-native version of the Veo 3.x sketch. It exists to keep f
 - Backend: `packages/firebase`
 - Shared types/schemas: `packages/shared`
 - Playback layer: `video.js`
-- Render/composition layer: Remotion
+- Render/composition layer: engine behind the `VideoRendererContract` (@indii/shared). Migration status: legacy Remotion path + HyperFrames adapter coexist behind the boundary until parity sign-offs complete — see docs/video/remotion-migration/ (ADR-001, INVENTORY, PARITY_SIGNOFF). Agents speak `IndiiVideoProject` + the contract; never an engine name.
 
 ## Keep
 

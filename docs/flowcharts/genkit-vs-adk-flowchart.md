@@ -53,6 +53,6 @@ graph TD
 ## Flow Transitions
 
 1. **Local File I/O:** The user loads high-definition master tracks or multi-track stems. The `AgentGraphService` (the Conductor) runs completely locally on the native desktop environment.
-2. **Native Tool Delegation:** To perform intensive DSP operations (e.g., rendering video components with Remotion, dissecting audio transients with Essentia, or converting formats with FFmpeg), the Conductor initiates zero-latency shell processes natively.
+2. **Native Tool Delegation:** To perform intensive DSP operations (e.g., rendering video components with HyperFrames, dissecting audio transients with Essentia, or converting formats with FFmpeg), the Conductor initiates zero-latency shell processes natively.
 3. **Stateless Model Actions:** For cognitive agent tasks, the Conductor generates request packages pre-scanned by the `InputSanitizer` (R2A2 security gate). It sends these stateless payloads to Firebase Gen 2 Cloud Functions, leveraging pinned `genkit` (1.26.0) wrappers.
 4. **Cloud Swarm Exclusion (Why ADK is rejected):** Moving large audio stems to persistent GCP ADK swarms would require massive upload times, introduce substantial network overhead, and incur high, continuous cloud VM billing rates, which breaks the business model for independent music creators.

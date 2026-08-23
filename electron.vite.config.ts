@@ -9,9 +9,26 @@
  */
 import { defineConfig, externalizeDepsPlugin, type Plugin } from 'electron-vite';
 import type { ResolvedConfig, Connect } from 'vite';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+
+/** Ship the exact GSAP runtime consumed by compiled local compositions. */
+const bundledGsapPlugin = (): Plugin => ({
+    name: 'bundle-video-gsap-runtime',
+    generateBundle() {
+        this.emitFile({
+            type: 'asset',
+            fileName: 'gsap.min.js',
+            source: readFileSync(resolve(
+                __dirname,
+                'packages/main/src/services/video/hyperframes/__fixtures__/gsap.min.js',
+            )),
+        });
+    },
+});
+
 const envSanitizerPlugin = (): Plugin => ({
     name: 'env-sanitizer',
     configResolved(config: ResolvedConfig) {
@@ -92,7 +109,7 @@ const apiFallbackPlugin = (): Plugin => ({
 export default defineConfig({
     // ── Main Process (Node.js) ──────────────────────────────────────────────
     main: {
-        plugins: [externalizeDepsPlugin()],
+        plugins: [bundledGsapPlugin(), externalizeDepsPlugin()],
         build: {
             outDir: 'dist/main',
             rollupOptions: {
@@ -222,7 +239,6 @@ export default defineConfig({
                                         dep.includes('vendor-tesseract') ||
                                         dep.includes('vendor-reactflow') ||
                                         dep.includes('vendor-yjs') ||
-                                        dep.includes('vendor-remotion') ||
                                         dep.includes('vendor-driver') ||
                                         dep.includes('vendor-virtuoso') ||
                                         dep.includes('vendor-firebase-messaging');
@@ -339,10 +355,6 @@ export default defineConfig({
                         if (pkg === 'yjs' || pkg === 'y-websocket' || pkg === 'y-protocols') {
                             return 'vendor-yjs';
                         }
-                        // Remotion
-                        if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
-                            return 'vendor-remotion';
-                        }
                         // Internationalization (i18n)
                         if (pkg === 'i18next' || pkg === 'react-i18next' || pkg.startsWith('i18next-')) {
                             return 'vendor-i18n';
@@ -395,7 +407,6 @@ export default defineConfig({
                 '@': resolve(__dirname, 'packages/renderer/src'),
                 '@agents': resolve(__dirname, 'agents'),
                 '@shared': resolve(__dirname, 'packages/shared/src'),
-                '@remotion/renderer': resolve(__dirname, 'packages/renderer/src/services/video/remotion-mock.ts'),
             },
         },
         server: {

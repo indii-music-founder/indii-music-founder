@@ -34,7 +34,7 @@ Known fixed baseline if Apple + Spotify + Azure signing only: about **$31.23/mon
 | Lyria music generation | Usage-based | Per request | Music-generation experiments if enabled | Treat as experimental; log every request because it creates licensing/rights review needs too | [Gemini API pricing - Lyria](https://ai.google.dev/gemini-api/docs/pricing) |
 | OpenAI API | Usage-based | Per token/tool use | Future app runtime agents, evals, founder assistants, OpenAI-backed tooling | Not currently the primary runtime found in env, but include for “building/maintaining Codex/agents” budget | [OpenAI API pricing](https://developers.openai.com/api/docs/pricing) |
 | Codex usage credits / overages | Variable | Monthly | Development workflow, automated coding/review | Treat as founder/dev tooling, not COGS unless exposed to users | [Codex pricing](https://developers.openai.com/codex/pricing) |
-| Remotion on Cloud Run / GCP | Usage-based | Build/render/runtime | Video rendering, creative exports | Costs come from Cloud Run, Cloud Storage, Artifact Registry, logs, egress, build minutes | [Google Cloud pricing](https://cloud.google.com/pricing), [Firebase pricing](https://firebase.google.com/pricing) |
+| HyperFrames on Cloud Run / GCP (not active; founder approval required) | Usage-based | Build/render/runtime | Video rendering, creative exports | Costs begin only after approved deployment and come from Cloud Run, Cloud Storage, Artifact Registry, logs, egress, and build minutes | [Google Cloud pricing](https://cloud.google.com/pricing), [Firebase pricing](https://firebase.google.com/pricing) |
 
 Required controls before public launch:
 
@@ -46,7 +46,7 @@ Required controls before public launch:
 
 ## Firebase / Google Cloud infrastructure
 
-Local evidence: `.env.example`, `packages/firebase/src/config/secrets.ts`, and package dependencies show Firebase, Firestore, Storage, Functions, BigQuery, Cloud Tasks, Vertex/Gemini, Google Maps, YouTube/Google OAuth, Remotion Cloud Run, and Secret Manager usage.
+Local evidence: `.env.example`, `packages/firebase/src/config/secrets.ts`, and package dependencies show Firebase, Firestore, Storage, Functions, BigQuery, Cloud Tasks, Vertex/Gemini, Google Maps, YouTube/Google OAuth, and Secret Manager usage. HyperFrames Cloud Run remains approval-gated and is not current spend.
 
 | Cost center | Estimate | Cadence | Why it matters | Risk / control | Source |
 | --- | ---: | --- | --- | --- | --- |
@@ -191,5 +191,5 @@ Each external account should have a row or linked record with:
 6. Choose GS1 single GTIN vs Company Prefix for UPC/GTIN ownership.
 7. Get DDEX Implementation Licence/DPID before direct production DDEX delivery.
 8. Enable GCP/Firebase budget alerts before any public generation endpoints.
-9. Add hard app-side quotas for Gemini, Veo, Omni, Remotion, Maps, and OpenAI-backed jobs.
+9. Add hard app-side quotas for Gemini, Veo, Omni, video renders, Maps, and OpenAI-backed jobs.
 10. Choose one e-sign provider; do not keep PandaDoc and DocuSign paid in parallel unless both are actually needed.

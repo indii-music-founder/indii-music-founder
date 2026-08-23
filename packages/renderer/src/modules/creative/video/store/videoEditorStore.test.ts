@@ -46,6 +46,15 @@ describe('useVideoEditorStore', () => {
         expect(result.current.project.durationInFrames).toBe(500);
     });
 
+    it('invalidates a rendered preview when the project changes', () => {
+        const store = useVideoEditorStore.getState();
+        store.setPreviewArtifactUrl('file:///tmp/rendered.mp4');
+        expect(useVideoEditorStore.getState().previewArtifactUrl).toBe('file:///tmp/rendered.mp4');
+
+        store.updateProjectSettings({ durationInFrames: 450 });
+        expect(useVideoEditorStore.getState().previewArtifactUrl).toBeNull();
+    });
+
     it('rejects invalid render dimensions and FPS at the store boundary', () => {
         const store = useVideoEditorStore.getState();
         store.updateProjectSettings({ width: Number.NaN, height: 0, fps: 999 });

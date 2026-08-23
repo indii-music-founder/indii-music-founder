@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { getAudioData } from '@remotion/media-utils';
-import type { AudioData } from '@remotion/media-utils';
+import { fetchAudioData } from '@/utils/audioPeaks';
+import type { AudioPeaks as AudioData } from '@/utils/audioPeaks';
 import { logger } from '@/utils/logger';
 
 interface AudioWaveformProps {
@@ -25,7 +25,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
         const fetchAudio = async () => {
             try {
                 // This is the expensive operation we want to cache
-                const data = await getAudioData(src);
+                const data = await fetchAudioData(src);
                 if (isMounted) {
                     setAudioData({ src, data });
                     setError(null);

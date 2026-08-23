@@ -688,15 +688,20 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@/modules/creative/video/store/videoEditorStore')>();
+    const { INITIAL_PROJECT } = actual;
     const mockState = {
-        project: { id: 'test-project', clips: [], tracks: [], duration: 0 },
+        project: { ...INITIAL_PROJECT, id: 'test-project' },
         currentTime: 0,
         isPlaying: false,
         selectedClipId: null,
         selectedTrackId: null,
         viewMode: 'director',
         storyboardProject: null,
-        setProject: vi.fn(),
+        previewArtifactUrl: null as string | null,
+        setPreviewArtifactUrl: vi.fn((url: string | null) => { mockState.previewArtifactUrl = url; }),
+        setProject: vi.fn((project: unknown) => {
+            mockState.project = { ...(mockState.project as Record<string, unknown>), ...(project as Record<string, unknown>) } as typeof mockState.project;
+        }),
         addClip: vi.fn(),
         updateClip: vi.fn(),
         removeClip: vi.fn(),

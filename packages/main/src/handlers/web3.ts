@@ -21,6 +21,18 @@ export interface Web3ProviderMetadata {
     networkName: string;
 }
 
+interface JsonRpcResponse<T> {
+    result?: T;
+    error?: {
+        message?: unknown;
+        code?: unknown;
+    };
+}
+
+const errorMessage = (error: unknown): string => (
+    error instanceof Error ? error.message : String(error)
+);
+
 class EthereumNetworkWrapper {
     private rpcUrl: string | null = null;
     private chainId = '0x1'; // Default: Ethereum Mainnet (1)
@@ -62,8 +74,8 @@ class EthereumNetworkWrapper {
                 chainId: chainIdHex,
                 networkName
             };
-        } catch (err: any) {
-            log.warn(`[Web3] Failed to query RPC network. Falling back to simulated metadata: ${err?.message}`);
+        } catch (err: unknown) {
+            log.warn(`[Web3] Failed to query RPC network. Falling back to simulated metadata: ${errorMessage(err)}`);
             return {
                 rpcUrl: this.rpcUrl,
                 isSimulated: true,
@@ -132,8 +144,8 @@ class EthereumNetworkWrapper {
                     gasUsed: parseInt(gasEstimate, 16),
                     rpcUrl: this.rpcUrl
                 };
-            } catch (err: any) {
-                log.warn(`[Web3] RPC execution failed: ${err.message}. Routing to simulated provider stub.`);
+            } catch (err: unknown) {
+                log.warn(`[Web3] RPC execution failed: ${errorMessage(err)}. Routing to simulated provider stub.`);
             }
         }
 
@@ -166,8 +178,8 @@ class EthereumNetworkWrapper {
                     unit: 'wei',
                     isSimulated: false
                 };
-            } catch (err: any) {
-                log.warn(`[Web3] Balance fetch failed: ${err.message}. Falling back to simulated balance.`);
+            } catch (err: unknown) {
+                log.warn(`[Web3] Balance fetch failed: ${errorMessage(err)}. Falling back to simulated balance.`);
             }
         }
 
@@ -184,7 +196,7 @@ class EthereumNetworkWrapper {
     /**
      * Helper to make raw JSON-RPC HTTP calls
      */
-    private async rpcCall<T>(method: string, params: any[]): Promise<T> {
+    private async rpcCall<T>(method: string, params: unknown[]): Promise<T> {
         if (!this.rpcUrl) {
             throw new Error('No RPC provider configured.');
         }
@@ -206,9 +218,13 @@ class EthereumNetworkWrapper {
             throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
         }
 
-        const json = await res.json() as any;
+        const json = await res.json() as JsonRpcResponse<T>;
         if (json.error) {
-            throw new Error(`JSON-RPC Error: ${json.error.message} (Code: ${json.error.code})`);
+            throw new Error(`JSON-RPC Error: ${String(json.error.message)} (Code: ${String(json.error.code)})`);
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(json, 'result')) {
+            throw new Error('JSON-RPC response did not include a result.');
         }
 
         return json.result as T;
@@ -240,9 +256,9 @@ export function registerWeb3Handlers() {
         validateSender(event);
         try {
             return await ethereumNetworkWrapper.executeTransaction(data);
-        } catch (err: any) {
+        } catch (err: unknown) {
             log.error('[Web3] Error executing transaction:', err);
-            return { success: false, error: err?.message || String(err) };
+            return { success: false, error: errorMessage(err) };
         }
     });
 
@@ -251,9 +267,9 @@ export function registerWeb3Handlers() {
         validateSender(event);
         try {
             return await ethereumNetworkWrapper.getProviderMetadata();
-        } catch (err: any) {
+        } catch (err: unknown) {
             log.error('[Web3] Error getting provider metadata:', err);
-            return { success: false, error: err?.message || String(err) };
+            return { success: false, error: errorMessage(err) };
         }
     });
 
@@ -263,9 +279,9 @@ export function registerWeb3Handlers() {
         try {
             ethereumNetworkWrapper.setRpcUrl(rpcUrl);
             return { success: true };
-        } catch (err: any) {
+        } catch (err: unknown) {
             log.error('[Web3] Error setting RPC URL:', err);
-            return { success: false, error: err?.message || String(err) };
+            return { success: false, error: errorMessage(err) };
         }
     });
 
@@ -274,9 +290,9 @@ export function registerWeb3Handlers() {
         validateSender(event);
         try {
             return await ethereumNetworkWrapper.getBalance(address);
-        } catch (err: any) {
+        } catch (err: unknown) {
             log.error('[Web3] Error querying balance:', err);
-            return { success: false, error: err?.message || String(err) };
+            return { success: false, error: errorMessage(err) };
         }
     });
 }

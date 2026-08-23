@@ -2,52 +2,20 @@ import { httpsCallable } from 'firebase/functions';
 
 import { functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import type {
+    RenderResult,
+    VideoRenderConfig,
+    VideoRenderReceipt,
+    VideoRendererContract,
+} from '@indii/shared';
 
-export interface RenderConfig {
-    compositionId: string;
-    outputLocation: string;
-    inputProps: Record<string, unknown>;
-    projectId?: string;
-    organizationId?: string;
-    codec?: 'h264' | 'vp8';
-    useCloudQueue?: boolean;
-}
-
-export type VideoRenderReceipt =
-    | {
-        status: 'queued';
-        renderId: string;
-        projectId: string;
-        progress: number;
-    }
-    | {
-        status: 'running';
-        renderId: string;
-        projectId: string;
-        progress: number;
-        phase?: string;
-    }
-    | {
-        status: 'completed';
-        renderId: string;
-        projectId: string;
-        progress: 100;
-        asset: {
-            url: string;
-            expiresAt: number;
-            generation: string;
-            mimeType: 'video/mp4';
-        };
-    }
-    | {
-        status: 'failed';
-        renderId: string;
-        projectId: string;
-        progress: number;
-        error: string;
-    };
-
-export type RenderResult = string | VideoRenderReceipt;
+/**
+ * MIG-002: The renderer contract lives in @indii/shared (`VideoRendererContract`).
+ * These are compatibility aliases — the receipt protocol is frozen there and must
+ * not drift here. New code imports from '@indii/shared' directly.
+ */
+export type RenderConfig = VideoRenderConfig;
+export type { RenderResult, VideoRenderReceipt };
 
 type CallableInvoker = (name: string, payload: Record<string, unknown>) => Promise<unknown>;
 type Sleep = (milliseconds: number) => Promise<void>;
@@ -141,7 +109,7 @@ const sleep: Sleep = milliseconds => new Promise(resolve => {
     setTimeout(resolve, milliseconds);
 });
 
-export class RenderService {
+export class RenderService implements VideoRendererContract {
     constructor(
         private readonly call: CallableInvoker = invokeCallable,
         private readonly wait: Sleep = sleep,
@@ -212,36 +180,15 @@ export class RenderService {
         }
     }
 
+    /** Local execution now runs through the main-process indii pipeline. */
     async renderComposition(config: RenderConfig): Promise<RenderResult> {
-        if (config.useCloudQueue) {
-            return this.queueComposition(config);
+        if (!config.useCloudQueue) {
+            throw new Error(
+                'Renderer-process local rendering was removed with the legacy engine. '
+                + 'Use the Electron IPC local render or the cloud queue.',
+            );
         }
-
-        try {
-            logger.info(`[RenderService] Starting local render for ${config.compositionId}...`);
-            const bundleLocation = import.meta.env.VITE_REMOTION_BUNDLE_PATH || './dist/remotion-bundle';
-            const remotionPkg = '@remotion/renderer';
-            const { renderMedia } = await import(/* @vite-ignore */ remotionPkg);
-            await renderMedia({
-                composition: {
-                    id: config.compositionId,
-                    props: config.inputProps as Record<string, unknown>,
-                    width: 1920,
-                    height: 1080,
-                    fps: 30,
-                    durationInFrames: 300,
-                },
-                serveUrl: bundleLocation,
-                codec: config.codec || 'h264',
-                outputLocation: config.outputLocation,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any);
-            logger.info(`[RenderService] Render complete: ${config.outputLocation}`);
-            return config.outputLocation;
-        } catch (error: unknown) {
-            logger.error('[RenderService] Render failed:', error);
-            throw new Error(`Failed to render composition: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        return this.queueComposition(config);
     }
 }
 

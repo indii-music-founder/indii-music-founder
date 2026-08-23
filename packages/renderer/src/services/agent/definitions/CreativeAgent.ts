@@ -58,7 +58,7 @@ export const CreativeAgent: AgentConfig = {
             canvas_push: DirectorTools.canvas_push,
             generate_moodboard: DirectorTools.generate_moodboard,
             analyze_visual_trends: DirectorTools.analyze_visual_trends,
-            queue_remotion_render: McpTools.queue_remotion_render,
+            queue_video_render: McpTools.queue_video_render,
             audit_asset_resolutions: McpTools.audit_asset_resolutions,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
@@ -77,7 +77,7 @@ export const CreativeAgent: AgentConfig = {
         'generate_moodboard',
         'analyze_visual_trends',
         'list_domain_records',
-        'queue_remotion_render',
+        'queue_video_render',
         'audit_asset_resolutions'
     ],
     tools: [{
@@ -251,8 +251,8 @@ export const CreativeAgent: AgentConfig = {
                 }
             },
             {
-                name: "queue_remotion_render",
-                description: "Queue a Remotion video render using the remote MCP backend.",
+                name: "queue_video_render",
+                description: "Queue a video render using the remote MCP backend.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

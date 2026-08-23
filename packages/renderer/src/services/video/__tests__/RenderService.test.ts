@@ -1,14 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { renderMedia } from '@remotion/renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RenderService } from '../RenderService';
-
-vi.mock('@remotion/renderer', () => ({
-    renderMedia: vi.fn(),
-}));
 
 const privateConfig = {
     compositionId: 'Showreel',
@@ -24,28 +19,14 @@ describe('RenderService', () => {
         vi.clearAllMocks();
     });
 
-    it('keeps the local renderer contract unchanged', async () => {
-        (renderMedia as import('vitest').Mock).mockResolvedValue(undefined);
+    it('refuses renderer-process local rendering (removed with legacy engine)', async () => {
         const service = new RenderService();
-
-        const result = await service.renderComposition({
+        await expect(service.renderComposition({
             compositionId: 'TestComp',
             outputLocation: '/tmp/output.mp4',
             inputProps: { text: 'Hello' },
             codec: 'h264',
-        });
-
-        expect(renderMedia).toHaveBeenCalledWith(expect.objectContaining({
-            composition: expect.objectContaining({
-                id: 'TestComp',
-                props: { text: 'Hello' },
-                width: 1920,
-                height: 1080,
-            }),
-            outputLocation: '/tmp/output.mp4',
-            codec: 'h264',
-        }));
-        expect(result).toBe('/tmp/output.mp4');
+        })).rejects.toThrow(/removed with the legacy engine/);
     });
 
     it('queues only through the authenticated server authority with fixed private policy', async () => {
@@ -149,14 +130,14 @@ describe('RenderService', () => {
         expect(receipts[0]).not.toEqual(expect.objectContaining({ asset: expect.anything() }));
     });
 
-    it('contains no renderer Cloud Run client authority, public privacy, or fabricated fallback', async () => {
+    it('contains zero remotion references and no public privacy or fabricated fallback', async () => {
         // Resolve relative to THIS file (src/services/video/__tests__), so the
         // suite behaves identically from the repo root and from the renderer
         // package directory.
         const files = await Promise.all([
             readFile(resolve(__dirname, '../RenderService.ts'), 'utf8'),
             readFile(resolve(__dirname, '../ParallelRenderOrchestrator.ts'), 'utf8'),
-            readFile(resolve(__dirname, '../VeoToRemotionBridge.ts'), 'utf8'),
+            readFile(resolve(__dirname, '../VeoTimelineIngestBridge.ts'), 'utf8'),
             // __tests__ → video → services → src → packages/renderer
             readFile(resolve(__dirname, '../../../../vite.config.ts'), 'utf8'),
             // …→ packages/renderer → packages → repo root
@@ -164,7 +145,7 @@ describe('RenderService', () => {
         ]);
         const rendererAuthority = files.join('\n');
 
-        expect(rendererAuthority).not.toContain('@remotion/cloudrun/client');
+        expect(rendererAuthority).not.toMatch(/@remotion\//i);
         expect(rendererAuthority).not.toMatch(/privacy\s*:\s*['"]public['"]/);
         expect(rendererAuthority).not.toContain('storage.googleapis.com/indii-renders');
         expect(rendererAuthority).not.toContain('RemotionCloudRunConfig');

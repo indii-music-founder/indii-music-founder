@@ -20,7 +20,7 @@ flowchart LR
         Providers2["MotionConfig →<br/>ResponsiveLayout →<br/>Voice/Theme/Toast"]
         AppContent["AppContent"]
         Modules["60+ Modules:<br/>Creative, Legal, Marketing,<br/>etc. (all lazy)"]
-        HeavyVendors["Heavy Vendors:<br/>vendor-three, fabric, audio,<br/>recharts, video, pdfjs,<br/>tesseract, reactflow,<br/>yjs, remotion"]
+        HeavyVendors["Heavy Vendors:<br/>vendor-three, fabric, audio,<br/>recharts, video, pdfjs,<br/>tesseract, reactflow,<br/>yjs"]
     end
     
     User -->|navigate /| Main
@@ -59,7 +59,7 @@ flowchart LR
 4. **ISSUE-549 Step 3 (modulePreload)** — Both vite configs
    - Add `modulePreload.resolveDependencies` filter to packages/renderer/vite.config.ts
    - Add same to electron.vite.config.ts
-   - Excludes vendor-three/fabric/audio/recharts/video/pdfjs/tesseract/reactflow/yjs/remotion
+   - Excludes vendor-three/fabric/audio/recharts/video/pdfjs/tesseract/reactflow/yjs
 
 5. **ISSUE-549 Step 4 (Verify Gate)** — All checks must pass
    - `npm run typecheck` ✓

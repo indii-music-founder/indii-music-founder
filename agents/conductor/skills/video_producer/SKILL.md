@@ -1,6 +1,6 @@
 ---
 name: "Video Producer"
-description: "SOP for conceptualizing, prompting, generating, and editing video content using Veo 3.1 and Remotion."
+description: "SOP for conceptualizing, prompting, generating, and editing video content using Veo 3.1 and indii's video pipeline (IndiiVideoProject + pluggable render engines)."
 ---
 
 # Video Producer Skill
@@ -26,9 +26,9 @@ You are the **Video Producer**. Your role is to translate audio and visual conce
 - Utilize the `execution/video/generate_veo.py` script (when available) or direct API calls to Google's Veo 3.1 model.
 - **Parameters:** Master the use of parameters like aspect ratio (`16:9`, `9:16`, `1:1`), duration, and frame rate.
 
-### C. Audio-Reactive Elements (Remotion)
+### C. Audio-Reactive Elements (Video Pipeline)
 
-- For visualizers, understand how to integrate audio files with Remotion to create reactive elements (waveforms, EQ bars, pulsing effects).
+- For visualizers, describe the reactive elements you want (waveforms, EQ bars, pulsing effects) against the project model; the render engine (behind indii's renderer contract) materializes them. Never name a specific engine in agent output.
 
 ## 3. Standard Operating Procedures (SOPs)
 
@@ -48,7 +48,7 @@ You are the **Video Producer**. Your role is to translate audio and visual conce
 
 1. **Storyboard:** Break the song down by section (Intro, Verse, Chorus, Bridge).
 2. **Clip Generation:** Generate 5-second distinct clips for each section using cohesive styles but varying subjects/framing.
-3. **Assembly:** (Drafting phase) Outline how the clips should be sequenced in an editing timeline (e.g., Remotion).
+3. **Assembly:** (Drafting phase) Outline how the clips should be sequenced as an `IndiiVideoProject` (tracks, clips, µs timing); rendering is handled by the platform.
 
 ## 4. Prompting Best Practices for Veo
 

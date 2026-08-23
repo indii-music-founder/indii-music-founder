@@ -43,7 +43,7 @@ export const McpTools: Record<string, AnyToolFunction> = {
     // CREATIVE (Director)
     // ----------------------------------------------------
     fetch_brand_kit: createMcpWrapper('fetch_brand_kit'),
-    queue_remotion_render: createMcpWrapper('queue_remotion_render'),
+    queue_video_render: createMcpWrapper('queue_video_render'),
     audit_asset_resolutions: createMcpWrapper('audit_asset_resolutions'),
 
     // ----------------------------------------------------

@@ -7,7 +7,18 @@ import { logger } from '@/utils/logger';
 import type { StoryboardProject, StoryboardSlot } from '../schemas/storyboard';
 import type { ScreenwriterStoryboardHandoff } from '@/types/handoff';
 
-export type ClipType = 'video' | 'image' | 'text' | 'audio';
+/**
+ * MIG-001: The canonical project model lives in @indii/shared (`IndiiVideoProject`).
+ * The names below are renderer-facing compatibility aliases — indii owns the model,
+ * engines adapt to it. Do NOT add engine-specific fields here; extend the shared type.
+ */
+import type {
+    IndiiVideoClip,
+    IndiiVideoProject,
+    IndiiVideoTrack,
+} from '@indii/shared';
+
+export type ClipType = IndiiVideoClip['type'];
 
 /** Immutable audio identity sent to the render backend; preview URLs are not authority. */
 export type CanonicalMasterRenderReference = Pick<
@@ -15,81 +26,21 @@ export type CanonicalMasterRenderReference = Pick<
     'contentHash' | 'generation' | 'masterFingerprint' | 'storagePath'
 > & { volume: number };
 
-export interface VideoClip {
-    id: string;
-    type: ClipType;
-    src?: string; // URL for video/image/audio
-    text?: string; // Content for text
-    startFrame: number;
-    durationInFrames: number;
-    trackId: string;
-    name: string;
-    // Visual properties
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
-    scale?: number;
-    opacity?: number;
-    rotation?: number;
-    anchorX?: number; // 0 to 1 (percentage)
-    anchorY?: number; // 0 to 1 (percentage)
-    borderRadius?: number;
-    volume?: number; // 0 to 1
-    masterFingerprint?: string;
-    isrc?: string;
-    canonicalMaster?: CanonicalMasterRenderReference;
-    /** Server-owned GCS identity for cloud renders; `src` remains preview-only. */
-    canonicalSourceUri?: string;
-    // Text specific properties
-    textColor?: string;
-    fontSize?: number;
-    fontWeight?: string;
-    textAlign?: 'left' | 'center' | 'right';
-    filter?: {
-        type: 'blur' | 'grayscale' | 'sepia' | 'contrast' | 'brightness';
-        intensity: number; // 0-100
-    };
-    transitionIn?: { type: 'fade' | 'slide' | 'wipe' | 'zoom'; duration: number };
-    transitionOut?: { type: 'fade' | 'slide' | 'wipe' | 'zoom'; duration: number };
-    keyframes?: {
-        [key: string]: Array<{
-            frame: number; // Relative to clip start
-            value: number;
-            easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
-        }>;
-    };
-    // Session Breakdown & Master Sync fields (ISSUE-1180)
-    sourceInUs?: number;
-    sourceOutUs?: number;
-    sourceGeneration?: string;
-    proxyGeneration?: string;
-    syncAlignmentId?: string;
-    syncLock?: boolean;
-    audioRecipeId?: string;
-    approvalReceiptId?: string;
-    planId?: string;
-}
+// Structural twin of CanonicalMasterRenderReference lives in @indii/shared
+// (`canonicalMaster` field). This compile-time check fails if the two drift apart.
+type _CanonicalMasterRefInSync = [IndiiVideoClip['canonicalMaster']] extends [
+    CanonicalMasterRenderReference | undefined,
+]
+    ? true
+    : never;
+const _CANONICAL_MASTER_REF_IN_SYNC: _CanonicalMasterRefInSync = true;
+void _CANONICAL_MASTER_REF_IN_SYNC;
 
+export type VideoClip = IndiiVideoClip;
 
-export interface VideoTrack {
-    id: string;
-    name: string;
-    type: 'video' | 'audio' | 'text'; // Simplified track types for now
-    isMuted?: boolean;
-    isHidden?: boolean;
-}
+export type VideoTrack = IndiiVideoTrack;
 
-export interface VideoProject {
-    id: string;
-    name: string;
-    fps: number;
-    durationInFrames: number;
-    width: number;
-    height: number;
-    tracks: VideoTrack[];
-    clips: VideoClip[];
-}
+export type VideoProject = IndiiVideoProject;
 
 interface VideoEditorState {
     project: VideoProject;
@@ -160,6 +111,10 @@ interface VideoEditorState {
     // Popout Viewer State
     isPopoutActive: boolean;
     setIsPopoutActive: (active: boolean) => void;
+
+    /** Rendered artifact (indii pipeline output) backing the preview surfaces. */
+    previewArtifactUrl: string | null;
+    setPreviewArtifactUrl: (url: string | null) => void;
 
     // Persistence (ISSUE-1147)
     isLoadingProject: boolean;
@@ -285,7 +240,8 @@ if (typeof window !== 'undefined') {
             // Give it the latest state immediately
             syncChannel?.postMessage({
                 type: 'SYNC_PROJECT',
-                project: useVideoEditorStore.getState().project
+                project: useVideoEditorStore.getState().project,
+                artifactUrl: useVideoEditorStore.getState().previewArtifactUrl,
             });
         } else if (event.data?.type === 'POPOUT_CLOSED') {
             useVideoEditorStore.getState().setIsPopoutActive(false);
@@ -302,15 +258,24 @@ if (typeof window !== 'undefined') {
 export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
     // Custom set wrapper to broadcast project sync
     const set: typeof _set = (partial, replace) => {
+        const before = get();
         const safeSet = _set as unknown as (p: unknown, r?: boolean) => void;
         safeSet(partial, replace);
+        let state = get();
+        // A rendered artifact represents one exact project snapshot. Any
+        // timeline mutation invalidates it so preview can never silently show
+        // stale pixels for the newly edited project.
+        if (state.project !== before.project && state.previewArtifactUrl !== null) {
+            safeSet({ previewArtifactUrl: null }, false);
+            state = get();
+        }
         // After setting, if project was updated, sync it out.
         // Zustand batches updates but we can grab the latest.
-        const state = get();
         if (syncChannel && window.location.pathname !== '/video-popout') {
             syncChannel.postMessage({
                 type: 'SYNC_PROJECT',
-                project: state.project
+                project: state.project,
+                artifactUrl: state.previewArtifactUrl,
             });
         }
     };
@@ -382,6 +347,8 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         })),
 
         isPopoutActive: false,
+        previewArtifactUrl: null,
+        setPreviewArtifactUrl: (url) => set({ previewArtifactUrl: url }),
         setIsPopoutActive: (active) => set({ isPopoutActive: active }),
 
         // Persistence (ISSUE-1147)
