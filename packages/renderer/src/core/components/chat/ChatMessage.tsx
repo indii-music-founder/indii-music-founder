@@ -410,12 +410,37 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                 )}
 
                 <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden wrap-break-word leading-normal font-medium tracking-tight`}>
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={markdownComponents}
-                    >
-                        {cleanText}
-                    </ReactMarkdown>
+                    {cleanText ? (
+                        <>
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={markdownComponents}
+                            >
+                                {cleanText}
+                            </ReactMarkdown>
+                            {msg.isStreaming && (
+                                <span
+                                    data-testid="streaming-cursor"
+                                    className="inline-block w-1.5 h-3.5 bg-green-400 animate-pulse ml-1 align-middle rounded-xs"
+                                    aria-label="Generating response..."
+                                />
+                            )}
+                        </>
+                    ) : msg.isStreaming ? (
+                        <div
+                            data-testid="agent-thinking-indicator"
+                            className="flex items-center gap-2 py-1.5 text-gray-400 text-xs animate-in fade-in duration-300"
+                        >
+                            <span className="flex gap-1 items-center">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-bounce [animation-delay:-0.3s]" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-bounce [animation-delay:-0.15s]" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-bounce" />
+                            </span>
+                            <span className="text-[11px] font-mono text-gray-400 italic">
+                                Working on it...
+                            </span>
+                        </div>
+                    ) : null}
                 </div>
 
                 {/* Metadata-driven Plan Rendering (Fallback/Secondary) */}

@@ -736,7 +736,7 @@ export class AgentService {
 
             // Direct mode always means one explicitly selected agent.
             logger.debug(`[AgentService] Executing direct specialist agent: ${targetAgentId}`);
-            updateAgentMessage(responseId, { agentId: targetAgentId });
+            updateAgentMessage(responseId, { agentId: targetAgentId, isStreaming: true });
             
             let currentStreamedText = '';
             const result = await this.executor.execute(targetAgentId, text, context as PipelineContext, (event) => {
@@ -828,7 +828,7 @@ export class AgentService {
 
         // Default: Single Agent Execution
         const agentId = orchestration.agentId || 'generalist';
-        updateAgentMessage(responseId, { agentId });
+        updateAgentMessage(responseId, { agentId, isStreaming: true });
         const singleAgentContext: AgentContext = { ...context, conversationMode: 'direct' };
 
         let currentStreamedText = '';
