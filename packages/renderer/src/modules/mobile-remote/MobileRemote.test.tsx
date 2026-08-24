@@ -273,8 +273,13 @@ describe('MobileRemote', () => {
 
         renderController();
 
-        expect(await screen.findByText('Pairing Link Needed')).toBeInTheDocument();
+        expect(await screen.findByText('Pairing Failed')).toBeInTheDocument();
         expect(screen.getByText(/Generate a new link from Desktop Studio/i)).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Link' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Pairing Instructions' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /try reconnecting now/i })).not.toBeInTheDocument();
+        expect(screen.queryByText(/Remote Protocol v1/i)).not.toBeInTheDocument();
+        expect(screen.getByTestId('controller-build')).toHaveTextContent(/Controller build/i);
     });
 
     it('redeems a valid one-click handoff before the phone is already authenticated', async () => {
@@ -324,28 +329,4 @@ describe('MobileRemote', () => {
         }
     });
 
-    it('labels the pairing dialog, closes it with Escape, and restores trigger focus', async () => {
-        vi.mocked(remoteRelayService.isAuthenticated).mockReturnValue(false);
-        mockOnAuthStateChanged.mockImplementation((_auth: unknown, callback: (user: unknown | null) => void) => {
-            callback(null);
-            return vi.fn();
-        });
-
-        renderController();
-
-        const linkButton = await screen.findByRole('button', { name: 'Link' });
-        linkButton.focus();
-        fireEvent.click(linkButton);
-
-        const dialog = await screen.findByRole('dialog', { name: 'Pair from Studio' });
-        expect(dialog).toHaveAttribute('aria-modal', 'true');
-        expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
-
-        fireEvent.keyDown(document, { key: 'Escape' });
-
-        await waitFor(() => {
-            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-            expect(screen.getByRole('button', { name: 'Link' })).toHaveFocus();
-        });
-    });
 });

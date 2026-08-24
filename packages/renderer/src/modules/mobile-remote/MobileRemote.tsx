@@ -19,7 +19,6 @@
  */
 
 import { useEffect, useCallback, useState, useRef, lazy, Suspense } from 'react';
-import { flushSync } from 'react-dom';
 import {
   isFreshStudioState,
   remoteRelayService,
@@ -31,13 +30,12 @@ import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
   LayoutDashboard, LayoutGrid, Grip, MessageSquare, Navigation,
-  CheckSquare, QrCode, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
+  CheckSquare, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { getRemoteConnectionPhase } from './RemoteConnectionState';
 import { isRemoteSurfaceDevice } from './routing';
-import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { useMobile } from '@/hooks/useMobile';
 
 // Helper for haptic feedback
@@ -79,49 +77,6 @@ const TABS: Tab[] = [
 
 const TRANSIENT_HEARTBEAT_GRACE_MS = 10_000;
 
-// ─── Pairing Help ────────────────────────────────────────────────────────────
-
-function PairingModal({ onClose }: { onClose: () => void }) {
-  const dialogRef = useModalAccessibility(true, onClose);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl p-6"
-    >
-      <motion.div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="mobile-remote-pairing-title"
-        aria-describedby="mobile-remote-pairing-description"
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 20 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="bg-[#1c1c1e] border border-white/10 rounded-[32px] p-8 max-w-sm w-full flex flex-col items-center shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]"
-      >
-        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 border border-blue-500/20">
-          <QrCode className="w-7 h-7 text-blue-400" />
-        </div>
-        <h2 id="mobile-remote-pairing-title" className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Pair from Studio</h2>
-        <p id="mobile-remote-pairing-description" className="text-[#a1a1a6] text-center text-sm mb-8 leading-relaxed">
-          Open the desktop Studio, then go to Settings → Mobile Remote and scan its pairing code. Controller pages cannot create Studio pairing codes.
-        </p>
-        <button
-          onClick={onClose}
-          className="w-full h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-base font-semibold transition-all active:scale-[0.98] cursor-pointer"
-          style={{ minHeight: '44px' }}
-        >
-          Close
-        </button>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 // ─── Tab Content Fallback ────────────────────────────────────────────────────
 
 function TabFallback() {
@@ -142,26 +97,9 @@ export default function MobileRemote() {
     remoteRelayService.isAuthenticated() ? 'pairing' : 'idle'
   );
   const [activeTab, setActiveTab] = useState<TabId>('home');
-  const [showPairingModal, setShowPairingModal] = useState(false);
   const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
   const [handoffError, setHandoffError] = useState<string | null>(null);
-  const headerPairingTriggerRef = useRef<HTMLButtonElement>(null);
-  const instructionsPairingTriggerRef = useRef<HTMLButtonElement>(null);
-  const activePairingTriggerRef = useRef<'header' | 'instructions' | null>(null);
-  const openPairingModal = useCallback((trigger: 'header' | 'instructions') => {
-    activePairingTriggerRef.current = trigger;
-    setShowPairingModal(true);
-  }, []);
-  const closePairingModal = useCallback(() => {
-    const trigger = activePairingTriggerRef.current;
-    flushSync(() => setShowPairingModal(false));
-    if (trigger === 'header') {
-      headerPairingTriggerRef.current?.focus();
-    } else {
-      instructionsPairingTriggerRef.current?.focus();
-    }
-    activePairingTriggerRef.current = null;
-  }, []);
+  const controllerBuild = (import.meta.env.VITE_BUILD_SHA || 'development').slice(0, 9);
 
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -720,25 +658,18 @@ export default function MobileRemote() {
                   </motion.div>
                 )
               ) : (
-                <motion.button
-                  ref={headerPairingTriggerRef}
+                <motion.div
                   key="idle"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  onClick={() => {
-                    triggerHaptic(50);
-                    openPairingModal('header');
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-5 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
-                  style={{ minWidth: '80px', minHeight: '56px' }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20"
                 >
-                  <QrCode className="w-4 h-4" />
-                  <span className="text-[11px] font-bold uppercase tracking-widest">
-                    Link
+                  <div className="w-2 h-2 rounded-full bg-red-400" />
+                  <span className="text-[10px] font-bold text-red-400 uppercase tracking-[0.15em]">
+                    Unpaired
                   </span>
-                </motion.button>
+                </motion.div>
               )}
             </AnimatePresence>
           </div>
@@ -821,27 +752,14 @@ export default function MobileRemote() {
               </div>
               
               <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">
-                {handoffError ? 'Pairing Link Needed' : 'Studio Disconnected'}
+                {handoffError ? 'Pairing Failed' : 'Studio Disconnected'}
               </h2>
               <p className="text-base text-[#a1a1a6] mb-10 leading-relaxed px-6 font-medium">
                 {handoffError ?? 'Your indii studio is currently offline. Launch the desktop application to restore control, or click below to manually retry.'}
               </p>
               
-              <div className="flex flex-col gap-4 w-full px-6">
-                <motion.button
-                  ref={instructionsPairingTriggerRef}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    triggerHaptic(50);
-                    openPairingModal('instructions');
-                  }}
-                  className="group flex items-center justify-center gap-3 w-full h-14 rounded-[20px] bg-white text-black font-bold transition-all hover:bg-[#f2f2f7] shadow-xl shadow-white/5 cursor-pointer"
-                  style={{ minHeight: '56px' }}
-                >
-                  <QrCode className="w-5 h-5" />
-                  Pairing Instructions
-                </motion.button>
-
+              {!handoffError && (
+                <div className="flex flex-col gap-4 w-full px-6">
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleManualRetry}
@@ -851,10 +769,14 @@ export default function MobileRemote() {
                   <RefreshCw className="w-5 h-5" />
                   Try Reconnecting Now
                 </motion.button>
-              </div>
+                </div>
+              )}
               
-              <p className="mt-12 text-[#48484a] text-xs font-bold uppercase tracking-[0.2em]">
-                Remote Protocol v1
+              <p
+                data-testid="controller-build"
+                className="mt-12 rounded-full border border-violet-400/30 bg-violet-500/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-violet-300"
+              >
+                Controller build {controllerBuild}
               </p>
 
               {!looksLikeRemoteDevice && (
@@ -950,13 +872,6 @@ export default function MobileRemote() {
           })}
         </div>
       </nav>
-
-      {/* ─── Modals ─────────────────────────────────────────────────────── */}
-      {showPairingModal && (
-        <PairingModal
-          onClose={closePairingModal}
-        />
-      )}
     </div>
   );
 }

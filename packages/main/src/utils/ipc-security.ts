@@ -1,7 +1,22 @@
 import log from 'electron-log';
-import { IpcMainInvokeEvent, app } from 'electron';
+import { IpcMainInvokeEvent, app, type WebContents } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+const trustedRendererWebContentsIds = new Set<number>();
+
+/**
+ * Registers the renderer created by the main process. React Router rewrites a
+ * packaged file URL from the physical index.html path to virtual paths such as
+ * `file:///settings?section=remote`; sender identity is the stable security
+ * boundary across those same-document route changes.
+ */
+export function registerTrustedRendererWebContents(webContents: WebContents): void {
+    trustedRendererWebContentsIds.add(webContents.id);
+    webContents.once('destroyed', () => {
+        trustedRendererWebContentsIds.delete(webContents.id);
+    });
+}
 
 function safeFileURLToPath(urlStr: string): string {
     if (typeof fileURLToPath === 'function') {
@@ -38,6 +53,14 @@ export function validateSender(event: IpcMainInvokeEvent): void {
 
     // 1. Allow Electron Production (File Protocol) - STRICT CHECK
     if (url.startsWith('file://')) {
+        if (
+            app.isPackaged
+            && event.sender
+            && trustedRendererWebContentsIds.has(event.sender.id)
+        ) {
+            return;
+        }
+
         try {
             const filePath = safeFileURLToPath(url);
             const appPath = app.getAppPath();
