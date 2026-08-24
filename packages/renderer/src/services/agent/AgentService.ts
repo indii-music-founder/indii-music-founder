@@ -1145,6 +1145,57 @@ export class AgentService {
             return;
         }
 
+        // Trivial Input Fast-Path in Boardroom:
+        // For simple greetings or short acknowledgements, respond immediately from the chair
+        // (Conductor or lead seated agent) rather than triggering all seated agents to fan out.
+        if (AgentService.isTrivialInput(task.rawUserUtterance)) {
+            const leadAgentId = activeAgents.includes('generalist') ? 'generalist' : activeAgents[0]!;
+            logger.debug(`[AgentService] Boardroom greeting fast-path: executing lead agent ${leadAgentId}`);
+            useStore.getState().updateAgentMessage(initialResponseId, { agentId: leadAgentId, isStreaming: true });
+
+            const seatedAgentNames = activeAgents
+                .map(id => agentRegistry.get(id)?.name || id)
+                .join(', ');
+
+            const greetingPrompt = `${task.rawUserUtterance}\n\n(SYSTEM NOTE): You are chairing a Boardroom session. The following agents are seated at the table with you: ${seatedAgentNames}. Give a brief, welcoming, professional greeting to the artist and ask what agenda or objective they would like the board to tackle today. Keep it under 2-3 sentences.`;
+
+            let currentStreamedText = '';
+            const result = await this.executor.execute(
+                leadAgentId,
+                greetingPrompt,
+                context as PipelineContext,
+                (event) => {
+                    if (event.type === 'token') {
+                        currentStreamedText += event.content;
+                        useStore.getState().updateAgentMessage(initialResponseId, { text: currentStreamedText });
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        this.debounceSyncMessage(initialResponseId, () => useStore.getState().agentHistory.find((m: any) => m.id === initialResponseId));
+                    }
+                },
+                signal,
+                undefined,
+                attachments
+            );
+
+            if (result && result.text) {
+                await this.applyCompletedResponse(
+                    leadAgentId,
+                    task.rawUserUtterance,
+                    initialResponseId,
+                    result,
+                    useStore.getState().updateAgentMessage,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    () => useStore.getState().agentHistory.find((m: any) => m.id === initialResponseId)
+                );
+            } else {
+                useStore.getState().updateAgentMessage(initialResponseId, {
+                    isStreaming: false,
+                    thoughtSignature: result?.thoughtSignature
+                });
+            }
+            return;
+        }
+
         let assetContext = '';
         if (referencedAssets.length > 0) {
             assetContext = '\n\n[BOARDROOM REFERENCED ASSETS]\n' + referencedAssets.map(a => {

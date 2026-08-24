@@ -420,7 +420,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 onValueChange={handleInputValueChange}
                 onSubmit={() => handleSubmit()}
                 className="bg-transparent border-none shadow-none py-1"
-                disabled={isLocalProcessing}
             >
                 <PromptInputTextarea
                     placeholder={

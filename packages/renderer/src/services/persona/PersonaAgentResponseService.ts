@@ -7,6 +7,7 @@ import {
     type InstrumentedPersonaResponseResult,
 } from './PersonaResponseService';
 import type { PersonaResponseMetadata } from './PersonaResponseMetadata';
+import { isTrivialInput } from '@/services/agent/utils/trivialInput';
 
 const AGENT_PERSONA_MAP: Readonly<Record<string, PersonaId>> = Object.freeze({
     generalist: 'manager',
@@ -81,7 +82,7 @@ export async function finalizePersonaAgentResponse(
     dependencies: PersonaAgentResponseDependencies = DEFAULT_DEPENDENCIES,
 ): Promise<FinalizedPersonaAgentResponse> {
     const personaId = AGENT_PERSONA_MAP[input.agentId];
-    if (!personaId || !input.response.text.trim() || (input.response.toolCalls?.length ?? 0) > 0) {
+    if (!personaId || !input.response.text.trim() || (input.response.toolCalls?.length ?? 0) > 0 || isTrivialInput(input.question)) {
         return { text: input.response.text };
     }
 
