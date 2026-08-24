@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { validateSender } from './ipc-security';
+import { registerTrustedRendererWebContents, validateSender } from './ipc-security';
 
 // Mock electron app
 vi.mock('electron', () => ({
@@ -22,12 +22,26 @@ describe('Sentinel: IPC Validation Security', () => {
     });
 
     describe('validateSender (IPC Hijack Protection)', () => {
-        const mockEvent = (url: string) => ({
-            senderFrame: { url }
+        const mockEvent = (url: string, senderId = 0) => ({
+            senderFrame: { url },
+            sender: { id: senderId },
         } as any);
 
         it('should accept file:// URLs inside app bundle (Production)', () => {
             expect(() => validateSender(mockEvent('file:///app/index.html'))).not.toThrow();
+        });
+
+        it('accepts virtual packaged routes from the registered app renderer', () => {
+            registerTrustedRendererWebContents({
+                id: 42,
+                once: vi.fn(),
+            } as any);
+
+            expect(() => validateSender(mockEvent('file:///settings?section=remote', 42))).not.toThrow();
+        });
+
+        it('rejects virtual packaged routes from an unregistered renderer', () => {
+            expect(() => validateSender(mockEvent('file:///settings?section=remote', 999))).toThrow('Unauthorized sender URL');
         });
 
         it('should REJECT file:// URLs outside app bundle (Vulnerability Fix)', () => {

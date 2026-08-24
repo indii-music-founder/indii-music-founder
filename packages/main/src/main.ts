@@ -1,4 +1,4 @@
-import { validateSender } from './utils/ipc-security';
+import { registerTrustedRendererWebContents, validateSender } from './utils/ipc-security';
 import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter, protocol, net, globalShortcut } from 'electron';
 import path from 'path';
 import log from 'electron-log';
@@ -171,6 +171,8 @@ const createWindow = async () => {
         show: false,
         icon: path.join(app.getAppPath(), 'public/icon-512.png'),
     });
+
+    registerTrustedRendererWebContents(win.webContents);
 
     if (windowState.isMaximized) {
         win.maximize();

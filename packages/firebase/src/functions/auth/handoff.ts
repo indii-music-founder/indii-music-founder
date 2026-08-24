@@ -3,10 +3,65 @@ import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
 import * as express from 'express';
 
-const db = admin.firestore();
+const getDb = () => admin.firestore();
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const MAX_ATTEMPTS_PER_WINDOW = 10; // max 10 requests per minute
+
+interface StoredHandoff {
+    userId: string;
+    idToken: string;
+    accessToken: string | null;
+    expiresAt: Date;
+}
+
+export type HandoffRedemptionResult =
+    | { status: 200; customToken: string; idToken: string; accessToken: string | null }
+    | { status: 404; message: 'Invalid or expired code' };
+
+export interface HandoffRedemptionDependencies {
+    load: () => Promise<StoredHandoff | null>;
+    expire: () => Promise<void>;
+    mintCustomToken: (userId: string) => Promise<string>;
+    consume: (userId: string, now: Date) => Promise<boolean>;
+    now?: () => Date;
+}
+
+/**
+ * Mint before consuming the one-time record. A production IAM outage must not
+ * destroy a valid QR code before Firebase can create the phone's custom token.
+ * The final atomic consume remains the single winner for concurrent requests;
+ * tokens minted by losing requests are never returned to a client.
+ */
+export async function redeemStoredHandoff(
+    dependencies: HandoffRedemptionDependencies,
+): Promise<HandoffRedemptionResult> {
+    const now = dependencies.now?.() ?? new Date();
+    const handoff = await dependencies.load();
+
+    if (!handoff) {
+        return { status: 404, message: 'Invalid or expired code' };
+    }
+
+    if (handoff.expiresAt < now) {
+        await dependencies.expire();
+        return { status: 404, message: 'Invalid or expired code' };
+    }
+
+    const customToken = await dependencies.mintCustomToken(handoff.userId);
+    const consumeTime = dependencies.now?.() ?? new Date();
+    const consumed = await dependencies.consume(handoff.userId, consumeTime);
+    if (!consumed) {
+        return { status: 404, message: 'Invalid or expired code' };
+    }
+
+    return {
+        status: 200,
+        customToken,
+        idToken: handoff.idToken,
+        accessToken: handoff.accessToken,
+    };
+}
 
 /**
  * Clean and extract IP from request
@@ -21,6 +76,7 @@ function getClientIp(req: Request): string {
  * Firestore-based IP Rate Limiting middleware helper
  */
 async function isRateLimited(ip: string, action: string): Promise<boolean> {
+    const db = getDb();
     const cleanIp = ip.replace(/[^a-zA-Z0-9]/g, '_');
     const docRef = db.collection('rate_limits').doc(`${action}_${cleanIp}`);
     
@@ -81,6 +137,7 @@ export const createHandoffCode = onRequest({ cors: true }, async (req: Request, 
     }
 
     try {
+        const db = getDb();
         // 2. Verify the ID token to ensure the request is legitimate
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const userId = decodedToken.uid;
@@ -137,36 +194,38 @@ export const redeemHandoffCode = onRequest({ cors: true }, async (req: Request, 
     }
 
     try {
+        const db = getDb();
         const docRef = db.collection('auth_handoffs').doc(code);
 
-        // Run transaction for atomic read/write to prevent concurrent reuse
-        const result = await db.runTransaction(async (transaction) => {
-            const doc = await transaction.get(docRef);
+        const result = await redeemStoredHandoff({
+            load: async () => {
+                const doc = await docRef.get();
+                const data = doc.data();
+                if (!doc.exists || !data) return null;
+                return {
+                    userId: data.userId,
+                    idToken: data.idToken,
+                    accessToken: data.accessToken ?? null,
+                    expiresAt: data.expiresAt.toDate(),
+                };
+            },
+            expire: async () => {
+                await docRef.delete();
+            },
+            mintCustomToken: (userId) => admin.auth().createCustomToken(userId),
+            consume: async (expectedUserId, now) => db.runTransaction(async (transaction) => {
+                const current = await transaction.get(docRef);
+                const data = current.data();
+                if (!current.exists || !data || data.userId !== expectedUserId) return false;
 
-            if (!doc.exists) {
-                return { status: 404, message: 'Invalid or expired code' };
-            }
+                if (data.expiresAt.toDate() < now) {
+                    transaction.delete(docRef);
+                    return false;
+                }
 
-            const data = doc.data();
-            if (!data) {
-                return { status: 404, message: 'Invalid or expired code' };
-            }
-
-            const expiresAt = data.expiresAt.toDate();
-            if (expiresAt < new Date()) {
                 transaction.delete(docRef);
-                return { status: 404, message: 'Code expired' };
-            }
-
-            // Perform write operation first
-            transaction.delete(docRef);
-
-            return {
-                status: 200,
-                idToken: data.idToken,
-                accessToken: data.accessToken,
-                userId: data.userId
-            };
+                return true;
+            }),
         });
 
         if (result.status !== 200) {
@@ -174,9 +233,11 @@ export const redeemHandoffCode = onRequest({ cors: true }, async (req: Request, 
             return;
         }
 
-        // Custom token generation cannot run inside firestore transaction (it's an external network call)
-        const customToken = await admin.auth().createCustomToken(result.userId!);
-        res.status(200).json({ idToken: result.idToken, accessToken: result.accessToken, customToken });
+        res.status(200).json({
+            idToken: result.idToken,
+            accessToken: result.accessToken,
+            customToken: result.customToken,
+        });
     } catch (err) {
         console.error('Error redeeming handoff code:', err);
         res.status(500).send('Internal Server Error');
