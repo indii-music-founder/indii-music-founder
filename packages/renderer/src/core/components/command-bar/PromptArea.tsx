@@ -62,7 +62,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         stopAgent,
         isAgentProcessing,
         directTargetAgentId,
-        activeDepartmentId
+        activeDepartmentId,
+        activeAgents,
     } = useStore(useShallow(state => ({
         currentModule: state.currentModule,
         isRightPanelOpen: state.isRightPanelOpen,
@@ -83,11 +84,14 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         stopAgent: state.stopAgent,
         isAgentProcessing: state.isAgentProcessing,
         directTargetAgentId: state.directTargetAgentId,
-        activeDepartmentId: state.activeDepartmentId
+        activeDepartmentId: state.activeDepartmentId,
+        activeAgents: state.activeAgents,
     })));
 
     const isBoardroom = conversationMode === 'boardroom';
-    
+    const isBoardroomBlocked = isBoardroom && (!activeAgents || activeAgents.length === 0);
+
+
     // Sync chatChannel (theme) with conversationMode
     useEffect(() => {
         if (conversationMode === 'boardroom') {
@@ -253,6 +257,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 return;
             }
 
+            // Boardroom with no agents seated — reject immediately with clear guidance
+            if (isBoardroomBlocked) {
+                toast.error('Seat at least one agent on the table to start the discussion.');
+                return;
+            }
+
             setIsLocalProcessing(true);
             let currentInput = input;
             const currentAttachments = [...(commandBarAttachments || [])];
@@ -347,7 +357,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             logger.error("PromptArea: Fatal crash", fatalError);
             setIsLocalProcessing(false);
         }
-    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isLocalProcessing, isIndiiMode, isBoardroom, setCommandBarInput, setCommandBarAttachments]);
+    }, [commandBarInput, commandBarAttachments, isRightPanelOpen, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isLocalProcessing, isIndiiMode, isBoardroom, isBoardroomBlocked, setCommandBarInput, setCommandBarAttachments]);
 
     const handleTalkRelease = useCallback(({ text, autoSend }: { text: string; autoSend: boolean }) => {
         setCommandBarInput(text);
@@ -413,8 +423,16 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 disabled={isLocalProcessing}
             >
                 <PromptInputTextarea
-                    placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${activeAgentName}...`)}
-                    aria-label={isIndiiMode ? "Ask indii" : `Message ${activeAgentName}`}
+                    placeholder={
+                        isDragging
+                            ? ''
+                            : isBoardroomBlocked
+                                ? 'Seat agents on the table to begin...'
+                                : isIndiiMode
+                                    ? 'Launch a campaign, audit security, or ask anything...'
+                                    : `Message ${activeAgentName}...`
+                    }
+                    aria-label={isIndiiMode ? 'Ask indii' : `Message ${activeAgentName}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                     data-testid="main-prompt-input"
                 />

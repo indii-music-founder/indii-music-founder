@@ -236,6 +236,45 @@ export class AgentService {
         this.pendingSends = [];
     }
 
+    /**
+     * Returns true for short conversational inputs that carry no domain intent
+     * and should skip both orchestration LLM calls to eliminate cold-start latency.
+     *
+     * Criteria:
+     *   - ≤ 6 words AND matches a known trivial pattern (greetings, acks, filler), OR
+     *   - ≤ 3 words unconditionally (too short to require routing).
+     *
+     * This is intentionally conservative — false negatives (routing a greeting through
+     * orchestration) are acceptable; false positives (skipping routing for a real query)
+     * are not. Domain-specific keywords (e.g. "contract", "distribute", "register")
+     * never appear in trivial inputs.
+     */
+    static isTrivialInput(text: string): boolean {
+        const trimmed = text.trim();
+        const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+
+        // Always fast-path very short inputs (≤3 words can't encode real domain intent)
+        if (wordCount <= 3) return true;
+
+        // For 4–6 word inputs, require a known trivial pattern
+        if (wordCount <= 6) {
+            const lower = trimmed.toLowerCase();
+            const trivialPatterns = [
+                /^(hi|hey|hello|howdy|sup|what'?s up|yo)\b/,
+                /^(thanks?|thank you|thx|ty|appreciated?)\b/,
+                /^(ok|okay|got it|sounds good|perfect|great|cool|awesome|nice|alright)\b/,
+                /^(yes|yeah|yep|yup|no|nope|nah|sure)\b/,
+                /^(good morning|good afternoon|good evening|good night)\b/,
+                /^(how are you|how'?s it going|what'?s new|how do you do)\b/,
+                /^(bye|goodbye|see you|later|talk soon|ttyl)\b/,
+                /^(lol|haha|lmao|😂|😊|👋|🙏)\b/,
+            ];
+            return trivialPatterns.some(p => p.test(lower));
+        }
+
+        return false;
+    }
+
     private shouldCacheCompletedResponse(
         isGenerationRequest: boolean,
         message: AgentMessage | undefined,
@@ -715,6 +754,12 @@ export class AgentService {
         // still provide a legacy forced target, which must not bypass it.
         if (forcedAgentId && conversationMode !== 'orchestrated') {
             orchestration = { type: 'single' as const, agentId: forcedAgentId, reasoning: 'Forced by user' };
+        } else if (AgentService.isTrivialInput(text)) {
+            // Fast-path: skip both orchestration LLM calls for short conversational
+            // inputs (greetings, acks, simple questions). First token appears
+            // immediately instead of after 2–6s of silent API overhead.
+            logger.debug('[AgentService] Trivial input fast-path → generalist (no orchestration)');
+            orchestration = { type: 'single' as const, agentId: 'generalist', reasoning: 'Trivial input bypass' };
         } else {
             orchestration = await this.orchestrator.determineOrchestrationPath(context, text);
         }
