@@ -275,6 +275,34 @@ export class AgentService {
         return false;
     }
 
+    /**
+     * Returns an instant, zero-latency greeting string without any LLM call.
+     * Used for trivial inputs (hi, hey, yo) in all conversation modes.
+     *
+     * @param agentId - The ID of the responding agent.
+     * @param seatedAgentNames - Comma-separated names of agents seated (boardroom only).
+     * @param mode - Current conversation mode for context framing.
+     */
+    static buildInstantGreeting(agentId: string, seatedAgentNames?: string, mode?: string): string {
+        const agentName = agentRegistry.get(agentId)?.name || 'indii Conductor';
+
+        if (mode === 'boardroom' && seatedAgentNames) {
+            const lines = [
+                `Hey! The board is ready. Seated today: **${seatedAgentNames}**.`,
+                `What would you like us to tackle?`,
+            ];
+            return lines.join(' ');
+        }
+
+        const greetings = [
+            `Hey! I'm ${agentName}. What are we working on?`,
+            `Hi there — ${agentName} here. What's on the agenda?`,
+            `Hey! ${agentName} ready to go. What do you need?`,
+        ];
+        // Deterministic selection based on agentId length (avoids random on each call)
+        return greetings[agentId.length % greetings.length]!;
+    }
+
     private shouldCacheCompletedResponse(
         isGenerationRequest: boolean,
         message: AgentMessage | undefined,
@@ -755,11 +783,13 @@ export class AgentService {
         if (forcedAgentId && conversationMode !== 'orchestrated') {
             orchestration = { type: 'single' as const, agentId: forcedAgentId, reasoning: 'Forced by user' };
         } else if (AgentService.isTrivialInput(text)) {
-            // Fast-path: skip both orchestration LLM calls for short conversational
-            // inputs (greetings, acks, simple questions). First token appears
-            // immediately instead of after 2–6s of silent API overhead.
-            logger.debug('[AgentService] Trivial input fast-path → generalist (no orchestration)');
-            orchestration = { type: 'single' as const, agentId: 'generalist', reasoning: 'Trivial input bypass' };
+            // Zero-latency greeting: respond instantly with a template, NO LLM call at all.
+            // The previous path routed to single-agent execution which still cost 15-45s.
+            const activeAgentId = state.directTargetAgentId || 'generalist';
+            const instantReply = AgentService.buildInstantGreeting(activeAgentId, undefined, conversationMode as string);
+            logger.debug('[AgentService] Trivial input instant-reply (0ms, no API call)');
+            updateAgentMessage(responseId, { agentId: activeAgentId, text: instantReply, isStreaming: false });
+            return;
         } else {
             orchestration = await this.orchestrator.determineOrchestrationPath(context, text);
         }
@@ -1146,53 +1176,23 @@ export class AgentService {
         }
 
         // Trivial Input Fast-Path in Boardroom:
-        // For simple greetings or short acknowledgements, respond immediately from the chair
-        // (Conductor or lead seated agent) rather than triggering all seated agents to fan out.
+        // Zero-latency: return a pre-built template instantly with NO LLM call.
+        // The previous implementation still called executor.execute() causing 15-45s delays.
         if (AgentService.isTrivialInput(task.rawUserUtterance)) {
             const leadAgentId = activeAgents.includes('generalist') ? 'generalist' : activeAgents[0]!;
-            logger.debug(`[AgentService] Boardroom greeting fast-path: executing lead agent ${leadAgentId}`);
-            useStore.getState().updateAgentMessage(initialResponseId, { agentId: leadAgentId, isStreaming: true });
-
             const seatedAgentNames = activeAgents
                 .map(id => agentRegistry.get(id)?.name || id)
                 .join(', ');
 
-            const greetingPrompt = `${task.rawUserUtterance}\n\n(SYSTEM NOTE): You are chairing a Boardroom session. The following agents are seated at the table with you: ${seatedAgentNames}. Give a brief, welcoming, professional greeting to the artist and ask what agenda or objective they would like the board to tackle today. Keep it under 2-3 sentences.`;
-
-            let currentStreamedText = '';
-            const result = await this.executor.execute(
-                leadAgentId,
-                greetingPrompt,
-                context as PipelineContext,
-                (event) => {
-                    if (event.type === 'token') {
-                        currentStreamedText += event.content;
-                        useStore.getState().updateAgentMessage(initialResponseId, { text: currentStreamedText });
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        this.debounceSyncMessage(initialResponseId, () => useStore.getState().agentHistory.find((m: any) => m.id === initialResponseId));
-                    }
-                },
-                signal,
-                undefined,
-                attachments
-            );
-
-            if (result && result.text) {
-                await this.applyCompletedResponse(
-                    leadAgentId,
-                    task.rawUserUtterance,
-                    initialResponseId,
-                    result,
-                    useStore.getState().updateAgentMessage,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    () => useStore.getState().agentHistory.find((m: any) => m.id === initialResponseId)
-                );
-            } else {
-                useStore.getState().updateAgentMessage(initialResponseId, {
-                    isStreaming: false,
-                    thoughtSignature: result?.thoughtSignature
-                });
-            }
+            const instantReply = AgentService.buildInstantGreeting(leadAgentId, seatedAgentNames, 'boardroom');
+            logger.debug(`[AgentService] Boardroom greeting instant-reply (0ms, no API call)`);
+            useStore.getState().updateAgentMessage(initialResponseId, {
+                agentId: leadAgentId,
+                text: instantReply,
+                isStreaming: false,
+            });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.flushSyncMessage(initialResponseId, () => useStore.getState().agentHistory.find((m: any) => m.id === initialResponseId));
             return;
         }
 
