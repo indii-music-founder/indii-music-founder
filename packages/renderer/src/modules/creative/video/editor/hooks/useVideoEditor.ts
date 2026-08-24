@@ -11,6 +11,7 @@ import { readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creati
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { cloudRenderEligibilityError } from '../utils/renderEligibility';
 import { RenderService } from '@/services/video/RenderService';
+import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
 
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
@@ -129,7 +130,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             syncChannel?.postMessage({ type: 'SYNC_ACTION', action: 'seek', frame });
             setCurrentTime(frame);
         }
-    }, [setCurrentTime]);
+    }, [project.fps, setCurrentTime]);
 
     const formatTime = useCallback((frame: number) => {
         const fps = project.fps || 30;
@@ -155,13 +156,28 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     }, [addClip]);
 
     const handleExport = async () => {
+        if (window.electronAPI?.video?.render) {
+            setIsExporting(true);
+            toast.info('Rendering video locally…');
+            try {
+                const receipt = await renderVideoProjectLocally(project);
+                toast.success(`Render complete: ${receipt.asset.url.replace(/^file:\/\//, '')}`);
+            } catch (error: unknown) {
+                logger.error('Desktop render error:', error);
+                toast.error(`Render failed: ${error instanceof Error ? error.message : String(error)}`);
+            } finally {
+                setIsExporting(false);
+            }
+            return;
+        }
+
         const eligibilityError = cloudRenderEligibilityError(project);
         if (eligibilityError) {
             toast.error(eligibilityError);
             return;
         }
         setIsExporting(true);
-        toast.info('Starting cloud export... This may take a while.');
+        toast.info('Starting cloud export…');
         try {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
@@ -222,8 +238,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                 throw new Error("Local rendering is not supported in the browser environment. Please use the desktop app.");
             }
 
-            const timestamp = Date.now();
-            const filename = `video_${timestamp}.mp4`;
+            const filename = `video_${Date.now()}.mp4`;
 
             // Prompt user to select export directory (handles access granting via AccessControlService)
             const selectedDirectory = await electronAPI.selectDirectory();
@@ -236,34 +251,11 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             // Construct full output path (forward slashes work on all platforms in Electron)
             const outputLocation = `${selectedDirectory}/${filename}`;
 
-            const resultLocation = await electronAPI.video.render({
-                compositionId: project.id,
+            const receipt = await renderVideoProjectLocally(project, {
                 outputLocation,
-                inputProps: { project }
+                outputName: filename,
             });
-
-            setPreviewArtifactUrl(`file://${resultLocation}`);
-            toast.success(`Render complete: ${resultLocation}`);
-
-            // Auto-save output to generatedHistory globally
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            import('@/core/store').then((module: any) => {
-                const { useStore } = module;
-                const state = useStore.getState();
-                state.addToHistory({
-                    id: `export_${timestamp}`,
-                    type: 'video',
-                    url: `file://${resultLocation}`,
-                    localPath: resultLocation,
-                    origin: 'editor',
-                    prompt: `Export of ${project.name || 'Project'}`,
-                    timestamp: timestamp,
-                    projectId: project.id,
-                    orgId: state.currentOrganizationId
-                });
-            }).catch((error) => {
-                logger.error('Failed to record local export in history:', error);
-            });
+            toast.success(`Render complete: ${receipt.asset.url.replace(/^file:\/\//, '')}`);
 
         } catch (error: unknown) {
             logger.error('Local export error:', error);

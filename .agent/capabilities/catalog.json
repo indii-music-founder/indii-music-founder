@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "7652f0b62558424fedd68fd31de82298a5da1f4209142b0ae98a5d86d15f37b3",
+  "sourceDigest": "881a1c474e72e38a5de53b66fccde3bf4bef5164009a25f2ca291db57b906592",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 36,
     "conditional": 69,
-    "quarantined": 81,
+    "quarantined": 78,
     "deprecated": 1
   },
   "capabilities": [
@@ -3295,74 +3295,6 @@
       "lockHash": "0dc00f155130d001cfe6f9bfcc2da2452ad92c13275564178595ec7948414154"
     },
     {
-      "id": "skill:vendored:developing-genkit-dart",
-      "name": "developing-genkit-dart",
-      "kind": "skill",
-      "registry": ".agents/skills",
-      "path": null,
-      "mutable": false,
-      "available": false,
-      "description": "Locked vendored skill is not installed on this machine.",
-      "descriptionHash": "8bed74de47215b2013573c1f9baff960e8862b6211da88df7a271b3606865c94",
-      "contentHash": null,
-      "state": "quarantined",
-      "authority": "inherits-active-request",
-      "prerequisites": [
-        "The skill is installed",
-        "A skills-lock.json entry exists",
-        "Required tools are available"
-      ],
-      "outputs": [
-        "The upstream skill-defined result"
-      ],
-      "verification": [
-        "Use upstream checks plus repository-specific acceptance evidence"
-      ],
-      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
-      "fallback": "workflow:skill-skill",
-      "idempotency": "Follow the upstream skill's repeat-safety rules.",
-      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
-      "reason": "Lock entry exists but the skill is not installed.",
-      "locked": true,
-      "upstream": "firebase/agent-skills",
-      "lockHash": "aa92490e4db5038730c629477ad968796f329040433625cf9b7bb13e26a859e3",
-      "conflicts": []
-    },
-    {
-      "id": "skill:vendored:developing-genkit-go",
-      "name": "developing-genkit-go",
-      "kind": "skill",
-      "registry": ".agents/skills",
-      "path": null,
-      "mutable": false,
-      "available": false,
-      "description": "Locked vendored skill is not installed on this machine.",
-      "descriptionHash": "8bed74de47215b2013573c1f9baff960e8862b6211da88df7a271b3606865c94",
-      "contentHash": null,
-      "state": "quarantined",
-      "authority": "inherits-active-request",
-      "prerequisites": [
-        "The skill is installed",
-        "A skills-lock.json entry exists",
-        "Required tools are available"
-      ],
-      "outputs": [
-        "The upstream skill-defined result"
-      ],
-      "verification": [
-        "Use upstream checks plus repository-specific acceptance evidence"
-      ],
-      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
-      "fallback": "workflow:skill-skill",
-      "idempotency": "Follow the upstream skill's repeat-safety rules.",
-      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
-      "reason": "Lock entry exists but the skill is not installed.",
-      "locked": true,
-      "upstream": "firebase/agent-skills",
-      "lockHash": "163d0bbfcb2a067d4cd56d6c27725c23cd628084df94409b31c803e1d24dc3b6",
-      "conflicts": []
-    },
-    {
       "id": "skill:vendored:developing-genkit-js",
       "name": "developing-genkit-js",
       "kind": "skill",
@@ -4549,40 +4481,6 @@
       "locked": true,
       "upstream": "heygen-com/hyperframes",
       "lockHash": "414bcbebc52eba6455b76a2e78bebcd8dd6929abc76fcdeb1ad8a70043d96186"
-    },
-    {
-      "id": "skill:vendored:xcode-project-setup",
-      "name": "xcode-project-setup",
-      "kind": "skill",
-      "registry": ".agents/skills",
-      "path": null,
-      "mutable": false,
-      "available": false,
-      "description": "Locked vendored skill is not installed on this machine.",
-      "descriptionHash": "8bed74de47215b2013573c1f9baff960e8862b6211da88df7a271b3606865c94",
-      "contentHash": null,
-      "state": "quarantined",
-      "authority": "inherits-active-request",
-      "prerequisites": [
-        "The skill is installed",
-        "A skills-lock.json entry exists",
-        "Required tools are available"
-      ],
-      "outputs": [
-        "The upstream skill-defined result"
-      ],
-      "verification": [
-        "Use upstream checks plus repository-specific acceptance evidence"
-      ],
-      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
-      "fallback": "workflow:skill-skill",
-      "idempotency": "Follow the upstream skill's repeat-safety rules.",
-      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
-      "reason": "Lock entry exists but the skill is not installed.",
-      "locked": true,
-      "upstream": "firebase/agent-skills",
-      "lockHash": "65fc8ef640574e34cd315cef3a2e8ea6eb2d3b29d38eba18e1e749d812215161",
-      "conflicts": []
     },
     {
       "id": "workflow:20m",

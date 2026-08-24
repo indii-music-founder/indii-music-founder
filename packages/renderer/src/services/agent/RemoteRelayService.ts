@@ -195,7 +195,7 @@ export function resolveRemoteCommandExecutionTarget(
 
 export interface AgentDispatchTask {
     id?: string;
-    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'live_moment' | 'media_capture' | 'document_scan' | 'venue_log' | 'computer_task';
+    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'live_moment' | 'media_capture' | 'document_scan' | 'venue_log' | 'computer_task' | 'video_render';
     payload: {
         audioUrl?: string;
         videoUrl?: string;
@@ -217,6 +217,10 @@ export interface AgentDispatchTask {
          */
         goal?: string;
         constraints?: string;
+        /** Canonical persisted editor project requested by queue_video_render. */
+        projectId?: string;
+        /** Safe basename only; the desktop chooses its managed export directory. */
+        outputName?: string;
     };
     status: 'pending' | 'processing' | 'completed' | 'failed';
     executorId?: string;
@@ -236,6 +240,8 @@ export interface AgentDispatchTask {
     result?: {
         noteId?: string;
         assetUrl?: string;
+        renderId?: string;
+        projectId?: string;
     };
 }
 

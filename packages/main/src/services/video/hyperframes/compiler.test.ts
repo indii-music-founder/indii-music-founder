@@ -76,6 +76,8 @@ describe('compileProjectToHyperFrames', () => {
         };
         const { html } = compileProjectToHyperFrames(project);
         expect(html).toContain('data-track-index="1"');
+        expect(html).toContain('data-hf-root');
+        expect(html).toContain('data-hf-id="hf-el-c1-media"');
         expect(html).not.toContain('data-track-index="t1"');
         expect(html).toContain('data-media-start="0.25"');
         expect(html).toContain('data-duration="1"');

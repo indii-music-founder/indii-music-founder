@@ -156,7 +156,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                             data-testid="video-export-btn"
                             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${isExporting ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 text-white'}`}
                         >
-                            {isExporting ? 'Exporting...' : 'Cloud Render'}
+                            {isExporting ? 'Rendering…' : 'Render Video'}
                         </button>
                     </div>
                 }

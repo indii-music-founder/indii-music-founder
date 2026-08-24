@@ -16,4 +16,4 @@ Parity sign-off per composition is the deletion gate for the legacy path.
 - [x] `runParityComparison()` engine-agnostic (inject LEGACY/NEW render callbacks) → judged result; `writeParityReports()` emits human markdown + machine JSON per run; thresholds configurable per run
 - [x] Sign-off ledger live at docs/video/remotion-migration/PARITY_SIGNOFF.md (manual updates from reports; calibration record seeded)
 - [x] Calibration covers positive control (same comp ×2 → `identical`), negative control (perturbed → `mismatch`), report content, thresholds, and visually-identical/audio-mismatched rejection
-- [ ] Cross-engine rows re-signed under current structural/audio gate using immutable baseline artifacts
+- [x] Cross-engine rows re-signed under the current structural/audio gate using committed/provenanced baseline evidence

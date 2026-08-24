@@ -2,37 +2,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('firebase-admin');
 
-const sendMock = vi.fn();
-vi.mock('../../../lib/inngestClient.js', () => ({
-    getInngestClient: () => ({ send: sendMock }),
-}));
-
-import { queueVideoRender } from '../queueVideoRender.js';
-import { McpContext } from '../../types.js';
 import * as admin from 'firebase-admin';
+import { queueVideoRender } from '../queueVideoRender.js';
+import type { McpContext } from '../../types.js';
 import { textContent } from './mcpContent';
 
-const addMock = vi.fn();
-const releaseGetMock = vi.fn();
-const topLevelGetMock = vi.fn();
+const projectGetMock = vi.fn();
+const dispatchAddMock = vi.fn();
 
-// Structural firestore mock covering users/{uid}/releases/{id}, releases/{id}, mcpRenderJobs.
 const firestoreFn = vi.fn(() => ({
     collection: (name: string) => {
-        if (name === 'users') {
-            return {
-                doc: () => ({
-                    collection: () => ({ doc: () => ({ get: releaseGetMock }) }),
-                }),
-            };
-        }
-        if (name === 'releases') {
-            return { doc: () => ({ get: topLevelGetMock }) };
-        }
-        if (name === 'mcpRenderJobs') {
-            return { add: addMock };
-        }
-        throw new Error(`unexpected collection ${name}`);
+        if (name !== 'users') throw new Error(`unexpected collection ${name}`);
+        return {
+            doc: () => ({
+                collection: (child: string) => {
+                    if (child === 'videoProjects') {
+                        return { doc: () => ({ get: projectGetMock }) };
+                    }
+                    if (child === 'agent_dispatch_queue') {
+                        return { add: dispatchAddMock };
+                    }
+                    throw new Error(`unexpected child collection ${child}`);
+                },
+            }),
+        };
     },
 })) as any;
 
@@ -47,96 +40,63 @@ const context = (uid: string): McpContext => ({ user: { uid } } as McpContext);
 
 describe('queueVideoRender MCP tool', () => {
     beforeEach(() => {
-        addMock.mockReset().mockResolvedValue({ id: 'job-123' });
-        releaseGetMock.mockReset();
-        topLevelGetMock.mockReset();
-        sendMock.mockReset().mockResolvedValue(undefined);
+        projectGetMock.mockReset();
+        dispatchAddMock.mockReset().mockResolvedValue({ id: 'render-123' });
     });
 
-    it('writes a whitelisted mcpRenderJobs doc, dropping unknown animationSpec keys, and dispatches to Inngest', async () => {
-        releaseGetMock.mockResolvedValueOnce({ exists: true, data: () => ({}) });
+    it('queues an owned persisted project for the desktop renderer', async () => {
+        projectGetMock.mockResolvedValue({
+            exists: true,
+            data: () => ({ userId: 'user-1', project: { id: 'project-1', clips: [{}], tracks: [] } }),
+        });
 
         const result = await queueVideoRender.handler({
-            releaseId: 'rel-1',
-            canvasType: 'Spotify',
-            animationSpec: {
-                template: 'waveform',
-                durationSeconds: 30,
-                colorPalette: ['#000', '#fff'],
-                textOverlay: 'New single',
-                __proto__pollution: 'evil',
-                callbackUrl: 'https://attacker.example',
-                userId: 'someone-else',
-            },
+            projectId: 'project-1',
+            outputName: 'My Final / No.mp4'.replace(' / ', ' '),
+            callbackUrl: 'https://attacker.example',
+            engine: 'remotion',
         }, context('user-1'));
 
         const payload = JSON.parse(textContent(result));
         expect(result.isError).toBeUndefined();
-        expect(payload.status).toBe('succeeded');
-        expect(payload.resource.type).toBe('render_intent');
-        expect(payload.data).toEqual({ jobId: 'job-123', canvasType: 'Spotify' });
-        expect(payload.warnings.join(' ')).toMatch(/dispatched to Inngest/);
-
-        expect(addMock).toHaveBeenCalledTimes(1);
-        const written = addMock.mock.calls[0][0];
-        expect(written).toEqual({
-            releaseId: 'rel-1',
-            canvasType: 'Spotify',
-            animationSpec: {
-                template: 'waveform',
-                durationSeconds: 30,
-                colorPalette: ['#000', '#fff'],
-                textOverlay: 'New single',
-            },
-            initiatorUid: 'user-1',
+        expect(payload.status).toBe('queued');
+        expect(payload.data).toEqual({
+            renderId: 'render-123',
+            projectId: 'project-1',
             status: 'queued',
+            progress: 0,
+        });
+        expect(dispatchAddMock).toHaveBeenCalledWith({
+            type: 'video_render',
+            payload: { projectId: 'project-1', outputName: 'My_Final_No.mp4' },
+            status: 'pending',
             createdAt: 'SERVER_TIMESTAMP',
         });
-        expect(written.animationSpec).not.toHaveProperty('callbackUrl');
-        expect(written.animationSpec).not.toHaveProperty('userId');
-
-        // Dispatches the render event to Inngest with whitelisted data only
-        expect(sendMock).toHaveBeenCalledTimes(1);
-        const sentEvent = sendMock.mock.calls[0][0];
-        expect(sentEvent.name).toBe('mcp/render.requested');
-        expect(sentEvent.data.jobId).toBe('job-123');
-        expect(sentEvent.data.uid).toBe('user-1');
-        expect(sentEvent.data.releaseId).toBe('rel-1');
-        expect(sentEvent.data.canvasType).toBe('Spotify');
     });
 
-    it('rejects a cross-tenant release without writing anything', async () => {
-        releaseGetMock.mockResolvedValueOnce({ exists: false, data: () => undefined });
-        topLevelGetMock.mockResolvedValueOnce({ exists: true, data: () => ({ userId: 'other-user' }) });
+    it('fails closed for a missing or cross-tenant project', async () => {
+        projectGetMock.mockResolvedValue({
+            exists: true,
+            data: () => ({ userId: 'other-user', project: { id: 'project-1' } }),
+        });
 
-        const result = await queueVideoRender.handler(
-            { releaseId: 'rel-not-mine', canvasType: 'TikTok' },
-            context('user-1'),
-        );
-
+        const result = await queueVideoRender.handler({ projectId: 'project-1' }, context('user-1'));
         const payload = JSON.parse(textContent(result));
+
         expect(result.isError).toBe(true);
-        expect(payload.status).toBe('failed');
         expect(payload.error.code).toBe('FORBIDDEN');
-        expect(payload.error.message).toContain('Forbidden');
-        expect(addMock).not.toHaveBeenCalled();
+        expect(dispatchAddMock).not.toHaveBeenCalled();
     });
 
-    it('rejects invalid canvasType and out-of-range durationSeconds is dropped', async () => {
-        const bad = await queueVideoRender.handler(
-            { releaseId: 'rel-1', canvasType: 'YouTube' },
-            context('user-1'),
-        );
-        expect(bad.isError).toBe(true);
-        expect(JSON.parse(textContent(bad)).error.code).toBe('INVALID_ARGUMENT');
-        expect(addMock).not.toHaveBeenCalled();
+    it('rejects path-like project IDs and output names', async () => {
+        const badProject = await queueVideoRender.handler({ projectId: '../other' }, context('user-1'));
+        expect(JSON.parse(textContent(badProject)).error.code).toBe('INVALID_ARGUMENT');
 
-        releaseGetMock.mockResolvedValueOnce({ exists: true, data: () => ({}) });
-        const ok = await queueVideoRender.handler(
-            { releaseId: 'rel-1', canvasType: 'Instagram', animationSpec: { durationSeconds: 9999, template: 42 } },
+        const badOutput = await queueVideoRender.handler(
+            { projectId: 'project-1', outputName: '../outside.mp4' },
             context('user-1'),
         );
-        expect(ok.isError).toBeUndefined();
-        expect(addMock.mock.calls[0][0].animationSpec).toEqual({});
+        expect(JSON.parse(textContent(badOutput)).error.code).toBe('INVALID_ARGUMENT');
+        expect(dispatchAddMock).not.toHaveBeenCalled();
     });
 });

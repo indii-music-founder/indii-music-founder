@@ -131,6 +131,11 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     generate_motion_brush: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     extend_video: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     update_keyframe: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+    inspect_video_project: { riskTier: 'read', permissionTier: 'core', requiresApproval: false, description: 'Inspect the active video timeline' },
+    add_video_clip: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Add a clip to the active video timeline' },
+    update_video_clip: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Update a clip on the active video timeline' },
+    queue_video_render: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Render the active editor project to the managed local video folder' },
+    queue_release_canvas_render: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Queue a specialized release canvas render' },
 
     // Project
     create_project: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },

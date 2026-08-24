@@ -101,26 +101,26 @@ const mediaElementsFor = (clip: IndiiVideoClip, fps: number, track: CompiledTrac
         case 'video': {
             const audioTiming = timingAttributes(clip, fps, track.audioIndex);
             const elements = [
-                `<div id="${id}-box" style="${boxStyleFor(clip)}"><div id="${id}" style="width:100%;height:100%;${motionStyleFor(clip)}"><video id="${id}-media" src="${src}" muted playsinline preload="auto" ${timing}${hidden} style="display:block;width:100%;height:100%;object-fit:cover;"></video></div></div>`,
+                `<div id="${id}-box" data-hf-id="hf-${id}-box" data-name="${escapeHtml(clip.name)}" style="${boxStyleFor(clip)}"><div id="${id}" data-hf-id="hf-${id}" style="width:100%;height:100%;${motionStyleFor(clip)}"><video id="${id}-media" data-hf-id="hf-${id}-media" src="${src}" muted playsinline preload="auto" ${timing}${hidden} style="display:block;width:100%;height:100%;object-fit:cover;"></video></div></div>`,
             ];
             if (clip.hasAudio === true) {
-                elements.push(`<audio id="${id}-audio" src="${src}" preload="auto" ${audioTiming} data-volume="${volume}"${hidden}></audio>`);
+                elements.push(`<audio id="${id}-audio" data-hf-id="hf-${id}-audio" data-name="${escapeHtml(clip.name)} audio" src="${src}" preload="auto" ${audioTiming} data-volume="${volume}"${hidden}></audio>`);
             }
             return elements;
         }
         case 'image':
             return [
-                `<section id="${id}-clip" class="clip" ${timing}${hidden} style="${boxStyleFor(clip)}"><img id="${id}" src="${src}" alt="" style="display:block;width:100%;height:100%;object-fit:contain;${motionStyleFor(clip)}" /></section>`,
+                `<section id="${id}-clip" data-hf-id="hf-${id}-clip" data-name="${escapeHtml(clip.name)}" class="clip" ${timing}${hidden} style="${boxStyleFor(clip)}"><img id="${id}" data-hf-id="hf-${id}" src="${src}" alt="" style="display:block;width:100%;height:100%;object-fit:contain;${motionStyleFor(clip)}" /></section>`,
             ];
         case 'audio':
             return [
-                `<audio id="${id}" src="${src}" preload="auto" ${timing} data-volume="${volume}"${hidden}></audio>`,
+                `<audio id="${id}" data-hf-id="hf-${id}" data-name="${escapeHtml(clip.name)}" src="${src}" preload="auto" ${timing} data-volume="${volume}"${hidden}></audio>`,
             ];
         case 'text': {
             const align = clip.textAlign ?? 'center';
             const justify = align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center';
             return [
-                `<section id="${id}-clip" class="clip" ${timing}${hidden} style="${boxStyleFor(clip)}"><div id="${id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:${justify};padding:4%;box-sizing:border-box;${motionStyleFor(clip)}"><span style="display:block;color:${escapeHtml(clip.textColor ?? '#ffffff')};font-size:${clip.fontSize ?? 32}px;font-weight:${escapeHtml(String(clip.fontWeight ?? 700))};text-align:${align};white-space:pre-wrap;">${escapeHtml(clip.text ?? '')}</span></div></section>`,
+                `<section id="${id}-clip" data-hf-id="hf-${id}-clip" data-name="${escapeHtml(clip.name)}" class="clip" ${timing}${hidden} style="${boxStyleFor(clip)}"><div id="${id}" data-hf-id="hf-${id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:${justify};padding:4%;box-sizing:border-box;${motionStyleFor(clip)}"><span data-hf-id="hf-${id}-text" style="display:block;color:${escapeHtml(clip.textColor ?? '#ffffff')};font-size:${clip.fontSize ?? 32}px;font-weight:${escapeHtml(String(clip.fontWeight ?? 700))};text-align:${align};white-space:pre-wrap;">${escapeHtml(clip.text ?? '')}</span></div></section>`,
             ];
         }
     }
@@ -278,7 +278,7 @@ export const compileProjectToHyperFrames = (
   .clip { position:absolute; }
 </style></head>
 <body>
-    <div id="root" data-composition-id="${compositionId}" data-start="0"
+    <div id="root" data-hf-root data-composition-id="${compositionId}" data-start="0"
       data-width="${project.width}" data-height="${project.height}" data-duration="${secondsString(durationSeconds)}" data-fps="${fps}">
 ${bodyClips.join('\n')}
     </div>

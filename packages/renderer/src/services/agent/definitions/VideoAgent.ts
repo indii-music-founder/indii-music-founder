@@ -5,6 +5,7 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import systemPrompt from '@agents/video/prompt.md?raw';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
 import { StorageTools } from '../tools/StorageTools';
+import { VideoProjectTools } from '../tools/VideoProjectTools';
 
 
 
@@ -36,6 +37,10 @@ export const VideoAgent: AgentConfig = {
             indii_image_gen: UniversalTools.indii_image_gen,
             orchestrate_timeline: VideoTools.orchestrate_timeline,
             create_performance_video: VideoTools.create_performance_video,
+            inspect_video_project: VideoProjectTools.inspect_video_project,
+            add_video_clip: VideoProjectTools.add_video_clip,
+            update_video_clip: VideoProjectTools.update_video_clip,
+            queue_video_render: VideoProjectTools.queue_video_render,
             generate_storyboard: async (args: { script: string, numFrames: number }) => {
                 const prompt = `Break down this script into a ${args.numFrames}-frame storyboard. For each frame, provide a shot type, action description, and visual prompt for image generation. Script: ${args.script}`;
                 try {
@@ -56,7 +61,7 @@ export const VideoAgent: AgentConfig = {
             }
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'list_stored_assets', 'search_stored_assets', 'generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline', 'create_performance_video', 'generate_storyboard', 'draft_video_budget'],
+    authorizedTools: ['list_domain_records', 'list_stored_assets', 'search_stored_assets', 'generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline', 'create_performance_video', 'inspect_video_project', 'add_video_clip', 'update_video_clip', 'queue_video_render', 'generate_storyboard', 'draft_video_budget'],
     tools: [{
         functionDeclarations: [
             ...videoRetrievalDeclarations,
@@ -175,6 +180,60 @@ export const VideoAgent: AgentConfig = {
                         artStyle: { type: "STRING", description: "The overarching visual style to append to each prompt (e.g., 'Cinematic 35mm, neon noir')." }
                     },
                     required: ["masterScript", "totalDuration", "artStyle"]
+                }
+            },
+            {
+                name: "inspect_video_project",
+                description: "Inspect the active indii video project, including its tracks, clips, timing, layout, transitions, and keyframes. Call this before editing the timeline.",
+                parameters: { type: "OBJECT", properties: {}, required: [] }
+            },
+            {
+                name: "add_video_clip",
+                description: "Add a video, image, text, or audio clip to the active editor timeline. The live HyperFrames preview updates automatically.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        type: { type: "STRING", enum: ["video", "image", "text", "audio"] },
+                        name: { type: "STRING" },
+                        trackId: { type: "STRING", description: "Optional compatible track ID; otherwise the first compatible track is used." },
+                        src: { type: "STRING", description: "Media URL for video, image, or audio." },
+                        text: { type: "STRING", description: "Text content for a text clip." },
+                        startFrame: { type: "NUMBER" },
+                        durationInFrames: { type: "NUMBER" },
+                        x: { type: "NUMBER" }, y: { type: "NUMBER" }, width: { type: "NUMBER" }, height: { type: "NUMBER" },
+                        opacity: { type: "NUMBER" }, rotation: { type: "NUMBER" }, volume: { type: "NUMBER" },
+                        textColor: { type: "STRING" }, fontSize: { type: "NUMBER" },
+                        textAlign: { type: "STRING", enum: ["left", "center", "right"] }
+                    },
+                    required: ["type", "name", "startFrame", "durationInFrames"]
+                }
+            },
+            {
+                name: "update_video_clip",
+                description: "Update an existing clip on the active timeline. Inspect the project first to get the clip ID; omitted properties remain unchanged.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        clipId: { type: "STRING" }, name: { type: "STRING" }, src: { type: "STRING" }, text: { type: "STRING" },
+                        startFrame: { type: "NUMBER" }, durationInFrames: { type: "NUMBER" },
+                        x: { type: "NUMBER" }, y: { type: "NUMBER" }, width: { type: "NUMBER" }, height: { type: "NUMBER" },
+                        opacity: { type: "NUMBER" }, rotation: { type: "NUMBER" }, volume: { type: "NUMBER" },
+                        textColor: { type: "STRING" }, fontSize: { type: "NUMBER" },
+                        textAlign: { type: "STRING", enum: ["left", "center", "right"] }
+                    },
+                    required: ["clipId"]
+                }
+            },
+            {
+                name: "queue_video_render",
+                description: "Render the active video-editor project through indii's planner. Direct media uses FFmpeg; composed timelines use HyperFrames. The completed MP4 becomes the editor preview artifact.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        projectId: { type: "STRING", description: "Optional safety check against the active video project." },
+                        outputName: { type: "STRING", description: "Optional MP4 filename." }
+                    },
+                    required: []
                 }
             },
             {

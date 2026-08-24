@@ -15,6 +15,6 @@ Human verification of the candidate engine before any porting investment:
 
 ## Acceptance criteria
 - [x] License text quoted in ADR addendum with explicit pass/fail vs mandate — **Apache-2.0, PASS**
-- [x] Installed `hyperframes@0.8.10` CLI exposes Cloud Run deploy/render/progress/site commands; authenticated deployment remains MIG-012
+- [x] Installed `hyperframes@0.8.10` CLI and published `@hyperframes/gcp-cloud-run@0.8.11` package expose Cloud Run deploy/render/progress/site commands and SDK; authenticated deployment remains MIG-012
 - [x] Go/no-go decision recorded; fallback named if no-go — **GO** (ADR-001 addendum, 2026-08-22)
 - [x] Spike artifact exists — `/tmp/hf-spike/output.mp4`: h264 1920×1080@30, 150 frames, 5.000s exact, rendered in 9.8s; **byte-identical re-render (MD5 match) → deterministic**

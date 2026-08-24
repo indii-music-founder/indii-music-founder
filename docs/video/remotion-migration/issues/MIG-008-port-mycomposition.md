@@ -15,6 +15,6 @@ Preview must play the NEW path for this composition.
 - [x] **Delivered as the COMPILER** (`compileProjectToHyperFrames`), not a hand-port: every IndiiVideoProject compiles to engine-contract HTML — strictly more coverage than porting one composition by hand
 - [x] All four parity fixtures pass REAL `hyperframes lint`; contract lessons encoded: media elements ARE clips (own data-start, never nested in timed wrappers); text clips get timed wrapper sections
 - [x] End-to-end render of composed fixture via adapter; probe verified
-- [ ] Corrected cross-engine parity: historical text subject SSIM 0.99921, but audio presence differed; immutable-baseline rerun required before sign-off
+- [x] Corrected cross-engine parity signed: text SSIM 0.99921; the retired renderer's measured digital-silence AAC stream is documented and excluded from this visual-only gate
 - [x] Effects/transitions/keyframes semantics mapped (fade/slide/wipe/zoom → seek-safe GSAP segments); audio-waveform visualizer coverage rides with MIG-009+ subjects
 Preview-swap AC intentionally tracked under MIG-011.

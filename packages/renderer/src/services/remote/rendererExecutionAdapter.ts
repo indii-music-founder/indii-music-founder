@@ -18,6 +18,9 @@ import { NotesTools } from '@/services/agent/tools/NotesTools';
 import { logger } from '@/utils/logger';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import type { HistoryItem } from '@/core/types/history';
+import { auth } from '@/services/firebase';
+import { loadVideoProject } from '@/modules/creative/video/services/VideoProjectPersistenceService';
+import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
 import {
     MAX_REMOTE_AGENT_RESPONSES,
     type RelayRespond,
@@ -114,6 +117,52 @@ export function validateComputerTaskDispatch(
         return 'computer_task is missing a goal';
     }
     return null;
+}
+
+interface VideoRenderDispatchDependencies {
+    hasDesktopVideo: () => boolean;
+    currentUid: () => string | undefined;
+    organizationId: () => string | undefined;
+    loadProject: typeof loadVideoProject;
+    renderProject: typeof renderVideoProjectLocally;
+    complete: typeof remoteRelayService.updateDispatchTaskStatus;
+}
+
+const videoRenderDispatchDependencies = (): VideoRenderDispatchDependencies => ({
+    hasDesktopVideo: () => typeof window !== 'undefined' && !!window.electronAPI?.video?.render,
+    currentUid: () => auth.currentUser?.uid,
+    organizationId: () => useStore.getState().currentOrganizationId,
+    loadProject: loadVideoProject,
+    renderProject: renderVideoProjectLocally,
+    complete: remoteRelayService.updateDispatchTaskStatus.bind(remoteRelayService),
+});
+
+/** Execute the durable MCP/remote render request through the same local entry as the editor. */
+export async function executeVideoRenderDispatch(
+    task: import('@/services/agent/RemoteRelayService').AgentDispatchTask,
+    dependencies: VideoRenderDispatchDependencies = videoRenderDispatchDependencies(),
+): Promise<void> {
+    const projectId = task.payload.projectId?.trim();
+    if (!projectId) throw new Error('video_render is missing projectId');
+    if (!dependencies.hasDesktopVideo()) {
+        throw new Error('Video rendering requires the indii desktop app.');
+    }
+    const uid = dependencies.currentUid();
+    if (!uid) throw new Error('Video rendering requires an authenticated desktop session.');
+
+    const loaded = await dependencies.loadProject(projectId, uid);
+    if (loaded.status === 'error') throw new Error(`Could not load video project ${projectId}.`);
+    if (loaded.status === 'absent') throw new Error(`Video project ${projectId} was not found.`);
+
+    const receipt = await dependencies.renderProject(loaded.project, {
+        outputName: task.payload.outputName,
+        organizationId: dependencies.organizationId(),
+    });
+    await dependencies.complete(task.id, 'completed', undefined, {
+        assetUrl: receipt.asset.url,
+        renderId: receipt.renderId,
+        projectId: receipt.projectId,
+    });
 }
 
 /**
@@ -429,6 +478,11 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
                 assertDesktopIsFree();
                 await agentService.sendMessage(instruction, undefined, 'generalist', { source: 'mobile-remote' });
                 await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
+                return;
+            }
+
+            case 'video_render': {
+                await executeVideoRenderDispatch(task);
                 return;
             }
 

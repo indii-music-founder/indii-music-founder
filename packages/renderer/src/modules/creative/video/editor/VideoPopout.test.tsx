@@ -76,7 +76,7 @@ describe('VideoPopout — SYNC_ACTION handling', () => {
         expect(el).toBeTruthy();
 
         const playSpy = vi.spyOn(el as HTMLVideoElement, 'play').mockResolvedValue(undefined);
-        const pauseSpy = vi.spyOn(el as HTMLVideoElement, 'pause');
+        const pauseSpy = vi.spyOn(el as HTMLVideoElement, 'pause').mockImplementation(() => undefined);
 
         channelInstance.onmessage?.({ data: { type: 'SYNC_ACTION', action: 'play' } });
         expect(playSpy).toHaveBeenCalled();
@@ -92,6 +92,6 @@ describe('VideoPopout — SYNC_ACTION handling', () => {
         setArtifact(null);
         render(<VideoPopout />);
         expect(document.querySelector('[data-testid="popout-video"]')).toBeNull();
-        expect(document.body.textContent).toContain('No rendered artifact');
+        expect(document.body.textContent).toContain('Add a clip in the editor to preview');
     });
 });

@@ -3,6 +3,7 @@ export { generatePlaylistPitch } from './generatePlaylistPitch.js';
 export { scheduleCampaignWaterfall } from './scheduleCampaignWaterfall.js';
 export { fetchBrandKit } from './fetchBrandKit.js';
 export { queueVideoRender } from './queueVideoRender.js';
+export { queueReleaseCanvasRender } from './queueReleaseCanvasRender.js';
 export { auditAssetResolutions } from './auditAssetResolutions.js';
 export { registerSplitSheet } from './registerSplitSheet.js';
 export { draftCwrRegistration } from './draftCwrRegistration.js';

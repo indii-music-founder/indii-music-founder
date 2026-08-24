@@ -4,7 +4,7 @@ Removal performed ahead of full parity coverage by founder directive ('bottom li
 - packages: `remotion`, `@remotion/{bundler,media-utils,player,renderer}` from manifests; lockfile reconciled; node_modules unresolvable
 - sources: both composition roots + MyComposition/LogoReveal/BannerAnimations deleted
 - services: RenderService local branch (now cloud-only), ElectronRenderService rewritten onto HyperFramesAdapter+compiler
-- preview: Player→artifact playback via previewTransport/video element (MIG-011 Option B)
+- preview: legacy Player→official HyperFrames Player via previewTransport; artifact fallback (MIG-011)
 - build: vendor-remotion chunks + aliases + optimizeDeps excludes stripped from BOTH vite configs; remotion-mock.ts deleted
 - ops: deploy-cloudrun.ts deleted; VITE_REMOTION_* env vars removed (.env.example + vite-env.d.ts)
 - MCP: legacy engine-specific render tool renamed to `queue_video_render` (backend+tests+agent definitions)

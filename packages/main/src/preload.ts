@@ -141,6 +141,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         openFolder: (filePath?: string) => ipcRenderer.invoke('video:open-folder', filePath),
         render: (config: unknown) => ipcRenderer.invoke('video:render', config),
         getDefaultPath: (filename?: string) => ipcRenderer.invoke('video:get-default-path', filename),
+        compilePreview: (project: unknown) => ipcRenderer.invoke('video:compile-preview', project),
     },
 
 

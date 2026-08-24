@@ -9,6 +9,8 @@
  *   - packages/renderer/src/ (window.electronAPI usage in 57+ files)
  */
 
+import type { IndiiVideoProject } from '../types/videoProject';
+
 // ── Shared Data Types ─────────────────────────────────────────────────────
 
 export interface Credentials {
@@ -146,6 +148,8 @@ export interface ElectronVideoAPI {
     saveAsset: (url: string, filename: string) => Promise<unknown>;
     openFolder: (filePath?: string) => Promise<unknown>;
     render: (config: unknown) => Promise<string>;
+    getDefaultPath: (filename?: string) => Promise<string>;
+    compilePreview: (project: IndiiVideoProject) => Promise<string>;
 }
 
 export interface ElectronDawAPI {

@@ -139,6 +139,17 @@ export function registerVideoHandlers() {
         }
     });
 
+    ipcMain.handle('video:compile-preview', async (event, project: import('@indii/shared').IndiiVideoProject) => {
+        try {
+            validateSender(event);
+            const { electronRenderService } = await import('../services/ElectronRenderService');
+            return await electronRenderService.compilePreview(project);
+        } catch (error) {
+            log.error('[VideoHandler] Preview compilation failed:', error);
+            throw error;
+        }
+    });
+
     ipcMain.handle('video:open-folder', async (event, filePath?: string) => {
         try {
             validateSender(event);

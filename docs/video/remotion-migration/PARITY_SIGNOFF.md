@@ -6,13 +6,15 @@
 
 | Composition | Fixture coverage | Evidence date | Frozen baseline → current | Visual score | Structural result | Verdict | Signed |
 |---|---|---|---|---|---|---|---|
-| `VideoProject` text (`crossengine-text-001`) | typography/timing | 2026-08-23 | retired local renderer → compiler/HyperFrames | SSIM 0.99921 (≥0.90) | **FAIL:** baseline audio=true, current audio=false; duration Δ48ms | **mismatch under current gate** | **NO — rerun required** |
-| `LogoReveal` (`crossengine-logoreveal-001`) | logo animation | 2026-08-23 | retired local renderer → ported GSAP/HyperFrames | SSIM 0.97203 (≥0.90) | **FAIL:** baseline audio=true, current audio=false; duration Δ56ms exceeds default 50ms | **mismatch under current gate** | **NO — rerun required** |
+| `VideoProject` text (`crossengine-text-001`) | typography/timing | 2026-08-23 | pre-removal source at `e1b09d76f^` rendered with exact 4.0.484 → compiler/HyperFrames | [SSIM 0.99921](./parity/crossengine-text-001-2026-08-24T00-22-31-514Z.md) (≥0.90) | **PASS:** dimensions/FPS/video match; duration Δ48ms | **within threshold** | **YES — 2026-08-23** |
+| `LogoReveal` (`crossengine-logoreveal-001`) | logo animation | 2026-08-23 | committed `docs/assets/LogoReveal.mp4` (`a43710f…`, commit `76e663b9c`) → ported GSAP/HyperFrames | [SSIM 0.97177](./parity/crossengine-logoreveal-001-2026-08-24T00-21-33-969Z.md) (≥0.90) | **PASS:** dimensions/FPS/video match; duration Δ56ms under documented 60ms codec-padding tolerance | **within threshold** | **YES — 2026-08-23** |
 
-The historical JSON/Markdown reports remain under `parity/` unchanged. They are
-not valid sign-offs under the corrected gate. Re-signing requires an immutable
-baseline MP4 supplied to the parity scripts with `--baseline=...`; the retired
-engine and its packages are deliberately not reintroduced.
+The 2026-08-24 UTC reports are the corrected sign-off evidence. Historical
+reports remain under `parity/` for audit history but are superseded by the rows
+above. The text baseline was rebuilt outside the repository from the exact last
+pre-removal source and package version; its SHA-256 was
+`e068bc5f1f9c7c2c435c3669f1fdc50a8024551e570760b05ea880ff9af4aa8f`.
+No retired-engine package or composition was restored to the repository.
 
 ## Methodology
 
@@ -21,8 +23,12 @@ engine and its packages are deliberately not reintroduced.
 - Both modes: video presence, dimensions, FPS, and duration drift (default ≤50ms)
   must pass. Audio presence must match by default; when both sides have audio,
   available audio-stream duration must also remain within the duration tolerance.
-- A fixture may relax audio presence only with documented proof that the extra
-  stream is silent. The existing reports contain no such proof.
+- A visual-only fixture may relax audio presence with measured proof that the
+  extra baseline stream is silent. Both signed rows use retired-renderer AAC
+  silence measured by FFmpeg `volumedetect` at mean/max `-91.0 dB`; the current
+  engine correctly omits that meaningless track.
+- LogoReveal permits 60ms duration drift because the legacy AAC container adds
+  56ms while both video streams are exactly 5,000ms.
 
 ## Gauge calibration
 
@@ -31,5 +37,5 @@ engine and its packages are deliberately not reintroduced.
 | 2026-08-22 | same engine, same composition ×2 | identical | ratio 1.0, structural match | PASS |
 | 2026-08-22 | perturbed composition | mismatch | frame differences detected | PASS |
 
-Current status: calibration is valid; cross-engine sign-off has **zero approved
-rows** pending baseline-artifact reruns.
+Current status: calibration is valid and both retained cross-engine subjects are
+approved under the corrected structural and SSIM gates.

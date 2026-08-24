@@ -56,6 +56,7 @@ import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
 import { EmailTools } from './EmailTools';
 import { McpTools } from './McpTools';
+import { VideoProjectTools } from './VideoProjectTools';
 import { RemoteSupportTools } from './RemoteSupportTools';
 import { TrashTools } from './TrashTools';
 import { AnyToolFunction } from '../types';
@@ -127,6 +128,9 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...HarnessTools,
     ...EmailTools,
     ...McpTools,
+    // Must follow McpTools: queue_video_render is the canonical local editor
+    // renderer; the remote release-canvas MCP tool has its own explicit name.
+    ...VideoProjectTools,
     ...RemoteSupportTools,
     ...TrashTools,
 };

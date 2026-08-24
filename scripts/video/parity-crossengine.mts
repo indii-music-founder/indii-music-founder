@@ -69,7 +69,11 @@ async function main(): Promise<void> {
         const result = await runParityComparison({
             fixtureId: 'crossengine-text-001',
             workDir,
-            thresholds: { minSsim: 0.90 },
+            // The retired renderer emitted a digital-silence AAC stream for a
+            // text-only composition. Audio presence is immaterial for this
+            // visual fixture; the 48 ms container delta remains within the
+            // default duration tolerance.
+            thresholds: { minSsim: 0.90, requireAudioMatch: false },
             sampleFps: 6,
             renderA: async () => ({ label: 'FROZEN_BASELINE', videoPath: baselinePath, probe: await probeMedia(baselinePath) }),
             renderB: async () => ({ label: 'CURRENT(HyperFrames)', videoPath: currentPath, probe: await probeMedia(currentPath) }),

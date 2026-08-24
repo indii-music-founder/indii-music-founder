@@ -5,6 +5,7 @@ import systemPrompt from '@agents/creative/prompt.md?raw';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
 import { McpTools } from '../tools/McpTools';
 import { StorageTools } from '../tools/StorageTools';
+import { VideoProjectTools } from '../tools/VideoProjectTools';
 
 const creativeRetrievalConfig = {
     canvases: {
@@ -58,7 +59,8 @@ export const CreativeAgent: AgentConfig = {
             canvas_push: DirectorTools.canvas_push,
             generate_moodboard: DirectorTools.generate_moodboard,
             analyze_visual_trends: DirectorTools.analyze_visual_trends,
-            queue_video_render: McpTools.queue_video_render,
+            queue_video_render: VideoProjectTools.queue_video_render,
+            queue_release_canvas_render: McpTools.queue_release_canvas_render,
             audit_asset_resolutions: McpTools.audit_asset_resolutions,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
@@ -78,6 +80,7 @@ export const CreativeAgent: AgentConfig = {
         'analyze_visual_trends',
         'list_domain_records',
         'queue_video_render',
+        'queue_release_canvas_render',
         'audit_asset_resolutions'
     ],
     tools: [{
@@ -252,14 +255,27 @@ export const CreativeAgent: AgentConfig = {
             },
             {
                 name: "queue_video_render",
-                description: "Queue a video render using the remote MCP backend.",
+                description: "Render the active video-editor project through indii's local planner. The planner automatically uses FFmpeg for direct media or HyperFrames for composed timelines, then updates the editor preview and project history.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        compositionId: { type: "STRING" },
-                        inputProps: { type: "OBJECT" }
+                        projectId: { type: "STRING", description: "Optional safety check: render only if this is the active video project." },
+                        outputName: { type: "STRING", description: "Optional MP4 filename. The desktop app chooses its managed video export folder." }
                     },
-                    required: ["compositionId"]
+                    required: []
+                }
+            },
+            {
+                name: "queue_release_canvas_render",
+                description: "Render the specialized 3-8 second release canvas made from owned cover art and canonical audio. Use queue_video_render for the active editor timeline.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING" },
+                        canvasType: { type: "STRING", enum: ["Spotify", "TikTok", "Instagram"] },
+                        animationSpec: { type: "OBJECT" }
+                    },
+                    required: ["releaseId", "canvasType"]
                 }
             },
             {

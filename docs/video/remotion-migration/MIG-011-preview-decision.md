@@ -1,40 +1,48 @@
-# MIG-011 Decision Doc: Preview Architecture After the Port
+# MIG-011 Decision: Live HyperFrames Player Preview
 
-> The one slice that cannot be auto-decided: it changes what ships in the browser bundle.
+**Status:** Supersedes the temporary artifact-only decision on 2026-08-23.
 
-## The tension
+## Product decision
 
-`HyperFramesAdapter` lives worker-side (packages/main) by design — browser bundles never
-carry the engine. But preview is a renderer-process concern. Three ways through:
+The editor and popout use `@hyperframes/player` with same-origin `srcdoc` HTML
+compiled from the active `IndiiVideoProject`. This restores live play, pause, and
+timeline seeking. A completed MP4 remains a browser/failure fallback and a durable
+export artifact; users do not have to render before they can see an edit.
 
-## Options
+This follows HyperFrames' published application contract:
 
-### A. `@hyperframes/player` web component in the renderer bundle
-- **Pro:** true WYSIWYG scrubbing, same seekable-timeline semantics as renders.
-- **Con:** re-introduces engine code into the browser bundle — the dependency-surface
-  we just cleaned. Package is Apache-2.0 so licensing is fine; it's an architecture
-  call, not a legal one.
+```
+IndiiVideoProject → deterministic HyperFrames HTML → Player or render
+```
 
-### B. Preview = rendered artifact playback (plain video element)
-- **Pro:** zero engine code in renderer; reuses the existing playback layer; preview
-  is *literally* the render (perfect WYSIWYG, just not instant).
-- **Con:** no live scrubbing while editing; render-on-change latency (mitigate with
-  debounced low-res local renders via ElectronRenderService path).
+The main process owns compilation and inlines the exact bundled GSAP runtime for
+preview. The final local render invokes the same compiler and GSAP asset, then routes
+through `RenderPlanner` to FFmpeg or the composition contract. Generated elements carry
+stable `data-hf-id` values so the composition is compatible with HyperFrames SDK and
+Studio editing surfaces.
 
-### C. Hybrid: thumbnail/snapshot strip for scrubbing + B for playback
-- **Pro:** fast scrub via pre-rendered frame samples (harness already produces these);
-  full-fidelity playback on demand.
-- **Con:** most code; two preview modes to maintain.
+## Why the earlier choice was wrong
 
-## Recommendation
+The original Option B optimized dependency purity over the artist experience. It left
+new and edited projects preview-less until a complete render finished. HyperFrames
+publishes `@hyperframes/player` specifically as the browser-safe playback layer; it is
+not the Node rendering engine. Keeping the Player out of the renderer provided no user
+benefit worth losing live scrubbing.
 
-**B now, C later.** B uses the browser's native video element; it keeps the
-bundle clean and the preview honest. If editors demand live scrubbing, C's frame
-strips are already half-built by the parity sampler. A remains available — the
-contract doesn't change, only the preview surface.
+## Studio boundary
 
-## Acceptance criteria impact
+`@hyperframes/studio` is not embedded in this change. Its published package requires
+React 19 and project-server contexts, while indii currently ships React 18 and owns its
+timeline/persistence model. The supported Player is integrated now. A future complete
+Studio integration should migrate deliberately to the shared editable HTML/project-file
+model rather than mounting disconnected Studio widgets or creating a second source of
+truth.
 
-MIG-011's acceptance criteria are revised under B: main stage + popout play completed
-artifacts, the artifact synchronizes across windows, and an edited/unrendered project
-shows an honest empty state. Frame-accurate live timeline scrubbing is deferred.
+## Acceptance evidence
+
+- active projects compile to Player `srcdoc` without a render;
+- timeline transport seeks the Player by seconds derived from project FPS;
+- Player `timeupdate` advances the indii playhead;
+- the popout compiles the same project and retains BroadcastChannel transport sync;
+- an empty project says “Add a clip to preview”;
+- a completed artifact remains available when live compilation is unavailable.

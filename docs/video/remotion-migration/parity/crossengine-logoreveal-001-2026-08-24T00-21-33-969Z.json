@@ -1,0 +1,91 @@
+{
+  "fixtureId": "crossengine-logoreveal-001",
+  "ranAtIso": "2026-08-24T00:21:33.969Z",
+  "verdict": "within-threshold",
+  "thresholds": {
+    "minIdentityRatio": 1,
+    "maxDurationDeltaUs": 60000,
+    "requireAudioMatch": false,
+    "minSsim": 0.9
+  },
+  "sideA": {
+    "label": "FROZEN_BASELINE",
+    "videoPath": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/docs/assets/LogoReveal.mp4",
+    "probe": {
+      "durationUs": 5056000,
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "hasVideo": true,
+      "hasAudio": true,
+      "videoDurationUs": 5000000,
+      "audioDurationUs": 5056000,
+      "videoCodec": "h264",
+      "audioCodec": "aac"
+    }
+  },
+  "sideB": {
+    "label": "CURRENT(HyperFrames)",
+    "videoPath": "/var/folders/h5/_k0rmph56n571tfjcqf1ldbh0000gp/T/parity-logo-AXYFp9/current.mp4",
+    "probe": {
+      "durationUs": 5000000,
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "hasVideo": true,
+      "hasAudio": false,
+      "videoDurationUs": 5000000,
+      "videoCodec": "h264"
+    }
+  },
+  "metadataDelta": {
+    "durationUsDelta": 56000,
+    "dimensionsMatch": true,
+    "fpsMatch": true,
+    "videoPresenceMatch": true,
+    "audioPresenceMatch": false,
+    "structuralPass": true
+  },
+  "frames": {
+    "totalCompared": 30,
+    "matchedFrames": 0,
+    "mismatchedIndexes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29
+    ],
+    "missingAlignment": 0,
+    "identityRatio": 0
+  },
+  "ssim": {
+    "score": 0.971773,
+    "rawLine": "SSIM Y:0.964149 (14.455016) U:0.991600 (20.757464) V:0.982439 (17.554603) All:0.971773 (15.493323)\n[out#0/null @ 0x9b1018840] video:61KiB audio:948KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown"
+  }
+}

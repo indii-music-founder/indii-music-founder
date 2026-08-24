@@ -1,6 +1,6 @@
 # PRD: Video Engine Abstraction & Remotion Removal
 
-> Status: IMPLEMENTED LOCALLY; cloud composition activation and corrected parity re-sign remain open.
+> Status: IMPLEMENTED LOCALLY with corrected parity signed; optional cloud composition activation remains approval-gated.
 > Parents: [ADR-001](./ADR-001-video-engine-abstraction.md), [INVENTORY.md](./INVENTORY.md).
 > Publishing to an external tracker requires explicit request + credentials (repo skill policy).
 
@@ -62,8 +62,9 @@ it first; the parity ledger therefore requires immutable retired-engine baseline
   (permissive, no usage-triggered clauses) and a hands-on spike confirming distributed
   rendering on Google Cloud Run with GCS object storage. The local adapter is implemented;
   the cloud adapter/deployment remains blocked on founder cost approval.
-- **Preview:** a plain video element plays the most recent render artifact. Live timeline
-  scrubbing is intentionally not preserved; project edits invalidate the prior artifact.
+- **Preview:** the official HyperFrames Player presents a seekable live composition compiled
+  from the same `IndiiVideoProject` and compiler used by export. The most recent rendered MP4
+  remains a delivery/failure fallback rather than the primary editing surface.
 - **Cloud topology:** unchanged provider direction — local Electron renders and Google Cloud
   Run workers (Chromium + engine + FFmpeg) writing to GCS. No AWS introduction.
 - **Agents:** producer/conductor skills and MCP tools speak `IndiiVideoProject` and the
@@ -100,6 +101,6 @@ it first; the parity ledger therefore requires immutable retired-engine baseline
 
 - Supersedes the 2026-06-26 "keep Remotion" decision (see ADR-001); the anti-hand-rolling
   spirit of that decision is retained — we add engines behind contracts, not ad-hoc code.
-- HyperFrames licensing and local adapter maturity are verified. Remaining external proof:
-  an approved Cloud Run deployment/GCS round trip and corrected cross-engine parity reruns
-  using immutable retired-engine baseline artifacts.
+- HyperFrames licensing, local adapter maturity, and corrected cross-engine parity are
+  verified. The only remaining external proof is an approved Cloud Run deployment/GCS
+  round trip.

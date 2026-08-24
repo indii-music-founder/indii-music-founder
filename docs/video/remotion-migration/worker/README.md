@@ -17,7 +17,8 @@ deployed worker and it is not a claim that only one command remains.
 
 1. Authenticate the official GCP application-default flow and review the CLI's
    proposed resources/costs.
-2. Deploy the vendor-managed Cloud Run resources with the pinned CLI.
+2. Install the official exact-pinned `@hyperframes/gcp-cloud-run` adapter and deploy
+   indii-owned Cloud Run/Workflows/GCS resources with the pinned CLI.
 3. Implement the server-side cloud adapter and map its lifecycle onto the frozen
    indii receipt contract and existing cost-reservation policy.
 4. Prove owner-scoped GCS input/output with a genuine authenticated round trip.

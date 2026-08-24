@@ -8,7 +8,9 @@
 
 - `hyperframes@0.8.10` — exact-pinned in `packages/main` and at the repository root
   for Electron Builder production packaging.
-- No separate `@hyperframes/gcp-cloud-run` package is installed or assumed.
+- The official `@hyperframes/gcp-cloud-run@0.8.11` SDK/container/Terraform package is
+  verified from the published docs. It is intentionally not installed until this
+  deployment path is approved and implemented.
 
 The installed CLI is the source of truth for flags. Before any paid action, run the
 pinned command's help and review its current plan:
@@ -21,7 +23,8 @@ HOME=/tmp/hf-home XDG_CACHE_HOME=/tmp/.cache \
 ## Phase A — approval, authentication, and infrastructure
 
 1. Obtain explicit founder approval for GCP resource creation and expected spend.
-2. Use the official Application Default Credentials login flow if credentials are
+2. Install exact-pinned `@hyperframes/gcp-cloud-run@0.8.11`, then use the official
+   Application Default Credentials login flow if credentials are
    absent or expired; do not substitute another identity.
 3. Select the existing indii GCP project, region, service account, bucket prefixes,
    concurrency, timeout, and spend ceilings.
@@ -33,8 +36,9 @@ HOME=/tmp/hf-home XDG_CACHE_HOME=/tmp/.cache \
 Implement a server-side adapter behind `VideoRendererContract`:
 
 1. Compile `IndiiVideoProject` to a frozen composition bundle.
-2. Upload or register the site using the installed CLI/API surface.
-3. Start a Cloud Run render and map provider execution IDs/progress/artifacts onto
+2. Upload or register the site using `@hyperframes/gcp-cloud-run/sdk` (`deploySite`).
+3. Start a Cloud Run render with `renderToCloudRun`, poll `getRenderProgress`, and map
+   provider execution IDs/progress/artifacts onto
    `renderId/projectId/progress/status/asset/expiresAt`.
 4. Apply the existing owner authorization and cost reservation before dispatch;
    finalize or release the reservation on terminal state.

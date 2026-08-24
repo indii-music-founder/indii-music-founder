@@ -25,18 +25,6 @@
       "skillPath": ".agents/skills/cut-the-curve/SKILL.md",
       "computedHash": "0dc00f155130d001cfe6f9bfcc2da2452ad92c13275564178595ec7948414154"
     },
-    "developing-genkit-dart": {
-      "source": "firebase/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/developing-genkit-dart/SKILL.md",
-      "computedHash": "aa92490e4db5038730c629477ad968796f329040433625cf9b7bb13e26a859e3"
-    },
-    "developing-genkit-go": {
-      "source": "firebase/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/developing-genkit-go/SKILL.md",
-      "computedHash": "163d0bbfcb2a067d4cd56d6c27725c23cd628084df94409b31c803e1d24dc3b6"
-    },
     "developing-genkit-js": {
       "source": "firebase/agent-skills",
       "sourceType": "github",
@@ -252,12 +240,6 @@
       "sourceType": "github",
       "skillPath": ".agents/skills/talking-head-recut/SKILL.md",
       "computedHash": "414bcbebc52eba6455b76a2e78bebcd8dd6929abc76fcdeb1ad8a70043d96186"
-    },
-    "xcode-project-setup": {
-      "source": "firebase/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/xcode-project-setup/SKILL.md",
-      "computedHash": "65fc8ef640574e34cd315cef3a2e8ea6eb2d3b29d38eba18e1e749d812215161"
     }
   }
 }

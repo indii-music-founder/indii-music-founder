@@ -1,14 +1,16 @@
 ## OUTCOME
 
-> Option B EXECUTED during the removal: previews play rendered artifacts through a plain <video> bound to the store (`previewArtifactUrl`), popout synced via BroadcastChannel, empty-state when nothing is rendered. Zero engine code in the renderer bundle.
+> Final product decision: previews use the official seekable `@hyperframes/player`
+> against main-process-compiled `srcdoc`. Rendered artifacts remain fallback/delivery;
+> popout transport stays synchronized through BroadcastChannel.
 
 # MIG-011: Preview off the legacy Player, onto the indii player interface
 
 Type: AFK after architecture sign-off · Blocked by: MIG-006, MIG-008 · Stories: 3
 
-> STATUS: **Option B implemented.** Local and cloud completion paths populate
-> `previewArtifactUrl`; project edits invalidate it. Main and popout use a plain video
-> element. Live timeline scrubbing is intentionally absent.
+> STATUS: **live Player implemented.** Main and popout compile the active project to
+> same-origin HyperFrames `srcdoc`. Completed artifacts remain the delivery/browser
+> fallback and are invalidated by project edits.
 
 ## Parent
 docs/video/remotion-migration/PRD.md
@@ -20,8 +22,9 @@ waveform visualization, and popout behavior feel identical to users. WYSIWYG gua
 preview matches golden outputs.
 
 ## Acceptance criteria
-- [x] Main stage + popout play the current completed artifact
+- [x] Main stage + popout play and seek the active project before a render
+- [x] Both surfaces use the official browser-safe `@hyperframes/player@0.8.11`
 - [x] Artifact URL synchronizes over BroadcastChannel and clears on project edits
-- [x] Empty state is explicit when no current artifact exists
+- [x] Empty state is explicit when the project has no clips
 - [x] Audio waveform no longer depends on engine media utilities
-- [ ] Live/frame-accurate timeline scrubbing (explicitly deferred by Option B)
+- [x] Timeline scrubbing drives the seekable Player and Player time updates drive the playhead

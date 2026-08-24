@@ -6,7 +6,7 @@
  * frozen VideoRendererContract boundary.
  */
 
-import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -55,7 +55,35 @@ const copyGsapAsset = async (destination: string): Promise<void> => {
     throw new Error(`Local render could not resolve the bundled GSAP runtime. Tried: ${attempted.join(', ')}`);
 };
 
+const readGsapAsset = async (): Promise<string> => {
+    const attempted: string[] = [];
+    for (const candidate of gsapAssetCandidates()) {
+        attempted.push(candidate);
+        try {
+            return await readFile(candidate, 'utf8');
+        } catch {
+            // Try the next deterministic app/source layout.
+        }
+    }
+    throw new Error(`Preview could not resolve the bundled GSAP runtime. Tried: ${attempted.join(', ')}`);
+};
+
 export const electronRenderService = {
+    async compilePreview(project: IndiiVideoProject): Promise<string> {
+        if (!project || typeof project !== 'object' || !Array.isArray(project.clips) || !Array.isArray(project.tracks)) {
+            throw new Error('Preview compilation requires an IndiiVideoProject.');
+        }
+        const [{ compileProjectToHyperFrames }, gsapSource] = await Promise.all([
+            import('./video/hyperframes/compiler'),
+            readGsapAsset(),
+        ]);
+        const compiled = compileProjectToHyperFrames(project);
+        return compiled.html.replace(
+            '<script src="./gsap.min.js"></script>',
+            `<script>${gsapSource.replace(/<\/script/gi, '<\\/script')}</script>`,
+        );
+    },
+
     async render(config: LocalRenderConfig): Promise<string> {
         const project = resolveProject(config);
         if (!project || typeof project !== 'object' || !Array.isArray(project.clips) || !Array.isArray(project.tracks)) {

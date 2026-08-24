@@ -4,7 +4,7 @@ import type { IndiiVideoProject } from '@indii/shared';
 
 const mocks = vi.hoisted(() => ({
     direct: vi.fn(async () => ({ hasVideo: true, hasAudio: true, durationUs: 1_000_000 })),
-    compile: vi.fn(() => ({ html: '<html></html>', compositionId: 'compiled', durationSeconds: 1 })),
+    compile: vi.fn(() => ({ html: '<html><script src="./gsap.min.js"></script></html>', compositionId: 'compiled', durationSeconds: 1 })),
     probe: vi.fn(async () => ({ hasVideo: true, hasAudio: true, durationUs: 1_000_000 })),
     adapterConstructed: vi.fn(),
     adapterRender: vi.fn(async (config: { outputLocation: string }) => ({
@@ -93,5 +93,17 @@ describe('ElectronRenderService routing', () => {
             projectId: 'local',
             organizationId: 'local',
         }));
+    });
+
+    it('compiles the live preview with the bundled GSAP runtime inline', async () => {
+        const html = await electronRenderService.compilePreview(project([{
+            id: 'title', type: 'text', text: 'indii', name: 'Title',
+            startFrame: 0, durationInFrames: 30, trackId: 't1',
+        }]));
+
+        expect(mocks.compile).toHaveBeenCalledOnce();
+        expect(html).not.toContain('src="./gsap.min.js"');
+        expect(html).toContain('<script>');
+        expect(html.length).toBeGreaterThan(1_000);
     });
 });

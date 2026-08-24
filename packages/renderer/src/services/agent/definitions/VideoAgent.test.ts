@@ -25,6 +25,15 @@ vi.mock('../tools/UniversalTools', () => ({
     }
 }));
 
+vi.mock('../tools/VideoProjectTools', () => ({
+    VideoProjectTools: {
+        inspect_video_project: vi.fn(),
+        add_video_clip: vi.fn(),
+        update_video_clip: vi.fn(),
+        queue_video_render: vi.fn(),
+    }
+}));
+
 
 vi.mock('../tools/StorageTools', () => ({
     StorageTools: {
@@ -57,6 +66,10 @@ describe('VideoAgent', () => {
         expect(VideoAgent.authorizedTools).toContain('orchestrate_timeline');
         expect(VideoAgent.authorizedTools).toContain('generate_storyboard');
         expect(VideoAgent.authorizedTools).toContain('draft_video_budget');
+        expect(VideoAgent.authorizedTools).toContain('queue_video_render');
+        expect(VideoAgent.authorizedTools).toContain('inspect_video_project');
+        expect(VideoAgent.authorizedTools).toContain('add_video_clip');
+        expect(VideoAgent.authorizedTools).toContain('update_video_clip');
     });
 
     it('should map the functions to correct tool implementations', () => {
@@ -71,5 +84,9 @@ describe('VideoAgent', () => {
         expect(VideoAgent.functions!.orchestrate_timeline).toBeDefined();
         expect(VideoAgent.functions!.generate_storyboard).toBeDefined();
         expect(VideoAgent.functions!.draft_video_budget).toBeDefined();
+        expect(VideoAgent.functions!.queue_video_render).toBeDefined();
+        expect(VideoAgent.functions!.inspect_video_project).toBeDefined();
+        expect(VideoAgent.functions!.add_video_clip).toBeDefined();
+        expect(VideoAgent.functions!.update_video_clip).toBeDefined();
     });
 });

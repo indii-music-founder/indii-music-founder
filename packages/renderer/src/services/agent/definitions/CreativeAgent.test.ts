@@ -23,6 +23,17 @@ vi.mock('../tools/DirectorTools', () => ({
     }
 }));
 
+vi.mock('../tools/VideoProjectTools', () => ({
+    VideoProjectTools: { queue_video_render: vi.fn() }
+}));
+
+vi.mock('../tools/McpTools', () => ({
+    McpTools: {
+        queue_release_canvas_render: vi.fn(),
+        audit_asset_resolutions: vi.fn(),
+    }
+}));
+
 
 vi.mock('../tools/StorageTools', () => ({
     StorageTools: {
@@ -57,6 +68,8 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.authorizedTools).toContain('canvas_push');
         expect(CreativeAgent.authorizedTools).toContain('generate_moodboard');
         expect(CreativeAgent.authorizedTools).toContain('analyze_visual_trends');
+        expect(CreativeAgent.authorizedTools).toContain('queue_video_render');
+        expect(CreativeAgent.authorizedTools).toContain('queue_release_canvas_render');
     });
 
     it('should map the functions to correct tool implementations', () => {
@@ -73,5 +86,7 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.functions!.canvas_push).toBeDefined();
         expect(CreativeAgent.functions!.generate_moodboard).toBeDefined();
         expect(CreativeAgent.functions!.analyze_visual_trends).toBeDefined();
+        expect(CreativeAgent.functions!.queue_video_render).toBeDefined();
+        expect(CreativeAgent.functions!.queue_release_canvas_render).toBeDefined();
     });
 });

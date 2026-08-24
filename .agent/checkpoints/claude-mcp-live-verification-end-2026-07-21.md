@@ -13,7 +13,7 @@
 - P3: `stage_stripe_payouts` — real Stripe Connect account verification (`accounts.retrieve`), `payoutBatches` staging; no transfer call (money movement stays a separate human-approved action).
 - P4: `draft_dsp_metadata_xml` — fuller DDEX ERN (MessageHeader/ResourceList/ReleaseList/DealList).
 - P5: `schedule_campaign_waterfall` — real Inngest dispatch, `step.sleepUntil` durable per-event execution, `emailOptIn`-gated outreach email.
-- P6: `queue_video_render` — real ffmpeg canvas MP4 composition via Inngest (artist's own cover art + audio only, no music generation).
+- P6: `queue_release_canvas_render` (renamed from the historical general render name) — real ffmpeg canvas MP4 composition via Inngest (artist's own cover art + audio only, no music generation).
 - P7a: `audit_sample_clearance` — real metadata-declaration verdict (DECLARED-BUT-UNVERIFIED / NONE-DECLARED). P7b (fingerprint vendor) tracked as a founder action in `docs/RELEASE_CHECKLIST.md`.
 - **P8 (the hard one): live SSE round-trip verified against the deployed `mcpEndpoint`** with a real Firebase ID token (service-account custom-token → Identity Toolkit exchange). `listTools()` returned all 11 real tools; `callTool()` executed a real handler and returned an honest `NOT_FOUND` — no fabricated success.
 

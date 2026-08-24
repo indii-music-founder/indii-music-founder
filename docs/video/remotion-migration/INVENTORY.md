@@ -16,7 +16,7 @@
 - [x] FFmpeg direct-path executor
 - [x] General project compiler + one standalone LogoReveal port
 - [x] Golden render harness calibrated and structurally gated
-- [x] Preview moved to rendered-artifact playback
+- [x] Preview moved to the seekable HyperFrames Player; rendered artifact is fallback/delivery
 - [ ] Cloud Run composition path implemented/deployed (Firebase fails closed until approval)
 - [x] Agent skills and MCP surface re-pointed at engine-neutral APIs
 - [x] Remotion packages/config/env/scripts deleted
@@ -148,19 +148,21 @@ Golden-parity harness target: same `IndiiVideoProject` through LEGACY (Remotion)
 ## 13. Verification items
 
 - [x] HyperFrames license terms — **Apache-2.0**, verified from repo LICENSE 2026-08-22 (ADR-001 addendum)
-- [x] Cloud Run CLI surface confirmed in the installed `hyperframes@0.8.10` package
+- [x] Cloud Run CLI (`0.8.10`) and published `@hyperframes/gcp-cloud-run` surface (`0.8.11`) confirmed
 - [x] Remotion migration tooling — `/remotion-to-hyperframes` skill confirmed in-repo
 - [x] Compiler/GSAP adapter maps project timing, effects, transitions, and keyframes and passes real CLI lint fixtures
 - [x] Harness calibration and structural/SSIM gates implemented
-- [ ] Corrected cross-engine parity sign-off (immutable retired-engine baseline artifacts required)
+- [x] Corrected cross-engine parity signed for the two retained subjects with provenanced baseline evidence
 - [ ] Paid Cloud Run deployment, owner-scoped GCS round trip, and receipt smoke test
 
 ## 14. Current dependency placement
 
 `hyperframes@0.8.10` is exact-pinned in `packages/main` and at the repository root.
 The root declaration is an Electron Builder packaging requirement: production dependencies
-are collected from the root manifest into `app.asar`. It is absent from the renderer
-manifest and browser bundle; GSAP is emitted separately as a main-process render asset.
+are collected from the root manifest into `app.asar`. The Node engine remains absent from
+the renderer manifest. The renderer exact-pins browser-safe `@hyperframes/player@0.8.11`
+for live timeline playback; GSAP is emitted separately as a main-process render asset and
+inlined into preview HTML by the trusted IPC compiler.
 
 `skills-lock.json` contains 26 entries sourced from `heygen-com/hyperframes`, all rooted
 only at `.agents/skills/`. The installer's byte-identical duplicate tree under `skills/`

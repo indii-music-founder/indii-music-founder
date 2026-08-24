@@ -524,7 +524,7 @@ if (!gotTheLock) {
             'security:rotate-credentials', 'security:scan-vulnerabilities',
             'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
             'daw:start', 'daw:stop', 'daw:get-state',
-            'video:render', 'video:open-folder', 'video:save-asset', 'video:get-default-path',
+            'video:render', 'video:open-folder', 'video:save-asset', 'video:get-default-path', 'video:compile-preview',
             'power:get-state',
             'updater:check', 'updater:install', 'updater:set-channel', 'updater:set-source', 'updater:get-config',
             'scheduler:register', 'scheduler:cancel', 'scheduler:set-enabled', 'scheduler:status', 'scheduler:get',

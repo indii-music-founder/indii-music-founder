@@ -1,6 +1,6 @@
 # ADR-001: Video Engine Abstraction & Remotion Removal
 
-**Status:** Accepted; local implementation complete, cloud activation and parity re-sign pending
+**Status:** Accepted; local implementation and corrected parity complete, optional cloud activation approval-gated
 **Date:** 2026-08-22
 **Supersedes:** Founder decision 2026-06-26 — "Do not hand-roll media buffering or replace Remotion's render/composition role with video.js."
 **Companion:** [INVENTORY.md](./INVENTORY.md)
@@ -113,13 +113,15 @@ Verified directly against the `heygen-com/hyperframes` repo (main branch):
    No revenue-, headcount-, or usage-triggered commercial clauses. README's own
    comparison table confirms: "Apache 2.0" vs Remotion's "Source-available Remotion License."
 2. **GCP distributed rendering: CAPABILITY CONFIRMED; deployment pending.** The pinned
-   `hyperframes@0.8.10` CLI exposes `cloudrun deploy/sites/render/progress/destroy`.
-   No separate `@hyperframes/gcp-cloud-run` dependency is installed, and no paid GCP
-   deployment or authenticated GCS round trip has been performed. AWS is not introduced.
+   pinned `hyperframes@0.8.10` exposes `cloudrun deploy/sites/render/progress/destroy`, and the
+   official `@hyperframes/gcp-cloud-run@0.8.11` package publishes a Node SDK, container,
+   and Terraform module. The adapter package is not yet installed because no paid GCP
+   deployment or authenticated GCS round trip has been approved. AWS is not introduced.
 3. **Migration tooling: CONFIRMED.** `/remotion-to-hyperframes` skill ships in-repo
    ("Porting an existing Remotion (React) composition's source to HyperFrames HTML").
-4. Note: HeyGen also offers a hosted `cloud render` service — **not used**; we run our own
-   Cloud Run workers to avoid re-introducing vendor hosting.
+4. Note: HeyGen also offers a hosted `cloud render` service — **not used**; we run the
+   local renderer today. Managed Cloud or an indii-owned Cloud Run deployment remain
+   explicit infrastructure choices, not a separate AI agent architecture.
 
 MIG-006 (local adapter) is complete. MIG-012 remains approval-gated and the Firebase
 cloud entry point fails closed for composed projects until a cloud adapter is implemented,
