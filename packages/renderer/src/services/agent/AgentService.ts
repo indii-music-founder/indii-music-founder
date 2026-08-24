@@ -277,30 +277,42 @@ export class AgentService {
 
     /**
      * Returns an instant, zero-latency greeting string without any LLM call.
-     * Used for trivial inputs (hi, hey, yo) in all conversation modes.
+     * Incorporates time-of-day awareness and session absence context.
      *
      * @param agentId - The ID of the responding agent.
      * @param seatedAgentNames - Comma-separated names of agents seated (boardroom only).
      * @param mode - Current conversation mode for context framing.
+     * @param lastMessageTimestamp - Optional timestamp of previous message to detect absence/return.
      */
-    static buildInstantGreeting(agentId: string, seatedAgentNames?: string, mode?: string): string {
+    static buildInstantGreeting(
+        agentId: string,
+        seatedAgentNames?: string,
+        mode?: string,
+        lastMessageTimestamp?: number
+    ): string {
         const agentName = agentRegistry.get(agentId)?.name || 'indii Conductor';
+        const hour = new Date().getHours();
+        const timeOfDay = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+        
+        const isReturning = !lastMessageTimestamp || (Date.now() - lastMessageTimestamp > 2 * 60 * 60 * 1000);
 
         if (mode === 'boardroom' && seatedAgentNames) {
-            const lines = [
-                `Hey! The board is ready. Seated today: **${seatedAgentNames}**.`,
-                `What would you like us to tackle?`,
-            ];
-            return lines.join(' ');
+            if (isReturning) {
+                return `${timeOfDay}! Good to have you back at the table. Seated today: **${seatedAgentNames}**. What's our agenda?`;
+            }
+            return `Hey! The board is assembled: **${seatedAgentNames}**. What would you like us to tackle?`;
         }
 
-        const greetings = [
-            `Hey! I'm ${agentName}. What are we working on?`,
-            `Hi there — ${agentName} here. What's on the agenda?`,
-            `Hey! ${agentName} ready to go. What do you need?`,
+        if (isReturning) {
+            return `${timeOfDay}! Good to hear from you — ${agentName} ready. What are we working on today?`;
+        }
+
+        const activeReplies = [
+            `Hey! ${agentName} right here — what's next?`,
+            `Right here! What do you need?`,
+            `Hey! Let's keep moving — what are we tackling?`,
         ];
-        // Deterministic selection based on agentId length (avoids random on each call)
-        return greetings[agentId.length % greetings.length]!;
+        return activeReplies[agentId.length % activeReplies.length]!;
     }
 
     private shouldCacheCompletedResponse(
@@ -784,9 +796,16 @@ export class AgentService {
             orchestration = { type: 'single' as const, agentId: forcedAgentId, reasoning: 'Forced by user' };
         } else if (AgentService.isTrivialInput(text)) {
             // Zero-latency greeting: respond instantly with a template, NO LLM call at all.
-            // The previous path routed to single-agent execution which still cost 15-45s.
+            // Incorporates time of day and presence/absence awareness.
             const activeAgentId = state.directTargetAgentId || 'generalist';
-            const instantReply = AgentService.buildInstantGreeting(activeAgentId, undefined, conversationMode as string);
+            const history = state.agentHistory || [];
+            const lastMsg = history[history.length - 1];
+            const instantReply = AgentService.buildInstantGreeting(
+                activeAgentId,
+                undefined,
+                conversationMode as string,
+                lastMsg?.timestamp
+            );
             logger.debug('[AgentService] Trivial input instant-reply (0ms, no API call)');
             updateAgentMessage(responseId, { agentId: activeAgentId, text: instantReply, isStreaming: false });
             return;
@@ -1184,7 +1203,14 @@ export class AgentService {
                 .map(id => agentRegistry.get(id)?.name || id)
                 .join(', ');
 
-            const instantReply = AgentService.buildInstantGreeting(leadAgentId, seatedAgentNames, 'boardroom');
+            const history = state.agentHistory || [];
+            const lastMsg = history[history.length - 1];
+            const instantReply = AgentService.buildInstantGreeting(
+                leadAgentId,
+                seatedAgentNames,
+                'boardroom',
+                lastMsg?.timestamp
+            );
             logger.debug(`[AgentService] Boardroom greeting instant-reply (0ms, no API call)`);
             useStore.getState().updateAgentMessage(initialResponseId, {
                 agentId: leadAgentId,
