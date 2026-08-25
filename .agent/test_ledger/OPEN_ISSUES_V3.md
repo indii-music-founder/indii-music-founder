@@ -2602,3 +2602,17 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Impact:** Any founder/customer flow using Google OAuth (YouTube upload, Gmail) is unusable for real users.
 - **Fix:** EITHER add the founder as a test user now (fast, keeps Testing status for dev), OR complete OAuth consent-screen verification and publish to production (required before public offer; Google review may be required for sensitive scopes). Then re-test the YouTube upload + Gmail flows.
 - **Acceptance:** Founder completes the YouTube upload OAuth flow (or Gmail) as a non-test-user account without Google warning; consent screen shows “In production”.
+
+### G5 founder-seat backfill — VERIFIED CLOSED as data-complete (2026-08-25)
+
+- **Trigger:** founder re-ran `gcloud auth application-default login`; ADC now resolves to `wiil@indii.music` (verified via tokeninfo; cloud-platform scope). Stale/wrong-principal credential issue from 2026-08-11 checkpoint is repaired.
+- **Run:** `packages/firebase/scripts/backfill-founder-seat.ts` ABORTED on its idempotency guard — `founders/g2AcFApNZvQKYlGg0LQuVADCFoO2` already exists. No writes performed (guard correct).
+- **Live read-back (production, read-only):**
+  - `founders/{uid}`: seat **11**, name "William Paul Roberts", joinedAt 2026-06-02, agreementVersion 1.0.0, verificationHash recomputes and matches.
+  - `subscriptions/{uid}`: tier founder, status active (period to ~mid-2027).
+  - `users/{uid}`: isFounder true, tier founder, subscriptionTier founder.
+  - `entitlements/current`: schemaVersion account-entitlement.v1, tier founder, status active, source `founder_registry_migration`.
+  - `founders_meta/summary`: count 1, founders[0] = seat 11 entry.
+  - No `founder_github_commit_queue` rows (G4 still deferred — mock token).
+- **Conclusion:** badge/seat/hash receipt path is data-complete. The Aug-20 audit's "no founders doc" reading was superseded by the registry migration.
+- **OPEN decision (founder):** seat is 11 with display name "William Paul Roberts", not the planned seat-1/"wiil" shape. Cosmetic/data-hygiene only (G6 notes seat 11 renders as "ii" — possibly intentional i-i internal-seat styling). If founder wants seat 1/"wiil", the backfill script needs its guard relaxed to a migrate-in-place mode — requires explicit founder approval before any overwrite.
