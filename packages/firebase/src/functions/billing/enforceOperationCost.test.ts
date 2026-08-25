@@ -740,3 +740,133 @@ describe('creative cost admission', () => {
     expect(mocks.firestore).not.toHaveBeenCalled();
   });
 });
+
+describe('tier-aware confirmation and runaway guards', () => {
+  function budgetHarness(documents: Map<string, Record<string, unknown>>) {
+    const set = vi.fn((
+      reference: { path: string },
+      values: Record<string, unknown>,
+      _options?: { merge?: boolean },
+    ) => {
+      const current = { ...(documents.get(reference.path) || {}) };
+      for (const [key, value] of Object.entries(values)) {
+        if (value && typeof value === 'object' && '__increment' in value) {
+          current[key] = Number(current[key] || 0) + Number((value as { __increment: number }).__increment);
+        } else {
+          current[key] = value;
+        }
+      }
+      documents.set(reference.path, current);
+    });
+    const transaction = {
+      get: vi.fn(async (reference: { path: string }) => {
+        const data = documents.get(reference.path);
+        return { exists: Boolean(data), data: () => data };
+      }),
+      set,
+    };
+    const db = {
+      doc: vi.fn((path: string) => ({ path })),
+      collection: vi.fn((name: string) => ({
+        doc: vi.fn((id: string) => ({ path: `${name}/${id}` })),
+      })),
+      runTransaction: vi.fn(async (
+        handler: (tx: typeof transaction) => Promise<unknown>,
+      ) => handler(transaction)),
+    };
+    return { db };
+  }
+
+  const now = new Date();
+  const today = now.toISOString().split('T')[0]!;
+  const month = today.slice(0, 7);
+  const hourlyPath = `users/user-1/costLedger/hourly-${now.toISOString().slice(0, 13)}`;
+
+  it('auto-approves a $30 founder video reservation (no $20 confirmation gate)', async () => {
+    const documents = new Map<string, Record<string, unknown>>();
+    const { db } = budgetHarness(documents);
+    mocks.firestore.mockReturnValue(db);
+
+    const result = await checkOperationBudget({
+      userId: 'user-1',
+      entitlementTier: 'founder',
+      estimatedCost: 30,
+      operationType: 'video',
+    });
+
+    expect(result.allowed).toBe(true);
+    expect(result.requiresConfirmation).toBeUndefined();
+  });
+
+  it('auto-approves a $25 enterprise reservation (no $20 confirmation gate)', async () => {
+    const documents = new Map<string, Record<string, unknown>>();
+    const { db } = budgetHarness(documents);
+    mocks.firestore.mockReturnValue(db);
+
+    const result = await checkOperationBudget({
+      userId: 'user-1',
+      entitlementTier: 'enterprise',
+      estimatedCost: 25,
+      operationType: 'video',
+    });
+
+    expect(result.allowed).toBe(true);
+    expect(result.requiresConfirmation).toBeUndefined();
+  });
+
+  it('still requests confirmation for a $20 pro operation', async () => {
+    const documents = new Map<string, Record<string, unknown>>();
+    const { db } = budgetHarness(documents);
+    mocks.firestore.mockReturnValue(db);
+
+    const result = await checkOperationBudget({
+      userId: 'user-1',
+      entitlementTier: 'pro',
+      estimatedCost: 20,
+      operationType: 'video',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.requiresConfirmation).toBe(true);
+    expect(result.reason).toContain('automatic approval threshold');
+  });
+
+  it('does not kill a founder reservation under the flat $500 cap when within founder monthly budget', async () => {
+    const documents = new Map<string, Record<string, unknown>>([
+      [`users/user-1/costLedger/monthly-${month}`, { totalCost: 600 }],
+      [hourlyPath, { operationCount: 0 }],
+    ]);
+    const { db } = budgetHarness(documents);
+    mocks.firestore.mockReturnValue(db);
+
+    // $600 used + $400 requested = $1000 ≫ the old flat $500 runaway cap,
+    // but within the founder tier's own $10k monthly ceiling.
+    const result = await checkOperationBudget({
+      userId: 'user-1',
+      entitlementTier: 'founder',
+      estimatedCost: 400,
+      operationType: 'video',
+    });
+
+    expect(result.allowed).toBe(true);
+  });
+
+  it('keeps the flat $500 runaway cap for pro tier spend beyond its own ceiling', async () => {
+    const documents = new Map<string, Record<string, unknown>>([
+      [`users/user-1/costLedger/monthly-${month}`, { totalCost: 480 }],
+      [hourlyPath, { operationCount: 0 }],
+    ]);
+    const { db } = budgetHarness(documents);
+    mocks.firestore.mockReturnValue(db);
+
+    const result = await checkOperationBudget({
+      userId: 'user-1',
+      entitlementTier: 'pro',
+      estimatedCost: 30,
+      operationType: 'video',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain('RUNAWAY_PROTECTION');
+  });
+});

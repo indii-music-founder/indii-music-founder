@@ -2631,3 +2631,18 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Backend scope:** the loop's backend is TTS (`generateSpeech` → Gemini AUDIO, ISSUE-1392 fixed 2026-08-20) and the agent stream (`isStreaming` settled on every execution path since `8d03f5444`) — both audited, no new defects.
 - **Evidence:** 5 new VoiceService regression tests (15 total) + 3 new TalkButton tests; 55/55 voice suites; 334/334 intelligence+components; typecheck green; lint 0 errors. ERROR_LEDGER entry 2026-08-25.
 - **Honest limit:** Web Speech API itself is Chrome-owned — network/service-side instability (rare 'network' errors) still surfaces as a toast and clean session end rather than a stuck UI; no auto-restart added (deliberate: don't re-arm a mic without user intent).
+
+### ISSUE-1402: Founder hit a video "cost reservation" denial on a clip-stitch request — fixed at root (2026-08-25)
+
+- **Status:** ✅ FIXED (code) 2026-08-25 — founder escalation: "I'm the founder. I'm signed into my account. I should never see this."
+- **Severity:** 🔴 CRITICAL for founder UX (flagship video path hard-blocked; founder premise broken)
+- **Module:** firebase billing/entitlements + renderer video/agent + conductor skills
+- **Root causes (stacked):**
+  1. Founder-tier budget had NO confirmation exemption: `USER_CONFIRMATION_THRESHOLD` ($20/op) fired for founder/enterprise, and the video client hard-blocks on `requiresConfirmation` (no prompt UI exists for video). A multi-clip movie stitch estimates >$20 → denied.
+  2. Flat `RUNAWAY_LIMIT` ($500/month) fired BELOW the founder tier's own $10k/month ceiling — the kill-switch killed founders before their own budget did.
+  3. Entitlement provisioning read ONLY `founders/{uid}`; paid `subscriptions/{uid}` (Stripe-materialized) was never consulted, so any lag between payment records and the founder registry resolved FREE (the "paying customers budgeted as FREE" P1 class).
+  4. Conductor routing gap: the `video_producer` skill sent stitch/join/sequence jobs through Veo (`generate_video`) — the cost-controlled generation path — even though the local IndiiVideoProject pipeline (`add_video_clip` → `queue_video_render`, HyperFrames behind the renderer contract) exists in-app and renders stitch jobs with no cost reservation at all.
+- **Fix:** founder/enterprise exempt from the per-op confirmation threshold; runaway cap = `max($500, tier monthly ceiling)`; entitlement provisioning resolves from `founders/{uid}` + non-canceled paid `subscriptions/{uid}` with `subscription_migration` grants and one-directional in-place upgrades (tierRank guard); video confirmation blocks get an actionable message; `GeneralistAgent.isHardStopError` stops on cost-reservation/budget language; conductor `video_producer` skill now hard-routes edit jobs to the local pipeline (Veo = new footage only).
+- **Evidence:** 14 entitlements tests (new: founder self-heal, subscription materialization, provenance); 27 enforceOperationCost tests (new: founder/enterprise confirmation bypass, tier-aware runaway); full firebase suite 1011 pass (3 rules suites fail-closed without emulator, documented, green in CI); root typecheck green; lint 0 errors. ERROR_LEDGER entry 2026-08-25.
+- **Deployment follow-up:** no prod data change needed — G5 (2026-08-25) already verified `founders/{uid}`, `subscriptions/{uid}`, and the FOUNDER entitlement in production. The budget-guard fixes take effect on the next functions deploy.
+- **Left open (separate track):** `render_stitch` reliability (long-form stitch pipeline) remains P1 work; this fix guarantees a founder never sees a reservation denial, not that every long stitch succeeds on the first poll.

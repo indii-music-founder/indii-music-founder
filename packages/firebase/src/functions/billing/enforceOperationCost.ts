@@ -360,6 +360,11 @@ export async function checkOperationBudget(
       const testDailyUsed = testSnap?.exists ? (testSnap.data()?.totalCost || 0) : 0;
       const userTier = entitlementTier;
       const limits = BUDGET_LIMITS[userTier];
+      // The global runaway kill-switch never fires below a tier's own monthly
+      // budget: founder/enterprise ceilings govern themselves, free/pro stay
+      // under the flat $500 guard. (A founder tripping the flat cap at $500
+      // while entitled to $10k/month was a live reservation-denial bug.)
+      const runawayLimit = Math.max(RUNAWAY_LIMIT, limits.monthly);
 
       if (operationSnap.exists) {
         const existing = operationSnap.data() || {};
@@ -412,14 +417,14 @@ export async function checkOperationBudget(
         };
       }
 
-      if (monthlyUsed + estimatedCost > RUNAWAY_LIMIT) {
+      if (monthlyUsed + estimatedCost > runawayLimit) {
         const incidentRef = db.collection('incidents').doc(`runaway-${Date.now()}`);
         tx.set(incidentRef, {
           type: 'RUNAWAY_KILLED',
           userId,
           operationType,
           projectedCost: monthlyUsed + estimatedCost,
-          limit: RUNAWAY_LIMIT,
+          limit: runawayLimit,
           timestamp: FieldValue.serverTimestamp(),
           action: 'BLOCKED',
           metadata: metadata || {},
@@ -430,12 +435,12 @@ export async function checkOperationBudget(
           operationType,
           monthlyUsed,
           estimatedCost,
-          limit: RUNAWAY_LIMIT,
+          limit: runawayLimit,
         });
 
         return {
           allowed: false,
-          reason: `RUNAWAY_PROTECTION: Monthly cost ($${monthlyUsed.toFixed(2)}) + operation ($${estimatedCost.toFixed(2)}) exceeds global limit ($${RUNAWAY_LIMIT})`,
+          reason: `RUNAWAY_PROTECTION: Monthly cost ($${monthlyUsed.toFixed(2)}) + operation ($${estimatedCost.toFixed(2)}) exceeds global limit ($${runawayLimit})`,
           remainingBudget: 0,
           dailyUsed,
           monthlyUsed,
@@ -497,7 +502,12 @@ export async function checkOperationBudget(
       }
 
       const threshold = isTestMode ? TEST_CONFIRMATION_THRESHOLD : USER_CONFIRMATION_THRESHOLD;
-      if (estimatedCost >= threshold) {
+      // Founder (and enterprise) accounts are auto-approved below their own
+      // budget ceilings: their tier limits ARE the confirmation gate. The
+      // per-op $20 prompt otherwise hard-blocks long video renders on the
+      // client, which has no confirmation prompt for video.
+      const confirmationExempt = userTier === 'founder' || userTier === 'enterprise';
+      if (!confirmationExempt && estimatedCost >= threshold) {
         console.warn(`[CostControl] High cost operation detected ($${estimatedCost}), requesting confirmation`);
         return {
           allowed: false,

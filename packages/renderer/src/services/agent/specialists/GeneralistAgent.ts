@@ -83,6 +83,9 @@ export class GeneralistAgent extends BaseAgent {
             lower.includes('quota') ||
             lower.includes('cost control') ||
             lower.includes('cost ledger') ||
+            lower.includes('cost reservation') ||
+            lower.includes('budget') ||
+            lower.includes('confirmation threshold') ||
             lower.includes('billing') ||
             lower.includes('prepayment credits');
     }

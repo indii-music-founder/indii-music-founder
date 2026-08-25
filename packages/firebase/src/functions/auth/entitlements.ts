@@ -5,6 +5,7 @@ import { getFirestore, FieldValue, type Firestore, type Transaction } from 'fire
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 
 import { SubscriptionTier } from '../../shared/subscription/types';
+import { normalizeSubscriptionTier } from '../../subscription/subscriptionDefaults';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { arcjetKey } from '../../config/secrets';
 import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from '../security/arcjet';
@@ -12,7 +13,49 @@ import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from 
 export const ACCOUNT_ENTITLEMENT_SCHEMA_VERSION = 'account-entitlement.v1' as const;
 
 export type BudgetTier = 'free' | 'pro' | 'founder' | 'enterprise';
-export type EntitlementSource = 'verified_email' | 'founder_registry_migration' | 'founder_activation';
+export type EntitlementSource =
+    | 'verified_email'
+    | 'founder_registry_migration'
+    | 'founder_activation'
+    | 'subscription_migration';
+
+/** Total order of spend-bearing tiers; used to decide safe in-place upgrades. */
+export function tierRank(tier: SubscriptionTier): number {
+    switch (tier) {
+        case SubscriptionTier.FOUNDER:
+            return 3;
+        case SubscriptionTier.STUDIO:
+            return 2;
+        case SubscriptionTier.PRO_MONTHLY:
+        case SubscriptionTier.PRO_YEARLY:
+            return 1;
+        case SubscriptionTier.FREE:
+        default:
+            return 0;
+    }
+}
+
+/**
+ * The paid tier the server can prove RIGHT NOW from its own registries.
+ * `founders/{uid}` wins; a non-canceled paid `subscriptions/{uid}` is the
+ * second source (Stripe/webhook materialized). FREE is the fail-safe floor.
+ * Never derives a tier from client-writable profile fields.
+ */
+export function resolveServerProvenTier(options: {
+    isFounder: boolean;
+    subscription?: Record<string, unknown> | null;
+}): SubscriptionTier {
+    if (options.isFounder) return SubscriptionTier.FOUNDER;
+    const data = options.subscription;
+    if (data) {
+        const status = typeof data.status === 'string' ? data.status : undefined;
+        if (status !== 'canceled') {
+            const tier = normalizeSubscriptionTier(data.tier);
+            if (tier !== SubscriptionTier.FREE) return tier;
+        }
+    }
+    return SubscriptionTier.FREE;
+}
 
 export interface AccountEntitlement {
     schemaVersion: typeof ACCOUNT_ENTITLEMENT_SCHEMA_VERSION;
@@ -61,7 +104,7 @@ function entitlementFromUnknown(value: unknown): AccountEntitlement | undefined 
     ) {
         return undefined;
     }
-    if (!['verified_email', 'founder_registry_migration', 'founder_activation'].includes(data.source)) {
+    if (!['verified_email', 'founder_registry_migration', 'founder_activation', 'subscription_migration'].includes(data.source)) {
         return undefined;
     }
     return {
@@ -87,6 +130,7 @@ function entitlementRefs(firestore: Firestore, uid: string) {
         current: userRef.collection('entitlements').doc('current'),
         audit: (id: string) => userRef.collection('entitlementAudit').doc(id),
         founder: firestore.collection('founders').doc(uid),
+        subscription: firestore.collection('subscriptions').doc(uid),
     };
 }
 
@@ -105,36 +149,60 @@ function firestoreEntitlementRepository(firestore: Firestore): EntitlementReposi
             const uid = requireUid(rawUid);
             const refs = entitlementRefs(firestore, uid);
             return firestore.runTransaction(async transaction => {
-                const [currentSnapshot, founderSnapshot] = await Promise.all([
+                const [currentSnapshot, founderSnapshot, subscriptionSnapshot] = await Promise.all([
                     transaction.get(refs.current),
                     transaction.get(refs.founder),
+                    transaction.get(refs.subscription),
                 ]);
                 const existing = currentSnapshot.exists
                     ? currentEntitlementOrThrow(currentSnapshot.data(), uid)
                     : undefined;
-                if (existing) return existing;
 
-                const isFounder = founderSnapshot.exists;
-                const tier = isFounder ? SubscriptionTier.FOUNDER : SubscriptionTier.FREE;
-                const source: EntitlementSource = isFounder ? 'founder_registry_migration' : 'verified_email';
-                const reference = isFounder ? refs.founder.path : uid;
+                // The tier the server can prove from its own registries right now.
+                // Never from client-writable profile fields.
+                const provenTier = resolveServerProvenTier({
+                    isFounder: founderSnapshot.exists,
+                    subscription: subscriptionSnapshot.exists ? subscriptionSnapshot.data() : undefined,
+                });
+
+                // Idempotency: an entitlement at least as spend-bearing as the
+                // proven tier is kept as-is. A stale FREE (or lower) record is
+                // upgraded in place — e.g. a founder whose founders/{uid} or
+                // subscriptions/{uid} doc landed after the FREE grant.
+                if (existing && tierRank(existing.tier) >= tierRank(provenTier)) return existing;
+
+                const isFounder = provenTier === SubscriptionTier.FOUNDER && founderSnapshot.exists;
+                const fromSubscription = !isFounder && provenTier !== SubscriptionTier.FREE;
+                const source: EntitlementSource = isFounder
+                    ? 'founder_registry_migration'
+                    : fromSubscription
+                        ? 'subscription_migration'
+                        : 'verified_email';
+                const reference = isFounder
+                    ? refs.founder.path
+                    : fromSubscription
+                        ? refs.subscription.path
+                        : uid;
                 const record: AccountEntitlement = {
                     schemaVersion: ACCOUNT_ENTITLEMENT_SCHEMA_VERSION,
                     uid,
-                    tier,
+                    tier: provenTier,
                     status: 'active',
                     source,
-                    grantId: grantId(uid, tier, source, reference),
+                    grantId: grantId(uid, provenTier, source, reference),
                 };
 
-                transaction.create(refs.current, {
+                transaction.set(refs.current, {
                     ...record,
                     issuedAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp(),
                 });
                 transaction.create(refs.audit(record.grantId), {
                     ...record,
-                    evidence: [{ type: isFounder ? 'founder_registry' : 'firebase_auth_email_verification', reference }],
+                    evidence: [{
+                        type: isFounder ? 'founder_registry' : fromSubscription ? 'subscription_registry' : 'firebase_auth_email_verification',
+                        reference,
+                    }],
                     issuedAt: FieldValue.serverTimestamp(),
                 });
                 return record;

@@ -182,6 +182,15 @@ export class VideoGenerationService {
             });
 
             if (!costCheck.allowed) {
+                if (costCheck.requiresConfirmation) {
+                    // Video has no interactive confirmation prompt (the
+                    // conductor cannot click through a dialog), so surface a
+                    // clear, actionable block instead of an opaque denial.
+                    throw new Error(
+                        `Video generation requires a cost confirmation for this request (estimated $${estimatedCost.toFixed(2)}). ` +
+                        'Reduce the duration, or contact support to raise the automatic approval limit for your tier.',
+                    );
+                }
                 throw new Error(`Video generation blocked: ${costCheck.reason}`);
             }
 
