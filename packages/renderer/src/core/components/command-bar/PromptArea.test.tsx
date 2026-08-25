@@ -39,6 +39,7 @@ vi.mock('@/services/intelligence/VoiceService', () => ({
       return true;
     }),
     stopDictation: vi.fn(),
+    stopDictationIfOwner: vi.fn(),
   },
 }));
 

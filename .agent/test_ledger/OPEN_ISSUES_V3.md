@@ -2616,3 +2616,18 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
   - No `founder_github_commit_queue` rows (G4 still deferred — mock token).
 - **Conclusion:** badge/seat/hash receipt path is data-complete. The Aug-20 audit's "no founders doc" reading was superseded by the registry migration.
 - **OPEN decision (founder):** seat is 11 with display name "William Paul Roberts", not the planned seat-1/"wiil" shape. Cosmetic/data-hygiene only (G6 notes seat 11 renders as "ii" — possibly intentional i-i internal-seat styling). If founder wants seat 1/"wiil", the backfill script needs its guard relaxed to a migrate-in-place mode — requires explicit founder approval before any overwrite.
+
+### ISSUE-1401: Talk-over (voice-to-text) system instability — escalated audit (2026-08-25)
+
+- **Status:** ✅ FIXED 2026-08-25 — five defect classes found and fixed at the root in the voice-to-text + UI synchronization layers (founder escalation: "technical instability within the voice-to-text and UI synchronization layers").
+- **Severity:** 🟠 HIGH (reproduces on the most common gesture: release the TalkButton, click Talk again → dead mic)
+- **Module:** renderer / VoiceService + TalkButton (Web Speech API engine, no backend STT — dictation is browser-native)
+- **Defects fixed:**
+  1. **Stop-in-flight rebind race (root cause):** release→quick re-engage rebinded handlers over a stopping engine; the old session's `onend` fired into the new session → natural-end for a session that never started. Fixed with a pending-start queue + engineRunning tracking; `onend` promotes the queued session.
+  2. **Word fusion:** final fragments concatenated without separator when Chrome omitted trailing spaces ("helloworld"). Whitespace-aware join.
+  3. **Unmount cross-kill:** an idle TalkButton unmounting called unconditional `stopDictation()` and killed another surface's live session. Owner-scoped `stopDictationIfOwner(handlers)`.
+  4. **Legacy clobber:** onboarding `startListening` could detach a live dictation session (UI stuck "listening") and never reset continuous mode. Now supersedes the owner + resets single-shot config.
+  5. **Busy hot mic:** agent busy mid-listen left a live mic with no visible owner. Busy stand-down + onEnd always resets UI state.
+- **Backend scope:** the loop's backend is TTS (`generateSpeech` → Gemini AUDIO, ISSUE-1392 fixed 2026-08-20) and the agent stream (`isStreaming` settled on every execution path since `8d03f5444`) — both audited, no new defects.
+- **Evidence:** 5 new VoiceService regression tests (15 total) + 3 new TalkButton tests; 55/55 voice suites; 334/334 intelligence+components; typecheck green; lint 0 errors. ERROR_LEDGER entry 2026-08-25.
+- **Honest limit:** Web Speech API itself is Chrome-owned — network/service-side instability (rare 'network' errors) still surfaces as a toast and clean session end rather than a stuck UI; no auto-restart added (deliberate: don't re-arm a mic without user intent).

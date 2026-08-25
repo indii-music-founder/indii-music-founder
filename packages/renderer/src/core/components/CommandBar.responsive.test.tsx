@@ -103,6 +103,7 @@ vi.mock('@/services/intelligence/VoiceService', () => ({
         stopListening: mockStopListening,
         startDictation: mockStartDictation,
         stopDictation: vi.fn(),
+        stopDictationIfOwner: vi.fn(),
         isDictatingActive: () => false,
     }
 }));

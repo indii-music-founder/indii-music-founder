@@ -8,6 +8,7 @@ vi.mock('@/services/intelligence/VoiceService', () => ({
         isSupported: vi.fn(() => true),
         startDictation: vi.fn(),
         stopDictation: vi.fn(),
+        stopDictationIfOwner: vi.fn(),
         startListening: vi.fn(),
         stopListening: vi.fn(),
     },
@@ -63,6 +64,46 @@ describe('TalkButton', () => {
         />
     );
 
+    it('unmount cleanup stops the mic only when this surface owns the session', () => {
+        const { unmount } = renderButton('typed');
+        fireEvent.click(screen.getByTestId('talk-button'));
+        const handlers = captured[0]!;
+
+        unmount();
+        expect(voiceService.stopDictationIfOwner).toHaveBeenCalledWith(handlers);
+    });
+
+    it('unmounting an idle button never touches the shared engine', () => {
+        const { unmount } = renderButton('');
+        unmount();
+        expect(voiceService.stopDictationIfOwner).not.toHaveBeenCalled();
+    });
+
+    it('agent going busy mid-listen cancels the take and stands the mic down', () => {
+        const { rerender } = renderButton('typed');
+        fireEvent.click(screen.getByTestId('talk-button'));
+        const handlers = captured[0]!;
+        act(() => handlers.onInterim!('half said'));
+
+        rerender(
+            <TalkButton
+                value="typed"
+                onStopAgent={onStopAgent}
+                onLiveText={onLiveText}
+                onSessionStart={onSessionStart}
+                onRelease={onRelease}
+                onNaturalEnd={onNaturalEnd}
+                onMicError={onMicError}
+                isAutoSendArmed={isAutoSendArmed}
+                isAgentBusy={true}
+            />
+        );
+
+        expect(voiceService.stopDictationIfOwner).toHaveBeenCalledWith(handlers);
+        expect(onLiveText).toHaveBeenLastCalledWith('typed'); // draft reverted
+        expect(screen.getByTestId('command-bar-stop-btn').getAttribute('data-face')).toBe('busy');
+    });
+
     it('opens the talkback channel on the first click and announces the session', () => {
         renderButton('base text');
         const btn = screen.getByTestId('talk-button');
@@ -114,7 +155,7 @@ describe('TalkButton', () => {
         vi.setSystemTime(1_000_600); // release well past the jitter window
         fireEvent.click(screen.getByTestId('talk-button'));
 
-        expect(voiceService.stopDictation).toHaveBeenCalled();
+        expect(voiceService.stopDictationIfOwner).toHaveBeenCalledWith(captured[0]);
         expect(onRelease).toHaveBeenCalledWith({ text: 'base spoken words tail', autoSend: true });
         expect(isAutoSendArmed).toHaveBeenCalled();
         expect(screen.getByTestId('talk-button').getAttribute('data-face')).toBe('idle');
@@ -141,7 +182,7 @@ describe('TalkButton', () => {
 
         fireEvent.keyDown(window, { key: 'Escape' });
 
-        expect(voiceService.stopDictation).toHaveBeenCalled();
+        expect(voiceService.stopDictationIfOwner).toHaveBeenCalledWith(captured[0]);
         expect(onLiveText).toHaveBeenLastCalledWith('keep me');
         expect(onRelease).not.toHaveBeenCalled();
         expect(screen.getByTestId('talk-button').getAttribute('data-face')).toBe('idle');

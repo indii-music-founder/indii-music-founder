@@ -9,6 +9,7 @@ interface SpeechRecognitionInstance {
     lang: string;
     start: () => void;
     stop: () => void;
+    onstart: (() => void) | null;
     onresult: ((event: SpeechRecognitionEventLike) => void) | null;
     onerror: ((event: { error: unknown }) => void) | null;
     onend: (() => void) | null;
@@ -36,12 +37,21 @@ interface DictationHandlers {
     onSuperseded?: () => void;
 }
 
+/** Joins two recognized fragments, keeping Chrome's usual trailing space but never fusing words. */
+function joinTranscripts(a: string, b: string): string {
+    if (!a) return b;
+    if (!b) return a;
+    return /\s$/.test(a) ? a + b : `${a} ${b}`;
+}
+
 export class VoiceService {
     private recognition: SpeechRecognitionInstance | null = null;
     private isListening: boolean = false;
     private isDictating: boolean = false;
     private stopRequested: boolean = false;
+    private engineRunning: boolean = false;
     private activeHandlers: DictationHandlers | null = null;
+    private pendingHandlers: DictationHandlers | null = null;
 
     private get synthesis(): SpeechSynthesis | null {
         if (typeof window === 'undefined') return null;
@@ -66,12 +76,36 @@ export class VoiceService {
     startListening(onResult: (text: string) => void, onError?: (error: unknown) => void) {
         if (!this.recognition) return;
 
+        // A live dictation session owns the shared engine. A legacy single-shot
+        // listen supersedes it so the two modes can never cross-wire handlers
+        // (previously this silently detached the dictation session and left its
+        // UI "listening" forever).
+        if (this.isDictating || this.pendingHandlers) {
+            const owner = this.activeHandlers ?? this.pendingHandlers;
+            owner?.onSuperseded?.();
+            this.activeHandlers = null;
+            this.pendingHandlers = null;
+            this.isDictating = false;
+            this.stopRequested = false;
+            if (this.engineRunning) {
+                try { this.recognition.stop(); } catch { /* already stopping */ }
+            }
+        }
+
         if (this.isListening) {
             this.stopListening();
         }
 
+        // Single-shot config: a previous dictation session may have left the
+        // engine in continuous mode, which would keep firing after the first
+        // result and never self-end.
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
         this.isListening = true;
 
+        this.recognition.onstart = () => {
+            this.engineRunning = true;
+        };
         this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
             const transcript = event.results[0]![0]!.transcript;
             onResult(transcript);
@@ -84,6 +118,7 @@ export class VoiceService {
         };
 
         this.recognition.onend = () => {
+            this.engineRunning = false;
             this.isListening = false;
         };
 
@@ -116,60 +151,114 @@ export class VoiceService {
         // Session-owner model: several chat surfaces can mount a TalkButton at
         // once (floating overlay + docked panel). The newest click owns the
         // shared engine; the previous owner is told to stand down.
-        if (this.isDictating && this.activeHandlers && this.activeHandlers !== handlers) {
-            this.activeHandlers.onSuperseded?.();
+        if ((this.isDictating || this.pendingHandlers) && this.activeHandlers !== handlers) {
+            const previous = this.activeHandlers ?? this.pendingHandlers;
+            previous?.onSuperseded?.();
         }
-        this.activeHandlers = handlers;
-        this.stopRequested = false;
 
-        // Reuse the single recognition instance; flip it into continuous mode
-        // for the session. The legacy single-shot path restores its own config.
-        this.recognition.continuous = true;
-        this.recognition.interimResults = true;
+        // Stop-in-flight window: a release calls stop(), and Chrome resolves it
+        // asynchronously through onend. A start() issued before that throws
+        // InvalidStateError, and a rebind would make the OLD session's onend
+        // fire into the NEW session (natural-end for a session that never ran —
+        // the classic release-then-quickly-talk-again dead mic). Queue instead:
+        // onend starts this session the moment the engine is free.
+        if (this.isDictating && this.stopRequested) {
+            this.pendingHandlers = handlers;
+            this.stopRequested = false;
+            return true;
+        }
+
+        // Engine already live: rebind handlers to the newest owner without
+        // restarting (never call start() on a running engine).
+        if (this.isDictating) {
+            this.activeHandlers = handlers;
+            this.bindRecognition(handlers);
+            return true;
+        }
+
+        return this.beginSession(handlers);
+    }
+
+    /** Starts (or restarts) the engine for a fresh dictation session. */
+    private beginSession(handlers: DictationHandlers): boolean {
+        const recognition = this.recognition;
+        if (!recognition) return false;
+
+        this.activeHandlers = handlers;
+        this.pendingHandlers = null;
+        this.stopRequested = false;
+        this.isDictating = true;
+
+        // Continuous talkback-style dictation: keeps listening across phrases
+        // and streams interim results while the user speaks. The legacy
+        // single-shot path restores its own config.
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        this.bindRecognition(handlers);
+
+        try {
+            recognition.start();
+        } catch (e: unknown) {
+            this.isDictating = false;
+            this.engineRunning = false;
+            this.activeHandlers = null;
+            handlers.onError?.(e);
+            return false;
+        }
+        return true;
+    }
+
+    /** Binds the shared instance's event handlers to the given session. */
+    private bindRecognition(handlers: DictationHandlers) {
+        const recognition = this.recognition;
+        if (!recognition) return;
 
         let finalTranscript = '';
         // Chrome fires onerror('aborted') as a normal consequence of stop() —
         // and 'no-speech' when the user stays quiet. Neither is a failure.
 
-        this.recognition.onresult = (event: SpeechRecognitionEventLike) => {
+        recognition.onstart = () => {
+            this.engineRunning = true;
+        };
+        recognition.onresult = (event: SpeechRecognitionEventLike) => {
             let interim = '';
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 const result = event.results[i]!;
                 const transcript = result[0]!.transcript;
                 if (result.isFinal) {
-                    finalTranscript += transcript;
+                    finalTranscript = joinTranscripts(finalTranscript, transcript);
                 } else {
-                    interim += transcript;
+                    interim = joinTranscripts(interim, transcript);
                 }
             }
             handlers.onFinal?.(finalTranscript);
             handlers.onInterim?.(interim.trim());
         };
-        this.recognition.onerror = (event: { error: unknown }) => {
+        recognition.onerror = (event: { error: unknown }) => {
             const code = String(event.error ?? '');
             if (this.stopRequested && code === 'aborted') return; // expected after stop()
             if (code === 'no-speech' || code === 'aborted') return; // silence ends via onend
             handlers.onError?.(event.error);
         };
-        this.recognition.onend = () => {
+        recognition.onend = () => {
+            this.engineRunning = false;
             const wasDictating = this.isDictating;
+            const ended = this.activeHandlers;
             this.isDictating = false;
             this.activeHandlers = null;
-            if (wasDictating) handlers.onEnd?.();
-        };
 
-        if (!this.isDictating) {
-            this.isDictating = true;
-            try {
-                this.recognition.start();
-            } catch (e: unknown) {
-                this.isDictating = false;
-                this.activeHandlers = null;
-                handlers.onError?.(e);
-                return false;
+            // A session queued during the stop-in-flight window now gets the
+            // freed engine. The deposed session's onEnd is intentionally not
+            // reported: its owner was already superseded.
+            if (this.pendingHandlers) {
+                const next = this.pendingHandlers;
+                this.pendingHandlers = null;
+                this.beginSession(next);
+                return;
             }
-        }
-        return true; // engine running with THIS session's handlers bound
+
+            if (wasDictating) ended?.onEnd?.();
+        };
     }
 
     /**
@@ -177,9 +266,24 @@ export class VoiceService {
      * result, and the onend handler clears the flag and notifies subscribers.
      */
     stopDictation() {
-        if (this.recognition && this.isDictating) {
+        // A queued (not yet started) session is discarded too — it never owned
+        // a live mic and must not start after the caller asked to stop.
+        this.pendingHandlers = null;
+        if (!this.recognition) return;
+        if (this.isDictating && this.engineRunning) {
             this.stopRequested = true;
             this.recognition.stop();
+        }
+    }
+
+    /**
+     * Owner-scoped stop: only ends the session if the given handlers still own
+     * the engine. Unmounting an idle TalkButton must never kill another
+     * surface's live session.
+     */
+    stopDictationIfOwner(handlers: DictationHandlers) {
+        if (this.activeHandlers === handlers || this.pendingHandlers === handlers) {
+            this.stopDictation();
         }
     }
 

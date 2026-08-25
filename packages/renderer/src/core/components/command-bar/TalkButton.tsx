@@ -83,15 +83,34 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
     const baseTextRef = useRef('');
     const finalRef = useRef('');
     const interimRef = useRef('');
+    /** The handlers object passed to voiceService for THIS surface's session. */
+    const handlersRef = useRef<Parameters<typeof voiceService.startDictation>[0] | null>(null);
 
     const face: TalkFace = isAgentBusy ? 'busy' : isListening ? 'listening' : 'idle';
 
-    // Leaving the surface with an open talkback channel must never leak a live mic.
+    // Leaving the surface with an open talkback channel must never leak a live
+    // mic — but only if this surface still OWNS the shared engine. An idle
+    // TalkButton unmounting (panel hidden, overlay closed) must not kill the
+    // session another surface is running.
     useEffect(() => {
         return () => {
-            voiceService.stopDictation();
+            if (handlersRef.current) voiceService.stopDictationIfOwner(handlersRef.current);
         };
     }, []);
+
+    // The agent going busy mid-listen (e.g. a response arrives from another
+    // surface) must stand the mic down: the busy face has no release affordance,
+    // and a live session with no visible owner is a silent hot mic. Only the
+    // external system is touched here — React state settles through onEnd.
+    useEffect(() => {
+        if (isAgentBusy && isListening) {
+            if (handlersRef.current) voiceService.stopDictationIfOwner(handlersRef.current);
+            startedAtRef.current = 0;
+            finalRef.current = '';
+            interimRef.current = '';
+            onLiveText(baseTextRef.current); // revert the draft take entirely
+        }
+    }, [isAgentBusy, isListening, onLiveText]);
 
     const endSession = useCallback(() => {
         setIsListening(false);
@@ -99,24 +118,36 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
         interimRef.current = '';
     }, []);
 
+    const handleCancel = useCallback(() => {
+        if (handlersRef.current) voiceService.stopDictationIfOwner(handlersRef.current);
+        startedAtRef.current = 0;
+        onLiveText(baseTextRef.current); // revert the draft take entirely
+        endSession();
+    }, [onLiveText, endSession]);
+
     const handleStart = useCallback(() => {
         if (!voiceService.isSupported()) return;
         baseTextRef.current = value;
         finalRef.current = '';
         interimRef.current = '';
         startedAtRef.current = Date.now();
-        const started = voiceService.startDictation({
-            onFinal: (finalText) => {
+        const handlers = {
+            onFinal: (finalText: string) => {
                 finalRef.current = finalText;
                 onLiveText(combineTranscript(baseTextRef.current, finalText, interimRef.current));
             },
-            onInterim: (interim) => {
+            onInterim: (interim: string) => {
                 interimRef.current = interim;
                 onLiveText(combineTranscript(baseTextRef.current, finalRef.current, interim));
             },
             onEnd: () => {
                 // Natural close: silence timeout or engine stop outside a release click.
-                if (!startedAtRef.current) return;
+                if (!startedAtRef.current) {
+                    // Session already retired (release/cancel/busy stand-down) —
+                    // still reset UI state so a stale listening face can't stick.
+                    endSession();
+                    return;
+                }
                 const finalText = combineTranscript(baseTextRef.current, finalRef.current, '');
                 endSession();
                 onNaturalEnd(finalText);
@@ -127,7 +158,7 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
                 startedAtRef.current = 0;
                 endSession();
             },
-            onError: (error) => {
+            onError: (error: unknown) => {
                 // Late engine noise after an intentional release/cancel must not
                 // revert the input or raise a toast (Chrome aborts on stop()).
                 if (!startedAtRef.current) return;
@@ -135,7 +166,9 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
                 endSession();
                 onMicError(error);
             },
-        });
+        };
+        handlersRef.current = handlers;
+        const started = voiceService.startDictation(handlers);
         if (started) {
             onSessionStart?.();
             setIsListening(true);
@@ -144,7 +177,7 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
 
     const handleRelease = useCallback(() => {
         const listenedMs = Date.now() - startedAtRef.current;
-        voiceService.stopDictation();
+        if (handlersRef.current) voiceService.stopDictationIfOwner(handlersRef.current);
 
         // Jitter guard: a near-instant second click is not a deliberate release.
         if (listenedMs < MIN_LISTEN_MS) {
@@ -158,13 +191,6 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
         endSession();
         onRelease({ text, autoSend: isAutoSendArmed() });
     }, [onLiveText, onRelease, isAutoSendArmed, endSession]);
-
-    const handleCancel = useCallback(() => {
-        voiceService.stopDictation();
-        startedAtRef.current = 0;
-        onLiveText(baseTextRef.current); // revert the draft take entirely
-        endSession();
-    }, [onLiveText, endSession]);
 
     // Esc while the talkback is open cancels without sending.
     useEffect(() => {

@@ -41,6 +41,7 @@ vi.mock('@/services/intelligence/VoiceService', () => ({
         stopListening: vi.fn(),
         startDictation: vi.fn(() => true),
         stopDictation: vi.fn(),
+        stopDictationIfOwner: vi.fn(),
         isDictatingActive: () => false,
     }
 }));
