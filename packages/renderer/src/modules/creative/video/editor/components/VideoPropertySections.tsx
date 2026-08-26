@@ -6,11 +6,20 @@ import { Image as ImageIcon } from 'lucide-react';
 
 // --- Project Settings Section ---
 
+export const ASPECT_RATIO_PRESETS = [
+    { id: '16:9', label: '16:9 · Landscape', width: 1920, height: 1080 },
+    { id: '9:16', label: '9:16 · Vertical', width: 1080, height: 1920 },
+    { id: '1:1', label: '1:1 · Square', width: 1080, height: 1080 },
+    { id: '4:5', label: '4:5 · Portrait', width: 1080, height: 1350 },
+] as const;
+
 interface ProjectSettingsSectionProps {
     project: VideoProject;
+    onApplyAspect?: (width: number, height: number) => void;
 }
 
-export const ProjectSettingsSection = memo(({ project }: ProjectSettingsSectionProps) => {
+export const ProjectSettingsSection = memo(({ project, onApplyAspect }: ProjectSettingsSectionProps) => {
+    const active = ASPECT_RATIO_PRESETS.find(preset => preset.width === project.width && preset.height === project.height);
     return (
         <PanelSection title="Project Settings" defaultOpen={true}>
             <PropertyRow label="Project Name">
@@ -21,6 +30,23 @@ export const ProjectSettingsSection = memo(({ project }: ProjectSettingsSectionP
                     onChange={() => { }}
                 />
             </PropertyRow>
+            {onApplyAspect && (
+                <PropertyRow label="Aspect" className="mt-1.5">
+                    <StyledSelect
+                        value={active?.id ?? ''}
+                        onChange={(e) => {
+                            const preset = ASPECT_RATIO_PRESETS.find(p => p.id === e.target.value);
+                            if (preset) onApplyAspect(preset.width, preset.height);
+                        }}
+                        data-testid="project-aspect-preset"
+                    >
+                        {!active && <option value="">{project.width}x{project.height} (custom)</option>}
+                        {ASPECT_RATIO_PRESETS.map(preset => (
+                            <option key={preset.id} value={preset.id}>{preset.label}</option>
+                        ))}
+                    </StyledSelect>
+                </PropertyRow>
+            )}
         </PanelSection>
     );
 });

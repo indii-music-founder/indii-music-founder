@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { VideoProject, VideoClip } from '../../store/videoEditorStore';
+import { useVideoEditorStore, VideoProject, VideoClip } from '../../store/videoEditorStore';
 import { PropertiesPanel } from '@/components/studio/PropertiesPanel';
 import FrameSelectionModal from '../../components/FrameSelectionModal';
 import { HistoryItem } from '@/core/store';
@@ -43,7 +43,10 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
         <PropertiesPanel title="Advanced Properties Hub" className={isPopoutActive ? "w-full flex-1 border-l-0 bg-[#0a0a0a]" : "w-64"}>
             <div className={contentWrapperClass}>
                 <div className={isPopoutActive ? "bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] shadow-sm overflow-hidden" : ""}>
-                    <ProjectSettingsSection project={project} />
+                    <ProjectSettingsSection
+                        project={project}
+                        onApplyAspect={(width, height) => useVideoEditorStore.getState().updateProjectSettings({ width, height })}
+                    />
                 </div>
 
                 {selectedClip ? (

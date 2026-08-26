@@ -14,7 +14,10 @@ export type VideoTreatmentPresetId =
     | 'bold-arrival'
     | 'neon-night'
     | 'vinyl-warm'
-    | 'cold-blue';
+    | 'cold-blue'
+    | 'sunset-punch'
+    | 'raw-documentary'
+    | 'candy-pop';
 
 export interface VideoTreatmentPreset {
     id: VideoTreatmentPresetId;
@@ -108,6 +111,47 @@ export const VIDEO_TREATMENT_PRESETS: Record<VideoTreatmentPresetId, VideoTreatm
         },
         seam: { type: 'cut-the-curve', direction: 'LEFT' },
         defaultTextEntrance: 'waterfall',
+    },
+    'sunset-punch': {
+        id: 'sunset-punch',
+        label: 'Sunset Punch',
+        matches: ['sunset', 'warm', 'golden', 'summer', 'orange', 'energy', 'bright'],
+        background: {
+            kind: 'radial-glow',
+            color: '#0F0A07',
+            accent: '#FF6B4A',
+            glowOpacity: 0.2,
+            glowPosition: 'top-left',
+        },
+        seam: { type: 'cut-the-curve', direction: 'LEFT' },
+        defaultTextEntrance: 'waterfall',
+        audioFade: { inSeconds: 0.5, outSeconds: 2 },
+    },
+    'raw-documentary': {
+        id: 'raw-documentary',
+        label: 'Raw Documentary',
+        matches: ['raw', 'documentary', 'real', 'interview', 'honest', 'behind the scenes', 'bts'],
+        background: {
+            kind: 'ghost-text',
+            color: '#0A0A0C',
+            accent: '#D6D2C8',
+            ghostText: 'RAW',
+        },
+        seam: { type: 'cut-the-curve', direction: 'LEFT' },
+        defaultTextEntrance: 'waterfall',
+        audioFade: { inSeconds: 1, outSeconds: 3 },
+    },
+    'candy-pop': {
+        id: 'candy-pop',
+        label: 'Candy Pop',
+        matches: ['candy', 'pop', 'playful', 'fun', 'bright', 'bubblegum', 'kids'],
+        background: {
+            kind: 'grid',
+            color: '#0D0A12',
+            accent: '#F472B6',
+        },
+        seam: { type: 'cut-the-curve', direction: 'LEFT' },
+        defaultTextEntrance: 'inverse-zoom',
     },
 };
 

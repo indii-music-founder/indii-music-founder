@@ -46,6 +46,9 @@ Presets (prefer the preset that matches their words; inline overrides win):
 | neon / electric / synthwave / club / cyber              | `preset: "neon-night"`                                     |
 | vinyl / analog / soul / jazz / retro / crackle          | `preset: "vinyl-warm"`                                     |
 | cold / blue / precise / clinical / winter               | `preset: "cold-blue"`                                      |
+| sunset / golden / summer / warm energy                  | `preset: "sunset-punch"`                                   |
+| raw / documentary / interview / behind the scenes       | `preset: "raw-documentary"`                                |
+| candy / pop / playful / fun / kids                      | `preset: "candy-pop"`                                      |
 | "no special look"                                       | `preset` omitted, `entrance: "none"`                       |
 | a specific detail ("fade the music in slowly")          | inline args: `audioFadeInSeconds` / `audioFadeOutSeconds`  |
 | a specific seam direction ("cut to the right")          | inline args: `seam: { type: "cut-the-curve", direction: "RIGHT" }` |

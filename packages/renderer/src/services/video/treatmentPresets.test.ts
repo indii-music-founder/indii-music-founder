@@ -28,6 +28,18 @@ describe('treatment presets', () => {
         expect(resolveTreatmentPreset('cold precise winter blue')?.id).toBe('cold-blue');
     });
 
+    it('maps sunset/energy words to the sunset punch preset', () => {
+        expect(resolveTreatmentPreset('golden sunset energy')?.id).toBe('sunset-punch');
+    });
+
+    it('maps documentary words to the raw documentary preset', () => {
+        expect(resolveTreatmentPreset('behind the scenes interview raw')?.id).toBe('raw-documentary');
+    });
+
+    it('maps playful words to the candy pop preset', () => {
+        expect(resolveTreatmentPreset('playful bubblegum fun')?.id).toBe('candy-pop');
+    });
+
     it('returns undefined when nothing matches', () => {
         expect(resolveTreatmentPreset('fluffy purple marshmallow')).toBeUndefined();
         expect(resolveTreatmentPreset('')).toBeUndefined();
@@ -70,6 +82,9 @@ describe('treatment presets', () => {
                 'neon-night',
                 'vinyl-warm',
                 'cold-blue',
+                'sunset-punch',
+                'raw-documentary',
+                'candy-pop',
             ]),
         );
     });
