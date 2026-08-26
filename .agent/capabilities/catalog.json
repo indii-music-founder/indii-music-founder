@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "881a1c474e72e38a5de53b66fccde3bf4bef5164009a25f2ca291db57b906592",
+  "sourceDigest": "8cca02c85594ae5ad68c5edbc02a13e18f323d26ee79bea973029a058b7d9c8e",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 36,
     "conditional": 69,
-    "quarantined": 78,
+    "quarantined": 79,
     "deprecated": 1
   },
   "capabilities": [
@@ -398,6 +398,36 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Re-run only when the script is documented as repeat-safe.",
       "authenticity": "Local command success is local evidence only.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:build:video-compiler",
+      "name": "npm run build:video-compiler",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "tsc -b packages/video-compiler",
+      "descriptionHash": "b19f297592f3c5d1331ac4f97bdaf1160b048b6234ef9c396ae5c512e1ed3eee",
+      "contentHash": "549d18e2fee52b10135b25e04d276ab9e3f2f438ebabc0ab4824b32ae5d0d434",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
       "conflicts": []
     },
     {
@@ -1330,9 +1360,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run build:shared && husky",
-      "descriptionHash": "248b81120d2159c96f9847d52403fd56bbfa5577e80a1cb4a82b0c2130087e2f",
-      "contentHash": "c9226e67cd4c52d3b259cb536f06e2bc9ea3e5c6eebb8d70a7e0c29481a30841",
+      "description": "npm run build:shared && npm run build:video-compiler && husky",
+      "descriptionHash": "a5f66c86995508119e11ddb355a6d30c87f09cb3a464b8500f7530383502b522",
+      "contentHash": "391c5b9f7bb683f056e6d17b9e6693a2536bb9f0d98866b29d6394f178cc3ecd",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -2194,9 +2224,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "tsc -b packages/shared && tsc -b packages/main && tsc -b packages/renderer && tsc -b packages/firebase && tsc -b packages/sdk && tsc -b packages/admin-dashboard && npm run typecheck:firebase-tests",
-      "descriptionHash": "5309988da9c04b0ba9ad64ae773c88ab3174b3c974ecfcd1c15054d074975ef5",
-      "contentHash": "de69c17814cf7a7f54c76d146c50d146e1ceaf0c7f5f22a1ea6fcfe064114aac",
+      "description": "tsc -b packages/shared && tsc -b packages/video-compiler && tsc -b packages/main && tsc -b packages/renderer && tsc -b packages/firebase && tsc -b packages/render-worker && tsc -b packages/sdk && tsc -b packages/admin-dashboard && npm run typecheck:firebase-tests",
+      "descriptionHash": "bfc2f1ccde050bb63a462b54dac7da5fc73f9992f8952ed3c1bd3748d9073016",
+      "contentHash": "9f044f4053031563b80c912a5310a6fd0c1600324bafed5e9692c24aa489a24e",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [
