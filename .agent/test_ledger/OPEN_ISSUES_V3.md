@@ -2670,3 +2670,10 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Observed blocker:** Google revoked the stored refresh tokens — `invalid_grant / invalid_rapt` ("reauth related error"). This is Google demanding interactive sign-in (password + MFA); no offline refresh path exists and none should be manufactured.
 - **Exact remaining action (documented in `docs/CLOUD_HYPERFRAMES_RUNBOOK.md` Step 0):** with the founder at the keyboard — `gcloud auth login`, `gcloud auth application-default login`, `firebase login:reauth` — then resume the runbook at Step 3.
 - **State guarantee while blocked:** code is complete and on main (CI green); web render requests queue durably in `videoRenderJobs` and show as queued in the editor; the dispatcher logs "RENDER_WORKER_URL not provisioned" without faking a terminal state.
+
+### MIG-010b: professional editor round (2026-08-26)
+
+- **Status:** 🟢 SHIPPED on main, CI green (c17fc2d72, run 33021943171)
+- **Delivered:** text styling + speed · split/duplicate/delete · undo/redo · snapping + source-aware trimming · aspect presets · 9 treatment presets
+- **Evidence:** full root suite 6966 passed (25 new this round); editor module 103/103; typecheck clean; lint 0 errors.
+- **Remaining candidates (not requested this round):** ripple delete / multi-select, timeline zoom UI, loop-region playback, more preset looks on request.
