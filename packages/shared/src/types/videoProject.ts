@@ -107,6 +107,8 @@ export interface IndiiVideoClip {
     volume?: number; // 0 to 1
     /** Verified by media probing; controls whether a video gets a separate audio element. */
     hasAudio?: boolean;
+    /** Constant playback speed (pitch-preserved) — render-safe, 0.25–4. */
+    playbackRate?: number;
     masterFingerprint?: string;
     isrc?: string;
     canonicalMaster?: IndiiCanonicalMasterRenderReference;
@@ -117,6 +119,24 @@ export interface IndiiVideoClip {
     fontSize?: number;
     fontWeight?: string;
     textAlign?: 'left' | 'center' | 'right';
+    /** Bundle-safe family from the compiler's embedded set (Archivo Black, Space Mono, …). */
+    fontFamily?: string;
+    /** Em units, e.g. 0.08 — tighter for display sizes. */
+    letterSpacing?: number;
+    textCase?: 'none' | 'uppercase' | 'lowercase';
+    /** Caption/panel treatment behind the text. */
+    textBackground?: {
+        color: string;
+        padding?: number;
+        radius?: number;
+    };
+    /** Drop shadow for legibility over footage. */
+    textShadow?: {
+        color?: string;
+        blur?: number;
+        offsetX?: number;
+        offsetY?: number;
+    };
     filter?: {
         type: 'blur' | 'grayscale' | 'sepia' | 'contrast' | 'brightness';
         intensity: number; // 0-100

@@ -19,6 +19,36 @@ const US_PER_SECOND = 1_000_000;
 const DEFAULT_CANVAS = '#0b0c0f';
 const DEFAULT_ACCENT = '#F5B13D';
 
+/**
+ * Families the renderer pre-bundles (typography contract). Text clips may
+ * only use these; anything else renders non-deterministically or fails
+ * closed in cloud renders, so the compiler rejects unknown families.
+ */
+export const EMBEDDED_TEXT_FONT_FAMILIES = [
+    'Archivo Black',
+    'Space Mono',
+    'Montserrat',
+    'Oswald',
+    'League Gothic',
+    'JetBrains Mono',
+    'IBM Plex Mono',
+    'Source Code Pro',
+] as const;
+
+export type EmbeddedTextFontFamily = (typeof EMBEDDED_TEXT_FONT_FAMILIES)[number];
+
+export const resolveTextFontFamily = (
+    raw: string | undefined,
+    fallback: EmbeddedTextFontFamily = 'Archivo Black',
+): EmbeddedTextFontFamily => {
+    if (raw === undefined || raw === '') return fallback;
+    const match = EMBEDDED_TEXT_FONT_FAMILIES.find(family => family.toLowerCase() === raw.toLowerCase());
+    if (!match) {
+        throw new Error(`compiler: text font family "${raw}" is not in the embedded set (${EMBEDDED_TEXT_FONT_FAMILIES.join(', ')})`);
+    }
+    return match;
+};
+
 const safeId = (raw: string): string => `el-${raw.replace(CSS_ESCAPE, '-')}`;
 
 const secondsString = (seconds: number): string =>
@@ -95,7 +125,10 @@ const timingAttributes = (clip: IndiiVideoClip, fps: number, trackIndex: number)
     const sourceStart = clip.sourceInUs !== undefined
         ? ` data-media-start="${secondsString(clip.sourceInUs / US_PER_SECOND)}"`
         : '';
-    return `data-start="${framesToSeconds(clip.startFrame, fps)}" data-duration="${secondsString(clipDurationSeconds(clip, fps))}" data-track-index="${trackIndex}"${sourceStart}`;
+    const playbackRate = clip.playbackRate !== undefined
+        ? ` data-playback-rate="${Math.min(4, Math.max(0.25, clip.playbackRate)).toFixed(3)}"`
+        : '';
+    return `data-start="${framesToSeconds(clip.startFrame, fps)}" data-duration="${secondsString(clipDurationSeconds(clip, fps))}" data-track-index="${trackIndex}"${sourceStart}${playbackRate}`;
 };
 
 const mediaElementsFor = (clip: IndiiVideoClip, fps: number, track: CompiledTrack): string[] => {
@@ -127,6 +160,15 @@ const mediaElementsFor = (clip: IndiiVideoClip, fps: number, track: CompiledTrac
         case 'text': {
             const align = clip.textAlign ?? 'center';
             const justify = align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center';
+            const fontFamily = resolveTextFontFamily(clip.fontFamily);
+            const textCase = clip.textCase === 'uppercase' ? 'uppercase' : clip.textCase === 'lowercase' ? 'lowercase' : 'none';
+            const letterSpacing = clip.letterSpacing !== undefined && Number.isFinite(clip.letterSpacing) ? clip.letterSpacing : 0;
+            const backgroundStyle = clip.textBackground
+                ? `background-color:${escapeHtml(clip.textBackground.color)};padding:${clip.textBackground.padding ?? 12}px ${(clip.textBackground.padding ?? 12) * 1.6}px;border-radius:${clip.textBackground.radius ?? 8}px;`
+                : '';
+            const shadow = clip.textShadow
+                ? `text-shadow:${clip.textShadow.offsetX ?? 0}px ${clip.textShadow.offsetY ?? 3}px ${clip.textShadow.blur ?? 8}px ${escapeHtml(clip.textShadow.color ?? 'rgba(0,0,0,0.65)')};`
+                : '';
             const content = clip.entrance?.type === 'waterfall'
                 ? (clip.text ?? '').trim().split(/\s+/).filter(Boolean)
                     .map((word, index) =>
@@ -134,7 +176,7 @@ const mediaElementsFor = (clip: IndiiVideoClip, fps: number, track: CompiledTrac
                     .join('')
                 : escapeHtml(clip.countUp ? `${clip.countUp.prefix ?? ''}0${clip.countUp.suffix ?? ''}` : clip.text ?? '');
             return [
-                `<section id="${id}-clip" data-hf-id="hf-${id}-clip" data-name="${escapeHtml(clip.name)}" class="clip" ${timing}${hidden} style="${boxStyleFor(clip)}"><div id="${id}" data-hf-id="hf-${id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:${justify};padding:4%;box-sizing:border-box;${motionStyleFor(clip)}"><span id="${id}-text" data-hf-id="hf-${id}-text" style="display:block;color:${escapeHtml(clip.textColor ?? '#ffffff')};font-size:${clip.fontSize ?? 32}px;font-weight:${escapeHtml(String(clip.fontWeight ?? 700))};text-align:${align};white-space:pre-wrap;">${content}</span></div></section>`,
+                `<section id="${id}-clip" data-hf-id="hf-${id}-clip" data-name="${escapeHtml(clip.name)}" class="clip" ${timing}${hidden} style="${boxStyleFor(clip)}"><div id="${id}" data-hf-id="hf-${id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:${justify};padding:4%;box-sizing:border-box;${motionStyleFor(clip)}"><span id="${id}-text" data-hf-id="hf-${id}-text" style="display:block;color:${escapeHtml(clip.textColor ?? '#ffffff')};font-family:'${escapeHtml(fontFamily)}',sans-serif;font-size:${clip.fontSize ?? 32}px;font-weight:${escapeHtml(String(clip.fontWeight ?? 700))};text-align:${align};letter-spacing:${letterSpacing}em;text-transform:${textCase};white-space:pre-wrap;${backgroundStyle}${shadow}">${content}</span></div></section>`,
             ];
         }
     }

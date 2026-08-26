@@ -168,6 +168,66 @@ describe('compileProjectToHyperFrames (pure package)', () => {
         expect(() => compileProjectToHyperFrames(project)).toThrow(/cannot combine/);
     });
 
+    it('emits professional text styling: embedded font, spacing, case, caption panel, shadow', () => {
+        const project = baseProject({
+            durationInFrames: 60,
+            tracks: [
+                { id: 't1', name: 'V1', type: 'video' },
+                { id: 't2', name: 'TXT', type: 'text' },
+            ],
+            clips: [
+                ...baseProject({ durationInFrames: 60 }).clips.map(clip => ({ ...clip, durationInFrames: 60 })),
+                {
+                    id: 't9', type: 'text', text: 'Out Now', name: 'title', startFrame: 0, durationInFrames: 60, trackId: 't2',
+                    fontFamily: 'Space Mono', letterSpacing: 0.08, textCase: 'uppercase',
+                    textBackground: { color: '#000000', padding: 12, radius: 8 },
+                    textShadow: { color: 'rgba(0,0,0,0.65)', blur: 8, offsetX: 0, offsetY: 3 },
+                },
+            ],
+        });
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toContain("font-family:'Space Mono',sans-serif");
+        expect(html).toContain('letter-spacing:0.08em');
+        expect(html).toContain('text-transform:uppercase');
+        expect(html).toContain('background-color:#000000');
+        expect(html).toContain('border-radius:8px');
+        expect(html).toContain('text-shadow:0px 3px 8px rgba(0,0,0,0.65)');
+    });
+
+    it('rejects text font families outside the embedded set (fail closed)', () => {
+        const project = baseProject({
+            durationInFrames: 60,
+            tracks: [
+                { id: 't1', name: 'V1', type: 'video' },
+                { id: 't2', name: 'TXT', type: 'text' },
+            ],
+            clips: [
+                ...baseProject({ durationInFrames: 60 }).clips.map(clip => ({ ...clip, durationInFrames: 60 })),
+                { id: 't9', type: 'text', text: 'X', name: 'title', startFrame: 0, durationInFrames: 60, trackId: 't2', fontFamily: 'Papyrus' },
+            ],
+        });
+        expect(() => compileProjectToHyperFrames(project)).toThrow(/not in the embedded set/);
+    });
+
+    it('emits a clamped constant playback rate on video and audio clips', () => {
+        const project = baseProject({
+            durationInFrames: 60,
+            tracks: [
+                { id: 't1', name: 'V1', type: 'video' },
+                { id: 't3', name: 'A1', type: 'audio' },
+            ],
+            clips: [
+                { ...baseProject({}).clips[0]!, durationInFrames: 60, playbackRate: 2 },
+                { ...baseProject({}).clips[0]!, durationInFrames: 60, playbackRate: 9 },
+                { id: 'a1', type: 'audio', src: 'bed.mp3', name: 'bed', startFrame: 0, durationInFrames: 60, trackId: 't3', playbackRate: 0.1 },
+            ],
+        });
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toContain('data-playback-rate="2.000"');
+        expect(html).toContain('data-playback-rate="4.000"'); // clamped to the ceiling
+        expect(html).toContain('data-playback-rate="0.250"'); // clamped to the floor
+    });
+
     it('compiles a fully treated project and passes the real hyperframes lint', async () => {
         const project = baseProject({
             durationInFrames: 60,

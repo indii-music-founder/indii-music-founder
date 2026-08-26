@@ -46,6 +46,11 @@ export const ClipBasicsSection = memo(({ selectedClip, updateClip }: ClipBasicsS
         updateClip(selectedClip.id, { durationInFrames: parseInt(e.target.value) || 1 });
     }, [selectedClip.id, updateClip]);
 
+    const handlePlaybackRateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const parsed = parseFloat(e.target.value);
+        updateClip(selectedClip.id, { playbackRate: Number.isFinite(parsed) ? Math.min(4, Math.max(0.25, parsed)) : undefined });
+    }, [selectedClip.id, updateClip]);
+
     return (
         <PanelSection title="Clip Basics">
             <PropertyRow label="Name">
@@ -71,6 +76,19 @@ export const ClipBasicsSection = memo(({ selectedClip, updateClip }: ClipBasicsS
                     />
                 </PropertyRow>
             </div>
+            {(selectedClip.type === 'video' || selectedClip.type === 'audio') && (
+                <PropertyRow label="Speed (0.25–4×)" className="mt-1.5">
+                    <StyledInput
+                        type="number"
+                        step="0.25"
+                        min="0.25"
+                        max="4"
+                        value={selectedClip.playbackRate ?? 1}
+                        onChange={handlePlaybackRateChange}
+                        data-testid="clip-playback-rate"
+                    />
+                </PropertyRow>
+            )}
         </PanelSection>
     );
 });
@@ -435,6 +453,40 @@ export const ContentSection = memo(({ selectedClip, updateClip }: ContentSection
         updateClip(selectedClip.id, { textAlign: e.target.value as 'left' | 'center' | 'right' });
     }, [selectedClip.id, updateClip]);
 
+    const handleFontFamilyChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        updateClip(selectedClip.id, { fontFamily: e.target.value });
+    }, [selectedClip.id, updateClip]);
+
+    const handleLetterSpacingChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const parsed = parseFloat(e.target.value);
+        updateClip(selectedClip.id, { letterSpacing: Number.isFinite(parsed) ? parsed : undefined });
+    }, [selectedClip.id, updateClip]);
+
+    const handleTextCaseChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        updateClip(selectedClip.id, { textCase: e.target.value as 'none' | 'uppercase' | 'lowercase' });
+    }, [selectedClip.id, updateClip]);
+
+    const handleTextBackgroundToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, e.target.checked
+            ? { textBackground: { color: '#000000', padding: 12, radius: 8 } }
+            : { textBackground: undefined });
+    }, [selectedClip.id, updateClip]);
+
+    const handleTextBackgroundColorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, { textBackground: { ...(selectedClip.textBackground ?? { color: '#000000', padding: 12, radius: 8 }), color: e.target.value } });
+    }, [selectedClip.id, selectedClip.textBackground, updateClip]);
+
+    const handleTextShadowToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, e.target.checked
+            ? { textShadow: { color: 'rgba(0,0,0,0.65)', blur: 8, offsetX: 0, offsetY: 3 } }
+            : { textShadow: undefined });
+    }, [selectedClip.id, updateClip]);
+
+    const handleTextShadowBlurChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const blur = parseInt(e.target.value);
+        updateClip(selectedClip.id, { textShadow: { ...(selectedClip.textShadow ?? { color: 'rgba(0,0,0,0.65)', blur: 8, offsetX: 0, offsetY: 3 }), blur: Number.isFinite(blur) ? blur : undefined } });
+    }, [selectedClip.id, selectedClip.textShadow, updateClip]);
+
     return (
         <PanelSection title="Text Content">
             <PropertyRow label="Text">
@@ -477,6 +529,83 @@ export const ContentSection = memo(({ selectedClip, updateClip }: ContentSection
                         <option value="center">Center</option>
                         <option value="right">Right</option>
                     </StyledSelect>
+                </PropertyRow>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+                <PropertyRow label="Font">
+                    <StyledSelect
+                        value={selectedClip.fontFamily ?? 'Archivo Black'}
+                        onChange={handleFontFamilyChange}
+                        data-testid="text-font-family"
+                    >
+                        <option value="Archivo Black">Archivo Black</option>
+                        <option value="Space Mono">Space Mono</option>
+                        <option value="Montserrat">Montserrat</option>
+                        <option value="Oswald">Oswald</option>
+                        <option value="League Gothic">League Gothic</option>
+                        <option value="JetBrains Mono">JetBrains Mono</option>
+                        <option value="IBM Plex Mono">IBM Plex Mono</option>
+                        <option value="Source Code Pro">Source Code Pro</option>
+                    </StyledSelect>
+                </PropertyRow>
+                <PropertyRow label="Case">
+                    <StyledSelect value={selectedClip.textCase ?? 'none'} onChange={handleTextCaseChange} data-testid="text-case">
+                        <option value="none">As typed</option>
+                        <option value="uppercase">UPPERCASE</option>
+                        <option value="lowercase">lowercase</option>
+                    </StyledSelect>
+                </PropertyRow>
+            </div>
+            <PropertyRow label="Letter spacing (em)" className="mt-2">
+                <StyledInput
+                    type="number"
+                    step="0.01"
+                    min="-0.1"
+                    max="0.5"
+                    value={selectedClip.letterSpacing ?? 0}
+                    onChange={handleLetterSpacingChange}
+                    data-testid="text-letter-spacing"
+                />
+            </PropertyRow>
+            <div className="grid grid-cols-2 gap-2 mt-2 items-center">
+                <PropertyRow label="Caption panel">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={Boolean(selectedClip.textBackground)}
+                            onChange={handleTextBackgroundToggle}
+                            data-testid="text-background-toggle"
+                        />
+                        {selectedClip.textBackground && (
+                            <StyledInput
+                                type="color"
+                                value={selectedClip.textBackground.color}
+                                onChange={handleTextBackgroundColorChange}
+                                data-testid="text-background-color"
+                            />
+                        )}
+                    </div>
+                </PropertyRow>
+                <PropertyRow label="Shadow">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={Boolean(selectedClip.textShadow)}
+                            onChange={handleTextShadowToggle}
+                            data-testid="text-shadow-toggle"
+                        />
+                        {selectedClip.textShadow && (
+                            <StyledInput
+                                type="number"
+                                min="0"
+                                max="40"
+                                value={selectedClip.textShadow.blur ?? 8}
+                                onChange={handleTextShadowBlurChange}
+                                title="Blur (px)"
+                                data-testid="text-shadow-blur"
+                            />
+                        )}
+                    </div>
                 </PropertyRow>
             </div>
         </PanelSection>
