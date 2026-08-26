@@ -53,6 +53,23 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const projectLoadError = useVideoEditorStore(state => state.projectLoadError);
     const projectSaveError = useVideoEditorStore(state => state.projectSaveError);
     const isEphemeralSession = useVideoEditorStore(state => state.isEphemeralSession);
+    const canUndo = useVideoEditorStore(state => state.past.length > 0);
+    const canRedo = useVideoEditorStore(state => state.future.length > 0);
+
+    React.useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (!(event.metaKey || event.ctrlKey)) return;
+            if (event.key.toLowerCase() === 'z' && event.shiftKey) {
+                event.preventDefault();
+                useVideoEditorStore.getState().redo();
+            } else if (event.key.toLowerCase() === 'z') {
+                event.preventDefault();
+                useVideoEditorStore.getState().undo();
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, []);
 
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
     const handleFrameUpdate = React.useCallback((frame: number) => setCurrentTime(frame), [setCurrentTime]);
@@ -144,6 +161,24 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 }
                 right={
                     <div className="flex gap-2">
+                        <button
+                            onClick={() => useVideoEditorStore.getState().undo()}
+                            disabled={!canUndo}
+                            data-testid="video-undo-btn"
+                            title="Undo (⌘Z)"
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${canUndo ? 'bg-gray-800 hover:bg-gray-700 text-gray-200' : 'bg-gray-900 text-gray-600 cursor-not-allowed'}`}
+                        >
+                            ↩
+                        </button>
+                        <button
+                            onClick={() => useVideoEditorStore.getState().redo()}
+                            disabled={!canRedo}
+                            data-testid="video-redo-btn"
+                            title="Redo (⌘⇧Z)"
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${canRedo ? 'bg-gray-800 hover:bg-gray-700 text-gray-200' : 'bg-gray-900 text-gray-600 cursor-not-allowed'}`}
+                        >
+                            ↪
+                        </button>
                         <TreatmentPicker />
                         {selectedClipIdState && (
                             <>

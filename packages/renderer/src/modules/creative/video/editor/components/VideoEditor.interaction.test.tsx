@@ -151,6 +151,10 @@ describe('VideoEditor Integration', () => {
             setIsLoadingProject: vi.fn(),
             resetProjectForId: vi.fn(),
             loadProjectFromDoc: vi.fn(),
+            past: [],
+            future: [],
+            undo: vi.fn(),
+            redo: vi.fn(),
         };
         // A selector-based mock (not mockReturnValue) so `useVideoEditorStore(state
         // => state.someField)` actually reads that field, matching real Zustand

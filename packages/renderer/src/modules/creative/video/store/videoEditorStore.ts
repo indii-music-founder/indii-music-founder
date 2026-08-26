@@ -55,6 +55,12 @@ interface VideoEditorState {
     setIsPlaying: (isPlaying: boolean) => void;
     setSelectedClipId: (id: string | null) => void;
 
+    // Undo/redo history (in-memory; capped)
+    past: VideoProject[];
+    future: VideoProject[];
+    undo: () => void;
+    redo: () => void;
+
     addTrack: (type: VideoTrack['type']) => void;
     removeTrack: (id: string) => void;
 
@@ -259,6 +265,10 @@ if (typeof window !== 'undefined') {
     };
 }
 
+const HISTORY_LIMIT = 50;
+/** True while undo/redo is applying a snapshot — that change must not re-record itself. */
+let _restoring = false;
+
 export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
     // Custom set wrapper to broadcast project sync
     const set: typeof _set = (partial, replace) => {
@@ -266,6 +276,15 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         const safeSet = _set as unknown as (p: unknown, r?: boolean) => void;
         safeSet(partial, replace);
         let state = get();
+        // Every user edit lands in the undo history (capped); a new edit
+        // clears the redo stack. Undo/redo applications are exempt.
+        if (state.project !== before.project && !_restoring) {
+            safeSet({
+                past: [...before.past, before.project].slice(-HISTORY_LIMIT),
+                future: [],
+            }, false);
+            state = get();
+        }
         // A rendered artifact represents one exact project snapshot. Any
         // timeline mutation invalidates it so preview can never silently show
         // stale pixels for the newly edited project.
@@ -289,6 +308,36 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         currentTime: 0,
         isPlaying: false,
         selectedClipId: null,
+        past: [],
+        future: [],
+        undo: () => {
+            const state = get();
+            if (state.past.length === 0) return;
+            _restoring = true;
+            try {
+                set({
+                    project: state.past[state.past.length - 1],
+                    past: state.past.slice(0, -1),
+                    future: [...state.future, state.project],
+                });
+            } finally {
+                _restoring = false;
+            }
+        },
+        redo: () => {
+            const state = get();
+            if (state.future.length === 0) return;
+            _restoring = true;
+            try {
+                set({
+                    project: state.future[state.future.length - 1],
+                    future: state.future.slice(0, -1),
+                    past: [...state.past, state.project].slice(-HISTORY_LIMIT),
+                });
+            } finally {
+                _restoring = false;
+            }
+        },
         jobId: null,
         status: 'idle',
         progress: 0,
