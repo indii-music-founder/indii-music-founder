@@ -74,7 +74,7 @@ export const electronRenderService = {
             throw new Error('Preview compilation requires an IndiiVideoProject.');
         }
         const [{ compileProjectToHyperFrames }, gsapSource] = await Promise.all([
-            import('./video/hyperframes/compiler'),
+            import('@indii/video-compiler'),
             readGsapAsset(),
         ]);
         const compiled = compileProjectToHyperFrames(project);
@@ -125,7 +125,7 @@ export const electronRenderService = {
         // These imports happen only after a composed route is proven.
         const [adapterModule, compilerModule, mediaModule] = await Promise.all([
             import('./video/HyperFramesAdapter'),
-            import('./video/hyperframes/compiler'),
+            import('@indii/video-compiler'),
             import('./media/MediaOps'),
         ]);
 

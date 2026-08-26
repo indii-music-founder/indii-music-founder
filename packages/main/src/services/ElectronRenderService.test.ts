@@ -24,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('electron-log', () => ({ default: { info: vi.fn(), error: vi.fn() } }));
 vi.mock('./media/MediaJobExecutor', () => ({ executeDirectMediaJob: mocks.direct }));
 vi.mock('./media/MediaOps', () => ({ probeMedia: mocks.probe }));
-vi.mock('./video/hyperframes/compiler', () => ({ compileProjectToHyperFrames: mocks.compile }));
+vi.mock('@indii/video-compiler', () => ({ compileProjectToHyperFrames: mocks.compile }));
 vi.mock('./video/HyperFramesAdapter', () => ({
     HyperFramesAdapter: class {
         constructor() { mocks.adapterConstructed(); }

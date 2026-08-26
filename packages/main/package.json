@@ -1,40 +1,41 @@
 {
-    "name": "@indii/main",
-    "version": "0.0.1",
-    "private": true,
-    "main": "src/main.ts",
-    "scripts": {
-        "typecheck": "tsc --noEmit"
-    },
-    "dependencies": {
-        "@indii/shared": "*",
-        "@modelcontextprotocol/sdk": "^1.30.0",
-        "@ngrok/ngrok": "^1.7.0",
-        "bufferutil": "^4.1.0",
-        "chokidar": "^5.0.0",
-        "electron-log": "5.4.3",
-        "electron-squirrel-startup": "1.0.1",
-        "electron-store": "11.0.2",
-        "express": "^4.22.1",
-        "ffmpeg-static": "5.3.0",
-        "ffprobe-static": "3.1.0",
-        "fluent-ffmpeg": "2.1.3",
-        "hyperframes": "0.8.10",
-        "keytar": "7.9.0",
-        "libsodium-wrappers": "^0.7.10",
-        "ssh2-sftp-client": "12.0.1",
-        "utf-8-validate": "^5.0.2",
-        "ws": "^8.18.0",
-        "electron-updater": "^6.8.3",
-        "zod": "3.25.76"
-    },
-    "devDependencies": {
-        "@types/ffprobe-static": "^2.0.3",
-        "@types/fluent-ffmpeg": "2.1.28",
-        "@types/libsodium-wrappers": "^0.7.14",
-        "@types/node": "22.19.1",
-        "@types/ssh2-sftp-client": "9.0.6",
-        "@types/ws": "^8.5.14",
-        "typescript": "5.8.2"
-    }
+  "name": "@indii/main",
+  "version": "0.0.1",
+  "private": true,
+  "main": "src/main.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@indii/shared": "*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@ngrok/ngrok": "^1.7.0",
+    "bufferutil": "^4.1.0",
+    "chokidar": "^5.0.0",
+    "electron-log": "5.4.3",
+    "electron-squirrel-startup": "1.0.1",
+    "electron-store": "11.0.2",
+    "express": "^4.22.1",
+    "ffmpeg-static": "5.3.0",
+    "ffprobe-static": "3.1.0",
+    "fluent-ffmpeg": "2.1.3",
+    "hyperframes": "0.8.10",
+    "keytar": "7.9.0",
+    "libsodium-wrappers": "^0.7.10",
+    "ssh2-sftp-client": "12.0.1",
+    "utf-8-validate": "^5.0.2",
+    "ws": "^8.18.0",
+    "electron-updater": "^6.8.3",
+    "zod": "3.25.76",
+    "@indii/video-compiler": "*"
+  },
+  "devDependencies": {
+    "@types/ffprobe-static": "^2.0.3",
+    "@types/fluent-ffmpeg": "2.1.28",
+    "@types/libsodium-wrappers": "^0.7.14",
+    "@types/node": "22.19.1",
+    "@types/ssh2-sftp-client": "9.0.6",
+    "@types/ws": "^8.5.14",
+    "typescript": "5.8.2"
+  }
 }

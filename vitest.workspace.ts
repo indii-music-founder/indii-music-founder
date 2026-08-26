@@ -40,6 +40,15 @@ export default [
   {
     extends: './vitest.config.ts',
     test: {
+      name: 'video-compiler',
+      environment: 'node',
+      include: ['packages/video-compiler/src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
+    }
+  },
+  {
+    extends: './vitest.config.ts',
+    test: {
       name: 'firebase',
       environment: 'node',
       include: [
