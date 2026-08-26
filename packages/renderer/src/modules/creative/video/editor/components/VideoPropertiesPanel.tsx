@@ -10,6 +10,7 @@ import {
     TransformSection,
     FiltersSection,
     TransitionsSection,
+    TreatmentSection,
     ContentSection,
     SourceSection,
     AudioSection
@@ -64,6 +65,10 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
 
                         <div className={isPopoutActive ? "bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] shadow-sm overflow-hidden" : ""}>
                             <TransitionsSection selectedClip={selectedClip} updateClip={updateClip} />
+                        </div>
+
+                        <div className={isPopoutActive ? "bg-[#0a0a0a] rounded-lg border border-[#1a1a1a] shadow-sm overflow-hidden" : ""}>
+                            <TreatmentSection selectedClip={selectedClip} updateClip={updateClip} />
                         </div>
 
                         {/* Content Specific */}

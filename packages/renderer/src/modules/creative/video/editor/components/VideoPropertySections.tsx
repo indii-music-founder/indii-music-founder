@@ -484,6 +484,166 @@ export const ContentSection = memo(({ selectedClip, updateClip }: ContentSection
 });
 ContentSection.displayName = 'ContentSection';
 
+// --- Treatment Section (cinematic entrance / count-up / audio fades) ---
+
+interface TreatmentSectionProps {
+    selectedClip: VideoClip;
+    updateClip: (id: string, updates: Partial<VideoClip>) => void;
+}
+
+export const TreatmentSection = memo(({ selectedClip, updateClip }: TreatmentSectionProps) => {
+    const isText = selectedClip.type === 'text';
+    const isVisual = selectedClip.type !== 'audio';
+    const supportsFades = selectedClip.type === 'audio' || selectedClip.hasAudio === true;
+
+    const handleEntranceChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value as 'none' | 'waterfall' | 'inverse-zoom';
+        if (value === 'none') {
+            updateClip(selectedClip.id, { entrance: undefined });
+        } else {
+            updateClip(selectedClip.id, { entrance: { type: value } });
+        }
+    }, [selectedClip.id, updateClip]);
+
+    const handleCountUpToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            updateClip(selectedClip.id, {
+                countUp: { to: 10, suffix: '' },
+                entrance: undefined, // counter and waterfall cannot coexist (compiler contract)
+            });
+        } else {
+            updateClip(selectedClip.id, { countUp: undefined });
+        }
+    }, [selectedClip.id, updateClip]);
+
+    const handleCountUpTarget = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const to = parseInt(e.target.value);
+        if (!Number.isFinite(to) || to < 0) return;
+        updateClip(selectedClip.id, { countUp: { ...(selectedClip.countUp ?? { to: 10, suffix: '' }), to } });
+    }, [selectedClip.id, selectedClip.countUp, updateClip]);
+
+    const handleCountUpSuffix = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, { countUp: { ...(selectedClip.countUp ?? { to: 10, suffix: '' }), suffix: e.target.value } });
+    }, [selectedClip.id, selectedClip.countUp, updateClip]);
+
+    const handleCountUpPrefix = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, { countUp: { ...(selectedClip.countUp ?? { to: 10, suffix: '' }), prefix: e.target.value } });
+    }, [selectedClip.id, selectedClip.countUp, updateClip]);
+
+    const parseFadeSeconds = (value: string): number | undefined => {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+    };
+
+    const handleFadeInChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, {
+            audioFade: { ...(selectedClip.audioFade ?? {}), inSeconds: parseFadeSeconds(e.target.value) },
+        });
+    }, [selectedClip.id, selectedClip.audioFade, updateClip]);
+
+    const handleFadeOutChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        updateClip(selectedClip.id, {
+            audioFade: { ...(selectedClip.audioFade ?? {}), outSeconds: parseFadeSeconds(e.target.value) },
+        });
+    }, [selectedClip.id, selectedClip.audioFade, updateClip]);
+
+    return (
+        <PanelSection title="Treatment" defaultOpen={false}>
+            {isVisual && (
+                <PropertyRow label="Entrance">
+                    <StyledSelect
+                        value={selectedClip.entrance?.type ?? 'none'}
+                        onChange={handleEntranceChange}
+                        data-testid="treatment-entrance"
+                    >
+                        <option value="none">None</option>
+                        {isText && <option value="waterfall">Waterfall words</option>}
+                        <option value="inverse-zoom">Inverse zoom</option>
+                    </StyledSelect>
+                </PropertyRow>
+            )}
+
+            {isText && (
+                <>
+                    <PropertyRow label="Count-up">
+                        <input
+                            type="checkbox"
+                            checked={Boolean(selectedClip.countUp)}
+                            onChange={handleCountUpToggle}
+                            data-testid="treatment-countup-toggle"
+                        />
+                    </PropertyRow>
+                    {selectedClip.countUp && (
+                        <>
+                            <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+                                <PropertyRow label="To">
+                                    <StyledInput
+                                        type="number"
+                                        min="0"
+                                        value={selectedClip.countUp.to}
+                                        onChange={handleCountUpTarget}
+                                        data-testid="treatment-countup-to"
+                                    />
+                                </PropertyRow>
+                                <PropertyRow label="Suffix">
+                                    <StyledInput
+                                        type="text"
+                                        value={selectedClip.countUp.suffix ?? ''}
+                                        onChange={handleCountUpSuffix}
+                                        placeholder="AGENTS"
+                                        data-testid="treatment-countup-suffix"
+                                    />
+                                </PropertyRow>
+                            </div>
+                            <PropertyRow label="Prefix" className="mt-1.5">
+                                <StyledInput
+                                    type="text"
+                                    value={selectedClip.countUp.prefix ?? ''}
+                                    onChange={handleCountUpPrefix}
+                                    placeholder="$"
+                                    data-testid="treatment-countup-prefix"
+                                />
+                            </PropertyRow>
+                        </>
+                    )}
+                </>
+            )}
+
+            {supportsFades && (
+                <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+                    <PropertyRow label="Fade in (s)">
+                        <StyledInput
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={selectedClip.audioFade?.inSeconds ?? ''}
+                            onChange={handleFadeInChange}
+                            placeholder="0"
+                            data-testid="treatment-fade-in"
+                        />
+                    </PropertyRow>
+                    <PropertyRow label="Fade out (s)">
+                        <StyledInput
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={selectedClip.audioFade?.outSeconds ?? ''}
+                            onChange={handleFadeOutChange}
+                            placeholder="0"
+                            data-testid="treatment-fade-out"
+                        />
+                    </PropertyRow>
+                </div>
+            )}
+
+            {!isVisual && !supportsFades && (
+                <p className="text-[10px] text-gray-500">No treatment options for this clip type.</p>
+            )}
+        </PanelSection>
+    );
+});
+TreatmentSection.displayName = 'TreatmentSection';
+
 // --- Audio Section ---
 
 interface AudioSectionProps {
