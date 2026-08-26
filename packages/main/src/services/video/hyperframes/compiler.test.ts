@@ -219,7 +219,7 @@ describe('cinematic treatment compilation (background, seams, entrances, counter
         };
         const { html } = compileProjectToHyperFrames(project);
         const id = textClip.id.replace(/[^a-zA-Z0-9_-]/g, '-');
-        expect(html).toContain(`const __counter_el-${id} = { v: 0 };`);
+        expect(html).toContain(`const __counter_el_${id.replace(/-/g, '_')} = { v: 0 };`);
         expect(html).toContain('snap: { v: 1 }');
         expect(html).toContain('Math.round(__counter_');
         expect(html).toContain('" AGENTS"');
@@ -268,4 +268,43 @@ describe('cinematic treatment compilation (background, seams, entrances, counter
         };
         expect(() => compileProjectToHyperFrames(project)).toThrow(/cannot combine/);
     });
+
+    it('compiles a fully treated project (background + seam + waterfall + count-up + audio fades) and passes real lint', async () => {
+        const fixture = PARITY_FIXTURES['single-trim']!;
+        const c1 = { ...fixture.project.clips[0]! };
+        const c2 = { ...fixture.project.clips[0]!, id: 'c2', name: 'clip2', startFrame: 30 };
+        const project = {
+            ...fixture.project,
+            durationInFrames: 60,
+            tracks: [
+                ...fixture.project.tracks,
+                { id: 't2', name: 'TXT', type: 'text' as const },
+                { id: 't3', name: 'A1', type: 'audio' as const },
+            ],
+            clips: [
+                c1,
+                c2,
+                { id: 't9', type: 'text' as const, text: 'THE WORLD HEARS IT', name: 'title', startFrame: 0, durationInFrames: 60, trackId: 't2', fontSize: 56, entrance: { type: 'waterfall' as const } },
+                { id: 'n1', type: 'text' as const, text: '4', name: 'stat', startFrame: 0, durationInFrames: 60, trackId: 't2', fontSize: 64, countUp: { to: 4, suffix: ' AGENTS' } },
+                { id: 'a1', type: 'audio' as const, src: 'bed.mp3', name: 'bed', startFrame: 0, durationInFrames: 60, trackId: 't3', audioFade: { inSeconds: 1, outSeconds: 2 } },
+            ],
+            background: { kind: 'radial-glow' as const, color: '#0B0C0F', accent: '#F5B13D', glowOpacity: 0.16, glowPosition: 'bottom-left' as const },
+            seam: { type: 'cut-the-curve' as const, direction: 'LEFT' as const },
+        };
+
+        const dir = path.join(root, 'treated');
+        await mkdir(dir, { recursive: true });
+        const compiled = compileProjectToHyperFrames(project);
+        await writeFile(path.join(dir, 'index.html'), compiled.html);
+        await writeFile(path.join(dir, 'gsap.min.js'), await readFileGsap());
+        await exec(FFMPEG, ['-f', 'lavfi', '-i', `color=c=navy:size=${project.width}x${project.height}:rate=30`, '-t', '2', '-pix_fmt', 'yuv420p', '-y', path.join(dir, 'input.mp4')]);
+        await exec(FFMPEG, ['-f', 'lavfi', '-i', 'sine=frequency=440:duration=2', '-y', path.join(dir, 'bed.mp3')]);
+
+        const envHome = process.env.HYPERFRAMES_HOME || '/tmp/hyperframes-home';
+        await exec(process.execPath, [resolveHyperFramesCliEntry(), 'lint'], {
+            cwd: dir,
+            env: { ...process.env, HOME: envHome, XDG_CACHE_HOME: `${envHome}/.cache` },
+        });
+        expect(true).toBe(true); // reaching here = treated composition linted clean
+    }, 240_000);
 });

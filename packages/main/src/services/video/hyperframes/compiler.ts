@@ -303,9 +303,11 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number): TweenPlan[] => {
         const to = clip.countUp.to;
         if (!Number.isFinite(to) || to < 0) throw new Error(`compiler: clip ${clip.id} count-up target must be a non-negative number`);
         const durS = (clip.countUp.durationInFrames ?? fps) / fps;
+        // Identifier-safe name: clip ids may contain hyphens, which are illegal in JS identifiers.
+        const counterName = `__counter_${id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
         plan.push({
             atSeconds: startS,
-            statement: `tl.to(__counter_${id}, { v: ${to}, duration: ${secondsString(durS)}, ease: "power2.out", snap: { v: 1 }, onUpdate: function() { var el = document.getElementById("${id}-text"); if (el) { el.textContent = ${JSON.stringify(clip.countUp.prefix ?? '')} + Math.round(__counter_${id}.v) + ${JSON.stringify(clip.countUp.suffix ?? '')}; } } }, ${secondsString(startS)});`,
+            statement: `tl.to(${counterName}, { v: ${to}, duration: ${secondsString(durS)}, ease: "power2.out", snap: { v: 1 }, onUpdate: function() { var el = document.getElementById("${id}-text"); if (el) { el.textContent = ${JSON.stringify(clip.countUp.prefix ?? '')} + Math.round(${counterName}.v) + ${JSON.stringify(clip.countUp.suffix ?? '')}; } } }, ${secondsString(startS)});`,
         });
     }
 
@@ -451,7 +453,10 @@ export const compileProjectToHyperFrames = (
     // Seek-safe counter objects for count-up clips.
     const counters = project.clips
         .filter(clip => clip.countUp)
-        .map(clip => `      const __counter_${safeId(clip.id)} = { v: 0 };`)
+        .map(clip => {
+            const id = safeId(clip.id).replace(/[^a-zA-Z0-9_]/g, '_');
+            return `      const __counter_${id} = { v: 0 };`;
+        })
         .join('\n');
 
     tweenPlans.sort((a, b) => a.atSeconds - b.atSeconds);
