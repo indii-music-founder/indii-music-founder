@@ -1,0 +1,17 @@
+{
+  "name": "@indii/render-worker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@indii/shared": "*",
+    "@indii/video-compiler": "*",
+    "firebase-admin": "*",
+    "hyperframes": "0.8.10"
+  }
+}

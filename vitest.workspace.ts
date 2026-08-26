@@ -49,6 +49,15 @@ export default [
   {
     extends: './vitest.config.ts',
     test: {
+      name: 'render-worker',
+      environment: 'node',
+      include: ['packages/render-worker/src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
+    }
+  },
+  {
+    extends: './vitest.config.ts',
+    test: {
       name: 'firebase',
       environment: 'node',
       include: [

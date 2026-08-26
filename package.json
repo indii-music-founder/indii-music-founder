@@ -14,6 +14,7 @@
     "packages/shared",
     "packages/landing",
     "packages/sdk",
+    "packages/render-worker",
     "packages/mcp-server-local",
     "packages/mcp-server-harness",
     "packages/admin-dashboard"
@@ -32,7 +33,7 @@
     "deploy:functions": "npm run build -w packages/shared && npm run build -w packages/firebase && firebase deploy --only functions",
     "deploy:landing": "npm run build -w packages/landing && firebase deploy --only hosting:landing",
     "deploy:all": "npm run preflight:prod && npm run build && npm run build:firebase && npm run build:landing && firebase deploy",
-    "typecheck": "tsc -b packages/shared && tsc -b packages/video-compiler && tsc -b packages/main && tsc -b packages/renderer && tsc -b packages/firebase && tsc -b packages/sdk && tsc -b packages/admin-dashboard && npm run typecheck:firebase-tests",
+    "typecheck": "tsc -b packages/shared && tsc -b packages/video-compiler && tsc -b packages/main && tsc -b packages/renderer && tsc -b packages/firebase && tsc -b packages/render-worker && tsc -b packages/sdk && tsc -b packages/admin-dashboard && npm run typecheck:firebase-tests",
     "lint": "npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
     "validate:mainline-workflows": "node scripts/validate-mainline-workflows.js",
     "capabilities:generate": "node scripts/validate-agent-capabilities.mjs",
