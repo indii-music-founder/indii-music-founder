@@ -43,6 +43,9 @@ Presets (prefer the preset that matches their words; inline overrides win):
 | night / amber / warm / cinematic / moody / Detroit      | `preset: "amber-night-cinematic"`                          |
 | clean / tech / studio / professional / grid             | `preset: "clean-grid"`                                     |
 | drop / release / arrival / impact / big reveal          | `preset: "bold-arrival"`                                   |
+| neon / electric / synthwave / club / cyber              | `preset: "neon-night"`                                     |
+| vinyl / analog / soul / jazz / retro / crackle          | `preset: "vinyl-warm"`                                     |
+| cold / blue / precise / clinical / winter               | `preset: "cold-blue"`                                      |
 | "no special look"                                       | `preset` omitted, `entrance: "none"`                       |
 | a specific detail ("fade the music in slowly")          | inline args: `audioFadeInSeconds` / `audioFadeOutSeconds`  |
 | a specific seam direction ("cut to the right")          | inline args: `seam: { type: "cut-the-curve", direction: "RIGHT" }` |

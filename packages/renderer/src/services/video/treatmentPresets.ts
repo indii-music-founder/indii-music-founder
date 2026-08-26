@@ -8,7 +8,13 @@ import type { IndiiAudioFade, IndiiBackground, IndiiSeam } from '@indii/shared';
  * syntax may appear here.
  */
 
-export type VideoTreatmentPresetId = 'amber-night-cinematic' | 'clean-grid' | 'bold-arrival';
+export type VideoTreatmentPresetId =
+    | 'amber-night-cinematic'
+    | 'clean-grid'
+    | 'bold-arrival'
+    | 'neon-night'
+    | 'vinyl-warm'
+    | 'cold-blue';
 
 export interface VideoTreatmentPreset {
     id: VideoTreatmentPresetId;
@@ -61,6 +67,47 @@ export const VIDEO_TREATMENT_PRESETS: Record<VideoTreatmentPresetId, VideoTreatm
         seam: { type: 'cut-the-curve', direction: 'LEFT' },
         defaultTextEntrance: 'inverse-zoom',
         audioFade: { inSeconds: 0.5, outSeconds: 2.5 },
+    },
+    'neon-night': {
+        id: 'neon-night',
+        label: 'Neon Night',
+        matches: ['neon', 'electric', 'synthwave', 'vaporwave', 'club', 'rave', 'cyber'],
+        background: {
+            kind: 'radial-glow',
+            color: '#07070D',
+            accent: '#22D3EE',
+            glowOpacity: 0.18,
+            glowPosition: 'top-right',
+        },
+        seam: { type: 'cut-the-curve', direction: 'LEFT' },
+        defaultTextEntrance: 'waterfall',
+        audioFade: { inSeconds: 0.5, outSeconds: 2 },
+    },
+    'vinyl-warm': {
+        id: 'vinyl-warm',
+        label: 'Vinyl Warm',
+        matches: ['vinyl', 'analog', 'soul', 'jazz', 'classic', 'retro', 'crackle'],
+        background: {
+            kind: 'ghost-text',
+            color: '#100D0A',
+            accent: '#E8A34B',
+            ghostText: 'GROOVE',
+        },
+        seam: { type: 'cut-the-curve', direction: 'LEFT' },
+        defaultTextEntrance: 'waterfall',
+        audioFade: { inSeconds: 1.5, outSeconds: 2.5 },
+    },
+    'cold-blue': {
+        id: 'cold-blue',
+        label: 'Cold Blue',
+        matches: ['cold', 'blue', 'clean', 'clinical', 'precise', 'winter', 'ice'],
+        background: {
+            kind: 'grid',
+            color: '#080A10',
+            accent: '#60A5FA',
+        },
+        seam: { type: 'cut-the-curve', direction: 'LEFT' },
+        defaultTextEntrance: 'waterfall',
     },
 };
 

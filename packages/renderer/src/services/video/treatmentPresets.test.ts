@@ -16,6 +16,18 @@ describe('treatment presets', () => {
         expect(resolveTreatmentPreset('big bold drop impact')?.id).toBe('bold-arrival');
     });
 
+    it('maps neon/electronic words to the neon night preset', () => {
+        expect(resolveTreatmentPreset('synthwave neon club energy')?.id).toBe('neon-night');
+    });
+
+    it('maps vinyl/analog words to the vinyl warm preset', () => {
+        expect(resolveTreatmentPreset('analog vinyl soul crackle')?.id).toBe('vinyl-warm');
+    });
+
+    it('maps cold/precise words to the cold blue preset', () => {
+        expect(resolveTreatmentPreset('cold precise winter blue')?.id).toBe('cold-blue');
+    });
+
     it('returns undefined when nothing matches', () => {
         expect(resolveTreatmentPreset('fluffy purple marshmallow')).toBeUndefined();
         expect(resolveTreatmentPreset('')).toBeUndefined();
@@ -51,7 +63,14 @@ describe('treatment presets', () => {
 
     it('exposes every preset id in the picker list', () => {
         expect(VIDEO_TREATMENT_PRESET_IDS).toEqual(
-            expect.arrayContaining(['amber-night-cinematic', 'clean-grid', 'bold-arrival']),
+            expect.arrayContaining([
+                'amber-night-cinematic',
+                'clean-grid',
+                'bold-arrival',
+                'neon-night',
+                'vinyl-warm',
+                'cold-blue',
+            ]),
         );
     });
 });
