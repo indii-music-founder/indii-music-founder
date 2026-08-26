@@ -61,6 +61,10 @@ interface VideoEditorState {
     addClip: (clip: Omit<VideoClip, 'id'>) => void;
     updateClip: (id: string, updates: Partial<VideoClip>) => void;
     removeClip: (id: string) => void;
+    /** Razor: cut a clip at a frame; source trims (µs) shift with the split. */
+    splitClip: (id: string, atFrame: number) => void;
+    /** Copy a clip right after itself on the same track. */
+    duplicateClip: (id: string) => void;
     addKeyframe: (clipId: string, property: string, frame: number, value: number) => void;
     removeKeyframe: (clipId: string, property: string, frame: number) => void;
     updateKeyframe: (clipId: string, property: string, frame: number, updates: Partial<{ value: number, easing: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }>) => void;
@@ -508,6 +512,42 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                 clips: state.project.clips.filter(c => c.id !== id)
             }
         })),
+
+        splitClip: (id, atFrame) => set((state) => {
+            const clip = state.project.clips.find(c => c.id === id);
+            if (!clip) return {};
+            const start = clip.startFrame;
+            const end = start + clip.durationInFrames;
+            if (!Number.isInteger(atFrame) || atFrame <= start || atFrame >= end) return {};
+
+            const leftFrames = atFrame - start;
+            const left: VideoClip = { ...clip, id: uuidv4(), name: `${clip.name} A`, durationInFrames: leftFrames };
+            const right: VideoClip = { ...clip, id: uuidv4(), name: `${clip.name} B`, startFrame: atFrame, durationInFrames: end - atFrame };
+
+            // Source-trim-aware: the µs window shifts with the split so the
+            // two halves cover the same media region as the original.
+            if (clip.sourceInUs !== undefined && clip.sourceOutUs !== undefined) {
+                const splitUs = Math.round(leftFrames * 1_000_000 / state.project.fps);
+                left.sourceOutUs = clip.sourceInUs + splitUs;
+                right.sourceInUs = clip.sourceInUs + splitUs;
+            }
+
+            const clips = [...state.project.clips.filter(c => c.id !== id), left, right]
+                .sort((a, b) => a.startFrame - b.startFrame);
+            return { project: { ...state.project, clips } };
+        }),
+
+        duplicateClip: (id) => set((state) => {
+            const clip = state.project.clips.find(c => c.id === id);
+            if (!clip) return {};
+            const copy: VideoClip = {
+                ...clip,
+                id: uuidv4(),
+                name: `${clip.name} copy`,
+                startFrame: clip.startFrame + clip.durationInFrames,
+            };
+            return { project: { ...state.project, clips: [...state.project.clips, copy] } };
+        }),
 
         addKeyframe: (clipId: string, property: string, frame: number, value: number) => set((state) => {
             const clip = state.project.clips.find(c => c.id === clipId);

@@ -145,6 +145,34 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 right={
                     <div className="flex gap-2">
                         <TreatmentPicker />
+                        {selectedClipIdState && (
+                            <>
+                                <button
+                                    onClick={() => useVideoEditorStore.getState().splitClip(selectedClipIdState, currentTime)}
+                                    data-testid="video-split-btn"
+                                    title="Split the selected clip at the playhead"
+                                    className="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-200 transition-colors"
+                                >
+                                    ✂
+                                </button>
+                                <button
+                                    onClick={() => useVideoEditorStore.getState().duplicateClip(selectedClipIdState)}
+                                    data-testid="video-duplicate-btn"
+                                    title="Duplicate the selected clip"
+                                    className="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-200 transition-colors"
+                                >
+                                    ⧉
+                                </button>
+                                <button
+                                    onClick={() => useVideoEditorStore.getState().removeClip(selectedClipIdState)}
+                                    data-testid="video-delete-btn"
+                                    title="Delete the selected clip"
+                                    className="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-800 hover:bg-red-900 text-red-300 transition-colors"
+                                >
+                                    🗑
+                                </button>
+                            </>
+                        )}
                         <button
                             onClick={handleDownloadMP4}
                             disabled={isExporting}
