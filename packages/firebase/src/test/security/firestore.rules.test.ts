@@ -609,7 +609,6 @@ describe('Firestore Security Rules', () => {
             project: { id: 'proj-1', name: 'Timeline', fps: 30, durationInFrames: 300, width: 1920, height: 1080, tracks: [], clips: [] },
             revision: 1,
         });
-
         beforeEach(async () => {
             if (requireEmulator()) return;
             await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
@@ -651,6 +650,55 @@ describe('Firestore Security Rules', () => {
             if (requireEmulator()) return;
             const db = unauthCtx().firestore();
             await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'videoProjects', 'proj-1')));
+        });
+    });
+
+    // MIG-010: cloud render jobs are callable-created and executor-advanced.
+    // Owners observe progress; no client can forge, claim, or complete a job.
+    describe('users/{userId}/videoRenderJobs/{jobId} (MIG-010)', () => {
+        const jobDoc = (uid: string) => ({
+            schemaVersion: 'video-render-job.v1',
+            jobId: 'job-1',
+            userId: uid,
+            projectId: 'proj-1',
+            status: 'queued',
+            executor: null,
+            artifactUrl: null,
+            artifactGeneration: null,
+            error: null,
+        });
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'videoRenderJobs', 'job-1'), jobDoc(ALICE_UID));
+            });
+        });
+
+        it('owner: read allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'users', ALICE_UID, 'videoRenderJobs', 'job-1')));
+        });
+
+        it('owner: cannot create, claim, or complete a job client-side', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'videoRenderJobs', 'job-forged'), jobDoc(ALICE_UID)));
+            await assertFails(updateDoc(doc(db, 'users', ALICE_UID, 'videoRenderJobs', 'job-1'), { status: 'completed', artifactUrl: 'gs://fake' }));
+            await assertFails(deleteDoc(doc(db, 'users', ALICE_UID, 'videoRenderJobs', 'job-1')));
+        });
+
+        it('other user: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'videoRenderJobs', 'job-1')));
+        });
+
+        it('unauthenticated: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'videoRenderJobs', 'job-1')));
         });
     });
 

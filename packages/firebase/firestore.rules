@@ -1964,6 +1964,15 @@ service cloud.firestore {
         && authorityFieldsUnchanged();
     }
 
+    // Cloud render jobs (MIG-010): created only by the queueCloudVideoRender
+    // callable and advanced only by trusted executors (desktop relay / cloud
+    // worker) through the Admin SDK. Owners observe progress; no client can
+    // forge a job, claim it, or fake completion.
+    match /users/{userId}/videoRenderJobs/{jobId} {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
     // Single-use collaborator upload tokens (ISSUE-1118 Phase 2). The
     // collaborator has no indii account, so the token itself — validated
     // and consumed only by the submitTaxForm Cloud Function via the Admin

@@ -44,6 +44,7 @@ export { cancelVideoJob } from "./functions/creative/gateway";
 export { videoJobFirestoreOrchestrator } from "./functions/creative/videoJobOrchestrator";
 export { getMediaDuration } from "./functions/creative/getMediaDuration";
 export { createVideoSession } from "./functions/video/createVideoSession";
+export { queueCloudVideoRender } from "./functions/video/queueCloudVideoRender";
 export { getVideoRenderReceipt } from "./functions/video/getVideoRenderReceipt";
 export { cancelVideoSession } from "./functions/video/cancelVideoSession";
 export { finalizeVideoSessionUpload } from "./functions/video/finalizeVideoSessionUpload";
