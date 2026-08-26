@@ -35,6 +35,21 @@ Nothing in this runbook changes application code. Secrets:
 - Project ID: `indii-music-founder` (substitute `$PROJECT` throughout).
 - The repo checked out on `main` (build context for Cloud Build).
 
+> **Step 0 — REAUTH REQUIRED (observed 2026-08-26).** The machine's stored
+> Google session was revoked by Google (`invalid_grant / invalid_rapt`), so
+> BOTH credential stores must be re-established interactively before any
+> other step. Run these with the founder at the keyboard (email + MFA):
+>
+> ```bash
+> gcloud auth login                       # user credentials for gcloud
+> gcloud auth application-default login   # ADC (refresh tokens)
+> firebase login:reauth                   # firebase CLI store
+> ```
+>
+> Verify: `gcloud auth list` and `firebase login:list` both show
+> `wiil@indii.music`, and
+> `gcloud auth application-default print-access-token` returns a token.
+
 ```bash
 export PROJECT=indii-music-founder
 export REGION=us-central1

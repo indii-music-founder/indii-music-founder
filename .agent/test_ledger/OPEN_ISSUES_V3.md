@@ -2662,3 +2662,11 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Evidence:** video-compiler 9/9 (real lint); render-worker 7/7 (incl. real CLI+Chrome e2e render probed via ffprobe); firebase video functions 151/151; renderer video services 175/175; dispatcher 4/4; typecheck green; lint clean; pre-commit gates green per commit. Full suites at close in session logs.
 - **Remaining (out of agent authority):** GCP resource minting per the runbook — APIs, service account + IAM, secrets, Cloud Build, Cloud Run deploy, function deploy (CI), end-to-end verification.
 - **Honest limits:** web guests cannot render (queue requires a verified account; guests had no desktop path either); jobs stay `queued` until the worker is deployed (visible, not fake); Cloud Run v1 auth is Bearer-secret (allow-unauthenticated ingress) with an OIDC upgrade noted in the runbook.
+
+### MIG-010 GCP activation attempt — BLOCKED on Google reauth (2026-08-26)
+
+- **Status:** 🔴 BLOCKED — founder authorized the runbook execution; every step up to the credential wall was attempted live.
+- **Attempted:** APIs enable, service account + IAM, secrets, Cloud Build, Cloud Run deploy — via `gcloud` (user auth `wiil@indii.music`), then via the machine's only other live credential surface (firebase CLI refresh token + the embedded firebase-tools OAuth client).
+- **Observed blocker:** Google revoked the stored refresh tokens — `invalid_grant / invalid_rapt` ("reauth related error"). This is Google demanding interactive sign-in (password + MFA); no offline refresh path exists and none should be manufactured.
+- **Exact remaining action (documented in `docs/CLOUD_HYPERFRAMES_RUNBOOK.md` Step 0):** with the founder at the keyboard — `gcloud auth login`, `gcloud auth application-default login`, `firebase login:reauth` — then resume the runbook at Step 3.
+- **State guarantee while blocked:** code is complete and on main (CI green); web render requests queue durably in `videoRenderJobs` and show as queued in the editor; the dispatcher logs "RENDER_WORKER_URL not provisioned" without faking a terminal state.
