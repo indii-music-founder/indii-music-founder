@@ -1,6 +1,7 @@
 import type { CompletedRenderReceipt, IndiiVideoProject } from '@indii/shared';
 
 import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import { queueCloudRender, waitForCloudRender, type CloudRenderDependencies } from './CloudVideoRenderService';
 
 interface DesktopVideoApi {
     getDefaultPath?(filename?: string): Promise<string>;
@@ -18,7 +19,9 @@ export interface LocalVideoRenderOptions {
 }
 
 interface LocalVideoRenderDependencies {
-    videoApi: DesktopVideoApi;
+    videoApi?: DesktopVideoApi;
+    /** Web path: durable cloud queue + poll. Defaults to the real services. */
+    cloud?: CloudRenderDependencies;
     now: () => number;
     createRenderId: () => string;
     recordArtifact: (
@@ -39,12 +42,9 @@ const fileUrl = (output: string): string => output.startsWith('file://') ? outpu
 
 const defaultDependencies = (): LocalVideoRenderDependencies => {
     const videoApi = typeof window !== 'undefined' ? window.electronAPI?.video : undefined;
-    if (!videoApi?.render) {
-        throw new Error('Local video rendering requires the indii desktop app.');
-    }
 
     return {
-        videoApi,
+        ...(videoApi?.render ? { videoApi } : {}),
         now: () => Date.now(),
         createRenderId: () => crypto.randomUUID(),
         recordArtifact: async (receipt, project, organizationId) => {
@@ -74,8 +74,10 @@ const defaultDependencies = (): LocalVideoRenderDependencies => {
 
 /**
  * The single renderer-process entry point for an agent or editor requesting a
- * local project render. Routing remains main-process owned: Electron applies
- * RenderPlanner and selects FFmpeg or HyperFrames behind the shared contract.
+ * project render. Desktop routes through Electron (RenderPlanner selects
+ * FFmpeg or HyperFrames behind the shared contract); every other surface —
+ * web included — queues through the durable cloud render protocol and waits
+ * for the completed artifact.
  */
 export async function renderVideoProjectLocally(
     project: IndiiVideoProject,
@@ -89,26 +91,48 @@ export async function renderVideoProjectLocally(
     const deps = dependencies ?? defaultDependencies();
     const startedAt = deps.now();
     const outputName = safeOutputName(project, options.outputName, startedAt);
-    const outputLocation = options.outputLocation ?? await (() => {
-        if (!deps.videoApi.getDefaultPath) {
-            throw new Error('The desktop app could not resolve its managed video folder.');
-        }
-        return deps.videoApi.getDefaultPath(outputName);
-    })();
-    const renderedPath = await deps.videoApi.render({
-        compositionId: project.id,
-        outputLocation,
-        inputProps: { project },
-    });
+
+    if (deps.videoApi?.render) {
+        const outputLocation = options.outputLocation ?? await (() => {
+            if (!deps.videoApi?.getDefaultPath) {
+                throw new Error('The desktop app could not resolve its managed video folder.');
+            }
+            return deps.videoApi.getDefaultPath(outputName);
+        })();
+        const renderedPath = await deps.videoApi.render({
+            compositionId: project.id,
+            outputLocation,
+            inputProps: { project },
+        });
+        const receipt: CompletedRenderReceipt = {
+            status: 'completed',
+            renderId: deps.createRenderId(),
+            projectId: project.id,
+            progress: 100,
+            asset: {
+                url: fileUrl(renderedPath),
+                expiresAt: Number.MAX_SAFE_INTEGER,
+                generation: `local-${startedAt}`,
+                mimeType: 'video/mp4',
+            },
+        };
+        await deps.recordArtifact(receipt, project, options.organizationId);
+        return receipt;
+    }
+
+    // Web / cloud path: queue, poll, record. Same receipt contract.
+    const cloud = deps.cloud ?? {};
+    const { renderId } = await queueCloudRender(project.id, outputName, cloud);
+    const artifact = await waitForCloudRender(renderId, {}, cloud);
     const receipt: CompletedRenderReceipt = {
         status: 'completed',
-        renderId: deps.createRenderId(),
+        renderId,
         projectId: project.id,
         progress: 100,
         asset: {
-            url: fileUrl(renderedPath),
-            expiresAt: Number.MAX_SAFE_INTEGER,
-            generation: `local-${startedAt}`,
+            url: artifact.url,
+            expiresAt: startedAt + 24 * 60 * 60 * 1000,
+            generation: artifact.generation,
             mimeType: 'video/mp4',
         },
     };
