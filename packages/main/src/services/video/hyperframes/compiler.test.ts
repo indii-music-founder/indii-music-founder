@@ -147,3 +147,125 @@ describe('compileProjectToHyperFrames', () => {
         expect(probe.durationUs).toBeLessThan(2_300_000);
     }, 180_000);
 });
+
+describe('cinematic treatment compilation (background, seams, entrances, counters, audio fades)', () => {
+    it('emits a radial-glow background layer with its finite ambient tween and tints the canvas', () => {
+        const fixture = PARITY_FIXTURES['single-trim']!;
+        const project = {
+            ...fixture.project,
+            background: { kind: 'radial-glow' as const, accent: '#F5B13D', color: '#0B0C0F', glowOpacity: 0.2, glowPosition: 'bottom-left' as const },
+        };
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toContain('id="bg-glow"');
+        expect(html).toContain('radial-gradient(circle, %23F5B13D20');
+        expect(html).toContain('tl.to("#bg-glow", { scale: 1.1');
+        expect(html).toContain('background:#0B0C0F');
+        expect(html).toContain('data-layout-allow-overflow');
+    });
+
+    it('emits a ghost-text background with slow drift', () => {
+        const fixture = PARITY_FIXTURES['single-trim']!;
+        const project = {
+            ...fixture.project,
+            background: { kind: 'ghost-text' as const, ghostText: 'DETROIT', accent: '#F5B13D' },
+        };
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toContain('id="bg-ghost"');
+        expect(html).toContain('>DETROIT</div>');
+        expect(html).toContain('tl.to("#bg-ghost", { x: -120, y: -40');
+    });
+
+    it('stamps velocity-matched cut-the-curve tweens at adjacent clip boundaries', () => {
+        const fixture = PARITY_FIXTURES['single-trim']!;
+        const c1 = { ...fixture.project.clips[0]! };
+        const c2 = { ...fixture.project.clips[0]!, id: 'c2', name: 'clip2', startFrame: c1.startFrame + c1.durationInFrames };
+        const project = {
+            ...fixture.project,
+            durationInFrames: 60,
+            clips: [c1, c2],
+            seam: { type: 'cut-the-curve' as const, direction: 'LEFT' as const },
+        };
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toContain('tl.to("#el-c1-box", { xPercent: -12, autoAlpha: 0, duration: 0.34, ease: "power3.in" }');
+        expect(html).toContain('tl.set("#el-c1-box", { autoAlpha: 0 }');
+        expect(html).toContain('tl.fromTo("#el-c2-box", { xPercent: 10, autoAlpha: 0.35 }, { xPercent: 0, autoAlpha: 1, duration: 0.42, ease: "power4.out", immediateRender: false }');
+    });
+
+    it('splits a waterfall-entrance text clip into word spans with staggered arrivals', () => {
+        const fixture = PARITY_FIXTURES['text-title']!;
+        const textClip = fixture.project.clips.find(clip => clip.type === 'text')!;
+        const project = {
+            ...fixture.project,
+            clips: fixture.project.clips.map(clip => clip === textClip
+                ? { ...clip, text: 'THE CITY SLEEPS', entrance: { type: 'waterfall' as const, staggerSeconds: 0.05 } }
+                : clip),
+        };
+        const { html } = compileProjectToHyperFrames(project);
+        const id = textClip.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+        expect(html).toContain(`<span id="el-${id}-w0"`);
+        expect(html).toContain('>THE</span>');
+        expect(html).toContain(`tl.set("#el-${id}-w0", { y: 70, autoAlpha: 0 }`);
+        expect(html).toContain(`tl.to("#el-${id}-w0", { y: 0, duration: 0.2, ease: "power4.out" }`);
+    });
+
+    it('emits a seek-safe counter for a count-up text clip', () => {
+        const fixture = PARITY_FIXTURES['text-title']!;
+        const textClip = fixture.project.clips.find(clip => clip.type === 'text')!;
+        const project = {
+            ...fixture.project,
+            clips: fixture.project.clips.map(clip => clip === textClip
+                ? { ...clip, text: '4', countUp: { to: 4, suffix: ' AGENTS' } }
+                : clip),
+        };
+        const { html } = compileProjectToHyperFrames(project);
+        const id = textClip.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+        expect(html).toContain(`const __counter_el-${id} = { v: 0 };`);
+        expect(html).toContain('snap: { v: 1 }');
+        expect(html).toContain('Math.round(__counter_');
+        expect(html).toContain('" AGENTS"');
+        expect(html).toContain('>0 AGENTS</span>');
+    });
+
+    it('emits an inverse-zoom arrival on the clip wrapper', () => {
+        const fixture = PARITY_FIXTURES['single-trim']!;
+        const project = {
+            ...fixture.project,
+            clips: fixture.project.clips.map(clip => ({ ...clip, entrance: { type: 'inverse-zoom' as const } })),
+        };
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toContain('tl.fromTo("#el-c1-box", { autoAlpha: 0.15, scale: 1.25, filter: "blur(10px)" }');
+        expect(html).toContain('ease: "expo.out", immediateRender: false');
+    });
+
+    it('automates audio fades with absolute-gain volume tweens', () => {
+        const fixture = PARITY_FIXTURES['single-trim']!;
+        const project = {
+            ...fixture.project,
+            tracks: [...fixture.project.tracks, { id: 't2', name: 'A1', type: 'audio' as const }],
+            clips: [
+                ...fixture.project.clips,
+                {
+                    id: 'a1', type: 'audio' as const, src: 'bed.mp3', name: 'bed',
+                    startFrame: 0, durationInFrames: 30, trackId: 't2',
+                    audioFade: { inSeconds: 1, outSeconds: 2 },
+                },
+            ],
+        };
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toContain('data-volume="1"');
+        expect(html).toContain('tl.fromTo("#el-a1", { volume: 0 }, { volume: 1');
+        expect(html).toContain('tl.to("#el-a1", { volume: 0');
+    });
+
+    it('rejects a waterfall + count-up combination on one clip (fail closed)', () => {
+        const fixture = PARITY_FIXTURES['text-title']!;
+        const textClip = fixture.project.clips.find(clip => clip.type === 'text')!;
+        const project = {
+            ...fixture.project,
+            clips: fixture.project.clips.map(clip => clip === textClip
+                ? { ...clip, entrance: { type: 'waterfall' as const }, countUp: { to: 4 } }
+                : clip),
+        };
+        expect(() => compileProjectToHyperFrames(project)).toThrow(/cannot combine/);
+    });
+});

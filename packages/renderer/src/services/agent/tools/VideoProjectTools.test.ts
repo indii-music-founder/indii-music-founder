@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => {
     const project = {
         id: 'project-1', name: 'Project', width: 1920, height: 1080, fps: 30,
         durationInFrames: 30,
+        background: undefined as { kind?: string } | undefined,
+        seam: undefined as { type?: string; direction?: string } | undefined,
         tracks: [
             { id: 'video-track', name: 'Video', type: 'video' as const },
             { id: 'text-track', name: 'Text', type: 'text' as const },
@@ -20,6 +22,9 @@ const mocks = vi.hoisted(() => {
         updateClip: (id: string, updates: Record<string, unknown>) => {
             const index = project.clips.findIndex(clip => clip.id === id);
             if (index >= 0) project.clips[index] = { ...project.clips[index], ...updates } as never;
+        },
+        updateProjectSettings: (settings: Record<string, unknown>) => {
+            Object.assign(project, settings);
         },
     });
     return { project, getState, renderVideoProjectLocally: vi.fn() };
@@ -107,5 +112,39 @@ describe('VideoProjectTools.queue_video_render', () => {
         });
         expect(wrongTrack.success).toBe(false);
         expect(mocks.project.clips).toHaveLength(1);
+    });
+
+    it('applies a named treatment preset to the project, text clips, and audio clips', async () => {
+        const result = await VideoProjectTools.apply_video_treatment!({ preset: 'amber-night-cinematic' });
+
+        expect(result.success).toBe(true);
+        expect(result.data).toMatchObject({ preset: 'amber-night-cinematic' });
+        expect(mocks.project).toMatchObject({
+            background: { kind: 'radial-glow', accent: '#F5B13D' },
+            seam: { type: 'cut-the-curve', direction: 'LEFT' },
+        });
+        expect(mocks.project.clips[0]).toMatchObject({ entrance: { type: 'waterfall' } });
+    });
+
+    it('lets inline overrides win over the preset and clears entrances on request', async () => {
+        const result = await VideoProjectTools.apply_video_treatment!({
+            preset: 'amber-night-cinematic',
+            seam: { type: 'cut-the-curve', direction: 'RIGHT' },
+            entrance: 'none',
+            audioFadeOutSeconds: 3,
+        });
+
+        expect(result.success).toBe(true);
+        expect(mocks.project.seam).toMatchObject({ direction: 'RIGHT' });
+        expect(mocks.project.clips[0]).not.toHaveProperty('entrance', { type: 'waterfall' });
+    });
+
+    it('refuses an unknown treatment preset without touching the project', async () => {
+        const before = JSON.stringify(mocks.project);
+        const result = await VideoProjectTools.apply_video_treatment!({ preset: 'nope' as never });
+
+        expect(result.success).toBe(false);
+        expect(result.metadata?.errorCode).toBe('INVALID_INPUT');
+        expect(JSON.stringify(mocks.project)).toBe(before);
     });
 });

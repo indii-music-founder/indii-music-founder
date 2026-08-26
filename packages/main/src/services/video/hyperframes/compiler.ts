@@ -6,10 +6,18 @@
  * one paused, synchronously registered GSAP timeline.
  */
 
-import type { IndiiVideoClip, IndiiVideoProject, IndiiVideoTrack } from '@indii/shared';
+import type {
+    IndiiBackground,
+    IndiiSeam,
+    IndiiVideoClip,
+    IndiiVideoProject,
+    IndiiVideoTrack,
+} from '@indii/shared';
 
 const CSS_ESCAPE = /[^a-zA-Z0-9_-]/g;
 const US_PER_SECOND = 1_000_000;
+const DEFAULT_CANVAS = '#0b0c0f';
+const DEFAULT_ACCENT = '#F5B13D';
 
 const safeId = (raw: string): string => `el-${raw.replace(CSS_ESCAPE, '-')}`;
 
@@ -104,7 +112,7 @@ const mediaElementsFor = (clip: IndiiVideoClip, fps: number, track: CompiledTrac
                 `<div id="${id}-box" data-hf-id="hf-${id}-box" data-name="${escapeHtml(clip.name)}" style="${boxStyleFor(clip)}"><div id="${id}" data-hf-id="hf-${id}" style="width:100%;height:100%;${motionStyleFor(clip)}"><video id="${id}-media" data-hf-id="hf-${id}-media" src="${src}" muted playsinline preload="auto" ${timing}${hidden} style="display:block;width:100%;height:100%;object-fit:cover;"></video></div></div>`,
             ];
             if (clip.hasAudio === true) {
-                elements.push(`<audio id="${id}-audio" data-hf-id="hf-${id}-audio" data-name="${escapeHtml(clip.name)} audio" src="${src}" preload="auto" ${audioTiming} data-volume="${volume}"${hidden}></audio>`);
+                elements.push(`<audio id="${id}-audio" data-hf-id="hf-${id}-audio" data-name="${escapeHtml(clip.name)} audio" src="${src}" preload="auto" ${audioTiming} data-volume="${clip.audioFade ? '1' : volume}"${hidden}></audio>`);
             }
             return elements;
         }
@@ -114,13 +122,19 @@ const mediaElementsFor = (clip: IndiiVideoClip, fps: number, track: CompiledTrac
             ];
         case 'audio':
             return [
-                `<audio id="${id}" data-hf-id="hf-${id}" data-name="${escapeHtml(clip.name)}" src="${src}" preload="auto" ${timing} data-volume="${volume}"${hidden}></audio>`,
+                `<audio id="${id}" data-hf-id="hf-${id}" data-name="${escapeHtml(clip.name)}" src="${src}" preload="auto" ${timing} data-volume="${clip.audioFade ? '1' : volume}"${hidden}></audio>`,
             ];
         case 'text': {
             const align = clip.textAlign ?? 'center';
             const justify = align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center';
+            const content = clip.entrance?.type === 'waterfall'
+                ? (clip.text ?? '').trim().split(/\s+/).filter(Boolean)
+                    .map((word, index) =>
+                        `<span id="${id}-w${index}" data-hf-id="hf-${id}-w${index}" style="display:inline-block;margin:0 0.35em 0 0;">${escapeHtml(word)}</span>`)
+                    .join('')
+                : escapeHtml(clip.countUp ? `${clip.countUp.prefix ?? ''}0${clip.countUp.suffix ?? ''}` : clip.text ?? '');
             return [
-                `<section id="${id}-clip" data-hf-id="hf-${id}-clip" data-name="${escapeHtml(clip.name)}" class="clip" ${timing}${hidden} style="${boxStyleFor(clip)}"><div id="${id}" data-hf-id="hf-${id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:${justify};padding:4%;box-sizing:border-box;${motionStyleFor(clip)}"><span data-hf-id="hf-${id}-text" style="display:block;color:${escapeHtml(clip.textColor ?? '#ffffff')};font-size:${clip.fontSize ?? 32}px;font-weight:${escapeHtml(String(clip.fontWeight ?? 700))};text-align:${align};white-space:pre-wrap;">${escapeHtml(clip.text ?? '')}</span></div></section>`,
+                `<section id="${id}-clip" data-hf-id="hf-${id}-clip" data-name="${escapeHtml(clip.name)}" class="clip" ${timing}${hidden} style="${boxStyleFor(clip)}"><div id="${id}" data-hf-id="hf-${id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:${justify};padding:4%;box-sizing:border-box;${motionStyleFor(clip)}"><span id="${id}-text" data-hf-id="hf-${id}-text" style="display:block;color:${escapeHtml(clip.textColor ?? '#ffffff')};font-size:${clip.fontSize ?? 32}px;font-weight:${escapeHtml(String(clip.fontWeight ?? 700))};text-align:${align};white-space:pre-wrap;">${content}</span></div></section>`,
             ];
         }
     }
@@ -130,6 +144,52 @@ interface TweenPlan {
     atSeconds: number;
     statement: string;
 }
+
+/** Ambient layer behind every clip plus its slow finite drift tween. */
+const backgroundLayerFor = (
+    background: IndiiBackground,
+    durationSeconds: number,
+): { html: string; tween: string; canvas: string } => {
+    const accent = escapeHtml(background.accent ?? DEFAULT_ACCENT);
+    const canvas = background.color ?? DEFAULT_CANVAS;
+    const glowOpacity = Math.min(0.5, Math.max(0.05, background.glowOpacity ?? 0.16));
+    const position = background.glowPosition ?? 'bottom-left';
+    const anchor: Record<string, string> = {
+        'bottom-left': 'left:-30%;bottom:-40%',
+        'bottom-right': 'right:-30%;bottom:-40%',
+        'top-left': 'left:-30%;top:-40%',
+        'top-right': 'right:-30%;top:-40%',
+        'center': 'left:50%;top:50%;margin-left:-40%;margin-top:-40%',
+    };
+    const glowCss = `radial-gradient(circle, ${accent.replace('#', '%23')}${Math.round(glowOpacity * 100)} 0%, rgba(0,0,0,0) 62%)`;
+
+    switch (background.kind) {
+        case 'solid':
+            return { html: '', tween: '', canvas };
+        case 'radial-glow':
+            return {
+                html: `<div id="bg-glow" data-hf-id="hf-bg-glow" data-name="background glow" style="position:absolute;${anchor[position] ?? anchor['bottom-left']};width:80%;height:80%;border-radius:50%;background:${glowCss};" data-layout-allow-overflow></div>`,
+                tween: `tl.to("#bg-glow", { scale: 1.1, duration: ${secondsString(durationSeconds)}, ease: "none" }, 0);`,
+                canvas,
+            };
+        case 'grid':
+            return {
+                html: `<div id="bg-grid" data-hf-id="hf-bg-grid" data-name="background grid" style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.5) 2px, transparent 2px),linear-gradient(90deg, rgba(255,255,255,0.5) 2px, transparent 2px);background-size:140px 140px;opacity:0.07;"></div>`,
+                tween: `tl.fromTo("#bg-grid", { opacity: 0.06 }, { opacity: 0.1, duration: ${secondsString(Math.min(5, durationSeconds))}, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);`,
+                canvas,
+            };
+        case 'ghost-text': {
+            const ghost = escapeHtml(background.ghostText ?? '');
+            return {
+                html: `<div id="bg-ghost" data-hf-id="hf-bg-ghost" data-name="ghost text" style="position:absolute;top:14%;right:-6%;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:380px;line-height:1;letter-spacing:-0.03em;color:${accent};opacity:0.08;white-space:nowrap;" data-layout-allow-overflow>${ghost}</div>`,
+                tween: `tl.to("#bg-ghost", { x: -120, y: -40, duration: ${secondsString(durationSeconds)}, ease: "none" }, 0);`,
+                canvas,
+            };
+        }
+        default:
+            return { html: '', tween: '', canvas };
+    }
+};
 
 const mapEase = (ease: string | undefined): string => {
     switch (ease) {
@@ -150,6 +210,15 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number): TweenPlan[] => {
 
     if (clip.type === 'audio' && (clip.transitionIn || clip.transitionOut)) {
         throw new Error(`compiler: audio clip ${clip.id} cannot use visual transitions`);
+    }
+    if (clip.type === 'audio' && clip.entrance) {
+        throw new Error(`compiler: audio clip ${clip.id} cannot use a visual entrance`);
+    }
+    if (clip.entrance?.type === 'waterfall' && clip.countUp) {
+        throw new Error(`compiler: clip ${clip.id} cannot combine a waterfall entrance with a count-up`);
+    }
+    if (clip.entrance?.type === 'inverse-zoom' && clip.countUp) {
+        throw new Error(`compiler: clip ${clip.id} cannot combine an inverse-zoom entrance with a count-up`);
     }
 
     const initial: Record<string, number> = {};
@@ -209,6 +278,104 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number): TweenPlan[] => {
             }
         }
     }
+
+    // ── Cinematic entrance (waterfall words / inverse-zoom arrival)
+    if (clip.entrance?.type === 'waterfall') {
+        const words = (clip.text ?? '').trim().split(/\s+/).filter(Boolean);
+        const stagger = Math.max(0.02, clip.entrance.staggerSeconds ?? 0.05);
+        words.forEach((_word, index) => {
+            const at = startS + index * stagger;
+            plan.push({ atSeconds: at, statement: `tl.set("#${id}-w${index}", { y: 70, autoAlpha: 0 }, ${secondsString(startS)});` });
+            plan.push({ atSeconds: at, statement: `tl.set("#${id}-w${index}", { autoAlpha: 1 }, ${secondsString(at)});` });
+            plan.push({ atSeconds: at, statement: `tl.to("#${id}-w${index}", { y: 0, duration: 0.2, ease: "power4.out" }, ${secondsString(at)});` });
+        });
+    }
+    if (clip.entrance?.type === 'inverse-zoom') {
+        const boxId = clip.type === 'video' ? `${id}-box` : `${id}-clip`;
+        plan.push({
+            atSeconds: startS,
+            statement: `tl.fromTo("#${boxId}", { autoAlpha: 0.15, scale: 1.25, filter: "blur(10px)" }, { autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false }, ${secondsString(startS)});`,
+        });
+    }
+
+    // ── Seek-safe counter (text clips only)
+    if (clip.countUp) {
+        const to = clip.countUp.to;
+        if (!Number.isFinite(to) || to < 0) throw new Error(`compiler: clip ${clip.id} count-up target must be a non-negative number`);
+        const durS = (clip.countUp.durationInFrames ?? fps) / fps;
+        plan.push({
+            atSeconds: startS,
+            statement: `tl.to(__counter_${id}, { v: ${to}, duration: ${secondsString(durS)}, ease: "power2.out", snap: { v: 1 }, onUpdate: function() { var el = document.getElementById("${id}-text"); if (el) { el.textContent = ${JSON.stringify(clip.countUp.prefix ?? '')} + Math.round(__counter_${id}.v) + ${JSON.stringify(clip.countUp.suffix ?? '')}; } } }, ${secondsString(startS)});`,
+        });
+    }
+
+    // ── Audio fade automation (absolute-gain volume tweens)
+    if (clip.audioFade && (clip.type === 'audio' || clip.hasAudio === true)) {
+        const audioId = clip.type === 'video' ? `${id}-audio` : id;
+        const gain = clip.volume ?? 1;
+        const fades = clip.audioFade;
+        if (fades.inSeconds !== undefined && fades.inSeconds > 0) {
+            plan.push({
+                atSeconds: startS,
+                statement: `tl.fromTo("#${audioId}", { volume: 0 }, { volume: ${gain}, duration: ${secondsString(fades.inSeconds)}, ease: "none" }, ${secondsString(startS)});`,
+            });
+        }
+        if (fades.outSeconds !== undefined && fades.outSeconds > 0) {
+            const endS = startS + clipDurationSeconds(clip, fps);
+            const outStart = Math.max(startS, endS - fades.outSeconds);
+            plan.push({
+                atSeconds: outStart,
+                statement: `tl.to("#${audioId}", { volume: 0, duration: ${secondsString(endS - outStart)}, ease: "none" }, ${secondsString(outStart)});`,
+            });
+        }
+    }
+    return plan;
+};
+
+/** Box/wrapper target for seam tweens: video clips move the outer box, image/text move their section. */
+const seamTargetFor = (clip: IndiiVideoClip): string => {
+    const id = safeId(clip.id);
+    return clip.type === 'video' ? `#${id}-box` : `#${id}-clip`;
+};
+
+/**
+ * Velocity-matched cut-the-curve tweens at every adjacent clip boundary.
+ * The outgoing clip accelerates in `seam.direction` and the incoming clip
+ * continues the same vector from mid-flight — one continuous camera move.
+ */
+const seamPlansFor = (
+    clips: IndiiVideoClip[],
+    fps: number,
+    seam: IndiiSeam,
+): TweenPlan[] => {
+    if (seam.type !== 'cut-the-curve') return [];
+    const dir = seam.direction === 'RIGHT' ? 1 : seam.direction === 'UP' || seam.direction === 'DOWN' ? (seam.direction === 'UP' ? -1 : 1) : -1;
+    const prop = seam.direction === 'UP' || seam.direction === 'DOWN' ? 'yPercent' : 'xPercent';
+    const visual = (clip: IndiiVideoClip): boolean => clip.type !== 'audio';
+    const ordered = [...clips].filter(visual).sort((a, b) => a.startFrame - b.startFrame);
+    const plan: TweenPlan[] = [];
+    for (let i = 0; i < ordered.length - 1; i += 1) {
+        const out = ordered[i]!;
+        const next = ordered[i + 1]!;
+        const outEndFrame = out.startFrame + out.durationInFrames;
+        const epsilon = 0.51;
+        if (Math.abs(next.startFrame - outEndFrame) > epsilon) continue;
+        const cut = next.startFrame / fps;
+        const exitDur = 0.34;
+        const entryDur = 0.42;
+        plan.push({
+            atSeconds: cut - exitDur,
+            statement: `tl.to("${seamTargetFor(out)}", { ${prop}: ${12 * dir}, autoAlpha: 0, duration: ${exitDur}, ease: "power3.in" }, ${secondsString(cut - exitDur)});`,
+        });
+        plan.push({
+            atSeconds: cut,
+            statement: `tl.set("${seamTargetFor(out)}", { autoAlpha: 0 }, ${secondsString(cut)});`,
+        });
+        plan.push({
+            atSeconds: cut,
+            statement: `tl.fromTo("${seamTargetFor(next)}", { ${prop}: ${-10 * dir}, autoAlpha: 0.35 }, { ${prop}: 0, autoAlpha: 1, duration: ${entryDur}, ease: "power4.out", immediateRender: false }, ${secondsString(cut)});`,
+        });
+    }
     return plan;
 };
 
@@ -220,7 +387,7 @@ export interface CompiledComposition {
 
 /** Compile a canonical project into one standalone HyperFrames composition. */
 export const compileProjectToHyperFrames = (
-    project: Pick<IndiiVideoProject, 'id' | 'name' | 'fps' | 'durationInFrames' | 'width' | 'height' | 'tracks' | 'clips'>,
+    project: Pick<IndiiVideoProject, 'id' | 'name' | 'fps' | 'durationInFrames' | 'width' | 'height' | 'tracks' | 'clips' | 'background' | 'seam'>,
 ): CompiledComposition => {
     const fps = project.fps;
     const compositionId = project.id.replace(CSS_ESCAPE, '-').toLowerCase();
@@ -266,6 +433,27 @@ export const compileProjectToHyperFrames = (
         tweenPlans.push(...tweenPlanFor(clip, fps));
     }
 
+    // Scene treatment: background layer + its ambient tween render behind all clips.
+    let backgroundHtml = '';
+    let canvas = DEFAULT_CANVAS;
+    if (project.background) {
+        const layer = backgroundLayerFor(project.background, durationSeconds);
+        backgroundHtml = layer.html;
+        canvas = layer.canvas;
+        if (layer.tween) tweenPlans.push({ atSeconds: 0, statement: layer.tween });
+    }
+
+    // Velocity-matched seams at every adjacent visual-clip boundary.
+    if (project.seam) {
+        tweenPlans.push(...seamPlansFor(project.clips, fps, project.seam));
+    }
+
+    // Seek-safe counter objects for count-up clips.
+    const counters = project.clips
+        .filter(clip => clip.countUp)
+        .map(clip => `      const __counter_${safeId(clip.id)} = { v: 0 };`)
+        .join('\n');
+
     tweenPlans.sort((a, b) => a.atSeconds - b.atSeconds);
     const html = `<!doctype html>
 <html lang="en"><head><meta charset="UTF-8" />
@@ -274,17 +462,19 @@ export const compileProjectToHyperFrames = (
 <script src="./gsap.min.js"></script>
 <style>
   html, body { margin:0; width:100%; height:100%; background:#000; }
-  #root { position:relative; width:${project.width}px; height:${project.height}px; overflow:hidden; }
+  #root { position:relative; width:${project.width}px; height:${project.height}px; overflow:hidden; background:${escapeHtml(canvas)}; }
   .clip { position:absolute; }
 </style></head>
 <body>
     <div id="root" data-hf-root data-composition-id="${compositionId}" data-start="0"
       data-width="${project.width}" data-height="${project.height}" data-duration="${secondsString(durationSeconds)}" data-fps="${fps}">
+${backgroundHtml}
 ${bodyClips.join('\n')}
     </div>
     <script>
       window.__timelines = window.__timelines || {};
       const tl = gsap.timeline({ paused: true });
+${counters}
 ${tweenPlans.map(tween => `      ${tween.statement}`).join('\n') || '      // no tweens — static timeline'}
       window.__timelines["${compositionId}"] = tl;
     </script>

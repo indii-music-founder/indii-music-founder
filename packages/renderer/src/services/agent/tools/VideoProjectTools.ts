@@ -1,14 +1,28 @@
 import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
+import { resolveTreatment, VIDEO_TREATMENT_PRESETS, type VideoTreatmentPresetId } from '@/services/video/treatmentPresets';
 
 import type { AnyToolFunction } from '../types';
 import { toolError, toolSuccess, wrapTool } from '../utils/ToolUtils';
 
-import type { IndiiVideoClip } from '@indii/shared';
+import type { IndiiBackground, IndiiSeam, IndiiVideoClip } from '@indii/shared';
 
 interface QueueVideoRenderArgs {
     projectId?: string;
     outputName?: string;
+}
+
+interface ApplyVideoTreatmentArgs {
+    /** Named preset id (amber-night-cinematic | clean-grid | bold-arrival). */
+    preset?: VideoTreatmentPresetId;
+    /** Inline background override (wins over the preset). */
+    background?: IndiiBackground;
+    /** Inline seam override (wins over the preset). */
+    seam?: IndiiSeam;
+    /** Entrance applied to every text clip; 'none' clears them. */
+    entrance?: 'waterfall' | 'inverse-zoom' | 'none';
+    audioFadeInSeconds?: number;
+    audioFadeOutSeconds?: number;
 }
 
 interface AddVideoClipFields {
@@ -135,6 +149,47 @@ export const VideoProjectTools: Record<string, AnyToolFunction> = {
         return toolSuccess(
             receipt,
             `Rendered the active video project to ${receipt.asset.url}. The editor preview and project history now reference this artifact.`,
+        );
+    }),
+
+    apply_video_treatment: wrapTool('apply_video_treatment', async (args: ApplyVideoTreatmentArgs) => {
+        if (args.preset && !VIDEO_TREATMENT_PRESETS[args.preset]) {
+            return toolError(
+                `Unknown treatment preset "${args.preset}". Available: ${Object.keys(VIDEO_TREATMENT_PRESETS).join(', ')}.`,
+                'INVALID_INPUT',
+            );
+        }
+
+        const treatment = resolveTreatment(args);
+        const state = useVideoEditorStore.getState();
+        if (treatment.background) state.updateProjectSettings({ background: treatment.background });
+        if (treatment.seam) state.updateProjectSettings({ seam: treatment.seam });
+
+        if (treatment.entrance) {
+            for (const clip of state.project.clips) {
+                if (clip.type !== 'text') continue;
+                state.updateClip(clip.id, treatment.entrance === 'none'
+                    ? { entrance: undefined }
+                    : { entrance: { type: treatment.entrance } });
+            }
+        }
+
+        if (treatment.audioFade) {
+            for (const clip of state.project.clips) {
+                if (clip.type === 'audio' || clip.hasAudio === true) {
+                    state.updateClip(clip.id, { audioFade: treatment.audioFade });
+                }
+            }
+        }
+
+        return toolSuccess(
+            {
+                preset: args.preset ?? null,
+                background: treatment.background ?? null,
+                seam: treatment.seam ?? null,
+                entrance: treatment.entrance ?? null,
+            },
+            `Applied the ${args.preset ? `"${VIDEO_TREATMENT_PRESETS[args.preset].label}"` : 'custom'} treatment to the active video project (background, seams, text entrances, audio fades).`,
         );
     }),
 };

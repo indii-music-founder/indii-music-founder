@@ -9,6 +9,7 @@ import { useTimelineDrag } from './hooks/useTimelineDrag';
 import { VideoEditorSidebar } from './components/VideoEditorSidebar';
 import { useVideoEditor } from './hooks/useVideoEditor';
 import { useVideoProjectPersistence } from './hooks/useVideoProjectPersistence';
+import { TreatmentPicker } from './components/TreatmentPicker';
 import AnnotationPalette from "../../components/AnnotationPalette";
 import EditDefinitionsPanel from "../../components/EditDefinitionsPanel";
 import { STUDIO_COLORS, CreativeColor } from '../../constants';
@@ -143,6 +144,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 }
                 right={
                     <div className="flex gap-2">
+                        <TreatmentPicker />
                         <button
                             onClick={handleDownloadMP4}
                             disabled={isExporting}

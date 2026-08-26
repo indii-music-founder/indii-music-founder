@@ -2646,3 +2646,11 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Evidence:** 14 entitlements tests (new: founder self-heal, subscription materialization, provenance); 27 enforceOperationCost tests (new: founder/enterprise confirmation bypass, tier-aware runaway); full firebase suite 1011 pass (3 rules suites fail-closed without emulator, documented, green in CI); root typecheck green; lint 0 errors. ERROR_LEDGER entry 2026-08-25.
 - **Deployment follow-up:** no prod data change needed — G5 (2026-08-25) already verified `founders/{uid}`, `subscriptions/{uid}`, and the FOUNDER entitlement in production. The budget-guard fixes take effect on the next functions deploy.
 - **Left open (separate track):** `render_stitch` reliability (long-form stitch pipeline) remains P1 work; this fix guarantees a founder never sees a reservation denial, not that every long stitch succeeds on the first poll.
+
+### MIG-010: In-app cinematic video treatments — user instruction → treated movie (2026-08-25)
+
+- **Status:** 🟢 IMPLEMENTED (code) 2026-08-25 — founder: "I need my app to make that same video, but the user's own version, from their instructions."
+- **Severity:** 🟡 Feature (T2 — shared schema + main compiler + renderer tooling + agent skill)
+- **Delivered:** IndiiVideoProject schema vocabulary (`background`, `seam`, `entrance`, `countUp`, `audioFade`); compiler emission (background layers + ambient tweens, cut-the-curve seams at adjacent boundaries, waterfall word arrivals, seek-safe counters, inverse-zoom arrivals, absolute-gain audio fades); three named presets with direction-word resolution; Conductor tool `apply_video_treatment`; editor toolbar `TreatmentPicker` sharing the same resolver; `video_producer` skill routing table mapping mood words → presets.
+- **Evidence:** main compiler suite 17 pass (incl. real-hyperframes-lint + end-to-end render); renderer treatment suites 25 pass (tool, presets, picker, editor interaction); shared 108 pass; full typecheck green; lint 0 errors. Full renderer suite pending at close (reported separately). ERROR_LEDGER 2026-08-25.
+- **Follow-ups (not in this unit):** editor per-clip entrance/count-up controls beyond the preset picker; ghost-text/glow position UI; cloud render transport for web-only users (local render remains desktop); treatment presets for more moods on request.
