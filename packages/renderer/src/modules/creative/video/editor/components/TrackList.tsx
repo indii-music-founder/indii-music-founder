@@ -11,7 +11,7 @@ interface TrackListProps {
     onAddSampleClip: (trackId: string, type: 'text' | 'video' | 'image' | 'audio') => void;
     onToggleExpand: (id: string) => void;
     onRemoveClip: (id: string) => void;
-    onDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize') => void;
+    onDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize-left' | 'resize-right') => void;
     onAddKeyframe: (e: React.MouseEvent, clip: VideoClip, property: string, defaultValue: number) => void;
     onKeyframeClick: (e: React.MouseEvent, clipId: string, property: string, frame: number, easing?: string) => void;
 }

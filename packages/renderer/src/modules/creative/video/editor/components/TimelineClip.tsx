@@ -20,7 +20,7 @@ interface TimelineClipProps {
     isExpanded: boolean;
     onToggleExpand: (id: string) => void;
     onRemove: (id: string) => void;
-    onDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize') => void;
+    onDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize-left' | 'resize-right') => void;
     onAddKeyframe: (e: React.MouseEvent, clip: VideoClip, property: string, defaultValue: number) => void;
     onKeyframeClick: (e: React.MouseEvent, clipId: string, property: string, frame: number, easing?: string) => void;
 }
@@ -129,10 +129,16 @@ export const TimelineClip = memo(({
                 </div>
             )}
 
-            {/* Resize Handle */}
+            {/* Trim handles: both edges, source-aware */}
+            <div
+                className="absolute left-0 top-0 bottom-0 w-2 cursor-w-resize hover:bg-white/50 transition-colors z-20"
+                onMouseDown={(e) => onDragStart(e, clip, 'resize-left')}
+                data-testid={`clip-trim-left-${clip.id}`}
+            />
             <div
                 className="absolute right-0 top-0 bottom-0 w-2 cursor-e-resize hover:bg-white/50 transition-colors z-20"
-                onMouseDown={(e) => onDragStart(e, clip, 'resize')}
+                onMouseDown={(e) => onDragStart(e, clip, 'resize-right')}
+                data-testid={`clip-trim-right-${clip.id}`}
             />
         </div>
     );

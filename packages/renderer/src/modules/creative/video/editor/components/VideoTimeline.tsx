@@ -18,7 +18,7 @@ interface VideoTimelineProps {
     handleAddSampleClip: (trackId: string, type: 'text' | 'video' | 'image' | 'audio') => void;
     removeTrack: (id: string) => void;
     removeClip: (id: string) => void;
-    handleDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize') => void;
+    handleDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize-left' | 'resize-right') => void;
     formatTime: (frame: number) => string;
 }
 
