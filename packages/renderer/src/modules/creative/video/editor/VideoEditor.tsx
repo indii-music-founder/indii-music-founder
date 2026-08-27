@@ -65,6 +65,12 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
             } else if (event.key.toLowerCase() === 'z') {
                 event.preventDefault();
                 useVideoEditorStore.getState().undo();
+            } else if (event.key === 'Backspace') {
+                const selected = useVideoEditorStore.getState().selectedClipId;
+                if (selected) {
+                    event.preventDefault();
+                    useVideoEditorStore.getState().rippleDeleteClip(selected);
+                }
             }
         };
         window.addEventListener('keydown', onKeyDown);
@@ -205,6 +211,14 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                                     className="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-800 hover:bg-red-900 text-red-300 transition-colors"
                                 >
                                     🗑
+                                </button>
+                                <button
+                                    onClick={() => useVideoEditorStore.getState().rippleDeleteClip(selectedClipIdState)}
+                                    data-testid="video-ripple-delete-btn"
+                                    title="Ripple delete — remove and close the gap (⌘⌫)"
+                                    className="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-800 hover:bg-red-900 text-red-200 transition-colors"
+                                >
+                                    Ripple ⌫
                                 </button>
                             </>
                         )}

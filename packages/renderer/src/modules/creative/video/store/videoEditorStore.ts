@@ -67,6 +67,8 @@ interface VideoEditorState {
     addClip: (clip: Omit<VideoClip, 'id'>) => void;
     updateClip: (id: string, updates: Partial<VideoClip>) => void;
     removeClip: (id: string) => void;
+    /** Delete + close the gap: later clips on the same track slide left. */
+    rippleDeleteClip: (id: string) => void;
     /** Razor: cut a clip at a frame; source trims (µs) shift with the split. */
     splitClip: (id: string, atFrame: number) => void;
     /** Copy a clip right after itself on the same track. */
@@ -561,6 +563,23 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                 clips: state.project.clips.filter(c => c.id !== id)
             }
         })),
+
+        rippleDeleteClip: (id) => set((state) => {
+            const clip = state.project.clips.find(c => c.id === id);
+            if (!clip) return {};
+            const gapEnd = clip.startFrame + clip.durationInFrames;
+            return {
+                project: {
+                    ...state.project,
+                    clips: state.project.clips
+                        .filter(c => c.id !== id)
+                        .map(c => (c.trackId === clip.trackId && c.startFrame >= gapEnd
+                            ? { ...c, startFrame: c.startFrame - clip.durationInFrames }
+                            : c))
+                        .sort((a, b) => a.startFrame - b.startFrame),
+                },
+            };
+        }),
 
         splitClip: (id, atFrame) => set((state) => {
             const clip = state.project.clips.find(c => c.id === id);

@@ -62,3 +62,57 @@ describe('videoEditorStore — split and duplicate', () => {
         expect(clips[1]!.id).not.toBe('c1');
     });
 });
+
+describe('videoEditorStore — ripple delete', () => {
+    beforeEach(() => {
+        useVideoEditorStore.setState({
+            project: {
+                ...blankProjectForId('proj-1'),
+                tracks: [
+                    { id: 'track-1', name: 'V1', type: 'video' },
+                    { id: 'track-2', name: 'V2', type: 'video' },
+                ],
+                clips: [
+                    { id: 'c1', type: 'video', startFrame: 0, durationInFrames: 30, trackId: 'track-1', name: 'One', src: 'a.mp4' },
+                    { id: 'c2', type: 'video', startFrame: 30, durationInFrames: 30, trackId: 'track-1', name: 'Two', src: 'b.mp4' },
+                    { id: 'c3', type: 'video', startFrame: 60, durationInFrames: 30, trackId: 'track-1', name: 'Three', src: 'c.mp4' },
+                    { id: 'c9', type: 'video', startFrame: 30, durationInFrames: 30, trackId: 'track-2', name: 'Other track', src: 'd.mp4' },
+                ],
+            },
+        });
+    });
+
+    it('deletes the clip and slides later clips on the same track left to close the gap', () => {
+        useVideoEditorStore.getState().rippleDeleteClip('c2');
+
+        const clips = useVideoEditorStore.getState().project.clips;
+        expect(clips.map(c => c.id)).toEqual(['c1', 'c3', 'c9']);
+        expect(clips.find(c => c.id === 'c3')).toMatchObject({ startFrame: 30, durationInFrames: 30 });
+        expect(clips.find(c => c.id === 'c1')).toMatchObject({ startFrame: 0 });
+        // Other tracks never move.
+        expect(clips.find(c => c.id === 'c9')).toMatchObject({ startFrame: 30 });
+    });
+
+    it('leaves clips that overlap the deleted clip untouched', () => {
+        useVideoEditorStore.setState(state => ({
+            project: {
+                ...state.project,
+                clips: [
+                    ...state.project.clips,
+                    { id: 'c5', type: 'video', startFrame: 20, durationInFrames: 20, trackId: 'track-1', name: 'Overlap', src: 'e.mp4' },
+                ],
+            },
+        }));
+        useVideoEditorStore.getState().rippleDeleteClip('c1');
+
+        const clips = useVideoEditorStore.getState().project.clips;
+        expect(clips.find(c => c.id === 'c5')).toMatchObject({ startFrame: 20 });
+        // A clip starting exactly at the deleted end closes the gap.
+        expect(clips.find(c => c.id === 'c2')).toMatchObject({ startFrame: 0 });
+    });
+
+    it('no-ops on a missing clip', () => {
+        useVideoEditorStore.getState().rippleDeleteClip('missing');
+        expect(useVideoEditorStore.getState().project.clips).toHaveLength(4);
+    });
+});
