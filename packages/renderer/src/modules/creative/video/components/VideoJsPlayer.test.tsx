@@ -36,7 +36,7 @@ const mocks = vi.hoisted(() => {
         error,
         el,
     };
-    const videojs = vi.fn(() => player);
+    const videojs = vi.fn((_element: HTMLElement) => player);
     return { dispose, src, autoplay, controls, muted, loop, poster, on, off, ready, currentTime, duration, buffered, error, el, player, videojs };
 });
 
@@ -49,7 +49,7 @@ describe('VideoJsPlayer', () => {
         vi.clearAllMocks();
     });
 
-    it('creates and disposes the player cleanly', () => {
+    it('gives Video.js ownership of a child element and disposes it cleanly', () => {
         const ref = React.createRef<VideoJsPlayerHandle>();
         const { unmount } = render(
             <VideoJsPlayer
@@ -60,6 +60,9 @@ describe('VideoJsPlayer', () => {
         );
 
         expect(mocks.videojs).toHaveBeenCalledTimes(1);
+        const playerElement = mocks.videojs.mock.calls[0]?.[0] as HTMLElement;
+        expect(playerElement.tagName).toBe('VIDEO-JS');
+        expect(playerElement.parentElement?.hasAttribute('data-vjs-player')).toBe(true);
         expect(ref.current).toBeTruthy();
         expect(ref.current?.currentTime()).toBe(12);
         expect(ref.current?.duration()).toBe(120);
@@ -68,6 +71,19 @@ describe('VideoJsPlayer', () => {
         expect(mocks.player.currentTime).toHaveBeenCalledWith(33);
 
         unmount();
+        expect(mocks.dispose).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not let a Video.js disposal error crash Studio unmount', () => {
+        mocks.dispose.mockImplementationOnce(() => {
+            throw new DOMException('The node to be removed is not a child of this node.', 'NotFoundError');
+        });
+
+        const { unmount } = render(
+            <VideoJsPlayer videoUrl="https://storage.googleapis.com/test-video.mp4" />
+        );
+
+        expect(() => unmount()).not.toThrow();
         expect(mocks.dispose).toHaveBeenCalledTimes(1);
     });
 });

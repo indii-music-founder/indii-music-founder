@@ -45,7 +45,7 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
     onTimeUpdate,
     onError,
 }, ref) => {
-    const videoElementRef = React.useRef<HTMLVideoElement | null>(null);
+    const playerContainerRef = React.useRef<HTMLDivElement | null>(null);
     const playerRef = React.useRef<VideoJsPlayerInstance | null>(null);
     const onReadyRef = React.useRef(onReady);
     const onTimeUpdateRef = React.useRef(onTimeUpdate);
@@ -67,7 +67,7 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
 
     const captureFrame = React.useCallback((): string | null => {
         const player = playerRef.current;
-        const videoEl = (videoElementRef.current || (player?.el()?.querySelector('video') as HTMLVideoElement | null));
+        const videoEl = player?.el()?.querySelector('video') as HTMLVideoElement | null;
         if (!videoEl || videoEl.videoWidth === 0 || videoEl.videoHeight === 0) {
             return null;
         }
@@ -103,8 +103,17 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
     React.useImperativeHandle(ref, () => buildHandle(), [buildHandle]);
 
     React.useEffect(() => {
-        const videoEl = videoElementRef.current;
-        if (!videoEl || playerRef.current || !sourceUrl) return;
+        const playerContainer = playerContainerRef.current;
+        if (!playerContainer || playerRef.current || !sourceUrl) return;
+
+        // Video.js reparents and removes the element passed to it. Keep that
+        // mutable subtree outside React's ownership so disposal cannot race
+        // React's own DOM cleanup when the Studio changes modes.
+        const videoEl = document.createElement('video-js');
+        videoEl.className = `video-js vjs-big-play-centered ${className}`.trim();
+        videoEl.setAttribute('data-testid', dataTestId);
+        videoEl.setAttribute('playsinline', 'true');
+        playerContainer.appendChild(videoEl);
 
         const player = videojs(videoEl, {
             controls,
@@ -137,10 +146,18 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
         return () => {
             player.off('timeupdate', emitTimeUpdate);
             player.off('error', emitError);
-            player.dispose();
-            playerRef.current = null;
+            try {
+                player.dispose();
+            } catch (error) {
+                logger.warn('[VideoJsPlayer] disposal raced Studio DOM teardown', error);
+            } finally {
+                playerRef.current = null;
+                // React renders no children inside this container, so any
+                // node left behind after Video.js cleanup is player-owned.
+                playerContainer.replaceChildren();
+            }
         };
-    }, [autoPlay, buildHandle, controls, mimeType, muted, posterUrl, sourceUrl, loop]);
+    }, [autoPlay, buildHandle, className, controls, dataTestId, mimeType, muted, posterUrl, sourceUrl, loop]);
 
     React.useEffect(() => {
         const player = playerRef.current;
@@ -178,12 +195,7 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
     }
 
     return (
-        <video
-            ref={videoElementRef}
-            className={`video-js vjs-big-play-centered ${className}`.trim()}
-            data-testid={dataTestId}
-            playsInline
-        />
+        <div ref={playerContainerRef} data-vjs-player className={className} />
     );
 });
 
