@@ -12,15 +12,22 @@ const ctx = (overrides: Partial<ClipDragContext>): ClipDragContext => ({
     deltaFrames: 0,
     candidates: [],
     fps: 30,
+    pxPerFrame: 2,
     ...overrides,
 });
 
 describe('timeline snapping', () => {
     it('snaps a frame to the nearest candidate within the threshold', () => {
-        expect(snapFrame(29, [30])).toBe(30);
-        expect(snapFrame(31, [30])).toBe(30);
-        expect(snapFrame(26, [30])).toBe(26); // outside 6px (3 frames)
-        expect(snapFrame(0, [0])).toBe(0);
+        expect(snapFrame(29, [30], 2)).toBe(30);
+        expect(snapFrame(31, [30], 2)).toBe(30);
+        expect(snapFrame(26, [30], 2)).toBe(26); // outside 6px (3 frames)
+        expect(snapFrame(0, [0], 2)).toBe(0);
+    });
+
+    it('scales the snap threshold with zoom', () => {
+        // 2× zoom → 4px per frame → 6px threshold ≈ 1.5 frames
+        expect(snapFrame(1.4, [0], 4)).toBe(0);
+        expect(snapFrame(2.2, [0], 4)).toBe(2.2);
     });
 
     it('snaps a move to the playhead over free positioning', () => {

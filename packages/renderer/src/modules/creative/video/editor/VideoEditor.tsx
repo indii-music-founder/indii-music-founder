@@ -55,6 +55,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const isEphemeralSession = useVideoEditorStore(state => state.isEphemeralSession);
     const canUndo = useVideoEditorStore(state => state.past.length > 0);
     const canRedo = useVideoEditorStore(state => state.future.length > 0);
+    const timelineZoom = useVideoEditorStore(state => state.timelineZoom);
 
     React.useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
@@ -167,6 +168,27 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                 }
                 right={
                     <div className="flex gap-2">
+                        <div className="flex items-center gap-1 bg-gray-800 rounded-md px-1">
+                            <button
+                                onClick={() => useVideoEditorStore.getState().setTimelineZoom(timelineZoom / 1.5)}
+                                data-testid="video-zoom-out-btn"
+                                title="Zoom out"
+                                className="px-2 py-1.5 text-gray-300 hover:text-white text-sm font-bold"
+                            >
+                                −
+                            </button>
+                            <span className="text-[10px] text-gray-400 w-10 text-center" data-testid="video-zoom-label">
+                                {Math.round(timelineZoom * 100)}%
+                            </span>
+                            <button
+                                onClick={() => useVideoEditorStore.getState().setTimelineZoom(timelineZoom * 1.5)}
+                                data-testid="video-zoom-in-btn"
+                                title="Zoom in"
+                                className="px-2 py-1.5 text-gray-300 hover:text-white text-sm font-bold"
+                            >
+                                +
+                            </button>
+                        </div>
                         <button
                             onClick={() => useVideoEditorStore.getState().undo()}
                             disabled={!canUndo}

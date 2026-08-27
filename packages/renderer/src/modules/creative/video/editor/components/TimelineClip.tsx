@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { VideoClip } from '../../store/videoEditorStore';
+import { VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { AudioWaveform } from '../components/AudioWaveform'; // Check path relative to new file location? No, this is in components dir.
 import { getKeyframeColor } from '../utils/keyframeUtils';
 import { PIXELS_PER_FRAME, ANIMATABLE_PROPERTIES } from '../constants';
@@ -30,6 +30,8 @@ export const TimelineClip = memo(({
     onToggleExpand, onRemove, onDragStart,
     onAddKeyframe, onKeyframeClick
 }: TimelineClipProps) => {
+    const zoom = useVideoEditorStore(state => state.timelineZoom);
+    const pxPerFrame = PIXELS_PER_FRAME * zoom;
     const urlToResolve = clip.src && !clip.src.startsWith('file://') ? clip.src : null;
     const { url: resolvedUrl } = useResolvedStorageUrl(urlToResolve);
     const displayUrl = resolvedUrl || clip.src;
@@ -38,8 +40,8 @@ export const TimelineClip = memo(({
         <div
             className={`absolute top-2 border rounded cursor-pointer transition-all group/clip ${isSelected ? 'bg-green-600 border-green-400 ring-1 ring-white' : 'bg-green-600/30 border-green-500/50 hover:bg-green-600/50'}`}
             style={{
-                left: clip.startFrame * PIXELS_PER_FRAME,
-                width: clip.durationInFrames * PIXELS_PER_FRAME,
+                left: clip.startFrame * pxPerFrame,
+                width: clip.durationInFrames * pxPerFrame,
                 height: isExpanded ? 'auto' : '64px',
                 zIndex: isExpanded ? 20 : 10
             }}
@@ -80,7 +82,7 @@ export const TimelineClip = memo(({
                 <div className="absolute top-0 left-0 right-0 h-16 z-0 opacity-50 pointer-events-none">
                     <AudioWaveform
                         src={displayUrl}
-                        width={clip.durationInFrames * PIXELS_PER_FRAME}
+                        width={clip.durationInFrames * pxPerFrame}
                         height={64}
                         color="rgba(255, 255, 255, 0.6)"
                     />
@@ -117,7 +119,7 @@ export const TimelineClip = memo(({
                                     <div
                                         key={idx}
                                         className={`absolute top-1/2 -translate-y-1/2 w-2 h-2 rotate-45 hover:scale-150 transition-transform cursor-pointer z-30 shadow-sm shadow-black ${getKeyframeColor(kf.easing)}`}
-                                        style={{ left: kf.frame * PIXELS_PER_FRAME }}
+                                        style={{ left: kf.frame * pxPerFrame }}
                                         onClick={(e) => onKeyframeClick(e, clip.id, prop.key, kf.frame, kf.easing)}
                                         onContextMenu={(e) => onKeyframeClick(e, clip.id, prop.key, kf.frame, kf.easing)}
                                         title={`${prop.label}: ${kf.value} @ f${kf.frame} (${kf.easing || 'linear'})`}

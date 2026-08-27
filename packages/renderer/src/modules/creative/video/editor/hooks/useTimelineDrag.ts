@@ -21,11 +21,17 @@ export interface ClipDragContext {
     /** Snap candidates in frames: 0, project end, playhead, neighbors' edges. */
     candidates: number[];
     fps: number;
+    pxPerFrame: number;
 }
 
 /** Snap a frame to the nearest candidate within the pixel threshold. */
-export const snapFrame = (frame: number, candidates: number[], thresholdPx = SNAP_THRESHOLD_PX): number => {
-    const thresholdFrames = thresholdPx / PIXELS_PER_FRAME;
+export const snapFrame = (
+    frame: number,
+    candidates: number[],
+    pxPerFrame: number,
+    thresholdPx = SNAP_THRESHOLD_PX,
+): number => {
+    const thresholdFrames = thresholdPx / pxPerFrame;
     let best = frame;
     let bestDistance = thresholdFrames;
     for (const candidate of candidates) {
@@ -44,7 +50,7 @@ export const snapFrame = (frame: number, candidates: number[], thresholdPx = SNA
  */
 export const computeMoveUpdate = (ctx: ClipDragContext): { startFrame: number } => {
     const raw = Math.max(0, ctx.origin.startFrame + ctx.deltaFrames);
-    return { startFrame: snapFrame(raw, ctx.candidates) };
+    return { startFrame: snapFrame(raw, ctx.candidates, ctx.pxPerFrame) };
 };
 
 /**
@@ -62,7 +68,7 @@ export const computeTrimUpdate = (
 
     if (edge === 'resize-right') {
         const rawEnd = Math.max(origin.startFrame + 1, endFrame + ctx.deltaFrames);
-        const snappedEnd = snapFrame(rawEnd, ctx.candidates);
+        const snappedEnd = snapFrame(rawEnd, ctx.candidates, ctx.pxPerFrame);
         const durationInFrames = snappedEnd - origin.startFrame;
         const hasSourceRange = origin.sourceInUs !== undefined && origin.sourceOutUs !== undefined;
         return {
@@ -72,7 +78,7 @@ export const computeTrimUpdate = (
     }
 
     const rawStart = Math.max(0, Math.min(endFrame - 1, origin.startFrame + ctx.deltaFrames));
-    const snappedStart = snapFrame(rawStart, ctx.candidates);
+    const snappedStart = snapFrame(rawStart, ctx.candidates, ctx.pxPerFrame);
     const durationInFrames = endFrame - snappedStart;
     const hasSourceRange = origin.sourceInUs !== undefined && origin.sourceOutUs !== undefined;
     return {
@@ -89,6 +95,7 @@ interface DragState {
     origin: ClipDragOrigin;
     candidates: number[];
     fps: number;
+    pxPerFrame: number;
 }
 
 export function useTimelineDrag() {
@@ -108,6 +115,7 @@ export function useTimelineDrag() {
         e.preventDefault();
         const project = useVideoEditorStore.getState().project;
         const playhead = useVideoEditorStore.getState().currentTime;
+        const zoom = useVideoEditorStore.getState().timelineZoom;
         const neighbors = project.clips
             .filter(c => c.id !== clip.id)
             .flatMap(c => [c.startFrame, c.startFrame + c.durationInFrames]);
@@ -123,6 +131,7 @@ export function useTimelineDrag() {
             },
             candidates: [0, project.durationInFrames, playhead, ...neighbors],
             fps: project.fps,
+            pxPerFrame: PIXELS_PER_FRAME * zoom,
         });
         setSelectedClipId(clip.id);
     }, [setSelectedClipId]);
@@ -132,12 +141,13 @@ export function useTimelineDrag() {
             const current = dragStateRef.current;
             if (!current) return;
 
-            const deltaFrames = Math.round((e.clientX - current.startX) / PIXELS_PER_FRAME);
+            const deltaFrames = Math.round((e.clientX - current.startX) / current.pxPerFrame);
             const ctx: ClipDragContext = {
                 origin: current.origin,
                 deltaFrames,
                 candidates: current.candidates,
                 fps: current.fps,
+                pxPerFrame: current.pxPerFrame,
             };
 
             if (current.type === 'move') {

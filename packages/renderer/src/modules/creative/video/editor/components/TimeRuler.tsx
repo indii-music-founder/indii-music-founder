@@ -12,6 +12,8 @@ interface TimeRulerProps {
 export const TimeRuler = memo(({ durationInFrames, fps, onSeek }: TimeRulerProps) => {
     // Select currentTime to update accessible value and support keyboard navigation
     const currentTime = useVideoEditorStore(state => state.currentTime);
+    const zoom = useVideoEditorStore(state => state.timelineZoom);
+    const pxPerFrame = PIXELS_PER_FRAME * zoom;
 
     // Generate labels only (reducing iteration and object creation complexity is handled by utils)
     // We still generate marks for labels, but the drawing of ticks is offloaded to CSS
@@ -19,11 +21,11 @@ export const TimeRuler = memo(({ durationInFrames, fps, onSeek }: TimeRulerProps
         return generateTimeRulerMarks(durationInFrames, fps);
     }, [durationInFrames, fps]);
 
-    const rulerWidth = durationInFrames * PIXELS_PER_FRAME;
+    const rulerWidth = durationInFrames * pxPerFrame;
 
     // Optimization: CSS Gradient for ticks (1s intervals) to reduce DOM node count
-    // 1 second = fps * PIXELS_PER_FRAME pixels
-    const tickSpacing = fps * PIXELS_PER_FRAME;
+    // 1 second = fps * pxPerFrame pixels
+    const tickSpacing = fps * pxPerFrame;
 
     // We want a line every `tickSpacing` pixels.
     // background-image: linear-gradient(to right, border-color 1px, transparent 1px)
@@ -38,7 +40,7 @@ export const TimeRuler = memo(({ durationInFrames, fps, onSeek }: TimeRulerProps
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
-        const frame = Math.round(x / PIXELS_PER_FRAME);
+        const frame = Math.round(x / pxPerFrame);
         onSeek(Math.max(0, Math.min(frame, durationInFrames)));
     };
 
@@ -93,7 +95,7 @@ export const TimeRuler = memo(({ durationInFrames, fps, onSeek }: TimeRulerProps
             {/* Labels (DOM) - Still needed for readability */}
             {timeRulerMarks.map((mark) => (
                 <div key={mark.second} className="absolute top-0 text-[10px] text-gray-600 pl-1.5 pointer-events-none"
-                    style={{ left: mark.position }}>
+                    style={{ left: mark.position * zoom }}>
                     {mark.second}s
                 </div>
             ))}

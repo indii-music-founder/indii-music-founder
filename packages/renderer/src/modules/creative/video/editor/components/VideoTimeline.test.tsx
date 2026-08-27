@@ -57,6 +57,7 @@ describe('VideoTimeline', () => {
             removeKeyframe: mockRemoveKeyframe,
             updateKeyframe: mockUpdateKeyframe,
             currentTime: 0,
+            timelineZoom: 1,
         };
 
         // Mock implementation to handle both direct access and selector access
@@ -70,6 +71,7 @@ describe('VideoTimeline', () => {
             }
             return mockState;
         });
+        (useVideoEditorStore as unknown as import("vitest").Mock & { getState: () => typeof mockState }).getState = () => mockState;
     });
 
     it('renders clips', () => {

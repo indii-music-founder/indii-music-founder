@@ -155,6 +155,8 @@ describe('VideoEditor Integration', () => {
             future: [],
             undo: vi.fn(),
             redo: vi.fn(),
+            timelineZoom: 1,
+            setTimelineZoom: vi.fn(),
         };
         // A selector-based mock (not mockReturnValue) so `useVideoEditorStore(state
         // => state.someField)` actually reads that field, matching real Zustand

@@ -66,10 +66,11 @@ export const TimelineTrack = memo(({
 
                         const rect = e.currentTarget.getBoundingClientRect();
                         const x = e.clientX - rect.left;
-                        const frame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
+                        const { useVideoEditorStore } = await import('../../store/videoEditorStore');
+                        const zoom = useVideoEditorStore.getState().timelineZoom;
+                        const frame = Math.max(0, Math.round(x / (PIXELS_PER_FRAME * zoom)));
 
                         const files = Array.from(e.dataTransfer.files) as File[];
-                        const { useVideoEditorStore } = await import('../../store/videoEditorStore');
                         const { getMediaDurationFromFile, resolveMediaDurationSeconds, durationSecondsToFrames } = await import('../utils/mediaMetadata');
                         const fps = useVideoEditorStore.getState().project?.fps || 30;
 

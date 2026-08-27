@@ -53,7 +53,8 @@ export const VideoTimeline = memo(({
         e.stopPropagation();
         const rect = e.currentTarget.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
-        const frameOffset = Math.round(clickX / PIXELS_PER_FRAME);
+        const zoom = useVideoEditorStore.getState().timelineZoom;
+        const frameOffset = Math.round(clickX / (PIXELS_PER_FRAME * zoom));
         const frame = Math.max(0, Math.min(frameOffset, clip.durationInFrames));
         addKeyframe(clip.id, property, frame, defaultValue);
     }, [addKeyframe]);
