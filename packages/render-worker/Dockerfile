@@ -50,8 +50,23 @@ COPY --from=build /app/packages/shared/package.json node_modules/@indii/shared/p
 COPY --from=build /app/packages/shared/dist node_modules/@indii/shared/dist
 COPY --from=build /app/packages/video-compiler/package.json node_modules/@indii/video-compiler/package.json
 COPY --from=build /app/packages/video-compiler/dist node_modules/@indii/video-compiler/dist
+# Local checkout permissions are preserved by COPY. Keep runtime package
+# metadata readable by the unprivileged node user even when a source
+# package.json was owner-only on the build machine.
+RUN chmod 0644 \
+    package.json package-lock.json \
+    packages/shared/package.json \
+    packages/video-compiler/package.json \
+    packages/render-worker/package.json \
+    node_modules/@indii/shared/package.json \
+    node_modules/@indii/video-compiler/package.json
 # Chromium sandbox: Cloud Run's hardened kernel requires the setuid helper.
 RUN chmod 4755 /usr/lib/chromium/chrome-sandbox 2>/dev/null || true
 USER node
+# Validate runtime resolution as the same restricted user that starts the
+# service. This catches unreadable or incorrectly packaged workspaces while
+# the image is still being built.
+RUN node --input-type=module --eval \
+    "await import('@indii/shared'); await import('@indii/video-compiler'); await import('./packages/render-worker/dist/job.js'); console.log('runtime imports ok')"
 EXPOSE 8080
 CMD ["node", "packages/render-worker/dist/index.js"]
