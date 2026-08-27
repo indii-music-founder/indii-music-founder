@@ -43,11 +43,13 @@ COPY --from=build /app/packages/video-compiler/dist packages/video-compiler/dist
 COPY --from=build /app/packages/video-compiler/package.json packages/video-compiler/package.json
 COPY --from=build /app/packages/render-worker/dist packages/render-worker/dist
 COPY --from=build /app/packages/render-worker/package.json packages/render-worker/package.json
-# npm workspace links are materialized when node_modules crosses build stages.
-# Restore them so the runtime resolves the compiled workspace packages above.
-RUN rm -rf node_modules/@indii/shared node_modules/@indii/video-compiler && \
-    ln -s ../../packages/shared node_modules/@indii/shared && \
-    ln -s ../../packages/video-compiler node_modules/@indii/video-compiler
+# npm workspace links do not survive the build-stage boundary reliably.
+# Replace them with physical runtime packages so Node resolves package metadata.
+RUN rm -rf node_modules/@indii/shared node_modules/@indii/video-compiler
+COPY --from=build /app/packages/shared/package.json node_modules/@indii/shared/package.json
+COPY --from=build /app/packages/shared/dist node_modules/@indii/shared/dist
+COPY --from=build /app/packages/video-compiler/package.json node_modules/@indii/video-compiler/package.json
+COPY --from=build /app/packages/video-compiler/dist node_modules/@indii/video-compiler/dist
 # Chromium sandbox: Cloud Run's hardened kernel requires the setuid helper.
 RUN chmod 4755 /usr/lib/chromium/chrome-sandbox 2>/dev/null || true
 USER node
