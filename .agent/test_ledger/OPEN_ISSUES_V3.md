@@ -2677,3 +2677,10 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Delivered:** text styling + speed · split/duplicate/delete · undo/redo · snapping + source-aware trimming · aspect presets · 9 treatment presets
 - **Evidence:** full root suite 6966 passed (25 new this round); editor module 103/103; typecheck clean; lint 0 errors.
 - **Remaining candidates (not requested this round):** ripple delete / multi-select, timeline zoom UI, loop-region playback, more preset looks on request.
+
+### MIG-010c: professional editor round 2 (2026-08-27)
+
+- **Status:** 🟢 SHIPPED on main, CI green (42cd45df4, run 33030426026)
+- **Delivered:** ripple delete (⌘⌫) · timeline zoom 25–400% · loop-region playback · desktop render relay (the queue's second executor: claim/complete callables + scoped artifact IPC + storage upload)
+- **Evidence:** full root suite 6983 passed; firebase video 157/157; relay callables 6 + relay service 3; editor module 111/111; typecheck clean; lint 0 errors.
+- **Remaining:** GCP activation (founder reauth, runbook Step 0) — everything else from the founder's lists is closed.
