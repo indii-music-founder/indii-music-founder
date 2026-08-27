@@ -56,6 +56,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const canUndo = useVideoEditorStore(state => state.past.length > 0);
     const canRedo = useVideoEditorStore(state => state.future.length > 0);
     const timelineZoom = useVideoEditorStore(state => state.timelineZoom);
+    const loopRegion = useVideoEditorStore(state => state.loopRegion);
 
     React.useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
@@ -188,6 +189,37 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                             >
                                 +
                             </button>
+                        </div>
+                        <div className="flex items-center gap-1 bg-gray-800 rounded-md px-1" title="Loop region">
+                            <button
+                                onClick={() => useVideoEditorStore.getState().setLoopIn()}
+                                data-testid="video-loop-in-btn"
+                                title="Set loop in-point at the playhead"
+                                className="px-2 py-1.5 text-gray-300 hover:text-white text-[10px] font-bold"
+                            >
+                                ⟦
+                            </button>
+                            <span className="text-[10px] text-gray-400" data-testid="video-loop-label">
+                                {loopRegion ? `${loopRegion.a}–${loopRegion.b}f` : 'loop'}
+                            </span>
+                            <button
+                                onClick={() => useVideoEditorStore.getState().setLoopOut()}
+                                data-testid="video-loop-out-btn"
+                                title="Set loop out-point at the playhead"
+                                className="px-2 py-1.5 text-gray-300 hover:text-white text-[10px] font-bold"
+                            >
+                                ⟧
+                            </button>
+                            {loopRegion && (
+                                <button
+                                    onClick={() => useVideoEditorStore.getState().clearLoop()}
+                                    data-testid="video-loop-clear-btn"
+                                    title="Clear the loop region"
+                                    className="px-1.5 py-1.5 text-gray-400 hover:text-red-300 text-[10px] font-bold"
+                                >
+                                    ×
+                                </button>
+                            )}
                         </div>
                         <button
                             onClick={() => useVideoEditorStore.getState().undo()}

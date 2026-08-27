@@ -61,6 +61,12 @@ interface VideoEditorState {
     undo: () => void;
     redo: () => void;
 
+    // Loop-region playback
+    loopRegion: { a: number; b: number } | null;
+    setLoopIn: () => void;
+    setLoopOut: () => void;
+    clearLoop: () => void;
+
     addTrack: (type: VideoTrack['type']) => void;
     removeTrack: (id: string) => void;
 
@@ -308,6 +314,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
     return {
         project: INITIAL_PROJECT,
         currentTime: 0,
+        loopRegion: null,
         isPlaying: false,
         selectedClipId: null,
         past: [],
@@ -498,9 +505,29 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                 project: { ...state.project, ...newSettings }
             };
         }),
-        setCurrentTime: (time) => set({ currentTime: time }),
+        setCurrentTime: (time) => set((state) => {
+            // Loop-region enforcement: while playing, crossing the out-point
+            // snaps back to the in-point. Paused scrubbing stays unrestricted.
+            const loop = state.loopRegion;
+            if (state.isPlaying && loop && time >= loop.b) {
+                return { currentTime: loop.a };
+            }
+            return { currentTime: time };
+        }),
         setIsPlaying: (isPlaying) => set({ isPlaying }),
         setSelectedClipId: (id) => set({ selectedClipId: id }),
+
+        setLoopIn: () => set((state) => {
+            const a = Math.max(0, state.currentTime);
+            const b = state.loopRegion?.b ?? state.project.durationInFrames;
+            return { loopRegion: a < b ? { a, b } : { a: 0, b: state.project.durationInFrames } };
+        }),
+        setLoopOut: () => set((state) => {
+            const b = Math.min(state.project.durationInFrames, Math.max(1, state.currentTime));
+            const a = state.loopRegion?.a ?? 0;
+            return { loopRegion: a < b ? { a, b } : null };
+        }),
+        clearLoop: () => set({ loopRegion: null }),
 
         addTrack: (type) => set((state) => {
             const newTrack: VideoTrack = {
