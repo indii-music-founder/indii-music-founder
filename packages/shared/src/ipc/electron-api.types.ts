@@ -150,6 +150,8 @@ export interface ElectronVideoAPI {
     render: (config: unknown) => Promise<string>;
     getDefaultPath: (filename?: string) => Promise<string>;
     compilePreview: (project: IndiiVideoProject) => Promise<string>;
+    /** Reads a locally rendered artifact as a data URL for cloud upload (relay path). */
+    readArtifact?: (filePath: string) => Promise<string>;
 }
 
 export interface ElectronDawAPI {

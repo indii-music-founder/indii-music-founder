@@ -10,6 +10,7 @@ import { VideoEditorSidebar } from './components/VideoEditorSidebar';
 import { useVideoEditor } from './hooks/useVideoEditor';
 import { useVideoProjectPersistence } from './hooks/useVideoProjectPersistence';
 import { TreatmentPicker } from './components/TreatmentPicker';
+import { useDesktopRenderRelay } from '@/services/video/DesktopRenderRelayService';
 import AnnotationPalette from "../../components/AnnotationPalette";
 import EditDefinitionsPanel from "../../components/EditDefinitionsPanel";
 import { STUDIO_COLORS, CreativeColor } from '../../constants';
@@ -47,6 +48,8 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const { handleDragStart } = useTimelineDrag();
 
     useVideoProjectPersistence();
+    // Desktop only: execute queued cloud render jobs while the studio runs.
+    useDesktopRenderRelay();
 
     const isPopoutActive = useVideoEditorStore(state => state.isPopoutActive);
     const isLoadingProject = useVideoEditorStore(state => state.isLoadingProject);

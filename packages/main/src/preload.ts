@@ -142,6 +142,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         render: (config: unknown) => ipcRenderer.invoke('video:render', config),
         getDefaultPath: (filename?: string) => ipcRenderer.invoke('video:get-default-path', filename),
         compilePreview: (project: unknown) => ipcRenderer.invoke('video:compile-preview', project),
+        readArtifact: (filePath: string) => ipcRenderer.invoke('video:read-artifact', filePath),
     },
 
 

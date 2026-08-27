@@ -229,4 +229,31 @@ export function registerVideoHandlers() {
             throw error;
         }
     });
+
+    ipcMain.handle('video:read-artifact', async (event, filePath: string) => {
+        try {
+            validateSender(event);
+            if (typeof filePath !== 'string' || filePath.includes('..')) {
+                throw new Error('Security Violation: Invalid artifact path');
+            }
+            const ext = path.extname(filePath).toLowerCase();
+            if (!['.mp4', '.mov', '.webm'].includes(ext)) {
+                throw new Error(`Security Violation: File type ${ext} is not allowed`);
+            }
+            if (!accessControlService.verifyAccess(filePath)) {
+                throw new Error('Security Violation: Access denied to artifact');
+            }
+            const stat = await fs.promises.stat(filePath);
+            const MAX_ARTIFACT_BYTES = 512 * 1024 * 1024;
+            if (stat.size > MAX_ARTIFACT_BYTES) {
+                throw new Error(`Artifact exceeds the ${MAX_ARTIFACT_BYTES / (1024 * 1024)} MB read cap.`);
+            }
+            const data = await fs.promises.readFile(filePath);
+            const mime = ext === '.mp4' ? 'video/mp4' : ext === '.mov' ? 'video/quicktime' : 'video/webm';
+            return `data:${mime};base64,${data.toString('base64')}`;
+        } catch (error) {
+            log.error('[VideoHandler] Artifact read failed:', error);
+            throw error;
+        }
+    });
 }

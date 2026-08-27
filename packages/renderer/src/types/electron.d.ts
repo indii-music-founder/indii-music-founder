@@ -219,6 +219,8 @@ export interface ElectronAPI {
         openFolder: (filePath?: string) => Promise<void>;
         render: (config: { compositionId: string; outputLocation: string; inputProps?: Record<string, unknown> }) => Promise<string>;
         getDefaultPath: (filename?: string) => Promise<string>;
+        compilePreview?: (project: unknown) => Promise<string>;
+        readArtifact?: (filePath: string) => Promise<string>;
     };
 
     // Credentials

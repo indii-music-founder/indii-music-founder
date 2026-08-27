@@ -46,6 +46,7 @@ export { getMediaDuration } from "./functions/creative/getMediaDuration";
 export { createVideoSession } from "./functions/video/createVideoSession";
 export { queueCloudVideoRender } from "./functions/video/queueCloudVideoRender";
 export { dispatchCloudVideoRender } from "./functions/video/dispatchCloudVideoRender";
+export { claimVideoRenderJob, completeVideoRenderJob } from "./functions/video/relayVideoRenderJob";
 export { getVideoRenderReceipt } from "./functions/video/getVideoRenderReceipt";
 export { cancelVideoSession } from "./functions/video/cancelVideoSession";
 export { finalizeVideoSessionUpload } from "./functions/video/finalizeVideoSessionUpload";
