@@ -10,7 +10,7 @@ import path from 'node:path';
 import type { IndiiVideoProject } from '@indii/shared';
 import { compileProjectToHyperFrames } from '@indii/video-compiler';
 
-import { GSAP_SOURCE } from './gsapAsset';
+import { GSAP_SOURCE } from './gsapAsset.js';
 
 export async function prepareComposition(project: IndiiVideoProject, compositionDir: string): Promise<void> {
     await mkdir(compositionDir, { recursive: true });

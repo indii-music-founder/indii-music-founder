@@ -18,9 +18,9 @@ import { initializeApp, cert, applicationDefault, getApps } from 'firebase-admin
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
-import { executeRenderJob } from './job';
-import type { ArtifactUploader, JobStore } from './job';
-import type { MediaFetcher } from './stage';
+import { executeRenderJob } from './job.js';
+import type { ArtifactUploader, JobStore } from './job.js';
+import type { MediaFetcher } from './stage.js';
 
 const PORT = Number(process.env.PORT ?? 8080);
 const SECRET = process.env.RENDER_WORKER_SECRET ?? '';

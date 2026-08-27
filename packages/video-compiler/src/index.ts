@@ -7,4 +7,4 @@
  * renders), the web renderer (browser-side compilation), and the cloud render
  * worker (server-side composition).
  */
-export * from './compiler';
+export * from './compiler.js';

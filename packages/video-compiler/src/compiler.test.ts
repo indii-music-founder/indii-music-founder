@@ -14,7 +14,7 @@ import { promisify } from 'node:util';
 import ffmpegPath from 'ffmpeg-static';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { compileProjectToHyperFrames } from './compiler';
+import { compileProjectToHyperFrames } from './compiler.js';
 import type { IndiiVideoProject } from '@indii/shared';
 
 const require = createRequire(import.meta.url);

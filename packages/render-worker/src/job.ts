@@ -11,9 +11,9 @@ import path from 'node:path';
 
 import type { IndiiVideoProject } from '@indii/shared';
 
-import { prepareComposition } from './composition';
-import { runHyperFramesRender } from './render';
-import { stageMedia, type MediaFetcher } from './stage';
+import { prepareComposition } from './composition.js';
+import { runHyperFramesRender } from './render.js';
+import { stageMedia, type MediaFetcher } from './stage.js';
 
 export interface RenderJobRecord {
     status: 'queued' | 'running' | 'completed' | 'failed';
