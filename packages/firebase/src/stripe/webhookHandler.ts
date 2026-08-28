@@ -719,6 +719,99 @@ async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
 }
 
 /**
+ * Handle charge.refunded — reverse credit-pack grants when a purchase is
+ * fully refunded. Partial refunds are logged but do not claw back credits
+ * (pro-rated clawback is tracked in OPEN_ISSUES_V3). Non-credit-pack refunds
+ * (subscriptions, marketplace, licensing) need distinct financial flows and
+ * are intentionally out of scope here.
+ */
+async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
+  const charge = event.data.object as Stripe.Charge;
+  const paymentIntent = typeof charge.payment_intent === 'string' ? charge.payment_intent : null;
+  if (!paymentIntent) return;
+
+  let session: Stripe.Checkout.Session | undefined;
+  try {
+    const sessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent, limit: 1 });
+    session = sessions.data[0];
+  } catch (error: unknown) {
+    logger.error('[handleChargeRefunded] Failed to look up checkout session — throwing for retry', {
+      chargeId: charge.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+
+  if (!session || session.metadata?.type !== 'micro_transaction') {
+    logger.info(`[handleChargeRefunded] Charge ${charge.id} is not a credit-pack purchase — no credit action`);
+    return;
+  }
+
+  const userId = session.metadata?.userId;
+  const credits = parseInt(session.metadata?.credits || '0', 10);
+  if (!userId || !Number.isFinite(credits) || credits <= 0) {
+    logger.error(`[handleChargeRefunded] Credit-pack session ${session.id} has invalid metadata — cannot reverse`);
+    return;
+  }
+
+  const fullyRefunded = (charge.amount_refunded ?? 0) >= charge.amount;
+  if (!fullyRefunded) {
+    logger.info(`[handleChargeRefunded] Partial refund on session ${session.id} — credits not clawed back`);
+    return;
+  }
+
+  const db = getFirestore();
+  const creditsRef = db.collection('user_credits').doc(userId);
+  // Deterministic per-charge refund log → idempotent across Stripe retries.
+  const refundLogRef = creditsRef.collection('transactions').doc(`refund_${charge.id}`);
+
+  await db.runTransaction(async (t) => {
+    const logSnap = await t.get(refundLogRef);
+    if (logSnap.exists) {
+      logger.info(`[handleChargeRefunded] Charge ${charge.id} already reversed — skipping duplicate delivery`);
+      return;
+    }
+    const doc = await t.get(creditsRef);
+    const current = doc.exists ? (doc.data()?.balance || 0) : 0;
+    const applied = Math.max(0, Math.min(current, credits));
+    if (applied > 0) {
+      t.update(creditsRef, { balance: current - applied, updatedAt: Date.now() });
+    }
+    t.set(refundLogRef, {
+      amount: -credits,
+      applied,
+      shortfall: credits - applied,
+      type: 'refund',
+      chargeId: charge.id,
+      sessionId: session!.id,
+      timestamp: Date.now()
+    });
+  });
+
+  logger.info(`[handleChargeRefunded] Reversed up to ${credits} credits for user ${maskId(userId)} (charge ${charge.id})`);
+}
+
+/**
+ * Handle charge.dispute.created — record an early-warning doc for finance.
+ * No automatic balance action: disputes are resolved out-of-band; this makes
+ * them visible instead of silently landing in the unhandled-events log.
+ */
+async function handleChargeDisputeCreated(event: Stripe.Event): Promise<void> {
+  const dispute = event.data.object as Stripe.Dispute;
+  const db = getFirestore();
+  // Deterministic ID keyed by the dispute — duplicate deliveries overwrite.
+  await db.collection('payment_disputes').doc(dispute.id).set({
+    chargeId: dispute.charge,
+    amount: dispute.amount,
+    currency: dispute.currency,
+    reason: dispute.reason,
+    status: dispute.status,
+    recordedAt: FieldValue.serverTimestamp(),
+  });
+  logger.warn(`[handleChargeDisputeCreated] Dispute ${dispute.id} recorded for finance review`);
+}
+
+/**
  * Main webhook handler
  */
 export const stripeWebhook = onRequest({
@@ -822,6 +915,12 @@ export const stripeWebhook = onRequest({
         break;
       case 'invoice.payment_failed':
         await handleInvoicePaymentFailed(event);
+        break;
+      case 'charge.refunded':
+        await handleChargeRefunded(event);
+        break;
+      case 'charge.dispute.created':
+        await handleChargeDisputeCreated(event);
         break;
       default:
         logger.warn({

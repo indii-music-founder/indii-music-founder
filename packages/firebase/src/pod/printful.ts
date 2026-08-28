@@ -100,6 +100,11 @@ export const pod_printfulCreateOrder = onCall({ secrets: [printfulApiKey], enfor
     const result = await request<unknown>('/orders', {
         method: 'POST',
         body: JSON.stringify({
+            // Containment: orders must stay Printful DRAFTS. A confirmed order
+            // charges indii's Printful account real money, and there is no
+            // paid-checkout binding on this path yet (tracked in
+            // OPEN_ISSUES_V3). Never set confirm:true without that gate.
+            confirm: false,
             recipient: {
                 name: req.data.address.name,
                 company: req.data.address.company,

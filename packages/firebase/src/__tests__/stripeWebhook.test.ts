@@ -32,7 +32,7 @@ const mocks = vi.hoisted(() => {
     });
 
     const mockDocGet = vi.fn();
-    const mockDoc = vi.fn(() => ({ set: mockSet, update: mockUpdate, get: mockDocGet }));
+    const mockDoc = vi.fn(() => ({ set: mockSet, update: mockUpdate, get: mockDocGet, collection: vi.fn(() => ({ doc: mockDoc })) }));
     const mockCollection = vi.fn(() => ({ doc: mockDoc, add: mockAdd, where: vi.fn() }));
 
     // runTransaction: smartly returns the right snapshot type based on the argument.
@@ -78,6 +78,7 @@ const mocks = vi.hoisted(() => {
 
     const mockConstructEvent = vi.fn();
     const mockRetrieve = vi.fn();
+    const mockSessionsList = vi.fn().mockResolvedValue({ data: [] });
     const mockTransferCreate = vi.fn().mockResolvedValue({ id: 'tr_123' });
 
     return {
@@ -96,6 +97,7 @@ const mocks = vi.hoisted(() => {
         mockDb,
         mockConstructEvent,
         mockRetrieve,
+        mockSessionsList,
         mockTransferCreate,
         makeSnap,
     };
@@ -137,6 +139,7 @@ vi.mock('../stripe/config', async () => {
             webhooks: { constructEvent: mocks.mockConstructEvent },
             subscriptions: { retrieve: mocks.mockRetrieve },
             transfers: { create: mocks.mockTransferCreate },
+            checkout: { sessions: { retrieve: mocks.mockRetrieve, list: mocks.mockSessionsList } },
         },
         mapStripeStatus: (status: string) => {
             const map: Record<string, string> = {
@@ -752,5 +755,97 @@ describe('Stripe Webhook Handler (WO-8)', () => {
             expect.anything(),
             expect.objectContaining({ status: 'released', releasedReason: 'checkout_expired' })
         );
+    });
+
+    // ── charge.refunded / charge.dispute.created ─────────────────────────────
+    it('reverses credits when a credit-pack purchase is fully refunded', async () => {
+        mocks.mockSessionsList.mockResolvedValueOnce({
+            data: [{ id: 'cs_refund_1', metadata: { type: 'micro_transaction', userId: 'user-123', credits: '100' } }],
+        });
+        const event = {
+            id: 'evt_refund_full',
+            type: 'charge.refunded',
+            data: { object: { id: 'ch_full', payment_intent: 'pi_full', amount: 1000, amount_refunded: 1000 } },
+        } as unknown as Stripe.Event;
+        mocks.mockConstructEvent.mockReturnValueOnce(event);
+
+        // Two transactions: (1) idempotency guard, (2) refund reversal.
+        mocks.mockRunTransaction.mockImplementationOnce(async (cb) => cb({
+            get: vi.fn().mockResolvedValue(mocks.makeSnap(false)),
+            set: mocks.mockSet,
+            update: mocks.mockUpdate,
+        }));
+        const refundGet = vi.fn()
+            .mockResolvedValueOnce(mocks.makeSnap(false))              // refund log: not yet present
+            .mockResolvedValueOnce(mocks.makeSnap(true, { balance: 100 })); // credits doc
+        mocks.mockRunTransaction.mockImplementationOnce(async (cb) => cb({
+            get: refundGet,
+            set: mocks.mockSet,
+            update: mocks.mockUpdate,
+        }));
+
+        const { req, res, jsonFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+        expect(mocks.mockUpdate).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ balance: 0 })
+        );
+        const refundWrite = mocks.mockSet.mock.calls.find((c) => (c[1] as { type?: string })?.type === 'refund');
+        expect(refundWrite).toBeDefined();
+        expect(refundWrite![1]).toMatchObject({ amount: -100, applied: 100, type: 'refund' });
+    });
+
+    it('does not claw back credits on a partial refund', async () => {
+        mocks.mockSessionsList.mockResolvedValueOnce({
+            data: [{ id: 'cs_refund_2', metadata: { type: 'micro_transaction', userId: 'user-123', credits: '100' } }],
+        });
+        const event = {
+            id: 'evt_refund_partial',
+            type: 'charge.refunded',
+            data: { object: { id: 'ch_partial', payment_intent: 'pi_partial', amount: 1000, amount_refunded: 400 } },
+        } as unknown as Stripe.Event;
+        mocks.mockConstructEvent.mockReturnValueOnce(event);
+
+        const { req, res } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        // Only the idempotency-guard transaction ran; no reversal transaction.
+        expect(mocks.mockRunTransaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores refunds of non-credit-pack checkouts', async () => {
+        mocks.mockSessionsList.mockResolvedValueOnce({
+            data: [{ id: 'cs_refund_3', metadata: { type: 'marketplace_purchase', userId: 'user-123' } }],
+        });
+        const event = {
+            id: 'evt_refund_market',
+            type: 'charge.refunded',
+            data: { object: { id: 'ch_mkt', payment_intent: 'pi_mkt', amount: 2000, amount_refunded: 2000 } },
+        } as unknown as Stripe.Event;
+        mocks.mockConstructEvent.mockReturnValueOnce(event);
+
+        const { req, res } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(mocks.mockRunTransaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('records a dispute for finance review without touching balances', async () => {
+        const event = {
+            id: 'evt_dispute_1',
+            type: 'charge.dispute.created',
+            data: { object: { id: 'dp_1', charge: 'ch_x', amount: 1500, currency: 'usd', reason: 'product_not_received', status: 'warning' } },
+        } as unknown as Stripe.Event;
+        mocks.mockConstructEvent.mockReturnValueOnce(event);
+
+        const { req, res, jsonFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+        const disputeWrite = mocks.mockSet.mock.calls.find((c) => (c[0] as { reason?: string })?.reason === 'product_not_received');
+        expect(disputeWrite).toBeDefined();
+        expect(disputeWrite![0]).toMatchObject({ amount: 1500, status: 'warning' });
     });
 });

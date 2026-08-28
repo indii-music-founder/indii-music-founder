@@ -147,4 +147,19 @@ describe('createCheckoutSession', () => {
       expect.objectContaining({ customer: 'cus_existing_customer' })
     );
   });
+
+  it('clamps client-supplied trialDays to the server-side maximum', async () => {
+    const { createCheckoutSession } = await import('./createCheckoutSession');
+    mocks.mockSessionsCreate.mockResolvedValueOnce({ url: 'https://checkout.stripe.com/x', id: 'cs_trial' });
+    const request = makeRequest();
+    (request.data as Record<string, unknown>).trialDays = 3650; // abusive client value
+
+    await (createCheckoutSession as unknown as (req: unknown) => Promise<unknown>)(request);
+
+    expect(mocks.mockSessionsCreate).toHaveBeenCalledTimes(1);
+    const params = mocks.mockSessionsCreate.mock.calls[0]![0] as {
+      subscription_data?: { trial_period_days?: number };
+    };
+    expect(params.subscription_data?.trial_period_days).toBe(14);
+  });
 });

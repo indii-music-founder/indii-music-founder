@@ -91,10 +91,14 @@ export const createCheckoutSession = onCall({
       client_reference_id: userId
     };
 
-    // Add trial period if specified
+    // Add trial period if specified.
+    // SECURITY: trialDays previously came straight from the client — any user
+    // could mint an arbitrarily long free trial. Clamp to a server-side max
+    // regardless of what the client sends.
+    const SERVER_MAX_TRIAL_DAYS = 14;
     if (trialDays && trialDays > 0) {
       sessionParams.subscription_data = {
-        trial_period_days: trialDays,
+        trial_period_days: Math.min(Math.floor(trialDays), SERVER_MAX_TRIAL_DAYS),
         metadata: { userId, tier }
       };
     }
