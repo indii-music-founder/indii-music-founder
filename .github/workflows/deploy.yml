@@ -722,6 +722,11 @@ jobs:
           npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete calculateFuelLogistics --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete agentLoopCron --region us-central1 --project indii-music-founder --force --non-interactive || true
+          # MIG-010: dispatchCloudVideoRender was partially deployed as an HTTPS
+          # function; Gen2 cannot change trigger type in place. Delete so the
+          # background-triggered version deploys fresh. Idempotent — safe on
+          # repeat deploys once the stale version is gone.
+          npx --no-install firebase functions:delete dispatchCloudVideoRender --region us-central1 --project indii-music-founder --force --non-interactive || true
           # Gen1 -> Gen2 cutover (ISSUE-1243). Cloud Functions cannot change
           # generation in place, so each former Gen1 endpoint must be deleted
           # before the Gen2 replacement can deploy. Idempotent and re-runnable:
