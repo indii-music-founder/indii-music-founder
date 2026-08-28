@@ -638,18 +638,24 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
   const invoice = event.data.object as Stripe.Invoice;
   if (!invoice.customer) return;
 
-  let currentPeriodEnd = undefined;
-  if ((invoice as unknown as { subscription?: string }).subscription) {
-    const subscription = await stripe.subscriptions.retrieve((invoice as unknown as { subscription: string }).subscription);
-    currentPeriodEnd = (subscription as unknown as { current_period_end: number }).current_period_end * 1000;
-  }
+  // ISSUE-1410: the LIVE subscription object is the status authority. Events
+  // are not ordered by Stripe, so a late-arriving invoice.paid after a
+  // cancellation must never resurrect the subscription to 'active' — derive
+  // the status (and period bounds) from the live object instead of trusting
+  // the event's implied state. One-time invoices (no subscription field)
+  // never touch subscription status at all; they still get a ledger entry.
+  const invoiceSubscriptionId = (invoice as unknown as { subscription?: string }).subscription;
 
-  const updateData: Partial<LocalSubscription> = { status: 'active' };
-  if (currentPeriodEnd) {
-    updateData.currentPeriodEnd = currentPeriodEnd;
+  if (invoiceSubscriptionId) {
+    const subscription = await stripe.subscriptions.retrieve(invoiceSubscriptionId);
+    const updateData: Partial<LocalSubscription> = {
+      status: mapStripeStatus((subscription as unknown as { status: Stripe.Subscription.Status }).status),
+      currentPeriodStart: (subscription as unknown as { current_period_start: number }).current_period_start * 1000,
+      currentPeriodEnd: (subscription as unknown as { current_period_end: number }).current_period_end * 1000,
+      cancelAtPeriodEnd: (subscription as unknown as { cancel_at_period_end: boolean }).cancel_at_period_end,
+    };
+    await updateSubscriptionByCustomer(invoice.customer as string, 'handleInvoicePaid', updateData);
   }
-
-  await updateSubscriptionByCustomer(invoice.customer as string, 'handleInvoicePaid', updateData);
 
   // Write ledger entry for Finance dashboard
   const db = getFirestore();
