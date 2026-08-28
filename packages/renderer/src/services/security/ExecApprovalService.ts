@@ -11,7 +11,9 @@
  *   - Approvals are scoped to (commandPattern, scope) pairs
  *   - Scope can be 'once', 'session', or 'permanent'
  *   - Permanent approvals are persisted; session/once approvals are in-memory only
- *   - Docker/ephemeral isolation is enforced for any untrusted external input
+ *   - High-risk shell/filesystem/network calls require sandboxed execution. With the
+ *     Agent Zero/Docker runtime removed (74bca6fbb) no caller can currently satisfy
+ *     isSandboxed=true, so those categories fail closed until a real sandbox is rebuilt.
  *
  * File: Persisted in Electron via IPC → userData/exec-approvals.json
  */

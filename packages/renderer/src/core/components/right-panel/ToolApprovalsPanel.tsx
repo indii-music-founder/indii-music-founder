@@ -207,7 +207,7 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
                     <div className="flex flex-col items-center justify-center h-32 text-center opacity-50">
                         <ShieldAlert size={28} className="mb-2 text-red-400" />
                         <p className="text-sm">No pending approvals</p>
-                        <p className="text-xs mt-1">Destructive actions (execute_code, computer_click, etc.) pause here before running</p>
+                        <p className="text-xs mt-1">Destructive actions (computer_click, rotate_credentials, etc.) pause here before running</p>
                     </div>
                 ) : (
                     approvals.map((approval) => (

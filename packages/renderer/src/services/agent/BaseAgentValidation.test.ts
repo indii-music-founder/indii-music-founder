@@ -169,7 +169,7 @@ describe('BaseAgent Tool Validation', () => {
     describe('ISSUE-1116: pre-execution approval gate', () => {
         const executeCodeHandler = vi.fn().mockResolvedValue({ success: true, data: 'ran' });
 
-        it('halts before executing a tool explicitly marked requiresApproval:true (e.g. execute_code) and creates a pending approval', async () => {
+        it('halts before executing a tool explicitly marked requiresApproval:true (e.g. computer_click) and creates a pending approval', async () => {
             const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
             const config: AgentConfig = {
@@ -180,16 +180,16 @@ describe('BaseAgent Tool Validation', () => {
                 category: 'specialist',
                 systemPrompt: 'sys prompt',
                 tools: [{
-                    functionDeclarations: [createTool('execute_code', 'Runs code', z.object({ code: z.string() }))]
+                    functionDeclarations: [createTool('computer_click', 'Clicks the host desktop', z.object({ x: z.number(), y: z.number() }))]
                 }],
-                functions: { execute_code: executeCodeHandler }
+                functions: { computer_click: executeCodeHandler }
             };
             const gatedAgent = new BaseAgent(config);
 
             vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
                 response: {
                     text: () => 'Running code...',
-                    functionCalls: () => [{ name: 'execute_code', args: { code: 'print(1)' } }]
+                    functionCalls: () => [{ name: 'computer_click', args: { x: 10, y: 20 } }]
                 }
             } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
@@ -197,8 +197,8 @@ describe('BaseAgent Tool Validation', () => {
 
             expect(executeCodeHandler).not.toHaveBeenCalled();
             expect(mockCreatePendingApproval).toHaveBeenCalledWith(expect.objectContaining({
-                toolName: 'execute_code',
-                args: { code: 'print(1)' },
+                toolName: 'computer_click',
+                args: { x: 10, y: 20 },
                 riskTier: 'destructive'
             }));
             expect(response.error).toBe('AWAITING_TOOL_APPROVAL');

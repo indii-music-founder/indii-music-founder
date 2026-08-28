@@ -42,7 +42,6 @@ import { CaptainsLogTools } from './CaptainsLogTools';
 import { SqueezerTools } from './SqueezerTools';
 import { HiveTools } from './HiveTools';
 import { CanvasTools } from './CanvasTools';
-import { CodeExecutionTools } from './CodeExecutionTools';
 import { NotificationTools } from './NotificationTools';
 import { BugReportTools } from './BugReportTools';
 import { LivingPlanTools } from './LivingPlanTools';
@@ -112,9 +111,8 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     // Memory Architecture Layer 1 & 2
     ...SqueezerTools,
     ...HiveTools,
-    // A2UI + Code Execution + Notifications (OpenClaw gaps)
+    // A2UI + Notifications (OpenClaw gaps)
     ...CanvasTools,
-    ...CodeExecutionTools,
     ...NotificationTools,
     // Bug Reporting
     ...BugReportTools,
@@ -260,12 +258,10 @@ AVAILABLE TOOLS:
 102. canvas_push(type, title, data, agentId?) - Push structured visual content (chart/table/card/markdown) to the user's workspace canvas.
 103. canvas_clear() - Clear all agent-pushed canvas panels.
 104. draw_shape(shapeType, x, y, width?, height?, radius?, color?, fill?, stroke?, zIndex?, label?) - Draw deterministic UI vector shapes (rect, circle, line, text). NOT for Autonomous media generation.
---- CODE EXECUTION ---
-105. execute_code(language, code, description) - Execute a Python script via the sandboxed sidecar. HIGH RISK — requires user approval.
 --- NOTIFICATIONS ---
-106. send_notification(title, body, urgency?, action_url?) - Send a notification (info/warning/critical) to the user outside the app.
-107. propose_plan(draft: object) - Propose a structured living plan for a career goal or release.
-108. refine_plan(planId: string, updates: object) - Refine an existing plan draft.
+105. send_notification(title, body, urgency?, action_url?) - Send a notification (info/warning/critical) to the user outside the app.
+106. propose_plan(draft: object) - Propose a structured living plan for a career goal or release.
+107. refine_plan(planId: string, updates: object) - Refine an existing plan draft.
 109. get_plan(planId: string) - Get details of a specific plan.
 110. resize_image_for_socials(imageUrl: string, platforms?: string[]) - Resize image for TikTok, Instagram, YouTube, etc. using Autonomous outpainting.
 111. analyze_audio_dna(audioUrl: string) - Extract BPM, Key, Mood, Genre, and Energy from an audio file.

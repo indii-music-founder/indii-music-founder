@@ -1,8 +1,13 @@
 # Autonomous Browser Agent (Gemini Drive)
 
-**Status:** Prototype / Beta
-**Model:** `gemini-2.5-pro-ui-checkpoint`
-**Core Library:** Puppeteer (Main Process)
+**Status:** Bridge live / Gemini Drive retired (see Reality Check)
+**Body:** Hidden Electron `BrowserWindow` via `packages/main/src/services/BrowserAgentService.ts` (NOT Puppeteer — it was removed to cut ~150MB)
+
+## Reality Check (2026-08 audit)
+
+- **Live surface:** `BrowserTools`/`UniversalTools.browser_tool` → `electronAPI.agent` IPC → hidden sandboxed `BrowserWindow`. Registered in dev AND packaged builds (production gating removed 2026-08; ERROR_LEDGER "env-gated IPC" pattern). Sessions persist across navigate→act→snapshot and are reaped after 10 minutes idle.
+- **Retired:** the renderer `BrowserAgentService` "Gemini Drive" loop (`isConfigured()` hard-false, ISSUE-972) and `MusicPortalAgents` built on it. The coordinate-based Computer Use paradigm never matched the selector-based bridge.
+- The "Puppeteer" references below are historical.
 
 ## Overview
 

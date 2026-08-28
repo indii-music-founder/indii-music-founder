@@ -258,8 +258,11 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     // Legal (destructive — initiates legal processes)
     trigger_digital_signature: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Destructive operation requiring explicit user approval' },
 
-    // Code Execution (destructive — runs arbitrary code on host)
-    execute_code: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Executes arbitrary Python code via the sidecar — requires explicit user approval' },
+    // NOTE: execute_code was retired with the Python sidecar removal (74bca6fbb) and is no
+    // longer in TOOL_REGISTRY and has no agent declarations. No agent can invoke it
+    // (BaseAgent blocks undeclared tools). DigitalHandshake's getToolRiskMetadata fallback
+    // would still classify it destructive/requiresApproval; the ISSUE-1116 dispatch gate
+    // only keys on EXPLICIT entries by design, so do not re-add phantom entries here.
 
     // Computer input control (destructive — CE-2, ISSUE-1111. Controls the real mouse/keyboard.)
     computer_click: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Moves the mouse and clicks on the host desktop — requires explicit user approval' },

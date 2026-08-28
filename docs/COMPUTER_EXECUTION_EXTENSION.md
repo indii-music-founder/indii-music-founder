@@ -51,7 +51,7 @@ The **Brain–Body–Bridge** pattern, already proven by the Autonomous Browser 
 
 - **Brain (renderer):** `BrowserAgentDriver.ts` — capture → reason (Gemini UI model, screenshot in prompt) → act → repeat, max-step bounded.
 - **Bridge:** `packages/main/src/preload.ts` exposes namespaced `electronAPI.*` (e.g. `electronAPI.agent.navigateAndExtract/performAction/captureState`); every `ipcMain.handle` in `packages/main/src/handlers/*.ts` runs `validateSender(event)` + Zod validation (`handlers/agent.ts`).
-- **Body (main process):** Puppeteer-based `BrowserAgentService` executes real browser actions.
+- **Body (main process):** `BrowserAgentService` — a hidden, sandboxed Electron `BrowserWindow` (Puppeteer was removed to cut bundle size) — executes real browser actions.
 
 Web sessions **fail closed**: `BrowserTools.ts` returns `BROWSER_DESKTOP_ONLY` when `window.electronAPI` is absent — no silent fallback.
 

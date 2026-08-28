@@ -5,7 +5,7 @@ import os
 import re
 
 CONFIG_PATH = ".agent/test_ledger/departments_test_config.json"
-ISSUES_PATH = ".agent/test_ledger/OPEN_ISSUES_V2.md"
+ISSUES_PATH = ".agent/test_ledger/OPEN_ISSUES_V3.md"
 GSTACK_BIN = os.path.expanduser("~/.claude/skills/gstack/browse/dist/browse")
 PORT = "4243"
 
