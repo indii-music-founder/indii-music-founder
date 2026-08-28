@@ -1,3 +1,48 @@
+# Session Close — Agent chat 413 payload guard fix (2026-08-28, DSH agent)
+
+**Final state: both fixes on `origin/main`, CI green at `dd3d72ed2` (run 33196608685, incl. production deploy).**
+
+## What happened (founder report → investigation → two shipped fixes)
+
+Founder pasted an "Operational Verdict Report" from indii Conductor claiming
+"content payload too large" with improvised trademark caveats (Detroit Tigers
+Old English D request). Root cause was THREE stacked gaps, two shipped:
+
+1. `d3672afb3` — chat attachments + creative auto-inject crossed as RAW base64
+   inlineData against the server's 200K-CHAR guard (client guards counted flat
+   TOKENS — unit mismatch); the 413 was masked as INTERNAL_ERROR and the Evolas
+   persona layer laundered that failure text into a bogus verdict. Fix:
+   `StreamPayloadGuard` (char-mirror assert + 1024→768→512 JPEG ladder, fail-open),
+   `PAYLOAD_TOO_LARGE` error code, controlled BaseAgent halt, persona passes
+   failed-execution responses byte-identical. 5 regression tests.
+2. `8edc335cb` — founder challenge ("the too-large images are also images the
+   app made") exposed a SECOND path: the tool loop embeds tool results into the
+   next iteration's prompt as TEXT, and generate_image results carry the
+   app-generated image as a data-URL in `result.data`. Fix:
+   `elideBase64Payloads` sanitizer at every `fullPrompt +=` site. 4 tests.
+
+Evidence: full monorepo vitest 7010/0 (first unit), 1782/0 affected (second),
+typecheck clean, lint 0 errors, production build green; exact-SHA CI success.
+
+## Honest limits (founder was told, in writing)
+
+- Payload messaging can still appear for genuinely unsendable inputs (huge
+  audio attachment; corrupt image) — by design, now honest and specific.
+- NOT audited to the same standard: canvas image-editor and memory-ingestion
+  size limits (separate pipelines). Flagged as follow-up.
+- `TokenEstimator` still counts images as flat 258 tokens (unit mismatch vs
+  char budget documented; harmless now that the char guard exists).
+
+## Concurrent-session note
+
+Multiple pushes landed alongside mine (video-editor WIP, arcjet edits, CI fix,
+ledger docs). My CI run was cancelled twice by concurrency supersession;
+acceptance was taken on the successor run containing both my SHAs. Foreign
+dirty files in the worktree (video refactor, landing audio, agent-watch
+observation) are NOT mine — left untouched.
+
+---
+
 # Session Checkpoint — Backend P0 Audit Fixes (2026-08-22, DSH agent)
 
 **Updated:** 2026-08-22 (session close)
