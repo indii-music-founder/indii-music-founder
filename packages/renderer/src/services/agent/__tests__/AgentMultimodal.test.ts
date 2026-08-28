@@ -41,6 +41,14 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
+// Compression must fail closed-to-original in this harness: the guard fails
+// OPEN (keeps the raw attachment) and the payload budget assert decides.
+vi.mock('@/services/CloudStorageService', () => ({
+    CloudStorageService: {
+        compressImage: vi.fn().mockRejectedValue(new Error('canvas unavailable in test')),
+    },
+}));
+
 class VisionAgent extends BaseAgent {
     constructor() {
         super({
@@ -104,5 +112,22 @@ describe('Agent Multimodal Support', () => {
         );
 
         expect(result.text).toBe('I see a red car.');
+    });
+
+    it('halts controlled with a specific payload error when attachments exceed the stream budget (ERROR_LEDGER 2026-08-27)', async () => {
+        const result = await agent.execute(
+            'Render this logo',
+            {},
+            undefined,
+            undefined,
+            [{ mimeType: 'image/png', base64: 'A'.repeat(250_000) }]
+        );
+
+        expect(result.error).toBe('Payload Too Large');
+        expect(result.text).toContain('Task halted');
+        expect(result.text).toContain('200KB');
+        // Decisive: the oversize request never reached the model layer.
+        expect(AutonomousIntelligence.generateContentStream).not.toHaveBeenCalled();
+        expect(AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
     });
 });

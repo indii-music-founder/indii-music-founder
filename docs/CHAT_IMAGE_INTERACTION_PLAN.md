@@ -208,6 +208,9 @@ This format gives the model concrete coordinates per color, paired with the natu
 - **E2E coverage**: Reviewed and cleaned up the new `e2e/image-annotation.spec.ts` (inline annotator open → draw via `e2e-force-annotation` helper → prompt fill → Apply). Removed debug scaffolding (repo-root `dom-dump.html` write, stray console.logs). Spec relies on `data-testid="inline-annotator"` and the `e2e-force-annotation` helper.
 - **Retry-batch resilience**: `failedVariationBatch` moved from InfiniteCanvas local state into the creative history store so the variation-retry UI survives canvas unmounts. Deliberately NOT persisted to localStorage (base64 payload quota risk — see ISSUE-1080). InfiniteCanvas unit suite 6/6 green.
 
+**Recent work (DSH agent session 2026-08-27):**
+- **Agent-chat 413 payload fix (ERROR_LEDGER 2026-08-27)**: chat image attachments and BaseAgent's auto-injected generated-artifact crossed to `generateContentStream` as RAW base64 and blew the server's 200K-char contents guard; the failure was persona-formatted into a misleading "Operational Verdict Report". New `services/intelligence/StreamPayloadGuard.ts` mirrors the server measurement in CHARS, compresses oversized raster attachments (1024→768→512 JPEG ladder via `CloudStorageService.compressImage`, fail-open), and throws the new `PAYLOAD_TOO_LARGE` before the network call; `BaseAgent` halts controlled on it; `FirebaseIntelligenceService` maps HTTP 413 to the same code; `PersonaAgentResponseService` passes failed-execution (`response.error`) responses through byte-identical so failure text can never become a verdict. Note for annotator work: this guard covers the AGENT chat path only — the annotator/canvas pipeline (§Phase 1-3) has its own size handling; do not assume one covers the other.
+
 **Notes for the next agent:**
 
 - The Boardroom UI lives at `packages/renderer/src/modules/boardroom/` — the screenshot William shared on 2026-05-05 is from there.

@@ -13,6 +13,7 @@ import { livingPlanService } from './LivingPlanService';
 // Workflow coordinator removed for indii Conductor standard routing
 import { maestroBatchingService } from './MaestroBatchingService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { compressStreamImageAttachments } from '@/services/intelligence/StreamPayloadGuard';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { agentGraphService } from './orchestration/AgentGraphService';
 import { agentGraphStateService } from './orchestration/AgentGraphStateService';
@@ -1521,9 +1522,14 @@ The user will see this plan and can approve it to start execution.`;
         // Build the prompt contents: history + current message
         const currentMessagePart: { role: 'user'; parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> } = { role: 'user' as const, parts: [{ text }] };
 
-        // Handle image attachments inline
+        // Handle image attachments inline. Oversized raster images are
+        // compressed first — raw base64 blew the backend 200K-char guard and
+        // surfaced as an opaque INTERNAL_ERROR (ERROR_LEDGER 2026-08-27).
+        // Fail-open: a compression error keeps the original attachment and the
+        // stream boundary's budget assertion produces the actionable error.
         if (attachments && attachments.length > 0) {
-            for (const att of attachments) {
+            const streamAttachments = await compressStreamImageAttachments(attachments);
+            for (const att of streamAttachments) {
                 currentMessagePart.parts.push({
                     inlineData: { mimeType: att.mimeType, data: att.base64 }
                 });

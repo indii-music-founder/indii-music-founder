@@ -358,6 +358,36 @@ describe('FirebaseIntelligenceService', () => {
         });
     });
 
+    it('maps a backend 413 payload rejection to PAYLOAD_TOO_LARGE, not INTERNAL_ERROR (ERROR_LEDGER 2026-08-27)', async () => {
+        vi.mocked(fetch).mockImplementationOnce(async () => new Response('Content payload is too large.', { status: 413 }));
+
+        await expect(service.rawGenerateContentStream('tiny', undefined, undefined, undefined, undefined, { timeout: 0 }))
+            .rejects.toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
+    });
+
+    it('rejects oversized contents BEFORE the network call with PAYLOAD_TOO_LARGE (server-guard mirror)', async () => {
+        const fetchCallsBefore = vi.mocked(fetch).mock.calls.length;
+        const oversizedContents = [{
+            role: 'user' as const,
+            parts: [
+                { text: 'Look at this' },
+                { inlineData: { mimeType: 'image/png', data: 'A'.repeat(250_000) } },
+            ],
+        }];
+
+        await expect(service.rawGenerateContentStream(
+            oversizedContents,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { timeout: 0 },
+        )).rejects.toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
+
+        // Decisive: the rejection happened locally, not as a backend round trip.
+        expect(vi.mocked(fetch).mock.calls.length).toBe(fetchCallsBefore);
+    });
+
     it('should not fall back if bootstrap fails (Resilience)', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));

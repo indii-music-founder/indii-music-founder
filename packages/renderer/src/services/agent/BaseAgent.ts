@@ -1,6 +1,7 @@
 import { logger } from '@/utils/logger';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { compressStreamImageAttachments, assertContentsWithinStreamBudget } from '@/services/intelligence/StreamPayloadGuard';
 import {
     SpecializedAgent,
     AgentResponse,
@@ -1070,15 +1071,36 @@ The capability snapshot could not be loaded this session. Do not claim any capab
                     }
                 }
 
+                // Compress oversized raster attachments BEFORE serialization.
+                // Raw base64 images (attachments and the auto-injected
+                // generated artifact above) blew the backend 200K-char guard
+                // and surfaced as an opaque INTERNAL_ERROR (ERROR_LEDGER
+                // 2026-08-27). Fail-open: compression errors keep the original.
+                const streamAttachments = await compressStreamImageAttachments(finalAttachments);
+
                 const requestContents = [{
                     role: 'user' as const,
                     parts: [
                         { text: fullPrompt },
-                        ...finalAttachments.map(a => ({
+                        ...streamAttachments.map(a => ({
                             inlineData: { mimeType: a.mimeType, data: a.base64 }
                         }))
                     ]
                 }];
+
+                // Server-guard mirror: fail HERE with a controlled, honest
+                // halt instead of an opaque backend 413 mid-consultation.
+                try {
+                    assertContentsWithinStreamBudget(requestContents, `${this.id}#iteration-${iterations}`);
+                } catch (payloadError) {
+                    logger.warn(`[BaseAgent] Payload budget halted execution in ${this.id}.`, payloadError);
+                    executionContext.rollback();
+                    return {
+                        text: 'Task halted: request payload exceeds the ~200KB backend limit even after image compression. Reduce image attachments or start a fresh conversation.',
+                        error: 'Payload Too Large',
+                        toolCalls
+                    };
+                }
 
                 // Pre-flight Token Estimation (Primitive #5)
                 const { TokenEstimator } = await importWithRetry(() => import('./governance/TokenEstimator'));

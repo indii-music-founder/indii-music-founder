@@ -85,6 +85,15 @@ export async function finalizePersonaAgentResponse(
     if (!personaId || !input.response.text.trim() || (input.response.toolCalls?.length ?? 0) > 0 || isTrivialInput(input.question)) {
         return { text: input.response.text };
     }
+    // ERROR_LEDGER 2026-08-27: a FAILED execution (response.error set) is a
+    // system report, not a completed specialist analysis. Running it through
+    // the verdict pipeline manufactured authoritative-looking "Operational
+    // Verdict Reports" out of raw failure text (e.g. an opaque 413 payload
+    // error rendered as a trademark/IP risk assessment). Failure text passes
+    // through byte-identical, exactly like tool-bearing responses.
+    if (input.response.error) {
+        return { text: input.response.text };
+    }
 
     try {
         const faderResolution = dependencies.resolveFaders

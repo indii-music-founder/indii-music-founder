@@ -57,6 +57,23 @@ describe('PersonaAgentResponseService', () => {
         });
     });
 
+    it('keeps failed-execution responses byte-identical and never renders them as a verdict (ERROR_LEDGER 2026-08-27)', async () => {
+        const loadFaders = vi.fn();
+        const getResponse = vi.fn();
+        const failureText = 'Task halted: request payload exceeds the ~200KB backend limit even after image compression.';
+
+        const result = await finalizePersonaAgentResponse({
+            agentId: 'generalist',
+            question: 'Render the Detroit Tigers Old English D style.',
+            responseId: 'response-failed',
+            response: { text: failureText, error: 'Payload Too Large', toolCalls: [] },
+        }, { loadFaders, getResponse: getResponse as never });
+
+        expect(result).toEqual({ text: failureText });
+        expect(loadFaders).not.toHaveBeenCalled();
+        expect(getResponse).not.toHaveBeenCalled();
+    });
+
     it('keeps tool-bearing responses byte-identical and never enters the presentation layer', async () => {
         const loadFaders = vi.fn();
         const getResponse = vi.fn();

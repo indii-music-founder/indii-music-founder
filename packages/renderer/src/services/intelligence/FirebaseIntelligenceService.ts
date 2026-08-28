@@ -4,6 +4,7 @@ import { appCheck, auth, functions, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
+import { assertContentsWithinStreamBudget } from './StreamPayloadGuard';
 import { APPROVED_MODELS, INTELLIGENCE_MODELS, getModelKey } from '@/core/config/intelligence-models';
 import { RemoteIntelligenceConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteIntelligenceConfig } from './config/RemoteIntelligenceConfig';
 import {
@@ -438,6 +439,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         headers: Record<string, string>,
         signal?: AbortSignal
     ): Promise<{ stream: ReadableStream<StreamChunk>; response: Promise<WrappedResponse> }> {
+        // Mirror the server's 200K-char contents guard locally so oversized
+        // requests fail here with a specific PAYLOAD_TOO_LARGE instead of an
+        // opaque HTTP 413 INTERNAL_ERROR round trip (ERROR_LEDGER 2026-08-27).
+        assertContentsWithinStreamBudget(contents, 'generateContentStream');
         const response = await fetch(this.getBackendStreamUrl(), {
             method: 'POST',
             headers,
@@ -455,6 +460,13 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 safeJsonParse(message) as BackendStreamPayload | null,
             );
             if (generationCapacity) throw generationCapacity;
+            if (response.status === 413) {
+                // The server's contents guard rejected the serialized request.
+                // Name the actual failure instead of masking it as INTERNAL_ERROR.
+                throw new AppException(AppErrorCode.PAYLOAD_TOO_LARGE,
+                    message || 'AI request payload exceeded the backend size limit.',
+                    { retryable: false, context: { httpStatus: response.status } });
+            }
             if (response.status === 401 || response.status === 403) {
                 throw new AppException(AppErrorCode.UNAUTHORIZED, message || 'AI backend authentication failed', { retryable: false });
             }
