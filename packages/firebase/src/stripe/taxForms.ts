@@ -26,6 +26,12 @@ export const requestTaxForms = onCall(
             );
         }
 
+        // Firestore batches cap at 500 ops; bound the client-fed array well below
+        // it so an oversized request fails validation instead of crashing the fn.
+        if (payees.length > 200) {
+            throw new HttpsError('invalid-argument', "A maximum of 200 payees can be requested per call.");
+        }
+
         const requests = payees.map((payee, index) => {
             if (!payee || typeof payee !== 'object') {
                 throw new HttpsError('invalid-argument', `Payee at index ${index} must be an object.`);

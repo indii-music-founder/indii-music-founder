@@ -33,6 +33,12 @@ describe('Knowledge Base Index Worker', () => {
     const createColRef = (colPath: string) => ({
       doc: (docId: string) => createDocRef(`${colPath}/${docId}`),
       where: () => ({
+        limit: () => ({
+          get: vi.fn(async () => ({
+            empty: true,
+            docs: [],
+          })),
+        }),
         get: vi.fn(async () => ({
           empty: true,
           docs: [],

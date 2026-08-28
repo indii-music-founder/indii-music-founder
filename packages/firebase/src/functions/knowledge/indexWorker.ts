@@ -153,12 +153,22 @@ export async function executeDocumentIndexing(
     // 7. Write chunks to users/{uid}/ragChunks in batches
     const chunksCol = db.collection('users').doc(uid).collection('ragChunks');
 
-    // Clear any existing stale chunks for this document first (idempotent cleanup)
-    const existingChunksSnap = await chunksCol.where('documentId', '==', documentId).get();
-    if (!existingChunksSnap.empty) {
-      const deleteBatch = db.batch();
-      existingChunksSnap.docs.forEach((docSnap) => deleteBatch.delete(docSnap.ref));
-      await deleteBatch.commit();
+    // Clear any existing stale chunks for this document first (idempotent cleanup).
+    // Both the query and the deletes are paginated/chunked: an unbounded query fed
+    // into a single batch.commit() throws past 500 ops, which would permanently
+    // break re-indexing for any document with a large stale-chunk tail.
+    for (;;) {
+      const existingChunksSnap = await chunksCol.where('documentId', '==', documentId).limit(250).get();
+      if (existingChunksSnap.empty) break;
+      for (let i = 0; i < existingChunksSnap.docs.length; i += 250) {
+        const deleteBatch = db.batch();
+        for (const docSnap of existingChunksSnap.docs.slice(i, i + 250)) {
+          deleteBatch.delete(docSnap.ref);
+        }
+        await deleteBatch.commit();
+      }
+      // Guard against an infinite loop if deletes somehow don't settle.
+      if (existingChunksSnap.size < 250) break;
     }
 
     const batchSize = 250;
