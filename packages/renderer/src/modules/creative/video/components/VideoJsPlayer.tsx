@@ -195,7 +195,13 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
     }
 
     return (
-        <div ref={playerContainerRef} data-vjs-player className={className} />
+        // Width contract: before the DOM-ownership refactor (37628bddc) the
+        // .video-js element itself was this component's root and took its width
+        // from the parent (video.js fluid = width:100% + aspect padding). The
+        // intermediate container must reproduce that contract — max-w-* alone
+        // shrink-wraps to the border (a 2px "black player") because .video-js's
+        // percentage width then resolves against a degenerate box.
+        <div ref={playerContainerRef} data-vjs-player className={`block w-full ${className}`} />
     );
 });
 

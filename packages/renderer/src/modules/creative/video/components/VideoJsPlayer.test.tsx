@@ -86,4 +86,26 @@ describe('VideoJsPlayer', () => {
         expect(() => unmount()).not.toThrow();
         expect(mocks.dispose).toHaveBeenCalledTimes(1);
     });
+
+    it('keeps the player-container width contract so fluid sizing cannot collapse to the border (regression: 2px black player)', () => {
+        // ERROR_LEDGER 2026-08-28: the DOM-ownership refactor wrapped the player
+        // in a container whose only size classes were max-h/max-w — max-* constrains
+        // but never PROVIDES width, so video.js fluid (width:100% + aspect padding)
+        // resolved against a shrink-wrapped degenerate box and the preview rendered
+        // at 2x3px. The container must reproduce the old root's block w-full contract.
+        const { container } = render(
+            <VideoJsPlayer
+                videoUrl="https://storage.googleapis.com/test-video.mp4"
+                className="max-h-full max-w-full rounded-lg"
+            />
+        );
+
+        const host = container.firstElementChild as HTMLElement | null;
+        expect(host).toBeTruthy();
+        expect(host?.hasAttribute('data-vjs-player')).toBe(true);
+        expect(host?.classList.contains('block')).toBe(true);
+        expect(host?.classList.contains('w-full')).toBe(true);
+        // max-* constraints from the caller are preserved on the same element.
+        expect(host?.classList.contains('max-w-full')).toBe(true);
+    });
 });
