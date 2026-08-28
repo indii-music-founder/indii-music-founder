@@ -265,4 +265,33 @@ describe('BrowserAgentService', () => {
             expect((service as any).window).toBeNull();
         });
     });
+
+    describe('idle reaper', () => {
+        it('closes the session after the idle timeout', async () => {
+            vi.useFakeTimers();
+            try {
+                await service.startSession();
+                const closeSpy = vi.spyOn(service, 'closeSession');
+                vi.advanceTimersByTime(10 * 60 * 1000 + 1);
+                expect(closeSpy).toHaveBeenCalled();
+                expect((service as any).window).toBeNull();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('activity postpones the idle close', async () => {
+            vi.useFakeTimers();
+            try {
+                await service.startSession();
+                vi.advanceTimersByTime(9 * 60 * 1000);
+                await service.captureSnapshot(); // touches activity
+                vi.advanceTimersByTime(9 * 60 * 1000);
+                expect((service as any).window).not.toBeNull();
+            } finally {
+                vi.useRealTimers();
+                await service.closeSession();
+            }
+        });
+    });
 });

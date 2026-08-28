@@ -57,6 +57,23 @@ export const BrowserTools = {
             if (typeof window !== 'undefined' && window.electronAPI?.agent) {
                 const result = await window.electronAPI.agent.performAction(args.action, args.selector, args.text);
                 if (result.success) {
+                    // Best-effort observability: record the action alongside navigations.
+                    // NEVER persist args.text — typed content may contain credentials.
+                    try {
+                        const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+                        const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
+                        const uid = auth.currentUser?.uid;
+                        if (uid) {
+                            await addDoc(collection(db, 'users', uid, 'browserHistory'), {
+                                action: args.action,
+                                selector: args.selector,
+                                status: 'action',
+                                timestamp: serverTimestamp(),
+                            });
+                        }
+                    } catch (pErr: unknown) {
+                        logger.warn('[BrowserTools] Failed to persist browser action audit:', pErr);
+                    }
                     return toolSuccess(result, `Successfully performed ${args.action} on ${args.selector}`);
                 }
                 return toolError(result.error || 'Action failed', 'BROWSER_ACTION_ERROR');

@@ -3,16 +3,34 @@ import { BrowserWindow, session, Event } from 'electron';
 
 /**
  * BrowserAgentService
- * 
+ *
  * Manages a hidden Electron BrowserWindow for autonomous agent tasks.
  * Replaces Puppeteer to reduce bundle size (~150MB savings).
- * 
- * Uses 'gemini-2.5-pro-ui-checkpoint' (via Agent Driver) as the brain,
- * and this service as the body/executor.
+ *
+ * Body/executor for the renderer-side agent drivers: a session persists across
+ * multi-step flows (navigate → act → snapshot) and is reaped after inactivity.
  */
 export class BrowserAgentService {
     private window: BrowserWindow | null = null;
     private isInitializing = false;
+    private idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /** Hidden sessions are reaped after this much inactivity so windows/partitions never leak. */
+    private static readonly IDLE_CLOSE_MS = 10 * 60 * 1000;
+
+    /**
+     * Keeps the hidden session alive across multi-step agent flows
+     * (navigate → act → snapshot) and reaps it after inactivity.
+     */
+    private touchActivity(): void {
+        if (this.idleTimer) clearTimeout(this.idleTimer);
+        this.idleTimer = setTimeout(() => {
+            console.log('[BrowserAgentService] Closing idle browser session');
+            void this.closeSession();
+        }, BrowserAgentService.IDLE_CLOSE_MS);
+        // Never hold the process open for the reaper alone.
+        (this.idleTimer as unknown as { unref?: () => void }).unref?.();
+    }
 
     /**
      * Starts the browser session (Hidden Window).
@@ -58,6 +76,7 @@ export class BrowserAgentService {
                 ses.clearStorageData().catch(() => {});
             });
 
+            this.touchActivity();
         } finally {
             this.isInitializing = false;
         }
@@ -68,6 +87,7 @@ export class BrowserAgentService {
      */
     async navigateTo(url: string): Promise<void> {
         if (!this.window) throw new Error('Session not started');
+        this.touchActivity();
 
 
         // Setup one-time fail handler
@@ -94,6 +114,7 @@ export class BrowserAgentService {
      */
     async captureSnapshot(): Promise<{ title: string; url: string; text: string; screenshotBase64: string }> {
         if (!this.window) throw new Error('Session not started');
+        this.touchActivity();
 
         const title = this.window.getTitle();
         const url = this.window.webContents.getURL();
@@ -253,6 +274,7 @@ export class BrowserAgentService {
      */
     async performAction(action: string, selector: string, text?: string): Promise<{ success: boolean; error?: string }> {
         if (!this.window) throw new Error('Session not started');
+        this.touchActivity();
         try {
             if (action === 'click') {
                 await this.click(selector);
@@ -287,6 +309,10 @@ export class BrowserAgentService {
      * Closes the browser session.
      */
     async closeSession(): Promise<void> {
+        if (this.idleTimer) {
+            clearTimeout(this.idleTimer);
+            this.idleTimer = null;
+        }
         if (this.window) {
             this.window.close(); // Close the window
             this.window = null;

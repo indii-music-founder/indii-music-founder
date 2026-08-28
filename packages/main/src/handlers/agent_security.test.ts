@@ -88,6 +88,7 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
         vi.spyOn(console, 'error').mockImplementation(() => {});
         vi.spyOn(console, 'warn').mockImplementation(() => {});
         handlers = {};
+        mocks.app.isPackaged = false;
 
         // Capture handlers
         mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -153,5 +154,23 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
         expect(result.success).toBe(false);
         // This comes from Zod validation (FetchUrlSchema)
         expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
+    });
+
+    it('should register the browser bridge in packaged (production) builds', () => {
+        // ERROR_LEDGER pattern: environment-gated handler registration strands the
+        // other environment. The agent browser bridge must exist in shipped builds.
+        mocks.app.isPackaged = true;
+        const packagedHandlers: Record<string, (...args: unknown[]) => unknown> = {};
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
+            packagedHandlers[channel] = handler;
+        });
+
+        registerAgentHandlers();
+
+        expect(packagedHandlers['agent:navigate-and-extract']).toBeDefined();
+        expect(packagedHandlers['agent:perform-action']).toBeDefined();
+        expect(packagedHandlers['agent:capture-state']).toBeDefined();
+        // The google.com test harness stays dev-only
+        expect(packagedHandlers['test:browser-agent']).toBeUndefined();
     });
 });
