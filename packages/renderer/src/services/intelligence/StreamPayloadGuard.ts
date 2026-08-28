@@ -141,3 +141,24 @@ export async function compressStreamImageAttachments<
         return { ...att, mimeType: compressed.mimeType, base64: compressed.base64 };
     }));
 }
+
+/**
+ * Elide base64 payloads embedded in TEXT that re-enters the model prompt.
+ *
+ * Image tools return generated artifacts as data-URLs inside `result.data`;
+ * serializing those into the next tool-loop iteration's prompt re-introduces
+ * the exact multi-megabyte payloads the stream guard exists to block — as
+ * prompt TEXT, which inlineData compression cannot reach (ERROR_LEDGER
+ * 2026-08-27, founder follow-up: "the images said to be too large are also
+ * images the app made"). The model needs the metadata, never the bytes: the
+ * image itself reaches the model as inlineData via attachments or the
+ * creative auto-inject.
+ */
+const EMBEDDED_BASE64_PATTERN = /data:([a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=]{1024,})/g;
+
+export function elideBase64Payloads(text: string): string {
+    if (!text || text.indexOf(';base64,') === -1) return text;
+    return text.replace(EMBEDDED_BASE64_PATTERN, (_match: string, mime: string, payload: string) =>
+        `data:${mime};base64,[elided ${Math.max(1, Math.round((payload.length * 3) / 4 / 1024))}KB — delivered to the model as inlineData when needed]`
+    );
+}

@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { compressStreamImageAttachments, assertContentsWithinStreamBudget } from '@/services/intelligence/StreamPayloadGuard';
+import { compressStreamImageAttachments, assertContentsWithinStreamBudget, elideBase64Payloads } from '@/services/intelligence/StreamPayloadGuard';
 import {
     SpecializedAgent,
     AgentResponse,
@@ -1314,7 +1314,7 @@ The capability snapshot could not be loaded this session. Do not claim any capab
                                 };
                                 lastToolResult = result;
                                 toolCalls.push({ name, args, result });
-                                fullPrompt += `\n[Tool Call: ${name}(${JSON.stringify(args)})] Result: Success: ${message}\n`;
+                                fullPrompt += `\n[Tool Call: ${name}(${elideBase64Payloads(JSON.stringify(args))})] Result: Success: ${message}\n`;
                                 onProgress?.({
                                     type: 'tool_result',
                                     toolName: name,
@@ -1358,7 +1358,7 @@ The capability snapshot could not be loaded this session. Do not claim any capab
                             toolCalls.push({ name, args, result: blockedResult });
                             lastToolResult = blockedResult;
                             // Inject block notice into conversation and continue loop
-                            fullPrompt += `\n[Tool Call: ${name}(${JSON.stringify(args)})] Result: Error: Tool '${name}' is not authorized for agent '${this.id}'.\n`;
+                            fullPrompt += `\n[Tool Call: ${name}(${elideBase64Payloads(JSON.stringify(args))})] Result: Error: Tool '${name}' is not authorized for agent '${this.id}'.\n`;
                             continue;
                         }
 
@@ -1425,7 +1425,7 @@ The capability snapshot could not be loaded this session. Do not claim any capab
                             };
                         }
 
-                        const argsStr = JSON.stringify(args);
+                        const argsStr = elideBase64Payloads(JSON.stringify(args));
                         onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
 
                         // EVENT: Tool Execution Start
@@ -1532,13 +1532,18 @@ The capability snapshot could not be loaded this session. Do not claim any capab
                             }
                         }
 
+                        // Elide base64 payloads: image tools return generated
+                        // artifacts as data-URLs in result.data/args — embedding
+                        // them raw re-introduced the multi-megabyte payloads the
+                        // stream guard blocks, as prompt text compression cannot
+                        // reach (ERROR_LEDGER 2026-08-27 founder follow-up).
                         const outputText = typeof result === 'string'
-                            ? result
+                            ? elideBase64Payloads(result)
                             : (result.success === false
                                 ? `Error: ${result.error || result.message}`
                                 : (result.message
-                                    ? `Success: ${result.message}\n\n[SYSTEM ONLY - DO NOT REPEAT THIS JSON TO THE USER]: ${JSON.stringify(result.data || result)}`
-                                    : `Success: ${JSON.stringify(result.data || result)}`));
+                                    ? `Success: ${result.message}\n\n[SYSTEM ONLY - DO NOT REPEAT THIS JSON TO THE USER]: ${elideBase64Payloads(JSON.stringify(result.data || result))}`
+                                    : `Success: ${elideBase64Payloads(JSON.stringify(result.data || result))}`));
 
                         // Update prompt with tool result for next iteration
                         fullPrompt += `\n[Tool Call: ${name}(${argsStr})] Result: ${outputText}\n`;

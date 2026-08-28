@@ -4,6 +4,7 @@ import {
     estimateContentsCharLength,
     assertContentsWithinStreamBudget,
     compressStreamImageAttachments,
+    elideBase64Payloads,
 } from './StreamPayloadGuard';
 import { CloudStorageService } from '@/services/CloudStorageService';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
@@ -129,5 +130,37 @@ describe('compressStreamImageAttachments', () => {
         ]);
 
         expect(result).toMatchObject({ name: 'tigers-reference.png', base64: 'small' });
+    });
+});
+
+describe('elideBase64Payloads', () => {
+    it('elides a large data-URL payload while preserving the mime type and reporting its size', () => {
+        const hugePayload = 'A'.repeat(400_000); // ~300KB binary
+        const toolJson = `Success: {"id":"img-1","url":"data:image/png;base64,${hugePayload}"}`;
+
+        const output = elideBase64Payloads(toolJson);
+
+        expect(output).not.toContain(hugePayload);
+        expect(output).toContain('data:image/png;base64,[elided');
+        expect(output).toMatch(/elided 293KB/);
+        expect(output).toContain('"id":"img-1"');
+    });
+
+    it('elides multiple embedded payloads in one pass', () => {
+        const text = `a=data:image/jpeg;base64,${'B'.repeat(2000)} b=data:image/webp;base64,${'C'.repeat(4000)}`;
+        const output = elideBase64Payloads(text);
+        expect(output).not.toMatch(/[BC]{1024,}/);
+        expect(output.match(/elided/g)?.length).toBe(2);
+    });
+
+    it('leaves short base64 fixtures (test-sized) untouched', () => {
+        const text = 'data:image/png;base64,AQID and data:image/png;base64,tiny';
+        expect(elideBase64Payloads(text)).toBe(text);
+    });
+
+    it('leaves plain text and text without base64 markers untouched', () => {
+        const text = '[Tool Call: generate_image({"prompt":"Old English D style"})] Result: Success: done';
+        expect(elideBase64Payloads(text)).toBe(text);
+        expect(elideBase64Payloads('')).toBe('');
     });
 });
