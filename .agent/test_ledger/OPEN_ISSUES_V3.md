@@ -2729,7 +2729,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1408: processWebhookQueue is claim-less — overlapping runs double-deliver
 
-- **Status:** ✅ FIXED locally (commit staged, push pending)
+- **Status:** ✅ FIXED on origin/main (45ca95800 — the fix rode in that commit's staging sweep; message there covers the shared-harness work, this entry is the authoritative description of the dispatcher changes in it)
 - **Severity:** 🟡 MEDIUM
 - **Module:** packages/firebase/src/functions/webhooks/dispatcher.ts
 - **Summary:** 30s schedule + 300s timeout + no claim: two overlapping invocations delivered the same pending webhook. Top-level catch also aborted the whole batch on one bad delivery.
@@ -2755,7 +2755,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 ### Autonomous hygiene & P1 sweep (2026-08-27, DSH agent)
 
 - **Status:** 🟡 IN PROGRESS — 3 commits landed locally, push pending on concurrent-session stillness
-- **Landed locally:** 5f0f97f19 (browser bridge packaged builds + audit trail), a6f33cdeb (execute_code retirement + truthful docs + case study `docs/AGENT_SANDBOX_BROWSER_TOOLS_CASE_STUDY.md`), 31788705e (trialDays clamp, refund/dispute webhooks, POD draft containment). Staged: ISSUE-1408 lease fix.
+- **Landed on origin/main:** 5f0f97f19 (browser bridge packaged builds + audit trail), a6f33cdeb (execute_code retirement + truthful docs + case study `docs/AGENT_SANDBOX_BROWSER_TOOLS_CASE_STUDY.md`), 31788705e (trialDays clamp, refund/dispute webhooks, POD draft containment; also carries the 44 root-scratch archive renames via a staged-area sweep), 45ca95800 (shared harness unbundling from the concurrent session, which also carried the ISSUE-1408 webhook lease fix).
 - **Repo hygiene done:** 45 unreferenced root scratch scripts/dumps archived to `archive/root-scratch-2026-08-27/` (reference-checked first; the 4 deep-test PNGs used by e2e/deep-test.spec.ts and package.json-referenced test.js were kept in place).
 - **Remaining P1 backlog (from the 2026-08-22 backend audit, details lost with that session's transcript — re-derive from source before fixing):**
   - Scheduled workers swallowing top-level errors (audit said six; candidates seen: storageMaintenance, retention-daemon, pollDeliveryStatus, deliverScheduledPosts, pulseTick, flushConversionEvents, cleanupVideoSessions, reclaimStuckVideoJobs, agentLoopCron, enforceOperationCost)
@@ -2765,3 +2765,22 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
   - BigQuery revenue export cursor starvation; knowledge task queue dead retries; timeline milestone duplicate window; ISRC query-then-write uniqueness race
   - Rules: revenue collection client-mutable; `/users/{uid}/tmp` storage unbounded
 - **Concurrent-session note:** a Codex session is actively refactoring shared video-contract exports (videoRendererSuite → renderer test tree) in this same worktree; commits/pushes deferred until its state is stable to avoid bundling foreign work.
+
+### ISSUE-1411: Audit claim "video reaper resubmits billable jobs" — NOT REPRODUCIBLE
+
+- **Status:** 🟢 WONTFIX (already fixed by earlier waves; recorded with evidence)
+- **Module:** packages/firebase/src/functions/video/reclaimStuckVideoJobs.ts
+- **Evidence:** the reaper requeues ONLY jobs with `providerSubmissionState === 'not_submitted'` under a MAX_REQUEUES=2 budget. Ambiguous-submission jobs are terminalized with the cost hold SETTLED (fail-closed financially); only provably un-submitted holds are VOIDED. The audit's concern is structurally impossible in current code.
+
+### ISSUE-1412: Audit claim "video under-reservation warn-only" — NOT REPRODUCIBLE
+
+- **Status:** 🟢 WONTFIX (already fixed; recorded with evidence)
+- **Module:** packages/firebase/src/functions/video/createVideoSession.ts
+- **Evidence:** `reserveCost` calls `checkOperationBudget` and THROWS `resource-exhausted` when `!reservation.allowed` — denial blocks the session, it does not warn-and-proceed. Matches ISSUE-1402 (founder-visible reservation denial fixed at root 2026-08-25).
+
+### ISSUE-1413: cleanupOrphanedVideos deletion safety — rails present, live-fire probe still required before enabling
+
+- **Status:** 🟡 PARTIAL (safe by configuration today; unresolved if the config flag is ever switched on)
+- **Module:** packages/firebase/src/devops/storageMaintenance.ts
+- **Evidence:** DRY RUN by default; deletion gated behind `config/storageMaintenance.enableDeletion`; writes audit runs; weekly schedule; cross-references the `history` collection.
+- **Remaining:** before anyone enables deletion, add a targeted probe test that a freshly-rendered output with a missing/slow `history` doc is NOT matched as orphan (age heuristic + doc-coverage check), and log the enablement in this ledger.
