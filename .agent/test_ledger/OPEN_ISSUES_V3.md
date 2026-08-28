@@ -2784,3 +2784,10 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Module:** packages/firebase/src/devops/storageMaintenance.ts
 - **Evidence:** DRY RUN by default; deletion gated behind `config/storageMaintenance.enableDeletion`; writes audit runs; weekly schedule; cross-references the `history` collection.
 - **Remaining:** before anyone enables deletion, add a targeted probe test that a freshly-rendered output with a missing/slow `history` doc is NOT matched as orphan (age heuristic + doc-coverage check), and log the enablement in this ledger.
+
+### ISSUE-1414: Audit claim "six scheduled workers swallow top-level errors" — LARGELY NOT REPRODUCIBLE
+
+- **Status:** 🟢 WONTFIX for the surveyed sites (recorded with survey evidence); 🟡 the unsurveyed remainder stays on the backlog until a concrete silent failure is observed
+- **Module:** packages/firebase/src/{devops/storageMaintenance,social/deliverScheduledPosts,marketing/flushConversionEvents,distribution/pollDeliveryStatus}.ts
+- **Survey evidence (2026-08-28):** deliverScheduledPosts propagates (`async () => handler()` — uncaught errors hit Cloud Logging/Error Reporting); flushConversionEvents catches but logs via `logger.error` (Error Reporting-visible) and the next tick retries; storageMaintenance has an unguarded top-level config read (errors propagate) plus per-item errorCount accounting; pollDeliveryStatus has no top-level swallow catch. Scheduled-tick catch-and-log with a retrying next tick is the correct topology here — "fixing" it by rethrowing adds nothing.
+- **Unsurveyed remainder:** retention-daemon, pulseTick, cleanupVideoSessions, agentLoopCron, enforceOperationCost.
