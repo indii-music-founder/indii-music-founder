@@ -2803,3 +2803,15 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Attribution:** failing files last touched by `541505b88`/`8dab863b3` (Arcjet transient-timeout retry) and `b39dc932a` (rules revenue server-origin); run was manually dispatched, i.e. the owning session is actively iterating. Not caused by `c7fbcce39` (landing-only soundtrack change: all landing tests green in-shard; full local /plat build gate green; live browser verification passed).
 - **Delivery note:** first green `Deploy to Firebase Hosting` run whose headSha contains `c7fbcce39` closes the soundtrack delivery cycle; earlier runs for that SHA were cancelled by push concurrency (33169864911, 33170062345), not failed.
 - **Detection:** `gh run list --branch main --limit 5`; failing jobs `rules-tests` + one `unit-tests` shard; grep `--log-failed` for `arcjet.test.ts|firestore.rules.test.ts`.
+
+### ISSUE-1416: Conductor agents cannot assemble finished films from existing rendered assets (CD agent has no editor tools)
+
+- **Status:** 🔴 OPEN — spec of record written, implementation not started
+- **Severity:** 🟡 MEDIUM (capability gap, no money/parity risk)
+- **Module:** packages/renderer/src/services/agent/tools/ (new EditorTools.ts), packages/renderer/src/services/video/PerformanceVideoService.ts
+- **Evidence (2026-08-28):** In-app Creative Director refused "mix these clips together" and proposed headless browser automation of external editors. The platform already owns the full pipeline: `renderVideo` callable → Inngest stitch → `videoJobs/{renderId}` (ISSUE-994 contract: `{compositionId, inputProps:{project}}`, returns renderId never a URL), `waitForJob` polling, `VideoTools` agent-tool precedent for billable video jobs, server cost reservation that fail-closes (ISSUE-1412). The missing layer is agent tools between "assets exist" and "stitch submitted": discover, plan, execute, report.
+- **Spec of record:** `docs/AGENT_VIDEO_EDITOR_BRIDGE.md` — four tools: `video_list_renderable_assets` (read-only, duration-unknown fails closed), `video_plan_sequence` (validated plan, no cost), `video_render_stitch` (HIGH-RISK billable: user-owned URIs only, reservation before callable, ExecApprovalService approval, honest terminal-state-only URL reporting), `video_get_render_status` (read-only). Headless external editors and ParallelRenderOrchestrator are explicit non-goals.
+- **Fix direction:** Implement per spec §4 in three slices (tools+risk registry+tests → tool-pool wiring + capability-accurate CD copy → optional UI↔agent plan interop via ScreenwriterStoryboardHandoff-style contract).
+- **Acceptance:** Agent conversation lists real assets, produces a validated plan, and after approval + reservation receives a real stitched URL; every failure mode yields an honest specific message (no fabricated success, ISSUE-950/952 lineage); all tools explicitly registered in ToolRiskRegistry (ISSUE-1404 rule: no phantom entries).
+
+---
