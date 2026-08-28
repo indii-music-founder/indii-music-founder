@@ -150,6 +150,20 @@ function securityUnavailableResult(
     };
 }
 
+function decisionErrorMessage(decision: ArcjetDecision): string {
+    const reason = decision.reason as unknown as { message?: unknown };
+    return typeof reason?.message === "string" ? reason.message : String(decision.reason);
+}
+
+function isTransientArcjetFailure(message: string): boolean {
+    const lower = message.toLowerCase();
+    return lower.includes("deadline")
+        || lower.includes("timeout")
+        || lower.includes("econnreset")
+        || lower.includes("fetch failed")
+        || lower.includes("socket");
+}
+
 function mapDecision(
     decision: ArcjetDecision,
     policy: ArcjetPolicyClass,
@@ -164,12 +178,11 @@ function mapDecision(
         // a total outage is undiagnosable from logs. Escalated to `error`
         // severity too: every authenticated request is being denied, which is
         // not a warning-level event.
-        const reason = decision.reason as unknown as { message?: unknown };
         logger.error("[Arcjet] Decision failed", {
             decisionId: decision.id,
             policy,
             operationId,
-            err_msg: typeof reason?.message === "string" ? reason.message : String(decision.reason),
+            err_msg: decisionErrorMessage(decision),
         });
         return securityUnavailableResult(policy, operationId, failureMode, "decision_error");
     }
@@ -237,6 +250,21 @@ export async function protectAuthenticatedApiRequest(
                 userId: context.userId,
                 correlationId: context.operationId,
             });
+            if (decision.isErrored()) {
+                const errMsg = decisionErrorMessage(decision);
+                logger.error("[Arcjet] Decision failed", {
+                    decisionId: decision.id,
+                    policy: context.policy,
+                    operationId: context.operationId,
+                    attempt: attempt + 1,
+                    err_msg: errMsg,
+                });
+                if (attempt < attempts - 1 && isTransientArcjetFailure(errMsg)) {
+                    await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+                    continue;
+                }
+                return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
+            }
             return mapDecision(decision, context.policy, context.operationId, "fail-closed");
         } catch (error) {
             // ISSUE-1242: this catch previously discarded the error entirely
@@ -258,9 +286,8 @@ export async function protectAuthenticatedApiRequest(
                 // Transient timeout/connectivity blip: retry with backoff.
                 // Non-transient errors (bad key, malformed request) fail
                 // immediately without burning the retries.
-                const lower = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-                const transient = lower.includes("deadline") || lower.includes("timeout") || lower.includes("econnreset") || lower.includes("fetch failed") || lower.includes("socket");
-                if (!transient) return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
+                const message = error instanceof Error ? error.message : String(error);
+                if (!isTransientArcjetFailure(message)) return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
                 await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
                 continue;
             }

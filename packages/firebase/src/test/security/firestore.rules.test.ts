@@ -2119,7 +2119,9 @@ describe('Firestore Security Rules', () => {
             ['workflows', 'userId'],
             ['bountyLinks', 'userId'],
             ['expenses', 'userId'],
-            ['revenue', 'userId'],
+            // NOTE: revenue is intentionally NOT in this list — it is
+            // server-origin only (write: if false, see /revenue match + the
+            // revenue describe block above).
             ['manufacture_requests', 'userId'],
             ['agent_traces', 'userId'],
             ['sessions', 'userId'],
