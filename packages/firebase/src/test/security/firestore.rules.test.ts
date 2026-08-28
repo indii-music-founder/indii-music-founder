@@ -1204,16 +1204,28 @@ describe('Firestore Security Rules', () => {
             await assertFails(getDoc(doc(db, 'revenue', 'rev-1')));
         });
 
-        it('owner: create own revenue record allowed', async () => {
+        it('owner: create denied — revenue is server-origin only', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
-            await assertSucceeds(setDoc(doc(db, 'revenue', 'rev-new'), revenueData));
+            await assertFails(setDoc(doc(db, 'revenue', 'rev-new'), revenueData));
         });
 
-        it('cannot create revenue record for another user', async () => {
+        it('other user: create denied', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(BOB_UID).firestore();
             await assertFails(setDoc(doc(db, 'revenue', 'rev-fake'), revenueData));
+        });
+
+        it('owner: update denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(updateDoc(doc(db, 'revenue', 'rev-1'), { amount: 999999 }));
+        });
+
+        it('owner: delete denied — financial records are server-managed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(deleteDoc(doc(db, 'revenue', 'rev-1')));
         });
     });
 

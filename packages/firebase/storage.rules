@@ -63,9 +63,14 @@ service firebase.storage {
       allow write, delete: if false;
     }
 
-    // Ephemeral / Cache paths: Client cleanup privileges allowed
+    // Ephemeral / Cache paths: Client cleanup privileges allowed. Writes are
+    // size-capped like the general user path so tmp cannot be used as an
+    // unbounded storage hole; deletes stay unrestricted for cache hygiene.
     match /users/{userId}/tmp/{allPaths=**} {
-      allow read, write, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isUnderSizeLimit(500);
     }
 
     // Users general storage: Delete denied for clients (route through Trash).

@@ -2278,9 +2278,12 @@ service cloud.firestore {
       allow write: if false;
     }
     match /revenue/{revenueId} {
-      allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
-      allow update: if isVerifiedUser() && ownerUpdateIsValid('userId');
+      // Revenue rows originate exclusively from server paths (Stripe webhook,
+      // marketplace fulfillment) which bypass rules via the Admin SDK. Client
+      // write access was pure fabrication surface — a user could mint revenue
+      // rows into their own Finance dashboard.
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow write: if false;
     }
     match /manufacture_requests/{requestId} {
       allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
