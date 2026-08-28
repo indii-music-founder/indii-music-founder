@@ -1,7 +1,7 @@
 # indii — Roadmap
 
-> **Current release:** v1.55.3 (2026-04-23)
-> **Next milestone:** Investor-weekend handoff to 10 potential founders
+> **Current release:** v1.80.1 (2026-08-27)
+> **Note:** the Phase-0 checklist below is the verified v1.55.3 demo-weekend snapshot, kept for history. Later shipped work (professional video editor + cloud/desktop render pipeline, render-worker + video-compiler packages, marketplace, admin dashboard, MCP harness) is tracked in `.agent/test_ledger/OPEN_ISSUES_V3.md` round blocks and CHANGELOG.
 
 ## Phase 0 — Shipped (demo-weekend ready)
 
@@ -13,7 +13,7 @@ Every item below is verified against the codebase at v1.55.3. Nothing aspiration
 - [x] **5-layer memory system** — CaptainsLog → CORE Vault → DeepHive → UserAlignment → BigBrain; all layers live at `packages/renderer/src/services/agent/memory/`
 - [x] **Cryptographic Agent Identity (GEAP Phase 1)** — SHA-256 fingerprint + base64 attestation per instance at `packages/renderer/src/services/agent/governance/AgentIdentity.ts`
 - [x] **Digital Handshake governance** + **Tool Risk Registry** — ~165 tools classified as read / write / destructive
-- [x] **Python sidecar** at `localhost:50080` — Docker runtime, 92 custom tools, MCP client, auto-restart on failure
+- [x] ~~Python sidecar~~ **removed** (74bca6fbb) with the Agent Zero/Docker era; native TS execution + deterministic `execution/` scripts via the Electron PythonBridge remain
 - [x] **Electron desktop (v41.1.1)** — keytar credential vault, SFTP client, code signing, hardened runtime
 - [x] **Firebase backend** — Functions 7.0.5 (Node 22 Gen 2), Firestore custom-claims auth, BigQuery analytics, Inngest 3.22 workflows, Stripe 20.1 payments
 

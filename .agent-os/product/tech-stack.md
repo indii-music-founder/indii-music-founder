@@ -17,6 +17,12 @@
 | `packages/shared` | Zod schemas and cross-workspace types (type-only, no runtime) | ESM |
 | `packages/landing` | Marketing site (separate React + Vite app) | ESM / Vite |
 | `packages/mcp-server-local` | Model Context Protocol server | Node |
+| `packages/render-worker` | Cloud render worker for HyperFrames compositions (Cloud Run) | Node |
+| `packages/video-compiler` | Shared composition compiler used by desktop, web fallback, and the cloud worker | Node |
+| `packages/admin-dashboard` | Internal admin console | ESM / Vite |
+| `packages/mcp-server-harness` | indii harness MCP server (`indii-harness-mcp`) | Node |
+| `packages/sdk` | Official TypeScript SDK for the indii REST API (`@indii/sdk`, beta) | ESM |
+| `packages/engine-dsp` | DSP engine workspace (scaffold — no package.json yet) | — |
 
 ## Languages and compilation
 

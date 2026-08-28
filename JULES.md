@@ -68,7 +68,7 @@ bash .claude/scripts/checkpoint.sh
 
 **indii** is an AI-native music business platform for independent music artists — the first of its kind. It picks up where music mastering ends. Not built for major labels, major managers, or major artists.
 
-- **Version:** 1.55.3
+- **Version:** 1.80.1
 - **Org:** New Detroit Music LLC
 - **Repo:** `indii-music-founder/indii-music-founder`
 - **Node Requirement:** >= 24.0.0

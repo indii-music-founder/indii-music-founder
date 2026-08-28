@@ -2684,3 +2684,84 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Delivered:** ripple delete (⌘⌫) · timeline zoom 25–400% · loop-region playback · desktop render relay (the queue's second executor: claim/complete callables + scoped artifact IPC + storage upload)
 - **Evidence:** full root suite 6983 passed; firebase video 157/157; relay callables 6 + relay service 3; editor module 111/111; typecheck clean; lint 0 errors.
 - **Remaining:** GCP activation (founder reauth, runbook Step 0) — everything else from the founder's lists is closed.
+
+### ISSUE-1403: Agent browser bridge (browser_tool) missing in packaged desktop builds
+
+- **Status:** ✅ FIXED locally (5f0f97f19) — push pending
+- **Severity:** 🔴 HIGH
+- **Module:** packages/main/src/handlers/agent.ts, packages/renderer/src/services/agent/tools/BrowserTools.ts
+- **Summary:** `agent:navigate-and-extract` / `agent:perform-action` were registered only under `if (!app.isPackaged)`; every shipped desktop build failed all browser_tool calls (ISSUE-972 cause #2, unlabelled). `agent:capture-state` was registered in prod but no session could exist outside dev. Matches ERROR_LEDGER pattern "IPC handlers not registered → renderer hangs" (env-gated registration).
+- **Fix:** handlers registered unconditionally (google.com test harness stays dev-only); hidden-window session persists across navigate→act→snapshot with a 10-minute idle reaper; browser_action writes best-effort audit docs to `users/{uid}/browserHistory` (action+selector only, typed text never persisted).
+
+### ISSUE-1404: execute_code advertised as live but was a dead stub
+
+- **Status:** ✅ FIXED locally (a6f33cdeb) — push pending
+- **Severity:** 🟡 MEDIUM
+- **Module:** packages/renderer/src/services/agent/tools/CodeExecutionTools.ts (deleted), tools/index.ts, ToolRiskRegistry.ts
+- **Summary:** stub always returned CODE_EXECUTION_DISABLED since the sidecar removal (74bca6fbb) while tool help text + risk registry still advertised it. No agent declared it.
+- **Fix:** tool, spread, help entry, registry entry removed; ISSUE-1116 gate fixture retargeted to computer_click; ToolRiskRegistry note warns against phantom entries (gate keys on explicit entries only). ExecApprovalService header now states Docker isolation is gone and high-risk categories fail closed.
+
+### ISSUE-1405: Client-controlled trialDays — arbitrary free trials
+
+- **Status:** ✅ FIXED locally (31788705e) — push pending
+- **Severity:** 🔴 HIGH
+- **Module:** packages/firebase/src/subscription/createCheckoutSession.ts
+- **Summary:** `trialDays` came straight from `request.data` with only a `> 0` check — any caller could mint a years-long trial.
+- **Fix:** server-side clamp `Math.min(floor(trialDays), 14)`; test pins a 3650-day request to 14.
+
+### ISSUE-1406: No refund/dispute webhook handling
+
+- **Status:** 🟡 PARTIAL (31788705e) — credit packs closed; marketplace/licensing refund flows open
+- **Severity:** 🟡 MEDIUM
+- **Module:** packages/firebase/src/stripe/webhookHandler.ts
+- **Summary:** switch had no `charge.refunded` / `charge.dispute.created` cases — refunded credit packs kept spendable credits; disputes landed in the unhandled-event log.
+- **Fix shipped:** `charge.refunded` reverses fully-refunded credit-pack purchases idempotently (deterministic `refund_{chargeId}` log, shortfall recorded when balance already spent); partial refunds logged without clawback; `charge.dispute.created` writes `payment_disputes/{disputeId}` for finance.
+- **Remaining:** refund handling for marketplace sales (seller clawback) and licensing (transfer reversal) — distinct financial flows, ticket before building.
+
+### ISSUE-1407: pod_printfulCreateOrder has no payment gate
+
+- **Status:** 🟡 PARTIAL (31788705e) — containment shipped; paid binding open
+- **Severity:** 🟡 MEDIUM
+- **Module:** packages/firebase/src/pod/printful.ts
+- **Summary:** any authed user could create Printful orders with no payment binding. Orders were already drafts by omission (no `confirm` field), so no direct money loss — but nothing prevented it explicitly and accidental confirmation charges indii's account.
+- **Fix shipped:** body pins `confirm: false` with a comment that orders must stay drafts until a paid-checkout binding exists.
+- **Remaining:** real payment gate (Stripe checkout bound to the POD order before confirm) — feature work, ticket first.
+
+### ISSUE-1408: processWebhookQueue is claim-less — overlapping runs double-deliver
+
+- **Status:** ✅ FIXED locally (commit staged, push pending)
+- **Severity:** 🟡 MEDIUM
+- **Module:** packages/firebase/src/functions/webhooks/dispatcher.ts
+- **Summary:** 30s schedule + 300s timeout + no claim: two overlapping invocations delivered the same pending webhook. Top-level catch also aborted the whole batch on one bad delivery.
+- **Fix:** transactional 2-minute claim lease (expired leases reclaimable after a crash) + per-delivery fault isolation; claim predicate extracted (`isQueueItemClaimable`) and unit-tested.
+
+### ISSUE-1409: Audit claim "paid tiers never materialized as server entitlements" — NOT REPRODUCIBLE
+
+- **Status:** 🟢 WONTFIX (claim does not match current code; recorded so it stops being re-raised without evidence)
+- **Severity:** n/a
+- **Module:** packages/firebase/src/stripe/webhookHandler.ts, packages/firebase/src/subscription/getUsageStats.ts, packages/renderer/src/services/intelligence/billing/TokenUsageService.ts
+- **Evidence:** `handleCheckoutCompleted`/`handleSubscription*` write `subscriptions/{userId}` with tier+status; `getUsageStats` reads `subscription.tier` → `TIER_CONFIGS[tier]`; renderer `TokenUsageService` quota checks read the same doc via `subscriptionService.getSubscription`. The chain is connected. (Adjacent real gap: on subscription-fetch *error* TokenUsageService defaults to FREE — soft degradation, not an entitlement hole.)
+
+### ISSUE-1410: Subscription webhook out-of-order regression window
+
+- **Status:** 🔴 OPEN (backlog)
+- **Severity:** 🟡 MEDIUM
+- **Module:** packages/firebase/src/stripe/webhookHandler.ts
+- **Summary:** `handleInvoicePaid` sets `status: 'active'` unconditionally; a late-arriving invoice.paid after a cancellation can resurrect a canceled subscription's status until the next authoritative subscription event. Events are not ordered by Stripe.
+- **Fix direction:** compare `currentPeriodEnd`/event timestamp before downgrading-away or reactivating, or always re-derive status from the live Stripe subscription object instead of trusting the event payload.
+
+---
+
+### Autonomous hygiene & P1 sweep (2026-08-27, DSH agent)
+
+- **Status:** 🟡 IN PROGRESS — 3 commits landed locally, push pending on concurrent-session stillness
+- **Landed locally:** 5f0f97f19 (browser bridge packaged builds + audit trail), a6f33cdeb (execute_code retirement + truthful docs + case study `docs/AGENT_SANDBOX_BROWSER_TOOLS_CASE_STUDY.md`), 31788705e (trialDays clamp, refund/dispute webhooks, POD draft containment). Staged: ISSUE-1408 lease fix.
+- **Repo hygiene done:** 45 unreferenced root scratch scripts/dumps archived to `archive/root-scratch-2026-08-27/` (reference-checked first; the 4 deep-test PNGs used by e2e/deep-test.spec.ts and package.json-referenced test.js were kept in place).
+- **Remaining P1 backlog (from the 2026-08-22 backend audit, details lost with that session's transcript — re-derive from source before fixing):**
+  - Scheduled workers swallowing top-level errors (audit said six; candidates seen: storageMaintenance, retention-daemon, pollDeliveryStatus, deliverScheduledPosts, pulseTick, flushConversionEvents, cleanupVideoSessions, reclaimStuckVideoJobs, agentLoopCron, enforceOperationCost)
+  - Firestore batches that can exceed the 500-op limit (14 untested writeBatch/batch() sites)
+  - Video under-reservation warn-only (billable providers can run without full credit reservation)
+  - Video reaper resubmitting possibly-already-billed jobs; cleanupOrphanedVideos staleness heuristic vs live outputs
+  - BigQuery revenue export cursor starvation; knowledge task queue dead retries; timeline milestone duplicate window; ISRC query-then-write uniqueness race
+  - Rules: revenue collection client-mutable; `/users/{uid}/tmp` storage unbounded
+- **Concurrent-session note:** a Codex session is actively refactoring shared video-contract exports (videoRendererSuite → renderer test tree) in this same worktree; commits/pushes deferred until its state is stable to avoid bundling foreign work.
