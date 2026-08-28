@@ -107,3 +107,29 @@
   then trigger CI (`gh workflow run deploy.yml --ref main`) to recreate it as the correct background type.
 - `completeVideoRenderJob`'s earlier healthcheck failure was the vitest-bundle bug — fixed by 45ca95800; it will deploy cleanly on the next run.
 - All other infrastructure (APIs, SA + IAM, both secrets, artifact repo, Cloud Run worker, `queueCloudVideoRender` + `claimVideoRenderJob` functions) is deployed and Ready ✓.
+33171512319 d3672afb32 completed success
+33170784546 8ba9d03c18 completed cancelled
+33176197033 66ab29610a completed success
+33171512319 d3672afb32 completed success
+33194407208 29fc6fd742 in_progress 
+33176197033 66ab29610a completed success
+33194785272 8edc335cbe in_progress 
+33194407208 29fc6fd742 completed cancelled
+33194785272 8edc335cbe queued 
+33194407208 29fc6fd742 completed cancelled
+33194785272 8edc335cbe in_progress 
+33194407208 29fc6fd742 completed cancelled
+33196608685 dd3d72ed25 pending 
+33194785272 8edc335cbe in_progress 
+33196608685 dd3d72ed25 queued 
+33194785272 8edc335cbe completed cancelled
+
+## RESOLVED — 2026-08-28
+
+- CI run 33194785272 (SHA `8edc335cb`): all jobs green including deploy-production.
+- Pre-delete step fired: stale HTTPS `dispatchCloudVideoRender` deleted; fresh background-triggered version created.
+- All four queue functions live: `queueCloudVideoRender` ✓ `claimVideoRenderJob` ✓ `dispatchCloudVideoRender` ✓ `completeVideoRenderJob` ✓
+- Cloud Run worker `indii-render-worker` Ready ✓
+- Pipeline is live end to end: web user → queue → dispatcher → worker → MP4.
+
+No remaining infrastructure blockers. The MIG-010 cloud render pipeline is fully activated.
