@@ -86,3 +86,24 @@
 - CRITICAL BUG FOUND AND FIXED (45ca95800→45ca95800 lineage + ad648b03a): the functions deploy healthcheck-failed on all four queue functions — the shared bundle included a vitest import via the index re-export of the test harness. Fixed by relocating the harness out of the production export path (now `shared/src/testing/`, unexported; consumers import directly). Verified: shared builds clean, all consumers green.
 - CI re-dispatched after webhook lag; watching run 33170199615.
 - Arcjet retry regression test (other agent's uncommitted work) landed as 8dab863b3.
+33170199615 8dab863b36 completed failure
+33170062345 8dab863b36 completed cancelled
+33170784546 8ba9d03c18 in_progress 
+33170199615 8dab863b36 completed failure
+33170784546 8ba9d03c18 queued 
+33170199615 8dab863b36 completed failure
+33171512319 d3672afb32 queued 
+33170784546 8ba9d03c18 completed cancelled
+33171512319 d3672afb32 in_progress 
+33170784546 8ba9d03c18 completed cancelled
+
+## Update — 2026-08-28 (deployment blocker: stale function type conflict)
+
+- CI deploy for the queue functions hit a Gen2 restriction: `dispatchCloudVideoRender` already exists in GCP as an **HTTPS function** (from a partial earlier deploy), and Gen2 forbids changing it to a background-triggered function in place.
+- **Fix required (one command, founder or browser agent):**
+  ```
+  gcloud functions delete dispatchCloudVideoRender --region us-central1 --project indii-music-founder --quiet
+  ```
+  then trigger CI (`gh workflow run deploy.yml --ref main`) to recreate it as the correct background type.
+- `completeVideoRenderJob`'s earlier healthcheck failure was the vitest-bundle bug — fixed by 45ca95800; it will deploy cleanly on the next run.
+- All other infrastructure (APIs, SA + IAM, both secrets, artifact repo, Cloud Run worker, `queueCloudVideoRender` + `claimVideoRenderJob` functions) is deployed and Ready ✓.
