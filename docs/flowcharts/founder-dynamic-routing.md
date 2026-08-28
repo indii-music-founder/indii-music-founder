@@ -37,12 +37,16 @@ flowchart TD
     LogoReveal --> Crawl["Move thesis at pixels-per-second timing"]
     Crawl --> EndCard["Hold final wiil, Founder end card"]
 
-    ThesisModal --> AudioAction{"Visitor enables sound"}
-    AudioAction --> AudioCandidates["Try MP3, then M4A, then WAV"]
+    ThesisModal --> AudioAction{"Auto-start soundtrack"}
+    AudioAction --> AutoplayAllowed{"Playback with sound allowed?"}
+    AutoplayAllowed -->|"Yes (open follows the Watch-the-thesis click)"| AudioCandidates["Try MP3, then M4A, then WAV"]
+    AutoplayAllowed -->|"Blocked (deep link, no gesture yet)"| GestureRetry["Retry on the visitor's first pointer, key, touch, or wheel gesture"]
+    GestureRetry --> AudioCandidates
     AudioCandidates --> AudioValidation{"Response is successful audio content?"}
     AudioValidation -->|Yes| LoopTrack["Play and loop the supplied soundtrack"]
     AudioValidation -->|No sources succeed| SynthFallback["Start temporary Web Audio synth fallback"]
-    LoopTrack --> AudioCleanup["Pause, revoke object URL, and clear audio state on stop or close"]
+    LoopTrack --> CompletionFade["Fade out over 5s when the crawl completes, then stop"]
+    CompletionFade --> AudioCleanup["Pause, revoke object URL, and clear audio state on stop or close"]
     SynthFallback --> AudioCleanup
     AudioCleanup --> CloseContext["Stop oscillators and close AudioContext"]
 
@@ -52,9 +56,9 @@ flowchart TD
     classDef safe fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#111
     classDef closed fill:#fce4ec,stroke:#d81b60,stroke-width:2px,color:#111
 
-    class Request,ThesisButton,AudioAction user
-    class FounderRoutes,GeneralRoutes,FounderHome,PublicHome,SharedRoutes,PublicSharedRoutes,BrandPromise,ProtectedMarks,ThesisModal,Intro,LogoReveal,Crawl,EndCard,Funnel logic
-    class ModeGate,PreviewGate,TargetLabel,AudioValidation gate
+    class Request,ThesisButton,GestureRetry user
+    class FounderRoutes,GeneralRoutes,FounderHome,PublicHome,SharedRoutes,PublicSharedRoutes,BrandPromise,ProtectedMarks,ThesisModal,Intro,LogoReveal,Crawl,EndCard,AudioAction,Funnel,CompletionFade logic
+    class ModeGate,PreviewGate,TargetLabel,AutoplayAllowed,AudioValidation gate
     class OpenCTA,Studio,StudioTarget,LoopTrack,AudioCleanup,CloseContext safe
     class ClosedCTA,StatusAnchor,ComingSoonTarget,SynthFallback closed
 ```
@@ -68,8 +72,8 @@ flowchart TD
 5. **State the product identity precisely.** The marketing Conductor section, thesis, preview sign-in copy, and in-app brand description all explain the same distinction: indii is both the conductor that receives the artist's direction and the connected orchestra that carries the work. The Conductor is not presented as a separate product.
 6. **Protect the lowercase marks.** Visible uses spell `indii`, `indii.music`, and `wiil` exactly in lowercase. The `.indii-name` and `.wiil-name` treatments supply true lowercase glyphs and override inherited uppercase transforms without forcing surrounding labels into lowercase.
 7. **Run the thesis sequence.** Opening `ThesisCrawl` locks background scrolling, resets the sequence, runs the opening statement for `6000` milliseconds, reveals the logo for `3800` milliseconds, then advances the crawl using elapsed frame time and `CRAWL_PIXELS_PER_SECOND`. Completion holds the signed end card rather than looping the animation.
-8. **Resolve soundtrack sources safely.** Sound begins only after a visitor gesture. The component tries `/audio/indii-thesis-theme.mp3`, `.m4a`, and `.wav` in that order, confirms the response is successful and has an audio content type, then loops the first playable asset.
-9. **Degrade and clean up.** If no supplied track can play, a temporary Web Audio synth is used. Pausing, muting, replaying, closing, or unmounting stops media, revokes object URLs, stops oscillators, closes the `AudioContext`, restores page scrolling, and prevents leaked audio resources.
+8. **Auto-start and resolve the soundtrack safely.** Opening the thesis always follows a visitor gesture, so the soundtrack auto-starts with the experience: the component tries `/audio/indii-thesis-theme.mp3`, `.m4a`, and `.wav` in that order, confirms the response is successful and has an audio content type, then plays and loops the first playable asset. If the browser refuses autoplay (a deep link with no prior interaction), the component stays silent instead of degrading to the synth and retries on the visitor's first pointer, key, touch, or wheel gesture. The visitor can mute at any time; a muted choice survives replay and reopen.
+9. **Fade out, degrade, and clean up.** Whether the supplied track is longer than the crawl or loops past it, reaching the end card fades the soundtrack out over five seconds and releases it. If no supplied track can play, a temporary Web Audio synth is used. Pausing, muting, replaying, closing, or unmounting stops media, revokes object URLs, stops oscillators, closes the `AudioContext`, restores page scrolling, and prevents leaked audio resources.
 
 ## Verified Files
 

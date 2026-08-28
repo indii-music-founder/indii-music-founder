@@ -31,6 +31,9 @@ const THESIS_SOUNDTRACK_SOURCES = [
 ];
 const THESIS_PDF_PATH = '/downloads/the-indii-thesis.pdf';
 const THESIS_PDF_FILENAME = 'The-indii-Thesis.pdf';
+// Once the crawl reaches the signed end card, the looping soundtrack fades
+// out over this duration and is released.
+const SOUNDTRACK_COMPLETION_FADE_MS = 5000;
 
 /** Vestibular-safe mode: the crawl becomes a static, scrollable transcript. */
 const PREFERS_REDUCED_MOTION =
@@ -192,6 +195,16 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
   const soundtrackRef = useRef<HTMLAudioElement | null>(null);
   const soundtrackObjectUrlRef = useRef<string | null>(null);
   const audioStartingRef = useRef(false);
+  const soundtrackFadeIntervalRef = useRef<number | null>(null);
+  // Bumped on every stop so an in-flight source load can never attach after
+  // the thesis closed or replayed.
+  const audioGenerationRef = useRef(0);
+  // Set only when the visitor mutes the soundtrack, so replay and reopen
+  // respect that choice instead of forcing the music back on.
+  const audioOptedOutRef = useRef(false);
+  // True while any audio path (soundtrack or synth) is actually live, so a
+  // stop that runs before anything ever played does not broadcast a stop.
+  const audioActiveRef = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const audioButtonRef = useRef<HTMLButtonElement>(null);
@@ -214,6 +227,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
       const ctx = new AudioContextClass();
       audioContextRef.current = ctx;
+      audioActiveRef.current = true;
       setAudioEnabled(true);
 
       // Create a master volume
@@ -281,9 +295,46 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
     }
   };
 
+  /** Cancel any in-flight soundtrack fade ramp. */
+  const cancelSoundtrackFade = () => {
+    if (soundtrackFadeIntervalRef.current !== null) {
+      window.clearInterval(soundtrackFadeIntervalRef.current);
+      soundtrackFadeIntervalRef.current = null;
+    }
+  };
+
+  /**
+   * Ramp the looping soundtrack to silence, then hand off to a final cleanup.
+   * Used when the crawl finishes so the experience always ends in silence,
+   * whether the track is longer than the crawl or loops past it.
+   */
+  const fadeOutSoundtrack = (durationMs: number, onFaded: () => void) => {
+    if (!soundtrackRef.current) return;
+    cancelSoundtrackFade();
+    const startVolume = soundtrackRef.current.volume;
+    const fadeStartedAt = performance.now();
+    soundtrackFadeIntervalRef.current = window.setInterval(() => {
+      const fading = soundtrackRef.current;
+      if (!fading) {
+        // The soundtrack was stopped or swapped mid-fade; nothing left to ramp.
+        cancelSoundtrackFade();
+        return;
+      }
+      const progress = Math.min(1, (performance.now() - fadeStartedAt) / durationMs);
+      fading.volume = Math.max(0, startVolume * (1 - progress));
+      if (progress >= 1) {
+        cancelSoundtrackFade();
+        onFaded();
+      }
+    }, 60);
+  };
+
   const startAudio = async () => {
     if (soundtrackRef.current || audioContextRef.current || audioStartingRef.current) return;
+    // The visitor muted the soundtrack; only their toggle brings it back.
+    if (audioOptedOutRef.current) return;
     audioStartingRef.current = true;
+    const generation = audioGenerationRef.current;
 
     for (const source of THESIS_SOUNDTRACK_SOURCES) {
       try {
@@ -293,31 +344,55 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
         try {
           await soundtrack.play();
+          if (audioGenerationRef.current !== generation) {
+            // The thesis closed or replayed while this source was loading.
+            soundtrack.pause();
+            soundtrack.removeAttribute('src');
+            soundtrack.load();
+            URL.revokeObjectURL(objectUrl);
+            return;
+          }
           soundtrackRef.current = soundtrack;
           soundtrackObjectUrlRef.current = objectUrl;
+          audioActiveRef.current = true;
           setAudioEnabled(true);
           audioStartingRef.current = false;
-          // Notify the system layer so the network can react to the music
-          // (the visitor explicitly enabled this audio).
+          // Notify the system layer so the network can react to the music.
           window.dispatchEvent(
             new CustomEvent('indii:thesis-audio', { detail: { element: soundtrack } }),
           );
           return;
-        } catch {
+        } catch (error) {
           soundtrack.removeAttribute('src');
           soundtrack.load();
           URL.revokeObjectURL(objectUrl);
+          // Autoplay with sound was refused because no user activation exists
+          // yet (e.g. a deep link straight into the thesis). Keep the supplied
+          // track pending instead of degrading to the synth; the first visitor
+          // gesture retries via the auto-start effect below.
+          if (error instanceof DOMException && error.name === 'NotAllowedError') {
+            audioStartingRef.current = false;
+            return;
+          }
         }
       } catch (error) {
         console.warn(`Thesis soundtrack source could not be loaded: ${source}`, error);
       }
     }
 
-    startSynthFallback();
+    if (audioGenerationRef.current === generation) {
+      startSynthFallback();
+    }
     audioStartingRef.current = false;
   };
 
   const stopAudio = () => {
+    audioGenerationRef.current += 1;
+    cancelSoundtrackFade();
+    // Only broadcast a stop if something was actually live, so lifecycle
+    // calls that run before any audio started stay silent on the event bus.
+    const wasActive = audioActiveRef.current;
+    audioActiveRef.current = false;
     if (soundtrackRef.current) {
       soundtrackRef.current.pause();
       soundtrackRef.current.removeAttribute('src');
@@ -342,14 +417,22 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
     }
     audioStartingRef.current = false;
     setAudioEnabled(false);
-    window.dispatchEvent(new CustomEvent('indii:thesis-audio-stop'));
+    if (wasActive) {
+      window.dispatchEvent(new CustomEvent('indii:thesis-audio-stop'));
+    }
+  };
+
+  const enableAudio = () => {
+    audioOptedOutRef.current = false;
+    void startAudio();
   };
 
   const toggleAudio = () => {
     if (audioEnabled) {
+      audioOptedOutRef.current = true;
       stopAudio();
     } else {
-      startAudio();
+      enableAudio();
     }
   };
 
@@ -370,6 +453,37 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
       }
     }
   }, [audioEnabled, isPlaying]);
+
+  // Soundtrack lifecycle with the experience: auto-start on open, stop on
+  // close. Opening the thesis always follows a visitor gesture (the "Watch
+  // the thesis" click), so playback with sound is allowed; if the browser
+  // still refuses (a deep link with no prior interaction), these
+  // once-per-gesture listeners retry until the track is actually playing.
+  useEffect(() => {
+    if (!isOpen) {
+      setTimeout(stopAudio, 0);
+      return undefined;
+    }
+    void startAudio();
+
+    const retrySoundtrackStart = () => {
+      if (!soundtrackRef.current && !audioContextRef.current) {
+        void startAudio();
+      }
+    };
+    const retryEvents: (keyof WindowEventMap)[] = ['pointerdown', 'keydown', 'touchstart', 'wheel'];
+    retryEvents.forEach((eventName) => {
+      window.addEventListener(eventName, retrySoundtrackStart, { once: true });
+    });
+    return () => {
+      retryEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, retrySoundtrackStart);
+      });
+    };
+    // startAudio/stopAudio read only refs and setters, so the lifecycle must
+    // not re-run just because they are re-created on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, sequenceVersion]);
 
   // Adjust state during render based on props to avoid useEffect setState warning
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
@@ -454,7 +568,6 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
       };
     } else {
       document.body.style.overflow = 'unset';
-      setTimeout(stopAudio, 0);
     }
   }, [isOpen, sequenceVersion]);
 
@@ -508,7 +621,21 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
     setSpeed(1);
     crawlY.set(crawlBounds.start);
     setSequenceVersion((version) => version + 1);
+    // Restart the looping soundtrack with the replay unless the visitor muted it.
+    stopAudio();
+    if (!audioOptedOutRef.current) {
+      void startAudio();
+    }
   };
+
+  // The thesis finished scrolling: fade the soundtrack out gracefully and
+  // release it, ending the experience in silence.
+  useEffect(() => {
+    if (!isComplete) return;
+    fadeOutSoundtrack(SOUNDTRACK_COMPLETION_FADE_MS, () => stopAudio());
+    // fadeOutSoundtrack/stopAudio read only refs and setters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isComplete]);
 
   // Generate star field via state lazy initializer to avoid useEffect call during render
   const [stars] = useState<Array<{ x: number; y: number; size: number; opacity: number; duration: number; blur: number; color: string }>>(() => {
@@ -750,7 +877,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
               {!audioEnabled && (
                 <button
                   type="button"
-                  onClick={() => void startAudio()}
+                  onClick={enableAudio}
                   className="absolute bottom-10 left-6 z-30 bg-amber-500/10 border border-amber-500/30 rounded-full px-6 py-2 backdrop-blur-md flex items-center gap-2 cursor-pointer hover:bg-amber-500/20 transition-all shadow-[0_0_20px_rgba(245,158,11,0.15)]"
                 >
                   <Info size={14} className="text-amber-400" />

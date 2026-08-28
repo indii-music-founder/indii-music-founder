@@ -1,25 +1,33 @@
 INDII THESIS SOUNDTRACK
 
-CURRENT TRACK: "Machine Code" (techno, 120 BPM) — chosen by the founder
-2026-08-22, replacing "What To Come".
+CURRENT TRACK: "Fader Fights Back" — Treblo ("Mix Pushing Back"), placed by the
+founder 2026-08-27, replacing "Machine Code" (theme 2026-08-22 → 2026-08-27).
 
 `indii-thesis-theme.mp3` is a web-optimized transcode of the founder's
-`archive/Music/Machine Code.mp3` (source upload: 171 s).
-Encoding: 48 kHz stereo, 192 kbps MP3 (~4.1 MB).
+`Fader Fights Back - Mix Pushing Back - Treblo.mp3`
+(folder: `~/Desktop/indii.music.demo.music/`; source: 44.1 kHz stereo,
+320 kbps, 166.5 s). Encoding: 44.1 kHz stereo, 192 kbps MP3 (~4.0 MB).
 
-Facts from analysis of the source:
-- Steady 120 BPM grid (315 detected beats across 171 s).
-- Spectral centroid ~2790 Hz — brighter, more digital texture than the
-  previous track; suits the system-network visualizer's high band.
-- Arc: opens at moderate energy (RMS ~0.08), closes near-silence
-  (end RMS ~0.001). The fade-out-to-quiet-restart makes a clean loop join —
-  no click, just a natural breath between loops.
-- The loop plays continuously in the thesis player and drives the
-  audio-reactive system network (bass/mid/high bands).
+Loop treatment: a 40 ms fade-in head and a 1.2 s fade-out tail were added to
+the transcode so the loop join is click-free. The source file is untouched.
+
+PLAYBACK BEHAVIOR (ThesisCrawl)
+
+- Auto-starts when the thesis experience opens — the "Watch the thesis" click
+  provides the browser's required user activation. If a browser refuses
+  autoplay (e.g. a deep link with no prior interaction), the track starts on
+  the visitor's first pointer/key/touch gesture instead.
+- Loops for the whole experience (audio.loop = true), whether the track is
+  shorter or longer than the crawl.
+- Fades out over 5 seconds once the crawl reaches the signed end card, then
+  stops and releases its media resources.
+- The visitor can mute/unmute at any time with the HUD control; a muted
+  choice is respected across replay and reopen.
 
 PREVIOUS TRACKS (kept in `archive/Music/` and mirrored in
-`test-fixtures/audio/`): "What To Come" (techno ~116 BPM, was theme until
-2026-08-22) and "Fading Echoes ext v2.2".
+`test-fixtures/audio/`): "Machine Code" (techno, 120 BPM, theme until
+2026-08-27), "What To Come" (theme until 2026-08-22), and
+"Fading Echoes ext v2.2".
 
 REPLACING IT
 
