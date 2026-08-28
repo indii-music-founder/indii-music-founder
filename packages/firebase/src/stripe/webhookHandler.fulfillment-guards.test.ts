@@ -50,6 +50,7 @@ vi.mock('../config/secrets', () => ({
   stripeSecretKey: {},
   stripeWebhookSecret: {},
   getStripeWebhookSecret: () => 'whsec_test_secret',
+  printfulApiKey: {},
 }));
 
 vi.mock('@indii/shared', () => ({

@@ -2228,6 +2228,7 @@ export * from './mcp';
 // Agent Orchestration State Machine
 export * from './orchestration';
 export * from './pod/printful';
+export { pod_createOrderCheckout } from './pod/checkout';
 
 // Payment Links
 export { createStripePaymentLinks } from './stripe/paymentLinks';

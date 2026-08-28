@@ -62,6 +62,22 @@ function isExpiredStorageFile(cutoffDate: Date, metadata: StorageFileMetadata): 
     return !!fileDate && fileDate < cutoffDate;
 }
 
+/**
+ * ISSUE-1413 deletion rail (founder decision 2026-08-28: rails only, DRY RUN
+ * stays on). A freshly-rendered output whose `history`/`videoJobs` document
+ * write is slow or still in flight must NEVER be matched as deletable. Auto-
+ * deletion therefore additionally requires the file itself to be older than
+ * ORPHAN_GRACE_MS — and a file whose age is UNKNOWN is never auto-deleted.
+ */
+const ORPHAN_GRACE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function isOlderThanOrphanGrace(file: { metadata?: Record<string, unknown>; timeCreated?: string }): boolean {
+    const meta = (file.metadata ?? {}) as StorageFileMetadata;
+    const fileDate = parseStorageFileDate(meta);
+    if (!fileDate) return false; // unknown age → fail closed, never delete
+    return (Date.now() - fileDate.getTime()) > ORPHAN_GRACE_MS;
+}
+
 function isCreativeVideoTempPath(path: string): boolean {
     const pathParts = path.split("/");
     return pathParts.length >= 6 &&
@@ -119,6 +135,7 @@ export const cleanupOrphanedVideos = onSchedule(
         let orphanCount = 0;
         let deletedCount = 0;
         let errorCount = 0;
+        let recentOrphansPreserved = 0;
         const orphanPaths: string[] = [];
 
         // Process the videos/ prefix
@@ -171,6 +188,15 @@ export const cleanupOrphanedVideos = onSchedule(
                         orphanCount++;
                         orphanPaths.push(file.name);
 
+                        if (enableDeletion && !isOlderThanOrphanGrace(file as { metadata?: Record<string, unknown>; timeCreated?: string })) {
+                            // ISSUE-1413 rail: doc coverage is missing but the
+                            // file is fresh — a render just finished and its
+                            // history/videoJobs doc may not be visible yet.
+                            recentOrphansPreserved++;
+                            console.log(`[StorageMaintenance] [PROTECTED] Recent file without doc coverage, not deleted: ${file.name}`);
+                            continue;
+                        }
+
                         if (enableDeletion) {
                             try {
                                 await file.delete();
@@ -205,6 +231,7 @@ export const cleanupOrphanedVideos = onSchedule(
                 orphanCount,
                 deletedCount,
                 errorCount,
+                recentOrphansPreserved,
                 dryRun: !enableDeletion,
                 orphanPaths: orphanPaths.slice(0, 100), // Cap at 100 for Firestore doc size
             });

@@ -12,6 +12,8 @@ import { stripe, mapStripeStatus, mapStripeTierToSubscriptionTier } from './conf
 import { SubscriptionTier, Subscription as LocalSubscription } from '../shared/subscription/types';
 import { stripeSecretKey, stripeWebhookSecret, getStripeWebhookSecret } from '../config/secrets';
 import { enqueueConversionEvent } from '../marketing/conversionEventOutbox';
+import { confirmPrintfulOrder } from '../pod/printfulApi';
+import { printfulApiKey } from '../config/secrets';
 import { buildConversionEventId } from '@indii/shared';
 
 function maskId(id: string): string {
@@ -485,6 +487,12 @@ async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
     return;
   }
 
+  // Route POD (Printful) order payment — the ISSUE-1407 paid gate.
+  if (session.metadata?.type === 'pod_order') {
+    await handlePodOrderPaid(session);
+    return;
+  }
+
   // Emit sale conversion for all paid checkouts (attributable to an artist).
   try {
     await emitSaleConversion(session);
@@ -719,34 +727,279 @@ async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
 }
 
 /**
- * Handle charge.refunded — reverse credit-pack grants when a purchase is
- * fully refunded. Partial refunds are logged but do not claw back credits
- * (pro-rated clawback is tracked in OPEN_ISSUES_V3). Non-credit-pack refunds
- * (subscriptions, marketplace, licensing) need distinct financial flows and
- * are intentionally out of scope here.
+ * Look up the checkout session that produced a refunded charge. Throws so
+ * Stripe retries when the lookup itself fails (fail closed, like every other
+ * financial read in this file).
  */
-async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
-  const charge = event.data.object as Stripe.Charge;
+async function resolveChargeCheckoutSession(
+  charge: Stripe.Charge,
+): Promise<Stripe.Checkout.Session | undefined> {
   const paymentIntent = typeof charge.payment_intent === 'string' ? charge.payment_intent : null;
-  if (!paymentIntent) return;
+  if (!paymentIntent) return undefined;
 
-  let session: Stripe.Checkout.Session | undefined;
   try {
     const sessions = await stripe.checkout.sessions.list({ payment_intent: paymentIntent, limit: 1 });
-    session = sessions.data[0];
+    return sessions.data[0];
   } catch (error: unknown) {
-    logger.error('[handleChargeRefunded] Failed to look up checkout session — throwing for retry', {
+    logger.error('[resolveChargeCheckoutSession] Failed to look up checkout session — throwing for retry', {
       chargeId: charge.id,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
   }
+}
 
-  if (!session || session.metadata?.type !== 'micro_transaction') {
-    logger.info(`[handleChargeRefunded] Charge ${charge.id} is not a credit-pack purchase — no credit action`);
+/**
+ * ISSUE-1406 (founder decision 2026-08-28): a refunded marketplace sale is
+ * clawed back from the seller's spendable credit balance. If the balance was
+ * already spent, the un-collectible part is recorded as shortfall debt on the
+ * deterministic refund log (same pattern as credit-pack clawbacks) — the
+ * platform does not silently absorb refund costs. Reservations, the purchase
+ * doc, and revenue analytics are flipped to refunded in the same transaction.
+ * Partial refunds are logged without clawback. Disputes remain a
+ * finance-review record (handleChargeDisputeCreated) — funds are not yet
+ * lost while a dispute is pending, and premature clawback would require a
+ * re-credit path on `charge.dispute.closed` (deliberately not built yet).
+ */
+async function handleMarketplaceRefund(
+  session: Stripe.Checkout.Session,
+  charge: Stripe.Charge,
+): Promise<void> {
+  const reservationId = session.metadata?.reservationId;
+  if (!reservationId) {
+    logger.error('[handleMarketplaceRefund] Marketplace refund session is missing reservationId', { sessionId: session.id });
     return;
   }
 
+  if ((charge.amount_refunded ?? 0) < charge.amount) {
+    logger.info(`[handleMarketplaceRefund] Partial refund on session ${session.id} — seller balance not clawed back`);
+    return;
+  }
+
+  const db = getFirestore();
+  const reservationRef = db.collection('marketplace_reservations').doc(reservationId);
+  const resSnap = await reservationRef.get();
+  if (!resSnap.exists) {
+    logger.error(`[handleMarketplaceRefund] Reservation ${reservationId} not found — cannot claw back`);
+    return;
+  }
+  const reservation = resSnap.data()!;
+
+  // Binding guard, mirroring fulfillment: the reservation must belong to THIS
+  // session and the refunded amount must equal the server-reserved price.
+  if (reservation.stripeSessionId !== session.id) {
+    logger.error(
+      `[handleMarketplaceRefund] Reservation ${reservationId} is bound to session ${maskId(String(reservation.stripeSessionId ?? ''))}, not ${maskId(session.id)} — refusing`,
+    );
+    return;
+  }
+  if (Number(reservation.priceCents) !== Number(charge.amount)) {
+    logger.error(
+      `[handleMarketplaceRefund] Refund ${String(charge.amount)} != reserved ${String(reservation.priceCents)} for reservation ${reservationId} — refusing`,
+    );
+    return;
+  }
+  if (reservation.status !== 'completed') {
+    logger.info(`[handleMarketplaceRefund] Reservation ${reservationId} is ${String(reservation.status)} — no clawback`);
+    return;
+  }
+
+  const sellerId = String(reservation.sellerId);
+  const amount = Number(reservation.priceCents);
+  const creditsRef = db.collection('user_credits').doc(sellerId);
+  // Deterministic per-charge refund log → idempotent across Stripe retries.
+  const refundLogRef = creditsRef.collection('transactions').doc(`refund_${charge.id}`);
+
+  await db.runTransaction(async (t) => {
+    const logSnap = await t.get(refundLogRef);
+    if (logSnap.exists) {
+      logger.info(`[handleMarketplaceRefund] Charge ${charge.id} already clawed back — skipping duplicate delivery`);
+      return;
+    }
+    const doc = await t.get(creditsRef);
+    const current = doc.exists ? (doc.data()?.balance || 0) : 0;
+    const applied = Math.max(0, Math.min(current, amount));
+    if (applied > 0) {
+      t.update(creditsRef, { balance: current - applied, updatedAt: Date.now() });
+    }
+    t.set(refundLogRef, {
+      amount: -amount,
+      applied,
+      shortfall: amount - applied,
+      type: 'marketplace_refund',
+      chargeId: charge.id,
+      sessionId: session.id,
+      reservationId,
+      timestamp: Date.now(),
+    });
+    t.update(reservationRef, {
+      status: 'refunded',
+      refundChargeId: charge.id,
+      refundedAt: FieldValue.serverTimestamp(),
+    });
+    t.set(db.collection('purchases').doc(session.id), {
+      status: 'refunded',
+      refundChargeId: charge.id,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    // Negative revenue row so marketplace analytics net the refund out.
+    t.set(db.collection('revenue').doc(), {
+      userId: sellerId,
+      productId: reservation.productId,
+      productName: reservation.productTitle,
+      amount: -amount,
+      currency: reservation.currency,
+      source: reservation.source === 'social' ? 'social_drop' : reservation.source,
+      sourceId: reservation.sourceId || undefined,
+      customerId: reservation.buyerId,
+      status: 'refunded',
+      refundChargeId: charge.id,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  logger.info(
+    `[handleMarketplaceRefund] Clawed back ${amount} cents of seller earnings from ${maskId(sellerId)} (charge ${charge.id})`,
+  );
+}
+
+/**
+ * ISSUE-1406 (founder decision 2026-08-28): a refunded sync license reverses
+ * the payout transfer from the seller's connected account (the seller eats
+ * the refund, including a possible negative connected-account balance), then
+ * deactivates the license, the agreement, and writes a negative ledger row —
+ * all idempotent per charge. If the reversal cannot execute (e.g. the
+ * connected account cannot cover it), nothing is marked refunded; the license
+ * flips to `refund_pending_reversal` and a finance-review doc records the
+ * failure instead of retrying forever.
+ */
+async function handleLicensingRefund(
+  session: Stripe.Checkout.Session,
+  charge: Stripe.Charge,
+): Promise<void> {
+  if ((charge.amount_refunded ?? 0) < charge.amount) {
+    logger.info(`[handleLicensingRefund] Partial refund on session ${session.id} — transfer not reversed`);
+    return;
+  }
+
+  const db = getFirestore();
+  const licenseRef = db.collection('licenses').doc(session.id);
+  const licSnap = await licenseRef.get();
+  if (!licSnap.exists) {
+    logger.error(`[handleLicensingRefund] License ${session.id} not found — cannot reverse payout`);
+    return;
+  }
+  const license = licSnap.data()!;
+
+  if (license.status !== 'active') {
+    logger.info(`[handleLicensingRefund] License ${session.id} is ${String(license.status)} — no reversal`);
+    return;
+  }
+  const transferId = license.stripeTransferId;
+  const licensorUserId = license.userId;
+  const agreementId = license.agreementId;
+  if (typeof licensorUserId !== 'string' || !licensorUserId
+    || typeof transferId !== 'string' || !/^tr_[a-zA-Z0-9]+$/.test(transferId)) {
+    logger.error(`[handleLicensingRefund] License ${session.id} lacks a usable transfer/user binding — finance review required`);
+    return;
+  }
+
+  let reversalId: string;
+  try {
+    const reversal = await stripe.transfers.createReversal(transferId, undefined, {
+      idempotencyKey: `reversal_${charge.id}`,
+    });
+    reversalId = reversal.id;
+    logger.info(`[handleLicensingRefund] Reversed transfer ${transferId} → ${reversalId} (charge ${charge.id})`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`[handleLicensingRefund] Transfer reversal failed for charge ${charge.id}: ${message}`);
+    await licenseRef.set({
+      status: 'refund_pending_reversal',
+      refundChargeId: charge.id,
+      refundReversalError: message,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    // Deterministic ID → duplicate deliveries overwrite instead of piling up.
+    await db.collection('finance_reversal_failures').doc(charge.id).set({
+      kind: 'licensing_transfer_reversal',
+      licenseId: session.id,
+      licensorUserId,
+      transferId,
+      amount: license.amount ?? null,
+      currency: 'usd',
+      error: message,
+      recordedAt: FieldValue.serverTimestamp(),
+    });
+    return;
+  }
+
+  const batch = db.batch();
+  batch.set(licenseRef, {
+    status: 'refunded',
+    refundChargeId: charge.id,
+    stripeReversalId: reversalId,
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+  if (typeof agreementId === 'string' && agreementId) {
+    batch.set(db.collection('license_agreements').doc(agreementId), {
+      status: 'refunded',
+      refundChargeId: charge.id,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+  batch.set(db.collection(`users/${licensorUserId}/ledger`).doc(`sync_license_refund_${charge.id}`), {
+    type: 'sync_license_refund',
+    amount: -(Number(license.amount) || 0),
+    currency: 'usd',
+    status: 'reversed',
+    stripeSessionId: session.id,
+    stripeTransferId: transferId,
+    stripeReversalId: reversalId,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+/**
+ * Handle charge.refunded — route by what was bought:
+ * - credit pack (`micro_transaction`): reverse fully-refunded grants
+ *   idempotently, shortfall recorded when the balance was already spent.
+ * - marketplace sale: claw the sale amount back from the seller's credit
+ *   balance (ISSUE-1406 founder decision).
+ * - sync license: reverse the payout transfer from the connected account and
+ *   deactivate the license/agreement (ISSUE-1406 founder decision).
+ * Partial refunds are logged but do not claw back (pro-rated clawback is
+ * tracked in OPEN_ISSUES_V3). Subscriptions need no clawback path.
+ */
+async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
+  const charge = event.data.object as Stripe.Charge;
+  const session = await resolveChargeCheckoutSession(charge);
+
+  if (!session) {
+    logger.info(`[handleChargeRefunded] Charge ${charge.id} has no checkout session — no refund action`);
+    return;
+  }
+
+  switch (session.metadata?.type) {
+    case 'micro_transaction':
+      await handleCreditPackRefund(session, charge);
+      return;
+    case 'marketplace_purchase':
+      await handleMarketplaceRefund(session, charge);
+      return;
+    case 'licensing_purchase':
+      await handleLicensingRefund(session, charge);
+      return;
+    default:
+      logger.info(`[handleChargeRefunded] Charge ${charge.id} is not a refundable purchase type — no action`);
+  }
+}
+
+async function handleCreditPackRefund(
+  session: Stripe.Checkout.Session,
+  charge: Stripe.Charge,
+): Promise<void> {
   const userId = session.metadata?.userId;
   const credits = parseInt(session.metadata?.credits || '0', 10);
   if (!userId || !Number.isFinite(credits) || credits <= 0) {
@@ -812,10 +1065,99 @@ async function handleChargeDisputeCreated(event: Stripe.Event): Promise<void> {
 }
 
 /**
+ * Handle checkout.session.completed for a POD (Printful) order — the paid
+ * gate required by ISSUE-1407 (founder decision 2026-08-28: Stripe Checkout
+ * per order). The session was created by pod_createOrderCheckout bound to a
+ * specific draft order; this handler re-verifies the binding AND the live
+ * Stripe amount before confirming the Printful order, so a forged or
+ * underpaid session can never charge indii's Printful account. A confirm
+ * failure parks the order doc in `payment_received_confirm_failed` and
+ * throws — Stripe retries until the confirm lands, and the money is never
+ * lost either way.
+ */
+async function handlePodOrderPaid(session: Stripe.Checkout.Session): Promise<void> {
+  if (session.payment_status !== 'paid') {
+    logger.info(`[handlePodOrderPaid] Session ${session.id} not paid yet (${session.payment_status})`);
+    return;
+  }
+
+  const userId = session.metadata?.userId;
+  const orderId = session.metadata?.printfulOrderId;
+  if (!userId || !orderId) {
+    logger.error('[handlePodOrderPaid] pod_order session is missing user/order metadata', { sessionId: session.id });
+    return;
+  }
+
+  const db = getFirestore();
+  const orderRef = db.collection('users').doc(userId).collection('pod_orders').doc(String(orderId));
+  const snap = await orderRef.get();
+  if (!snap.exists) {
+    logger.error(`[handlePodOrderPaid] No ownership doc for order ${orderId} — refusing to confirm`);
+    return;
+  }
+  const orderDoc = snap.data()!;
+
+  // The order doc must be bound to THIS checkout session.
+  if (orderDoc.checkoutSessionId !== session.id) {
+    logger.error(
+      `[handlePodOrderPaid] Order ${orderId} is bound to session ${maskId(String(orderDoc.checkoutSessionId ?? ''))}, not ${maskId(session.id)} — refusing`,
+    );
+    return;
+  }
+  if (orderDoc.status === 'confirmed') {
+    logger.info(`[handlePodOrderPaid] Order ${orderId} already confirmed — skipping duplicate delivery`);
+    return;
+  }
+  if (orderDoc.status !== 'awaiting_payment' && orderDoc.status !== 'payment_received_confirm_failed') {
+    logger.error(`[handlePodOrderPaid] Order ${orderId} is ${String(orderDoc.status)} — refusing to confirm`);
+    return;
+  }
+
+  // Defense in depth (mirrors the credit-pack guard): re-read the session
+  // from Stripe and require the paid amount to equal the server-recorded
+  // price before any Printful mutation.
+  const liveSession = await stripe.checkout.sessions.retrieve(session.id);
+  if (liveSession.payment_status !== 'paid') {
+    logger.info(`[handlePodOrderPaid] Live session ${session.id} not paid yet — waiting for async payment`);
+    return;
+  }
+  if (Number(liveSession.amount_total) !== Number(orderDoc.customerCents)) {
+    logger.error(
+      `[handlePodOrderPaid] Paid ${String(liveSession.amount_total)} != bound ${String(orderDoc.customerCents)} for order ${orderId} — refusing to confirm`,
+    );
+    return;
+  }
+
+  try {
+    await confirmPrintfulOrder(orderId);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error(`[handlePodOrderPaid] Printful confirm failed for order ${orderId}: ${message} — throwing for retry`);
+    await orderRef.set({
+      status: 'payment_received_confirm_failed',
+      confirmError: message,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    throw error;
+  }
+
+  await orderRef.set({
+    status: 'confirmed',
+    stripeSessionId: session.id,
+    stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+    paidCents: Number(orderDoc.customerCents),
+    confirmedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  logger.info(`[handlePodOrderPaid] Confirmed Printful order ${orderId} for ${maskId(userId)} (session ${session.id})`);
+}
+
+/**
  * Main webhook handler
  */
 export const stripeWebhook = onRequest({
-  secrets: [stripeSecretKey, stripeWebhookSecret],
+  secrets: [stripeSecretKey, stripeWebhookSecret, printfulApiKey],
   timeoutSeconds: 30,
 }, async (req, res) => {
   const signature = req.headers['stripe-signature'] as string;

@@ -51,6 +51,7 @@ vi.mock('../config/secrets', () => ({
   stripeSecretKey: {},
   stripeWebhookSecret: {},
   getStripeWebhookSecret: () => 'whsec_test_secret',
+  printfulApiKey: {},
 }));
 
 function makeReq(overrides: Partial<{ signature: string; rawBody: string }> = {}) {

@@ -129,6 +129,7 @@ vi.mock('../config/secrets', () => ({
     stripeWebhookSecret: { value: vi.fn(() => 'whsec_mock') },
     getStripeSecretKey: () => 'sk_test_mock',
     getStripeWebhookSecret: () => 'whsec_mock',
+    printfulApiKey: {},
 }));
 
 vi.mock('../stripe/config', async () => {
