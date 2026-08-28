@@ -31,6 +31,7 @@ vi.mock("firebase-functions/logger", () => ({
 type DecisionOptions = {
     denied?: boolean;
     errored?: boolean;
+    errorMessage?: string;
     rateLimit?: boolean;
     reset?: number;
 };
@@ -52,7 +53,7 @@ function mockDecision(options: DecisionOptions = {}) {
         isDenied: () => Boolean(options.denied),
         isErrored: () => Boolean(options.errored),
         reason: options.errored
-            ? { message: "Arcjet service error" }
+            ? { message: options.errorMessage ?? "Arcjet service error" }
             : { isRateLimit: () => Boolean(options.rateLimit), reset: options.reset ?? 17 },
     };
 }
@@ -177,6 +178,25 @@ describe("Arcjet request protection", () => {
         expect(result).toEqual({ allowed: true });
         expect(mocks.freeProtect).toHaveBeenCalledTimes(2);
         expect(mocks.freeProtect).toHaveBeenLastCalledWith(request, { userId: "user_123", correlationId: "operation-1" });
+    });
+
+    it("retries an errored timeout decision and allows the request when the retry succeeds", async () => {
+        mocks.freeProtect
+            .mockResolvedValueOnce(mockDecision({
+                errored: true,
+                errorMessage: "[deadline_exceeded] the operation timed out",
+            }))
+            .mockResolvedValue(mockDecision({ denied: false }));
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        const result = await protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "operation-1",
+        });
+
+        expect(result).toEqual({ allowed: true });
+        expect(mocks.freeProtect).toHaveBeenCalledTimes(2);
     });
 
     it("does not retry non-transient errors (bad key, malformed request)", async () => {
