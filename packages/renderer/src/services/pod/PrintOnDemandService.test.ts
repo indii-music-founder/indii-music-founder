@@ -253,5 +253,14 @@ describe('PrintOnDemandService', () => {
         it('should reject unknown or unimplemented providers instead of falling back', () => {
             expect(() => PrintOnDemandService.getProvider('gooten' as any)).toThrow('POD provider gooten is not registered or configured.');
         });
+
+        it('rejects the removed phantom Prodigi provider loudly (ISSUE-1417)', () => {
+            // The former ProdigiProvider called pod_prodigi* callables that have
+            // no backend; it must not be registered or silently fall back.
+            expect(PrintOnDemandService.getAvailableProviders()).not.toContain('prodigi');
+            expect(() => PrintOnDemandService.getProvider('prodigi' as any)).toThrow(
+                'POD provider prodigi is not registered or configured.',
+            );
+        });
     });
 });
