@@ -50,6 +50,18 @@ interface WebhookEvent {
   maxAttempts: number;
   nextRetry?: string;
   error?: string;
+  /** Claim lease set by processWebhookQueue so overlapping scheduled runs
+   *  cannot double-deliver the same event. Absent/expired = claimable. */
+  leaseUntil?: string;
+}
+
+/** Pure predicate for the queue claim decision (exported for tests). */
+export function isQueueItemClaimable(
+  data: Pick<WebhookEvent, 'leaseUntil'>,
+  nowMs: number
+): boolean {
+  if (!data.leaseUntil) return true;
+  return new Date(data.leaseUntil).getTime() <= nowMs;
 }
 
 /**
@@ -288,33 +300,60 @@ export const processWebhookQueue = onSchedule(
         return;
       }
 
+      const LEASE_MS = 2 * 60 * 1000;
       for (const doc of snapshot.docs) {
-        const event = doc.data() as WebhookEvent;
+        // Atomic claim: overlapping scheduled runs (30s cadence, 300s timeout)
+        // previously double-delivered webhooks. A transactional lease makes
+        // the claim check-and-set atomic; expired leases are reclaimable.
+        const leased = await getDb().runTransaction(async (tx) => {
+          const ref = getDb().collection('webhook_queue').doc(doc.id);
+          const snap = await tx.get(ref);
+          if (!snap.exists) return false;
+          const data = snap.data() as WebhookEvent;
+          if (!isQueueItemClaimable(data, Date.now())) {
+            return false; // another worker holds a live lease
+          }
+          tx.update(ref, { leaseUntil: new Date(Date.now() + LEASE_MS).toISOString() });
+          return true;
+        });
+        if (!leased) continue;
 
-        const webhook = await getDb()
-          .collection('users').doc(event.userId)
-          .collection('webhooks').doc(event.webhookId)
-          .get();
-
-        if (!webhook.exists) {
-          await getDb().collection('webhook_queue').doc(doc.id).delete();
-          logger.warn(`[WebhookDispatcher] Webhook not found: ${event.webhookId} for user ${maskId(event.userId)}`);
-          continue;
+        // Fault isolation: one bad delivery must not abort the rest of the batch.
+        try {
+          await deliverQueuedWebhook(doc);
+        } catch (err) {
+          logger.error(`[WebhookDispatcher] Delivery for ${doc.id} failed unexpectedly:`, err);
         }
-
-        const webhookData = webhook.data() as Webhook;
-        if (!webhookData.active) {
-          await getDb().collection('webhook_queue').doc(doc.id).delete();
-          continue;
-        }
-
-        await processWebhookDelivery(event, webhookData);
       }
     } catch (err) {
       logger.error('[WebhookDispatcher] Queue processing failed:', err);
     }
   }
 );
+
+/** Fetches the queue doc + webhook and runs a single delivery. */
+async function deliverQueuedWebhook(doc: admin.firestore.QueryDocumentSnapshot): Promise<void> {
+  const event = doc.data() as WebhookEvent;
+
+  const webhook = await getDb()
+    .collection('users').doc(event.userId)
+    .collection('webhooks').doc(event.webhookId)
+    .get();
+
+  if (!webhook.exists) {
+    await getDb().collection('webhook_queue').doc(doc.id).delete();
+    logger.warn(`[WebhookDispatcher] Webhook not found: ${event.webhookId} for user ${maskId(event.userId)}`);
+    return;
+  }
+
+  const webhookData = webhook.data() as Webhook;
+  if (!webhookData.active) {
+    await getDb().collection('webhook_queue').doc(doc.id).delete();
+    return;
+  }
+
+  await processWebhookDelivery(event, webhookData);
+}
 
 /**
  * HTTP endpoint: Create webhook subscription

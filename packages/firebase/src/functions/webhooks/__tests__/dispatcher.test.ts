@@ -6,6 +6,7 @@
 
 import * as crypto from 'crypto';
 import { describe, it, expect } from 'vitest';
+import { isQueueItemClaimable } from '../dispatcher';
 
 describe('WebhookDispatcher', () => {
   const secret = 'test-secret-key';
@@ -279,5 +280,21 @@ describe('WebhookDispatcher', () => {
       const concurrentCount = 50; // Max batch size
       expect(concurrentCount).toBeLessThanOrEqual(100);
     });
+  });
+});
+
+describe('Queue claim lease', () => {
+  const now = 1_750_000_000_000;
+
+  it('claims items with no lease', () => {
+    expect(isQueueItemClaimable({}, now)).toBe(true);
+  });
+
+  it('refuses items another worker still holds a live lease on', () => {
+    expect(isQueueItemClaimable({ leaseUntil: new Date(now + 60_000).toISOString() }, now)).toBe(false);
+  });
+
+  it('reclaims items whose lease expired (crashed worker)', () => {
+    expect(isQueueItemClaimable({ leaseUntil: new Date(now - 1).toISOString() }, now)).toBe(true);
   });
 });
