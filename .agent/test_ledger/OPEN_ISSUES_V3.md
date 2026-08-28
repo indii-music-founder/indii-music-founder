@@ -2716,7 +2716,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Module:** packages/firebase/src/stripe/webhookHandler.ts
 - **Summary:** switch had no `charge.refunded` / `charge.dispute.created` cases — refunded credit packs kept spendable credits; disputes landed in the unhandled-event log.
 - **Fix shipped:** `charge.refunded` reverses fully-refunded credit-pack purchases idempotently (deterministic `refund_{chargeId}` log, shortfall recorded when balance already spent); partial refunds logged without clawback; `charge.dispute.created` writes `payment_disputes/{disputeId}` for finance.
-- **Remaining:** refund handling for marketplace sales (seller clawback) and licensing (transfer reversal) — distinct financial flows, ticket before building.
+- **Resolved remainder (2026-08-28, founder decision: claw back from seller balance / reverse the transfer):** `handleMarketplaceRefund` claws the sale amount out of the seller's `user_credits` balance (shortfall debt on the deterministic refund log when already spent) and flips reservation/purchase/revenue to refunded in one transaction, idempotent per charge, with the same session-binding + amount guards as fulfillment. `handleLicensingRefund` reverses the payout via `stripe.transfers.createReversal` (idempotency key `reversal_{chargeId}`), deactivates license + agreement, and writes a negative ledger row; reversal failure parks the license in `refund_pending_reversal` plus a `finance_reversal_failures/{chargeId}` doc instead of marking refunded. Partial refunds claw nothing back on either flow. Disputes on these flows remain finance-review records only (premature clawback would need a `charge.dispute.closed` re-credit path — deliberately not built). Tests: `webhookHandler.refunds.test.ts` 13/13.
 
 ### ISSUE-1407: pod_printfulCreateOrder has no payment gate
 
@@ -2725,7 +2725,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Module:** packages/firebase/src/pod/printful.ts
 - **Summary:** any authed user could create Printful orders with no payment binding. Orders were already drafts by omission (no `confirm` field), so no direct money loss — but nothing prevented it explicitly and accidental confirmation charges indii's account.
 - **Fix shipped:** body pins `confirm: false` with a comment that orders must stay drafts until a paid-checkout binding exists.
-- **Remaining:** real payment gate (Stripe checkout bound to the POD order before confirm) — feature work, ticket first.
+- **Resolved remainder (2026-08-28, founder decision: Stripe Checkout per order):** new `pod_createOrderCheckout` (`packages/firebase/src/pod/checkout.ts`) binds a Stripe Checkout session to a caller-owned Printful DRAFT order, priced server-side from Printful's own cost estimate plus a clamped platform markup (`config/podCheckout.markupPercent`, env fallback, default 25%, ceiling 500%) — never client input; redirects restricted to approved indii.music origins. Webhook `handlePodOrderPaid` (`webhookHandler.ts`, metadata `type: 'pod_order'`) re-verifies the doc binding AND the live Stripe amount before `confirmPrintfulOrder`; confirm failure parks the order in `payment_received_confirm_failed` and throws so Stripe retries. Orders remain drafts unless this exact paid path completes. Renderer callables are reached through the generic `pod_{name}` wrapper; UI checkout redirect wiring is a follow-up. Printful API helpers extracted to onCall-free `pod/printfulApi.ts`. Tests: `pod/checkout.test.ts` 6/6, `stripe/webhookHandler.pod.test.ts` 6/6.
 
 ### ISSUE-1408: processWebhookQueue is claim-less — overlapping runs double-deliver
 
@@ -2784,6 +2784,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Module:** packages/firebase/src/devops/storageMaintenance.ts
 - **Evidence:** DRY RUN by default; deletion gated behind `config/storageMaintenance.enableDeletion`; writes audit runs; weekly schedule; cross-references the `history` collection.
 - **Remaining:** before anyone enables deletion, add a targeted probe test that a freshly-rendered output with a missing/slow `history` doc is NOT matched as orphan (age heuristic + doc-coverage check), and log the enablement in this ledger.
+- **Rails shipped (2026-08-28, founder decision: rails only, keep DRY RUN):** `storageMaintenance.ts` now has a 7-day freshness rail (`isOlderThanOrphanGrace`): with deletion enabled, an orphan-matched file younger than 7 days is reported but NOT deleted (`recentOrphansPreserved` in the audit run), and a file with UNKNOWN age fails closed (never auto-deleted). Probe test `storageMaintenance.orphan-probe.test.ts` 5/5 pins: fresh output with slow docs never deleted, unknown age never deleted, only stale+uncovered files deleted, doc-covered files untouched, DRY RUN deletes nothing. `enableDeletion` remains false; enablement still requires a ledger log entry.
 
 ### ISSUE-1414: Audit claim "six scheduled workers swallow top-level errors" — LARGELY NOT REPRODUCIBLE
 
@@ -2791,3 +2792,14 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Module:** packages/firebase/src/{devops/storageMaintenance,social/deliverScheduledPosts,marketing/flushConversionEvents,distribution/pollDeliveryStatus}.ts
 - **Survey evidence (2026-08-28):** deliverScheduledPosts propagates (`async () => handler()` — uncaught errors hit Cloud Logging/Error Reporting); flushConversionEvents catches but logs via `logger.error` (Error Reporting-visible) and the next tick retries; storageMaintenance has an unguarded top-level config read (errors propagate) plus per-item errorCount accounting; pollDeliveryStatus has no top-level swallow catch. Scheduled-tick catch-and-log with a retrying next tick is the correct topology here — "fixing" it by rethrowing adds nothing.
 - **Unsurveyed remainder:** retention-daemon, pulseTick, cleanupVideoSessions, agentLoopCron, enforceOperationCost.
+
+### ISSUE-1415: CI red on main @ 8dab863b3 — Arcjet retry test + Firestore owner-rewrite rules test (soundtrack delivery awaiting green containing c7fbcce39)
+
+- **Status:** 🔴 OPEN — owned by the active Arcjet/security-rules workstream (not the soundtrack session)
+- **Module:** `packages/firebase/src/functions/security/arcjet.test.ts`, `packages/firebase/src/test/security/firestore.rules.test.ts`
+- **Evidence (run 33170199615, 2026-08-28T12:13Z, workflow_dispatch on 8dab863b3):**
+  1. `unit-tests (4/20)`: `arcjet.test.ts > Arcjet request protection > retries an errored timeout decision and allows the request when the retry succeeds` — AssertionError `expected { allowed: false, status: 503, … } to deeply equal { allowed: true }`; 54/56 files in shard passed.
+  2. `rules-tests`: `firestore.rules.test.ts > root owner-scoped collections pin every authority field > allows ordinary owner updates but rejects ownership rewrites for every migrated collection`.
+- **Attribution:** failing files last touched by `541505b88`/`8dab863b3` (Arcjet transient-timeout retry) and `b39dc932a` (rules revenue server-origin); run was manually dispatched, i.e. the owning session is actively iterating. Not caused by `c7fbcce39` (landing-only soundtrack change: all landing tests green in-shard; full local /plat build gate green; live browser verification passed).
+- **Delivery note:** first green `Deploy to Firebase Hosting` run whose headSha contains `c7fbcce39` closes the soundtrack delivery cycle; earlier runs for that SHA were cancelled by push concurrency (33169864911, 33170062345), not failed.
+- **Detection:** `gh run list --branch main --limit 5`; failing jobs `rules-tests` + one `unit-tests` shard; grep `--log-failed` for `arcjet.test.ts|firestore.rules.test.ts`.
