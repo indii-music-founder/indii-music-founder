@@ -6,8 +6,8 @@
 
 import { beforeEach, describe, expect, vi } from 'vitest';
 
-import { runVideoRendererContractSuite } from '@indii/shared';
-import type { RendererContractScenario } from '@indii/shared';
+import { runVideoRendererContractSuite } from '../../../../../shared/src/testing/videoRendererSuite';
+import type { RendererContractScenario } from '../../../../../shared/src/testing/videoRendererSuite';
 
 import { RenderService } from '../RenderService';
 

@@ -28,7 +28,10 @@ export * from './types/founderFunnel.js';
 export * from './types/videoProject.js';
 export * from './types/videoRenderer.js';
 export * from './types/videoRoute.js';
-export * from './types/videoRendererSuite.js';
+// types/videoRendererSuite.js is deliberately NOT exported here — it is a
+// vitest-backed compliance harness and must never enter production bundles
+// (a vitest import crashed the cloud functions deploy). It now lives beside
+// its only consumer in the renderer test tree.
 export * from './types/PersonaFaders.js';
 export * from './types/PersonaInteractionSignal.js';
 export * from './types/PersonaMeasurementTelemetry.js';

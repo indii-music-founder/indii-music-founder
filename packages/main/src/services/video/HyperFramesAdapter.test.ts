@@ -12,8 +12,8 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect } from 'vitest';
 
-import { runVideoRendererContractSuite } from '@indii/shared';
-import type { RendererContractScenario } from '@indii/shared';
+import { runVideoRendererContractSuite } from '@shared/testing/videoRendererSuite';
+import type { RendererContractScenario } from '@shared/testing/videoRendererSuite';
 
 import { HyperFramesAdapter } from './HyperFramesAdapter';
 

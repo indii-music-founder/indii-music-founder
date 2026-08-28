@@ -10,7 +10,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { CompletedRenderReceipt, VideoRenderConfig, VideoRenderReceipt, VideoRendererContract } from './videoRenderer.js';
+import type { CompletedRenderReceipt, VideoRenderConfig, VideoRenderReceipt, VideoRendererContract } from '../types/videoRenderer.js';
 
 /**
  * Harness each adapter binds to the suite. `complete`/`fail` drive an
@@ -78,9 +78,9 @@ export const runVideoRendererContractSuite = (
             const config = scenario.baseConfig();
             const queued = await adapter.queueComposition(config);
             const observed: VideoRenderReceipt[] = [];
-            const pending = adapter.waitForRender(queued.renderId, receipt => observed.push(receipt), SHORT_POLL);
+            const pending = adapter.waitForRender(queued.renderId, (receipt: VideoRenderReceipt) => observed.push(receipt), SHORT_POLL);
             await scenario.complete(queued.renderId);
-            const done = (await pending) as CompletedRenderReceipt;
+            const done = (await pending) as CompletedRenderReceipt; // cast: waitForRender narrows on resolve
             expect(done.status).toBe('completed');
             expect(done.progress).toBe(100);
             expect(done.renderId).toBe(queued.renderId);
