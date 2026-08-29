@@ -925,6 +925,12 @@
             "add_character_reference"
           ]
         },
+        "fuse_likeness": {
+          "description": "Fuse the verified likeness from My Likeness onto a generated subject image via best-of-N regeneration, with a measured identity similarity score and retry until it passes.",
+          "trigger_labels": [
+            "fuse_likeness"
+          ]
+        },
         "analyze_audio": {
           "description": "Perform 'Audio-to-Visual' analysis to extract BPM, key, mood, and energy from a track to guide artistic direction.",
           "trigger_labels": [

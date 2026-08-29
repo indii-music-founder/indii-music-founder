@@ -209,9 +209,9 @@ export async function fuseLikeness(req: FusionRequest): Promise<FusionResult>;
 **Acceptance criteria:**
 
 - [ ] **A1.1** `FacePipeline` loads human from vendored local weights only; unit test asserts no network fetch attempt (jsdom fetch mock).
-- [ ] **A1.2** `cosineSimilarity` unit tests (identical=1, orthogonal=0, inverted=-1, dimension-mismatch throws).
-- [ ] **A1.3** `fuseLikeness` service tests with mocked pipeline: rejects no-headshot, rejects no-face headshot, retries below threshold, returns best-of-N, stores attempt list.
-- [ ] **A1.4** `fuse_likeness` tool test mirrors `DirectorTools.test.ts` §`add_character_reference` style; registry + prompt.md + authorizedTools test updated.
+- [x] **A1.2** `cosineSimilarity` unit tests (identical=1, orthogonal=0, inverted=-1, dimension-mismatch throws).
+- [x] **A1.3** `fuseLikeness` service tests with mocked pipeline: rejects no-headshot, rejects no-face headshot, retries below threshold, returns best-of-N, stores attempt list.
+- [x] **A1.4** `fuse_likeness` tool test mirrors `DirectorTools.test.ts` §`add_character_reference` style; registry + prompt.md + authorizedTools test updated.
 - [ ] **A1.5** Threshold calibrated on REAL pairs (Ground Rule 7); distribution + chosen value recorded in Section 19.
 - [ ] **A1.6** Fallback documented if `@vladmandic/human` is unusable (e.g., wasm constraint): `@mediapipe/tasks-vision` FaceLandmarker for geometry + declare honestly that v1 fallback scores geometry-fit, not identity — requires founder sign-off to ship in that degraded mode.
 - [ ] **A1.7** Panel smoke: pick IMG_4488 from My Likeness → fuse onto a generated subject → score displayed → result in Gallery with meta.
@@ -768,7 +768,7 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 
 **Substrate audit (2026-08-28, this session):** confirmed existing — `CanvasBatchService` + `PLATFORM_DIMENSIONS`, `VideoGenerationService` `firstFrame` path, merch catalog/canvas, `ImageAnalysisService` (vision + Box2D), `BrandAgent.analyze_brand_consistency` (desktop/text, to be absorbed by D), `CanonicalCoverArtService` provenance/hash, Remotion renderers. See each workstream's "Existing substrate" block before writing anything new.
 
-- Phase A1: ☐ not started
+- Phase A1: NOTE — A1.2 (cosineSimilarity), A1.3 (mocked loop: reject no-headshot/no-face, retry below threshold, best-of-N), A1.4 (fuse_likeness tool + registration on CreativeAgent/Director + registry + prompt + tests) SHIPPED. A1.1 (real @vladmandic/human backend, not installed) + A1.5 (real-pair threshold calibration — founder data/data URIs required) + A1.6 (degraded-mode founder sign-off) + A1.7 (panel smoke) remain BLOCKED on dependency install + founder. fuse_likeness surfaces a specific "not configured" error until A1.1/A1.6 resolve (no silent degraded scoring).
 - Phase B1: ☐ not started
 - Phase C1: ☐ not started
 - Phase D1 (compliance pixel engine): ☑ **DONE** — commit `b640f8a26`, CI green (run 33253189268, incl. production deploy). 48/48 brand-dir tests incl. all 12 Sharma ΔE2000 reference vectors. Canvas-wrapper behavioral proof still pending D2.3 smoke.

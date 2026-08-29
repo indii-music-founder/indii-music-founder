@@ -20,6 +20,7 @@ vi.mock('../tools/DirectorTools', () => ({
         canvas_push: vi.fn(),
         generate_moodboard: vi.fn(),
         analyze_visual_trends: vi.fn(),
+        fuse_likeness: vi.fn(),
     }
 }));
 
@@ -65,6 +66,7 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.authorizedTools).toContain('extract_grid_frame');
         expect(CreativeAgent.authorizedTools).toContain('add_character_reference');
         expect(CreativeAgent.authorizedTools).toContain('analyze_audio');
+        expect(CreativeAgent.authorizedTools).toContain('fuse_likeness');
         expect(CreativeAgent.authorizedTools).toContain('canvas_push');
         expect(CreativeAgent.authorizedTools).toContain('generate_moodboard');
         expect(CreativeAgent.authorizedTools).toContain('analyze_visual_trends');
@@ -82,6 +84,7 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.functions!.render_cinematic_grid).toBeDefined();
         expect(CreativeAgent.functions!.extract_grid_frame).toBeDefined();
         expect(CreativeAgent.functions!.add_character_reference).toBeDefined();
+        expect(CreativeAgent.functions!.fuse_likeness).toBeDefined();
         expect(CreativeAgent.functions!.analyze_audio).toBeDefined();
         expect(CreativeAgent.functions!.canvas_push).toBeDefined();
         expect(CreativeAgent.functions!.generate_moodboard).toBeDefined();

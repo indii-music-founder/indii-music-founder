@@ -62,6 +62,7 @@ export const CreativeAgent: AgentConfig = {
             queue_video_render: VideoProjectTools.queue_video_render,
             queue_release_canvas_render: McpTools.queue_release_canvas_render,
             audit_asset_resolutions: McpTools.audit_asset_resolutions,
+            fuse_likeness: DirectorTools.fuse_likeness,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: [
@@ -81,7 +82,8 @@ export const CreativeAgent: AgentConfig = {
         'list_domain_records',
         'queue_video_render',
         'queue_release_canvas_render',
-        'audit_asset_resolutions'
+        'audit_asset_resolutions',
+        'fuse_likeness'
     ],
     tools: [{
         functionDeclarations: [

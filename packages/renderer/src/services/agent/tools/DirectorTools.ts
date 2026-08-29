@@ -10,6 +10,7 @@ import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { MusicTools } from './MusicTools';
 import { CanvasTools } from './CanvasTools';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { logger } from '@/utils/logger';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 /**
@@ -481,6 +482,70 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
 
     add_character_reference: wrapTool('add_character_reference', async (args: SetEntityAnchorArgs) => {
         return DirectorTools.set_entity_anchor!(args);
+    }),
+
+    /**
+     * Best-of-N identity fusion onto a generated subject (Workstream A1).
+     * NOTE (honest): the identity backend (@vladmandic/human) is not installed;
+     * this surfaces the specific "not configured" error until A1.1/A1.6 resolve.
+     */
+    fuse_likeness: wrapTool('fuse_likeness', async (args: { targetImageIndex: number; headshotId?: string; maxAttempts?: number }) => {
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { generatedHistory, uploadedImages, addToHistory, currentProjectId } = useStore.getState();
+        const target = args.targetImageIndex !== undefined
+            ? generatedHistory?.[args.targetImageIndex] ?? uploadedImages?.[args.targetImageIndex]
+            : undefined;
+        if (!target?.url) {
+            return toolError('targetImageIndex did not resolve to a generated image. Pass the index of the subject image you want to fuse onto.', 'INVALID_INPUT');
+        }
+
+        try {
+            const targetParts = /^data:(image\/[^;,]+);base64,([\s\S]+)$/.exec(target.url);
+            if (!targetParts) {
+                return toolError('The target image must be a base64 data URI to be editable.', 'INVALID_INPUT');
+            }
+
+            const { LikenessFusionService } = await importWithRetry(() => import('@/services/identity/LikenessFusionService'));
+            const result = await LikenessFusionService.fuseLikeness({
+                targetDataUrl: target.url,
+                headshotId: args.headshotId,
+                maxAttempts: args.maxAttempts
+            });
+
+            // History item per attempt carries meta 'likeness_fusion' + similarity details.
+            for (const attempt of result.attempts) {
+                addToHistory({
+                    id: crypto.randomUUID(),
+                    url: attempt.dataUrl,
+                    prompt: `Likeness fusion attempt (similarity ${attempt.similarity.toFixed(3)})`,
+                    type: 'image' as const,
+                    timestamp: Date.now(),
+                    projectId: currentProjectId,
+                    meta: JSON.stringify({ source: 'likeness_fusion', similarity: attempt.similarity, headshotId: args.headshotId ?? 'newest', passedThreshold: result.passedThreshold })
+                });
+            }
+
+            if (!result.passedThreshold) {
+                const best = result.attempts[result.attempts.length - 1];
+                return toolError(
+                    `Likeness fusion did not reach the identity threshold (${result.similarity.toFixed(3)} < 0.55) after ${result.attempts.length} attempt(s). ` +
+                    'The closest result was saved; consider a higher-quality headshot or more attempts.',
+                    'FUSION_BELOW_THRESHOLD',
+                    { similarity: result.similarity, attempts: result.attempts.length }
+                );
+            }
+
+            return toolSuccess({
+                similarity: result.similarity,
+                passedThreshold: true,
+                attempts: result.attempts.length,
+                resultUrl: result.dataUrl
+            }, `Likeness fusion passed (similarity ${result.similarity.toFixed(3)}). Best result added to history.`);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            logger.error('[DirectorTools] fuse_likeness failed:', err);
+            return toolError(message, 'FUSION_FAILED');
+        }
     }),
 
     analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {

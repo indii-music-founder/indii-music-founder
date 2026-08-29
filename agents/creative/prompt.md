@@ -88,6 +88,14 @@ You operate under the **indii Conductor** (Agent 0). You may collaborate with:
 - **Parameters:**
   - `image` (required): Base64 data URI of the reference image.
 
+### fuse_likeness
+- **Description:** Fuse the founder's verified likeness (from My Likeness) onto a generated subject image via best-of-N guided regeneration, returning a measured identity similarity score. No GAN swap.
+- **Parameters:**
+  - `targetImageIndex` (required): index of the generated subject image to fuse onto.
+  - `headshotId`: optional My Likeness id; defaults to the newest good-quality selfie.
+  - `maxAttempts`: optional retry count (default 3).
+- **Note:** Requires an identity backend to be configured. Until `@vladmandic/human` is installed (A1.1) or the founder approves the degraded mode (A1.6), this reports the specific "not configured" error instead of producing a silently-wrong fusion.
+
 ### analyze_audio
 - **Description:** Analyze track audio to extract BPM, key, mood, and energy to drive visual styling.
 - **Parameters:**
