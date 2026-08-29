@@ -681,11 +681,11 @@ export async function renderDistributionBundle(req: BundleRequest): Promise<{ re
 
 **Acceptance criteria:**
 
-- [ ] **I1.1** Profile table test: every profile passes its own validator (pixels > 0, format/colorSpace valid, bleed requires dpi).
-- [ ] **I1.2** Upsample rejection tests (oversized ok, 1.15× boundary, undersized rejected with exact message).
-- [ ] **I1.3** Bleed math tests (mm→px at 300dpi; edge-stretch deterministic).
-- [ ] **I1.4** Gate tests: bundle blocked on failing compliance and on missing rights record.
-- [ ] **I1.5** Manifest shape test (sha256 present, profile snapshot matches registry).
+- [x] **I1.1** Profile table test: every profile passes its own validator (pixels > 0, format/colorSpace valid, bleed requires dpi).
+- [x] **I1.2** Upsample rejection tests (oversized ok, 1.15× boundary, undersized rejected with exact message).
+- [x] **I1.3** Bleed math tests (mm→px at 300dpi; edge-stretch deterministic).
+- [x] **I1.4** Gate tests: bundle blocked on failing compliance and on missing rights record.
+- [x] **I1.5** Manifest shape test (sha256 present, profile snapshot matches registry).
 - [ ] **I1.6** Real smoke: founder's release master → DSP bundle accepted by Spotify/Apple artwork validators or manually verified against published specs. Record in Section 19.
 
 **Estimated commits:** 3.
@@ -779,7 +779,7 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase G1 (platform exporter): ☑ G1.1–G1.5 shipped (structural evidence: 38 tests across 5 files, strict tsc + lint clean). G1.6 real smoke pending founder/browser.
 - Phase H1 (version graph): ☑ H1.1+H1.2 shipped (AssetVersionService append-only graph + exporter/canvas producer hooks; structural evidence). H1.3 real smoke pending founder.
 - Phase H2 (rights metadata): ☐ not started
-- Phase I1 (distribution render profiles): ☐ not started
+- Phase I1 (distribution render profiles): ☑ I1.1–I1.5 shipped (RenderProfiles registry + validateProfile, DistributionRenderPipeline upsample policy/bleed math/gates/manifest sha256). render_distribution_bundle agent tool + I1.6 real smoke pending.
 - Phase B2: ☑ B2.1+B2.2 shipped (render_typography tool + TypographyPanel + full CreativeAgent/registry/prompt registration + RTL/tool tests). B2.3 real smoke pending founder.
 - Phase C2: ☐ not started
 - Phase A2: ☐ blocked on founder licensing decision (inswapper_128 non-commercial license)
