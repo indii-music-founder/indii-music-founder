@@ -1,3 +1,25 @@
+# Session Update — B1 typography shipped (2026-08-29, DSH agent, goal round 6)
+
+**`1787c22a2` on `origin/main`; green evidence = run 33276574623 SUCCESS on
+successor `3cd4cc112`** (concurrent session's fix pushed on top; my B1 run was
+superseded/canceled, accepted on the successor run as the handoff protocol does).
+
+Autonomous decision (founder: "do whatever is best"): chose B1 as the next
+unit (deterministic, self-contained, high user value) over installing the
+heavy identity model. B1.1–B1.4 shipped:
+- FontLibrary: opentype.js parse + Firebase persist (Storage + Firestore,
+  LikenessService pattern); .woff2 + 8MB + bad-extension guards.
+- TextVectorRenderer: deterministic renderTextPath (svgPathD + advanceWidth +
+  letterSpacing formula) + rasterizeVectorText (transparent PNG) + Latin-only
+  v1 guard.
+- Fixture font built at runtime via opentype.js Font.toArrayBuffer() — no
+  vendored licensed binary; deterministic tests.
+- opentype.js 2.0.0 added (renderer dep + minimal ambient d.ts in src/vendor).
+- Evidence: 12 tests; tsc + lint clean; pre-commit gates green.
+
+Concurrency note: a concurrent session pushed 3cd4cc112 (loop-detector gate)
+on top. No foreign files touched by me; worktree syncs to origin/main.
+
 # Session Update — A1.6 degraded identity backend shipped (founder-approved) (2026-08-29, DSH agent, goal round 5b)
 
 **`88c6456aa` on `origin/main`, CI run 33274912095 SUCCESS incl. production deploy.**
