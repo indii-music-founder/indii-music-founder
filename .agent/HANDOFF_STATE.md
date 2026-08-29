@@ -1,3 +1,43 @@
+# Session Close — G1 platform exporter + payload-guard audit follow-ups (2026-08-29, DSH agent)
+
+**Final state: two commits on `origin/main`, each green at its own SHA incl. production deploy — `b84614b08` (CI 33259107242) and `932433c3c` (CI 33260303299).**
+
+## What happened
+
+1. **G1 (plan §12) shipped** (`b84614b08`): `PLATFORM_DIMENSIONS` extended
+   additively (spotify_cover 3000x3000, ig_story, yt_banner 2560x1440, x_post,
+   x_profile, facebook_og, tiktok_cover; legacy rows untouched, registry-test
+   locked); `services/export/SmartCrop.ts` (pure face/logo/manual-anchored
+   cover crop, margin bias, clamped); `services/export/AssetExporter.ts`
+   (headless offscreen-canvas, cover + contain-blur-pad w/ blurred self-fill,
+   injectable host, jszip bundle, Fabric-free — enforced by a source-scan test);
+   `export_platform_assets` agent tool (deterministic resize, history items +
+   zip, registered in BASE_TOOLS). 38/38 tests across 5 files; strict tsc +
+   lint clean; pre-commit gates green.
+2. **Payload-guard follow-ups closed** (`932433c3c` + audit):
+   - *Stream callers audit:* every `generateContentStream` caller (AgentService,
+     BaseAgent, WhiskService) funnels through `AutonomousIntelligence` ==
+     `FirebaseIntelligenceService.rawGenerateContentStream` ->
+     `callBackendGenerateContentStream`, which asserts the 200K-char budget.
+     NO bypass path exists. Onboarding-audio/browser-screenshot payloads are
+     uncompressed but fail loudly with PAYLOAD_TOO_LARGE if oversized — honest
+     by design (audio is not canvas-compressible).
+   - *TokenEstimator fixed:* inlineData parts no longer count flat 258 tokens;
+     they scale with serialized size, floored at the intrinsic 258 cost.
+     6 new unit tests.
+
+## Honest limits
+
+- **G1.6 real smoke pending founder:** one 3000x3000 master -> full matrix +
+  zip opens cleanly (browser-real; record in plan section 19). All G1 evidence
+  otherwise structural/local.
+- **Canvas image-editor + memory-ingestion size limits:** NOT built. Audit
+  verdict: no server guard exists on those paths to mirror, and no product
+  limit is specified — needs founder input before limits are invented.
+  Scope unchanged from the 2026-08-27 ledger entry otherwise.
+- Foreign dirty files (`.agent/observations/agent-watch.md`, `videos/`) remain
+  NOT mine — untouched.
+
 # Session Close — Creative Finalization Tools: plan + Workstream D shipped (2026-08-28, DSH agent)
 
 **Final state: plan doc + Phase D1 and D2 on `origin/main`, CI green at `b640f8a26` (run 33253189268) and `fd2b48560` (run 33254595962), both incl. production deploy.**
