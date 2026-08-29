@@ -1,7 +1,7 @@
 {
   "name": "indii.music",
   "version": "1.80.1",
-  "description": "The Operating System for Independent Music \u2014 npm Workspace Monorepo",
+  "description": "The Operating System for Independent Music — npm Workspace Monorepo",
   "author": "New Detroit Music LLC <info@indii.music>",
   "type": "module",
   "private": true,
@@ -292,6 +292,7 @@
     "hyperframes": "0.8.10",
     "jspdf": "^4.2.1",
     "keytar": "7.9.0",
+    "opentype.js": "^2.0.0",
     "pdf-lib": "^1.17.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
