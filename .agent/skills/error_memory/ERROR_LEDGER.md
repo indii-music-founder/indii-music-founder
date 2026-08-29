@@ -1,3 +1,13 @@
+
+## 2026-08-29 Studio video previews blank (camera icon on empty tile)
+
+- SEVERITY: P1 (all video thumbnails/previews read as a black or empty tile with a camera icon; clicking didn't show the clip)
+- FILES: `packages/renderer/src/core/components/right-panel/AssetsPanel.tsx` (VideoThumb), `packages/renderer/src/modules/creative/components/CanvasViewport.tsx`, `packages/renderer/src/services/storage/resolveStorageUrl.ts`
+- ERROR: founder report — no video previews anywhere (All tab / video tab / example project assets): a blank space with a camera icon; clicking a video tile shows nothing.
+- CAUSE: (1) gallery `VideoThumb` rendered `<video preload="metadata" muted>` with no poster — browsers paint NO frame, so the tile was a black box; the always-rendered fallback camera icon (`-z-0`, later in DOM) sat ON TOP of it, producing exactly the blank+icon view. (2) Even a working preview was hidden behind that unconditionally-rendered icon. (3) `resolveStorageUrl` cut the path with `split('/').slice(3)`, which mis-handled buckets/leading slashes, so some `gs://` video URIs couldn't resolve to a playable URL. (4) The click-through `CanvasViewport` video was a silent black `<video controls>` (no autoplay), so it didn't start.
+- FIX: VideoThumb now renders a MUTED AUTOPLAY LOOPING `playsInline` `<video preload="auto">` (paints real frames) with `relative z-[1]` so it covers the fallback icon; the icon only shows when the preview is resolving/broken. Image thumbnails likewise lifted above the icon. CanvasViewport video auto-plays muted+loop. `resolveStorageUrl` uses `parseGcsObjectPath` (bucket-aware, leading-slash-safe) — single testable source. New `resolveStorageUrl.test.ts` (8 tests).
+- EVIDENCE: tsc clean; lint 0 errors; 8 storage + 21 interconnect + suite green. Structural — live browser eyeball (hard-refresh Studio) still needed to confirm the tiles now show frames (muted-autoplay requires the video to be playable; broken/unresolvable previews correctly fall back to the icon).
+- PREVENTION: a silent `preload="metadata"` `<video>` is NOT a thumbnail. For gallery previews use muted autoplay/loop/playsInline (or a real poster source). A fallback placeholder must be rendered BEHIND (lower z-index / earlier in DOM) the live media, and only shown on an actual failure — never on top of a healthy preview.
 ## 2026-08-29 Brand-Asset Metadata Dropped From Agent Tool Output → Headshot Loop
 
 **SEVERITY:** Medium (Creative Director re-listed brand assets and was killed by the loop detector instead of answering "find my headshot")

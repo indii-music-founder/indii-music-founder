@@ -38,7 +38,7 @@ function AssetThumbnail({ src, alt, className, onError }: { src: string; alt: st
         <img
             src={resolvedSrc}
             alt={alt}
-            className={className}
+            className={cn(className, 'relative z-[1]')}
             loading="lazy"
             onError={() => { setFailed(true); onError?.(); }}
         />
@@ -47,15 +47,26 @@ function AssetThumbnail({ src, alt, className, onError }: { src: string; alt: st
 
 // ISSUE-1395 (audit): the panel's video tiles fed raw asset URLs (a gs://
 // URI breaks the element silently). Resolve storage URIs to download URLs.
+// Previews cannot rely on `preload="metadata"` (browsers paint nothing, so the
+// tile reads as a black box) — instead the video auto-plays muted + loops and
+// paints its first frames. The caller keeps its own fallback icon BEHIND this
+// element, so a resolved preview hides it; a broken/unresolvable preview shows
+// the icon again.
 function VideoThumb({ src, className }: { src: string; className: string }) {
-    const { url: resolvedUrl, isResolving } = useResolvedStorageUrl(src);
-    if (isResolving) return null;
+    const { url: resolvedUrl, isResolving, error } = useResolvedStorageUrl(src);
+    // While resolving or on a hard failure, render nothing so the caller's
+    // fallback type icon (rendered behind this element) shows instead of a
+    // broken black box. All other cases render a live, muted, looping preview.
+    if (isResolving || error) return null;
     return (
         <video
             src={resolvedUrl || src}
-            preload="metadata"
+            autoPlay
             muted
-            className={className}
+            loop
+            playsInline
+            preload="auto"
+            className={cn(className, 'relative z-[1] bg-black/40')}
             onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }}
         />
     );

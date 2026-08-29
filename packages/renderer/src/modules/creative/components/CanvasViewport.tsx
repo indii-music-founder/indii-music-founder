@@ -47,7 +47,16 @@ export function CanvasViewport({
                         Playback asset unavailable.
                     </div>
                 ) : (
-                    <video src={resolvedVideoUrl} controls className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
+                    <video
+                        src={resolvedVideoUrl}
+                        controls
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="auto"
+                        className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
+                    />
                 )
             ) : (
                 <div
