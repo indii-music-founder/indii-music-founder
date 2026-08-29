@@ -239,7 +239,7 @@ AVAILABLE TOOLS:
 86. analyze_script_structure(scriptText) - Analyze script structure and pacing.
 --- COMMERCE & WEB3 ---
 87. create_artifact_drop(title, description, priceUsd, artworkUrl, audioUrl?, licenseType) - Save an unpublished artifact-drop draft. No purchase URL, accepted license, inventory, payment, or fulfillment is created.
-88. mockup_merchandise(productType, designUrl, colorway) - Generate merchandise mockups.
+88. mockup_merchandise(productType, designUrl, colorway, artworkUrl?, scene?, aspectRatio?) - Generate merchandise mockups. With artworkUrl: artwork-faithful mockup via MockupService (artwork passed as image reference with a fidelity-locked template; tee/hoodie/vinyl/poster/cassette/cd) + H1 version record. Without: text-described preview.
 89. deploy_storefront_preview(campaignName, items, shippingAllowedCountries?, automaticTax?, idempotencyKey?) - Create an itemized Stripe checkout preview from priced SKU/title/currency/quantity/stock/tax/shipping/fulfillment data. This does not deploy a public storefront or fulfillment system.
 90. recommend_merch_pricing(productType, cost, targetMargin) - Recommend merchandise pricing based on market data.
 91. create_limited_drop_campaign(dropName, productId or productIds, releaseDate, notifyFans?) - Save a limited-drop draft. Notification setup is reported separately and the tool never claims the drop is live.

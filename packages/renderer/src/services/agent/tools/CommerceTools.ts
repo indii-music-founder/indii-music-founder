@@ -6,7 +6,76 @@ import { importWithRetry } from '@/utils/dynamicImport';
 import { limitedDropService } from '@/services/commerce/LimitedDropService';
 
 export const CommerceTools = {
-    mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string }) => {
+    mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string; artworkUrl?: string; scene?: 'studio' | 'lifestyle' | 'flat'; aspectRatio?: string }) => {
+        // F1 extension (plan §11): when real artwork is supplied, route through
+        // MockupService — the artwork crosses as a sourceImages reference with
+        // a fidelity-locked template, never re-described in prose alone.
+        // Results become history items (meta 'mockup') + H1 version records.
+        if (args.artworkUrl) {
+            const kindByProduct: Record<string, string> = {
+                't-shirt': 'tee', 'tee': 'tee', 'hoodie': 'hoodie',
+                'vinyl': 'vinyl-12', '12-inch vinyl': 'vinyl-12',
+                'poster': 'poster', 'cassette': 'cassette', 'cd': 'cd-jewel'
+            };
+            const kind = kindByProduct[args.productType.toLowerCase()] ?? 'poster';
+            const { generateMockup, MOCKUP_PROMPTS } = await importWithRetry(() => import('@/services/mockup/MockupService'));
+            if (!(kind in MOCKUP_PROMPTS)) {
+                return toolError(`No mockup template for product type "${args.productType}". Supported artwork mockups: tee, hoodie, vinyl, poster, cassette, cd.`, 'INVALID_INPUT');
+            }
+
+            try {
+                const mockup = await generateMockup({
+                    artworkUrl: args.artworkUrl,
+                    kind: kind as Parameters<typeof generateMockup>[0]['kind'],
+                    scene: args.scene,
+                    aspectRatio: args.aspectRatio
+                });
+
+                const { useStore } = await importWithRetry(() => import('@/core/store'));
+                const store = useStore.getState();
+                const historyId = `mockup_${mockup.kind}_${Date.now()}`;
+                store.addToHistory({
+                    id: historyId,
+                    url: mockup.url,
+                    prompt: `Mockup: ${mockup.kind}`,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: store.currentProjectId,
+                    meta: JSON.stringify({ source: 'mockup', kind: mockup.kind }),
+                    tags: ['mockup', mockup.kind],
+                    origin: 'generated'
+                });
+
+                // H1 producer hook — mockup versions join the asset graph.
+                try {
+                    const { AssetVersionService } = await importWithRetry(() => import('@/services/assets/AssetVersionService'));
+                    await AssetVersionService.recordVersion({
+                        assetId: historyId,
+                        parentVersionId: null,
+                        url: mockup.url,
+                        source: 'mockup',
+                        provenance: { note: `Mockup ${mockup.kind}` },
+                        tags: ['mockup', mockup.kind]
+                    });
+                } catch (versionError) {
+                    logger.warn('[CommerceTools] Version record failed for mockup; result unaffected:', versionError);
+                }
+
+                return toolSuccess({
+                    productType: args.productType,
+                    kind: mockup.kind,
+                    artworkFidelity: 'sourceImages reference — artwork not re-described',
+                    promptUsed: mockup.promptUsed,
+                    mockupImageUrl: mockup.url,
+                    readyForPOD: false,
+                    reason: 'AI mockup preview only. Requires product variant ID, print-area mapping, DPI verification, and provider file acceptance before upload.',
+                }, `Artwork-faithful ${mockup.kind} mockup generated. Visual reference only — not production-ready for upload.`);
+            } catch (err: unknown) {
+                logger.error('[CommerceTools] artwork mockup generation failed:', err);
+                return toolError(`Failed to generate artwork mockup: ${err instanceof Error ? err.message : String(err)}`, 'IMAGE_GEN_FAILED');
+            }
+        }
+
         // Use Intelligence image generation to produce an actual product mockup
         const productDescriptions: Record<string, string> = {
             't-shirt':    'a flat-lay product photo of a black unisex t-shirt displayed on a white background',

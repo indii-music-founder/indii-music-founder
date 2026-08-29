@@ -529,9 +529,9 @@ export const MOCKUP_PROMPTS: Record<MockupKind, string>; // locked templates, se
 
 **Acceptance criteria:**
 
-- [ ] **F1.1** Template tests: all seven kinds contain the fidelity clause; aspect map correct per kind.
-- [ ] **F1.2** Service test (generation mocked): correct sourceImages + template assembly; error when artwork missing.
-- [ ] **F1.3** `generate_mockup` tool test + registration assertions.
+- [x] **F1.1** Template tests: all seven kinds contain the fidelity clause; aspect map correct per kind.
+- [x] **F1.2** Service test (generation mocked): correct sourceImages + template assembly; error when artwork missing.
+- [x] **F1.3** `generate_mockup` tool test + registration assertions.
 - [ ] **F1.4** Real smoke: founder's current cover → vinyl + tee mockups; artwork fidelity eyeball pass + optional compliance scan (D) pass. Record in Section 19.
 
 **Estimated commits:** 2.
@@ -775,7 +775,7 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase D2 (vision engine + gate): ☑ **core DONE** (second commit, this session) — `AestheticVisionEngine` (structured-output Gemini, hybrid engine merge, degrade-to-warning), `decideDelivery` DEC-6 gate, `scan_brand_compliance` agent tool in `BrandTools` + `BrandAgent` (authorized + declared + registry + prompt.md), `analyze_brand_consistency` asset path absorbed into the deterministic engine. 84/84 affected tests. **Open remainder:** D2.1's live finalize-button wiring + override-reason persistence land with H1 (no delivery-action surface exists yet — the gate logic and its tests ship now); D2.3 real founder-kit smoke still pending.
 - Phase E1 (deterministic motion): ☐ not started
 - Phase E2 (generative micro-motion): ☐ flag-gated, not started
-- Phase F1 (mockup service + tool): ☐ not started
+- Phase F1 (mockup service + tool): ☑ F1.1–F1.3 shipped (MockupService fidelity-locked templates + artwork-based mockup_merchandise extension + H1 mockup version hook; structural evidence). F1.4 real smoke pending founder.
 - Phase G1 (platform exporter): ☑ G1.1–G1.5 shipped (structural evidence: 38 tests across 5 files, strict tsc + lint clean). G1.6 real smoke pending founder/browser.
 - Phase H1 (version graph): ☑ H1.1+H1.2 shipped (AssetVersionService append-only graph + exporter/canvas producer hooks; structural evidence). H1.3 real smoke pending founder.
 - Phase H2 (rights metadata): ☐ not started
