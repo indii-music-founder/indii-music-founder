@@ -108,7 +108,15 @@ export class LoopDetector {
         // to the iteration budget.
         const recentCalls = this.toolCallHistory.slice(-10); // Last 10 calls
         const sameToolCount = recentCalls.filter(call => call.name === name).length;
-        const MAX_SAME_TOOL_FREQUENCY = (name === 'unseat_agent' || name === 'seat_agent') ? 10 : 5; // Max 5 times in last 10 calls (10 for agent seating)
+        // Cost-aware frequency ceiling. Image generation is ~$0.04/call and is
+        // already budget-gated on every call (Check 7) plus the session cost cap
+        // (Check 6), so a hard "5 in 10" was tripping legitimate multi-image
+        // creative batches (record cover + artist likeness + refinements).
+        // Expensive tools (video/audio) stay tight because one call can cost dollars.
+        const MAX_SAME_TOOL_FREQUENCY =
+            (name === 'unseat_agent' || name === 'seat_agent') ? 10 :
+            (name === 'generate_image' || name === 'indii_image_gen') ? 12 :
+            5;
 
         if ((costedTool || name === 'unseat_agent' || name === 'seat_agent') && sameToolCount >= MAX_SAME_TOOL_FREQUENCY) {
             return {

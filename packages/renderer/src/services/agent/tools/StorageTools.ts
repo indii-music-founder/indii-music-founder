@@ -18,14 +18,30 @@ export const StorageTools = {
         }
         if (source === 'brand_assets' || source === 'all') {
             const assets = state.userProfile?.brandKit?.brandAssets || [];
-            allItems = allItems.concat(assets.map((item, idx) => ({ 
-                id: `brand-asset-${idx}`, url: item.url, type: 'image', _source: 'brand_assets', referenceAssetIndex: idx 
+            allItems = allItems.concat(assets.map((item, idx) => ({
+                id: item.id || `brand-asset-${idx}`,
+                url: item.url,
+                type: 'image',
+                _source: 'brand_assets',
+                referenceAssetIndex: idx,
+                description: item.description,
+                category: item.category,
+                tags: item.tags,
+                subject: item.subject,
             })));
         }
         if (source === 'reference_images' || source === 'all') {
             const references = state.userProfile?.brandKit?.referenceImages || [];
-            allItems = allItems.concat(references.map((item, idx) => ({ 
-                id: `ref-image-${idx}`, url: item.url, type: 'image', _source: 'reference_images', referenceImageIndex: idx 
+            allItems = allItems.concat(references.map((item, idx) => ({
+                id: item.id || `ref-image-${idx}`,
+                url: item.url,
+                type: 'image',
+                _source: 'reference_images',
+                referenceImageIndex: idx,
+                description: item.description,
+                category: item.category,
+                tags: item.tags,
+                subject: item.subject,
             })));
         }
         if (source === 'uploads' || source === 'all') {
@@ -50,7 +66,7 @@ export const StorageTools = {
         const thumbnailCount = Math.min(filtered.length, 12);
         const thumbnails = filtered.slice(0, thumbnailCount)
             .filter(item => item.type === 'image')
-            .map(item => `![${item.prompt || item.id}](${item.url})`)
+            .map(item => `![${item.prompt || item.description || item.category || item.id}](${item.url})`)
             .join(' ');
             
         const nonImageLines = filtered.slice(0, thumbnailCount)
@@ -77,13 +93,29 @@ export const StorageTools = {
         allItems = allItems.concat(galleryItems.map(item => ({ ...item, _source: 'gallery' })));
         
         const assets = state.userProfile?.brandKit?.brandAssets || [];
-        allItems = allItems.concat(assets.map((item, idx) => ({ 
-            id: `brand-asset-${idx}`, url: item.url, type: 'image', _source: 'brand_assets', referenceAssetIndex: idx 
+        allItems = allItems.concat(assets.map((item, idx) => ({
+            id: item.id || `brand-asset-${idx}`,
+            url: item.url,
+            type: 'image',
+            _source: 'brand_assets',
+            referenceAssetIndex: idx,
+            description: item.description,
+            category: item.category,
+            tags: item.tags,
+            subject: item.subject,
         })));
         
         const references = state.userProfile?.brandKit?.referenceImages || [];
-        allItems = allItems.concat(references.map((item, idx) => ({ 
-            id: `ref-image-${idx}`, url: item.url, type: 'image', _source: 'reference_images', referenceImageIndex: idx 
+        allItems = allItems.concat(references.map((item, idx) => ({
+            id: item.id || `ref-image-${idx}`,
+            url: item.url,
+            type: 'image',
+            _source: 'reference_images',
+            referenceImageIndex: idx,
+            description: item.description,
+            category: item.category,
+            tags: item.tags,
+            subject: item.subject,
         })));
         
         const uploads = state.uploadedImages || [];
@@ -95,6 +127,10 @@ export const StorageTools = {
 
         const matches = allItems.filter(item =>
             (item.prompt && item.prompt.toLowerCase().includes(q)) ||
+            (item.description && item.description.toLowerCase().includes(q)) ||
+            (item.category && item.category.toLowerCase().includes(q)) ||
+            (item.subject && item.subject.toLowerCase().includes(q)) ||
+            (Array.isArray(item.tags) && item.tags.some(t => t.toLowerCase().includes(q))) ||
             (item.type && item.type.toLowerCase().includes(q)) ||
             (item._source && item._source.toLowerCase().includes(q))
         );
@@ -106,7 +142,7 @@ export const StorageTools = {
         const thumbnailCount = Math.min(matches.length, 12);
         const thumbnails = matches.slice(0, thumbnailCount)
             .filter(item => item.type === 'image')
-            .map(item => `![${item.prompt || item.id}](${item.url})`)
+            .map(item => `![${item.prompt || item.description || item.category || item.id}](${item.url})`)
             .join(' ');
             
         const nonImageLines = matches.slice(0, thumbnailCount)

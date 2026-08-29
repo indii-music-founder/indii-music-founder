@@ -76,6 +76,26 @@ describe('StorageTools', () => {
             expect(result.message).toContain('![ref-image-0](https://test.com/ref.png)');
             expect(result.message).toContain('![upload-0](https://test.com/upload.png)');
         });
+
+        it('preserves brand-asset metadata so agents can identify assets like a headshot', async () => {
+            vi.mocked(StorageService.loadHistory).mockResolvedValue([]);
+            vi.mocked(useStore.getState).mockReturnValue({
+                userProfile: {
+                    brandKit: {
+                        brandAssets: [{ id: 'hs-1', url: 'https://test.com/headshot.png', description: 'Headshot', category: 'headshot', subject: 'Dave' }],
+                        referenceImages: []
+                    }
+                },
+                uploadedImages: []
+            } as any);
+
+            const result = await StorageTools.list_files({ source: 'brand_assets', limit: 10 });
+
+            expect(result.success).toBe(true);
+            expect(result.data.count).toBe(1);
+            expect((result.data as any).files[0]).toMatchObject({ id: 'hs-1', description: 'Headshot', category: 'headshot', subject: 'Dave' });
+            expect(result.message).toContain('Headshot');
+        });
     });
     describe('search_files', () => {
         it('should return files matching the query in prompt', async () => {
@@ -102,6 +122,25 @@ describe('StorageTools', () => {
             expect(result.success).toBe(true);
             expect(result.data.count).toBe(1);
             expect(result.message).toContain('cyberpunk');
+        });
+
+        it('finds brand assets by category (headshot)', async () => {
+            vi.mocked(StorageService.loadHistory).mockResolvedValue([]);
+            vi.mocked(useStore.getState).mockReturnValue({
+                userProfile: {
+                    brandKit: {
+                        brandAssets: [{ id: 'hs-1', url: 'https://test.com/headshot.png', description: 'Headshot', category: 'headshot' }],
+                        referenceImages: []
+                    }
+                },
+                uploadedImages: []
+            } as any);
+
+            const result = await StorageTools.search_files({ query: 'headshot' });
+
+            expect(result.success).toBe(true);
+            expect(result.data.count).toBe(1);
+            expect(result.message).toContain('Headshot');
         });
 
         it('should return empty list if no matches found', async () => {

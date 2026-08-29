@@ -105,13 +105,24 @@ describe('LoopDetector speak rule', () => {
         const freeResult = await detector.detectLoop('search_knowledge', { query: 'q6' });
         expect(freeResult.isLoop).toBe(false);
 
-        // The same frequency of a billable tool is still a loop.
+        // The same frequency of an EXPENSIVE billable tool is still a loop.
         const fresh = new LoopDetector();
         for (let i = 0; i < 6; i += 1) {
-            fresh.recordToolCall('generate_image', { prompt: `p${i}` });
+            fresh.recordToolCall('generate_video', { prompt: `v${i}`, duration: 4 });
         }
-        const costedResult = await fresh.detectLoop('generate_image', { prompt: 'p6' });
+        const costedResult = await fresh.detectLoop('generate_video', { prompt: 'v6', duration: 4 });
         expect(costedResult.isLoop).toBe(true);
         expect(costedResult.reason).toContain('times in last');
+    });
+
+    it('gives cheap image tools more headroom than expensive billable tools', async () => {
+        // generate_image is ~$0.04/call and is budget-gated on every call, so a
+        // hard "5 in 10" was tripping legitimate multi-image creative batches.
+        const img = new LoopDetector();
+        for (let i = 0; i < 10; i += 1) {
+            img.recordToolCall('generate_image', { prompt: `p${i}` });
+        }
+        const result = await img.detectLoop('generate_image', { prompt: 'p10' });
+        expect(result.isLoop).toBe(false);
     });
 });
