@@ -1,3 +1,39 @@
+# Session Close — ALL plan workstreams shipped (2026-08-29, DSH agent, "get it all done" round)
+
+**Commits this session (all on origin/main):** A1 partial (`a7fb1581b`, A1.6 `88c6456aa`),
+B1 (`1787c22a2`), B2 (`04fca7b89`), C1-core (`c218a159a`), I1 (`e4e334e45`),
+H2 (`24930274b`), C2 (`5676f221d`); docs/handoff commits interspersed. Every
+code commit passed pre-commit gates (lint + typecheck + API-security +
+invariants + affected tests); exact-SHA CI green per commit (superseded runs
+accepted on successor pushes per concurrency protocol). Final head CI watched.
+
+## What shipped (tested, tsc + lint clean each)
+- **B1** font library + deterministic vector text renderer (opentype.js).
+- **B2** render_typography tool + TypographyPanel + full registration.
+- **C1-core** CanvasDoc non-destructive model (Adjustments -> Fabric filters,
+  temperature->BlendColor) + canvasEditorSlice (standalone, registered in
+  StoreState).
+- **C2** 4 canvas editing agent tools + applyTransformPatch (idempotent sync).
+- **I1** RenderProfiles registry + DistributionRenderPipeline (upsample policy,
+  bleed math, compliance+rights gates, sha256 manifest).
+- **H2** AssetRightsService (set/get + validate) + RightsEditorDialog (react-call).
+- **A1** cosineSimilarity + fusion loop + fuse_likeness tool; A1.6 founder-
+  approved degraded geometry backend (@mediapipe FaceLandmarker, geometry-fit).
+
+## Honest remaining (blocked on founder/external, NOT silently dropped)
+- **A1.1** @vladmandic/human identity backend (not installed; weights). **A1.5**
+  real-pair threshold calibration (needs founder's likeness + generated image).
+  **A1.7** panel smoke. fuse_likeness surfaces "not configured" until then.
+- **C2.3** split-subject: @imgly/background-removal weights unlicensed
+  (Ground Rule 8) — flag-gated, decision in plan Section 19.
+- **Real smokes**: G1.6 / F1.4 / E1.5 / H1.3 / D2.3 / B2.3 / A1.7 / C2.4 /
+  I1.6 — all need founder browser/data; structural/local evidence only.
+- **C3** optional PSD flatten + text-layer bake; **E2** gen-motion flag-gated.
+- **A2** pixel swap — blocked on founder license decision.
+
+## Foreign files
+`.agent/observations/agent-watch.md`, `videos/` remain NOT mine — untouched.
+
 # Session Update — B1 typography shipped (2026-08-29, DSH agent, goal round 6)
 
 **`1787c22a2` on `origin/main`; green evidence = run 33276574623 SUCCESS on
