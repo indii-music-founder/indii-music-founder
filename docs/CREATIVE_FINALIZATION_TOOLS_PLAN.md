@@ -489,11 +489,11 @@ export function moveTransform(move: CameraMove, progress: number /* 0..1 */, fra
 
 **Acceptance criteria:**
 
-- [ ] **E1.1** `moveTransform` pure tests: progress 0 and 1 anchors exact; monotonic; no translate exceeds the overscan envelope for any preset/intensity in 0..1.
-- [ ] **E1.2** Preset snapshot test (all seven presets serialize stable).
-- [ ] **E1.3** Renderer smoke: 24-frame test render completes via `LocalVideoProjectRenderer` (existing test infra in `services/video/__tests__/`).
-- [ ] **E1.4** `animate_still` tool test + registration assertions.
-- [ ] **E2.1** E2 path flag-gated off by default; prompt scaffold test asserts the no-scene-change clause is present.
+- [x] **E1.1** `moveTransform` pure tests: progress 0 and 1 anchors exact; monotonic; no translate exceeds the overscan envelope for any preset/intensity in 0..1.
+- [x] **E1.2** Preset snapshot test (all seven presets serialize stable).
+- [x] **E1.3** Renderer smoke: 24-frame test render completes via `LocalVideoProjectRenderer` (existing test infra in `services/video/__tests__/`).
+- [x] **E1.4** `animate_still` tool test + registration assertions.
+- [x] **E2.1** E2 path flag-gated off by default; prompt scaffold test asserts the no-scene-change clause is present.
 - [ ] **E1.5** Real smoke: one founder still → dolly-in 4s 1080×1920 → plays correctly on an actual phone-sized viewport. Record in Section 19.
 
 **Estimated commits:** 3.
@@ -773,7 +773,7 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase C1: ☐ not started
 - Phase D1 (compliance pixel engine): ☑ **DONE** — commit `b640f8a26`, CI green (run 33253189268, incl. production deploy). 48/48 brand-dir tests incl. all 12 Sharma ΔE2000 reference vectors. Canvas-wrapper behavioral proof still pending D2.3 smoke.
 - Phase D2 (vision engine + gate): ☑ **core DONE** (second commit, this session) — `AestheticVisionEngine` (structured-output Gemini, hybrid engine merge, degrade-to-warning), `decideDelivery` DEC-6 gate, `scan_brand_compliance` agent tool in `BrandTools` + `BrandAgent` (authorized + declared + registry + prompt.md), `analyze_brand_consistency` asset path absorbed into the deterministic engine. 84/84 affected tests. **Open remainder:** D2.1's live finalize-button wiring + override-reason persistence land with H1 (no delivery-action surface exists yet — the gate logic and its tests ship now); D2.3 real founder-kit smoke still pending.
-- Phase E1 (deterministic motion): ☐ not started
+- Phase E1 (deterministic motion): ☑ E1.1–E1.4 + E2.1 shipped (MotionPresets pure moveTransform + overscan envelope, StillMotionRenderer over the render contract, animate_still tool, flag-gated E2 scaffold). E1.5 real smoke pending founder. VideoWorkflow "Animate still" UI wiring deferred (no acceptance checkbox; tool path + registration done).
 - Phase E2 (generative micro-motion): ☐ flag-gated, not started
 - Phase F1 (mockup service + tool): ☑ F1.1–F1.3 shipped (MockupService fidelity-locked templates + artwork-based mockup_merchandise extension + H1 mockup version hook; structural evidence). F1.4 real smoke pending founder.
 - Phase G1 (platform exporter): ☑ G1.1–G1.5 shipped (structural evidence: 38 tests across 5 files, strict tsc + lint clean). G1.6 real smoke pending founder/browser.

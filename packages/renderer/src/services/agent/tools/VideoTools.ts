@@ -5,6 +5,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { performanceVideoService } from '@/services/video/PerformanceVideoService';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { logger } from '@/utils/logger';
 import type { MasterAudioReference } from '@/services/metadata/types';
 
 // ============================================================================
@@ -545,6 +546,87 @@ export const VideoTools = {
             const errorMsg = err instanceof Error ? err.message : 'Unknown error';
             return toolError(`Failed to generate performance video: ${errorMsg}`, 'PERFORMANCE_VIDEO_GENERATION_FAILED');
         }
+    }),
+
+    /**
+     * Deterministic camera move over a still image (E1 - plan section 10).
+     * Pure preset math through the shared render contract - no generative
+     * model, no token cost.
+     */
+    animate_still: wrapTool('animate_still', async (args: {
+        imageUrl: string;
+        preset?: string;
+        intensity?: number;
+        durationSec?: number;
+        resolution?: '9:16' | '16:9' | '4:5';
+    }) => {
+        if (!args.imageUrl) {
+            return toolError('imageUrl is required (data URI or hosted still image).', 'INVALID_INPUT');
+        }
+
+        try {
+            const { renderStillMotion, STILL_MOTION_RESOLUTIONS } = await importWithRetry(
+                () => import('@/services/video/StillMotionRenderer')
+            );
+            const { MOTION_PRESETS, CINEMATIC_MOVE_PROMPTS } = await importWithRetry(
+                () => import('@/services/video/MotionPresets')
+            );
+
+            const presetId = args.preset && MOTION_PRESETS[args.preset] ? args.preset : 'ken-burns';
+            const resolution = args.resolution && args.resolution in STILL_MOTION_RESOLUTIONS ? args.resolution : '9:16';
+
+            const receipt = await renderStillMotion({
+                stillUrl: args.imageUrl,
+                preset: presetId,
+                intensity: args.intensity,
+                durationSec: args.durationSec,
+                resolution
+            });
+
+            const url = receipt.asset.url;
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const store = useStore.getState();
+            const historyId = `motion_${Date.now()}`;
+            store.addToHistory?.({
+                id: historyId,
+                url,
+                type: 'video',
+                prompt: `Animate still: ${presetId}`,
+                timestamp: Date.now(),
+                projectId: store.currentProjectId,
+                meta: JSON.stringify({ source: 'motion_clip', preset: presetId, resolution }),
+                tags: ['motion_clip', presetId],
+                origin: 'generated'
+            });
+
+            // H1 producer hook - motion clips join the asset version graph.
+            try {
+                const { AssetVersionService } = await importWithRetry(() => import('@/services/assets/AssetVersionService'));
+                await AssetVersionService.recordVersion({
+                    assetId: historyId,
+                    parentVersionId: null,
+                    url,
+                    source: 'canvas-export',
+                    provenance: { note: `Deterministic motion clip (${presetId}); rendered from a still via the local render contract` },
+                    tags: ['motion_clip', presetId]
+                });
+            } catch (versionError) {
+                logger.warn('[VideoTools] Version record failed for motion clip; result unaffected:', versionError);
+            }
+
+            return toolSuccess({
+                url,
+                preset: presetId,
+                resolution,
+                deterministic: true,
+                generativeNote: 'Deterministic camera move - no generative model was used. For model-generated motion (costs tokens), the generative micro-motion path is flag-gated off by default.',
+                scaffoldIfEnabled: CINEMATIC_MOVE_PROMPTS[presetId as keyof typeof CINEMATIC_MOVE_PROMPTS]
+            }, `Rendered deterministic ${presetId} motion clip at ${resolution}.`);
+        } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            logger.error('[VideoTools] animate_still failed:', err);
+            return toolError(`Failed to animate still: ${errorMsg}`, 'MOTION_RENDER_FAILED');
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -560,5 +642,6 @@ export const {
     orchestrate_video_render,
     orchestrate_timeline,
     generate_plp_variations,
-    create_performance_video
+    create_performance_video,
+    animate_still
 } = VideoTools;

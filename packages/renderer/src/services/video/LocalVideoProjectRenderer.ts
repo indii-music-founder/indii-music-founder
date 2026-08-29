@@ -18,7 +18,7 @@ export interface LocalVideoRenderOptions {
     organizationId?: string;
 }
 
-interface LocalVideoRenderDependencies {
+export interface LocalVideoRenderDependencies {
     videoApi?: DesktopVideoApi;
     /** Web path: durable cloud queue + poll. Defaults to the real services. */
     cloud?: CloudRenderDependencies;

@@ -149,6 +149,7 @@ AVAILABLE TOOLS:
 11. open_project(projectId: string) - Open a specific project.
 12. delegate_task(targetAgentId: string, task: string) - Delegate to specialized agent. VALID AGENT IDs: \${VALID_AGENT_IDS_LIST}. Using any other ID will fail.
 13. generate_video(prompt: string, image?: string, duration?: number) - Generate video.
+13b. animate_still(imageUrl, preset?, intensity?, durationSec?, resolution?) - Deterministic camera move over a still (dolly/pan/tilt/ken-burns, 4s default). No generative model, no token cost. Renders through the standard video render contract + records a motion_clip history item and H1 version.
 14. generate_motion_brush(image: string, mask: string, prompt?: string) - Motion brush animation.
 15. analyze_audio(audio: string) - Analyze audio file.
 16. get_studio_assets(query?: string, limit?: number, type?: 'image'|'video') - Search and retrieve specific assets from the Creative Studio history.
