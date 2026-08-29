@@ -16,6 +16,7 @@ import { logger } from '@/utils/logger';
 import {
     analyzeFace as defaultAnalyzeFace,
     cosineSimilarity,
+    geometryFitSimilarity,
     type FaceAnalysisFn
 } from '@/services/identity/FacePipeline';
 import { Editing } from '@/services/image/EditingService';
@@ -45,12 +46,15 @@ export interface FusionResult {
     similarity: number;
     passedThreshold: boolean;
     attempts: FusionAttempt[];
+    /** 'identity' (biometric) or 'geometry' (founder-approved degraded v1, A1.6). */
+    embeddingMode: 'identity' | 'geometry';
 }
 
 export interface AnalyzeDeps {
     analyzeFace: FaceAnalysisFn;
     resolveHeadshot: () => Promise<LikenessImage>;
     similarity: (a: number[], b: number[]) => number;
+    geometrySimilarity: (a: Array<[number, number]>, b: Array<[number, number]>) => number;
     edit: (args: {
         image: { mimeType: string; data: string };
         prompt: string;
@@ -88,6 +92,7 @@ class LikenessFusionServiceImpl {
         return {
             analyzeFace: injected?.analyzeFace ?? defaultAnalyzeFace,
             similarity: injected?.similarity ?? cosineSimilarity,
+            geometrySimilarity: injected?.geometrySimilarity ?? geometryFitSimilarity,
             resolveHeadshot: injected?.resolveHeadshot ?? (() => defaultResolveHeadshot(req.headshotId)),
             threshold,
             edit: injected?.edit ?? (async (args) => Editing.editImage(args))
@@ -105,9 +110,11 @@ class LikenessFusionServiceImpl {
         // Analyze the headshot: require >= 1 face.
         const headshotAnalysis = await deps.analyzeFace(headshotUri);
         const referenceEmbedding = headshotAnalysis.primaryEmbedding;
-        if (!referenceEmbedding || referenceEmbedding.length === 0) {
+        const referenceLandmarks = headshotAnalysis.landmarks;
+        if ((!referenceEmbedding || referenceEmbedding.length === 0) && (!referenceLandmarks || referenceLandmarks.length === 0)) {
             throw new Error('Headshot could not be read as a face. Use a clear, front-facing selfie in My Likeness.');
         }
+        const embeddingMode = headshotAnalysis.embeddingMode ?? (referenceEmbedding ? 'identity' : 'geometry');
 
         const targetParts = parseDataUri(req.targetDataUrl);
         if (!targetParts) throw new Error('targetDataUrl must be a base64 image data URI.');
@@ -135,11 +142,14 @@ class LikenessFusionServiceImpl {
             }
 
             const resultAnalysis = await deps.analyzeFace(result.url);
-            const embedding = resultAnalysis.primaryEmbedding;
-            if (!embedding) {
+            let similarity: number;
+            if (embeddingMode === 'identity' && referenceEmbedding && resultAnalysis.primaryEmbedding) {
+                similarity = deps.similarity(referenceEmbedding, resultAnalysis.primaryEmbedding);
+            } else if (referenceLandmarks && resultAnalysis.landmarks && resultAnalysis.landmarks.length > 0) {
+                similarity = deps.geometrySimilarity(referenceLandmarks, resultAnalysis.landmarks);
+            } else {
                 throw new Error(`Fusion attempt ${attempt} produced no detectable face.`);
             }
-            const similarity = deps.similarity(referenceEmbedding, embedding);
             attempts.push({ dataUrl: result.url, similarity });
             logger.info(`[LikenessFusion] attempt ${attempt}: similarity ${similarity.toFixed(3)}`);
 
@@ -155,7 +165,8 @@ class LikenessFusionServiceImpl {
             dataUrl: best.dataUrl,
             similarity: best.similarity,
             passedThreshold: bestPassed,
-            attempts
+            attempts,
+            embeddingMode
         };
     }
 }

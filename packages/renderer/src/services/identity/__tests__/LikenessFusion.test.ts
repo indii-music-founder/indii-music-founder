@@ -60,6 +60,7 @@ function makeDeps(opts: {
             i++;
             return sim;
         },
+        geometrySimilarity: (_a: Array<[number, number]>, _b: Array<[number, number]>) => 0.9,
         edit: async (args: { image: { mimeType: string; data: string }; prompt: string; model: string; sourceImages: Array<{ mimeType: string; data: string }> }) => {
             expect(args.model).toBe(APPROVED_MODELS.IMAGE_GEN); // Ground Rule 6
             expect(args.prompt).toContain(LIKENESS_IDENTITY_PROMPT_SUFFIX);
@@ -116,5 +117,49 @@ describe('fuseLikeness loop (A1.3)', () => {
         expect(result.attempts).toHaveLength(1);
         expect(result.passedThreshold).toBe(true);
         expect(result.similarity).toBeCloseTo(0.90, 10);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// degraded geometry mode (founder-approved A1.6): geometry-fit, not identity
+// ---------------------------------------------------------------------------
+
+describe('fuseLikeness in degraded geometry mode (A1.6)', () => {
+    function geomDeps(attemptGeo: number[]) {
+        let i = 0;
+        const L = [[33,100],[263,100],[100,80],[120,60]] as Array<[number, number]>;
+        return {
+            analyzeFace: async () => ({
+                faces: [{ box: { x: 0, y: 0, width: 10, height: 10 }, score: 1 }],
+                primaryEmbedding: null,
+                landmarks: L,
+                embeddingMode: 'geometry' as const
+            }),
+            resolveHeadshot: async () => ({ id: 'img_4488', url: 'data:image/headshot;base64,QUJD', storageRef: 'x', createdAt: 1, qualityScore: 'good' as const }),
+            similarity: (_a, _b) => 999, // must NOT be called in geometry mode
+            geometrySimilarity: (_a, _b) => { const v = attemptGeo[Math.min(i, attemptGeo.length - 1)]!; i++; return v; },
+            edit: async () => ({ id: 'r', url: 'data:image/result;base64,R' }),
+            threshold: 0.55
+        };
+    }
+
+    it('scores geometry fit (not cosine) and reports embeddingMode geometry', async () => {
+        const result = await LikenessFusionService.fuseLikeness(
+            { targetDataUrl: TARGET, maxAttempts: 2 },
+            geomDeps([0.70])
+        );
+        expect(result.embeddingMode).toBe('geometry');
+        expect(result.similarity).toBeCloseTo(0.70, 10);
+        expect(result.passedThreshold).toBe(true);
+    });
+
+    it('retries below the geometry threshold and returns best-of-N', async () => {
+        const result = await LikenessFusionService.fuseLikeness(
+            { targetDataUrl: TARGET, maxAttempts: 3 },
+            geomDeps([0.30, 0.58])
+        );
+        expect(result.attempts).toHaveLength(2);
+        expect(result.similarity).toBeCloseTo(0.58, 10);
+        expect(result.passedThreshold).toBe(true);
     });
 });
