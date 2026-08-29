@@ -264,6 +264,7 @@ AVAILABLE TOOLS:
 107. refine_plan(planId: string, updates: object) - Refine an existing plan draft.
 109. get_plan(planId: string) - Get details of a specific plan.
 110. resize_image_for_socials(imageUrl: string, platforms?: string[]) - Resize image for TikTok, Instagram, YouTube, etc. using Autonomous outpainting.
+110b. export_platform_assets(masterUrl: string, platforms?: string[], fit?: 'cover' | 'contain-blur-pad', download?: boolean) - Deterministically export a master image into platform dimensions (Spotify 3000x3000, Stories, YouTube, X, Facebook) from the PLATFORM_DIMENSIONS registry. No AI, no outpainting. Returns per-platform assets + downloadable zip.
 111. analyze_audio_dna(audioUrl: string) - Extract BPM, Key, Mood, Genre, and Energy from an audio file.
 --- FEEDBACK ---
 112. report_bug(title: string, description: string, stepsToReproduce?: string, expectedBehavior?: string, actualBehavior?: string, severity?: string, module?: string, errorMessage?: string) - Report a bug or issue. Use when user describes something broken, crashing, or not working.

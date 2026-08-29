@@ -21,7 +21,16 @@ export const PLATFORM_DIMENSIONS: BatchDimension[] = [
     { id: 'portrait', label: 'TikTok / Reel (9:16)', width: 1080, height: 1920, platform: 'tiktok' },
     { id: 'square', label: 'Instagram Post (1:1)', width: 1080, height: 1080, platform: 'instagram' },
     { id: 'landscape', label: 'YouTube (16:9)', width: 1920, height: 1080, platform: 'youtube' },
-    { id: 'story', label: 'Snapchat / Story', width: 720, height: 1280, platform: 'snapchat' }
+    { id: 'story', label: 'Snapchat / Story', width: 720, height: 1280, platform: 'snapchat' },
+    // Workstream G1 (docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md §12) — founder-required matrix.
+    // Additive only: never modify the rows above.
+    { id: 'spotify_cover', label: 'Spotify Cover (3000×3000)', width: 3000, height: 3000, platform: 'spotify' },
+    { id: 'ig_story', label: 'Instagram Story (9:16)', width: 1080, height: 1920, platform: 'instagram_story' },
+    { id: 'yt_banner', label: 'YouTube Banner (16:9 safe-area)', width: 2560, height: 1440, platform: 'youtube_banner' },
+    { id: 'x_post', label: 'X Post (16:9)', width: 1600, height: 900, platform: 'x_post' },
+    { id: 'x_profile', label: 'X Profile (1:1)', width: 400, height: 400, platform: 'x_profile' },
+    { id: 'facebook_og', label: 'Facebook OG (1.91:1)', width: 1200, height: 630, platform: 'facebook' },
+    { id: 'tiktok_cover', label: 'TikTok Cover (9:16)', width: 1080, height: 1920, platform: 'tiktok_cover' }
 ];
 
 export class CanvasBatchService {

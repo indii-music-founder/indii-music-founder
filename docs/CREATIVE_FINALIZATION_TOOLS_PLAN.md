@@ -575,11 +575,11 @@ export async function downloadAsZip(results: ExportResult[], name: string): Prom
 
 **Acceptance criteria:**
 
-- [ ] **G1.1** `computeCrop` table tests: square→9:16 face-anchored keeps face centered w/ margin; extreme aspect without anchors → center crop; identity crop for same aspect.
-- [ ] **G1.2** Registry test: founder's four required platforms exist with exact pixels (3000×3000, 1080×1920, 1920×1080, X/FB rows).
-- [ ] **G1.3** Exporter tests per fit mode at 2× scale (canvas-mocked): output dimensions exact; blur-pad composites blurred fill.
-- [ ] **G1.4** Lint guard: `AssetExporter.ts` imports no `fabric` (enforce with a test or eslint rule).
-- [ ] **G1.5** `export_platform_assets` tool test + registration.
+- [x] **G1.1** `computeCrop` table tests: square→9:16 face-anchored keeps face centered w/ margin; extreme aspect without anchors → center crop; identity crop for same aspect.
+- [x] **G1.2** Registry test: founder's four required platforms exist with exact pixels (3000×3000, 1080×1920, 1920×1080, X/FB rows).
+- [x] **G1.3** Exporter tests per fit mode at 2× scale (canvas-mocked): output dimensions exact; blur-pad composites blurred fill.
+- [x] **G1.4** Lint guard: `AssetExporter.ts` imports no `fabric` (enforce with a test or eslint rule).
+- [x] **G1.5** `export_platform_assets` tool test + registration.
 - [ ] **G1.6** Real smoke: one 3000×3000 master → full matrix + zip opens cleanly. Record in Section 19.
 
 **Estimated commits:** 2–3.
@@ -776,7 +776,7 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase E1 (deterministic motion): ☐ not started
 - Phase E2 (generative micro-motion): ☐ flag-gated, not started
 - Phase F1 (mockup service + tool): ☐ not started
-- Phase G1 (platform exporter): ☐ not started
+- Phase G1 (platform exporter): ☑ G1.1–G1.5 shipped (structural evidence: 38 tests across 5 files, strict tsc + lint clean). G1.6 real smoke pending founder/browser.
 - Phase H1 (version graph): ☐ not started
 - Phase H2 (rights metadata): ☐ not started
 - Phase I1 (distribution render profiles): ☐ not started

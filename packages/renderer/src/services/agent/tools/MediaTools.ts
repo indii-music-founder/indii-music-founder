@@ -103,6 +103,68 @@ export const MediaTools = {
     }),
 
     /**
+     * Exports a master image into platform assets via the deterministic
+     * headless exporter (no AI, no Fabric) and bundles them into a zip.
+     * Workstream G1 — docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md §12.
+     */
+    export_platform_assets: wrapTool('export_platform_assets', async (args: { masterUrl: string, platforms?: string[], fit?: 'cover' | 'contain-blur-pad', download?: boolean }) => {
+        const { exportMasterAsset, downloadAsZip, DEFAULT_CORE_MATRIX_IDS } = await importWithRetry(
+            () => import('@/services/export/AssetExporter')
+        );
+
+        const requested = args.platforms && args.platforms.length > 0 ? args.platforms : DEFAULT_CORE_MATRIX_IDS;
+        if (!args.masterUrl) {
+            return toolError("masterUrl is required. Provide a data URI or hosted image URL.", 'INVALID_INPUT');
+        }
+
+        try {
+            const results = await exportMasterAsset({
+                masterUrl: args.masterUrl,
+                presets: requested.map(dimensionId => ({ dimensionId, fit: args.fit }))
+            });
+
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const store = useStore.getState();
+
+            for (const r of results) {
+                store.addToHistory({
+                    id: `export_${r.platformId}_${Date.now()}`,
+                    url: r.url,
+                    prompt: `Platform export: ${r.platformId} (${r.width}x${r.height}, ${r.fit})`,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: store.currentProjectId,
+                    meta: JSON.stringify({ source: 'platform-export', platformId: r.platformId, fit: r.fit }),
+                    tags: ['platform-export', r.platformId],
+                    origin: 'canvas-export'
+                });
+            }
+
+            let zipName: string | undefined;
+            if (args.download !== false) {
+                zipName = `platform_assets_${Date.now()}`;
+                await downloadAsZip(results, zipName);
+            }
+
+            return toolSuccess({
+                count: results.length,
+                assets: results.map(r => ({
+                    platformId: r.platformId,
+                    width: r.width,
+                    height: r.height,
+                    bytes: r.bytes,
+                    fit: r.fit
+                })),
+                zipName
+            }, `Exported ${results.length} platform assets${zipName ? ` and bundled zip "${zipName}.zip"` : ''}. These are deterministic resizes of the master — no generative outpainting was applied.`);
+        } catch (error: unknown) {
+            const err = error as Error;
+            logger.error('[MediaTools] export_platform_assets failed:', err);
+            return toolError(`Failed to export platform assets: ${err.message}`);
+        }
+    }),
+
+    /**
      * Extracts Audio DNA from a track - BPM, Key, Mood, Genre, and Energy.
      */
     analyze_audio_dna: wrapTool('analyze_audio_dna', async (args: { audioUrl: string }) => {
@@ -307,4 +369,4 @@ export const MediaTools = {
 };
 
 // Aliases
-export const { resize_image_for_socials, analyze_audio_dna, crop_image, generate_thumbnail } = MediaTools;
+export const { resize_image_for_socials, analyze_audio_dna, crop_image, generate_thumbnail, export_platform_assets } = MediaTools;
