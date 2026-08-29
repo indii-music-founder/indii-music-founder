@@ -1,3 +1,20 @@
+# Session Update — A1 likeness fusion (loop + tool) shipped; real identity core blocked (2026-08-29, DSH agent, goal round 5)
+
+**`a7fb1581b` on `origin/main`, CI run 33270155379 SUCCESS incl. production deploy.**
+
+- FacePipeline: cosineSimilarity (pure, A1.2) + honest identity-backend
+  boundary (no silent degraded scoring, A1.6).
+- LikenessFusionService: best-of-N guided regeneration, threshold/retry,
+  injectable analysis backend (A1.3), DEC-2 headshot resolution only.
+- fuse_likeness tool (Director) + CreativeAgent functions/authorizedTools/
+  registry/prompt/tests (A1.4); history meta likeness_fusion + score.
+- Evidence: 24 tests; tsc + lint clean; pre-commit gates green.
+- **BLOCKED on founder + dependency:** A1.1 (@vladmandic/human not installed
+  — weights must be vendored locally), A1.5 (real-pair threshold calibration
+  needs founder's real likeness uploads + generated images), A1.6 (degraded
+  @mediapipe mode needs founder sign-off), A1.7 (panel smoke). The tool
+  surfaces a specific "not configured" error rather than scoring degraded.
+
 # Session Update — E1 deterministic motion + Creative Director agent registration (2026-08-29, DSH agent, goal round 4)
 
 **`8725e3ea8` on `origin/main`, CI run 33266440643 SUCCESS incl. production deploy** (E1 `b4c0a0797` was superseded/canceled by this push; the successor SHA is the green evidence).
