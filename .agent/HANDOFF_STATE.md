@@ -217,3 +217,29 @@ Full suite green at each delivery point (final: 6,791 passed / 0 failed).
 ## Shared-tree note
 
 The working tree carries a large in-progress video-studio refactor by the other agent (Remotion removal, `ElectronRenderService`, `packages/main/src/services/{video,media}`, cspell, electron.vite.config, package.json/lock, etc.) — uncommitted, NOT mine, left untouched. Local full-suite/typecheck is contaminated by that state; authoritative proof is the per-SHA CI runs above.
+
+---
+
+# Session Close — POD/webhook plan execution: ISSUE-1410, phantom prodigi, 1407 UI slice, ledger truth (2026-08-28, DSH agent)
+
+**Final state: all four work packages of `docs/POD_CHECKOUT_AND_WEBHOOK_FIXES_PLAN.md` delivered to origin/main, exact-SHA CI green, production deployed.**
+
+| SHA | What | Evidence |
+|---|---|---|
+| `1172ce430` | ISSUE-1410: `handleInvoicePaid` derives subscription status from the LIVE Stripe object (late invoice.paid can no longer resurrect canceled subs); one-time invoices skip status writes | `webhookHandler.invoice-paid.test.ts` 4/4 |
+| `f5116c6ff` | ISSUE-1417 (new): phantom ProdigiProvider removed — it called `pod_prodigi*` callables with no backend; `getProvider('prodigi')` fails loudly | pod suite 35/35 incl. rejection test |
+| `6e6bcd347` | ISSUE-1407 UI slice: `PrintfulProvider.createOrderCheckout` + ManufacturingPanel Stripe redirect w/ return handling; false "POD Order Created!" toasts replaced with honest draft copy; Printful order status is the only confirmation authority | panel 6/6; merch+pod 97/97 |
+| `6cdda7b3c` | Ledger truth: ISSUE-1415 FIXED (run 33196608685 green incl. arcjet+rules — was already resolved), ISSUE-1410 closed, ISSUE-1417 recorded, ISSUE-1407 end-to-end | `OPEN_ISSUES_V3.md` |
+
+CI: run `33243768835` success on `6cdda7b3c` (incl. production deploy; one transient Cloud Functions quota retry self-resolved).
+Plan of record for execution details: `docs/POD_CHECKOUT_AND_WEBHOOK_FIXES_PLAN.md`.
+
+## NOT done / honest limits
+
+- ISSUE-1416 (conductor agents driving the video editor) is SPEC'd only — `docs/AGENT_VIDEO_EDITOR_BRIDGE.md` + ledger ticket; awaiting founder green-light. Four tools: list assets / plan sequence / render stitch (billable, approval-gated) / render status.
+- Prodigi credential-config surfaces (`PODIntegrationPanel`/`PODCredentialService`) remain — inert key storage without a backend; remove/gate with any future Prodigi build (noted in ISSUE-1417).
+- POD checkout validated structurally (unit/component); no live Stripe->Printful end-to-end order has been placed.
+
+## Shared-tree note
+
+Foreign in-flight work observed and untouched: VideoJsPlayer.tsx/.test.tsx edits, e2e/video-preview-display.spec.ts, packages/renderer/public/e2e/, `.agent/observations/`, untracked `videos/`, brand pixel engine commit `b640f8a26` (another agent's, CI theirs).
