@@ -628,8 +628,8 @@ export async function setRights(assetId: string, rights: AssetRights): Promise<v
 
 - [x] **H1.1** record/tree/promote unit tests: append-only (no mutation), promote creates a new head node, orphan parent allowed.
 - [x] **H1.2** At least two producer hooks (fusion + exporter) covered by tests calling `recordVersion`.
-- [ ] **H2.1** Rights validation tests (invalid `usageRights` rejected; `licensed-third-party` requires `licenseNotes`).
-- [ ] **H2.2** Rights editor RTL test using the dialog pattern.
+- [x] **H2.1** Rights validation tests (invalid `usageRights` rejected; `licensed-third-party` requires `licenseNotes`).
+- [x] **H2.2** Rights editor RTL test using the dialog pattern.
 - [ ] **H1.3** Real smoke: fuse → adjust in canvas → export; version tree shows all three with revert working. Record in Section 19.
 
 **Estimated commits:** 2–3.
@@ -778,7 +778,7 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase F1 (mockup service + tool): ☑ F1.1–F1.3 shipped (MockupService fidelity-locked templates + artwork-based mockup_merchandise extension + H1 mockup version hook; structural evidence). F1.4 real smoke pending founder.
 - Phase G1 (platform exporter): ☑ G1.1–G1.5 shipped (structural evidence: 38 tests across 5 files, strict tsc + lint clean). G1.6 real smoke pending founder/browser.
 - Phase H1 (version graph): ☑ H1.1+H1.2 shipped (AssetVersionService append-only graph + exporter/canvas producer hooks; structural evidence). H1.3 real smoke pending founder.
-- Phase H2 (rights metadata): ☐ not started
+- Phase H2 (rights metadata): ☑ H2.1+H2.2 shipped (AssetRightsService set/get + validateRights incl. licensed-third-party requires licenseNotes; RightsEditorDialog via react-call awaited-dialog pattern). Sidecar manifest is written by I1; in-browser IPTC embedding deferred (A-8).
 - Phase I1 (distribution render profiles): ☑ I1.1–I1.5 shipped (RenderProfiles registry + validateProfile, DistributionRenderPipeline upsample policy/bleed math/gates/manifest sha256). render_distribution_bundle agent tool + I1.6 real smoke pending.
 - Phase B2: ☑ B2.1+B2.2 shipped (render_typography tool + TypographyPanel + full CreativeAgent/registry/prompt registration + RTL/tool tests). B2.3 real smoke pending founder.
 - Phase C2: ☐ not started
