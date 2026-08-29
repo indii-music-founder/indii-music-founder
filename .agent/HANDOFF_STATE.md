@@ -1,3 +1,18 @@
+# Session Update — H1 asset version graph shipped (2026-08-29, DSH agent, goal round 2)
+
+**`3f4cf68aa` on `origin/main`, CI run 33261685863 SUCCESS incl. production deploy.**
+
+- `services/assets/AssetVersionService.ts`: append-only version graph
+  (record/getVersionTree/promote) over Firestore
+  `users/{uid}/assetVersions/{assetId}/versions/{versionId}`, mirroring
+  LikenessService. Promote = NEW head node copying the target; never mutates
+  or deletes; orphan parents allowed.
+- H1.2 producer hooks wired: `export_platform_assets` (export-bundle) and
+  `CanvasBatchService.exportBatch` (canvas-export), both fail-open.
+- Evidence: 17/17 affected tests; strict tsc + lint clean; pre-commit gates
+  green; exact-SHA CI success. H1.3 real smoke (fuse → canvas → export tree)
+  pending founder. Plan checkboxes updated.
+
 # Session Close — G1 platform exporter + payload-guard audit follow-ups (2026-08-29, DSH agent)
 
 **Final state: two commits on `origin/main`, each green at its own SHA incl. production deploy — `b84614b08` (CI 33259107242) and `932433c3c` (CI 33260303299).**
