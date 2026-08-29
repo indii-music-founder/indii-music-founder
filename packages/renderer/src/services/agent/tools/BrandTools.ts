@@ -149,6 +149,46 @@ export const BrandTools = {
         };
     }),
 
+    scan_brand_compliance: wrapTool('scan_brand_compliance', async (args: { assetIndex?: number; assetId?: string }) => {
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { generatedHistory, uploadedImages, userProfile } = useStore.getState();
+        const combined = [...generatedHistory, ...uploadedImages];
+        const asset = args.assetId
+            ? combined.find((h) => h.id === args.assetId)
+            : combined[args.assetIndex ?? -1];
+
+        if (!asset || !asset.url) {
+            return toolError(
+                `No asset found${args.assetId ? ` for id ${args.assetId}` : ` at index ${args.assetIndex}`}. Provide a valid assetIndex or assetId.`,
+                'ASSET_NOT_FOUND'
+            );
+        }
+
+        const brandKit = userProfile?.brandKit;
+        if (!brandKit || ((brandKit.colors ?? []).length === 0 && !(brandKit.fonts ?? '').trim() && !(brandKit.aestheticStyle ?? '').trim() && !(brandKit.visualIdentity ?? '').trim())) {
+            return toolError(
+                'No usable Brand Kit found. Set up your Brand Kit (palette, fonts, logo, aesthetic) before running a compliance scan.',
+                'BRAND_KIT_MISSING'
+            );
+        }
+
+        try {
+            const { scanAsset } = await import('@/services/brand/BrandComplianceService');
+            const report = await scanAsset(asset.url, brandKit, undefined, { assetId: asset.id });
+            const violations = report.violations.map((v) => `[${v.severity.toUpperCase()}] ${v.type}: ${v.detail}`);
+            return toolSuccess({
+                passed: report.passed,
+                score: report.score,
+                engine: report.engine,
+                violations,
+            }, report.passed
+                ? `Brand compliance PASSED (score ${report.score}/100, ${report.engine} engine). Asset is cleared for delivery.`
+                : `Brand compliance FAILED (score ${report.score}/100): ${report.violations.filter((v) => v.severity === 'error').length} error(s), ${report.violations.filter((v) => v.severity === 'warning').length} warning(s). Delivery requires an explicit override with reason (DEC-6).`);
+        } catch (err) {
+            return toolError(`Brand compliance scan failed: ${err instanceof Error ? err.message : String(err)}`, 'SCAN_FAILED');
+        }
+    }),
+
     generate_brand_guidelines: wrapTool('generate_brand_guidelines', async ({ name, values }: { name: string; values: string[] }) => {
         const schema = zodToJsonSchema(GenerateBrandGuidelinesSchema);
         const prompt = `

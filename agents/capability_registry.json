@@ -305,6 +305,12 @@
             "analyze_brand_consistency"
           ]
         },
+        "scan_brand_compliance": {
+          "description": "Scan a visual asset against the Brand Kit (palette, fonts, logo safe-zone, aesthetic) with a structured compliance report.",
+          "trigger_labels": [
+            "scan_brand_compliance"
+          ]
+        },
         "generate_brand_guidelines": {
           "description": "Generate structured brand guidelines based on core values.",
           "trigger_labels": [

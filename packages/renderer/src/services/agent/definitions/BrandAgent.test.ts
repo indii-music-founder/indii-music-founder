@@ -38,6 +38,28 @@ describe('BrandAgent', () => {
         expect(BrandAgent.authorizedTools).toContain('generate_brand_kit');
     });
 
+    it('should authorize the compliance scanner (Workstream D)', () => {
+        expect(BrandAgent.authorizedTools).toContain('scan_brand_compliance');
+        expect(BrandAgent.functions.scan_brand_compliance).toBeDefined();
+    });
+
+    it('should declare the scan_brand_compliance schema', () => {
+        const schemas = BrandAgent.tools[0].functionDeclarations.map(d => d.name);
+        expect(schemas).toContain('scan_brand_compliance');
+    });
+
+    it('should delegate asset-based consistency analysis to the compliance engine', async () => {
+        // Store mock (above) has no brandKit → the absorbed asset path must
+        // fail loudly rather than silently returning prose.
+        const result = await BrandAgent.functions.analyze_brand_consistency({
+            content: 'irrelevant',
+            type: 'image',
+            assetPath: 'data:image/png;base64,AAA',
+        });
+        expect(result.success).toBe(false);
+        expect((result as { error?: string }).error).toContain('Brand Kit');
+    });
+
     it('should declare tool schemas for Phase C tools', () => {
         const schemas = BrandAgent.tools[0].functionDeclarations.map(d => d.name);
         expect(schemas).toContain('analyze_brand_sentiment');

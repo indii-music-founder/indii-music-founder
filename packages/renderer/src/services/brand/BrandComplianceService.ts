@@ -9,6 +9,7 @@
 import type { BrandKit } from '@/types/User';
 import type { Box2D } from '@/services/image/ImageAnalysisService';
 import { deltaE2000, extractDominantColors, srgbToLab, type ColorCluster } from './ColorExtraction';
+import { evaluateAesthetic, hasAestheticIdentity, type AestheticAssessment } from './AestheticVisionEngine';
 import { logger } from '@/utils/logger';
 
 export type ComplianceViolationType = 'color' | 'typography' | 'logo' | 'safe-zone' | 'aesthetic';
@@ -45,6 +46,8 @@ export interface ComplianceConfig {
     /** Logo center must sit within this percent margin of the frame edges. */
     logoSafeZonePct: number;
     passScore: number;
+    /** Run the Gemini aesthetic-identity check when the brand kit declares one. */
+    enableAestheticCheck: boolean;
 }
 
 export const DEFAULT_COMPLIANCE_CONFIG: ComplianceConfig = {
@@ -53,6 +56,7 @@ export const DEFAULT_COMPLIANCE_CONFIG: ComplianceConfig = {
     requireLogo: false,
     logoSafeZonePct: 5,
     passScore: 85,
+    enableAestheticCheck: true,
 };
 
 /** Box2D values are normalized 0..1 across the asset. */
@@ -63,6 +67,8 @@ export interface ComplianceVisionProbe {
 export interface ScanDeps {
     vision?: ComplianceVisionProbe;
     extractColors?(dataUrl: string, maxColors?: number): Promise<ColorCluster[]>;
+    /** Overrides or disables (returns null) the default aesthetic vision engine. */
+    aesthetic?(assetUrl: string, brandKit: BrandKit): Promise<AestheticAssessment | null>;
     /** Stable identity of the scanned history item, when the caller has one. */
     assetId?: string;
 }
@@ -228,6 +234,29 @@ export async function scanAsset(
         }
     }
 
+    // --- Aesthetic identity (vision, Phase D2) -------------------------------
+    let aestheticRan = false;
+    if (cfg.enableAestheticCheck && hasAestheticIdentity(brandKit)) {
+        const assessor = deps?.aesthetic ?? evaluateAesthetic;
+        try {
+            const assessment = await assessor(assetUrl, brandKit);
+            if (assessment) {
+                aestheticRan = true;
+                for (const v of assessment.violations) {
+                    violations.push({ type: 'aesthetic', severity: v.severity, detail: v.detail });
+                }
+            }
+        } catch (err) {
+            logger.warn('[BrandCompliance] Aesthetic check failed; degrading to warning.', err);
+            violations.push({
+                type: 'aesthetic',
+                severity: 'warning',
+                detail: `Aesthetic identity check could not be evaluated (${err instanceof Error ? err.message : String(err)}); it must be re-run before delivery.`,
+            });
+            aestheticRan = true;
+        }
+    }
+
     const errors = violations.filter((v) => v.severity === 'error').length;
     const warnings = violations.filter((v) => v.severity === 'warning').length;
     const score = Math.max(0, Math.min(100, 100 - errors * ERROR_PENALTY - warnings * WARNING_PENALTY));
@@ -238,8 +267,32 @@ export async function scanAsset(
         passed: errors === 0 && score >= cfg.passScore,
         score,
         violations,
-        engine: 'pixel',
+        engine: aestheticRan ? 'hybrid' : 'pixel',
         brandKitVersion: 'unversioned',
         scannedAt: Date.now(),
+    };
+}
+
+export interface DeliveryDecision {
+    assetId: string;
+    allowed: boolean;
+    report: BrandComplianceReport;
+    /** Present only when delivery was allowed via DEC-6 override. */
+    overrideReason?: string;
+}
+
+/**
+ * DEC-6 gate: a failing asset ships ONLY via an explicit non-empty override
+ * reason. Callers persist `overrideReason` with the asset's record (Workstream H
+ * version metadata) — an override that is not recorded is a protocol violation.
+ */
+export function decideDelivery(report: BrandComplianceReport, override?: { reason: string }): DeliveryDecision {
+    const reason = override?.reason.trim();
+    const allowed = report.passed || (Boolean(reason) && reason!.length > 0);
+    return {
+        assetId: report.assetId,
+        allowed,
+        report,
+        ...(allowed && !report.passed ? { overrideReason: reason } : {}),
     };
 }

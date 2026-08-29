@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     createDefaultVisionProbe,
+    decideDelivery,
     mergeConfig,
     scanAsset,
     type ComplianceVisionProbe,
@@ -222,5 +223,94 @@ describe('createDefaultVisionProbe', () => {
     it('is a callable probe contract (structural — real vision proof lands at D2.3)', () => {
         const probe = createDefaultVisionProbe();
         expect(typeof probe.detectLogo).toBe('function');
+    });
+});
+
+describe('scanAsset — aesthetic identity wiring (Phase D2)', () => {
+    const identityKit = brandKit({ aestheticStyle: 'Cyberpunk' });
+
+    it('merges aesthetic violations and reports the hybrid engine', async () => {
+        const aesthetic = vi.fn().mockResolvedValue({
+            violations: [{ detail: 'Off-brand serif logo styling', severity: 'error' }],
+            summary: 'Off-brand.',
+        });
+        const report = await scanAsset(ASSET, identityKit, undefined, {
+            extractColors: fakeExtract([]),
+            aesthetic,
+        });
+        expect(aesthetic).toHaveBeenCalledOnce();
+        const aestheticViolations = report.violations.filter((v) => v.type === 'aesthetic');
+        expect(aestheticViolations).toHaveLength(1);
+        expect(aestheticViolations[0]!.severity).toBe('error');
+        expect(report.engine).toBe('hybrid');
+        expect(report.passed).toBe(false);
+    });
+
+    it('keeps the pixel engine when the kit declares no aesthetic identity', async () => {
+        const aesthetic = vi.fn();
+        const report = await scanAsset(ASSET, brandKit(), undefined, {
+            extractColors: fakeExtract([]),
+            aesthetic,
+        });
+        expect(aesthetic).not.toHaveBeenCalled();
+        expect(report.engine).toBe('pixel');
+    });
+
+    it('skips the aesthetic check when disabled in config', async () => {
+        const aesthetic = vi.fn();
+        await scanAsset(ASSET, identityKit, { enableAestheticCheck: false }, {
+            extractColors: fakeExtract([]),
+            aesthetic,
+        });
+        expect(aesthetic).not.toHaveBeenCalled();
+    });
+
+    it('degrades an engine failure to a re-run warning instead of crashing', async () => {
+        const aesthetic = vi.fn().mockRejectedValue(new Error('model quota exhausted'));
+        const report = await scanAsset(ASSET, identityKit, undefined, {
+            extractColors: fakeExtract([]),
+            aesthetic,
+        });
+        const aestheticViolations = report.violations.filter((v) => v.type === 'aesthetic');
+        expect(aestheticViolations).toHaveLength(1);
+        expect(aestheticViolations[0]!.severity).toBe('warning');
+        expect(aestheticViolations[0]!.detail).toContain('model quota exhausted');
+        expect(aestheticViolations[0]!.detail).toContain('re-run');
+    });
+
+    it('keeps the pixel engine when the injected assessor returns null (skipped)', async () => {
+        const aesthetic = vi.fn().mockResolvedValue(null);
+        const report = await scanAsset(ASSET, identityKit, undefined, {
+            extractColors: fakeExtract([]),
+            aesthetic,
+        });
+        expect(report.engine).toBe('pixel');
+        expect(report.violations.filter((v) => v.type === 'aesthetic')).toHaveLength(0);
+    });
+});
+
+describe('decideDelivery — DEC-6 gate', () => {
+    const passingReport = { assetId: 'a1', passed: true, score: 100, violations: [], engine: 'pixel', brandKitVersion: 'unversioned', scannedAt: 1, assetUrl: ASSET };
+    const failingReport = { assetId: 'a2', passed: false, score: 60, violations: [], engine: 'hybrid', brandKitVersion: 'unversioned', scannedAt: 1, assetUrl: ASSET };
+
+    it('allows a passing report outright', () => {
+        const decision = decideDelivery(passingReport as never);
+        expect(decision.allowed).toBe(true);
+        expect(decision.overrideReason).toBeUndefined();
+    });
+
+    it('blocks a failing report without an override', () => {
+        expect(decideDelivery(failingReport as never).allowed).toBe(false);
+    });
+
+    it('allows a failing report only with a non-empty override reason', () => {
+        const decision = decideDelivery(failingReport as never, { reason: 'Founder approved off-palette special edition' });
+        expect(decision.allowed).toBe(true);
+        expect(decision.overrideReason).toBe('Founder approved off-palette special edition');
+    });
+
+    it('rejects whitespace-only override reasons', () => {
+        expect(decideDelivery(failingReport as never, { reason: '   ' }).allowed).toBe(false);
+        expect(decideDelivery(failingReport as never, { reason: '' }).allowed).toBe(false);
     });
 });

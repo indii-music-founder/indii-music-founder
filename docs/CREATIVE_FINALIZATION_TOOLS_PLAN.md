@@ -771,8 +771,8 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase A1: ☐ not started
 - Phase B1: ☐ not started
 - Phase C1: ☐ not started
-- Phase D1 (compliance pixel engine): ☐ not started
-- Phase D2 (vision engine + gate): ☐ not started
+- Phase D1 (compliance pixel engine): ☑ **DONE** — commit `b640f8a26`, CI green (run 33253189268, incl. production deploy). 48/48 brand-dir tests incl. all 12 Sharma ΔE2000 reference vectors. Canvas-wrapper behavioral proof still pending D2.3 smoke.
+- Phase D2 (vision engine + gate): ☑ **core DONE** (second commit, this session) — `AestheticVisionEngine` (structured-output Gemini, hybrid engine merge, degrade-to-warning), `decideDelivery` DEC-6 gate, `scan_brand_compliance` agent tool in `BrandTools` + `BrandAgent` (authorized + declared + registry + prompt.md), `analyze_brand_consistency` asset path absorbed into the deterministic engine. 84/84 affected tests. **Open remainder:** D2.1's live finalize-button wiring + override-reason persistence land with H1 (no delivery-action surface exists yet — the gate logic and its tests ship now); D2.3 real founder-kit smoke still pending.
 - Phase E1 (deterministic motion): ☐ not started
 - Phase E2 (generative micro-motion): ☐ flag-gated, not started
 - Phase F1 (mockup service + tool): ☐ not started

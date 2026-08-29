@@ -3,6 +3,7 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import systemPrompt from '@agents/brand/prompt.md?raw';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { BrandTools } from '../tools/BrandTools';
 
 const brandRetrievalConfig = {
     brand_guidelines: {
@@ -52,20 +53,24 @@ export const BrandAgent: AgentConfig = {
         },
         analyze_brand_consistency: async (args: { content?: string, type?: string, assetPath?: string, brandKit?: Record<string, unknown> }) => {
             try {
-                // If an asset path is provided, use the high-fidelity vision tool
-                if (args.assetPath && window.electronAPI?.brand) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const response = await window.electronAPI.brand.analyzeConsistency(args.assetPath, args.brandKit || {}) as any;
-                    if (response.success) {
-                        return { success: true, data: { analysis: response.report } };
+                // Asset path → deterministic compliance engine (Workstream D).
+                // Absorbs the old desktop-only vision bridge; web/desktop parity.
+                if (args.assetPath) {
+                    const { useStore } = await import('@/core/store');
+                    const { userProfile } = useStore.getState();
+                    const brandKit = userProfile?.brandKit;
+                    if (!brandKit) {
+                        return { success: false, error: 'No Brand Kit found. Set up your Brand Kit before running a visual consistency scan.' };
                     }
-                    throw new Error(response.error);
+                    const { scanAsset } = await import('@/services/brand/BrandComplianceService');
+                    const report = await scanAsset(args.assetPath, brandKit);
+                    return { success: true, data: { analysis: report } };
                 }
 
                 // Fallback to text-based analysis
                 const prompt = `Analyze the following ${args.type || 'content'} for brand consistency.
                 Content: ${args.content}
-                
+
                 Evaluate: Tone of Voice, Visual/Descriptive Alignment, and Core Values.
                 Return a Score (0-100) and actionable feedback.`;
                 const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
@@ -74,6 +79,7 @@ export const BrandAgent: AgentConfig = {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
+        scan_brand_compliance: BrandTools.scan_brand_compliance,
         generate_brand_guidelines: async (args: { name: string, values: string[] }) => {
             const prompt = `Generate a comprehensive Brand Bible for "${args.name}".
             Core Values: ${args.values.join(', ')}
@@ -165,7 +171,7 @@ export const BrandAgent: AgentConfig = {
         },
         fetch_brand_kit: McpTools.fetch_brand_kit
     },
-    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'update_brand_color', 'generate_brand_kit', 'list_domain_records', 'fetch_brand_kit'],
+    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'scan_brand_compliance', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'update_brand_color', 'generate_brand_kit', 'list_domain_records', 'fetch_brand_kit'],
     tools: [{
         functionDeclarations: [
             ...brandRetrievalDeclarations,
@@ -193,6 +199,17 @@ export const BrandAgent: AgentConfig = {
                         brandKit: { type: 'OBJECT', description: 'Optional: Specific brand guidelines to use for analysis (colors, fonts, vibe).' }
                     },
                     required: ["content", "type"]
+                }
+            },
+            {
+                name: 'scan_brand_compliance',
+                description: 'Scan a generated or uploaded visual asset against the user\'s Brand Kit (palette colors, fonts, logo/safe-zone, aesthetic identity) and return a structured compliance report with a 0-100 score. Failing assets need an explicit override reason before delivery.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        assetIndex: { type: 'NUMBER', description: 'Index of the asset across the user\'s generated history and uploads.' },
+                        assetId: { type: 'STRING', description: 'Optional: exact history/upload asset id (takes precedence over assetIndex).' }
+                    }
                 }
             },
             {

@@ -47,6 +47,13 @@ You operate under the **indii Conductor** (Agent 0) as a department head. You ma
   - `assetPath`: Optional local path to an image or video asset for high-fidelity vision analysis.
   - `brandKit`: Optional specific brand guidelines to use for analysis (colors, fonts, vibe).
 
+### scan_brand_compliance
+- **Description:** Scan a generated or uploaded visual asset against the user's Brand Kit with the deterministic compliance engine: palette adherence (CIEDE2000 color distance), typography usage, logo presence and safe-zone placement, and aesthetic identity. Returns a structured report with a 0-100 score and per-violation evidence. Use this instead of `analyze_brand_consistency` for IMAGES — it is measured, not vibes.
+- **Parameters:**
+  - `assetIndex`: Index of the asset across generated history and uploads.
+  - `assetId`: Optional exact asset id (takes precedence over the index).
+- **Gate rule:** when the report fails, the asset must NOT be delivered without the user giving an explicit override reason; pass that reason back to the user and record it.
+
 ### generate_brand_guidelines
 - **Description:** Generate structured brand guidelines based on core values.
 - **Parameters:**
