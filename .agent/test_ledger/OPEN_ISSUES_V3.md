@@ -2726,6 +2726,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Summary:** any authed user could create Printful orders with no payment binding. Orders were already drafts by omission (no `confirm` field), so no direct money loss — but nothing prevented it explicitly and accidental confirmation charges indii's account.
 - **Fix shipped:** body pins `confirm: false` with a comment that orders must stay drafts until a paid-checkout binding exists.
 - **Resolved remainder (2026-08-28, founder decision: Stripe Checkout per order):** new `pod_createOrderCheckout` (`packages/firebase/src/pod/checkout.ts`) binds a Stripe Checkout session to a caller-owned Printful DRAFT order, priced server-side from Printful's own cost estimate plus a clamped platform markup (`config/podCheckout.markupPercent`, env fallback, default 25%, ceiling 500%) — never client input; redirects restricted to approved indii.music origins. Webhook `handlePodOrderPaid` (`webhookHandler.ts`, metadata `type: 'pod_order'`) re-verifies the doc binding AND the live Stripe amount before `confirmPrintfulOrder`; confirm failure parks the order in `payment_received_confirm_failed` and throws so Stripe retries. Orders remain drafts unless this exact paid path completes. Renderer callables are reached through the generic `pod_{name}` wrapper; UI checkout redirect wiring is a follow-up. Printful API helpers extracted to onCall-free `pod/printfulApi.ts`. Tests: `pod/checkout.test.ts` 6/6, `stripe/webhookHandler.pod.test.ts` 6/6.
+- **UI slice landed (2026-08-28, commit `6e6bcd347`) — follow-up complete, POD loop closed end-to-end:** `PrintfulProvider.createOrderCheckout` binds Stripe Checkout to the draft via `pod_createOrderCheckout`; `ManufacturingPanel` redirects with success/cancel return URLs and reads real order state on return (Printful order status is the confirmation authority — the URL param never is). The false "POD Order Created!"/delivery toasts are replaced with honest "Draft saved — payment required" copy; checkout failure leaves the draft saved-and-unpaid with no success claim. Tests: ManufacturingPanel 6/6 (honest-copy, failed-binding, cancelled-return), merchandise+pod suites 97/97.
 
 ### ISSUE-1408: processWebhookQueue is claim-less — overlapping runs double-deliver
 
@@ -2744,7 +2745,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1410: Subscription webhook out-of-order regression window
 
-- **Status:** 🔴 OPEN (backlog)
+- **Status:** ✅ FIXED (2026-08-28, commit `1172ce430`) — `handleInvoicePaid` now derives status/period bounds/`cancelAtPeriodEnd` from the LIVE Stripe subscription object (retrieved via the invoice's `subscription` id) instead of hardcoding `'active'`; a late invoice.paid after cancellation can no longer resurrect the subscription. One-time invoices never touch subscription status but still write their ledger entry. Tests: `webhookHandler.invoice-paid.test.ts` 4/4 (canceled not resurrected, unpaid mapping, active no-regression, one-time guard).
 - **Severity:** 🟡 MEDIUM
 - **Module:** packages/firebase/src/stripe/webhookHandler.ts
 - **Summary:** `handleInvoicePaid` sets `status: 'active'` unconditionally; a late-arriving invoice.paid after a cancellation can resurrect a canceled subscription's status until the next authoritative subscription event. Events are not ordered by Stripe.
@@ -2795,7 +2796,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1415: CI red on main @ 8dab863b3 — Arcjet retry test + Firestore owner-rewrite rules test (soundtrack delivery awaiting green containing c7fbcce39)
 
-- **Status:** 🔴 OPEN — owned by the active Arcjet/security-rules workstream (not the soundtrack session)
+- **Status:** ✅ FIXED (2026-08-28) — run `33196608685` (success, 1h47m, head `dd3d72ed2`, tree contains `8edc335cb`'s Arcjet/rules fixes) passed ALL 20 unit-test shards including the Arcjet retry test and the `rules-tests` job including the owner-rewrite test, plus build, e2e-staging, and production deploy. The original failures do not reproduce on current main.
 - **Module:** `packages/firebase/src/functions/security/arcjet.test.ts`, `packages/firebase/src/test/security/firestore.rules.test.ts`
 - **Evidence (run 33170199615, 2026-08-28T12:13Z, workflow_dispatch on 8dab863b3):**
   1. `unit-tests (4/20)`: `arcjet.test.ts > Arcjet request protection > retries an errored timeout decision and allows the request when the retry succeeds` — AssertionError `expected { allowed: false, status: 503, … } to deeply equal { allowed: true }`; 54/56 files in shard passed.
@@ -2815,3 +2816,12 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Acceptance:** Agent conversation lists real assets, produces a validated plan, and after approval + reservation receives a real stitched URL; every failure mode yields an honest specific message (no fabricated success, ISSUE-950/952 lineage); all tools explicitly registered in ToolRiskRegistry (ISSUE-1404 rule: no phantom entries).
 
 ---
+
+### ISSUE-1417: Phantom ProdigiProvider called pod_prodigi* callables with no backend
+
+- **Status:** ✅ FIXED (2026-08-28, commit `f5116c6ff`)
+- **Severity:** 🟡 MEDIUM (runtime failure if selected; a naive future backend would have shipped with no payment gate — the exact hole ISSUE-1407 closed for Printful)
+- **Module:** packages/renderer/src/services/pod/PrintOnDemandService.ts
+- **Evidence:** `ProdigiProvider` (line ~674 pre-removal) called `pod_prodigiCreateOrder`/`prodigiGetOrder`/etc.; `grep -rn prodigi packages/firebase/src` finds no Prodigi backend — every call would fail at runtime, and ManufacturingPanel could route orders to it programmatically.
+- **Fix:** class + registration removed; `getProvider('prodigi')` fails loudly ("not registered or configured"). Known remainder (deliberate): `PODIntegrationPanel`/`PODCredentialService` still list Prodigi for API-key storage — inert without a backend; remove or gate together with any future Prodigi build.
+- **Acceptance:** pod suite 35/35 incl. explicit test that 'prodigi' is not offered and getProvider throws.
