@@ -259,6 +259,10 @@ AVAILABLE TOOLS:
 102. canvas_push(type, title, data, agentId?) - Push structured visual content (chart/table/card/markdown) to the user's workspace canvas.
 103. canvas_clear() - Clear all agent-pushed canvas panels.
 104. draw_shape(shapeType, x, y, width?, height?, radius?, color?, fill?, stroke?, zIndex?, label?) - Draw deterministic UI vector shapes (rect, circle, line, text). NOT for Autonomous media generation.
+104b. canvas_open_image(imageIndex) - Open a gallery image into the non-destructive layer editor, returns docId.
+104c. canvas_add_layer(docId, imageIndex) - Add a raster layer from a gallery item to the open doc.
+104d. canvas_set_adjustments(docId, layerId, adjustments) - Merge an adjustment patch (brightness/contrast/saturation/hue/temperature/exposure/blur/vignette) over the neutral stack.
+104e. canvas_export(docId?, format?, scale?) - Export the open layer doc as a raster PNG/JPEG history item + URL.
 --- NOTIFICATIONS ---
 105. send_notification(title, body, urgency?, action_url?) - Send a notification (info/warning/critical) to the user outside the app.
 106. propose_plan(draft: object) - Propose a structured living plan for a career goal or release.

@@ -5,6 +5,7 @@ import {
     mergeAdjustments,
     adjustmentsToFilters,
     vignetteMatrix,
+    applyTransformPatch,
     type RasterLayer
 } from '../CanvasDoc';
 
@@ -82,5 +83,29 @@ describe('vignetteMatrix', () => {
         const strong = vignetteMatrix(1);
         expect(weak).toHaveLength(9);
         expect(strong.every(v => v <= weak[0]!)).toBe(true);
+    });
+});
+
+describe('applyTransformPatch (C2.2 — Fabric object:modified sync)', () => {
+    it('applies a transform patch immutably', () => {
+        const layer = createDocFromImage('a.png', 'p').layers[0] as RasterLayer;
+        const prev = layer;
+        const next = applyTransformPatch(layer, { x: 10, y: 20, scaleX: 1.5, rotation: 45 });
+        expect(next).not.toBe(prev);
+        expect(next.x).toBe(10);
+        expect(next.y).toBe(20);
+        expect(next.scaleX).toBe(1.5);
+        expect(next.rotation).toBe(45);
+        expect(prev.x).toBe(0); // untouched
+    });
+
+    it('is idempotent — repeated identical transforms do not drift', () => {
+        const base = createDocFromImage('a.png', 'p').layers[0] as RasterLayer;
+        const patch = { x: 12, y: -8, scaleX: 2, scaleY: 2, rotation: 90 };
+        const once = applyTransformPatch(base, patch);
+        const twice = applyTransformPatch(once, patch);
+        expect(twice).toEqual(once);
+        expect(twice.x).toBe(12);
+        expect(twice.rotation).toBe(90);
     });
 });

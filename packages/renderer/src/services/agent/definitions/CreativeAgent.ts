@@ -1,6 +1,7 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { DirectorTools } from '../tools/DirectorTools';
+import { CanvasTools } from '../tools/CanvasTools';
 import systemPrompt from '@agents/creative/prompt.md?raw';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
 import { McpTools } from '../tools/McpTools';
@@ -64,6 +65,10 @@ export const CreativeAgent: AgentConfig = {
             audit_asset_resolutions: McpTools.audit_asset_resolutions,
             fuse_likeness: DirectorTools.fuse_likeness,
             render_typography: DirectorTools.render_typography,
+            canvas_open_image: CanvasTools.canvas_open_image,
+            canvas_add_layer: CanvasTools.canvas_add_layer,
+            canvas_set_adjustments: CanvasTools.canvas_set_adjustments,
+            canvas_export: CanvasTools.canvas_export,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: [
@@ -85,7 +90,11 @@ export const CreativeAgent: AgentConfig = {
         'queue_release_canvas_render',
         'audit_asset_resolutions',
         'fuse_likeness',
-        'render_typography'
+        'render_typography',
+        'canvas_open_image',
+        'canvas_add_layer',
+        'canvas_set_adjustments',
+        'canvas_export'
     ],
     tools: [{
         functionDeclarations: [

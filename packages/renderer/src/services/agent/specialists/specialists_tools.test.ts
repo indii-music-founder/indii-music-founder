@@ -18,6 +18,8 @@ describe('Specialist Agent Tools', () => {
         expect(decls.some((f) => f.name === 'export_platform_assets')).toBe(true);
         expect(decls.some((f) => f.name === 'mockup_merchandise')).toBe(true);
         expect(decls.some((f) => f.name === 'animate_still')).toBe(true);
+        expect(decls.some((f) => f.name === 'canvas_open_image')).toBe(true);
+        expect(decls.some((f) => f.name === 'canvas_export')).toBe(true);
     });
 
     it('BrandAgent should have verify_output tool', async () => {

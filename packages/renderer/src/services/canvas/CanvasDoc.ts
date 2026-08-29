@@ -188,6 +188,17 @@ export function adjustmentsToFilters(a: AdjustmentStack): FabricFilterDescriptor
     return filters;
 }
 
+/**
+ * Transform patch from a Fabric `object:modified` event → layer fields.
+ * Pure + immutable (C2.2): applying the same transform twice yields the same
+ * result (no drift), so the doc stays the single source of truth.
+ */
+export function applyTransformPatch<
+    L extends BaseLayer
+>(layer: L, patch: Partial<Pick<BaseLayer, 'x' | 'y' | 'scaleX' | 'scaleY' | 'rotation'>>): L {
+    return { ...layer, x: patch.x ?? layer.x, y: patch.y ?? layer.y, scaleX: patch.scaleX ?? layer.scaleX, scaleY: patch.scaleY ?? layer.scaleY, rotation: patch.rotation ?? layer.rotation };
+}
+
 /** 3x3 Convolute kernel that darkens the frame edges proportionally to strength. */
 export function vignetteMatrix(strength: number): number[] {
     const s = Math.max(0, Math.min(1, strength));

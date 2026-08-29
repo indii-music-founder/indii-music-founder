@@ -937,6 +937,22 @@
             "render_typography"
           ]
         },
+        "canvas_open_image": {
+          "description": "Open a gallery image into the non-destructive layer editor (returns docId).",
+          "trigger_labels": ["canvas_open_image"]
+        },
+        "canvas_add_layer": {
+          "description": "Add a raster layer from a gallery item to the open layer doc.",
+          "trigger_labels": ["canvas_add_layer"]
+        },
+        "canvas_set_adjustments": {
+          "description": "Merge a non-destructive adjustment patch over the neutral stack for a raster layer.",
+          "trigger_labels": ["canvas_set_adjustments"]
+        },
+        "canvas_export": {
+          "description": "Export the open layer doc as a raster PNG/JPEG history item + URL.",
+          "trigger_labels": ["canvas_export"]
+        },
         "analyze_audio": {
           "description": "Perform 'Audio-to-Visual' analysis to extract BPM, key, mood, and energy from a track to guide artistic direction.",
           "trigger_labels": [

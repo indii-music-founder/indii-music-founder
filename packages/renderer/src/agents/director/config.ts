@@ -33,9 +33,13 @@ export const DirectorAgent: AgentConfig = {
             mockup_merchandise: CommerceTools.mockup_merchandise,
             export_platform_assets: MediaTools.export_platform_assets,
             animate_still: VideoTools.animate_still,
+            canvas_open_image: CanvasTools.canvas_open_image,
+            canvas_add_layer: CanvasTools.canvas_add_layer,
+            canvas_set_adjustments: CanvasTools.canvas_set_adjustments,
+            canvas_export: CanvasTools.canvas_export,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['generate_image', 'batch_edit_images', 'generate_video', 'batch_edit_videos', 'run_showroom_mockup', 'generate_high_res_asset', 'set_entity_anchor', 'generate_visual_script', 'render_cinematic_grid', 'extract_grid_frame', 'interpolate_sequence', 'analyze_audio', 'canvas_push', 'mockup_merchandise', 'export_platform_assets', 'animate_still'],
+    authorizedTools: ['generate_image', 'batch_edit_images', 'generate_video', 'batch_edit_videos', 'run_showroom_mockup', 'generate_high_res_asset', 'set_entity_anchor', 'generate_visual_script', 'render_cinematic_grid', 'extract_grid_frame', 'interpolate_sequence', 'analyze_audio', 'canvas_push', 'mockup_merchandise', 'export_platform_assets', 'animate_still', 'canvas_open_image', 'canvas_add_layer', 'canvas_set_adjustments', 'canvas_export'],
     tools: [{
         functionDeclarations: [
             {
@@ -241,6 +245,26 @@ export const DirectorAgent: AgentConfig = {
                     },
                     required: ["imageUrl"]
                 }
+            },
+            {
+                name: "canvas_open_image",
+                description: "Open a gallery image into the non-destructive layer editor.",
+                parameters: { type: "OBJECT", properties: { imageIndex: { type: "NUMBER", description: "Index of the gallery image." } }, required: ["imageIndex"] }
+            },
+            {
+                name: "canvas_add_layer",
+                description: "Add a raster layer from a gallery item to the open layer doc.",
+                parameters: { type: "OBJECT", properties: { docId: { type: "STRING" }, imageIndex: { type: "NUMBER" } }, required: ["docId", "imageIndex"] }
+            },
+            {
+                name: "canvas_set_adjustments",
+                description: "Merge a non-destructive adjustment patch over the neutral stack for a raster layer.",
+                parameters: { type: "OBJECT", properties: { docId: { type: "STRING" }, layerId: { type: "STRING" }, adjustments: { type: "OBJECT" } }, required: ["docId", "layerId", "adjustments"] }
+            },
+            {
+                name: "canvas_export",
+                description: "Export the open layer doc as a raster PNG/JPEG history item + URL.",
+                parameters: { type: "OBJECT", properties: { docId: { type: "STRING" }, format: { type: "STRING", enum: ['png','jpeg'] }, scale: { type: "NUMBER" } }, required: [] }
             }
         ]
     }]

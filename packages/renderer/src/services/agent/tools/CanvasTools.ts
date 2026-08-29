@@ -234,4 +234,107 @@ export const CanvasTools = {
             return toolError(`Failed to draw shape: ${String(error)}`, 'CANVAS_DRAW_ERROR');
         }
     }),
+    /**
+     * Open a gallery image into the non-destructive canvas layer editor
+     * (Workstream C2). Returns the docId.
+     */
+    canvas_open_image: wrapTool('canvas_open_image', async (args: { imageIndex: number }) => {
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const store = useStore.getState();
+        const { generatedHistory, uploadedImages, currentProjectId } = store;
+        const target = generatedHistory?.[args.imageIndex] ?? uploadedImages?.[args.imageIndex];
+        if (!target?.url) return toolError('imageIndex did not resolve to an image.', 'INVALID_INPUT');
+        try {
+            store.openImage(target.url, currentProjectId ?? 'project_default');
+            const docId = store.currentDoc?.id ?? null;
+            return toolSuccess({ docId }, `Opened image ${args.imageIndex} into the layer editor (${docId}).`);
+        } catch (error) {
+            logger.error('[CanvasTools] canvas_open_image error:', error);
+            return toolError(error instanceof Error ? error.message : String(error), 'CANVAS_OPEN_ERROR');
+        }
+    }),
+
+    /**
+     * Add a raster layer from a gallery/upload index to the open doc.
+     */
+    canvas_add_layer: wrapTool('canvas_add_layer', async (args: { docId: string; imageIndex: number }) => {
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const store = useStore.getState();
+        if (!store.currentDoc || store.currentDoc.id !== args.docId) {
+            return toolError(`No open doc "${args.docId}". Open an image first.`, 'INVALID_INPUT');
+        }
+        const target = store.generatedHistory?.[args.imageIndex] ?? store.uploadedImages?.[args.imageIndex];
+        if (!target?.url) return toolError('imageIndex did not resolve to an image.', 'INVALID_INPUT');
+        const layerId = store.addRasterLayer(target.url);
+        return toolSuccess({ layerId }, `Added raster layer "${layerId}" to doc ${args.docId}.`);
+    }),
+
+    /**
+     * Merge an adjustment patch over the neutral stack for a raster layer.
+     */
+    canvas_set_adjustments: wrapTool('canvas_set_adjustments', async (args: { docId: string; layerId: string; adjustments: Record<string, number> }) => {
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const store = useStore.getState();
+        if (!store.currentDoc || store.currentDoc.id !== args.docId) {
+            return toolError(`No open doc "${args.docId}".`, 'INVALID_INPUT');
+        }
+        try {
+            store.setAdjustments(args.layerId, args.adjustments);
+            return toolSuccess({ layerId: args.layerId, adjustments: args.adjustments }, `Set adjustments on layer ${args.layerId}.`);
+        } catch (error) {
+            return toolError(error instanceof Error ? error.message : String(error), 'CANVAS_ADJUST_ERROR');
+        }
+    }),
+
+    /**
+     * Export the open doc as a raster asset → history item + result URL.
+     */
+    canvas_export: wrapTool('canvas_export', async (args: { docId?: string; format?: 'png' | 'jpeg'; scale?: number }) => {
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const store = useStore.getState();
+        if (!store.currentDoc) return toolError('No open doc to export. Open an image first.', 'INVALID_INPUT');
+        const doc = store.currentDoc;
+        if (args.docId && args.docId !== doc.id) return toolError(`Doc "${args.docId}" is not open.`, 'INVALID_INPUT');
+        try {
+            // Deterministic export: composite the layers' raster source over the
+            // background at doc resolution. The Fabric canvas applies per-layer
+            // adjustment filters; here we emit the doc contract URL as a PNG
+            // data URL for the tool result (the interactive Editor performs the
+            // full filter bake). Format honored for the history record.
+            const scale = args.scale ?? 1;
+            const width = Math.round(doc.width * scale);
+            const height = Math.round(doc.height * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('No 2D context');
+            ctx.fillStyle = doc.background || '#000000';
+            ctx.fillRect(0, 0, width, height);
+            for (const layer of [...doc.layers].reverse()) {
+                if (!layer.visible || layer.kind !== 'raster') continue; // text-vector bake is C3
+                const img = new Image();
+                img.src = layer.src;
+                await img.decode().catch(() => {});
+                if (img.width > 0) {
+                    const s = Math.max(width / img.width, height / img.height);
+                    const dw = img.width * s, dh = img.height * s;
+                    ctx.drawImage(img, (width - dw) / 2, (height - dh) / 2, dw, dh);
+                }
+            }
+            const mime = args.format === 'jpeg' ? 'image/jpeg' : 'image/png';
+            const url = canvas.toDataURL(mime);
+            const historyId = `canvas_export_${Date.now()}`;
+            store.addToHistory?.({
+                id: historyId, url, prompt: 'Layer editor export', type: 'image',
+                timestamp: Date.now(), projectId: doc.projectId,
+                meta: JSON.stringify({ source: 'canvas_export', docId: doc.id }),
+                tags: ['canvas_export'], origin: 'canvas-export'
+            });
+            return toolSuccess({ url, width, height }, `Exported layer doc ${doc.id} as ${args.format ?? 'png'} (${width}×${height}).`);
+        } catch (error) {
+            logger.error('[CanvasTools] canvas_export error:', error);
+            return toolError(error instanceof Error ? error.message : String(error), 'CANVAS_EXPORT_ERROR');
+        }
+    })
 } satisfies Record<string, AnyToolFunction>;

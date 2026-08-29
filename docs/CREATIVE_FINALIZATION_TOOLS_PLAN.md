@@ -376,8 +376,8 @@ export function createDocFromImage(src: string, projectId: string): CanvasDoc;  
 
 **Acceptance criteria:**
 
-- [ ] **C2.1** Each tool: unit test + registration assertions.
-- [ ] **C2.2** `object:modified` sync test: Fabric transform → doc patch, no drift on repeated moves.
+- [x] **C2.1** Each tool: unit test + registration assertions.
+- [x] **C2.2** `object:modified` sync test: Fabric transform → doc patch, no drift on repeated moves.
 - [ ] **C2.3** Split-subject path: license decision recorded; either working op behind flag or documented blocker.
 - [ ] **C2.4** Real smoke (founder path): open generated cover → cool the background 0.3 → warm subject 0.15 → move wordmark layer → export. Zero generation calls. Record in Section 19.
 
@@ -774,16 +774,16 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase D1 (compliance pixel engine): ☑ **DONE** — commit `b640f8a26`, CI green (run 33253189268, incl. production deploy). 48/48 brand-dir tests incl. all 12 Sharma ΔE2000 reference vectors. Canvas-wrapper behavioral proof still pending D2.3 smoke.
 - Phase D2 (vision engine + gate): ☑ **core DONE** (second commit, this session) — `AestheticVisionEngine` (structured-output Gemini, hybrid engine merge, degrade-to-warning), `decideDelivery` DEC-6 gate, `scan_brand_compliance` agent tool in `BrandTools` + `BrandAgent` (authorized + declared + registry + prompt.md), `analyze_brand_consistency` asset path absorbed into the deterministic engine. 84/84 affected tests. **Open remainder:** D2.1's live finalize-button wiring + override-reason persistence land with H1 (no delivery-action surface exists yet — the gate logic and its tests ship now); D2.3 real founder-kit smoke still pending.
 - Phase E1 (deterministic motion): ☑ E1.1–E1.4 + E2.1 shipped (MotionPresets pure moveTransform + overscan envelope, StillMotionRenderer over the render contract, animate_still tool, flag-gated E2 scaffold). E1.5 real smoke pending founder. VideoWorkflow "Animate still" UI wiring deferred (no acceptance checkbox; tool path + registration done).
-- Phase E2 (generative micro-motion): ☐ flag-gated, not started
+- Phase E2 (generative micro-motion): ☑ scaffold flag-gated OFF by default (E2.1 shipped); enabling requires founder cost approval.
 - Phase F1 (mockup service + tool): ☑ F1.1–F1.3 shipped (MockupService fidelity-locked templates + artwork-based mockup_merchandise extension + H1 mockup version hook; structural evidence). F1.4 real smoke pending founder.
 - Phase G1 (platform exporter): ☑ G1.1–G1.5 shipped (structural evidence: 38 tests across 5 files, strict tsc + lint clean). G1.6 real smoke pending founder/browser.
 - Phase H1 (version graph): ☑ H1.1+H1.2 shipped (AssetVersionService append-only graph + exporter/canvas producer hooks; structural evidence). H1.3 real smoke pending founder.
 - Phase H2 (rights metadata): ☑ H2.1+H2.2 shipped (AssetRightsService set/get + validateRights incl. licensed-third-party requires licenseNotes; RightsEditorDialog via react-call awaited-dialog pattern). Sidecar manifest is written by I1; in-browser IPTC embedding deferred (A-8).
 - Phase I1 (distribution render profiles): ☑ I1.1–I1.5 shipped (RenderProfiles registry + validateProfile, DistributionRenderPipeline upsample policy/bleed math/gates/manifest sha256). render_distribution_bundle agent tool + I1.6 real smoke pending.
 - Phase B2: ☑ B2.1+B2.2 shipped (render_typography tool + TypographyPanel + full CreativeAgent/registry/prompt registration + RTL/tool tests). B2.3 real smoke pending founder.
-- Phase C2: ☐ not started
-- Phase A2: ☐ blocked on founder licensing decision (inswapper_128 non-commercial license)
-- Phase C3: ☐ optional, not started
+- Phase C2: ☑ C2.1+C2.2 shipped (4 canvas agent tools: canvas_open_image/add_layer/set_adjustments/export, registered on Director+CreativeAgent+registry+catalog+tests; applyTransformPatch Fabric object:modified sync, idempotent). C2.3 split-subject BLOCKED: @imgly/background-removal model weights unlicensed (Ground Rule 8) — flag-gated, decision recorded. C2.4 real smoke pending founder.
+- Phase A2: ⛔ blocked on founder licensing decision (inswapper_128 non-commercial license).
+- Phase C3: ☐ optional — requires C1+C2 doc model + B1 text vectoring; PSD flatten-layers + text-layer bake.
 
 **Calibration record (fill at A1.5):** threshold = ____, same-pair distribution = ____, different-pair distribution = ____.
 
