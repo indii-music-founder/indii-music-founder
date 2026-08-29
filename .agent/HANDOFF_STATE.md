@@ -1,3 +1,25 @@
+# Session Update — E1 deterministic motion + Creative Director agent registration (2026-08-29, DSH agent, goal round 4)
+
+**`8725e3ea8` on `origin/main`, CI run 33266440643 SUCCESS incl. production deploy** (E1 `b4c0a0797` was superseded/canceled by this push; the successor SHA is the green evidence).
+
+- E1 shipped: `MotionPresets` (pure moveTransform, cubic in-out, overscan
+  envelope 1.08x), `StillMotionRenderer` (single-clip project over the shared
+  LocalVideoProjectRenderer contract, 1080x1920/1920x1080/1080x1350),
+  `animate_still` tool (deterministic, no tokens, motion_clip + H1 version),
+  E2 gen-motion scaffold flag-gated off.
+- **Registration-gap fix:** the built tools (G1 export_platform_assets, F1
+  mockup_merchandise artwork path, E1 animate_still) were ONLY in the
+  BASE_TOOLS catalog — NOT on the Creative Director agent's runtime surfaces
+  (functions getter / authorizedTools / functionDeclarations / prompt.md) or
+  capability_registry.json, so the app reported them missing. Now registered on
+  all surfaces; specialists_tools asserts their exposure.
+- Evidence: 198 specialist + definitions tests green; capabilityTruth clean;
+  tsc + lint clean; pre-commit gates green.
+- Still genuinely unbuilt: A1 (likeness fusion), B1/B2 (typography), C1/C2
+  (canvas layer editor), I1 (distribution profiles), H2 (rights UI), E2 gen.
+  A2 blocked on founder license decision. Real smokes (E1.5/F1.4/G1.6/H1.3/
+  D2.3) pending founder.
+
 # Session Update — F1 artwork-faithful mockups shipped (2026-08-29, DSH agent, goal round 3)
 
 **`09956b8ee` on `origin/main`, CI run 33263072986 SUCCESS incl. production deploy** (one retry of the deploy job: GCP Cloud Run returned a transient INTERNAL while building the deterministic media worker; unrelated to the diff — renderer-only — and cleared on rerun at the same SHA).
