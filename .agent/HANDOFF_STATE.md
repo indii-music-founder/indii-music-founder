@@ -1,3 +1,18 @@
+# Session Update — F1 artwork-faithful mockups shipped (2026-08-29, DSH agent, goal round 3)
+
+**`09956b8ee` on `origin/main`, CI run 33263072986 SUCCESS incl. production deploy** (one retry of the deploy job: GCP Cloud Run returned a transient INTERNAL while building the deterministic media worker; unrelated to the diff — renderer-only — and cleared on rerun at the same SHA).
+
+- `services/mockup/MockupService.ts`: seven fidelity-locked template kinds;
+  every template carries the artwork-fidelity clause verbatim (test-locked);
+  artwork crosses as a sourceImages reference; scene staging + per-kind aspect
+  map; model via APPROVED_MODELS.
+- `mockup_merchandise` tool extended (not duplicated): artworkUrl routes
+  through MockupService; history item (meta 'mockup') + H1 mockup version
+  record (fail-open). Legacy designIdea path untouched.
+- Evidence: 13 new tests + 189 passing across tools/commerce suites; strict
+  tsc + lint clean; pre-commit gates green. F1.4 real fidelity smoke pending
+  founder. Plan checkboxes updated.
+
 # Session Update — H1 asset version graph shipped (2026-08-29, DSH agent, goal round 2)
 
 **`3f4cf68aa` on `origin/main`, CI run 33261685863 SUCCESS incl. production deploy.**
