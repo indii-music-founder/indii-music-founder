@@ -13,6 +13,7 @@ import { AuthSlice, createAuthSlice } from './slices/authSlice';
 import { FinanceSlice, createFinanceSlice } from './slices/financeSlice';
 import { DistributionSlice, createDistributionSlice } from './slices/distributionSlice';
 import { FileSystemSlice, createFileSystemSlice } from './slices/fileSystemSlice';
+import { createCanvasEditorSlice, CanvasEditorSlice } from './slices/creative/canvasEditorSlice';
 import { AudioIntelligenceSlice, createAudioIntelligenceSlice } from './slices/audioIntelligenceSlice';
 import { SubscriptionSlice, createSubscriptionSlice } from './slices/subscriptionSlice';
 import { SidecarSlice, createSidecarSlice } from './slices/sidecarSlice';
@@ -59,6 +60,7 @@ export interface StoreState extends
     FinanceSlice,
     DistributionSlice,
     FileSystemSlice,
+    CanvasEditorSlice,
     AudioIntelligenceSlice,
     SubscriptionSlice,
     SidecarSlice,
@@ -135,6 +137,7 @@ export const useStore = create<StoreState>()(
                 ...createFinanceSlice(...a),
                 ...createDistributionSlice(...a),
                 ...createFileSystemSlice(...a),
+                ...createCanvasEditorSlice(...a),
                 ...createAudioIntelligenceSlice(...a),
                 ...createSubscriptionSlice(...a),
                 ...createSidecarSlice(...a),
