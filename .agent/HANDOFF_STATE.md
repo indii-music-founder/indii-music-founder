@@ -1,6 +1,73 @@
+# Session Close — Creative Finalization Tools: plan + Workstream D shipped (2026-08-28, DSH agent)
+
+**Final state: plan doc + Phase D1 and D2 on `origin/main`, CI green at `b640f8a26` (run 33253189268) and `fd2b48560` (run 33254595962), both incl. production deploy.**
+
+## What happened
+
+1. **Plan:** `docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md` — living plan for NINE
+   creative finalization tools (Workstreams A–I) after a substrate audit
+   (CanvasBatchService, Veo firstFrame, merch catalog, ImageAnalysisService,
+   CanonicalCoverArtService provenance all partially exist — build on, don't
+   rebuild). Locked decisions DEC-1..6, per-phase acceptance criteria, ground
+   rules §4 for executing agents. Sequencing: A1 → D1 → G1 → F1 → E1 → B1 →
+   C1 → D2 → B2 → C2 → H1 → I1.
+2. **D1 shipped** (`b640f8a26`): `services/brand/ColorExtraction.ts` (median-cut
+   quantization, sRGB→Lab, CIEDE2000 validated against all 12 Sharma reference
+   pairs) + `BrandComplianceService.ts` (`scanAsset` → structured report; color
+   rule, honest typography-unverifiable warning, logo/safe-zone via injectable
+   vision probe).
+3. **D2 shipped** (`fd2b48560`): `AestheticVisionEngine.ts` (structured-output
+   Gemini, hybrid merge, degrade-to-warning), `decideDelivery` DEC-6 gate
+   (fail ⇒ ship only with non-empty override reason), `scan_brand_compliance`
+   agent tool (BrandTools + BrandAgent authorizedTools/declarations +
+   capability_registry.json + agents/brand/prompt.md),
+   `analyze_brand_consistency` asset path absorbed into the deterministic
+   engine (desktop-only vision bridge removed; web/desktop parity).
+
+## Evidence
+
+84/84 tests across 8 affected files (36 new); repo typecheck + lint clean;
+both SHAs exact-CI green incl. production deploy. Structural only — real-path
+proof (D2.3 founder-kit smoke) still pending.
+
+## Still pending (next agent starts here)
+
+- **Next unit (§15):** G1 — extend `CanvasBatchService.PLATFORM_DIMENSIONS`
+  (Spotify 3000×3000, X, FB, YT banner) + `SmartCrop` face-anchored crop +
+  `AssetExporter` zip bundle.
+- **D2 open items:** live finalize-button wiring + override-reason persistence
+  (deferred to H1 — no delivery-action surface exists yet); D2.3 real smoke with
+  the founder's actual Brand Kit (one on-brand + one off-brand asset), record
+  results in plan §19.
+- **Blocked on founder:** A2 (inswapper_128 non-commercial license decision).
+
+## Notes
+
+- Concurrent sessions landed `5511f8de1` (origin) and this same-day video-editor
+  update below during my run; my `fd2b48560` fast-forwarded cleanly on top —
+  no rewrites, no foreign files in my commits.
+- Foreign dirty worktree files (`.agent/observations/…agent-watch.md`,
+  `videos/`) are NOT mine — untouched. This handoff entry is intentionally
+  left uncommitted (doc-only).
+
+---
+
 # Session Close — Agent chat 413 payload guard fix (2026-08-28, DSH agent)
 
 **Final state: both fixes on `origin/main`, CI green at `dd3d72ed2` (run 33196608685, incl. production deploy).**
+
+> **Late-session update (same day, DSH agent):** third shipped fix — Studio
+> Video Editor "black preview" was a 2x3px player box (`3523cfbe3`, CI green
+> 33219659621, production deployed). `37628bddc`'s DOM-ownership wrapper lost
+> the width contract (max-* constrains, never provides width). Container now
+> `block w-full`; regression-locked by `e2e/video-preview-display.spec.ts` +
+> unit contract test; fixture `public/e2e/sample-clip.mp4` (16KB, ships by
+> design for the spec's real-decode assertion). Self-review closed a
+> mode-revert false alarm (single late persist-rehydration, not a product bug).
+> Known follow-ups: canvas image-editor + memory-ingestion size limits and the
+> other generateContentStream callers (onboarding audio, browser-agent
+> screenshots) not audited/compressed to this standard; `TokenEstimator` still
+> flat-258 per image. Detail: ERROR_LEDGER 2026-08-27 + 2026-08-28.
 
 ## What happened (founder report → investigation → two shipped fixes)
 

@@ -73,7 +73,11 @@ test('video editor preview mounts a real, full-size player for a decoded clip', 
     expect(box!.height).toBeGreaterThan(100);
 
     // And the clip must actually decode (real mp4 served by the dev server).
-    await page.waitForTimeout(2500);
+    // Poll readyState instead of a fixed sleep — slow runners must not flake.
+    await page.waitForFunction(() => {
+        const el = document.querySelector('[data-testid="video-player"] video, video-js[data-testid="video-player"] video');
+        return (el as HTMLVideoElement | null)?.readyState !== undefined && (el as HTMLVideoElement).readyState >= 2;
+    }, { timeout: 20_000 });
     const video = await player.evaluate((el) => {
         const v = el.tagName === 'VIDEO' ? el : el.querySelector('video');
         return { videoWidth: v?.videoWidth ?? 0, readyState: v?.readyState ?? 0, error: v?.error?.message ?? null };
