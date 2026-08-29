@@ -489,6 +489,94 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
      * NOTE (honest): the identity backend (@vladmandic/human) is not installed;
      * this surfaces the specific "not configured" error until A1.1/A1.6 resolve.
      */
+    /**
+     * Deterministic vector typography (Workstream B2). For wordmarks/logos/brand
+     * text ALWAYS prefer this over asking an image model to draw letters.
+     */
+    render_typography: wrapTool('render_typography', async (args: {
+        text: string;
+        fontId?: string;
+        fontSize?: number;
+        x?: number;
+        y?: number;
+        letterSpacing?: number;
+        fill?: string;
+        align?: 'left' | 'center' | 'right';
+        outputScale?: number;
+    }) => {
+        if (!args.text || !args.text.trim()) return toolError('text is required.', 'INVALID_INPUT');
+        try {
+            const { renderTextPath, rasterizeVectorText } = await importWithRetry(() => import('@/services/typography/TextVectorRenderer'));
+            const { FontLibrary } = await importWithRetry(() => import('@/services/typography/FontLibrary'));
+
+            // Resolve the font: explicit fontId, else any uploaded font, else fail.
+            let fontId = args.fontId;
+            let font: import('opentype.js').Font | null = null;
+            const fonts = await FontLibrary.listFonts();
+            if (!fontId) {
+                fontId = fonts[0]?.id;
+            } else if (!fonts.some(f => f.id === fontId)) {
+                return toolError(`Unknown fontId "${fontId}". Available: ${fonts.map(f => f.id).join(', ') || '(none uploaded)'}.`, 'INVALID_INPUT', { availableFontIds: fonts.map(f => f.id) });
+            }
+            if (!fontId) {
+                return toolError('No font registered. Upload a font in Typography or pass fontId.', 'INVALID_INPUT');
+            }
+            font = await FontLibrary.loadOpenTypeFont(fontId);
+
+            const vector = renderTextPath(args.text, font, {
+                fontSize: args.fontSize ?? 96,
+                x: args.x ?? 0,
+                y: args.y ?? 96,
+                letterSpacing: args.letterSpacing,
+                kerning: true,
+                align: args.align ?? 'left'
+            });
+
+            const raster = await rasterizeVectorText(vector, args.fill ?? '#ffffff', args.outputScale ?? 1);
+
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const store = useStore.getState();
+            const historyId = `typography_${Date.now()}`;
+            store.addToHistory?.({
+                id: historyId,
+                url: raster.dataUrl,
+                prompt: `Typography: ${args.text}`,
+                type: 'image' as const,
+                timestamp: Date.now(),
+                projectId: store.currentProjectId,
+                meta: JSON.stringify({ source: 'typography_layer', fontId, text: args.text }),
+                tags: ['typography_layer', fontId],
+                origin: 'canvas-export'
+            });
+
+            try {
+                const { AssetVersionService } = await importWithRetry(() => import('@/services/assets/AssetVersionService'));
+                await AssetVersionService.recordVersion({
+                    assetId: historyId,
+                    parentVersionId: null,
+                    url: raster.dataUrl,
+                    source: 'typography',
+                    provenance: { note: `Vector wordmark ${args.text} (font ${fontId})` },
+                    tags: ['typography_layer', fontId]
+                });
+            } catch (versionError) {
+                logger.warn('[DirectorTools] Version record failed for typography; result unaffected:', versionError);
+            }
+
+            return toolSuccess({
+                url: raster.dataUrl,
+                width: raster.width,
+                height: raster.height,
+                svgPathD: vector.svgPathD,
+                advanceWidth: vector.advanceWidth,
+                fontId
+            }, `Rendered "${args.text}" as deterministic vector text (font ${fontId}). No image model was used — the letters are exact.`);
+        } catch (err) {
+            logger.error('[DirectorTools] render_typography failed:', err);
+            return toolError(err instanceof Error ? err.message : String(err), 'TYPOGRAPHY_RENDER_FAILED');
+        }
+    }),
+
     fuse_likeness: wrapTool('fuse_likeness', async (args: { targetImageIndex: number; headshotId?: string; maxAttempts?: number }) => {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { generatedHistory, uploadedImages, addToHistory, currentProjectId } = useStore.getState();
@@ -526,7 +614,6 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
 
             if (!result.passedThreshold) {
-                const best = result.attempts[result.attempts.length - 1];
                 return toolError(
                     `Likeness fusion did not reach the identity threshold (${result.similarity.toFixed(3)} < 0.55) after ${result.attempts.length} attempt(s). ` +
                     'The closest result was saved; consider a higher-quality headshot or more attempts.',

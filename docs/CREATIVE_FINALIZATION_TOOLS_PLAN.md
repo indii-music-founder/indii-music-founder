@@ -301,8 +301,8 @@ export interface TypographyLayer {
 
 **Acceptance criteria:**
 
-- [ ] **B2.1** Panel RTL tests: upload mock font → renders controls → produces layer/composite (mirror `CharacterLibrary.test.tsx` store-mocking style).
-- [ ] **B2.2** `render_typography` tool test + registration assertions.
+- [x] **B2.1** Panel RTL tests: upload mock font → renders controls → produces layer/composite (mirror `CharacterLibrary.test.tsx` store-mocking style).
+- [x] **B2.2** `render_typography` tool test + registration assertions.
 - [ ] **B2.3** Real smoke: upload the founder's brand font, render the 'Dii' wordmark over a generated cover, compare against the font's own metrics in a vector app — record result in Section 19.
 
 **Estimated commits:** 2.
@@ -780,7 +780,7 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase H1 (version graph): ☑ H1.1+H1.2 shipped (AssetVersionService append-only graph + exporter/canvas producer hooks; structural evidence). H1.3 real smoke pending founder.
 - Phase H2 (rights metadata): ☐ not started
 - Phase I1 (distribution render profiles): ☐ not started
-- Phase B2: ☐ not started
+- Phase B2: ☑ B2.1+B2.2 shipped (render_typography tool + TypographyPanel + full CreativeAgent/registry/prompt registration + RTL/tool tests). B2.3 real smoke pending founder.
 - Phase C2: ☐ not started
 - Phase A2: ☐ blocked on founder licensing decision (inswapper_128 non-commercial license)
 - Phase C3: ☐ optional, not started

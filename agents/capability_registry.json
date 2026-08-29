@@ -931,6 +931,12 @@
             "fuse_likeness"
           ]
         },
+        "render_typography": {
+          "description": "Render brand text as deterministic vector typography (exact letters, no image model). For wordmarks/logos ALWAYS prefer this over asking the model to draw letters.",
+          "trigger_labels": [
+            "render_typography"
+          ]
+        },
         "analyze_audio": {
           "description": "Perform 'Audio-to-Visual' analysis to extract BPM, key, mood, and energy from a track to guide artistic direction.",
           "trigger_labels": [

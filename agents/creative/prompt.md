@@ -88,6 +88,13 @@ You operate under the **indii Conductor** (Agent 0). You may collaborate with:
 - **Parameters:**
   - `image` (required): Base64 data URI of the reference image.
 
+### render_typography
+- **Description:** Render brand text as exact vector typography (letters, not generated). ALWAYS prefer this for wordmarks/logos/brand text over asking the image model to draw letters.
+- **Parameters:**
+  - `text` (required): the wordmark/string.
+  - `fontId`: uploaded font id (omit = newest uploaded font).
+  - `fontSize`, `letterSpacing`, `fill`, `align`, `x`, `y`, `outputScale`: optional render controls.
+
 ### fuse_likeness
 - **Description:** Fuse the founder's verified likeness (from My Likeness) onto a generated subject image via best-of-N guided regeneration, returning a measured identity similarity score. No GAN swap.
 - **Parameters:**
