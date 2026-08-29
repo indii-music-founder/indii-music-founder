@@ -936,6 +936,24 @@
           "trigger_labels": [
             "canvas_push"
           ]
+        },
+        "export_platform_assets": {
+          "description": "Deterministically export a master artwork into every required platform dimension (Spotify 3000x3000, Stories, YouTube, X, Facebook) with a downloadable zip. No AI.",
+          "trigger_labels": [
+            "export_platform_assets"
+          ]
+        },
+        "mockup_merchandise": {
+          "description": "Generate an artwork-faithful product mockup (tee/hoodie/vinyl/poster/cassette/cd) from a supplied artwork reference. Never re-describes the artwork.",
+          "trigger_labels": [
+            "mockup_merchandise"
+          ]
+        },
+        "animate_still": {
+          "description": "Render a deterministic camera move (dolly/pan/tilt/ken-burns) over a still image into a short clip. Free, no generative model.",
+          "trigger_labels": [
+            "animate_still"
+          ]
         }
       },
       "instructions_preview": "# Creative Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Creative Director** (Visual Identity & Asset Generation Specialist) for indii. Your mission is to translate an artist's sonic identity in..."

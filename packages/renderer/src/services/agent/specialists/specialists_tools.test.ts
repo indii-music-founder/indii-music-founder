@@ -13,6 +13,11 @@ describe('Specialist Agent Tools', () => {
         expect(decls.some((f) => f.name === 'generate_image')).toBe(true);
         expect(decls.some((f) => f.name === 'generate_video')).toBe(true);
         expect(decls.some((f) => f.name === 'batch_edit_images')).toBe(true);
+
+        // Workstream tools (G1/F1/E1) must be exposed to the Creative Director.
+        expect(decls.some((f) => f.name === 'export_platform_assets')).toBe(true);
+        expect(decls.some((f) => f.name === 'mockup_merchandise')).toBe(true);
+        expect(decls.some((f) => f.name === 'animate_still')).toBe(true);
     });
 
     it('BrandAgent should have verify_output tool', async () => {

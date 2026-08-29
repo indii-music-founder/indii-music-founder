@@ -5,6 +5,8 @@ import { NarrativeTools } from '@/services/agent/tools/NarrativeTools';
 import { DirectorTools } from '@/services/agent/tools/DirectorTools';
 import { MusicTools } from '@/services/agent/tools/MusicTools';
 import { CanvasTools } from '@/services/agent/tools/CanvasTools';
+import { CommerceTools } from '@/services/agent/tools/CommerceTools';
+import { MediaTools } from '@/services/agent/tools/MediaTools';
 
 export const DirectorAgent: AgentConfig = {
     id: 'director',
@@ -28,9 +30,12 @@ export const DirectorAgent: AgentConfig = {
             interpolate_sequence: VideoTools.interpolate_sequence,
             analyze_audio: MusicTools.analyze_audio,
             canvas_push: CanvasTools.canvas_push,
+            mockup_merchandise: CommerceTools.mockup_merchandise,
+            export_platform_assets: MediaTools.export_platform_assets,
+            animate_still: VideoTools.animate_still,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['generate_image', 'batch_edit_images', 'generate_video', 'batch_edit_videos', 'run_showroom_mockup', 'generate_high_res_asset', 'set_entity_anchor', 'generate_visual_script', 'render_cinematic_grid', 'extract_grid_frame', 'interpolate_sequence', 'analyze_audio', 'canvas_push'],
+    authorizedTools: ['generate_image', 'batch_edit_images', 'generate_video', 'batch_edit_videos', 'run_showroom_mockup', 'generate_high_res_asset', 'set_entity_anchor', 'generate_visual_script', 'render_cinematic_grid', 'extract_grid_frame', 'interpolate_sequence', 'analyze_audio', 'canvas_push', 'mockup_merchandise', 'export_platform_assets', 'animate_still'],
     tools: [{
         functionDeclarations: [
             {
@@ -191,6 +196,50 @@ export const DirectorAgent: AgentConfig = {
                         agentId: { type: "STRING", description: "Optional agent ID (default 'director')." }
                     },
                     required: ["type", "title", "data"]
+                }
+            },
+            {
+                name: "mockup_merchandise",
+                description: "Generate an artwork-faithful product mockup. With artworkUrl: the artwork is passed as an image reference with a fidelity-locked template (tee/hoodie/vinyl/poster/cassette/cd). Without: text-described preview.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        productType: { type: "STRING", description: "Product: t-shirt, hoodie, vinyl, poster, cassette, cd." },
+                        designIdea: { type: "STRING", description: "Text idea (legacy path; ignored when artworkUrl present)." },
+                        artworkUrl: { type: "STRING", description: "Optional data URI or hosted image of the artwork." },
+                        scene: { type: "STRING", enum: ['studio', 'lifestyle', 'flat'], description: "Staging scene." },
+                        aspectRatio: { type: "STRING", description: "Optional output aspect ratio override." }
+                    },
+                    required: ["productType", "designIdea"]
+                }
+            },
+            {
+                name: "export_platform_assets",
+                description: "Deterministically export a master image into platform dimensions (Spotify 3000x3000, Stories, YouTube, X, Facebook) from the PLATFORM_DIMENSIONS registry. No AI. Returns per-platform assets + downloadable zip.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        masterUrl: { type: "STRING", description: "Data URI or hosted image of the master artwork." },
+                        platforms: { type: "ARRAY", items: { type: "STRING" }, description: "Optional platform ids; defaults to the core matrix." },
+                        fit: { type: "STRING", enum: ['cover', 'contain-blur-pad'], description: "Fit mode; defaults per aspect change." },
+                        download: { type: "BOOLEAN", description: "Whether to bundle a zip (default true)." }
+                    },
+                    required: ["masterUrl"]
+                }
+            },
+            {
+                name: "animate_still",
+                description: "Render a deterministic camera move (dolly/pan/tilt/ken-burns) over a still image. No generative model, no token cost.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        imageUrl: { type: "STRING", description: "Data URI or hosted still image." },
+                        preset: { type: "STRING", enum: ['dolly-in', 'dolly-out', 'pan-left', 'pan-right', 'tilt-up', 'tilt-down', 'ken-burns'], description: "Camera move preset." },
+                        intensity: { type: "NUMBER", description: "0..1 move intensity (default 0.35)." },
+                        durationSec: { type: "NUMBER", description: "Duration in seconds (default 4)." },
+                        resolution: { type: "STRING", enum: ['9:16', '16:9', '4:5'], description: "Output resolution (default 9:16)." }
+                    },
+                    required: ["imageUrl"]
                 }
             }
         ]
