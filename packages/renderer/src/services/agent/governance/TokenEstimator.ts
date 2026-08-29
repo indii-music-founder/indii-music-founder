@@ -52,8 +52,17 @@ export class TokenEstimator {
                         inputTokens += Math.ceil(part.text.length / this.CHARS_PER_TOKEN);
                     }
                     if ('inlineData' in part) {
-                        // Image approximation (Gemini charges ~258 tokens per standard image)
-                        inputTokens += 258;
+                        // Binary payload accounting. Gemini charges ~258 tokens
+                        // intrinsic per image, but a multi-MB base64 payload
+                        // also dominates the request's real cost — a flat 258
+                        // massively UNDER-counts large attachments (unit
+                        // mismatch vs the 200K-char stream guard, see
+                        // ERROR_LEDGER 2026-08-27/28). Estimate binary parts
+                        // from their serialized size, floored at the intrinsic
+                        // image cost. Conservative by design: overestimating
+                        // input only tightens the budget gate.
+                        const partStr = JSON.stringify(part);
+                        inputTokens += Math.max(258, Math.ceil(partStr.length / this.CHARS_PER_TOKEN));
                     }
                     if ('functionCall' in part) {
                         inputTokens += 20;
