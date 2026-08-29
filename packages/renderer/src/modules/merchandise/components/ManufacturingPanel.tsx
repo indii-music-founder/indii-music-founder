@@ -79,6 +79,55 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
         setPodConfigured(isConfigured);
     }, []);
 
+    // ISSUE-1407: return trip from Stripe Checkout. The URL param tells us the
+    // user's checkout outcome, but CONFIRMATION authority is the Printful
+    // order state (the backend flips it only after verified payment). Never
+    // claim production before the order is actually confirmed.
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const outcome = params.get('podCheckout');
+        if (!outcome) return;
+        const orderId = sessionStorage.getItem('podCheckoutOrderId');
+        params.delete('podCheckout');
+        const cleanSearch = params.toString();
+        window.history.replaceState(
+            {},
+            '',
+            `${window.location.pathname}${cleanSearch ? `?${cleanSearch}` : ''}${window.location.hash}`,
+        );
+        if (outcome === 'cancelled') {
+            toast.info('Checkout cancelled — your Printful draft is saved and unpaid.');
+            return;
+        }
+        if (!orderId) {
+            toast.info('Checkout returned, but no pending POD order was found.');
+            return;
+        }
+        sessionStorage.removeItem('podCheckoutOrderId');
+        let mounted = true;
+        (async () => {
+            // Give the paid webhook a moment to confirm the Printful order.
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            if (!mounted) return;
+            try {
+                const order = await PrintOnDemandService.getOrder(orderId, 'printful');
+                if (!mounted) return;
+                const status = (order?.status || '').toLowerCase();
+                if (status === 'confirmed' || status === 'pending' || status === 'inproduction' || status === 'in_production') {
+                    toast.success(`Payment received — Printful order ${orderId} is confirmed and in production.`);
+                } else if (status === 'draft' || status === 'pendingpayment' || status === '') {
+                    toast.info(`Payment processing — order ${orderId} will be confirmed automatically. Check back shortly.`);
+                } else {
+                    toast.info(`Order ${orderId} status: ${status || 'unknown'}.`);
+                }
+            } catch (err) {
+                logger.error('[ManufacturingPanel] Failed to read POD order after checkout:', err);
+                toast.info(`Could not read order ${orderId} — it will be confirmed automatically after payment.`);
+            }
+        })();
+        return () => { mounted = false; };
+    }, [toast]);
+
     // ⚡ Bolt Optimization: Combined duplicate useEffect hooks to prevent double-fetching
     // the catalog and potential race conditions.
     useEffect(() => {
@@ -177,8 +226,26 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                     selectedPODProvider
                 );
 
-                toast.success(`POD Order Created! ID: ${order.id}`);
-                toast.info(`Estimated delivery: ${order.estimatedDelivery || '5-7 business days'}`);
+                // ISSUE-1407/1129 lineage: a Printful order at this point is an
+                // UNPAID DRAFT. Never claim "created/production" here — payment
+                // and backend confirmation are what make it real.
+                toast.info(`Draft saved with Printful (ID: ${order.id}) — payment is required to send it to production.`);
+
+                const returnBase = `${window.location.origin}${window.location.pathname}`;
+                try {
+                    sessionStorage.setItem('podCheckoutOrderId', order.id);
+                    const checkout = await PrintOnDemandService.createOrderCheckout(
+                        order.id,
+                        `${returnBase}?podCheckout=success`,
+                        `${returnBase}?podCheckout=cancelled`,
+                    );
+                    window.location.assign(checkout.checkoutUrl);
+                    return; // navigating away to Stripe Checkout
+                } catch (checkoutError) {
+                    logger.error('[ManufacturingPanel] POD checkout binding failed:', checkoutError);
+                    toast.error('Could not start checkout. Your Printful draft is saved and unpaid — retry from your dashboard.');
+                    return;
+                }
             } else {
                 // Internal Mode - Use existing merchandise service
                 toast.info("Initializing production line...");

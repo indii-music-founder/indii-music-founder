@@ -79,6 +79,14 @@ export interface PrintfulOrderResponse {
 // ============================================================================
 
 export const PODProviderSchema = z.enum(['printful', 'printify', 'gooten', 'prodigi', 'internal']);
+
+/** Result of binding a Stripe Checkout session to a Printful draft (ISSUE-1407). */
+export interface PODCheckoutResult {
+    checkoutUrl: string;
+    sessionId: string;
+    customerCents: number;
+    currency: string;
+}
 export type PODProvider = z.infer<typeof PODProviderSchema>;
 
 export const PODProductSchema = z.object({
@@ -189,6 +197,8 @@ export interface PODProviderAdapter {
 
     // Orders
     createOrder(items: PODOrderItem[], address: PODShippingAddress, shippingMethod?: string): Promise<PODOrder>;
+    /** ISSUE-1407 paid gate: bind a Stripe Checkout session to a Printful DRAFT order. */
+    createOrderCheckout?(orderId: string, successUrl: string, cancelUrl: string): Promise<PODCheckoutResult>;
     getOrder(orderId: string): Promise<PODOrder | null>;
     cancelOrder(orderId: string): Promise<boolean>;
 
@@ -311,6 +321,26 @@ class PrintfulProvider implements PODProviderAdapter {
         } catch {
             return false;
         }
+    }
+
+    /**
+     * ISSUE-1407 paid gate: bind a Stripe Checkout session to a Printful DRAFT
+     * order created by createOrder. The order only reaches production after
+     * the backend webhook verifies payment and confirms it — this method never
+     * confirms anything itself.
+     */
+    async createOrderCheckout(orderId: string, successUrl: string, cancelUrl: string): Promise<PODCheckoutResult> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await this.callFunction<any>('createOrderCheckout', { orderId, successUrl, cancelUrl });
+        if (!result?.checkoutUrl) {
+            throw new Error('Checkout session did not return a URL.');
+        }
+        return {
+            checkoutUrl: String(result.checkoutUrl),
+            sessionId: String(result.sessionId || ''),
+            customerCents: Number(result.customerCents || 0),
+            currency: String(result.currency || 'usd'),
+        };
     }
 
     async generateMockup(productId: string, variantId: string, designUrl: string, printArea = 'front'): Promise<string> {
@@ -745,6 +775,15 @@ class PrintOnDemandServiceClass {
 
     async createOrder(items: PODOrderItem[], address: PODShippingAddress, shippingMethod?: string, provider?: PODProvider): Promise<PODOrder> {
         return this.getProvider(provider).createOrder(items, address, shippingMethod);
+    }
+
+    /** ISSUE-1407 paid gate: bind Stripe Checkout to a Printful draft order. Printful-only. */
+    async createOrderCheckout(orderId: string, successUrl: string, cancelUrl: string, provider?: PODProvider): Promise<PODCheckoutResult> {
+        const adapter = this.getProvider(provider);
+        if (!adapter.createOrderCheckout) {
+            throw new Error(`POD provider ${adapter.name} does not support paid checkout.`);
+        }
+        return adapter.createOrderCheckout(orderId, successUrl, cancelUrl);
     }
 
     async getOrder(orderId: string, provider?: PODProvider): Promise<PODOrder | null> {
