@@ -1,3 +1,25 @@
+# Session Update — A1.6 degraded identity backend shipped (founder-approved) (2026-08-29, DSH agent, goal round 5b)
+
+**`88c6456aa` on `origin/main`, CI run 33274912095 SUCCESS incl. production deploy.**
+
+Founder approved A1.6 (degraded geometry mode). FacePipeline now runs
+@mediapipe FaceLandmarker geometry (embeddingMode 'geometry'), scale-invariant
+geometryFitSimilarity, and the fusion loop scores geometry when no biometric
+embedding exists. Result carries embeddingMode so the UI can never mistake
+geometry-fit for identity. FACE_LANDMARKER_MODEL_PATH must be wired to a
+bundled face_landmarker.task at runtime (specific error until present).
+
+Evidence: 18 identity tests (cosine anchors, scale-invariant geometry,
+degenerate guards, geometry loop reject/retry/best-of-N); tsc + lint clean;
+pre-commit gates green; exact-SHA CI success.
+
+STILL OPEN: A1.1 (@vladmandic/human identity backend, not installed),
+A1.5 (real-pair threshold calibration — needs founder's real likeness + a
+generated image to compare), A1.7 (panel smoke). Honest: geometry mode scores
+geometry-fit, not identity (founder-signed limitation).
+
+A1 completeness so far: A1.2/A1.3/A1.4/A1.6 shipped on origin/main.
+
 # Session Update — A1 likeness fusion (loop + tool) shipped; real identity core blocked (2026-08-29, DSH agent, goal round 5)
 
 **`a7fb1581b` on `origin/main`, CI run 33270155379 SUCCESS incl. production deploy.**
