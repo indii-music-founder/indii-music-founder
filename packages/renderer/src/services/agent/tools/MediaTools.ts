@@ -126,9 +126,16 @@ export const MediaTools = {
             const { useStore } = await importWithRetry(() => import('@/core/store'));
             const store = useStore.getState();
 
+            // H1.2 producer hook: every export-bundle result becomes an
+            // append-only version node (Workstream H, plan §13).
+            const { AssetVersionService } = await importWithRetry(
+                () => import('@/services/assets/AssetVersionService')
+            );
+
             for (const r of results) {
+                const historyId = `export_${r.platformId}_${Date.now()}`;
                 store.addToHistory({
-                    id: `export_${r.platformId}_${Date.now()}`,
+                    id: historyId,
                     url: r.url,
                     prompt: `Platform export: ${r.platformId} (${r.width}x${r.height}, ${r.fit})`,
                     type: 'image',
@@ -138,6 +145,18 @@ export const MediaTools = {
                     tags: ['platform-export', r.platformId],
                     origin: 'canvas-export'
                 });
+                try {
+                    await AssetVersionService.recordVersion({
+                        assetId: historyId,
+                        parentVersionId: null,
+                        url: r.url,
+                        source: 'export-bundle',
+                        provenance: { note: `Platform export ${r.platformId} ${r.width}x${r.height} (${r.fit})` },
+                        tags: ['platform-export', r.platformId]
+                    });
+                } catch (versionError) {
+                    logger.warn('[MediaTools] Version record failed for export; export result is unaffected:', versionError);
+                }
             }
 
             let zipName: string | undefined;

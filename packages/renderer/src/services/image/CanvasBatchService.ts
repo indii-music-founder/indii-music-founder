@@ -87,6 +87,23 @@ export class CanvasBatchService {
                 const userId = import.meta.env.VITE_E2E ? 'e2e_user' : 'batch_user';
                 const result = await CloudStorageService.smartSave(dataUrl, `batch_${target.id}_${Date.now()}`, userId);
                 exportedMap.set(target.id, result.url);
+
+                // H1.2 producer hook: canvas exports become append-only version
+                // nodes (Workstream H, plan §13). Bookkeeping must not fail the
+                // export itself.
+                try {
+                    const { AssetVersionService } = await import('@/services/assets/AssetVersionService');
+                    await AssetVersionService.recordVersion({
+                        assetId: `canvas_${target.id}_${Date.now()}`,
+                        parentVersionId: null,
+                        url: result.url,
+                        source: 'canvas-export',
+                        provenance: { note: `Canvas batch export ${target.id} (${target.width}x${target.height})` },
+                        tags: ['canvas-export', target.id]
+                    });
+                } catch (versionError) {
+                    logger.warn('[CanvasBatch] Version record failed; export result is unaffected:', versionError);
+                }
                 
                 store.updateJobProgress(jobId, Math.round(((i + 1) / targets.length) * 100));
             }

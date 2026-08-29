@@ -626,8 +626,8 @@ export async function setRights(assetId: string, rights: AssetRights): Promise<v
 
 **Acceptance criteria:**
 
-- [ ] **H1.1** record/tree/promote unit tests: append-only (no mutation), promote creates a new head node, orphan parent allowed.
-- [ ] **H1.2** At least two producer hooks (fusion + exporter) covered by tests calling `recordVersion`.
+- [x] **H1.1** record/tree/promote unit tests: append-only (no mutation), promote creates a new head node, orphan parent allowed.
+- [x] **H1.2** At least two producer hooks (fusion + exporter) covered by tests calling `recordVersion`.
 - [ ] **H2.1** Rights validation tests (invalid `usageRights` rejected; `licensed-third-party` requires `licenseNotes`).
 - [ ] **H2.2** Rights editor RTL test using the dialog pattern.
 - [ ] **H1.3** Real smoke: fuse → adjust in canvas → export; version tree shows all three with revert working. Record in Section 19.
@@ -777,7 +777,7 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase E2 (generative micro-motion): ☐ flag-gated, not started
 - Phase F1 (mockup service + tool): ☐ not started
 - Phase G1 (platform exporter): ☑ G1.1–G1.5 shipped (structural evidence: 38 tests across 5 files, strict tsc + lint clean). G1.6 real smoke pending founder/browser.
-- Phase H1 (version graph): ☐ not started
+- Phase H1 (version graph): ☑ H1.1+H1.2 shipped (AssetVersionService append-only graph + exporter/canvas producer hooks; structural evidence). H1.3 real smoke pending founder.
 - Phase H2 (rights metadata): ☐ not started
 - Phase I1 (distribution render profiles): ☐ not started
 - Phase B2: ☐ not started

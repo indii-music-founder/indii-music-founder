@@ -9,6 +9,10 @@ vi.mock('@/services/export/AssetExporter', () => ({
     DEFAULT_CORE_MATRIX_IDS: ['spotify_cover', 'ig_story', 'landscape', 'x_post', 'facebook_og']
 }));
 
+vi.mock('@/services/assets/AssetVersionService', () => ({
+    AssetVersionService: { recordVersion: vi.fn(async (input: unknown) => ({ versionId: 'v_x', createdAt: 1, tags: [], ...(input as object) })) }
+}));
+
 vi.mock('@/core/store', () => {
     const mockStore = {
         addToHistory: vi.fn(),
@@ -19,6 +23,7 @@ vi.mock('@/core/store', () => {
 
 import { MediaTools } from '../MediaTools';
 import { useStore } from '@/core/store';
+import { AssetVersionService } from '@/services/assets/AssetVersionService';
 
 const RESULTS = [
     { platformId: 'spotify_cover', url: 'data:image/png;base64,AAA', width: 3000, height: 3000, bytes: 1234, fit: 'cover' },
@@ -81,6 +86,28 @@ describe('export_platform_assets tool (G1.5)', () => {
             export_platform_assets: (args: { masterUrl: string; download: boolean }) => Promise<unknown>;
         }).export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD', download: false });
         expect(downloadAsZip).not.toHaveBeenCalled();
+    });
+
+    it('records an append-only export-bundle version per asset (H1.2)', async () => {
+        await (MediaTools as unknown as {
+            export_platform_assets: (args: { masterUrl: string; download: boolean }) => Promise<unknown>;
+        }).export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD', download: false });
+
+        expect(AssetVersionService.recordVersion).toHaveBeenCalledTimes(2);
+        expect(AssetVersionService.recordVersion).toHaveBeenCalledWith(expect.objectContaining({
+            parentVersionId: null,
+            source: 'export-bundle',
+            url: 'data:image/png;base64,AAA'
+        }));
+    });
+
+    it('still succeeds when version recording fails (bookkeeping is fail-open)', async () => {
+        (AssetVersionService.recordVersion as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('offline'));
+        const res = await (MediaTools as unknown as {
+            export_platform_assets: (args: { masterUrl: string; download: boolean }) => Promise<{ success: boolean; data: { count: number } }>;
+        }).export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD', download: false });
+        expect(res.success).toBe(true);
+        expect(res.data.count).toBe(2);
     });
 
     it('fails closed on a missing masterUrl', async () => {
