@@ -44,12 +44,12 @@ describe('LoopDetector speak rule', () => {
         expect(result.isLoop).toBe(false);
     });
 
-    it('still detects genuine alternating loops (A→B→A→B)', async () => {
-        detector.recordToolCall('tool_a', { arg: '1' });
-        detector.recordToolCall('tool_b', { arg: '2' });
-        detector.recordToolCall('tool_a', { arg: '1' });
+    it('still detects genuine alternating loops (A→B→A→B) on billable tools', async () => {
+        detector.recordToolCall('generate_image', { prompt: '1' });
+        detector.recordToolCall('generate_video', { prompt: '2', duration: 4 });
+        detector.recordToolCall('generate_image', { prompt: '1' });
 
-        const result = await detector.detectLoop('tool_b', { arg: '2' });
+        const result = await detector.detectLoop('generate_video', { prompt: '2', duration: 4 });
 
         expect(result.isLoop).toBe(true);
         expect(result.reason).toContain('Alternating');
@@ -85,13 +85,13 @@ describe('LoopDetector speak rule', () => {
         // A genuine ABC→ABC repetition in the recorded history IS loop-shaped.
         const looper = new LoopDetector();
         const sequence = [
-            ['tool_a', '0'], ['tool_b', '1'], ['tool_c', '2'],
-            ['tool_a', '0'], ['tool_b', '1'], ['tool_c', '2'],
+            ['generate_image', '0'], ['generate_video', '1'], ['generate_audio', '2'],
+            ['generate_image', '0'], ['generate_video', '1'], ['generate_audio', '2'],
         ];
         for (const [tool, arg] of sequence) {
             looper.recordToolCall(tool, { arg });
         }
-        const result = await looper.detectLoop('tool_next', { arg: 'x' });
+        const result = await looper.detectLoop('generate_video', { arg: '1' });
         expect(result.isLoop).toBe(true);
         expect(result.reason).toContain('Repeating sequence');
     });
@@ -123,6 +123,17 @@ describe('LoopDetector speak rule', () => {
             img.recordToolCall('generate_image', { prompt: `p${i}` });
         }
         const result = await img.detectLoop('generate_image', { prompt: 'p10' });
+        expect(result.isLoop).toBe(false);
+    });
+
+    it('does not flag free-tool repetition — the iteration budget bounds it', async () => {
+        // list_stored_assets is a free read tool; re-listing is legitimate
+        // intent-chaining, not a loop. Only billable tools are loop-killed.
+        const free = new LoopDetector();
+        for (let i = 0; i < 6; i += 1) {
+            free.recordToolCall('list_stored_assets', { source: 'brand_assets' });
+        }
+        const result = await free.detectLoop('list_stored_assets', { source: 'brand_assets' });
         expect(result.isLoop).toBe(false);
     });
 });

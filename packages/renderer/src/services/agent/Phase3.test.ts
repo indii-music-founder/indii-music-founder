@@ -37,12 +37,12 @@ describe('Phase 3: Architectural Improvements', () => {
             expect(result.reason).toContain('consecutively');
         });
 
-        it('should detect alternating patterns (A-B-A-B)', async () => {
-            detector.recordToolCall('tool_a', {});
-            detector.recordToolCall('tool_b', {});
-            detector.recordToolCall('tool_a', {});
+        it('should detect alternating patterns (A-B-A-B) on billable tools', async () => {
+            detector.recordToolCall('generate_image', {});
+            detector.recordToolCall('generate_video', {});
+            detector.recordToolCall('generate_image', {});
 
-            const result = await detector.detectLoop('tool_b', {});
+            const result = await detector.detectLoop('generate_video', {});
             expect(result.isLoop).toBe(true);
             expect(result.reason).toContain('Alternating pattern');
         });

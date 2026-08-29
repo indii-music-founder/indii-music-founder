@@ -64,7 +64,7 @@ export class LoopDetector {
     async detectLoop(name: string, args: Record<string, unknown>): Promise<LoopDetectionResult> {
         const argsStr = JSON.stringify(args);
 
-        // Checks 1 and 3 protect against BILLABLE spend loops. Free tools
+        // Checks 1–4 protect against BILLABLE spend loops. Free tools
         // (search, reads, document ops) legitimately repeat — an agent
         // re-reading the same file or querying several times in a row is
         // normal intent-chaining, not a loop; the agent's iteration budget
@@ -88,8 +88,8 @@ export class LoopDetector {
             };
         }
 
-        // Check 2: Alternating pattern (A→B→A→B)
-        if (this.toolCallHistory.length >= 3) {
+        // Check 2: Alternating pattern (A→B→A→B) — billable tools only
+        if (costedTool && this.toolCallHistory.length >= 3) {
             const last3 = this.toolCallHistory.slice(-3);
             const [call1, call2, call3] = last3 as [typeof last3[number], typeof last3[number], typeof last3[number]];
 
@@ -130,7 +130,7 @@ export class LoopDetector {
         // includes the arguments — six calls of the same tool with different
         // args (pagination, repeated lookups) is intent-chaining, not a loop;
         // only an exact (tool, args) sequence repetition is loop-shaped.
-        if (this.toolCallHistory.length >= 6) {
+        if (costedTool && this.toolCallHistory.length >= 6) {
             const last6 = this.toolCallHistory.slice(-6);
             const signature = (call: ToolCall) => `${call.name}(${call.args})`;
             const sequence1 = last6.slice(0, 3).map(signature).join('→');

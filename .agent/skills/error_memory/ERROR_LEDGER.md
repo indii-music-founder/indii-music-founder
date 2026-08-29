@@ -1,3 +1,19 @@
+## 2026-08-29 Brand-Asset Metadata Dropped From Agent Tool Output → Headshot Loop
+
+**SEVERITY:** Medium (Creative Director re-listed brand assets and was killed by the loop detector instead of answering "find my headshot")
+
+- **BUG:** `StorageTools.list_files` and `search_files` mapped `brandKit.brandAssets` / `referenceImages` down to `{ id: brand-asset-N, url, type, _source }`, discarding each asset's `description`, `category`, `tags`, and `subject`. A headshot stored with `category: 'headshot'` was indistinguishable from the other assets, and `search_files("headshot")` returned nothing because the label was stripped before the filter ran. The agent re-listed the same opaque URLs until `LoopDetector` ended the task.
+- **FIX:** Preserve `id`, `description`, `category`, `tags`, and `subject` on brand-asset/reference mappings in both tools; search those fields; and label thumbnails with `prompt || description || category || id` (gallery labels keep `prompt` first, so existing behavior is unchanged).
+- **PREVENTION:** A tool that surfaces stored user data must carry the semantic fields an agent needs to act on it — never reduce a rich record to an opaque index + URL. When an agent loops on a read tool, check whether the tool returns enough signal before blaming the agent. (Extends the 2026-07-02 "Brand Assets Missing from Creative Director" entry to the agent-tool path.)
+
+## 2026-08-29 LoopDetector False-Kill on Free Read Tools (Alternating / Repeating)
+
+**SEVERITY:** Medium (a non-billable read tool was killed by the "alternating" check, contradicting the detector's own doctrine that free tools repeat freely)
+
+- **BUG:** `LoopDetector` `Check 1` and `Check 3` were gated to billable tools, but `Check 2` (alternating A→B→A→B) and `Check 4` (repeating A→B→C→A→B→C) ran on every tool. A free read tool called repeatedly triggered "Alternating pattern detected" and ended the task — even though the file's own comment says free-tool repetition is bounded by the iteration budget, not the loop detector.
+- **FIX:** Gate `Check 2` and `Check 4` to billable tools (`costedTool`), consistent with `Check 1`/`Check 3`. Free-tool runaway now falls through to the iteration cap; billable spend loops are still caught. The `Check 4` seating carve-out remains.
+- **PREVENTION:** Every loop-detector check must state whether it guards billable spend or all-tool behavior. Structural checks should match the "free tools repeat freely" doctrine, or a read-only helper call gets mistaken for a money loop.
+
 ## 2026-08-09 A Scheduled Worker That Swallows Its Top-Level Failure Is Down While Reporting Success
 
 **SEVERITY:** Critical (the production social-delivery function failed every five minutes on a missing Firestore index while scheduled posts and campaign cards remained stuck in an apparently active state)
