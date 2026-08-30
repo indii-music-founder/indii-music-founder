@@ -2830,24 +2830,24 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1418: Complete the Founding Artist Beta homepage architecture and approved copy
 
-- **Status:** 🟡 PARTIAL — approved architecture and pricing presentation implemented; deployment proof pending
+- **Status:** 🟡 PARTIAL — implementation + genuine desktop/mobile browser review done (2026-08-30, deployed `founder.indii.music`); canonical domain alignment (ISSUE-1419) remains
 - **Severity:** 🟠 HIGH
 - **Module:** `packages/landing`
 - **Source of truth:** `docs/business-decisions/07_FOUNDING_ARTIST_BETA_MARKETING.md`
-- **Evidence:** Beta banner/hero/waitlist, Founding Owner copy, public Free/Start/Build/Scale pricing, safer workflow claims, illustrative-demo labels, canonical metadata, calculator quarantine, and regression assertions are implemented. Checkout remains deliberately gated.
+- **Evidence:** Beta banner/hero/waitlist, Founding Owner copy, public Free/Start/Build/Scale pricing, safer workflow claims, illustrative-demo labels, canonical metadata, calculator quarantine, and regression assertions are implemented. Checkout remains deliberately gated. Genuine Playwright review of the deployed landing at 1440/768/390 widths: all 14 `data-system-section` markers render, no horizontal overflow, no page errors/failed requests, axe (WCAG 2.1 A/AA, structural) 0 violations, all `#` anchors + `/privacy` `/terms` routes resolve. One defect found and fixed: the inline custom-domain redirect script was dead (CSP `script-src` blocks inline JS) and pointed at `indii.music` (which serves the studio) — removed.
 - **Impact:** The public site otherwise leads with obsolete founder-only framing and unsupported claims.
-- **Fix:** Complete exact-SHA deployment and genuine desktop/mobile browser review, then reconcile any observed production defects without activating unverified commerce.
+- **Fix:** Remaining is ISSUE-1419 (make `indii.music`/`www` resolve to the landing so the canonical/OG/JSON-LD URLs agree) — requires Firebase/DNS credentials.
 - **Acceptance:** Production matches approved copy, retains Detroit/thesis/comparison, shows no fake scarcity or retired claims, and passes exact-SHA CI plus genuine deployed browser review.
 
 ### ISSUE-1419: Canonical domain, aliases, redirects, and metadata are not verified end to end
 
-- **Status:** 🔴 OPEN
+- **Status:** 🔴 OPEN — confirmed mismatch (2026-08-30); blocked on Firebase/DNS credentials
 - **Severity:** 🟠 HIGH
 - **Module:** Hosting / DNS / landing metadata
 - **Source of truth:** Marketing decision § Website and conversion flow
-- **Evidence:** Local metadata targets `https://indii.music/`; `www`, historical founder aliases, DNS, redirects, search canonicalization, social cards, and auth return URLs have not been verified together.
+- **Evidence:** Confirmed live: `indii.music`, `www.indii.music`, and `app.indii.music` all serve the STUDIO app (Geist fonts, `og:title` "music business at the speed of you"), while the LANDING is served at `founder.indii.music` (`og:title` "Run your music career without giving it away."). The landing's committed `canonical`/`og:url`/JSON-LD point to `https://indii.music/`, so the landing canonicalizes to the studio app. `firebase` CLI is unauthenticated in this checkout, so the domain move cannot be performed by an agent without credentials.
 - **Impact:** Visitors and crawlers may reach inconsistent offers or broken paths.
-- **Fix:** Inventory owned hosts and align HTTPS redirects, canonical/OG/Twitter/JSON-LD, sitemap, robots, hosting, and auth returns.
+- **Fix:** Move the `indii.music` + `www.indii.music` custom domains from the `app` (`indii-music-studio`) site to the `landing` (`indii-music-founder`) site (or otherwise make the root resolve to the landing), then re-add a CSP-compliant custom-domain redirect. Requires Firebase Hosting custom-domain + DNS access.
 - **Acceptance:** Every owned alias reaches the intended canonical page without loops while app/auth subdomains remain intact.
 
 ### ISSUE-1420: Verified-email account, waitlist, invitation order, and milestone updates are not one authoritative flow
@@ -2918,13 +2918,13 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1426: Homepage lifecycle timeline needs real capture and deployment proof
 
-- **Status:** 🟡 PARTIAL — lifecycle UI implemented; real clips and deployment proof pending
+- **Status:** 🟡 PARTIAL — lifecycle UI implemented and responsive interaction verified in deployed browser (2026-08-30); real clips (ISSUE-1427) and domain alignment (ISSUE-1419) pending
 - **Severity:** 🟠 HIGH
 - **Module:** Landing capabilities
 - **Source of truth:** Marketing decision § Product explanation
-- **Evidence:** The homepage now presents Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat, starts on Delivery Preparation, maps relevant specialists and five approved workflow outcomes, and reserves an honest captioned product-capture slot for every stage.
+- **Evidence:** The homepage now presents Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat, starts on Delivery Preparation, maps relevant specialists and five approved workflow outcomes, and reserves an honest captioned product-capture slot for every stage. Deployed browser review (1440/768/390 widths): lifecycle stage tabs render and are keyboard-focusable (`aria-pressed` toggles), no overflow, no page errors.
 - **Impact:** Visitors still learn internal structure before the artist journey.
-- **Fix:** Add eight genuine founder-narrated product captures, verify responsive interaction in a deployed browser, and replace each placeholder only when its matching behavior is proven.
+- **Fix:** Add eight genuine founder-narrated product captures (ISSUE-1427), then replace each placeholder only when its matching behavior is proven.
 - **Acceptance:** A new visitor follows all eight stages, understands the five promises and shared context, and sees no department-count or unproven delivery pitch.
 
 ### ISSUE-1427: Eight founder-narrated real-product clips and accessible playback are missing
