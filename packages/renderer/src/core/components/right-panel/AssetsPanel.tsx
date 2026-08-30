@@ -82,6 +82,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
         setSelectedItem,
         setViewMode,
         setModule,
+        setGenerationMode,
         removeItemFromProject,
         removeUploadedImageFromProject,
         removeUploadedAudioFromProject,
@@ -96,6 +97,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
         setSelectedItem: state.setSelectedItem,
         setViewMode: state.setViewMode,
         setModule: state.setModule,
+        setGenerationMode: state.setGenerationMode,
         removeItemFromProject: state.removeItemFromProject,
         removeUploadedImageFromProject: state.removeUploadedImageFromProject,
         removeUploadedAudioFromProject: state.removeUploadedAudioFromProject,
@@ -213,7 +215,16 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
     ];
 
     const handleAssetClick = (asset: HistoryItem) => {
-        if (asset.type === 'image' || asset.type === 'video') {
+        // ISSUE-1395 follow-up: a VIDEO asset opens the video player (production
+        // stage), not the image 'magic edit' canvas. Only images open the editor.
+        if (asset.type === 'video') {
+            setSelectedItem(asset);
+            setModule('creative');
+            setGenerationMode('video');
+            setViewMode('video_production');
+            return;
+        }
+        if (asset.type === 'image') {
             setSelectedItem(asset);
             setModule('creative');
             setViewMode('editor');
