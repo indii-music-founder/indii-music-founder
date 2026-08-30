@@ -93,7 +93,17 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                         </div>
                     </div>
                 ) : (
-                    <video src={playableVideoSrc} className="w-full h-full object-contain bg-black" loop muted onMouseOver={e => e.currentTarget.play()} onMouseOut={e => e.currentTarget.pause()} />
+                    <video
+                        src={playableVideoSrc}
+                        className="w-full h-full object-contain bg-black"
+                        loop
+                        muted
+                        autoPlay
+                        playsInline
+                        preload="auto"
+                        onMouseOver={e => e.currentTarget.play()}
+                        onMouseOut={e => e.currentTarget.pause()}
+                    />
                 )
             ) : item.type === 'music' ? (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-400 p-4 text-center group-hover:text-white transition-colors">
