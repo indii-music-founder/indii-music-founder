@@ -1,3 +1,35 @@
+# Session Close — video previews + cross-tool asset drag/drop (2026-08-30, DSH agent)
+
+**Final state: every commit green at its own SHA (superseded runs accepted on successor per concurrency protocol); final head `067ea6a91` CI run 33317733108 SUCCESS incl. production deploy.**
+
+## Video previews / playback (founder-reported, root-caused + fixed)
+- PRIMARY: hosting CSP `media-src` omitted `https://firebasestorage.googleapis.com`
+  (the host getDownloadURL returns) → browser blocked ALL video media. Fixed in
+  `331029519` (firebase.json, all 4 CSP blocks); live header curl-verified.
+- Tiles: `preload="metadata"` painted nothing + the fallback camera icon sat on
+  top → muted autoplay loop + z-lift (`2f86292b8`). Editor: video.js error →
+  native <video> fallback (`b61f9a8a5`). Routing: video assets open the video
+  player, not the image 'magic edit' canvas (`5b6f0c42b`).
+
+## Cross-tool asset drag/drop (the "move assets without leaving the app" promise)
+- Audit result: all drag SOURCES (gallery/project-assets/resource-tree/dailies)
+  write the canonical creative-asset payload; the gap was TARGETS.
+- FIXED: creative toolchain drop zones (IngredientDropZone, WhiskDropZone,
+  StoryboardTimeline, AutonomousLab) read the canonical payload (cross-source)
+  — `f6496ecc4`.
+- FIXED: Marketing asset library accepts creative-asset drops — `b6d099964`.
+- FIXED: Publishing cover art accepts a created image via drag (uploadCoverByUrl
+  → canonicalCoverArtService.persistFromUrl, no file round-trip) — `067ea6a91`.
+- LEFT ALONE (work via in-app pickers, confirmed no-download): distribution
+  cover art (dropdown from brand assets), social media (brand-assets picker).
+
+## Honest remaining
+- Real-smokes still need founder browser/data (see `.agent/FOUNDER_BLOCKERS.md`):
+  A1.1/A1.5/A1.7 identity model + calibration, C2.3 @imgly license, the per-phase
+  G/F/E/H/D/B/A/C/I real smokes, E2 gen-motion flag, C3 PSD, A2 pixel swap.
+- Foreign dirty files untouched: `.agent/observations/2026-08-27-agent-watch.md`,
+  `videos/`.
+
 # Session Close — ALL plan workstreams shipped (2026-08-29, DSH agent, "get it all done" round)
 
 **Commits this session (all on origin/main):** A1 partial (`a7fb1581b`, A1.6 `88c6456aa`),
