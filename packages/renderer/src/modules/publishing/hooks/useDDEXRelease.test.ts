@@ -2,13 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDDEXRelease } from './useDDEXRelease';
 
-const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, mockPersistMaster, mockPersistCover, mockAuditArtwork, docIds } = vi.hoisted(() => ({
+const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, mockPersistMaster, mockPersistCover, mockPersistFromUrl, mockAuditArtwork, docIds } = vi.hoisted(() => ({
     mockAddDoc: vi.fn(),
     mockUpdateDoc: vi.fn(),
     mockRunAgent: vi.fn(),
     mockUploadFile: vi.fn(),
     mockPersistMaster: vi.fn(),
     mockPersistCover: vi.fn(),
+    mockPersistFromUrl: vi.fn(),
     mockAuditArtwork: vi.fn(),
     docIds: { counter: 0 },
 }));
@@ -43,7 +44,7 @@ vi.mock('@/services/audio/MasterAudioService', () => ({
 }));
 
 vi.mock('@/services/distribution/CanonicalCoverArtService', () => ({
-    canonicalCoverArtService: { persistFile: mockPersistCover },
+    canonicalCoverArtService: { persistFile: mockPersistCover, persistFromUrl: mockPersistFromUrl },
 }));
 
 vi.mock('@/services/agent/AgentService', () => ({
@@ -373,5 +374,50 @@ describe('useDDEXRelease.uploadAsset (ISSUE-963)', () => {
             generationProvenance: { source: 'uploaded' },
         }));
         vi.unstubAllGlobals();
+    });
+});
+
+
+describe('useDDEXRelease.uploadCoverByUrl (created-asset cover art, no file round-trip)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        docIds.counter = 0;
+        mockPersistFromUrl.mockImplementation(async () => ({
+            content_hash: 'a'.repeat(64),
+            download_url: 'https://example.com/cover-created.png',
+            mime_type: 'image/png',
+            original_file_name: 'cover.png',
+            size_bytes: 2_000_000,
+            storage_path: 'covers/user-1/hash/original.png',
+            generation_provenance: { source: 'not_recorded' },
+        }));
+        // Stub Image dimension extraction (jsdom has no real image decoder).
+        globalThis.Image = class {
+            naturalWidth = 3000;
+            naturalHeight = 3000;
+            crossOrigin = '';
+            onload: (() => void) | null = null;
+            onerror: (() => void) | null = null;
+            set src(_v: string) { queueMicrotask(() => this.onload?.()); }
+            get src() { return ''; }
+        } as unknown as typeof Image;
+    });
+
+    it('content-addresses a dropped image URL as cover art and sets width/height', async () => {
+        const { result } = renderHook(() => useDDEXRelease());
+        let url: string | undefined;
+        await act(async () => {
+            url = await result.current.uploadCoverByUrl('https://example.com/created-cover.png');
+        });
+
+        expect(url).toBe('https://example.com/cover-created.png');
+        expect(mockPersistFromUrl).toHaveBeenCalledWith('https://example.com/created-cover.png', expect.objectContaining({ userId: 'user-1' }));
+        expect(result.current.assets.coverArt).toMatchObject({
+            url: 'https://example.com/cover-created.png',
+            width: 3000,
+            height: 3000,
+            sizeBytes: 2_000_000,
+            contentHash: 'a'.repeat(64),
+        });
     });
 });

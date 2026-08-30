@@ -22,6 +22,7 @@ import { ReleaseHarnessWorkspace } from './ReleaseHarnessWorkspace';
 import type { DistributorId } from '@/services/distribution/types/distributor';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 // Step configuration
 const STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
@@ -81,6 +82,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     assets,
     updateAssets,
     uploadAsset,
+    uploadCoverByUrl,
     uploadProgress,
     isStepValid,
     validationErrors,
@@ -647,10 +649,24 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       </div>
 
       {/* Cover Art Upload */}
-      <div className={`
+      <div
+        className={`
         bg-gray-800/30 border-2 border-dashed rounded-xl p-8 text-center transition-all
         ${assets.coverArt ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 hover:border-gray-600'}
-      `}>
+      `}
+        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+        onDrop={async (e) => {
+          e.preventDefault();
+          const creative = readCreativeAssetDrag(e.dataTransfer);
+          if (creative && creative.asset.type === 'image') {
+            try {
+              await uploadCoverByUrl(creative.asset.url);
+            } catch (err: unknown) {
+              logger.error('Cover art drop failed:', err);
+            }
+          }
+        }}
+      >
         {assets.coverArt ? (
           <div className="flex flex-col items-center">
             <div className="w-32 h-32 mx-auto rounded-lg mb-4 overflow-hidden border border-gray-700">
@@ -673,6 +689,9 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             <h3 className="text-lg font-medium text-white mb-2">Upload Cover Art</h3>
             <p className="text-sm text-gray-400 mb-4">
               3000x3000 pixels, JPG or PNG, RGB color mode
+            </p>
+            <p className="text-[11px] text-gray-500 mb-2">
+              or drag a created image from Project Assets / Gallery
             </p>
             <div className="relative inline-block">
               <input

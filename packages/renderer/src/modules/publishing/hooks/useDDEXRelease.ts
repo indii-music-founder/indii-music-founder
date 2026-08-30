@@ -12,6 +12,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { masterAudioService } from '@/services/audio/MasterAudioService';
 import { canonicalCoverArtService } from '@/services/distribution/CanonicalCoverArtService';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { agentService } from '@/services/agent/AgentService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
@@ -102,6 +103,8 @@ export interface UseDDEXReleaseReturn {
   assets: Partial<ReleaseAssets>;
   updateAssets: (updates: Partial<ReleaseAssets>) => void;
   uploadAsset: (type: 'audio' | 'cover', file: File) => Promise<string>;
+  /** Content-address an already-created image URL as release cover art (no file round-trip). */
+  uploadCoverByUrl: (sourceUrl: string) => Promise<string>;
   uploadProgress: { audio: number; cover: number };
 
   // Validation
@@ -152,6 +155,21 @@ async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; b
  * default — an image that cannot be decoded must never be displayed/stored
  * as if its dimensions were measured.
  */
+async function extractImageDimensionsFromUrl(url: string): Promise<{ width: number; height: number } | null> {
+  try {
+    return await new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject(new Error('Image failed to load'));
+      img.src = url;
+    });
+  } catch (error: unknown) {
+    logger.warn('[useDDEXRelease] Failed to extract image dimensions from URL — cover cannot be verified:', error);
+    return null;
+  }
+}
+
 async function extractImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
   const imageUrl = URL.createObjectURL(file);
   try {
@@ -327,6 +345,46 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       throw error;
     }
   }, [activeOrg, userProfile, metadata.masterFingerprint, updateAssets, updateMetadata]);
+
+  // Bring an already-created image (Project Assets / Gallery / marketing) into
+  // release cover art WITHOUT a download+re-upload round-trip. The bytes are
+  // content-addressed through the same immutable canonical cover path so the
+  // server conformance audit sees an identical object to a file upload.
+  const uploadCoverByUrl = useCallback(async (sourceUrl: string) => {
+    if (!activeOrg?.id || !userProfile?.id) {
+      throw new Error('Missing organization or user context');
+    }
+
+    // Firestore download tokens or gs:// refs both resolve to a fetchable URL.
+    const resolved = sourceUrl.startsWith('gs://') ? await resolveStorageUrl(sourceUrl) : sourceUrl;
+
+    const imageDimensions = await extractImageDimensionsFromUrl(resolved);
+    if (!imageDimensions) {
+      const message = 'Could not read image dimensions for the selected cover — it may be corrupt or an unsupported format.';
+      setSubmitError(message);
+      throw new Error(message);
+    }
+
+    setUploadProgress(prev => ({ ...prev, cover: 10 }));
+    const coverAsset = await canonicalCoverArtService.persistFromUrl(resolved, {
+      userId: userProfile.id,
+    });
+    setUploadProgress(prev => ({ ...prev, cover: 100 }));
+
+    const coverInfo = {
+      url: coverAsset.download_url,
+      mimeType: coverAsset.mime_type,
+      sizeBytes: coverAsset.size_bytes,
+      width: imageDimensions.width,
+      height: imageDimensions.height,
+      storagePath: coverAsset.storage_path,
+      contentHash: coverAsset.content_hash,
+      generationProvenance: { source: 'not_recorded' as const },
+    };
+    setSubmitError(null);
+    updateAssets({ coverArt: coverInfo });
+    return coverAsset.download_url;
+  }, [activeOrg, userProfile, updateAssets]);
 
   // Validation errors
   const getValidationErrors = useCallback((step: WizardStep): string[] => {
@@ -565,6 +623,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     assets,
     updateAssets,
     uploadAsset,
+    uploadCoverByUrl,
     uploadProgress,
     isStepValid,
     validationErrors,
