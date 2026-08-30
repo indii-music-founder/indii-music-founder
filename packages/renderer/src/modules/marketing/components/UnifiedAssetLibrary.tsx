@@ -5,6 +5,7 @@ import { BrandAsset } from '@/types/User';
 import { StorageService } from '@/services/StorageService';
 import WebcamCapture from '@/components/shared/WebcamCapture';
 import { logger } from '@/utils/logger';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 type AssetCollection = 'brandAssets' | 'referenceImages';
 type AssetCategory = 'logo' | 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'other';
@@ -128,6 +129,32 @@ export default function UnifiedAssetLibrary({
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
+
+        // Internal asset handoff (the core "move assets between tools without
+        // a download round-trip" flow): accept a creative asset dropped from
+        // Project Assets / Gallery / Resource Tree / Video Dailies / Clipboard.
+        const creative = readCreativeAssetDrag(e.dataTransfer);
+        if (creative) {
+            const a = creative.asset;
+            // Brand visual collections hold image/video references; music/text
+            // assets don't belong here and are ignored rather than mis-filed.
+            if (a.type === 'image' || a.type === 'video') {
+                const existing = currentAssets.find(x => x.id === a.id);
+                if (!existing) {
+                    const brandAsset: BrandAsset = {
+                        id: a.id,
+                        url: a.url,
+                        storageUri: a.storageUri,
+                        description: a.prompt || a.name || `Imported ${a.type}`,
+                        category: 'other',
+                        tags: ['creative-import']
+                    };
+                    onUpdate([...currentAssets, brandAsset]);
+                }
+            }
+            return;
+        }
+
         const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
         if (files.length > 0) {
             setPendingFiles(files);
@@ -263,6 +290,7 @@ export default function UnifiedAssetLibrary({
 
             {/* Drop Zone & Grid */}
             <div
+                data-testid="marketing-asset-dropzone"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -273,7 +301,7 @@ export default function UnifiedAssetLibrary({
                     <div className="absolute inset-0 bg-dept-marketing/10 rounded-xl flex items-center justify-center z-10 border-2 border-dashed border-dept-marketing">
                         <div className="text-center">
                             <Upload size={32} className="mx-auto mb-2 text-dept-marketing" />
-                            <p className="text-sm font-bold text-dept-marketing">Drop images to upload</p>
+                            <p className="text-sm font-bold text-dept-marketing">Drop assets from Project Assets / Gallery — or files to upload</p>
                         </div>
                     </div>
                 )}
