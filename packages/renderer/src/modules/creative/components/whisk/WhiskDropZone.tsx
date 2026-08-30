@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { WhiskItem, WhiskCategory } from '@/core/store/slices/creative';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { WhiskService } from '@/services/WhiskService';
 
 // ============================================================================
@@ -76,12 +77,18 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
         e.preventDefault();
         setIsDragOver(false);
 
-        const id = e.dataTransfer.getData('text/plain');
+        const creative = readCreativeAssetDrag(e.dataTransfer);
+        const id = creative?.asset.id ?? e.dataTransfer.getData('text/plain');
         if (!id) return;
 
-        const { useStore } = await import('@/core/store');
-        const { generatedHistory, uploadedImages } = useStore.getState();
-        const item = [...generatedHistory, ...uploadedImages].find(i => i.id === id);
+        let item: { id: string; url: string; type: string } | null = null;
+        if (creative) {
+            item = { id: creative.asset.id, url: creative.asset.url, type: creative.asset.type };
+        } else {
+            const { useStore } = await import('@/core/store');
+            const { generatedHistory, uploadedImages } = useStore.getState();
+            item = [...generatedHistory, ...uploadedImages].find(i => i.id === id) as { id: string; url: string; type: string } | null ?? null;
+        }
 
         if (item && item.type === 'image') {
             toast.info(`Analyzing ${category} reference...`);

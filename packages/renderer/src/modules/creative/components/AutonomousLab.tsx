@@ -21,6 +21,7 @@ import {
     Plus
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { logger } from '@/utils/logger';
 import { getValidatedSequenceDurations } from './autonomousLabSequence';
 
@@ -231,6 +232,15 @@ export default function AutonomousLab() {
         setIsDragOver(false);
         
         try {
+            const creative = readCreativeAssetDrag(e.dataTransfer);
+            if (creative && creative.asset.type === 'image') {
+                setSeedImage({ id: creative.asset.id, url: creative.asset.url } as never);
+                setStatus('idle');
+                setTargetImage(null);
+                setCurrentStep(1);
+                return;
+            }
+
             const assetId = e.dataTransfer.getData('text/plain');
             if (assetId) {
                 const asset = generatedHistory.find(h => h.id === assetId) || uploadedImages.find(i => i.id === assetId);

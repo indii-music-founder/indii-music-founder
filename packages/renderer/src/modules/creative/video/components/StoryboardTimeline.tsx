@@ -11,6 +11,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useVideoEditorStore } from '../store/videoEditorStore';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { StoryboardSlot, StoryboardProject } from '../schemas/storyboard';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { renderService, type VideoRenderReceipt } from '@/services/video/RenderService';
@@ -258,6 +259,16 @@ export function StoryboardTimeline() {
         setDragOverSlotId(null);
         
         try {
+            const creative = readCreativeAssetDrag(e.dataTransfer);
+            if (creative && creative.asset.type === 'image') {
+                updateStoryboardSlot(slotId, {
+                    videoUrl: creative.asset.url,
+                    prompt: creative.asset.prompt || creative.asset.name || 'Imported graphic'
+                });
+                toast.success("Creative graphic pinned to storyboard slot successfully!");
+                return;
+            }
+
             const rawData = e.dataTransfer.getData('text/plain');
             if (!rawData) return;
             

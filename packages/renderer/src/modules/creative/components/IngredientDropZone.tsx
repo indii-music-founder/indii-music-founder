@@ -2,6 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import { X, ImagePlus, Upload, Film, ArrowRightLeft, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { PhotoSourcePanel } from './PhotoSourcePanel';
 import { CloudStorageService } from '@/services/CloudStorageService';
 
@@ -67,6 +68,33 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference', 
     const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
+
+        // Canonical creative-asset handoff (works from ANY source: gallery,
+        // project assets, resource tree, dailies, clipboard) — not just items
+        // already present in the local store.
+        const creative = readCreativeAssetDrag(e.dataTransfer);
+        if (creative && (creative.asset.type === 'image' || creative.asset.type === 'video')) {
+            if (ingredients.length >= maxIngredients) {
+                error(`Maximum of ${maxIngredients} ingredients allowed for this mode.`);
+                return;
+            }
+            if (mode === 'base_video' && creative.asset.type !== 'video') {
+                error('Only videos are allowed for base video mode.');
+                return;
+            }
+            if (ingredients.find(ing => ing.id === creative.asset.id)) {
+                error('This item is already added.');
+                return;
+            }
+            const newIngredient: Ingredient = {
+                id: creative.asset.id,
+                dataUrl: creative.asset.url,
+                file: new File([], 'placeholder'),
+                type: creative.asset.type as 'image' | 'video'
+            };
+            onChange([...ingredients, newIngredient]);
+            return;
+        }
 
         const droppedId = e.dataTransfer.getData('text/plain');
         if (droppedId) {
