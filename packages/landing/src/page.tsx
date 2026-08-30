@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { useAuth } from './components/auth/AuthProvider';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './lib/firebase';
-import { getStudioPreviewUrl } from './lib/auth';
+import { getStudioPreviewUrl, getStudioUrl } from './lib/auth';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from './lib/founderFunnel';
 import { isFounderPreviewEnabled } from './lib/previewAccess';
 import { emitSystemPulse } from './three/signals';
@@ -327,16 +327,27 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             </a>
           </div>
 
-          <a
-            href={previewHref}
-            target={previewEnabled ? '_blank' : undefined}
-            rel={previewEnabled ? 'noopener noreferrer' : undefined}
-            onClick={() => trackPreview('nav')}
-            className="group inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-black transition-transform hover:scale-[1.03] md:px-5"
-          >
-            <span>{previewEnabled ? (loading ? 'Verifying…' : user ? 'Resume session' : 'Enter preview') : 'Get access'}</span>
-            <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
-          </a>
+          <div className="flex items-center gap-2 md:gap-3">
+            <a
+              href={getStudioUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackPreview('nav_login')}
+              className="inline-flex items-center px-3 py-2.5 text-xs font-bold text-white/70 transition-colors hover:text-white"
+            >
+              Log in
+            </a>
+            <a
+              href={previewHref}
+              target={previewEnabled ? '_blank' : undefined}
+              rel={previewEnabled ? 'noopener noreferrer' : undefined}
+              onClick={() => trackPreview('nav')}
+              className="group inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-black transition-transform hover:scale-[1.03] md:px-5"
+            >
+              <span>{previewEnabled ? (loading ? 'Verifying…' : user ? 'Resume session' : 'Enter preview') : 'Get access'}</span>
+              <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+            </a>
+          </div>
         </div>
       </nav>
 

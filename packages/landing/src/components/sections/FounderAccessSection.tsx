@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
 import { emitSystemPulse } from '../../three/signals';
+import { getStudioUrl } from '../../lib/auth';
 
 const founderIncludes = [
   'Permanent top-tier software access',
@@ -76,6 +77,14 @@ export default function FounderAccessSection({ trackPreview }: FounderAccessSect
             >
               Get Founding Owner access
               <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
+            </a>
+            <a
+              href={getStudioUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center justify-center gap-2 text-sm font-semibold text-white/60 transition-colors hover:text-white"
+            >
+              Log in
             </a>
             <p className="mt-5 text-xs leading-relaxed text-white/50">
               Join the waitlist first. Founding Owner access is offered during the beta with limited availability, first come, first served. If you use indii

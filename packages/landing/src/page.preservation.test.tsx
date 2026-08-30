@@ -178,6 +178,7 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('Run the business behind your music');
     expect(text).toContain('One connected workspace.');
     expect(text).toContain('Get Founding Artist access');
+    expect(text).toContain('Log in');
     expect(text).toContain('See how indii.music works');
     expect(text).toContain('Working software / Founding Artist Beta');
     // The "$ıt" wordplay must survive intact.

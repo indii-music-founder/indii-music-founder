@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
+import { getStudioUrl } from '../../lib/auth';
 
 interface PricingSectionProps {
   onPlanSelect: (plan: string) => void;
@@ -66,6 +67,14 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
           <p className="mx-auto mt-4 max-w-2xl font-mono text-[9px] uppercase leading-relaxed tracking-[0.16em] text-amber-300/80">
             Beta access is invitation-based. These cards describe the intended beta packaging; checkout remains closed until plan entitlements are verified.
           </p>
+          <a
+            href={getStudioUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex items-center justify-center gap-2 text-sm font-semibold text-white/70 transition-colors hover:text-white"
+          >
+            Log in
+          </a>
         </motion.div>
         <div className="mt-16 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan, index) => (

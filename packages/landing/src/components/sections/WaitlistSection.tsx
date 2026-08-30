@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { getStudioUrl } from '../../lib/auth';
 
 interface WaitlistSectionProps {
   email: string;
@@ -66,6 +67,14 @@ export default function WaitlistSection({ email, status, message, onChange, onSu
               {message}
             </p>
           )}
+          <a
+            href={getStudioUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-block text-sm font-semibold text-white/60 transition-colors hover:text-white"
+          >
+            Log in
+          </a>
         </div>
       </div>
     </section>

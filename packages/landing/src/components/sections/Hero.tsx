@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { ArrowDown, ArrowRight, Play } from 'lucide-react';
 import { emitSystemPulse } from '../../three/signals';
+import { getStudioUrl } from '../../lib/auth';
 import { INDII_BRAND } from '@shared/brand';
 
 const heroWords = ['Run', 'your', 'music', 'career', 'without', 'giving', 'it', 'away.'];
@@ -179,6 +180,15 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                       : 'Enter indii.music'
                     : 'Get Founding Artist access'}
                   <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                </a>
+                <a
+                  href={getStudioUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackPreview('hero_login')}
+                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-7 py-4 text-sm font-bold text-white transition-colors hover:border-amber-400/50 hover:text-amber-300"
+                >
+                  Log in
                 </a>
                 <a
                   href="#studio-preview"
