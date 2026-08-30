@@ -49,6 +49,7 @@ Production creative image generation is routed through the TypeScript Firebase g
 
 | Document | Description |
 |----------|-------------|
+| [Founding Artist Beta Marketing](./business-decisions/07_FOUNDING_ARTIST_BETA_MARKETING.md) | Canonical website, pricing, beta, free-demo, video, social, and self-marketing decisions with active issue mapping |
 | [component-kit-research.md](./component-kit-research.md) | UI library analysis |
 | [video-editing-deep-dive.md](./video-editing-deep-dive.md) | Remotion, Motion Canvas |
 | [Proprietary Ingestion IP_IMPLEMENTATION_PLAN.md](./Proprietary Ingestion IP_IMPLEMENTATION_PLAN.md) | Proprietary ingestion infrastructure |

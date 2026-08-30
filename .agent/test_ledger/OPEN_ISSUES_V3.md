@@ -3,7 +3,7 @@
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-08-02 (**Master Ledger V3 Initialized for Final Production Release Push**)
+> **Last updated:** 2026-08-30 (**Founding Artist Beta marketing program added as ISSUE-1418 through ISSUE-1430**)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V3):** This is the ACTIVE master ledger. It operates with strict discipline:
@@ -2825,3 +2825,148 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Evidence:** `ProdigiProvider` (line ~674 pre-removal) called `pod_prodigiCreateOrder`/`prodigiGetOrder`/etc.; `grep -rn prodigi packages/firebase/src` finds no Prodigi backend — every call would fail at runtime, and ManufacturingPanel could route orders to it programmatically.
 - **Fix:** class + registration removed; `getProvider('prodigi')` fails loudly ("not registered or configured"). Known remainder (deliberate): `PODIntegrationPanel`/`PODCredentialService` still list Prodigi for API-key storage — inert without a backend; remove or gate together with any future Prodigi build.
 - **Acceptance:** pod suite 35/35 incl. explicit test that 'prodigi' is not offered and getProvider throws.
+
+---
+
+### ISSUE-1418: Complete the Founding Artist Beta homepage architecture and approved copy
+
+- **Status:** 🟡 PARTIAL — first truthful copy pass recovered on current `main`; deployment proof pending
+- **Severity:** 🟠 HIGH
+- **Module:** `packages/landing`
+- **Source of truth:** `docs/business-decisions/07_FOUNDING_ARTIST_BETA_MARKETING.md`
+- **Evidence:** Beta banner/hero/waitlist, Founding Owner copy, safer workflow claims, illustrative-demo label, canonical metadata, calculator quarantine, and regression assertions are implemented locally.
+- **Impact:** The public site otherwise leads with obsolete founder-only framing and unsupported claims.
+- **Fix:** Preserve the existing visual site while completing the lifecycle explanation, public prices, retained story sections, and Start/Build/Scale final CTA.
+- **Acceptance:** Production matches approved copy, retains Detroit/thesis/comparison, shows no fake scarcity or retired claims, and passes exact-SHA CI plus genuine deployed browser review.
+
+### ISSUE-1419: Canonical domain, aliases, redirects, and metadata are not verified end to end
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Hosting / DNS / landing metadata
+- **Source of truth:** Marketing decision § Website and conversion flow
+- **Evidence:** Local metadata targets `https://indii.music/`; `www`, historical founder aliases, DNS, redirects, search canonicalization, social cards, and auth return URLs have not been verified together.
+- **Impact:** Visitors and crawlers may reach inconsistent offers or broken paths.
+- **Fix:** Inventory owned hosts and align HTTPS redirects, canonical/OG/Twitter/JSON-LD, sitemap, robots, hosting, and auth returns.
+- **Acceptance:** Every owned alias reaches the intended canonical page without loops while app/auth subdomains remain intact.
+
+### ISSUE-1420: Verified-email account, waitlist, invitation order, and milestone updates are not one authoritative flow
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Landing / Firebase Auth / waitlist / communications
+- **Source of truth:** Marketing decision §§ Website and Founding Artist Beta operations
+- **Evidence:** Current form records an entered email but does not prove ownership or create the decided verified free account; invitation and communication state are separate or absent.
+- **Impact:** Fake emails, duplicate records, and client-controlled priority would undermine beta access.
+- **Fix:** Verify email before activation; preserve immutable join order and waitlisted/invited/accepted states; record milestone consent and delivery; prevent client-assigned priority.
+- **Acceptance:** A genuine user verifies once, receives one account and ordered waitlist record, cannot forge invitation priority, and can receive an auditable invite/update.
+
+### ISSUE-1421: Guided free mini-campaign using the artist's music and image is not implemented end to end
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Landing demo / Creative Suite / export / privacy
+- **Source of truth:** Marketing decision § Verified free experience
+- **Evidence:** Existing tools do not yet form verified email → owned music/image → guided creation → no-watermark pack → enforced save/delete.
+- **Impact:** The main product demonstration cannot yet prove value with the visitor's own work.
+- **Fix:** Audit and connect existing upload, generation, video, export, history/version, and deletion systems before building new paths.
+- **Acceptance:** A genuine free user downloads coherent images and short music-backed clips without forced branding, then chooses save or delete and sees that choice enforced for sources and derivatives.
+
+### ISSUE-1422: Start, Build, and Scale subscriptions and multi-period billing are not reconciled with entitlements
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Pricing / Stripe / entitlements / usage
+- **Source of truth:** Marketing decision § Public pricing and `03_REVENUE_AND_PRICING.md`
+- **Evidence:** Founder approved $22/$55/$110 monthly and quarterly/six-month/annual discounts of approximately 5%/10%/20%; existing internal packaging uses older names.
+- **Impact:** Publishing prices before server reconciliation could sell the wrong entitlement or unsafe margin.
+- **Fix:** Calculate safety floors, define stage-appropriate capacity/capabilities, map internal keys, settle whole-number totals, and provision Stripe only after cost/tax review.
+- **Acceptance:** Public pricing, checkout, webhook entitlement, renewal cadence, total charge, monthly equivalent, and beta caveat agree; lifecycle tests cover changes/cancellations; no `.99` pricing appears.
+
+### ISSUE-1423: Non-expiring finish-the-project microtransactions are not modeled
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Usage wallet / top-ups / packs / checkout
+- **Source of truth:** Marketing decision § Extra capacity and microtransactions
+- **Evidence:** The decision allows unit purchases, workflow/project packs, and larger reusable packs; purchased capacity never expires and upgrades remain optional.
+- **Impact:** Artists may otherwise be forced into unnecessary upgrades or lose purchased capacity.
+- **Fix:** Separate recurring allowance from purchased balance; define spend order, eligible work, refunds, failed-job release, plan-change behavior, and honest recommendations.
+- **Acceptance:** Purchased capacity survives periods and plan changes, settles only for disclosed successful work, cannot be client-minted, and can finish work without a forced upgrade.
+
+### ISSUE-1424: Founding Owner checkout, permanent entitlement, recognition, usage boundary, and post-beta migration are incomplete
+
+- **Status:** 🟡 PARTIAL
+- **Severity:** 🔴 HIGH
+- **Module:** Landing / Stripe / founder entitlement / onboarding
+- **Source of truth:** Marketing decision § Founding Owner License
+- **Evidence:** Public copy is reframed and fake 11-seat scarcity removed; existing checkout/entitlement has not been proven against the new permanent-access promise.
+- **Impact:** A $2,500 purchaser could receive ambiguous rights or metered usage terms.
+- **Fix:** Make waitlist eligibility server-authoritative; define first-year included usage; persist software access separately from provider capacity; preserve recognition and post-beta rights.
+- **Acceptance:** A genuine eligible purchaser pays the disclosed amount once, receives non-forgeable permanent access/recognition, sees accurate usage terms, and keeps rights after renaming.
+
+### ISSUE-1425: Beta participation, bug reporting, invitations, and communications need bounded operations
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Support / feedback / release operations
+- **Source of truth:** Marketing decision § Founding Artist Beta operations
+- **Evidence:** Bug-reports-only expectations, first-come invites, milestone-only updates, no payment promise, and no unscheduled deadline are not encoded consistently.
+- **Impact:** Beta users could receive contradictory expectations or communications.
+- **Fix:** Add consistent onboarding/terms, authenticated bug reporting, invite batching, milestone rules, and an absent-by-default scheduled deadline field.
+- **Acceptance:** Users see one bounded expectation, can submit actionable bugs, and receive no fabricated deadline, compensation promise, or unauthorized message.
+
+### ISSUE-1426: Homepage lifecycle timeline and shared-context demonstration are not implemented
+
+- **Status:** 🟡 PARTIAL
+- **Severity:** 🟠 HIGH
+- **Module:** Landing capabilities
+- **Source of truth:** Marketing decision § Product explanation
+- **Evidence:** Safer workflow copy exists, but the UI remains a specialist selector rather than Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat.
+- **Impact:** Visitors still learn internal structure before the artist journey.
+- **Fix:** Adapt the current visual system into an explorable lifecycle, feature Delivery Preparation first, show outcomes/shared context, relevant specialists only, and real-capture slots; explain AI later.
+- **Acceptance:** A new visitor follows all eight stages, understands the five promises and shared context, and sees no department-count or unproven delivery pitch.
+
+### ISSUE-1427: Eight founder-narrated real-product clips and accessible playback are missing
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Product capture / video / captions / landing media
+- **Source of truth:** Marketing decision § Product video system
+- **Evidence:** No approved set of eight 15–30 second lifecycle clips exists.
+- **Impact:** The website relies on illustrative UI instead of concise real product evidence.
+- **Fix:** Use one demo project; script, capture, narrate, edit, caption, export, version, and integrate one click-to-play clip per stage through indii tools where genuinely available.
+- **Acceptance:** Eight clips show matching real behavior, meet duration, include synchronized captions/transcripts, do not autoplay with sound, and preserve source/version/approval records.
+
+### ISSUE-1428: Social account ownership, security, brand, and integration inventory is missing
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Founder operations / Social / credential vault
+- **Source of truth:** Marketing decision § Social channel inventory
+- **Evidence:** Dictation suggests `@indie_music` and `@indie.music`-style accounts, but exact platform spellings and ownership are unverified.
+- **Impact:** Assets or posts could be prepared for the wrong handle while account recovery/security remains unknown.
+- **Fix:** Inventory Instagram, Facebook, TikTok, YouTube/Shorts, X, Threads, LinkedIn, Bluesky, and later channels with handle/URL/admin/recovery/2FA/brand/bio/posting/integration/status fields; keep secrets in the vault only.
+- **Acceptance:** Every claimed account is opened and ownership-verified, missing channels are explicitly create/decline, and indii resolves the correct destination without exposing secrets.
+
+### ISSUE-1429: indii does not yet run its own marketing as a first-class internal artist project
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Conductor / Marketing / Creative / Social / timeline
+- **Source of truth:** Marketing decision § indii as its own first artist/customer
+- **Evidence:** No canonical internal project, reusable Conductor instruction, asset map, approval path, campaign timeline, or outcome record exists.
+- **Impact:** indii cannot yet prove the product by operating its own marketing through it.
+- **Fix:** Create an internal artist-style project and instruction that routes real planning, imagery, video, copy, news, social, approvals, versions, costs, and results; surface unavailable tools honestly.
+- **Acceptance:** One approved instruction produces a visible plan, routes genuine work, prepares channel outputs, records approvals/versions, and truthfully reports gaps; resulting work becomes beta evidence.
+
+### ISSUE-1430: Deal comparison and distributor/royalty calculator contain unverified or overbroad claims
+
+- **Status:** 🟡 PARTIAL — unsafe component quarantined from the rendered page
+- **Severity:** 🔴 HIGH
+- **Module:** `LegacyComparison.tsx` / `FounderRoyaltyCalculator.tsx`
+- **Source of truth:** Marketing decision § Comparison and calculator evidence
+- **Evidence:** The calculator hard-codes provider prices, commissions, fees, stream rates, rights/training allegations, and an unproven indii direct-pipeline comparison.
+- **Impact:** Stale financial or legal claims create material public-trust risk.
+- **Fix:** Compare selected deal types; use current authoritative provider sources with URL/date; expose assumptions; separate facts/estimates; hide stale rows; remove unsupported rights/training/delivery/payout claims.
+- **Acceptance:** Every named value is current and traceable, calculations are reproducible, stale/unverified rows cannot render, indii uses proven capabilities only, and legal/financial review precedes restoration.

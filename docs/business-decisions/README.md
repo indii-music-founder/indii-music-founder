@@ -17,6 +17,7 @@
 4. **Review `04_DSP_ONBOARDING_PLAYBOOK.md`** — your path to direct distribution
 5. **Check `05_LAUNCH_TIMELINE.md`** — orchestrates the order of operations
 6. **Follow `06_BRAND_POSITIONING.md`** — the canonical tagline ("music business at the speed of you") for every surface and investor/partner material
+7. **Use `07_FOUNDING_ARTIST_BETA_MARKETING.md`** — the canonical public website, beta, pricing, free-experience, video, social, and self-marketing direction
 
 ---
 
@@ -30,6 +31,7 @@
 | [`04`](./04_DSP_ONBOARDING_PLAYBOOK.md) | DSP & Distribution Onboarding | N/A (reference) | DistroKid SFTP, Proprietary Ingestion IP certification, ASCAP/BMI |
 | [`05`](./05_LAUNCH_TIMELINE.md) | Pre-Launch Orchestration Timeline | 20 min | Deployment sequence, attorney handoff, go-live date |
 | [`06`](./06_BRAND_POSITIONING.md) | Brand Positioning — Canonical Tagline | N/A (reference) | Consistent brand voice across marketing, app, metadata, and investor materials |
+| [`07`](./07_FOUNDING_ARTIST_BETA_MARKETING.md) | Founding Artist Beta Marketing, Website, Pricing & Launch System | Accepted founder direction | Website, Start/Build/Scale, Founding Owner, free demo, video, social inventory, and internal marketing |
 
 ---
 

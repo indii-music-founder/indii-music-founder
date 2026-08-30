@@ -6,6 +6,16 @@
 > **Scope:** Image/video creation, node workflows, access tiers, Generation Credits, top-ups, Vertex AI cost control, signup security, marketing-site requirements, and a staged Web3 commerce direction
 > **Mode:** Planning only. This document does not authorize a deployment, price activation, token launch, or financial transaction.
 
+> **2026-08-29 public-packaging update:**
+> [`07_FOUNDING_ARTIST_BETA_MARKETING.md`](./07_FOUNDING_ARTIST_BETA_MARKETING.md)
+> supersedes the public-facing Free/Creator/Studio/Founder names with
+> **Free / Start / Build / Scale / Founding Owner License** and temporary
+> monthly prices of **$0 / $22 / $55 / $110 / $2,500 one time**. This document
+> remains authoritative for secure credits, provider costs, BYO, and
+> server-authoritative commerce. Backend entitlement mapping and operating-cost
+> calibration remain implementation work; checkout must not activate until the
+> records agree.
+
 ---
 
 ## Executive Decision
