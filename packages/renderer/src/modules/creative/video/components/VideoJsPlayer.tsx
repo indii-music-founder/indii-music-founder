@@ -50,6 +50,7 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
     const onReadyRef = React.useRef(onReady);
     const onTimeUpdateRef = React.useRef(onTimeUpdate);
     const onErrorRef = React.useRef(onError);
+    const [nativeFallback, setNativeFallback] = React.useState(false);
     const { url: resolvedVideoUrl, isResolving, error: resolveError } = useResolvedStorageUrl(videoUrl);
     const sourceUrl = resolvedVideoUrl || (videoUrl.startsWith('gs://') ? '' : videoUrl);
 
@@ -134,6 +135,10 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
         const emitError = () => {
             const error = player.error();
             onErrorRef.current?.(error?.message || 'Playback Error: Video source unavailable or corrupted.');
+            // video.js failed to present the source (CORS/tech/range). The tile
+            // native <video> proves the same URL plays, so fall back to a native
+            // element rather than leaving a dead red box.
+            setNativeFallback(true);
         };
 
         player.on('timeupdate', emitTimeUpdate);
@@ -186,11 +191,27 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
         );
     }
 
-    if (resolveError) {
+    if (resolveError && !nativeFallback && !sourceUrl) {
         return (
             <div className={`flex items-center justify-center rounded-lg border border-red-500/20 bg-[#1a0f0f] text-red-300 ${className}`}>
                 Playback asset unavailable.
             </div>
+        );
+    }
+
+    if (nativeFallback && sourceUrl) {
+        return (
+            <video
+                src={sourceUrl}
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                className={`w-full h-full object-contain bg-black ${className}`}
+                onError={() => { /* keep native element; no further fallback */ }}
+            />
         );
     }
 
