@@ -112,6 +112,7 @@ describe('home page preservation (founder mode)', () => {
       import('./components/sections/PrinciplesSection'),
       import('./components/sections/OnboardingSection'),
       import('./components/sections/FounderAccessSection'),
+      import('./components/sections/PricingSection'),
     ]);
   });
 
@@ -142,7 +143,7 @@ describe('home page preservation (founder mode)', () => {
       // Modules are pre-warmed in beforeAll, so this resolves quickly.
       for (let i = 0; i < 40; i++) {
         const markers = container.querySelectorAll('[data-system-section]').length;
-        if (markers >= 13) break; // hero, waitlist, footer + the 10 deferred sections
+        if (markers >= 14) break; // hero, waitlist, footer + the 11 deferred sections
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
     });
@@ -220,8 +221,8 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('0% royalty share');
     expect(text).toContain('The music industry was built');
     expect(text).toContain('upside-down.');
-    expect(text).toContain('Every part of the work.');
-    expect(text).toContain('Connected to the same project.');
+    expect(text).toContain('Run the whole release.');
+    expect(text).toContain('Keep the context connected.');
     expect(text).toContain('One direction.');
     expect(text).toContain('The whole system moves.');
     expect(text).toContain('See how your career');
@@ -255,9 +256,7 @@ describe('home page preservation (founder mode)', () => {
   it('marks every section for the system layer', async () => {
     await renderHome();
     await revealSections();
-    const markers = Array.from(container.querySelectorAll('[data-system-section]')).map(
-      (el) => el.getAttribute('data-system-section'),
-    );
+    const markers = Array.from(container.querySelectorAll('[data-system-section]')).map((el) => el.getAttribute('data-system-section'));
     for (const expected of [
       'hero',
       'waitlist',
@@ -271,30 +270,54 @@ describe('home page preservation (founder mode)', () => {
       'principles',
       'onboarding',
       'founder-access',
+      'pricing',
       'footer',
     ]) {
       expect(markers).toContain(expected);
     }
   });
 
-  it('keeps the working execution paths in the capabilities grid', async () => {
+  it('keeps the complete release lifecycle and its approved workflow promises', async () => {
     await renderHome();
     await revealSections();
     const text = container.textContent ?? '';
     expect(text).toContain('Prepare releases and delivery-ready packages.');
     expect(text).toContain('DDEX ERN 4.3');
-    expect(text).toContain('Working Execution Path');
+    expect(text).toContain('Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat');
+    expect(text).toContain('Real product clip planned');
     expect(text).toContain('Mastered Audio → Release Metadata → Schema Verification → Delivery-Ready Package');
-    expect(
-      container.querySelector(
-        'button[aria-label="Publishing: Know what should be registered and what still needs attention."]',
-      ),
-    ).not.toBeNull();
-    expect(
-      container.querySelector(
-        'button[aria-label="Financial Center: Track every dollar coming in and every dollar going out."]',
-      ),
-    ).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Register: Know what you own and what still needs to be registered."]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Track: Track income, expenses, and splits together."]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Campaign: Turn finished music into a coordinated visual campaign."]')).not.toBeNull();
+
+    const registerStage = container.querySelector(
+      'button[aria-label="Register: Know what you own and what still needs to be registered."]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      registerStage.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(registerStage.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('shows public beta pricing without presenting checkout as active', async () => {
+    await renderHome();
+    await revealSections();
+    const text = container.textContent ?? '';
+    expect(text).toContain('Choose the stage that fits');
+    expect(text).toContain('your career now.');
+    expect(text).toContain('$0');
+    expect(text).toContain('$22');
+    expect(text).toContain('$55');
+    expect(text).toContain('$110');
+    expect(text).toContain('Monthly, quarterly, six-month, or annual.');
+    expect(text).toContain('About 5% less');
+    expect(text).toContain('About 10% less');
+    expect(text).toContain('About 20% less');
+    expect(text).toContain('checkout remains closed until plan entitlements are verified');
+    expect(text).toContain('Purchased extra capacity will not expire');
+    expect(container.querySelector('a[href*="founders-checkout"]')).toBeNull();
+    const founderOwnerLink = Array.from(container.querySelectorAll('a')).find((link) => link.textContent?.includes('Get Founding Owner access'));
+    expect(founderOwnerLink?.getAttribute('href')).toBe('#waitlist');
   });
 });
 

@@ -2830,13 +2830,13 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1418: Complete the Founding Artist Beta homepage architecture and approved copy
 
-- **Status:** 🟡 PARTIAL — first truthful copy pass recovered on current `main`; deployment proof pending
+- **Status:** 🟡 PARTIAL — approved architecture and pricing presentation implemented; deployment proof pending
 - **Severity:** 🟠 HIGH
 - **Module:** `packages/landing`
 - **Source of truth:** `docs/business-decisions/07_FOUNDING_ARTIST_BETA_MARKETING.md`
-- **Evidence:** Beta banner/hero/waitlist, Founding Owner copy, safer workflow claims, illustrative-demo label, canonical metadata, calculator quarantine, and regression assertions are implemented locally.
+- **Evidence:** Beta banner/hero/waitlist, Founding Owner copy, public Free/Start/Build/Scale pricing, safer workflow claims, illustrative-demo labels, canonical metadata, calculator quarantine, and regression assertions are implemented. Checkout remains deliberately gated.
 - **Impact:** The public site otherwise leads with obsolete founder-only framing and unsupported claims.
-- **Fix:** Preserve the existing visual site while completing the lifecycle explanation, public prices, retained story sections, and Start/Build/Scale final CTA.
+- **Fix:** Complete exact-SHA deployment and genuine desktop/mobile browser review, then reconcile any observed production defects without activating unverified commerce.
 - **Acceptance:** Production matches approved copy, retains Detroit/thesis/comparison, shows no fake scarcity or retired claims, and passes exact-SHA CI plus genuine deployed browser review.
 
 ### ISSUE-1419: Canonical domain, aliases, redirects, and metadata are not verified end to end
@@ -2916,15 +2916,15 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Fix:** Add consistent onboarding/terms, authenticated bug reporting, invite batching, milestone rules, and an absent-by-default scheduled deadline field.
 - **Acceptance:** Users see one bounded expectation, can submit actionable bugs, and receive no fabricated deadline, compensation promise, or unauthorized message.
 
-### ISSUE-1426: Homepage lifecycle timeline and shared-context demonstration are not implemented
+### ISSUE-1426: Homepage lifecycle timeline needs real capture and deployment proof
 
-- **Status:** 🟡 PARTIAL
+- **Status:** 🟡 PARTIAL — lifecycle UI implemented; real clips and deployment proof pending
 - **Severity:** 🟠 HIGH
 - **Module:** Landing capabilities
 - **Source of truth:** Marketing decision § Product explanation
-- **Evidence:** Safer workflow copy exists, but the UI remains a specialist selector rather than Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat.
+- **Evidence:** The homepage now presents Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat, starts on Delivery Preparation, maps relevant specialists and five approved workflow outcomes, and reserves an honest captioned product-capture slot for every stage.
 - **Impact:** Visitors still learn internal structure before the artist journey.
-- **Fix:** Adapt the current visual system into an explorable lifecycle, feature Delivery Preparation first, show outcomes/shared context, relevant specialists only, and real-capture slots; explain AI later.
+- **Fix:** Add eight genuine founder-narrated product captures, verify responsive interaction in a deployed browser, and replace each placeholder only when its matching behavior is proven.
 - **Acceptance:** A new visitor follows all eight stages, understands the five promises and shared context, and sees no department-count or unproven delivery pitch.
 
 ### ISSUE-1427: Eight founder-narrated real-product clips and accessible playback are missing

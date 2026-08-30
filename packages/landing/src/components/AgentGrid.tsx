@@ -2,190 +2,118 @@
 
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUpRight, CheckCircle2, Shield } from 'lucide-react';
+import { ArrowRight, CheckCircle2, PlayCircle, Shield } from 'lucide-react';
 
-interface Workstream {
+interface LifecycleStage {
   id: string;
   index: string;
   name: string;
+  label: string;
   title: string;
   outcome: string;
   details: string[];
+  specialists: string[];
   route: string;
-  badge: string;
 }
 
-const workstreams: Workstream[] = [
+const lifecycle: LifecycleStage[] = [
   {
-    id: 'distribution',
+    id: 'finished-music',
     index: '01',
-    name: 'Delivery Preparation',
-    badge: 'Delivery Ready',
+    name: 'Finished music',
+    label: 'Starting point',
+    title: 'Start with the finished music and the facts around it.',
+    outcome: 'Bring the master, artwork, credits, contributors, and release intent into one project so the next steps begin with shared context.',
+    details: ['Finished master', 'Credits and contributors', 'One release record'],
+    specialists: ['Audio Intelligence', 'Catalog'],
+    route: 'Finished Master → Project Context → Release Record',
+  },
+  {
+    id: 'plan',
+    index: '02',
+    name: 'Plan',
+    label: 'Release planning',
+    title: 'Keep dates, tasks, assets, and approvals together.',
+    outcome: 'Turn the release goal into visible work. Everyone involved can see what is due, what is blocked, and what still needs artist approval.',
+    details: ['Release dates', 'Tasks and owners', 'Approval checkpoints'],
+    specialists: ['Conductor', 'Release Planning'],
+    route: 'Release Goal → Timeline → Tasks → Artist Approval',
+  },
+  {
+    id: 'register',
+    index: '03',
+    name: 'Register',
+    label: 'Rights and records',
+    title: 'Know what you own and what still needs to be registered.',
+    outcome: 'Keep composition information, master ownership, songwriter splits, credits, and registration status attached to the music they describe.',
+    details: ['Ownership records', 'Split information', 'Registration status'],
+    specialists: ['Rights & Legal', 'Publishing'],
+    route: 'Credits → Ownership → Split Check → Registration Status',
+  },
+  {
+    id: 'prepare-delivery',
+    index: '04',
+    name: 'Prepare delivery',
+    label: 'Featured workflow',
     title: 'Prepare releases and delivery-ready packages.',
     outcome:
-      'Bring mastered audio, artwork, credits, rights information, identifiers, and DDEX metadata together before a release leaves the project.',
-    details: ['DDEX ERN 4.3 Preparation', 'Identifier & Metadata Checks', 'Delivery-Ready Release Record'],
+      'Bring mastered audio, artwork, credits, rights information, identifiers, and release metadata together before the package moves to the next approved delivery step.',
+    details: ['DDEX ERN 4.3 preparation', 'Identifier and metadata checks', 'Delivery-ready release record'],
+    specialists: ['Delivery Preparation', 'Rights & Legal', 'Audio Intelligence'],
     route: 'Mastered Audio → Release Metadata → Schema Verification → Delivery-Ready Package',
   },
   {
-    id: 'music',
-    index: '02',
-    name: 'Audio Intelligence',
-    badge: 'Sonic DNA',
-    title: 'Turn finished audio into shared project context.',
-    outcome:
-      'Extract useful metadata from the finished master so the relevant release, campaign, and catalog workflows begin with the same source context.',
-    details: ['Agent Context Baseline', 'Sonic DNA Metadata', 'Multi-Specialist Alignment'],
-    route: 'Audio Upload → Sonic DNA Extraction → Agent Specialist Baseline → Release Pipeline',
-  },
-  {
-    id: 'creative',
-    index: '03',
-    name: 'Creative Director',
-    badge: '4K Visual Studio',
-    title: 'Unify all release visual assets in one workspace.',
-    outcome:
-      'Whether you import assets from outside creative teams or generate 4K artwork and visualizers in the app, every visual asset sits unified in your release pipeline.',
-    details: ['External Asset Import', 'In-App 4K Generation', 'Unified Visual Pipeline'],
-    route: 'Sound Profile → Visual Concept → Render & Canvas → Approval',
-  },
-  {
-    id: 'brand',
-    index: '04',
-    name: 'Brand Manager',
-    badge: 'Identity Guard',
-    title: 'Lock in your visual identity & tone of voice.',
-    outcome:
-      'Define Brand Bibles, typography hierarchies, color palettes, and copywriting rules. Audit every output with 0-100 brand consistency scores.',
-    details: ['Brand Bible Blueprint', 'Typography & Palette Control', '0-100 Consistency Scoring'],
-    route: 'Artist Voice → Identity Guardrails → Audited Output',
-  },
-  {
-    id: 'rights',
+    id: 'campaign',
     index: '05',
-    name: 'Rights & Legal',
-    badge: 'Rights Protection',
-    title: 'Protect your rights and own your masters from day one.',
-    outcome:
-      'Keep songwriter splits, copyright-registration status, credits, and master ownership attached to the project they describe.',
-    details: ['Ownership Records', 'Split Information', 'Copyright & Registration Tracking'],
-    route: 'Credits → Split Information → Registration Status → Catalog Record',
+    name: 'Campaign',
+    label: 'Creative workflow',
+    title: 'Turn finished music into a coordinated visual campaign.',
+    outcome: 'Build artwork, short-form video, campaign copy, and channel-ready assets from the same music, visual identity, release plan, and approvals.',
+    details: ['Connected visual direction', 'Campaign asset set', 'Artist-reviewed outputs'],
+    specialists: ['Creative Director', 'Marketing Strategy', 'Social Media'],
+    route: 'Music + Brand → Visual Direction → Campaign Assets → Review',
   },
   {
-    id: 'finance',
+    id: 'release',
     index: '06',
-    name: 'Financial Center',
-    badge: 'Income & Outflow',
-    title: 'Track every dollar coming in and every dollar going out.',
+    name: 'Release',
+    label: 'Approved action',
+    title: 'Move the approved release plan into action.',
     outcome:
-      'Track streaming, sync, and merchandise income alongside collaborator splits and project expenses without separating the money from the release.',
-    details: ['Income Tracking', 'Split Records', 'Project Expenses'],
-    route: 'Income Records → Split Information → Expense Ledger → Project Summary',
+      'Keep the final package, campaign schedule, approvals, and release-day responsibilities visible while each external action remains under artist control.',
+    details: ['Final package review', 'Release-day checklist', 'Recorded approvals'],
+    specialists: ['Conductor', 'Delivery Preparation', 'Marketing Strategy'],
+    route: 'Final Review → Approved Actions → Release-Day Record',
   },
   {
-    id: 'marketing',
+    id: 'track',
     index: '07',
-    name: 'Marketing Strategy',
-    badge: 'Waterfall Campaigns',
-    title: 'Execute high-impact release rollouts.',
+    name: 'Track',
+    label: 'Financial workflow',
+    title: 'Track income, expenses, and splits together.',
     outcome:
-      'Structure waterfall single rollouts, pre-save momentum campaigns, ad budget allocations, and editorial pitching for maximum reach.',
-    details: ['Waterfall Rollout Plans', '500-Char DSP Pitch Drafts', 'Ad Budget Optimization'],
-    route: 'Release Goal → Campaign Strategy → Multi-Channel Rollout',
+      'Keep reported revenue, project costs, collaborator splits, and release activity connected so the business picture does not live in scattered spreadsheets.',
+    details: ['Income records', 'Project expenses', 'Split tracking'],
+    specialists: ['Financial Center', 'Rights & Royalties'],
+    route: 'Income + Expenses → Split Records → Project Summary',
   },
   {
-    id: 'social',
+    id: 'repeat',
     index: '08',
-    name: 'Social Media',
-    badge: 'Funnel-Connected',
-    title: 'Connected social content generated directly from your release funnel.',
+    name: 'Repeat',
+    label: 'Connected context',
+    title: 'Carry what you learned into the next release.',
     outcome:
-      'Because your songs, brand bible, audio DNA, and marketing rollout sit in the exact same workspace, social media concepts and announcements flow naturally directly out of your active release funnel.',
-    details: ['Funnel-Connected Assets', 'Brand & Song Context', 'Direct Release Pipeline'],
-    route: 'Release Funnel → Content Drafts → Artist Review → Scheduled Output',
-  },
-  {
-    id: 'publishing',
-    index: '09',
-    name: 'Publishing',
-    badge: 'Composition Rights',
-    title: 'Know what should be registered and what still needs attention.',
-    outcome:
-      'Organize composition metadata and registration status in one place so accurate records are ready for the appropriate publishing and rights organizations.',
-    details: ['Composition Metadata', 'Registration Status', 'Publishing Records'],
-    route: 'Composition Metadata → Registration Check → Prepared Records → Status Tracking',
-  },
-  {
-    id: 'licensing',
-    index: '10',
-    name: 'Sync & Licensing',
-    badge: 'Sync Ready',
-    title: 'Prepare your catalog for TV, film & gaming pitches.',
-    outcome:
-      'Organize instrumentals, stems, sync briefs, and one-stop clearance metadata so you can pitch immediately when opportunities arise.',
-    details: ['Stem & Instrumental Vault', 'One-Stop Clearance Tags', 'Sync Brief Matching'],
-    route: 'Opportunity → Filtered Catalog → Pitch Package Sent',
-  },
-  {
-    id: 'publicist',
-    index: '11',
-    name: 'Publicity & PR',
-    badge: 'EPK & Press',
-    title: 'Keep publicity materials connected to current project facts.',
-    outcome:
-      'Use current songs, dates, milestones, and brand material to prepare EPK and publicity updates from the same project source.',
-    details: ['Current Project Facts', 'EPK Preparation', 'Publicity Materials'],
-    route: 'Project Facts → EPK Update → Artist Review → Outreach Preparation',
-  },
-  {
-    id: 'road',
-    index: '12',
-    name: 'Road Manager',
-    badge: 'Touring & Mileage',
-    title: 'Coordinate tours, show logistics, and mileage records.',
-    outcome:
-      'Manage venue contracts, day-of-show schedules, tour routing, and business mileage records across every gig so travel activity stays visible.',
-    details: ['Tour Mileage & Expense Tracking', 'Venue & Day-of-Show Schedules', 'Show Revenue & Per-Diem Accounting'],
-    route: 'Booked Date → Mileage & Route Optimization → Day-of-Show Itinerary → Settlement',
-  },
-  {
-    id: 'merchandise',
-    index: '13',
-    name: 'Merch & Store',
-    badge: 'Physical Products',
-    title: 'Turn visual identity into physical merchandise.',
-    outcome:
-      'Design apparel, vinyl mockups, and physical products connected directly to your album art and brand kit.',
-    details: ['Apparel & Vinyl Mockups', 'Direct Store Integration', 'Margin & Profit Analytics'],
-    route: 'Visual Identity → Product Design → E-Commerce Store',
-  },
-  {
-    id: 'security',
-    index: '14',
-    name: 'Control & Security',
-    badge: 'Full Oversight',
-    title: 'High-impact actions stay visible and reviewable.',
-    outcome:
-      'Review proposed high-impact work, important assets, financial actions, and external-release steps before they move forward.',
-    details: ['Artist Review', 'Protected Master Storage', 'Recorded Actions'],
-    route: 'Specialist Proposal → Risk-Aware Review → Recorded Action',
-  },
-  {
-    id: 'conductor',
-    index: '15',
-    name: 'Conductor',
-    badge: 'System Coordinator',
-    title: 'One plain-language request coordinates the relevant work.',
-    outcome:
-      'Tell indii what you want to achieve. Conductor orchestrates the departments, breaks down complex workflows, and presents clear results.',
-    details: ['Multi-Specialist Orchestration', 'Plain English Directives', 'Unified Project State'],
-    route: 'Artist Intent → Conductor Plan → Relevant Specialists → Artist Review',
+      'Reuse the project record, approved assets, catalog information, and operating lessons instead of rebuilding your music business from zero every time.',
+    details: ['Reusable project context', 'Catalog continuity', 'Next-release starting point'],
+    specialists: ['Conductor', 'Catalog', 'Financial Center'],
+    route: 'Release Record → Lessons → Reusable Context → Next Release',
   },
 ];
 
 export default function AgentGrid() {
-  const [activeId, setActiveId] = useState(workstreams[0].id);
-  const active = workstreams.find((workstream) => workstream.id === activeId) ?? workstreams[0];
+  const [activeId, setActiveId] = useState('prepare-delivery');
+  const active = lifecycle.find((stage) => stage.id === activeId) ?? lifecycle[3];
 
   return (
     <section id="capabilities" data-system-section="capabilities" className="relative z-20 w-full border-t border-white/10 bg-[#030303]">
@@ -200,116 +128,68 @@ export default function AgentGrid() {
           <div>
             <div className="mb-4 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.3em] text-amber-400">
               <Shield size={14} />
-              The Operating System
+              The release lifecycle
             </div>
             <div className="font-mono text-xs uppercase leading-relaxed tracking-[0.18em] text-white/40">
-              Connected Music-Business Workflows
+              Finished music to the next release
               <br />
-              One Artist-Controlled Workspace
+              One artist-controlled project
             </div>
           </div>
           <div>
             <h2 className="max-w-5xl text-5xl font-black leading-[0.92] tracking-[-0.055em] text-white sm:text-6xl md:text-8xl lg:text-[7.5rem]">
-              Every part of the work.
-              <span className="block text-amber-400">Connected to the same project.</span>
+              Run the whole release.
+              <span className="block text-amber-400">Keep the context connected.</span>
             </h2>
             <p className="mt-8 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
-              Independent artists carry release, rights, campaign, and financial work across disconnected tools. See how indii.music keeps the relevant work connected in one artist-controlled workspace.
+              Follow the work from finished music through planning, rights, delivery preparation, campaign, release, and financial tracking. The relevant
+              specialists use the same project context at every stage.
             </p>
           </div>
         </motion.div>
 
-        {/* Mobile Horizontal Selector */}
-        <div className="-mx-5 mt-10 flex gap-0 overflow-x-auto border-y border-white/10 px-5 no-scrollbar lg:hidden">
-          {workstreams.map((workstream) => {
-            const isActive = workstream.id === active.id;
+        <div className="-mx-5 mt-10 flex overflow-x-auto border-y border-white/10 px-5 no-scrollbar lg:mx-0 lg:grid lg:grid-cols-8 lg:overflow-visible lg:px-0">
+          {lifecycle.map((stage) => {
+            const isActive = stage.id === active.id;
             return (
               <button
-                key={workstream.id}
+                key={stage.id}
                 type="button"
-                onClick={() => setActiveId(workstream.id)}
-                className={`flex shrink-0 items-center gap-2 border-r border-white/10 px-4 py-4 font-mono text-[9px] uppercase tracking-[0.16em] transition-colors ${
-                  isActive ? 'bg-amber-400 text-black font-bold' : 'text-white/40'
-                }`}
+                onClick={() => setActiveId(stage.id)}
+                className={`flex min-w-[150px] shrink-0 flex-col items-start gap-1 border-r border-white/10 px-4 py-4 text-left transition-colors lg:min-w-0 ${isActive ? 'bg-amber-400 text-black' : 'text-white/45 hover:bg-white/[0.04] hover:text-white'}`}
                 aria-pressed={isActive}
-                aria-label={`${workstream.name}: ${workstream.title}`}
+                aria-label={`${stage.name}: ${stage.title}`}
               >
-                <span>{workstream.index}</span>
-                <span>{workstream.name}</span>
+                <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em]">{stage.index}</span>
+                <span className="text-sm font-bold leading-tight">{stage.name}</span>
               </button>
             );
           })}
         </div>
 
-        <div className="grid gap-12 pt-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16 lg:pt-12">
-          {/* Desktop Left Department List */}
-          <div className="hidden border-t border-white/10 lg:block max-h-[720px] overflow-y-auto pr-2 no-scrollbar">
-            {workstreams.map((workstream) => {
-              const isActive = workstream.id === active.id;
-              return (
-                <button
-                  key={workstream.id}
-                  type="button"
-                  onClick={() => setActiveId(workstream.id)}
-                  className={`group flex w-full items-center gap-4 border-b px-3 py-4 text-left transition-all ${
-                    isActive
-                      ? 'border-amber-400/60 bg-amber-400/[0.06] text-white pl-4'
-                      : 'border-white/8 text-white/40 hover:border-white/20 hover:text-white/80'
-                  }`}
-                  aria-pressed={isActive}
-                  aria-label={`${workstream.name}: ${workstream.title}`}
-                >
-                  <span className={`font-mono text-[10px] tracking-[0.2em] ${isActive ? 'text-amber-400 font-bold' : 'text-white/40'}`}>
-                    {workstream.index}
-                  </span>
-                  <span className="flex-1 text-base font-bold tracking-tight md:text-lg">{workstream.name}</span>
-                  <span className={`rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
-                    isActive ? 'bg-amber-400 text-black font-bold' : 'bg-white/5 text-white/45'
-                  }`}>
-                    {workstream.badge}
-                  </span>
-                  <ArrowUpRight
-                    size={16}
-                    className={`transition-transform ${isActive ? 'translate-x-0 text-amber-400' : '-translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'}`}
-                  />
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Right Active Department Card */}
-          <div className="lg:sticky lg:top-28 lg:h-fit">
-            <AnimatePresence mode="wait">
-              <motion.article
-                key={active.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="relative min-h-[500px] overflow-hidden rounded-2xl border border-white/15 bg-[#080808] p-8 md:min-h-[540px] md:p-12"
-              >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(245,158,11,0.12),transparent_40%)]" />
-                <div className="absolute -right-8 -top-16 select-none font-mono text-[16rem] font-black leading-none text-white/[0.02]">
-                  {active.index}
-                </div>
-
-                <div className="relative">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-5 font-mono text-[10px] uppercase tracking-[0.24em]">
-                    <span className="text-amber-400 font-bold flex items-center gap-2">
+        <div className="pt-10 lg:pt-14">
+          <AnimatePresence mode="wait">
+            <motion.article
+              key={active.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#080808]"
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_15%,rgba(245,158,11,0.13),transparent_38%)]" />
+              <div className="relative grid lg:grid-cols-[1.2fr_0.8fr]">
+                <div className="p-7 md:p-12 lg:p-14">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-5 font-mono text-[10px] uppercase tracking-[0.22em]">
+                    <span className="flex items-center gap-2 font-bold text-amber-400">
                       <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
                       {active.name}
                     </span>
-                    <span className="rounded bg-white/10 px-2.5 py-1 text-white/70 font-semibold">{active.badge}</span>
+                    <span className="rounded bg-white/10 px-2.5 py-1 font-semibold text-white/70">{active.label}</span>
                   </div>
-
-                  <h3 className="mt-8 max-w-3xl text-3xl font-black leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">
-                    {active.title}
-                  </h3>
-                  <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/60 md:text-lg">
-                    {active.outcome}
-                  </p>
-
-                  <div className="mt-10 grid gap-3 sm:grid-cols-3">
+                  <h3 className="mt-8 max-w-3xl text-3xl font-black leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">{active.title}</h3>
+                  <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/60 md:text-lg">{active.outcome}</p>
+                  <div className="mt-9 grid gap-3 sm:grid-cols-3">
                     {active.details.map((detail) => (
                       <div key={detail} className="rounded-xl border border-white/10 bg-black/60 p-4">
                         <CheckCircle2 size={16} className="mb-2 text-amber-400" />
@@ -317,17 +197,44 @@ export default function AgentGrid() {
                       </div>
                     ))}
                   </div>
-
-                  <div className="mt-10 border-t border-white/10 pt-5">
-                    <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.25em] text-white/30">
-                      Working Execution Path
-                    </div>
-                    <div className="font-mono text-xs leading-relaxed text-amber-300/90 font-semibold">{active.route}</div>
+                  <div className="mt-9 border-t border-white/10 pt-5">
+                    <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.25em] text-white/30">Connected path</div>
+                    <div className="font-mono text-xs font-semibold leading-relaxed text-amber-300/90">{active.route}</div>
                   </div>
                 </div>
-              </motion.article>
-            </AnimatePresence>
-          </div>
+                <aside className="flex flex-col justify-between border-t border-white/10 bg-black/55 p-7 md:p-10 lg:border-l lg:border-t-0">
+                  <div>
+                    <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-white/35">Relevant specialists</div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {active.specialists.map((specialist) => (
+                        <span key={specialist} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/70">
+                          {specialist}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="mt-5 text-sm leading-relaxed text-white/45">
+                      Shared project context keeps this work connected. You review the decisions and remain in control.
+                    </p>
+                  </div>
+                  <div className="mt-12 rounded-xl border border-dashed border-amber-400/35 bg-amber-400/[0.04] p-5">
+                    <PlayCircle size={24} className="text-amber-400" />
+                    <div className="mt-4 font-mono text-[9px] uppercase tracking-[0.22em] text-amber-400">Real product clip planned</div>
+                    <p className="mt-2 text-sm font-semibold text-white">{active.name} / founder walkthrough</p>
+                    <p className="mt-2 text-xs leading-relaxed text-white/45">
+                      A 15–30 second, click-to-play product capture with captions will appear here during the beta.
+                    </p>
+                  </div>
+                </aside>
+              </div>
+              <div className="relative flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-7 py-5 font-mono text-[9px] uppercase tracking-[0.2em] text-white/35 md:px-12">
+                <span>Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat</span>
+                <a href="#conductor" className="inline-flex items-center gap-2 font-bold text-amber-400 transition-colors hover:text-amber-300">
+                  See how Conductor connects it
+                  <ArrowRight size={13} />
+                </a>
+              </div>
+            </motion.article>
+          </AnimatePresence>
         </div>
       </div>
     </section>

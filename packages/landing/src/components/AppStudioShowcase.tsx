@@ -2,17 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Sparkles,
-  Layers,
-  Share2,
-  Activity,
-  DollarSign,
-  CheckCircle2,
-  Disc,
-  FileCode,
-  Zap,
-} from 'lucide-react';
+import { Sparkles, Layers, Share2, Activity, DollarSign, CheckCircle2, Disc, FileCode, Zap } from 'lucide-react';
 
 interface TabItem {
   id: string;
@@ -22,11 +12,36 @@ interface TabItem {
 }
 
 const tabs: TabItem[] = [
-  { id: 'boardroom', label: 'Conductor & Boardroom', badge: 'Command Engine', icon: Sparkles },
-  { id: 'creative', label: 'Creative Studio', badge: 'Visual & Video', icon: Layers },
-  { id: 'distribution', label: 'Delivery Preparation', badge: 'DDEX ERN 4.3', icon: Share2 },
-  { id: 'audio', label: 'Audio Intelligence', badge: 'Sonic DNA', icon: Activity },
-  { id: 'finance', label: 'Financial Command', badge: 'Project Records', icon: DollarSign },
+  {
+    id: 'boardroom',
+    label: 'Conductor & Boardroom',
+    badge: 'Command Engine',
+    icon: Sparkles,
+  },
+  {
+    id: 'creative',
+    label: 'Creative Studio',
+    badge: 'Visual & Video',
+    icon: Layers,
+  },
+  {
+    id: 'distribution',
+    label: 'Delivery Preparation',
+    badge: 'DDEX ERN 4.3',
+    icon: Share2,
+  },
+  {
+    id: 'audio',
+    label: 'Audio Intelligence',
+    badge: 'Sonic DNA',
+    icon: Activity,
+  },
+  {
+    id: 'finance',
+    label: 'Financial Command',
+    badge: 'Project Records',
+    icon: DollarSign,
+  },
 ];
 
 export default function AppStudioShowcase() {
@@ -91,12 +106,12 @@ export default function AppStudioShowcase() {
               <span className="h-3 w-3 rounded-full bg-red-500/80" />
               <span className="h-3 w-3 rounded-full bg-yellow-500/80" />
               <span className="h-3 w-3 rounded-full bg-green-500/80" />
-              <span className="ml-4 tracking-[0.2em] uppercase text-white/60">indii.music / Founding Artist Beta</span>
+              <span className="ml-4 tracking-[0.2em] uppercase text-white/60">indii.music / illustrative beta walkthrough</span>
             </div>
             <div className="hidden items-center gap-6 md:flex">
               <span className="flex items-center gap-1.5 text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                System Active
+                Illustrative Preview
               </span>
               <span>Connected Project Context</span>
               <span className="text-amber-400 font-bold">Artist Controlled</span>
@@ -117,25 +132,25 @@ export default function AppStudioShowcase() {
                 >
                   <div className="flex flex-col justify-between">
                     <div>
-                      <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
-                        Conductor Command Engine
-                      </div>
+                      <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Conductor Command Engine</div>
                       <h3 className="mt-3 text-3xl font-black tracking-tight text-white md:text-4xl">
                         You speak the direction. <br />
                         The system carries the work.
                       </h3>
                       <p className="mt-4 text-sm leading-relaxed text-white/60">
-                        Type or speak in plain English. Conductor turns the goal into visible work, brings in the relevant specialists, and keeps the shared project context connected.
+                        Type or speak in plain English. Conductor turns the goal into visible work, brings in the relevant specialists, and keeps the shared
+                        project context connected.
                       </p>
                     </div>
 
                     <div className="mt-8 rounded-xl border border-amber-400/20 bg-amber-400/[0.04] p-5">
                       <div className="flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-amber-400">
-                        <span>Live Voice Input Captured</span>
-                        <span>0.4s latency</span>
+                        <span>Example artist direction</span>
+                        <span>Shared project context</span>
                       </div>
                       <p className="mt-2 font-medium text-white">
-                        “Prepare my summer single for Spotify & Apple Music, build 3 artwork variations matching my visual profile, and set up a 14-day waterfall rollout.”
+                        “Prepare a delivery-ready package for my summer single, build three artwork directions from my visual profile, and plan a 14-day
+                        rollout.”
                       </p>
                     </div>
                   </div>
@@ -143,20 +158,36 @@ export default function AppStudioShowcase() {
                   {/* Right Workflow Mockup */}
                   <div className="rounded-xl border border-white/10 bg-[#0c0c0c] p-6 font-sans">
                     <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">
-                        Workflow Execution Graph
-                      </span>
-                      <span className="rounded bg-emerald-500/20 px-2 py-0.5 font-mono text-[9px] uppercase text-emerald-400">
-                        4 Departments In Progress
-                      </span>
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-white/40">Workflow Execution Graph</span>
+                      <span className="rounded bg-emerald-500/20 px-2 py-0.5 font-mono text-[9px] uppercase text-emerald-400">Relevant workstreams</span>
                     </div>
 
                     <div className="mt-6 space-y-4">
                       {[
-                        { dept: 'Audio Intelligence', task: 'Extracted Track DNA (124 BPM, F# Minor, Ethereal)', status: 'Complete', color: 'text-emerald-400' },
-                        { dept: 'Creative Director', task: 'Generated 3 Artwork Briefs (Minimalist Sans-Serif)', status: 'Awaiting Artist Review', color: 'text-amber-400' },
-                        { dept: 'Delivery Preparation', task: 'Compiled DDEX ERN 4.3 XML Payload', status: 'Validated', color: 'text-emerald-400' },
-                        { dept: 'Marketing & PR', task: 'Drafted 500-char Editorial Pitch & Waterfall Rollout', status: 'In Progress', color: 'text-blue-400' },
+                        {
+                          dept: 'Audio Intelligence',
+                          task: 'Extracted Track DNA (124 BPM, F# Minor, Ethereal)',
+                          status: 'Complete',
+                          color: 'text-emerald-400',
+                        },
+                        {
+                          dept: 'Creative Director',
+                          task: 'Generated 3 Artwork Briefs (Minimalist Sans-Serif)',
+                          status: 'Awaiting Artist Review',
+                          color: 'text-amber-400',
+                        },
+                        {
+                          dept: 'Delivery Preparation',
+                          task: 'Compiled DDEX ERN 4.3 XML Payload',
+                          status: 'Validated',
+                          color: 'text-emerald-400',
+                        },
+                        {
+                          dept: 'Marketing & PR',
+                          task: 'Drafted 500-char Editorial Pitch & Waterfall Rollout',
+                          status: 'In Progress',
+                          color: 'text-blue-400',
+                        },
                       ].map((item, idx) => (
                         <div key={idx} className="flex items-start gap-4 rounded-lg border border-white/5 bg-white/[0.02] p-4">
                           <CheckCircle2 size={18} className={`${item.color} mt-0.5 shrink-0`} />
@@ -184,27 +215,26 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
-                      Creative Studio & Brand Guard
-                    </div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Creative Studio & Brand Guard</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                      Generate 4K release visuals <br />
-                      without diluting your brand.
+                      Build release visuals <br />
+                      from one shared direction.
                     </h3>
                     <p className="mt-4 text-sm leading-relaxed text-white/60">
-                      Upload reference assets or prompt in plain language. Creative Director automatically scores every generated visual (0-100) against your Brand Bible typography, color palette, and visual identity.
+                      Upload reference assets or begin with a plain-language direction. Keep generated concepts, brand references, revisions, and approvals
+                      connected to the release.
                     </p>
 
                     <div className="mt-6 grid grid-cols-2 gap-4">
                       <div className="rounded-xl border border-white/10 bg-[#0d0d0d] p-4">
                         <div className="font-mono text-[9px] uppercase text-white/40">Brand Consistency</div>
-                        <div className="mt-2 text-3xl font-black text-emerald-400">96 / 100</div>
-                        <div className="mt-1 text-[10px] text-white/50">Strict Minimalist Rules Applied</div>
+                        <div className="mt-2 text-3xl font-black text-emerald-400">In review</div>
+                        <div className="mt-1 text-[10px] text-white/50">Example brand check</div>
                       </div>
                       <div className="rounded-xl border border-white/10 bg-[#0d0d0d] p-4">
                         <div className="font-mono text-[9px] uppercase text-white/40">Resolution Output</div>
-                        <div className="mt-2 text-3xl font-black text-amber-400">4K Master</div>
-                        <div className="mt-1 text-[10px] text-white/50">Spotify Canvas & Vinyl Ready</div>
+                        <div className="mt-2 text-3xl font-black text-amber-400">Export set</div>
+                        <div className="mt-1 text-[10px] text-white/50">Formats selected by the artist</div>
                       </div>
                     </div>
                   </div>
@@ -212,12 +242,8 @@ export default function AppStudioShowcase() {
                   {/* Studio Visual Canvas Mockup */}
                   <div className="relative flex min-h-[300px] flex-col justify-between rounded-xl border border-amber-400/20 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-950/20 via-black to-black p-6">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-amber-400">
-                        Active Visual Generation
-                      </span>
-                      <span className="rounded-full bg-amber-400/20 px-3 py-1 font-mono text-[9px] text-amber-300">
-                        1:1 Square (3000x3000px)
-                      </span>
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-amber-400">Active Visual Generation</span>
+                      <span className="rounded-full bg-amber-400/20 px-3 py-1 font-mono text-[9px] text-amber-300">1:1 Square (3000x3000px)</span>
                     </div>
 
                     <div className="my-auto text-center">
@@ -248,15 +274,14 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1.2fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
-                      Delivery Preparation
-                    </div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Delivery Preparation</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
                       Prepare the release. <br />
                       Keep the package connected.
                     </h3>
                     <p className="mt-4 text-sm leading-relaxed text-white/60">
-                      Bring mastered audio, artwork, credits, identifiers, and release metadata together. indii helps format and validate a delivery-ready package using DDEX ERN 4.3 standards.
+                      Bring mastered audio, artwork, credits, identifiers, and release metadata together. indii helps format and validate a delivery-ready
+                      package using DDEX ERN 4.3 standards.
                     </p>
 
                     <div className="mt-8 space-y-3 font-mono text-xs">
@@ -281,13 +306,11 @@ export default function AppStudioShowcase() {
                         <FileCode size={14} className="text-amber-400" />
                         <span>DDEX_ERN_43_PAYLOAD.XML</span>
                       </div>
-                      <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[9px] uppercase text-emerald-400">
-                        Schema Validated
-                      </span>
+                      <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[9px] uppercase text-emerald-400">Schema Validated</span>
                     </div>
 
                     <pre className="mt-4 text-[11px] leading-relaxed text-amber-300/80 overflow-x-auto">
-{`<NewReleaseMessage xmlns="http://ddex.net/xml/ern/43">
+                      {`<NewReleaseMessage xmlns="http://ddex.net/xml/ern/43">
   <MessageHeader>
     <SenderPartyId>PADPIDA20260803</SenderPartyId>
     <MessageThreadId>INDII_CATALOG_8921</MessageThreadId>
@@ -319,15 +342,14 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
-                      Audio Intelligence & DNA Extraction
-                    </div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Audio Intelligence & DNA Extraction</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
                       Understand your track <br />
                       down to the millisecond.
                     </h3>
                     <p className="mt-4 text-sm leading-relaxed text-white/60">
-                      Upload your master WAV file. Audio Intelligence analyzes key, BPM, harmonic frequency, loudness (LUFS), and mood classification to optimize your DSP pitching and marketing campaigns.
+                      Upload your master WAV file. Audio Intelligence analyzes key, BPM, harmonic frequency, loudness (LUFS), and mood classification to
+                      optimize your DSP pitching and marketing campaigns.
                     </p>
 
                     <div className="mt-6 grid grid-cols-3 gap-3 font-mono">
@@ -355,11 +377,7 @@ export default function AppStudioShowcase() {
 
                     <div className="my-8 flex items-end justify-center gap-1.5 h-32">
                       {[40, 65, 80, 45, 90, 100, 75, 55, 85, 95, 60, 40, 70, 85, 95, 100, 65, 45, 75, 90, 50, 35, 70, 85].map((h, i) => (
-                        <div
-                          key={i}
-                          className="w-2 rounded-full bg-gradient-to-t from-amber-500/30 via-amber-400 to-amber-300"
-                          style={{ height: `${h}%` }}
-                        />
+                        <div key={i} className="w-2 rounded-full bg-gradient-to-t from-amber-500/30 via-amber-400 to-amber-300" style={{ height: `${h}%` }} />
                       ))}
                     </div>
 
@@ -381,9 +399,7 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
-                      Financial Command & Royalties
-                    </div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Financial Command & Royalties</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
                       Real-time revenue tracking. <br />
                       Zero hidden deductions.
@@ -393,13 +409,9 @@ export default function AppStudioShowcase() {
                     </p>
 
                     <div className="mt-6 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.04] p-5">
-                      <div className="font-mono text-[9px] uppercase tracking-wider text-emerald-400">
-                        Illustrative Project Summary
-                      </div>
+                      <div className="font-mono text-[9px] uppercase tracking-wider text-emerald-400">Illustrative Project Summary</div>
                       <div className="mt-2 text-4xl font-black text-white">One record</div>
-                      <p className="mt-1 text-xs text-white/50">
-                        Income, expenses, and split information stay connected to the work that created them.
-                      </p>
+                      <p className="mt-1 text-xs text-white/50">Income, expenses, and split information stay connected to the work that created them.</p>
                     </div>
                   </div>
 

@@ -5,30 +5,21 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
 import { emitSystemPulse } from '../../three/signals';
 
-/**
- * Studio link that lands directly on the Founders Pass paywall
- * (the studio honors ?module=<id> deep links after sign-in).
- */
-function buildPaywallUrl(studioUrl: string): string {
-  return `${studioUrl}${studioUrl.includes('?') ? '&' : '?'}module=founders-checkout`;
-}
-
 const founderIncludes = [
   'Permanent top-tier software access',
   'Conductor and connected specialist access',
   'Guided Project White Glove onboarding',
-  'First year of API usage included',
+  'First year of included usage allowances',
   'Founding Artist Beta product updates',
   'Permanent Founding Owner recognition',
   'Usage available as needed after included allowances',
 ];
 
 interface FounderAccessSectionProps {
-  studioUrl: string;
   trackPreview: (location: string) => void;
 }
 
-export default function FounderAccessSection({ studioUrl, trackPreview }: FounderAccessSectionProps) {
+export default function FounderAccessSection({ trackPreview }: FounderAccessSectionProps) {
   return (
     <section id="founder-access" data-system-section="founder-access" className="relative z-20 w-full overflow-hidden border-t border-amber-400/25 bg-black">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(245,158,11,0.18),transparent_34%)]" />
@@ -39,20 +30,15 @@ export default function FounderAccessSection({ studioUrl, trackPreview }: Founde
 
       <div className="relative mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
         <div className="grid gap-14 lg:grid-cols-[1.15fr_0.85fr] lg:gap-24">
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-          >
-            <div className="mb-6 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
-              Founding Artist Beta / one-time software license
-            </div>
+          <motion.div initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}>
+            <div className="mb-6 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Founding Artist Beta / one-time software license</div>
             <h2 className="text-6xl font-black leading-[0.85] tracking-[-0.065em] text-white sm:text-7xl md:text-9xl lg:text-[10rem]">
               Founding Owner
               <span className="block text-amber-400">License.</span>
             </h2>
             <p className="mt-10 max-w-2xl text-lg leading-relaxed text-white/55 md:text-xl">
-              Permanent top-tier indii.music software access for one $2,500 purchase. Ongoing metered usage and third-party services are purchased as needed. This is software access—not an investment or promise of financial return.
+              Permanent top-tier indii.music software access for one $2,500 purchase. Ongoing metered usage and third-party services are purchased as needed.
+              This is software access—not an investment or promise of financial return.
             </p>
           </motion.div>
 
@@ -80,8 +66,7 @@ export default function FounderAccessSection({ studioUrl, trackPreview }: Founde
             </div>
 
             <a
-              href={buildPaywallUrl(studioUrl)}
-              rel="noopener noreferrer"
+              href="#waitlist"
               onClick={() => {
                 trackPreview('founder_access');
                 emitSystemPulse('cta', 7, 1);
@@ -93,7 +78,9 @@ export default function FounderAccessSection({ studioUrl, trackPreview }: Founde
               <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
             </a>
             <p className="mt-5 text-xs leading-relaxed text-white/50">
-              If you use indii for your music business, the purchase may qualify as a business software expense. Tax treatment depends on your circumstances; confirm it with your tax professional.
+              Join the waitlist first. Founding Owner access is offered during the beta with limited availability, first come, first served. If you use indii
+              for your music business, the purchase may qualify as a business software expense. Tax treatment depends on your circumstances; confirm it with
+              your tax professional.
             </p>
           </motion.div>
         </div>

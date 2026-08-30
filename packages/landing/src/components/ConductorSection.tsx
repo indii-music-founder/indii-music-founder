@@ -4,13 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDown, Check, CornerDownRight } from 'lucide-react';
 
-const routedDepartments = [
-  'Distribution',
-  'Creative',
-  'Rights',
-  'Marketing',
-  'Social',
-];
+const routedDepartments = ['Delivery Preparation', 'Creative', 'Rights', 'Marketing', 'Social'];
 
 const workingSteps = [
   {
@@ -62,7 +56,8 @@ export default function ConductorSection() {
               <span className="block text-amber-400">The whole system moves.</span>
             </h2>
             <p className="mt-10 max-w-2xl text-lg leading-relaxed text-white/55 md:text-xl">
-              You should not have to become the integration layer for your own career. Give indii the direction. The same system can shape the plan, coordinate the specialists, and return the work to one artist-controlled project.
+              You should not have to become the integration layer for your own career. Give indii the direction. The same system can shape the plan, coordinate
+              the specialists, and return the work to one artist-controlled project.
             </p>
           </div>
         </motion.div>
@@ -84,9 +79,7 @@ export default function ConductorSection() {
             </div>
 
             <div className="px-6 py-10 md:px-10 md:py-14">
-              <div className="mb-5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
-                Your direction
-              </div>
+              <div className="mb-5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Your direction</div>
               <p className="max-w-3xl text-2xl font-semibold leading-snug tracking-[-0.025em] text-white md:text-4xl">
                 “My single is finished. Prepare the release, build the visual direction, organize the rights information, and give me a campaign I can review.”
               </p>
@@ -145,9 +138,7 @@ export default function ConductorSection() {
                 <div>
                   <h3 className="text-xl font-bold tracking-tight text-white md:text-2xl">{step.label}</h3>
                   <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/45 md:text-base">{step.text}</p>
-                  {index < workingSteps.length - 1 && (
-                    <ArrowDown size={14} className="mt-5 text-white/15" aria-hidden="true" />
-                  )}
+                  {index < workingSteps.length - 1 && <ArrowDown size={14} className="mt-5 text-white/15" aria-hidden="true" />}
                 </div>
               </motion.div>
             ))}
@@ -161,9 +152,7 @@ export default function ConductorSection() {
           transition={{ duration: 1 }}
           className="mt-24 border-y border-amber-400/25 py-8 text-center"
         >
-          <p className="text-2xl font-semibold tracking-[-0.025em] text-white md:text-4xl">
-            Less tab management. More informed decisions.
-          </p>
+          <p className="text-2xl font-semibold tracking-[-0.025em] text-white md:text-4xl">Less tab management. More informed decisions.</p>
         </motion.div>
       </div>
     </section>

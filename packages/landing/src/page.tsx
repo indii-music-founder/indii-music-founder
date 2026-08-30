@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { useAuth } from './components/auth/AuthProvider';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './lib/firebase';
-import { getStudioPreviewUrl, getStudioUrl } from './lib/auth';
+import { getStudioPreviewUrl } from './lib/auth';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from './lib/founderFunnel';
 import { isFounderPreviewEnabled } from './lib/previewAccess';
 import { emitSystemPulse } from './three/signals';
@@ -36,6 +36,7 @@ const StatsBand = lazy(() => import('./components/sections/StatsBand'));
 const PrinciplesSection = lazy(() => import('./components/sections/PrinciplesSection'));
 const OnboardingSection = lazy(() => import('./components/sections/OnboardingSection'));
 const FounderAccessSection = lazy(() => import('./components/sections/FounderAccessSection'));
+const PricingSection = lazy(() => import('./components/sections/PricingSection'));
 const systemTier = typeof window === 'undefined' ? 'FALLBACK' : detectTier(detectInputs());
 const shouldMountSystem = systemTier !== 'FALLBACK';
 
@@ -76,8 +77,6 @@ function DeferredExperienceShell() {
   );
 }
 
-
-
 /**
  * LazySection — renders below-the-fold marketing sections only when they
  * approach the viewport (IntersectionObserver), when the URL hash targets
@@ -104,12 +103,15 @@ function LazySection({ id, children }: { id?: string; children: React.ReactNode 
     const el = ref.current;
     if (!el) return;
     const show = () => setVisible(true);
-    const io = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
-        show();
-        io.disconnect();
-      }
-    }, { rootMargin: '900px 0px' });
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          show();
+          io.disconnect();
+        }
+      },
+      { rootMargin: '900px 0px' },
+    );
     io.observe(el);
     const onHash = () => {
       if (id && window.location.hash === '#' + id) {
@@ -124,13 +126,8 @@ function LazySection({ id, children }: { id?: string; children: React.ReactNode 
     };
   }, [id, visible]);
 
-  return (
-    <div ref={ref}>
-      {visible ? <Suspense fallback={null}>{children}</Suspense> : null}
-    </div>
-  );
+  return <div ref={ref}>{visible ? <Suspense fallback={null}>{children}</Suspense> : null}</div>;
 }
-
 
 const ambientStars = Array.from({ length: 72 }, (_, index) => ({
   left: `${(index * 37.31) % 100}%`,
@@ -180,7 +177,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       await addDoc(collection(db, 'waitlist'), {
         email: waitlistEmail,
         createdAt: serverTimestamp(),
-        source: 'landing_page'
+        source: 'landing_page',
       });
       setWaitlistStatus('success');
       setWaitlistMessage("You're on the list. We'll be in touch.");
@@ -189,7 +186,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
     } catch (err) {
       console.error('Waitlist error:', err);
       setWaitlistStatus('error');
-      setWaitlistMessage("Something went wrong. Please try again later.");
+      setWaitlistMessage('Something went wrong. Please try again later.');
     }
   };
 
@@ -205,8 +202,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           name: 'indii.music',
           url: 'https://indii.music',
           slogan: 'music business at the speed of you',
-          description:
-            'An artist-controlled workspace for the work around an independent music career.',
+          description: 'An artist-controlled workspace for the work around an independent music career.',
         },
         {
           '@type': 'WebSite',
@@ -219,8 +215,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           '@type': 'Product',
           '@id': 'https://indii.music/#product',
           name: 'indii.music Founding Artist Beta',
-          description:
-            'Working music-business software for independent artists, currently being refined through the Founding Artist Beta.',
+          description: 'Working music-business software for independent artists, currently being refined through the Founding Artist Beta.',
         },
       ],
     });
@@ -258,6 +253,20 @@ export default function Home({ founder = true }: { founder?: boolean }) {
     window.location.href = 'mailto:wiil@indii.music';
   };
 
+  const handlePlanSelect = (plan: string) => {
+    void trackFounderFunnelEvent(
+      'founder_interest_clicked',
+      {
+        location: 'pricing',
+        label: plan,
+      },
+      {
+        userId: user?.uid ?? null,
+        email: user?.email ?? null,
+      },
+    );
+  };
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#020202] font-sans text-white selection:bg-amber-400/30">
       <a href="#home" className="skip-link">
@@ -286,10 +295,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
 
       {shouldMountSystem && <DeferredExperienceShell />}
 
-      <nav
-        className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/65 backdrop-blur-2xl"
-        aria-label="Main navigation"
-      >
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/65 backdrop-blur-2xl" aria-label="Main navigation">
         <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/20 bg-amber-400 px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black">
           <span>Founding Artist Beta — working software, still being refined</span>
           <a href="#waitlist" className="underline decoration-black/40 underline-offset-2 hover:decoration-black">
@@ -297,20 +303,19 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           </a>
         </div>
         <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-5 md:px-10">
-          <a
-            href="#home"
-            className="text-[15px] font-bold tracking-[-0.025em] text-white transition-colors hover:text-amber-400"
-            aria-label="indii.music home"
-          >
+          <a href="#home" className="text-[15px] font-bold tracking-[-0.025em] text-white transition-colors hover:text-amber-400" aria-label="indii.music home">
             indii.music
           </a>
 
           <div className="hidden items-center gap-7 font-mono text-[9px] uppercase tracking-[0.2em] text-white/45 md:flex">
             <a href="#capabilities" className="py-2 transition-colors hover:text-white">
-              The system
+              Release lifecycle
             </a>
             <a href="#conductor" className="py-2 transition-colors hover:text-white">
               Conductor
+            </a>
+            <a href="#pricing" className="py-2 transition-colors hover:text-white">
+              Pricing
             </a>
             {founder && (
               <button type="button" onClick={() => setIsThesisOpen(true)} className="py-2 transition-colors hover:text-white">
@@ -329,42 +334,21 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             onClick={() => trackPreview('nav')}
             className="group inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-black transition-transform hover:scale-[1.03] md:px-5"
           >
-            <span>
-              {previewEnabled
-                ? loading
-                  ? 'Verifying…'
-                  : user
-                    ? 'Resume session'
-                    : 'Enter preview'
-                : 'Get access'}
-            </span>
+            <span>{previewEnabled ? (loading ? 'Verifying…' : user ? 'Resume session' : 'Enter preview') : 'Get access'}</span>
             <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
           </a>
         </div>
       </nav>
 
-      <Hero
-        founder={founder}
-        previewEnabled={previewEnabled}
-        previewHref={previewHref}
-        trackPreview={trackPreview}
-      />
+      <Hero founder={founder} previewEnabled={previewEnabled} previewHref={previewHref} trackPreview={trackPreview} />
 
       {!previewEnabled && (
-        <WaitlistSection
-          email={waitlistEmail}
-          status={waitlistStatus}
-          message={waitlistMessage}
-          onChange={setWaitlistEmail}
-          onSubmit={handleWaitlistSubmit}
-        />
+        <WaitlistSection email={waitlistEmail} status={waitlistStatus} message={waitlistMessage} onChange={setWaitlistEmail} onSubmit={handleWaitlistSubmit} />
       )}
 
       <LazySection id="detroit">{founder && <DetroitSection />}</LazySection>
 
-      <LazySection>
-        {founder && <ThesisSection setIsThesisOpen={setIsThesisOpen} />}
-      </LazySection>
+      <LazySection>{founder && <ThesisSection setIsThesisOpen={setIsThesisOpen} />}</LazySection>
 
       <LazySection>
         <StatsBand />
@@ -389,17 +373,18 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       <LazySection>{founder && <OnboardingSection />}</LazySection>
 
       <LazySection id="founder-access">
-        <FounderAccessSection studioUrl={getStudioUrl()} trackPreview={trackPreview} />
+        <FounderAccessSection trackPreview={trackPreview} />
+      </LazySection>
+
+      <LazySection id="pricing">
+        <PricingSection onPlanSelect={handlePlanSelect} />
       </LazySection>
 
       <FooterSection founder={founder} onContactClick={handleFounderInterestClick} />
 
       {founder && (
         <Suspense fallback={null}>
-          <ThesisCrawl
-            isOpen={isThesisOpen}
-            onClose={() => setIsThesisOpen(false)}
-          />
+          <ThesisCrawl isOpen={isThesisOpen} onClose={() => setIsThesisOpen(false)} />
         </Suspense>
       )}
     </main>

@@ -13,7 +13,7 @@ const legacyPillars = [
   {
     title: 'Disconnected Work',
     legacy: 'Managing releases across 20+ disconnected apps, spreadsheets, and file drops.',
-    indii: 'One integrated workspace connecting audio, visual art, metadata, distribution, and finances.',
+    indii: 'One integrated workspace connecting audio, visual art, metadata, delivery preparation, and finances.',
   },
   {
     title: 'Operating Support',
@@ -52,12 +52,11 @@ export default function LegacyComparison() {
           </h2>
 
           <p className="mt-6 text-lg leading-relaxed text-white/60 md:text-xl">
-            Music-business arrangements are not all the same. Compare what each model handles, what it costs, and how much ownership or control the artist keeps.
+            Music-business arrangements are not all the same. Compare what each model handles, what it costs, and how much ownership or control the artist
+            keeps.
           </p>
 
-          <p className="mt-3 font-mono text-xs uppercase tracking-wider text-amber-300">
-            Compare the operating model, then read the actual terms.
-          </p>
+          <p className="mt-3 font-mono text-xs uppercase tracking-wider text-amber-300">Compare the operating model, then read the actual terms.</p>
         </motion.div>
 
         {/* Comparison Grid */}
@@ -79,12 +78,9 @@ export default function LegacyComparison() {
                 {/* Legacy Card */}
                 <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/[0.03] p-4">
                   <div className="flex items-center gap-2 font-mono text-[9px] uppercase font-bold text-red-400">
-                    <ShieldAlert size={12} />
-                    A common arrangement
+                    <ShieldAlert size={12} />A common arrangement
                   </div>
-                  <p className="mt-2 text-xs leading-relaxed text-white/55">
-                    {pillar.legacy}
-                  </p>
+                  <p className="mt-2 text-xs leading-relaxed text-white/55">{pillar.legacy}</p>
                 </div>
 
                 {/* indii Way Card */}
@@ -93,9 +89,7 @@ export default function LegacyComparison() {
                     <ShieldCheck size={12} />
                     The indii Workspace
                   </div>
-                  <p className="mt-2 text-xs font-medium leading-relaxed text-white/90">
-                    {pillar.indii}
-                  </p>
+                  <p className="mt-2 text-xs font-medium leading-relaxed text-white/90">{pillar.indii}</p>
                 </div>
               </div>
 
@@ -109,11 +103,9 @@ export default function LegacyComparison() {
 
         {/* Bottom Callout Banner */}
         <div className="mt-14 rounded-2xl border border-amber-400/30 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-950/40 via-black to-black p-8 text-center sm:p-12">
-          <h3 className="text-2xl font-black tracking-tight text-white md:text-4xl">
-            You don’t need a label to run a professional career.
-          </h3>
+          <h3 className="text-2xl font-black tracking-tight text-white md:text-4xl">You don’t need a label to run a professional career.</h3>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/60 sm:text-base">
-            You just need one unified workspace where distribution, artwork, rights, campaigns, and finances work together under your direct command.
+            You need one unified workspace where delivery preparation, artwork, rights, campaigns, and finances stay connected under your direction.
             <span className="mt-4 block text-lg font-black text-amber-400 sm:text-xl">
               YOU need <span className="indii-name">indii.music</span>.
             </span>
