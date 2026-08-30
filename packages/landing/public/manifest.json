@@ -1,7 +1,7 @@
 {
-  "name": "indii.music — Founder Access",
+  "name": "indii.music — Founding Artist Beta",
   "short_name": "indii.music",
-  "description": "indii.music — music business at the speed of you — Founder access to the indii.music workspace for independent artists.",
+  "description": "Run the business behind your music in the indii.music workspace for independent artists.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

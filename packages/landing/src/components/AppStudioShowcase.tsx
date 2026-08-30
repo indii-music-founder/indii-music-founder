@@ -24,9 +24,9 @@ interface TabItem {
 const tabs: TabItem[] = [
   { id: 'boardroom', label: 'Conductor & Boardroom', badge: 'Command Engine', icon: Sparkles },
   { id: 'creative', label: 'Creative Studio', badge: 'Visual & Video', icon: Layers },
-  { id: 'distribution', label: 'Direct Distribution', badge: 'DDEX ERN 4.3', icon: Share2 },
+  { id: 'distribution', label: 'Delivery Preparation', badge: 'DDEX ERN 4.3', icon: Share2 },
   { id: 'audio', label: 'Audio Intelligence', badge: 'Sonic DNA', icon: Activity },
-  { id: 'finance', label: 'Financial Command', badge: '100% Payouts', icon: DollarSign },
+  { id: 'finance', label: 'Financial Command', badge: 'Project Records', icon: DollarSign },
 ];
 
 export default function AppStudioShowcase() {
@@ -50,7 +50,7 @@ export default function AppStudioShowcase() {
             <span className="text-amber-400">actually gets run.</span>
           </h2>
           <p className="mt-6 text-base text-white/50 sm:text-lg md:text-xl">
-            No mockups or third-party wrappers. This is your single, integrated studio workspace where 24 departments execute under your direction.
+            Explore an interactive, illustrative walkthrough of the connected workspace. Real product capture will replace these preview panels during the beta.
           </p>
         </div>
 
@@ -91,15 +91,15 @@ export default function AppStudioShowcase() {
               <span className="h-3 w-3 rounded-full bg-red-500/80" />
               <span className="h-3 w-3 rounded-full bg-yellow-500/80" />
               <span className="h-3 w-3 rounded-full bg-green-500/80" />
-              <span className="ml-4 tracking-[0.2em] uppercase text-white/60">indiiOS Studio / v1.64</span>
+              <span className="ml-4 tracking-[0.2em] uppercase text-white/60">indii.music / Founding Artist Beta</span>
             </div>
             <div className="hidden items-center gap-6 md:flex">
               <span className="flex items-center gap-1.5 text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                 System Active
               </span>
-              <span>24 Departments Connected</span>
-              <span className="text-amber-400 font-bold">Artist Ownership: 100%</span>
+              <span>Connected Project Context</span>
+              <span className="text-amber-400 font-bold">Artist Controlled</span>
             </div>
           </div>
 
@@ -125,7 +125,7 @@ export default function AppStudioShowcase() {
                         The system carries the work.
                       </h3>
                       <p className="mt-4 text-sm leading-relaxed text-white/60">
-                        Type or speak in plain English. Conductor breaks down your goal into actionable work steps, assigns tasks across your 24 departments, and presents every decision for your approval.
+                        Type or speak in plain English. Conductor turns the goal into visible work, brings in the relevant specialists, and keeps the shared project context connected.
                       </p>
                     </div>
 
@@ -155,7 +155,7 @@ export default function AppStudioShowcase() {
                       {[
                         { dept: 'Audio Intelligence', task: 'Extracted Track DNA (124 BPM, F# Minor, Ethereal)', status: 'Complete', color: 'text-emerald-400' },
                         { dept: 'Creative Director', task: 'Generated 3 Artwork Briefs (Minimalist Sans-Serif)', status: 'Awaiting Artist Review', color: 'text-amber-400' },
-                        { dept: 'Direct Distribution', task: 'Compiled DDEX ERN 4.3 XML Payload', status: 'Validated', color: 'text-emerald-400' },
+                        { dept: 'Delivery Preparation', task: 'Compiled DDEX ERN 4.3 XML Payload', status: 'Validated', color: 'text-emerald-400' },
                         { dept: 'Marketing & PR', task: 'Drafted 500-char Editorial Pitch & Waterfall Rollout', status: 'In Progress', color: 'text-blue-400' },
                       ].map((item, idx) => (
                         <div key={idx} className="flex items-start gap-4 rounded-lg border border-white/5 bg-white/[0.02] p-4">
@@ -249,22 +249,22 @@ export default function AppStudioShowcase() {
                 >
                   <div>
                     <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
-                      Direct Distribution Engine
+                      Delivery Preparation
                     </div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
-                      Distribute globally. <br />
-                      Keep 100% of your earnings.
+                      Prepare the release. <br />
+                      Keep the package connected.
                     </h3>
                     <p className="mt-4 text-sm leading-relaxed text-white/60">
-                      Bypass traditional distributors taking annual fees or percentage cuts. indii formats, validates, and packages your release using institutional DDEX ERN 4.3 standards directly to all major streaming services.
+                      Bring mastered audio, artwork, credits, identifiers, and release metadata together. indii helps format and validate a delivery-ready package using DDEX ERN 4.3 standards.
                     </p>
 
                     <div className="mt-8 space-y-3 font-mono text-xs">
                       {[
-                        '0% Royalty Share — indii is software, not your label',
-                        'Automated ISRC & UPC code generation',
-                        'DDEX ERN 4.3 XML schema validation',
-                        'Direct delivery pipeline to Spotify, Apple, Tidal, Amazon',
+                        'Artist-controlled release record',
+                        'Identifier and metadata checks',
+                        'DDEX ERN 4.3 package preparation',
+                        'Delivery-ready files for the next approved step',
                       ].map((benefit, i) => (
                         <div key={i} className="flex items-center gap-3 text-white/80">
                           <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
@@ -300,8 +300,8 @@ export default function AppStudioShowcase() {
     </SoundRecording>
   </ResourceList>
   <DealList>
-    <RoyaltyShare>0.00% (Label Cut: 0%)</RoyaltyShare>
-    <ArtistPayout>100% Direct to Bank</ArtistPayout>
+    <ReleaseStatus>DeliveryPackagePrepared</ReleaseStatus>
+    <ArtistReview>RequiredBeforeExternalDelivery</ArtistReview>
   </DealList>
 </NewReleaseMessage>`}
                     </pre>
@@ -389,16 +389,16 @@ export default function AppStudioShowcase() {
                       Zero hidden deductions.
                     </h3>
                     <p className="mt-4 text-sm leading-relaxed text-white/60">
-                      Track earnings across streaming services, sync licensing, and merch sales. Automate collaborator split contracts and payout schedules with clear accounting records.
+                      Track reported streaming, sync, and merchandise income alongside collaborator split records and project expenses in one connected view.
                     </p>
 
                     <div className="mt-6 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.04] p-5">
                       <div className="font-mono text-[9px] uppercase tracking-wider text-emerald-400">
-                        Net Revenue Retained
+                        Illustrative Project Summary
                       </div>
-                      <div className="mt-2 text-4xl font-black text-white">100.00%</div>
+                      <div className="mt-2 text-4xl font-black text-white">One record</div>
                       <p className="mt-1 text-xs text-white/50">
-                        Traditional record labels retain 80%+ of gross revenues. indii takes 0%.
+                        Income, expenses, and split information stay connected to the work that created them.
                       </p>
                     </div>
                   </div>
@@ -407,7 +407,7 @@ export default function AppStudioShowcase() {
                   <div className="flex flex-col justify-between rounded-xl border border-white/10 bg-[#090909] p-6 font-mono">
                     <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs">
                       <span className="text-white/60">Catalog Financial Summary</span>
-                      <span className="text-emerald-400 font-bold">Payout Status: Active</span>
+                      <span className="text-emerald-400 font-bold">Illustrative Data</span>
                     </div>
 
                     <div className="my-6 space-y-4">
@@ -426,8 +426,8 @@ export default function AppStudioShowcase() {
                     </div>
 
                     <div className="text-[10px] text-white/40 border-t border-white/10 pt-3 flex items-center justify-between">
-                      <span>Collaborator Splits Executed (3 Co-Writers)</span>
-                      <span className="text-emerald-400">Audited</span>
+                      <span>Collaborator Split Records (3 Co-Writers)</span>
+                      <span className="text-emerald-400">Connected</span>
                     </div>
                   </div>
                 </motion.div>

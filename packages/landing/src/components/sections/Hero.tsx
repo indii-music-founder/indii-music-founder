@@ -13,10 +13,9 @@ interface HeroProps {
   previewEnabled: boolean;
   previewHref: string;
   trackPreview: (location: string) => void;
-  setIsThesisOpen: (open: boolean) => void;
 }
 
-export default function Hero({ founder, previewEnabled, previewHref, trackPreview, setIsThesisOpen }: HeroProps) {
+export default function Hero({ founder, previewEnabled, previewHref, trackPreview }: HeroProps) {
   const reducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll();
   // Under prefers-reduced-motion the hero stays put: no scroll-linked
@@ -38,23 +37,11 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
       aria-label="indii.music founder introduction"
     >
       <div className="flex items-center justify-between border-t border-white/12 pt-4 font-mono text-[9px] uppercase tracking-[0.23em] text-white/45">
-        <span>Independent music / operating workspace</span>
-        <span className="hidden sm:inline">Detroit, Michigan / Private founder preview</span>
+        <span>Independent music / business operating system</span>
+        <span className="hidden sm:inline">Detroit, Michigan / Founding Artist Beta</span>
       </div>
 
       <div className="relative my-auto py-16 md:py-12">
-        {/* Canonical brand lockup — indii.music / music business at the speed of you */}
-        <motion.p
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="relative mb-8 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] tracking-[0.22em] text-white/55 md:mb-10"
-        >
-          <span className="font-bold text-white">{INDII_BRAND.name}</span>
-          <span aria-hidden="true" className="h-px w-7 bg-white/25" />
-          <span className="normal-case tracking-[0.16em]">{INDII_BRAND.tagline}</span>
-        </motion.p>
-
         <h1
           className="relative max-w-[1450px] text-[15.4vw] font-black leading-[0.73] tracking-[-0.075em] text-white sm:text-[12.3vw] lg:text-[10.6rem]"
           aria-label="Run your music career without giving it away."
@@ -98,6 +85,23 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
           ))}
         </h1>
 
+        {/* Headline first, then the category explanation and canonical tagline. */}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.62, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mt-9 flex flex-col gap-3 md:mt-11"
+        >
+          <p className="text-xl font-black tracking-[-0.025em] text-white md:text-3xl">
+            The operating system for your music independence.
+          </p>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] tracking-[0.22em] text-white/55">
+            <span className="font-bold text-white">{INDII_BRAND.name}</span>
+            <span aria-hidden="true" className="h-px w-7 bg-white/25" />
+            <span className="normal-case tracking-[0.16em]">{INDII_BRAND.tagline}</span>
+          </p>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
@@ -108,16 +112,15 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
           <div>
             <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
               <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.8)]" />
-              The Artist Operating System
+              Run the business behind your music
             </div>
 
-            {/* New Catchphrase */}
             <h2 className="mt-3 text-2xl font-black tracking-tight text-white md:text-3xl lg:text-4xl">
-              Tools for your music career <span className="text-[#FFB800] [text-shadow:0_0_25px_rgba(255,184,0,0.6)]">without sacrifice</span>.
+              One connected workspace. <span className="text-[#FFB800] [text-shadow:0_0_25px_rgba(255,184,0,0.6)]">Your direction.</span>
             </h2>
 
             <p className="mt-4 text-lg font-medium leading-relaxed text-white/80 md:text-xl">
-              Artists already bypassed labels and recording studios. <span className="text-amber-400 font-bold">Distribution is the last gatekeeper standing.</span> Everything you create sits right in front of the pipeline.
+              indii.music brings the business behind your music together—from planning and rights to distribution preparation, campaigns, and money.
             </p>
 
             {/* No More Gatekeepers / Handlers Card */}
@@ -127,35 +130,35 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                   The Freedom Principle
                 </span>
                 <span className="rounded bg-amber-400/20 px-2.5 py-0.5 font-mono text-[9px] font-bold text-amber-300 border border-amber-400/40">
-                  Direct Distribution Pipeline
+                  Artist-controlled workspace
                 </span>
               </div>
 
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div className="border-l-2 border-amber-400 pl-3">
-                  <div className="text-xs font-black uppercase tracking-wider text-white">Distribution IS The Workspace</div>
+                  <div className="text-xs font-black uppercase tracking-wider text-white">The release stays connected</div>
                   <p className="mt-1 text-xs leading-relaxed text-white/70">
-                    Instead of 20 fragmented tools scattered everywhere, all assets, rights, and rollouts sit directly connected in front of your distribution pipeline.
+                    Keep assets, rights, plans, campaigns, and financial records attached to the same project.
                   </p>
                 </div>
                 <div className="border-l-2 border-amber-400 pl-3">
-                  <div className="text-xs font-black uppercase tracking-wider text-white">No Handlers. 24 Specialists.</div>
+                  <div className="text-xs font-black uppercase tracking-wider text-white">The right help, in context</div>
                   <p className="mt-1 text-xs leading-relaxed text-white/70">
-                    No middleman making decisions for you. You call the shots—our 24 agent specialists coordinate the work and guide the pipeline.
+                    Connected specialists help prepare the work while you remain the artist and decision-maker.
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Primary CTAs & Guarantee Badges */}
+          {/* Right Column: Primary CTAs & Product Status */}
           <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.02] p-7 backdrop-blur-md">
             <div>
               <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">
-                Immediate Access / Founder Edition
+                Working software / Founding Artist Beta
               </div>
               <p className="mt-3 text-base text-white/70">
-                Join independent artists taking control of their releases, catalog, and finances.
+                Join the waitlist for working software that is still being refined with independent artists.
               </p>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -174,32 +177,29 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                     ? founder
                       ? 'Enter Founder Preview'
                       : 'Enter indii.music'
-                    : 'Join Waitlist'}
+                    : 'Get Founding Artist access'}
                   <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
                 </a>
-                {founder && (
-                  <button
-                    type="button"
-                    onClick={() => setIsThesisOpen(true)}
-                    className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/20 px-7 py-4 text-sm font-bold text-white transition-colors hover:border-amber-400/50 hover:text-amber-300"
-                  >
-                    <Play size={14} fill="currentColor" />
-                    Watch the Thesis
-                  </button>
-                )}
+                <a
+                  href="#studio-preview"
+                  className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/20 px-7 py-4 text-sm font-bold text-white transition-colors hover:border-amber-400/50 hover:text-amber-300"
+                >
+                  <Play size={14} fill="currentColor" />
+                  See how indii.music works
+                </a>
               </div>
             </div>
 
             <div className="mt-8 border-t border-white/10 pt-4">
               <div className="grid grid-cols-3 gap-2 text-center font-mono text-[9px] uppercase tracking-wider">
                 <div className="rounded bg-black/60 p-2 text-white/80 border border-white/5">
-                  <span className="block font-bold text-amber-400">100%</span> Rights
+                  <span className="block font-bold text-amber-400">Keep</span> Your rights
                 </div>
                 <div className="rounded bg-black/60 p-2 text-white/80 border border-white/5">
                   <span className="block font-bold text-amber-400">0%</span> Royalty Cut
                 </div>
                 <div className="rounded bg-black/60 p-2 text-white/80 border border-white/5">
-                  <span className="block font-bold text-amber-400">24</span> Departments
+                  <span className="block font-bold text-amber-400">Live</span> Working beta
                 </div>
               </div>
             </div>

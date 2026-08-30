@@ -3,8 +3,8 @@
  *
  * Renders the REAL Home component (not a mock) with only Firebase and the
  * WebGL layer stubbed, and asserts that every conversion-critical string and
- * system marker from the pre-transformation site is still present. This is the
- * tripwire for copy drift during the section extraction.
+ * system marker from the approved Founding Artist Beta positioning is still
+ * present. This is the tripwire for unsupported claim and conversion-path drift.
  *
  * The below-the-fold sections are now deferred (LazySection): they mount only
  * when they approach the viewport, when the URL hash targets them, or when a
@@ -106,7 +106,6 @@ describe('home page preservation (founder mode)', () => {
       import('./components/ConductorSection'),
       import('./components/AppStudioShowcase'),
       import('./components/LegacyComparison'),
-      import('./components/FounderRoyaltyCalculator'),
       import('./components/sections/DetroitSection'),
       import('./components/sections/ThesisSection'),
       import('./components/sections/StatsBand'),
@@ -173,31 +172,33 @@ describe('home page preservation (founder mode)', () => {
     await renderHome();
     const text = container.textContent ?? '';
     expect(normalized(text)).toContain(normalized('Run your music career without giving $ıt away.'));
-    expect(text).toContain('The Artist Operating System');
-    expect(text).toContain('Tools for your music career');
-    expect(text).toContain('without sacrifice');
-    // Preview closed → the hero CTA is the waitlist join (original behavior).
-    expect(text).toContain('Join Waitlist');
-    expect(text).toContain('Watch the Thesis');
+    expect(text).toContain('The operating system for your music independence.');
+    expect(text).toContain('music business at the speed of you');
+    expect(text).toContain('Run the business behind your music');
+    expect(text).toContain('One connected workspace.');
+    expect(text).toContain('Get Founding Artist access');
+    expect(text).toContain('See how indii.music works');
+    expect(text).toContain('Working software / Founding Artist Beta');
     // The "$ıt" wordplay must survive intact.
     expect(text).toContain('ıt');
-    // Below-the-fold claims still exist once the sections reveal.
+    // The public page must not revive unsupported legacy promises.
     await revealSections();
     const revealed = container.textContent ?? '';
-    expect(revealed).toContain('Distribution is the last gatekeeper standing');
     expect(revealed).toContain('The Freedom Principle');
-    expect(revealed).toContain('Direct Distribution Pipeline');
-    expect(revealed).toContain('Distribution IS The Workspace');
-    expect(revealed).toContain('No Handlers. 24 Specialists.');
-    expect(revealed).toContain('100%');
-    expect(revealed).toContain('0%');
-    expect(revealed).toContain('24');
+    expect(revealed).toContain('Keep Your rights');
+    expect(revealed).toContain('0% Royalty Cut');
+    expect(revealed).not.toContain('Distribution is the last gatekeeper standing');
+    expect(revealed).not.toContain('Direct Distribution Pipeline');
+    expect(revealed).not.toContain('No Handlers. 24 Specialists.');
+    expect(revealed).not.toContain('Deliver directly to Spotify');
   });
 
   it('keeps the waitlist conversion path', async () => {
     await renderHome();
     const text = container.textContent ?? '';
-    expect(text).toContain('Join the founder waitlist.');
+    expect(text).toContain('Join the Founding Artist Beta waitlist.');
+    expect(text).toContain('first-come beta invitations');
+    expect(text).toContain('early-pricing priority');
     const input = container.querySelector('input[type="email"]');
     expect(input).not.toBeNull();
     expect(input?.getAttribute('placeholder')).toBe('Enter your email');
@@ -213,13 +214,14 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('argument.');
     expect(text).toContain('Launch cinematic thesis');
     expect(text).toContain('One workspace');
-    expect(text).toContain('24 connected departments');
-    expect(text).toContain('Artist review');
+    expect(text).toContain('Connected work');
+    expect(text).toContain('Shared project context');
+    expect(text).toContain('Artist Review');
     expect(text).toContain('0% royalty share');
     expect(text).toContain('The music industry was built');
     expect(text).toContain('upside-down.');
-    expect(text).toContain('Every department you need.');
-    expect(text).toContain('Under your direct command.');
+    expect(text).toContain('Every part of the work.');
+    expect(text).toContain('Connected to the same project.');
     expect(text).toContain('One direction.');
     expect(text).toContain('The whole system moves.');
     expect(text).toContain('See how your career');
@@ -236,8 +238,10 @@ describe('home page preservation (founder mode)', () => {
     await revealSections();
     const text = container.textContent ?? '';
     expect(text).toContain('$2,500');
-    expect(text).toContain('Secure Founder Access');
-    expect(text).toContain('Lifetime access to the Founder edition');
+    expect(text).toContain('Founding Owner License');
+    expect(text).toContain('Get Founding Owner access');
+    expect(text).toContain('Permanent top-tier software access');
+    expect(text).toContain('Usage available as needed after included allowances');
     expect(text).toContain('What you are buying');
     expect(text).toContain('What you are not buying');
     expect(text).toContain('Separate conversations');
@@ -277,10 +281,20 @@ describe('home page preservation (founder mode)', () => {
     await renderHome();
     await revealSections();
     const text = container.textContent ?? '';
-    expect(text).toContain('Deliver directly to Spotify, Apple & Tidal.');
+    expect(text).toContain('Prepare releases and delivery-ready packages.');
     expect(text).toContain('DDEX ERN 4.3');
     expect(text).toContain('Working Execution Path');
-    expect(text).toContain('Master WAV → DDEX Metadata → Schema Verification → Global Delivery');
+    expect(text).toContain('Mastered Audio → Release Metadata → Schema Verification → Delivery-Ready Package');
+    expect(
+      container.querySelector(
+        'button[aria-label="Publishing: Know what should be registered and what still needs attention."]',
+      ),
+    ).not.toBeNull();
+    expect(
+      container.querySelector(
+        'button[aria-label="Financial Center: Track every dollar coming in and every dollar going out."]',
+      ),
+    ).not.toBeNull();
   });
 });
 
@@ -305,7 +319,7 @@ describe('home page preservation (public mode)', () => {
       root.render(<Home founder={false} />);
     });
     const text = container.textContent ?? '';
-    expect(text).toContain('Join the founder waitlist.');
+    expect(text).toContain('Join the Founding Artist Beta waitlist.');
     // With the preview closed, the hero CTA is the waitlist join.
     expect(text).toContain('Join Waitlist');
     expect(text).not.toContain('Enter Founder Preview');
@@ -322,7 +336,8 @@ describe('home page preservation (public mode)', () => {
       }
     });
     const revealed = container.textContent ?? '';
-    expect(revealed).toContain('Secure Founder Access');
+    expect(revealed).toContain('Founding Owner License');
+    expect(revealed).toContain('Get Founding Owner access');
     expect(revealed).toContain('$2,500');
     expect(revealed).not.toContain('Built in Detroit for your work');
     expect(revealed).not.toContain('Launch cinematic thesis');

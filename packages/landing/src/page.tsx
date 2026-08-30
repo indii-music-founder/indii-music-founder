@@ -30,9 +30,6 @@ const AgentGrid = lazy(() => import('./components/AgentGrid'));
 const ConductorSection = lazy(() => import('./components/ConductorSection'));
 const AppStudioShowcase = lazy(() => import('./components/AppStudioShowcase'));
 const LegacyComparison = lazy(() => import('./components/LegacyComparison'));
-const FounderRoyaltyCalculator = lazy(() =>
-  import('./components/FounderRoyaltyCalculator').then((m) => ({ default: m.FounderRoyaltyCalculator })),
-);
 const DetroitSection = lazy(() => import('./components/sections/DetroitSection'));
 const ThesisSection = lazy(() => import('./components/sections/ThesisSection'));
 const StatsBand = lazy(() => import('./components/sections/StatsBand'));
@@ -213,25 +210,17 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         },
         {
           '@type': 'WebSite',
-          '@id': 'https://founder.indii.music/#website',
-          url: 'https://founder.indii.music',
-          name: 'indii.music Founder Access',
+          '@id': 'https://indii.music/#website',
+          url: 'https://indii.music',
+          name: 'indii.music',
           publisher: { '@id': 'https://indii.music/#organization' },
         },
         {
           '@type': 'Product',
-          '@id': 'https://founder.indii.music/#product',
-          name: 'indii.music Founder Access',
+          '@id': 'https://indii.music/#product',
+          name: 'indii.music Founding Artist Beta',
           description:
-            'A one-time software purchase for lifetime access to the indii.music Founder edition, guided onboarding, Boardroom, Conductor, and founder-level updates.',
-          offers: {
-            '@type': 'Offer',
-            url: 'https://founder.indii.music',
-            price: '2500',
-            priceCurrency: 'USD',
-            availability: 'https://schema.org/InStock',
-            seller: { '@id': 'https://indii.music/#organization' },
-          },
+            'Working music-business software for independent artists, currently being refined through the Founding Artist Beta.',
         },
       ],
     });
@@ -259,7 +248,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       'founder_interest_clicked',
       {
         location: 'footer',
-        label: 'Founder Access',
+        label: 'Founding Owner License',
       },
       {
         userId: user?.uid ?? null,
@@ -301,6 +290,12 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/65 backdrop-blur-2xl"
         aria-label="Main navigation"
       >
+        <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/20 bg-amber-400 px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black">
+          <span>Founding Artist Beta — working software, still being refined</span>
+          <a href="#waitlist" className="underline decoration-black/40 underline-offset-2 hover:decoration-black">
+            Join the waitlist
+          </a>
+        </div>
         <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-5 md:px-10">
           <a
             href="#home"
@@ -323,7 +318,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               </button>
             )}
             <a href="#founder-access" className="py-2 text-amber-400 transition-colors hover:text-amber-300">
-              Founder access
+              Founding Owner
             </a>
           </div>
 
@@ -341,7 +336,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                   : user
                     ? 'Resume session'
                     : 'Enter preview'
-                : 'Join Waitlist'}
+                : 'Get access'}
             </span>
             <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
           </a>
@@ -353,7 +348,6 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         previewEnabled={previewEnabled}
         previewHref={previewHref}
         trackPreview={trackPreview}
-        setIsThesisOpen={setIsThesisOpen}
       />
 
       {!previewEnabled && (
@@ -387,9 +381,6 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       </LazySection>
       <LazySection id="studio-preview">
         <AppStudioShowcase />
-      </LazySection>
-      <LazySection>
-        <FounderRoyaltyCalculator />
       </LazySection>
       <LazySection>
         <PrinciplesSection />

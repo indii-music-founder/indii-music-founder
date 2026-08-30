@@ -6,24 +6,24 @@ import { ShieldAlert, ShieldCheck, ArrowRight, RefreshCw, Zap } from 'lucide-rea
 
 const legacyPillars = [
   {
-    title: 'The Middleman Tax',
-    legacy: 'Record labels & handlers take 80%+ of gross royalties just for administrative access.',
-    indii: '0% Royalty Share. You keep 100% of your rights and streaming revenue.',
+    title: 'Ownership & Control',
+    legacy: 'Some agreements exchange services or funding for rights, revenue participation, or decision-making control. Terms vary by contract.',
+    indii: 'indii is business software, not a label. The artist keeps the rights and remains the decision-maker.',
   },
   {
-    title: 'The Scavenger Hunt',
+    title: 'Disconnected Work',
     legacy: 'Managing releases across 20+ disconnected apps, spreadsheets, and file drops.',
     indii: 'One integrated workspace connecting audio, visual art, metadata, distribution, and finances.',
   },
   {
-    title: 'Conditioned Control',
-    legacy: 'Conditioned to believe you need gatekeepers and handlers to make choices for you.',
-    indii: 'Same professional career operations—you set the direction, our specialists carry the work.',
+    title: 'Operating Support',
+    legacy: 'Independent artists often carry release, rights, campaign, and financial work without a shared operating system.',
+    indii: 'You set the direction. Connected specialists help prepare the relevant work from shared project context.',
   },
   {
-    title: 'Opaque Accounting',
-    legacy: 'Delayed 6-month royalty statements with hidden deductions and unverified splits.',
-    indii: 'Real-time transparent revenue tracking, automated split contracts, and immediate payouts.',
+    title: 'Financial Context',
+    legacy: 'Revenue reports, split information, and project expenses often live in separate systems or spreadsheets.',
+    indii: 'Track reported income, expenses, and split records together with the project that created them.',
   },
 ];
 
@@ -52,11 +52,11 @@ export default function LegacyComparison() {
           </h2>
 
           <p className="mt-6 text-lg leading-relaxed text-white/60 md:text-xl">
-            For decades, independent artists have been conditioned to believe that surrendering rights, paying an 80% middleman tax, and letting handlers make decisions is “just how the business works.”
+            Music-business arrangements are not all the same. Compare what each model handles, what it costs, and how much ownership or control the artist keeps.
           </p>
 
           <p className="mt-3 font-mono text-xs uppercase tracking-wider text-amber-300">
-            Same essential career operations. A completely new way to run them—with total control.
+            Compare the operating model, then read the actual terms.
           </p>
         </motion.div>
 
@@ -80,7 +80,7 @@ export default function LegacyComparison() {
                 <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/[0.03] p-4">
                   <div className="flex items-center gap-2 font-mono text-[9px] uppercase font-bold text-red-400">
                     <ShieldAlert size={12} />
-                    The Legacy Conditioning
+                    A common arrangement
                   </div>
                   <p className="mt-2 text-xs leading-relaxed text-white/55">
                     {pillar.legacy}
@@ -100,7 +100,7 @@ export default function LegacyComparison() {
               </div>
 
               <div className="mt-6 border-t border-white/10 pt-4 font-mono text-[9px] uppercase tracking-wider text-amber-400 flex items-center justify-between">
-                <span>Total Ownership</span>
+                <span>Artist-controlled alternative</span>
                 <Zap size={12} />
               </div>
             </motion.div>

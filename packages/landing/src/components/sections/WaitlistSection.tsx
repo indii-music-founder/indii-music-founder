@@ -15,7 +15,7 @@ export default function WaitlistSection({ email, status, message, onChange, onSu
     <section
       id="waitlist"
       data-system-section="waitlist"
-      className="relative z-20 scroll-mt-[72px] border-y border-amber-400/20 bg-[#080602]"
+      className="relative z-20 scroll-mt-[104px] border-y border-amber-400/20 bg-[#080602]"
       aria-labelledby="waitlist-title"
     >
       <div className="mx-auto grid max-w-[1500px] gap-8 px-5 py-12 md:grid-cols-[0.48fr_1fr_0.36fr] md:items-center md:px-10 md:py-14">
@@ -28,10 +28,10 @@ export default function WaitlistSection({ email, status, message, onChange, onSu
             id="waitlist-title"
             className="text-3xl font-black tracking-[-0.045em] text-white md:text-4xl"
           >
-            Join the founder waitlist.
+            Join the Founding Artist Beta waitlist.
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/45 md:text-base">
-            We are preparing the Founder preview before opening product access. You can explore the thesis and the working system here. Join the list to get notified when spots open up.
+            indii.music is working software that is still being refined. Join for first-come beta invitations, meaningful development updates, and early-pricing priority.
           </p>
         </div>
         <div className="md:text-right">

@@ -4,8 +4,8 @@ import React from 'react';
 
 const stats: Array<[string, string]> = [
   ['One workspace', 'Projects and career operations'],
-  ['24 connected departments', 'The public operating model'],
-  ['Artist review', 'High-impact actions stay visible'],
+  ['Artist controlled', 'You remain the decision-maker'],
+  ['Connected work', 'Shared project context'],
   ['0% royalty share', 'indii is software, not your label'],
 ];
 

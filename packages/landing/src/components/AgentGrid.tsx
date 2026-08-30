@@ -19,22 +19,22 @@ const workstreams: Workstream[] = [
   {
     id: 'distribution',
     index: '01',
-    name: 'Direct Distribution',
-    badge: '0% Royalty Share',
-    title: 'Deliver directly to Spotify, Apple & Tidal.',
+    name: 'Delivery Preparation',
+    badge: 'Delivery Ready',
+    title: 'Prepare releases and delivery-ready packages.',
     outcome:
-      'Publish globally using institutional DDEX ERN 4.3 standards. No middleman distributor taking percentage cuts or charging annual recurring fees.',
-    details: ['DDEX ERN 4.3 XML Generation', 'Automated ISRC & UPC Codes', '100% Direct Artist Earnings'],
-    route: 'Master WAV → DDEX Metadata → Schema Verification → Global Delivery',
+      'Bring mastered audio, artwork, credits, rights information, identifiers, and DDEX metadata together before a release leaves the project.',
+    details: ['DDEX ERN 4.3 Preparation', 'Identifier & Metadata Checks', 'Delivery-Ready Release Record'],
+    route: 'Mastered Audio → Release Metadata → Schema Verification → Delivery-Ready Package',
   },
   {
     id: 'music',
     index: '02',
     name: 'Audio Intelligence',
     badge: 'Sonic DNA',
-    title: 'Extract deep sonic metadata to fuel your 24 agent specialists.',
+    title: 'Turn finished audio into shared project context.',
     outcome:
-      'Establishes the intelligent baseline for our 24 agent specialists to understand the music powering your release, artwork, mastering, and campaign rollouts.',
+      'Extract useful metadata from the finished master so the relevant release, campaign, and catalog workflows begin with the same source context.',
     details: ['Agent Context Baseline', 'Sonic DNA Metadata', 'Multi-Specialist Alignment'],
     route: 'Audio Upload → Sonic DNA Extraction → Agent Specialist Baseline → Release Pipeline',
   },
@@ -67,9 +67,9 @@ const workstreams: Workstream[] = [
     badge: 'Rights Protection',
     title: 'Protect your rights and own your masters from day one.',
     outcome:
-      'Lock in your songwriter splits, copyright registrations, and master ownership in one unalterable project record you control 100%.',
-    details: ['Master Ownership & Protection', 'Automated Split Contracts', 'Copyright & Registration Logging'],
-    route: 'Co-writing → Split Agreements → Rights Protection → Verified Catalog Record',
+      'Keep songwriter splits, copyright-registration status, credits, and master ownership attached to the project they describe.',
+    details: ['Ownership Records', 'Split Information', 'Copyright & Registration Tracking'],
+    route: 'Credits → Split Information → Registration Status → Catalog Record',
   },
   {
     id: 'finance',
@@ -78,9 +78,9 @@ const workstreams: Workstream[] = [
     badge: 'Income & Outflow',
     title: 'Track every dollar coming in and every dollar going out.',
     outcome:
-      'Complete financial command: monitor streaming, sync, and merch revenue coming in, while managing split payouts, collaborator cuts, and business expenses going out.',
-    details: ['Gross Revenue Tracking (In)', 'Automated Split Payouts (Out)', 'Expense & Business Audit'],
-    route: 'Gross Revenue → Auto-Split Payouts → Expense Ledger → Direct Artist Bank',
+      'Track streaming, sync, and merchandise income alongside collaborator splits and project expenses without separating the money from the release.',
+    details: ['Income Tracking', 'Split Records', 'Project Expenses'],
+    route: 'Income Records → Split Information → Expense Ledger → Project Summary',
   },
   {
     id: 'marketing',
@@ -109,11 +109,11 @@ const workstreams: Workstream[] = [
     index: '09',
     name: 'Publishing',
     badge: 'Composition Rights',
-    title: 'Register composition rights everywhere from one source—zero dollars to the black box.',
+    title: 'Know what should be registered and what still needs attention.',
     outcome:
-      'Our publishing specialists assist you in submitting registrations across PROs (BMI, ASCAP, PRS, MLC) directly from your workspace, ensuring 100% of your performance and mechanical royalties reach your bank instead of disappearing into unclaimed black box pools.',
-    details: ['Single-Source PRO Submissions', 'Unclaimed Royalty Protection', 'Zero Black Box Leakage'],
-    route: 'Composition Metadata → Automated PRO Submissions → Black Box Protection → 100% Royalty Collection',
+      'Organize composition metadata and registration status in one place so accurate records are ready for the appropriate publishing and rights organizations.',
+    details: ['Composition Metadata', 'Registration Status', 'Publishing Records'],
+    route: 'Composition Metadata → Registration Check → Prepared Records → Status Tracking',
   },
   {
     id: 'licensing',
@@ -131,20 +131,20 @@ const workstreams: Workstream[] = [
     index: '11',
     name: 'Publicity & PR',
     badge: 'EPK & Press',
-    title: 'Real-time press & EPK sync—never have an outdated media kit ever again.',
+    title: 'Keep publicity materials connected to current project facts.',
     outcome:
-      'As your career evolves, new songs, tour dates, press milestones, and brand updates automatically sync to your EPK and publicity materials in real time. One source of truth powers all media outreach.',
-    details: ['Live Auto-Syncing EPK', 'Real-Time Press Milestones', 'Single-Source PR Outbound'],
-    route: 'Live Project Facts → Real-Time EPK Auto-Sync → Media Pitching → Press Distribution',
+      'Use current songs, dates, milestones, and brand material to prepare EPK and publicity updates from the same project source.',
+    details: ['Current Project Facts', 'EPK Preparation', 'Publicity Materials'],
+    route: 'Project Facts → EPK Update → Artist Review → Outreach Preparation',
   },
   {
     id: 'road',
     index: '12',
     name: 'Road Manager',
     badge: 'Touring & Mileage',
-    title: 'Coordinate tours, show logistics & automated mileage tracking.',
+    title: 'Coordinate tours, show logistics, and mileage records.',
     outcome:
-      'Manage venue contracts, day-of-show schedules, tour routing, and tax-deductible mileage tracking across every gig so no travel expense gets lost.',
+      'Manage venue contracts, day-of-show schedules, tour routing, and business mileage records across every gig so travel activity stays visible.',
     details: ['Tour Mileage & Expense Tracking', 'Venue & Day-of-Show Schedules', 'Show Revenue & Per-Diem Accounting'],
     route: 'Booked Date → Mileage & Route Optimization → Day-of-Show Itinerary → Settlement',
   },
@@ -164,22 +164,22 @@ const workstreams: Workstream[] = [
     index: '14',
     name: 'Control & Security',
     badge: 'Full Oversight',
-    title: 'High-impact actions stay 100% under your control.',
+    title: 'High-impact actions stay visible and reviewable.',
     outcome:
-      'Review every proposal, asset, financial transfer, and external release. Nothing is executed without your explicit sign-off.',
-    details: ['Artist Gate & Review', 'Encrypted Master Storage', 'Zero Unsanctioned Actions'],
-    route: 'Department Proposal → Artist Review → Approved Action',
+      'Review proposed high-impact work, important assets, financial actions, and external-release steps before they move forward.',
+    details: ['Artist Review', 'Protected Master Storage', 'Recorded Actions'],
+    route: 'Specialist Proposal → Risk-Aware Review → Recorded Action',
   },
   {
     id: 'conductor',
     index: '15',
     name: 'Conductor',
     badge: 'System Coordinator',
-    title: 'One plain-language request coordinates all 15 areas.',
+    title: 'One plain-language request coordinates the relevant work.',
     outcome:
       'Tell indii what you want to achieve. Conductor orchestrates the departments, breaks down complex workflows, and presents clear results.',
     details: ['Multi-Specialist Orchestration', 'Plain English Directives', 'Unified Project State'],
-    route: 'Artist Intent → Conductor Plan → 15 Specialists → Artist Approval',
+    route: 'Artist Intent → Conductor Plan → Relevant Specialists → Artist Review',
   },
 ];
 
@@ -203,18 +203,18 @@ export default function AgentGrid() {
               The Operating System
             </div>
             <div className="font-mono text-xs uppercase leading-relaxed tracking-[0.18em] text-white/40">
-              24 Specialized Operating Departments
+              Connected Music-Business Workflows
               <br />
               One Artist-Controlled Workspace
             </div>
           </div>
           <div>
             <h2 className="max-w-5xl text-5xl font-black leading-[0.92] tracking-[-0.055em] text-white sm:text-6xl md:text-8xl lg:text-[7.5rem]">
-              Every department you need.
-              <span className="block text-amber-400">Under your direct command.</span>
+              Every part of the work.
+              <span className="block text-amber-400">Connected to the same project.</span>
             </h2>
             <p className="mt-8 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
-              Stop juggling 20 fragmented apps or paying labels an 80% royalty tax. Explore your 24 dedicated departments working synchronously in one workspace.
+              Independent artists carry release, rights, campaign, and financial work across disconnected tools. See how indii.music keeps the relevant work connected in one artist-controlled workspace.
             </p>
           </div>
         </motion.div>
@@ -232,6 +232,7 @@ export default function AgentGrid() {
                   isActive ? 'bg-amber-400 text-black font-bold' : 'text-white/40'
                 }`}
                 aria-pressed={isActive}
+                aria-label={`${workstream.name}: ${workstream.title}`}
               >
                 <span>{workstream.index}</span>
                 <span>{workstream.name}</span>
@@ -256,6 +257,7 @@ export default function AgentGrid() {
                       : 'border-white/8 text-white/40 hover:border-white/20 hover:text-white/80'
                   }`}
                   aria-pressed={isActive}
+                  aria-label={`${workstream.name}: ${workstream.title}`}
                 >
                   <span className={`font-mono text-[10px] tracking-[0.2em] ${isActive ? 'text-amber-400 font-bold' : 'text-white/40'}`}>
                     {workstream.index}

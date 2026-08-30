@@ -99,7 +99,7 @@ function ThesisContent() {
                       Distribution, audio, creative direction, rights, finance, publishing, licensing, campaigns, social preparation, publicity, touring, merchandise, security, and the project record all work from the same artist-controlled context.
                     </p>
                     <p>
-                      Fifteen connected areas. One workspace. The artist remains the owner, the decision-maker, and the source of truth.
+                      Connected areas. One workspace. The artist remains the owner, the decision-maker, and the source of truth.
                     </p>
                     <p className="text-center text-white font-black text-3xl md:text-5xl lg:text-6xl my-12 tracking-wide leading-snug">
                       indii is the conductor and the orchestra.
@@ -918,7 +918,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                           rel="noopener noreferrer"
                           className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-amber-400 px-8 py-4 text-sm font-black text-black shadow-[0_0_38px_rgba(245,158,11,0.32)] transition-transform hover:scale-[1.03] sm:w-auto"
                         >
-                          Secure Founder Access — $2,500
+                          Get Founding Owner access — $2,500
                           <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
                         </a>
                         {!PREFERS_REDUCED_MOTION && (
@@ -933,7 +933,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                         )}
                       </div>
                       <p className="mx-auto mt-5 max-w-md font-mono text-[9px] uppercase leading-relaxed tracking-[0.16em] text-white/40">
-                        Founder Access is a software purchase, not an investment or promise of financial return.
+                        The Founding Owner License is a software purchase, not an investment or promise of financial return.
                       </p>
                     </motion.div>
                   </motion.div>
