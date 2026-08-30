@@ -1,5 +1,9 @@
 
-## 2026-08-29 Studio video previews blank (camera icon on empty tile)
+## 2026-08-29 Studio video previews blank (camera icon on empty tile) — PRIMARY ROOT CAUSE = CSP media-src
+
+- **PRIMARY CAUSE (the real blocker):** Firebase Hosting CSP `media-src` in `firebase.json` allowed `'self' blob: https://storage.googleapis.com http://commondatastorage.googleapis.com` but OMITTED `https://firebasestorage.googleapis.com` — the exact host `getDownloadURL()` returns for every Storage object. So every video (resolved to `https://firebasestorage.googleapis.com/...`) was BLOCKED by the browser's media policy: no preview, no playback, anywhere. `img-src`/`connect-src` already allowed the host, which is why images worked and videos did not. FIX: add `https://firebasestorage.googleapis.com` to `media-src` in all 4 CSP blocks (`firebase.json`). Requires hosting redeploy to serve the new headers (CI deploy does this).
+- Secondary rendering improvements (also shipped): gallery `VideoThumb` muted-autoplay-loop + lifted above the fallback icon; editor video auto-plays; `resolveStorageUrl` bucket-aware. These help AFTER media is allowed, but were NOT the primary cause.
+
 
 - SEVERITY: P1 (all video thumbnails/previews read as a black or empty tile with a camera icon; clicking didn't show the clip)
 - FILES: `packages/renderer/src/core/components/right-panel/AssetsPanel.tsx` (VideoThumb), `packages/renderer/src/modules/creative/components/CanvasViewport.tsx`, `packages/renderer/src/services/storage/resolveStorageUrl.ts`
