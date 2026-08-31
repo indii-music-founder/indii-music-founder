@@ -7,12 +7,17 @@
  * Requires: gcloud CLI authenticated (gcloud auth login)
  * Fetches: tuningJobs from Vertex (location: VERTEX_TUNING_LOCATION or us-central1, picks latest per agent by endTime)
  * Writes: renderer agent routing plus Firebase's server admission allowlist.
+ *
+ * --check: read-only. Preflights live endpoints AND diffs the checked-in registry
+ * against live Vertex (stale / missing / added agents); exits non-zero on drift so
+ * the `health:vertex-specialists` check fails loudly instead of silently serving
+ * stale endpoints (Platinum Anti-Pattern #9).
  */
 
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import {
   resolveVertexEndpointResource,
   resolveVertexLocation,
@@ -112,10 +117,48 @@ function buildRegistry(jobs) {
   return registry;
 }
 
+function parseCheckedInRegistry(sourceText) {
+  const registry = {};
+  // Match both `key: '...',` and `'hyphen-key': '...',` entries inside R8_ENDPOINTS.
+  const entryRe = /^\s{2}'?([a-z][a-z0-9-]*)'?: '([^']+)',$/gm;
+  let match;
+  while ((match = entryRe.exec(sourceText)) !== null) {
+    registry[match[1]] = match[2];
+  }
+  return registry;
+}
+
+function compareRegistries(checkedIn, live) {
+  const checkedKeys = Object.keys(checkedIn);
+  const liveKeys = Object.keys(live);
+  return {
+    stale: checkedKeys.filter((k) => live[k] !== undefined && live[k] !== checkedIn[k]),
+    missing: checkedKeys.filter((k) => live[k] === undefined),
+    added: liveKeys.filter((k) => checkedIn[k] === undefined),
+    matching: checkedKeys.filter((k) => live[k] === checkedIn[k]),
+  };
+}
+
+function hasDrift(comparison) {
+  return comparison.stale.length > 0 || comparison.missing.length > 0 || comparison.added.length > 0;
+}
+
+function driftDescription(comparison) {
+  const parts = [];
+  if (comparison.stale.length) parts.push(`${comparison.stale.length} stale (endpoint changed): ${comparison.stale.join(', ')}`);
+  if (comparison.missing.length) parts.push(`${comparison.missing.length} missing (no live SUCCEEDED job): ${comparison.missing.join(', ')}`);
+  if (comparison.added.length) parts.push(`${comparison.added.length} new (live, not in checked-in): ${comparison.added.join(', ')}`);
+  return parts.length ? parts.join('; ') : `in sync (${comparison.matching.length} agents)`;
+}
+
+function safeObjectKey(key) {
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key) ? key : `'${key}'`;
+}
+
 function generateFile(registry) {
   const entries = Object.entries(registry)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `  ${k}: '${v}',`)
+    .map(([k, v]) => `  ${safeObjectKey(k)}: '${v}',`)
     .join('\n');
 
   const now = new Date().toISOString().split('T')[0];
@@ -193,10 +236,19 @@ async function main() {
     const checkedEndpoints = await preflightEndpoints(token, registry);
     console.log(`✓ Read-only preflight verified ${checkedEndpoints} specialist endpoints`);
 
+    const comparison = compareRegistries(parseCheckedInRegistry(fs.readFileSync(OUTPUT_FILE, 'utf8')), registry);
+
     if (process.argv.includes('--check')) {
-      console.log('✓ Check-only mode: generated files were not modified');
+      if (hasDrift(comparison)) {
+        console.error(`✗ Checked-in registry is out of sync with live Vertex: ${driftDescription(comparison)}`);
+        console.error('  Re-sync by running the sync script without --check, then commit the generated files.');
+        process.exit(1);
+      }
+      console.log(`✓ Check-only mode: checked-in registry ${driftDescription(comparison)}; generated files were not modified`);
       return;
     }
+
+    console.log(`↻ Re-syncing registry (${driftDescription(comparison)})`);
 
     const content = generateFile(registry);
     fs.writeFileSync(OUTPUT_FILE, content, 'utf8');
@@ -216,4 +268,17 @@ async function main() {
   }
 }
 
-main();
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  main();
+}
+
+export {
+  parseCheckedInRegistry,
+  compareRegistries,
+  hasDrift,
+  driftDescription,
+  safeObjectKey,
+  buildRegistry,
+  generateFile,
+};
