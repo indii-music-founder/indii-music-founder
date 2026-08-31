@@ -64,6 +64,28 @@ export default function TypographyPanel(): React.ReactElement {
         }
     }, [refreshFonts]);
 
+    const handleAddToLayerEditor = useCallback(() => {
+        if (!fontId) { setError('Upload a font first'); return; }
+        if (!text.trim()) { setError('Enter some text'); return; }
+        setError(null);
+        const id = useStore.getState().addTextLayer?.({
+            fontId,
+            text,
+            fontSize,
+            letterSpacing,
+            kerning: true,
+            fill,
+            x: 0,
+            y: 0,
+            rotation: 0,
+            opacity: 1,
+            visible: true,
+        });
+        if (!id) {
+            setError('Open an image in the Layer Editor first, then add the wordmark.');
+        }
+    }, [fontId, text, fontSize, letterSpacing, fill]);
+
     const handleRender = useCallback(async () => {
         if (!text.trim()) { setError('Enter some text'); return; }
         if (!fontId) { setError('Upload a font first'); return; }
@@ -134,6 +156,10 @@ export default function TypographyPanel(): React.ReactElement {
 
             <button data-testid="render-btn" onClick={() => void handleRender()} className="rounded bg-purple-600 px-3 py-1 text-xs font-semibold text-white">
                 Render wordmark
+            </button>
+
+            <button data-testid="add-to-layer-editor-btn" onClick={() => void handleAddToLayerEditor()} className="rounded bg-purple-600/20 border border-purple-500/40 px-3 py-1 text-xs font-semibold text-purple-200 hover:bg-purple-600/30">
+                Add to Layer Editor
             </button>
 
             {error && <p className="text-xs text-red-600" data-testid="error">{error}</p>}
