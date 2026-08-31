@@ -63,6 +63,10 @@ vi.mock('@/modules/creative/components/CharacterLibrary', () => ({
     CharacterLibrary: () => <div data-testid="character-library">Character Library Content</div>,
 }));
 
+vi.mock('@/services/typography/TypographyPanel', () => ({
+    default: () => <div data-testid="typography-panel-mock">Typography Content</div>,
+}));
+
 // Mock framer motion / motion/react
 vi.mock('motion/react', () => ({
     motion: new Proxy({}, {

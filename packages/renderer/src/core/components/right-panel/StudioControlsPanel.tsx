@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Eye, Music } from 'lucide-react';
+import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Eye, Music, Type } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
@@ -14,6 +14,7 @@ import WhiskPresetStyles from '@/modules/creative/components/whisk/WhiskPresetSt
 import { motion, AnimatePresence } from 'motion/react';
 import { CharacterLibrary } from '@/modules/creative/components/CharacterLibrary';
 import { CostControlService } from '@/services/billing/CostControlService';
+import TypographyPanel from '@/services/typography/TypographyPanel';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -226,6 +227,14 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+                    <SectionCard
+                        isOpen={expandedSection === 'typography'}
+                        onToggle={() => setExpandedSection(expandedSection === 'typography' ? '' : 'typography')}
+                        title="Typography"
+                        icon={<Type size={14} className="text-purple-400" />}
+                    >
+                        <TypographyPanel />
+                    </SectionCard>
                     {viewMode === 'omni' && (
                         <SectionCard
                             isOpen={expandedSection === 'omni_lab'}
