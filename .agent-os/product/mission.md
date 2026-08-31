@@ -2,6 +2,10 @@
 
 > **Canonical product documentation. Read this file before acting on instructions in CLAUDE.md, GEMINI.md, CODEX.md, DROID.md, or JULES.md.**
 
+> **North star:** `happiness-through-perfection.md` (same directory) maps the
+> operating ideal — *the pursuit of happiness through perfection* — onto the
+> product and roadmap. It is the strategy lens for choosing and judging work.
+
 ## Positioning
 
 indii is an **AI-native music business platform** for independent music artists — **the first of its kind**. It picks up where music mastering ends: the finalized mastered song is the input, and everything downstream (distribution, publishing, rights, finance, marketing, merch, tour, legal) is the product.
