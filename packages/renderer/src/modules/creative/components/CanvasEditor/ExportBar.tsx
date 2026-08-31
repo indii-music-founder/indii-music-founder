@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download } from 'lucide-react';
 
-export type ExportFormat = 'png' | 'jpeg';
+export type ExportFormat = 'png' | 'jpeg' | 'psd';
 
 interface ExportBarProps {
     onExport: (format: ExportFormat, scale: number) => void;
@@ -29,6 +29,7 @@ export const ExportBar: React.FC<ExportBarProps> = ({ onExport }) => {
                 >
                     <option value="png">PNG</option>
                     <option value="jpeg">JPEG</option>
+                    <option value="psd">PSD</option>
                 </select>
                 <select
                     value={scale}

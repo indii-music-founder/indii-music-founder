@@ -34,6 +34,11 @@ vi.mock('@/services/storage/resolveStorageUrl', () => ({
     resolveStorageUrl: vi.fn((uri: string) => Promise.resolve(uri)),
 }));
 
+// PSD export has its own unit test; isolate the component test from ag-psd.
+vi.mock('@/services/canvas/PsdExportService', () => ({
+    canvasDocToPsd: vi.fn(),
+}));
+
 vi.mock('fabric', () => {
     const makeFilter = () => vi.fn();
     return {

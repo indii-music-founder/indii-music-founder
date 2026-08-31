@@ -3,12 +3,13 @@ import * as fabric from 'fabric';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { adjustmentsToFilters, type RasterLayer } from '@/services/canvas/CanvasDoc';
-import { descriptorsToFabricFilters } from './fabricFilters';
+import { descriptorsToFabricFilters } from '@/services/canvas/fabricFilters';
 import { LayerList } from './LayerList';
 import { AdjustPanel } from './AdjustPanel';
 import { ExportBar, type ExportFormat } from './ExportBar';
 import { useCanvasAutosave } from '../../hooks/useCanvasAutosave';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
+import { canvasDocToPsd } from '@/services/canvas/PsdExportService';
 
 type LayerIdCarrier = fabric.FabricObject & { layerId?: string };
 
@@ -135,11 +136,29 @@ export const CanvasEditor: React.FC = () => {
 
     const handleExport = useCallback(
         async (format: ExportFormat, scale: number) => {
+            if (!currentDoc) return;
+            const stem = `canvas-${currentDoc.id.slice(0, 8)}`;
+
+            // PSD: write the document (adjustments baked) and download the blob.
+            if (format === 'psd') {
+                const buffer = await canvasDocToPsd(currentDoc, { scale });
+                const blob = new Blob([buffer], { type: 'image/vnd.adobe.photoshop' });
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement('a');
+                anchor.href = url;
+                anchor.download = `${stem}.psd`;
+                document.body.appendChild(anchor);
+                anchor.click();
+                document.body.removeChild(anchor);
+                URL.revokeObjectURL(url);
+                return;
+            }
+
             const canvas = fabricRef.current;
-            if (!canvas || !currentDoc) return;
+            if (!canvas) return;
             const dataUrl = canvas.toDataURL({ format, multiplier: scale });
             const { downloadAsset } = await import('@/utils/download');
-            await downloadAsset(dataUrl, `canvas-${currentDoc.id.slice(0, 8)}.${format}`);
+            await downloadAsset(dataUrl, `${stem}.${format}`);
         },
         [currentDoc],
     );
