@@ -12,8 +12,6 @@
     "dependencies": {
         "@emotion/is-prop-valid": "1.4.0",
         "@hyperframes/player": "0.8.11",
-        "@imgly/background-removal": "^1.7.0",
-        "onnxruntime-web": "1.21.0",
         "@indii/shared": "*",
         "@modelcontextprotocol/sdk": "^1.30.0",
         "@radix-ui/react-context-menu": "^2.2.16",

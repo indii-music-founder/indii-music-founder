@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
@@ -11,7 +11,6 @@ import { ExportBar, type ExportFormat } from './ExportBar';
 import { useCanvasAutosave } from '../../hooks/useCanvasAutosave';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { canvasDocToPsd } from '@/services/canvas/PsdExportService';
-import { splitSubjectToForeground } from '@/services/canvas/SplitSubjectService';
 
 type LayerIdCarrier = fabric.FabricObject & { layerId?: string };
 
@@ -24,7 +23,7 @@ type LayerIdCarrier = fabric.FabricObject & { layerId?: string };
  * never mutated; `object:modified` writes the transform back to the doc.
  */
 export const CanvasEditor: React.FC = () => {
-    const { currentDoc, selectedLayerId, updateLayer, setAdjustments, selectLayer, closeDoc, addRasterLayer } = useStore(
+    const { currentDoc, selectedLayerId, updateLayer, setAdjustments, selectLayer, closeDoc } = useStore(
         useShallow((state) => ({
             currentDoc: state.currentDoc,
             selectedLayerId: state.selectedLayerId,
@@ -32,7 +31,6 @@ export const CanvasEditor: React.FC = () => {
             setAdjustments: state.setAdjustments,
             selectLayer: state.selectLayer,
             closeDoc: state.closeDoc,
-            addRasterLayer: state.addRasterLayer,
         })),
     );
 
@@ -42,26 +40,6 @@ export const CanvasEditor: React.FC = () => {
 
     // Persist doc changes to storage (C1.5).
     useCanvasAutosave();
-
-    const [isSplitting, setIsSplitting] = useState(false);
-    const [splitError, setSplitError] = useState<string | null>(null);
-
-    const handleSplitSubject = useCallback(async () => {
-        const layer = currentDoc?.layers.find((l) => l.id === selectedLayerId);
-        if (!layer || layer.kind !== 'raster' || isSplitting) return;
-        setIsSplitting(true);
-        setSplitError(null);
-        try {
-            const subjectDataUrl = await splitSubjectToForeground(layer.src);
-            // Original layer stays as the background; the cut-out subject goes on top.
-            updateLayer(layer.id, { name: `${layer.name} · background` });
-            addRasterLayer(subjectDataUrl, `${layer.name} · subject`);
-        } catch (err) {
-            setSplitError(err instanceof Error ? err.message : 'Split subject failed');
-        } finally {
-            setIsSplitting(false);
-        }
-    }, [currentDoc, selectedLayerId, isSplitting, updateLayer, addRasterLayer]);
 
     // Initialize the Fabric canvas once.
     useEffect(() => {
@@ -236,21 +214,6 @@ export const CanvasEditor: React.FC = () => {
                     onToggleVisible={toggleVisible}
                     onToggleLock={toggleLock}
                 />
-                {selectedRaster && (
-                    <div className="px-3 py-2 border-b border-white/5">
-                        <button
-                            onClick={() => void handleSplitSubject()}
-                            disabled={isSplitting}
-                            data-testid="split-subject-btn"
-                            className="w-full rounded bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 border border-purple-500/40 px-3 py-1.5 text-xs font-semibold disabled:opacity-50 transition-colors"
-                        >
-                            {isSplitting ? 'Splitting…' : 'Split subject from background'}
-                        </button>
-                        {splitError && (
-                            <p className="mt-1 text-[10px] text-red-400" data-testid="split-subject-error">{splitError}</p>
-                        )}
-                    </div>
-                )}
                 {selectedRaster && (
                     <AdjustPanel
                         adjustments={selectedRaster.adjustments}
