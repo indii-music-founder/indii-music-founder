@@ -38,7 +38,7 @@ Give me your **verified selfie** (already in My Likeness, or upload one) + name 
 | 4 | C2.3 split-subject | C2 | License decision on `@imgly/background-removal` model weights | flag-gated layer op behind feature flag |
 | 5 | A2 pixel swap | A2 | License decision on `inswapper_128` (non-commercial) | Electron sidecar (desktop-only, default off) |
 | 6 | E2 generative motion | E2 | Cost-approval to enable the gen-motion flag | `VITE_ENABLE_GEN_MOTION` gate |
-| 7 | C1.3 Fabric editor UI | C1 | (founder OK to proceed) | `CanvasEditor` components + `CreativeStorageService` |
+| 7 | ~~C1.3 Fabric editor UI~~ | C1 | ✅ SHIPPED (2026-08-31, `678273f00`) | `CanvasEditor` components + `CanvasDocumentService` persistence + `useCanvasAutosave` |
 | 8 | C3 PSD export + text layer | C3 | founder OK to spin up | optional PSD flatten + TextLayer wiring |
 
 ## Table: real-path smokes (founder eyeball / browser / real assets needed)
