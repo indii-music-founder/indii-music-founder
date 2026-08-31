@@ -30,6 +30,10 @@ vi.mock('@/services/canvas/CanvasDocumentService', () => ({
     CanvasDocumentService: { saveDoc: mockSaveDoc },
 }));
 
+vi.mock('@/services/storage/resolveStorageUrl', () => ({
+    resolveStorageUrl: vi.fn((uri: string) => Promise.resolve(uri)),
+}));
+
 vi.mock('fabric', () => {
     const makeFilter = () => vi.fn();
     return {

@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from '
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, Download, Share2, RotateCw, Pin, Send } from 'lucide-react';
+import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, Download, Share2, RotateCw, Pin, Send, Layers } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
@@ -39,10 +39,11 @@ interface GalleryItemProps {
     pinToClipboard: (item: HistoryItem) => void;
     sendToModule: (target: SendToTarget, payload: SendToPayload) => void;
     sendToStage: (target: CreativeStage, payload: StageHandoffPayload) => void;
+    openInLayerEditor: (item: HistoryItem) => void;
     key?: React.Key;
 }
 
-const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule, sendToStage }: GalleryItemProps) => {
+const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule, sendToStage, openInLayerEditor }: GalleryItemProps) => {
     const [showSendMenu, setShowSendMenu] = useState(false);
     const [imageLoadFailed, setImageLoadFailed] = useState(false);
     const videoUrlToResolve = item.type === 'video' && !item.localPath ? item.url : null;
@@ -167,6 +168,18 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                         )}
                         {item.type !== 'music' && (
                             <>
+                                {/* Open in Layer Editor (C1.3) — image only */}
+                                {item.type === 'image' && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); openInLayerEditor(item); }}
+                                        className="p-1.5 bg-gray-800/50 hover:bg-purple-600 text-purple-400 hover:text-white rounded transition-colors"
+                                        title="Open in Layer Editor"
+                                        aria-label="Open in Layer Editor"
+                                        data-testid={`open-in-layer-editor-${item.id}`}
+                                    >
+                                        <Layers size={14} />
+                                    </button>
+                                )}
                                 {/* Pin Action */}
                                 <button
                                     onClick={(e) => {
@@ -528,7 +541,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack,
-        pinToClipboard, sendToModule, sendToStage, isHistoryInitialized, historySyncError
+        pinToClipboard, sendToModule, sendToStage, isHistoryInitialized, historySyncError, openImage
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         removeItemFromProject: state.removeItemFromProject,
@@ -556,10 +569,19 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         sendToModule: state.sendToModule,
         sendToStage: state.sendToStage,
         isHistoryInitialized: state.isHistoryInitialized,
-        historySyncError: state.historySyncError
+        historySyncError: state.historySyncError,
+        openImage: state.openImage
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
+
+    // Open an image in the non-destructive layer editor (C1.3). The editor
+    // resolves gs:// sources itself; pass the raw URL and let it load.
+    const openInLayerEditor = useCallback((item: HistoryItem) => {
+        if (item.type !== 'image' || !item.url) return;
+        openImage(item.url, currentProjectId ?? 'project_default');
+        toast.success('Opened in Layer Editor.');
+    }, [openImage, currentProjectId, toast]);
 
     // ⚡ Bolt Optimization: Stable callback reference for onSelect to prevent re-renders when parent passes new arrow function
     const onSelectRef = useRef(onSelect);
@@ -835,6 +857,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                             pinToClipboard={pinToClipboard}
                                             sendToModule={sendToModule}
                                             sendToStage={sendToStage}
+                                            openInLayerEditor={openInLayerEditor}
                                         />
                                     ))}
                                 </div>

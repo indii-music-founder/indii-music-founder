@@ -8,6 +8,7 @@ import { LayerList } from './LayerList';
 import { AdjustPanel } from './AdjustPanel';
 import { ExportBar, type ExportFormat } from './ExportBar';
 import { useCanvasAutosave } from '../../hooks/useCanvasAutosave';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 type LayerIdCarrier = fabric.FabricObject & { layerId?: string };
 
@@ -68,7 +69,10 @@ export const CanvasEditor: React.FC = () => {
             for (const layer of currentDoc.layers) {
                 if (layer.kind !== 'raster') continue;
                 try {
-                    const img = await fabric.Image.fromURL(layer.src, { crossOrigin: 'anonymous' });
+                    // gs:// sources must resolve to an https URL before Fabric can
+                    // load them; https/data sources pass through unchanged.
+                    const src = await resolveStorageUrl(layer.src);
+                    const img = await fabric.Image.fromURL(src, { crossOrigin: 'anonymous' });
                     if (generation !== syncGeneration.current) return; // stale load
                     (img as LayerIdCarrier).layerId = layer.id;
                     img.set({
