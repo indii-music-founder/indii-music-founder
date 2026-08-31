@@ -265,17 +265,6 @@ jobs:
           VITE_INGESTION_CONTACT_ADDRESS: Detroit, MI
           VITE_INGESTION_CONTACT_PHONE: +1-844-INDII-01
 
-      - name: Cache background-removal model weights
-        id: imgly-weights
-        uses: actions/cache@v4
-        with:
-          path: packages/renderer/public/models/background-removal
-          key: imgly-weights-v1-1.7.0
-
-      - name: Vendor background-removal model weights
-        if: steps.imgly-weights.outputs.cache-hit != 'true'
-        run: node scripts/vendor-imgly-weights.mjs || echo "::warning::Background-removal weights could not be vendored; split-subject will be unavailable this deploy."
-
       - name: Build studio app
         run: |
           set -euo pipefail
