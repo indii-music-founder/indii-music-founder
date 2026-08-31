@@ -7,6 +7,7 @@ import { descriptorsToFabricFilters } from './fabricFilters';
 import { LayerList } from './LayerList';
 import { AdjustPanel } from './AdjustPanel';
 import { ExportBar, type ExportFormat } from './ExportBar';
+import { useCanvasAutosave } from '../../hooks/useCanvasAutosave';
 
 type LayerIdCarrier = fabric.FabricObject & { layerId?: string };
 
@@ -33,6 +34,9 @@ export const CanvasEditor: React.FC = () => {
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const fabricRef = useRef<fabric.Canvas | null>(null);
     const syncGeneration = useRef(0);
+
+    // Persist doc changes to storage (C1.5).
+    useCanvasAutosave();
 
     // Initialize the Fabric canvas once.
     useEffect(() => {
