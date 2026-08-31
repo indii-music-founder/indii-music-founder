@@ -3195,6 +3195,8 @@ describe('Firestore Security Rules', () => {
             ['foundingArtistEmailIndex', 'email-hash'],
             ['foundingArtistWaitlistMeta', 'sequence'],
             ['foundingArtistEvents', 'enrollment-event'],
+            ['foundingArtistCommunications', 'invitation-message'],
+            ['foundingArtistCampaigns', 'milestone-campaign'],
         ] as const;
 
         it('denies direct reads and writes even to a verified artist', async () => {
@@ -3206,6 +3208,11 @@ describe('Firestore Security Rules', () => {
                 await assertFails(getDoc(reference));
                 await assertFails(setDoc(reference, { uid: ALICE_UID, queuePosition: 1 }));
             }
+
+            await assertFails(getDoc(doc(db, 'foundingArtistCampaigns', 'milestone-campaign', 'deliveries', ALICE_UID)));
+            await assertFails(setDoc(doc(db, 'foundingArtistCampaigns', 'milestone-campaign', 'deliveries', ALICE_UID), {
+                status: 'sent',
+            }));
         });
     });
 });

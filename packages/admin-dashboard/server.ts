@@ -318,6 +318,8 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
       submissionOrder: number;
       verificationStatus: 'verified' | 'unverified';
       status: 'waitlisted' | 'invited' | 'accepted' | 'declined' | 'revoked' | 'legacy_unverified';
+      invitationStatus: 'not_queued' | 'queued' | 'sent' | 'failed';
+      majorMilestoneUpdates: boolean;
     }>();
 
     const toIso = (value: unknown): string | null => {
@@ -342,6 +344,8 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
         source?: unknown;
         queuePosition?: unknown;
         status?: unknown;
+        invitation?: { status?: unknown } | null;
+        communicationPreferences?: { majorMilestoneUpdates?: unknown };
       };
       if (typeof data.email !== 'string') continue;
       const email = data.email.trim().toLowerCase();
@@ -350,6 +354,10 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
       const status = allowedStatuses.includes(data.status as typeof allowedStatuses[number])
         ? data.status as typeof allowedStatuses[number]
         : 'waitlisted';
+      const allowedInvitationStatuses = ['queued', 'sent', 'failed'] as const;
+      const invitationStatus = allowedInvitationStatuses.includes(
+        data.invitation?.status as typeof allowedInvitationStatuses[number],
+      ) ? data.invitation?.status as typeof allowedInvitationStatuses[number] : 'not_queued';
       byEmail.set(email, {
         id: `verified:${document.id}`,
         email,
@@ -359,6 +367,8 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
         submissionOrder: position,
         verificationStatus: 'verified',
         status,
+        invitationStatus,
+        majorMilestoneUpdates: data.communicationPreferences?.majorMilestoneUpdates === true,
       });
     }
 
@@ -390,6 +400,8 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
         submissionOrder: legacyPosition,
         verificationStatus: 'unverified',
         status: 'legacy_unverified',
+        invitationStatus: 'not_queued',
+        majorMilestoneUpdates: false,
       });
     }
 
@@ -398,12 +410,18 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
       return a.submissionOrder - b.submissionOrder;
     });
     const verifiedCount = entries.filter((entry) => entry.verificationStatus === 'verified').length;
+    const milestoneOptInCount = entries.filter((entry) => (
+      entry.verificationStatus === 'verified'
+      && entry.majorMilestoneUpdates
+      && ['waitlisted', 'invited', 'accepted'].includes(entry.status)
+    )).length;
 
     res.json({
       count: entries.length,
       totalSubmissions: verifiedSnapshot.docs.length + legacySnapshot.docs.length,
       verifiedCount,
       unverifiedCount: entries.length - verifiedCount,
+      milestoneOptInCount,
       verificationEnabled: true,
       entries,
     });

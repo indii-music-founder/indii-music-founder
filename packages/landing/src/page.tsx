@@ -150,7 +150,14 @@ export default function Home({ founder = true }: { founder?: boolean }) {
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'loading' | 'sent' | 'success' | 'error'>('idle');
   const [waitlistMessage, setWaitlistMessage] = useState('');
-  const [majorMilestoneUpdates, setMajorMilestoneUpdates] = useState(true);
+  const [isManagingUpdates] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('manageUpdates') === 'true';
+  });
+  const [majorMilestoneUpdates, setMajorMilestoneUpdates] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return new URLSearchParams(window.location.search).get('manageUpdates') !== 'true';
+  });
   const [isThesisOpen, setIsThesisOpen] = useState(() => {
     if (typeof window === 'undefined') return false;
     const { hostname, search, hash } = window.location;
@@ -194,7 +201,9 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         .then((result) => {
           if (cancelled) return;
           setWaitlistStatus('success');
-          setWaitlistMessage(`Email verified. You are #${result.queuePosition} on the Founding Artist waitlist.`);
+          setWaitlistMessage(isManagingUpdates
+            ? 'Email verified. Your Founding Artist email preferences are updated.'
+            : `Email verified. You are #${result.queuePosition} on the Founding Artist waitlist.`);
           window.history.replaceState({}, '', '/#waitlist');
           emitSystemPulse('waitlist', 0, 1);
         })
@@ -210,7 +219,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [isManagingUpdates]);
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -221,7 +230,9 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       if (isCompletingFoundingArtistLink()) {
         const result = await completeFoundingArtistVerification(waitlistEmail, majorMilestoneUpdates);
         setWaitlistStatus('success');
-        setWaitlistMessage(`Email verified. You are #${result.queuePosition} on the Founding Artist waitlist.`);
+        setWaitlistMessage(isManagingUpdates
+          ? 'Email verified. Your Founding Artist email preferences are updated.'
+          : `Email verified. You are #${result.queuePosition} on the Founding Artist waitlist.`);
         window.history.replaceState({}, '', '/#waitlist');
         emitSystemPulse('waitlist', 0, 1);
         return;
@@ -230,7 +241,9 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       const existingEnrollment = await enrollCurrentVerifiedArtist(waitlistEmail, majorMilestoneUpdates);
       if (existingEnrollment) {
         setWaitlistStatus('success');
-        setWaitlistMessage(`You are #${existingEnrollment.queuePosition} on the Founding Artist waitlist.`);
+        setWaitlistMessage(isManagingUpdates
+          ? 'Your Founding Artist email preferences are updated.'
+          : `You are #${existingEnrollment.queuePosition} on the Founding Artist waitlist.`);
         emitSystemPulse('waitlist', 0, 1);
         return;
       }
@@ -414,6 +427,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           status={waitlistStatus}
           message={waitlistMessage}
           majorMilestoneUpdates={majorMilestoneUpdates}
+          preferenceMode={isManagingUpdates}
           onChange={setWaitlistEmail}
           onMilestoneUpdatesChange={setMajorMilestoneUpdates}
           onSubmit={handleWaitlistSubmit}

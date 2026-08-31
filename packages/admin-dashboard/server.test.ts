@@ -233,7 +233,7 @@ describe('admin-dashboard server.ts', () => {
                 { id: 'second', data: { email: 'second@example.com', createdAt: { toDate: () => new Date('2026-08-03T10:00:00Z') }, source: 'landing_page' } },
             ]));
             const verifiedQuery = makeQuery(makeSnapshot([
-                { id: 'verified-uid', data: { email: 'artist@example.com', joinedAt: { toDate: () => new Date('2026-08-04T10:00:00Z') }, source: 'landing_page', queuePosition: 7, status: 'waitlisted' } },
+                { id: 'verified-uid', data: { email: 'artist@example.com', joinedAt: { toDate: () => new Date('2026-08-04T10:00:00Z') }, source: 'landing_page', queuePosition: 7, status: 'waitlisted', invitation: { status: 'queued' }, communicationPreferences: { majorMilestoneUpdates: true } } },
             ]));
             const auditCollection = {
                 add: vi.fn().mockResolvedValue(undefined),
@@ -255,6 +255,7 @@ describe('admin-dashboard server.ts', () => {
                 totalSubmissions: 4,
                 verifiedCount: 1,
                 unverifiedCount: 1,
+                milestoneOptInCount: 1,
                 verificationEnabled: true,
                 entries: [
                     {
@@ -264,6 +265,8 @@ describe('admin-dashboard server.ts', () => {
                         submissionCount: 1,
                         verificationStatus: 'verified',
                         status: 'waitlisted',
+                        invitationStatus: 'queued',
+                        majorMilestoneUpdates: true,
                     },
                     {
                         id: 'legacy:second',
@@ -272,6 +275,8 @@ describe('admin-dashboard server.ts', () => {
                         submissionCount: 1,
                         verificationStatus: 'unverified',
                         status: 'legacy_unverified',
+                        invitationStatus: 'not_queued',
+                        majorMilestoneUpdates: false,
                     },
                 ],
             });

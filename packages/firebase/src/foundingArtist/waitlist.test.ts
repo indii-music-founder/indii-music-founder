@@ -7,7 +7,7 @@ interface Ref { path: string }
 interface StoredSnapshot { exists: boolean; data: () => Record<string, unknown> }
 
 function makeFirestore(initial: Record<string, Record<string, unknown>> = {}) {
-  const writes: Array<{ path: string; data: Record<string, unknown>; options?: unknown }> = [];
+  const writes: Array<{ operation: 'set' | 'update'; path: string; data: Record<string, unknown>; options?: unknown }> = [];
   const snapshots = new Map<string, StoredSnapshot>(
     Object.entries(initial).map(([path, data]) => [path, { exists: true, data: () => data }]),
   );
@@ -18,7 +18,10 @@ function makeFirestore(initial: Record<string, Record<string, unknown>> = {}) {
     runTransaction: vi.fn(async (work: (transaction: unknown) => Promise<unknown>) => work({
       get: vi.fn(async (document: Ref) => snapshots.get(document.path) ?? { exists: false, data: () => ({}) }),
       set: vi.fn((document: Ref, data: Record<string, unknown>, options?: unknown) => {
-        writes.push({ path: document.path, data, options });
+        writes.push({ operation: 'set', path: document.path, data, options });
+      }),
+      update: vi.fn((document: Ref, data: Record<string, unknown>) => {
+        writes.push({ operation: 'update', path: document.path, data });
       }),
     })),
   };
@@ -58,7 +61,12 @@ describe('Founding Artist verified waitlist enrollment', () => {
     const email = 'artist@example.com';
     const emailHash = createHash('sha256').update(email).digest('hex');
     const { firestore, writes } = makeFirestore({
-      'foundingArtistWaitlist/artist-uid': { emailHash, queuePosition: 4, status: 'waitlisted' },
+      'foundingArtistWaitlist/artist-uid': {
+        emailHash,
+        queuePosition: 4,
+        status: 'waitlisted',
+        communicationPreferences: { majorMilestoneUpdates: true },
+      },
       [`foundingArtistEmailIndex/${emailHash}`]: { uid: 'artist-uid' },
       'foundingArtistWaitlistMeta/sequence': { nextPosition: 8 },
     });
@@ -71,6 +79,42 @@ describe('Founding Artist verified waitlist enrollment', () => {
 
     expect(result).toEqual({ status: 'waitlisted', queuePosition: 4, alreadyJoined: true });
     expect(writes).toHaveLength(0);
+  });
+
+  it('updates an existing artist milestone preference without changing their queue position', async () => {
+    const email = 'artist@example.com';
+    const emailHash = createHash('sha256').update(email).digest('hex');
+    const { firestore, writes } = makeFirestore({
+      'foundingArtistWaitlist/artist-uid': {
+        emailHash,
+        queuePosition: 4,
+        status: 'waitlisted',
+        communicationPreferences: { majorMilestoneUpdates: true },
+      },
+      [`foundingArtistEmailIndex/${emailHash}`]: { uid: 'artist-uid' },
+      'foundingArtistWaitlistMeta/sequence': { nextPosition: 8 },
+    });
+
+    const result = await enrollVerifiedFoundingArtist(
+      { uid: 'artist-uid', email },
+      { source: 'landing_page', majorMilestoneUpdates: false },
+      firestore,
+    );
+
+    expect(result).toEqual({ status: 'waitlisted', queuePosition: 4, alreadyJoined: true });
+    expect(writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        operation: 'update',
+        path: 'foundingArtistWaitlist/artist-uid',
+        data: expect.objectContaining({ 'communicationPreferences.majorMilestoneUpdates': false }),
+      }),
+      expect.objectContaining({
+        operation: 'set',
+        path: expect.stringMatching(/^foundingArtistEvents\/[0-9a-f-]+$/),
+        data: expect.objectContaining({ type: 'milestone_preference_changed', majorMilestoneUpdates: false }),
+      }),
+    ]));
+    expect(writes.some((write) => write.path === 'foundingArtistWaitlistMeta/sequence')).toBe(false);
   });
 
   it('rejects an email index already owned by another account', async () => {

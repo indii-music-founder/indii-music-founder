@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getFunctions } from 'firebase/functions';
 
 /**
  * Firebase client config for the admin dashboard.
@@ -27,6 +28,7 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const functions = getFunctions(app, 'us-central1');
 
 /** localStorage key the data modules read their Bearer token from. */
 export const ADMIN_TOKEN_KEY = 'indii_admin_token';

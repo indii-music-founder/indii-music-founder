@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { z } from 'zod';
@@ -63,9 +63,33 @@ export async function enrollVerifiedFoundingArtist(
     ]);
 
     if (artistSnapshot.exists) {
-      const existing = artistSnapshot.data() as { emailHash?: string; queuePosition?: number; status?: string };
+      const existing = artistSnapshot.data() as {
+        emailHash?: string;
+        queuePosition?: number;
+        status?: string;
+        communicationPreferences?: { majorMilestoneUpdates?: boolean };
+      };
       if (existing.emailHash !== emailHash) {
         throw new HttpsError('permission-denied', 'This account is already linked to a different verified email.');
+      }
+      if (existing.communicationPreferences?.majorMilestoneUpdates !== input.majorMilestoneUpdates) {
+        const timestamp = admin.firestore.FieldValue.serverTimestamp();
+        transaction.update(artistRef, {
+          'communicationPreferences.majorMilestoneUpdates': input.majorMilestoneUpdates,
+          'communicationPreferences.consentVersion': FOUNDING_ARTIST_CONSENT_VERSION,
+          'communicationPreferences.recordedAt': timestamp,
+          updatedAt: timestamp,
+        });
+        transaction.set(
+          firestore.collection(FOUNDING_ARTIST_EVENTS_COLLECTION).doc(randomUUID()),
+          {
+            uid: identity.uid,
+            type: 'milestone_preference_changed',
+            majorMilestoneUpdates: input.majorMilestoneUpdates,
+            consentVersion: FOUNDING_ARTIST_CONSENT_VERSION,
+            createdAt: timestamp,
+          },
+        );
       }
       return {
         status: 'waitlisted',

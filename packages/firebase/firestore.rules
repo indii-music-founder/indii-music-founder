@@ -2719,6 +2719,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /foundingArtistCommunications/{communicationId} {
+      allow read, write: if false;
+    }
+
+    match /foundingArtistCampaigns/{campaignId}/{document=**} {
+      allow read, write: if false;
+    }
+
     // =========================================================================
     // Founders program
     // =========================================================================

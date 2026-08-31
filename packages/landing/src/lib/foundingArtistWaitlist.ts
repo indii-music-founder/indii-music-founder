@@ -66,8 +66,12 @@ export async function beginFoundingArtistVerification(email: string, majorMilest
     // The email can be entered again after the link opens if storage is blocked.
   }
 
+  const isManagingUpdates = new URLSearchParams(window.location.search).get('manageUpdates') === 'true';
+  const completionQuery = isManagingUpdates
+    ? '?completeWaitlist=true&manageUpdates=true'
+    : '?completeWaitlist=true';
   await sendSignInLinkToEmail(firebaseAuth, normalizedEmail, {
-    url: `${window.location.origin}/?completeWaitlist=true#waitlist`,
+    url: `${window.location.origin}/${completionQuery}#waitlist`,
     handleCodeInApp: true,
   });
 }

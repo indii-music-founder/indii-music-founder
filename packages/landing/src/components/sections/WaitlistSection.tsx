@@ -8,6 +8,7 @@ interface WaitlistSectionProps {
   status: 'idle' | 'loading' | 'sent' | 'success' | 'error';
   message: string;
   majorMilestoneUpdates: boolean;
+  preferenceMode?: boolean;
   onChange: (email: string) => void;
   onMilestoneUpdatesChange: (enabled: boolean) => void;
   onSubmit: (event: React.FormEvent) => void;
@@ -18,6 +19,7 @@ export default function WaitlistSection({
   status,
   message,
   majorMilestoneUpdates,
+  preferenceMode = false,
   onChange,
   onMilestoneUpdatesChange,
   onSubmit,
@@ -32,17 +34,19 @@ export default function WaitlistSection({
       <div className="mx-auto grid max-w-[1500px] gap-8 px-5 py-12 md:grid-cols-[0.48fr_1fr_0.36fr] md:items-center md:px-10 md:py-14">
         <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.23em] text-amber-400">
           <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.8)]" />
-          Waitlist open
+          {preferenceMode ? 'Email preferences' : 'Waitlist open'}
         </div>
         <div>
           <h2
             id="waitlist-title"
             className="text-3xl font-black tracking-[-0.045em] text-white md:text-4xl"
           >
-            Join the Founding Artist Beta waitlist.
+            {preferenceMode ? 'Manage Founding Artist email preferences.' : 'Join the Founding Artist Beta waitlist.'}
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/45 md:text-base">
-            indii.music is working software that is still being refined. Join for first-come beta invitations, meaningful development updates, and early-pricing priority.
+            {preferenceMode
+              ? 'Verify the email used for your waitlist account, then choose whether to receive major development milestones. Beta invitation emails remain part of the waitlist.'
+              : 'indii.music is working software that is still being refined. Join for first-come beta invitations, meaningful development updates, and early-pricing priority.'}
           </p>
         </div>
         <div className="md:text-right">
@@ -66,7 +70,13 @@ export default function WaitlistSection({
                 disabled={status === 'loading' || status === 'success'}
                 className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-amber-400 px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-amber-300 disabled:opacity-50 disabled:hover:bg-amber-400"
               >
-                {status === 'loading' ? 'Verifying...' : status === 'sent' ? 'Resend link' : status === 'success' ? 'Joined' : 'Verify & join'}
+                {status === 'loading'
+                  ? 'Verifying...'
+                  : status === 'sent'
+                    ? 'Resend link'
+                    : status === 'success'
+                      ? preferenceMode ? 'Updated' : 'Joined'
+                      : preferenceMode ? 'Verify & update' : 'Verify & join'}
               </button>
             </div>
             <label className="flex max-w-[380px] items-start gap-2 text-left text-[11px] leading-relaxed text-white/45 md:text-right">

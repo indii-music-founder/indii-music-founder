@@ -63,6 +63,21 @@ describe('Founding Artist waitlist verification', () => {
     expect(localStorage.getItem('indii_founding_artist_milestones')).toBe('false');
   });
 
+  it('preserves preference-management mode through email verification', async () => {
+    window.history.replaceState({}, '', '/?manageUpdates=true#waitlist');
+
+    await beginFoundingArtistVerification('artist@example.com', false);
+
+    expect(mocks.sendSignInLinkToEmail).toHaveBeenCalledWith(
+      mocks.auth,
+      'artist@example.com',
+      {
+        url: `${window.location.origin}/?completeWaitlist=true&manageUpdates=true#waitlist`,
+        handleCodeInApp: true,
+      },
+    );
+  });
+
   it('exchanges a valid link before calling the server enrollment function', async () => {
     const getIdToken = vi.fn().mockResolvedValue('fresh-token');
     mocks.isSignInWithEmailLink.mockReturnValue(true);

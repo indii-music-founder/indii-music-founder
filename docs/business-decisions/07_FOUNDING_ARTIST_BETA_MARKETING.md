@@ -213,10 +213,11 @@ The unsafe calculator component remains in the repository but is quarantined fro
 
 The recovered first website pass includes the beta banner and hero, waitlist copy, Founding Owner language, removal of artificial seat scarcity, safer delivery/workflow/comparison claims, illustrative-demo labeling, canonical metadata, calculator quarantine, and claim-regression tests.
 
-The following remain open and must not be advertised as live:
+The following remain open and must not be advertised as proven to artists:
 
-- production deployment and genuine-user proof of verified-email enrollment;
-- invitation operations and auditable milestone delivery;
+- genuine-user proof of verified-email enrollment;
+- genuine inbox delivery of a beta invitation and consent-respecting milestone update;
+- invitation acceptance and access activation after the artist opens the app;
 - guided free mini-campaign exports and save/delete enforcement;
 - Start/Build/Scale entitlements and all billing periods;
 - non-expiring top-ups;
@@ -226,7 +227,9 @@ The following remain open and must not be advertised as live:
 - the internal indii-operated marketing project;
 - verified provider calculator data.
 
-The landing now has a passwordless email-link flow that uses the verified Firebase identity to call a server-authoritative enrollment function. The function owns queue assignment, deduplicates verified emails, records consent and a lifecycle event, and writes the canonical `foundingArtistWaitlist` record; direct client access to the canonical collections is denied. The administrator dashboard merges that verified queue with the legacy raw `waitlist`, clearly separating canonical verified artists from unverified submissions. Deployment, Firebase email-link/authorized-domain configuration, legacy promotion, invitations, and auditable milestone delivery remain open.
+The landing now has a passwordless email-link flow that uses the verified Firebase identity to call a server-authoritative enrollment function. The function owns queue assignment, deduplicates verified emails, records consent and a lifecycle event, and writes the canonical `foundingArtistWaitlist` record; direct client access to the canonical collections is denied. The administrator dashboard merges that verified queue with the legacy raw `waitlist`, clearly separating canonical verified artists from unverified submissions.
+
+The invitation/communication implementation adds administrator-only controls that queue the earliest verified waitlisted artist, advances that artist to `invited` only after provider delivery succeeds, and records the provider result. Major-milestone campaigns snapshot only verified artists who opted in, recheck consent immediately before delivery, use provider idempotency keys for safe retries, and retain per-recipient delivery records. Each milestone email links to a verified-email preference flow on the landing page, where the artist can disable or restore milestone updates without losing their queue position. The dashboard requires explicit confirmation before either external action. Genuine inbox delivery, invitation acceptance/access activation, legacy promotion, and verified email-link production walkthroughs remain acceptance work; structural tests are not substitutes for those proofs.
 
 ## Issue map
 

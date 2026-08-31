@@ -205,6 +205,14 @@ export { sendEmail } from './email/sendEmail';
 
 // Founding Artist Beta — verified, server-authoritative waitlist enrollment.
 export { joinFoundingArtistWaitlist } from './foundingArtist/waitlist';
+export {
+    inviteNextFoundingArtist,
+    queueFoundingArtistMilestoneUpdate,
+} from './foundingArtist/admin';
+export {
+    sendFoundingArtistInvitation,
+    sendFoundingArtistMilestoneCampaign,
+} from './foundingArtist/communications';
 
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analyticsGetConnectionStatus, analyticsRefreshToken, analyticsRevokeToken, auditInstagramConnectionCallable } from './analytics/platformTokenExchange';

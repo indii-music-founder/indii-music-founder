@@ -10,6 +10,12 @@ import { defineSecret } from 'firebase-functions/params';
 
 export const resendApiKey = defineSecret('RESEND_API_KEY');
 
+export interface TransactionalEmailOptions {
+    text?: string;
+    /** Stable provider key so an Eventarc retry cannot send the same message twice. */
+    idempotencyKey?: string;
+}
+
 function getResendApiKey(): string {
     const envKey = process.env.RESEND_API_KEY;
     if (envKey) return envKey;
@@ -24,6 +30,7 @@ export async function sendTransactionalEmail(
     to: string,
     subject: string,
     html: string,
+    options: TransactionalEmailOptions = {},
 ): Promise<{ sent: boolean; reason?: string; messageId?: string }> {
     const apiKey = getResendApiKey();
     if (!apiKey) {
@@ -31,12 +38,16 @@ export async function sendTransactionalEmail(
         return { sent: false, reason: 'RESEND_API_KEY not configured' };
     }
     const resend = new Resend(apiKey);
-    const result = await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'indii <hello@indii.music>',
-        to,
-        subject,
-        html,
-    });
+    const result = await resend.emails.send(
+        {
+            from: process.env.RESEND_FROM_EMAIL || 'indii <hello@indii.music>',
+            to,
+            subject,
+            html,
+            text: options.text,
+        },
+        options.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : undefined,
+    );
     if (result.error) {
         console.error('[Notify] Resend send failed:', result.error);
         return { sent: false, reason: result.error.message };
