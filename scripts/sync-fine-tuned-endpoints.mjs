@@ -155,6 +155,30 @@ function safeObjectKey(key) {
   return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key) ? key : `'${key}'`;
 }
 
+function parseCheckedInPolicyEndpoints(sourceText) {
+  const marker = 'APPROVED_TEXT_STREAM_FINE_TUNED_ENDPOINTS = new Set([';
+  const start = sourceText.indexOf(marker);
+  if (start === -1) return new Set();
+  const block = sourceText.slice(start + marker.length);
+  const end = block.indexOf(']);');
+  const body = end === -1 ? block : block.slice(0, end);
+  const endpoints = new Set();
+  const entryRe = /^\s*'([^']+)',\s*$/gm;
+  let match;
+  while ((match = entryRe.exec(body)) !== null) {
+    endpoints.add(match[1]);
+  }
+  return endpoints;
+}
+
+function compareEndpointSets(checkedIn, live) {
+  return {
+    removed: [...checkedIn].filter((e) => !live.has(e)),
+    added: [...live].filter((e) => !checkedIn.has(e)),
+    matching: [...checkedIn].filter((e) => live.has(e)),
+  };
+}
+
 function generateFile(registry) {
   const entries = Object.entries(registry)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -237,18 +261,26 @@ async function main() {
     console.log(`✓ Read-only preflight verified ${checkedEndpoints} specialist endpoints`);
 
     const comparison = compareRegistries(parseCheckedInRegistry(fs.readFileSync(OUTPUT_FILE, 'utf8')), registry);
+    const liveEndpoints = new Set(Object.values(registry));
+    const policyComparison = compareEndpointSets(
+      parseCheckedInPolicyEndpoints(fs.readFileSync(FIREBASE_POLICY_OUTPUT_FILE, 'utf8')),
+      liveEndpoints,
+    );
 
     if (process.argv.includes('--check')) {
-      if (hasDrift(comparison)) {
-        console.error(`✗ Checked-in registry is out of sync with live Vertex: ${driftDescription(comparison)}`);
+      const registryDrift = hasDrift(comparison);
+      const policyDrift = policyComparison.removed.length > 0 || policyComparison.added.length > 0;
+      if (registryDrift || policyDrift) {
+        if (registryDrift) console.error(`✗ Renderer registry out of sync with live Vertex: ${driftDescription(comparison)}`);
+        if (policyDrift) console.error(`✗ Firebase admission allowlist out of sync with live Vertex: ${policyComparison.removed.length} removed, ${policyComparison.added.length} added`);
         console.error('  Re-sync by running the sync script without --check, then commit the generated files.');
         process.exit(1);
       }
-      console.log(`✓ Check-only mode: checked-in registry ${driftDescription(comparison)}; generated files were not modified`);
+      console.log(`✓ Check-only mode: renderer registry ${driftDescription(comparison)}; firebase allowlist in sync (${policyComparison.matching.length} endpoints); generated files were not modified`);
       return;
     }
 
-    console.log(`↻ Re-syncing registry (${driftDescription(comparison)})`);
+    console.log(`↻ Re-syncing registry (${driftDescription(comparison)}; allowlist ${policyComparison.removed.length} removed, ${policyComparison.added.length} added)`);
 
     const content = generateFile(registry);
     fs.writeFileSync(OUTPUT_FILE, content, 'utf8');
@@ -279,6 +311,8 @@ export {
   hasDrift,
   driftDescription,
   safeObjectKey,
+  parseCheckedInPolicyEndpoints,
+  compareEndpointSets,
   buildRegistry,
   generateFile,
 };
