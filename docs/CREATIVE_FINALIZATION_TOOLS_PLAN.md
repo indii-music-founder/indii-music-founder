@@ -784,7 +784,7 @@ Handoff state after each step is recorded in **Section 19**. Update it before en
 - Phase B2: ☑ B2.1+B2.2 shipped (render_typography tool + TypographyPanel + full CreativeAgent/registry/prompt registration + RTL/tool tests). B2.3 real smoke pending founder.
 - Phase C2: ☑ C2.1+C2.2 shipped (4 canvas agent tools: canvas_open_image/add_layer/set_adjustments/export, registered on Director+CreativeAgent+registry+catalog+tests; applyTransformPatch Fabric object:modified sync, idempotent). C2.3 split-subject BLOCKED: @imgly/background-removal model weights unlicensed (Ground Rule 8) — flag-gated, decision recorded. C2.4 real smoke pending founder.
 - Phase A2: ⛔ blocked on founder licensing decision (inswapper_128 non-commercial license).
-- Phase C3: ☐ optional — requires C1+C2 doc model + B1 text vectoring; PSD flatten-layers + text-layer bake.
+- Phase C3: ☑ shipped — PSD export (ag-psd; raster layers adjustments-baked, text layers baked via the B1 vector path) + `rasterizeTextLayer` editor rendering + `canvasEditorSlice.addTextLayer` + TypographyPanel "Add to Layer Editor". Commits `74a309250`/`a0f6d342e`/`8bd4d30c4`. Real founder smoke pending.
 
 **Calibration record (fill at A1.5):** threshold = ____, same-pair distribution = ____, different-pair distribution = ____.
 
