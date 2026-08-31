@@ -1,3 +1,27 @@
+# Session Close — live canvas layer editor (C1/C2/C3) (2026-08-31, DSH agent)
+
+**Final state: head `9befee869`, CI run 33438044242 SUCCESS incl. production deploy. All canvas work green; split-subject (C2.3) built then REVERTED per founder.**
+
+## Shipped — non-destructive layer editor (Workstream C, `docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md` §8)
+- **C1.3** editor components (`CanvasEditor`/`LayerList`/`AdjustPanel`/`ExportBar`) + Fabric-7
+  descriptor fix (temperature `tint`, Gamma RGB triplet, Convolute `opaque`) — `8eb680f9f`.
+- **C1.4/C1.5** export test + debounced `useCanvasAutosave` — `678273f00`.
+- **C3** PSD export (`PsdExportService` ag-psd, adjustments-baked) + text-layer rasterization
+  (`rasterizeTextLayer`) + `addTextLayer` + TypographyPanel "Add to Layer Editor" —
+  `74a309250` / `a0f6d342e` / `8bd4d30c4`.
+- Gallery "Open in Layer Editor" + gs:// resolve in editor — `f7b7a08d1`.
+- State docs marked C1/C3 shipped (§19 + FOUNDER_BLOCKERS #7/#8).
+
+## Reverted — split-subject (C2.3, `@imgly/background-removal`)
+- Built (`29ab327a8`) then REVERTED on founder's "undo it" (`051033c1a` + `9befee869`).
+  No imgly/onnxruntime refs remain in manifests/lock/code.
+- **C2.3 is back to BLOCKED** (license decision pending) — FOUNDER_BLOCKERS #4 restored.
+
+## Honest remaining (all founder-gated)
+- C2.3 split-subject license decision; C2.4 real smoke; A1.1/A1.5/A1.7 identity;
+  A2 pixel swap; E2 gen-motion; real smokes G1.6/F1.4/E1.5/H1.3/D2.3/B2.3/I1.6.
+- Foreign dirty files untouched: `.agent/observations/2026-08-27-agent-watch.md`, `videos/`.
+
 # Session Close — video previews + cross-tool asset drag/drop (2026-08-30, DSH agent)
 
 **Final state: every commit green at its own SHA (superseded runs accepted on successor per concurrency protocol); final head `067ea6a91` CI run 33317733108 SUCCESS incl. production deploy.**
