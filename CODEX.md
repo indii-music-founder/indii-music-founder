@@ -64,7 +64,7 @@ bash .claude/scripts/checkpoint.sh
 
 ## Project Overview
 
-> **Canonical product documentation lives in `.agent-os/product/`. Read those 5 files first before acting on instructions in this file.**
+> **Canonical product documentation lives in `.agent-os/product/`. Read those files first — mission, roadmap, decisions, tech-stack, code-style, and the north-star happiness-through-perfection — before acting on instructions in this file.**
 
 **indii** is an AI-native music business platform for independent music artists — the first of its kind. It picks up where music mastering ends. Not built for major labels, major managers, or major artists.
 
