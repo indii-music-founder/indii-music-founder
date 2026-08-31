@@ -13,7 +13,7 @@
  * (set IMGLY_VERSION to match, or edit the default below).
  */
 import { spawnSync } from 'child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -23,7 +23,17 @@ const URL = `https://staticimgly.com/@imgly/background-removal-data/${VERSION}/p
 const TARGET = path.join(__dirname, '../packages/renderer/public/models/background-removal');
 const TMP = path.join(__dirname, '../.imgly-weights.tgz');
 
+function hasWeights(dir) {
+    if (!existsSync(dir)) return false;
+    const files = readdirSync(dir).filter((f) => f !== 'LICENSES.md' && f !== '.gitignore');
+    return files.length > 0;
+}
+
 async function main() {
+    if (hasWeights(TARGET)) {
+        console.log('✓ Weights already vendored; skipping download.');
+        return;
+    }
     console.log(`Vendoring @imgly/background-removal weights v${VERSION} ...`);
     const res = await fetch(URL);
     if (!res.ok) throw new Error(`Fetch failed (HTTP ${res.status})`);

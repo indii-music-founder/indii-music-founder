@@ -12,7 +12,6 @@
  *    (Ground Rule 8).
  */
 
-import { removeBackground } from '@imgly/background-removal';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 const WEIGHTS_PUBLIC_PATH = '/models/background-removal/';
@@ -39,6 +38,9 @@ export async function splitSubjectToForeground(src: string): Promise<string> {
     }
     const blob = await response.blob();
 
+    // Lazy-load the heavy onnxruntime/imgly runtime only when this op runs, so
+    // it code-splits out of the main bundle (onnxruntime-web is ~MB of JS+WASM).
+    const { removeBackground } = await import('@imgly/background-removal');
     const subjectBlob = await removeBackground(blob, {
         publicPath: WEIGHTS_PUBLIC_PATH,
         model: 'isnet_quint8',
