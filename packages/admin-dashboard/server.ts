@@ -298,6 +298,86 @@ app.get('/api/founders', requireAdminAuth, async (_req, res) => {
   }
 });
 
+// Serves the raw Founding Artist waitlist captured by the public landing page.
+// These records are intentionally labelled unverified: the present landing
+// form records an email submission, but does not yet prove ownership. The
+// admin dashboard must not silently promote those leads into invited members.
+app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
+  try {
+    const snapshot = await admin
+      .firestore()
+      .collection('waitlist')
+      .orderBy('createdAt', 'asc')
+      .limit(1000)
+      .get();
+
+    const byEmail = new Map<string, {
+      id: string;
+      email: string;
+      joinedAt: string | null;
+      source: string;
+      submissionCount: number;
+      verificationStatus: 'unverified';
+    }>();
+
+    for (const document of snapshot.docs) {
+      const data = document.data() as {
+        email?: unknown;
+        createdAt?: { toDate?: () => Date } | Date | string;
+        source?: unknown;
+      };
+      if (typeof data.email !== 'string') continue;
+
+      const email = data.email.trim().toLowerCase();
+      if (!email) continue;
+
+      const existing = byEmail.get(email);
+      if (existing) {
+        existing.submissionCount += 1;
+        continue;
+      }
+
+      let joinedAt: string | null = null;
+      try {
+        const date = typeof data.createdAt === 'object' && data.createdAt !== null && 'toDate' in data.createdAt
+          ? data.createdAt.toDate?.()
+          : data.createdAt instanceof Date
+            ? data.createdAt
+            : typeof data.createdAt === 'string'
+              ? new Date(data.createdAt)
+              : null;
+        joinedAt = date && !Number.isNaN(date.getTime()) ? date.toISOString() : null;
+      } catch {
+        joinedAt = null;
+      }
+
+      byEmail.set(email, {
+        id: document.id,
+        email,
+        joinedAt,
+        source: typeof data.source === 'string' ? data.source : 'unknown',
+        submissionCount: 1,
+        verificationStatus: 'unverified',
+      });
+    }
+
+    const entries = Array.from(byEmail.values()).map((entry, index) => ({
+      ...entry,
+      submissionOrder: index + 1,
+    }));
+
+    res.json({
+      count: entries.length,
+      totalSubmissions: snapshot.docs.length,
+      verificationEnabled: false,
+      entries,
+    });
+  } catch (error) {
+    console.error('[Waitlist] Failed to read waitlist collection:', error);
+    res.status(500).json({ error: 'Failed to load waitlist' });
+  }
+});
+
 // Phase 4: Agentic System Integration - Webhooks
 
 const requireWebhookSecret = (req: express.Request, res: express.Response, next: express.NextFunction) => {

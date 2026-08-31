@@ -14,7 +14,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
 // Studio app URL for refunds after auth
-const STUDIO_URL = import.meta.env.VITE_STUDIO_URL || (import.meta.env.DEV ? 'http://localhost:4242' : 'https://indii.music');
+const STUDIO_URL = import.meta.env.VITE_STUDIO_URL || (import.meta.env.DEV ? 'http://localhost:4242' : 'https://app.indii.music');
 
 function isLocalLandingDevHost() {
   return (

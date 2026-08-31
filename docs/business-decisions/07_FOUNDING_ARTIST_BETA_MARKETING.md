@@ -38,6 +38,8 @@ music business at the speed of you
 
 All owned public aliases, including `indii.music` and `www.indii.music`, should resolve to one canonical public landing page. Canonical URLs, redirects, metadata, social cards, structured data, sitemaps, and authentication return URLs must agree.
 
+The public root stays the front door for everyone. A signed-out member visiting `indii.music` sees the same public landing page as a new visitor. A signed-in member may see an **Open app** action, but should not be automatically pulled away from the marketing site. The protected Studio lives at `app.indii.music`; an unauthenticated Studio visit enters authentication and returns to the Studio after success.
+
 The current website does not need a wholesale redesign. Preserve its strongest visual work and story sections while updating copy, truthful capability boundaries, calls to action, and product paths.
 
 ### Hero
@@ -62,6 +64,8 @@ Supporting copy communicates **Run the business behind your music** and one conn
 | Promise                | Beta invitation, major milestone updates, early-pricing priority |
 
 The initial account and waitlist collect a **verified email only**. Creating the free account also joins the beta waitlist. Do not claim verification until it is enforced.
+
+Operationally, waitlist submissions must be visible inside the administrator-only Founders Dashboard. Raw landing submissions remain clearly labelled unverified until the account-verification flow promotes them. The authoritative pipeline will connect submission, verification, waitlist order, invitation, account, plan, and communication history without exposing email addresses publicly.
 
 The final homepage conversion section asks an eligible artist to choose Start, Build, or Scale. Pricing-section placement was not selected; use the clearest existing page flow without forcing a redesign.
 
@@ -220,6 +224,8 @@ The following remain open and must not be advertised as live:
 - verified social inventory and posting integrations;
 - the internal indii-operated marketing project;
 - verified provider calculator data.
+
+The administrator dashboard now exposes the existing raw `waitlist` records through an authenticated backend route, deduplicates them for operational review, preserves first-submission order, and labels them unverified. This is visibility into the current collection path, not completion of the verified-account or invitation bus.
 
 ## Issue map
 

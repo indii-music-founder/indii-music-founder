@@ -23,7 +23,7 @@ describe('FoundersPortal', () => {
     it('shows an admin-auth-required panel on 401, not a generic error', async () => {
         vi.mocked(fetch).mockResolvedValue(jsonResponse({}, 401));
         render(<FoundersPortal />);
-        await waitFor(() => expect(screen.getByText(/Admin authentication required/)).toBeDefined());
+        await waitFor(() => expect(screen.getAllByText(/Admin authentication required/)).toHaveLength(2));
     });
 
     it('shows an honest empty state with the real seat count when nobody has activated yet', async () => {

@@ -216,6 +216,70 @@ describe('admin-dashboard server.ts', () => {
         });
     });
 
+    describe('GET /api/waitlist', () => {
+        it('rejects unauthenticated access to collected email addresses', async () => {
+            const res = await request('GET', '/api/waitlist');
+            expect(res.status).toBe(401);
+        });
+
+        it('returns normalized, deduplicated submissions without claiming verification', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+
+            const waitlistQuery = makeQuery(makeSnapshot([
+                { id: 'first', data: { email: ' Artist@Example.com ', createdAt: { toDate: () => new Date('2026-08-01T10:00:00Z') }, source: 'landing_page' } },
+                { id: 'duplicate', data: { email: 'artist@example.com', createdAt: { toDate: () => new Date('2026-08-02T10:00:00Z') }, source: 'landing_page' } },
+                { id: 'second', data: { email: 'second@example.com', createdAt: { toDate: () => new Date('2026-08-03T10:00:00Z') }, source: 'landing_page' } },
+            ]));
+            const auditCollection = {
+                add: vi.fn().mockResolvedValue(undefined),
+                doc: vi.fn(() => ({ set: vi.fn().mockResolvedValue(undefined) })),
+            };
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn((name: string) => name === 'waitlist' ? waitlistQuery : auditCollection),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('GET', '/api/waitlist', { headers: { Authorization: 'Bearer good-token' } });
+
+            expect(res.status).toBe(200);
+            expect(res.body).toMatchObject({
+                count: 2,
+                totalSubmissions: 3,
+                verificationEnabled: false,
+                entries: [
+                    {
+                        id: 'first',
+                        email: 'artist@example.com',
+                        submissionOrder: 1,
+                        submissionCount: 2,
+                        verificationStatus: 'unverified',
+                    },
+                    {
+                        id: 'second',
+                        email: 'second@example.com',
+                        submissionOrder: 2,
+                        submissionCount: 1,
+                        verificationStatus: 'unverified',
+                    },
+                ],
+            });
+        });
+
+        it('returns an honest failure instead of exposing invented entries', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => makeFailingQuery('firestore down')),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('GET', '/api/waitlist', { headers: { Authorization: 'Bearer good-token' } });
+            expect(res.status).toBe(500);
+            expect(res.body).toEqual({ error: 'Failed to load waitlist' });
+        });
+    });
+
     describe('GET /api/usage/summary', () => {
         beforeEach(() => {
             vi.mocked(admin.auth).mockReturnValue({

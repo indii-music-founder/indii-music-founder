@@ -1,7 +1,7 @@
 # indii Admin Dashboard
 
 A standalone admin console for indii. Shows **real data only** — per-user AI token
-usage / cost and the live founders roster. No mock or placeholder data: empty states
+usage / cost, the live founders roster, and the Founding Artist waitlist. No mock or placeholder data: empty states
 show real zeros until real activity exists.
 
 ## Architecture
@@ -15,7 +15,7 @@ show real zeros until real activity exists.
 | Module | Source |
 |--------|--------|
 | **Token Usage** | `user_usage_stats` Firestore collection (written by `TokenUsageService.trackUsage`). Cost by model, spend by user, projected economics. |
-| **Founders Portal** | `founders` Firestore collection (written by `activateFounderPass`). Live seat count (X of 11) + roster. |
+| **Founders Portal** | `founders` Firestore collection (written by `activateFounderPass`) plus the administrator-only `waitlist` collection. Activated roster and deduplicated raw landing submissions remain visibly separate; submissions are labelled unverified until the account-verification flow exists. |
 | **Inbox & Messaging** | `messages` Firestore collection through the authenticated admin API. |
 | **Google Workspace Hub** | Stored Google OAuth credentials plus the live Gmail, Calendar, and Drive APIs. |
 | **DDEX Deliveries** | `deliveries` Firestore collection. Every count is derived from the latest API result. |

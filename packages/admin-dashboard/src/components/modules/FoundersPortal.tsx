@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Users, Crown, Clock, AlertTriangle } from 'lucide-react';
+import { WaitlistPanel } from './WaitlistPanel';
 
 /**
  * Founders Portal.
@@ -172,6 +173,7 @@ export const FoundersPortal: React.FC = () => {
           )}
         </>
       )}
+      <WaitlistPanel />
     </div>
   );
 };
