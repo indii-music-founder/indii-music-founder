@@ -1,6 +1,6 @@
 # Session Close — live canvas layer editor (C1/C2/C3) (2026-08-31, DSH agent)
 
-**Final state: head `9befee869`, CI run 33438044242 SUCCESS incl. production deploy. All canvas work green; split-subject (C2.3) built then REVERTED per founder.**
+**Final state: head `31b9bb8be`, CI run 33441855914 SUCCESS incl. production deploy. All canvas work green; split-subject (C2.3) built then REVERTED per founder; editor fully wired (all buttons pressable).**
 
 ## Shipped — non-destructive layer editor (Workstream C, `docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md` §8)
 - **C1.3** editor components (`CanvasEditor`/`LayerList`/`AdjustPanel`/`ExportBar`) + Fabric-7
@@ -11,6 +11,8 @@
   `74a309250` / `a0f6d342e` / `8bd4d30c4`.
 - Gallery "Open in Layer Editor" + gs:// resolve in editor — `f7b7a08d1`.
 - State docs marked C1/C3 shipped (§19 + FOUNDER_BLOCKERS #7/#8).
+- **Wiring fix:** TypographyPanel (B2) was never mounted, leaving "Add to Layer Editor"
+  dead — mounted as a "Typography" section in StudioControlsPanel — `31b9bb8be`.
 
 ## Reverted — split-subject (C2.3, `@imgly/background-removal`)
 - Built (`29ab327a8`) then REVERTED on founder's "undo it" (`051033c1a` + `9befee869`).
