@@ -2,6 +2,8 @@ import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getFunctions, type Functions } from 'firebase/functions';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 // All values are Firebase project identifiers (not secrets).
 // Using env vars enables staging/production environment isolation.
@@ -23,6 +25,7 @@ let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let db: Firestore | undefined;
 let storage: FirebaseStorage | undefined;
+let functions: Functions | undefined;
 
 if (typeof window !== 'undefined') {
   try {
@@ -30,11 +33,19 @@ if (typeof window !== 'undefined') {
     db = getFirestore(app);
     storage = getStorage(app);
     auth = getAuth(app);
+    functions = getFunctions(app, 'us-central1');
+    const appCheckKey = import.meta.env.VITE_FIREBASE_APP_CHECK_KEY;
+    if (appCheckKey) {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(appCheckKey),
+        isTokenAutoRefreshEnabled: true,
+      });
+    }
     console.log('[Firebase] Initialization successful');
   } catch (error) {
     console.error('[Firebase] Initialization failed:', error);
   }
 }
 
-export { auth, db, storage };
+export { auth, db, storage, functions };
 export default app;

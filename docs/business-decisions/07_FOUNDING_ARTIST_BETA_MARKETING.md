@@ -63,7 +63,7 @@ Supporting copy communicates **Run the business behind your music** and one conn
 | Priority               | First come, first served                                         |
 | Promise                | Beta invitation, major milestone updates, early-pricing priority |
 
-The initial account and waitlist collect a **verified email only**. Creating the free account also joins the beta waitlist. Do not claim verification until it is enforced.
+The initial account and waitlist collect a **verified email only**. Creating the free account also joins the beta waitlist. The email-link and server-authoritative enrollment path is implemented in code; do not claim it is live until Firebase configuration, deployment, and genuine-user verification are complete.
 
 Operationally, waitlist submissions must be visible inside the administrator-only Founders Dashboard. Raw landing submissions remain clearly labelled unverified until the account-verification flow promotes them. The authoritative pipeline will connect submission, verification, waitlist order, invitation, account, plan, and communication history without exposing email addresses publicly.
 
@@ -215,7 +215,8 @@ The recovered first website pass includes the beta banner and hero, waitlist cop
 
 The following remain open and must not be advertised as live:
 
-- verified-email accounts and invitation operations;
+- production deployment and genuine-user proof of verified-email enrollment;
+- invitation operations and auditable milestone delivery;
 - guided free mini-campaign exports and save/delete enforcement;
 - Start/Build/Scale entitlements and all billing periods;
 - non-expiring top-ups;
@@ -225,7 +226,7 @@ The following remain open and must not be advertised as live:
 - the internal indii-operated marketing project;
 - verified provider calculator data.
 
-The administrator dashboard now exposes the existing raw `waitlist` records through an authenticated backend route, deduplicates them for operational review, preserves first-submission order, and labels them unverified. This is visibility into the current collection path, not completion of the verified-account or invitation bus.
+The landing now has a passwordless email-link flow that uses the verified Firebase identity to call a server-authoritative enrollment function. The function owns queue assignment, deduplicates verified emails, records consent and a lifecycle event, and writes the canonical `foundingArtistWaitlist` record; direct client access to the canonical collections is denied. The administrator dashboard merges that verified queue with the legacy raw `waitlist`, clearly separating canonical verified artists from unverified submissions. Deployment, Firebase email-link/authorized-domain configuration, legacy promotion, invitations, and auditable milestone delivery remain open.
 
 ## Issue map
 

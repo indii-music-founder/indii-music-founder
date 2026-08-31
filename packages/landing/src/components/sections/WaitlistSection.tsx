@@ -5,13 +5,23 @@ import { getStudioUrl } from '../../lib/auth';
 
 interface WaitlistSectionProps {
   email: string;
-  status: 'idle' | 'loading' | 'success' | 'error';
+  status: 'idle' | 'loading' | 'sent' | 'success' | 'error';
   message: string;
+  majorMilestoneUpdates: boolean;
   onChange: (email: string) => void;
+  onMilestoneUpdatesChange: (enabled: boolean) => void;
   onSubmit: (event: React.FormEvent) => void;
 }
 
-export default function WaitlistSection({ email, status, message, onChange, onSubmit }: WaitlistSectionProps) {
+export default function WaitlistSection({
+  email,
+  status,
+  message,
+  majorMilestoneUpdates,
+  onChange,
+  onMilestoneUpdatesChange,
+  onSubmit,
+}: WaitlistSectionProps) {
   return (
     <section
       id="waitlist"
@@ -36,33 +46,45 @@ export default function WaitlistSection({ email, status, message, onChange, onSu
           </p>
         </div>
         <div className="md:text-right">
-          <form onSubmit={onSubmit} className="flex w-full flex-col gap-3 sm:flex-row md:justify-end">
-            <label htmlFor="waitlist-email" className="sr-only">
-              Email address
+          <form onSubmit={onSubmit} className="flex w-full flex-col gap-3 md:items-end">
+            <div className="flex w-full flex-col gap-3 sm:flex-row md:justify-end">
+              <label htmlFor="waitlist-email" className="sr-only">
+                Email address
+              </label>
+              <input
+                id="waitlist-email"
+                type="email"
+                placeholder="Enter your email"
+                required
+                value={email}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={status === 'loading' || status === 'success'}
+                className="w-full rounded-md border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none transition-colors focus:border-amber-400 focus:bg-white/10 sm:max-w-[240px]"
+              />
+              <button
+                type="submit"
+                disabled={status === 'loading' || status === 'success'}
+                className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-amber-400 px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-amber-300 disabled:opacity-50 disabled:hover:bg-amber-400"
+              >
+                {status === 'loading' ? 'Verifying...' : status === 'sent' ? 'Resend link' : status === 'success' ? 'Joined' : 'Verify & join'}
+              </button>
+            </div>
+            <label className="flex max-w-[380px] items-start gap-2 text-left text-[11px] leading-relaxed text-white/45 md:text-right">
+              <input
+                type="checkbox"
+                checked={majorMilestoneUpdates}
+                onChange={(event) => onMilestoneUpdatesChange(event.target.checked)}
+                disabled={status === 'loading' || status === 'success'}
+                className="mt-0.5 accent-amber-400"
+              />
+              <span>The beta invitation is part of joining. Also email me major development milestones. I can unsubscribe from updates.</span>
             </label>
-            <input
-              id="waitlist-email"
-              type="email"
-              placeholder="Enter your email"
-              required
-              value={email}
-              onChange={(e) => onChange(e.target.value)}
-              disabled={status === 'loading' || status === 'success'}
-              className="w-full rounded-md border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none transition-colors focus:border-amber-400 focus:bg-white/10 sm:max-w-[240px]"
-            />
-            <button
-              type="submit"
-              disabled={status === 'loading' || status === 'success'}
-              className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-amber-400 px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-amber-300 disabled:opacity-50 disabled:hover:bg-amber-400"
-            >
-              {status === 'loading' ? 'Joining...' : status === 'success' ? 'Joined' : 'Join Waitlist'}
-            </button>
           </form>
           {message && (
             <p
               role="status"
               aria-live="polite"
-              className={`mt-3 text-xs ${status === 'success' ? 'text-amber-400' : 'text-red-400'}`}
+              className={`mt-3 text-xs ${status === 'success' || status === 'sent' ? 'text-amber-400' : status === 'error' ? 'text-red-400' : 'text-white/55'}`}
             >
               {message}
             </p>

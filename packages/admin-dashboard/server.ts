@@ -298,18 +298,16 @@ app.get('/api/founders', requireAdminAuth, async (_req, res) => {
   }
 });
 
-// Serves the raw Founding Artist waitlist captured by the public landing page.
-// These records are intentionally labelled unverified: the present landing
-// form records an email submission, but does not yet prove ownership. The
-// admin dashboard must not silently promote those leads into invited members.
+// Serves both the canonical verified Founding Artist queue and the legacy raw
+// landing submissions. Canonical records win during deduplication; raw records
+// remain labelled legacy_unverified until their owner completes email-link auth.
 app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
   try {
-    const snapshot = await admin
-      .firestore()
-      .collection('waitlist')
-      .orderBy('createdAt', 'asc')
-      .limit(1000)
-      .get();
+    const firestore = admin.firestore();
+    const [verifiedSnapshot, legacySnapshot] = await Promise.all([
+      firestore.collection('foundingArtistWaitlist').orderBy('queuePosition', 'asc').limit(1000).get(),
+      firestore.collection('waitlist').orderBy('createdAt', 'asc').limit(1000).get(),
+    ]);
 
     const byEmail = new Map<string, {
       id: string;
@@ -317,59 +315,96 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
       joinedAt: string | null;
       source: string;
       submissionCount: number;
-      verificationStatus: 'unverified';
+      submissionOrder: number;
+      verificationStatus: 'verified' | 'unverified';
+      status: 'waitlisted' | 'invited' | 'accepted' | 'declined' | 'revoked' | 'legacy_unverified';
     }>();
 
-    for (const document of snapshot.docs) {
+    const toIso = (value: unknown): string | null => {
+      try {
+        const date = typeof value === 'object' && value !== null && 'toDate' in value
+          ? (value as { toDate?: () => Date }).toDate?.()
+          : value instanceof Date
+            ? value
+            : typeof value === 'string'
+              ? new Date(value)
+              : null;
+        return date && !Number.isNaN(date.getTime()) ? date.toISOString() : null;
+      } catch {
+        return null;
+      }
+    };
+
+    for (const document of verifiedSnapshot.docs) {
       const data = document.data() as {
         email?: unknown;
-        createdAt?: { toDate?: () => Date } | Date | string;
+        joinedAt?: unknown;
+        source?: unknown;
+        queuePosition?: unknown;
+        status?: unknown;
+      };
+      if (typeof data.email !== 'string') continue;
+      const email = data.email.trim().toLowerCase();
+      const position = typeof data.queuePosition === 'number' ? data.queuePosition : 0;
+      const allowedStatuses = ['waitlisted', 'invited', 'accepted', 'declined', 'revoked'] as const;
+      const status = allowedStatuses.includes(data.status as typeof allowedStatuses[number])
+        ? data.status as typeof allowedStatuses[number]
+        : 'waitlisted';
+      byEmail.set(email, {
+        id: `verified:${document.id}`,
+        email,
+        joinedAt: toIso(data.joinedAt),
+        source: typeof data.source === 'string' ? data.source : 'unknown',
+        submissionCount: 1,
+        submissionOrder: position,
+        verificationStatus: 'verified',
+        status,
+      });
+    }
+
+    let legacyPosition = 0;
+    for (const document of legacySnapshot.docs) {
+      const data = document.data() as {
+        email?: unknown;
+        createdAt?: unknown;
         source?: unknown;
       };
       if (typeof data.email !== 'string') continue;
 
       const email = data.email.trim().toLowerCase();
       if (!email) continue;
+      legacyPosition += 1;
 
       const existing = byEmail.get(email);
       if (existing) {
-        existing.submissionCount += 1;
+        if (existing.verificationStatus === 'unverified') existing.submissionCount += 1;
         continue;
       }
 
-      let joinedAt: string | null = null;
-      try {
-        const date = typeof data.createdAt === 'object' && data.createdAt !== null && 'toDate' in data.createdAt
-          ? data.createdAt.toDate?.()
-          : data.createdAt instanceof Date
-            ? data.createdAt
-            : typeof data.createdAt === 'string'
-              ? new Date(data.createdAt)
-              : null;
-        joinedAt = date && !Number.isNaN(date.getTime()) ? date.toISOString() : null;
-      } catch {
-        joinedAt = null;
-      }
-
       byEmail.set(email, {
-        id: document.id,
+        id: `legacy:${document.id}`,
         email,
-        joinedAt,
+        joinedAt: toIso(data.createdAt),
         source: typeof data.source === 'string' ? data.source : 'unknown',
         submissionCount: 1,
+        submissionOrder: legacyPosition,
         verificationStatus: 'unverified',
+        status: 'legacy_unverified',
       });
     }
 
-    const entries = Array.from(byEmail.values()).map((entry, index) => ({
-      ...entry,
-      submissionOrder: index + 1,
-    }));
+    const entries = Array.from(byEmail.values()).sort((a, b) => {
+      if (a.verificationStatus !== b.verificationStatus) return a.verificationStatus === 'verified' ? -1 : 1;
+      return a.submissionOrder - b.submissionOrder;
+    });
+    const verifiedCount = entries.filter((entry) => entry.verificationStatus === 'verified').length;
 
     res.json({
       count: entries.length,
-      totalSubmissions: snapshot.docs.length,
-      verificationEnabled: false,
+      totalSubmissions: verifiedSnapshot.docs.length + legacySnapshot.docs.length,
+      verifiedCount,
+      unverifiedCount: entries.length - verifiedCount,
+      verificationEnabled: true,
       entries,
     });
   } catch (error) {

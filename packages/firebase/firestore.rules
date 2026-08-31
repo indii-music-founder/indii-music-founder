@@ -2700,6 +2700,25 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // Canonical Founding Artist records, verified-email indexes, sequence state,
+    // and lifecycle events are server-authoritative. Public clients cannot read
+    // email addresses or assign their own queue position/status.
+    match /foundingArtistWaitlist/{uid} {
+      allow read, write: if false;
+    }
+
+    match /foundingArtistEmailIndex/{emailHash} {
+      allow read, write: if false;
+    }
+
+    match /foundingArtistWaitlistMeta/{docId} {
+      allow read, write: if false;
+    }
+
+    match /foundingArtistEvents/{eventId} {
+      allow read, write: if false;
+    }
+
     // =========================================================================
     // Founders program
     // =========================================================================

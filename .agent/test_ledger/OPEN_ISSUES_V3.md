@@ -2852,13 +2852,13 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1420: Verified-email account, waitlist, invitation order, and milestone updates are not one authoritative flow
 
-- **Status:** 🟡 PARTIAL — raw submissions are now visible in the authenticated Founders Dashboard; verification and promotion remain open
+- **Status:** 🟡 PARTIAL — server-authoritative verified enrollment is implemented and locally tested; deployment, legacy promotion, invitations, and delivery remain open
 - **Severity:** 🟠 HIGH
 - **Module:** Landing / Firebase Auth / waitlist / communications
 - **Source of truth:** Marketing decision §§ Website and Founding Artist Beta operations
-- **Evidence:** Current form records an entered email but does not prove ownership or create the decided verified free account; invitation and communication state are separate or absent. The admin backend now reads the otherwise inaccessible `waitlist` collection, deduplicates by normalized email, preserves first-submission order, and returns entries as explicitly unverified. The Founders Dashboard displays that operational queue separately from activated founders.
+- **Evidence:** The landing now sends a Firebase passwordless email link and only calls `joinFoundingArtistWaitlist` after the SDK returns an email-verified user. The callable derives email and UID from the verified token, assigns immutable queue order in a transaction, deduplicates through a SHA-256 email index, records consent plus a canonical enrollment event, and writes `foundingArtistWaitlist/{uid}`. Firestore rules deny direct client access to all canonical waitlist/index/meta/event collections. The authenticated Founders Dashboard merges the canonical verified queue with deduplicated legacy `waitlist` submissions and labels their different trust states. Focused Firebase, landing, and admin regressions pass locally; Firebase, landing, shared, and admin production builds pass. This is code evidence, not a claim that the flow is deployed or verified by a genuine production user.
 - **Impact:** Fake emails, duplicate records, and client-controlled priority would undermine beta access.
-- **Fix:** Verify email before activation; preserve immutable join order and waitlisted/invited/accepted states; record milestone consent and delivery; prevent client-assigned priority.
+- **Remaining:** Deploy the function and landing; confirm Firebase Email Link authentication, authorized domains, and App Check configuration; complete one genuine-user enrollment; migrate or resolve legacy unverified records; add invitation transitions and an auditable invitation/milestone delivery outbox.
 - **Acceptance:** A genuine user verifies once, receives one account and ordered waitlist record, cannot forge invitation priority, and can receive an auditable invite/update.
 
 ### ISSUE-1421: Guided free mini-campaign using the artist's music and image is not implemented end to end

@@ -40,6 +40,15 @@ vi.mock('./lib/auth', () => ({
   getStudioUrl: () => 'http://studio.test',
 }));
 
+vi.mock('./lib/foundingArtistWaitlist', () => ({
+  beginFoundingArtistVerification: vi.fn().mockResolvedValue(undefined),
+  completeFoundingArtistVerification: vi.fn(),
+  enrollCurrentVerifiedArtist: vi.fn().mockResolvedValue(null),
+  getStoredFoundingArtistEmail: vi.fn().mockReturnValue(null),
+  getStoredMilestoneConsent: vi.fn().mockReturnValue(true),
+  isCompletingFoundingArtistLink: vi.fn().mockReturnValue(false),
+}));
+
 vi.mock('./lib/founderFunnel', () => ({
   flushFounderFunnelQueue: vi.fn(),
   trackFounderFunnelEvent: vi.fn().mockResolvedValue(undefined),
@@ -204,6 +213,8 @@ describe('home page preservation (founder mode)', () => {
     const input = container.querySelector('input[type="email"]');
     expect(input).not.toBeNull();
     expect(input?.getAttribute('placeholder')).toBe('Enter your email');
+    expect(text).toContain('Verify & join');
+    expect(text).toContain('major development milestones');
   });
 
   it('keeps the story sections and their headlines', async () => {
@@ -345,7 +356,7 @@ describe('home page preservation (public mode)', () => {
     const text = container.textContent ?? '';
     expect(text).toContain('Join the Founding Artist Beta waitlist.');
     // With the preview closed, the hero CTA is the waitlist join.
-    expect(text).toContain('Join Waitlist');
+    expect(text).toContain('Verify & join');
     expect(text).not.toContain('Enter Founder Preview');
     expect(text).not.toContain('Built in Detroit for your work');
     expect(text).not.toContain('Launch cinematic thesis');

@@ -8,12 +8,15 @@ interface WaitlistEntry {
   source: string;
   submissionCount: number;
   submissionOrder: number;
-  verificationStatus: 'unverified';
+  verificationStatus: 'verified' | 'unverified';
+  status: 'waitlisted' | 'invited' | 'accepted' | 'declined' | 'revoked' | 'legacy_unverified';
 }
 
 interface WaitlistResponse {
   count: number;
   totalSubmissions: number;
+  verifiedCount: number;
+  unverifiedCount: number;
   verificationEnabled: boolean;
   entries: WaitlistEntry[];
 }
@@ -89,15 +92,16 @@ export const WaitlistPanel: React.FC = () => {
           <p className="mt-1 text-sm text-white/40">Landing-page submissions, deduplicated by email and ordered by first submission.</p>
         </div>
         <div className="flex gap-3 text-center">
-          <Metric label="Unique emails" value={data?.count ?? entries.length} />
-          <Metric label="Submissions" value={data?.totalSubmissions ?? entries.length} />
+          <Metric label="Verified" value={data?.verifiedCount ?? 0} />
+          <Metric label="Unverified" value={data?.unverifiedCount ?? 0} />
+          <Metric label="Unique" value={data?.count ?? entries.length} />
         </div>
       </div>
 
-      {!data?.verificationEnabled && (
+      {(data?.unverifiedCount ?? 0) > 0 && (
         <div className="flex gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm text-amber-100/80">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
-          <p>These are unverified email submissions. Their order is visible here, but they are not eligible for invitations until the verified-account flow is connected.</p>
+          <p>Legacy submissions remain unverified. Their original order is visible, but they are not eligible for invitations until the artist completes email verification.</p>
         </div>
       )}
 
@@ -119,10 +123,12 @@ export const WaitlistPanel: React.FC = () => {
               <tbody className="divide-y divide-white/5">
                 {entries.map((entry) => (
                   <tr key={entry.id} className="transition-colors hover:bg-white/[0.02]">
-                    <td className="px-6 py-4 font-mono text-xs text-[#4bd5ee]">#{entry.submissionOrder}</td>
+                    <td className="px-6 py-4 font-mono text-xs text-[#4bd5ee]">{entry.verificationStatus === 'verified' ? `#${entry.submissionOrder}` : `Legacy #${entry.submissionOrder}`}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-white/90">{entry.email}</td>
                     <td className="px-6 py-4">
-                      <span className="rounded border border-amber-400/20 bg-amber-400/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">Unverified</span>
+                      <span className={`rounded border px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${entry.verificationStatus === 'verified' ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-amber-400/20 bg-amber-400/10 text-amber-300'}`}>
+                        {entry.status === 'legacy_unverified' ? 'Unverified' : entry.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-xs text-white/40">
                       <span className="flex items-center gap-2"><Clock className="h-3 w-3" />{formatDate(entry.joinedAt)}</span>

@@ -3,9 +3,15 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from './components/auth/AuthProvider';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './lib/firebase';
 import { getStudioPreviewUrl, getStudioUrl } from './lib/auth';
+import {
+  beginFoundingArtistVerification,
+  completeFoundingArtistVerification,
+  enrollCurrentVerifiedArtist,
+  getStoredFoundingArtistEmail,
+  getStoredMilestoneConsent,
+  isCompletingFoundingArtistLink,
+} from './lib/foundingArtistWaitlist';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from './lib/founderFunnel';
 import { isFounderPreviewEnabled } from './lib/previewAccess';
 import { emitSystemPulse } from './three/signals';
@@ -142,8 +148,9 @@ export default function Home({ founder = true }: { founder?: boolean }) {
   const previewHref = previewEnabled ? getStudioPreviewUrl() : '#waitlist';
   const hasTrackedFounderView = useRef(false);
   const [waitlistEmail, setWaitlistEmail] = useState('');
-  const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'loading' | 'sent' | 'success' | 'error'>('idle');
   const [waitlistMessage, setWaitlistMessage] = useState('');
+  const [majorMilestoneUpdates, setMajorMilestoneUpdates] = useState(true);
   const [isThesisOpen, setIsThesisOpen] = useState(() => {
     if (typeof window === 'undefined') return false;
     const { hostname, search, hash } = window.location;
@@ -168,25 +175,73 @@ export default function Home({ founder = true }: { founder?: boolean }) {
     }
   }, [founder, user]);
 
+  useEffect(() => {
+    if (!isCompletingFoundingArtistLink()) return;
+    const storedEmail = getStoredFoundingArtistEmail();
+    const storedMilestoneConsent = getStoredMilestoneConsent();
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      if (!storedEmail) {
+        setWaitlistMessage('Enter the same email address to finish verification.');
+        return;
+      }
+
+      setWaitlistStatus('loading');
+      setWaitlistEmail(storedEmail);
+      setMajorMilestoneUpdates(storedMilestoneConsent);
+      void completeFoundingArtistVerification(storedEmail, storedMilestoneConsent)
+        .then((result) => {
+          if (cancelled) return;
+          setWaitlistStatus('success');
+          setWaitlistMessage(`Email verified. You are #${result.queuePosition} on the Founding Artist waitlist.`);
+          window.history.replaceState({}, '', '/#waitlist');
+          emitSystemPulse('waitlist', 0, 1);
+        })
+        .catch((error: unknown) => {
+          if (cancelled) return;
+          console.error('Waitlist verification error:', error);
+          setWaitlistStatus('error');
+          setWaitlistMessage('We could not finish verification. Enter your email and request a new link.');
+        });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, []);
+
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!waitlistEmail || !db) return;
+    if (!waitlistEmail) return;
     setWaitlistStatus('loading');
     setWaitlistMessage('');
     try {
-      await addDoc(collection(db, 'waitlist'), {
-        email: waitlistEmail,
-        createdAt: serverTimestamp(),
-        source: 'landing_page',
-      });
-      setWaitlistStatus('success');
-      setWaitlistMessage("You're on the list. We'll be in touch.");
-      setWaitlistEmail('');
-      emitSystemPulse('waitlist', 0, 1);
+      if (isCompletingFoundingArtistLink()) {
+        const result = await completeFoundingArtistVerification(waitlistEmail, majorMilestoneUpdates);
+        setWaitlistStatus('success');
+        setWaitlistMessage(`Email verified. You are #${result.queuePosition} on the Founding Artist waitlist.`);
+        window.history.replaceState({}, '', '/#waitlist');
+        emitSystemPulse('waitlist', 0, 1);
+        return;
+      }
+
+      const existingEnrollment = await enrollCurrentVerifiedArtist(waitlistEmail, majorMilestoneUpdates);
+      if (existingEnrollment) {
+        setWaitlistStatus('success');
+        setWaitlistMessage(`You are #${existingEnrollment.queuePosition} on the Founding Artist waitlist.`);
+        emitSystemPulse('waitlist', 0, 1);
+        return;
+      }
+
+      await beginFoundingArtistVerification(waitlistEmail, majorMilestoneUpdates);
+      setWaitlistStatus('sent');
+      setWaitlistMessage(`Verification sent to ${waitlistEmail.trim().toLowerCase()}. Open that link to join the waitlist.`);
     } catch (err) {
       console.error('Waitlist error:', err);
       setWaitlistStatus('error');
-      setWaitlistMessage('Something went wrong. Please try again later.');
+      setWaitlistMessage('We could not start verification. Check the address and try again.');
     }
   };
 
@@ -354,7 +409,15 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       <Hero founder={founder} previewEnabled={previewEnabled} previewHref={previewHref} trackPreview={trackPreview} />
 
       {!previewEnabled && (
-        <WaitlistSection email={waitlistEmail} status={waitlistStatus} message={waitlistMessage} onChange={setWaitlistEmail} onSubmit={handleWaitlistSubmit} />
+        <WaitlistSection
+          email={waitlistEmail}
+          status={waitlistStatus}
+          message={waitlistMessage}
+          majorMilestoneUpdates={majorMilestoneUpdates}
+          onChange={setWaitlistEmail}
+          onMilestoneUpdatesChange={setMajorMilestoneUpdates}
+          onSubmit={handleWaitlistSubmit}
+        />
       )}
 
       <LazySection id="detroit">{founder && <DetroitSection />}</LazySection>

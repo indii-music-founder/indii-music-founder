@@ -203,6 +203,9 @@ export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email
 // Email Delivery Service (Resend — transactional emails, contract PDFs, notifications)
 export { sendEmail } from './email/sendEmail';
 
+// Founding Artist Beta — verified, server-authoritative waitlist enrollment.
+export { joinFoundingArtistWaitlist } from './foundingArtist/waitlist';
+
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analyticsGetConnectionStatus, analyticsRefreshToken, analyticsRevokeToken, auditInstagramConnectionCallable } from './analytics/platformTokenExchange';
 export { sendInstagramMessageCallable, replyInstagramCommentCallable, getInstagramMediaCommentsCallable } from './social/instagramMessaging';

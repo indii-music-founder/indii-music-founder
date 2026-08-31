@@ -22,26 +22,43 @@ describe('WaitlistPanel', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders real waitlist entries as unverified', async () => {
+  it('renders canonical and legacy states without treating them as equivalent', async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({
-      count: 1,
+      count: 2,
       totalSubmissions: 2,
-      verificationEnabled: false,
-      entries: [{
-        id: 'entry-1',
-        email: 'artist@example.com',
-        joinedAt: '2026-08-01T10:00:00.000Z',
-        source: 'landing_page',
-        submissionCount: 2,
-        submissionOrder: 1,
-        verificationStatus: 'unverified',
-      }],
+      verifiedCount: 1,
+      unverifiedCount: 1,
+      verificationEnabled: true,
+      entries: [
+        {
+          id: 'verified:uid-1',
+          email: 'verified@example.com',
+          joinedAt: '2026-08-02T10:00:00.000Z',
+          source: 'landing_page',
+          submissionCount: 1,
+          submissionOrder: 1,
+          verificationStatus: 'verified',
+          status: 'waitlisted',
+        },
+        {
+          id: 'legacy:entry-1',
+          email: 'artist@example.com',
+          joinedAt: '2026-08-01T10:00:00.000Z',
+          source: 'landing_page',
+          submissionCount: 2,
+          submissionOrder: 1,
+          verificationStatus: 'unverified',
+          status: 'legacy_unverified',
+        },
+      ],
     }));
 
     render(<WaitlistPanel />);
 
     await waitFor(() => expect(screen.getByText('artist@example.com')).toBeDefined());
-    expect(screen.getByText('Unverified')).toBeDefined();
+    expect(screen.getByText('verified@example.com')).toBeDefined();
+    expect(screen.getByText('waitlisted')).toBeDefined();
+    expect(screen.getAllByText('Unverified')).toHaveLength(2);
     expect(screen.getByText(/not eligible for invitations/)).toBeDefined();
     expect(fetch).toHaveBeenCalledWith('/api/waitlist', expect.objectContaining({
       headers: { Authorization: 'Bearer admin-token' },
@@ -52,7 +69,9 @@ describe('WaitlistPanel', () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({
       count: 0,
       totalSubmissions: 0,
-      verificationEnabled: false,
+      verifiedCount: 0,
+      unverifiedCount: 0,
+      verificationEnabled: true,
       entries: [],
     }));
 

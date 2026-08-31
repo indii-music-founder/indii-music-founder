@@ -222,22 +222,29 @@ describe('admin-dashboard server.ts', () => {
             expect(res.status).toBe(401);
         });
 
-        it('returns normalized, deduplicated submissions without claiming verification', async () => {
+        it('returns canonical verified artists ahead of deduplicated legacy submissions', async () => {
             vi.mocked(admin.auth).mockReturnValue({
                 verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
 
-            const waitlistQuery = makeQuery(makeSnapshot([
+            const legacyQuery = makeQuery(makeSnapshot([
                 { id: 'first', data: { email: ' Artist@Example.com ', createdAt: { toDate: () => new Date('2026-08-01T10:00:00Z') }, source: 'landing_page' } },
                 { id: 'duplicate', data: { email: 'artist@example.com', createdAt: { toDate: () => new Date('2026-08-02T10:00:00Z') }, source: 'landing_page' } },
                 { id: 'second', data: { email: 'second@example.com', createdAt: { toDate: () => new Date('2026-08-03T10:00:00Z') }, source: 'landing_page' } },
+            ]));
+            const verifiedQuery = makeQuery(makeSnapshot([
+                { id: 'verified-uid', data: { email: 'artist@example.com', joinedAt: { toDate: () => new Date('2026-08-04T10:00:00Z') }, source: 'landing_page', queuePosition: 7, status: 'waitlisted' } },
             ]));
             const auditCollection = {
                 add: vi.fn().mockResolvedValue(undefined),
                 doc: vi.fn(() => ({ set: vi.fn().mockResolvedValue(undefined) })),
             };
             vi.mocked(admin.firestore).mockReturnValue({
-                collection: vi.fn((name: string) => name === 'waitlist' ? waitlistQuery : auditCollection),
+                collection: vi.fn((name: string) => {
+                    if (name === 'waitlist') return legacyQuery;
+                    if (name === 'foundingArtistWaitlist') return verifiedQuery;
+                    return auditCollection;
+                }),
             } as unknown as ReturnType<typeof admin.firestore>);
 
             const res = await request('GET', '/api/waitlist', { headers: { Authorization: 'Bearer good-token' } });
@@ -245,22 +252,26 @@ describe('admin-dashboard server.ts', () => {
             expect(res.status).toBe(200);
             expect(res.body).toMatchObject({
                 count: 2,
-                totalSubmissions: 3,
-                verificationEnabled: false,
+                totalSubmissions: 4,
+                verifiedCount: 1,
+                unverifiedCount: 1,
+                verificationEnabled: true,
                 entries: [
                     {
-                        id: 'first',
+                        id: 'verified:verified-uid',
                         email: 'artist@example.com',
-                        submissionOrder: 1,
-                        submissionCount: 2,
-                        verificationStatus: 'unverified',
+                        submissionOrder: 7,
+                        submissionCount: 1,
+                        verificationStatus: 'verified',
+                        status: 'waitlisted',
                     },
                     {
-                        id: 'second',
+                        id: 'legacy:second',
                         email: 'second@example.com',
-                        submissionOrder: 2,
+                        submissionOrder: 3,
                         submissionCount: 1,
                         verificationStatus: 'unverified',
+                        status: 'legacy_unverified',
                     },
                 ],
             });

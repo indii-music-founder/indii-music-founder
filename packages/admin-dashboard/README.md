@@ -15,7 +15,7 @@ show real zeros until real activity exists.
 | Module | Source |
 |--------|--------|
 | **Token Usage** | `user_usage_stats` Firestore collection (written by `TokenUsageService.trackUsage`). Cost by model, spend by user, projected economics. |
-| **Founders Portal** | `founders` Firestore collection (written by `activateFounderPass`) plus the administrator-only `waitlist` collection. Activated roster and deduplicated raw landing submissions remain visibly separate; submissions are labelled unverified until the account-verification flow exists. |
+| **Founders Portal** | `founders` Firestore collection (written by `activateFounderPass`), the server-owned `foundingArtistWaitlist` verified queue, and the legacy administrator-only `waitlist` collection. Activated founders, verified artists, and deduplicated legacy submissions retain visible trust and lifecycle labels. |
 | **Inbox & Messaging** | `messages` Firestore collection through the authenticated admin API. |
 | **Google Workspace Hub** | Stored Google OAuth credentials plus the live Gmail, Calendar, and Drive APIs. |
 | **DDEX Deliveries** | `deliveries` Firestore collection. Every count is derived from the latest API result. |

@@ -3188,4 +3188,24 @@ describe('Firestore Security Rules', () => {
             await assertFails(setDoc(doc(db, 'some_unlisted_collection', 'doc-1'), { data: true }));
         });
     });
+
+    describe('Founding Artist canonical waitlist collections', () => {
+        const serverOwnedDocuments = [
+            ['foundingArtistWaitlist', ALICE_UID],
+            ['foundingArtistEmailIndex', 'email-hash'],
+            ['foundingArtistWaitlistMeta', 'sequence'],
+            ['foundingArtistEvents', 'enrollment-event'],
+        ] as const;
+
+        it('denies direct reads and writes even to a verified artist', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+
+            for (const [collectionName, documentId] of serverOwnedDocuments) {
+                const reference = doc(db, collectionName, documentId);
+                await assertFails(getDoc(reference));
+                await assertFails(setDoc(reference, { uid: ALICE_UID, queuePosition: 1 }));
+            }
+        });
+    });
 });
