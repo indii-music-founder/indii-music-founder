@@ -67,7 +67,20 @@ describe('adjustmentsToFilters (C1.2)', () => {
         const cool = adjustmentsToFilters({ ...NEUTRAL_ADJUSTMENTS, temperature: -0.6 });
         expect(warm[0]).toMatchObject({ type: 'BlendColor', args: { color: '#ff9a4d' } });
         expect(cool[0]).toMatchObject({ type: 'BlendColor', args: { color: '#4da3ff' } });
-        expect(warm[0]!.args.mode).toBe('softLight');
+        // Fabric 7 BlendColor has no 'softLight'; temperature is a 'tint'.
+        expect(warm[0]!.args.mode).toBe('tint');
+    });
+
+    it('maps exposure to a Fabric-7 RGB triplet gamma, and vignette to an opaque Convolute', () => {
+        const exposure = adjustmentsToFilters({ ...NEUTRAL_ADJUSTMENTS, exposure: 0.5 });
+        expect(exposure[0]).toMatchObject({ type: 'Gamma' });
+        const gamma = exposure[0]!.args.gamma as number[];
+        expect(gamma).toHaveLength(3);
+        expect(gamma[0]).toBeCloseTo(1.25);
+
+        const vignette = adjustmentsToFilters({ ...NEUTRAL_ADJUSTMENTS, vignette: 0.5 });
+        expect(vignette[0]).toMatchObject({ type: 'Convolute', args: { opaque: true } });
+        expect((vignette[0]!.args.matrix as number[]).length).toBe(9);
     });
 
     it('zero field maps to no filter; partial stack yields subset', () => {

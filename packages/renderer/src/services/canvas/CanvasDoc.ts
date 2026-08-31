@@ -145,7 +145,7 @@ export function mergeAdjustments(base: AdjustmentStack, patch: Partial<Adjustmen
  */
 export interface FabricFilterDescriptor {
     type: 'Brightness' | 'Contrast' | 'Saturation' | 'HueRotation' | 'BlendColor' | 'Gamma' | 'Blur' | 'Convolute';
-    args: Record<string, number | string | number[]>;
+    args: Record<string, number | string | boolean | number[]>;
 }
 
 export function adjustmentsToFilters(a: AdjustmentStack): FabricFilterDescriptor[] {
@@ -169,20 +169,26 @@ export function adjustmentsToFilters(a: AdjustmentStack): FabricFilterDescriptor
     }
     if (a.temperature !== 0) {
         // Warm/cool tint via BlendColor (never hue — avoids skin-tone shifts).
+        // Fabric 7 BlendColor has no 'softLight'; 'tint' blends toward the cast
+        // color by `alpha`, which is the faithful temperature semantics.
         filters.push({ type: 'BlendColor', args: {
             color: a.temperature > 0 ? '#ff9a4d' : '#4da3ff',
-            mode: 'softLight'
+            mode: 'tint',
+            alpha: 0.4
         } });
     }
     if (a.exposure !== 0) {
-        // Exposure via Gamma on midtones (range -1..1 → gamma 0.5..1.5).
-        filters.push({ type: 'Gamma', args: { gamma: 1 + a.exposure * 0.5 } });
+        // Exposure via Gamma on all three channels (range -1..1 → gamma 0.5..1.5).
+        // Fabric 7 Gamma takes an RGB triplet, not a scalar.
+        const g = 1 + a.exposure * 0.5;
+        filters.push({ type: 'Gamma', args: { gamma: [g, g, g] } });
     }
     if (a.blur > 0) {
         filters.push({ type: 'Blur', args: { blur: a.blur } });
     }
     if (a.vignette > 0) {
-        filters.push({ type: 'Convolute', args: { matrix: vignetteMatrix(a.vignette) } });
+        // Convolute requires an explicit opaque flag; edge-darkening is opaque.
+        filters.push({ type: 'Convolute', args: { opaque: true, matrix: vignetteMatrix(a.vignette) } });
     }
 
     return filters;

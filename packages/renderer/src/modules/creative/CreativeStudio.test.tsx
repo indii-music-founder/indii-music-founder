@@ -9,6 +9,7 @@ vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
 vi.mock('./components/CreativeNavbar', () => ({ default: () => <div data-testid="creative-navbar" /> }));
 vi.mock('./components/CreativeGallery', () => ({ default: () => <div data-testid="creative-gallery" /> }));
+vi.mock('./components/CanvasEditor/CanvasEditor', () => ({ CanvasEditor: () => <div data-testid="canvas-editor-mock" /> }));
 vi.mock('./components/DirectGenerationTab', () => ({ default: () => <div data-testid="direct-generation-tab" /> }));
 vi.mock('../../core/components/AgentWindow', () => ({ default: () => <div data-testid="agent-window" /> }));
 vi.mock('./components/InfiniteCanvas', () => ({ default: () => <div data-testid="infinite-canvas" /> }));

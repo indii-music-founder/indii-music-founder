@@ -15,6 +15,7 @@ import { WhiskService } from '@/services/WhiskService';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import DirectGenerationTab from './components/DirectGenerationTab';
 import ShowroomUI from './components/ShowroomUI';
+import { CanvasEditor } from './components/CanvasEditor/CanvasEditor';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 import { awaitCompletedPlpVideoVariant } from './plpVideoVariant';
@@ -138,13 +139,15 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         pendingStageHandoff,
         consumeStageHandoff,
         addCharacterReference,
-        canvasImages
+        canvasImages,
+        currentDoc
     } = useStore(useShallow(state => ({
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
         selectedItem: state.selectedItem,
         setSelectedItem: state.setSelectedItem,
         canvasImages: state.canvasImages,
+        currentDoc: state.currentDoc,
         generationMode: state.generationMode,
         setGenerationMode: state.setGenerationMode,
         pendingPrompt: state.pendingPrompt,
@@ -717,6 +720,13 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     }
                                 }}
                             />
+
+                        {/* Layer Editor overlay (C1.3) — opens whenever a CanvasDoc is active. */}
+                        {Boolean(currentDoc) && (
+                            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
+                                <CanvasEditor />
+                            </div>
+                        )}
                     </div>
                     </AdaptiveWorkspace>
                 </div>
