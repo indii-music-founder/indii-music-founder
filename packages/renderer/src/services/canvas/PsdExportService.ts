@@ -13,15 +13,11 @@
 import { readPsd, writePsd, type BlendMode, type Layer, type Psd } from 'ag-psd';
 import * as fabric from 'fabric';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
-import { adjustmentsToFilters, type CanvasBlendMode, type CanvasDoc, type RasterLayer } from './CanvasDoc';
+import { adjustmentsToFilters, type CanvasBlendMode, type CanvasDoc, type RasterLayer, type TextLayer } from './CanvasDoc';
 import { descriptorsToFabricFilters } from './fabricFilters';
+import { rasterizeTextLayerToRaster, type RenderedRaster } from './textLayerRaster';
 
-export interface RenderedRaster {
-    width: number;
-    height: number;
-    /** RGBA pixel data. */
-    data: Uint8ClampedArray;
-}
+export type { RenderedRaster } from './textLayerRaster';
 
 const CANVAS_BLEND_TO_PSD: Record<CanvasBlendMode, BlendMode> = {
     normal: 'normal',
@@ -80,23 +76,28 @@ export interface PsdExportOptions {
     scale?: number;
     /** Injectable for tests; defaults to the Fabric-backed renderer. */
     renderRaster?: (layer: RasterLayer, scale: number) => Promise<RenderedRaster>;
+    /** Injectable for tests; defaults to the B1 typography rasterizer. */
+    renderText?: (layer: TextLayer, scale: number) => Promise<RenderedRaster>;
 }
 
 /**
  * Assemble and write a PSD. `children` is Photoshop top-to-bottom order, so the
- * bottom-first CanvasDoc layer list is reversed. Raster layers become
- * flattened imageData layers; the background color is carried on the document.
+ * bottom-first CanvasDoc layer list is reversed. Raster layers become flattened
+ * imageData layers (adjustments baked); text layers bake via the B1 vector
+ * path. The live params stay canonical in the CanvasDoc JSON.
  */
 export async function canvasDocToPsd(doc: CanvasDoc, options: PsdExportOptions = {}): Promise<ArrayBuffer> {
     const scale = options.scale ?? 1;
     const renderRaster = options.renderRaster ?? renderRasterLayer;
+    const renderText = options.renderText ?? rasterizeTextLayerToRaster;
     const width = Math.max(1, Math.round(doc.width * scale));
     const height = Math.max(1, Math.round(doc.height * scale));
 
     const children: Layer[] = [];
     for (const layer of [...doc.layers].reverse()) {
-        if (layer.kind !== 'raster') continue; // text layers: deferred to TextLayer wiring
-        const rendered = await renderRaster(layer, scale);
+        const rendered: RenderedRaster = layer.kind === 'raster'
+            ? await renderRaster(layer, scale)
+            : await renderText(layer, scale);
         children.push({
             name: layer.name,
             left: Math.round(layer.x * scale),

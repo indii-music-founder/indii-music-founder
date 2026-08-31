@@ -5,7 +5,7 @@ import {
     readPsd,
     type RenderedRaster,
 } from '../PsdExportService';
-import { createDocFromImage, type CanvasDoc, type RasterLayer } from '../CanvasDoc';
+import { createDocFromImage, type CanvasDoc, type RasterLayer, type TextLayer } from '../CanvasDoc';
 
 function solidRaster(width: number, height: number, channel: number): RenderedRaster {
     const data = new Uint8ClampedArray(width * height * 4);
@@ -90,5 +90,53 @@ describe('canvasDocToPsd (C3.1/C3.2)', () => {
         const psd = readPsd(buffer, { skipLayerImageData: true, skipCompositeImageData: true });
         expect(psd.width).toBe(20);
         expect(psd.height).toBe(40);
+    });
+
+    it('bakes text layers through the injected text renderer', async () => {
+        const doc = createDocFromImage('data:image/png;base64,AAA', 'proj_1');
+        doc.width = 16;
+        doc.height = 16;
+        const textLayer: TextLayer = {
+            id: 'layer_text',
+            name: 'Wordmark',
+            visible: true,
+            locked: false,
+            opacity: 1,
+            blendMode: 'normal',
+            x: 4,
+            y: 4,
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            kind: 'text',
+            typography: {
+                id: 'layer_text',
+                kind: 'text',
+                fontId: 'font_1',
+                text: 'INDII',
+                fontSize: 32,
+                letterSpacing: 0,
+                kerning: true,
+                fill: '#ffffff',
+                x: 4,
+                y: 4,
+                rotation: 0,
+                opacity: 1,
+                visible: true,
+            },
+        };
+        doc.layers.push(textLayer);
+
+        const buffer = await canvasDocToPsd(doc, {
+            scale: 1,
+            renderRaster: async () => solidRaster(16, 16, 50),
+            renderText: async () => solidRaster(8, 4, 255),
+        });
+
+        const psd = readPsd(buffer, { skipLayerImageData: true, skipCompositeImageData: true });
+        expect(psd.children).toHaveLength(2);
+        expect(psd.children![0]!.name).toBe('Wordmark');
+        expect(psd.children![0]!.left).toBe(4);
+        expect(psd.children![0]!.top).toBe(4);
     });
 });

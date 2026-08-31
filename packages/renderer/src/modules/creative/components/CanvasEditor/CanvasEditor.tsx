@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { adjustmentsToFilters, type RasterLayer } from '@/services/canvas/CanvasDoc';
 import { descriptorsToFabricFilters } from '@/services/canvas/fabricFilters';
+import { rasterizeTextLayer } from '@/services/canvas/textLayerRaster';
 import { LayerList } from './LayerList';
 import { AdjustPanel } from './AdjustPanel';
 import { ExportBar, type ExportFormat } from './ExportBar';
@@ -68,12 +69,18 @@ export const CanvasEditor: React.FC = () => {
 
         void (async () => {
             for (const layer of currentDoc.layers) {
-                if (layer.kind !== 'raster') continue;
                 try {
-                    // gs:// sources must resolve to an https URL before Fabric can
-                    // load them; https/data sources pass through unchanged.
-                    const src = await resolveStorageUrl(layer.src);
-                    const img = await fabric.Image.fromURL(src, { crossOrigin: 'anonymous' });
+                    let img: fabric.Image;
+                    if (layer.kind === 'text') {
+                        // Text layers bake via the deterministic B1 vector path.
+                        const { dataUrl } = await rasterizeTextLayer(layer, 1);
+                        img = await fabric.Image.fromURL(dataUrl, { crossOrigin: 'anonymous' });
+                    } else {
+                        // gs:// sources must resolve to an https URL before Fabric
+                        // can load them; https/data sources pass through unchanged.
+                        const src = await resolveStorageUrl(layer.src);
+                        img = await fabric.Image.fromURL(src, { crossOrigin: 'anonymous' });
+                    }
                     if (generation !== syncGeneration.current) return; // stale load
                     (img as LayerIdCarrier).layerId = layer.id;
                     img.set({
@@ -86,8 +93,10 @@ export const CanvasEditor: React.FC = () => {
                         visible: layer.visible,
                         locked: layer.locked,
                     });
-                    img.filters = descriptorsToFabricFilters(adjustmentsToFilters(layer.adjustments));
-                    img.applyFilters();
+                    if (layer.kind === 'raster') {
+                        img.filters = descriptorsToFabricFilters(adjustmentsToFilters(layer.adjustments));
+                        img.applyFilters();
+                    }
                     canvas.add(img);
                     canvas.renderAll();
                 } catch {

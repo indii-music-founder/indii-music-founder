@@ -39,6 +39,13 @@ vi.mock('@/services/canvas/PsdExportService', () => ({
     canvasDocToPsd: vi.fn(),
 }));
 
+// Text rasterization pulls in FontLibrary (Firebase); isolate the component test.
+vi.mock('@/services/canvas/textLayerRaster', () => ({
+    rasterizeTextLayer: vi.fn(async () => ({ dataUrl: 'data:image/png;base64,AAA', width: 8, height: 8 })),
+    rasterizeTextLayerToRaster: vi.fn(),
+    dataUrlToRaster: vi.fn(),
+}));
+
 vi.mock('fabric', () => {
     const makeFilter = () => vi.fn();
     return {

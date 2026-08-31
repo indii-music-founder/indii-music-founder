@@ -5,7 +5,9 @@ import {
     mergeAdjustments,
     type AdjustmentStack,
     type CanvasDoc,
-    type CanvasLayer
+    type CanvasLayer,
+    type TextLayer,
+    type TypographyLayer
 } from '@/services/canvas/CanvasDoc';
 
 export interface CanvasEditorSlice {
@@ -14,6 +16,7 @@ export interface CanvasEditorSlice {
     openDoc: (doc: CanvasDoc) => void;
     openImage: (src: string, projectId: string) => void;
     addRasterLayer: (src: string, name?: string) => string | null;
+    addTextLayer: (typography: Omit<TypographyLayer, 'id' | 'kind'>) => string | null;
     updateLayer: (id: string, patch: Partial<CanvasLayer>) => void;
     setAdjustments: (layerId: string, patch: Partial<AdjustmentStack>) => void;
     reorderLayer: (id: string, toIndex: number) => void;
@@ -52,6 +55,29 @@ export const createCanvasEditorSlice: StateCreator<StoreState, [], [], CanvasEdi
             kind: 'raster',
             src,
             adjustments: { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, exposure: 0, blur: 0, vignette: 0 }
+        };
+        set({ currentDoc: { ...doc, layers: [...doc.layers, layer], updatedAt: Date.now() }, selectedLayerId: id });
+        return id;
+    },
+
+    addTextLayer: (typography) => {
+        const doc = get().currentDoc;
+        if (!doc) return null;
+        const id = `layer_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const layer: TextLayer = {
+            id,
+            name: `Text ${doc.layers.length + 1}`,
+            visible: typography.visible ?? true,
+            locked: false,
+            opacity: typography.opacity ?? 1,
+            blendMode: 'normal',
+            x: typography.x ?? 0,
+            y: typography.y ?? 0,
+            scaleX: 1,
+            scaleY: 1,
+            rotation: typography.rotation ?? 0,
+            kind: 'text',
+            typography: { ...typography, id, kind: 'text' }
         };
         set({ currentDoc: { ...doc, layers: [...doc.layers, layer], updatedAt: Date.now() }, selectedLayerId: id });
         return id;

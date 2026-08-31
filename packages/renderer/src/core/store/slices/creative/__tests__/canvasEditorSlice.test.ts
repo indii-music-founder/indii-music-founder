@@ -32,6 +32,20 @@ describe('canvasEditorSlice (C1.1)', () => {
         expect(added).toMatchObject({ visible: true, blendMode: 'normal' });
     });
 
+    it('addTextLayer appends a text layer and selects it', () => {
+        store.getState().openImage('a.png', 'p');
+        const before = store.getState().currentDoc!.layers.length;
+        const id = store.getState().addTextLayer({
+            fontId: 'font_1', text: 'INDII', fontSize: 48, letterSpacing: 0, kerning: true,
+            fill: '#ffffff', x: 10, y: 20, rotation: 0, opacity: 1, visible: true,
+        });
+        expect(store.getState().currentDoc!.layers).toHaveLength(before + 1);
+        expect(store.getState().selectedLayerId).toBe(id);
+        const added = store.getState().currentDoc!.layers.find(l => l.id === id)!;
+        expect(added.kind).toBe('text');
+        expect(added).toMatchObject({ x: 10, y: 20, rotation: 0, opacity: 1, visible: true });
+    });
+
     it('setAdjustments merges immutably', () => {
         store.getState().openImage('a.png', 'p');
         const id = store.getState().currentDoc!.layers[0]!.id;
