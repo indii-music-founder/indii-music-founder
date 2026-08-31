@@ -1,0 +1,5 @@
+# Vendored model weights (~285MB) — fetched by scripts/vendor-imgly-weights.mjs,
+# never committed. Keep LICENSES.md as the license record.
+*
+!LICENSES.md
+!.gitignore

@@ -35,7 +35,7 @@ Give me your **verified selfie** (already in My Likeness, or upload one) + name 
 | 1 | A1.1 identity backend | A1 | Approve + allow installing `@vladmandic/human` (vendored weights) | `FacePipeline.loadHuman` real backend |
 | 2 | A1.5 threshold calibration | A1 | **Your real likeness selfie + name one correct generated image of you** | real threshold in `LikenessFusionService.IDENTITY_SIMILARITY_THRESHOLD` |
 | 3 | A1.7 panel smoke | A1 | eyeball the panel in Studio | `LikenessFusionPanel` live wiring |
-| 4 | C2.3 split-subject | C2 | License decision on `@imgly/background-removal` model weights | flag-gated layer op behind feature flag |
+| 4 | ~~C2.3 split-subject~~ | C2 | ✅ APPROVED + SHIPPED (2026-08-31) | `SplitSubjectService` + "Split subject" editor op; weights self-hosted via `scripts/vendor-imgly-weights.mjs` |
 | 5 | A2 pixel swap | A2 | License decision on `inswapper_128` (non-commercial) | Electron sidecar (desktop-only, default off) |
 | 6 | E2 generative motion | E2 | Cost-approval to enable the gen-motion flag | `VITE_ENABLE_GEN_MOTION` gate |
 | 7 | ~~C1.3 Fabric editor UI~~ | C1 | ✅ SHIPPED (2026-08-31, `678273f00`) | `CanvasEditor` components + `CanvasDocumentService` persistence + `useCanvasAutosave` |

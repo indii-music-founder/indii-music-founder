@@ -46,6 +46,11 @@ vi.mock('@/services/canvas/textLayerRaster', () => ({
     dataUrlToRaster: vi.fn(),
 }));
 
+// Split-subject pulls in @imgly/background-removal; isolate the component test.
+vi.mock('@/services/canvas/SplitSubjectService', () => ({
+    splitSubjectToForeground: vi.fn(async () => 'data:image/png;base64,SUBJECT'),
+}));
+
 vi.mock('fabric', () => {
     const makeFilter = () => vi.fn();
     return {
@@ -85,12 +90,14 @@ describe('CanvasEditor (C1.3 layer editor RTL + C1.4 export)', () => {
     let setAdjustments: ReturnType<typeof vi.fn>;
     let selectLayer: ReturnType<typeof vi.fn>;
     let closeDoc: ReturnType<typeof vi.fn>;
+    let addRasterLayer: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         updateLayer = vi.fn();
         setAdjustments = vi.fn();
         selectLayer = vi.fn();
         closeDoc = vi.fn();
+        addRasterLayer = vi.fn();
         mockCanvasRef.current = null;
         mockDownloadAsset.mockReset().mockResolvedValue(true);
         mockSaveDoc.mockReset().mockResolvedValue(undefined);
@@ -101,6 +108,7 @@ describe('CanvasEditor (C1.3 layer editor RTL + C1.4 export)', () => {
             setAdjustments,
             selectLayer,
             closeDoc,
+            addRasterLayer,
         };
     });
 
@@ -158,6 +166,24 @@ describe('CanvasEditor (C1.3 layer editor RTL + C1.4 export)', () => {
         fireEvent.change(slider, { target: { value: '0.4' } });
 
         expect(setAdjustments).toHaveBeenCalledWith(layer.id, { brightness: 0.4 });
+    });
+
+    it('split subject renames background and adds a subject layer (C2.3)', async () => {
+        const doc = createDocFromImage('data:image/png;base64,AAA', 'proj_1');
+        const layer = doc.layers[0]!;
+        mockStoreStateRef.current = {
+            ...mockStoreStateRef.current,
+            currentDoc: doc,
+            selectedLayerId: layer.id,
+        };
+
+        render(<CanvasEditor />);
+        fireEvent.click(screen.getByTestId('split-subject-btn'));
+
+        await waitFor(() => {
+            expect(updateLayer).toHaveBeenCalledWith(layer.id, { name: `${layer.name} · background` });
+            expect(addRasterLayer).toHaveBeenCalledWith('data:image/png;base64,SUBJECT', `${layer.name} · subject`);
+        });
     });
 
     it('exports at the selected scale via canvas.toDataURL and downloads (C1.4)', async () => {
