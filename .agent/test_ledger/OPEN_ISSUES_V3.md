@@ -2944,9 +2944,9 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Severity:** 🟠 HIGH
 - **Module:** Founder operations / Social / credential vault
 - **Source of truth:** Marketing decision § Social channel inventory
-- **Evidence:** Dictation suggests `@indie_music` and `@indie.music`-style accounts, but exact platform spellings and ownership are unverified.
+- **Evidence:** The launch checklist now records the known Instagram candidates (`@indii_music` and `@indii.music`), the possible Facebook variants, the full channel registry fields, and the required ownership/security audit. Exact public URLs, recovery state, and platform ownership remain unverified.
 - **Impact:** Assets or posts could be prepared for the wrong handle while account recovery/security remains unknown.
-- **Fix:** Inventory Instagram, Facebook, TikTok, YouTube/Shorts, X, Threads, LinkedIn, Bluesky, and later channels with handle/URL/admin/recovery/2FA/brand/bio/posting/integration/status fields; keep secrets in the vault only.
+- **Fix:** Execute M-02 in `docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md`: inventory Instagram, Facebook, TikTok, YouTube/Shorts, X, Threads, LinkedIn, Bluesky, and later channels with handle/URL/admin/recovery/2FA/brand/bio/posting/integration/status fields; keep secrets in the vault only.
 - **Acceptance:** Every claimed account is opened and ownership-verified, missing channels are explicitly create/decline, and indii resolves the correct destination without exposing secrets.
 
 ### ISSUE-1429: indii does not yet run its own marketing as a first-class internal artist project
@@ -2955,9 +2955,9 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Severity:** 🟠 HIGH
 - **Module:** Conductor / Marketing / Creative / Social / timeline
 - **Source of truth:** Marketing decision § indii as its own first artist/customer
-- **Evidence:** No canonical internal project, reusable Conductor instruction, asset map, approval path, campaign timeline, or outcome record exists.
+- **Evidence:** `docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md` now defines the direction layer, Codex and indii execution stacks, task IDs C-01 through C-08 and M-01 through M-09, handoff packets, asset/channel records, approval gates, evidence requirements, and weekly review. The checklist is a durable operating specification; the actual internal campaign record and execution evidence still do not exist.
 - **Impact:** indii cannot yet prove the product by operating its own marketing through it.
-- **Fix:** Create an internal artist-style project and instruction that routes real planning, imagery, video, copy, news, social, approvals, versions, costs, and results; surface unavailable tools honestly.
+- **Fix:** Execute M-01 and the dependent jobs in `docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md`: create the internal artist-style project and route real planning, imagery, video, copy, news, social, approvals, versions, costs, and results; surface unavailable tools honestly.
 - **Acceptance:** One approved instruction produces a visible plan, routes genuine work, prepares channel outputs, records approvals/versions, and truthfully reports gaps; resulting work becomes beta evidence.
 
 ### ISSUE-1430: Deal comparison and distributor/royalty calculator contain unverified or overbroad claims
