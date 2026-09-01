@@ -92,11 +92,6 @@ vi.mock('./components/VideoStage', () => ({
     VideoStage: ({ jobStatus }: any) => <div data-testid="video-stage">Status: {jobStatus}</div>
 }));
 
-// Mock SceneBuilder (3D Visualizer) as it uses @react-three/fiber which fails in JSDOM
-vi.mock('./visualizer/SceneBuilder', () => ({
-    SceneBuilder: () => <div data-testid="scene-builder">3D Stage</div>
-}));
-
 // Mock WhiskService
 vi.mock('../../services/WhiskService', () => ({
     WhiskService: {

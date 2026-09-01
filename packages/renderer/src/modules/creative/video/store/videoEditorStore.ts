@@ -115,9 +115,9 @@ interface VideoEditorState {
     timelineZoom: number;
     setTimelineZoom: (zoom: number) => void;
 
-    // View Mode (Director vs Editor vs Visualizer vs Storyboard)
-    viewMode: 'director' | 'editor' | 'visualizer' | 'storyboard';
-    setViewMode: (mode: 'director' | 'editor' | 'visualizer' | 'storyboard') => void;
+    // View Mode (Director vs Editor vs Storyboard)
+    viewMode: 'director' | 'editor' | 'storyboard';
+    setViewMode: (mode: 'director' | 'editor' | 'storyboard') => void;
 
     // Storyboard Timeline
     storyboardProject: StoryboardProject | null;

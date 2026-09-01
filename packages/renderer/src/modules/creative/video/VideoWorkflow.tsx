@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 
-import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { projectBucketMatches } from '@/core/constants';
 import { useShallow } from 'zustand/react/shallow';
@@ -12,7 +12,7 @@ import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '@/services/firebase';
 import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
 import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
-import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film, Send } from 'lucide-react';
+import { Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film, Send } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { StoryboardTimeline } from './components/StoryboardTimeline';
 import { SessionIngestionPanel } from './components/SessionIngestionPanel';
@@ -23,8 +23,6 @@ import { VideoStage } from './components/VideoStage';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { resolveStorageUri } from '@/services/storage/storageUri';
-// Lazy load SceneBuilder to prevent vendor-three → vendor-react circular dependency
-const SceneBuilder = lazy(() => import('./visualizer/SceneBuilder').then(m => ({ default: m.SceneBuilder })));
 import { useToast, ToastContextType } from '@/core/context/ToastContext';
 import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
 
@@ -1033,13 +1031,6 @@ export default function VideoWorkflow() {
                         onOpenProxy={openSessionProxy}
                     />
                     <button
-                        onClick={() => setViewMode('visualizer')}
-                        className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all shadow-xl backdrop-blur-md"
-                        title="Open 3D Stage Builder"
-                    >
-                        <Layout size={18} />
-                    </button>
-                    <button
                         onClick={() => setViewMode('editor')}
                         className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-green-400 hover:bg-green-500/10 transition-all shadow-xl backdrop-blur-md"
                         title="Open Timeline Editor"
@@ -1247,37 +1238,6 @@ export default function VideoWorkflow() {
                     </ErrorBoundary>
                 </div>
             )}
-            {/* 3D Visualizer Container */}
-            {viewMode === 'visualizer' && (
-                <div className="absolute inset-0 z-50 bg-background flex flex-col p-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setViewMode('director')}
-                                className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
-                            >
-                                <ChevronDown size={20} className="rotate-90" />
-                            </button>
-                            <h2 className="text-white font-bold uppercase tracking-wider text-sm flex items-center gap-2">
-                                <Layout size={16} className="text-blue-400" />
-                                Interactive 3D Stage
-                            </h2>
-                        </div>
-                        <button
-                            onClick={() => setViewMode('director')}
-                            className="p-2 hover:bg-red-900/40 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
-                        >
-                            <Trash2 size={20} />
-                        </button>
-                    </div>
-                    <div className="flex-1 min-h-0">
-                        <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading 3D Stage...</div>}>
-                            <SceneBuilder />
-                        </Suspense>
-                    </div>
-                </div>
-            )}
-
             {/* Storyboard Sync Container */}
             {viewMode === 'storyboard' && (
                 <div className="absolute inset-0 z-50 bg-background flex flex-col">
