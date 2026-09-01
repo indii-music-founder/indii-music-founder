@@ -170,10 +170,90 @@ export class AgentGraphService {
             throw new Error(`Graph execution ${executionId} already has an active loop.`);
         }
         this.activeLoops.add(executionId);
+
+        const runnerId = uuidv4();
+        const acquired = await this.acquireGraphLease(userId, executionId, runnerId);
+        if (!acquired) {
+            this.activeLoops.delete(executionId);
+            throw new Error(`Graph execution ${executionId} is locked by another runner.`);
+        }
+
+        // Arm 5-second lease heartbeat
+        const heartbeatTimer = setInterval(() => {
+            this.acquireGraphLease(userId, executionId, runnerId, 20000).catch(err => {
+                logger.warn(`[AgentGraph] Heartbeat lease renewal failed for ${executionId}:`, err);
+            });
+        }, 5000);
+
         try {
             return await this.runGraphLoopInternal(userId, graph, executionId, context, traceId, initialInput);
         } finally {
+            clearInterval(heartbeatTimer);
+            await this.releaseGraphLease(userId, executionId, runnerId);
             this.activeLoops.delete(executionId);
+        }
+    }
+
+    /**
+     * Atomically acquire or renew a distributed execution lease on the graph execution document.
+     * Prevents multi-instance concurrent graph execution loops while allowing expired leases (>20s) to be claimed.
+     */
+    private async acquireGraphLease(
+        userId: string,
+        executionId: string,
+        runnerId: string,
+        leaseDurationMs = 20000
+    ): Promise<boolean> {
+        const ref = doc(db, 'users', userId, 'graphExecutions', executionId);
+        try {
+            return await runTransaction(db, async (tx) => {
+                const snap = await tx.get(ref);
+                if (!snap.exists) return false;
+                const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
+                const now = Date.now();
+                const existingLease = data?.lease;
+
+                if (existingLease && existingLease.expiresAt > now && existingLease.holderId !== runnerId) {
+                    logger.warn(`[AgentGraph] Execution ${executionId} is actively leased by ${existingLease.holderId} until ${new Date(existingLease.expiresAt).toISOString()}`);
+                    return false;
+                }
+
+                tx.update(ref, {
+                    lease: {
+                        holderId: runnerId,
+                        acquiredAt: existingLease?.holderId === runnerId ? existingLease.acquiredAt : now,
+                        expiresAt: now + leaseDurationMs,
+                    },
+                    updatedAt: now,
+                });
+                return true;
+            });
+        } catch (error) {
+            logger.warn(`[AgentGraph] Failed to acquire distributed lease for ${executionId}:`, error);
+            return false;
+        }
+    }
+
+    private async releaseGraphLease(
+        userId: string,
+        executionId: string,
+        runnerId: string
+    ): Promise<void> {
+        const ref = doc(db, 'users', userId, 'graphExecutions', executionId);
+        try {
+            await runTransaction(db, async (tx) => {
+                const snap = await tx.get(ref);
+                if (!snap.exists) return;
+                const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
+                if (data?.lease?.holderId === runnerId) {
+                    tx.update(ref, {
+                        lease: null,
+                        updatedAt: Date.now(),
+                    });
+                }
+            });
+        } catch (error) {
+            logger.warn(`[AgentGraph] Failed to release lease for ${executionId}:`, error);
         }
     }
 
@@ -225,6 +305,10 @@ export class AgentGraphService {
         let lastOutput = '';
         let iteration = 0;
         const MAX_ITERATIONS = 50; // Safety break - lowered from 1000 to prevent expensive runaways
+        const startTime = Date.now();
+        let lastProgressTime = Date.now();
+        const MAX_EXECUTION_TIME_MS = 270000; // 270s hard limit per skills/firestore-transaction-locks.md
+        const MAX_IDLE_TIME_MS = 60000; // 60s idle limit
 
         // Preserve initial input in state for resumption
         if (initialInput) {
@@ -233,6 +317,14 @@ export class AgentGraphService {
 
         while (running) {
             iteration++;
+            const now = Date.now();
+
+            if (now - startTime > MAX_EXECUTION_TIME_MS) {
+                logger.error(`[AgentGraph] Execution ${executionId} exceeded 270s maximum execution deadline.`);
+                await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                throw new Error('Maximum graph execution time exceeded (270s)');
+            }
+
             if (iteration > MAX_ITERATIONS) {
                 logger.error(`[AgentGraph] Execution ${executionId} exceeded MAX_ITERATIONS (${MAX_ITERATIONS}). Potential cycle detected.`);
                 await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
@@ -264,19 +356,29 @@ export class AgentGraphService {
             for (const node of graph.nodes) {
                 const nodeState = state.nodeStates[node.id];
 
-                // HITL check: If any node is waiting for approval, the loop pauses execution
-                if (nodeState?.status === 'AWAITING_HUMAN') {
-                    isWaitingForApproval = true;
-                    continue;
+                // If already completed or skipped or failed, do nothing
+                if (nodeState && nodeState.status !== 'PLANNED') continue;
+
+                // Approval check (Human in the loop)
+                if (node.requiresApproval) {
+                    // Check if parent dependencies are met first
+                    const incoming = graph.edges.filter(e => e.targetId === node.id);
+                    const parentsDone = incoming.every(e => state.nodeStates[e.sourceId]?.status === 'STEP_COMPLETE');
+
+                    if (parentsDone && (!nodeState || nodeState.status === 'PLANNED')) {
+                        // Mark as awaiting human approval
+                        await agentGraphStateService.updateNodeStatus(userId, executionId, node.id, {
+                            status: 'AWAITING_HUMAN'
+                        });
+                        isWaitingForApproval = true;
+                        continue;
+                    } else if (nodeState?.status === 'AWAITING_HUMAN') {
+                        isWaitingForApproval = true;
+                        continue;
+                    }
                 }
 
-                // Only consider nodes that haven't been processed yet
-                // Failed nodes are retried only through retryNode(), which resets
-                // them to PLANNED. Automatically re-running FAILED nodes can loop
-                // forever and turns an explicit failure into an implicit retry.
-                if (!nodeState || nodeState.status !== 'PLANNED') continue;
-
-                // Entry node is always ready if it's planned
+                // Entry node is always ready if not run yet
                 if (node.id === graph.entryNodeId) {
                     readyNodes.push(node);
                     continue;
@@ -311,26 +413,30 @@ export class AgentGraphService {
                     if (validEdges.length === incomingEdges.length) {
                         readyNodes.push(node);
                     } else {
-                        logger.info(`[AgentGraph] Skipping node ${node.id}: 'all' wait condition not met.`);
+                        // Node cannot run because its condition wasn't met -> prune branch
                         nodesToSkip.push(node.id);
                     }
                 } else if (node.waitCondition === 'any') {
-                    // At least one incoming path must be valid
+                    // At least one incoming path succeeded
                     if (validEdges.length > 0) {
                         readyNodes.push(node);
                     } else {
-                        logger.info(`[AgentGraph] Skipping node ${node.id}: 'any' wait condition not met.`);
+                        // None succeeded -> prune
                         nodesToSkip.push(node.id);
                     }
                 }
             }
 
-            // 2. Handle Skips
-            for (const nodeId of nodesToSkip) {
-                await agentGraphStateService.updateNodeStatus(userId, executionId, nodeId, {
-                    status: 'SKIPPED',
-                    completedAt: Date.now()
-                });
+            // Apply branch pruning for nodes whose conditions failed
+            if (nodesToSkip.length > 0) {
+                logger.info(`[AgentGraph] Iteration ${iteration}: Condition failed for nodes: ${nodesToSkip.join(', ')}. Pruning branches.`);
+                for (const skipId of nodesToSkip) {
+                    await agentGraphStateService.updateNodeStatus(userId, executionId, skipId, {
+                        status: 'SKIPPED',
+                        completedAt: Date.now()
+                    });
+                    await this.pruneDescendants(userId, executionId, skipId, graph);
+                }
             }
 
             if (isWaitingForApproval) {
@@ -370,23 +476,48 @@ export class AgentGraphService {
                     await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
                     throw new Error(`Graph execution ${executionId} is stuck with unreachable node(s): ${plannedNodeIds.join(', ')}.`);
                 } else {
+                    if (now - lastProgressTime > MAX_IDLE_TIME_MS) {
+                        logger.error(`[AgentGraph] Execution ${executionId} exceeded 60s idle limit with background tasks pending.`);
+                        await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                        throw new Error('Graph execution idle timeout exceeded (60s)');
+                    }
                     // Wait for background tasks to complete
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 continue;
             }
 
-            // 3. Atomically claim the ready nodes. A concurrent loop instance
-            // (resume/retry while running) computes the same PLANNED nodes
-            // from its own snapshot; the transaction grants each node to
-            // exactly one loop, so duplicate tool calls are impossible.
+            // 2. ATOMIC NODE CLAIMING: claim candidate nodes through Firestore
+            // transactions before touching memory retrieval or delegates. Only
+            // nodes this loop successfully claimed move to task execution.
+            const claimResults = await Promise.all(
+                readyNodes.map(async (node) => ({
+                    nodeId: node.id,
+                    claimed: await this.claimNodeAtomically(userId, executionId, node.id),
+                }))
+            );
             const claimedNodeIds: string[] = [];
-            for (const node of readyNodes) {
-                if (await this.claimNodeAtomically(userId, executionId, node.id)) {
-                    claimedNodeIds.push(node.id);
-                    AgentEventBus.emitNodeEvent('GRAPH_NODE_STARTED', graph.id, node.id, executionId);
+            for (const r of claimResults) {
+                if (r.claimed) {
+                    claimedNodeIds.push(r.nodeId);
+                    AgentEventBus.emitNodeEvent('GRAPH_NODE_STARTED', graph.id, r.nodeId, executionId);
                 }
             }
+
+            if (claimedNodeIds.length > 0) {
+                lastProgressTime = Date.now();
+            }
+
+            // 3. Mark the claimed nodes EXECUTING in local state so downstream
+            // preparation observes the updated status.
+            for (const nodeId of claimedNodeIds) {
+                state.nodeStates[nodeId] = {
+                    ...(state.nodeStates[nodeId] || { status: 'PLANNED' }),
+                    status: 'EXECUTING_GENERATION',
+                    startedAt: Date.now(),
+                };
+            }
+
             if (claimedNodeIds.length === 0) {
                 logger.info(`[AgentGraph] Iteration ${iteration}: all candidate nodes claimed by another loop — re-evaluating.`);
                 continue;
@@ -401,11 +532,21 @@ export class AgentGraphService {
                 if (!node) throw new Error(`Graph node ${nodeId} missing from definition`);
                 const prompt = this.resolveNodePrompt(node, graph, state, inputToUse);
 
-                // GEAP Pillar 2: SCALE - Pull relevant memories before execution
+                // GEAP Pillar 2: SCALE - Pull relevant memories before execution (capped to top 5 / 3,000 chars)
                 let memoryContext = '';
                 try {
-                    const { results } = await memoryBankService.searchMemories(userId, prompt, 100);
-                    memoryContext = results.map(m => m.memory).join('\n---\n');
+                    const { results } = await memoryBankService.searchMemories(userId, prompt, 5);
+                    const memoryLines: string[] = [];
+                    let totalChars = 0;
+                    for (const m of results) {
+                        if (totalChars + m.memory.length > 3000) {
+                            memoryLines.push(m.memory.slice(0, Math.max(0, 3000 - totalChars)) + '... [trimmed]');
+                            break;
+                        }
+                        memoryLines.push(m.memory);
+                        totalChars += m.memory.length;
+                    }
+                    memoryContext = memoryLines.join('\n---\n');
                 } catch (memErr) {
                     logger.warn(`[AgentGraph] Memory retrieval failed for node ${node.id}, continuing without it.`, memErr);
                 }
@@ -454,6 +595,7 @@ export class AgentGraphService {
                         });
                         AgentEventBus.emitNodeEvent('GRAPH_NODE_COMPLETED', graph.id, res.nodeId, executionId);
                         lastOutput = res.output || '';
+                        lastProgressTime = Date.now();
                     } else {
                         await agentGraphStateService.updateNodeStatus(userId, executionId, res.nodeId, {
                             status: 'FAILED',
@@ -461,14 +603,13 @@ export class AgentGraphService {
                             completedAt: Date.now()
                         });
                         AgentEventBus.emitNodeEvent('GRAPH_NODE_FAILED', graph.id, res.nodeId, executionId, res.error);
+                        lastProgressTime = Date.now();
 
                         if (res.error) {
                             // Path Pruning: If a node fails, prune its descendants and mark them as skipped.
-                            // The graph execution continues for other branches unless all paths are blocked.
                             logger.warn(`[AgentGraph] Node ${res.nodeId} failed. Pruning descendants.`);
                             await this.pruneDescendants(userId, executionId, res.nodeId, graph);
 
-                            // Check if there are any nodes still planned or executing
                             const latestState = await agentGraphStateService.getExecution(userId, executionId);
                             const hasActiveNodes = latestState && Object.values(latestState.nodeStates).some(
                                 s => s.status === 'PLANNED' || s.status === 'EXECUTING_GENERATION'
@@ -489,6 +630,9 @@ export class AgentGraphService {
                 await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
                 throw error;
             }
+
+            // Yield briefly between iterations
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         const finalReport = `Graph execution finished. Final output snippet: ${lastOutput.slice(0, 200)}...`;
@@ -507,20 +651,43 @@ export class AgentGraphService {
     }
 
     /**
-     * Evaluates a condition against an output string.
-     * Supports Regex or simple inclusion.
+     * Evaluates a simple edge condition against parent output.
+     * Supports basic operators like contains, equals, etc.
      */
-    private evaluateCondition(condition: string | undefined, output: string): boolean {
-        if (!condition) return true;
+    private evaluateCondition(condition?: string, output?: string): boolean {
+        if (!condition) return true; // Unconditional edge
+        if (!output) return false;
+
+        // Simple condition DSL: "status:SUCCESS" or "contains:approved"
+        if (condition.startsWith('contains:')) {
+            const term = condition.substring('contains:'.length);
+            return output.toLowerCase().includes(term.toLowerCase());
+        } else if (condition.startsWith('equals:')) {
+            const term = condition.substring('equals:'.length);
+            return output.trim() === term.trim();
+        } else if (condition.startsWith('not_contains:')) {
+            const term = condition.substring('not_contains:'.length);
+            return !output.toLowerCase().includes(term.toLowerCase());
+        }
 
         try {
             const regex = new RegExp(condition, 'i');
             return regex.test(output);
         } catch (_e) {
+            // Default: substring match
             return output.includes(condition);
         }
     }
 
+    /**
+     * Trims long outputs to a safe character budget to prevent context window explosion.
+     */
+    private trimForContext(text: string, maxChars = 10000): string {
+        if (!text || text.length <= maxChars) return text;
+        const head = text.slice(0, 7500);
+        const tail = text.slice(-2500);
+        return `${head}\n\n[... Output trimmed for context efficiency (${text.length - maxChars} chars omitted) ...]\n\n${tail}`;
+    }
 
     /**
      * Resolves placeholders in the task template using parent outputs and initial input.
@@ -562,12 +729,12 @@ export class AgentGraphService {
                     }
 
                     const placeholderRegex = new RegExp(`\\{\\{${targetPlaceholder}\\}\\}`, 'g');
-                    prompt = prompt.replace(placeholderRegex, extractedValue);
+                    prompt = prompt.replace(placeholderRegex, this.trimForContext(extractedValue));
                 }
             } else {
                 // Default fallback: replace {{sourceNodeId}} with the full parent output
                 const defaultRegex = new RegExp(`\\{\\{${edge.sourceId}\\}\\}`, 'g');
-                prompt = prompt.replace(defaultRegex, parentOutput);
+                prompt = prompt.replace(defaultRegex, this.trimForContext(parentOutput));
             }
         }
 
@@ -584,7 +751,7 @@ export class AgentGraphService {
                     const parsed = JSON.parse(sourceState.output);
                     const value = this.getNestedValue(parsed, path);
                     if (value !== undefined) {
-                        prompt = prompt.replace(fullMatch, String(value));
+                        prompt = prompt.replace(fullMatch, this.trimForContext(String(value)));
                     }
                 } catch (_e) {
                     // Ignore resolution errors for global paths
@@ -611,7 +778,13 @@ export class AgentGraphService {
     /**
      * Recursively prunes (skips) all descendant nodes of a failed node.
      */
-    private async pruneDescendants(userId: string, executionId: string, failedNodeId: string, graph: AgentGraph): Promise<void> {
+    private async pruneDescendants(
+        userId: string,
+        executionId: string,
+        failedNodeId: string,
+        graph: AgentGraph,
+        reason?: string
+    ): Promise<void> {
         const queue = [failedNodeId];
         const visited = new Set<string>();
 
@@ -630,7 +803,7 @@ export class AgentGraphService {
                     logger.debug(`[AgentGraph] Pruning node ${descId} (descendant of ${failedNodeId})`);
                     await agentGraphStateService.updateNodeStatus(userId, executionId, descId, {
                         status: 'SKIPPED',
-                        error: `Skipped due to upstream failure in node: ${failedNodeId}`
+                        error: reason || `Skipped due to upstream failure in node: ${failedNodeId}`
                     });
                     queue.push(descId);
                 }

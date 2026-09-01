@@ -549,6 +549,8 @@ export interface GraphNode {
     waitCondition: 'all' | 'any';
     /** Optional hardcoded context overrides for this node. */
     contextOverrides?: Partial<AgentContext>;
+    /** Optional flag indicating human in the loop approval is required before execution. */
+    requiresApproval?: boolean;
 }
 
 /**
@@ -604,4 +606,10 @@ export interface GraphExecutionState {
     graph?: AgentGraph;
     /** Arbitrary execution metadata (e.g. initial input). */
     metadata?: Record<string, any>;
+    /** Distributed concurrency lease for multi-runner coordination. */
+    lease?: {
+        holderId: string;
+        expiresAt: number;
+        acquiredAt: number;
+    } | null;
 }

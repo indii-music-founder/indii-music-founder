@@ -35,33 +35,35 @@ export class CampaignFSM {
     }
 
     async transition(newState: FSMState, error?: string): Promise<void> {
-        const context = await this.getState();
-        
-        // Basic state validation rules
-        if (context.state === 'COMPLETED') {
-            throw new HttpsError('failed-precondition', 'Cannot transition a completed campaign.');
-        }
-
-        const updates: Partial<CampaignContext> = {
-            state: newState,
-            lastUpdated: new Date().toISOString()
-        };
-
-        if (error) {
-            updates.error = error;
-            if (newState === 'FAILED') updates.retries = context.retries + 1;
-        }
-
-            const doc = await getDb().collection('campaign_fsm').doc(this.releaseId).get();
-            if (!doc.exists) {
-                // If it doesn't exist, we must initialize the full default state so merge:true doesn't leave orphaned properties
-                Object.assign(updates, {
-                    releaseId: this.releaseId,
-                    retries: 0
-                });
+        const db = getDb();
+        const docRef = db.collection('campaign_fsm').doc(this.releaseId);
+        await db.runTransaction(async (tx) => {
+            const snap = await tx.get(docRef);
+            let context: CampaignContext;
+            if (!snap.exists) {
+                context = { releaseId: this.releaseId, state: 'IDLE', retries: 0, lastUpdated: new Date().toISOString() };
+            } else {
+                context = snap.data() as CampaignContext;
             }
 
-        await getDb().collection('campaign_fsm').doc(this.releaseId).set(updates, { merge: true });
+            // Basic state validation rules
+            if (context.state === 'COMPLETED') {
+                throw new HttpsError('failed-precondition', 'Cannot transition a completed campaign.');
+            }
+
+            const updates: Partial<CampaignContext> = {
+                releaseId: this.releaseId,
+                state: newState,
+                retries: newState === 'FAILED' && error ? context.retries + 1 : context.retries,
+                lastUpdated: new Date().toISOString()
+            };
+
+            if (error) {
+                updates.error = error;
+            }
+
+            tx.set(docRef, updates, { merge: true });
+        });
         console.log(`Campaign ${this.releaseId} transitioned to ${newState}`);
     }
 }

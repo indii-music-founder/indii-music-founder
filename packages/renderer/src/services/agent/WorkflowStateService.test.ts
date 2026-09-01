@@ -1,5 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const { mockTxGet, mockTxUpdate, mockRunTransaction } = vi.hoisted(() => {
+    const mockTxGet = vi.fn();
+    const mockTxUpdate = vi.fn();
+    const mockRunTransaction = vi.fn((_db: any, callback: any) => {
+        return callback({
+            get: mockTxGet,
+            update: mockTxUpdate,
+        });
+    });
+    return { mockTxGet, mockTxUpdate, mockRunTransaction };
+});
+
 // Mock Firestore
 vi.mock('../../firebase', () => ({
     db: {},
@@ -7,7 +19,12 @@ vi.mock('../../firebase', () => ({
 
 vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
+    doc: vi.fn((_db: any, ...pathSegments: string[]) => ({
+        path: pathSegments.join('/'),
+        id: pathSegments[pathSegments.length - 1],
+    })),
     addDoc: vi.fn().mockResolvedValue({ id: 'mock-doc-id' }),
+    runTransaction: mockRunTransaction,
     serverTimestamp: vi.fn(() => ({ _type: 'serverTimestamp' })),
     Timestamp: {
         now: vi.fn(() => ({ seconds: 1000, nanoseconds: 0 })),
@@ -97,6 +114,63 @@ describe('WorkflowStateService', () => {
         });
     });
 
+    describe('markStepExecuting', () => {
+        it('should mark step as executing in a transaction and set startedAt', async () => {
+            const storedExecution: WorkflowExecution = {
+                id: 'exec-executing',
+                workflowId: 'CAMPAIGN_LAUNCH',
+                userId,
+                status: 'PLANNED',
+                steps: {
+                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'PLANNED', idempotencyKey: 'test-key-0' },
+                },
+                edges: [],
+                createdAt: 1000,
+                updatedAt: 1000,
+            };
+
+            mockTxGet.mockResolvedValue({
+                exists: () => true,
+                data: () => ({ ...storedExecution }),
+            });
+
+            await workflowStateService.markStepExecuting(userId, 'exec-executing', 'step_0');
+
+            expect(mockRunTransaction).toHaveBeenCalledOnce();
+            expect(mockTxUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({ path: 'users/test-user/workflowExecutions/exec-executing' }),
+                expect.objectContaining({
+                    'steps.step_0.status': 'EXECUTING_GENERATION',
+                    status: 'EXECUTING',
+                })
+            );
+        });
+
+        it('should reject execution if step is already executing (idempotency lock)', async () => {
+            const storedExecution: WorkflowExecution = {
+                id: 'exec-locked',
+                workflowId: 'CAMPAIGN_LAUNCH',
+                userId,
+                status: 'EXECUTING',
+                steps: {
+                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'EXECUTING_GENERATION', idempotencyKey: 'test-key-0' },
+                },
+                edges: [],
+                createdAt: 1000,
+                updatedAt: 1000,
+            };
+
+            mockTxGet.mockResolvedValue({
+                exists: () => true,
+                data: () => ({ ...storedExecution }),
+            });
+
+            await expect(
+                workflowStateService.markStepExecuting(userId, 'exec-locked', 'step_0')
+            ).rejects.toThrow(/Idempotency Lock/);
+        });
+    });
+
     describe('advanceStep', () => {
         it('should mark a step as complete and advance the index', async () => {
             const storedExecution: WorkflowExecution = {
@@ -114,14 +188,25 @@ describe('WorkflowStateService', () => {
                 updatedAt: 1000,
             };
 
-            mockGet.mockResolvedValue({ ...storedExecution });
+            mockTxGet.mockResolvedValue({
+                exists: () => true,
+                data: () => ({ ...storedExecution }),
+            });
 
             const result = await workflowStateService.advanceStep(userId, 'exec-1', 'step_0', 'Brand audit complete');
 
             expect(result.steps['step_0']!.status).toBe('STEP_COMPLETE');
             expect(result.steps['step_0']!.result).toBe('Brand audit complete');
             expect(result.status).toBe('EXECUTING');
-            expect(mockSet).toHaveBeenCalledOnce();
+            expect(mockRunTransaction).toHaveBeenCalledOnce();
+            expect(mockTxUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({ path: 'users/test-user/workflowExecutions/exec-1' }),
+                expect.objectContaining({
+                    'steps.step_0.status': 'STEP_COMPLETE',
+                    'steps.step_0.result': 'Brand audit complete',
+                    status: 'EXECUTING',
+                })
+            );
         });
 
         it('should mark the workflow as completed when all steps are done', async () => {
@@ -140,12 +225,54 @@ describe('WorkflowStateService', () => {
                 updatedAt: 2000,
             };
 
-            mockGet.mockResolvedValue({ ...storedExecution });
+            mockTxGet.mockResolvedValue({
+                exists: () => true,
+                data: () => ({ ...storedExecution }),
+            });
 
             const result = await workflowStateService.advanceStep(userId, 'exec-2', 'step_2', 'Social posts drafted');
 
             expect(result.steps['step_2']!.status).toBe('STEP_COMPLETE');
             expect(result.status).toBe('COMPLETED');
+            expect(mockTxUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({ path: 'users/test-user/workflowExecutions/exec-2' }),
+                expect.objectContaining({
+                    'steps.step_2.status': 'STEP_COMPLETE',
+                    status: 'COMPLETED',
+                })
+            );
+        });
+
+        it('should fail step when readiness blockers exist (ISSUE-571)', async () => {
+            const storedExecution: WorkflowExecution = {
+                id: 'exec-blocked',
+                workflowId: 'CAMPAIGN_LAUNCH',
+                userId,
+                status: 'EXECUTING',
+                steps: {
+                    'step_0': { stepId: 'step_0', agentId: 'brand', prompt: 'Analyze brand', status: 'EXECUTING_GENERATION', idempotencyKey: 'test-key-0' },
+                },
+                edges: [],
+                createdAt: 1000,
+                updatedAt: 1000,
+            };
+
+            mockTxGet.mockResolvedValue({
+                exists: () => true,
+                data: () => ({ ...storedExecution }),
+            });
+
+            const result = await workflowStateService.advanceStep(userId, 'exec-blocked', 'step_0', 'Output', ['Missing verified likeness']);
+
+            expect(result.steps['step_0']!.status).toBe('FAILED');
+            expect(result.status).toBe('FAILED');
+            expect(mockTxUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({ path: 'users/test-user/workflowExecutions/exec-blocked' }),
+                expect.objectContaining({
+                    'steps.step_0.status': 'FAILED',
+                    status: 'FAILED',
+                })
+            );
         });
     });
 
@@ -166,7 +293,10 @@ describe('WorkflowStateService', () => {
                 updatedAt: 1500,
             };
 
-            mockGet.mockResolvedValue({ ...storedExecution });
+            mockTxGet.mockResolvedValue({
+                exists: () => true,
+                data: () => ({ ...storedExecution }),
+            });
 
             const result = await workflowStateService.failStep(userId, 'exec-3', 'step_1', 'API timeout');
 
@@ -174,6 +304,14 @@ describe('WorkflowStateService', () => {
             expect(result.steps['step_1']!.error).toBe('API timeout');
             expect(result.steps['step_2']!.status).toBe('PLANNED'); // Preserved for resume
             expect(result.status).toBe('FAILED');
+            expect(mockTxUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({ path: 'users/test-user/workflowExecutions/exec-3' }),
+                expect.objectContaining({
+                    'steps.step_1.status': 'FAILED',
+                    'steps.step_1.error': 'API timeout',
+                    status: 'FAILED',
+                })
+            );
         });
     });
 
@@ -194,15 +332,22 @@ describe('WorkflowStateService', () => {
                 updatedAt: 1000,
             };
 
-            mockGet.mockResolvedValue({ ...storedExecution });
+            mockTxGet.mockResolvedValue({
+                exists: () => true,
+                data: () => ({ ...storedExecution }),
+            });
 
             await workflowStateService.cancelExecution(userId, 'exec-4');
 
-            const savedDoc = mockSet.mock.calls[0]![1] as WorkflowExecution;
-            expect(savedDoc.status).toBe('CANCELLED');
-            expect(savedDoc.steps['step_0']!.status).toBe('STEP_COMPLETE'); // Already complete — not cancelled
-            expect(savedDoc.steps['step_1']!.status).toBe('CANCELLED');
-            expect(savedDoc.steps['step_2']!.status).toBe('CANCELLED');
+            expect(mockRunTransaction).toHaveBeenCalledOnce();
+            expect(mockTxUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({ path: 'users/test-user/workflowExecutions/exec-4' }),
+                expect.objectContaining({
+                    status: 'CANCELLED',
+                    'steps.step_1.status': 'CANCELLED',
+                    'steps.step_2.status': 'CANCELLED',
+                })
+            );
         });
     });
 
