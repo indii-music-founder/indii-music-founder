@@ -1,19 +1,48 @@
 [
-    {
-        "origin": [
-            "*"
-        ],
-        "method": [
-            "GET",
-            "PUT",
-            "POST",
-            "DELETE",
-            "HEAD",
-            "OPTIONS"
-        ],
-        "responseHeader": [
-            "*"
-        ],
-        "maxAgeSeconds": 3600
-    }
+  {
+    "origin": [
+      "http://localhost:3000",
+      "http://localhost:4242",
+      "http://localhost:4243",
+      "http://localhost:5173",
+      "http://localhost:8080",
+      "https://indii-music-studio.web.app",
+      "https://indii-music-studio.firebaseapp.com",
+      "https://indii-music-founder.web.app",
+      "https://indii-music-founder.firebaseapp.com",
+      "https://indii.music",
+      "https://app.indii.music",
+      "https://founder.indii.music",
+      "https://www.indii.music"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    "responseHeader": [
+      "*",
+      "Content-Type",
+      "Content-Length",
+      "Content-Range",
+      "Range",
+      "Accept-Ranges",
+      "ETag",
+      "Authorization",
+      "Access-Control-Allow-Origin",
+      "Cross-Origin-Resource-Policy",
+      "x-goog-generation",
+      "x-goog-metageneration",
+      "x-goog-resumable",
+      "x-goog-meta-author",
+      "x-goog-meta-title",
+      "x-goog-meta-genre",
+      "x-goog-meta-status",
+      "x-goog-meta-bpm",
+      "x-goog-meta-contenthash",
+      "x-goog-meta-ownerid",
+      "x-goog-meta-immutable",
+      "x-goog-meta-masterfingerprint",
+      "x-goog-meta-originalfilename",
+      "x-goog-meta-sessionid",
+      "x-goog-meta-uploadsessionid"
+    ],
+    "maxAgeSeconds": 3600
+  }
 ]

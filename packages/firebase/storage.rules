@@ -13,6 +13,7 @@ service firebase.storage {
 
     function isOrgMember(orgId) {
       return isAuthenticated() && 
+        firestore.exists(/databases/(default)/documents/organizations/$(orgId)) &&
         request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(orgId)).data.members;
     }
 
@@ -71,6 +72,17 @@ service firebase.storage {
       allow create, update: if isAuthenticated() &&
                               request.auth.uid == userId &&
                               isUnderSizeLimit(500);
+    }
+
+    // Ephemeral Audio Analysis Uploads: GCS lifecycle rules automatically delete
+    // these temporary files after processing (1-day TTL). Authenticated owner can
+    // upload audio files up to 500MB and delete immediately upon completion.
+    match /tmp/audio-analysis/{userId}/{allPaths=**} {
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isUnderSizeLimit(500) &&
+                              isAudioType();
     }
 
     // Users general storage: Delete denied for clients (route through Trash).

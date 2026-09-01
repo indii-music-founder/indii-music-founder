@@ -49,6 +49,7 @@ export class MasterAudioService {
                 }
                 const uploadTask = uploadBytesResumable(masterRef, file, {
                     contentType: canonicalMimeType,
+                    cacheControl: 'public, max-age=31536000, immutable',
                     customMetadata: {
                         bitDepth: String(audioProperties.bitDepth),
                         channels: String(audioProperties.channels),

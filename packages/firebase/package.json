@@ -14,7 +14,8 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "test": "vitest",
-    "test:rules": "vitest src/test/security/firestore.rules.test.ts src/test/security/paint-save-repro.rules.test.ts"
+    "test:rules": "vitest src/test/security/firestore.rules.test.ts src/test/security/paint-save-repro.rules.test.ts",
+    "test:rules:storage": "vitest src/test/security/storage.rules.test.ts"
   },
   "dependencies": {
     "@arcjet/node": "^1.4.0",

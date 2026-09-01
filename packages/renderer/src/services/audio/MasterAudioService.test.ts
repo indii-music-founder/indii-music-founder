@@ -97,6 +97,7 @@ describe('MasterAudioService', () => {
             file,
             {
                 contentType: 'audio/wav',
+                cacheControl: 'public, max-age=31536000, immutable',
                 customMetadata: {
                     bitDepth: '24',
                     channels: '2',

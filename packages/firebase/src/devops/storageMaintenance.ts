@@ -416,8 +416,9 @@ export const cleanupExpiredVideoTemps = onSchedule(
  * Scans the `videos/` prefix and flags files older than ARCHIVE_THRESHOLD_DAYS
  * by setting a custom metadata field `archiveEligible: "true"`.
  *
- * This metadata field can then be used by a GCS Object Lifecycle Policy
- * to automatically transition files to Nearline or Coldline storage class.
+ * Note: GCS Object Lifecycle Policies natively transition `videos/` to Nearline
+ * storage class via `config/gcs-lifecycle.json` (prefix: "videos/", age: 90).
+ * This function provides internal application-layer visibility and metadata tagging.
  *
  * Schedule: First of each month at 4:00 AM UTC
  */

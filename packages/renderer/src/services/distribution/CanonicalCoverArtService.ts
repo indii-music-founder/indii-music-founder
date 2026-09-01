@@ -97,6 +97,7 @@ export class CanonicalCoverArtService {
             try {
                 await uploadBytes(coverRef, bytes, {
                     contentType: mimeType,
+                    cacheControl: 'public, max-age=31536000, immutable',
                     customMetadata: {
                         contentHash,
                         immutable: 'true',

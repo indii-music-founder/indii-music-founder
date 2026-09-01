@@ -24,6 +24,9 @@ const firebaseConfig = {
 };
 
 const BUCKET_CANDIDATES = [
+    "indii-music-founder.firebasestorage.app",
+    "indii-music-founder.appspot.com",
+    "gs://indii-music-founder.firebasestorage.app",
     "gs://indii-alpha-electron",
     "indii-alpha-electron.appspot.com",
     "indii-alpha-electron.firebasestorage.app",
@@ -55,7 +58,7 @@ async function main() {
             // Initialize Storage with specific bucket
             // Note: getStorage(app, bucketUrl) is the API
             const storage = getStorage(app, bucket);
-            const testRef = ref(storage, `users/${user.uid}/probe.txt`);
+            const testRef = ref(storage, `users/${user.uid}/tmp/probe.txt`);
 
             await uploadBytes(testRef, content);
             console.log("✅ SUCCESS! Upload worked.");

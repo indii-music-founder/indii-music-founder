@@ -472,3 +472,61 @@ describe('private project render outputs', () => {
         await assertFails(deleteObject(ownerRef));
     });
 });
+
+describe('ephemeral audio analysis storage (/tmp/audio-analysis)', () => {
+    let testEnv: RulesTestEnvironment;
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: `${PROJECT_ID}-audio-analysis`,
+            storage: {
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    function ownerStorage() {
+        return testEnv.authenticatedContext(OWNER_ID, {
+            email: 'owner@example.com',
+            firebase: { sign_in_provider: 'password' },
+        }).storage();
+    }
+
+    function otherUserStorage() {
+        return testEnv.authenticatedContext('other-user', {
+            email: 'other@example.com',
+            firebase: { sign_in_provider: 'password' },
+        }).storage();
+    }
+
+    it('allows owner to upload audio and delete temporary analysis files', async () => {
+        const audioRef = ref(ownerStorage(), `tmp/audio-analysis/${OWNER_ID}/take-1.wav`);
+        await assertSucceeds(uploadBytes(audioRef, new Uint8Array([1, 2, 3]), { contentType: 'audio/wav' }));
+        await assertSucceeds(deleteObject(audioRef));
+    });
+
+    it('denies non-audio uploads to temporary audio analysis directory', async () => {
+        const nonAudioRef = ref(ownerStorage(), `tmp/audio-analysis/${OWNER_ID}/doc.pdf`);
+        await assertFails(uploadBytes(nonAudioRef, new Uint8Array([1, 2, 3]), { contentType: 'application/pdf' }));
+    });
+
+    it('denies cross-tenant reads, writes, and deletes on temporary audio analysis files', async () => {
+        const ownerFile = ref(ownerStorage(), `tmp/audio-analysis/${OWNER_ID}/take-2.flac`);
+        await assertSucceeds(uploadBytes(ownerFile, new Uint8Array([1, 2, 3]), { contentType: 'audio/flac' }));
+
+        const foreignAccess = ref(otherUserStorage(), `tmp/audio-analysis/${OWNER_ID}/take-2.flac`);
+        await assertFails(getMetadata(foreignAccess));
+        await assertFails(uploadBytes(foreignAccess, new Uint8Array([4, 5, 6]), { contentType: 'audio/flac' }));
+        await assertFails(deleteObject(foreignAccess));
+
+        const unauthAccess = ref(testEnv.unauthenticatedContext().storage(), `tmp/audio-analysis/${OWNER_ID}/take-2.flac`);
+        await assertFails(getMetadata(unauthAccess));
+        await assertFails(deleteObject(unauthAccess));
+    });
+});
