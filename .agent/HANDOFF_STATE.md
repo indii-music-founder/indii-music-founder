@@ -1,3 +1,19 @@
+# Session Close — Autonomous Loop Engine Hardening & Concurrency Stabilization (2026-09-01)
+
+**Final state: all 31 autonomous loop, DAG orchestration, FSM, and transaction tests passing (0 failures). Distributed leases, backoff, and trimming active on `main`.**
+
+## Shipped — Autonomous Loop Engine Hardening (Agent #27 Mandates)
+- **WP-A (Durable Persistence & Resumption):** Replaced volatile in-memory `Map` in `AgentLoopService.ts` with Firestore `users/{uid}/agentLoopExecutions/{id}`. Added `resumeLoop()` and `getResumableLoops()`.
+- **WP-B1 (Atomic Firestore Transactions):** Refactored `WorkflowStateService.ts` (`markStepExecuting`, `advanceStep`, `skipStep`, `failStep`, `cancelExecution`) to native `runTransaction()` with dot-notated step paths.
+- **WP-B2 (FSM State Machine):** Wrapped `CampaignFSM.transition()` in `getDb().runTransaction()` with terminal status guards and retry incrementing.
+- **WP-C (Exponential Backoff & Resumption):** Added `isTransientError()` and jittered exponential backoff (`executeActionWithRetry`) in `AgentLoopService.ts`. Persistent timeouts halt gracefully without leaking to LLM judge.
+- **WP-D1 & WP-D2 (Context Bloat Trimming):** Capped memory queries to top-5 (3,000-char cap), trimmed parent DAG outputs to 10,000 chars in `AgentGraphService.ts`, and capped feedback history to 2 failed iterations.
+- **WP-E (Distributed Lease Locking & Deadlines):** Implemented distributed leases in `AgentGraphService.ts` with 20s lock deadlines, 5s heartbeat renewal, 60s idle limits, and 270s execution ceiling.
+- **Commits on `main`:** `4b1e77f4a` and `29569a367`. All 5 pre-commit quality gates passed.
+
+## Honest remaining / Untouched foreign work
+- Foreign dirty files preserved untouched per `branch-safety.md`.
+
 # Session Close — Financial Transaction Architecture & Security Perimeter Hardening (2026-09-01)
 
 **Final state: all 180 financial, webhook, checkout, and POD tests passing (0 failures). Security perimeter strictly locked.**
