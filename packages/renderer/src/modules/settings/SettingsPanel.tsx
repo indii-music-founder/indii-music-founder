@@ -31,6 +31,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import ProfileSection from './settings-panel/ProfileSection';
+import PersonaFadersSection from './settings-panel/PersonaFadersSection';
 import ConnectionsSection from './settings-panel/ConnectionsSection';
 import NotificationsSection from './settings-panel/NotificationsSection';
 import AppearanceSection from './settings-panel/AppearanceSection';
@@ -45,6 +46,7 @@ import {
     type SettingsSectionId,
 } from './SettingsNavigation';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import { Sliders } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Types & Navigation Config
@@ -52,6 +54,7 @@ import { getColorForModule } from '@/core/theme/moduleColors';
 
 const SECTIONS: Array<{ id: SettingsSectionId; label: string; icon: LucideIcon; description: string }> = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Name, avatar, and bio' },
+    { id: 'personas', label: 'Agent Personas', icon: Sliders, description: 'Personality sliders and posture for each agent' },
     { id: 'connections', label: 'Connected Services', icon: Link2, description: 'Email, social, and integrations' },
     { id: 'remote', label: 'Mobile Remote', icon: Smartphone, description: 'Pair and sync your phone or tablet' },
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Push, email, and sound preferences' },
@@ -87,6 +90,7 @@ const SettingsPanel: React.FC = () => {
     const renderSection = () => {
         switch (activeSection) {
             case 'profile': return <ProfileSection />;
+            case 'personas': return <PersonaFadersSection />;
             case 'connections': return <ConnectionsSection />;
             case 'remote': return <RemoteSection />;
             case 'notifications': return <NotificationsSection />;

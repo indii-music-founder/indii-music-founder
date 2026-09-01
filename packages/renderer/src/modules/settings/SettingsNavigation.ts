@@ -2,6 +2,7 @@ export const SETTINGS_SECTION_REQUEST_EVENT = 'indii:settings-section-request';
 
 export const SETTINGS_SECTION_IDS = [
     'profile',
+    'personas',
     'connections',
     'remote',
     'notifications',

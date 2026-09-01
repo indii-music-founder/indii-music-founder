@@ -1,4 +1,4 @@
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import {
     PERSONA_FADER_DEFAULT,
     isValidPersonaFaderValues,
@@ -37,4 +37,34 @@ export async function resolvePersonaFaderValues(personaId: PersonaId): Promise<P
 /** Resolve the signed-in user's saved faders, or population defaults when unset. */
 export async function loadPersonaFaderValues(personaId: PersonaId): Promise<PersonaFaderValues> {
     return (await resolvePersonaFaderValues(personaId)).values;
+}
+
+/** Persist calibrated persona faders for the signed-in user. */
+export async function savePersonaFaderValues(
+    personaId: PersonaId,
+    values: PersonaFaderValues,
+): Promise<void> {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+        throw new PersonaFaderRepositoryError('Persona faders require an authenticated user.');
+    }
+    if (!isValidPersonaFaderValues(values)) {
+        throw new PersonaFaderRepositoryError('Invalid persona fader values provided.');
+    }
+
+    await setDoc(doc(db, 'users', uid, 'personaFaders', personaId), {
+        personaId,
+        values,
+        updatedAt: Date.now(),
+    });
+}
+
+/** Reset persona faders back to population defaults by deleting the saved override. */
+export async function resetPersonaFaderValues(personaId: PersonaId): Promise<void> {
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+        throw new PersonaFaderRepositoryError('Persona faders require an authenticated user.');
+    }
+
+    await deleteDoc(doc(db, 'users', uid, 'personaFaders', personaId));
 }
