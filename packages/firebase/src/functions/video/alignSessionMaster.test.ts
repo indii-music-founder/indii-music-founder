@@ -150,19 +150,30 @@ describe('alignSessionMaster Handler', () => {
         const { createDefaultAlignmentService } = await import('./alignSessionMaster');
         const service = createDefaultAlignmentService('https://engine-dsp.a.run.app');
 
-        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-            ok: true,
-            status: 200,
-            json: async () => ({
-                status: 'locked',
-                aggregateConfidence: 0.99,
-                driftPpm: 0,
-                residualP95Us: 500,
-                fitModel: 'linear',
-                anchors: [],
-                algorithmVersion: 'align-dsp.v1',
-            }),
-        } as any);
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: any) => {
+            const url = typeof input === 'string' ? input : input?.url || '';
+            if (url.includes('/align')) {
+                return {
+                    ok: true,
+                    status: 200,
+                    json: async () => ({
+                        status: 'locked',
+                        aggregateConfidence: 0.99,
+                        driftPpm: 0,
+                        residualP95Us: 500,
+                        fitModel: 'linear',
+                        anchors: [],
+                        algorithmVersion: 'align-dsp.v1',
+                    }),
+                } as any;
+            }
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ id_token: 'mock-id-token' }),
+                text: async () => 'mock-id-token',
+            } as any;
+        });
 
         const result = await service.align({
             sessionId: 'session-1',
