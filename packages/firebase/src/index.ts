@@ -232,6 +232,15 @@ export { shopifyWebhook } from './marketing/shopifyWebhook';
 
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)
 export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
+
+// Database Maintenance (Scheduled — Coldline managed exports, snapshot verification, telemetry & token purge)
+export {
+    scheduledFirestoreColdlineExport,
+    purgeStaleDatabaseTelemetry,
+    verifyExportSnapshot,
+    getLatestVerifiedSnapshot,
+    executeTelemetryPurge,
+} from './devops/databaseMaintenance';
 export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAssetForCanvas';
 export { verifyMasterAudio } from './functions/storage/verifyMasterAudio';
 export { processAudioIngestion } from './distribution/ingestion';

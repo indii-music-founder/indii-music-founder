@@ -9,99 +9,74 @@ the disaster recovery procedure for a full data loss event.
 
 ---
 
-## Backup Architecture
+## Backup & Database Health Architecture
 
 ```
-Cloud Scheduler (daily 2:00 AM UTC)
+Cloud Scheduler (Daily 02:00 UTC)
     ↓ triggers
-Cloud Function (firestore-backup)
+Cloud Function v2: scheduledFirestoreColdlineExport (packages/firebase/src/devops/databaseMaintenance.ts)
     ↓ calls
-gcloud firestore export → gs://indii-backups/firestore/YYYY-MM-DD/
+admin.firestore.v1.FirestoreAdminClient.exportDocuments
+    ↓ streams
+gs://indii-music-founder-firestore-backups-coldline/exports/YYYY-MM-DDTHH-mm-ss/ (Storage Class: COLDLINE)
+
+Cloud Scheduler (Daily 04:00 UTC)
+    ↓ triggers
+Cloud Function v2: purgeStaleDatabaseTelemetry
+    ↓ verifies
+Snapshot Integrity Rail: verifyExportSnapshot() checks GCS Coldline manifest & chunks < 48h
+    ↓ (Aborts if snapshot missing/corrupted; dry-run unless enableDeletion=true)
+Batched Document Compaction & Purge (agent_traces > 30d, ai_context_cache expired, orphaned notification_tokens)
 ```
 
 ---
 
-## Step 1: Create Backup GCS Bucket
+## Step 1: Create Backup GCS Coldline Bucket
 
 ```bash
-# Create a dedicated backup bucket with versioning
-gsutil mb -p indii-music-founder -l us-central1 gs://indii-backups
+# Dedicated Coldline bucket for disaster recovery snapshots
+gsutil mb -p indii-music-founder -c COLDLINE -l us-central1 gs://indii-music-founder-firestore-backups-coldline
 
-# Enable versioning for additional protection
-gsutil versioning set on gs://indii-backups
+# Enable versioning for object protection
+gsutil versioning set on gs://indii-music-founder-firestore-backups-coldline
 
-# Set lifecycle rule: delete backups older than 90 days
-cat > /tmp/lifecycle.json << 'EOF'
-{
-  "rule": [
-    {
-      "action": { "type": "Delete" },
-      "condition": { "age": 90 }
-    }
-  ]
-}
-EOF
-gsutil lifecycle set /tmp/lifecycle.json gs://indii-backups
+# Apply Coldline lifecycle policy (Coldline -> Archive at 90d -> Delete at 365d)
+gsutil lifecycle set config/gcs-backup-lifecycle.json gs://indii-music-founder-firestore-backups-coldline
 ```
 
-## Step 2: Grant Firestore Export Permissions
+## Step 2: Grant Firestore Export & GCS Permissions
 
 ```bash
-# Get the default service account
-SA=$(gcloud iam service-accounts list --project=indii-music-founder \
-  --filter="email:firebase-adminsdk" --format="value(email)")
+# Service account identity
+SA="indii-music-founder@appspot.gserviceaccount.com"
 
-# Grant Firestore export permissions
+# Grant Firestore export administrator role
 gcloud projects add-iam-policy-binding indii-music-founder \
   --member="serviceAccount:$SA" \
   --role="roles/datastore.importExportAdmin"
 
-# Grant Storage write access
-gsutil iam ch serviceAccount:$SA:objectCreator gs://indii-backups
+# Grant Storage write and object viewer permissions on Coldline bucket
+gsutil iam ch serviceAccount:$SA:roles/storage.admin gs://indii-music-founder-firestore-backups-coldline
 ```
 
-## Step 3: Create Cloud Function
+## Step 3: Automated Cloud Functions (Scheduled)
 
-```typescript
-// functions/src/backup/firestoreBackup.ts
-import * as functions from 'firebase-functions/v1';
-import * as admin from 'firebase-admin';
+The automated routines are defined in `packages/firebase/src/devops/databaseMaintenance.ts`:
 
-export const scheduledFirestoreBackup = functions
-  .pubsub.schedule('0 2 * * *')  // Daily at 2:00 AM UTC
-  .timeZone('America/New_York')
-  .onRun(async () => {
-    const client = new admin.firestore.v1.FirestoreAdminClient();
-    const projectId = process.env.GCP_PROJECT || 'indii-music-founder';
-    const databaseName = client.databasePath(projectId, '(default)');
+1. **`scheduledFirestoreColdlineExport`**: Runs daily at 02:00 UTC. Initiates Firestore managed export of all collections to `gs://${BUCKET}/exports/${timestamp}` with Coldline storage class.
+2. **`verifyExportSnapshot`**: Inspects the GCS target path, ensuring `.overall_export_metadata` and collection chunk `.export_metadata` files exist with `size > 0`.
+3. **`purgeStaleDatabaseTelemetry`**: Runs daily at 04:00 UTC.
+   - **Safety Rail**: Checks `getLatestVerifiedSnapshot(48)`. If no verified Coldline export exists within 48 hours, **aborts immediately** to protect against data loss.
+   - **Dry-Run Rail**: Safe by default (`dryRun: true`). Set `admin/databaseMaintenance.enableDeletion=true` in Firestore to enable permanent deletions.
+   - Purges stale `agent_traces` (> 30 days), expired `ai_context_cache`, orphaned/stale `notification_tokens` (> 90 days), expired `taxFormRequests`, and transient outbox events.
+   - Writes run metrics to `admin/databaseMaintenance/runs/{runId}`.
 
-    const date = new Date().toISOString().split('T')[0];
-    const bucket = `gs://indii-backups/firestore/${date}`;
+## Step 4: Manual CLI Export & Verification Drill
 
-    const [response] = await client.exportDocuments({
-      name: databaseName,
-      outputUriPrefix: bucket,
-      collectionIds: [], // Empty = all collections
-    });
-
-    console.log(`[Backup] Export started: ${response.name}`);
-    console.log(`[Backup] Destination: ${bucket}`);
-  });
-```
-
-## Step 4: Set Up Cloud Scheduler (Alternative to Cloud Function)
+Run the updated automated backup and verification script:
 
 ```bash
-# Using gcloud directly (alternative to Cloud Function above)
-gcloud scheduler jobs create http firestore-daily-backup \
-  --project=indii-music-founder \
-  --schedule="0 2 * * *" \
-  --time-zone="America/New_York" \
-  --uri="https://firestore.googleapis.com/v1/projects/indii-music-founder/databases/(default):exportDocuments" \
-  --http-method=POST \
-  --headers="Content-Type=application/json" \
-  --message-body='{"outputUriPrefix":"gs://indii-backups/firestore/"}' \
-  --oauth-service-account-email="firebase-adminsdk@indii-music-founder.iam.gserviceaccount.com"
+./scripts/backup-firestore.sh
 ```
 
 ---
