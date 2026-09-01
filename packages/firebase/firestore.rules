@@ -569,6 +569,11 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Server-only financial ledger subcollection written by webhook handlers.
+      match /ledger/{entryId} {
+        allow read, write: if false;
+      }
+
       // Server-issued account access. The browser can inspect its current
       // entitlement and immutable grant evidence, but cannot create, modify,
       // downgrade, or self-upgrade either document. Firebase Functions use the
@@ -2747,6 +2752,41 @@ service cloud.firestore {
 
     // GitHub retry queue is server-only — never readable or writable by clients.
     match /founder_github_commit_queue/{docId} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // Financial Transactions & Webhooks (Server-Authoritative Only)
+    // =========================================================================
+    // Subscriptions are server-authoritative and managed exclusively via Cloud
+    // Functions. Clients read subscriptions via the getSubscription callable.
+    match /subscriptions/{userId} {
+      allow read, write: if false;
+    }
+
+    // User credit pack balances and audit logs are managed exclusively via
+    // Cloud Functions (handleMicroTransactionCheckoutCompleted / Admin SDK).
+    match /user_credits/{userId} {
+      allow read, write: if false;
+      match /transactions/{txId} {
+        allow read, write: if false;
+      }
+    }
+
+    // Stripe webhook idempotency locks, recovery logs, and dunning notifications.
+    match /stripe_webhook_deliveries/{deliveryId} {
+      allow read, write: if false;
+    }
+    match /finance_reversal_failures/{chargeId} {
+      allow read, write: if false;
+    }
+    match /payment_disputes/{disputeId} {
+      allow read, write: if false;
+    }
+    match /dunning_notifications/{notificationId} {
+      allow read, write: if false;
+    }
+    match /founder_fulfillment_queue/{sessionId} {
       allow read, write: if false;
     }
 

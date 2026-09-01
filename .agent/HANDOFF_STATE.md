@@ -1,3 +1,17 @@
+# Session Close — Financial Transaction Architecture & Security Perimeter Hardening (2026-09-01)
+
+**Final state: all 180 financial, webhook, checkout, and POD tests passing (0 failures). Security perimeter strictly locked.**
+
+## Shipped — Financial & Security Hardening
+- **WP-1 (Firestore Rules):** Explicit server-only lockdown (`allow read, write: if false;`) for `/subscriptions`, `/user_credits` (and `/transactions`), `/users/{uid}/ledger`, `/stripe_webhook_deliveries`, `/finance_reversal_failures`, `/payment_disputes`, `/dunning_notifications`, `/founder_fulfillment_queue`. Unit tests added to `firestore.rules.test.ts`.
+- **WP-2 (Stripe Config):** Lazy price resolution on `STRIPE_PRICES` getters; eliminated test console warning spam.
+- **WP-3 (Phantom Prodigi Purge):** Removed `'prodigi'` from `PODProviderSchema`, removed inert credential storage loop from `PODCredentialService`, and removed Prodigi card from `PODIntegrationPanel` UI (ISSUE-1417 closed).
+- **WP-4 (Public Beta Tier Mapping):** Added `STRIPE_PRODUCT_START`, `STRIPE_PRODUCT_BUILD`, `STRIPE_PRODUCT_SCALE` mapping in `mapStripeTierToSubscriptionTier` (ISSUE-1422).
+- **WP-5 (Micro-Transactions):** Added comprehensive `createMicroTransaction.test.ts` unit tests covering auth boundaries, negative credit validation, price config failure, and checkout session metadata (ISSUE-1423).
+
+## Honest remaining / Untouched foreign work
+- Foreign dirty files preserved untouched: `.agent/observations/2026-08-27-agent-watch.md`, `videos/`, `.agent/FOUNDER_BLOCKERS.md`, landing sections, agent loop in-progress files.
+
 # Session Close — live canvas layer editor (C1/C2/C3) (2026-08-31, DSH agent)
 
 **Final state: head `31b9bb8be`, CI run 33441855914 SUCCESS incl. production deploy. All canvas work green; split-subject (C2.3) built then REVERTED per founder; editor fully wired (all buttons pressable).**

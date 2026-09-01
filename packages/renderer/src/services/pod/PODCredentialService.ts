@@ -60,7 +60,7 @@ export class PODCredentialService {
         if (!window.electronAPI?.credentials) {
             return {};
         }
-        const providers: PODProvider[] = ['printful', 'printify', 'gooten', 'prodigi'];
+        const providers: PODProvider[] = ['printful', 'printify', 'gooten'];
         const result: Partial<Record<PODProvider, string>> = {};
         for (const provider of providers) {
             try {
@@ -110,15 +110,6 @@ export class PODCredentialService {
                         undefined,
                         10_000
                     );
-                    return res.ok;
-                }
-                case 'prodigi': {
-                    const res = await fetchWithTimeout('https://api.prodigi.com/v1.0/orders?limit=1', {
-                        headers: {
-                            'X-API-Key': apiKey,
-                            'Content-Type': 'application/json'
-                        }
-                    }, 10_000);
                     return res.ok;
                 }
                 default:

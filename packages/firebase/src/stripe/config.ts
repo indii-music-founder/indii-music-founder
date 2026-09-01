@@ -36,14 +36,16 @@ function resolvePriceId(envVar: string): string {
   const value = process.env[envVar];
 
   if (!value) {
-    console.warn(`[Stripe] Missing price ID for ${envVar}. Checkout for the related tier is disabled until configured.`);
+    if (process.env.NODE_ENV !== 'test' && process.env.VITEST !== 'true') {
+      console.warn(`[Stripe] Missing price ID for ${envVar}. Checkout for the related tier is disabled until configured.`);
+    }
     return '';
   }
 
   return value;
 }
 
-// Stripe price IDs for each tier and billing period
+// Stripe price IDs for each tier and billing period (lazy getters for test safety and dynamic env resolution)
 export const STRIPE_PRICES: Record<SubscriptionTier, {
   monthly?: string;
   yearly?: string;
@@ -51,16 +53,16 @@ export const STRIPE_PRICES: Record<SubscriptionTier, {
 }> = {
   [SubscriptionTier.FREE]: {},
   [SubscriptionTier.PRO_MONTHLY]: {
-    monthly: resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'),
-    yearly: resolvePriceId('STRIPE_PRICE_PRO_YEARLY'),
+    get monthly() { return resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
   },
   [SubscriptionTier.PRO_YEARLY]: {
-    monthly: resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'),
-    yearly: resolvePriceId('STRIPE_PRICE_PRO_YEARLY'),
+    get monthly() { return resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
   },
   [SubscriptionTier.STUDIO]: {
-    monthly: resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'),
-    yearly: resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'),
+    get monthly() { return resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'); },
   },
   [SubscriptionTier.FOUNDER]: {},
 };
@@ -121,6 +123,17 @@ export function mapStripeTierToSubscriptionTier(
   // Pro — use billing interval to distinguish monthly vs yearly
   if (process.env.STRIPE_PRODUCT_PRO && productId === process.env.STRIPE_PRODUCT_PRO) {
     return billingInterval === 'year' ? SubscriptionTier.PRO_YEARLY : SubscriptionTier.PRO_MONTHLY;
+  }
+
+  // ISSUE-1422: Support public beta tiers (Start / Build / Scale)
+  if (process.env.STRIPE_PRODUCT_START && productId === process.env.STRIPE_PRODUCT_START) {
+    return billingInterval === 'year' ? SubscriptionTier.PRO_YEARLY : SubscriptionTier.PRO_MONTHLY;
+  }
+  if (process.env.STRIPE_PRODUCT_BUILD && productId === process.env.STRIPE_PRODUCT_BUILD) {
+    return SubscriptionTier.STUDIO;
+  }
+  if (process.env.STRIPE_PRODUCT_SCALE && productId === process.env.STRIPE_PRODUCT_SCALE) {
+    return SubscriptionTier.STUDIO;
   }
 
   return null;

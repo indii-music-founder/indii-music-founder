@@ -78,7 +78,7 @@ export interface PrintfulOrderResponse {
 // Types & Schemas
 // ============================================================================
 
-export const PODProviderSchema = z.enum(['printful', 'printify', 'gooten', 'prodigi', 'internal']);
+export const PODProviderSchema = z.enum(['printful', 'printify', 'gooten', 'internal']);
 
 /** Result of binding a Stripe Checkout session to a Printful draft (ISSUE-1407). */
 export interface PODCheckoutResult {

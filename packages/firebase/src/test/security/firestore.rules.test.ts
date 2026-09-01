@@ -1879,6 +1879,50 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('server-only financial and webhook perimeter (WP-1)', () => {
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'subscriptions', ALICE_UID), { tier: 'pro', status: 'active' });
+                await setDoc(doc(ctx.firestore(), 'user_credits', ALICE_UID), { balance: 500 });
+                await setDoc(doc(ctx.firestore(), 'user_credits', ALICE_UID, 'transactions', 'tx-1'), { credits: 500 });
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'ledger', 'sub-1'), { amount: 2500 });
+                await setDoc(doc(ctx.firestore(), 'stripe_webhook_deliveries', 'evt-1'), { status: 'processed' });
+            });
+        });
+
+        it('denies all client reads and writes to /subscriptions', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(alice, 'subscriptions', ALICE_UID)));
+            await assertFails(getDoc(doc(bob, 'subscriptions', ALICE_UID)));
+            await assertFails(setDoc(doc(alice, 'subscriptions', ALICE_UID), { status: 'active' }));
+        });
+
+        it('denies all client reads and writes to /user_credits', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(getDoc(doc(alice, 'user_credits', ALICE_UID)));
+            await assertFails(getDoc(doc(alice, 'user_credits', ALICE_UID, 'transactions', 'tx-1')));
+            await assertFails(setDoc(doc(alice, 'user_credits', ALICE_UID), { balance: 9999 }));
+        });
+
+        it('denies all client reads and writes to /users/{uid}/ledger', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(getDoc(doc(alice, 'users', ALICE_UID, 'ledger', 'sub-1')));
+            await assertFails(setDoc(doc(alice, 'users', ALICE_UID, 'ledger', 'sub-forged'), { amount: 100 }));
+        });
+
+        it('denies all client reads and writes to /stripe_webhook_deliveries', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(getDoc(doc(alice, 'stripe_webhook_deliveries', 'evt-1')));
+            await assertFails(setDoc(doc(alice, 'stripe_webhook_deliveries', 'evt-forged'), { status: 'failed' }));
+        });
+    });
+
     describe('users/{uid}/assetAuditReceipts/{auditId}', () => {
         const auditPath = ['users', ALICE_UID, 'assetAuditReceipts', 'asset_audit_receipt'] as const;
         const receipt = {

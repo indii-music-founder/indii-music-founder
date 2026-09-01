@@ -87,17 +87,16 @@ describe('PODCredentialService', () => {
     // -------------------------------------------------------------------------
     // loadAllCredentials
     // -------------------------------------------------------------------------
-    describe('loadAllCredentials', () => {
+        describe('loadAllCredentials', () => {
         it('returns all stored provider credentials', async () => {
             const mockGet = vi.mocked(window.electronAPI?.credentials?.get);
             mockGet
                 .mockResolvedValueOnce({ [USER_ID]: 'k1' }) // printful
                 .mockResolvedValueOnce({ [USER_ID]: 'k2' }) // printify
-                .mockResolvedValueOnce(null) // gooten
-                .mockResolvedValueOnce({ [USER_ID]: 'k4' }); // prodigi
+                .mockResolvedValueOnce(null); // gooten
 
             const result = await PODCredentialService.loadAllCredentials(USER_ID);
-            expect(result).toEqual({ printful: 'k1', printify: 'k2', prodigi: 'k4' });
+            expect(result).toEqual({ printful: 'k1', printify: 'k2' });
         });
 
         it('returns empty object when Electron API is unavailable', async () => {
