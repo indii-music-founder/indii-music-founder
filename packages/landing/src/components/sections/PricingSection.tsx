@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
 import { getStudioUrl } from '../../lib/auth';
@@ -9,10 +9,24 @@ interface PricingSectionProps {
   onPlanSelect: (plan: string) => void;
 }
 
+type BillingCycle = 'monthly' | 'quarterly' | 'six-month' | 'annual';
+
+const billingCycles: Array<{
+  id: BillingCycle;
+  label: string;
+  months: number;
+  discount: number;
+}> = [
+  { id: 'monthly', label: 'Monthly', months: 1, discount: 0 },
+  { id: 'quarterly', label: 'Quarterly', months: 3, discount: 0.05 },
+  { id: 'six-month', label: 'Six-month', months: 6, discount: 0.1 },
+  { id: 'annual', label: 'Annual', months: 12, discount: 0.2 },
+];
+
 const plans = [
   {
     name: 'Free',
-    price: '$0',
+    monthlyPrice: 0,
     audience: 'See how the connected creative workflow works with one bounded guided experience.',
     includes: ['Verified email account', 'Guided mini-campaign experience', 'Images and short clips without forced branding'],
     cta: 'See how indii.music works',
@@ -20,7 +34,7 @@ const plans = [
   },
   {
     name: 'Start',
-    price: '$22',
+    monthlyPrice: 22,
     audience: 'For an artist beginning to organize and operate the business behind the music.',
     includes: ['Core release workspace', 'Planning and project records', 'Capacity for an emerging artist'],
     cta: 'Choose Start',
@@ -28,7 +42,7 @@ const plans = [
   },
   {
     name: 'Build',
-    price: '$55',
+    monthlyPrice: 55,
     audience: 'For an artist actively releasing music and building repeatable operations.',
     includes: ['Everything needed for active releases', 'More connected workflows', 'More working capacity'],
     cta: 'Choose Build',
@@ -37,7 +51,7 @@ const plans = [
   },
   {
     name: 'Scale',
-    price: '$110',
+    monthlyPrice: 110,
     audience: 'For an artist with an active career, larger workload, and music income.',
     includes: ['Broader operating capability', 'Higher working capacity', 'Support for a larger release load'],
     cta: 'Choose Scale',
@@ -46,6 +60,23 @@ const plans = [
 ];
 
 export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
+  const selectedCycle = billingCycles.find((cycle) => cycle.id === billingCycle) ?? billingCycles[0];
+
+  const getDisplayedPrice = (monthlyPrice: number) => {
+    if (monthlyPrice === 0) return { total: '$0', cadence: 'to begin', equivalent: null };
+    const total = Math.round(monthlyPrice * selectedCycle.months * (1 - selectedCycle.discount));
+    const monthlyEquivalent = Math.round(total / selectedCycle.months);
+    if (selectedCycle.id === 'monthly') {
+      return { total: `$${total}`, cadence: 'charged monthly', equivalent: null };
+    }
+    return {
+      total: `$${total}`,
+      cadence: `charged ${selectedCycle.label.toLowerCase()}`,
+      equivalent: `about $${monthlyEquivalent}/month`,
+    };
+  };
+
   return (
     <section id="pricing" data-system-section="pricing" className="relative z-20 w-full border-t border-white/10 bg-[#030303]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(245,158,11,0.09),transparent_40%)]" />
@@ -76,10 +107,32 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
             Log in
           </a>
         </motion.div>
+        <div className="mx-auto mt-10 max-w-3xl">
+          <div className="mb-3 text-center font-mono text-[9px] uppercase tracking-[0.22em] text-white/40">Choose your billing rhythm</div>
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/60 p-2 sm:grid-cols-4" role="group" aria-label="Billing schedule">
+            {billingCycles.map((cycle) => (
+              <button
+                key={cycle.id}
+                type="button"
+                aria-pressed={billingCycle === cycle.id}
+                onClick={() => setBillingCycle(cycle.id)}
+                className={`rounded-xl px-3 py-3 text-xs font-bold transition-colors ${billingCycle === cycle.id ? 'bg-amber-400 text-black' : 'text-white/55 hover:bg-white/[0.06] hover:text-white'}`}
+              >
+                <span className="block">{cycle.label}</span>
+                <span className={`mt-1 block font-mono text-[8px] uppercase tracking-[0.12em] ${billingCycle === cycle.id ? 'text-black/65' : 'text-amber-400'}`}>
+                  {cycle.discount ? `${Math.round(cycle.discount * 100)}% savings` : 'Standard price'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="mt-16 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {plans.map((plan, index) => (
+          {plans.map((plan, index) => {
+            const displayedPrice = getDisplayedPrice(plan.monthlyPrice);
+            return (
             <motion.article
               key={plan.name}
+              data-plan={plan.name.toLowerCase()}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-70px' }}
@@ -94,10 +147,11 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
                   </span>
                 )}
               </div>
-              <div className="mt-7 flex items-end gap-2">
-                <span className="text-5xl font-black tracking-[-0.055em] text-white">{plan.price}</span>
-                <span className="pb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/40">{plan.name === 'Free' ? 'to begin' : 'per month'}</span>
+              <div className="mt-7 flex items-end gap-2" aria-live="polite">
+                <span className="text-5xl font-black tracking-[-0.055em] text-white">{displayedPrice.total}</span>
+                <span className="pb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/40">{displayedPrice.cadence}</span>
               </div>
+              {displayedPrice.equivalent && <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.16em] text-amber-400">{displayedPrice.equivalent}</div>}
               <p className="mt-5 min-h-[78px] text-sm leading-relaxed text-white/55">{plan.audience}</p>
               <div className="mt-6 flex-1 border-t border-white/10 pt-4">
                 {plan.includes.map((item) => (
@@ -116,7 +170,8 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
                 <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
               </a>
             </motion.article>
-          ))}
+            );
+          })}
         </div>
         <div className="mt-8 grid gap-5 rounded-2xl border border-white/10 bg-black/55 p-6 md:grid-cols-[1fr_1.4fr] md:p-8">
           <div>
@@ -138,8 +193,8 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
         </div>
         <div className="mt-6 flex flex-col gap-3 text-xs leading-relaxed text-white/40 md:flex-row md:items-start md:justify-between">
           <p className="max-w-2xl">
-            These are introductory beta prices and may change after real operating costs are measured. Longer-period totals and monthly equivalents will be
-            shown before payment.
+            These are introductory beta prices and may change after real operating costs are measured. Select a billing rhythm above to see the total charge
+            and approximate monthly equivalent now.
           </p>
           <p className="max-w-lg md:text-right">
             Need to finish more work? One-off units, project packs, and reusable capacity packs are planned. Purchased extra capacity will not expire, and an

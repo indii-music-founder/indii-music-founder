@@ -208,12 +208,12 @@ describe('home page preservation (founder mode)', () => {
     await renderHome();
     const text = container.textContent ?? '';
     expect(text).toContain('Join the Founding Artist Beta waitlist.');
-    expect(text).toContain('first-come beta invitations');
+    expect(text).toContain('Beta invitations are sent first come, first served.');
     expect(text).toContain('early-pricing priority');
     const input = container.querySelector('input[type="email"]');
     expect(input).not.toBeNull();
     expect(input?.getAttribute('placeholder')).toBe('Enter your email');
-    expect(text).toContain('Verify & join');
+    expect(text).toContain('Create free account');
     expect(text).toContain('major development milestones');
   });
 
@@ -237,8 +237,11 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('Keep the context connected.');
     expect(text).toContain('One direction.');
     expect(text).toContain('The whole system moves.');
-    expect(text).toContain('See how your career');
-    expect(text).toContain('actually gets run.');
+    expect(text).toContain('Start with finished music.');
+    expect(text).toContain('Leave with a campaign.');
+    expect(text).toContain('Verified email required');
+    expect(text).toContain('No watermark');
+    expect(text).toContain('Choose to save or delete uploads');
     expect(text).toContain('You stay the artist.');
     expect(text).toContain('You also stay in control.');
     expect(text).toContain('Start with your real catalog');
@@ -327,6 +330,16 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('About 20% less');
     expect(text).toContain('checkout remains closed until plan entitlements are verified');
     expect(text).toContain('Purchased extra capacity will not expire');
+    expect(container.querySelector('[role="group"][aria-label="Billing schedule"]')).not.toBeNull();
+    const quarterlyButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('Quarterly')) as HTMLButtonElement;
+    expect(quarterlyButton).toBeDefined();
+    await act(async () => {
+      quarterlyButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(container.querySelector('[data-plan="start"]')?.textContent).toContain('$63');
+    expect(container.querySelector('[data-plan="start"]')?.textContent).toContain('about $21/month');
+    expect(container.querySelector('[data-plan="build"]')?.textContent).toContain('$157');
+    expect(container.querySelector('[data-plan="scale"]')?.textContent).toContain('$314');
     expect(container.querySelector('a[href*="founders-checkout"]')).toBeNull();
     const founderOwnerLink = Array.from(container.querySelectorAll('a')).find((link) => link.textContent?.includes('Get Founding Owner access'));
     expect(founderOwnerLink?.getAttribute('href')).toBe('#waitlist');
@@ -356,7 +369,7 @@ describe('home page preservation (public mode)', () => {
     const text = container.textContent ?? '';
     expect(text).toContain('Join the Founding Artist Beta waitlist.');
     // With the preview closed, the hero CTA is the waitlist join.
-    expect(text).toContain('Verify & join');
+    expect(text).toContain('Create free account');
     expect(text).not.toContain('Enter Founder Preview');
     expect(text).not.toContain('Built in Detroit for your work');
     expect(text).not.toContain('Launch cinematic thesis');

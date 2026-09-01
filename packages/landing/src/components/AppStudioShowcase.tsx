@@ -61,11 +61,23 @@ export default function AppStudioShowcase() {
             Inside the Workspace
           </div>
           <h2 className="mt-6 text-4xl font-black leading-tight tracking-[-0.045em] text-white sm:text-6xl md:text-7xl">
-            See how your career <br />
-            <span className="text-amber-400">actually gets run.</span>
+            Start with finished music. <br />
+            <span className="text-amber-400">Leave with a campaign.</span>
           </h2>
           <p className="mt-6 text-base text-white/50 sm:text-lg md:text-xl">
-            Explore an interactive, illustrative walkthrough of the connected workspace. Real product capture will replace these preview panels during the beta.
+            Bring one finished song and one image—or create a visual inside indii.music. Follow one guided workflow and leave with a mini campaign pack of short
+            clips and images.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/55">
+            {['Verified email required', 'No watermark', 'Keep your exports', 'Choose to save or delete uploads'].map((fact) => (
+              <span key={fact} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">{fact}</span>
+            ))}
+          </div>
+          <a href="#waitlist" className="mt-7 inline-flex rounded-full bg-amber-400 px-6 py-3 text-xs font-black text-black transition-transform hover:scale-[1.03]">
+            See how indii.music works
+          </a>
+          <p className="mt-5 text-xs text-white/35">
+            The workspace below is an illustrative walkthrough. Real product capture will replace these preview panels during the beta.
           </p>
         </div>
 

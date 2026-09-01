@@ -43,11 +43,23 @@ export default function WaitlistSection({
           >
             {preferenceMode ? 'Manage Founding Artist email preferences.' : 'Join the Founding Artist Beta waitlist.'}
           </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/45 md:text-base">
-            {preferenceMode
-              ? 'Verify the email used for your waitlist account, then choose whether to receive major development milestones. Beta invitation emails remain part of the waitlist.'
-              : 'indii.music is working software that is still being refined. Join for first-come beta invitations, meaningful development updates, and early-pricing priority.'}
-          </p>
+          {preferenceMode ? (
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/45 md:text-base">
+              Verify the email used for your waitlist account, then choose whether to receive major development milestones. Beta invitation emails remain part
+              of the waitlist.
+            </p>
+          ) : (
+            <div className="mt-3 max-w-2xl space-y-2 text-sm leading-relaxed text-white/45 md:text-base">
+              <p>
+                Create a free account with a verified email. You will join the beta waitlist and get access to a guided creative experience built around your
+                own finished music.
+              </p>
+              <p>
+                Beta invitations are sent first come, first served. We will also let you know when meaningful product milestones arrive and give you
+                early-pricing priority.
+              </p>
+            </div>
+          )}
         </div>
         <div className="md:text-right">
           <form onSubmit={onSubmit} className="flex w-full flex-col gap-3 md:items-end">
@@ -73,10 +85,10 @@ export default function WaitlistSection({
                 {status === 'loading'
                   ? 'Verifying...'
                   : status === 'sent'
-                    ? 'Resend link'
+                    ? 'Resend verification'
                     : status === 'success'
-                      ? preferenceMode ? 'Updated' : 'Joined'
-                      : preferenceMode ? 'Verify & update' : 'Verify & join'}
+                      ? preferenceMode ? 'Updated' : 'Account verified'
+                      : preferenceMode ? 'Verify & update' : 'Create free account'}
               </button>
             </div>
             <label className="flex max-w-[380px] items-start gap-2 text-left text-[11px] leading-relaxed text-white/45 md:text-right">
