@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1920px;
+          height: 1080px;
+          background: #0b0c0f;
+          color: #f4efe4;
+          overflow: hidden;
+          font-family: "Space Mono", monospace;
+        }
+        .grid {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(244, 239, 228, 0.5) 2px, transparent 2px),
+            linear-gradient(90deg, rgba(244, 239, 228, 0.5) 2px, transparent 2px);
+          background-size: 140px 140px;
+          opacity: 0.07;
+        }
+        .glow {
+          position: absolute;
+          right: -320px;
+          top: -260px;
+          width: 1300px;
+          height: 1300px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(245, 177, 61, 0.16) 0%, rgba(245, 177, 61, 0) 60%);
+        }
+        .headline {
+          position: absolute;
+          left: 120px;
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          letter-spacing: -0.03em;
+          text-transform: uppercase;
+          line-height: 1.03;
+        }
+        .headline .w {
+          display: inline-block;
+          margin-right: 36px;
+        }
+        #a2-top {
+          top: 180px;
+          font-size: 158px;
+        }
+        #a2-company {
+          top: 430px;
+          font-size: 118px;
+        }
+        .amber {
+          color: #f5b13d;
+        }
+        .stats {
+          position: absolute;
+          left: 120px;
+          top: 600px;
+          display: flex;
+          gap: 64px;
+        }
+        .stat {
+          display: flex;
+          align-items: baseline;
+          gap: 18px;
+        }
+        .stat .num {
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          font-size: 72px;
+          line-height: 1;
+        }
+        .stat .tag {
+          font-size: 22px;
+          letter-spacing: 0.16em;
+          color: #7d7971;
+          text-transform: uppercase;
+        }
+        #a2-sub {
+          position: absolute;
+          left: 120px;
+          top: 688px;
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          font-size: 48px;
+          letter-spacing: -0.02em;
+        }
+        #a2-sub .amber {
+          margin-left: 18px;
+        }
+        .cards {
+          position: absolute;
+          left: 120px;
+          top: 750px;
+          display: flex;
+          gap: 40px;
+        }
+        .card {
+          width: 400px;
+          height: 244px;
+          border: 2px solid #23262b;
+          border-radius: 14px;
+          background: #0e1014;
+          padding: 30px 32px;
+          box-sizing: border-box;
+        }
+        .card .head {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 22px;
+        }
+        .card .dot {
+          width: 16px;
+          height: 16px;
+          background: #f5b13d;
+        }
+        .card .title {
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          font-size: 36px;
+          letter-spacing: -0.01em;
+          text-transform: uppercase;
+        }
+        .card .read {
+          position: relative;
+          height: 96px;
+        }
+        .card .read .line {
+          position: absolute;
+          left: 0;
+          top: 0;
+          font-size: 19px;
+          letter-spacing: 0.1em;
+          color: #a9a49a;
+          text-transform: uppercase;
+        }
+      </style>
+
+      <div data-hf-id="hf-h485" id="root" data-composition-id="act2" data-start="0" data-width="1920" data-height="1080">
+        <div data-hf-id="hf-c45g" id="a2-grid" class="grid"></div>
+        <div data-hf-id="hf-wvmd" id="a2-glow" class="glow" data-layout-allow-overflow=""></div>
+
+        <div data-hf-id="hf-7ed9" id="a2-top" class="headline">
+          <span data-hf-id="hf-tnv0" class="w">ONE</span><span data-hf-id="hf-5ilr" class="w">ARTIST.</span>
+        </div>
+        <div data-hf-id="hf-gvzd" id="a2-company" class="headline">
+          <span data-hf-id="hf-ufi3" class="w">A</span><span data-hf-id="hf-9vmb" class="w">WHOLE</span><span data-hf-id="hf-66by" class="w amber">COMPANY.</span>
+        </div>
+
+        <div data-hf-id="hf-view" id="a2-stats" class="stats">
+          <div data-hf-id="hf-xa0m" class="stat">
+            <span data-hf-id="hf-rdx4" class="num" id="a2-num1">0</span><span data-hf-id="hf-cqad" class="tag">AGENTS</span>
+          </div>
+          <div data-hf-id="hf-tx7e" class="stat">
+            <span data-hf-id="hf-aetl" class="num" id="a2-num2">0</span><span data-hf-id="hf-fifj" class="tag">24/7</span>
+          </div>
+          <div data-hf-id="hf-ubif" class="stat">
+            <span data-hf-id="hf-i1c6" class="num" id="a2-num3">0</span><span data-hf-id="hf-xcmf" class="tag">SUBMIT</span>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-jwed" id="a2-sub">your music business <span data-hf-id="hf-r32r" class="amber">team</span></div>
+
+        <div data-hf-id="hf-kkpw" id="a2-cards" class="cards">
+          <div data-hf-id="hf-ljdt" class="card" id="a2-card1">
+            <div data-hf-id="hf-z992" class="head"><div data-hf-id="hf-lu65" class="dot"></div><div data-hf-id="hf-cu77" class="title">Legal</div></div>
+            <div data-hf-id="hf-ri2c" class="read">
+              <div data-hf-id="hf-imub" class="line">splits locked</div>
+              <div data-hf-id="hf-mwnl" class="line">contracts out</div>
+              <div data-hf-id="hf-skrc" class="line">rights clear</div>
+            </div>
+          </div>
+          <div data-hf-id="hf-phhu" class="card" id="a2-card2">
+            <div data-hf-id="hf-gwvu" class="head"><div data-hf-id="hf-ww7l" class="dot"></div><div data-hf-id="hf-ibva" class="title">Marketing</div></div>
+            <div data-hf-id="hf-jxos" class="read">
+              <div data-hf-id="hf-t9it" class="line">press kit out</div>
+              <div data-hf-id="hf-71xr" class="line">ads running</div>
+              <div data-hf-id="hf-dcrl" class="line">fans growing</div>
+            </div>
+          </div>
+          <div data-hf-id="hf-tflv" class="card" id="a2-card3">
+            <div data-hf-id="hf-hb6v" class="head"><div data-hf-id="hf-y34o" class="dot"></div><div data-hf-id="hf-2f8s" class="title">Finance</div></div>
+            <div data-hf-id="hf-iqrp" class="read">
+              <div data-hf-id="hf-rm7j" class="line">payouts tracked</div>
+              <div data-hf-id="hf-brgt" class="line">taxes filed</div>
+              <div data-hf-id="hf-8olh" class="line">reports live</div>
+            </div>
+          </div>
+          <div data-hf-id="hf-a03g" class="card" id="a2-card4">
+            <div data-hf-id="hf-hphw" class="head"><div data-hf-id="hf-xotn" class="dot"></div><div data-hf-id="hf-y9w1" class="title">Music</div></div>
+            <div data-hf-id="hf-j52q" class="read">
+              <div data-hf-id="hf-bv5v" class="line">master ready</div>
+              <div data-hf-id="hf-9mud" class="line">video cut</div>
+              <div data-hf-id="hf-gi1s" class="line">artwork live</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        // ── Ambient: grid breathes (finite), glow drifts
+        tl.fromTo("#a2-grid", { opacity: 0.06 }, { opacity: 0.11, duration: 5, ease: "sine.inOut" }, 0);
+        tl.to("#a2-grid", { opacity: 0.06, duration: 5, ease: "sine.inOut" }, 5);
+        tl.to("#a2-glow", { scale: 1.09, duration: 26, ease: "none" }, 0);
+
+        // ── "ONE ARTIST." waterfall entry
+        const wordsTop = gsap.utils.toArray("#a2-top .w");
+        wordsTop.forEach((w, i) => {
+          const t = 0.3 + i * 0.14;
+          tl.set(w, { y: 70, autoAlpha: 0 }, 0);
+          tl.set(w, { autoAlpha: 1 }, t);
+          tl.to(w, { y: 0, duration: 0.2, ease: "power4.out" }, t);
+        });
+
+        // ── Nudge curve (§7): slow-fast-slow slide up to make room
+        // Total 160px: ramp-in ~10% (16px) / burst ~65% (104px) / tail ~25% (40px)
+        tl.to("#a2-top", { y: -16, duration: 0.2, ease: "power3.in" }, 2.4);
+        tl.to("#a2-top", { y: -120, duration: 0.17, ease: "none" }, 2.6);
+        tl.to("#a2-top", { y: -160, duration: 0.62, ease: "power4.out" }, 2.79);
+
+        // ── "A WHOLE COMPANY." reveals beneath
+        const wordsCo = gsap.utils.toArray("#a2-company .w");
+        wordsCo.forEach((w, i) => {
+          const t = 3.3 + i * 0.13;
+          tl.set(w, { y: 60, autoAlpha: 0 }, 0);
+          tl.set(w, { autoAlpha: 1 }, t);
+          tl.to(w, { y: 0, duration: 0.18, ease: "power4.out" }, t);
+        });
+
+        // ── Agent cards cascade in
+        const cards = ["#a2-card1", "#a2-card2", "#a2-card3", "#a2-card4"];
+        cards.forEach((sel, i) => {
+          const t = 4.9 + i * 0.11;
+          tl.set(sel, { y: 80, autoAlpha: 0 }, 0);
+          tl.set(sel, { autoAlpha: 1 }, t);
+          tl.to(sel, { y: 0, duration: 0.5, ease: "power4.out" }, t);
+        });
+
+        // ── Card readout lines: state 0 visible, then sequenced swaps
+        gsap.utils.toArray("#a2-cards .line").forEach((line, i) => {
+          tl.set(line, { autoAlpha: i % 3 === 0 ? 1 : 0 }, 0);
+        });
+        let prevTarget = 0;
+        [1, 2, 1, 2].forEach((target, step) => {
+          gsap.utils.toArray("#a2-cards .read").forEach((read) => {
+            const lines = read.querySelectorAll(".line");
+            const next = lines[target];
+            const prev = lines[prevTarget];
+            const t = 13.8 + step * 2.4;
+            tl.set(prev, { autoAlpha: 0 }, t);
+            tl.set(next, { y: 10, autoAlpha: 1 }, t);
+            tl.to(next, { y: 0, duration: 0.2, ease: "power4.out" }, t);
+          });
+          prevTarget = target;
+        });
+
+        // ── Count-ups (seek-safe counters)
+        const count = (sel, end, startAt, dur) => {
+          const obj = { v: 0 };
+          tl.to(obj, {
+            v: end,
+            duration: dur,
+            ease: "power2.out",
+            snap: { v: 1 },
+            onUpdate: () => {
+              document.getElementById(sel).textContent = String(Math.round(obj.v));
+            },
+          }, startAt);
+        };
+        count("a2-num1", 4, 8.4, 1.1);
+        count("a2-num2", 24, 8.6, 1.3);
+        count("a2-num3", 1, 8.8, 0.8);
+
+        // ── Stats blocks + subline whip in
+        ["#a2-num1", "#a2-num2", "#a2-num3"].forEach((_, i) => {
+          const sel = ["#a2-num1", "#a2-num2", "#a2-num3"][i];
+          tl.set(sel, { y: 30, autoAlpha: 0 }, 0);
+          tl.set(sel, { autoAlpha: 1 }, 8.3 + i * 0.16);
+          tl.to(sel, { y: 0, duration: 0.4, ease: "power4.out" }, 8.3 + i * 0.16);
+        });
+        tl.set("#a2-sub", { x: 60, autoAlpha: 0 }, 0);
+        tl.set("#a2-sub", { autoAlpha: 1 }, 12.4);
+        tl.to("#a2-sub", { x: 0, duration: 0.45, ease: "power4.out" }, 12.4);
+
+        window.__timelines["act2"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

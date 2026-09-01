@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1920px;
+          height: 1080px;
+          background: #0b0c0f;
+          color: #f4efe4;
+          overflow: hidden;
+          font-family: "Space Mono", monospace;
+        }
+        .glow {
+          position: absolute;
+          left: 50%;
+          top: -560px;
+          width: 2200px;
+          height: 1600px;
+          margin-left: -1100px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(245, 177, 61, 0.14) 0%, rgba(245, 177, 61, 0) 58%);
+        }
+        .rings {
+          position: absolute;
+          right: -130px;
+          bottom: -200px;
+          width: 900px;
+          height: 900px;
+        }
+        .ring {
+          position: absolute;
+          border-radius: 50%;
+          border: 3px dashed #23262b;
+        }
+        #a3-ring1 { inset: 0; }
+        #a3-ring2 { inset: 105px; }
+        #a3-ring3 { inset: 210px; }
+        #a3-ring4 { inset: 315px; border-color: rgba(245, 177, 61, 0.45); }
+        .label {
+          position: absolute;
+          top: 100px;
+          left: 120px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          font-size: 26px;
+          letter-spacing: 0.22em;
+          color: #6e6a61;
+          text-transform: uppercase;
+        }
+        .label .dot {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #f5b13d;
+        }
+        .headline {
+          position: absolute;
+          top: 300px;
+          left: 120px;
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          font-size: 158px;
+          line-height: 1.03;
+          letter-spacing: -0.03em;
+          text-transform: uppercase;
+        }
+        .headline .line {
+          display: block;
+          height: 168px;
+        }
+        .headline .w {
+          display: inline-block;
+          margin-right: 38px;
+        }
+        .amber {
+          color: #f5b13d;
+        }
+        #a3-stage {
+          position: absolute;
+          inset: 0;
+          width: 1920px;
+          height: 1080px;
+        }
+        .chips {
+          position: absolute;
+          left: 120px;
+          top: 700px;
+          display: flex;
+          gap: 36px;
+        }
+        .chip {
+          padding: 20px 44px;
+          border: 2px solid #23262b;
+          border-radius: 999px;
+          background: #0e1014;
+          font-size: 26px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+        .subline {
+          position: absolute;
+          left: 120px;
+          top: 840px;
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          font-size: 56px;
+          letter-spacing: -0.02em;
+          text-transform: uppercase;
+        }
+        .subline .w {
+          display: inline-block;
+          margin-right: 24px;
+        }
+        .lockup {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .lockup-inner {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 920px;
+        }
+        .lockup-inner img {
+          width: 250px;
+          height: 250px;
+          margin-bottom: 44px;
+        }
+        .lockup-inner .name {
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          font-size: 158px;
+          letter-spacing: -0.03em;
+          line-height: 1;
+        }
+        .lockup-inner .tagline {
+          margin-top: 30px;
+          font-size: 27px;
+          letter-spacing: 0.42em;
+          color: #f5b13d;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+      </style>
+
+      <div data-hf-id="hf-ki08" id="root" data-composition-id="act3" data-start="0" data-width="1920" data-height="1080">
+        <div data-hf-id="hf-jgi6" id="a3-glow" class="glow" data-layout-allow-overflow=""></div>
+
+        <div data-hf-id="hf-o2n7" class="rings" aria-hidden="true" data-layout-allow-overflow="">
+          <div data-hf-id="hf-rtt8" class="ring" id="a3-ring1"></div>
+          <div data-hf-id="hf-2pav" class="ring" id="a3-ring2"></div>
+          <div data-hf-id="hf-wjl2" class="ring" id="a3-ring3"></div>
+          <div data-hf-id="hf-7f2p" class="ring" id="a3-ring4"></div>
+        </div>
+
+        <div data-hf-id="hf-1ypg" id="a3-stage">
+          <div data-hf-id="hf-uhw5" id="a3-label" class="label">
+            <span data-hf-id="hf-9gry" class="dot"></span><span data-hf-id="hf-j4aj">NOW LIVE</span>
+          </div>
+
+          <div data-hf-id="hf-y6hx" id="a3-head" class="headline">
+            <div data-hf-id="hf-np12" class="line"><span data-hf-id="hf-i4dv" class="w">THE</span><span data-hf-id="hf-590s" class="w">WORLD</span></div>
+            <div data-hf-id="hf-sogq" class="line"><span data-hf-id="hf-65uy" class="w amber">HEARS</span><span data-hf-id="hf-u2xe" class="w amber">IT.</span></div>
+          </div>
+
+          <div data-hf-id="hf-sybp" id="a3-chips" class="chips">
+            <div data-hf-id="hf-2ggw" class="chip">SPOTIFY</div>
+            <div data-hf-id="hf-fo79" class="chip">APPLE MUSIC</div>
+            <div data-hf-id="hf-zz0u" class="chip">TIDAL</div>
+            <div data-hf-id="hf-kgfo" class="chip">BANDCAMP</div>
+          </div>
+
+          <div data-hf-id="hf-kscz" id="a3-sub" class="subline">
+            <span data-hf-id="hf-d16j" class="w">EVERY</span><span data-hf-id="hf-ihfr" class="w">PLATFORM.</span><span data-hf-id="hf-dpmv" class="w amber">ONE</span><span data-hf-id="hf-oggp" class="w amber">SUBMIT.</span>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-5gz7" id="a3-lockup" class="lockup">
+          <div data-hf-id="hf-isul" class="lockup-inner" id="a3-lockup-inner">
+            <img data-hf-id="hf-bhsy" src=".media/images/logo_002.svg" alt="indii mark">
+            <div data-hf-id="hf-co2g" class="name">indii</div>
+            <div data-hf-id="hf-7s88" class="tagline">music business at the speed of you</div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        // ── Ambient: glow drifts, vinyl rings rotate slowly (dashes make rotation visible)
+        tl.to("#a3-glow", { scale: 1.08, duration: 26, ease: "none" }, 0);
+        tl.to("#a3-ring1", { rotation: 12, duration: 26, ease: "none" }, 0);
+        tl.to("#a3-ring2", { rotation: -10, duration: 26, ease: "none" }, 0);
+        tl.to("#a3-ring3", { rotation: 16, duration: 26, ease: "none" }, 0);
+        tl.to("#a3-ring4", { rotation: -8, duration: 26, ease: "none" }, 0);
+
+        // ── NOW LIVE label + dot blinks (finite 3x)
+        tl.set("#a3-label", { autoAlpha: 0 }, 0);
+        tl.to("#a3-label", { autoAlpha: 1, duration: 0.3, ease: "none" }, 0.4);
+        tl.set("#a3-label .dot", { autoAlpha: 1 }, 0.4);
+        for (let b = 0; b < 3; b++) {
+          tl.set("#a3-label .dot", { autoAlpha: 0 }, 0.9 + b * 0.3);
+          tl.set("#a3-label .dot", { autoAlpha: 1 }, 1.05 + b * 0.3);
+        }
+
+        // ── Headline waterfall entry
+        const words = gsap.utils.toArray("#a3-head .w");
+        words.forEach((w, i) => {
+          const t = 1.0 + i * 0.15 - i * i * 0.01;
+          tl.set(w, { y: 70, autoAlpha: 0 }, 0);
+          tl.set(w, { autoAlpha: 1 }, t);
+          tl.to(w, { y: 0, duration: 0.2, ease: "power4.out" }, t);
+        });
+
+        // ── Platform chips cascade in
+        const chips = gsap.utils.toArray("#a3-chips .chip");
+        chips.forEach((chip, i) => {
+          const t = 3.6 + i * 0.13;
+          tl.set(chip, { y: 70, autoAlpha: 0 }, 0);
+          tl.set(chip, { autoAlpha: 1 }, t);
+          tl.to(chip, { y: 0, duration: 0.5, ease: "power4.out" }, t);
+        });
+
+        // ── Subline word cascade
+        const subs = gsap.utils.toArray("#a3-sub .w");
+        subs.forEach((w, i) => {
+          const t = 7.4 + i * 0.12 - i * i * 0.008;
+          tl.set(w, { y: 50, autoAlpha: 0 }, 0);
+          tl.set(w, { autoAlpha: 1 }, t);
+          tl.to(w, { y: 0, duration: 0.18, ease: "power4.out" }, t);
+        });
+
+        // ── Stillness before climax (11.0–11.5): stage composed, nothing moves
+        // ── Inverse zoom-through ARRIVAL: stage recedes, lockup retracts into place
+        tl.to("#a3-stage", { scale: 0.8, filter: "blur(10px)", duration: 0.2, ease: "power3.in" }, 11.5);
+        tl.to("#a3-stage", { opacity: 0.15, duration: 0.2, ease: "none" }, 11.5);
+        tl.set("#a3-stage", { autoAlpha: 0 }, 11.7);
+        tl.set("#a3-lockup-inner", { autoAlpha: 0 }, 0);
+        tl.fromTo(
+          "#a3-lockup-inner",
+          { autoAlpha: 0.15, scale: 1.25, filter: "blur(10px)" },
+          { autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false },
+          11.7
+        );
+
+        // ── Gentle end drift on the held lockup
+        tl.to("#a3-lockup-inner", { scale: 1.05, duration: 12, ease: "none" }, 13.4);
+
+        window.__timelines["act3"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

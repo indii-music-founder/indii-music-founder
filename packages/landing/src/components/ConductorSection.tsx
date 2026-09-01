@@ -4,7 +4,19 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDown, Check, CornerDownRight } from 'lucide-react';
 
-const routedDepartments = ['Delivery Preparation', 'Creative', 'Rights', 'Marketing', 'Social'];
+interface RoutedDept {
+  name: string;
+  hex: string;
+  glow: string;
+}
+
+const routedDepartments: RoutedDept[] = [
+  { name: 'Delivery Preparation', hex: '#2196F3', glow: 'rgba(33, 150, 243, 0.3)' },
+  { name: 'Creative', hex: '#00FF66', glow: 'rgba(0, 255, 102, 0.3)' },
+  { name: 'Rights', hex: '#009688', glow: 'rgba(0, 150, 136, 0.3)' },
+  { name: 'Marketing', hex: '#E91E63', glow: 'rgba(233, 30, 99, 0.3)' },
+  { name: 'Social', hex: '#00BCD4', glow: 'rgba(0, 188, 212, 0.3)' },
+];
 
 const workingSteps = [
   {
@@ -91,17 +103,22 @@ export default function ConductorSection() {
                 Routed work
               </div>
               <div className="flex flex-wrap gap-2">
-                {routedDepartments.map((department, index) => (
+                {routedDepartments.map((dept, index) => (
                   <motion.div
-                    key={department}
+                    key={dept.name}
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.4, delay: 0.12 * index }}
-                    className="border border-white/10 bg-white/[0.025] px-4 py-3 font-mono text-[10px] uppercase tracking-[0.16em] text-white/60"
+                    style={{ borderColor: `${dept.hex}40`, backgroundColor: `${dept.hex}08` }}
+                    className="flex items-center gap-2 border px-4 py-3 font-mono text-[10px] uppercase tracking-[0.16em] text-white/90 shadow-sm"
                   >
-                    <span className="mr-2 text-amber-400/70">0{index + 1}</span>
-                    {department}
+                    <span className="font-bold" style={{ color: dept.hex }}>0{index + 1}</span>
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: dept.hex, boxShadow: `0 0 6px ${dept.hex}` }}
+                    />
+                    <span>{dept.name}</span>
                   </motion.div>
                 ))}
               </div>

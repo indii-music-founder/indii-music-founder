@@ -28,6 +28,20 @@
   --radius-md: 12px;
   --radius-pill: 9999px;
 
+  /* Department Color System (Canonical Hex Codes) */
+  --color-dept-royalties: #FFC107;
+  --color-dept-distribution: #2196F3;
+  --color-dept-marketing: #E91E63;
+  --color-dept-legal: #455A64;
+  --color-dept-creative: #00FF66;
+  --color-dept-creative-purple: #9C27B0;
+  --color-dept-touring: #FF5722;
+  --color-dept-publishing: #8BC34A;
+  --color-dept-social: #00BCD4;
+  --color-dept-licensing: #009688;
+  --color-dept-brand: #FFB300;
+  --color-dept-campaign: #FF7043;
+
   /* Subliminal Theme Colors */
   --void: #000000;
   --true-black: #08080A;

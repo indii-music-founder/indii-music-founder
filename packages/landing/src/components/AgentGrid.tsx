@@ -14,6 +14,10 @@ interface LifecycleStage {
   details: string[];
   specialists: string[];
   route: string;
+  hex: string;
+  glow: string;
+  accentClass: string;
+  badgeBg: string;
 }
 
 const lifecycle: LifecycleStage[] = [
@@ -27,6 +31,10 @@ const lifecycle: LifecycleStage[] = [
     details: ['Finished master', 'Credits and contributors', 'One release record'],
     specialists: ['Audio Intelligence', 'Catalog'],
     route: 'Finished Master → Project Context → Release Record',
+    hex: '#00BCD4',
+    glow: 'rgba(0, 188, 212, 0.25)',
+    accentClass: 'text-[#00BCD4]',
+    badgeBg: 'bg-[#00BCD4]/10 border-[#00BCD4]/30 text-[#00BCD4]',
   },
   {
     id: 'plan',
@@ -38,6 +46,10 @@ const lifecycle: LifecycleStage[] = [
     details: ['Release dates', 'Tasks and owners', 'Approval checkpoints'],
     specialists: ['Conductor', 'Release Planning'],
     route: 'Release Goal → Timeline → Tasks → Artist Approval',
+    hex: '#FFB800',
+    glow: 'rgba(255, 184, 0, 0.25)',
+    accentClass: 'text-[#FFB800]',
+    badgeBg: 'bg-[#FFB800]/10 border-[#FFB800]/30 text-[#FFB800]',
   },
   {
     id: 'register',
@@ -49,6 +61,10 @@ const lifecycle: LifecycleStage[] = [
     details: ['Ownership records', 'Split information', 'Registration status'],
     specialists: ['Rights & Legal', 'Publishing'],
     route: 'Credits → Ownership → Split Check → Registration Status',
+    hex: '#009688',
+    glow: 'rgba(0, 150, 136, 0.25)',
+    accentClass: 'text-[#009688]',
+    badgeBg: 'bg-[#009688]/10 border-[#009688]/30 text-[#009688]',
   },
   {
     id: 'prepare-delivery',
@@ -61,6 +77,10 @@ const lifecycle: LifecycleStage[] = [
     details: ['DDEX ERN 4.3 preparation', 'Identifier and metadata checks', 'Delivery-ready release record'],
     specialists: ['Delivery Preparation', 'Rights & Legal', 'Audio Intelligence'],
     route: 'Mastered Audio → Release Metadata → Schema Verification → Delivery-Ready Package',
+    hex: '#2196F3',
+    glow: 'rgba(33, 150, 243, 0.25)',
+    accentClass: 'text-[#2196F3]',
+    badgeBg: 'bg-[#2196F3]/10 border-[#2196F3]/30 text-[#2196F3]',
   },
   {
     id: 'campaign',
@@ -72,6 +92,10 @@ const lifecycle: LifecycleStage[] = [
     details: ['Connected visual direction', 'Campaign asset set', 'Artist-reviewed outputs'],
     specialists: ['Creative Director', 'Marketing Strategy', 'Social Media'],
     route: 'Music + Brand → Visual Direction → Campaign Assets → Review',
+    hex: '#E91E63',
+    glow: 'rgba(233, 30, 99, 0.25)',
+    accentClass: 'text-[#E91E63]',
+    badgeBg: 'bg-[#E91E63]/10 border-[#E91E63]/30 text-[#E91E63]',
   },
   {
     id: 'release',
@@ -84,6 +108,10 @@ const lifecycle: LifecycleStage[] = [
     details: ['Final package review', 'Release-day checklist', 'Recorded approvals'],
     specialists: ['Conductor', 'Delivery Preparation', 'Marketing Strategy'],
     route: 'Final Review → Approved Actions → Release-Day Record',
+    hex: '#FF5722',
+    glow: 'rgba(255, 87, 34, 0.25)',
+    accentClass: 'text-[#FF5722]',
+    badgeBg: 'bg-[#FF5722]/10 border-[#FF5722]/30 text-[#FF5722]',
   },
   {
     id: 'track',
@@ -96,6 +124,10 @@ const lifecycle: LifecycleStage[] = [
     details: ['Income records', 'Project expenses', 'Split tracking'],
     specialists: ['Financial Center', 'Rights & Royalties'],
     route: 'Income + Expenses → Split Records → Project Summary',
+    hex: '#FFC107',
+    glow: 'rgba(255, 193, 7, 0.25)',
+    accentClass: 'text-[#FFC107]',
+    badgeBg: 'bg-[#FFC107]/10 border-[#FFC107]/30 text-[#FFC107]',
   },
   {
     id: 'repeat',
@@ -108,6 +140,10 @@ const lifecycle: LifecycleStage[] = [
     details: ['Reusable project context', 'Catalog continuity', 'Next-release starting point'],
     specialists: ['Conductor', 'Catalog', 'Financial Center'],
     route: 'Release Record → Lessons → Reusable Context → Next Release',
+    hex: '#8BC34A',
+    glow: 'rgba(139, 195, 74, 0.25)',
+    accentClass: 'text-[#8BC34A]',
+    badgeBg: 'bg-[#8BC34A]/10 border-[#8BC34A]/30 text-[#8BC34A]',
   },
 ];
 
@@ -156,7 +192,8 @@ export default function AgentGrid() {
                 key={stage.id}
                 type="button"
                 onClick={() => setActiveId(stage.id)}
-                className={`flex min-w-[150px] shrink-0 flex-col items-start gap-1 border-r border-white/10 px-4 py-4 text-left transition-colors lg:min-w-0 ${isActive ? 'bg-amber-400 text-black' : 'text-white/45 hover:bg-white/[0.04] hover:text-white'}`}
+                style={isActive ? { backgroundColor: stage.hex, color: '#000000', boxShadow: `0 0 20px ${stage.glow}` } : {}}
+                className={`flex min-w-[150px] shrink-0 flex-col items-start gap-1 border-r border-white/10 px-4 py-4 text-left transition-all lg:min-w-0 ${isActive ? 'font-bold' : 'text-white/45 hover:bg-white/[0.04] hover:text-white'}`}
                 aria-pressed={isActive}
                 aria-label={`${stage.name}: ${stage.title}`}
               >
@@ -177,29 +214,37 @@ export default function AgentGrid() {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#080808]"
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_15%,rgba(245,158,11,0.13),transparent_38%)]" />
+              <div
+                className="absolute inset-0 transition-opacity duration-700"
+                style={{
+                  background: `radial-gradient(circle at 82% 15%, ${active.glow}, transparent 45%)`,
+                }}
+              />
               <div className="relative grid lg:grid-cols-[1.2fr_0.8fr]">
                 <div className="p-7 md:p-12 lg:p-14">
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-5 font-mono text-[10px] uppercase tracking-[0.22em]">
-                    <span className="flex items-center gap-2 font-bold text-amber-400">
-                      <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
+                    <span className="flex items-center gap-2 font-bold" style={{ color: active.hex }}>
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: active.hex, boxShadow: `0 0 10px ${active.hex}` }}
+                      />
                       {active.name}
                     </span>
-                    <span className="rounded bg-white/10 px-2.5 py-1 font-semibold text-white/70">{active.label}</span>
+                    <span className={`rounded px-2.5 py-1 font-semibold border ${active.badgeBg}`}>{active.label}</span>
                   </div>
                   <h3 className="mt-8 max-w-3xl text-3xl font-black leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">{active.title}</h3>
                   <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/60 md:text-lg">{active.outcome}</p>
                   <div className="mt-9 grid gap-3 sm:grid-cols-3">
                     {active.details.map((detail) => (
-                      <div key={detail} className="rounded-xl border border-white/10 bg-black/60 p-4">
-                        <CheckCircle2 size={16} className="mb-2 text-amber-400" />
+                      <div key={detail} className="rounded-xl border border-white/10 bg-black/60 p-4 transition-colors hover:border-white/20">
+                        <CheckCircle2 size={16} className="mb-2" style={{ color: active.hex }} />
                         <div className="text-xs font-semibold leading-snug text-white/80">{detail}</div>
                       </div>
                     ))}
                   </div>
                   <div className="mt-9 border-t border-white/10 pt-5">
                     <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.25em] text-white/30">Connected path</div>
-                    <div className="font-mono text-xs font-semibold leading-relaxed text-amber-300/90">{active.route}</div>
+                    <div className="font-mono text-xs font-semibold leading-relaxed" style={{ color: active.hex }}>{active.route}</div>
                   </div>
                 </div>
                 <aside className="flex flex-col justify-between border-t border-white/10 bg-black/55 p-7 md:p-10 lg:border-l lg:border-t-0">
@@ -207,7 +252,11 @@ export default function AgentGrid() {
                     <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-white/35">Relevant specialists</div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {active.specialists.map((specialist) => (
-                        <span key={specialist} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/70">
+                        <span
+                          key={specialist}
+                          style={{ borderColor: `${active.hex}30` }}
+                          className="rounded-full border bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/80 transition-colors"
+                        >
                           {specialist}
                         </span>
                       ))}
@@ -216,9 +265,12 @@ export default function AgentGrid() {
                       Shared project context keeps this work connected. You review the decisions and remain in control.
                     </p>
                   </div>
-                  <div className="mt-12 rounded-xl border border-dashed border-amber-400/35 bg-amber-400/[0.04] p-5">
-                    <PlayCircle size={24} className="text-amber-400" />
-                    <div className="mt-4 font-mono text-[9px] uppercase tracking-[0.22em] text-amber-400">Real product clip planned</div>
+                  <div
+                    style={{ borderColor: `${active.hex}40`, backgroundColor: `${active.hex}08` }}
+                    className="mt-12 rounded-xl border border-dashed p-5"
+                  >
+                    <PlayCircle size={24} style={{ color: active.hex }} />
+                    <div className="mt-4 font-mono text-[9px] uppercase tracking-[0.22em]" style={{ color: active.hex }}>Real product clip planned</div>
                     <p className="mt-2 text-sm font-semibold text-white">{active.name} / founder walkthrough</p>
                     <p className="mt-2 text-xs leading-relaxed text-white/45">
                       A 15–30 second, click-to-play product capture with captions will appear here during the beta.

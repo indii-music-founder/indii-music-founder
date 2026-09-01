@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1920px;
+          height: 1080px;
+          background: #0b0c0f;
+          color: #f4efe4;
+          overflow: hidden;
+          font-family: "Space Mono", monospace;
+        }
+        .glow {
+          position: absolute;
+          left: -420px;
+          bottom: -520px;
+          width: 1500px;
+          height: 1500px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(245, 177, 61, 0.17) 0%, rgba(245, 177, 61, 0) 62%);
+        }
+        .ghost {
+          position: absolute;
+          top: 150px;
+          right: -140px;
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          font-size: 400px;
+          line-height: 1;
+          letter-spacing: -0.03em;
+          color: #f4efe4;
+          opacity: 0.09;
+          white-space: nowrap;
+        }
+        .label {
+          position: absolute;
+          top: 108px;
+          left: 120px;
+          font-size: 26px;
+          letter-spacing: 0.22em;
+          color: #6e6a61;
+          text-transform: uppercase;
+        }
+        .label .ch {
+          display: inline-block;
+        }
+        .label .caret {
+          display: inline-block;
+          width: 14px;
+          height: 26px;
+          margin-left: 6px;
+          background: #f5b13d;
+          vertical-align: -4px;
+        }
+        .headline {
+          position: absolute;
+          top: 330px;
+          left: 120px;
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          font-size: 158px;
+          line-height: 1.03;
+          letter-spacing: -0.03em;
+          text-transform: uppercase;
+        }
+        .headline .line {
+          display: block;
+          height: 168px;
+        }
+        .headline .w {
+          display: inline-block;
+          margin-right: 38px;
+          will-change: transform;
+        }
+        .amber {
+          color: #f5b13d;
+        }
+        #a1-headB {
+          top: 330px;
+          left: 120px;
+        }
+        .stats {
+          position: absolute;
+          left: 120px;
+          bottom: 130px;
+          display: flex;
+          align-items: center;
+          gap: 56px;
+        }
+        .stat {
+          display: flex;
+          align-items: baseline;
+          gap: 22px;
+        }
+        .stat .num {
+          font-family: "Archivo Black", sans-serif;
+          font-weight: 400;
+          font-size: 96px;
+          line-height: 1;
+          color: #f4efe4;
+        }
+        .stat .tag {
+          font-size: 24px;
+          letter-spacing: 0.18em;
+          color: #716e65;
+          text-transform: uppercase;
+        }
+        .divider {
+          width: 2px;
+          height: 96px;
+          background: #f5b13d;
+          transform-origin: left center;
+        }
+        .meta {
+          position: absolute;
+          right: 120px;
+          top: 420px;
+          text-align: right;
+          font-size: 34px;
+          line-height: 1.75;
+          letter-spacing: 0.14em;
+          color: #f4efe4;
+          text-transform: uppercase;
+        }
+        .meta .amber {
+          display: block;
+        }
+        .wave {
+          position: absolute;
+          right: 120px;
+          bottom: 150px;
+          display: flex;
+          align-items: flex-end;
+          gap: 9px;
+          height: 210px;
+        }
+        .wave .bar {
+          display: block;
+          width: 11px;
+          border-radius: 3px;
+          background: #f5b13d;
+          transform-origin: 50% 100%;
+        }
+      </style>
+
+      <div data-hf-id="hf-jf02" id="root" data-composition-id="act1" data-start="0" data-width="1920" data-height="1080">
+        <div data-hf-id="hf-fuao" id="a1-glow" class="glow" data-layout-allow-overflow=""></div>
+        <div data-hf-id="hf-ql99" id="a1-ghost" class="ghost" data-layout-allow-overflow="">DETROIT</div>
+
+        <div data-hf-id="hf-jlad" id="a1-label" class="label" aria-label="03:12 AM — DETROIT, MI"></div>
+
+        <div data-hf-id="hf-walo" id="a1-headA" class="headline">
+          <div data-hf-id="hf-np12" class="line"><span data-hf-id="hf-i4dv" class="w">THE</span><span data-hf-id="hf-b0mh" class="w">CITY'S</span></div>
+          <div data-hf-id="hf-sogq" class="line"><span data-hf-id="hf-h8pc" class="w">ASLEEP.</span></div>
+        </div>
+        <div data-hf-id="hf-763b" id="a1-headB" class="headline">
+          <div data-hf-id="hf-t2rr" class="line"><span data-hf-id="hf-18ur" class="w">THE</span><span data-hf-id="hf-ttdr" class="w">TRACK</span></div>
+          <div data-hf-id="hf-th2s" class="line"><span data-hf-id="hf-1vd8" class="w amber">ISN'T.</span></div>
+        </div>
+
+        <div data-hf-id="hf-lrn7" id="a1-stats" class="stats">
+          <div data-hf-id="hf-ew2e" class="stat" id="a1-stat1">
+            <span data-hf-id="hf-kud6" class="num">1</span><span data-hf-id="hf-bayw" class="tag">ARTIST</span>
+          </div>
+          <div data-hf-id="hf-zfxq" class="divider" id="a1-div1"></div>
+          <div data-hf-id="hf-axyd" class="stat" id="a1-stat2">
+            <span data-hf-id="hf-kg25" class="num">0</span><span data-hf-id="hf-zax3" class="tag">LABEL</span>
+          </div>
+          <div data-hf-id="hf-vhtp" class="divider" id="a1-div2"></div>
+          <div data-hf-id="hf-a6ak" class="stat" id="a1-stat3">
+            <span data-hf-id="hf-ls71" class="num">100%</span><span data-hf-id="hf-ld2k" class="tag">OURS</span>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-9wao" id="a1-meta" class="meta" aria-label="INDEPENDENT SINCE DAY ONE"></div>
+
+        <div data-hf-id="hf-zd9g" id="a1-wave" class="wave" aria-hidden="true"></div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        // ── Ambient decoratives (finite, slow)
+        tl.to("#a1-glow", { scale: 1.12, duration: 26, ease: "none" }, 0);
+        tl.to("#a1-ghost", { x: -120, y: -40, duration: 26, ease: "none" }, 0);
+
+        // ── Mono label types in, caret blinks 3x (finite)
+        const labelEl = document.getElementById("a1-label");
+        const labelText = "03:12 AM — DETROIT, MI";
+        for (let i = 0; i < labelText.length; i++) {
+          const ch = document.createElement("span");
+          ch.className = "ch";
+          ch.textContent = labelText[i];
+          labelEl.appendChild(ch);
+          tl.set(ch, { autoAlpha: 0 }, 0);
+          tl.set(ch, { autoAlpha: 1 }, 0.1 + i * 0.04);
+        }
+        const caret = document.createElement("span");
+        caret.className = "caret";
+        labelEl.appendChild(caret);
+        tl.set(caret, { autoAlpha: 0 }, 0);
+        for (let b = 0; b < 3; b++) {
+          tl.set(caret, { autoAlpha: 1 }, 1.25 + b * 0.3);
+          tl.set(caret, { autoAlpha: 0 }, 1.4 + b * 0.3);
+        }
+
+        // ── Headline A waterfall entry (binary opacity, from below, shrinking gaps)
+        const wordsA = gsap.utils.toArray("#a1-headA .w");
+        wordsA.forEach((w, i) => {
+          const t = 0.8 + i * 0.16 - i * i * 0.012;
+          tl.set(w, { y: 70, autoAlpha: 0 }, 0);
+          tl.set(w, { autoAlpha: 1 }, t);
+          tl.to(w, { y: 0, duration: 0.2, ease: "power4.out" }, t);
+        });
+
+        // ── Zoom-through swap: THE CITY'S ASLEEP. → THE TRACK ISN'T.
+        tl.set("#a1-headB", { autoAlpha: 0 }, 0);
+        tl.to("#a1-headA", { scale: 1.2, filter: "blur(10px)", duration: 0.2, ease: "power3.in" }, 6.8);
+        tl.to("#a1-headA", { opacity: 0.15, duration: 0.2, ease: "none" }, 6.8);
+        tl.set("#a1-headA", { autoAlpha: 0 }, 7.0);
+        tl.fromTo(
+          "#a1-headB",
+          { autoAlpha: 0.15, scale: 0.75, filter: "blur(10px)" },
+          { autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false },
+          7.0
+        );
+
+        // ── Stats row: dividers draw, blocks whip in (staggered)
+        ["#a1-stat1", "#a1-stat2", "#a1-stat3"].forEach((sel, i) => {
+          tl.set(sel, { y: 64, autoAlpha: 0 }, 0);
+          tl.set(sel, { autoAlpha: 1 }, 8.1 + i * 0.14);
+          tl.to(sel, { y: 0, duration: 0.42, ease: "power4.out" }, 8.1 + i * 0.14);
+        });
+        ["#a1-div1", "#a1-div2"].forEach((sel, i) => {
+          tl.set(sel, { scaleX: 0 }, 0);
+          tl.to(sel, { scaleX: 1, duration: 0.4, ease: "power3.out" }, 8.0 + i * 0.14);
+        });
+
+        // ── Right-column statement lines cascade
+        const metaEl = document.getElementById("a1-meta");
+        const metaLines = ["INDEPENDENT", "SINCE", "DAY ONE"];
+        metaLines.forEach((text, i) => {
+          const span = document.createElement("span");
+          span.textContent = text;
+          if (i === 2) span.className = "amber";
+          metaEl.appendChild(span);
+          tl.set(span, { x: 60, autoAlpha: 0 }, 0);
+          tl.set(span, { autoAlpha: 1 }, 12.6 + i * 0.16);
+          tl.to(span, { x: 0, duration: 0.4, ease: "power4.out" }, 12.6 + i * 0.16);
+        });
+
+        // ── Waveform sweep: deterministic baked heights, one pass
+        const waveEl = document.getElementById("a1-wave");
+        const heights = [42, 74, 118, 96, 150, 188, 132, 168, 88, 120, 204, 158, 76, 140, 180, 104, 196, 128, 84, 164, 112, 176, 92, 146, 122, 60];
+        const bars = [];
+        heights.forEach((h) => {
+          const bar = document.createElement("span");
+          bar.className = "bar";
+          bar.style.height = h + "px";
+          waveEl.appendChild(bar);
+          bars.push(bar);
+        });
+        gsap.set(bars, { scaleY: 0.06 });
+        tl.to(bars, { scaleY: 1, duration: 0.7, ease: "power4.out", stagger: 0.028 }, 15.8);
+
+        window.__timelines["act1"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

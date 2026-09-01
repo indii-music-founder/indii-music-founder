@@ -9,6 +9,8 @@ interface TabItem {
   label: string;
   badge: string;
   icon: React.ElementType;
+  hex: string;
+  glow: string;
 }
 
 const tabs: TabItem[] = [
@@ -17,41 +19,62 @@ const tabs: TabItem[] = [
     label: 'Conductor & Boardroom',
     badge: 'Command Engine',
     icon: Sparkles,
+    hex: '#FFB800',
+    glow: 'rgba(255, 184, 0, 0.35)',
   },
   {
     id: 'creative',
     label: 'Creative Studio',
     badge: 'Visual & Video',
     icon: Layers,
+    hex: '#00FF66',
+    glow: 'rgba(0, 255, 102, 0.35)',
   },
   {
     id: 'distribution',
     label: 'Delivery Preparation',
     badge: 'DDEX ERN 4.3',
     icon: Share2,
+    hex: '#2196F3',
+    glow: 'rgba(33, 150, 243, 0.35)',
   },
   {
     id: 'audio',
     label: 'Audio Intelligence',
     badge: 'Sonic DNA',
     icon: Activity,
+    hex: '#00BCD4',
+    glow: 'rgba(0, 188, 212, 0.35)',
   },
   {
     id: 'finance',
     label: 'Financial Command',
     badge: 'Project Records',
     icon: DollarSign,
+    hex: '#FFC107',
+    glow: 'rgba(255, 193, 7, 0.35)',
   },
 ];
 
 export default function AppStudioShowcase() {
   const [activeTab, setActiveTab] = useState<string>('boardroom');
+  const currentTab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
 
   return (
     <section id="studio-preview" data-system-section="studio" className="relative z-20 w-full border-t border-white/10 bg-[#040404] py-24 md:py-36">
-      {/* Glow Effects */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(245,158,11,0.08),transparent_50%)]" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 bg-amber-500/[0.04] blur-[140px]" />
+      {/* Dynamic Department Glow Effects */}
+      <div
+        className="pointer-events-none absolute inset-0 transition-opacity duration-700"
+        style={{
+          background: `radial-gradient(circle at 50% 20%, ${currentTab.glow}, transparent 55%)`,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 blur-[140px] transition-all duration-700 opacity-60"
+        style={{
+          backgroundColor: `${currentTab.hex}15`,
+        }}
+      />
 
       <div className="relative mx-auto max-w-[1500px] px-5 md:px-10">
         {/* Section Header */}
@@ -90,17 +113,27 @@ export default function AppStudioShowcase() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: tab.hex,
+                        color: '#000000',
+                        boxShadow: `0 0 25px ${tab.glow}`,
+                        borderColor: tab.hex,
+                      }
+                    : {}
+                }
                 className={`group relative flex items-center gap-2.5 rounded-full border px-5 py-3 text-xs font-bold transition-all duration-300 ${
                   isActive
-                    ? 'border-amber-400/60 bg-amber-400 text-black shadow-[0_0_25px_rgba(245,158,11,0.35)] scale-[1.02]'
+                    ? 'scale-[1.02]'
                     : 'border-white/10 bg-black/60 text-white/70 hover:border-white/25 hover:text-white'
                 }`}
               >
-                <Icon size={14} className={isActive ? 'text-black' : 'text-amber-400'} />
+                <Icon size={14} className={isActive ? 'text-black' : ''} style={!isActive ? { color: tab.hex } : {}} />
                 <span>{tab.label}</span>
                 <span
                   className={`ml-1 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
-                    isActive ? 'bg-black/15 text-black' : 'bg-white/10 text-white/50'
+                    isActive ? 'bg-black/20 text-black' : 'bg-white/10 text-white/50'
                   }`}
                 >
                   {tab.badge}
@@ -227,7 +260,7 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Creative Studio & Brand Guard</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#00FF66]">Creative Studio & Brand Guard</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
                       Build release visuals <br />
                       from one shared direction.
@@ -238,39 +271,39 @@ export default function AppStudioShowcase() {
                     </p>
 
                     <div className="mt-6 grid grid-cols-2 gap-4">
-                      <div className="rounded-xl border border-white/10 bg-[#0d0d0d] p-4">
+                      <div className="rounded-xl border border-white/10 bg-[#0d0d0d] p-4 transition-colors hover:border-[#00FF66]/30">
                         <div className="font-mono text-[9px] uppercase text-white/40">Brand Consistency</div>
-                        <div className="mt-2 text-3xl font-black text-emerald-400">In review</div>
+                        <div className="mt-2 text-3xl font-black text-[#00FF66]">In review</div>
                         <div className="mt-1 text-[10px] text-white/50">Example brand check</div>
                       </div>
-                      <div className="rounded-xl border border-white/10 bg-[#0d0d0d] p-4">
+                      <div className="rounded-xl border border-white/10 bg-[#0d0d0d] p-4 transition-colors hover:border-[#00FF66]/30">
                         <div className="font-mono text-[9px] uppercase text-white/40">Resolution Output</div>
-                        <div className="mt-2 text-3xl font-black text-amber-400">Export set</div>
+                        <div className="mt-2 text-3xl font-black text-[#9C27B0]">Export set</div>
                         <div className="mt-1 text-[10px] text-white/50">Formats selected by the artist</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Studio Visual Canvas Mockup */}
-                  <div className="relative flex min-h-[300px] flex-col justify-between rounded-xl border border-amber-400/20 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-950/20 via-black to-black p-6">
+                  <div className="relative flex min-h-[300px] flex-col justify-between rounded-xl border border-[#00FF66]/30 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-950/30 via-[#0a0f0d] to-black p-6 shadow-[0_0_50px_rgba(0,255,102,0.1)]">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-amber-400">Active Visual Generation</span>
-                      <span className="rounded-full bg-amber-400/20 px-3 py-1 font-mono text-[9px] text-amber-300">1:1 Square (3000x3000px)</span>
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-[#00FF66]">Active Visual Generation</span>
+                      <span className="rounded-full border border-[#00FF66]/40 bg-[#00FF66]/20 px-3 py-1 font-mono text-[9px] text-[#00FF66]">1:1 Square (3000x3000px)</span>
                     </div>
 
                     <div className="my-auto text-center">
-                      <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-2xl border border-amber-400/40 bg-black/80 shadow-[0_0_40px_rgba(245,158,11,0.25)]">
-                        <Disc size={48} className="animate-spin text-amber-400 [animation-duration:12s]" />
+                      <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-2xl border border-[#00FF66]/40 bg-black/80 shadow-[0_0_40px_rgba(0,255,102,0.25)]">
+                        <Disc size={48} className="animate-spin text-[#00FF66] [animation-duration:12s]" />
                       </div>
                       <p className="mt-4 text-xs font-mono text-white/70">
-                        Title: <span className="text-amber-400">NOSTALGIA_V4_FINAL.WAV</span>
+                        Title: <span className="text-[#00FF66]">NOSTALGIA_V4_FINAL.WAV</span>
                       </p>
                       <p className="text-[10px] font-mono text-white/40">Typography: Neue Haas Grotesk Light</p>
                     </div>
 
                     <div className="flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/50">
-                      <span>Palette: Amber / Obsidian / Slate</span>
-                      <span className="text-emerald-400 font-mono">Ready for Export</span>
+                      <span>Palette: Emerald / Obsidian / Violet</span>
+                      <span className="text-[#00FF66] font-mono font-bold">Ready for Export</span>
                     </div>
                   </div>
                 </motion.div>
@@ -286,7 +319,7 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1.2fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Delivery Preparation</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#2196F3]">Delivery Preparation</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
                       Prepare the release. <br />
                       Keep the package connected.
@@ -304,7 +337,7 @@ export default function AppStudioShowcase() {
                         'Delivery-ready files for the next approved step',
                       ].map((benefit, i) => (
                         <div key={i} className="flex items-center gap-3 text-white/80">
-                          <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
+                          <CheckCircle2 size={16} className="text-[#2196F3] shrink-0" />
                           <span>{benefit}</span>
                         </div>
                       ))}
@@ -312,16 +345,16 @@ export default function AppStudioShowcase() {
                   </div>
 
                   {/* DDEX Code Mockup */}
-                  <div className="rounded-xl border border-white/10 bg-[#080808] p-6 font-mono">
+                  <div className="rounded-xl border border-[#2196F3]/30 bg-[#040810] p-6 font-mono shadow-[0_0_40px_rgba(33,150,243,0.1)]">
                     <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                      <div className="flex items-center gap-2 text-xs text-white/60">
-                        <FileCode size={14} className="text-amber-400" />
+                      <div className="flex items-center gap-2 text-xs text-white/70">
+                        <FileCode size={14} className="text-[#2196F3]" />
                         <span>DDEX_ERN_43_PAYLOAD.XML</span>
                       </div>
-                      <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[9px] uppercase text-emerald-400">Schema Validated</span>
+                      <span className="rounded bg-[#2196F3]/20 border border-[#2196F3]/40 px-2 py-0.5 text-[9px] uppercase text-[#2196F3] font-bold">Schema Validated</span>
                     </div>
 
-                    <pre className="mt-4 text-[11px] leading-relaxed text-amber-300/80 overflow-x-auto">
+                    <pre className="mt-4 text-[11px] leading-relaxed text-[#64B5F6] overflow-x-auto">
                       {`<NewReleaseMessage xmlns="http://ddex.net/xml/ern/43">
   <MessageHeader>
     <SenderPartyId>PADPIDA20260803</SenderPartyId>
@@ -354,7 +387,7 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Audio Intelligence & DNA Extraction</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#00BCD4]">Audio Intelligence & DNA Extraction</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
                       Understand your track <br />
                       down to the millisecond.
@@ -365,15 +398,15 @@ export default function AppStudioShowcase() {
                     </p>
 
                     <div className="mt-6 grid grid-cols-3 gap-3 font-mono">
-                      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 text-center">
+                      <div className="rounded-lg border border-[#00BCD4]/20 bg-[#00BCD4]/[0.05] p-3 text-center">
                         <div className="text-[9px] uppercase text-white/40">Tempo</div>
-                        <div className="mt-1 text-xl font-bold text-amber-400">124 BPM</div>
+                        <div className="mt-1 text-xl font-bold text-[#00BCD4]">124 BPM</div>
                       </div>
-                      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 text-center">
+                      <div className="rounded-lg border border-[#00BCD4]/20 bg-[#00BCD4]/[0.05] p-3 text-center">
                         <div className="text-[9px] uppercase text-white/40">Key</div>
-                        <div className="mt-1 text-xl font-bold text-amber-400">F# Minor</div>
+                        <div className="mt-1 text-xl font-bold text-[#00BCD4]">F# Minor</div>
                       </div>
-                      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 text-center">
+                      <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] p-3 text-center">
                         <div className="text-[9px] uppercase text-white/40">Loudness</div>
                         <div className="mt-1 text-xl font-bold text-emerald-400">-9.2 LUFS</div>
                       </div>
@@ -381,15 +414,15 @@ export default function AppStudioShowcase() {
                   </div>
 
                   {/* Audio Waveform Mockup */}
-                  <div className="flex flex-col justify-between rounded-xl border border-white/10 bg-[#090909] p-6 font-mono">
+                  <div className="flex flex-col justify-between rounded-xl border border-[#00BCD4]/30 bg-[#03090e] p-6 font-mono shadow-[0_0_40px_rgba(0,188,212,0.1)]">
                     <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs">
                       <span className="text-white/60">Audio DNA Analysis</span>
-                      <span className="text-amber-400 font-bold">24-bit / 48kHz WAV</span>
+                      <span className="text-[#00BCD4] font-bold">24-bit / 48kHz WAV</span>
                     </div>
 
                     <div className="my-8 flex items-end justify-center gap-1.5 h-32">
                       {[40, 65, 80, 45, 90, 100, 75, 55, 85, 95, 60, 40, 70, 85, 95, 100, 65, 45, 75, 90, 50, 35, 70, 85].map((h, i) => (
-                        <div key={i} className="w-2 rounded-full bg-gradient-to-t from-amber-500/30 via-amber-400 to-amber-300" style={{ height: `${h}%` }} />
+                        <div key={i} className="w-2 rounded-full bg-gradient-to-t from-[#00BCD4]/30 via-[#00BCD4] to-[#00F0FF]" style={{ height: `${h}%` }} />
                       ))}
                     </div>
 
@@ -411,7 +444,7 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">Financial Command & Royalties</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#FFC107]">Financial Command & Royalties</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
                       Real-time revenue tracking. <br />
                       Zero hidden deductions.
@@ -420,15 +453,15 @@ export default function AppStudioShowcase() {
                       Track reported streaming, sync, and merchandise income alongside collaborator split records and project expenses in one connected view.
                     </p>
 
-                    <div className="mt-6 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.04] p-5">
-                      <div className="font-mono text-[9px] uppercase tracking-wider text-emerald-400">Illustrative Project Summary</div>
+                    <div className="mt-6 rounded-xl border border-[#FFC107]/30 bg-[#FFC107]/[0.05] p-5">
+                      <div className="font-mono text-[9px] uppercase tracking-wider text-[#FFC107]">Illustrative Project Summary</div>
                       <div className="mt-2 text-4xl font-black text-white">One record</div>
                       <p className="mt-1 text-xs text-white/50">Income, expenses, and split information stay connected to the work that created them.</p>
                     </div>
                   </div>
 
                   {/* Financial Dashboard Card */}
-                  <div className="flex flex-col justify-between rounded-xl border border-white/10 bg-[#090909] p-6 font-mono">
+                  <div className="flex flex-col justify-between rounded-xl border border-[#FFC107]/25 bg-[#0a0904] p-6 font-mono shadow-[0_0_40px_rgba(255,193,7,0.1)]">
                     <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs">
                       <span className="text-white/60">Catalog Financial Summary</span>
                       <span className="text-emerald-400 font-bold">Illustrative Data</span>
@@ -444,8 +477,8 @@ export default function AppStudioShowcase() {
                         <span className="font-bold text-white">$3,500.00</span>
                       </div>
                       <div className="flex items-center justify-between text-sm border-t border-white/10 pt-3">
-                        <span className="text-amber-400 font-bold">Artist Net Earnings</span>
-                        <span className="font-black text-xl text-amber-400">$18,320.50</span>
+                        <span className="text-[#FFC107] font-bold">Artist Net Earnings</span>
+                        <span className="font-black text-xl text-[#FFC107]">$18,320.50</span>
                       </div>
                     </div>
 

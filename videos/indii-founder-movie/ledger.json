@@ -1,0 +1,19 @@
+{
+  "fps": 30,
+  "seams": [
+    {
+      "id": "grind→machine",
+      "cut": 26,
+      "technique": "cut-the-curve LEFT",
+      "exit": { "selector": "#el-act1", "axis": "x", "dir": -1 },
+      "entry": { "selector": "#el-act2", "axis": "x", "dir": -1 }
+    },
+    {
+      "id": "machine→release",
+      "cut": 52,
+      "technique": "cut-the-curve LEFT",
+      "exit": { "selector": "#el-act2", "axis": "x", "dir": -1 },
+      "entry": { "selector": "#el-act3", "axis": "x", "dir": -1 }
+    }
+  ]
+}
