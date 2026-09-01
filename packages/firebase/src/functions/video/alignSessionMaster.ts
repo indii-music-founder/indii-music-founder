@@ -59,9 +59,23 @@ export function createDefaultAlignmentService(workerUrl?: string): AlignmentServ
                 };
             }
 
+            let authHeaders: Record<string, string> = {};
+            try {
+                const { GoogleAuth } = await import('google-auth-library');
+                const auth = new GoogleAuth();
+                const client = await auth.getIdTokenClient(workerUrl);
+                const reqHeaders = await client.getRequestHeaders(workerUrl);
+                authHeaders = reqHeaders as unknown as Record<string, string>;
+            } catch {
+                // In local/test environment or non-GCP runtime, proceed with baseline headers
+            }
+
             const response = await fetch(`${workerUrl}/align`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...authHeaders,
+                },
                 body: JSON.stringify({
                     sessionId: input.sessionId,
                     ownerUid: input.ownerUid,

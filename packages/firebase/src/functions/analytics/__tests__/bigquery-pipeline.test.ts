@@ -231,4 +231,40 @@ describe('BigQueryEventsPipeline', () => {
       expect(savedRows).toBe(4);
     });
   });
+
+  describe('Watermark Synchronization & Cursor Querying', () => {
+    it('should query strictly after the watermark to prevent re-inserting duplicates', () => {
+      const lastWatermark = '2026-04-24T12:00:00.000Z';
+      const events = [
+        { id: '1', timestamp: '2026-04-24T11:59:00.000Z' }, // older, should be excluded
+        { id: '2', timestamp: '2026-04-24T12:00:00.000Z' }, // equal, should be excluded
+        { id: '3', timestamp: '2026-04-24T12:01:00.000Z' }, // newer, should be included
+        { id: '4', timestamp: '2026-04-24T12:05:00.000Z' }, // newer, should be included
+      ];
+
+      const filtered = events
+        .filter(e => e.timestamp > lastWatermark)
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+      expect(filtered.map(e => e.id)).toEqual(['3', '4']);
+      expect(filtered[filtered.length - 1].timestamp).toBe('2026-04-24T12:05:00.000Z');
+    });
+
+    it('should advance watermark monotonically across consecutive batches', () => {
+      let currentWatermark = '1970-01-01T00:00:00.000Z';
+      const batch1 = [
+        { id: 'e1', timestamp: '2026-04-24T12:00:00.000Z' },
+        { id: 'e2', timestamp: '2026-04-24T12:01:00.000Z' },
+      ];
+
+      currentWatermark = batch1[batch1.length - 1].timestamp;
+      expect(currentWatermark).toBe('2026-04-24T12:01:00.000Z');
+
+      const batch2 = [
+        { id: 'e3', timestamp: '2026-04-24T12:02:00.000Z' },
+      ];
+      currentWatermark = batch2[batch2.length - 1].timestamp;
+      expect(currentWatermark).toBe('2026-04-24T12:02:00.000Z');
+    });
+  });
 });

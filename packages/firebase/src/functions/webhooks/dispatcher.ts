@@ -275,12 +275,83 @@ export const sendWebhookOnEvent = onDocumentCreated('events/{eventId}', async (c
     }
   });
 
+export interface WebhookTasksClientLike {
+  queuePath(project: string, location: string, queue: string): string;
+  createTask(request: {
+    parent: string;
+    task: {
+      name?: string;
+      dispatchDeadline?: { seconds: number };
+      httpRequest: {
+        httpMethod: 'POST';
+        url: string;
+        body: string;
+        headers: Record<string, string>;
+        oidcToken?: { serviceAccountEmail: string; audience: string };
+      };
+    };
+  }): Promise<unknown>;
+}
+
+export interface WebhookTasksConfig {
+  project: string;
+  location: string;
+  queue: string;
+  workerUrl: string;
+  serviceAccount?: string;
+  audience?: string;
+}
+
 /**
- * Scheduled function: Process webhook queue every 30 seconds
+ * Enqueue a webhook delivery task directly to Google Cloud Tasks.
+ * Bypasses Firestore queue polling for instant sub-second delivery with native retries.
+ */
+export async function enqueueWebhookTask(
+  event: WebhookEvent,
+  client?: WebhookTasksClientLike,
+  config?: WebhookTasksConfig,
+): Promise<boolean> {
+  const project = config?.project || process.env.GCLOUD_PROJECT || 'indii-music-founder';
+  const location = config?.location || process.env.WEBHOOK_TASKS_LOCATION || 'us-central1';
+  const queue = config?.queue || process.env.WEBHOOK_TASKS_QUEUE || 'webhook-delivery';
+  const workerUrl = config?.workerUrl || process.env.WEBHOOK_WORKER_URL;
+
+  if (!workerUrl || !client) {
+    return false;
+  }
+
+  const parent = client.queuePath(project, location, queue);
+  const taskName = `${parent}/tasks/webhook-${event.eventId}`;
+
+  await client.createTask({
+    parent,
+    task: {
+      name: taskName,
+      httpRequest: {
+        httpMethod: 'POST',
+        url: `${workerUrl}/deliver`,
+        headers: { 'Content-Type': 'application/json' },
+        body: Buffer.from(JSON.stringify(event)).toString('base64'),
+        ...(config?.serviceAccount && config?.audience ? {
+          oidcToken: {
+            serviceAccountEmail: config.serviceAccount,
+            audience: config.audience,
+          },
+        } : {}),
+      },
+    },
+  });
+
+  return true;
+}
+
+/**
+ * Scheduled function: Process webhook queue every 1 minute.
+ * Serves as the fallback poller / dead-letter drain for webhooks in Firestore.
  */
 export const processWebhookQueue = onSchedule(
   {
-    schedule: 'every 30 seconds',
+    schedule: 'every 1 minutes',
     timeoutSeconds: 300,
     memory: '512MiB',
   },

@@ -54,7 +54,7 @@ async function isDuplicate(idempotencyKey: string): Promise<boolean> {
   const query = `
     SELECT COUNT(*) as count FROM \`${process.env.GCLOUD_PROJECT}.${DATASET_ID}.${TABLE_ID}\`
     WHERE _idempotencyKey = @key
-    AND TIMESTAMP_MILLIS(_timestamp) > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 MINUTE)
+    AND TIMESTAMP(_timestamp) > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR)
   `;
 
   try {
@@ -121,6 +121,54 @@ async function streamEventsToBigQuery(events: AnalyticsEvent[]): Promise<void> {
 }
 
 /**
+ * Core batch event processing handler (pure, exported for testing).
+ * Advances a persistent cursor watermark in admin/bigquerySyncState
+ * so the pipeline queries strictly chronologically and never re-inserts duplicates.
+ */
+export async function runBatchEventsSync(
+  dbInstance = db,
+  streamer = streamEventsToBigQuery,
+): Promise<{ processed: number; lastWatermark: string | null }> {
+  const syncStateRef = dbInstance.collection('admin').doc('bigquerySyncState');
+  const syncDoc = await syncStateRef.get();
+  const lastWatermark = syncDoc.data()?.lastSyncedTimestamp || '1970-01-01T00:00:00.000Z';
+
+  // Chronological query starting strictly after the last watermark
+  const snapshot = await dbInstance.collection('events')
+    .where('timestamp', '>', lastWatermark)
+    .orderBy('timestamp', 'asc')
+    .limit(BATCH_SIZE)
+    .get();
+
+  if (snapshot.empty) {
+    console.log('[BigQueryEventsPipeline] No new events to process after watermark:', lastWatermark);
+    return { processed: 0, lastWatermark };
+  }
+
+  const events = snapshot.docs.map(doc => ({
+    eventId: doc.id,
+    ...doc.data(),
+  } as unknown as AnalyticsEvent));
+
+  await streamer(events);
+
+  const batch = dbInstance.batch();
+  snapshot.docs.forEach(doc => {
+    batch.update(doc.ref, { _bigQuerySynced: true });
+  });
+
+  const newestTimestamp = String(events[events.length - 1].timestamp);
+  batch.set(syncStateRef, {
+    lastSyncedTimestamp: newestTimestamp,
+    lastSyncedAt: new Date().toISOString(),
+    eventCount: admin.firestore.FieldValue.increment(events.length),
+  }, { merge: true });
+
+  await batch.commit();
+  return { processed: events.length, lastWatermark: newestTimestamp };
+}
+
+/**
  * Scheduled function: Batch events to BigQuery every 5 minutes
  */
 export const batchEventsScheduled = onSchedule(
@@ -131,29 +179,8 @@ export const batchEventsScheduled = onSchedule(
   },
   async () => {
     try {
-      const snapshot = await db.collection('events')
-        .orderBy('timestamp', 'desc')
-        .limit(BATCH_SIZE)
-        .get();
-
-      if (snapshot.empty) {
-        console.log('[BigQueryEventsPipeline] No events to process');
-        return;
-      }
-
-      const events = snapshot.docs.map(doc => ({
-        eventId: doc.id,
-        ...doc.data(),
-      } as unknown as AnalyticsEvent));
-
-      await streamEventsToBigQuery(events);
-
-      // Mark batch as processed (optional: add processedAt timestamp)
-      const batch = db.batch();
-      snapshot.docs.forEach(doc => {
-        batch.update(doc.ref, { _bigQuerySynced: true });
-      });
-      await batch.commit();
+      const result = await runBatchEventsSync();
+      console.log(`[BigQueryEventsPipeline] Synced ${result.processed} events (watermark: ${result.lastWatermark})`);
     } catch (err) {
       console.error('[BigQueryEventsPipeline] Batch failed:', err);
       throw err;

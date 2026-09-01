@@ -145,4 +145,42 @@ describe('alignSessionMaster Handler', () => {
         expect(result.reused).toBe(true);
         expect(result.alignment.alignmentId).toBe('existing-align-1');
     });
+
+    it('createDefaultAlignmentService calls alignment worker with Content-Type and auth headers', async () => {
+        const { createDefaultAlignmentService } = await import('./alignSessionMaster');
+        const service = createDefaultAlignmentService('https://engine-dsp.a.run.app');
+
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            json: async () => ({
+                status: 'locked',
+                aggregateConfidence: 0.99,
+                driftPpm: 0,
+                residualP95Us: 500,
+                fitModel: 'linear',
+                anchors: [],
+                algorithmVersion: 'align-dsp.v1',
+            }),
+        } as any);
+
+        const result = await service.align({
+            sessionId: 'session-1',
+            ownerUid: 'user-1',
+            organizationId: 'org-1',
+            projectId: 'proj-1',
+            guideAudioRef: { bucket: 'b', path: 'p' },
+            canonicalMasterRef: { bucket: 'b', path: 'm', masterFingerprint: 'f1' },
+        });
+
+        expect(result.status).toBe('locked');
+        expect(fetchSpy).toHaveBeenCalledWith(
+            'https://engine-dsp.a.run.app/align',
+            expect.objectContaining({
+                method: 'POST',
+                headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+            })
+        );
+        fetchSpy.mockRestore();
+    });
 });

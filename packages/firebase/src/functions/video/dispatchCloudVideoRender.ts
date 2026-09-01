@@ -43,15 +43,16 @@ export const dispatchCloudVideoRender = onDocumentCreated(
                 headers: {
                     authorization: `Bearer ${renderWorkerSecret.value().trim()}`,
                     'content-type': 'application/json',
+                    prefer: 'respond-async',
                 },
                 body: JSON.stringify({ jobPath }),
                 signal: AbortSignal.timeout(55_000),
             });
-            if (!response.ok) {
+            if (!response.ok && response.status !== 202) {
                 const body = await response.text().catch(() => '');
                 throw new Error(`render worker responded ${response.status}: ${body.slice(0, 400)}`);
             }
-            logger.info('[dispatchCloudVideoRender] Worker accepted job', { jobPath });
+            logger.info('[dispatchCloudVideoRender] Worker accepted job', { jobPath, status: response.status });
         } catch (error) {
             // The worker marks failures itself; a dispatch failure leaves the
             // job queued with a visible note instead of a false terminal state.

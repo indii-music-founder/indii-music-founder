@@ -438,11 +438,39 @@ async function deliverPost(
     }
 }
 
+export interface SocialTasksClientLike {
+    queuePath(project: string, location: string, queue: string): string;
+    createTask(request: {
+        parent: string;
+        task: {
+            name?: string;
+            dispatchDeadline?: { seconds: number };
+            httpRequest: {
+                httpMethod: 'POST';
+                url: string;
+                body: string;
+                headers: Record<string, string>;
+                oidcToken?: { serviceAccountEmail: string; audience: string };
+            };
+        };
+    }): Promise<unknown>;
+}
+
+export interface SocialDeliveryConfig {
+    project: string;
+    location: string;
+    workerUrl: string;
+    serviceAccount?: string;
+    audience?: string;
+}
+
 export interface ScheduledDeliveryDependencies {
     db?: DeliveryDatabase;
     now?: Timestamp;
     getToken?: typeof getTokenForUser;
     dispatch?: typeof deliverPost;
+    tasksClient?: SocialTasksClientLike;
+    tasksConfig?: SocialDeliveryConfig;
 }
 
 /**
@@ -553,6 +581,35 @@ export async function deliverScheduledPostsHandler(
                     continue;
                 }
 
+                if (dependencies.tasksClient && dependencies.tasksConfig) {
+                    const queueName = `social-delivery-${claimedPost.platform}`;
+                    const parent = dependencies.tasksClient.queuePath(
+                        dependencies.tasksConfig.project,
+                        dependencies.tasksConfig.location,
+                        queueName,
+                    );
+                    const taskPayload = { postId: docSnap.id };
+                    await dependencies.tasksClient.createTask({
+                        parent,
+                        task: {
+                            httpRequest: {
+                                httpMethod: 'POST',
+                                url: `${dependencies.tasksConfig.workerUrl}/deliver`,
+                                headers: { 'Content-Type': 'application/json' },
+                                body: Buffer.from(JSON.stringify(taskPayload)).toString('base64'),
+                                ...(dependencies.tasksConfig.serviceAccount && dependencies.tasksConfig.audience ? {
+                                    oidcToken: {
+                                        serviceAccountEmail: dependencies.tasksConfig.serviceAccount,
+                                        audience: dependencies.tasksConfig.audience,
+                                    },
+                                } : {}),
+                            },
+                        },
+                    });
+                    logger.info(`[deliverScheduledPosts] Post ${docSnap.id} enqueued to Cloud Tasks (${queueName})`);
+                    continue;
+                }
+
                 const token = await getToken(db, claimedPost.userId, claimedPost.platform);
                 const result = token
                     ? await dispatch(claimedPost, token, docSnap.id, db, postRef)
@@ -586,6 +643,34 @@ export async function deliverScheduledPostsHandler(
         logger.error({ message: '[deliverScheduledPosts] Error during scheduled delivery', errorCode: 'DELIVERY_FAILED', detail: errMsg });
         throw error;
     }
+}
+
+/**
+ * Single-post delivery executor for Cloud Tasks worker endpoints.
+ */
+export async function deliverSingleScheduledPost(
+    postId: string,
+    dependencies: ScheduledDeliveryDependencies = {},
+): Promise<DeliveryResult> {
+    const db = dependencies.db ?? getFirestore();
+    const now = dependencies.now ?? Timestamp.now();
+    const getToken = dependencies.getToken ?? getTokenForUser;
+    const dispatch = dependencies.dispatch ?? deliverPost;
+
+    const postRef = db.collection('scheduledPosts').doc(postId);
+    const postSnap = await postRef.get();
+    if (!postSnap.exists) {
+        throw new Error(`Scheduled post ${postId} not found`);
+    }
+    const post = postSnap.data() as ScheduledPostDoc;
+
+    const token = await getToken(db, post.userId, post.platform);
+    const result = token
+        ? await dispatch(post, token, postId, db, postRef)
+        : { success: false, error: `No OAuth token for ${post.platform}` };
+
+    await persistDeliveryOutcome(db, postRef, post, result, now);
+    return result;
 }
 
 /**

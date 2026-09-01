@@ -5,8 +5,8 @@
  */
 
 import * as crypto from 'crypto';
-import { describe, it, expect } from 'vitest';
-import { isQueueItemClaimable } from '../dispatcher';
+import { describe, it, expect, vi } from 'vitest';
+import { isQueueItemClaimable, enqueueWebhookTask } from '../dispatcher';
 
 describe('WebhookDispatcher', () => {
   const secret = 'test-secret-key';
@@ -268,17 +268,55 @@ describe('WebhookDispatcher', () => {
   });
 
   describe('Scheduled Processing', () => {
-    it('should process queue every 30 seconds', () => {
-      const schedule = 'every 30 seconds';
-      const intervalMs = 30 * 1000;
+    it('should process queue on a valid Cloud Scheduler interval (1 minute fallback)', () => {
+      const schedule = 'every 1 minutes';
+      const intervalMs = 60 * 1000;
 
-      expect(intervalMs).toBe(30000);
-      expect(schedule).toContain('30');
+      expect(intervalMs).toBe(60000);
+      expect(schedule).toContain('1');
     });
 
     it('should handle concurrent webhook deliveries', () => {
       const concurrentCount = 50; // Max batch size
       expect(concurrentCount).toBeLessThanOrEqual(100);
+    });
+
+    it('should enqueue directly to Cloud Tasks when client and config are present', async () => {
+      const createTaskMock = vi.fn().mockResolvedValue({});
+      const queuePathMock = vi.fn().mockReturnValue('projects/p/locations/l/queues/webhook-delivery');
+
+      const mockTasksClient = {
+        createTask: createTaskMock,
+        queuePath: queuePathMock,
+      };
+
+      const event = {
+        eventId: 'evt-100',
+        webhookId: 'wh-1',
+        userId: 'user-1',
+        eventType: 'track_created',
+        payload: { title: 'Track 1' },
+        timestamp: '2026-09-01T12:00:00Z',
+        attempt: 0,
+        maxAttempts: 3,
+      };
+
+      const enqueued = await enqueueWebhookTask(event, mockTasksClient, {
+        project: 'test-project',
+        location: 'us-central1',
+        queue: 'webhook-delivery',
+        workerUrl: 'https://worker.indii.internal',
+        serviceAccount: 'invoker@indii.iam.gserviceaccount.com',
+        audience: 'https://worker.indii.internal',
+      });
+
+      expect(enqueued).toBe(true);
+      expect(queuePathMock).toHaveBeenCalledWith('test-project', 'us-central1', 'webhook-delivery');
+      expect(createTaskMock).toHaveBeenCalledOnce();
+      const call = createTaskMock.mock.calls[0][0];
+      expect(call.parent).toBe('projects/p/locations/l/queues/webhook-delivery');
+      expect(call.task.name).toContain('webhook-evt-100');
+      expect(call.task.httpRequest.oidcToken.serviceAccountEmail).toBe('invoker@indii.iam.gserviceaccount.com');
     });
   });
 });

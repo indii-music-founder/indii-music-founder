@@ -122,33 +122,63 @@ const readBody = (req: import('node:http').IncomingMessage): Promise<Record<stri
         req.on('error', reject);
     });
 
-const server = createServer(async (req, res) => {
-    if (req.url === '/healthz') {
-        json(res, 200, { ok: true });
-        return;
+// Cloud Run Job batch execution mode: runs directly to completion and exits
+const jobPathFromEnv = process.env.JOB_PATH || process.argv[2];
+if (jobPathFromEnv) {
+    if (/^users\/[^/]+\/videoRenderJobs\/[A-Za-z0-9_-]{1,128}$/.test(jobPathFromEnv)) {
+        console.log(`[render-worker-job] Executing Cloud Run Job for ${jobPathFromEnv}`);
+        executeRenderJob(jobPathFromEnv, { store: firestoreStore, fetchToFile, uploadArtifact })
+            .then(result => {
+                console.log(`[render-worker-job] Render completed successfully:`, result);
+                process.exit(0);
+            })
+            .catch(err => {
+                console.error(`[render-worker-job] Render failed:`, err);
+                process.exit(1);
+            });
+    } else {
+        console.error(`[render-worker-job] Invalid JOB_PATH: ${jobPathFromEnv}`);
+        process.exit(2);
     }
-    if (req.method !== 'POST' || req.url !== '/v1/render') {
-        json(res, 404, { error: 'not found' });
-        return;
-    }
-    if (!SECRET || req.headers.authorization !== `Bearer ${SECRET}`) {
-        json(res, 401, { error: 'unauthorized' });
-        return;
-    }
-    try {
-        const body = await readBody(req);
-        const jobPath = typeof body.jobPath === 'string' ? body.jobPath : '';
-        if (!/^users\/[^/]+\/videoRenderJobs\/[A-Za-z0-9_-]{1,128}$/.test(jobPath)) {
-            json(res, 400, { error: 'jobPath must be a users/{uid}/videoRenderJobs/{jobId} path' });
+} else {
+    const server = createServer(async (req, res) => {
+        if (req.url === '/healthz') {
+            json(res, 200, { ok: true });
             return;
         }
-        const result = await executeRenderJob(jobPath, { store: firestoreStore, fetchToFile, uploadArtifact });
-        json(res, 200, result);
-    } catch (error) {
-        json(res, 500, { error: error instanceof Error ? error.message : String(error) });
-    }
-});
+        if (req.method !== 'POST' || req.url !== '/v1/render') {
+            json(res, 404, { error: 'not found' });
+            return;
+        }
+        if (!SECRET || req.headers.authorization !== `Bearer ${SECRET}`) {
+            json(res, 401, { error: 'unauthorized' });
+            return;
+        }
+        try {
+            const body = await readBody(req);
+            const jobPath = typeof body.jobPath === 'string' ? body.jobPath : '';
+            if (!/^users\/[^/]+\/videoRenderJobs\/[A-Za-z0-9_-]{1,128}$/.test(jobPath)) {
+                json(res, 400, { error: 'jobPath must be a users/{uid}/videoRenderJobs/{jobId} path' });
+                return;
+            }
 
-server.listen(PORT, () => {
-    console.log(`[render-worker] listening on :${PORT}`);
-});
+            const isAsync = req.headers['prefer'] === 'respond-async' || body.async === true;
+            if (isAsync) {
+                json(res, 202, { status: 'accepted', jobPath });
+                executeRenderJob(jobPath, { store: firestoreStore, fetchToFile, uploadArtifact }).catch(error => {
+                    console.error(`[render-worker] Background execution failed for ${jobPath}:`, error);
+                });
+                return;
+            }
+
+            const result = await executeRenderJob(jobPath, { store: firestoreStore, fetchToFile, uploadArtifact });
+            json(res, 200, result);
+        } catch (error) {
+            json(res, 500, { error: error instanceof Error ? error.message : String(error) });
+        }
+    });
+
+    server.listen(PORT, () => {
+        console.log(`[render-worker] listening on :${PORT}`);
+    });
+}

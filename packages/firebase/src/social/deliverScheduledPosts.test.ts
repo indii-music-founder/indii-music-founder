@@ -347,4 +347,44 @@ describe('deliverScheduledPostsHandler production worker path', () => {
         expect(getToken).not.toHaveBeenCalled();
         expect(memory.scheduledPost('queue-1')).toMatchObject({ status: 'failed', retryCount: 3 });
     });
+
+    it('enqueues due posts to platform-specific Cloud Tasks queues when tasksClient is configured', async () => {
+        const memory = createMemoryDb({
+            scheduledPosts: { 'queue-1': pendingPost({ platform: 'instagram' }) },
+            campaigns: { 'campaign-1': campaign() },
+        });
+
+        const createTaskMock = vi.fn().mockResolvedValue({});
+        const queuePathMock = vi.fn().mockReturnValue('projects/test-p/locations/us-central1/queues/social-delivery-instagram');
+        const tasksClient = {
+            createTask: createTaskMock,
+            queuePath: queuePathMock,
+        };
+
+        const tasksConfig = {
+            project: 'test-p',
+            location: 'us-central1',
+            workerUrl: 'https://worker.indii.internal',
+            serviceAccount: 'sa@indii.iam.gserviceaccount.com',
+            audience: 'https://worker.indii.internal',
+        };
+
+        const dispatchMock = vi.fn();
+
+        await deliverScheduledPostsHandler({
+            db: memory.db as never,
+            now: NOW,
+            dispatch: dispatchMock,
+            tasksClient,
+            tasksConfig,
+        });
+
+        expect(memory.scheduledPost('queue-1')?.status).toBe('delivering');
+        expect(dispatchMock).not.toHaveBeenCalled();
+        expect(queuePathMock).toHaveBeenCalledWith('test-p', 'us-central1', 'social-delivery-instagram');
+        expect(createTaskMock).toHaveBeenCalledOnce();
+        const taskCall = createTaskMock.mock.calls[0][0];
+        expect(taskCall.parent).toBe('projects/test-p/locations/us-central1/queues/social-delivery-instagram');
+        expect(taskCall.task.httpRequest.oidcToken.serviceAccountEmail).toBe('sa@indii.iam.gserviceaccount.com');
+    });
 });
