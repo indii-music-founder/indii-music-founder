@@ -6,7 +6,10 @@ import { MapPin } from 'lucide-react';
 
 export default function DetroitSection() {
   return (
-    <section id="detroit" data-system-section="detroit" className="relative z-20 w-full border-t border-white/10 bg-[#050505]">
+    <section id="detroit" data-system-section="detroit" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-[#050505]">
+      {/* Ambient background glow */}
+      <div className="pointer-events-none absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-[#E91E63]/[0.035] blur-[150px]" />
+      <div className="pointer-events-none absolute right-0 top-1/3 h-[500px] w-[500px] rounded-full bg-[#2196F3]/[0.035] blur-[150px]" />
       <div className="mx-auto grid max-w-[1500px] gap-16 px-5 py-28 md:px-10 md:py-40 lg:grid-cols-[0.55fr_1.45fr]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

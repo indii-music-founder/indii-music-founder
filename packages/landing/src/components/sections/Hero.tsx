@@ -136,13 +136,13 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
               </div>
 
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div className="border-l-2 border-amber-400 pl-3">
+                <div className="border-l-2 border-[#2196F3] pl-3">
                   <div className="text-xs font-black uppercase tracking-wider text-white">The release stays connected</div>
                   <p className="mt-1 text-xs leading-relaxed text-white/70">
                     Keep assets, rights, plans, campaigns, and financial records attached to the same project.
                   </p>
                 </div>
-                <div className="border-l-2 border-amber-400 pl-3">
+                <div className="border-l-2 border-[#00FF66] pl-3">
                   <div className="text-xs font-black uppercase tracking-wider text-white">The right help, in context</div>
                   <p className="mt-1 text-xs leading-relaxed text-white/70">
                     Connected specialists help prepare the work while you remain the artist and decision-maker.
@@ -202,14 +202,14 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
 
             <div className="mt-8 border-t border-white/10 pt-4">
               <div className="grid grid-cols-3 gap-2 text-center font-mono text-[9px] uppercase tracking-wider">
-                <div className="rounded bg-black/60 p-2 text-white/80 border border-white/5">
-                  <span className="block font-bold text-amber-400">Keep</span> Your rights
+                <div className="rounded bg-black/60 p-2 text-white/80 border border-[#2196F3]/20">
+                  <span className="block font-bold text-[#2196F3]">Keep</span> Your rights
                 </div>
-                <div className="rounded bg-black/60 p-2 text-white/80 border border-white/5">
-                  <span className="block font-bold text-amber-400">0%</span> Royalty Cut
+                <div className="rounded bg-black/60 p-2 text-white/80 border border-[#FFC107]/20">
+                  <span className="block font-bold text-[#FFC107]">0%</span> Royalty Cut
                 </div>
-                <div className="rounded bg-black/60 p-2 text-white/80 border border-white/5">
-                  <span className="block font-bold text-amber-400">Live</span> Working beta
+                <div className="rounded bg-black/60 p-2 text-white/80 border border-[#00FF66]/20">
+                  <span className="block font-bold text-[#00FF66]">Live</span> Working beta
                 </div>
               </div>
             </div>

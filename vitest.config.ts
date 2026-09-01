@@ -36,6 +36,7 @@ export default defineConfig({
       // repository's private fixtures/tooling.
       '.agents/**',
       'landing-page/**',
+      'archive/**',
       '_archive_legacy/**',
       'tests/**',
       'scripts/**',

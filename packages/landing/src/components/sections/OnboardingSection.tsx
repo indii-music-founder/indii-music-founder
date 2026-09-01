@@ -5,17 +5,19 @@ import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
 const intakeItems = [
-  'Masters and stems',
-  'Songwriter and split information',
-  'Release metadata',
-  'Registrations and rights records',
-  'Artist profiles and working accounts',
-  'Current projects and open decisions',
+  { text: 'Masters and stems', hex: '#00BCD4' },
+  { text: 'Songwriter and split information', hex: '#009688' },
+  { text: 'Release metadata', hex: '#2196F3' },
+  { text: 'Registrations and rights records', hex: '#455A64' },
+  { text: 'Artist profiles and working accounts', hex: '#E91E63' },
+  { text: 'Current projects and open decisions', hex: '#FFB800' },
 ];
 
 export default function OnboardingSection() {
   return (
-    <section data-system-section="onboarding" className="relative z-20 w-full border-t border-white/10 bg-[#050505]">
+    <section data-system-section="onboarding" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-[#050505]">
+      {/* Ambient background glow */}
+      <div className="pointer-events-none absolute right-0 top-1/2 h-[450px] w-[450px] -translate-y-1/2 rounded-full bg-[#00BCD4]/[0.03] blur-[140px]" />
       <div className="mx-auto grid max-w-[1500px] gap-16 px-5 py-28 md:px-10 md:py-40 lg:grid-cols-[1.05fr_0.95fr] lg:gap-24">
         <motion.div
           initial={{ opacity: 0, y: 25 }}
@@ -48,10 +50,10 @@ export default function OnboardingSection() {
             <span className="text-amber-400">Guided</span>
           </div>
           {intakeItems.map((item, index) => (
-            <div key={item} className="flex items-center gap-5 border-b border-white/8 px-6 py-5">
-              <span className="font-mono text-[9px] text-white/20">0{index + 1}</span>
-              <span className="flex-1 text-sm font-medium text-white/65">{item}</span>
-              <Check size={13} className="text-amber-400/70" />
+            <div key={item.text} className="flex items-center gap-5 border-b border-white/8 px-6 py-5">
+              <span className="font-mono text-[9px] font-bold" style={{ color: item.hex }}>0{index + 1}</span>
+              <span className="flex-1 text-sm font-medium text-white/75">{item.text}</span>
+              <Check size={13} style={{ color: item.hex }} />
             </div>
           ))}
           <div className="px-6 py-7 text-sm leading-relaxed text-white/50">

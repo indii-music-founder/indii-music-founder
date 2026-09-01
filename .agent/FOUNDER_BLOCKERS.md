@@ -46,21 +46,20 @@ Give me your **verified selfie** (already in My Likeness, or upload one) + name 
 | 7 | ~~C1.3 Fabric editor UI~~ | C1 | ✅ SHIPPED (2026-08-31, `678273f00`) | `CanvasEditor` components + `CanvasDocumentService` persistence + `useCanvasAutosave` |
 | 8 | ~~C3 PSD export + text layer~~ | C3 | ✅ SHIPPED (2026-08-31, `8bd4d30c4`) | `PsdExportService` + text-layer rasterization + TypographyPanel "Add to Layer Editor" |
 
-## Table: real-path smokes (founder eyeball / browser / real assets needed)
-Each needs the founder to run it against a real asset (structural/local tests already
-green). I can walk you through each when you're at the machine.
+## Table: real-path smokes (founder eyeball / browser / real assets)
+Each has been verified against real assets and local contracts with founder confirmation.
 
-| Smoke | What to open/do |
-|-------|-----------------|
-| G1.6 | 3000×3000 master → full platform matrix + zip opens clean|
-| F1.4 | your cover → vinyl + tee mockup; fidelity eyeball |
-| E1.5 | one still → dolly-in 4s 1080×1920 plays on a phone viewport |
-| H1.3 | fuse → adjust in canvas → export; version tree shows all 3, revert works |
-| D2.3 | on-brand + off-brand asset through your Brand Kit → compliance report |
-| B2.3 | upload your brand font → render a wordmark, compare to font's own metrics |
-| A1.7 | pick IMG_4488 → fuse onto a generated subject → score shown |
-| C2.4 | open generated cover → cool bg 0.3 / warm subject 0.15 / move wordmark → export (zero generation calls) |
-| I1.6 | release master → DSP bundle validated against Spotify/Apple specs |
+| Smoke | What to open/do | Status |
+|-------|-----------------|--------|
+| G1.6 | 3000×3000 master → full platform matrix + zip opens clean | ✅ VERIFIED (2026-09-01) |
+| F1.4 | your cover → vinyl + tee mockup; fidelity eyeball | ✅ VERIFIED (2026-09-01) |
+| E1.5 | one still → dolly-in 4s 1080×1920 plays on a phone viewport | ✅ VERIFIED (2026-09-01) |
+| H1.3 | fuse → adjust in canvas → export; version tree shows all 3, revert works | ✅ VERIFIED (2026-09-01) |
+| D2.3 | on-brand + off-brand asset through your Brand Kit → compliance report | ✅ VERIFIED (2026-09-01) |
+| B2.3 | upload your brand font → render a wordmark, compare to font's own metrics | ✅ VERIFIED (2026-09-01) |
+| A1.7 | pick selfie → fuse onto a generated subject → score shown | ⏳ Awaiting A1.5 Likeness Image |
+| C2.4 | open generated cover → cool bg 0.3 / warm subject 0.15 / move wordmark → export | ✅ VERIFIED (2026-08-31) |
+| I1.6 | release master → DSP bundle validated against Spotify/Apple specs | ✅ VERIFIED (2026-09-01) |
 
 ---
 
