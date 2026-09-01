@@ -8,7 +8,12 @@
 > Living doc: a future agent or session reads this first. Updates go to
 > `docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md` §19 + this file together.
 >
-> Updated: 2026-08-29
+> Updated: 2026-08-31
+
+> **Founder tech policy (2026-08-31):** do not adopt third-party tech whose code or
+> model weights are proprietary. Open-source only (MIT/Apache/etc.). This declines
+> C2.3 (imgly weights are proprietary) and clears A1 (@vladmandic/human is MIT,
+> @mediapipe is Apache-2.0).
 
 ## Why these are blocked (not skipped)
 Per the repo's real-user-authenticity rule, I will not fabricate founder data,
@@ -35,7 +40,7 @@ Give me your **verified selfie** (already in My Likeness, or upload one) + name 
 | 1 | A1.1 identity backend | A1 | Approve + allow installing `@vladmandic/human` (vendored weights) | `FacePipeline.loadHuman` real backend |
 | 2 | A1.5 threshold calibration | A1 | **Your real likeness selfie + name one correct generated image of you** | real threshold in `LikenessFusionService.IDENTITY_SIMILARITY_THRESHOLD` |
 | 3 | A1.7 panel smoke | A1 | eyeball the panel in Studio | `LikenessFusionPanel` live wiring |
-| 4 | C2.3 split-subject | C2 | License decision on `@imgly/background-removal` model weights | flag-gated layer op behind feature flag |
+| 4 | C2.3 split-subject | C2 | ❌ DECLINED (imgly weights proprietary; open-source-only policy) | n/a — build an open-source alternative if ever wanted |
 | 5 | A2 pixel swap | A2 | License decision on `inswapper_128` (non-commercial) | Electron sidecar (desktop-only, default off) |
 | 6 | E2 generative motion | E2 | Cost-approval to enable the gen-motion flag | `VITE_ENABLE_GEN_MOTION` gate |
 | 7 | ~~C1.3 Fabric editor UI~~ | C1 | ✅ SHIPPED (2026-08-31, `678273f00`) | `CanvasEditor` components + `CanvasDocumentService` persistence + `useCanvasAutosave` |
