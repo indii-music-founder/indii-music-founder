@@ -23,6 +23,7 @@
         "@react-three/fiber": "8.17.14",
         "@sentry/react": "10.32.1",
         "@tanstack/react-virtual": "^3.13.21",
+        "@vladmandic/human": "^3.3.6",
         "ag-psd": "^31.0.2",
         "clsx": "2.1.1",
         "cmdk": "^1.0.4",

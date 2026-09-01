@@ -4,16 +4,13 @@
  * Face detection + identity scoring boundary (Workstream A1 —
  * docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md §6).
  *
- * The founder approved (2026-08-29) A1.6: run the DEGRADED geometry-only
- * backend in v1. `@mediapipe/tasks-vision` FaceLandmarker provides face
- * landmarks (NOT biometric embeddings), so similarity in this mode scores
- * GEOMETRY FIT (normalized landmark alignment), not identity. This is a
- * deliberate, founder-signed-off limitation and is surfaced on every result
- * (`embeddingMode: 'geometry'`).
+ * Identity backend: `@vladmandic/human` (MIT, open source — founder policy
+ * 2026-08-31). `faceres` produces a real biometric face descriptor, so
+ * `analyzeFace` returns `embeddingMode: 'identity'` + a `primaryEmbedding`.
+ * Models are vendored under `public/models/human/` (no CDN fetch).
  *
- * A model asset (face_landmarker.task) is still required at runtime; if it is
- * not present, `analyzeFace` throws a specific "model asset not bundled"
- * error rather than returning wrong-identity results.
+ * Fallback: `@mediapipe/tasks-vision` FaceLandmarker geometry mode (A1.6)
+ * when the identity backend fails to load.
  */
 
 export interface DetectedFace {
@@ -109,12 +106,83 @@ export interface HumanInstance {
 }
 
 /**
- * Founder-approved degraded backend (A1.6): geometry-only, available. The
- * model asset path must be wired to a bundled face_landmarker.task or
- * analyzeFace throws a specific error.
+ * Identity backend (@vladmandic/human, MIT) is installed and its face models
+ * are vendored under public/models/human/ — so identity mode is available.
  */
 export function loadHuman(): HumanInstance {
-    return { available: true, mode: 'geometry' };
+    return { available: true, mode: 'identity' };
+}
+
+/** Vendored model path for the @vladmandic/human face models (MIT). */
+export const HUMAN_MODEL_PATH = '/models/human/';
+
+let humanPromise: Promise<HumanLike> | null = null;
+
+type HumanLike = {
+    load: () => Promise<void>;
+    detect: (img: HTMLImageElement) => Promise<{ face?: HumanFace[] }>;
+};
+
+type HumanFace = {
+    box: { x: number; y: number; width: number; height: number };
+    score: number;
+    embedding?: number[];
+};
+
+/** Lazy-load the @vladmandic/human runtime (bundled tfjs) + vendored models. */
+async function getHuman(): Promise<HumanLike> {
+    if (humanPromise) return humanPromise;
+    humanPromise = (async () => {
+        const { default: Human } = await import('@vladmandic/human');
+        const Ctor = Human as unknown as new (config: Record<string, unknown>) => HumanLike;
+        const human = new Ctor({
+            modelBasePath: HUMAN_MODEL_PATH,
+            backend: 'webgl',
+            debug: false,
+            face: {
+                enabled: true,
+                detector: { enabled: true, modelPath: 'blazeface.json' },
+                mesh: { enabled: false },
+                description: { enabled: true, modelPath: 'faceres.json' },
+                emotion: { enabled: false },
+                iris: { enabled: false },
+                liveness: { enabled: false },
+                antispoof: { enabled: false },
+            },
+            body: { enabled: false },
+            hand: { enabled: false },
+            object: { enabled: false },
+            segmentation: { enabled: false },
+            gesture: { enabled: false },
+        });
+        await human.load();
+        return human;
+    })();
+    return humanPromise;
+}
+
+/**
+ * Real biometric identity: detect the primary face and return its face
+ * descriptor embedding (`embeddingMode: 'identity'`).
+ */
+export async function analyzeFaceIdentity(dataUrl: string): Promise<FaceAnalysis> {
+    const human = await getHuman();
+    const img = new Image();
+    img.src = dataUrl;
+    await img.decode().catch(() => { /* handled below via empty result */ });
+
+    const result = await human.detect(img);
+    const face = result.face?.[0];
+    if (!face || !face.embedding || face.embedding.length === 0) {
+        throw new Error('analyzeFaceIdentity: no face or embedding detected');
+    }
+
+    return {
+        faces: [{ box: face.box, score: face.score ?? 1 }],
+        primaryEmbedding: face.embedding,
+        landmarks: [],
+        embeddingMode: 'identity',
+    };
 }
 
 /** Path where the face_landmarker.task model asset must live (A1.6 degraded mode). */
@@ -145,7 +213,7 @@ async function getLandmarker(): Promise<unknown> {
  * primaryEmbedding is ALWAYS null here — this is geometry, not identity.
  * Throws a specific error when the model asset is missing.
  */
-export async function analyzeFace(dataUrl: string): Promise<FaceAnalysis> {
+async function analyzeFaceGeometry(dataUrl: string): Promise<FaceAnalysis> {
     const landmarker = await getLandmarker();
     const lm = landmarker as {
         detect: (img: HTMLImageElement, cb?: (r: unknown) => void) => { faceLandmarks?: Array<Array<{ x: number; y: number; z: number }>>; faceBlendshapes?: unknown };
@@ -178,6 +246,18 @@ export async function analyzeFace(dataUrl: string): Promise<FaceAnalysis> {
         landmarks,
         embeddingMode: 'geometry'
     };
+}
+
+/**
+ * Analyze a face: identity (biometric embedding) first, geometry fallback
+ * when the identity backend fails to load.
+ */
+export async function analyzeFace(dataUrl: string): Promise<FaceAnalysis> {
+    try {
+        return await analyzeFaceIdentity(dataUrl);
+    } catch {
+        return analyzeFaceGeometry(dataUrl);
+    }
 }
 
 /** Kept for A1.2 signature stability. */

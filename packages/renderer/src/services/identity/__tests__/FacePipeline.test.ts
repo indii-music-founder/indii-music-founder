@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cosineSimilarity, geometryFitSimilarity, loadHuman, FACE_LANDMARKER_MODEL_PATH } from '../FacePipeline';
+import { cosineSimilarity, geometryFitSimilarity, loadHuman, FACE_LANDMARKER_MODEL_PATH, HUMAN_MODEL_PATH } from '../FacePipeline';
 
 describe('FacePipeline geometry similarity (A1.6 degraded)', () => {
     // 6 normalized face landmarks; indices 0/1 are the eye pair used for the
@@ -33,10 +33,11 @@ describe('FacePipeline geometry similarity (A1.6 degraded)', () => {
         expect(() => cosineSimilarity([1, 2], [1])).toThrow(/dimension mismatch/);
     });
 
-    it('degraded backend reports geometry mode and a model asset path', () => {
+    it('identity backend is available (open-source @vladmandic/human)', () => {
         const human = loadHuman();
         expect(human.available).toBe(true);
-        expect(human.mode).toBe('geometry');
+        expect(human.mode).toBe('identity');
+        expect(HUMAN_MODEL_PATH).toContain('models/human');
         expect(FACE_LANDMARKER_MODEL_PATH).toContain('face_landmarker.task');
     });
 });
