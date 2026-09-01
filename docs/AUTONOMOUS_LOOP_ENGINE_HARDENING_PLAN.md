@@ -23,14 +23,19 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
 
 ## 2. Architecture & Vulnerability Matrix
 
-| Work Package | Component | Vulnerability | Target Pattern | Severity |
-|---|---|---|---|---|
-| **WP-A** | `AgentLoopService.ts` | In-memory `executionStore` Map | Durable Firestore collection `users/{uid}/agentLoopExecutions/{id}` with resumption | High |
-| **WP-B1** | `WorkflowStateService.ts` | Non-transactional `get()` $\to$ `set()` in step updates | `runTransaction()` with dot-notated step updates and status checks | Critical |
-| **WP-B2** | `CampaignFSM.ts` | Non-transactional state transitions | `runTransaction()` with preconditions and retry counter increments | High |
-| **WP-C** | `AgentLoopService.ts` | Burns iteration budget on API timeouts/429 | Jittered exponential backoff for transient errors; preserves iteration count | High |
-| **WP-D** | `AgentGraphService.ts` / `AgentLoopService.ts` | 100 memories + unbounded parent outputs dumped into prompts | Top-5 memory cap, 12K char parent output budget, pre-flight `TokenEstimator` | Medium |
-| **WP-E** | `AgentGraphService.ts` | `activeLoops` `Set` only guards single JS process | Distributed Firestore document lease (20s lock deadline, 5s heartbeat, 270s hard limit) | High |
+## Implementation Progress & Work Breakdown
+
+| Work Package | Focus Area | Status | Verification Target |
+| :--- | :--- | :--- | :--- |
+| **WP-B1** | Atomic Firestore Transactions (`WorkflowStateService.ts`) | **Completed** | `WorkflowStateService.test.ts` (10/10 passing) |
+| **WP-B2** | FSM Transactional State (`CampaignFSM.ts`) | **Completed** | `machine.test.ts` (4/4 passing) |
+| **WP-A** | Durable Persistence & Resumption (`AgentLoopService.ts`) | **Completed** | `AgentLoopService.test.ts` (resumption test) |
+| **WP-C** | Exponential Backoff & Transient Retry (`AgentLoopService.ts`) | **Completed** | `AgentLoopService.test.ts` (backoff test) |
+| **WP-D1** | Checkpoint Context Trimming (`AgentLoopService.ts`) | **Completed** | `AgentLoopService.test.ts` (context trim) |
+| **WP-D2** | Context Trimming & Memory Capping (`AgentGraphService.ts`) | **Completed** | `AgentGraphService.hardening.test.ts` |
+| **WP-E** | Distributed Lease Locking & Deadlines (`AgentGraphService.ts`) | **Completed** | `AgentGraphService.hardening.test.ts` |
+
+**Committed on `main`:** Commit [`4b1e77f4a`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder) with all 5 pre-commit quality gates passed.
 
 ---
 
