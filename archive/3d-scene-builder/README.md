@@ -33,3 +33,13 @@ models onto a stage, adjusted lighting/camera, and the scene fed the video pipel
 The shared audio-visualizer 3D pieces (`components/shared/WaveMesh.tsx`,
 `CanvasRenderer.tsx`, `AudioVisualizer.tsx`) are **not** part of this removal —
 they stay in the app.
+
+## Founder future idea (2026-09-01) — NOTE, not built
+Reuse this 3D tech for **staging a still picture**, not a performance stage:
+- Place objects in 3D space ("this to the left, that behind, this beside it").
+- Place a light source (e.g. "the sun's over here") and get realistic shadows
+  falling the right way.
+- Compose the scene and render it as a still image.
+- Use case: a band visual — arrange a room, props, lights, and get a composed
+  picture with believable lighting/shadows.
+When this is picked up, `SceneBuilder.tsx` is the starting point.
