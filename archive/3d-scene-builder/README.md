@@ -15,7 +15,8 @@ models onto a stage, adjusted lighting/camera, and the scene fed the video pipel
 - `sceneBuilderFiles.ts` — GLTF/OBJ file validation.
 - `ThreeSceneBuilderService.ts` — scene-state orchestration service (was already
   unreferenced by the time of removal).
-- `*.test.tsx` / `*.test.ts` — co-located tests.
+- `*.test.tsx.archived` / `*.test.ts.archived` — co-located tests (renamed so
+  Vitest no longer discovers them; strip the `.archived` suffix to restore).
 
 ## Restore if needed
 1. Move these files back under `packages/renderer/src/`:
