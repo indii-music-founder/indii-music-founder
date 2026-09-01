@@ -345,6 +345,11 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
 
     if (typeof window === 'undefined') return null;
 
+    if (!firebaseConfig.messagingSenderId) {
+        logger.debug('[Firebase] Messaging skipped: missing messagingSenderId in current environment.');
+        return null;
+    }
+
     try {
         const { getMessaging, isSupported: isMessagingSupported } = await import('firebase/messaging');
         const supported = await isMessagingSupported().catch(() => false);

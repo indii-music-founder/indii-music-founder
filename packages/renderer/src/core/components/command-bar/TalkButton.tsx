@@ -63,7 +63,7 @@ export const combineTranscript = (base: string, final: string, interim: string):
     return trimmedBase ? `${trimmedBase} ${spoken}` : spoken;
 };
 
-export const TalkButton: React.FC<TalkButtonProps> = ({
+export const TalkButton = React.forwardRef<HTMLButtonElement, TalkButtonProps>(({
     value,
     isAgentBusy = false,
     onStopAgent,
@@ -77,7 +77,7 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
     accent = 'glass',
     sizeVariant = 'default',
     className,
-}) => {
+}, ref) => {
     const [isListening, setIsListening] = useState(false);
     const startedAtRef = useRef(0);
     const baseTextRef = useRef('');
@@ -236,6 +236,7 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
 
     return (
         <button
+            ref={ref}
             onClick={handleClick}
             disabled={disabled}
             data-testid={face === 'busy' ? 'command-bar-stop-btn' : 'talk-button'}
@@ -262,6 +263,8 @@ export const TalkButton: React.FC<TalkButtonProps> = ({
             {showLabel && <span>{label}</span>}
         </button>
     );
-};
+});
+
+TalkButton.displayName = 'TalkButton';
 
 export default TalkButton;

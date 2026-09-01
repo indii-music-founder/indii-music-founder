@@ -25,9 +25,13 @@ function randomToken(): string {
 class StudioExecutorLeaseService {
     private cached: StudioExecutorLease | null = null;
 
+    isSupported(): boolean {
+        return typeof window !== 'undefined' && !!window.electronAPI?.credentials;
+    }
+
     async getLease(): Promise<StudioExecutorLease> {
         if (this.cached && this.cached.expiresAt - Date.now() > 60_000) return this.cached;
-        const credentials = window.electronAPI?.credentials;
+        const credentials = typeof window !== 'undefined' ? window.electronAPI?.credentials : undefined;
         if (!credentials) throw new Error('Studio executor leases can only be issued inside the Electron Studio app.');
         const stored = await credentials.get(KEYCHAIN_ID) as { apiKey?: string; apiSecret?: string } | null;
         let deviceId = stored?.apiKey;
@@ -44,6 +48,10 @@ class StudioExecutorLeaseService {
     }
 
     async publishPresence(state: Record<string, unknown>): Promise<void> {
+        if (!this.isSupported()) {
+            // Web browser mode — leases are Electron-only. Gracefully skip without spamming error logs.
+            return;
+        }
         // Record what the heartbeat loop actually observed so the Settings UI
         // can report real relay health instead of a structural capability
         // check. Errors re-throw — callers already handle them per beat.
@@ -65,6 +73,7 @@ class StudioExecutorLeaseService {
     }
 
     async releasePresence(studioInstanceId: string): Promise<void> {
+        if (!this.isSupported()) return;
         const lease = await this.getLease();
         const release = httpsCallable(functions, 'releaseStudioPresence');
         await release({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, studioInstanceId });
