@@ -23,13 +23,29 @@ npm run typecheck > /dev/null 2>&1 || {
 echo "  3️⃣  Checking API security boundaries..."
 npm run security:frontend-api-boundary > /dev/null 2>&1 || {
   echo "  ❌ Security boundary violation detected."
+  npm run security:frontend-api-boundary
+  exit 1
+}
+npm run security:vertex-only > /dev/null 2>&1 || {
+  echo "  ❌ Vertex-only backend boundary violation detected."
+  npm run security:vertex-only
+  exit 1
+}
+npm run security:vertex-routing > /dev/null 2>&1 || {
+  echo "  ❌ Vertex routing invariant violated."
+  npm run security:vertex-routing
   exit 1
 }
 
-# Stage 3a: Verify agent capability catalog is up to date
-echo "  3️⃣ a Checking agent capability catalog..."
+# Stage 3a: Verify agent capability catalog and mainline workflows are up to date
+echo "  3️⃣ a Checking agent capability catalog and workflows..."
 npm run validate:capabilities > /dev/null 2>&1 || {
   echo "  ❌ Capability catalog is stale. Run 'npm run capabilities:generate' and stage the catalog."
+  exit 1
+}
+npm run validate:mainline-workflows > /dev/null 2>&1 || {
+  echo "  ❌ Mainline workflow validation failed."
+  npm run validate:mainline-workflows
   exit 1
 }
 

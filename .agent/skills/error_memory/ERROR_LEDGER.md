@@ -1,4 +1,15 @@
 
+## 2026-09-02 CI Capability Catalog Stale Discrepancy — Pre-commit Hook Missing CI Lint Prerequisites
+
+- **SEVERITY:** High (broke remote CI build step while local git commit passed clean)
+- **FILES:** `.husky/pre-commit`, `.agent/capabilities/catalog.json`, `.agent/capabilities/catalog.md`, `scripts/validate-agent-capabilities.mjs`
+- **ERROR:** Remote CI failed at `Run linting checks`: `Capability catalog is stale. Run npm run capabilities:generate. Process completed with exit code 1.`
+- **CAUSE:** Updating agent manifests and skill markdown files invalidated `.agent/capabilities/catalog.json`. Local git commits passed because `.husky/pre-commit` only ran `lint-staged`, `typecheck`, and `security:frontend-api-boundary`. The full CI lint pipeline (`npm run lint`), which includes `validate:capabilities`, `validate:mainline-workflows`, `security:vertex-only`, and `security:vertex-routing`, was NOT in the pre-commit gate.
+- **FIX:** 
+  1. Regenerated catalog via `npm run capabilities:generate`.
+  2. Hardened `.husky/pre-commit` to run `npm run validate:capabilities`, `npm run validate:mainline-workflows`, `npm run security:vertex-only`, and `npm run security:vertex-routing` prior to commit.
+- **PREVENTION:** Pre-commit hooks MUST enforce the exact same lint and integrity prerequisite commands as remote CI (`npm run lint`). Any change to agent cards, manifests, or skills must trigger `npm run capabilities:generate` before committing.
+
 ## 2026-08-29 Studio video previews blank (camera icon on empty tile) — PRIMARY ROOT CAUSE = CSP media-src
 
 - **PRIMARY CAUSE (the real blocker):** Firebase Hosting CSP `media-src` in `firebase.json` allowed `'self' blob: https://storage.googleapis.com http://commondatastorage.googleapis.com` but OMITTED `https://firebasestorage.googleapis.com` — the exact host `getDownloadURL()` returns for every Storage object. So every video (resolved to `https://firebasestorage.googleapis.com/...`) was BLOCKED by the browser's media policy: no preview, no playback, anywhere. `img-src`/`connect-src` already allowed the host, which is why images worked and videos did not. FIX: add `https://firebasestorage.googleapis.com` to `media-src` in all 4 CSP blocks (`firebase.json`). Requires hosting redeploy to serve the new headers (CI deploy does this).
