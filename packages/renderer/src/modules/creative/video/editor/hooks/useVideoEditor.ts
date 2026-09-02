@@ -12,6 +12,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { cloudRenderEligibilityError } from '../utils/renderEligibility';
 import { RenderService } from '@/services/video/RenderService';
 import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
+import { platformBridge } from '@/services/platform/PlatformBridgeService';
 
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
@@ -229,19 +230,14 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         setIsExporting(true);
         toast.info('Starting local render... Please wait.');
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { electronAPI } = window as any;
-            if (!electronAPI?.selectDirectory) {
-                throw new Error("Directory selection is not available. Please use the desktop app.");
-            }
-            if (!electronAPI?.video?.render) {
+            if (!platformBridge.canRenderVideoLocally()) {
                 throw new Error("Local rendering is not supported in the browser environment. Please use the desktop app.");
             }
 
             const filename = `video_${Date.now()}.mp4`;
 
-            // Prompt user to select export directory (handles access granting via AccessControlService)
-            const selectedDirectory = await electronAPI.selectDirectory();
+            // Prompt user to select export directory via platform bridge
+            const selectedDirectory = await platformBridge.selectDirectory();
             if (!selectedDirectory) {
                 // User cancelled selection
                 setIsExporting(false);

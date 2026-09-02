@@ -9,6 +9,7 @@ import { db } from '../firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { logger } from '@/utils/logger';
 import { toMillisSafe } from '@/utils/timestamps';
+import { platformBridge } from '../platform/PlatformBridgeService';
 
 // Define the Firestore document shape (handling timestamps)
 interface SessionDocument extends Omit<ConversationSession, 'createdAt' | 'updatedAt'> {
@@ -138,26 +139,22 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
     async deleteSession(id: string): Promise<void> {
         await this.delete(id);
 
-        // KEEPER: Dual Write for Electron Local Persistence (Forget)
-        if (window.electronAPI?.agent?.deleteHistory) {
-            window.electronAPI.agent.deleteHistory(id).catch((err: any) => {
-                logger.error('[SessionService] Failed to delete local history:', err);
-            });
-        }
+        // KEEPER: Dual Write for Local Persistence (Cross-platform decoupled)
+        platformBridge.deleteHistory(id).catch((err: any) => {
+            logger.error('[SessionService] Failed to delete local history:', err);
+        });
     }
 
     private saveToLocal(id: string, data: any, attempt = 1) {
-        if (window.electronAPI?.agent?.saveHistory) {
-            // Fire and forget with retry logic for cross-device durability
-            window.electronAPI.agent.saveHistory(id, data).catch((err: any) => {
-                if (attempt < 3) {
-                    logger.warn(`[SessionService] Retrying local save for ${id} (attempt ${attempt + 1})...`);
-                    setTimeout(() => this.saveToLocal(id, data, attempt + 1), 1000 * attempt);
-                } else {
-                    logger.error('[SessionService] Failed to save to local history after 3 attempts:', err);
-                }
-            });
-        }
+        // Fire and forget with retry logic for cross-device durability via platformBridge
+        platformBridge.saveHistory(id, data).catch((err: any) => {
+            if (attempt < 3) {
+                logger.warn(`[SessionService] Retrying local save for ${id} (attempt ${attempt + 1})...`);
+                setTimeout(() => this.saveToLocal(id, data, attempt + 1), 1000 * attempt);
+            } else {
+                logger.error('[SessionService] Failed to save to local history after 3 attempts:', err);
+            }
+        });
     }
 
     async getSessionsForUser(): Promise<ConversationSession[]> {

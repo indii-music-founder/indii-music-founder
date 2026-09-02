@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { IndiiVideoProject } from '@indii/shared';
+import { platformBridge } from '@/services/platform/PlatformBridgeService';
 
 interface CompiledPreviewState {
     html: string | null;
@@ -10,7 +11,7 @@ interface CompiledPreviewState {
 
 const EMPTY: CompiledPreviewState = { html: null, error: null, isCompiling: false };
 
-/** Compile through main so preview and final render use the exact same compiler. */
+/** Compile through platform bridge so preview and final render use the exact same compiler. */
 export const useCompiledVideoPreview = (project: IndiiVideoProject): CompiledPreviewState => {
     const [state, setState] = React.useState<CompiledPreviewState>(EMPTY);
 
@@ -20,8 +21,7 @@ export const useCompiledVideoPreview = (project: IndiiVideoProject): CompiledPre
             return;
         }
 
-        const compile = window.electronAPI?.video?.compilePreview;
-        if (!compile) {
+        if (!platformBridge.canCompileVideoPreview()) {
             setState({
                 html: null,
                 error: 'Live timeline preview is available in the desktop app.',
@@ -32,7 +32,7 @@ export const useCompiledVideoPreview = (project: IndiiVideoProject): CompiledPre
 
         let cancelled = false;
         setState(current => ({ ...current, error: null, isCompiling: true }));
-        void compile(project).then((html) => {
+        void platformBridge.compileVideoPreview(project).then((html) => {
             if (!cancelled) setState({ html, error: null, isCompiling: false });
         }).catch((error: unknown) => {
             if (!cancelled) {

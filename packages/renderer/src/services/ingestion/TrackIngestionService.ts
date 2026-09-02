@@ -50,6 +50,12 @@ export class TrackIngestionService {
             }
         } else {
             Logger.info('TrackIngestion', `Force reanalyze enabled. Bypassing cache for: ${fingerprint}`);
+            try {
+                const { useStore } = await import('@/core/store');
+                useStore.getState().invalidateAudioProfile?.(fingerprint);
+            } catch {
+                // Non-blocking in headless/test environments without store
+            }
         }
 
         // 3. Technical Analysis (Essentia)

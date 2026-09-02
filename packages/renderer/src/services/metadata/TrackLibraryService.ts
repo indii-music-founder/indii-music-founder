@@ -1,12 +1,16 @@
 import {
     Timestamp,
     collection,
+    deleteDoc,
     doc,
     getDoc,
     getDocs,
+    onSnapshot,
     query,
     setDoc,
+    type FirestoreError,
     type QueryConstraint,
+    type Unsubscribe,
 } from 'firebase/firestore';
 
 import { auth, db } from '@/services/firebase';
@@ -64,6 +68,63 @@ export class TrackLibraryService {
             }),
             { merge: true }
         );
+    }
+
+    subscribeTracks(
+        onUpdate: (tracks: (ExtendedGoldenMetadata & { _hasPendingWrites?: boolean; _isFromCache?: boolean })[]) => void,
+        onError?: (error: FirestoreError) => void,
+        constraints: QueryConstraint[] = []
+    ): Unsubscribe {
+        const userId = this.requireUserId();
+        const q = query(collection(db, 'users', userId, 'tracks'), ...constraints);
+
+        return onSnapshot(
+            q,
+            { includeMetadataChanges: true },
+            snapshot => {
+                const tracks = snapshot.docs.map(trackDoc => ({
+                    id: trackDoc.id,
+                    ...trackDoc.data(),
+                    _hasPendingWrites: trackDoc.metadata.hasPendingWrites,
+                    _isFromCache: trackDoc.metadata.fromCache,
+                } as ExtendedGoldenMetadata & { _hasPendingWrites?: boolean; _isFromCache?: boolean }));
+                onUpdate(tracks);
+            },
+            onError
+        );
+    }
+
+    subscribeTrack(
+        fingerprint: string,
+        onUpdate: (track: (ExtendedGoldenMetadata & { _hasPendingWrites?: boolean; _isFromCache?: boolean }) | null) => void,
+        onError?: (error: FirestoreError) => void
+    ): Unsubscribe {
+        const userId = this.requireUserId();
+        const docRef = doc(db, 'users', userId, 'tracks', fingerprint);
+
+        return onSnapshot(
+            docRef,
+            { includeMetadataChanges: true },
+            snapshot => {
+                if (!snapshot.exists()) {
+                    onUpdate(null);
+                    return;
+                }
+                const track = {
+                    id: snapshot.id,
+                    ...snapshot.data(),
+                    _hasPendingWrites: snapshot.metadata.hasPendingWrites,
+                    _isFromCache: snapshot.metadata.fromCache,
+                } as ExtendedGoldenMetadata & { _hasPendingWrites?: boolean; _isFromCache?: boolean };
+                onUpdate(track);
+            },
+            onError
+        );
+    }
+
+    async deleteTrack(fingerprint: string): Promise<void> {
+        const userId = this.requireUserId();
+        await deleteDoc(doc(db, 'users', userId, 'tracks', fingerprint));
     }
 
     private pruneUndefined(value: unknown): unknown {

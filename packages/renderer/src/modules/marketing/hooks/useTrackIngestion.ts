@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { trackIngestion } from '@/services/ingestion/TrackIngestionService';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
 
 interface UseTrackIngestionResult {
-    ingest: (file: File) => Promise<ExtendedGoldenMetadata | null>;
+    ingest: (file: File, options?: { forceReanalyze?: boolean }) => Promise<ExtendedGoldenMetadata | null>;
     isAnalyzing: boolean;
     error: string | null;
     progress: string; // "Fingerprinting", "Listening", "Saving", etc.
@@ -15,17 +15,14 @@ export function useTrackIngestion(): UseTrackIngestionResult {
     const [error, setError] = useState<string | null>(null);
     const [progress, setProgress] = useState<string>('');
 
-    const ingest = useCallback(async (file: File) => {
+    const ingest = useCallback(async (file: File, options?: { forceReanalyze?: boolean }) => {
         setIsAnalyzing(true);
         setError(null);
         setProgress('Starting...');
 
         try {
-            // NOTE: In a real app we might want to emit events from the service
-            // for granular progress. For now we just set state.
-
             setProgress('Analyzing Audio...');
-            const metadata = await trackIngestion.ingestTrack(file);
+            const metadata = await trackIngestion.ingestTrack(file, options);
 
             setProgress('Complete');
             return metadata;
@@ -39,5 +36,10 @@ export function useTrackIngestion(): UseTrackIngestionResult {
         }
     }, []);
 
-    return { ingest, isAnalyzing, error, progress };
+    return useMemo(() => ({
+        ingest,
+        isAnalyzing,
+        error,
+        progress,
+    }), [ingest, isAnalyzing, error, progress]);
 }

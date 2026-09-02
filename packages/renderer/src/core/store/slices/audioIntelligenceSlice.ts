@@ -12,6 +12,9 @@ export interface AudioIntelligenceSlice {
     // Actions
     analyzeAudio: (file: File) => Promise<AudioIntelligenceProfile>;
     getAudioProfile: (id: string) => AudioIntelligenceProfile | undefined;
+    invalidateAudioProfile: (id: string) => void;
+    updateAudioProfile: (id: string, updates: Partial<AudioIntelligenceProfile>) => void;
+    clearAudioProfiles: () => void;
 }
 
 export const createAudioIntelligenceSlice: StateCreator<AudioIntelligenceSlice> = (set, get) => ({
@@ -61,5 +64,33 @@ export const createAudioIntelligenceSlice: StateCreator<AudioIntelligenceSlice> 
 
     getAudioProfile: (id: string) => {
         return get().audioProfiles[id];
+    },
+
+    invalidateAudioProfile: (id: string) => {
+        set(state => {
+            const next = { ...state.audioProfiles };
+            delete next[id];
+            return { audioProfiles: next };
+        });
+        logger.debug(`[AudioIntelligenceSlice] Invalidated profile for ${id}`);
+    },
+
+    updateAudioProfile: (id: string, updates: Partial<AudioIntelligenceProfile>) => {
+        set(state => {
+            const current = state.audioProfiles[id];
+            if (!current) return state;
+            return {
+                audioProfiles: {
+                    ...state.audioProfiles,
+                    [id]: { ...current, ...updates }
+                }
+            };
+        });
+        logger.debug(`[AudioIntelligenceSlice] Updated profile for ${id}`);
+    },
+
+    clearAudioProfiles: () => {
+        set({ audioProfiles: {} });
+        logger.debug('[AudioIntelligenceSlice] Cleared all cached audio profiles');
     }
 });

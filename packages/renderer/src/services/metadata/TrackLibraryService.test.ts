@@ -8,6 +8,8 @@ const firebaseMocks = vi.hoisted(() => ({
     getDocs: vi.fn(),
     query: vi.fn((reference: unknown) => reference),
     setDoc: vi.fn(),
+    deleteDoc: vi.fn(),
+    onSnapshot: vi.fn(),
     timestamp: class MockTimestamp {
         static now = vi.fn(() => 'timestamp');
     },
@@ -21,8 +23,10 @@ vi.mock('@/services/firebase', () => ({
 vi.mock('firebase/firestore', () => ({
     collection: firebaseMocks.collection,
     doc: firebaseMocks.doc,
+    deleteDoc: firebaseMocks.deleteDoc,
     getDoc: firebaseMocks.getDoc,
     getDocs: firebaseMocks.getDocs,
+    onSnapshot: firebaseMocks.onSnapshot,
     query: firebaseMocks.query,
     setDoc: firebaseMocks.setDoc,
     Timestamp: firebaseMocks.timestamp,
@@ -84,5 +88,71 @@ describe('TrackLibraryService', () => {
 
         await expect(service.getByFingerprint(metadata.masterFingerprint!))
             .rejects.toThrow('authenticated');
+    });
+
+    it('subscribes to track collection using onSnapshot with metadata changes', () => {
+        const unsubscribeMock = vi.fn();
+        firebaseMocks.onSnapshot.mockReturnValue(unsubscribeMock);
+
+        const service = new TrackLibraryService();
+        const onUpdate = vi.fn();
+        const onError = vi.fn();
+
+        const unsub = service.subscribeTracks(onUpdate, onError);
+
+        expect(firebaseMocks.collection).toHaveBeenCalledWith(
+            expect.anything(),
+            'users',
+            'owner-1',
+            'tracks'
+        );
+        expect(firebaseMocks.onSnapshot).toHaveBeenCalledWith(
+            expect.anything(),
+            { includeMetadataChanges: true },
+            expect.any(Function),
+            onError
+        );
+        expect(unsub).toBe(unsubscribeMock);
+    });
+
+    it('subscribes to single track document using onSnapshot', () => {
+        const unsubscribeMock = vi.fn();
+        firebaseMocks.onSnapshot.mockReturnValue(unsubscribeMock);
+
+        const service = new TrackLibraryService();
+        const onUpdate = vi.fn();
+
+        const unsub = service.subscribeTrack('SONIC-123', onUpdate);
+
+        expect(firebaseMocks.doc).toHaveBeenCalledWith(
+            expect.anything(),
+            'users',
+            'owner-1',
+            'tracks',
+            'SONIC-123'
+        );
+        expect(firebaseMocks.onSnapshot).toHaveBeenCalledWith(
+            expect.anything(),
+            { includeMetadataChanges: true },
+            expect.any(Function),
+            undefined
+        );
+        expect(unsub).toBe(unsubscribeMock);
+    });
+
+    it('deletes track from user catalog', async () => {
+        const service = new TrackLibraryService();
+        await service.deleteTrack('SONIC-to-delete');
+
+        expect(firebaseMocks.doc).toHaveBeenCalledWith(
+            expect.anything(),
+            'users',
+            'owner-1',
+            'tracks',
+            'SONIC-to-delete'
+        );
+        expect(firebaseMocks.deleteDoc).toHaveBeenCalledWith(
+            expect.objectContaining({ path: 'users/owner-1/tracks/SONIC-to-delete' })
+        );
     });
 });
