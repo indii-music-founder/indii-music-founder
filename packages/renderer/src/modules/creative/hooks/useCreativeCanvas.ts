@@ -292,7 +292,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             }
 
             const debouncedSave = debounce(async () => {
-                if (!canvasOps.isInitialized()) return;
+                if (typeof canvasOps?.isInitialized !== 'function' || !canvasOps.isInitialized()) return;
                 try {
                     const json = await canvasOps.toJSON();
                     if (json) {
