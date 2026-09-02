@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "97accfe2ee65eec8d8f4b40215cc88441688609e22976a86348b5908083cfcd5",
+  "sourceDigest": "386f9f92eb8ee68f3e249110d000094377ce0c5c7bf4e79332cde10ee0b01f6b",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 36,
     "conditional": 69,
-    "quarantined": 82,
+    "quarantined": 84,
     "deprecated": 1
   },
   "capabilities": [
@@ -3910,6 +3910,40 @@
       "lockHash": "5a90e991bb9acfd3e43bfb570498dee60b9cef94cbb80cfb99257c7e4f61c1a0"
     },
     {
+      "id": "skill:vendored:gemini-enterprise-agent-schema",
+      "name": "gemini-enterprise-agent-schema",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/gemini-enterprise-agent-schema/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Standards for transforming unstructured multimodal inputs into indiiOS Layer 1 Firestore models, DDEX ERN compliance objects, and DSP safety verifications.",
+      "descriptionHash": "07a8bde6dfa793b6f2a3f58951e1a6acf5489ae424279a039e7573527ca91dcf",
+      "contentHash": "3952cd1bf1f0e8f2dde71a6dbdfec1b8ac2f09c808890ce53c1d4cb6b54eec78",
+      "state": "quarantined",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": false,
+      "upstream": null,
+      "lockHash": null,
+      "reason": "Installed vendored skill has no skills-lock.json entry."
+    },
+    {
       "id": "skill:vendored:general-video",
       "name": "general-video",
       "kind": "skill",
@@ -4205,6 +4239,40 @@
       "locked": true,
       "upstream": "heygen-com/hyperframes",
       "lockHash": "ac8a17b31cb3dcbd025e17be617a531b2be6905cb764d4b1339bca54d7bc8f33"
+    },
+    {
+      "id": "skill:vendored:legal-contract-extraction",
+      "name": "legal-contract-extraction",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/legal-contract-extraction/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Specialized extraction protocols and rules for music industry split sheets, producer agreements, work-for-hire contracts, and distribution agreements.",
+      "descriptionHash": "1bd8c8c958fe15c0371c920c780f6ed09f4861ff1238066b287af0ce3aa0eae2",
+      "contentHash": "e7d6c77aad61a4026bca9e6ce7a6ef4819658f2ec6af0bcd6a98c5fd2645891a",
+      "state": "quarantined",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": false,
+      "upstream": null,
+      "lockHash": null,
+      "reason": "Installed vendored skill has no skills-lock.json entry."
     },
     {
       "id": "skill:vendored:media-use",

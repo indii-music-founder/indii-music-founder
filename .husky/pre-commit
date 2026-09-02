@@ -26,6 +26,13 @@ npm run security:frontend-api-boundary > /dev/null 2>&1 || {
   exit 1
 }
 
+# Stage 3a: Verify agent capability catalog is up to date
+echo "  3️⃣ a Checking agent capability catalog..."
+npm run validate:capabilities > /dev/null 2>&1 || {
+  echo "  ❌ Capability catalog is stale. Run 'npm run capabilities:generate' and stage the catalog."
+  exit 1
+}
+
 # Stage 3b: Cloud Function runtime invariants (ISSUE-1238, ISSUE-1242, ISSUE-1243)
 # Two failure modes that no type error or failing test catches, because they
 # only differ in production: a function pinned below the ~259MiB shared
