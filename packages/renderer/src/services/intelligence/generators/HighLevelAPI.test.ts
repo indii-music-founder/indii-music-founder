@@ -33,15 +33,9 @@ describe('HighLevelAPI: extractAndParseJson & parseJSON', () => {
         expect(parsed).toEqual(['Detroit Techno', 'Deep House', 'Minimal']);
     });
 
-    it('throws an AppException with INTERNAL_ERROR when input cannot be parsed', () => {
+    it('returns undefined when input cannot be parsed', () => {
         const input = 'Not a json string at all';
-        expect(() => extractAndParseJson(input)).toThrow(AppException);
-        try {
-            extractAndParseJson(input);
-        } catch (err: unknown) {
-            expect(err).toBeInstanceOf(AppException);
-            expect((err as AppException).code).toBe(AppErrorCode.INTERNAL_ERROR);
-        }
+        expect(extractAndParseJson(input)).toBeUndefined();
     });
 
     it('warns on missing required schema keys', () => {

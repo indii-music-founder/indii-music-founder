@@ -322,7 +322,8 @@ export function extractAndParseJson<T = Record<string, unknown>>(
     schema?: Schema | Record<string, unknown>
 ): T {
     if (!text || typeof text !== 'string') {
-        throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Empty response for structured JSON parsing');
+        logger.error('[HighLevelAPI] Empty response for structured JSON parsing');
+        return undefined as unknown as T;
     }
 
     // 1. Try markdown code block fence extraction
@@ -363,10 +364,8 @@ export function extractAndParseJson<T = Record<string, unknown>>(
     }
 
     if (parsed === undefined || parsed === null) {
-        throw new AppException(
-            AppErrorCode.INTERNAL_ERROR,
-            `Failed to parse structured JSON from intelligence response: ${text.slice(0, 150)}`
-        );
+        logger.error(`[HighLevelAPI] Failed to parse structured JSON from intelligence response: ${text.slice(0, 150)}`);
+        return undefined as unknown as T;
     }
 
     // Schema validation: if schema specifies required properties, validate them
@@ -389,7 +388,8 @@ export function extractAndParseJson<T = Record<string, unknown>>(
 export function parseJSON<T = Record<string, unknown>>(text: string | undefined): T | Record<string, never> {
     if (!text) return {};
     try {
-        return extractAndParseJson<T>(text);
+        const parsed = extractAndParseJson<T>(text);
+        return (parsed ?? {}) as T;
     } catch {
         logger.error('[HighLevelAPI] Failed to parse JSON:', text);
         return {} as T;
