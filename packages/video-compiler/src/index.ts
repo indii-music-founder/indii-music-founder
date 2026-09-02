@@ -8,3 +8,5 @@
  * worker (server-side composition).
  */
 export * from './compiler.js';
+export * from './beatSnapTimeline.js';
+export * from './omniFlashValidator.js';

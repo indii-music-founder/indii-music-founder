@@ -2,60 +2,219 @@
   "schemaVersion": "1.0.0",
   "agentId": "video",
   "displayName": "Video Director",
-  "description": "Specializes in video production, editing, and VFX.",
+  "description": "Specializes in frame-conditioned video production, beat-snapped timeline assembly, multimodal editing, and VFX on indiiOS Layer 1.",
   "capabilities": [
     {
       "name": "generate_video",
-      "description": "Generate a video from a text prompt or start image.",
-      "inputSchemaRef": "#/components/schemas/Empty",
-      "outputSchemaRef": "#/components/schemas/Empty",
+      "description": "Generate a video clip from a text prompt or start image with dual aspect ratio support.",
+      "inputSchemaRef": "#/components/schemas/GenerateVideoInput",
+      "outputSchemaRef": "#/components/schemas/GenerateVideoOutput",
+      "streaming": false
+    },
+    {
+      "name": "generate_video_chain",
+      "description": "Generate an end-to-end multi-segment frame-chained video sequence with dramatic beat snapping and seamless xfade transitions.",
+      "inputSchemaRef": "#/components/schemas/GenerateVideoChainInput",
+      "outputSchemaRef": "#/components/schemas/GenerateVideoChainOutput",
       "streaming": false
     },
     {
       "name": "batch_edit_videos",
-      "description": "Edit/grade uploaded videos with an instruction.",
-      "inputSchemaRef": "#/components/schemas/Empty",
-      "outputSchemaRef": "#/components/schemas/Empty",
+      "description": "Edit/grade uploaded video clips with multimodal Gemini Omni Flash while preserving boundary transition anchors.",
+      "inputSchemaRef": "#/components/schemas/BatchEditVideosInput",
+      "outputSchemaRef": "#/components/schemas/BatchEditVideosOutput",
       "streaming": false
     },
     {
       "name": "extend_video",
-      "description": "Extend a video clip forwards or backwards.",
-      "inputSchemaRef": "#/components/schemas/Empty",
-      "outputSchemaRef": "#/components/schemas/Empty",
+      "description": "Extend a video clip forwards or backwards using terminal/initial frame conditioning.",
+      "inputSchemaRef": "#/components/schemas/ExtendVideoInput",
+      "outputSchemaRef": "#/components/schemas/ExtendVideoOutput",
       "streaming": false
     },
     {
       "name": "update_keyframe",
-      "description": "Update animation keyframes.",
-      "inputSchemaRef": "#/components/schemas/Empty",
-      "outputSchemaRef": "#/components/schemas/Empty",
+      "description": "Update animation keyframes with sub-frame precision and easing curves.",
+      "inputSchemaRef": "#/components/schemas/UpdateKeyframeInput",
+      "outputSchemaRef": "#/components/schemas/UpdateKeyframeOutput",
       "streaming": false
     },
     {
       "name": "browser_tool",
       "description": "Search for stock footage or visual references.",
-      "inputSchemaRef": "#/components/schemas/Empty",
-      "outputSchemaRef": "#/components/schemas/Empty",
+      "inputSchemaRef": "#/components/schemas/BrowserToolInput",
+      "outputSchemaRef": "#/components/schemas/BrowserToolOutput",
       "streaming": false
     },
     {
       "name": "indii_image_gen",
-      "description": "Generate storyboard keyframes.",
-      "inputSchemaRef": "#/components/schemas/Empty",
-      "outputSchemaRef": "#/components/schemas/Empty",
+      "description": "Generate storyboard keyframes and white-studio base character reference frames (F_0).",
+      "inputSchemaRef": "#/components/schemas/IndiiImageGenInput",
+      "outputSchemaRef": "#/components/schemas/IndiiImageGenOutput",
       "streaming": false
     },
     {
       "name": "orchestrate_timeline",
-      "description": "Acts as a render supervisor, dynamically breaking down a master script/timeline into sequential 5-second descriptive prompts optimized for Veo generation.",
-      "inputSchemaRef": "#/components/schemas/Empty",
-      "outputSchemaRef": "#/components/schemas/Empty",
+      "description": "Render supervisor dynamically breaking down a master script/timeline into sequential beat-snapped prompts and crossfade transitions.",
+      "inputSchemaRef": "#/components/schemas/OrchestrateTimelineInput",
+      "outputSchemaRef": "#/components/schemas/OrchestrateTimelineOutput",
       "streaming": false
     }
   ],
-  "inputSchemas": {},
-  "outputSchemas": {},
+  "inputSchemas": {
+    "GenerateVideoInput": {
+      "type": "object",
+      "properties": {
+        "prompt": { "type": "string" },
+        "startImage": { "type": "string", "description": "Base64 data URI or Storage URL for F_0" },
+        "duration": { "type": "number", "minimum": 1, "maximum": 60 },
+        "aspectRatio": { "type": "string", "enum": ["16:9", "9:16"], "default": "16:9" },
+        "resolution": { "type": "string", "enum": ["720p", "1080p", "4k"], "default": "1080p" }
+      },
+      "required": ["prompt"]
+    },
+    "GenerateVideoChainInput": {
+      "type": "object",
+      "properties": {
+        "prompt": { "type": "string" },
+        "startImage": { "type": "string", "description": "F_0 conditioning base reference" },
+        "totalDuration": { "type": "number", "minimum": 10, "maximum": 120, "default": 30 },
+        "aspectRatio": { "type": "string", "enum": ["16:9", "9:16"], "default": "16:9" },
+        "bpm": { "type": "number", "description": "Audio tempo for beat snapping" },
+        "beatSnapped": { "type": "boolean", "default": true }
+      },
+      "required": ["prompt", "startImage"]
+    },
+    "BatchEditVideosInput": {
+      "type": "object",
+      "properties": {
+        "prompt": { "type": "string" },
+        "videoIndices": { "type": "array", "items": { "type": "integer" } },
+        "lockBoundaryMarginSeconds": { "type": "number", "default": 0.5 }
+      },
+      "required": ["prompt"]
+    },
+    "ExtendVideoInput": {
+      "type": "object",
+      "properties": {
+        "videoUrl": { "type": "string" },
+        "prompt": { "type": "string" },
+        "direction": { "type": "string", "enum": ["start", "end"], "default": "end" },
+        "duration": { "type": "number", "default": 5 }
+      },
+      "required": ["videoUrl", "prompt"]
+    },
+    "UpdateKeyframeInput": {
+      "type": "object",
+      "properties": {
+        "clipId": { "type": "string" },
+        "property": { "type": "string", "enum": ["scale", "opacity", "x", "y", "rotation"] },
+        "frame": { "type": "number" },
+        "value": { "type": "number" },
+        "easing": { "type": "string", "enum": ["linear", "easeIn", "easeOut", "easeInOut"], "default": "linear" }
+      },
+      "required": ["clipId", "property", "frame", "value"]
+    },
+    "BrowserToolInput": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string" },
+        "searchType": { "type": "string", "enum": ["image", "video", "reference"], "default": "reference" }
+      },
+      "required": ["query"]
+    },
+    "IndiiImageGenInput": {
+      "type": "object",
+      "properties": {
+        "prompt": { "type": "string" },
+        "aspectRatio": { "type": "string", "enum": ["16:9", "9:16", "1:1"], "default": "16:9" },
+        "style": { "type": "string" }
+      },
+      "required": ["prompt"]
+    },
+    "OrchestrateTimelineInput": {
+      "type": "object",
+      "properties": {
+        "masterScript": { "type": "string" },
+        "totalDuration": { "type": "number", "default": 30 },
+        "artStyle": { "type": "string" },
+        "bpm": { "type": "number" },
+        "beatSnapped": { "type": "boolean", "default": true }
+      },
+      "required": ["masterScript"]
+    }
+  },
+  "outputSchemas": {
+    "GenerateVideoOutput": {
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "status": { "type": "string" },
+        "videoUrl": { "type": "string" }
+      },
+      "required": ["jobId", "status"]
+    },
+    "GenerateVideoChainOutput": {
+      "type": "object",
+      "properties": {
+        "manifestId": { "type": "string" },
+        "status": { "type": "string" },
+        "segments": { "type": "array" },
+        "outputMasterGcsUri": { "type": "string" }
+      },
+      "required": ["manifestId", "status"]
+    },
+    "BatchEditVideosOutput": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string" },
+        "editedCount": { "type": "number" },
+        "editedVideoUrls": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["status", "editedCount"]
+    },
+    "ExtendVideoOutput": {
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string" },
+        "status": { "type": "string" },
+        "extendedVideoUrl": { "type": "string" }
+      },
+      "required": ["jobId", "status"]
+    },
+    "UpdateKeyframeOutput": {
+      "type": "object",
+      "properties": {
+        "success": { "type": "boolean" },
+        "clipId": { "type": "string" }
+      },
+      "required": ["success", "clipId"]
+    },
+    "BrowserToolOutput": {
+      "type": "object",
+      "properties": {
+        "results": { "type": "array" }
+      },
+      "required": ["results"]
+    },
+    "IndiiImageGenOutput": {
+      "type": "object",
+      "properties": {
+        "imageUrl": { "type": "string" },
+        "assetId": { "type": "string" }
+      },
+      "required": ["imageUrl"]
+    },
+    "OrchestrateTimelineOutput": {
+      "type": "object",
+      "properties": {
+        "timelineSegments": { "type": "array" },
+        "transitionOffsets": { "type": "array", "items": { "type": "number" } },
+        "totalDuration": { "type": "number" }
+      },
+      "required": ["timelineSegments", "transitionOffsets"]
+    }
+  },
   "costModel": {
     "perTokenInUsd": 0.000015,
     "perTokenOutUsd": 0.000075
@@ -73,6 +232,6 @@
   "roster": {
     "category": "department"
   },
-  "promptVersion": "1.55.3-video",
+  "promptVersion": "1.80.0-video",
   "trainingModel": "video"
 }

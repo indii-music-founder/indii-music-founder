@@ -56,6 +56,7 @@ import { BillingTools } from './BillingTools';
 import { EmailTools } from './EmailTools';
 import { McpTools } from './McpTools';
 import { VideoProjectTools } from './VideoProjectTools';
+import { EditorTools } from './EditorTools';
 import { RemoteSupportTools } from './RemoteSupportTools';
 import { TrashTools } from './TrashTools';
 import { AnyToolFunction } from '../types';
@@ -129,6 +130,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     // Must follow McpTools: queue_video_render is the canonical local editor
     // renderer; the remote release-canvas MCP tool has its own explicit name.
     ...VideoProjectTools,
+    ...EditorTools,
     ...RemoteSupportTools,
     ...TrashTools,
 };
@@ -164,6 +166,10 @@ AVAILABLE TOOLS:
 24. extend_video(videoUrl: string, direction: string, frame: number) - Extend video (direction: 'forwards' or 'backwards').
 25. update_keyframe(clipId: string, property: string, frame: number, value: number, easing: string) - Add or update a keyframe.
 26. create_performance_video(masterAsset: CanonicalMasterReference, artistImageUrl?: string, artistDescription?: string, style?: string, aspectRatio?: string, sceneCount?: number) - Generate a beat-synced performance music video from a verified canonical master and AI artist.
+26b. video_list_renderable_assets(aspectRatio?, minDuration?) - List user's finished video assets with duration and aspect ratio metadata.
+26c. video_plan_sequence(assetIds, bpm?, beatSnapped?, aspectRatio?, transitionDurationSeconds?) - Compose an ordered multi-clip sequence with dramatic beat snapping (no render, no cost).
+26d. video_render_stitch(planId?, assetIds?, projectId?, aspectRatio?) - Billable render submission for an approved beat-snapped sequence plan.
+26e. video_get_render_status(renderId) - Query honest rendering and progress status for an active stitch job.
 27. list_organizations() - List all organizations.
 27. switch_organization(orgId: string) - Switch to a different organization.
 28. create_organization(name: string) - Create a new organization.
