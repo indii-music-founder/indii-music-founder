@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "8cca02c85594ae5ad68c5edbc02a13e18f323d26ee79bea973029a058b7d9c8e",
+  "sourceDigest": "97accfe2ee65eec8d8f4b40215cc88441688609e22976a86348b5908083cfcd5",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 36,
     "conditional": 69,
-    "quarantined": 79,
+    "quarantined": 82,
     "deprecated": 1
   },
   "capabilities": [
@@ -232,6 +232,36 @@
       "description": "npm run preflight:prod && electron-vite build && electron-builder --win --publish never",
       "descriptionHash": "dc4c9d32b187efd1c8eda01060f8738325a254b81b708dba24f8d4757dd73012",
       "contentHash": "64124c9812f946c1f1a4f793477c18a3e570467955b4bcfc65c20b047890d9d1",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:build:electron",
+      "name": "npm run build:electron",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "electron-vite build",
+      "descriptionHash": "05fb5df71bdd9e800d5461072fdaa5f2eacd584cfc5506ff9ccd8379bb5973ac",
+      "contentHash": "abe64286e237268c3adea9d43072c8645c71f05f28fb95c91365af52a0d94ed5",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -1004,6 +1034,66 @@
       "description": "bash scripts/doctor.sh",
       "descriptionHash": "4aa98c8df563a0ed61bf9eaebe9c720f024d575c28014ddaf416e547f13d1053",
       "contentHash": "e2de8e7224813f11f72e2d0c721459f4b7db9e079acba2487365eacf6dd5b2f2",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:electron:build",
+      "name": "npm run electron:build",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "npm run build:desktop",
+      "descriptionHash": "d99ec88f4c173a7d8f4be19cc8b420fb8ae950862d27a0d31557fb1cfadbd7d5",
+      "contentHash": "e06ffc811aabfc8a0472cf94800b51ab762b55dff9e41f651b815b6b5211d01e",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:electron:dev",
+      "name": "npm run electron:dev",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "npm run dev",
+      "descriptionHash": "21f1677c8f4f84241689e7c6c37d74002be01686fac03a710ca876993526fff7",
+      "contentHash": "fca40e748ea4bb260d1196ec1c1f19e78eac21af7bae4032f54bfb25e7c1e3d9",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
