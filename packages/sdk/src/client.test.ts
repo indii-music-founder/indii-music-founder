@@ -3,7 +3,6 @@
  * Unit tests for indii SDK client
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { indiiClient, createClient, indiiError } from './client';
 

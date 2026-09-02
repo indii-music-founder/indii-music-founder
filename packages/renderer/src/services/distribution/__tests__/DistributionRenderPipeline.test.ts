@@ -5,7 +5,6 @@ import {
     mmToPx,
     bleedEdgePx,
     renderDistributionBundle,
-    UPSAMPLE_MIN_RATIO,
     UPSAMPLE_MAX_RATIO
 } from '../DistributionRenderPipeline';
 

@@ -14,7 +14,7 @@ vi.mock('firebase/firestore', () => ({
     getDoc: vi.fn(async (ref: { __path: string }) => ({ exists: () => store.has(ref.__path), data: () => store.get(ref.__path) }))
 }));
 
-import { validateRights, AssetRightsService, type AssetRights } from '../AssetRightsService';
+import { validateRights, AssetRightsService } from '../AssetRightsService';
 
 describe('validateRights (H2.1)', () => {
     it('accepts a valid ai-generated rights record', () => {

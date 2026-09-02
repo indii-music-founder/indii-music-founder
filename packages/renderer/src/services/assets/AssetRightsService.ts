@@ -12,7 +12,7 @@
  */
 
 import { auth, db } from '@/services/firebase';
-import { collection, doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
 export type UsageRights = 'ai-generated' | 'ai-assisted' | 'owned-licensed' | 'licensed-third-party';

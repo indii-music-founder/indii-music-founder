@@ -30,7 +30,6 @@ export interface RegisteredFont {
     addedAt: number;
 }
 
-const SUPPORTED_EXT = new Set(['ttf', 'otf']);
 const MAX_FONT_BYTES = 8 * 1024 * 1024; // 8MB heuristic guard
 
 function detectFormat(filename: string): { format: 'ttf' | 'otf' | 'woff' } {

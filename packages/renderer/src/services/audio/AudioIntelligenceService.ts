@@ -134,7 +134,7 @@ export class AudioIntelligenceService {
      * 1. Technical (local WASM)
      * 2. Semantic (Gemini 3 Pro - INTELLIGENCE_MODELS.TEXT.AGENT)
      */
-    async analyze(file: File | string, signal?: AbortSignal): Promise<AudioIntelligenceProfile> {
+    async analyze(file: File | string, _signal?: AbortSignal): Promise<AudioIntelligenceProfile> {
         return withServiceError('AudioIntelligence', 'analyze', async () => {
             const filename = typeof file === 'string'
                 ? file.split(/[/\\]/).pop() || 'audio'

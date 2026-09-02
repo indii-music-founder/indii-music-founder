@@ -12,14 +12,12 @@ const mocks = vi.hoisted(() => ({
   arcjetPolicyForEntitlement: vi.fn(),
 }));
 
-vi.mock('firebase-functions/v2', () => ({
-  https: {
-    onCall: mocks.onCall,
-    HttpsError: class HttpsError extends Error {
-      constructor(public code: string, message: string, public details?: unknown) {
-        super(message);
-      }
-    },
+vi.mock('firebase-functions/v2/https', () => ({
+  onCall: mocks.onCall,
+  HttpsError: class HttpsError extends Error {
+    constructor(public code: string, message: string, public details?: unknown) {
+      super(message);
+    }
   },
 }));
 

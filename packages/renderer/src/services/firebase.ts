@@ -36,7 +36,7 @@ import { initializeAuth, browserLocalPersistence, browserSessionPersistence, ind
 import { firebaseConfig, env } from '@/config/env';
 
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
-import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider, CustomProvider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, CustomProvider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { getE2EMockUser, isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
