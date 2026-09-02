@@ -16,6 +16,11 @@ vi.mock('@/core/context/ToastContext', () => ({
     })
 }));
 
+// Mock FileUpload
+vi.mock('@/components/kokonutui/file-upload', () => ({
+    default: () => <div data-testid="file-upload">Mock File Upload</div>
+}));
+
 describe('CreativeGallery', () => {
     const mockStore = {
         generatedHistory: [],
@@ -41,10 +46,6 @@ describe('CreativeGallery', () => {
     beforeEach(() => {
         (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
     });
-
-    vi.mock('@/components/kokonutui/file-upload', () => ({
-        default: () => <div data-testid="file-upload">Mock File Upload</div>
-    }));
 
     it('renders empty state with upload icon', () => {
         render(<CreativeGallery />);
