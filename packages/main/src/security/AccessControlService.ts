@@ -29,6 +29,37 @@ class AccessControlService {
         }
     }
 
+    private getAllowedRoots(): string[] {
+        const homeDir = typeof os.homedir === 'function' ? os.homedir() : '';
+        const roots = [
+            app.getPath('userData'),
+            os.tmpdir(),
+            path.join(app.getPath('documents'), 'indii'),
+            ...(homeDir ? [path.join(homeDir, 'indii')] : [])
+        ];
+
+        return roots.map(p => {
+            try {
+                // Try to resolve root to handle symlinks (e.g. /var/tmp -> /private/var/tmp)
+                return fs.realpathSync(p);
+            } catch (_e) {
+                // Fallback if root doesn't exist yet (unlikely for these standard dirs)
+                return path.resolve(p);
+            }
+        });
+    }
+
+    /**
+     * Checks whether a resolved path is within the allowed roots.
+     */
+    isWithinAllowedRoots(targetPath: string): boolean {
+        const allowedRoots = this.getAllowedRoots();
+        return allowedRoots.some(root => {
+            const rootWithSep = root.endsWith(path.sep) ? root : root + path.sep;
+            return targetPath === root || targetPath.startsWith(rootWithSep);
+        });
+    }
+
     /**
      * Verifies if the file path is authorized for access.
      * Access is authorized if:
@@ -36,32 +67,15 @@ class AccessControlService {
      * 2. The path is within the App's User Data directory.
      * 3. The path is within the OS Temporary Directory.
      * 4. The path is within the App's Documents/indii directory.
+     * 5. The path is within the User's ~/indii directory.
      */
     verifyAccess(filePath: string): boolean {
         try {
             // 1. Resolve Path (Canonicalize & Resolve Symlinks)
-            // This throws if file doesn't exist.
-            // If the file allows "read", it must exist.
-            // If we are checking "write" permission to a non-existent file, this would fail.
-            // But verifyAccess is mostly used for "read" (transmit, analyze, stage).
-            // For "save" (write), we usually grant access explicitly or use allowed dirs.
-            // So fs.realpathSync is correct for preventing symlink attacks.
             const resolvedPath = fs.realpathSync(filePath);
 
             // 2. Check Explicit Grants
-            // We check if the authorized paths set contains this specific file
-            // OR if an authorized path is a parent directory of this file (if we granted directory access)
             for (const authorized of this.authorizedPaths) {
-                // Determine if authorized path implies directory access
-                // If we granted access to a directory, we allow children.
-                // If we granted access to a file, we allow exact match.
-
-                // We don't know if 'authorized' was a file or dir at grant time without stating it.
-                // But usually selectDirectory grants a dir, selectFile grants a file.
-                // Let's assume strict prefix check handles both (file starts with dir/).
-                // But file starts with file/ is false.
-                // So we need: resolvedPath === authorized OR resolvedPath.startsWith(authorized + separator)
-
                 const authorizedWithSep = authorized.endsWith(path.sep) ? authorized : authorized + path.sep;
                 if (resolvedPath === authorized || resolvedPath.startsWith(authorizedWithSep)) {
                     return true;
@@ -69,27 +83,7 @@ class AccessControlService {
             }
 
             // 3. Check System Allowlist
-            // We assume app is ready when this is called.
-            const allowedRoots = [
-                app.getPath('userData'),
-                os.tmpdir(),
-                path.join(app.getPath('documents'), 'indii')
-            ].map(p => {
-                 try {
-                    // Try to resolve root to handle symlinks (e.g. /var/tmp -> /private/var/tmp)
-                    return fs.realpathSync(p);
-                } catch (_e) {
-                    // Fallback if root doesn't exist yet (unlikely for these standard dirs)
-                    return path.resolve(p);
-                }
-            });
-
-            const isAllowed = allowedRoots.some(root => {
-                const rootWithSep = root.endsWith(path.sep) ? root : root + path.sep;
-                return resolvedPath === root || resolvedPath.startsWith(rootWithSep);
-            });
-
-            if (isAllowed) return true;
+            if (this.isWithinAllowedRoots(resolvedPath)) return true;
 
             log.warn(`[AccessControl] Access denied: ${resolvedPath}`);
             return false;
@@ -127,22 +121,7 @@ class AccessControlService {
                 }
             }
 
-            const allowedRoots = [
-                app.getPath('userData'),
-                os.tmpdir(),
-                path.join(app.getPath('documents'), 'indii')
-            ].map(p => {
-                try {
-                    return fs.realpathSync(p);
-                } catch (_e) {
-                    return path.resolve(p);
-                }
-            });
-
-            const isAllowed = allowedRoots.some(root => {
-                const rootWithSep = root.endsWith(path.sep) ? root : root + path.sep;
-                return resolvedDir === root || resolvedDir.startsWith(rootWithSep);
-            });
+            const isAllowed = this.isWithinAllowedRoots(resolvedDir);
 
             if (!isAllowed) {
                 log.warn(`[AccessControl] Write target denied — resolved directory outside allowed scope: ${resolvedDir}`);

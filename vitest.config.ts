@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
+import workspace from './vitest.workspace';
 
 /**
  * Vitest configuration — post-monorepo migration.
@@ -68,7 +69,8 @@ export default defineConfig({
     pool: 'forks',
     isolate: true,
     maxWorkers: 2,
-    // Test discovery is now handled by vitest.workspace.ts
+    // Test discovery is now handled by workspace projects
+    projects: workspace,
     // Item 282: Coverage thresholds — build fails if coverage drops below these
     coverage: {
       provider: 'v8',

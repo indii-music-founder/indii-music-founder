@@ -31,10 +31,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getGpuInfo: () => ipcRenderer.invoke('system:get-gpu-info'),
     showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', { title, body }),
 
+    // Filesystem (Safe Local IPC Bridge for Inbox Watcher & Agent Tools)
+    fs: {
+        listFiles: (dirPath: string) => ipcRenderer.invoke('fs:list-files', dirPath),
+        readTextFile: (filePath: string) => ipcRenderer.invoke('fs:read-text-file', filePath),
+        readBinaryFile: (filePath: string) => ipcRenderer.invoke('fs:read-binary-file', filePath),
+        mkdir: (dirPath: string) => ipcRenderer.invoke('fs:mkdir', dirPath),
+    },
+
     // Auth (Simplified - login handled via Firebase SDK in renderer)
     auth: {
-        // Login is now handled directly via Firebase signInWithPopup in the renderer
-        // No need for IPC - it works natively in Electron's Chromium
+        login: async () => {
+            // Login is handled directly via Firebase signInWithPopup in renderer
+            return;
+        },
         logout: () => ipcRenderer.invoke('auth:logout'),
         onUserUpdate: (callback: (tokens: { idToken: string, accessToken?: string | null, source?: string | null } | null) => void) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

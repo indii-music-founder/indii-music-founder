@@ -98,6 +98,7 @@ export interface ElectronAPI {
     setPrivacyMode: (enabled: boolean) => Promise<void>;
     selectFile: (options?: { title?: string, filters?: { name: string, extensions: string[] }[] }) => Promise<string | null>;
     selectDirectory: (options?: { title?: string }) => Promise<string | null>;
+    getDirectoryContents: (dirPath: string, options?: { recursive?: boolean; extensions?: string[] }) => Promise<string[]>;
     searchApprovedAssets: (dirPath: string, options?: { query?: string; extensions?: string[]; maxResults?: number }) => Promise<Array<{
         name: string;
         relativePath: string;
@@ -105,7 +106,31 @@ export interface ElectronAPI {
         sizeBytes: number;
         modifiedAt: number;
     }>>;
+    getGpuInfo: () => Promise<unknown>;
     showNotification: (title: string, body: string) => void;
+
+    // Safe Local Trash
+    trash?: {
+        move: (req: { approvedFolderId: string; dirPath: string; relativePath: string; trashId: string }) => Promise<{
+            success: boolean;
+            trashId: string;
+            relativePath: string;
+            name: string;
+            sizeBytes: number;
+            isDirectory: boolean;
+        }>;
+        restore: (req: { dirPath: string; trashId: string; relativePath: string; targetRelativePath?: string }) => Promise<{
+            success: boolean;
+            restoredPath?: string;
+            conflict?: boolean;
+            error?: string;
+        }>;
+        purge: (req: { dirPath: string; trashId: string }) => Promise<{
+            success: boolean;
+            canceled?: boolean;
+            error?: string;
+        }>;
+    };
 
     // System Info (Device Detection)
     system?: {
@@ -289,6 +314,16 @@ export interface ElectronAPI {
     // Brand analysis IPC bridge (Electron-only)
     brand?: {
         analyzeConsistency: (assetPath: string, brandKit: Record<string, unknown>) => Promise<{ success: boolean; report?: unknown; issues?: unknown[]; error?: string }>;
+    };
+
+    // Publicist IPC bridge (Electron-only)
+    publicist?: {
+        generatePdf: (data: unknown) => Promise<{ success: boolean; path?: string; error?: string }>;
+    };
+
+    // Marketing analysis IPC bridge (Electron-only)
+    marketing?: {
+        analyzeTrends: (data: unknown) => Promise<{ success: boolean; trends?: unknown; error?: string }>;
     };
 
     // Built-in Task Scheduler (Neural Sync + background jobs)

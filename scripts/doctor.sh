@@ -74,17 +74,21 @@ if [ -f ".env" ]; then
   REQUIRED_VARS=(
     "VITE_FIREBASE_API_KEY"
     "VITE_FIREBASE_PROJECT_ID"
-    "VITE_API_KEY"
+    "VITE_FIREBASE_APP_ID"
   )
 
   for var in "${REQUIRED_VARS[@]}"; do
     VALUE=$(grep "^${var}=" .env 2>/dev/null | cut -d= -f2-)
-    if [ -z "$VALUE" ] || [ "$VALUE" = "your_firebase_api_key_here" ] || [ "$VALUE" = "your_project_id" ] || [ "$VALUE" = "your_gemini_api_key_here" ]; then
+    if [ -z "$VALUE" ] || [ "$VALUE" = "your_firebase_api_key_here" ] || [ "$VALUE" = "your_project_id" ] || [ "$VALUE" = "your_firebase_app_id_here" ]; then
       fail "$var: not configured (still placeholder)"
     else
       pass "$var: configured"
     fi
   done
+
+  if grep -q "^VITE_API_KEY=" .env 2>/dev/null && [ -n "$(grep "^VITE_API_KEY=" .env | cut -d= -f2-)" ]; then
+    warn "VITE_API_KEY is set in .env; production-gate.ts forbids raw provider keys in production builds"
+  fi
 else
   fail ".env file: missing — run 'cp .env.example .env' and fill in values"
 fi

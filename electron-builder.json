@@ -5,8 +5,11 @@
   },
   "files": [
     "dist/**/*",
-    "dist-electron/**/*",
     "package.json"
+  ],
+  "asarUnpack": [
+    "**/node_modules/ffmpeg-static/**",
+    "**/node_modules/ffprobe-static/**"
   ],
   "extraResources": [
     {
@@ -25,7 +28,7 @@
   "mac": {
     "category": "public.app-category.productivity",
     "entitlements": "build/entitlements.mac.plist",
-    "entitlementsInherit": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.inherit.plist",
     "gatekeeperAssess": false,
     "hardenedRuntime": true,
     "icon": "build/icon.icns",

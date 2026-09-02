@@ -67,21 +67,13 @@ fi
 # Build Electron app
 echo "🔨 Building Electron application..."
 if [ "$BUILD_MODE" = "debug" ]; then
-  # For debugging, use vite dev with electron
-  npm run electron:dev &
-  # DEV_PID=$!  # Shellcheck SC2034: unused variable
+  # For debugging, use electron-vite dev
+  npx electron-vite dev &
 else
-  # Production build
-  # Production build
+  # Production packaging
   if [[ "$PLATFORM" = "all" ]]; then
-    # Build all platforms
-    npm run electron:build
+    npx electron-builder --publish never
   else
-    # Build specific platform
-    # 1. Compile Main Process
-    npm run build:electron
-    
-    # 2. Package
     npx electron-builder --"$PLATFORM" --publish never
   fi
 fi
@@ -91,11 +83,11 @@ echo "✅ Build complete!"
 echo ""
 echo "Artifacts:"
 if [[ "$PLATFORM" = "all" || "$PLATFORM" = "mac" ]]; then
-  echo "  macOS: dist-electron-studio/indii Studio.dmg"
+  echo "  macOS: dist-electron/indii.music*.dmg"
 fi
 if [[ "$PLATFORM" = "all" || "$PLATFORM" = "win" ]]; then
-  echo "  Windows: dist-electron-studio/indii-Studio Setup.exe"
+  echo "  Windows: dist-electron/indii.music Setup*.exe"
 fi
 if [[ "$PLATFORM" = "all" || "$PLATFORM" = "linux" ]]; then
-  echo "  Linux: dist-electron-studio/indii-studio.AppImage"
+  echo "  Linux: dist-electron/indii.music*.AppImage"
 fi

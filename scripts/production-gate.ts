@@ -1,7 +1,8 @@
 import { z } from "zod";
 import * as dotenv from "dotenv";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, mkdirSync, writeFileSync, unlinkSync, accessSync, constants, rmSync } from "node:fs";
 import { join } from "node:path";
+import os from "node:os";
 
 // Load env vars from .env file
 dotenv.config();
@@ -224,13 +225,81 @@ function validateReact18Lock(): boolean {
   return true;
 }
 
-console.log(`\n${cyan}[1/3] Validating React Runtime Lock (React 18.3.1 only)...${reset}`);
+function getPlatformUserDataDir(): string {
+  if (process.env.INDII_USER_DATA_DIR) {
+    return process.env.INDII_USER_DATA_DIR;
+  }
+  if (process.env.ELECTRON_USER_DATA_DIR) {
+    return process.env.ELECTRON_USER_DATA_DIR;
+  }
+  const home = os.homedir();
+  if (process.platform === "darwin") {
+    return join(home, "Library", "Application Support", "indii.music");
+  }
+  if (process.platform === "win32") {
+    const appData = process.env.APPDATA || join(home, "AppData", "Roaming");
+    return join(appData, "indii.music");
+  }
+  const configHome = process.env.XDG_CONFIG_HOME || join(home, ".config");
+  return join(configHome, "indii.music");
+}
+
+function validateOfflineMetadataCachePermissions(): boolean {
+  const userDataDir = getPlatformUserDataDir();
+  const testDirs = [
+    join(userDataDir, "metadata-cache"),
+    join(userDataDir, "distribution"),
+    join(userDataDir, "artifacts"),
+    join(os.tmpdir(), "indii-cache-check"),
+  ];
+
+  const errors: string[] = [];
+
+  for (const dir of testDirs) {
+    try {
+      mkdirSync(dir, { recursive: true });
+      accessSync(dir, constants.R_OK | constants.W_OK);
+
+      const probeFile = join(dir, `.probe_${Date.now()}_${process.pid}.tmp`);
+      const probeContent = `indii-perm-check-${Date.now()}`;
+      writeFileSync(probeFile, probeContent, "utf-8");
+      const readBack = readFileSync(probeFile, "utf-8");
+      unlinkSync(probeFile);
+
+      if (readBack !== probeContent) {
+        errors.push(`${dir}: verification probe data mismatch`);
+      }
+    } catch (err: any) {
+      errors.push(`${dir}: ${err?.message || String(err)}`);
+    }
+  }
+
+  // Clean up temporary check folder if created
+  try {
+    const tmpCheck = join(os.tmpdir(), "indii-cache-check");
+    if (existsSync(tmpCheck)) {
+      rmSync(tmpCheck, { recursive: true, force: true });
+    }
+  } catch {
+    // best-effort cleanup
+  }
+
+  if (errors.length > 0) {
+    errors.forEach(err => console.log(`${red}  ❌ ${err}${reset}`));
+    return false;
+  }
+
+  console.log(`${green}  ✅ Read/write permissions verified for offline metadata cache & staging targets.${reset}`);
+  return true;
+}
+
+console.log(`\n${cyan}[1/4] Validating React Runtime Lock (React 18.3.1 only)...${reset}`);
 if (!validateReact18Lock()) {
   hasErrors = true;
   hasFatalErrors = true;
 }
 
-console.log(`\n${cyan}[2/3] Validating Renderer Config (Firebase, App Check, Tuned Agents, Functions)...${reset}`);
+console.log(`\n${cyan}[2/4] Validating Renderer Config (Firebase, App Check, Tuned Agents, Functions)...${reset}`);
 const rendererResult = rendererProdSchema.safeParse(processEnv);
 if (!rendererResult.success) {
   rendererResult.error.errors.forEach(err => {
@@ -241,7 +310,7 @@ if (!rendererResult.success) {
   console.log(`${green}  ✅ Renderer config validated.${reset}`);
 }
 
-console.log(`\n${cyan}[3/3] Validating Function Secrets (Social, Legal, Tax, Fan Enrichment, Distributor, POD)...${reset}`);
+console.log(`\n${cyan}[3/4] Validating Function Secrets (Social, Legal, Tax, Fan Enrichment, Distributor, POD)...${reset}`);
 const backendResult = backendSecretsSchema.safeParse(processEnv);
 if (!backendResult.success) {
   backendResult.error.errors.forEach(err => {
@@ -250,6 +319,14 @@ if (!backendResult.success) {
   hasErrors = true;
 } else {
   console.log(`${green}  ✅ Backend secrets/env validated.${reset}`);
+}
+
+console.log(`\n${cyan}[4/4] Validating Offline Metadata Cache & Storage Permissions (Desktop Client)...${reset}`);
+if (!validateOfflineMetadataCachePermissions()) {
+  hasErrors = true;
+  if (isProd) {
+    hasFatalErrors = true;
+  }
 }
 
 console.log("\n--------------------------------------");

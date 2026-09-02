@@ -75,6 +75,7 @@ try {
 log.info(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv)}`);
 
 import { registerSystemHandlers } from './handlers/system';
+import { registerFsHandlers } from './handlers/fs';
 import { registerAuthHandlers } from './handlers/auth';
 import { handleDeepLink } from './handlers/deeplink';
 import { setupMenu } from './menu';
@@ -469,6 +470,7 @@ if (!gotTheLock) {
         });
 
         registerSystemHandlers();
+        registerFsHandlers();
         registerAuthHandlers();
         registerAudioHandlers();
         registerNetworkHandlers();
@@ -510,6 +512,8 @@ if (!gotTheLock) {
         const KNOWN_IPC_CHANNELS = new Set([
             'get-platform', 'get-app-version', 'privacy:toggle-protection',
             'system:select-file', 'system:select-directory', 'system:get-directory-contents', 'system:search-approved-assets', 'system:get-gpu-info',
+            'trash:move', 'trash:restore', 'trash:purge',
+            'fs:list-files', 'fs:read-text-file', 'fs:read-binary-file', 'fs:mkdir',
             'auth:logout', 'credentials:save', 'credentials:get', 'credentials:delete', 'credentials:list',
             'audio:analyze', 'audio:lookup-metadata', 'audio:transcode', 'audio:master',
             'net:fetch-url', 'net:fetch-url-base64',
