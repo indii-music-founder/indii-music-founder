@@ -109,7 +109,23 @@ vi.mock('firebase-functions/params', () => ({
 // (agentStream.ts → v2/https,
 // etc.). Without these mocks, tests crash on import.
 
-const mockV2Handler = vi.fn((opts: unknown, handler?: unknown) => handler ?? opts);
+const mockV2Handler = vi.fn((opts: unknown, handler?: unknown) => {
+    const fn = (typeof handler === 'function' ? handler : typeof opts === 'function' ? opts : vi.fn()) as any;
+    if (typeof fn === 'function') {
+        fn.run = fn;
+    }
+    return fn;
+});
+
+class MockHttpsError extends Error {
+    code: string;
+    details?: unknown;
+    constructor(code: string, message: string, details?: unknown) {
+        super(message);
+        this.code = code;
+        this.details = details;
+    }
+}
 
 // index.ts and lib/image_generation.ts import `logger` and `setGlobalOptions`
 // from the v2 root entry point.
@@ -122,6 +138,26 @@ vi.mock('firebase-functions/v2', () => ({
         error: vi.fn(),
         debug: vi.fn(),
     },
+    https: {
+        onCall: mockV2Handler,
+        onRequest: mockV2Handler,
+        HttpsError: MockHttpsError,
+    },
+    firestore: {
+        onDocumentCreated: mockV2Handler,
+        onDocumentUpdated: mockV2Handler,
+        onDocumentDeleted: mockV2Handler,
+        onDocumentWritten: mockV2Handler,
+    },
+    storage: {
+        onObjectFinalized: mockV2Handler,
+        onObjectArchived: mockV2Handler,
+        onObjectDeleted: mockV2Handler,
+        onObjectMetadataUpdated: mockV2Handler,
+    },
+    scheduler: {
+        onSchedule: mockV2Handler,
+    },
 }));
 
 vi.mock('firebase-functions/v2/https', () => ({
@@ -131,15 +167,7 @@ vi.mock('firebase-functions/v2/https', () => ({
     // carries structured context that callers assert on — legacyAdmission's
     // Arcjet rejection puts { code, retryAfterSeconds } there. A mock that
     // drops it makes those assertions silently compare against undefined.
-    HttpsError: class extends Error {
-        code: string;
-        details?: unknown;
-        constructor(code: string, message: string, details?: unknown) {
-            super(message);
-            this.code = code;
-            this.details = details;
-        }
-    },
+    HttpsError: MockHttpsError,
 }));
 
 vi.mock('firebase-functions/v2/storage', () => ({
