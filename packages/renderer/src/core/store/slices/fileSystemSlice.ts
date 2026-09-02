@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { StoreState } from '..';
+import type { StoreState } from '../types';
 import { FileNode, fileSystemService } from '@/services/FileSystemService';
 import { logger } from '@/utils/logger';
 

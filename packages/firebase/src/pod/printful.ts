@@ -1,12 +1,9 @@
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import fetch from 'node-fetch';
+import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { printfulApiKey } from '../config/secrets';
 import { printfulRequest } from './printfulApi';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const BASE_URL = 'https://api.printful.com';
-
-function requireAuth(req: any) {
+function requireAuth(req: CallableRequest<unknown>): string {
     if (!req.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated');
     }

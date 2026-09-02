@@ -5,7 +5,7 @@ import { remoteRelayService, waitForDispatchConfirmation } from '@/services/agen
 import { StorageService } from '@/services/StorageService';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../MobileRemote';
+import { triggerHaptic } from '../haptics';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';

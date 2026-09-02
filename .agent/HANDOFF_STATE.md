@@ -1,3 +1,25 @@
+# Session Close — Codebase Optimization, Cloud Functions Bundle Trimming & Circular Dependency Elimination (2026-09-01)
+
+**Final state: all 7,330+ unit/integration tests passing (0 failures), 0 circular dependencies in Cloud Functions, 0 typecheck errors, 0 lint errors.**
+
+## Shipped — Optimization & AST Decoupling
+- **Cloud Functions Cold-Start Optimization (`packages/firebase`):**
+  - Converted `@google-cloud/bigquery`, `googleapis` (GKE/GCE DevOps), and `bigqueryService` from eager module-scope imports in `index.ts` to lazy dynamic imports inside onCall handlers (`executeBigQueryQuery`, `listGKEClusters`, `getGKEClusterStatus`, `scaleGKENodePool`, `listGCEInstances`, `restartGCEInstance`, `getBigQueryTableSchema`, `listBigQueryDatasets`).
+  - Lazy-loaded `@googlemaps/google-maps-services-js` inside `findPlaces` in `touring.ts`.
+  - Converted `@google/genai` to `import type { GoogleGenAI }` in `image_generation.ts`.
+  - Trims ~50MB+ of parsed JS AST and memory allocation during Cloud Function cold starts.
+- **Circular Dependency Elimination:**
+  - `packages/firebase`: 0 circular dependencies (decoupled `stitchMasterAudio.ts` ↔ `renderMasterContract.ts` and `finalizeVideoSessionUpload.ts` ↔ `dispatchSessionProxyJob.ts`).
+  - `packages/renderer`: Extracted `triggerHaptic` out of `MobileRemote.tsx` into `modules/mobile-remote/haptics.ts`, restoring React Fast Refresh and breaking circular cycles across 5 child components (`CommandPad`, `QuickCaptureView`, `SettingsView`, `StatusDashboard`, `StreamView`).
+  - Zustand Store Decoupling: Extracted `StoreState` interface to `core/store/types.ts` and converted all slice cross-imports to type-only. Refactored `notesSlice.ts` to standard Zustand `get()` instead of `useStore.getState()`.
+- **Code Hygiene & Boundaries:**
+  - Removed dead variables and unused imports in `printful.ts` and `databaseMaintenance.test.ts`.
+  - Synchronized `creativeNormalizers.ts` duration calculation with shared canonical schema.
+  - Upgraded Vitest mock harness in `packages/firebase/src/test/setup.ts` to support `.run()` and `https` subpaths.
+
+## Honest remaining / Untouched foreign work
+- Foreign dirty files preserved untouched per `branch-safety.md`: `.agent/observations/2026-08-27-agent-watch.md`.
+
 # Session Close — Autonomous Loop Engine Hardening & Concurrency Stabilization (2026-09-01)
 
 **Final state: all 31 autonomous loop, DAG orchestration, FSM, and transaction tests passing (0 failures). Distributed leases, backoff, and trimming active on `main`.**

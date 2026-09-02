@@ -5,7 +5,7 @@
  */
 
 import { StateCreator } from 'zustand';
-import { StoreState } from '@/core/store';
+import type { StoreState } from '@/core/store/types';
 import { CreativeStage, StageHandoffPayload, VALID_ASSET_TYPES } from '@/types/handoff';
 import { logger } from '@/utils/logger';
 

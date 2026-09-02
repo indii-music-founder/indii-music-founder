@@ -167,7 +167,6 @@ vi.mock('firebase-functions/v2/scheduler', () => ({
 // Import unit under test
 import {
   verifyExportSnapshot,
-  getLatestVerifiedSnapshot,
   scheduledFirestoreColdlineExport,
   executeTelemetryPurge,
 } from './databaseMaintenance';

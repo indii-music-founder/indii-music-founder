@@ -1,7 +1,8 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 import { z } from "zod";
-import { Client } from "@googlemaps/google-maps-services-js";
+// Google Maps Client is loaded lazily inside findPlaces to reduce cold start time
+// import { Client } from "@googlemaps/google-maps-services-js";
 import { googleMapsApiKey } from "../config/secrets";
 
 // ----------------------------------------------------------------------------
@@ -216,6 +217,7 @@ export const findPlaces = onCall(
         }
 
         const { location, type, radius } = validation.data;
+        const { Client } = await import("@googlemaps/google-maps-services-js");
         const client = new Client({});
 
         try {

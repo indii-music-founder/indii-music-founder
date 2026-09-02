@@ -28,7 +28,7 @@ import {
 } from '@/hooks/useAutoSleep';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../MobileRemote';
+import { triggerHaptic } from '../haptics';
 
 interface SettingsViewProps {
     desktopState: DesktopState | null;

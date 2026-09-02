@@ -3,7 +3,8 @@ import { onCall, onRequest, HttpsError, type CallableRequest } from "firebase-fu
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
-import { BigQuery } from "@google-cloud/bigquery";
+// Item 335: BigQuery is loaded lazily inside admin-only handlers to reduce cold start time
+// import { BigQuery } from "@google-cloud/bigquery";
 import { decisionToJobMetadata, planRenderRoute } from '@indii/shared';
 import type { IndiiVideoProject } from '@indii/shared';
 
@@ -1615,9 +1616,10 @@ export const ragProxy = onRequest(
 // DevOps Tools - GKE & GCE Management
 // ----------------------------------------------------------------------------
 
-import * as gkeService from './devops/gkeService';
-import * as gceService from './devops/gceService';
-import * as bigqueryService from './analytics/bigqueryService';
+// DevOps and analytics services are admin-only; lazy-loaded to reduce cold start
+// import * as gkeService from './devops/gkeService';
+// import * as gceService from './devops/gceService';
+// import * as bigqueryService from './analytics/bigqueryService';
 import * as touringService from './lib/touring';
 import * as marketingService from './lib/marketing';
 
@@ -1642,6 +1644,7 @@ export const listGKEClusters = onCall(
         }
 
         try {
+            const gkeService = await import('./devops/gkeService');
             return await gkeService.listClusters(projectId);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -1682,6 +1685,7 @@ export const getGKEClusterStatus = onCall(
         }
 
         try {
+            const gkeService = await import('./devops/gkeService');
             return await gkeService.getClusterStatus(projectId, data.location, data.clusterName);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -1709,6 +1713,7 @@ export const scaleGKENodePool = onCall(
         }
 
         try {
+            const gkeService = await import('./devops/gkeService');
             return await gkeService.scaleNodePool(projectId, data.location, data.clusterName, data.nodePoolName, data.nodeCount);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -1735,6 +1740,7 @@ export const listGCEInstances = onCall(
         }
 
         try {
+            const gceService = await import('./devops/gceService');
             return await gceService.listInstances(projectId);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -1762,6 +1768,7 @@ export const restartGCEInstance = onCall(
         }
 
         try {
+            const gceService = await import('./devops/gceService');
             return await gceService.resetInstance(projectId, data.zone, data.instanceName);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -1794,6 +1801,7 @@ export const executeBigQueryQuery = onCall(
         }
 
         try {
+            const { BigQuery } = await import("@google-cloud/bigquery");
             const bigquery = new BigQuery();
             const [job] = await bigquery.createQueryJob({
                 query: data.query,
@@ -1830,6 +1838,7 @@ export const getBigQueryTableSchema = onCall(
         }
 
         try {
+            const bigqueryService = await import('./analytics/bigqueryService');
             return await bigqueryService.getTableSchema(projectId, data.datasetId, data.tableId);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -1856,6 +1865,7 @@ export const listBigQueryDatasets = onCall(
         }
 
         try {
+            const bigqueryService = await import('./analytics/bigqueryService');
             return await bigqueryService.listDatasets(projectId);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));

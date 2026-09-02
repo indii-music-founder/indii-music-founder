@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import type { StoreState } from '../index';
+import type { StoreState } from '../types';
 
 export interface AgentScoutLead {
     id: string;

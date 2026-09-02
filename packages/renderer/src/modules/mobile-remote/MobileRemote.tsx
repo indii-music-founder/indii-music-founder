@@ -39,12 +39,8 @@ import { isRemoteSurfaceDevice } from './routing';
 import { useMobile } from '@/hooks/useMobile';
 
 // Helper for haptic feedback
-// eslint-disable-next-line react-refresh/only-export-components
-export const triggerHaptic = (pattern: number | number[] = 50) => {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(pattern);
-  }
-};
+export { triggerHaptic } from './haptics';
+import { triggerHaptic } from './haptics';
 
 // Lazy load sub-components for performance on remote devices
 const StatusDashboard = lazy(() => import('./components/StatusDashboard'));

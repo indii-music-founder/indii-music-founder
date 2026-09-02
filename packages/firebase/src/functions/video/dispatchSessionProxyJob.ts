@@ -2,7 +2,23 @@ import { createHash } from 'crypto';
 import { getFirestore } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
-import type { FinalizedOriginalRef } from './finalizeVideoSessionUpload';
+// Structurally matches FinalizedOriginalRef in finalizeVideoSessionUpload.ts;
+// inlined here to break the circular dependency between these modules.
+export interface FinalizedOriginalRef {
+    schemaVersion: 'canonical-media-ref.v1';
+    role: 'original';
+    ownerUid: string;
+    organizationId: string;
+    projectId: string;
+    bucket: string;
+    path: string;
+    generation: string;
+    sha256: string;
+    mimeType: string;
+    byteSize: number;
+    createdAt: string;
+    creationReceiptId: string;
+}
 
 /**
  * Repair-order step 2 (ISSUE-1175): durable worker execution.

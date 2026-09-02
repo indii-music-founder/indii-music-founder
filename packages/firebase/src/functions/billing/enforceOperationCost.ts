@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions/v2';
+import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
@@ -38,10 +38,10 @@ type CallableAuth = {
  */
 export function requireVerifiedCreativeUser(auth: CallableAuth): string {
   if (!auth || typeof auth.uid !== 'string' || !auth.uid) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    throw new HttpsError('unauthenticated', 'User must be authenticated.');
   }
   if (auth.token?.email_verified !== true) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'failed-precondition',
       'Verify your email before using creative generation.',
     );
@@ -51,23 +51,23 @@ export function requireVerifiedCreativeUser(auth: CallableAuth): string {
 
 function parseCostEnforcementRequest(value: unknown): CostEnforcementRequest {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new functions.https.HttpsError('invalid-argument', 'A cost reservation payload is required.');
+    throw new HttpsError('invalid-argument', 'A cost reservation payload is required.');
   }
   const data = value as Record<string, unknown>;
   const operationType = data.operationType;
   if (!['video', 'image', 'audio', 'agent_stream'].includes(String(operationType))) {
-    throw new functions.https.HttpsError('invalid-argument', 'operationType is invalid.');
+    throw new HttpsError('invalid-argument', 'operationType is invalid.');
   }
   const estimatedCost = data.estimatedCost;
   if (typeof estimatedCost !== 'number' || !Number.isFinite(estimatedCost) || estimatedCost <= 0 || estimatedCost > RUNAWAY_LIMIT) {
-    throw new functions.https.HttpsError('invalid-argument', 'estimatedCost is invalid.');
+    throw new HttpsError('invalid-argument', 'estimatedCost is invalid.');
   }
   const metadataValue = data.metadata;
   if (metadataValue === undefined) {
     return { operationType: operationType as OperationType, estimatedCost };
   }
   if (!metadataValue || typeof metadataValue !== 'object' || Array.isArray(metadataValue)) {
-    throw new functions.https.HttpsError('invalid-argument', 'metadata must be a flat object.');
+    throw new HttpsError('invalid-argument', 'metadata must be a flat object.');
   }
   const metadataEntries = Object.entries(metadataValue as Record<string, unknown>);
   if (metadataEntries.length > 20 || metadataEntries.some(([key, item]) => (
@@ -76,7 +76,7 @@ function parseCostEnforcementRequest(value: unknown): CostEnforcementRequest {
     || (typeof item !== 'string' && typeof item !== 'number' && typeof item !== 'boolean' && item !== null)
     || (typeof item === 'number' && !Number.isFinite(item))
   ))) {
-    throw new functions.https.HttpsError('invalid-argument', 'metadata contains an unsupported value.');
+    throw new HttpsError('invalid-argument', 'metadata contains an unsupported value.');
   }
   return {
     operationType: operationType as OperationType,
@@ -87,17 +87,17 @@ function parseCostEnforcementRequest(value: unknown): CostEnforcementRequest {
 
 function parseOperationReservationId(value: unknown): string {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new functions.https.HttpsError('invalid-argument', 'A cost reservation payload is required.');
+    throw new HttpsError('invalid-argument', 'A cost reservation payload is required.');
   }
   const operationId = (value as Record<string, unknown>).operationId;
   if (typeof operationId !== 'string' || !operationId.trim() || operationId.length > 256) {
-    throw new functions.https.HttpsError('invalid-argument', 'operationId is invalid.');
+    throw new HttpsError('invalid-argument', 'operationId is invalid.');
   }
   return operationId;
 }
 
 async function requireCostCallableAdmission(
-  request: functions.https.CallableRequest<unknown>,
+  request: CallableRequest<unknown>,
   operation: string,
 ): Promise<{ userId: string; entitlement: Awaited<ReturnType<typeof requireVerifiedServerEntitlement>> }> {
   validateAppCheckV2(request);
@@ -117,7 +117,7 @@ async function requireCostCallableAdmission(
       : protection.status === 403
         ? 'permission-denied'
         : 'unavailable';
-    throw new functions.https.HttpsError(code, protection.message, {
+    throw new HttpsError(code, protection.message, {
       code: protection.code,
       ...(protection.retryAfterSeconds ? { retryAfterSeconds: protection.retryAfterSeconds } : {}),
     });
@@ -920,10 +920,10 @@ export const expireStaleOperationCostReservations = onSchedule(
  * The actual budget logic lives in `checkOperationBudget` so it can be shared
  * with background triggers; this wrapper only handles auth + transport.
  */
-export const enforceOperationCost = functions.https.onCall(
+export const enforceOperationCost = onCall(
   { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 10, timeoutSeconds: 30 },
   async (
-    request: functions.https.CallableRequest<unknown>,
+    request: CallableRequest<unknown>,
   ): Promise<CostEnforcementResponse> => {
     const { userId, entitlement } = await requireCostCallableAdmission(request, 'reserve-cost');
     const req = parseCostEnforcementRequest(request.data);
@@ -937,9 +937,9 @@ export const enforceOperationCost = functions.https.onCall(
   },
 );
 
-export const voidAgentStreamCostReservation = functions.https.onCall(
+export const voidAgentStreamCostReservation = onCall(
   { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 10, timeoutSeconds: 30 },
-  async (request: functions.https.CallableRequest<unknown>): Promise<{ voided: true }> => {
+  async (request: CallableRequest<unknown>): Promise<{ voided: true }> => {
     const { userId } = await requireCostCallableAdmission(request, 'void-agent-stream-cost');
     const operationId = parseOperationReservationId(request.data);
     try {
@@ -949,15 +949,15 @@ export const voidAgentStreamCostReservation = functions.https.onCall(
       const message = error instanceof Error ? error.message : String(error);
       const code = message.includes('owner mismatch') ? 'permission-denied'
         : message.startsWith('Missing cost reservation') ? 'not-found' : 'failed-precondition';
-      throw new functions.https.HttpsError(code, code === 'permission-denied'
+      throw new HttpsError(code, code === 'permission-denied'
         ? 'Cost reservation does not belong to the authenticated user.' : message);
     }
   },
 );
 
-export const voidVideoCostReservation = functions.https.onCall(
+export const voidVideoCostReservation = onCall(
   { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 10, timeoutSeconds: 30 },
-  async (request: functions.https.CallableRequest<unknown>): Promise<{ voided: true }> => {
+  async (request: CallableRequest<unknown>): Promise<{ voided: true }> => {
     const { userId } = await requireCostCallableAdmission(request, 'void-video-cost');
     const operationId = parseOperationReservationId(request.data);
     try {
@@ -967,7 +967,7 @@ export const voidVideoCostReservation = functions.https.onCall(
       const message = error instanceof Error ? error.message : String(error);
       const code = message.includes('owner mismatch') ? 'permission-denied'
         : message.startsWith('Missing cost reservation') ? 'not-found' : 'failed-precondition';
-      throw new functions.https.HttpsError(code, code === 'permission-denied'
+      throw new HttpsError(code, code === 'permission-denied'
         ? 'Cost reservation does not belong to the authenticated user.' : message);
     }
   },
@@ -978,9 +978,9 @@ export const voidVideoCostReservation = functions.https.onCall(
  * holds, so the pending breakdown is returned explicitly rather than making
  * a renderer guess from mutable client state.
  */
-export const getOperationCostStatus = functions.https.onCall(
+export const getOperationCostStatus = onCall(
   { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
-  async (request: functions.https.CallableRequest<unknown>): Promise<CostStatusResponse> => {
+  async (request: CallableRequest<unknown>): Promise<CostStatusResponse> => {
     const { userId, entitlement } = await requireCostCallableAdmission(request, 'read-cost-status');
     const timestamp = new Date();
     const today = timestamp.toISOString().slice(0, 10);
@@ -1028,9 +1028,9 @@ export const getOperationCostStatus = functions.https.onCall(
  * Pending holds expose their automatic release deadline; settled and voided
  * entries expose finalization state without leaking prompts or metadata.
  */
-export const getOperationCostHistory = functions.https.onCall(
+export const getOperationCostHistory = onCall(
   { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
-  async (request: functions.https.CallableRequest<unknown>): Promise<CostOperationHistoryResponse> => {
+  async (request: CallableRequest<unknown>): Promise<CostOperationHistoryResponse> => {
     const { userId } = await requireCostCallableAdmission(request, 'read-cost-history');
     const data = (request.data || {}) as {
       limit?: unknown;

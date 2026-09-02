@@ -6,7 +6,7 @@
 import { Mic, ShoppingBag, Receipt, PenTool, LayoutDashboard, Navigation } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../MobileRemote';
+import { triggerHaptic } from '../haptics';
 
 interface StatusDashboardProps {
     connectionStatus: 'idle' | 'pairing' | 'connected' | 'error';

@@ -1,8 +1,7 @@
 import { StateCreator } from 'zustand';
-import { StoreState } from '../index';
+import type { StoreState } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
-import { useStore } from '../index';
 
 export interface Note {
     id: string;
@@ -29,7 +28,7 @@ export interface NotesSlice {
     loadNotesFromCloud: () => Promise<void>;
 }
 
-export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (set) => ({
+export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (set, get) => ({
     notes: [],
     selectedNoteId: null,
     notesLoading: false,
@@ -76,7 +75,7 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
         });
 
         // Sync to Firestore
-        const updatedNote = useStore.getState().notes.find((n: Note) => n.id === id);
+        const updatedNote = get().notes.find((n: Note) => n.id === id);
         if (updatedNote) {
             import('@/services/notes/NotesService').then(({ notesService }) => {
                 return notesService.pushNote(updatedNote);
@@ -121,7 +120,7 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
         });
 
         // Sync to Firestore
-        const updatedNote = useStore.getState().notes.find((n: Note) => n.id === id);
+        const updatedNote = get().notes.find((n: Note) => n.id === id);
         if (updatedNote) {
             import('@/services/notes/NotesService').then(({ notesService }) => {
                 return notesService.pushNote(updatedNote);

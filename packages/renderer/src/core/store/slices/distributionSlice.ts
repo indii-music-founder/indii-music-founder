@@ -3,7 +3,7 @@ import { DistributorConnection, DistributorId, DashboardRelease, DistributorCred
 import { DistributorService } from '@/services/distribution/DistributorService';
 
 import { DistributionSyncService } from '@/services/distribution/DistributionSyncService';
-import type { StoreState } from '../index';
+import type { StoreState } from '../types';
 import { getE2ELocalStorageValue, isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export interface DistributionSlice {

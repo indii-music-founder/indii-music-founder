@@ -28,7 +28,7 @@ export type { ShotItem, WhiskCategory, TargetMedia, WhiskItem, WhiskState, Saved
 export type { DesignVersion } from './designHistorySlice';
 export type { CreativeStage, HandoffRole, StageHandoffPayload } from '@/types/handoff';
 
-import { StoreState } from '@/core/store';
+import type { StoreState } from '@/core/store/types';
 
 /**
  * Composed StateCreator that merges all creative sub-slices.

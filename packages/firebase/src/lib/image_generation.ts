@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
-import { GoogleGenAI } from "@google/genai";
+import type { GoogleGenAI } from "@google/genai";
 import { FUNCTION_INTELLIGENCE_MODELS, NANO_BANANA_CAPABILITIES, type NanoBananaTier } from "../config/models";
 import {
     GenerateImageRequestSchema,

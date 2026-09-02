@@ -3,7 +3,7 @@ import { logger } from '@/utils/logger';
 import { CanvasImage } from './creativeHistorySlice';
 import { WhiskState, CreativeControlsSlice } from './creativeControlsSlice';
 import { HistoryItem } from '@/core/types/history';
-import { StoreState } from '@/core/store';
+import type { StoreState } from '@/core/store/types';
 
 export interface DesignVersionState {
     studioControls: CreativeControlsSlice['studioControls'];

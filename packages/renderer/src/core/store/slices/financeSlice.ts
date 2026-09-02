@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { type EarningsSummary } from '@/services/revenue/schema';
-import { ProfileSlice } from './profileSlice';
-import { SubscriptionSlice } from './subscriptionSlice';
+import type { ProfileSlice } from './profileSlice';
+import type { SubscriptionSlice } from './subscriptionSlice';
 import { logger } from '@/utils/logger';
 
 let financeUnsubscribe: (() => void) | null = null;

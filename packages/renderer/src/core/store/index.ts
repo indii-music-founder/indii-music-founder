@@ -50,40 +50,8 @@ import {
 export type { AgentMessage, AgentThought } from './slices/agent';
 
 
-export interface StoreState extends
-    AppSlice,
-    ProfileSlice,
-    AgentSlice,
-    CreativeSlice,
-    WorkflowSlice,
-    AuthSlice,
-    FinanceSlice,
-    DistributionSlice,
-    FileSystemSlice,
-    CanvasEditorSlice,
-    AudioIntelligenceSlice,
-    SubscriptionSlice,
-    SidecarSlice,
-    SyncSlice,
-    AudioGenerationSlice,
-    UploadQueueSlice,
-    AudioPlayerSlice,
-    BackgroundJobsSlice,
-    MemoryAgentSlice,
-    MarketplaceSlice,
-    EmailSlice,
-    AnalyticsSlice,
-    BoardroomSlice,
-    AgentFeedbackSlice,
-    RegistrationSlice,
-    AgentPlanSlice,
-    AgentCanvasSlice,
-    AgentMemoryState,
-    HandoffSlice,
-    CRMSlice,
-    MapSlice,
-    NotesSlice,
-    AgentSwarmSlice { }
+export type { StoreState } from './types';
+import type { StoreState } from './types';
 
 type SafePersistedAppState = Pick<
     StoreState,

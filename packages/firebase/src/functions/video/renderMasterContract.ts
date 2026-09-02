@@ -1,4 +1,13 @@
-import type { VerifiedMasterAudioForStitch } from './stitchMasterAudio';
+// Structurally identical to VerifiedMasterAudioForStitch in stitchMasterAudio.ts;
+// inlined here to break the circular import between these two modules.
+export interface VerifiedRenderMaster {
+    uri: string;
+    storagePath: string;
+    contentHash: string;
+    generation: string;
+    masterFingerprint: string;
+    volume: number;
+}
 
 export interface CanonicalRenderMaster {
     storagePath: string;
@@ -7,9 +16,6 @@ export interface CanonicalRenderMaster {
     masterFingerprint: string;
     volume: number;
 }
-
-/** Exact async-worker payload; both callable and stitcher share this type. */
-export type VerifiedRenderMaster = VerifiedMasterAudioForStitch;
 
 export interface MasterVerificationResult {
     verified: true;

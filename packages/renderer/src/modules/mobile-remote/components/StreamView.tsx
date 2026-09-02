@@ -10,7 +10,7 @@ import TransportBar from './TransportBar';
 import { motion } from 'motion/react';
 import { Music, Play, Loader2, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../MobileRemote';
+import { triggerHaptic } from '../haptics';
 import { logger } from '@/utils/logger';
 
 export default function StreamView() {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { Project } from '@/core/store/slices/appSlice';
-import { ProjectMetadata } from './DashboardService';
+import type { Project } from '@/core/store/slices/appSlice';
+import type { ProjectMetadata } from './DashboardService';
 
 /**
  * Zod Schema for Project (Firestore representation)

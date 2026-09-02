@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
-import { StoreState } from '@/core/store';
+import type { StoreState } from '@/core/store/types';
 import { z } from 'zod';
 import { AspectRatioSchema, VideoResolutionSchema, VideoJobStatusSchema } from '@/modules/creative/video/schemas';
 

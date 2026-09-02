@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { StoreState } from '@/core/store';
+import type { StoreState } from '@/core/store/types';
 import {
     createDocFromImage,
     mergeAdjustments,

@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 import { logger } from '@/utils/logger';
 import { isAnonymousOrDemoUser } from '@/utils/authGuards';
-import { StoreState } from '@/core/store';
+import type { StoreState } from '@/core/store/types';
 
 let creativeHistoryUnsubscribe: (() => void) | null = null;
 

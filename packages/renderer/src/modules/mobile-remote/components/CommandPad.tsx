@@ -24,7 +24,7 @@ import {
 import type { ModuleId } from '@/core/constants';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { triggerHaptic } from '../MobileRemote';
+import { triggerHaptic } from '../haptics';
 
 interface CommandPadProps {
   onSendCommand: (command: { type: string; payload: unknown }) => void;
