@@ -119,4 +119,54 @@ describe('AudioIntelligenceService (ISSUE-962)', () => {
         expect(mockMapEmotionalArcWithProxy).not.toHaveBeenCalled();
         expect(mockMapEmotionalArc).not.toHaveBeenCalled();
     });
+
+    it('successfully processes compressed proxy MP3 with Gemini 3 Pro when provided', async () => {
+        const file = new File(['fake audio bytes'], 'track.mp3', { type: 'audio/mp3' });
+        mockAudioAnalyze.mockResolvedValue({
+            features: TECHNICAL_FEATURES,
+            proxyBase64: 'fake-compressed-proxy-base64',
+        });
+
+        const profile = await service.analyze(file);
+
+        expect(profile.id).toBe('hash-abc123');
+        expect(profile.technical.bpm).toBe(120);
+        expect(profile.semantic.ddexGenre).toBe('Electronic');
+        expect(profile.semantic.ddexSubGenre).toBe('House');
+        expect(mockGenerateStructuredData).toHaveBeenCalledTimes(1);
+
+        const callArgs = mockGenerateStructuredData.mock.calls[0];
+        // Model argument must be Gemini 3 Pro (INTELLIGENCE_MODELS.TEXT.AGENT)
+        expect(callArgs[4]).toBe('gemini-3.1-pro-preview');
+        // Proxy audio should be passed in payload
+        expect(callArgs[0][1].inlineData.mimeType).toBe('audio/mpeg');
+        expect(callArgs[0][1].inlineData.data).toBe('fake-compressed-proxy-base64');
+    });
+
+    it('returns cached profile on fingerprint cache hit without calling Gemini', async () => {
+        const file = new File(['fake audio bytes'], 'track.mp3', { type: 'audio/mp3' });
+        mockGetAnalysisByHash.mockResolvedValueOnce({
+            features: TECHNICAL_FEATURES,
+            semantic: SEMANTIC_DATA,
+            analyzedAt: new Date().toISOString(),
+        });
+
+        const profile = await service.analyze(file);
+
+        expect(profile.id).toBe('hash-abc123');
+        expect(profile.semantic.ddexGenre).toBe('Electronic');
+        expect(mockAudioAnalyze).not.toHaveBeenCalled();
+        expect(mockGenerateStructuredData).not.toHaveBeenCalled();
+    });
+
+    it('throws clear error when offline', async () => {
+        const file = new File(['fake audio bytes'], 'track.mp3', { type: 'audio/mp3' });
+        vi.stubGlobal('navigator', { onLine: false });
+        mockAudioAnalyze.mockResolvedValue({
+            features: TECHNICAL_FEATURES,
+            proxyBase64: 'fake-compressed-proxy-base64',
+        });
+
+        await expect(service.analyze(file)).rejects.toThrow(/You are currently offline/);
+    });
 });

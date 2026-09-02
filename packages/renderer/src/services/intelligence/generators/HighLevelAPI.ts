@@ -150,9 +150,9 @@ export async function generateStructuredData<T>(
     const cached = await aiCache.get(cacheKeyString, modelName, config);
     if (cached) {
         try {
-            return safeJsonParse(cached) as T;
+            return extractAndParseJson<T>(cached, schema);
         } catch (__e: unknown) {
-            // Ignore parse failure
+            // Ignore parse failure on stale cache
         }
     }
 
@@ -173,9 +173,7 @@ export async function generateStructuredData<T>(
     }
     await aiCache.set(cacheKeyString, text, modelName, config);
 
-    // Use the robust parser
-    const cleaned = text.replace(/```json\n ?| ```/g, '').trim();
-    return safeJsonParse(cleaned) as T;
+    return extractAndParseJson<T>(text, schema);
 }
 
 /**
@@ -316,13 +314,82 @@ export async function analyzeAudio(
 }
 
 /**
+ * Safely extracts and parses JSON from Gemini responses, handling markdown code fences,
+ * commentary text, and validates against expected schema requirements.
+ */
+export function extractAndParseJson<T = Record<string, unknown>>(
+    text: string,
+    schema?: Schema | Record<string, unknown>
+): T {
+    if (!text || typeof text !== 'string') {
+        throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Empty response for structured JSON parsing');
+    }
+
+    // 1. Try markdown code block fence extraction
+    let candidate = text.trim();
+    const codeBlockMatch = candidate.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    if (codeBlockMatch) {
+        candidate = codeBlockMatch[1].trim();
+    } else {
+        // Strip any dangling fences
+        candidate = candidate.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+    }
+
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(candidate);
+    } catch {
+        // Fallback: extract outermost JSON object { ... } or array [ ... ]
+        const firstBrace = candidate.indexOf('{');
+        const lastBrace = candidate.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+            try {
+                parsed = JSON.parse(candidate.slice(firstBrace, lastBrace + 1));
+            } catch {
+                // Ignore fallback error
+            }
+        }
+        if (parsed === undefined) {
+            const firstBracket = candidate.indexOf('[');
+            const lastBracket = candidate.lastIndexOf(']');
+            if (firstBracket !== -1 && lastBracket > firstBracket) {
+                try {
+                    parsed = JSON.parse(candidate.slice(firstBracket, lastBracket + 1));
+                } catch {
+                    // Ignore fallback error
+                }
+            }
+        }
+    }
+
+    if (parsed === undefined || parsed === null) {
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            `Failed to parse structured JSON from intelligence response: ${text.slice(0, 150)}`
+        );
+    }
+
+    // Schema validation: if schema specifies required properties, validate them
+    if (schema && typeof schema === 'object' && 'required' in schema && Array.isArray(schema.required)) {
+        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+            const parsedObj = parsed as Record<string, unknown>;
+            const missing = (schema.required as string[]).filter(key => !(key in parsedObj));
+            if (missing.length > 0) {
+                logger.warn(`[HighLevelAPI] Structured JSON missing required schema keys: ${missing.join(', ')}`);
+            }
+        }
+    }
+
+    return parsed as T;
+}
+
+/**
  * Parse JSON from Intelligence response, handling markdown code blocks.
  */
 export function parseJSON<T = Record<string, unknown>>(text: string | undefined): T | Record<string, never> {
     if (!text) return {};
     try {
-        const cleaned = text.replace(/```json\n?|```/g, '').trim();
-        return safeJsonParse(cleaned) as T;
+        return extractAndParseJson<T>(text);
     } catch {
         logger.error('[HighLevelAPI] Failed to parse JSON:', text);
         return {} as T;

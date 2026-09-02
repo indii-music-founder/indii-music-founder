@@ -110,7 +110,8 @@ Respond ONLY with valid JSON:
   "reasoning": "<concise explanation>"
 }`;
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${options.model ?? 'gemini-2.0-flash'}:generateContent?key=${apiKey}`;
+            const modelId = options.model ?? 'gemini-omni-flash-preview';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -136,20 +137,26 @@ Respond ONLY with valid JSON:
                 const json = await response.json();
                 const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (rawText) {
-                    const parsed = JSON.parse(rawText) as Partial<ContinuityEvaluationResult>;
-                    const score = typeof parsed.score === 'number' ? parsed.score : 0.9;
+                    const match = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+                    const cleaned = match ? match[1].trim() : rawText.trim();
+                    const parsed = JSON.parse(cleaned) as Partial<ContinuityEvaluationResult>;
+                    const score = typeof parsed.score === 'number' ? Math.max(0, Math.min(1, parsed.score)) : 0.9;
                     return {
                         segmentIndexFrom: 0,
                         segmentIndexTo: 1,
-                        score,
-                        subjectMatch: parsed.subjectMatch ?? (score >= 0.8),
-                        lightingConsistency: parsed.lightingConsistency ?? (score >= 0.75),
-                        recommendation: parsed.recommendation ?? (score >= minScore ? 'accept' : 'regenerate'),
-                        reasoning: parsed.reasoning || 'Gemini Omni Flash validated continuity.',
+                        score: Math.round(score * 100) / 100,
+                        subjectMatch: typeof parsed.subjectMatch === 'boolean' ? parsed.subjectMatch : (score >= 0.8),
+                        lightingConsistency: typeof parsed.lightingConsistency === 'boolean' ? parsed.lightingConsistency : (score >= 0.75),
+                        recommendation: (parsed.recommendation === 'accept' || parsed.recommendation === 'regenerate' || parsed.recommendation === 'interpolate')
+                            ? parsed.recommendation
+                            : (score >= minScore ? 'accept' : 'regenerate'),
+                        reasoning: typeof parsed.reasoning === 'string' && parsed.reasoning.trim()
+                            ? parsed.reasoning.trim()
+                            : 'Gemini Omni Flash validated continuity.',
                     };
                 }
             }
-        } catch (err: any) {
+        } catch (_err: unknown) {
             // Fall through to structural analysis if network or endpoint fails
         }
     }

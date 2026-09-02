@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     evaluateFrameContinuity,
     planBoundaryPreservingEdit,
@@ -53,5 +53,48 @@ describe('OmniFlashValidator & Editor', () => {
 
         expect(result.score).toBeGreaterThanOrEqual(0.85);
         expect(result.recommendation).toBe('accept');
+    });
+
+    it('parses markdown-fenced JSON responses and defaults to gemini-omni-flash-preview', async () => {
+        let requestedUrl = '';
+        const mockFetch = vi.fn().mockImplementation(async (url: string) => {
+            requestedUrl = url;
+            return {
+                ok: true,
+                json: async () => ({
+                    candidates: [
+                        {
+                            content: {
+                                parts: [
+                                    {
+                                        text: '```json\n{\n  "score": 0.94,\n  "subjectMatch": true,\n  "lightingConsistency": true,\n  "recommendation": "accept",\n  "reasoning": "Consistent character geometry and lighting."\n}\n```'
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                })
+            };
+        });
+
+        const originalFetch = global.fetch;
+        global.fetch = mockFetch as unknown as typeof fetch;
+
+        try {
+            const result = await validateGeminiOmniFlashContinuity(
+                { dataUriOrBase64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' },
+                { dataUriOrBase64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=' },
+                { apiKey: 'test-api-key' }
+            );
+
+            expect(requestedUrl).toContain('models/gemini-omni-flash-preview:generateContent');
+            expect(result.score).toBe(0.94);
+            expect(result.subjectMatch).toBe(true);
+            expect(result.lightingConsistency).toBe(true);
+            expect(result.recommendation).toBe('accept');
+            expect(result.reasoning).toBe('Consistent character geometry and lighting.');
+        } finally {
+            global.fetch = originalFetch;
+        }
     });
 });

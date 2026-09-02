@@ -29,6 +29,7 @@ export const APPROVED_MODELS = {
     VIDEO_FAST: 'veo-3.1-fast-generate-001',  // Fast mode — lower latency, lower cost
     VIDEO_LITE: 'veo-3.1-lite-generate-001',  // Lite mode — lowest cost, good quality
     VIDEO_GEN: 'veo-3.1-generate-001',        // Alias for backward compatibility
+    VIDEO_OMNI: 'gemini-omni-flash-preview',  // Gemini Omni Flash — multimodal video QA and continuity
     BROWSER_AGENT: 'gemini-3.1-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
@@ -57,6 +58,7 @@ export const INTELLIGENCE_MODELS = {
         PRO: APPROVED_MODELS.VIDEO_PRO,
         FAST: APPROVED_MODELS.VIDEO_FAST,
         LITE: APPROVED_MODELS.VIDEO_LITE,
+        OMNI: APPROVED_MODELS.VIDEO_OMNI,
         EDIT: APPROVED_MODELS.VIDEO_PRO,
         GENERATION: APPROVED_MODELS.VIDEO_PRO // Backward compatibility
     },
@@ -219,6 +221,7 @@ export const MODEL_DISPLAY_NAMES: Record<string, string> = {
     [APPROVED_MODELS.VIDEO_PRO]: 'Veo 3.1',
     [APPROVED_MODELS.VIDEO_FAST]: 'Veo 3.1 Fast',
     [APPROVED_MODELS.VIDEO_LITE]: 'Veo 3.1 Lite',
+    [APPROVED_MODELS.VIDEO_OMNI]: 'Gemini Omni Flash',
 } as const;
 
 // Run validation on module load
