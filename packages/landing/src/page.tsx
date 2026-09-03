@@ -336,7 +336,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
   };
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#0A0806] font-sans text-white selection:bg-amber-400/30">
+    <main className="relative min-h-screen overflow-x-hidden bg-black font-sans text-white selection:bg-amber-400/30">
       <a href="#home" className="skip-link">
         Skip to content
       </a>
@@ -356,16 +356,14 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             />
           ))}
         </div>
-        {/* Multi-spectrum atmospheric lighting across the whole page */}
-        <div className="absolute left-1/2 top-[-26rem] h-[72rem] w-[72rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-500/[0.22] via-[#00BCD4]/[0.16] to-transparent blur-[140px]" />
-        <div className="absolute right-[-12rem] top-[18rem] h-[55rem] w-[55rem] rounded-full bg-[#00BCD4]/[0.14] blur-[150px]" />
-        <div className="absolute left-[-12rem] top-[50rem] h-[55rem] w-[55rem] rounded-full bg-[#00FF66]/[0.12] blur-[160px]" />
-        <div className="absolute right-[-10rem] top-[110rem] h-[60rem] w-[60rem] rounded-full bg-[#E91E63]/[0.11] blur-[170px]" />
-        <div className="absolute left-[-10rem] top-[170rem] h-[60rem] w-[60rem] rounded-full bg-[#2196F3]/[0.12] blur-[170px]" />
-        <div className="absolute right-[-8rem] top-[230rem] h-[55rem] w-[55rem] rounded-full bg-[#9C27B0]/[0.10] blur-[160px]" />
-        <div className="absolute left-1/2 top-[300rem] h-[65rem] w-[65rem] -translate-x-1/2 rounded-full bg-amber-500/[0.14] blur-[160px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,transparent_20%,#0A0806_88%)]" />
-        <div className="absolute inset-0 opacity-[0.03] [background-image:linear-gradient(rgba(255,255,255,0.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.8)_1px,transparent_1px)] [background-size:80px_80px]" />
+        {/* Warm Studio Atmospheric Lighting — Champagne Gold pools + Petroleum Teal accents on Gloss Piano Black */}
+        <div className="absolute left-1/2 top-[-20rem] h-[65rem] w-[65rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-500/[0.12] via-[#FFB800]/[0.06] to-transparent blur-[160px]" />
+        <div className="absolute right-[-14rem] top-[30rem] h-[50rem] w-[50rem] rounded-full bg-[#00B8D4]/[0.05] blur-[180px]" />
+        <div className="absolute left-[-14rem] top-[90rem] h-[50rem] w-[50rem] rounded-full bg-amber-500/[0.06] blur-[180px]" />
+        <div className="absolute right-[-10rem] top-[170rem] h-[45rem] w-[45rem] rounded-full bg-[#00B8D4]/[0.04] blur-[180px]" />
+        <div className="absolute left-1/2 top-[260rem] h-[55rem] w-[55rem] -translate-x-1/2 rounded-full bg-amber-500/[0.08] blur-[180px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,transparent_20%,#000000_85%)]" />
+        <div className="absolute inset-0 opacity-[0.02] [background-image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:80px_80px]" />
       </div>
 
       {shouldMountSystem && <DeferredExperienceShell />}

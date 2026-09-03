@@ -152,18 +152,18 @@ export default function AgentGrid() {
   const active = lifecycle.find((stage) => stage.id === activeId) ?? lifecycle[3];
 
   return (
-    <section id="capabilities" data-system-section="capabilities" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-[#0E0B08]">
-      {/* Dynamic Stage Glow Background */}
+    <section id="capabilities" data-system-section="capabilities" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-black">
+      {/* Subtle Studio Glow Background */}
       <div
         className="pointer-events-none absolute inset-0 transition-opacity duration-700"
         style={{
-          background: `radial-gradient(circle at 50% 25%, ${active.glow}, transparent 55%)`,
+          background: 'radial-gradient(circle at 50% 25%, rgba(255,184,0,0.06), transparent 55%)',
         }}
       />
       <div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[550px] w-[950px] -translate-x-1/2 -translate-y-1/2 blur-[150px] transition-all duration-700 opacity-50"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 blur-[160px] transition-all duration-700 opacity-40"
         style={{
-          backgroundColor: `${active.hex}15`,
+          backgroundColor: 'rgba(255,184,0,0.04)',
         }}
       />
 
@@ -215,8 +215,12 @@ export default function AgentGrid() {
                 aria-selected={isActive}
                 aria-pressed={isActive}
                 onClick={() => setActiveId(stage.id)}
-                style={isActive ? { backgroundColor: stage.hex, color: '#000000', boxShadow: `0 0 25px ${stage.glow}` } : {}}
-                className={`flex min-w-[150px] shrink-0 flex-col items-start gap-1 border-r border-white/10 px-4 py-4 text-left transition-all duration-300 lg:min-w-0 ${isActive ? 'font-bold scale-[1.02]' : 'text-white/45 hover:bg-white/[0.04] hover:text-white'}`}
+                style={isActive ? { borderTopColor: stage.hex, backgroundColor: 'rgba(255,255,255,0.05)' } : {}}
+                className={`flex min-w-[150px] shrink-0 flex-col items-start gap-1 border-r border-white/10 px-4 py-4 text-left transition-all duration-300 lg:min-w-0 ${
+                  isActive
+                    ? 'border-t-2 font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]'
+                    : 'text-white/45 hover:bg-white/[0.03] hover:text-white'
+                }`}
                 aria-label={`${stage.name}: ${stage.title}`}
               >
                 <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em]">{stage.index}</span>
@@ -237,31 +241,22 @@ export default function AgentGrid() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="relative overflow-hidden rounded-2xl border border-white/20 bg-[#16120D]/90 shadow-[0_30px_90px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
+              className="lacquer-card relative overflow-hidden rounded-2xl shadow-[0_30px_90px_rgba(0,0,0,0.95)] backdrop-blur-2xl"
             >
               <div
-                className="absolute inset-x-0 top-0 h-[2px] transition-all duration-500"
-                style={{
-                  background: `linear-gradient(90deg, transparent 0%, ${active.hex} 50%, transparent 100%)`,
-                }}
-              />
-              <div
-                className="pointer-events-none absolute inset-0 transition-opacity duration-700"
-                style={{
-                  background: `radial-gradient(circle at 82% 15%, ${active.glow}, transparent 55%), radial-gradient(circle at 18% 85%, ${active.glow}, transparent 60%)`,
-                }}
+                className="absolute inset-x-0 top-0 h-[1px] specular-line-gold"
               />
               <div className="relative grid lg:grid-cols-[1.2fr_0.8fr]">
                 <div className="p-7 md:p-12 lg:p-14">
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-5 font-mono text-[10px] uppercase tracking-[0.22em]">
-                    <span className="flex items-center gap-2 font-bold" style={{ color: active.hex }}>
+                    <span className="flex items-center gap-2 font-bold text-white">
                       <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: active.hex, boxShadow: `0 0 10px ${active.hex}` }}
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: active.hex, boxShadow: `0 0 8px ${active.hex}` }}
                       />
                       {active.name}
                     </span>
-                    <span className={`rounded px-2.5 py-1 font-semibold border ${active.badgeBg}`}>{active.label}</span>
+                    <span className="rounded-full bg-white/[0.04] px-3 py-1 font-semibold text-white/70 border border-white/10">{active.label}</span>
                   </div>
                   <h3 className="mt-8 max-w-3xl text-3xl font-black leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">{active.title}</h3>
                   <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">{active.outcome}</p>
@@ -269,32 +264,26 @@ export default function AgentGrid() {
                     {active.details.map((detail) => (
                       <div
                         key={detail}
-                        className="rounded-xl border p-4 transition-all duration-300"
-                        style={{
-                          backgroundColor: `${active.hex}0e`,
-                          borderColor: `${active.hex}38`,
-                          boxShadow: `0 0 15px -3px ${active.glow}`,
-                        }}
+                        className="rounded-xl border border-white/10 bg-black/60 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 hover:border-white/20"
                       >
-                        <CheckCircle2 size={16} className="mb-2" style={{ color: active.hex }} />
+                        <CheckCircle2 size={16} className="mb-2 text-[#FFB800]" />
                         <div className="text-xs font-bold leading-snug text-white/90">{detail}</div>
                       </div>
                     ))}
                   </div>
                   <div className="mt-9 border-t border-white/10 pt-5">
                     <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.25em] text-white/40">Connected path</div>
-                    <div className="font-mono text-xs font-semibold leading-relaxed" style={{ color: active.hex }}>{active.route}</div>
+                    <div className="font-mono text-xs font-semibold leading-relaxed text-amber-300/90">{active.route}</div>
                   </div>
                 </div>
-                <aside className="flex flex-col justify-between border-t border-white/10 bg-black/65 p-7 md:p-10 lg:border-l lg:border-t-0">
+                <aside className="flex flex-col justify-between border-t border-white/10 bg-black/75 p-7 md:p-10 lg:border-l lg:border-t-0">
                   <div>
                     <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-white/50">Relevant specialists</div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {active.specialists.map((specialist) => (
                         <span
                           key={specialist}
-                          style={{ borderColor: `${active.hex}60`, backgroundColor: `${active.hex}18`, color: '#FFFFFF' }}
-                          className="rounded-full border px-3.5 py-1.5 text-xs font-bold shadow-[0_0_12px_rgba(0,0,0,0.4)] transition-colors"
+                          className="rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-1.5 text-xs font-bold text-white shadow-[0_0_12px_rgba(0,0,0,0.4)] transition-colors hover:border-amber-400/40"
                         >
                           {specialist}
                         </span>
@@ -305,11 +294,10 @@ export default function AgentGrid() {
                     </p>
                   </div>
                   <div
-                    style={{ borderColor: `${active.hex}60`, backgroundColor: `${active.hex}12`, boxShadow: `0 0 25px -5px ${active.glow}` }}
-                    className="mt-12 rounded-xl border border-dashed p-6"
+                    className="mt-12 rounded-xl border border-white/15 bg-black/60 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   >
-                    <PlayCircle size={28} style={{ color: active.hex }} className="drop-shadow-[0_0_12px_currentColor]" />
-                    <div className="mt-4 font-mono text-[9px] uppercase font-bold tracking-[0.22em]" style={{ color: active.hex }}>Real product clip planned</div>
+                    <PlayCircle size={28} className="text-[#FFB800] drop-shadow-[0_0_10px_rgba(255,184,0,0.4)]" />
+                    <div className="mt-4 font-mono text-[9px] uppercase font-bold tracking-[0.22em] text-[#FFB800]">Real product clip planned</div>
                     <p className="mt-2 text-sm font-black text-white">{active.name} / founder walkthrough</p>
                     <p className="mt-2 text-xs leading-relaxed text-white/60">
                       A 15–30 second, click-to-play product capture with captions will appear here during the beta.

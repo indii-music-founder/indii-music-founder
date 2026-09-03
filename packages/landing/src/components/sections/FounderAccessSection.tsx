@@ -22,20 +22,20 @@ interface FounderAccessSectionProps {
 
 export default function FounderAccessSection({ trackPreview }: FounderAccessSectionProps) {
   return (
-    <section id="founder-access" data-system-section="founder-access" className="relative z-20 w-full overflow-hidden border-t border-amber-400/40 bg-gradient-to-b from-[#0F0A05] via-[#140D06] to-[#0A0704]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(255,184,0,0.28),rgba(233,30,99,0.08)_40%,transparent_60%)]" />
-      <div className="absolute right-[-12rem] top-1/2 h-[42rem] w-[42rem] -translate-y-1/2 rounded-full border border-amber-400/40">
-        <div className="absolute inset-[16%] rounded-full border border-amber-400/20" />
-        <div className="absolute inset-[34%] rounded-full bg-amber-400/20 blur-3xl" />
+    <section id="founder-access" data-system-section="founder-access" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-black">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(255,184,0,0.16),transparent_60%)]" />
+      <div className="absolute right-[-12rem] top-1/2 h-[42rem] w-[42rem] -translate-y-1/2 rounded-full border border-amber-400/20">
+        <div className="absolute inset-[16%] rounded-full border border-amber-400/10" />
+        <div className="absolute inset-[34%] rounded-full bg-amber-400/10 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
         <div className="grid gap-14 lg:grid-cols-[1.15fr_0.85fr] lg:gap-24">
           <motion.div initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}>
-            <div className="mb-6 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.6)]">Founding Artist Beta / one-time software license</div>
+            <div className="mb-6 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.5)]">Founding Artist Beta / one-time software license</div>
             <h2 className="text-6xl font-black leading-[0.85] tracking-[-0.065em] text-white sm:text-7xl md:text-9xl lg:text-[10rem]">
               Founding Owner
-              <span className="block text-[#FFB800] [text-shadow:0_0_55px_rgba(255,184,0,0.7)]">License.</span>
+              <span className="block text-[#FFB800] [text-shadow:0_0_45px_rgba(255,184,0,0.6)]">License.</span>
             </h2>
             <p className="mt-10 max-w-2xl text-lg leading-relaxed text-white/70 md:text-xl">
               Permanent top-tier indii.music software access for one $2,500 purchase. Ongoing metered usage and third-party services are purchased as needed.
@@ -47,15 +47,15 @@ export default function FounderAccessSection({ trackPreview }: FounderAccessSect
             initial={{ opacity: 0, x: 25 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-80px' }}
-            className="card-shade-gold relative overflow-hidden rounded-2xl p-8 shadow-[0_30px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl md:p-10"
+            className="lacquer-card-gold relative overflow-hidden rounded-2xl p-8 shadow-[0_30px_90px_rgba(0,0,0,0.95)] backdrop-blur-2xl md:p-10"
           >
             <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
-            <div className="flex items-end justify-between border-b border-amber-500/25 pb-7">
+            <div className="flex items-end justify-between border-b border-white/10 pb-7">
               <div>
                 <div className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-[#FFB800]">Founding Owner License</div>
                 <div className="mt-2 text-5xl font-black tracking-[-0.055em] text-white [text-shadow:0_0_20px_rgba(255,255,255,0.2)]">$2,500</div>
               </div>
-              <div className="rounded-full bg-amber-400/20 px-3.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] font-black text-amber-300 border border-amber-400/50 shadow-[0_0_15px_rgba(255,184,0,0.3)]">One-time purchase</div>
+              <div className="rounded-full bg-white/[0.04] px-3.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] font-black text-amber-300 border border-amber-400/30">One-time purchase</div>
             </div>
 
             <div className="py-5">

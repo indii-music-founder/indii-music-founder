@@ -58,28 +58,27 @@ const tabs: TabItem[] = [
 
 export default function AppStudioShowcase() {
   const [activeTab, setActiveTab] = useState<string>('boardroom');
-  const currentTab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
 
   return (
-    <section id="studio-preview" data-system-section="studio" className="relative z-20 w-full border-t border-white/10 bg-[#040404] py-24 md:py-36">
+    <section id="studio-preview" data-system-section="studio" className="relative z-20 w-full border-t border-white/10 bg-black py-24 md:py-36">
       {/* Dynamic Department Glow Effects */}
       <div
         className="pointer-events-none absolute inset-0 transition-opacity duration-700"
         style={{
-          background: `radial-gradient(circle at 50% 20%, ${currentTab.glow}, transparent 55%)`,
+          background: 'radial-gradient(circle at 50% 20%, rgba(255,184,0,0.06), transparent 55%)',
         }}
       />
       <div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 blur-[140px] transition-all duration-700 opacity-60"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 blur-[160px] transition-all duration-700 opacity-40"
         style={{
-          backgroundColor: `${currentTab.hex}15`,
+          backgroundColor: 'rgba(255,184,0,0.03)',
         }}
       />
 
       <div className="relative mx-auto max-w-[1500px] px-5 md:px-10">
         {/* Section Header */}
         <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-white/[0.03] px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
             <Zap size={13} />
             Inside the Workspace
           </div>
@@ -113,20 +112,10 @@ export default function AppStudioShowcase() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                style={
-                  isActive
-                    ? {
-                        backgroundColor: tab.hex,
-                        color: '#000000',
-                        boxShadow: `0 0 28px ${tab.glow}`,
-                        borderColor: tab.hex,
-                      }
-                    : {}
-                }
                 className={`group relative flex items-center gap-2.5 rounded-full border px-5 py-3 text-xs font-bold transition-all duration-300 ${
                   isActive
-                    ? 'scale-[1.03]'
-                    : 'border-white/10 bg-black/60 text-white/70 hover:border-white/25 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_25px_rgba(255,184,0,0.4)] border-amber-400 scale-[1.03]'
+                    : 'border-white/10 bg-black/70 text-white/70 hover:border-white/25 hover:text-white'
                 }`}
               >
                 <Icon size={14} className={isActive ? 'text-black' : ''} style={!isActive ? { color: tab.hex } : {}} />
@@ -144,12 +133,9 @@ export default function AppStudioShowcase() {
         </div>
 
         {/* Interactive Studio Frame */}
-        <div className="relative mt-12 overflow-hidden rounded-2xl border border-white/15 bg-black/90 shadow-[0_30px_100px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+        <div className="lacquer-card relative mt-12 overflow-hidden rounded-2xl shadow-[0_30px_100px_rgba(0,0,0,0.95)] backdrop-blur-xl">
           <div
-            className="absolute inset-x-0 top-0 h-[2px] transition-all duration-500 z-10"
-            style={{
-              background: `linear-gradient(90deg, transparent 0%, ${currentTab.hex} 50%, transparent 100%)`,
-            }}
+            className="absolute inset-x-0 top-0 h-[1px] specular-line-gold z-10"
           />
           {/* Studio Title Bar */}
           <div className="flex h-12 items-center justify-between border-b border-white/10 bg-[#090909] px-5 font-mono text-[10px] text-white/40">

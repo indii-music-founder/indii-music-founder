@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #08080A;
+  --background: #000000;
   --foreground: #FFFFFF;
 
   /* Color Palette Specs */
-  --bg-black: #08080A;
-  --surface-dark: #0F1115;
+  --bg-black: #000000;
+  --surface-dark: #070709;
   --surface-border: #1F222A;
   --surface-border-active: #333846;
   
@@ -50,7 +50,7 @@
 
   /* Subliminal Theme Colors */
   --void: #000000;
-  --true-black: #08080A;
+  --true-black: #000000;
   --resonance-blue: #2E2EFE;
   --electric-blue: #00F0FF;
   --frequency-pink: #FE2E9A;
@@ -452,93 +452,211 @@ footer span {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
- * TRANSLUCENT COLOR-SHADED GLASS CARDS
+ * PIANO LACQUER GLASS CARD SYSTEM
+ * Deep obsidian black glass with polished specular rim lights.
+ * Replaces garish colored gradient washes with luxury analog studio finish.
  * ──────────────────────────────────────────────────────────────────────────*/
-.card-shade-cyan {
-  background: linear-gradient(145deg, rgba(0, 188, 212, 0.14) 0%, rgba(10, 25, 30, 0.85) 45%, rgba(6, 16, 20, 0.95) 100%);
-  border: 1px solid rgba(0, 188, 212, 0.35);
-  box-shadow: 0 10px 35px -5px rgba(0, 188, 212, 0.2), inset 0 1px 0 rgba(0, 229, 255, 0.35);
+
+/* Polished lacquer specular sheen overlay — diagonal highlight across surfaces */
+.gloss-black-canvas {
+  background:
+    linear-gradient(115deg, rgba(255,255,255,0.028) 0%, transparent 38%, rgba(255,255,255,0.012) 68%, transparent 100%),
+    #000000;
 }
 
-.card-shade-gold {
-  background: linear-gradient(145deg, rgba(255, 184, 0, 0.15) 0%, rgba(30, 24, 15, 0.85) 45%, rgba(18, 14, 10, 0.95) 100%);
-  border: 1px solid rgba(255, 184, 0, 0.35);
-  box-shadow: 0 10px 35px -5px rgba(255, 184, 0, 0.2), inset 0 1px 0 rgba(255, 215, 0, 0.4);
+/* Studio floor reflection beneath console elements */
+.gloss-floor-reflection {
+  background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.015) 60%, rgba(255,255,255,0.04) 100%);
 }
 
-.card-shade-green {
-  background: linear-gradient(145deg, rgba(0, 255, 102, 0.14) 0%, rgba(12, 28, 18, 0.85) 45%, rgba(8, 18, 12, 0.95) 100%);
-  border: 1px solid rgba(0, 255, 102, 0.35);
-  box-shadow: 0 10px 35px -5px rgba(0, 255, 102, 0.2), inset 0 1px 0 rgba(105, 240, 174, 0.35);
+/* Base lacquer card — obsidian glass with beveled specular top */
+.lacquer-card {
+  background: linear-gradient(180deg, rgba(14,14,16,0.88) 0%, rgba(4,4,6,0.96) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    inset 0 0 20px rgba(255, 255, 255, 0.015),
+    0 20px 60px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
 }
 
-.card-shade-blue {
-  background: linear-gradient(145deg, rgba(33, 150, 243, 0.14) 0%, rgba(12, 24, 38, 0.85) 45%, rgba(8, 16, 26, 0.95) 100%);
-  border: 1px solid rgba(33, 150, 243, 0.35);
-  box-shadow: 0 10px 35px -5px rgba(33, 150, 243, 0.2), inset 0 1px 0 rgba(64, 196, 255, 0.35);
+.lacquer-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.25),
+    inset 0 0 30px rgba(255, 255, 255, 0.025),
+    0 25px 80px rgba(0, 0, 0, 0.95);
 }
 
-.card-shade-purple {
-  background: linear-gradient(145deg, rgba(156, 39, 176, 0.15) 0%, rgba(26, 14, 32, 0.85) 45%, rgba(16, 8, 22, 0.95) 100%);
-  border: 1px solid rgba(156, 39, 176, 0.35);
-  box-shadow: 0 10px 35px -5px rgba(156, 39, 176, 0.2), inset 0 1px 0 rgba(224, 64, 251, 0.35);
+/* Champagne Gold lacquer — obsidian with warm gold specular rim */
+.card-shade-gold,
+.lacquer-card-gold {
+  background: linear-gradient(180deg, rgba(14,12,8,0.9) 0%, rgba(4,4,4,0.97) 100%);
+  border: 1px solid rgba(255, 184, 0, 0.18);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 215, 0, 0.22),
+    inset 0 0 25px rgba(255, 184, 0, 0.04),
+    0 20px 60px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
 }
 
-.card-shade-magenta {
-  background: linear-gradient(145deg, rgba(233, 30, 99, 0.15) 0%, rgba(32, 14, 24, 0.85) 45%, rgba(20, 8, 15, 0.95) 100%);
-  border: 1px solid rgba(233, 30, 99, 0.35);
-  box-shadow: 0 10px 35px -5px rgba(233, 30, 99, 0.2), inset 0 1px 0 rgba(255, 64, 129, 0.35);
+/* Petroleum Teal lacquer — obsidian with smoked teal specular rim */
+.card-shade-cyan,
+.lacquer-card-teal {
+  background: linear-gradient(180deg, rgba(8,14,14,0.9) 0%, rgba(4,4,6,0.97) 100%);
+  border: 1px solid rgba(0, 184, 212, 0.15);
+  box-shadow:
+    inset 0 1px 1px rgba(0, 229, 204, 0.18),
+    inset 0 0 25px rgba(0, 184, 212, 0.03),
+    0 20px 60px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
 }
 
-.card-shade-crimson {
-  background: linear-gradient(145deg, rgba(244, 67, 54, 0.15) 0%, rgba(32, 14, 14, 0.85) 45%, rgba(20, 8, 8, 0.95) 100%);
-  border: 1px solid rgba(244, 67, 54, 0.35);
-  box-shadow: 0 10px 35px -5px rgba(244, 67, 54, 0.2), inset 0 1px 0 rgba(255, 82, 82, 0.35);
+/* Smoked Emerald lacquer — obsidian with dark green specular rim */
+.card-shade-green,
+.lacquer-card-emerald {
+  background: linear-gradient(180deg, rgba(8,14,10,0.9) 0%, rgba(4,4,4,0.97) 100%);
+  border: 1px solid rgba(0, 200, 83, 0.14);
+  box-shadow:
+    inset 0 1px 1px rgba(105, 240, 174, 0.15),
+    inset 0 0 25px rgba(0, 200, 83, 0.03),
+    0 20px 60px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+/* Polished Cobalt lacquer — obsidian with refined blue specular rim */
+.card-shade-blue,
+.lacquer-card-cobalt {
+  background: linear-gradient(180deg, rgba(8,10,16,0.9) 0%, rgba(4,4,6,0.97) 100%);
+  border: 1px solid rgba(33, 150, 243, 0.14);
+  box-shadow:
+    inset 0 1px 1px rgba(64, 196, 255, 0.15),
+    inset 0 0 25px rgba(33, 150, 243, 0.03),
+    0 20px 60px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+/* Dark Amethyst lacquer — obsidian with subtle purple specular rim */
+.card-shade-purple,
+.lacquer-card-amethyst {
+  background: linear-gradient(180deg, rgba(12,8,16,0.9) 0%, rgba(4,4,6,0.97) 100%);
+  border: 1px solid rgba(156, 39, 176, 0.14);
+  box-shadow:
+    inset 0 1px 1px rgba(186, 104, 200, 0.15),
+    inset 0 0 25px rgba(156, 39, 176, 0.03),
+    0 20px 60px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+/* Warm Crimson lacquer — obsidian with dark red specular rim */
+.card-shade-magenta,
+.card-shade-crimson,
+.lacquer-card-crimson {
+  background: linear-gradient(180deg, rgba(14,8,10,0.9) 0%, rgba(4,4,4,0.97) 100%);
+  border: 1px solid rgba(233, 30, 99, 0.14);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 82, 82, 0.15),
+    inset 0 0 25px rgba(233, 30, 99, 0.03),
+    0 20px 60px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
- * ILLUMINATED NEON PILLS & SPECULAR HIGHLIGHTS
+ * POLISHED METALLIC SPECULAR HIGHLIGHTS & PRECISION LED INDICATORS
  * ──────────────────────────────────────────────────────────────────────────*/
-.neon-pill-cyan {
-  background: #00BCD4;
-  color: #021115;
-  box-shadow: 0 0 25px rgba(0, 188, 212, 0.7), 0 0 45px rgba(0, 188, 212, 0.35);
-}
 
-.neon-pill-gold {
-  background: #FFB800;
-  color: #1A1102;
-  box-shadow: 0 0 25px rgba(255, 184, 0, 0.7), 0 0 45px rgba(255, 184, 0, 0.35);
-}
-
-.neon-pill-green {
-  background: #00FF66;
-  color: #021508;
-  box-shadow: 0 0 25px rgba(0, 255, 102, 0.7), 0 0 45px rgba(0, 255, 102, 0.35);
-}
-
-.neon-pill-blue {
-  background: #2196F3;
-  color: #031020;
-  box-shadow: 0 0 25px rgba(33, 150, 243, 0.7), 0 0 45px rgba(33, 150, 243, 0.35);
-}
-
+/* Specular hairline — polished metallic gradient, fades from edge to bright center */
 .specular-line-gold {
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.75) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.55) 30%, rgba(255, 184, 0, 0.8) 50%, rgba(255, 215, 0, 0.55) 70%, transparent 100%);
 }
 
 .specular-line-cyan {
-  background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.75) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 204, 0.45) 30%, rgba(0, 184, 212, 0.65) 50%, rgba(0, 229, 204, 0.45) 70%, transparent 100%);
 }
 
 .specular-line-green {
-  background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 102, 0.75) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 200, 83, 0.45) 30%, rgba(0, 200, 83, 0.65) 50%, rgba(0, 200, 83, 0.45) 70%, transparent 100%);
 }
 
 .specular-line-blue {
-  background: linear-gradient(90deg, transparent 0%, rgba(64, 196, 255, 0.75) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(33, 150, 243, 0.45) 30%, rgba(33, 150, 243, 0.65) 50%, rgba(33, 150, 243, 0.45) 70%, transparent 100%);
 }
 
 .specular-line-magenta {
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 64, 129, 0.75) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(233, 30, 99, 0.35) 30%, rgba(233, 30, 99, 0.55) 50%, rgba(233, 30, 99, 0.35) 70%, transparent 100%);
 }
+
+/* Precision Studio LED — small, tight indicator dots (not oversized neon pills) */
+.studio-led {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.studio-led-gold {
+  background: rgba(255, 184, 0, 0.12);
+  color: #FFB800;
+  border: 1px solid rgba(255, 184, 0, 0.35);
+  box-shadow: 0 0 10px rgba(255, 184, 0, 0.25);
+}
+
+.studio-led-cyan {
+  background: rgba(0, 184, 212, 0.10);
+  color: #00B8D4;
+  border: 1px solid rgba(0, 184, 212, 0.30);
+  box-shadow: 0 0 10px rgba(0, 184, 212, 0.20);
+}
+
+.studio-led-green {
+  background: rgba(0, 200, 83, 0.10);
+  color: #00C853;
+  border: 1px solid rgba(0, 200, 83, 0.30);
+  box-shadow: 0 0 10px rgba(0, 200, 83, 0.20);
+}
+
+.studio-led-blue {
+  background: rgba(33, 150, 243, 0.10);
+  color: #2196F3;
+  border: 1px solid rgba(33, 150, 243, 0.30);
+  box-shadow: 0 0 10px rgba(33, 150, 243, 0.20);
+}
+
+/* Legacy compatibility aliases for neon-pill classes (used in components) */
+.neon-pill-cyan {
+  background: rgba(0, 184, 212, 0.10);
+  color: #00B8D4;
+  border: 1px solid rgba(0, 184, 212, 0.30);
+  box-shadow: 0 0 10px rgba(0, 184, 212, 0.20);
+}
+.neon-pill-gold {
+  background: rgba(255, 184, 0, 0.12);
+  color: #FFB800;
+  border: 1px solid rgba(255, 184, 0, 0.35);
+  box-shadow: 0 0 10px rgba(255, 184, 0, 0.25);
+}
+.neon-pill-green {
+  background: rgba(0, 200, 83, 0.10);
+  color: #00C853;
+  border: 1px solid rgba(0, 200, 83, 0.30);
+  box-shadow: 0 0 10px rgba(0, 200, 83, 0.20);
+}
+.neon-pill-blue {
+  background: rgba(33, 150, 243, 0.10);
+  color: #2196F3;
+  border: 1px solid rgba(33, 150, 243, 0.30);
+  box-shadow: 0 0 10px rgba(33, 150, 243, 0.20);
+}
+

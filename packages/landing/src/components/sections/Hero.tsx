@@ -37,11 +37,11 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
       className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1600px] flex-col justify-between px-5 pb-8 pt-28 md:px-10 md:pb-10 md:pt-32"
       aria-label="indii.music founder introduction"
     >
-      {/* Saturated Petrol Teal & Radiant Gold Atmospheric Halos */}
+      {/* Warm Studio Atmospheric Halo — Champagne Gold & Smoked Petroleum Teal */}
       <div
-        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[680px] w-[1150px] blur-[140px] opacity-90"
+        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[1100px] blur-[150px] opacity-80"
         style={{
-          background: 'radial-gradient(ellipse at center, rgba(0,188,212,0.18) 0%, rgba(255,184,0,0.16) 40%, rgba(0,255,102,0.06) 65%, transparent 75%)',
+          background: 'radial-gradient(ellipse at center, rgba(255,184,0,0.12) 0%, rgba(0,184,212,0.06) 45%, transparent 70%)',
         }}
       />
 
@@ -133,33 +133,33 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
             </p>
 
             {/* No More Gatekeepers / Handlers Card */}
-            <div className="mt-6 card-shade-gold relative overflow-hidden rounded-2xl p-6 shadow-[0_12px_45px_rgba(0,0,0,0.8)]">
+            <div className="mt-6 lacquer-card-gold relative overflow-hidden rounded-2xl p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
               <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
-              <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_15px_rgba(255,184,0,0.5)]">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.4)]">
                   The Freedom Principle
                 </span>
-                <span className="rounded-full bg-amber-400/20 px-3 py-1 font-mono text-[9px] font-bold text-amber-300 border border-amber-400/50 shadow-[0_0_12px_rgba(255,184,0,0.25)]">
+                <span className="rounded-full bg-white/[0.04] px-3 py-1 font-mono text-[9px] font-bold text-amber-300/90 border border-amber-400/30">
                   Artist-controlled workspace
                 </span>
               </div>
 
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-[#2196F3]/35 bg-[#0C1A29]/75 p-3.5 shadow-[0_0_20px_rgba(33,150,243,0.15)]">
-                  <div className="text-xs font-black uppercase tracking-wider text-[#64B5F6] flex items-center gap-1.5">
+                <div className="rounded-xl border border-white/10 bg-black/60 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/20">
+                  <div className="text-xs font-black uppercase tracking-wider text-white/90 flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#2196F3] shadow-[0_0_8px_#2196F3]" />
                     The release stays connected
                   </div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-white/75">
+                  <p className="mt-1.5 text-xs leading-relaxed text-white/70">
                     Keep assets, rights, plans, campaigns, and financial records attached to the same project.
                   </p>
                 </div>
-                <div className="rounded-xl border border-[#00FF66]/35 bg-[#0A1F13]/75 p-3.5 shadow-[0_0_20px_rgba(0,255,102,0.15)]">
-                  <div className="text-xs font-black uppercase tracking-wider text-[#69F0AE] flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#00FF66] shadow-[0_0_8px_#00FF66]" />
+                <div className="rounded-xl border border-white/10 bg-black/60 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/20">
+                  <div className="text-xs font-black uppercase tracking-wider text-white/90 flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#00C853] shadow-[0_0_8px_#00C853]" />
                     The right help, in context
                   </div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-white/75">
+                  <p className="mt-1.5 text-xs leading-relaxed text-white/70">
                     Connected specialists help prepare the work while you remain the artist and decision-maker.
                   </p>
                 </div>
@@ -168,11 +168,11 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
           </div>
 
           {/* Right Column: Primary CTAs & Product Status */}
-          <div className="card-shade-cyan relative flex flex-col justify-between overflow-hidden rounded-2xl p-7 shadow-[0_20px_60px_rgba(0,0,0,0.85)]">
-            <div className="absolute inset-x-0 top-0 h-[1px] specular-line-cyan" />
+          <div className="lacquer-card relative flex flex-col justify-between overflow-hidden rounded-2xl p-7 shadow-[0_25px_70px_rgba(0,0,0,0.95)]">
+            <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
             <div>
-              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#00BCD4] [text-shadow:0_0_12px_rgba(0,188,212,0.6)]">
-                <span className="h-2 w-2 rounded-full bg-[#00BCD4] shadow-[0_0_10px_#00BCD4]" />
+              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#FFB800]">
+                <span className="h-2 w-2 rounded-full bg-[#00C853] shadow-[0_0_10px_#00C853]" />
                 Working software / Founding Artist Beta
               </div>
               <p className="mt-3 text-base text-white/90">
@@ -189,7 +189,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                     pulseHero(1);
                   }}
                   onMouseEnter={() => pulseHero(0.55)}
-                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-7 py-4 text-sm font-black text-black shadow-[0_0_35px_rgba(255,184,0,0.55)] transition-all hover:scale-[1.03] hover:shadow-[0_0_50px_rgba(255,184,0,0.8)]"
+                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-7 py-4 text-sm font-black text-black shadow-[0_0_35px_rgba(255,184,0,0.5)] transition-all hover:scale-[1.03] hover:shadow-[0_0_50px_rgba(255,184,0,0.75)]"
                 >
                   {previewEnabled
                     ? founder
@@ -203,13 +203,13 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackPreview('hero_login')}
-                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-black/60 px-7 py-4 text-sm font-bold text-white shadow-[0_0_15px_rgba(255,255,255,0.08)] backdrop-blur-md transition-all hover:border-amber-400/60 hover:text-amber-300 hover:shadow-[0_0_20px_rgba(255,184,0,0.3)]"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-7 py-4 text-sm font-bold text-white shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all hover:border-amber-400/50 hover:text-amber-300"
                 >
                   Log in
                 </a>
                 <a
                   href="#studio-preview"
-                  className="group inline-flex items-center justify-center gap-3 rounded-full border border-[#00BCD4]/40 bg-[#00BCD4]/10 px-7 py-4 text-sm font-bold text-cyan-200 shadow-[0_0_20px_rgba(0,188,212,0.2)] backdrop-blur-md transition-all hover:border-[#00BCD4]/80 hover:bg-[#00BCD4]/20 hover:text-white hover:shadow-[0_0_30px_rgba(0,188,212,0.45)]"
+                  className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/15 bg-white/[0.03] px-7 py-4 text-sm font-bold text-white/80 backdrop-blur-md transition-all hover:border-[#FFB800]/50 hover:bg-white/[0.06] hover:text-white"
                 >
                   <Play size={14} fill="currentColor" />
                   See how indii.music works
@@ -217,16 +217,16 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
               </div>
             </div>
 
-            <div className="mt-8 border-t border-cyan-500/20 pt-4">
+            <div className="mt-8 border-t border-white/10 pt-4">
               <div className="grid grid-cols-3 gap-2 text-center font-mono text-[9px] uppercase tracking-wider">
-                <div className="rounded-lg bg-[#081524]/90 p-2.5 text-white/80 border border-[#2196F3]/40 shadow-[0_0_16px_rgba(33,150,243,0.22)]">
-                  <span className="block font-black text-[#64B5F6] [text-shadow:0_0_10px_rgba(33,150,243,0.6)]">Keep</span> Your rights
+                <div className="rounded-xl bg-black/70 p-2.5 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                  <span className="block font-black text-white [text-shadow:0_0_8px_rgba(255,255,255,0.4)]">Keep</span> Your rights
                 </div>
-                <div className="rounded-lg bg-[#1D170A]/90 p-2.5 text-white/80 border border-[#FFC107]/40 shadow-[0_0_16px_rgba(255,193,7,0.22)]">
-                  <span className="block font-black text-[#FFD54F] [text-shadow:0_0_10px_rgba(255,193,7,0.6)]">0%</span> Royalty Cut
+                <div className="rounded-xl bg-black/70 p-2.5 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                  <span className="block font-black text-[#FFB800] [text-shadow:0_0_8px_rgba(255,184,0,0.5)]">0%</span> Royalty Cut
                 </div>
-                <div className="rounded-lg bg-[#071D10]/90 p-2.5 text-white/80 border border-[#00FF66]/40 shadow-[0_0_16px_rgba(0,255,102,0.22)]">
-                  <span className="block font-black text-[#69F0AE] [text-shadow:0_0_10px_rgba(0,255,102,0.6)]">Live</span> Working beta
+                <div className="rounded-xl bg-black/70 p-2.5 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                  <span className="block font-black text-[#00C853] [text-shadow:0_0_8px_rgba(0,200,83,0.5)]">Live</span> Working beta
                 </div>
               </div>
             </div>

@@ -28,11 +28,11 @@ export default function WaitlistSection({
     <section
       id="waitlist"
       data-system-section="waitlist"
-      className="relative z-20 scroll-mt-[104px] border-y border-amber-400/40 bg-gradient-to-r from-[#100D09] via-[#1A140F] to-[#100D09] shadow-[0_0_60px_rgba(255,184,0,0.18)]"
+      className="relative z-20 scroll-mt-[104px] border-y border-white/10 bg-black shadow-[0_20px_50px_rgba(0,0,0,0.9)]"
       aria-labelledby="waitlist-title"
     >
       <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(255,184,0,0.15),rgba(0,188,212,0.06)_50%,transparent_75%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(255,184,0,0.08),transparent_65%)]" />
       <div className="relative mx-auto grid max-w-[1500px] gap-8 px-5 py-12 md:grid-cols-[0.48fr_1fr_0.36fr] md:items-center md:px-10 md:py-14">
         <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.23em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.6)]">
           <span className="h-2 w-2 rounded-full bg-[#FFB800] shadow-[0_0_15px_rgba(255,184,0,0.9)]" />
@@ -77,7 +77,7 @@ export default function WaitlistSection({
                 value={email}
                 onChange={(e) => onChange(e.target.value)}
                 disabled={status === 'loading' || status === 'success'}
-                className="w-full rounded-lg border border-amber-400/40 bg-black/70 px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none backdrop-blur-md transition-all focus:border-[#FFB800] focus:bg-black/90 focus:shadow-[0_0_20px_rgba(255,184,0,0.4)] sm:max-w-[240px]"
+                className="w-full rounded-lg border border-white/15 bg-black/80 px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none backdrop-blur-md transition-all focus:border-[#FFB800] focus:bg-black focus:shadow-[0_0_20px_rgba(255,184,0,0.25)] sm:max-w-[240px]"
               />
               <button
                 type="submit"
