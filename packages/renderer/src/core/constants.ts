@@ -44,7 +44,8 @@ export const MODULE_IDS = [
     'security',
     'devops',
     'screenwriter',
-    'crm'
+    'crm',
+    'raw-converter'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
@@ -97,6 +98,7 @@ export const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
     'investor': 'Investor',
     'capture': 'Capture',
     'memory': 'Memory',
+    'raw-converter': 'RAW Converter',
 };
 
 // ============================================================================
@@ -105,6 +107,7 @@ export const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
 
 export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
     'dashboard': 'generalist',
+    'raw-converter': 'creative',
     'workflow': 'generalist',
     'history': 'generalist',
     'notes': 'memory',

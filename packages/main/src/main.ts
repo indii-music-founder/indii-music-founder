@@ -104,6 +104,7 @@ import { mcpClientService } from './services/mcp/MCPClientService';
 import { setupAutoUpdater, registerUpdaterHandlers } from './updater';
 import { registerWeb3Handlers } from './handlers/web3';
 import { registerPinataHandlers } from './handlers/pinata';
+import { registerRawHandlers } from './handlers/raw';
 import Store from 'electron-store';
 
 let tray: Tray | null = null;
@@ -505,6 +506,7 @@ if (!gotTheLock) {
         registerDawHandlers();
         registerWeb3Handlers();
         registerPinataHandlers();
+        registerRawHandlers();
 
         // Register Sidecar Handlers (Removed)
 
@@ -537,6 +539,7 @@ if (!gotTheLock) {
             'test:browser-agent', 'show-notification',
             'web3:execute-transaction', 'web3:get-provider-metadata', 'web3:set-rpc-url', 'web3:get-balance',
             'web3:pinata-upload',
+            'raw:inspect', 'raw:convert', 'raw:batch-convert', 'raw:cancel', 'raw:verify',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
 

@@ -18,6 +18,10 @@
       "filter": [
         "**/*"
       ]
+    },
+    {
+      "from": "packages/raw-converter/target/release/indii-raw",
+      "to": "packages/raw-converter/indii-raw"
     }
   ],
   "linux": {

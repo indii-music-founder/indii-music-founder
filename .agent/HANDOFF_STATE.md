@@ -1,3 +1,32 @@
+# Session Close — Local RAW-to-DNG Converter (indii RAW Converter) (2026-09-03)
+
+**Final state: all 5 Rust integration suites passing (100%), all 8 Electron & React unit/security tests passing (0 failures), real Sony ILCE-7M3 24MP fixture verified with 0 sample differences and bit-for-bit SHA-256 CFA hash match, recognized by Apple macOS sips as com.adobe.raw-image, 0 monorepo typecheck errors, 0 lint errors.**
+
+## Shipped — Local RAW-to-DNG Converter
+- **Clean-Room & Legal Boundary:**
+  - Built strictly from public specifications (Adobe DNG 1.4/1.6, TIFF 6.0, ITU-T T.81). No Adobe SDK, code, or decompiled binaries.
+  - Written clean-room declaration in `docs/clean_room/RAW_CONVERTER_CLEAN_ROOM.md` and source/license register in `docs/clean_room/SOURCE_AND_LICENSE_REGISTER.md`.
+- **Rust Core (`packages/raw-converter`):**
+  - Adapters: Sony ARW uncompressed (1), ITU-T T.81 lossless JPEG (6), and Sony cRAW (32767) with Tag 0x7010 curve reconstruction.
+  - Color calibration: Tag 0x7313 WB extraction (`[G/R, 1.0, G/B]`), `ColorMatrix1`/`ColorMatrix2`, +0.35 EV `BaselineExposure` lift.
+  - Multi-IFD DNG/TIFF serializer with atomic `.tmp` writing and renaming.
+  - Verification & Benchmark subcommands: `indii-raw inspect`, `convert`, `verify`, `benchmark`.
+  - Throughput: 61.61 MP/sec (~400 ms per 24MP image on Apple Silicon).
+- **Electron Main & Preload Bridge:**
+  - `RawConverterService.ts` with `accessControlService` validation, non-destructive safety (never overwrites original RAW), disk preflight, and cancellation.
+  - Registered IPC handlers in `packages/main/src/handlers/raw.ts`, whitelisted in `packages/main/src/main.ts`, exposed on `window.electronAPI.raw` in `preload.ts`.
+  - Vitest security tests passing in `packages/main/src/handlers/raw.security.test.ts`.
+- **Renderer Desktop Studio:**
+  - `RawConverterModule.tsx`: drag-and-drop batch queue, camera detection badge, exposure adjustment slider, "Keep Original" security guarantee badge, and bit-level integrity verification.
+  - Registered in `constants.ts`, `AppShell.tsx`, `Sidebar.tsx`, `moduleColors.ts`, and `ModuleTheme.ts`.
+  - Unit tests passing in `RawConverterModule.test.tsx`.
+- **Packaging & Monorepo Configuration:**
+  - Added `build:raw` script in `package.json`.
+  - Configured `extraResources` in `electron-builder.json` to bundle `indii-raw` binary.
+
+## Honest remaining / Untouched foreign work
+- Foreign dirty files preserved untouched per `branch-safety.md`: `.agent/observations/2026-08-27-agent-watch.md`, landing sections in `packages/landing`.
+
 # Session Close — Codebase Optimization, Cloud Functions Bundle Trimming & Circular Dependency Elimination (2026-09-01)
 
 **Final state: all 7,330+ unit/integration tests passing (0 failures), 0 circular dependencies in Cloud Functions, 0 typecheck errors, 0 lint errors.**

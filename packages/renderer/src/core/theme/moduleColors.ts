@@ -84,7 +84,8 @@ export const departmentCssVars = {
     security: '--color-dept-legal',                 // Security uses Legal slate
     devops: '--color-dept-distribution',            // DevOps uses Distribution blue
     screenwriter: '--color-dept-creative',          // Screenwriter uses Creative purple
-    crm: '--color-dept-marketing'                   // CRM uses Marketing magenta
+    crm: '--color-dept-marketing',                  // CRM uses Marketing magenta
+    'raw-converter': '--color-dept-creative'        // RAW Converter uses Creative purple
 } as const;
 
 /**
@@ -519,6 +520,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'group-hover:text-amber-300',
         hoverBg: 'hover:bg-amber-500/20',
         cssVar: '--color-dept-brand'
+    },
+    'raw-converter': {
+        text: 'text-purple-400',
+        bg: 'bg-purple-500/10',
+        border: 'border-purple-500/20',
+        ring: 'ring-purple-500/30',
+        hoverText: 'group-hover:text-purple-300',
+        hoverBg: 'hover:bg-purple-500/20',
+        cssVar: '--color-dept-creative'
     }
 };
 

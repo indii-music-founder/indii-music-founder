@@ -1,0 +1,8 @@
+/target/
+*.dng
+*.tmp*
+*.ARW
+*.arw
+tests/fixtures/*.dng
+tests/fixtures/*.ARW
+tests/fixtures/*.arw

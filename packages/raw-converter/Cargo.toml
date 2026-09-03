@@ -1,0 +1,28 @@
+[package]
+name = "indii-raw"
+version = "0.1.0"
+edition = "2021"
+authors = ["indii.music <engineering@indii.music>"]
+description = "indii RAW Converter: Memory-safe local RAW to DNG conversion core"
+license = "MIT OR Apache-2.0"
+
+[lib]
+name = "indii_raw"
+path = "src/lib.rs"
+
+[[bin]]
+name = "indii-raw"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+byteorder = "1.5"
+
+[profile.release]
+opt-level = 3
+lto = true
+overflow-checks = true
+panic = "abort"

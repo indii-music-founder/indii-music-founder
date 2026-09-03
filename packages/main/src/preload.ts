@@ -336,5 +336,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.invoke('trash:restore', req),
         purge: (req: { dirPath: string; trashId: string }) =>
             ipcRenderer.invoke('trash:purge', req),
+    },
+
+    // indii RAW Photo Converter
+    raw: {
+        inspect: (filePath: string) => ipcRenderer.invoke('raw:inspect', filePath),
+        convert: (options: unknown) => ipcRenderer.invoke('raw:convert', options),
+        batchConvert: (options: unknown) => ipcRenderer.invoke('raw:batch-convert', options),
+        cancel: (jobId: string) => ipcRenderer.invoke('raw:cancel', jobId),
+        verify: (dngPath: string, sourcePath?: string) => ipcRenderer.invoke('raw:verify', dngPath, sourcePath),
+        onProgress: (callback: (progress: unknown) => void) => {
+            const handler = (_event: unknown, progress: unknown) => callback(progress);
+            ipcRenderer.on('raw:convert-progress', handler);
+            return () => ipcRenderer.removeListener('raw:convert-progress', handler);
+        },
     }
 });
