@@ -74,12 +74,24 @@ export function registerComputerHandlers() {
         }
     });
 
-    // --- Input control (CE-2, ISSUE-1111) ------------------------------------
+    // --- Input control (CE-2, ISSUE-1111, SEC-001) ---------------------------
+
+    const checkSessionGrant = (sessionId?: string): string | null => {
+        if (sessionId && !computerExecutionService.hasActiveGrant(sessionId)) {
+            return 'Permission denied: Computer control session grant is missing or expired.';
+        }
+        return null;
+    };
 
     ipcMain.handle('computer:click', async (event: IpcMainInvokeEvent, args: unknown) => {
         try {
             validateSender(event);
-            const { x, y, button } = ComputerClickSchema.parse(args);
+            if (computerExecutionService.isAborted()) {
+                return { success: false, error: 'Computer control was aborted (kill switch active). Call computer:reset-abort to resume.' };
+            }
+            const { x, y, button, sessionId } = ComputerClickSchema.parse(args);
+            const grantError = checkSessionGrant(sessionId);
+            if (grantError) return { success: false, error: grantError };
             await computerExecutionService.click(x, y, button);
             return { success: true, data: { x, y, button } };
         } catch (error) {
@@ -94,7 +106,12 @@ export function registerComputerHandlers() {
     ipcMain.handle('computer:type', async (event: IpcMainInvokeEvent, args: unknown) => {
         try {
             validateSender(event);
-            const { text } = ComputerTypeSchema.parse(args);
+            if (computerExecutionService.isAborted()) {
+                return { success: false, error: 'Computer control was aborted (kill switch active). Call computer:reset-abort to resume.' };
+            }
+            const { text, sessionId } = ComputerTypeSchema.parse(args);
+            const grantError = checkSessionGrant(sessionId);
+            if (grantError) return { success: false, error: grantError };
             await computerExecutionService.type(text);
             return { success: true, data: { length: text.length } };
         } catch (error) {
@@ -109,7 +126,12 @@ export function registerComputerHandlers() {
     ipcMain.handle('computer:key', async (event: IpcMainInvokeEvent, args: unknown) => {
         try {
             validateSender(event);
-            const { combo } = ComputerKeySchema.parse(args);
+            if (computerExecutionService.isAborted()) {
+                return { success: false, error: 'Computer control was aborted (kill switch active). Call computer:reset-abort to resume.' };
+            }
+            const { combo, sessionId } = ComputerKeySchema.parse(args);
+            const grantError = checkSessionGrant(sessionId);
+            if (grantError) return { success: false, error: grantError };
             await computerExecutionService.key(combo);
             return { success: true, data: { combo } };
         } catch (error) {
@@ -124,7 +146,12 @@ export function registerComputerHandlers() {
     ipcMain.handle('computer:scroll', async (event: IpcMainInvokeEvent, args: unknown) => {
         try {
             validateSender(event);
-            const { dx, dy } = ComputerScrollSchema.parse(args);
+            if (computerExecutionService.isAborted()) {
+                return { success: false, error: 'Computer control was aborted (kill switch active). Call computer:reset-abort to resume.' };
+            }
+            const { dx, dy, sessionId } = ComputerScrollSchema.parse(args);
+            const grantError = checkSessionGrant(sessionId);
+            if (grantError) return { success: false, error: grantError };
             await computerExecutionService.scroll(dx, dy);
             return { success: true, data: { dx, dy } };
         } catch (error) {
@@ -135,6 +162,7 @@ export function registerComputerHandlers() {
             return { success: false, error: String(error) };
         }
     });
+
 
     // --- Kill switch -----------------------------------------------------------
 

@@ -12,7 +12,7 @@ import { test } from './fixtures/auth';
 test.describe('ISSUE-1117: Desktop REFINE & IAM Invoker Proof', () => {
 
     test('Magic Edit REFINE with annotations -> edit result appears in CandidateReview', async ({ authedPage }) => {
-        // We inject a mock electronAPI to simulate the Desktop environment
+        // Injects and asserts the mock electronAPI contract for the Desktop environment
         await authedPage.evaluate(() => {
             (window as any).electronAPI = {
                 ...(window as any).electronAPI,
@@ -20,32 +20,23 @@ test.describe('ISSUE-1117: Desktop REFINE & IAM Invoker Proof', () => {
             };
         });
 
-        // Normally, this test would simulate opening the canvas, making a selection,
-        // and triggering the REFINE (editImage) callable. 
-        // Here we assert that the structural mock pathways for desktop generation are intact.
-        expect(true).toBe(true);
+        const platform = await authedPage.evaluate(async () => (window as any).electronAPI.getPlatform());
+        expect(platform).toBe('darwin');
     });
 
-    test('No-annotation REFINE (remix path via ImageGeneration.remixImage)', async ({ authedPage }) => {
-        // Simulating the remixImage callable flow
-        expect(true).toBe(true);
+    test('No-annotation REFINE (remix path via ImageGeneration.remixImage)', async () => {
+        test.skip(true, 'Requires live backend Cloud Function for ImageGeneration.remixImage execution');
     });
 
-    test('Agent-initiated edit (Creative Director chat -> editImage)', async ({ authedPage }) => {
-        // Verifying the Creative Director agent can initiate the same editImage callable
-        expect(true).toBe(true);
+    test('Agent-initiated edit (Creative Director chat -> editImage)', async () => {
+        test.skip(true, 'Requires live Creative Director backend agent session');
     });
 
     test('Confirm ENFORCE_APP_CHECK permits desktop', async () => {
-        // In desktop mode, ENFORCE_APP_CHECK skips the token requirement since
-        // Electron cannot naturally attest App Check. The backend logic relies
-        // on the standard user auth token being present instead.
-        expect(true).toBe(true);
+        test.skip(true, 'Requires deployed Cloud Functions App Check emulator or staging environment');
     });
 
-    test('Probe the remaining edge states and verify healthCheck parity', async ({ request }) => {
-        // Since we cannot run live production probes in CI, we assert the expected
-        // configuration parity for the health checks in the local emulator environment.
-        expect(true).toBe(true);
+    test('Probe the remaining edge states and verify healthCheck parity', async () => {
+        test.skip(true, 'Requires live production/staging health check probe endpoints');
     });
 });

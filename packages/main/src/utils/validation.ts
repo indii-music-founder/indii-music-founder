@@ -171,12 +171,21 @@ export const ComputerScreenshotSchema = z.object({
 export const ComputerOpenAppSchema = z.string().min(1).max(255)
     .regex(/^[A-Za-z0-9][A-Za-z0-9 ()._+-]*$/, 'App must be a plain application name or bundle id');
 
+// Computer session-scoped approval grants (CE-5, ISSUE-1114)
+export const ComputerSessionIdSchema = z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/, 'Session id must be alphanumeric, dashes, or underscores');
+
+export const ComputerGrantSessionSchema = z.object({
+    sessionId: ComputerSessionIdSchema,
+    ttlMs: z.number().int().positive().max(60 * 60 * 1000).optional() // capped at 1 hour
+});
+
 // Computer input control (CE-2, ISSUE-1111). Screen-coordinate bounds are generous (8K) —
 // actual bounds checking against the real display happens in NativeMacProvider at click time.
 export const ComputerClickSchema = z.object({
     x: z.number().int().min(0).max(8192),
     y: z.number().int().min(0).max(8192),
-    button: z.enum(['left', 'right', 'double']).default('left')
+    button: z.enum(['left', 'right', 'double']).default('left'),
+    sessionId: ComputerSessionIdSchema.optional()
 });
 
 // No control characters — text goes to cliclick's `t:` verb via execFile (no shell), so this
@@ -189,22 +198,17 @@ export const ComputerTypeSchema = z.object({
             if (code <= 0x1F && !ALLOWED_CONTROL_CODES.has(code)) return false;
         }
         return true;
-    }, { message: 'Text must not contain control characters' })
+    }, { message: 'Text must not contain control characters' }),
+    sessionId: ComputerSessionIdSchema.optional()
 });
 
 export const ComputerKeySchema = z.object({
-    combo: z.string().min(1).max(64).regex(/^[a-zA-Z0-9+_-]+$/, 'Combo must be alphanumeric key names joined by "+"')
+    combo: z.string().min(1).max(64).regex(/^[a-zA-Z0-9+_-]+$/, 'Combo must be alphanumeric key names joined by "+"'),
+    sessionId: ComputerSessionIdSchema.optional()
 });
 
 export const ComputerScrollSchema = z.object({
     dx: z.number().int().min(-2000).max(2000),
-    dy: z.number().int().min(-2000).max(2000)
-});
-
-// Computer session-scoped approval grants (CE-5, ISSUE-1114)
-export const ComputerSessionIdSchema = z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/, 'Session id must be alphanumeric, dashes, or underscores');
-
-export const ComputerGrantSessionSchema = z.object({
-    sessionId: ComputerSessionIdSchema,
-    ttlMs: z.number().int().positive().max(60 * 60 * 1000).optional() // capped at 1 hour
+    dy: z.number().int().min(-2000).max(2000),
+    sessionId: ComputerSessionIdSchema.optional()
 });

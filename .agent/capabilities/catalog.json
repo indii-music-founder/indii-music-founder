@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "386f9f92eb8ee68f3e249110d000094377ce0c5c7bf4e79332cde10ee0b01f6b",
+  "sourceDigest": "528daa4b8f472ee0b9d11562085304701798e8cd41ec822e997eaa9d16940600",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 36,
     "conditional": 69,
-    "quarantined": 84,
+    "quarantined": 85,
     "deprecated": 1
   },
   "capabilities": [
@@ -727,6 +727,36 @@
       "conflicts": []
     },
     {
+      "id": "script:npm:check:test-quality",
+      "name": "npm run check:test-quality",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/check-test-quality.js",
+      "descriptionHash": "1e9bbe445dbafb3bfecc13248d6347e400570ea8dd55e5c49a27eda70a386f2c",
+      "contentHash": "2bd4715176278732c5ecc2a3d8a039cb66e180e29e41820366c51a9d2572c896",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
       "id": "script:npm:ci",
       "name": "npm run ci",
       "kind": "script",
@@ -1241,9 +1271,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
-      "descriptionHash": "308b7e2606a7a5093160c7e0ed12fedf76b73878ce89f244fc83ac4e3ed5b754",
-      "contentHash": "86b3acc522680c250b5e3e12f4547e7c355795d6fe3a4e31db744909affab2c9",
+      "description": "npm run check:test-quality && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
+      "descriptionHash": "eb48db8805690252305f8262dfff35f8fad2aec26239bbe4b5fab130842ab5c2",
+      "contentHash": "bd2b96640b82f2c164d84bc0b5c3ea6d9fee509938bf1bd0df16087d59f82a9c",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [

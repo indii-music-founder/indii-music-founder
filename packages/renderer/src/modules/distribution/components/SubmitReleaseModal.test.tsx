@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { SubmitReleaseModal } from './SubmitReleaseModal';
 
 const { mockListCanonicalTracks, mockSubmitRelease, mockPersistCoverArt, mockSetDoc, mockAuditArtwork, mockUserProfile, mockGeneratedHistory } = vi.hoisted(() => ({
@@ -230,5 +230,13 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
 
         fireEvent.click(screen.getByTestId('choose-replacement-cover'));
         expect(screen.getByTestId('release-artwork-select')).toHaveValue('');
+    });
+
+    it('shows the commercial authority notice when organization ISRC prefix is not verified', async () => {
+        await act(async () => {
+            render(<SubmitReleaseModal open onClose={vi.fn()} />);
+        });
+        expect(screen.getByTestId('isrc-prerequisite-notice')).toBeInTheDocument();
+        expect(screen.getByText(/Commercial Authority Notice/i)).toBeInTheDocument();
     });
 });

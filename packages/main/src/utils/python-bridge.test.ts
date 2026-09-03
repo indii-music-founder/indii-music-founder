@@ -124,4 +124,24 @@ describe('PythonBridge', () => {
                          expect.stringContaining('[REDACTED]')
                        );
            });
+
+            it('should reject with clean diagnostic message when python runtime is missing (ENOENT)', async () => {
+                  const mockProcess = new EventEmitter() as any;
+                  mockProcess.stdout = new EventEmitter();
+                  mockProcess.stderr = new EventEmitter();
+
+                  const spawnMock = spawn as unknown as any;
+                  spawnMock.mockReturnValue(mockProcess);
+
+                  const enoentErr = new Error('spawn python3 ENOENT') as NodeJS.ErrnoException;
+                  enoentErr.code = 'ENOENT';
+
+                  setTimeout(() => {
+                          mockProcess.emit('error', enoentErr);
+                  }, 10);
+
+                  await expect(
+                          PythonBridge.runScript('test_category', 'test_script.py')
+                  ).rejects.toThrow(/Python runtime not found/i);
+            });
 });

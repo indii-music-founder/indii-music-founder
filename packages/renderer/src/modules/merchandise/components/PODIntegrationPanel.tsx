@@ -94,8 +94,8 @@ function ApiKeyModal({ provider, onConfirm, onClose }: ApiKeyModalProps) {
                 </div>
 
                 <p className="text-xs text-neutral-500 mb-4">
-                    Enter your {provider.name} API key. Your key is stored securely in Firestore,
-                    scoped to your account.
+                    Enter your {provider.name} API key. Your key is stored securely in your local OS credential vault
+                    and never touches Firestore or external servers.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-3">

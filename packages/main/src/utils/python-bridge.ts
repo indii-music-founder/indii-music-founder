@@ -149,7 +149,13 @@ export class PythonBridge {
                 }
             });
 
-            childProcess.on('error', (err) => {
+            childProcess.on('error', (err: NodeJS.ErrnoException) => {
+                if (err.code === 'ENOENT') {
+                    const message = `Python runtime not found ("${python}"). Please install Python 3 or ensure it is available on your system PATH to run background analysis scripts.`;
+                    log.error(`[PythonBridge] ${message}`);
+                    reject(new Error(message));
+                    return;
+                }
                 reject(err);
             });
         });

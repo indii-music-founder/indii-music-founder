@@ -14,10 +14,12 @@ test.describe('ISSUE-1162: 3D Stage Builder Drag & Drop Intake', () => {
 
         // Check if the 3D Stage Builder container or Add Model picker is present
         const addModelButton = authedPage.locator('button:has-text("Add Model")');
-        if (await addModelButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await expect(addModelButton).toBeEnabled();
+        const isPresent = await addModelButton.isVisible({ timeout: 1500 }).catch(() => false);
+        if (!isPresent) {
+            test.skip(true, '3D Stage Builder model intake button is not present in the current video surface');
+            return;
         }
 
-        expect(true).toBe(true);
+        await expect(addModelButton).toBeEnabled();
     });
 });

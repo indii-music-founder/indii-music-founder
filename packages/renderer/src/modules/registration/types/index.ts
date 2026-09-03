@@ -134,3 +134,25 @@ export interface RegistrationFocus {
   trackId: string | null;
   orgId: OrgId | null;
 }
+
+// Organization-level legal prerequisites (ISSUE-1121)
+export type FounderPrerequisiteId =
+  | 'isrc_prefix'
+  | 'upc_prefix'
+  | 'ddex_dpid'
+  | 'pro_affiliation'
+  | 'mlc_membership'
+  | 'soundexchange'
+  | 'usco_org';
+
+export interface FounderPrerequisite {
+  id: FounderPrerequisiteId;
+  title: string;
+  organization: string;
+  category: 'identity' | 'distribution' | 'royalties' | 'copyright';
+  feeDescription: string;
+  officialUrl: string;
+  guidance: string;
+  identifierLabel: string;
+  identifierPlaceholder: string;
+}

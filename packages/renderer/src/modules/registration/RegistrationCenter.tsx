@@ -4,6 +4,8 @@ import { useStore } from '@/core/store';
 import { CatalogRail } from './components/CatalogRail';
 import { RegistrationSheet } from './components/RegistrationSheet';
 import { RegistrationAutonomousRail } from './components/RegistrationAutonomousRail';
+import { FounderReadinessPanel } from './components/FounderReadinessPanel';
+import { Building2, Music } from 'lucide-react';
 import { ORG_ADAPTERS } from './adapters';
 import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord } from './types';
 import { logger } from '@/utils/logger';
@@ -88,6 +90,7 @@ export default function RegistrationCenter() {
   const [tracks, setTracks] = useState<CatalogTrack[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'tracks' | 'founder'>('tracks');
 
   const selectedTrack = registrationFocus.trackId
     ? (tracks.find(t => t.id === registrationFocus.trackId) ?? tracks[0] ?? null)
@@ -177,40 +180,82 @@ export default function RegistrationCenter() {
     );
   }
 
-  if (tracks.length === 0) {
+  if (tracks.length === 0 && activeTab !== 'founder') {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500 text-sm px-8 text-center">
-        <p>No tracks found in your catalog.</p>
-        <p className="text-xs text-gray-600">Add tracks via the Distribution module, then return here to register them.</p>
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400 text-sm px-8 text-center">
+        <p>No tracks found in your catalog yet.</p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveTab('founder')}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-400 text-black text-xs font-bold rounded-lg hover:bg-amber-300 transition-colors"
+          >
+            <Building2 size={14} />
+            Open Founder Readiness Checklist
+          </button>
+        </div>
+        <p className="text-xs text-gray-600">You can establish your organization legal prerequisites above, or add tracks via Distribution.</p>
       </div>
     );
   }
 
   return (
     <div className="flex h-full overflow-hidden bg-background">
-      {/* Left: Catalog Rail */}
-      <div className="w-52 flex-shrink-0 border-r border-white/[0.05] bg-white/[0.01]">
-        <div className="px-4 py-3 border-b border-white/[0.05]">
-          <h1 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Registration Center</h1>
+      {/* Left: Rail */}
+      <div className="w-56 flex-shrink-0 border-r border-white/[0.05] bg-white/[0.01] flex flex-col">
+        <div className="p-3 border-b border-white/[0.05] space-y-2">
+          <h1 className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Registration Center</h1>
+          <div className="flex bg-black/40 p-1 rounded-lg border border-white/5 gap-1">
+            <button
+              onClick={() => setActiveTab('tracks')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1 text-xs font-semibold rounded transition-colors ${
+                activeTab === 'tracks' ? 'bg-white/10 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-300'
+              }`}
+            >
+              <Music size={12} />
+              Tracks
+            </button>
+            <button
+              onClick={() => setActiveTab('founder')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1 text-xs font-semibold rounded transition-colors ${
+                activeTab === 'founder' ? 'bg-amber-400 text-black shadow-sm' : 'text-neutral-500 hover:text-neutral-300'
+              }`}
+            >
+              <Building2 size={12} />
+              Founder
+            </button>
+          </div>
         </div>
-        <CatalogRail
-          tracks={tracks}
-          selectedTrackId={selectedTrack?.id ?? null}
-          registrationStates={registrationStates}
-          onSelectTrack={handleSelectTrack}
-        />
+        {activeTab === 'tracks' ? (
+          <CatalogRail
+            tracks={tracks}
+            selectedTrackId={selectedTrack?.id ?? null}
+            registrationStates={registrationStates}
+            onSelectTrack={handleSelectTrack}
+          />
+        ) : (
+          <div className="p-4 text-xs text-neutral-400 space-y-3">
+            <div className="font-semibold text-white">Prerequisites Scope</div>
+            <p className="leading-relaxed text-[11px]">
+              Organization credentials apply across all catalog releases. Once verified with the US ISRC Agency and GS1, prefixes are permanently owned by your company.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Center: Registration Sheet */}
-      <div className="flex-1 min-w-0 border-r border-white/[0.05]">
-        <RegistrationSheet
-          track={selectedTrack}
-          focusedOrgId={focusedOrgId}
-          registrationState={selectedTrack ? (registrationStates[selectedTrack.id] ?? null) : null}
-          userId={user?.uid ?? ''}
-          onOrgSelect={handleSelectOrg}
-          onSubmitComplete={handleSubmitComplete}
-        />
+      {/* Center: Content View */}
+      <div className="flex-1 min-w-0 border-r border-white/[0.05] flex flex-col overflow-hidden">
+        {activeTab === 'founder' ? (
+          <FounderReadinessPanel userId={user?.uid ?? ''} />
+        ) : (
+          <RegistrationSheet
+            track={selectedTrack}
+            focusedOrgId={focusedOrgId}
+            registrationState={selectedTrack ? (registrationStates[selectedTrack.id] ?? null) : null}
+            userId={user?.uid ?? ''}
+            onOrgSelect={handleSelectOrg}
+            onSubmitComplete={handleSubmitComplete}
+          />
+        )}
       </div>
 
       {/* Right: Intelligence Co-Pilot Rail */}

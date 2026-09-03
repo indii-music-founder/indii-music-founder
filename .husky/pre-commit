@@ -62,6 +62,13 @@ npm run check:functions > /dev/null 2>&1 || {
   exit 1
 }
 
+# Stage 3c: Test quality & agent anti-pattern scan (Platinum Standard)
+echo "  3️⃣ c Scanning test quality and anti-patterns..."
+node scripts/check-test-quality.js || {
+  echo "  ❌ Test quality or anti-pattern scan failed."
+  exit 1
+}
+
 # Stage 4: Run affected unit tests (CRITICAL: Closes the pre-commit gap)
 # If any .ts/.tsx source files are staged, run their corresponding tests.
 # This catches broken assertions, type mismatches, mock/stub issues before commit.

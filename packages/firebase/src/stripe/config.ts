@@ -53,16 +53,16 @@ export const STRIPE_PRICES: Record<SubscriptionTier, {
 }> = {
   [SubscriptionTier.FREE]: {},
   [SubscriptionTier.PRO_MONTHLY]: {
-    get monthly() { return resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'); },
-    get yearly() { return resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
+    get monthly() { return resolvePriceId('STRIPE_PRICE_START_MONTHLY') || resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_START_YEARLY') || resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
   },
   [SubscriptionTier.PRO_YEARLY]: {
-    get monthly() { return resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'); },
-    get yearly() { return resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
+    get monthly() { return resolvePriceId('STRIPE_PRICE_START_MONTHLY') || resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_START_YEARLY') || resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
   },
   [SubscriptionTier.STUDIO]: {
-    get monthly() { return resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'); },
-    get yearly() { return resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'); },
+    get monthly() { return resolvePriceId('STRIPE_PRICE_BUILD_MONTHLY') || resolvePriceId('STRIPE_PRICE_SCALE_MONTHLY') || resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_BUILD_YEARLY') || resolvePriceId('STRIPE_PRICE_SCALE_YEARLY') || resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'); },
   },
   [SubscriptionTier.FOUNDER]: {},
 };

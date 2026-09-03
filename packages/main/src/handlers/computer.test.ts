@@ -100,6 +100,31 @@ describe('🛡️ Shield: Computer IPC Security Test (ISSUE-1110/1111)', () => {
             expect(result.success).toBe(false);
             expect(result.error).toMatch(/kill switch/i);
         });
+
+        it('rejects immediately when abort kill-switch is active without invoking service', async () => {
+            mocks.computerExecutionService.isAborted.mockReturnValueOnce(true);
+            const result = await invoke('computer:click', goodEvent, { x: 1, y: 1, button: 'left' });
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/kill switch/i);
+            expect(mocks.computerExecutionService.click).not.toHaveBeenCalled();
+        });
+
+        it('rejects click when provided sessionId is missing active grant', async () => {
+            mocks.computerExecutionService.hasActiveGrant.mockReturnValueOnce(false);
+            const result = await invoke('computer:click', goodEvent, { x: 10, y: 20, sessionId: 'expired-sess' });
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/session grant is missing or expired/i);
+            expect(mocks.computerExecutionService.click).not.toHaveBeenCalled();
+            expect(mocks.computerExecutionService.hasActiveGrant).toHaveBeenCalledWith('expired-sess');
+        });
+
+        it('allows click when provided sessionId has active grant', async () => {
+            mocks.computerExecutionService.hasActiveGrant.mockReturnValueOnce(true);
+            const result = await invoke('computer:click', goodEvent, { x: 10, y: 20, sessionId: 'valid-sess' });
+            expect(result.success).toBe(true);
+            expect(mocks.computerExecutionService.click).toHaveBeenCalledWith(10, 20, 'left');
+            expect(mocks.computerExecutionService.hasActiveGrant).toHaveBeenCalledWith('valid-sess');
+        });
     });
 
     describe('computer:type', () => {

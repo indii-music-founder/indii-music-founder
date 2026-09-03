@@ -528,7 +528,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     <button
                         onClick={() => docInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
+                        className="flex flex-col items-center justify-center gap-2 p-3 min-h-[64px] min-w-[44px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                         <FileText className="w-6 h-6" />
                         <span className="text-[9px] font-bold uppercase tracking-wider">Doc</span>
@@ -538,7 +538,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     <button
                         onClick={() => photoInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
+                        className="flex flex-col items-center justify-center gap-2 p-3 min-h-[64px] min-w-[44px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                         <ImageIcon className="w-6 h-6" />
                         <span className="text-[9px] font-bold uppercase tracking-wider">Photo</span>
@@ -548,7 +548,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     <button
                         onClick={() => videoInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
+                        className="flex flex-col items-center justify-center gap-2 p-3 min-h-[64px] min-w-[44px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                         <Video className="w-6 h-6" />
                         <span className="text-[9px] font-bold uppercase tracking-wider">Video</span>
@@ -558,7 +558,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     <button
                         onClick={handlePinDrop}
                         disabled={isDispatching || isRecording || isFinalizingRecording || !hasGeolocation}
-                        className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
+                        className="flex flex-col items-center justify-center gap-2 p-3 min-h-[64px] min-w-[44px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                         <MapPin className="w-6 h-6" />
                         <span className="text-[9px] font-bold uppercase tracking-wider">{hasGeolocation ? 'Pin' : 'Pin N/A'}</span>

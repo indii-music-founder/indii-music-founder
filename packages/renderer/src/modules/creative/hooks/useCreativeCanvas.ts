@@ -651,7 +651,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     roleInstructions.length > 0 ? `Reference role guidance:\n${roleInstructions.join('\n')}` : '',
                 ].filter(Boolean).join('\n\n');
                 const referenceAssetUris = await uploadSessionMedia(referenceImages, referenceRoles, 'objects');
-                const maskAssetUris = await Promise.all(prepared.masks.map(async (mask) => {
+                const rawMaskAssetUris = await Promise.all(prepared.masks.map(async (mask) => {
                     const userId = auth.currentUser?.uid;
                     if (!userId) return null;
                     return CreativeStorageService.uploadReferenceMedia(
@@ -660,7 +660,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         'image',
                         { scope: 'masks', sessionId }
                     );
-                })).then((uris) => uris.filter((uri): uri is string => !!uri));
+                }));
+                const maskAssetUris = rawMaskAssetUris.filter((uri): uri is string => !!uri);
                 const sessionSnapshot = compileCreativeEditManifest({
                     sessionId,
                     projectId: currentProjectId,

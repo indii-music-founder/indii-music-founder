@@ -58,21 +58,26 @@ export class ISRCService {
 
     /** Record a new ISRC assignment in the registry. Returns the new document ID. */
     async recordAssignment(data: Omit<ISRCRecordDocument, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-        const record = httpsCallable(functions, 'recordDistributionIdentifier');
-        const result = await record({
-            type: 'isrc',
-            isrc: data.isrc,
-            releaseId: data.releaseId,
-            trackTitle: data.trackTitle,
-            artistName: data.artistName,
-            metadataSnapshot: data.metadataSnapshot,
-        });
-        const response = result.data as { id?: string };
-        if (!response.id) {
-            throw new Error('ISRC registry write did not return a document id.');
+        try {
+            const record = httpsCallable(functions, 'recordDistributionIdentifier');
+            const result = await record({
+                type: 'isrc',
+                isrc: data.isrc,
+                releaseId: data.releaseId,
+                trackTitle: data.trackTitle,
+                artistName: data.artistName,
+                metadataSnapshot: data.metadataSnapshot,
+            });
+            const response = result.data as { id?: string };
+            if (!response.id) {
+                throw new Error('ISRC registry write did not return a document id.');
+            }
+            logger.info(`[ISRC] Recorded assignment for ${data.isrc}`);
+            return response.id;
+        } catch (error) {
+            logger.error(`[ISRC] Failed to record assignment for ${data.isrc}:`, error);
+            throw error;
         }
-        logger.info(`[ISRC] Recorded assignment for ${data.isrc}`);
-        return response.id;
     }
 
     /**

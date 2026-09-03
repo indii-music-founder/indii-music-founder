@@ -273,7 +273,7 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                                         key={minutes}
                                         onClick={() => { triggerHaptic(30); persist({ ...settings, autoSleepMinutes: minutes }); }}
                                         className={cn(
-                                            'relative px-2 py-3 rounded-xl text-xs font-bold transition-all duration-200 border',
+                                            'relative px-2 py-3 min-h-[44px] flex items-center justify-center rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer',
                                             selected
                                                 ? 'bg-[#2E2EFE]/15 border-[#2E2EFE]/50 text-[#2E2EFE]'
                                                 : 'bg-white/[0.02] border-white/10 text-[#a1a1a6] hover:border-white/20'

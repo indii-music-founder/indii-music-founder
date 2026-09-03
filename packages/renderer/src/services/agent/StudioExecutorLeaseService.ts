@@ -1,5 +1,6 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
+import { logger } from '@/utils/logger';
 import {
     recordPresencePublishAttempt,
     recordPresencePublishFailure,
@@ -74,9 +75,13 @@ class StudioExecutorLeaseService {
 
     async releasePresence(studioInstanceId: string): Promise<void> {
         if (!this.isSupported()) return;
-        const lease = await this.getLease();
-        const release = httpsCallable(functions, 'releaseStudioPresence');
-        await release({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, studioInstanceId });
+        try {
+            const lease = await this.getLease();
+            const release = httpsCallable(functions, 'releaseStudioPresence');
+            await release({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, studioInstanceId });
+        } catch (error) {
+            logger.warn('[StudioExecutorLeaseService] releasePresence failed:', error);
+        }
     }
 
     async claimCommand(commandId: string, studioInstanceId: string): Promise<boolean> {
@@ -90,15 +95,25 @@ class StudioExecutorLeaseService {
     }
 
     async publishResponse(response: { commandId: string; text: string; agentId?: string; imageUrls?: string[]; videoUrls?: string[]; isStreaming: boolean; boardroomMessageId?: string }): Promise<void> {
-        const lease = await this.getLease();
-        const publish = httpsCallable(functions, 'publishStudioResponse');
-        await publish({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, ...response });
+        try {
+            const lease = await this.getLease();
+            const publish = httpsCallable(functions, 'publishStudioResponse');
+            await publish({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, ...response });
+        } catch (error) {
+            logger.error(`[StudioExecutorLeaseService] publishResponse failed for ${response.commandId}:`, error);
+            throw error;
+        }
     }
 
     async completeCommand(commandId: string): Promise<void> {
-        const lease = await this.getLease();
-        const complete = httpsCallable(functions, 'completeStudioCommand');
-        await complete({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, commandId });
+        try {
+            const lease = await this.getLease();
+            const complete = httpsCallable(functions, 'completeStudioCommand');
+            await complete({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, commandId });
+        } catch (error) {
+            logger.error(`[StudioExecutorLeaseService] completeCommand failed for ${commandId}:`, error);
+            throw error;
+        }
     }
 }
 

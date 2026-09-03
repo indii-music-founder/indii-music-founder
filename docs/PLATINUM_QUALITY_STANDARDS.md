@@ -13,9 +13,9 @@ Related docs:
 
 ---
 
-## The Nine Anti-Patterns
+## The Thirteen Anti-Patterns
 
-Meet all nine: **Platinum**. Miss one: **NO-GO**.
+Meet all thirteen: **Platinum**. Miss one: **NO-GO**.
 
 ### 1. Silent Reverts
 **Rule:** Zero silent reverts of recently-merged fixes.
@@ -62,6 +62,30 @@ Meet all nine: **Platinum**. Miss one: **NO-GO**.
 **Why:** Infra-minted IDs go stale silently. Re-tuning agents mints NEW Vertex endpoint IDs (and can change the location), so any hardcoded registry points at dead endpoints the moment a re-train ships — the app keeps compiling and "looks fine" while every agent 404s or silently falls back to a base model. (See ERROR_LEDGER 2026-06-21 "Stale Hardcoded Fine-Tuned Endpoint Registry".)
 **Detect:** `grep -rnE "endpoints/[0-9]{6,}|locations/(us|us-central1|global)/|projects/[0-9]{6,}" packages/renderer/src` — any match outside a test fixture is a violation.
 **Enforce:** Source infra IDs from a single config surface regenerated from live infra (e.g. a generated file written by a `gcloud ai endpoints list` / tuningJobs sync script, or runtime resolution), not hand-typed into a `.ts` registry. If a value MUST be checked in, it lives in one clearly-marked generated file with the sync command in its header — never scattered across frontend modules. Hardcoded identifier IDs in `packages/renderer/` fail review.
+
+### 10. Tautological & Potemkin Tests ("Fake-Green Assertions")
+**Rule:** Zero `expect(true).toBe(true)`, `expect(1).toBe(1)`, or assertions conditionally bypassed (`if (visible) expect...`) that yield false-positive passes without asserting real functional state.
+**Why:** Placeholder assertions create ghost test coverage that passes in CI while features are broken or unrendered. Violates the Real-User Authenticity Standard.
+**Detect:** `node scripts/check-test-quality.js`
+**Enforce:** Assert actual DOM elements, data mutations, or error handling paths. If an end-to-end user path cannot run in CI/emulator, mark it explicitly with `test.skip('Requires live environment')` rather than checking `expect(true).toBe(true)`.
+
+### 11. Call-Order FIFO Mocking ("Order-Dependent Mock Queues")
+**Rule:** Zero multi-endpoint mocks keyed purely by global invocation order (`mockResolvedValueOnce().mockResolvedValueOnce()` chains on `httpsCallable`, `fetch`, or IPC).
+**Why:** A call-order FIFO queue desynchronizes the moment a poll loop, retry, or component re-render shifts the call sequence, silently serving the wrong response to the wrong endpoint. (See ERROR_LEDGER 2026-08-06).
+**Detect:** Audit test files for consecutive `mockResolvedValueOnce` calls on functions taking endpoint names or URLs.
+**Enforce:** Branch on the endpoint name or URL parameter inside `mockImplementation((_functions, name) => ...)` so every endpoint deterministically receives its own response regardless of call ordering.
+
+### 12. Banned Model Policy Drift
+**Rule:** Zero hardcoded banned model strings (`gemini-1.5-*`, `gemini-2.0-*`, `gemini-pro`).
+**Why:** Violations cause immediate runtime crashes via model validation and breach core architecture policy.
+**Detect:** `node scripts/check-test-quality.js`
+**Enforce:** All AI model references **must** import `AI_MODELS` from `@/core/config/ai-models`.
+
+### 13. Dangling Async & Swallowed Queue Failures
+**Rule:** Zero unawaited client mutations before user success feedback; zero swallowed top-level failures in Cloud Scheduler or background workers without persisting durable terminal failure state.
+**Why:** Swallowed worker errors cause ghost jobs where UI displays "Pending" or "Success" while backend tasks are permanently dead. (See ERROR_LEDGER 2026-08-09).
+**Detect:** Static analysis via `bash scripts/detect-hidden-bugs.sh`.
+**Enforce:** Await all durable mutations before toasting success. Scheduled background functions must rethrow unrecoverable errors to Cloud Scheduler and record failure state in durable storage.
 
 ---
 

@@ -69,7 +69,7 @@ test.describe('Files Module', () => {
         const filterItems = page.locator('button:has-text("All Files"), button:has-text("Images"), button:has-text("Audio")');
         const count = await filterItems.count();
         if (count > 0) {
-            await filterItems.first().click();
+            await filterItems.first().click(); // bypass-strict: selects first matching category filter button
             await page.waitForTimeout(500);
             await expect(page.locator('#root')).toBeVisible();
         }
@@ -85,10 +85,10 @@ test.describe('Files Module', () => {
 
         const uploadBtn = page.locator('button:has-text("Upload Asset"), button:has-text("Upload")');
         const btnCount = await uploadBtn.count();
-        // May be absent on mobile; we just verify no crash
-        expect(true).toBe(true);
-        if (btnCount > 0) {
-            await expect(uploadBtn.first()).toBeVisible();
+        if (btnCount === 0) {
+            test.skip(true, 'Upload button is absent or hidden in current viewport');
+            return;
         }
+        await expect(uploadBtn.first()).toBeVisible(); // bypass-strict: upload button rendered in header and main panel
     });
 });

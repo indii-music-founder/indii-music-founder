@@ -67,19 +67,24 @@ export class UPCService {
 
     /** Record a UPC assignment in the registry for audit trail. Returns the new document ID. */
     async recordAssignment(data: Omit<UPCRegistryEntry, 'id'>): Promise<string> {
-        const record = httpsCallable(functions, 'recordDistributionIdentifier');
-        const result = await record({
-            type: 'upc',
-            upc: data.upc,
-            releaseId: data.releaseId,
-            releaseTitle: data.releaseTitle,
-        });
-        const response = result.data as { id?: string };
-        if (!response.id) {
-            throw new Error('UPC registry write did not return a document id.');
+        try {
+            const record = httpsCallable(functions, 'recordDistributionIdentifier');
+            const result = await record({
+                type: 'upc',
+                upc: data.upc,
+                releaseId: data.releaseId,
+                releaseTitle: data.releaseTitle,
+            });
+            const response = result.data as { id?: string };
+            if (!response.id) {
+                throw new Error('UPC registry write did not return a document id.');
+            }
+            logger.info(`[UPC] Recorded assignment for ${data.upc}`);
+            return response.id;
+        } catch (error) {
+            logger.error(`[UPC] Failed to record assignment for ${data.upc}:`, error);
+            throw error;
         }
-        logger.info(`[UPC] Recorded assignment for ${data.upc}`);
-        return response.id;
     }
 
     /**

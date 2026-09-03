@@ -767,13 +767,18 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('User must be authenticated');
 
-        const requestTakedown = httpsCallable(functions, 'requestDistributionTakedown');
-        await requestTakedown({
-            releaseId,
-            distributorId,
-            reason: reason ?? 'voluntary_withdrawal',
-        });
-        logger.info(`[DistributionService] Takedown requested for release ${releaseId} from ${distributorId}`);
+        try {
+            const requestTakedown = httpsCallable(functions, 'requestDistributionTakedown');
+            await requestTakedown({
+                releaseId,
+                distributorId,
+                reason: reason ?? 'voluntary_withdrawal',
+            });
+            logger.info(`[DistributionService] Takedown requested for release ${releaseId} from ${distributorId}`);
+        } catch (error) {
+            logger.error(`[DistributionService] Failed to request takedown for release ${releaseId}:`, error);
+            throw error;
+        }
     }
 
     /**

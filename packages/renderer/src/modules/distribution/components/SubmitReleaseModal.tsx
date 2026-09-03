@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, CheckCircle2, Loader2, XCircle, ChevronRight } from 'lucide-react';
+import { X, Send, CheckCircle2, Loader2, XCircle, ChevronRight, AlertCircle } from 'lucide-react';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
@@ -60,6 +60,34 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     const [coverRepairMessage, setCoverRepairMessage] = useState<string | null>(null);
 
     const [submitting, setSubmitting] = useState(false);
+    const [founderIsrcVerified] = useState(() => {
+        const ownerId = userProfile?.uid || userProfile?.id;
+        if (!ownerId) return false;
+        try {
+            const raw = localStorage.getItem(`indii_founder_readiness_prerequisites_v1_${ownerId}`);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                return !!parsed.isrc_prefix?.verified;
+            }
+        } catch {
+            // Ignore
+        }
+        return false;
+    });
+    const [founderIsrcPrefix] = useState(() => {
+        const ownerId = userProfile?.uid || userProfile?.id;
+        if (!ownerId) return '';
+        try {
+            const raw = localStorage.getItem(`indii_founder_readiness_prerequisites_v1_${ownerId}`);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                return parsed.isrc_prefix?.value || '';
+            }
+        } catch {
+            // Ignore
+        }
+        return '';
+    });
 
     const coverAssets: BrandAsset[] = [
         ...(userProfile?.brandKit?.brandAssets || []),
@@ -331,6 +359,20 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                         placeholder="US-XXX-25-XXXXX"
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder:text-gray-600 focus:outline-none focus:border-dept-distribution/50 transition-colors"
                                     />
+                                    {founderIsrcVerified ? (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400 mt-1" data-testid="isrc-verified-badge">
+                                            <CheckCircle2 size={12} />
+                                            Verified US ISRC Registrant: {founderIsrcPrefix || 'Active'}
+                                        </div>
+                                    ) : (
+                                        <div className="mt-2 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[11px] text-amber-200/90 flex items-start gap-2" data-testid="isrc-prerequisite-notice">
+                                            <AlertCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                                            <div>
+                                                <span className="font-bold text-amber-300">Commercial Authority Notice:</span>
+                                                {' '}No verified US ISRC Agency prefix found. Deliveries without an official registrant prefix will use a provisional draft code.
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

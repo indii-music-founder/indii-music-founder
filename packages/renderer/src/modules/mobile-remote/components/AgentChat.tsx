@@ -90,14 +90,15 @@ const MessageRating = memo(({
             {[1, 2, 3, 4, 5].map((star) => (
                 <button
                     key={star}
+                    type="button"
                     onClick={() => handleRate(star)}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
-                    className="focus:outline-none transition-transform hover:scale-110"
+                    className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none transition-transform hover:scale-110 active:scale-95 cursor-pointer"
                     aria-label={`Rate ${star} stars`}
                 >
                     <Star
-                        size={12}
+                        size={16}
                         className={`transition-colors ${(hoverRating || optimisticRating || 0) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-gray-400'}`}
                     />
                 </button>
@@ -132,6 +133,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     const [systemNotices, setSystemNotices] = useState<ChatMessage[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
     // Free, on-device real-time dictation via the app-wide Web Speech context.
     const { isListening, toggleListening, transcript } = useVoice();
@@ -290,6 +292,9 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         const userText = input.trim();
         setInput('');
         setIsWaiting(true);
+        if (textareaRef.current && typeof window !== 'undefined' && window.innerWidth < 768) {
+            textareaRef.current.blur();
+        }
 
         try {
             let targetAgentId: string | undefined = undefined;
@@ -410,6 +415,11 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             {/* Messages Area */}
             <div
                 ref={scrollRef}
+                onTouchStart={() => {
+                    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+                        document.activeElement.blur();
+                    }
+                }}
                 className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar pb-4"
             >
                 {messages.length === 0 ? (
@@ -571,6 +581,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                     
                     <div className="flex-1 min-h-[48px] flex items-center">
                         <textarea
+                            ref={textareaRef}
                             value={input}
                             onChange={e => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
