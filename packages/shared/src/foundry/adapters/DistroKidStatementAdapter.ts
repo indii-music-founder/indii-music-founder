@@ -3,8 +3,8 @@ import {
   NormalizedStatementTransaction,
   QuarantinedRow,
   ParseOptions,
-  DecimalMoney,
-} from '@indii/shared';
+} from '../types.js';
+import { DecimalMoney } from '../DecimalMoney.js';
 
 export class DistroKidStatementAdapter {
   readonly formatId = 'distrokid_statement';

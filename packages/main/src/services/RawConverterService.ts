@@ -115,8 +115,30 @@ export class RawConverterService {
         const baseName = path.basename(options.inputPath, path.extname(options.inputPath));
         const outputPath = options.outputPath || path.join(inputDir, `${baseName}.dng`);
 
-        if (path.resolve(options.inputPath) === path.resolve(outputPath)) {
+        const resolvedInput = path.resolve(options.inputPath);
+        const resolvedOutput = path.resolve(outputPath);
+
+        if (resolvedInput === resolvedOutput) {
             throw new Error('Security Error: Output path must not be identical to source RAW file.');
+        }
+
+        // Canonical symlink resolution to prevent hardlink/symlink source overwrite
+        try {
+            const canonicalInput = await fs.realpath(options.inputPath);
+            let canonicalOutput = resolvedOutput;
+            try {
+                canonicalOutput = await fs.realpath(outputPath);
+            } catch {
+                const parentCanonical = await fs.realpath(path.dirname(outputPath));
+                canonicalOutput = path.join(parentCanonical, path.basename(outputPath));
+            }
+            if (canonicalInput === canonicalOutput) {
+                throw new Error('Security Error: Output path canonical link resolves to identical source RAW file.');
+            }
+        } catch (err) {
+            if (err instanceof Error && err.message.includes('Security Error')) {
+                throw err;
+            }
         }
 
         // Verify write access for output
@@ -126,8 +148,14 @@ export class RawConverterService {
         const stat = await fs.stat(options.inputPath);
         await this.verifyDiskSpace(path.dirname(outputPath), stat.size * 2);
 
+        // Atomic writing: write to a temporary file first, then atomically rename
+        const tempOutputPath = path.join(
+            path.dirname(outputPath),
+            `.${path.basename(outputPath)}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 6)}`
+        );
+
         const binary = this.getBinaryPath();
-        const args = ['convert', options.inputPath, '--output', outputPath, '--json'];
+        const args = ['convert', options.inputPath, '--output', tempOutputPath, '--json'];
 
         if (options.compressionMode === 'uncompressed') {
             args.push('--uncompressed');
@@ -142,13 +170,22 @@ export class RawConverterService {
             args.push('--baseline-exposure', options.baselineExposureOverride.toString());
         }
 
-        const output = await this.execBinary(binary, args);
         try {
+            const output = await this.execBinary(binary, args);
             const report = JSON.parse(output);
+
+            if (!report.success) {
+                await fs.unlink(tempOutputPath).catch(() => {});
+                throw new Error(report.error || 'Native conversion failed');
+            }
+
+            // Atomic rename from temp to destination
+            await fs.rename(tempOutputPath, outputPath);
+
             return {
-                success: report.success,
+                success: true,
                 inputPath: report.input_path,
-                outputPath: report.output_path,
+                outputPath: outputPath,
                 inputSizeBytes: report.input_size_bytes,
                 outputSizeBytes: report.output_size_bytes,
                 compressionRatio: report.compression_ratio,
@@ -159,10 +196,11 @@ export class RawConverterService {
                     model: 'Sony Alpha',
                     orientation: 1,
                 },
-                error: report.error,
+                error: undefined,
             };
         } catch (err) {
-            log.error('[RawConverterService] Failed to parse convert JSON:', err, output);
+            await fs.unlink(tempOutputPath).catch(() => {});
+            log.error('[RawConverterService] Conversion failed:', err);
             throw new Error(`Conversion failed for ${options.inputPath}: ${String(err)}`);
         }
     }

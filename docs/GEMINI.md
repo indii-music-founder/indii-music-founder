@@ -6,7 +6,7 @@ This document outlines the technical parameters and best practices for utilizing
 
 ## 🏗️ Model Selection & Capabilities
 
-All AI interactions must adhere to the [Model Usage Policy](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-Alpha-Electron/MODEL_POLICY.md).
+All AI interactions must adhere to the [Model Usage Policy](MODEL_POLICY.md).
 
 | Capability | Model ID | Recommended Thinking |
 | :--- | :--- | :--- |

@@ -2,13 +2,13 @@
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PredictorSelection {
-    Ra = 1,                 // 1: Ra (left neighbor)
-    Rb = 2,                 // 2: Rb (upper neighbor)
-    Rc = 3,                 // 3: Rc (upper-left neighbor)
-    RaPlusRbMinusRc = 4,    // 4: Ra + Rb - Rc
-    RaPlusHalfDiff = 5,     // 5: Ra + ((Rb - Rc) / 2)
-    RbPlusHalfDiff = 6,     // 6: Rb + ((Ra - Rc) / 2)
-    AverageRaRb = 7,        // 7: (Ra + Rb) / 2
+    Ra = 1,              // 1: Ra (left neighbor)
+    Rb = 2,              // 2: Rb (upper neighbor)
+    Rc = 3,              // 3: Rc (upper-left neighbor)
+    RaPlusRbMinusRc = 4, // 4: Ra + Rb - Rc
+    RaPlusHalfDiff = 5,  // 5: Ra + ((Rb - Rc) / 2)
+    RbPlusHalfDiff = 6,  // 6: Rb + ((Ra - Rc) / 2)
+    AverageRaRb = 7,     // 7: (Ra + Rb) / 2
 }
 
 impl PredictorSelection {

@@ -1,6 +1,4 @@
-use crate::compression::huffman::{
-    decode_diff, encode_diff, BitReader, BitWriter, HuffmanTable,
-};
+use crate::compression::huffman::{decode_diff, encode_diff, BitReader, BitWriter, HuffmanTable};
 use crate::compression::predictor::PredictorSelection;
 use byteorder::{BigEndian, ByteOrder};
 
@@ -10,6 +8,7 @@ use byteorder::{BigEndian, ByteOrder};
 /// Bayer CFA columns are split into two interleaved components:
 /// - Component 1: Even columns (0, 2, 4...)
 /// - Component 2: Odd columns (1, 3, 5...)
+///
 /// This ensures horizontal predictor Ra always predicts from the identical Bayer color filter.
 pub fn encode_lossless_jpeg(
     samples: &[u16],
@@ -46,7 +45,7 @@ pub fn encode_lossless_jpeg(
 
     // 3. SOF3 Marker (Lossless Huffman frame header)
     if two_components {
-        let comp_width = (width + 1) / 2;
+        let comp_width = width.div_ceil(2);
         let sof_len = 2 + 1 + 2 + 2 + 1 + (2 * 3);
         out.extend_from_slice(&[0xFF, 0xC3]);
         out.extend_from_slice(&(sof_len as u16).to_be_bytes());
@@ -78,9 +77,9 @@ pub fn encode_lossless_jpeg(
         out.push(2); // 2 components in scan
         out.extend_from_slice(&[1, 0x00]); // Comp 1 uses DC table 0
         out.extend_from_slice(&[2, 0x00]); // Comp 2 uses DC table 0
-        out.push(predictor as u8);         // Predictor selection (1..7)
-        out.push(0);                       // Se (spectral selection end = 0)
-        out.push(0);                       // Ah=0, Al=0 (point transform = 0)
+        out.push(predictor as u8); // Predictor selection (1..7)
+        out.push(0); // Se (spectral selection end = 0)
+        out.push(0); // Ah=0, Al=0 (point transform = 0)
     } else {
         let sos_len = 2 + 1 + 2 + 3;
         out.extend_from_slice(&[0xFF, 0xDA]);
@@ -96,7 +95,7 @@ pub fn encode_lossless_jpeg(
     let mut bit_writer = BitWriter::new();
 
     if two_components {
-        let comp_width = (width + 1) / 2;
+        let comp_width = width.div_ceil(2);
         // Keep previous row samples for Ra, Rb, Rc prediction
         let mut prev_row_c1 = vec![0i32; comp_width];
         let mut prev_row_c2 = vec![0i32; comp_width];

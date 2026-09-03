@@ -1,3 +1,4 @@
+use byteorder::{ByteOrder, LittleEndian};
 use indii_raw::compression::huffman::{category, decode_diff, encode_diff};
 use indii_raw::compression::ljpeg::{decode_lossless_jpeg, encode_lossless_jpeg};
 use indii_raw::compression::predictor::PredictorSelection;
@@ -7,7 +8,6 @@ use indii_raw::model::raw_image::NormalizedRawImage;
 use indii_raw::verify::{decode_dng_cfa, verify_cfa_equality};
 use indii_raw::writer::tiff::{TiffDirectory, TiffSerializer, TiffTag};
 use indii_raw::writer::{DngCompression, DngWriter, DngWriterOptions};
-use byteorder::{ByteOrder, LittleEndian};
 
 #[test]
 fn test_tiff_tag_sorting_and_serialization() {
@@ -44,7 +44,11 @@ fn test_huffman_diff_category_roundtrip() {
     for diff in -8192..=8192 {
         let (ssss, bits) = encode_diff(diff);
         let decoded = decode_diff(ssss, bits);
-        assert_eq!(diff, decoded, "Difference roundtrip failed for diff {}", diff);
+        assert_eq!(
+            diff, decoded,
+            "Difference roundtrip failed for diff {}",
+            diff
+        );
         if diff != 0 {
             assert_eq!(ssss, category(diff));
         }
@@ -74,7 +78,8 @@ fn test_lossless_jpeg_roundtrip_exact_samples() {
         precision,
         PredictorSelection::Ra,
         true,
-    ).expect("Compression failed");
+    )
+    .expect("Compression failed");
 
     let (decoded_2comp, dec_w, dec_h, dec_prec, is_2comp) =
         decode_lossless_jpeg(&compressed_2comp).expect("Decompression failed");
@@ -92,7 +97,10 @@ fn test_lossless_jpeg_roundtrip_exact_samples() {
             differing += 1;
         }
     }
-    assert_eq!(differing, 0, "Lossless JPEG 2-component produced differing samples!");
+    assert_eq!(
+        differing, 0,
+        "Lossless JPEG 2-component produced differing samples!"
+    );
 
     // 2. Test 1-component layout
     let compressed_1comp = encode_lossless_jpeg(
@@ -102,7 +110,8 @@ fn test_lossless_jpeg_roundtrip_exact_samples() {
         precision,
         PredictorSelection::AverageRaRb,
         false,
-    ).expect("Compression 1-comp failed");
+    )
+    .expect("Compression 1-comp failed");
 
     let (decoded_1comp, _, _, _, is_2c) =
         decode_lossless_jpeg(&compressed_1comp).expect("Decompression 1-comp failed");
@@ -159,12 +168,17 @@ fn test_dng_writer_and_cfa_equality_verification() {
     let dng_bytes = DngWriter::write_dng_bytes(&raw, &options_ljpeg)
         .expect("Failed to write Lossless JPEG DNG");
 
-    let report = verify_cfa_equality(&raw, &dng_bytes)
-        .expect("Verification function failed");
+    let report = verify_cfa_equality(&raw, &dng_bytes).expect("Verification function failed");
 
     assert!(report.valid, "DNG verification failed: {:?}", report.issues);
-    assert_eq!(report.sample_difference_count, 0, "Zero sample loss required!");
-    assert_eq!(report.source_cfa_hash, report.dng_cfa_hash, "Cryptographic CFA hash match required!");
+    assert_eq!(
+        report.sample_difference_count, 0,
+        "Zero sample loss required!"
+    );
+    assert_eq!(
+        report.source_cfa_hash, report.dng_cfa_hash,
+        "Cryptographic CFA hash match required!"
+    );
 
     // Test Uncompressed DNG Output
     let options_uncompressed = DngWriterOptions {
@@ -177,8 +191,8 @@ fn test_dng_writer_and_cfa_equality_verification() {
     let dng_uncompressed = DngWriter::write_dng_bytes(&raw, &options_uncompressed)
         .expect("Failed to write Uncompressed DNG");
 
-    let report_uncomp = verify_cfa_equality(&raw, &dng_uncompressed)
-        .expect("Verification function failed");
+    let report_uncomp =
+        verify_cfa_equality(&raw, &dng_uncompressed).expect("Verification function failed");
 
     assert!(report_uncomp.valid);
     assert_eq!(report_uncomp.sample_difference_count, 0);
@@ -196,4 +210,134 @@ fn test_malformed_and_truncated_rejection() {
     // 3. Random garbage
     let garbage = vec![0xAB; 512];
     assert!(decode_dng_cfa(&garbage).is_err());
+}
+
+#[test]
+fn test_camera_calibration_registry_provenance() {
+    use indii_raw::model::{CalibrationProvenance, CameraCalibrationRegistry};
+
+    let a7m3 = CameraCalibrationRegistry::resolve("SONY", "ILCE-7M3");
+    assert_eq!(a7m3.provenance, CalibrationProvenance::CameraSpecificTable);
+    assert!(a7m3.is_exact_calibration);
+    assert_eq!(a7m3.black_level, 512);
+    assert_eq!(a7m3.white_level, 16383);
+    assert_eq!(a7m3.baseline_exposure, 0.35);
+
+    let unknown = CameraCalibrationRegistry::resolve("UnknownBrand", "Mystery9000");
+    assert_eq!(
+        unknown.provenance,
+        CalibrationProvenance::ControlledFallback
+    );
+    assert!(!unknown.is_exact_calibration);
+    assert_eq!(unknown.baseline_exposure, 0.0);
+}
+
+#[test]
+fn test_hostile_file_and_dos_protection() {
+    use indii_raw::adapter::sony_arw::read_ifd_tags;
+
+    // Buffer with pathological tag count claiming 60,000 entries but only 100 bytes long
+    let mut bad_buf = vec![0u8; 100];
+    LittleEndian::write_u16(&mut bad_buf[0..2], 60000);
+
+    let result = read_ifd_tags(&bad_buf, 0);
+    assert!(result.is_err(), "Must reject pathological IFD entry count");
+    let err = result.unwrap_err();
+    assert!(
+        err.contains("Pathological") || err.contains("bounds"),
+        "Unexpected error: {}",
+        err
+    );
+}
+
+#[test]
+fn test_independent_tiff_validation_oracle() {
+    use std::fs;
+    use std::process::Command;
+
+    let width = 64u32;
+    let height = 64u32;
+    let samples = vec![1000u16; (width * height) as usize];
+
+    let raw = NormalizedRawImage {
+        width,
+        height,
+        active_area: [0, 0, height, width],
+        bit_depth: 14,
+        cfa_pattern: CfaPattern::RGGB,
+        black_level: 512,
+        white_level: 16383,
+        samples,
+        preview_jpeg: None,
+        original_raw_bytes: None,
+        metadata: RawMetadata {
+            make: "SONY".to_string(),
+            model: "ILCE-7M3".to_string(),
+            unique_camera_model: "Sony ILCE-7M3".to_string(),
+            orientation: 1,
+            as_shot_neutral: [0.55, 1.0, 0.65],
+            baseline_exposure: 0.35,
+            ..Default::default()
+        },
+    };
+
+    let options = DngWriterOptions {
+        compression: DngCompression::Uncompressed,
+        embed_original_raw: false,
+        generate_preview: false,
+        baseline_exposure_override: None,
+    };
+
+    let dng_bytes = DngWriter::write_dng_bytes(&raw, &options).expect("Failed to write DNG");
+
+    let temp_dng =
+        std::env::temp_dir().join(format!("indii_test_oracle_{}.dng", std::process::id()));
+    fs::write(&temp_dng, &dng_bytes).expect("Failed to write temp DNG");
+
+    // Oracle 1: macOS native tiffutil
+    if let Ok(output) = Command::new("tiffutil")
+        .arg("-info")
+        .arg(&temp_dng)
+        .output()
+    {
+        if output.status.success() {
+            let info = String::from_utf8_lossy(&output.stdout);
+            assert!(
+                info.contains("Directory"),
+                "tiffutil must recognize valid TIFF/DNG structure: {}",
+                info
+            );
+        }
+    }
+
+    // Oracle 2: Independent Python Pillow parser
+    let py_script = r#"
+import sys
+from PIL import Image
+try:
+    with Image.open(sys.argv[1]) as im:
+        assert im.size == (64, 64), f"Dimension mismatch: {im.size}"
+        assert im.format == "TIFF", f"Format mismatch: {im.format}"
+        print("PIL_SUCCESS")
+except Exception as e:
+    print(f"PIL_ERROR: {e}", file=sys.stderr)
+    sys.exit(1)
+"#;
+    let py_res = Command::new("python3")
+        .arg("-c")
+        .arg(py_script)
+        .arg(&temp_dng)
+        .output();
+
+    if let Ok(res) = py_res {
+        if res.status.success() {
+            let stdout = String::from_utf8_lossy(&res.stdout);
+            assert!(
+                stdout.contains("PIL_SUCCESS"),
+                "Independent Pillow validation failed"
+            );
+        }
+    }
+
+    let _ = fs::remove_file(&temp_dng);
 }

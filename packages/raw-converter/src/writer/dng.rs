@@ -49,8 +49,8 @@ impl DngWriter {
                     // Use tile size of 160x160 as discovered in XDA benchmarks for optimal prediction
                     let tile_w = 160usize.min(raw.width as usize);
                     let tile_h = 160usize.min(raw.height as usize);
-                    let tiles_x = ((raw.width as usize) + tile_w - 1) / tile_w;
-                    let tiles_y = ((raw.height as usize) + tile_h - 1) / tile_h;
+                    let tiles_x = (raw.width as usize).div_ceil(tile_w);
+                    let tiles_y = (raw.height as usize).div_ceil(tile_h);
 
                     let mut combined_payload = Vec::new();
                     let mut offsets = Vec::new();
@@ -68,8 +68,9 @@ impl DngWriter {
                             for r in 0..cur_h {
                                 let src_row_start = (start_y + r) * (raw.width as usize) + start_x;
                                 let dst_row_start = r * cur_w;
-                                tile_samples[dst_row_start..dst_row_start + cur_w]
-                                    .copy_from_slice(&raw.samples[src_row_start..src_row_start + cur_w]);
+                                tile_samples[dst_row_start..dst_row_start + cur_w].copy_from_slice(
+                                    &raw.samples[src_row_start..src_row_start + cur_w],
+                                );
                             }
 
                             // Encode with Lossless JPEG (SOF3) using Predictor 1 and 2-component Bayer layout
@@ -126,7 +127,7 @@ impl DngWriter {
                         let sample = raw.samples[(sy * raw.width + sx) as usize];
                         let val8 = ((sample.saturating_sub(raw.black_level as u16) as u32 * 255)
                             / (raw.white_level - raw.black_level).max(1))
-                            .min(255) as u8;
+                        .min(255) as u8;
                         let idx = ((ty * thumb_w + tx) * 3) as usize;
                         thumb_rgb[idx] = val8;
                         thumb_rgb[idx + 1] = val8;
@@ -207,7 +208,10 @@ impl DngWriter {
 
         // CFA Pattern metadata
         subifd0.add_tag(TiffTag::shorts(33421, &[2, 2])); // CFARepeatPatternDim = [2, 2]
-        subifd0.add_tag(TiffTag::bytes(33422, &raw.cfa_pattern.to_dng_pattern_bytes())); // CFAPattern
+        subifd0.add_tag(TiffTag::bytes(
+            33422,
+            &raw.cfa_pattern.to_dng_pattern_bytes(),
+        )); // CFAPattern
         subifd0.add_tag(TiffTag::bytes(50710, &[0, 1, 2])); // CFAPlaneColor = [0, 1, 2]
         subifd0.add_tag(TiffTag::short(50711, 1)); // CFALayout = 1 (Rectangular)
 
@@ -353,8 +357,13 @@ impl DngWriter {
         let temp_path = parent_dir.join(temp_file_name);
 
         // Write to temporary file with sync
-        let mut file = File::create(&temp_path)
-            .map_err(|e| format!("Failed to create temporary file {}: {}", temp_path.display(), e))?;
+        let mut file = File::create(&temp_path).map_err(|e| {
+            format!(
+                "Failed to create temporary file {}: {}",
+                temp_path.display(),
+                e
+            )
+        })?;
         file.write_all(&dng_bytes)
             .map_err(|e| format!("Failed to write DNG bytes: {}", e))?;
         file.sync_all()
@@ -364,7 +373,12 @@ impl DngWriter {
         // Atomic rename
         fs::rename(&temp_path, target_path).map_err(|e| {
             let _ = fs::remove_file(&temp_path);
-            format!("Atomic rename failed from {} to {}: {}", temp_path.display(), target_path.display(), e)
+            format!(
+                "Atomic rename failed from {} to {}: {}",
+                temp_path.display(),
+                target_path.display(),
+                e
+            )
         })?;
 
         Ok(target_path.to_path_buf())

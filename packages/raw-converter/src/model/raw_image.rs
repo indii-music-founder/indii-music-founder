@@ -46,7 +46,8 @@ impl NormalizedRawImage {
             return Err("Active area bounds exceed sensor dimensions".to_string());
         }
 
-        if self.active_area[0] >= self.active_area[2] || self.active_area[1] >= self.active_area[3] {
+        if self.active_area[0] >= self.active_area[2] || self.active_area[1] >= self.active_area[3]
+        {
             return Err("Invalid active area rectangle".to_string());
         }
 

@@ -367,6 +367,20 @@ export interface LayeredValidationReport {
 // 7. Artist Business Graph Normalization
 // ============================================================================
 
+export interface CatalogMetadataLookup {
+  upc?: string;
+  isrc?: string;
+  trackTitle?: string;
+  artistName?: string;
+  albumTitle?: string;
+  splits?: Array<{
+    legalName?: string;
+    role?: 'songwriter' | 'producer' | 'performer' | 'label' | 'other';
+    percentage: number;
+    email?: string;
+  }>;
+}
+
 export interface GraphNormalizedRelease {
   upc: string;
   title: string;

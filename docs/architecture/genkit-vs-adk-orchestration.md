@@ -23,7 +23,7 @@ We stand firmly on our custom **100% native Node.js/TypeScript orchestration fra
 
 ## Flow Architecture
 
-A complete map of our execution pipeline can be viewed in [genkit-vs-adk-flowchart.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/genkit-vs-adk-flowchart.md).
+A complete map of our execution pipeline can be viewed in [genkit-vs-adk-flowchart.md](docs/flowcharts/genkit-vs-adk-flowchart.md).
 
 ```mermaid
 graph LR

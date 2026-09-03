@@ -4,8 +4,8 @@ import {
   GraphNormalizedRelease,
   GraphContributorAllocation,
   CatalogMetadataLookup,
-  DecimalMoney,
-} from '@indii/shared';
+} from './types.js';
+import { DecimalMoney } from './DecimalMoney.js';
 
 export class ArtistBusinessGraphNormalizer {
   /**
