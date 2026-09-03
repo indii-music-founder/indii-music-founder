@@ -37,9 +37,9 @@ const legacyPillars = [
 
 export default function LegacyComparison() {
   return (
-    <section id="legacy-shift" data-system-section="legacy" className="relative z-20 w-full border-t border-white/10 bg-[#100D0A] py-28 md:py-40">
+    <section id="legacy-shift" data-system-section="legacy" className="relative z-20 w-full border-t border-white/10 bg-black py-28 md:py-40">
       {/* Background radial glow */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(245,158,11,0.12),transparent_55%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(255,184,0,0.06),transparent_55%)]" />
 
       <div className="relative mx-auto max-w-[1500px] px-5 md:px-10">
         <motion.div
@@ -49,14 +49,14 @@ export default function LegacyComparison() {
           transition={{ duration: 0.8 }}
           className="mx-auto max-w-4xl text-center"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400 shadow-[0_0_15px_rgba(255,184,0,0.15)]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-white/[0.03] px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400 shadow-[0_0_15px_rgba(255,184,0,0.15)]">
             <RefreshCw size={13} />
             The Paradigm Shift
           </div>
 
           <h2 className="mt-6 text-4xl font-black leading-tight tracking-[-0.05em] text-white sm:text-6xl md:text-7xl">
             The music industry was built <br />
-            <span className="text-amber-400 [text-shadow:0_0_30px_rgba(255,184,0,0.4)]">upside-down.</span>
+            <span className="text-amber-400 [text-shadow:0_0_30px_rgba(255,184,0,0.35)]">upside-down.</span>
           </h2>
 
           <p className="mt-6 text-lg leading-relaxed text-white/60 md:text-xl">
@@ -76,34 +76,30 @@ export default function LegacyComparison() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-80px' }}
               transition={{ delay: index * 0.1, duration: 0.6 }}
-              className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-b from-[#1C1611]/90 via-[#140F0A]/85 to-[#0C0906] p-7 shadow-[0_15px_45px_rgba(0,0,0,0.7)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:border-amber-400/60 hover:shadow-[0_20px_55px_rgba(0,0,0,0.85)]"
-              style={{
-                boxShadow: `0 10px 35px -5px ${pillar.glow}`,
-              }}
+              className="lacquer-card relative flex flex-col justify-between overflow-hidden rounded-2xl p-7 shadow-[0_25px_70px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:border-amber-400/50"
             >
               <div
-                className="absolute inset-x-0 top-0 h-[2px]"
-                style={{ background: `linear-gradient(90deg, transparent 0%, ${pillar.hex} 50%, transparent 100%)` }}
+                className="absolute inset-x-0 top-0 h-[1px] specular-line-gold"
               />
               <div>
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: pillar.hex, textShadow: `0 0 10px ${pillar.glow}` }}>
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[#FFB800]">
                     0{index + 1} / {pillar.title}
                   </span>
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: pillar.hex, boxShadow: `0 0 10px ${pillar.hex}` }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#FFB800] shadow-[0_0_8px_rgba(255,184,0,0.8)]" />
                 </div>
 
                 {/* Legacy Card */}
-                <div className="mt-6 rounded-xl border border-red-500/40 bg-gradient-to-br from-rose-950/40 via-[#1C0A0C]/80 to-[#120608] p-4 shadow-[0_0_20px_rgba(244,67,54,0.15)]">
-                  <div className="flex items-center gap-2 font-mono text-[9px] uppercase font-bold text-[#FF5252] [text-shadow:0_0_8px_rgba(244,67,54,0.5)]">
+                <div className="mt-6 rounded-xl border border-white/10 bg-black/60 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                  <div className="flex items-center gap-2 font-mono text-[9px] uppercase font-bold text-red-400/90">
                     <ShieldAlert size={12} />A common arrangement
                   </div>
                   <p className="mt-2 text-xs leading-relaxed text-white/70">{pillar.legacy}</p>
                 </div>
 
                 {/* indii Way Card */}
-                <div className="mt-4 rounded-xl border border-[#00FF66]/50 bg-gradient-to-br from-emerald-950/50 via-[#0A2014]/85 to-[#06150D] p-4 shadow-[0_0_25px_rgba(0,255,102,0.18)]">
-                  <div className="flex items-center gap-2 font-mono text-[9px] uppercase font-black text-[#00FF66] [text-shadow:0_0_10px_rgba(0,255,102,0.6)]">
+                <div className="mt-4 rounded-xl border border-amber-400/25 bg-black/80 p-4 shadow-[inset_0_1px_0_rgba(255,215,0,0.1),0_0_20px_rgba(255,184,0,0.06)]">
+                  <div className="flex items-center gap-2 font-mono text-[9px] uppercase font-black text-[#FFB800]">
                     <ShieldCheck size={12} />
                     The indii Workspace
                   </div>
@@ -111,7 +107,7 @@ export default function LegacyComparison() {
                 </div>
               </div>
 
-              <div className="mt-6 border-t border-white/10 pt-4 font-mono text-[9px] uppercase tracking-wider text-[#FFB800] flex items-center justify-between [text-shadow:0_0_8px_rgba(255,184,0,0.5)]">
+              <div className="mt-6 border-t border-white/10 pt-4 font-mono text-[9px] uppercase tracking-wider text-[#FFB800]/90 flex items-center justify-between">
                 <span>Artist-controlled alternative</span>
                 <Zap size={12} />
               </div>
@@ -120,12 +116,12 @@ export default function LegacyComparison() {
         </div>
 
         {/* Bottom Callout Banner */}
-        <div className="card-shade-gold relative mt-14 overflow-hidden rounded-2xl p-8 text-center shadow-[0_25px_70px_rgba(0,0,0,0.85)] backdrop-blur-xl sm:p-12">
+        <div className="lacquer-card-gold relative mt-14 overflow-hidden rounded-2xl p-8 text-center shadow-[0_30px_90px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-12">
           <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
           <h3 className="text-2xl font-black tracking-tight text-white md:text-4xl">You don’t need a label to run a professional career.</h3>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/75 sm:text-base">
             You need one unified workspace where delivery preparation, artwork, rights, campaigns, and finances stay connected under your direction.
-            <span className="mt-4 block text-lg font-black text-[#FFB800] [text-shadow:0_0_25px_rgba(255,184,0,0.6)] sm:text-xl">
+            <span className="mt-4 block text-lg font-black text-[#FFB800] [text-shadow:0_0_25px_rgba(255,184,0,0.5)] sm:text-xl">
               YOU need <span className="indii-name text-white">indii.music</span>.
             </span>
           </p>

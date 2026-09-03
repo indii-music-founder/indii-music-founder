@@ -80,7 +80,7 @@ export const FounderRoyaltyCalculator: React.FC = () => {
 
   return (
     <section className="relative z-10 mx-auto my-20 w-full max-w-[1600px] px-5 md:px-10">
-      <div className="card-shade-gold relative overflow-hidden rounded-3xl p-8 md:p-12 shadow-[0_20px_80px_rgba(0,0,0,0.9)]">
+      <div className="lacquer-card-gold relative overflow-hidden rounded-3xl p-8 md:p-12 shadow-[0_30px_90px_rgba(0,0,0,0.95)]">
         <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
         {/* Background Ambient Radial Glow */}
         <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-amber-500/20 blur-[100px]" />

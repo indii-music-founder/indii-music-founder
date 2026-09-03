@@ -82,8 +82,8 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
   };
 
   return (
-    <section id="pricing" data-system-section="pricing" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-[#0E0B08]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(245,158,11,0.14),transparent_42%)]" />
+    <section id="pricing" data-system-section="pricing" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-black">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,184,0,0.08),transparent_42%)]" />
       <div className="relative mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -113,14 +113,14 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
         </motion.div>
         <div className="mx-auto mt-10 max-w-3xl">
           <div className="mb-3 text-center font-mono text-[9px] uppercase tracking-[0.22em] text-white/40">Choose your billing rhythm</div>
-          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-amber-400/25 bg-[#14100C]/90 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:grid-cols-4" role="group" aria-label="Billing schedule">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/80 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:grid-cols-4" role="group" aria-label="Billing schedule">
             {billingCycles.map((cycle) => (
               <button
                 key={cycle.id}
                 type="button"
                 aria-pressed={billingCycle === cycle.id}
                 onClick={() => setBillingCycle(cycle.id)}
-                className={`rounded-xl px-3 py-3 text-xs font-bold transition-all ${billingCycle === cycle.id ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_16px_rgba(255,184,0,0.4)]' : 'text-white/55 hover:bg-white/[0.06] hover:text-white'}`}
+                className={`rounded-xl px-3 py-3 text-xs font-bold transition-all ${billingCycle === cycle.id ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_16px_rgba(255,184,0,0.4)]' : 'text-white/55 hover:bg-white/[0.04] hover:text-white'}`}
               >
                 <span className="block">{cycle.label}</span>
                 <span className={`mt-1 block font-mono text-[8px] uppercase tracking-[0.12em] ${billingCycle === cycle.id ? 'text-black/75 font-bold' : 'text-amber-400'}`}>
@@ -141,27 +141,18 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-70px' }}
               transition={{ delay: index * 0.07 }}
-              className={`relative flex flex-col overflow-hidden rounded-2xl border p-6 md:p-7 backdrop-blur-xl transition-all duration-300 ${
+              className={`relative flex flex-col overflow-hidden rounded-2xl p-6 md:p-7 backdrop-blur-xl transition-all duration-300 ${
                 plan.featured
-                  ? 'border-[#FFB800]/70 bg-gradient-to-b from-[#221A0C]/95 via-[#1A1408]/90 to-[#100C05] shadow-[0_25px_65px_rgba(255,184,0,0.25)] ring-1 ring-[#FFB800]/40 scale-[1.03]'
-                  : 'border-white/15 bg-gradient-to-b from-[#18130E]/90 via-[#120E0A]/85 to-[#0A0806] shadow-[0_15px_40px_rgba(0,0,0,0.7)] hover:border-white/30 hover:scale-[1.01]'
+                  ? 'lacquer-card-gold shadow-[0_25px_70px_rgba(0,0,0,0.95)] ring-1 ring-amber-400/40 scale-[1.03]'
+                  : 'lacquer-card shadow-[0_20px_50px_rgba(0,0,0,0.9)] hover:scale-[1.01]'
               }`}
-              style={
-                !plan.featured
-                  ? {
-                      borderColor: `${plan.accentHex}45`,
-                      boxShadow: `0 12px 35px -5px ${plan.accentHex}20`,
-                    }
-                  : {}
-              }
             >
               <div
-                className="absolute inset-x-0 top-0 h-[2px]"
-                style={{ background: `linear-gradient(90deg, transparent 0%, ${plan.accentHex} 50%, transparent 100%)` }}
+                className="absolute inset-x-0 top-0 h-[1px] specular-line-gold"
               />
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plan.accentHex, boxShadow: `0 0 10px ${plan.accentHex}` }} />
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plan.accentHex, boxShadow: `0 0 8px ${plan.accentHex}` }} />
                   <h3 className="text-2xl font-black tracking-[-0.03em] text-white">{plan.name}</h3>
                 </div>
                 {plan.featured && (
@@ -179,7 +170,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
               <div className="mt-6 flex-1 border-t border-white/10 pt-4">
                 {plan.includes.map((item) => (
                   <div key={item} className="flex gap-3 border-b border-white/8 py-3 text-xs leading-relaxed text-white/85">
-                    <Check size={14} className="mt-0.5 shrink-0" style={{ color: plan.accentHex, filter: `drop-shadow(0 0 6px ${plan.accentHex})` }} />
+                    <Check size={14} className="mt-0.5 shrink-0 text-[#FFB800]" />
                     <span>{item}</span>
                   </div>
                 ))}

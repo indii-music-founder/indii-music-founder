@@ -17,7 +17,7 @@ interface ThesisSectionProps {
 
 export default function ThesisSection({ setIsThesisOpen }: ThesisSectionProps) {
   return (
-    <section data-system-section="thesis" className="relative z-20 min-h-[92vh] w-full overflow-hidden border-t border-amber-400/30 bg-[#0C0907]">
+    <section data-system-section="thesis" className="relative z-20 min-h-[92vh] w-full overflow-hidden border-t border-white/10 bg-black">
       <div className="absolute inset-0">
         {ambientStars.map((star, index) => (
           <span
@@ -32,8 +32,8 @@ export default function ThesisSection({ setIsThesisOpen }: ThesisSectionProps) {
             }}
           />
         ))}
-        <div className="absolute inset-x-[-15%] bottom-[-45%] h-[85%] rounded-[50%] border-t border-amber-400/70 bg-gradient-to-t from-amber-500/[0.22] via-[#FF3366]/[0.08] to-transparent shadow-[0_-50px_160px_rgba(255,184,0,0.4)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(255,184,0,0.3),rgba(233,30,99,0.1)_40%,transparent_65%)]" />
+        <div className="absolute inset-x-[-15%] bottom-[-45%] h-[85%] rounded-[50%] border-t border-amber-400/50 bg-gradient-to-t from-amber-500/[0.18] via-amber-400/[0.06] to-transparent shadow-[0_-40px_140px_rgba(255,184,0,0.25)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(255,184,0,0.18),transparent_65%)]" />
       </div>
 
       <div className="relative mx-auto flex min-h-[92vh] max-w-[1500px] flex-col justify-between px-5 py-12 md:px-10 md:py-16">

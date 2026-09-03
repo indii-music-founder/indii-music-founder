@@ -36,8 +36,8 @@ const operatingPrinciples = [
 
 export default function PrinciplesSection() {
   return (
-    <section data-system-section="principles" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-[#0C0907]">
-      <div className="pointer-events-none absolute right-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-amber-500/[0.05] blur-[150px]" />
+    <section data-system-section="principles" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-black">
+      <div className="pointer-events-none absolute right-0 top-1/2 h-[450px] w-[450px] -translate-y-1/2 rounded-full bg-amber-500/[0.04] blur-[160px]" />
       <div className="mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -64,25 +64,16 @@ export default function PrinciplesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-70px' }}
               transition={{ duration: 0.65, delay: index * 0.05 }}
-              style={{
-                background: `linear-gradient(90deg, ${principle.hex}08 0%, transparent 45%)`,
-              }}
-              className="grid gap-6 border-b border-white/10 py-10 transition-all hover:bg-white/[0.03] md:grid-cols-[0.18fr_0.42fr_1fr] md:gap-10 md:py-14"
+              className="grid gap-6 border-b border-white/10 py-10 transition-all hover:bg-white/[0.02] md:grid-cols-[0.18fr_0.42fr_1fr] md:gap-10 md:py-14"
             >
               <div className="flex items-start">
                 <span
-                  style={{
-                    borderColor: `${principle.hex}70`,
-                    color: principle.hex,
-                    backgroundColor: `${principle.hex}18`,
-                    boxShadow: `0 0 20px -2px ${principle.hex}45`,
-                  }}
-                  className="inline-flex h-9 w-14 items-center justify-center rounded-xl border font-mono text-[11px] font-black tracking-[0.18em]"
+                  className="inline-flex h-9 w-14 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] font-mono text-[11px] font-black tracking-[0.18em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 >
                   {principle.number}
                 </span>
               </div>
-              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: principle.hex, textShadow: `0 0 10px ${principle.hex}50` }}>
+              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800]">
                 {principle.label}
               </div>
               <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
