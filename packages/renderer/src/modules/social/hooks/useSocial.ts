@@ -88,6 +88,9 @@ export function useSocial(userId?: string) {
             if (doc.exists() && doc.data().socialStats) {
                 setStats(doc.data().socialStats as SocialStats);
             }
+        }, (err) => {
+            if (!isMountedRef.current) return;
+            logger.warn("[Social] Stats listener error (handled):", err);
         });
 
         // 2. Scheduled Posts Listener
@@ -122,6 +125,9 @@ export function useSocial(userId?: string) {
                 };
             }) as ScheduledPost[];
             setScheduledPosts(data);
+        }, (err) => {
+            if (!isMountedRef.current) return;
+            logger.warn("[Social] Scheduled posts listener error (handled):", err);
         });
 
         // 3. Feed Listener
@@ -206,7 +212,7 @@ export function useSocial(userId?: string) {
         refreshFeed: loadFeed
     }), [schedulePost, createPost, loadDashboardData, loadFeed]);
 
-    return {
+    return useMemo(() => ({
         // Data
         stats,
         posts,
@@ -221,5 +227,5 @@ export function useSocial(userId?: string) {
 
         // Actions
         actions
-    };
+    }), [stats, posts, scheduledPosts, isLoading, isFeedLoading, error, filter, setFilter, actions]);
 }

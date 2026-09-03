@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
@@ -29,21 +29,25 @@ export const usePricingConfig = () => {
     const [config, setConfig] = useState<PricingConfig>(DEFAULT_INDIE_MARGINS);
     const [loading, setLoading] = useState(true);
 
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
     useEffect(() => {
         if (!userProfile?.id) {
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 0);
-            return () => clearTimeout(timer);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLoading(false);
+            return;
         }
 
-        const timer2 = setTimeout(() => {
-            setLoading(true);
-        }, 0);
+        setLoading(true);
 
         const docRef = doc(db, 'merch_config', userProfile.id);
 
-        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+        const unsubscribe = onSnapshot(docRef, { includeMetadataChanges: true }, (docSnap) => {
+            if (!isMountedRef.current) return;
             if (docSnap.exists() && docSnap.data().pricing) {
                 setConfig({ ...DEFAULT_INDIE_MARGINS, ...docSnap.data().pricing });
             } else {
@@ -51,15 +55,15 @@ export const usePricingConfig = () => {
             }
             setLoading(false);
         }, (err) => {
+            if (!isMountedRef.current) return;
             logger.error('[usePricingConfig] Failed to fetch pricing config:', err);
             setLoading(false);
         });
 
         return () => {
-            clearTimeout(timer2);
             safeUnsubscribe(unsubscribe);
         };
     }, [userProfile?.id]);
 
-    return { config, loading };
+    return useMemo(() => ({ config, loading }), [config, loading]);
 };

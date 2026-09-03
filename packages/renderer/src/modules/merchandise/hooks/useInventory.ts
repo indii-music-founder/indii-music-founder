@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
@@ -13,6 +13,8 @@ export interface InventoryItem {
     virtual: number;
     reorderThreshold: number;
     channel: 'Printful' | 'Printify' | 'Shopify' | 'Direct';
+    _hasPendingWrites?: boolean;
+    _isFromCache?: boolean;
 }
 
 export const useInventory = () => {
@@ -22,44 +24,63 @@ export const useInventory = () => {
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [hasPendingWrites, setHasPendingWrites] = useState(false);
+
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     useEffect(() => {
         if (!userProfile?.id) {
-            const timer = setTimeout(() => {
-                setInventory([]);
-                setLoading(false);
-            }, 0);
-            return () => clearTimeout(timer);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setInventory([]);
+            setLoading(false);
+            setError(null);
+            return;
         }
 
-        const timer2 = setTimeout(() => {
-            setLoading(true);
-            setError(null);
-        }, 0);
+        setLoading(true);
+        setError(null);
 
         const q = query(
             collection(db, 'merchandise_inventory'),
             where('userId', '==', userProfile.id)
         );
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const items = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as InventoryItem));
-            setInventory(items);
-            setLoading(false);
-        }, (err) => {
-            logger.error('[useInventory] Subscription failed:', err);
-            setError('Could not load inventory.');
-            setLoading(false);
-        });
+        const unsubscribe = onSnapshot(
+            q,
+            { includeMetadataChanges: true },
+            (snapshot) => {
+                if (!isMountedRef.current) return;
+                const items = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    _hasPendingWrites: doc.metadata.hasPendingWrites,
+                    _isFromCache: doc.metadata.fromCache,
+                } as InventoryItem));
+                setInventory(items);
+                setHasPendingWrites(snapshot.metadata.hasPendingWrites);
+                setLoading(false);
+            },
+            (err) => {
+                if (!isMountedRef.current) return;
+                logger.error('[useInventory] Subscription failed:', err);
+                setError('Could not load inventory.');
+                setLoading(false);
+            }
+        );
 
         return () => {
-            clearTimeout(timer2);
             safeUnsubscribe(unsubscribe);
         };
     }, [userProfile?.id]);
 
-    return { inventory, loading, error };
+    return useMemo(() => ({
+        inventory,
+        loading,
+        error,
+        hasPendingWrites,
+    }), [inventory, loading, error, hasPendingWrites]);
 };
