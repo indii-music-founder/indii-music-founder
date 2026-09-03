@@ -152,8 +152,22 @@ export default function AgentGrid() {
   const active = lifecycle.find((stage) => stage.id === activeId) ?? lifecycle[3];
 
   return (
-    <section id="capabilities" data-system-section="capabilities" className="relative z-20 w-full border-t border-white/10 bg-[#030303]">
-      <div className="mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
+    <section id="capabilities" data-system-section="capabilities" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-[#0E0B08]">
+      {/* Dynamic Stage Glow Background */}
+      <div
+        className="pointer-events-none absolute inset-0 transition-opacity duration-700"
+        style={{
+          background: `radial-gradient(circle at 50% 25%, ${active.glow}, transparent 55%)`,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[550px] w-[950px] -translate-x-1/2 -translate-y-1/2 blur-[150px] transition-all duration-700 opacity-50"
+        style={{
+          backgroundColor: `${active.hex}15`,
+        }}
+      />
+
+      <div className="relative mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -184,17 +198,25 @@ export default function AgentGrid() {
           </div>
         </motion.div>
 
-        <div className="-mx-5 mt-10 flex overflow-x-auto border-y border-white/10 px-5 no-scrollbar lg:mx-0 lg:grid lg:grid-cols-8 lg:overflow-visible lg:px-0">
+        <div
+          role="tablist"
+          aria-label="Release lifecycle stages"
+          className="-mx-5 mt-10 flex overflow-x-auto border-y border-white/10 px-5 no-scrollbar lg:mx-0 lg:grid lg:grid-cols-8 lg:overflow-visible lg:px-0"
+        >
           {lifecycle.map((stage) => {
             const isActive = stage.id === active.id;
             return (
               <button
                 key={stage.id}
                 type="button"
-                onClick={() => setActiveId(stage.id)}
-                style={isActive ? { backgroundColor: stage.hex, color: '#000000', boxShadow: `0 0 20px ${stage.glow}` } : {}}
-                className={`flex min-w-[150px] shrink-0 flex-col items-start gap-1 border-r border-white/10 px-4 py-4 text-left transition-all lg:min-w-0 ${isActive ? 'font-bold' : 'text-white/45 hover:bg-white/[0.04] hover:text-white'}`}
+                role="tab"
+                id={`tab-${stage.id}`}
+                aria-controls={`panel-${stage.id}`}
+                aria-selected={isActive}
                 aria-pressed={isActive}
+                onClick={() => setActiveId(stage.id)}
+                style={isActive ? { backgroundColor: stage.hex, color: '#000000', boxShadow: `0 0 25px ${stage.glow}` } : {}}
+                className={`flex min-w-[150px] shrink-0 flex-col items-start gap-1 border-r border-white/10 px-4 py-4 text-left transition-all duration-300 lg:min-w-0 ${isActive ? 'font-bold scale-[1.02]' : 'text-white/45 hover:bg-white/[0.04] hover:text-white'}`}
                 aria-label={`${stage.name}: ${stage.title}`}
               >
                 <span className="font-mono text-[9px] font-bold uppercase tracking-[0.18em]">{stage.index}</span>
@@ -208,16 +230,19 @@ export default function AgentGrid() {
           <AnimatePresence mode="wait">
             <motion.article
               key={active.id}
+              role="tabpanel"
+              id={`panel-${active.id}`}
+              aria-labelledby={`tab-${active.id}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="relative overflow-hidden rounded-2xl border border-white/15 bg-[#080808]"
+              className="relative overflow-hidden rounded-2xl border border-white/20 bg-[#16120D]/90 shadow-[0_30px_90px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
             >
               <div
                 className="absolute inset-0 transition-opacity duration-700"
                 style={{
-                  background: `radial-gradient(circle at 82% 15%, ${active.glow}, transparent 45%)`,
+                  background: `radial-gradient(circle at 82% 15%, ${active.glow}, transparent 50%)`,
                 }}
               />
               <div className="relative grid lg:grid-cols-[1.2fr_0.8fr]">

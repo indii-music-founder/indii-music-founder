@@ -27,6 +27,7 @@ const plans = [
   {
     name: 'Free',
     monthlyPrice: 0,
+    accentHex: '#00BCD4',
     audience: 'See how the connected creative workflow works with one bounded guided experience.',
     includes: ['Verified email account', 'Guided mini-campaign experience', 'Images and short clips without forced branding'],
     cta: 'See how indii.music works',
@@ -35,6 +36,7 @@ const plans = [
   {
     name: 'Start',
     monthlyPrice: 22,
+    accentHex: '#2196F3',
     audience: 'For an artist beginning to organize and operate the business behind the music.',
     includes: ['Core release workspace', 'Planning and project records', 'Capacity for an emerging artist'],
     cta: 'Choose Start',
@@ -43,6 +45,7 @@ const plans = [
   {
     name: 'Build',
     monthlyPrice: 55,
+    accentHex: '#FFB800',
     audience: 'For an artist actively releasing music and building repeatable operations.',
     includes: ['Everything needed for active releases', 'More connected workflows', 'More working capacity'],
     cta: 'Choose Build',
@@ -52,6 +55,7 @@ const plans = [
   {
     name: 'Scale',
     monthlyPrice: 110,
+    accentHex: '#9C27B0',
     audience: 'For an artist with an active career, larger workload, and music income.',
     includes: ['Broader operating capability', 'Higher working capacity', 'Support for a larger release load'],
     cta: 'Choose Scale',
@@ -78,8 +82,8 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
   };
 
   return (
-    <section id="pricing" data-system-section="pricing" className="relative z-20 w-full border-t border-white/10 bg-[#030303]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(245,158,11,0.09),transparent_40%)]" />
+    <section id="pricing" data-system-section="pricing" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-[#0E0B08]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(245,158,11,0.14),transparent_42%)]" />
       <div className="relative mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -90,12 +94,12 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
           <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-amber-400">Founding Artist Beta pricing</div>
           <h2 className="mt-6 text-5xl font-black leading-[0.95] tracking-[-0.055em] text-white sm:text-6xl md:text-8xl">
             Choose the stage that fits
-            <span className="block text-amber-400">your career now.</span>
+            <span className="block text-amber-400 [text-shadow:0_0_35px_rgba(255,184,0,0.4)]">your career now.</span>
           </h2>
-          <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-white/55">
+          <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-white/60">
             Start with a complete plan for where you are. Add capacity when a project needs it, or move up when your career consistently needs more.
           </p>
-          <p className="mx-auto mt-4 max-w-2xl font-mono text-[9px] uppercase leading-relaxed tracking-[0.16em] text-amber-300/80">
+          <p className="mx-auto mt-4 max-w-2xl font-mono text-[9px] uppercase leading-relaxed tracking-[0.16em] text-amber-300/90">
             Beta access is invitation-based. These cards describe the intended beta packaging; checkout remains closed until plan entitlements are verified.
           </p>
           <a
@@ -109,17 +113,17 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
         </motion.div>
         <div className="mx-auto mt-10 max-w-3xl">
           <div className="mb-3 text-center font-mono text-[9px] uppercase tracking-[0.22em] text-white/40">Choose your billing rhythm</div>
-          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/60 p-2 sm:grid-cols-4" role="group" aria-label="Billing schedule">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-amber-400/25 bg-[#14100C]/90 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl sm:grid-cols-4" role="group" aria-label="Billing schedule">
             {billingCycles.map((cycle) => (
               <button
                 key={cycle.id}
                 type="button"
                 aria-pressed={billingCycle === cycle.id}
                 onClick={() => setBillingCycle(cycle.id)}
-                className={`rounded-xl px-3 py-3 text-xs font-bold transition-colors ${billingCycle === cycle.id ? 'bg-amber-400 text-black' : 'text-white/55 hover:bg-white/[0.06] hover:text-white'}`}
+                className={`rounded-xl px-3 py-3 text-xs font-bold transition-all ${billingCycle === cycle.id ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_16px_rgba(255,184,0,0.4)]' : 'text-white/55 hover:bg-white/[0.06] hover:text-white'}`}
               >
                 <span className="block">{cycle.label}</span>
-                <span className={`mt-1 block font-mono text-[8px] uppercase tracking-[0.12em] ${billingCycle === cycle.id ? 'text-black/65' : 'text-amber-400'}`}>
+                <span className={`mt-1 block font-mono text-[8px] uppercase tracking-[0.12em] ${billingCycle === cycle.id ? 'text-black/75 font-bold' : 'text-amber-400'}`}>
                   {cycle.discount ? `${Math.round(cycle.discount * 100)}% savings` : 'Standard price'}
                 </span>
               </button>
@@ -137,12 +141,19 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-70px' }}
               transition={{ delay: index * 0.07 }}
-              className={`flex flex-col rounded-2xl border p-6 md:p-7 ${plan.featured ? 'border-amber-400/60 bg-amber-400/[0.07]' : 'border-white/10 bg-black/55'}`}
+              className={`flex flex-col rounded-2xl border p-6 md:p-7 backdrop-blur-xl transition-all duration-300 ${
+                plan.featured
+                  ? 'border-amber-400/60 bg-[#1E170F]/95 shadow-[0_20px_50px_rgba(255,184,0,0.2)] ring-1 ring-amber-400/30 scale-[1.02]'
+                  : 'border-white/12 bg-[#16120D]/85 shadow-[0_15px_35px_rgba(0,0,0,0.6)] hover:border-white/25 hover:scale-[1.01]'
+              }`}
             >
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-2xl font-black tracking-[-0.03em] text-white">{plan.name}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plan.accentHex, boxShadow: `0 0 8px ${plan.accentHex}` }} />
+                  <h3 className="text-2xl font-black tracking-[-0.03em] text-white">{plan.name}</h3>
+                </div>
                 {plan.featured && (
-                  <span className="rounded-full bg-amber-400 px-2.5 py-1 font-mono text-[8px] font-black uppercase tracking-[0.16em] text-black">
+                  <span className="rounded-full bg-gradient-to-r from-[#FFD700] to-[#FFB800] px-3 py-1 font-mono text-[8px] font-black uppercase tracking-[0.16em] text-black shadow-[0_0_12px_rgba(255,184,0,0.4)]">
                     Active artist
                   </span>
                 )}
@@ -152,11 +163,11 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
                 <span className="pb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/40">{displayedPrice.cadence}</span>
               </div>
               {displayedPrice.equivalent && <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.16em] text-amber-400">{displayedPrice.equivalent}</div>}
-              <p className="mt-5 min-h-[78px] text-sm leading-relaxed text-white/55">{plan.audience}</p>
+              <p className="mt-5 min-h-[78px] text-sm leading-relaxed text-white/60">{plan.audience}</p>
               <div className="mt-6 flex-1 border-t border-white/10 pt-4">
                 {plan.includes.map((item) => (
-                  <div key={item} className="flex gap-3 border-b border-white/8 py-3 text-xs leading-relaxed text-white/65">
-                    <Check size={13} className="mt-0.5 shrink-0 text-amber-400" />
+                  <div key={item} className="flex gap-3 border-b border-white/8 py-3 text-xs leading-relaxed text-white/70">
+                    <Check size={13} className="mt-0.5 shrink-0" style={{ color: plan.accentHex }} />
                     <span>{item}</span>
                   </div>
                 ))}
@@ -164,7 +175,11 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
               <a
                 href={plan.href}
                 onClick={() => onPlanSelect(plan.name)}
-                className={`group mt-7 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-xs font-black transition-transform hover:scale-[1.02] ${plan.featured ? 'bg-amber-400 text-black' : 'bg-white text-black'}`}
+                className={`group mt-7 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-xs font-black transition-all hover:scale-[1.02] ${
+                  plan.featured
+                    ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_25px_rgba(255,184,0,0.4)] hover:shadow-[0_0_35px_rgba(255,184,0,0.6)]'
+                    : 'bg-white text-black hover:bg-amber-400'
+                }`}
               >
                 {plan.cta}
                 <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />

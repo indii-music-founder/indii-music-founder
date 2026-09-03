@@ -37,6 +37,14 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
       className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1600px] flex-col justify-between px-5 pb-8 pt-28 md:px-10 md:pb-10 md:pt-32"
       aria-label="indii.music founder introduction"
     >
+      {/* Studio Radial Glow Aura */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[950px] blur-[150px] opacity-70"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(255,184,0,0.14) 0%, rgba(0,255,102,0.06) 45%, transparent 70%)',
+        }}
+      />
+
       <div className="flex items-center justify-between border-t border-white/12 pt-4 font-mono text-[9px] uppercase tracking-[0.23em] text-white/45">
         <span>Independent music / business operating system</span>
         <span className="hidden sm:inline">Detroit, Michigan / Founding Artist Beta</span>
@@ -153,12 +161,12 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
           </div>
 
           {/* Right Column: Primary CTAs & Product Status */}
-          <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.02] p-7 backdrop-blur-md">
+          <div className="flex flex-col justify-between rounded-2xl border border-amber-400/25 bg-[#18130E]/85 p-7 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
             <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber-400/80">
                 Working software / Founding Artist Beta
               </div>
-              <p className="mt-3 text-base text-white/70">
+              <p className="mt-3 text-base text-white/80">
                 Join the waitlist for working software that is still being refined with independent artists.
               </p>
 
@@ -172,7 +180,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                     pulseHero(1);
                   }}
                   onMouseEnter={() => pulseHero(0.55)}
-                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-amber-400 px-7 py-4 text-sm font-black text-black shadow-[0_0_34px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.03]"
+                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-7 py-4 text-sm font-black text-black shadow-[0_0_34px_rgba(255,184,0,0.4)] transition-all hover:scale-[1.03] hover:shadow-[0_0_45px_rgba(255,184,0,0.6)]"
                 >
                   {previewEnabled
                     ? founder
@@ -186,13 +194,13 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackPreview('hero_login')}
-                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-7 py-4 text-sm font-bold text-white transition-colors hover:border-amber-400/50 hover:text-amber-300"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-black/40 px-7 py-4 text-sm font-bold text-white backdrop-blur-md transition-colors hover:border-amber-400/50 hover:text-amber-300"
                 >
                   Log in
                 </a>
                 <a
                   href="#studio-preview"
-                  className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/20 px-7 py-4 text-sm font-bold text-white transition-colors hover:border-amber-400/50 hover:text-amber-300"
+                  className="group inline-flex items-center justify-center gap-3 rounded-full border border-amber-400/30 bg-amber-400/[0.06] px-7 py-4 text-sm font-bold text-white backdrop-blur-md transition-colors hover:border-amber-400/60 hover:text-amber-300"
                 >
                   <Play size={14} fill="currentColor" />
                   See how indii.music works
@@ -202,13 +210,13 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
 
             <div className="mt-8 border-t border-white/10 pt-4">
               <div className="grid grid-cols-3 gap-2 text-center font-mono text-[9px] uppercase tracking-wider">
-                <div className="rounded bg-black/60 p-2 text-white/80 border border-[#2196F3]/20">
+                <div className="rounded-lg bg-black/60 p-2 text-white/80 border border-[#2196F3]/30 shadow-[0_0_12px_rgba(33,150,243,0.15)]">
                   <span className="block font-bold text-[#2196F3]">Keep</span> Your rights
                 </div>
-                <div className="rounded bg-black/60 p-2 text-white/80 border border-[#FFC107]/20">
+                <div className="rounded-lg bg-black/60 p-2 text-white/80 border border-[#FFC107]/30 shadow-[0_0_12px_rgba(255,193,7,0.15)]">
                   <span className="block font-bold text-[#FFC107]">0%</span> Royalty Cut
                 </div>
-                <div className="rounded bg-black/60 p-2 text-white/80 border border-[#00FF66]/20">
+                <div className="rounded-lg bg-black/60 p-2 text-white/80 border border-[#00FF66]/30 shadow-[0_0_12px_rgba(0,255,102,0.15)]">
                   <span className="block font-bold text-[#00FF66]">Live</span> Working beta
                 </div>
               </div>

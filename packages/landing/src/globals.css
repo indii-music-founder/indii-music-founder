@@ -42,6 +42,12 @@
   --color-dept-brand: #FFB300;
   --color-dept-campaign: #FF7043;
 
+  /* Sonic OS Warm Studio Canvas Tokens */
+  --color-bg-dark: #14100C;
+  --color-surface: #241F19;
+  --color-surface-elevated: #3A3226;
+  --color-surface-console: #1A1510;
+
   /* Subliminal Theme Colors */
   --void: #000000;
   --true-black: #08080A;
@@ -397,3 +403,50 @@ footer span {
   }
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+ * SONIC OS STUDIO LIGHTING & GLASS UTILITIES
+ * ──────────────────────────────────────────────────────────────────────────*/
+.studio-glass {
+  background: rgba(20, 16, 12, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.studio-panel {
+  background: rgba(36, 31, 25, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.studio-console {
+  background: rgba(26, 21, 16, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 184, 0, 0.2);
+}
+
+.liquid-gold-glow {
+  box-shadow: 0 0 35px rgba(255, 184, 0, 0.35);
+}
+
+.dept-glow-cyan {
+  box-shadow: 0 0 25px rgba(0, 188, 212, 0.3);
+}
+
+.dept-glow-green {
+  box-shadow: 0 0 25px rgba(0, 255, 102, 0.3);
+}
+
+.dept-glow-blue {
+  box-shadow: 0 0 25px rgba(33, 150, 243, 0.3);
+}
+
+.dept-glow-gold {
+  box-shadow: 0 0 25px rgba(255, 184, 0, 0.3);
+}
+
+.dept-glow-magenta {
+  box-shadow: 0 0 25px rgba(233, 30, 99, 0.3);
+}

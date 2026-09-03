@@ -336,7 +336,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
   };
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#020202] font-sans text-white selection:bg-amber-400/30">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#0A0806] font-sans text-white selection:bg-amber-400/30">
       <a href="#home" className="skip-link">
         Skip to content
       </a>
@@ -356,15 +356,17 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             />
           ))}
         </div>
-        <div className="absolute left-1/2 top-[-32rem] h-[68rem] w-[68rem] -translate-x-1/2 rounded-full bg-amber-500/[0.08] blur-[160px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_15%,#020202_82%)]" />
+        <div className="absolute left-1/2 top-[-32rem] h-[68rem] w-[68rem] -translate-x-1/2 rounded-full bg-amber-500/[0.12] blur-[160px]" />
+        <div className="absolute right-[-10rem] top-[20rem] h-[45rem] w-[45rem] rounded-full bg-[#00BCD4]/[0.035] blur-[180px]" />
+        <div className="absolute left-[-10rem] top-[60rem] h-[45rem] w-[45rem] rounded-full bg-[#00FF66]/[0.035] blur-[180px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_15%,#0A0806_82%)]" />
         <div className="absolute inset-0 opacity-[0.025] [background-image:linear-gradient(rgba(255,255,255,0.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.8)_1px,transparent_1px)] [background-size:80px_80px]" />
       </div>
 
       {shouldMountSystem && <DeferredExperienceShell />}
 
-      <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/65 backdrop-blur-2xl" aria-label="Main navigation">
-        <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/20 bg-amber-400 px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black">
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-amber-400/20 bg-[#14100C]/85 shadow-[0_10px_35px_rgba(0,0,0,0.7)] backdrop-blur-2xl" aria-label="Main navigation">
+        <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/30 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black shadow-[0_1px_15px_rgba(255,184,0,0.3)]">
           <span>Founding Artist Beta — working software, still being refined</span>
           <a href="#waitlist" className="underline decoration-black/40 underline-offset-2 hover:decoration-black">
             Join the waitlist
