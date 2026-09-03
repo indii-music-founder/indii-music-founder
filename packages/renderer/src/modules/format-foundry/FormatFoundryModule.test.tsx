@@ -24,13 +24,13 @@ describe('FormatFoundryModule', () => {
     expect(screen.getByText('distrokid_statement')).toBeInTheDocument();
 
     // 7-Layer validation
-    expect(screen.getByText('7-Layer Validation Matrix')).toBeInTheDocument();
-    expect(screen.getByText('ALL LAYERS PASSED')).toBeInTheDocument();
+    expect(await screen.findByText('7-Layer Validation Matrix')).toBeInTheDocument();
+    expect(await screen.findByText('ALL LAYERS PASSED')).toBeInTheDocument();
 
     // Business Graph
-    expect(screen.getByText('Artist Business Graph Normalization')).toBeInTheDocument();
+    expect(await screen.findByText('Artist Business Graph Normalization')).toBeInTheDocument();
     expect(screen.getAllByText('Velvet Voltage').length).toBeGreaterThan(0);
-    expect(screen.getByText('Kira Novakowski')).toBeInTheDocument();
+    expect(await screen.findByText('Kira Novakowski')).toBeInTheDocument();
   });
 
   it('handles consequential approval flow', async () => {
