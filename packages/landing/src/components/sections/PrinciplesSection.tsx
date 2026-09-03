@@ -64,27 +64,32 @@ export default function PrinciplesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-70px' }}
               transition={{ duration: 0.65, delay: index * 0.05 }}
-              className="grid gap-6 border-b border-white/10 py-10 transition-colors hover:bg-white/[0.015] md:grid-cols-[0.18fr_0.42fr_1fr] md:gap-10 md:py-14"
+              style={{
+                background: `linear-gradient(90deg, ${principle.hex}08 0%, transparent 45%)`,
+              }}
+              className="grid gap-6 border-b border-white/10 py-10 transition-all hover:bg-white/[0.03] md:grid-cols-[0.18fr_0.42fr_1fr] md:gap-10 md:py-14"
             >
               <div className="flex items-start">
                 <span
                   style={{
-                    borderColor: `${principle.hex}50`,
+                    borderColor: `${principle.hex}70`,
                     color: principle.hex,
-                    backgroundColor: `${principle.hex}10`,
-                    boxShadow: `0 0 15px ${principle.hex}25`,
+                    backgroundColor: `${principle.hex}18`,
+                    boxShadow: `0 0 20px -2px ${principle.hex}45`,
                   }}
-                  className="inline-flex h-8 w-12 items-center justify-center rounded-lg border font-mono text-[11px] font-bold tracking-[0.18em]"
+                  className="inline-flex h-9 w-14 items-center justify-center rounded-xl border font-mono text-[11px] font-black tracking-[0.18em]"
                 >
                   {principle.number}
                 </span>
               </div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">{principle.label}</div>
+              <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: principle.hex, textShadow: `0 0 10px ${principle.hex}50` }}>
+                {principle.label}
+              </div>
               <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-                <h3 className="text-2xl font-bold leading-tight tracking-[-0.03em] text-white md:text-3xl">
+                <h3 className="text-2xl font-black leading-tight tracking-[-0.03em] text-white md:text-3xl">
                   {principle.title}
                 </h3>
-                <p className="max-w-xl leading-relaxed text-white/55">{principle.text}</p>
+                <p className="max-w-xl leading-relaxed text-white/70">{principle.text}</p>
               </div>
             </motion.article>
           ))}

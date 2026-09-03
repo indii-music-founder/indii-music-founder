@@ -240,9 +240,15 @@ export default function AgentGrid() {
               className="relative overflow-hidden rounded-2xl border border-white/20 bg-[#16120D]/90 shadow-[0_30px_90px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
             >
               <div
-                className="absolute inset-0 transition-opacity duration-700"
+                className="absolute inset-x-0 top-0 h-[2px] transition-all duration-500"
                 style={{
-                  background: `radial-gradient(circle at 82% 15%, ${active.glow}, transparent 50%)`,
+                  background: `linear-gradient(90deg, transparent 0%, ${active.hex} 50%, transparent 100%)`,
+                }}
+              />
+              <div
+                className="pointer-events-none absolute inset-0 transition-opacity duration-700"
+                style={{
+                  background: `radial-gradient(circle at 82% 15%, ${active.glow}, transparent 55%), radial-gradient(circle at 18% 85%, ${active.glow}, transparent 60%)`,
                 }}
               />
               <div className="relative grid lg:grid-cols-[1.2fr_0.8fr]">
@@ -258,54 +264,62 @@ export default function AgentGrid() {
                     <span className={`rounded px-2.5 py-1 font-semibold border ${active.badgeBg}`}>{active.label}</span>
                   </div>
                   <h3 className="mt-8 max-w-3xl text-3xl font-black leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">{active.title}</h3>
-                  <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/60 md:text-lg">{active.outcome}</p>
+                  <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">{active.outcome}</p>
                   <div className="mt-9 grid gap-3 sm:grid-cols-3">
                     {active.details.map((detail) => (
-                      <div key={detail} className="rounded-xl border border-white/10 bg-black/60 p-4 transition-colors hover:border-white/20">
+                      <div
+                        key={detail}
+                        className="rounded-xl border p-4 transition-all duration-300"
+                        style={{
+                          backgroundColor: `${active.hex}0e`,
+                          borderColor: `${active.hex}38`,
+                          boxShadow: `0 0 15px -3px ${active.glow}`,
+                        }}
+                      >
                         <CheckCircle2 size={16} className="mb-2" style={{ color: active.hex }} />
-                        <div className="text-xs font-semibold leading-snug text-white/80">{detail}</div>
+                        <div className="text-xs font-bold leading-snug text-white/90">{detail}</div>
                       </div>
                     ))}
                   </div>
                   <div className="mt-9 border-t border-white/10 pt-5">
-                    <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.25em] text-white/30">Connected path</div>
+                    <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.25em] text-white/40">Connected path</div>
                     <div className="font-mono text-xs font-semibold leading-relaxed" style={{ color: active.hex }}>{active.route}</div>
                   </div>
                 </div>
-                <aside className="flex flex-col justify-between border-t border-white/10 bg-black/55 p-7 md:p-10 lg:border-l lg:border-t-0">
+                <aside className="flex flex-col justify-between border-t border-white/10 bg-black/65 p-7 md:p-10 lg:border-l lg:border-t-0">
                   <div>
-                    <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-white/35">Relevant specialists</div>
+                    <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-white/50">Relevant specialists</div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {active.specialists.map((specialist) => (
                         <span
                           key={specialist}
-                          style={{ borderColor: `${active.hex}30` }}
-                          className="rounded-full border bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/80 transition-colors"
+                          style={{ borderColor: `${active.hex}60`, backgroundColor: `${active.hex}18`, color: '#FFFFFF' }}
+                          className="rounded-full border px-3.5 py-1.5 text-xs font-bold shadow-[0_0_12px_rgba(0,0,0,0.4)] transition-colors"
                         >
                           {specialist}
                         </span>
                       ))}
                     </div>
-                    <p className="mt-5 text-sm leading-relaxed text-white/45">
+                    <p className="mt-5 text-sm leading-relaxed text-white/60">
                       Shared project context keeps this work connected. You review the decisions and remain in control.
                     </p>
                   </div>
                   <div
-                    style={{ borderColor: `${active.hex}40`, backgroundColor: `${active.hex}08` }}
-                    className="mt-12 rounded-xl border border-dashed p-5"
+                    style={{ borderColor: `${active.hex}60`, backgroundColor: `${active.hex}12`, boxShadow: `0 0 25px -5px ${active.glow}` }}
+                    className="mt-12 rounded-xl border border-dashed p-6"
                   >
-                    <PlayCircle size={24} style={{ color: active.hex }} />
-                    <div className="mt-4 font-mono text-[9px] uppercase tracking-[0.22em]" style={{ color: active.hex }}>Real product clip planned</div>
-                    <p className="mt-2 text-sm font-semibold text-white">{active.name} / founder walkthrough</p>
-                    <p className="mt-2 text-xs leading-relaxed text-white/45">
+                    <PlayCircle size={28} style={{ color: active.hex }} className="drop-shadow-[0_0_12px_currentColor]" />
+                    <div className="mt-4 font-mono text-[9px] uppercase font-bold tracking-[0.22em]" style={{ color: active.hex }}>Real product clip planned</div>
+                    <p className="mt-2 text-sm font-black text-white">{active.name} / founder walkthrough</p>
+                    <p className="mt-2 text-xs leading-relaxed text-white/60">
                       A 15–30 second, click-to-play product capture with captions will appear here during the beta.
                     </p>
                   </div>
                 </aside>
               </div>
-              <div className="relative flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-7 py-5 font-mono text-[9px] uppercase tracking-[0.2em] text-white/35 md:px-12">
+              <div className="relative flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-7 py-5 font-mono text-[9px] uppercase tracking-[0.2em] text-white/50 md:px-12">
                 <span>Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat</span>
-                <a href="#conductor" className="inline-flex items-center gap-2 font-bold text-amber-400 transition-colors hover:text-amber-300">
+                <a href="#conductor" className="inline-flex items-center gap-2 font-bold text-[#FFB800] [text-shadow:0_0_10px_rgba(255,184,0,0.5)] transition-colors hover:text-amber-300">
                   See how Conductor connects it
                   <ArrowRight size={13} />
                 </a>

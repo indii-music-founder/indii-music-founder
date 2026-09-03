@@ -356,11 +356,16 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             />
           ))}
         </div>
-        <div className="absolute left-1/2 top-[-32rem] h-[68rem] w-[68rem] -translate-x-1/2 rounded-full bg-amber-500/[0.12] blur-[160px]" />
-        <div className="absolute right-[-10rem] top-[20rem] h-[45rem] w-[45rem] rounded-full bg-[#00BCD4]/[0.035] blur-[180px]" />
-        <div className="absolute left-[-10rem] top-[60rem] h-[45rem] w-[45rem] rounded-full bg-[#00FF66]/[0.035] blur-[180px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_15%,#0A0806_82%)]" />
-        <div className="absolute inset-0 opacity-[0.025] [background-image:linear-gradient(rgba(255,255,255,0.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.8)_1px,transparent_1px)] [background-size:80px_80px]" />
+        {/* Multi-spectrum atmospheric lighting across the whole page */}
+        <div className="absolute left-1/2 top-[-26rem] h-[72rem] w-[72rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-500/[0.22] via-[#00BCD4]/[0.16] to-transparent blur-[140px]" />
+        <div className="absolute right-[-12rem] top-[18rem] h-[55rem] w-[55rem] rounded-full bg-[#00BCD4]/[0.14] blur-[150px]" />
+        <div className="absolute left-[-12rem] top-[50rem] h-[55rem] w-[55rem] rounded-full bg-[#00FF66]/[0.12] blur-[160px]" />
+        <div className="absolute right-[-10rem] top-[110rem] h-[60rem] w-[60rem] rounded-full bg-[#E91E63]/[0.11] blur-[170px]" />
+        <div className="absolute left-[-10rem] top-[170rem] h-[60rem] w-[60rem] rounded-full bg-[#2196F3]/[0.12] blur-[170px]" />
+        <div className="absolute right-[-8rem] top-[230rem] h-[55rem] w-[55rem] rounded-full bg-[#9C27B0]/[0.10] blur-[160px]" />
+        <div className="absolute left-1/2 top-[300rem] h-[65rem] w-[65rem] -translate-x-1/2 rounded-full bg-amber-500/[0.14] blur-[160px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,transparent_20%,#0A0806_88%)]" />
+        <div className="absolute inset-0 opacity-[0.03] [background-image:linear-gradient(rgba(255,255,255,0.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.8)_1px,transparent_1px)] [background-size:80px_80px]" />
       </div>
 
       {shouldMountSystem && <DeferredExperienceShell />}
@@ -373,11 +378,11 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           </a>
         </div>
         <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-5 md:px-10">
-          <a href="#home" className="text-[15px] font-bold tracking-[-0.025em] text-white transition-colors hover:text-amber-400" aria-label="indii.music home">
+          <a href="#home" className="text-[15px] font-black tracking-[-0.025em] text-white transition-all hover:text-[#FFB800] hover:[text-shadow:0_0_15px_rgba(255,184,0,0.7)]" aria-label="indii.music home">
             indii.music
           </a>
 
-          <div className="hidden items-center gap-7 font-mono text-[9px] uppercase tracking-[0.2em] text-white/45 md:flex">
+          <div className="hidden items-center gap-7 font-mono text-[9px] uppercase tracking-[0.2em] text-white/50 md:flex">
             <a href="#capabilities" className="py-2 transition-colors hover:text-white">
               Release lifecycle
             </a>
@@ -392,7 +397,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                 Thesis
               </button>
             )}
-            <a href="#founder-access" className="py-2 text-amber-400 transition-colors hover:text-amber-300">
+            <a href="#founder-access" className="py-2 font-bold text-[#FFB800] [text-shadow:0_0_10px_rgba(255,184,0,0.5)] transition-colors hover:text-amber-300">
               Founding Owner
             </a>
           </div>
@@ -412,7 +417,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               target={previewEnabled ? '_blank' : undefined}
               rel={previewEnabled ? 'noopener noreferrer' : undefined}
               onClick={() => trackPreview('nav')}
-              className="group inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-black transition-transform hover:scale-[1.03] md:px-5"
+              className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-4 py-2.5 text-xs font-black text-black shadow-[0_0_20px_rgba(255,184,0,0.4)] transition-all hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(255,184,0,0.65)] md:px-5"
             >
               <span>{previewEnabled ? (loading ? 'Verifying…' : user ? 'Resume session' : 'Enter preview') : 'Get access'}</span>
               <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />

@@ -141,33 +141,45 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-70px' }}
               transition={{ delay: index * 0.07 }}
-              className={`flex flex-col rounded-2xl border p-6 md:p-7 backdrop-blur-xl transition-all duration-300 ${
+              className={`relative flex flex-col overflow-hidden rounded-2xl border p-6 md:p-7 backdrop-blur-xl transition-all duration-300 ${
                 plan.featured
-                  ? 'border-amber-400/60 bg-[#1E170F]/95 shadow-[0_20px_50px_rgba(255,184,0,0.2)] ring-1 ring-amber-400/30 scale-[1.02]'
-                  : 'border-white/12 bg-[#16120D]/85 shadow-[0_15px_35px_rgba(0,0,0,0.6)] hover:border-white/25 hover:scale-[1.01]'
+                  ? 'border-[#FFB800]/70 bg-gradient-to-b from-[#221A0C]/95 via-[#1A1408]/90 to-[#100C05] shadow-[0_25px_65px_rgba(255,184,0,0.25)] ring-1 ring-[#FFB800]/40 scale-[1.03]'
+                  : 'border-white/15 bg-gradient-to-b from-[#18130E]/90 via-[#120E0A]/85 to-[#0A0806] shadow-[0_15px_40px_rgba(0,0,0,0.7)] hover:border-white/30 hover:scale-[1.01]'
               }`}
+              style={
+                !plan.featured
+                  ? {
+                      borderColor: `${plan.accentHex}45`,
+                      boxShadow: `0 12px 35px -5px ${plan.accentHex}20`,
+                    }
+                  : {}
+              }
             >
+              <div
+                className="absolute inset-x-0 top-0 h-[2px]"
+                style={{ background: `linear-gradient(90deg, transparent 0%, ${plan.accentHex} 50%, transparent 100%)` }}
+              />
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plan.accentHex, boxShadow: `0 0 8px ${plan.accentHex}` }} />
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plan.accentHex, boxShadow: `0 0 10px ${plan.accentHex}` }} />
                   <h3 className="text-2xl font-black tracking-[-0.03em] text-white">{plan.name}</h3>
                 </div>
                 {plan.featured && (
-                  <span className="rounded-full bg-gradient-to-r from-[#FFD700] to-[#FFB800] px-3 py-1 font-mono text-[8px] font-black uppercase tracking-[0.16em] text-black shadow-[0_0_12px_rgba(255,184,0,0.4)]">
+                  <span className="rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-3 py-1 font-mono text-[8px] font-black uppercase tracking-[0.16em] text-black shadow-[0_0_15px_rgba(255,184,0,0.5)]">
                     Active artist
                   </span>
                 )}
               </div>
               <div className="mt-7 flex items-end gap-2" aria-live="polite">
-                <span className="text-5xl font-black tracking-[-0.055em] text-white">{displayedPrice.total}</span>
-                <span className="pb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/40">{displayedPrice.cadence}</span>
+                <span className="text-5xl font-black tracking-[-0.055em] text-white [text-shadow:0_0_20px_rgba(255,255,255,0.15)]">{displayedPrice.total}</span>
+                <span className="pb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/50">{displayedPrice.cadence}</span>
               </div>
-              {displayedPrice.equivalent && <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.16em] text-amber-400">{displayedPrice.equivalent}</div>}
-              <p className="mt-5 min-h-[78px] text-sm leading-relaxed text-white/60">{plan.audience}</p>
+              {displayedPrice.equivalent && <div className="mt-2 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#FFB800]">{displayedPrice.equivalent}</div>}
+              <p className="mt-5 min-h-[78px] text-sm leading-relaxed text-white/70">{plan.audience}</p>
               <div className="mt-6 flex-1 border-t border-white/10 pt-4">
                 {plan.includes.map((item) => (
-                  <div key={item} className="flex gap-3 border-b border-white/8 py-3 text-xs leading-relaxed text-white/70">
-                    <Check size={13} className="mt-0.5 shrink-0" style={{ color: plan.accentHex }} />
+                  <div key={item} className="flex gap-3 border-b border-white/8 py-3 text-xs leading-relaxed text-white/85">
+                    <Check size={14} className="mt-0.5 shrink-0" style={{ color: plan.accentHex, filter: `drop-shadow(0 0 6px ${plan.accentHex})` }} />
                     <span>{item}</span>
                   </div>
                 ))}
@@ -177,8 +189,8 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
                 onClick={() => onPlanSelect(plan.name)}
                 className={`group mt-7 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-xs font-black transition-all hover:scale-[1.02] ${
                   plan.featured
-                    ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_25px_rgba(255,184,0,0.4)] hover:shadow-[0_0_35px_rgba(255,184,0,0.6)]'
-                    : 'bg-white text-black hover:bg-amber-400'
+                    ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_30px_rgba(255,184,0,0.5)] hover:shadow-[0_0_40px_rgba(255,184,0,0.7)]'
+                    : 'bg-white text-black hover:bg-[#FFB800] hover:shadow-[0_0_20px_rgba(255,184,0,0.4)]'
                 }`}
               >
                 {plan.cta}

@@ -32,13 +32,13 @@ export default function ThesisSection({ setIsThesisOpen }: ThesisSectionProps) {
             }}
           />
         ))}
-        <div className="absolute inset-x-[-15%] bottom-[-45%] h-[85%] rounded-[50%] border-t border-amber-400/50 bg-gradient-to-t from-amber-500/[0.12] to-transparent shadow-[0_-50px_140px_rgba(255,184,0,0.22)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(255,184,0,0.22),transparent_50%)]" />
+        <div className="absolute inset-x-[-15%] bottom-[-45%] h-[85%] rounded-[50%] border-t border-amber-400/70 bg-gradient-to-t from-amber-500/[0.22] via-[#FF3366]/[0.08] to-transparent shadow-[0_-50px_160px_rgba(255,184,0,0.4)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(255,184,0,0.3),rgba(233,30,99,0.1)_40%,transparent_65%)]" />
       </div>
 
       <div className="relative mx-auto flex min-h-[92vh] max-w-[1500px] flex-col justify-between px-5 py-12 md:px-10 md:py-16">
-        <div className="flex justify-between border-t border-amber-400/20 pt-4 font-mono text-[9px] uppercase tracking-[0.23em] text-white/40">
-          <span>The <span className="indii-name">indii</span> thesis</span>
+        <div className="flex justify-between border-t border-amber-400/20 pt-4 font-mono text-[9px] uppercase tracking-[0.23em] text-white/50">
+          <span>The <span className="indii-name text-white">indii</span> thesis</span>
           <span>Episode I / Everything to Everybody</span>
         </div>
 
@@ -49,18 +49,18 @@ export default function ThesisSection({ setIsThesisOpen }: ThesisSectionProps) {
           transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
           className="mx-auto max-w-6xl py-20 text-center"
         >
-          <Film size={24} className="mx-auto mb-8 text-amber-400 drop-shadow-[0_0_15px_rgba(255,184,0,0.8)]" />
+          <Film size={28} className="mx-auto mb-8 text-[#FFB800] drop-shadow-[0_0_25px_rgba(255,184,0,0.9)]" />
           <h2 className="text-6xl font-black uppercase leading-[0.82] tracking-[-0.065em] text-white sm:text-7xl md:text-9xl lg:text-[10.5rem]">
             Read the
-            <span className="block text-amber-400 [text-shadow:0_0_40px_rgba(255,184,0,0.5)]">argument.</span>
+            <span className="block text-[#FFB800] [text-shadow:0_0_55px_rgba(255,184,0,0.7)]">argument.</span>
           </h2>
-          <p className="mx-auto mt-9 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
+          <p className="mx-auto mt-9 max-w-2xl text-lg leading-relaxed text-white/75 md:text-xl">
             Why an independent artist does not need one more isolated tool. They need the work around the music to understand the work beside it.
           </p>
           <button
             type="button"
             onClick={() => setIsThesisOpen(true)}
-            className="group mt-10 inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-8 py-4 text-sm font-black text-black shadow-[0_0_45px_rgba(255,184,0,0.45)] transition-all hover:scale-[1.035] hover:shadow-[0_0_60px_rgba(255,184,0,0.65)]"
+            className="group mt-10 inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-9 py-4 text-sm font-black text-black shadow-[0_0_45px_rgba(255,184,0,0.6)] transition-all hover:scale-[1.04] hover:shadow-[0_0_65px_rgba(255,184,0,0.85)]"
           >
             Launch cinematic thesis
             <Play size={14} fill="currentColor" />

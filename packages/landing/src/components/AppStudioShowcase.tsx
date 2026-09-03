@@ -96,10 +96,10 @@ export default function AppStudioShowcase() {
               <span key={fact} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">{fact}</span>
             ))}
           </div>
-          <a href="#waitlist" className="mt-7 inline-flex rounded-full bg-amber-400 px-6 py-3 text-xs font-black text-black transition-transform hover:scale-[1.03]">
+          <a href="#waitlist" className="mt-7 inline-flex rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-7 py-3.5 text-xs font-black text-black shadow-[0_0_25px_rgba(255,184,0,0.45)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(255,184,0,0.7)]">
             See how indii.music works
           </a>
-          <p className="mt-5 text-xs text-white/35">
+          <p className="mt-5 text-xs text-white/45">
             The workspace below is an illustrative walkthrough. Real product capture will replace these preview panels during the beta.
           </p>
         </div>
@@ -118,14 +118,14 @@ export default function AppStudioShowcase() {
                     ? {
                         backgroundColor: tab.hex,
                         color: '#000000',
-                        boxShadow: `0 0 25px ${tab.glow}`,
+                        boxShadow: `0 0 28px ${tab.glow}`,
                         borderColor: tab.hex,
                       }
                     : {}
                 }
                 className={`group relative flex items-center gap-2.5 rounded-full border px-5 py-3 text-xs font-bold transition-all duration-300 ${
                   isActive
-                    ? 'scale-[1.02]'
+                    ? 'scale-[1.03]'
                     : 'border-white/10 bg-black/60 text-white/70 hover:border-white/25 hover:text-white'
                 }`}
               >
@@ -133,7 +133,7 @@ export default function AppStudioShowcase() {
                 <span>{tab.label}</span>
                 <span
                   className={`ml-1 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
-                    isActive ? 'bg-black/20 text-black' : 'bg-white/10 text-white/50'
+                    isActive ? 'bg-black/20 text-black font-bold' : 'bg-white/10 text-white/50'
                   }`}
                 >
                   {tab.badge}
@@ -144,7 +144,13 @@ export default function AppStudioShowcase() {
         </div>
 
         {/* Interactive Studio Frame */}
-        <div className="mt-12 overflow-hidden rounded-2xl border border-white/15 bg-black/90 shadow-[0_30px_100px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+        <div className="relative mt-12 overflow-hidden rounded-2xl border border-white/15 bg-black/90 shadow-[0_30px_100px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+          <div
+            className="absolute inset-x-0 top-0 h-[2px] transition-all duration-500 z-10"
+            style={{
+              background: `linear-gradient(90deg, transparent 0%, ${currentTab.hex} 50%, transparent 100%)`,
+            }}
+          />
           {/* Studio Title Bar */}
           <div className="flex h-12 items-center justify-between border-b border-white/10 bg-[#090909] px-5 font-mono text-[10px] text-white/40">
             <div className="flex items-center gap-2">
