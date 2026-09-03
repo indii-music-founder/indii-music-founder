@@ -105,6 +105,7 @@ import { setupAutoUpdater, registerUpdaterHandlers } from './updater';
 import { registerWeb3Handlers } from './handlers/web3';
 import { registerPinataHandlers } from './handlers/pinata';
 import { registerRawHandlers } from './handlers/raw';
+import { registerFoundryHandlers } from './handlers/foundry';
 import Store from 'electron-store';
 
 let tray: Tray | null = null;
@@ -507,6 +508,7 @@ if (!gotTheLock) {
         registerWeb3Handlers();
         registerPinataHandlers();
         registerRawHandlers();
+        registerFoundryHandlers();
 
         // Register Sidecar Handlers (Removed)
 
@@ -540,6 +542,7 @@ if (!gotTheLock) {
             'web3:execute-transaction', 'web3:get-provider-metadata', 'web3:set-rpc-url', 'web3:get-balance',
             'web3:pinata-upload',
             'raw:inspect', 'raw:convert', 'raw:batch-convert', 'raw:cancel', 'raw:verify',
+            'foundry:read-file', 'foundry:get-metadata',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
 

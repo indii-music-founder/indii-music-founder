@@ -266,6 +266,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         accent: '#a855f7', // purple-500
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(168, 85, 247, 0.08), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.15 }
+    },
+    'format-foundry': {
+        officeName: 'Capability Foundry',
+        accent: '#6366f1', // indigo-500
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.08), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'grid', opacity: 0.15 }
     }
 };
 

@@ -350,5 +350,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('raw:convert-progress', handler);
             return () => ipcRenderer.removeListener('raw:convert-progress', handler);
         },
+    },
+
+    // indii Format Intelligence & Capability Foundry
+    foundry: {
+        readFile: (filePath: string) => ipcRenderer.invoke('foundry:read-file', filePath),
+        getMetadata: (filePath: string) => ipcRenderer.invoke('foundry:get-metadata', filePath),
     }
 });

@@ -43,3 +43,4 @@ export * from './distribution/types/index.js';
 export * from './distribution/ddexBuilder.js';
 export * from './security/organizationAccess.js';
 export * from './raw/types.js';
+export * from './foundry/types.js';

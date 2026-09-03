@@ -59,6 +59,7 @@ import { VideoProjectTools } from './VideoProjectTools';
 import { EditorTools } from './EditorTools';
 import { RemoteSupportTools } from './RemoteSupportTools';
 import { TrashTools } from './TrashTools';
+import { FormatFoundryTools } from './FormatFoundryTools';
 import { AnyToolFunction } from '../types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -133,6 +134,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...EditorTools,
     ...RemoteSupportTools,
     ...TrashTools,
+    ...FormatFoundryTools,
 };
 
 

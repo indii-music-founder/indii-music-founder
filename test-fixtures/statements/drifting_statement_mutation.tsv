@@ -1,0 +1,4 @@
+Reporting Date	Sale Month	Store	Artist	Title	ISRC	UPC	Tax Withholding (USD)	Publisher Royalty ID	Quantity	Earnings (USD)	Country of Sale
+2026-05-15	2026-04	Spotify	KIRA NOVA	Velvet Voltage	US-IND-26-00001	8847243739548	1.25	PUB-9941	16000	60.80	US
+2026-05-15	2026-04	Apple Music	KIRA NOVA	Velvet Voltage	US-IND-26-00001	8847243739548	0.50	PUB-9941	3400	25.50	US
+2026-05-15	2026-04	CorruptedStore	KIRA NOVA	Velvet Voltage	MALFORMED_ISRC	8847243739548	0.00	PUB-9941	-10	-5.00	US

@@ -45,7 +45,8 @@ export const MODULE_IDS = [
     'devops',
     'screenwriter',
     'crm',
-    'raw-converter'
+    'raw-converter',
+    'format-foundry'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
@@ -99,6 +100,7 @@ export const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
     'capture': 'Capture',
     'memory': 'Memory',
     'raw-converter': 'RAW Converter',
+    'format-foundry': 'Capability Foundry',
 };
 
 // ============================================================================
@@ -108,6 +110,7 @@ export const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
 export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
     'dashboard': 'generalist',
     'raw-converter': 'creative',
+    'format-foundry': 'distribution',
     'workflow': 'generalist',
     'history': 'generalist',
     'notes': 'memory',

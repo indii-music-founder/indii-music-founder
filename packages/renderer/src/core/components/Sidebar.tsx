@@ -191,6 +191,7 @@ export default function Sidebar() {
     const toolItems: SidebarItem[] = [
         { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
         { id: 'raw-converter', icon: Camera, label: 'RAW Converter' },
+        { id: 'format-foundry', icon: Layers, label: 'Capability Foundry' },
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
         { id: 'notes', icon: FileText, label: 'Notes' },
