@@ -99,7 +99,7 @@ function ThesisContent() {
                       Distribution, audio, creative direction, rights, finance, publishing, licensing, campaigns, social preparation, publicity, touring, merchandise, security, and the project record all work from the same artist-controlled context.
                     </p>
                     <p>
-                      Connected areas. One workspace. The artist remains the owner, the decision-maker, and the source of truth.
+                      Connected areas. One workspace. Powered by Connected Intelligence©, the artist remains the owner, the decision-maker, and the source of truth.
                     </p>
                     <p className="text-center text-white font-black text-3xl md:text-5xl lg:text-6xl my-12 tracking-wide leading-snug">
                       indii is the conductor and the orchestra.
@@ -118,7 +118,7 @@ function ThesisContent() {
                       Most music-business tools solve one isolated task. The artist is left carrying information from one system to the next and repairing the gaps by hand.
                     </p>
                     <p>
-                      indii starts with shared project context. When rights information changes, the release record can reflect it. When the route changes, the working budget and show record can move with it.
+                      indii starts with Connected Intelligence© and shared project context. When you establish your brand colors, your art department already knows them. When rights information changes, the release record reflects it. When the route changes, the working budget and show record move with it.
                     </p>
                     <p>
                       indii conducts an artist goal into visible work, brings in the relevant areas, and keeps proposed high-impact actions available for review.
@@ -156,7 +156,7 @@ function ThesisContent() {
                       indii is designed so the approved visual direction can inform the campaign, the route can inform the working budget, and the rights record can stay attached to the release it governs.
                     </p>
                     <p className="italic text-center text-white font-bold my-16 leading-snug">
-                      "The advantage is not one more feature. It is the end of starting over."
+                      "The advantage is not one more feature. It is Connected Intelligence© — the end of starting over."
                     </p>
                   </div>
 

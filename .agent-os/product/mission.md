@@ -35,7 +35,7 @@ An independent artist without label infrastructure currently has to stitch toget
 
 Each tool has its own login, its own data model, its own pricing tier, and no shared context. Decisions made in one tool never reach another. The artist becomes a full-time systems integrator instead of a musician.
 
-indii consolidates all of this into **one AI-driven workspace**. A hub agent (`indii Conductor`) routes every task to one of 21 domain-specialized agents — legal, finance, distribution, publishing, marketing, merchandise, social, road, publicist, and more — that share memory, context, and the artist's master catalog.
+indii consolidates all of this into **one AI-driven workspace powered by Connected Intelligence©**. A hub agent (`indii Conductor`) routes every task to one of 21 domain-specialized agents — legal, finance, distribution, publishing, marketing, merchandise, social, road, publicist, and more — that share memory, context, and the artist's master catalog.
 
 ## Scope Boundary (Critical)
 
@@ -48,8 +48,20 @@ indii begins at mastered-audio ingestion. It does **not** do:
 
 That line is the product's defining constraint. Feature requests that cross it should be declined or deferred.
 
+## Proprietary Technologies & Assets
+
+- **Connected Intelligence©**: One unified context fabric. What the artist decides or explores with one specialist (e.g., brand colors with the Brand Manager) is instantly known by every downstream department (e.g., the Art Department adheres to those exact hex codes and typography rules). Zero repetitive briefings.
+- **indii Conductor©**: The central hub-and-spoke multi-agent orchestrator, DAG execution router, and intent parser.
+- **Sonic DNA©**: Multimodal audio intelligence pipeline extracting harmonic key, BPM, LUFS, and mood classification.
+- **Brand Guard©**: Deterministic CIEDE2000 color matching, typography rules, and visual brand guideline enforcement engine.
+- **Format Foundry©**: Clean-room deterministic media transcode, DDEX ERN 4.3 packaging, and multi-platform asset export engine.
+- **Digital Handshake©**: Cryptographic split sheet, contract verification, and verifiable agent authorization protocol.
+- **Project White Glove©**: Guided catalog intake, metadata enrichment, and onboarding pipeline for founding artists.
+- **The Freedom Principle©**: Core operating doctrine guaranteeing 100% artist ownership and 0% royalty cut.
+
 ## Value Proposition
 
+- **Connected Intelligence©**: Unified cross-department knowledge sharing — not 15 disconnected SaaS silos
 - **One login, one context, one agent orchestrator** — not 15 disconnected SaaS tools
 - **Department-trained specialist agents**, not a single generalist that knows everything shallowly
 - **Vault-grade security**: delivered as an Electron desktop app so masters, SFTP credentials, distributor API keys, and artist contracts live in the OS keychain (keytar) and a local encrypted store — not in a browser

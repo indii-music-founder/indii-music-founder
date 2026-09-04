@@ -24,7 +24,7 @@ const legacyPillars = [
     hex: '#00FF66',
     glow: 'rgba(0, 255, 102, 0.25)',
     legacy: 'Independent artists often carry release, rights, campaign, and financial work without a shared operating system.',
-    indii: 'You set the direction. Connected specialists help prepare the relevant work from shared project context.',
+    indii: 'You set the direction. Connected Intelligence© ensures specialists share context—from brand rules to rights records—without you repeating yourself.',
   },
   {
     title: 'Financial Context',

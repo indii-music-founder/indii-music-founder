@@ -8,8 +8,8 @@ import { getStudioUrl } from '../../lib/auth';
 
 const founderIncludes = [
   'Permanent top-tier software access',
-  'Conductor and connected specialist access',
-  'Guided Project White Glove onboarding',
+  'Conductor and Connected Intelligence© specialist access',
+  'Guided Project White Glove© onboarding',
   'First year of included usage allowances',
   'Founding Artist Beta product updates',
   'Permanent Founding Owner recognition',

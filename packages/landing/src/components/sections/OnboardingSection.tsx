@@ -26,7 +26,7 @@ export default function OnboardingSection() {
           viewport={{ once: true, margin: '-100px' }}
         >
           <div className="mb-6 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.5)]">
-            Founder onboarding / Project White Glove
+            Founder onboarding / Project White Glove©
           </div>
           <h2 className="max-w-4xl text-5xl font-black leading-[0.93] tracking-[-0.055em] text-white md:text-7xl lg:text-[6.4rem]">
             Start with your real catalog,

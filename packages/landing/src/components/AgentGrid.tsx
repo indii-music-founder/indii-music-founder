@@ -136,7 +136,7 @@ const lifecycle: LifecycleStage[] = [
     label: 'Connected context',
     title: 'Carry what you learned into the next release.',
     outcome:
-      'Reuse the project record, approved assets, catalog information, and operating lessons instead of rebuilding your music business from zero every time.',
+      'Reuse the project record, approved assets, catalog information, and operating lessons instead of rebuilding your music business from zero every time. Connected Intelligence© ensures every release builds upon the last.',
     details: ['Reusable project context', 'Catalog continuity', 'Next-release starting point'],
     specialists: ['Conductor', 'Catalog', 'Financial Center'],
     route: 'Release Record → Lessons → Reusable Context → Next Release',
@@ -192,8 +192,8 @@ export default function AgentGrid() {
               <span className="block text-amber-400">Keep the context connected.</span>
             </h2>
             <p className="mt-8 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
-              Follow the work from finished music through planning, rights, delivery preparation, campaign, release, and financial tracking. The relevant
-              specialists use the same project context at every stage.
+              Follow the work from finished music through planning, rights, delivery preparation, campaign, release, and financial tracking. Powered by Connected Intelligence©,
+              the relevant specialists use the same project context at every stage.
             </p>
           </div>
         </motion.div>
@@ -290,7 +290,7 @@ export default function AgentGrid() {
                       ))}
                     </div>
                     <p className="mt-5 text-sm leading-relaxed text-white/60">
-                      Shared project context keeps this work connected. You review the decisions and remain in control.
+                      Shared project context keeps this work connected. Powered by Connected Intelligence©, what you decide with one specialist is immediately known by the next.
                     </p>
                   </div>
                   <div

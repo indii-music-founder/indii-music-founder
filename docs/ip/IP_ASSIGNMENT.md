@@ -38,6 +38,10 @@ This assignment covers:
 - **Commits:** 874
 - **Assignment:** Per Google's terms for automated tooling, generated code is owned by the project owner. All such code is assigned to New Detroit Music LLC.
 
+**Google Antigravity & Gemini 3 Agents (Google DeepMind / Google Cloud)**
+- **Scope:** Autonomous orchestration, codebase refactoring, platform architecture, multi-agent coordination, and technical documentation.
+- **Assignment:** Per Google Cloud / Google AI Terms of Service, all generated outputs, architectures, and code are owned by the account/project owner. All such contributions are assigned to New Detroit Music LLC.
+
 ### CI/CD Automation
 
 **GitHub Actions**  

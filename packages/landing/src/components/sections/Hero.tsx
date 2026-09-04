@@ -137,7 +137,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
               <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.4)]">
-                  The Freedom Principle
+                  The Freedom Principle©
                 </span>
                 <span className="rounded-full bg-white/[0.04] px-3 py-1 font-mono text-[9px] font-bold text-amber-300/90 border border-amber-400/30">
                   Artist-controlled workspace
@@ -157,10 +157,10 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                 <div className="rounded-xl border border-white/10 bg-black/60 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/20">
                   <div className="text-xs font-black uppercase tracking-wider text-white/90 flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#00C853] shadow-[0_0_8px_#00C853]" />
-                    The right help, in context
+                    Connected Intelligence©
                   </div>
                   <p className="mt-1.5 text-xs leading-relaxed text-white/70">
-                    Connected specialists help prepare the work while you remain the artist and decision-maker.
+                    Connected specialists help prepare the work while you remain the artist and decision-maker. Tell your brand manager your visual direction, and the art department already knows your guidelines.
                   </p>
                 </div>
               </div>

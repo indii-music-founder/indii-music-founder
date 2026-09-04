@@ -177,7 +177,7 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
     },
     {
         name: 'consult_specialist',
-        description: 'Consult a specialized agent using the P2P A2A Swarm protocol. Use this to query a specific specialist for targeted advice or generation.',
+        description: 'Consult a specialized agent using Connected Intelligence© (P2P A2A Swarm protocol). Use this to query a specific specialist for targeted advice, cross-domain context, or generation.',
         parameters: {
             type: 'OBJECT',
             properties: {

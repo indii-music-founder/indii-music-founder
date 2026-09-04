@@ -41,7 +41,7 @@ const tabs: TabItem[] = [
   {
     id: 'audio',
     label: 'Audio Intelligence',
-    badge: 'Sonic DNA',
+    badge: 'Sonic DNA©',
     icon: Activity,
     hex: '#00BCD4',
     glow: 'rgba(0, 188, 212, 0.35)',
@@ -176,14 +176,14 @@ export default function AppStudioShowcase() {
                       </h3>
                       <p className="mt-4 text-sm leading-relaxed text-white/60">
                         Type or speak in plain English. Conductor turns the goal into visible work, brings in the relevant specialists, and keeps the shared
-                        project context connected.
+                        project context connected through Connected Intelligence©.
                       </p>
                     </div>
 
                     <div className="mt-8 rounded-xl border border-amber-400/20 bg-amber-400/[0.04] p-5">
                       <div className="flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-amber-400">
                         <span>Example artist direction</span>
-                        <span>Shared project context</span>
+                        <span>Connected Intelligence©</span>
                       </div>
                       <p className="mt-2 font-medium text-white">
                         “Prepare a delivery-ready package for my summer single, build three artwork directions from my visual profile, and plan a 14-day
@@ -202,14 +202,14 @@ export default function AppStudioShowcase() {
                     <div className="mt-6 space-y-4">
                       {[
                         {
-                          dept: 'Audio Intelligence',
-                          task: 'Extracted Track DNA (124 BPM, F# Minor, Ethereal)',
-                          status: 'Complete',
+                          dept: 'Brand Manager',
+                          task: 'Synced Brand Guidelines (Emerald, Obsidian, Violet)',
+                          status: 'Connected',
                           color: 'text-emerald-400',
                         },
                         {
                           dept: 'Creative Director',
-                          task: 'Generated 3 Artwork Briefs (Minimalist Sans-Serif)',
+                          task: 'Ingested Brand Kit — Generated 3 Artwork Briefs',
                           status: 'Awaiting Artist Review',
                           color: 'text-amber-400',
                         },
@@ -252,21 +252,20 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#00FF66]">Creative Studio & Brand Guard</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#00FF66]">Creative Studio & Brand Guard©</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
                       Build release visuals <br />
                       from one shared direction.
                     </h3>
                     <p className="mt-4 text-sm leading-relaxed text-white/60">
-                      Upload reference assets or begin with a plain-language direction. Keep generated concepts, brand references, revisions, and approvals
-                      connected to the release.
+                      Upload reference assets or begin with a plain-language direction. Powered by Connected Intelligence©, the art department automatically works within the brand guidelines and color palettes established with your Brand Manager.
                     </p>
 
                     <div className="mt-6 grid grid-cols-2 gap-4">
                       <div className="rounded-xl border border-white/10 bg-[#0d0d0d] p-4 transition-colors hover:border-[#00FF66]/30">
-                        <div className="font-mono text-[9px] uppercase text-white/40">Brand Consistency</div>
-                        <div className="mt-2 text-3xl font-black text-[#00FF66]">In review</div>
-                        <div className="mt-1 text-[10px] text-white/50">Example brand check</div>
+                        <div className="font-mono text-[9px] uppercase text-white/40">Connected Intelligence©</div>
+                        <div className="mt-2 text-3xl font-black text-[#00FF66]">In sync</div>
+                        <div className="mt-1 text-[10px] text-white/50">Brand guidelines enforced</div>
                       </div>
                       <div className="rounded-xl border border-white/10 bg-[#0d0d0d] p-4 transition-colors hover:border-[#00FF66]/30">
                         <div className="font-mono text-[9px] uppercase text-white/40">Resolution Output</div>
@@ -379,7 +378,7 @@ export default function AppStudioShowcase() {
                   className="grid gap-8 lg:grid-cols-[1fr_1fr]"
                 >
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#00BCD4]">Audio Intelligence & DNA Extraction</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#00BCD4]">Audio Intelligence & Sonic DNA© Extraction</div>
                     <h3 className="mt-3 text-3xl font-black text-white md:text-4xl">
                       Understand your track <br />
                       down to the millisecond.
@@ -408,7 +407,7 @@ export default function AppStudioShowcase() {
                   {/* Audio Waveform Mockup */}
                   <div className="flex flex-col justify-between rounded-xl border border-[#00BCD4]/30 bg-[#03090e] p-6 font-mono shadow-[0_0_40px_rgba(0,188,212,0.1)]">
                     <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs">
-                      <span className="text-white/60">Audio DNA Analysis</span>
+                      <span className="text-white/60">Sonic DNA© Analysis</span>
                       <span className="text-[#00BCD4] font-bold">24-bit / 48kHz WAV</span>
                     </div>
 

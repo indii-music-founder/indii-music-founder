@@ -36,8 +36,8 @@ const workingSteps = [
   },
   {
     number: '04',
-    label: 'Keep the record',
-    text: 'Approved work returns to the project, where the next department can use the same context without asking you to start over.',
+    label: 'Connected Intelligence©',
+    text: 'Approved work returns to the project, where Connected Intelligence© ensures every department works from the same facts without asking you to start over.',
   },
 ];
 
@@ -68,8 +68,8 @@ export default function ConductorSection() {
               <span className="block text-amber-400 [text-shadow:0_0_35px_rgba(255,184,0,0.4)]">The whole system moves.</span>
             </h2>
             <p className="mt-10 max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
-              You should not have to become the integration layer for your own career. Give indii the direction. The same system can shape the plan, coordinate
-              the specialists, and return the work to one artist-controlled project.
+              You should not have to become the integration layer for your own career. Give indii the direction. Powered by Connected Intelligence©, the same system shapes the plan, coordinates
+              the specialists, and returns the work to one artist-controlled project.
             </p>
           </div>
         </motion.div>
@@ -185,7 +185,7 @@ export default function ConductorSection() {
           transition={{ duration: 1 }}
           className="mt-24 rounded-2xl border border-white/10 bg-black/60 py-10 text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
         >
-          <p className="text-2xl font-semibold tracking-[-0.025em] text-white md:text-4xl">Less tab management. More informed decisions.</p>
+          <p className="text-2xl font-semibold tracking-[-0.025em] text-white md:text-4xl">Less tab management. Connected Intelligence© across every department.</p>
         </motion.div>
       </div>
     </section>

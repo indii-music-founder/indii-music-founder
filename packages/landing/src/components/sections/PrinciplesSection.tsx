@@ -27,10 +27,10 @@ const operatingPrinciples = [
   },
   {
     number: '04',
-    label: 'Keep the record',
+    label: 'Connected Intelligence©',
     hex: '#00FF66',
     title: 'Let the next move begin with context.',
-    text: 'Approved assets and decisions return to the project so every department can work from the same facts without making you repeat yourself.',
+    text: 'Approved assets and decisions return to the project so every department can work from the same facts without making you repeat yourself. Connected Intelligence© ensures that what your brand manager defines, your art department executes.',
   },
 ];
 
