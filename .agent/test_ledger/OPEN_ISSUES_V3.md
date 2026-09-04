@@ -21,9 +21,10 @@
 
 - **Re-ticketed from:** ISSUE-785 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated (FOUNDER + PRODUCT)`)
 - **Scope note (2026-07-21):** engineering remainder ONLY. The founder/real-world portion of the original issue is NOT part of this ticket — it is tracked in `docs/RELEASE_CHECKLIST.md` § "Founder Music-Identity & Royalty Registrations (ISSUE-785)". Do not block this ticket on it.
-- **Status:** ⏳ BACKLOG — consolidated (FOUNDER + PRODUCT)
+- **Status:** ✅ FIXED (2026-09-04)
 - **Severity:** 🔴 HIGH
 - **Module:** Registration Center / Founder operations
+- **Evidence:** `FounderReadinessPanel.tsx` implements the organization-level Founder Readiness record separating founder prerequisites (PRO, MLC, SoundExchange, ISRC prefix, GTIN prefix, DDEX DPID) from per-track registrations. Verified by `FounderReadinessPanel.test.tsx` (2/2 tests passing).
 - **Summary:** The Registration Center tracks Copyright, ASCAP/BMI/SESAC, SoundExchange, and MLC per track, but does not track the organization-level prerequisites that make identifier issuance, DDEX delivery, or platform rights management legitimate.
 - **Founder checklist (verify prices again at purchase):**
   1. **US ISRC Rights Owner prefix:** apply using the legal rights-owner identity; current official page lists **$95** and up to 100,000 codes/year ([US ISRC Agency](https://redesign.usisrc.org/apply-for-an-isrc-account/?user-is-manager=false)). Music videos need distinct ISRCs from audio recordings.
@@ -46,10 +47,10 @@
 ### ISSUE-1122: Merlin readiness assumes exclusive rights instead of collecting proof
 
 - **Re-ticketed from:** ISSUE-800 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-09-04)
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / Keys Layer / Merlin
-- **Evidence:** `KeysPanel.tsx:53-59` maps every catalog track to `exclusive_rights: true`. The Python check also defaults missing `exclusive_rights` to `True` (`keys_manager.py:86-90`) and awards readiness points for that assumption (`:110-114`).
+- **Evidence:** `KeysPanel.tsx` and `keys_manager.py` enforce fail-closed rights evidence checks. Tracks without explicit rights evidence return `NOT_READY` with missing proof details rather than defaulting to true. Verified by `test_keys_manager.py` (5/5 tests passing).
 - **External constraint:** Merlin’s own membership path says applicants must control digital rights free from third-party obligations and comply with Merlin content policy before applying ([Merlin membership path](https://merlinnetwork.org/path-to-merlin-membership/)).
 - **Impact:** The app can report Merlin readiness for catalog it has not verified, including tracks distributed through another admin, containing samples, or under conflicting licenses.
 - **Fix:** Replace the heuristic with a rights-evidence checklist: master owner, territory, existing distributor/admin obligations, samples/loops, content-policy status, takedown/claim conflicts, and supporting documents. Missing proof should be `UNKNOWN`, not `true`.

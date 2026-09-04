@@ -124,4 +124,16 @@ describe('AgentVisualIdentity', () => {
             expect(getAgentColorContrast(identity.accent, identity.surface)).toBeGreaterThanOrEqual(3);
         }
     });
+
+    it('normalizes conductor and generalist alias IDs consistently', () => {
+        const generalist = resolveAgentVisualIdentity('generalist');
+        const conductor = resolveAgentVisualIdentity('conductor');
+
+        expect(conductor.displayName).toBe('indii Conductor');
+        expect(conductor.iconKey).toBe('sparkles');
+        expect(conductor.role).toBe('independent');
+        expect(conductor.accent).toBe(generalist.accent);
+        expect(conductor.initials).toBe('IC');
+    });
 });
+

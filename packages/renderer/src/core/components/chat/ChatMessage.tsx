@@ -61,6 +61,10 @@ import {
     type AgentVisualIconKey,
 } from '@/services/agent/AgentVisualIdentity';
 
+/**
+ * Canonical mapping between typed AgentVisualIconKey identifiers and Lucide icons.
+ * Any unmapped iconKey falls back to `bot` (Bot icon) at render time to prevent crashes.
+ */
 const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.freeze({
     bot: Bot,
     'briefcase-business': BriefcaseBusiness,
@@ -90,6 +94,12 @@ const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.fre
 interface MessageItemProps {
     msg: AgentMessage & { agentId?: string };
     avatarUrl?: string;
+    /**
+     * Display density:
+     * - 'default': standard conversational card with full margins and prose-sm typography.
+     * - 'compact': dense card with reduced padding (p-3), smaller typography (prose-xs, text-[9px]),
+     *   and tighter spacing suited for sidebars and docked panels.
+     */
     variant?: 'default' | 'compact';
     key?: React.Key;
 }
@@ -101,32 +111,46 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
     const currentProjectId = useStore(state => state.currentProjectId);
 
     useEffect(() => {
-        if (!currentProjectId || !planId) return;
+        if (!currentProjectId || !planId) {
+            setIsLoading(false);
+            return;
+        }
 
+        let isCancelled = false;
         let hasResolved = false;
         const fetchPlan = async () => {
             try {
                 const fetchedPlan = await livingPlanService.get(currentProjectId, planId);
-                hasResolved = true;
-                setPlan(fetchedPlan);
+                if (!isCancelled) {
+                    hasResolved = true;
+                    setPlan(fetchedPlan);
+                }
             } catch (e) {
-                hasResolved = true;
-                logger.error('Failed to load living plan:', e);
+                if (!isCancelled) {
+                    hasResolved = true;
+                    logger.error('Failed to load living plan:', e);
+                }
             } finally {
-                setIsLoading(false);
+                if (!isCancelled) {
+                    setIsLoading(false);
+                }
             }
         };
         fetchPlan();
 
-        // 10s timeout failsafe to prevent infinite loading
+        // 10s timeout failsafe: stops the loading skeleton after 10s if the network or Firestore
+        // hangs, preventing the UI from spinning indefinitely and allowing the user to retry.
         const timer = setTimeout(() => {
-            if (!hasResolved) {
+            if (!hasResolved && !isCancelled) {
                 logger.warn(`LivingPlanToolRenderer: fetchPlan timed out after 10s for planId ${planId}`);
                 setIsLoading(false);
             }
         }, 10000);
 
-        return () => clearTimeout(timer);
+        return () => {
+            isCancelled = true;
+            clearTimeout(timer);
+        };
     }, [planId, currentProjectId]);
 
     if (isLoading) return <div className="p-4 animate-pulse bg-cyan-500/5 rounded-lg border border-cyan-500/20 text-xs text-cyan-400">Fetching living plan...</div>;
@@ -136,15 +160,20 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
         if (!currentProjectId) return;
         try {
             await livingPlanService.approve(currentProjectId, planId);
-            const updated = await livingPlanService.get(currentProjectId, planId);
-            setPlan(updated);
             toast.success('Plan approved! Strategy is now active.');
-            
-            // Resume the agent loop with the approved plan
-            await agentService.resumeActivePlan(planId);
         } catch (e) {
             logger.error('Failed to approve plan:', e);
             toast.error('Failed to approve plan.');
+            return;
+        }
+
+        try {
+            const updated = await livingPlanService.get(currentProjectId, planId);
+            setPlan(updated);
+            // Resume the agent loop with the approved plan
+            await agentService.resumeActivePlan(planId);
+        } catch (e) {
+            logger.warn('Plan approved, but background refresh/resume encountered an issue:', e);
         }
     };
 
@@ -187,8 +216,8 @@ const MessageRating = memo(({ messageId, currentRating }: { messageId: string, c
             const { agentFirebaseConnector } = await import('@/services/agent/AgentFirebaseConnector');
             await agentFirebaseConnector.update(messageId, { rating });
         } catch (err) {
-            logger.error('[ChatMessage] Failed to save message rating:', err);
-            setOptimisticRating(currentRating);
+            logger.error('[ChatMessage] Failed to save message rating or load connector:', { messageId, rating, error: err });
+            setOptimisticRating(current => current === rating ? currentRating : current);
             updateAgentMessage(messageId, { rating: currentRating });
         }
     };
@@ -223,7 +252,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
         () => resolveAgentVisualIdentity(msg.agentId),
         [msg.agentId],
     );
-    const AgentIcon = AGENT_ICONS[agentIdentity.iconKey];
+    const AgentIcon = AGENT_ICONS[agentIdentity.iconKey] || AGENT_ICONS.bot || Bot;
     // Custom Markdown Components
     const { cleanText, extractedTools, planIdFallback } = useMemo(() => {
         const text = msg.text || '';
@@ -232,8 +261,10 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
 
         let strippedText = text;
         
-        // Match robust backend explicit tool delimiters BEFORE Markdown corruption
-        // We handle cases where the LLM hallucinates Markdown code blocks or escapes the brackets
+        // Tool delimiter parsing: Matches explicit backend tool delimiters `[Tool: name]...[End Tool name]`
+        // before markdown parsing, stripping execution payloads from the body text so that raw API payloads
+        // do not leak into the user's conversation bubble. Plan IDs from `propose_plan` or `get_plan` are
+        // captured to link the associated LivingPlan card.
         const toolRegex = /(?:```(?:json)?\s*)?(?:\\?\[)Tool:\s*([a-zA-Z0-9_]+)(?:\\?\])([\s\S]*?)(?:\\?\[)End Tool \1(?:\\?\])(?:\s*```)?/g;
         let match;
         
@@ -259,7 +290,9 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
             strippedText = strippedText.replace(match[0], '');
         }
 
-        // Legacy regex fallback for older chat histories missing the [End Tool] wrapper
+        // Legacy tool-block regex: Retained strictly for compatibility with older chat histories
+        // created prior to explicit [End Tool] pairing. Planned for removal once all legacy sessions
+        // are archived or migrated to persisted thoughts.
         const legacyToolRegex = /(?:```(?:json)?\s*)?(?:\\?\[)Tool:\s*([a-zA-Z0-9_]+)(?:\\?\])\s*(\{[\s\S]*?\})(?=\n*(?:(?:\\?\[)Tool:|```|$))(?:\n*```)?/g;
         let legacyMatch;
         while ((legacyMatch = legacyToolRegex.exec(strippedText)) !== null) {
@@ -299,7 +332,10 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                 const content = String(codeChildren || '');
                 const match = /language-(\w+)/.exec(className || '');
                 const isJson = match && match[1] === 'json';
-                if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return children;
+                const lowerContent = content.toLowerCase();
+                // Legal agreements bypass generic code blocks so they can render with specialized
+                // document formatting and contract action bars instead of raw monospace pre elements.
+                if (lowerContent.includes('# legal agreement') || lowerContent.includes('non-disclosure agreement')) return children;
                 if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (err: unknown) { logger.debug('[ChatMessage] JSON parse failed inside pre block:', err); } }
             }
             return <CodeBlock {...props}>{children}</CodeBlock>;
@@ -313,7 +349,8 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
             const match = /language-(\w+)/.exec(className || '')
             const isJson = match && match[1] === 'json';
             const childrenStr = String(children);
-            if (!inline && (childrenStr.includes('# LEGAL AGREEMENT') || childrenStr.includes('**NON-DISCLOSURE AGREEMENT**'))) return <ContractRenderer markdown={childrenStr} />;
+            const lowerStr = childrenStr.toLowerCase();
+            if (!inline && (lowerStr.includes('# legal agreement') || lowerStr.includes('non-disclosure agreement'))) return <ContractRenderer markdown={childrenStr} />;
             if (!inline && isJson) {
                 try {
                     const content = childrenStr.replace(/\n$/, '');
@@ -409,42 +446,44 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                     />
                 )}
 
-                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden wrap-break-word leading-normal font-medium tracking-tight`}>
-                    {cleanText ? (
-                        <>
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                components={markdownComponents}
+                {(cleanText || msg.isStreaming) && (
+                    <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden wrap-break-word leading-normal font-medium tracking-tight`}>
+                        {msg.role !== 'system' && cleanText ? (
+                            <>
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={markdownComponents}
+                                >
+                                    {cleanText}
+                                </ReactMarkdown>
+                                {msg.isStreaming && (
+                                    <span
+                                        data-testid="streaming-cursor"
+                                        className="inline-block w-1.5 h-3.5 bg-green-400 animate-pulse ml-1 align-middle rounded-xs"
+                                        aria-label="Generating response..."
+                                    />
+                                )}
+                            </>
+                        ) : msg.isStreaming ? (
+                            <div
+                                data-testid="agent-thinking-indicator"
+                                className="flex items-center gap-2 py-1.5 text-gray-400 text-xs animate-in fade-in duration-300"
                             >
-                                {cleanText}
-                            </ReactMarkdown>
-                            {msg.isStreaming && (
-                                <span
-                                    data-testid="streaming-cursor"
-                                    className="inline-block w-1.5 h-3.5 bg-green-400 animate-pulse ml-1 align-middle rounded-xs"
-                                    aria-label="Generating response..."
-                                />
-                            )}
-                        </>
-                    ) : msg.isStreaming ? (
-                        <div
-                            data-testid="agent-thinking-indicator"
-                            className="flex items-center gap-2 py-1.5 text-gray-400 text-xs animate-in fade-in duration-300"
-                        >
-                            <span className="flex gap-1 items-center">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-bounce [animation-delay:-0.3s]" />
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-bounce [animation-delay:-0.15s]" />
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-bounce" />
-                            </span>
-                            <span className="text-[11px] font-mono text-gray-400 italic">
-                                Working on it...
-                            </span>
-                        </div>
-                    ) : null}
-                </div>
+                                <span className="flex gap-1 items-center">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-bounce [animation-delay:-0.3s]" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-bounce [animation-delay:-0.15s]" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-bounce" />
+                                </span>
+                                <span className="text-[11px] font-mono text-gray-400 italic">
+                                    Working on it...
+                                </span>
+                            </div>
+                        ) : null}
+                    </div>
+                )}
 
                 {/* Metadata-driven Plan Rendering (Fallback/Secondary) */}
-                {msg.role === 'model' && planIdFallback && !extractedTools.find(t => t.name === 'propose_plan') && (
+                {msg.role === 'model' && planIdFallback && !extractedTools.some(t => t.name === 'propose_plan' && ((t.json.planId || t.json.data?.planId) === planIdFallback)) && (
                     <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <LivingPlanToolRenderer planId={planIdFallback} />
                     </div>
@@ -453,41 +492,62 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                 {msg.role === 'system' && <span>{msg.text}</span>}
 
                 {/* Render Extracted Tools (Parsed directly from text stream) */}
-                {msg.role === 'model' && extractedTools.length > 0 && (
-                    <div className="mt-4 flex flex-col gap-4">
-                        {extractedTools.map((tool, idx) => {
-                            if (tool.name === 'propose_plan' && (tool.json.planId || tool.json.data?.planId)) {
-                                return (
-                                    <div key={`ext-tool-${idx}`} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                        <LivingPlanToolRenderer planId={tool.json.planId || tool.json.data.planId} />
-                                    </div>
-                                );
-                            }
-                            
-                            if (tool.name === 'analyze_brand_consistency' && tool.json.analysis) {
-                                return (
-                                    <div key={`ext-tool-${idx}`} className="my-4 bg-green-900/10 rounded-xl border border-green-500/20 p-4">
-                                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
-                                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                                            <span className="text-xs font-bold text-green-300 uppercase tracking-widest">Brand Analysis Report</span>
+                {msg.role === 'model' && extractedTools.length > 0 && (() => {
+                    const seenPlanIds = new Set<string>();
+                    return (
+                        <div className="mt-4 flex flex-col gap-4">
+                            {extractedTools.map((tool, idx) => {
+                                if (tool.name === 'propose_plan') {
+                                    const pid = (tool.json.planId || tool.json.data?.planId) as string | undefined;
+                                    if (pid && !seenPlanIds.has(pid)) {
+                                        seenPlanIds.add(pid);
+                                        return (
+                                            <div key={`ext-tool-${idx}`} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                                <LivingPlanToolRenderer planId={pid} />
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                }
+                                
+                                if (tool.name === 'analyze_brand_consistency' && tool.json.analysis) {
+                                    return (
+                                        <div key={`ext-tool-${idx}`} className="my-4 bg-green-900/10 rounded-xl border border-green-500/20 p-4">
+                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
+                                                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                                <span className="text-xs font-bold text-green-300 uppercase tracking-widest">Brand Analysis Report</span>
+                                            </div>
+                                            <div className="prose prose-invert prose-sm max-w-none">
+                                                <ReactMarkdown components={{ p: ({ children }: { children?: React.ReactNode }) => <span className="block mb-2 last:mb-0">{children}</span> }}>
+                                                    {tool.json.analysis as string}
+                                                </ReactMarkdown>
+                                            </div>
                                         </div>
-                                        <div className="prose prose-invert prose-sm max-w-none">
-                                            <ReactMarkdown components={{ p: ({ children }: { children?: React.ReactNode }) => <span className="block mb-2 last:mb-0">{children}</span> }}>
-                                                {tool.json.analysis as string}
-                                            </ReactMarkdown>
-                                        </div>
-                                    </div>
-                                );
-                            }
+                                    );
+                                }
 
-                            // We let generate_image be handled by the thoughts array below, 
-                            // or we could add it here. For now we only handle non-image tools here.
-                            return null;
-                        })}
-                    </div>
-                )}
+                                return null;
+                            })}
+                        </div>
+                    );
+                })()}
 
-                {/* Robust Tool Result Rendering (Persisted via Thoughts) */}
+                {/* 
+                 * Tool Result Rendering (Persisted via Thoughts):
+                 * Renders rich interactive tool artifacts (images, generated contracts, feedback modals)
+                 * directly from persisted thought chains (`thought.type === 'tool_result'`) rather than
+                 * inline markdown text, ensuring clean visual separation between dialogue and artifacts.
+                 * 
+                 * Image Generation Precedence:
+                 * 1. Direct URLs (`json.urls` or `json.url`) are rendered first (stateless & fast).
+                 * 2. Asset ID lookup in `generatedHistory` store is used as a fallback if direct URLs are omitted.
+                 * 
+                 * Guide for Adding New Tool-Output Renderers Safely:
+                 * 1. Check `toolName` against typed tool names (e.g. `generate_image`, `generate_contract`).
+                 * 2. Safely parse JSON payload via `safeJsonParse` (debug-logged on parse failure).
+                 * 3. Filter array inputs to ensure strings/valid objects to avoid runtime crashes.
+                 * 4. Wrap outputs in an accessible, styled card with messageId and agentId bindings.
+                 */}
                 {msg.role === 'model' && msg.thoughts?.map((thought, tIdx) => {
                     if (thought.type !== 'tool_result') return null;
 
@@ -501,13 +561,18 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
 
                         const json = safeJsonParse(jsonStr); if (!json) return null;
                         const toolName = thought.toolName || 'unknown_tool';
+                        const rawUrls: string[] = Array.isArray(json.urls)
+                            ? json.urls.filter((u: unknown): u is string => typeof u === 'string' && u.trim().length > 0)
+                            : typeof json.url === 'string' && json.url.trim().length > 0
+                                ? [json.url.trim()]
+                                : [];
 
-                        if ((toolName === 'generate_image' || toolName === 'batch_edit_images' || toolName === 'generate_high_res_asset' || toolName === 'remix_image') && (json.urls || json.image_ids)) {
+                        if ((toolName === 'generate_image' || toolName === 'batch_edit_images' || toolName === 'generate_high_res_asset' || toolName === 'remix_image') && (rawUrls.length > 0 || json.image_ids)) {
                             // Prefer URLs from the tool output directly (stateless)
-                            if (json.urls && Array.isArray(json.urls)) {
+                            if (rawUrls.length > 0) {
                                 return (
                                     <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        {json.urls.map((url: string, idx: number) => (
+                                        {rawUrls.map((url: string, idx: number) => (
                                             <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} messageId={msg.id} agentId={msg.agentId || 'generalist'} />
                                         ))}
                                     </div>

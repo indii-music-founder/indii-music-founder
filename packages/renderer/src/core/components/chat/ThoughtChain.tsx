@@ -16,8 +16,9 @@ export const ThoughtChain = memo(({ thoughts, messageId, compact, defaultOpen = 
     // This intentionally initializes once: a user’s manual choice for an
     // already-mounted response must not be overwritten by a settings change.
     const [isOpen, setIsOpen] = useState(defaultOpen);
-    const contentId = `thought-chain-${messageId}`;
-    const buttonId = `thought-chain-btn-${messageId}`;
+    const sanitizedId = messageId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const contentId = `thought-chain-${sanitizedId}`;
+    const buttonId = `thought-chain-btn-${sanitizedId}`;
 
     if (!thoughts || thoughts.length === 0) return null;
 

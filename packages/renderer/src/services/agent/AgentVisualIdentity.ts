@@ -112,6 +112,7 @@ const WORKER_ALIASES: Readonly<Record<string, VisualAlias>> = Object.freeze({
 
 const INDEPENDENT_ALIASES: Readonly<Record<string, VisualAlias>> = Object.freeze({
     generalist: { displayName: 'indii Conductor', iconKey: 'sparkles' },
+    conductor: { displayName: 'indii Conductor', iconKey: 'sparkles' },
     analytics: { displayName: 'Analytics Director', iconKey: 'calculator' },
     rights: { displayName: 'Rights & Registration Director', iconKey: 'shield-check' },
 });
@@ -167,6 +168,7 @@ const DEPARTMENT_PALETTE: Readonly<Record<string, PaletteKey>> = Object.freeze({
 
 const INDEPENDENT_PALETTE: Readonly<Record<string, PaletteKey>> = Object.freeze({
     generalist: 'default',
+    conductor: 'default',
     analytics: 'distribution',
     rights: 'licensing',
 });
@@ -177,6 +179,18 @@ const DARK_TEXT = '#050608';
 const NORMAL_TEXT_CONTRAST = 4.5;
 const UI_CONTRAST = 3;
 
+/**
+ * Resolves canonical visual identity tokens (accent colors, labels, icons, and CSS variables)
+ * for an agent ID across Boardroom seats, chat message cards, and telemetry surfaces.
+ * 
+ * Normalization & Aliases:
+ * - Aliases like `'conductor'` are normalized to `'generalist'`.
+ * - Department heads and workers are matched against standard department registries.
+ * 
+ * Fallback Behavior:
+ * - Unknown or unregistered agent IDs resolve safely to a neutral fallback identity
+ *   with a neutral palette, bot icon, and 'Unknown Agent' label without throwing.
+ */
 export function resolveAgentVisualIdentity(
     agentId: string | null | undefined,
     options: ResolveAgentVisualIdentityOptions = {},
@@ -264,8 +278,14 @@ export function getAgentColorContrast(foreground: string, background: string): n
     return (lighter + 0.05) / (darker + 0.05);
 }
 
+/**
+ * Normalizes incoming agent IDs by trimming whitespace, lowercasing, and
+ * mapping aliases such as 'conductor' to 'generalist'.
+ * Falls back to 'unknown' when no valid ID is provided.
+ */
 function normalizeAgentId(agentId: string | null | undefined): string {
     const normalized = agentId?.trim().toLowerCase();
+    if (normalized === 'conductor') return 'generalist';
     return normalized || 'unknown';
 }
 

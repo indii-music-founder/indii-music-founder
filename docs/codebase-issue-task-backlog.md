@@ -1,5 +1,7 @@
 # Codebase Issue Task Backlog
 
+> **Status: ✅ RESOLVED (2026-09-04)** — All 10 typo patterns audited (0 occurrences in source), 25 bug fixes implemented/verified, 50 comment/documentation discrepancies resolved, and 1 test improvement added (`ChatMessage.companion.test.tsx`). Reconciled with `.agent/test_ledger/OPEN_ISSUES_V3.md`.
+
 This backlog captures small, reviewable follow-up tasks found during a static pass over the repository. Items are grouped exactly as requested: 10 typo fixes, 25 bug fixes, 50 comment/documentation discrepancy fixes, and 1 test improvement.
 
 ## Typo fixes (10)
