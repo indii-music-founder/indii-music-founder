@@ -145,7 +145,7 @@ jobs:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
       - name: Build shared package
-        run: npx tsc -b packages/shared
+        run: npx tsc -b packages/shared packages/video-compiler
 
       - name: Run unit tests (shard ${{ matrix.shard }}/20)
         timeout-minutes: 15
@@ -187,7 +187,7 @@ jobs:
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Build shared package
-        run: npx tsc -b packages/shared
+        run: npx tsc -b packages/shared packages/video-compiler
 
       - name: Run Firestore and Storage rules tests
         run: |
@@ -229,7 +229,7 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Build shared package
-        run: npx tsc -b packages/shared
+        run: npx tsc -b packages/shared packages/video-compiler
 
       - name: Run linting checks
         run: npm run lint

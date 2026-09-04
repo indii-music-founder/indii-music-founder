@@ -407,6 +407,8 @@ export default defineConfig({
                 '@': resolve(__dirname, 'packages/renderer/src'),
                 '@agents': resolve(__dirname, 'agents'),
                 '@shared': resolve(__dirname, 'packages/shared/src'),
+                '@indii/shared': resolve(__dirname, 'packages/shared/src'),
+                '@indii/video-compiler': resolve(__dirname, 'packages/video-compiler/src'),
             },
         },
         server: {

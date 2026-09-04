@@ -16,6 +16,7 @@ export default defineConfig({
             '@agents': path.resolve(__dirname, './agents'),
             '@shared': path.resolve(__dirname, './packages/shared/src'),
             '@indii/shared': path.resolve(__dirname, './packages/shared/src'),
+            '@indii/video-compiler': path.resolve(__dirname, './packages/video-compiler/src'),
         },
     },
     test: {

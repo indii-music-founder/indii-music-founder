@@ -13,6 +13,7 @@
         "@emotion/is-prop-valid": "1.4.0",
         "@hyperframes/player": "0.8.11",
         "@indii/shared": "*",
+        "@indii/video-compiler": "*",
         "@modelcontextprotocol/sdk": "^1.30.0",
         "@radix-ui/react-context-menu": "^2.2.16",
         "@radix-ui/react-dropdown-menu": "2.1.16",

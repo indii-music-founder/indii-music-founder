@@ -148,6 +148,8 @@ export default defineConfig({
             '@': resolve(__dirname, 'src'),
             '@agents': resolve(repoRoot, 'agents'),
             '@shared': resolve(repoRoot, 'packages/shared/src'),
+            '@indii/shared': resolve(repoRoot, 'packages/shared/src'),
+            '@indii/video-compiler': resolve(repoRoot, 'packages/video-compiler/src'),
             'react': resolve(repoRoot, 'node_modules/react'),
             'react-dom': resolve(repoRoot, 'node_modules/react-dom'),
         },
