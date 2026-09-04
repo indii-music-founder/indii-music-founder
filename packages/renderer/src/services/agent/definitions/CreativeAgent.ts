@@ -7,6 +7,7 @@ import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../
 import { McpTools } from '../tools/McpTools';
 import { StorageTools } from '../tools/StorageTools';
 import { VideoProjectTools } from '../tools/VideoProjectTools';
+import { EditorTools } from '../tools/EditorTools';
 
 const creativeRetrievalConfig = {
     canvases: {
@@ -69,6 +70,12 @@ export const CreativeAgent: AgentConfig = {
             canvas_add_layer: CanvasTools.canvas_add_layer,
             canvas_set_adjustments: CanvasTools.canvas_set_adjustments,
             canvas_export: CanvasTools.canvas_export,
+            video_list_renderable_assets: EditorTools.video_list_renderable_assets,
+            video_plan_sequence: EditorTools.video_plan_sequence,
+            video_plan_chain: EditorTools.video_plan_chain,
+            video_render_stitch: EditorTools.video_render_stitch,
+            video_render_chain: EditorTools.video_render_chain,
+            video_get_render_status: EditorTools.video_get_render_status,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: [
@@ -94,7 +101,13 @@ export const CreativeAgent: AgentConfig = {
         'canvas_open_image',
         'canvas_add_layer',
         'canvas_set_adjustments',
-        'canvas_export'
+        'canvas_export',
+        'video_list_renderable_assets',
+        'video_plan_sequence',
+        'video_plan_chain',
+        'video_render_stitch',
+        'video_render_chain',
+        'video_get_render_status'
     ],
     tools: [{
         functionDeclarations: [
@@ -303,6 +316,80 @@ export const CreativeAgent: AgentConfig = {
                         }
                     },
                     required: ["assetUrls"]
+                }
+            },
+            {
+                name: 'video_list_renderable_assets',
+                description: "List the user's finished video assets with duration, aspect ratio, and download URLs. Use before planning sequences.",
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        aspectRatio: { type: 'STRING', enum: ['16:9', '9:16'], description: 'Filter by aspect ratio.' },
+                        minDurationSeconds: { type: 'NUMBER', description: 'Filter by minimum duration in seconds.' }
+                    }
+                }
+            },
+            {
+                name: 'video_plan_sequence',
+                description: 'Plan a beat-snapped video timeline sequence from existing finished assets without rendering or spending credits.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        assetIds: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Array of at least 2 asset IDs in desired order.' },
+                        bpm: { type: 'NUMBER', description: 'Music BPM for beat snapping (default 120).' },
+                        beatSnapped: { type: 'BOOLEAN', description: 'Whether to snap cuts to nearest beat (default true).' },
+                        aspectRatio: { type: 'STRING', enum: ['16:9', '9:16'], description: 'Aspect ratio of sequence.' },
+                        transitionDurationSeconds: { type: 'NUMBER', description: 'Transition overlap in seconds (default 1.0).' }
+                    },
+                    required: ['assetIds']
+                }
+            },
+            {
+                name: 'video_plan_chain',
+                description: 'Plan a sequential beat-snapped video chain from existing assets.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        assetIds: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Array of at least 2 asset IDs.' },
+                        bpm: { type: 'NUMBER', description: 'Music BPM for beat snapping (default 120).' },
+                        aspectRatio: { type: 'STRING', enum: ['16:9', '9:16'], description: 'Aspect ratio.' }
+                    },
+                    required: ['assetIds']
+                }
+            },
+            {
+                name: 'video_render_stitch',
+                description: 'Submit a billable multi-segment video stitch render for an approved sequence plan. Requires explicit user approval and server cost reservation.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        planId: { type: 'STRING', description: 'Plan ID returned from video_plan_sequence.' },
+                        assetIds: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Optional asset IDs if planId is omitted.' },
+                        projectId: { type: 'STRING', description: 'Associated project ID.' },
+                        aspectRatio: { type: 'STRING', enum: ['16:9', '9:16'], description: 'Target aspect ratio.' }
+                    }
+                }
+            },
+            {
+                name: 'video_render_chain',
+                description: 'Submit a billable sequential video chain render. Requires explicit user approval and server cost reservation.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        planId: { type: 'STRING', description: 'Plan ID from video_plan_chain.' },
+                        assetIds: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Asset IDs if planId omitted.' }
+                    }
+                }
+            },
+            {
+                name: 'video_get_render_status',
+                description: 'Check the real-time status of a video render job (queued, rendering, succeeded, failed) and retrieve the final video URL.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        renderId: { type: 'STRING', description: 'Render ID returned by video_render_stitch.' }
+                    },
+                    required: ['renderId']
                 }
             }
         ]

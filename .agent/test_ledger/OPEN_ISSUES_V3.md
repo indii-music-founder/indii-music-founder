@@ -2687,7 +2687,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1403: Agent browser bridge (browser_tool) missing in packaged desktop builds
 
-- **Status:** ✅ FIXED locally (5f0f97f19) — push pending
+- **Status:** ✅ FIXED on origin/main (5f0f97f19)
 - **Severity:** 🔴 HIGH
 - **Module:** packages/main/src/handlers/agent.ts, packages/renderer/src/services/agent/tools/BrowserTools.ts
 - **Summary:** `agent:navigate-and-extract` / `agent:perform-action` were registered only under `if (!app.isPackaged)`; every shipped desktop build failed all browser_tool calls (ISSUE-972 cause #2, unlabelled). `agent:capture-state` was registered in prod but no session could exist outside dev. Matches ERROR_LEDGER pattern "IPC handlers not registered → renderer hangs" (env-gated registration).
@@ -2695,7 +2695,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1404: execute_code advertised as live but was a dead stub
 
-- **Status:** ✅ FIXED locally (a6f33cdeb) — push pending
+- **Status:** ✅ FIXED on origin/main (a6f33cdeb)
 - **Severity:** 🟡 MEDIUM
 - **Module:** packages/renderer/src/services/agent/tools/CodeExecutionTools.ts (deleted), tools/index.ts, ToolRiskRegistry.ts
 - **Summary:** stub always returned CODE_EXECUTION_DISABLED since the sidecar removal (74bca6fbb) while tool help text + risk registry still advertised it. No agent declared it.
@@ -2703,7 +2703,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1405: Client-controlled trialDays — arbitrary free trials
 
-- **Status:** ✅ FIXED locally (31788705e) — push pending
+- **Status:** ✅ FIXED on origin/main (31788705e)
 - **Severity:** 🔴 HIGH
 - **Module:** packages/firebase/src/subscription/createCheckoutSession.ts
 - **Summary:** `trialDays` came straight from `request.data` with only a `> 0` check — any caller could mint a years-long trial.
@@ -2807,12 +2807,16 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1416: Conductor agents cannot assemble finished films from existing rendered assets (CD agent has no editor tools)
 
-- **Status:** 🔴 OPEN — spec of record written, implementation not started
+- **Status:** ✅ FIXED (2026-09-03) — Full implementation & wiring:
+  1. `EditorTools.ts`: four core video editor tools (`video_list_renderable_assets`, `video_plan_sequence`, `video_render_stitch`, `video_get_render_status`) plus chain variants (`video_plan_chain`, `video_render_chain`), implementing beat-snapped timeline calculations (`calculateBeatSnappedTimeline`), fail-closed validation, server cost-reservation gate (`CostControlService`), and user approval gate (`ExecApprovalService`).
+  2. `ToolRiskRegistry.ts`: explicitly registered all 6 editor tools (read-only for discovery/planning/status, destructive/approval-gated for render submissions) avoiding phantom tool definitions.
+  3. `CreativeAgent.ts` & `VideoAgent.ts`: wired all editor tools into `functions`, `authorizedTools`, and `tools[0].functionDeclarations`.
+  4. System prompts (`agents/creative/prompt.md`, `agents/video/prompt.md`): replaced "cannot mix clips" with capability-accurate documentation for timeline sequencing, beat snapping, and stitch renders.
+  5. Tests: 21/21 passing tests across `EditorTools.test.ts`, `CreativeAgent.test.ts`, `VideoAgent.test.ts`, and `EditorBridgeAgentWiring.test.ts`. Full monorepo typecheck clean.
 - **Severity:** 🟡 MEDIUM (capability gap, no money/parity risk)
-- **Module:** packages/renderer/src/services/agent/tools/ (new EditorTools.ts), packages/renderer/src/services/video/PerformanceVideoService.ts
+- **Module:** packages/renderer/src/services/agent/tools/ (EditorTools.ts), packages/renderer/src/services/agent/definitions/ (CreativeAgent.ts, VideoAgent.ts), packages/renderer/src/services/agent/ToolRiskRegistry.ts
 - **Evidence (2026-08-28):** In-app Creative Director refused "mix these clips together" and proposed headless browser automation of external editors. The platform already owns the full pipeline: `renderVideo` callable → Inngest stitch → `videoJobs/{renderId}` (ISSUE-994 contract: `{compositionId, inputProps:{project}}`, returns renderId never a URL), `waitForJob` polling, `VideoTools` agent-tool precedent for billable video jobs, server cost reservation that fail-closes (ISSUE-1412). The missing layer is agent tools between "assets exist" and "stitch submitted": discover, plan, execute, report.
 - **Spec of record:** `docs/AGENT_VIDEO_EDITOR_BRIDGE.md` — four tools: `video_list_renderable_assets` (read-only, duration-unknown fails closed), `video_plan_sequence` (validated plan, no cost), `video_render_stitch` (HIGH-RISK billable: user-owned URIs only, reservation before callable, ExecApprovalService approval, honest terminal-state-only URL reporting), `video_get_render_status` (read-only). Headless external editors and ParallelRenderOrchestrator are explicit non-goals.
-- **Fix direction:** Implement per spec §4 in three slices (tools+risk registry+tests → tool-pool wiring + capability-accurate CD copy → optional UI↔agent plan interop via ScreenwriterStoryboardHandoff-style contract).
 - **Acceptance:** Agent conversation lists real assets, produces a validated plan, and after approval + reservation receives a real stitched URL; every failure mode yields an honest specific message (no fabricated success, ISSUE-950/952 lineage); all tools explicitly registered in ToolRiskRegistry (ISSUE-1404 rule: no phantom entries).
 
 ---

@@ -131,6 +131,12 @@ pub struct TiffDirectory {
     tags: Vec<TiffTag>,
 }
 
+impl Default for TiffDirectory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TiffDirectory {
     pub fn new() -> Self {
         Self { tags: Vec::new() }
@@ -227,7 +233,7 @@ impl TiffSerializer {
                     tag_data_blobs.push((data_offset, tag.data.clone()));
                     data_offset += tag.data.len();
                     // Align to 2-byte word boundary
-                    if data_offset % 2 != 0 {
+                    if !data_offset.is_multiple_of(2) {
                         data_offset += 1;
                     }
                 }

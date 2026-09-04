@@ -7,6 +7,12 @@ use byteorder::{ByteOrder, LittleEndian};
 
 pub struct SonyArwAdapter;
 
+impl Default for SonyArwAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SonyArwAdapter {
     pub fn new() -> Self {
         Self
@@ -102,7 +108,8 @@ impl RawAdapter for SonyArwAdapter {
                             // Multiple SubIFD offsets stored at offset
                             let off = tag.value_or_offset as usize;
                             if off + 4 <= bytes.len() {
-                                subifd_offset = Some(LittleEndian::read_u32(&bytes[off..off + 4]) as usize);
+                                subifd_offset =
+                                    Some(LittleEndian::read_u32(&bytes[off..off + 4]) as usize);
                             }
                         }
                     }
@@ -122,7 +129,10 @@ impl RawAdapter for SonyArwAdapter {
 
         // Preview extraction from IFD0 if JPEG
         let mut preview_jpeg: Option<Vec<u8>> = None;
-        if ifd0_strip_offset > 0 && ifd0_strip_bytes > 0 && ifd0_strip_offset + ifd0_strip_bytes <= bytes.len() {
+        if ifd0_strip_offset > 0
+            && ifd0_strip_bytes > 0
+            && ifd0_strip_offset + ifd0_strip_bytes <= bytes.len()
+        {
             let slice = &bytes[ifd0_strip_offset..ifd0_strip_offset + ifd0_strip_bytes];
             if slice.len() > 4 && slice[0] == 0xFF && slice[1] == 0xD8 {
                 preview_jpeg = Some(slice.to_vec());
@@ -184,7 +194,8 @@ impl RawAdapter for SonyArwAdapter {
                         for i in 0..(tag.count as usize) {
                             let p = off + i * 4;
                             if p + 4 <= bytes.len() {
-                                strip_offsets.push(LittleEndian::read_u32(&bytes[p..p + 4]) as usize);
+                                strip_offsets
+                                    .push(LittleEndian::read_u32(&bytes[p..p + 4]) as usize);
                             }
                         }
                     }
@@ -198,7 +209,8 @@ impl RawAdapter for SonyArwAdapter {
                         for i in 0..(tag.count as usize) {
                             let p = off + i * 4;
                             if p + 4 <= bytes.len() {
-                                strip_byte_counts.push(LittleEndian::read_u32(&bytes[p..p + 4]) as usize);
+                                strip_byte_counts
+                                    .push(LittleEndian::read_u32(&bytes[p..p + 4]) as usize);
                             }
                         }
                     }
@@ -232,6 +244,14 @@ impl RawAdapter for SonyArwAdapter {
 
         if width == 0 || height == 0 {
             return Err("Failed to resolve RAW image dimensions from ARW".to_string());
+        }
+
+        // Hostile-file & DoS protection: bounds check dimensions and pixel count
+        if width > 32768 || height > 32768 || (width as u64 * height as u64) > 150_000_000 {
+            return Err(format!(
+                "Dimensions {}x{} exceed safe maximum limits (32768x32768, 150MP)",
+                width, height
+            ));
         }
 
         // Parse EXIF and MakerNote for White Balance (0x7313)
@@ -305,31 +325,21 @@ impl RawAdapter for SonyArwAdapter {
             }
         }
 
-        // Camera Calibration & Baseline Exposure
-        // Sony ILCE-7 series requires +0.35 EV BaselineExposure lift to avoid dark renders
-        let baseline_exposure = 0.35;
-        let color_matrix1 = [
-            0.8638, -0.2974, -0.0403,
-            -0.5186, 1.3051, 0.2372,
-            -0.0827, 0.1691, 0.6729,
-        ];
-        let color_matrix2 = [
-            0.7323, -0.1983, -0.0617,
-            -0.4578, 1.2584, 0.2227,
-            -0.0768, 0.1704, 0.6482,
-        ];
+        // Camera Calibration & Baseline Exposure from Registry
+        let calibration = crate::model::CameraCalibrationRegistry::resolve(&make, &model);
 
         let metadata = RawMetadata {
             make,
             model: model.clone(),
-            unique_camera_model: format!("Sony {}", model),
+            unique_camera_model: calibration.unique_camera_model.clone(),
             orientation,
             as_shot_neutral,
-            color_matrix1,
-            color_matrix2,
-            calibration_illuminant1: 17,
-            calibration_illuminant2: 21,
-            baseline_exposure,
+            color_matrix1: calibration.color_matrix1,
+            color_matrix2: calibration.color_matrix2,
+            calibration_illuminant1: calibration.calibration_illuminant1,
+            calibration_illuminant2: calibration.calibration_illuminant2,
+            baseline_exposure: calibration.baseline_exposure,
+            calibration_provenance: calibration.provenance,
             iso,
             exposure_time,
             f_number,
@@ -364,10 +374,15 @@ impl RawAdapter for SonyArwAdapter {
         } else if compression == 6 {
             // Lossless JPEG segments
             if let Some(&first_offset) = strip_offsets.first() {
-                let total_bytes = strip_byte_counts.first().cloned().unwrap_or(bytes.len() - first_offset);
+                let total_bytes = strip_byte_counts
+                    .first()
+                    .cloned()
+                    .unwrap_or(bytes.len() - first_offset);
                 if first_offset + total_bytes <= bytes.len() {
                     let ljpeg_bytes = &bytes[first_offset..first_offset + total_bytes];
-                    if let Ok((decoded_samples, _dec_w, _dec_h, _, _)) = decode_lossless_jpeg(ljpeg_bytes) {
+                    if let Ok((decoded_samples, _dec_w, _dec_h, _, _)) =
+                        decode_lossless_jpeg(ljpeg_bytes)
+                    {
                         let count = decoded_samples.len().min(samples.len());
                         samples[..count].copy_from_slice(&decoded_samples[..count]);
                     }
@@ -389,7 +404,7 @@ impl RawAdapter for SonyArwAdapter {
             ));
         }
 
-        let active_area = [0, 0, height, width];
+        let active_area = calibration.active_area.unwrap_or([0, 0, height, width]);
 
         Ok(NormalizedRawImage {
             width,
@@ -397,8 +412,8 @@ impl RawAdapter for SonyArwAdapter {
             active_area,
             bit_depth: bits_per_sample,
             cfa_pattern,
-            black_level: 512,
-            white_level: 16383,
+            black_level: calibration.black_level as u32,
+            white_level: calibration.white_level as u32,
             samples,
             preview_jpeg,
             original_raw_bytes: Some(bytes.to_vec()),
@@ -415,7 +430,9 @@ fn decode_sony_craw(
     height: usize,
     raw_curve: Option<[u16; 4]>,
 ) -> Result<Vec<u16>, String> {
-    let first_offset = *strip_offsets.first().ok_or_else(|| "Missing strip offset for cRAW".to_string())?;
+    let first_offset = *strip_offsets
+        .first()
+        .ok_or_else(|| "Missing strip offset for cRAW".to_string())?;
     let mut image = vec![0u16; width * height];
 
     // Build curve table (0..4095) from Tag 0x7010
@@ -458,11 +475,11 @@ fn decode_sony_craw(
             let mut pixels = [0u16; 16];
             let mut bit = 30usize;
 
-            for i in 0..16 {
+            for (i, p) in pixels.iter_mut().enumerate() {
                 if i == max_idx {
-                    pixels[i] = max_val;
+                    *p = max_val;
                 } else if i == min_idx {
-                    pixels[i] = min_val;
+                    *p = min_val;
                 } else {
                     let byte_off = data_idx + (bit >> 3);
                     let w = if byte_off + 2 <= row_bytes.len() {
@@ -472,9 +489,9 @@ fn decode_sony_craw(
                     } else {
                         0u16
                     };
-                    let delta = (((w >> (bit & 7)) & 0x7f) << shift) as u16;
+                    let delta = ((w >> (bit & 7)) & 0x7f) << shift;
                     bit += 7;
-                    pixels[i] = (delta + min_val).min(0x7ff);
+                    *p = (delta + min_val).min(0x7ff);
                 }
             }
 
@@ -516,6 +533,10 @@ pub fn read_ifd_tags(bytes: &[u8], offset: usize) -> Result<Vec<IfdEntry>, Strin
     }
 
     let num_entries = LittleEndian::read_u16(&bytes[offset..offset + 2]) as usize;
+    let max_possible = bytes.len().saturating_sub(offset + 2) / 12;
+    if num_entries > max_possible || num_entries > 4096 {
+        return Err("Pathological or corrupted IFD tag count".to_string());
+    }
     let mut entries = Vec::with_capacity(num_entries);
     let mut curr = offset + 2;
 

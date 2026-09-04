@@ -42,6 +42,17 @@ vi.mock('../tools/StorageTools', () => ({
     }
 }));
 
+vi.mock('../tools/EditorTools', () => ({
+    EditorTools: {
+        video_list_renderable_assets: vi.fn(),
+        video_plan_sequence: vi.fn(),
+        video_plan_chain: vi.fn(),
+        video_render_stitch: vi.fn(),
+        video_render_chain: vi.fn(),
+        video_get_render_status: vi.fn(),
+    }
+}));
+
 describe('VideoAgent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -70,6 +81,12 @@ describe('VideoAgent', () => {
         expect(VideoAgent.authorizedTools).toContain('inspect_video_project');
         expect(VideoAgent.authorizedTools).toContain('add_video_clip');
         expect(VideoAgent.authorizedTools).toContain('update_video_clip');
+        expect(VideoAgent.authorizedTools).toContain('video_list_renderable_assets');
+        expect(VideoAgent.authorizedTools).toContain('video_plan_sequence');
+        expect(VideoAgent.authorizedTools).toContain('video_plan_chain');
+        expect(VideoAgent.authorizedTools).toContain('video_render_stitch');
+        expect(VideoAgent.authorizedTools).toContain('video_render_chain');
+        expect(VideoAgent.authorizedTools).toContain('video_get_render_status');
     });
 
     it('should map the functions to correct tool implementations', () => {
@@ -88,5 +105,11 @@ describe('VideoAgent', () => {
         expect(VideoAgent.functions!.inspect_video_project).toBeDefined();
         expect(VideoAgent.functions!.add_video_clip).toBeDefined();
         expect(VideoAgent.functions!.update_video_clip).toBeDefined();
+        expect(VideoAgent.functions!.video_list_renderable_assets).toBeDefined();
+        expect(VideoAgent.functions!.video_plan_sequence).toBeDefined();
+        expect(VideoAgent.functions!.video_plan_chain).toBeDefined();
+        expect(VideoAgent.functions!.video_render_stitch).toBeDefined();
+        expect(VideoAgent.functions!.video_render_chain).toBeDefined();
+        expect(VideoAgent.functions!.video_get_render_status).toBeDefined();
     });
 });

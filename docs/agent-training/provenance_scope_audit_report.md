@@ -1,6 +1,6 @@
 # Sonic Director Provenance and Scope Audit Report
 
-This report documents the thorough provenance and scope audit executed on the Sonic Director (Music Agent) training dataset located at [music.jsonl](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/0068b233-5930-416c-a739-95581fcab611/.system_generated/worktrees/subagent-Training-Data-Auditor-self-e291d627/docs/agent-training/datasets/music.jsonl).
+This report documents the thorough provenance and scope audit executed on the Sonic Director (Music Agent) training dataset located at [music.jsonl](worktrees/subagent-Training-Data-Auditor-self-e291d627/docs/agent-training/datasets/music.jsonl).
 
 ---
 
@@ -33,7 +33,7 @@ An initial scan of the original 428-entry dataset revealed:
 
 ## 3. Transformation & Patching Strategy
 
-A custom, deterministic transformation script [rewrite_music_dataset.py](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/a59b3cb3-60f7-4834-b24c-6a6bce872735/scratch/rewrite_music_dataset.py) was run to process the dataset systematically:
+A custom, deterministic transformation script [rewrite_music_dataset.py](rewrite_music_dataset.py) was run to process the dataset systematically:
 
 ### A. Pruning Unsalvageable Material
 * **6 entries** containing pure, unsalvageable DAW shortcuts, importing session profiles, or creative composition advice were **completely removed** to protect the model's domain focus.
@@ -54,7 +54,7 @@ A custom, deterministic transformation script [rewrite_music_dataset.py](file://
 
 ## 4. Final Verification & Quality Control
 
-A dedicated validation suite [verify_rewritten_dataset.py](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/a59b3cb3-60f7-4834-b24c-6a6bce872735/scratch/verify_rewritten_dataset.py) was run on the resulting file to enforce strict compliance:
+A dedicated validation suite [verify_rewritten_dataset.py](verify_rewritten_dataset.py) was run on the resulting file to enforce strict compliance:
 
 ```
 Total lines in dataset: 422
@@ -74,8 +74,8 @@ PASSED: The rewritten dataset is 100% compliant, uses only allowed tools, and is
 
 ## 5. Summary of Files
 
-* **Target File:** [music.jsonl](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/0068b233-5930-416c-a739-95581fcab611/.system_generated/worktrees/subagent-Training-Data-Auditor-self-e291d627/docs/agent-training/datasets/music.jsonl) (Fully audited, updated, and validated)
+* **Target File:** [music.jsonl](worktrees/subagent-Training-Data-Auditor-self-e291d627/docs/agent-training/datasets/music.jsonl) (Fully audited, updated, and validated)
 * **Auditing Scripts:**
-  - [rewrite_music_dataset.py](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/a59b3cb3-60f7-4834-b24c-6a6bce872735/scratch/rewrite_music_dataset.py)
-  - [surgical_patch_failed_lines.py](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/a59b3cb3-60f7-4834-b24c-6a6bce872735/scratch/surgical_patch_failed_lines.py)
-  - [verify_rewritten_dataset.py](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.gemini/antigravity/brain/a59b3cb3-60f7-4834-b24c-6a6bce872735/scratch/verify_rewritten_dataset.py)
+  - [rewrite_music_dataset.py](rewrite_music_dataset.py)
+  - [surgical_patch_failed_lines.py](surgical_patch_failed_lines.py)
+  - [verify_rewritten_dataset.py](verify_rewritten_dataset.py)

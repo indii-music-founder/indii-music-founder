@@ -44,6 +44,17 @@ vi.mock('../tools/StorageTools', () => ({
     }
 }));
 
+vi.mock('../tools/EditorTools', () => ({
+    EditorTools: {
+        video_list_renderable_assets: vi.fn(),
+        video_plan_sequence: vi.fn(),
+        video_plan_chain: vi.fn(),
+        video_render_stitch: vi.fn(),
+        video_render_chain: vi.fn(),
+        video_get_render_status: vi.fn(),
+    }
+}));
+
 describe('CreativeAgent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -74,6 +85,12 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.authorizedTools).toContain('analyze_visual_trends');
         expect(CreativeAgent.authorizedTools).toContain('queue_video_render');
         expect(CreativeAgent.authorizedTools).toContain('queue_release_canvas_render');
+        expect(CreativeAgent.authorizedTools).toContain('video_list_renderable_assets');
+        expect(CreativeAgent.authorizedTools).toContain('video_plan_sequence');
+        expect(CreativeAgent.authorizedTools).toContain('video_plan_chain');
+        expect(CreativeAgent.authorizedTools).toContain('video_render_stitch');
+        expect(CreativeAgent.authorizedTools).toContain('video_render_chain');
+        expect(CreativeAgent.authorizedTools).toContain('video_get_render_status');
     });
 
     it('should map the functions to correct tool implementations', () => {
@@ -94,5 +111,11 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.functions!.analyze_visual_trends).toBeDefined();
         expect(CreativeAgent.functions!.queue_video_render).toBeDefined();
         expect(CreativeAgent.functions!.queue_release_canvas_render).toBeDefined();
+        expect(CreativeAgent.functions!.video_list_renderable_assets).toBeDefined();
+        expect(CreativeAgent.functions!.video_plan_sequence).toBeDefined();
+        expect(CreativeAgent.functions!.video_plan_chain).toBeDefined();
+        expect(CreativeAgent.functions!.video_render_stitch).toBeDefined();
+        expect(CreativeAgent.functions!.video_render_chain).toBeDefined();
+        expect(CreativeAgent.functions!.video_get_render_status).toBeDefined();
     });
 });

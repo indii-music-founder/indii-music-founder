@@ -79,7 +79,8 @@ pub fn decode_dng_cfa(bytes: &[u8]) -> Result<(Vec<u16>, u32, u32, CfaPattern, S
                     for i in 0..(tag.count as usize) {
                         let p = off + i * 4;
                         if p + 4 <= bytes.len() {
-                            tile_byte_counts.push(LittleEndian::read_u32(&bytes[p..p + 4]) as usize);
+                            tile_byte_counts
+                                .push(LittleEndian::read_u32(&bytes[p..p + 4]) as usize);
                         }
                     }
                 }
@@ -119,34 +120,36 @@ pub fn decode_dng_cfa(bytes: &[u8]) -> Result<(Vec<u16>, u32, u32, CfaPattern, S
     let total_pixels = (width as usize) * (height as usize);
     let mut samples = vec![0u16; total_pixels];
 
-    if compression == 7 && tile_w.is_some() && tile_h.is_some() {
-        // Lossless JPEG tiles
-        let tw = tile_w.unwrap() as usize;
-        let th = tile_h.unwrap() as usize;
-        let tiles_x = ((width as usize) + tw - 1) / tw;
-        let tiles_y = ((height as usize) + th - 1) / th;
+    if compression == 7 {
+        if let (Some(tile_width), Some(tile_height)) = (tile_w, tile_h) {
+            // Lossless JPEG tiles
+            let tw = tile_width as usize;
+            let th = tile_height as usize;
+            let tiles_x = (width as usize).div_ceil(tw);
+            let tiles_y = (height as usize).div_ceil(th);
 
-        let mut tile_idx = 0;
-        for ty in 0..tiles_y {
-            for tx in 0..tiles_x {
-                if tile_idx >= tile_offsets.len() || tile_idx >= tile_byte_counts.len() {
-                    break;
-                }
-                let off = tile_offsets[tile_idx];
-                let count = tile_byte_counts[tile_idx];
-                tile_idx += 1;
+            let mut tile_idx = 0;
+            for ty in 0..tiles_y {
+                for tx in 0..tiles_x {
+                    if tile_idx >= tile_offsets.len() || tile_idx >= tile_byte_counts.len() {
+                        break;
+                    }
+                    let off = tile_offsets[tile_idx];
+                    let count = tile_byte_counts[tile_idx];
+                    tile_idx += 1;
 
-                if off + count <= bytes.len() {
-                    let tile_data = &bytes[off..off + count];
-                    let (decoded, cur_w, cur_h, _, _) = decode_lossless_jpeg(tile_data)?;
-                    let start_x = tx * tw;
-                    let start_y = ty * th;
-                    for r in 0..cur_h {
-                        let dst_row_start = (start_y + r) * (width as usize) + start_x;
-                        let src_row_start = r * cur_w;
-                        let copy_len = cur_w.min((width as usize) - start_x);
-                        samples[dst_row_start..dst_row_start + copy_len]
-                            .copy_from_slice(&decoded[src_row_start..src_row_start + copy_len]);
+                    if off + count <= bytes.len() {
+                        let tile_data = &bytes[off..off + count];
+                        let (decoded, cur_w, cur_h, _, _) = decode_lossless_jpeg(tile_data)?;
+                        let start_x = tx * tw;
+                        let start_y = ty * th;
+                        for r in 0..cur_h {
+                            let dst_row_start = (start_y + r) * (width as usize) + start_x;
+                            let src_row_start = r * cur_w;
+                            let copy_len = cur_w.min((width as usize) - start_x);
+                            samples[dst_row_start..dst_row_start + copy_len]
+                                .copy_from_slice(&decoded[src_row_start..src_row_start + copy_len]);
+                        }
                     }
                 }
             }
@@ -195,17 +198,22 @@ pub fn verify_cfa_equality(
     let mut diff_count = 0usize;
     let min_len = source_raw.samples.len().min(dng_samples.len());
 
-    for i in 0..min_len {
-        if source_raw.samples[i] != dng_samples[i] {
+    for (i, (&src_s, &dng_s)) in source_raw.samples[..min_len]
+        .iter()
+        .zip(&dng_samples[..min_len])
+        .enumerate()
+    {
+        if src_s != dng_s {
             if diff_count < 5 {
-                eprintln!("Diff at {}: source={}, dng={}", i, source_raw.samples[i], dng_samples[i]);
+                eprintln!("Diff at {}: source={}, dng={}", i, src_s, dng_s);
             }
             diff_count += 1;
         }
     }
 
     if source_raw.samples.len() != dng_samples.len() {
-        diff_count += (source_raw.samples.len() as isize - dng_samples.len() as isize).unsigned_abs();
+        diff_count +=
+            (source_raw.samples.len() as isize - dng_samples.len() as isize).unsigned_abs();
         issues.push(format!(
             "Total sample count mismatch: source {}, DNG {}",
             source_raw.samples.len(),

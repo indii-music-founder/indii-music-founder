@@ -53,7 +53,8 @@ pub fn inspect_raw(path: &Path) -> Result<InspectReport, String> {
     let bytes = fs::read(path).map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
 
     let adapter = get_adapter_for(&bytes).ok_or_else(|| {
-        "Unsupported RAW format or camera make. Currently supported: Sony Alpha series ARW.".to_string()
+        "Unsupported RAW format or camera make. Currently supported: Sony Alpha series ARW."
+            .to_string()
     })?;
 
     let raw = adapter.parse(&bytes)?;
@@ -107,7 +108,7 @@ pub fn convert_raw(
         .unwrap_or(0);
 
     let duration = start.elapsed().as_millis() as u64;
-    let ratio = if bytes.len() > 0 {
+    let ratio = if !bytes.is_empty() {
         output_bytes as f64 / bytes.len() as f64
     } else {
         0.0

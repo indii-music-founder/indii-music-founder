@@ -46,6 +46,9 @@ export const FEATURE_FLAG_NAMES = {
     // Shell modules that are not ready for user-facing production.
     // Enabled in dev mode or via VITE_SHOW_DEV_MODULES=true.
     DEV_MODULES: 'enable_dev_modules',
+
+    // ---- Experimental tools (Part III: kept behind flag pending product placement) ----
+    RAW_CONVERTER: 'enable_raw_converter',
 } as const;
 
 export type FeatureFlagName = typeof FEATURE_FLAG_NAMES[keyof typeof FEATURE_FLAG_NAMES];
@@ -75,6 +78,9 @@ const DEFAULTS: Record<string, boolean> = {
 
     // Dev-only modules — enabled in dev or via VITE_SHOW_DEV_MODULES=true
     [FEATURE_FLAG_NAMES.DEV_MODULES]: import.meta.env.DEV || import.meta.env.VITE_SHOW_DEV_MODULES === 'true',
+
+    // Experimental modules — disabled by default pending product placement
+    [FEATURE_FLAG_NAMES.RAW_CONVERTER]: false,
 };
 
 // ============================================================================
@@ -94,6 +100,9 @@ export const GATED_MODULES: Record<string, ModuleId[]> = {
 
     // Dev-only shell modules — hidden in production, visible in dev mode
     [FEATURE_FLAG_NAMES.DEV_MODULES]: ['debug', 'capture', 'desktop', 'memory', 'select-org'],
+
+    // Experimental capability — kept behind flag until product placement is decided
+    [FEATURE_FLAG_NAMES.RAW_CONVERTER]: ['raw-converter'],
 };
 
 /**

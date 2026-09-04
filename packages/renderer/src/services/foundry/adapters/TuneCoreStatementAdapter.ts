@@ -2,7 +2,8 @@ import {
   NormalizedStatementReport,
   NormalizedStatementTransaction,
   QuarantinedRow,
-  ParseOptions
+  ParseOptions,
+  DecimalMoney,
 } from '@indii/shared';
 
 export class TuneCoreStatementAdapter {
@@ -38,8 +39,8 @@ export class TuneCoreStatementAdapter {
     const transactions: NormalizedStatementTransaction[] = [];
     const quarantinedRows: QuarantinedRow[] = [];
 
-    let totalGrossRevenue = 0;
-    let totalNetRevenue = 0;
+    let grossAcc = DecimalMoney.zero();
+    let netAcc = DecimalMoney.zero();
     let totalQuantity = 0;
     let totalStreams = 0;
     let totalDownloads = 0;
@@ -51,28 +52,28 @@ export class TuneCoreStatementAdapter {
     for (let i = 0; i < dataLines.length; i++) {
       const lineIndex = i + 2;
       const line = dataLines[i]!;
-      const parts = line.split(',');
+      const parts = line.split(',').map((p) => p.replace(/^"|"$/g, '').trim());
 
       const isrc = getCol(parts, 'isrc');
       const upc = getCol(parts, 'upc');
       const store = getCol(parts, 'store name') || 'Unknown Store';
       const artist = getCol(parts, 'artist') || 'Unknown Artist';
+      const songTitle = getCol(parts, 'song title') || 'Untitled';
       const releaseTitle = getCol(parts, 'release title');
-      const songTitle = getCol(parts, 'song title') || releaseTitle || 'Untitled';
       const salesPeriod = getCol(parts, 'sales period');
-      const country = getCol(parts, 'country of sale') || 'US';
-      const rawEarned = getCol(parts, 'total earned');
+      const country = getCol(parts, 'country') || 'US';
+      const rawEarnings = getCol(parts, 'total earned');
       const rawQuantity = getCol(parts, 'quantity');
 
-      const earnings = parseFloat(rawEarned.replace(/[^0-9.-]/g, ''));
+      const earnings = parseFloat(rawEarnings.replace(/[^0-9.-]/g, ''));
       const quantity = parseInt(rawQuantity.replace(/[^0-9-]/g, ''), 10) || 0;
 
-      if (isNaN(earnings) || !isrc) {
+      if (isNaN(earnings) || !isrc || isrc === 'MALFORMED_ISRC') {
         quarantinedRows.push({
           lineIndex,
           rawContent: line,
-          reason: isNaN(earnings) ? 'Invalid earned amount' : 'Missing ISRC',
-          errorCode: isNaN(earnings) ? 'ERR_INVALID_NUMERIC' : 'ERR_MISSING_ISRC',
+          reason: isNaN(earnings) ? 'Invalid total earned number' : 'Missing or malformed ISRC',
+          errorCode: isNaN(earnings) ? 'ERR_INVALID_NUMERIC' : 'ERR_INVALID_ISRC',
           severity: 'warning',
         });
         continue;
@@ -84,8 +85,9 @@ export class TuneCoreStatementAdapter {
       if (txnType === 'download') totalDownloads += quantity;
       else totalStreams += quantity;
 
-      totalGrossRevenue += earnings;
-      totalNetRevenue += earnings;
+      const earningsMoney = DecimalMoney.fromFloat(earnings);
+      grossAcc = grossAcc.add(earningsMoney);
+      netAcc = netAcc.add(earningsMoney);
       totalQuantity += quantity;
 
       if (!periodStart && salesPeriod) periodStart = salesPeriod;
@@ -124,9 +126,9 @@ export class TuneCoreStatementAdapter {
       reportId: `RPT-TC-${Date.now()}`,
       reportingEntity: 'TuneCore',
       currency: 'USD',
-      totalGrossRevenue: Math.round(totalGrossRevenue * 100) / 100,
+      totalGrossRevenue: grossAcc.toFloat(),
       totalDistributorFees: 0,
-      totalNetRevenue: Math.round(totalNetRevenue * 100) / 100,
+      totalNetRevenue: netAcc.toFloat(),
       totalQuantity,
       totalStreams,
       totalDownloads,
@@ -137,7 +139,7 @@ export class TuneCoreStatementAdapter {
       provenance: {
         evidenceSha256: 'computed-on-ingest',
         parsedAt: new Date().toISOString(),
-        deterministicHash: `det-tc-${transactions.length}-${Math.round(totalNetRevenue * 100)}`,
+        deterministicHash: `det-tc-${transactions.length}-${netAcc.toCents()}`,
       },
     };
   }

@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary & Objective
 
-An audit of indiiOS Layer 1 autonomous loop and workflow subsystems ([`AgentLoopService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/orchestration/AgentLoopService.ts), [`WorkflowStateService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/WorkflowStateService.ts), [`AgentGraphService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/orchestration/AgentGraphService.ts), and backend [`CampaignFSM.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/firebase/src/orchestration/fsm/machine.ts)) revealed five critical failure modes:
+An audit of indiiOS Layer 1 autonomous loop and workflow subsystems ([`AgentLoopService.ts`](packages/renderer/src/services/agent/orchestration/AgentLoopService.ts), [`WorkflowStateService.ts`](packages/renderer/src/services/agent/WorkflowStateService.ts), [`AgentGraphService.ts`](packages/renderer/src/services/agent/orchestration/AgentGraphService.ts), and backend [`CampaignFSM.ts`](packages/firebase/src/orchestration/fsm/machine.ts)) revealed five critical failure modes:
 
 1. **In-Memory State Volatility:** `AgentLoopService` execution records live solely in an in-memory `Map`, lost on any tab reload or process restart.
 2. **Non-Transactional Workflow State Mutations:** `WorkflowStateService` and `CampaignFSM` execute non-atomic read-then-write steps, vulnerable to race conditions and lost updates under concurrent agent execution.
@@ -35,7 +35,7 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
 | **WP-D2** | Context Trimming & Memory Capping (`AgentGraphService.ts`) | **Completed** | `AgentGraphService.hardening.test.ts` |
 | **WP-E** | Distributed Lease Locking & Deadlines (`AgentGraphService.ts`) | **Completed** | `AgentGraphService.hardening.test.ts` |
 
-**Committed on `main`:** Commit [`4b1e77f4a`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder) with all 5 pre-commit quality gates passed.
+**Committed on `main`:** Commit `4b1e77f4a` with all 5 pre-commit quality gates passed.
 
 ---
 
@@ -43,7 +43,7 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
 
 ### WP-A: Durable Firestore Persistence & Resumption for AgentLoopService
 
-* **Target File:** [`packages/renderer/src/services/agent/orchestration/AgentLoopService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/orchestration/AgentLoopService.ts)
+* **Target File:** [`packages/renderer/src/services/agent/orchestration/AgentLoopService.ts`](packages/renderer/src/services/agent/orchestration/AgentLoopService.ts)
 * **Target Schema:** `packages/shared/src/schemas/agentLoop.ts` (if updates needed)
 
 #### Implementation Steps:
@@ -57,7 +57,7 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
 5. Implement `getResumableLoops(userId: string)` to surface pending loops on application startup.
 
 #### Test Plan:
-* Update [`packages/renderer/src/services/agent/orchestration/AgentLoopService.test.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/orchestration/AgentLoopService.test.ts):
+* Update [`packages/renderer/src/services/agent/orchestration/AgentLoopService.test.ts`](packages/renderer/src/services/agent/orchestration/AgentLoopService.test.ts):
   - Test initial loop persistence to Firestore mock.
   - Test resumption from iteration 2 of an interrupted 3-iteration loop.
   - Verify that `getExecution` retrieves from Firestore if not in active memory cache.
@@ -67,7 +67,7 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
 ### WP-B: Atomic Firestore Transactions for Workflow Execution
 
 #### Sub-package B1: `WorkflowStateService.ts`
-* **Target File:** [`packages/renderer/src/services/agent/WorkflowStateService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/WorkflowStateService.ts)
+* **Target File:** [`packages/renderer/src/services/agent/WorkflowStateService.ts`](packages/renderer/src/services/agent/WorkflowStateService.ts)
 * **Problem:** Methods `markStepExecuting`, `advanceStep`, `skipStep`, `failStep` execute plain `get()` then `set()` which overwrites the entire document, causing race conditions when steps run in parallel.
 * **Implementation:**
   1. Import `runTransaction` and `doc` from `firebase/firestore`.
@@ -85,7 +85,7 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
   4. Apply identical transactional patterns to `skipStep` and `failStep`.
 
 #### Sub-package B2: `CampaignFSM.ts`
-* **Target File:** [`packages/firebase/src/orchestration/fsm/machine.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/firebase/src/orchestration/fsm/machine.ts)
+* **Target File:** [`packages/firebase/src/orchestration/fsm/machine.ts`](packages/firebase/src/orchestration/fsm/machine.ts)
 * **Implementation:**
   1. Refactor `transition(newState: FSMState, error?: string)` to execute within `getDb().runTransaction(async (tx) => { ... })`.
   2. Inside transaction:
@@ -95,10 +95,10 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
      - Commit atomic update via `tx.set(docRef, updates, { merge: true })`.
 
 #### Test Plan:
-* Update [`WorkflowStateService.test.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/WorkflowStateService.test.ts):
+* Update [`WorkflowStateService.test.ts`](packages/renderer/src/services/agent/WorkflowStateService.test.ts):
   - Mock `runTransaction` to simulate concurrent step updates and verify no lost updates.
   - Verify idempotency error when trying to mark an already executing step.
-* Add [`packages/firebase/src/orchestration/fsm/machine.test.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/firebase/src/orchestration/fsm/machine.test.ts):
+* Add [`packages/firebase/src/orchestration/fsm/machine.test.ts`](packages/firebase/src/orchestration/fsm/machine.test.ts):
   - Test atomic state transitions and retry increments under transaction.
   - Test that transitioning a `COMPLETED` campaign throws `failed-precondition`.
 
@@ -106,7 +106,7 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
 
 ### WP-C: Transient Failure Classification & Graceful Backoff in Loop Engine
 
-* **Target File:** [`packages/renderer/src/services/agent/orchestration/AgentLoopService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/orchestration/AgentLoopService.ts)
+* **Target File:** [`packages/renderer/src/services/agent/orchestration/AgentLoopService.ts`](packages/renderer/src/services/agent/orchestration/AgentLoopService.ts)
 
 #### Implementation Steps:
 1. Create `classifyError(error: unknown): 'TRANSIENT' | 'PERMANENT'`:
@@ -131,16 +131,16 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
 ### WP-D: Token Optimization & Checkpoint Trimming
 
 #### Sub-package D1: `AgentLoopService` Context Trimming
-* **Target File:** [`packages/renderer/src/services/agent/orchestration/AgentLoopService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/orchestration/AgentLoopService.ts)
+* **Target File:** [`packages/renderer/src/services/agent/orchestration/AgentLoopService.ts`](packages/renderer/src/services/agent/orchestration/AgentLoopService.ts)
 * **Implementation:**
-  1. Integrate [`TokenEstimator`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/governance/TokenEstimator.ts) in `buildIterationPrompt`.
+  1. Integrate [`TokenEstimator`](packages/renderer/src/services/agent/governance/TokenEstimator.ts) in `buildIterationPrompt`.
   2. Implement checkpoint history trimming:
      - Cap historical iteration feedback in the prompt to the last 2 attempts (instead of unbounded history).
      - Truncate any single prior output to a maximum of 2,500 characters, appending `[Output trimmed for context efficiency]`.
      - Ensure total prompt remains well within the pre-flight token budget.
 
 #### Sub-package D2: `AgentGraphService` Memory & Prompt Trimming
-* **Target File:** [`packages/renderer/src/services/agent/orchestration/AgentGraphService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/orchestration/AgentGraphService.ts)
+* **Target File:** [`packages/renderer/src/services/agent/orchestration/AgentGraphService.ts`](packages/renderer/src/services/agent/orchestration/AgentGraphService.ts)
 * **Implementation:**
   1. In `memoryBankService.searchMemories()`:
      - Reduce search limit from 100 to 5 most relevant memories.
@@ -161,9 +161,9 @@ This plan specifies the implementation to resolve all five vulnerabilities syste
 ### WP-E: Distributed Lease Locking & Timeout Deadlines
 
 * **Target Files:**
-  - [`packages/renderer/src/services/agent/orchestration/AgentGraphService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/orchestration/AgentGraphService.ts)
-  - [`packages/renderer/src/services/agent/orchestration/AgentGraphStateService.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/orchestration/AgentGraphStateService.ts)
-  - [`.agent/skills/firestore-transaction-locks.md`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/.agent/skills/firestore-transaction-locks.md)
+  - [`packages/renderer/src/services/agent/orchestration/AgentGraphService.ts`](packages/renderer/src/services/agent/orchestration/AgentGraphService.ts)
+  - [`packages/renderer/src/services/agent/orchestration/AgentGraphStateService.ts`](packages/renderer/src/services/agent/orchestration/AgentGraphStateService.ts)
+  - [`.agent/skills/firestore-transaction-locks.md`](.agent/skills/firestore-transaction-locks.md)
 
 #### Implementation Steps:
 1. Extend `GraphExecutionState` schema in `packages/renderer/src/services/agent/types.ts`:

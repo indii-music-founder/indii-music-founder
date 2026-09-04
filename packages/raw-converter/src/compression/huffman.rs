@@ -88,6 +88,12 @@ pub struct BitWriter {
     bits_in_current_byte: u8,
 }
 
+impl Default for BitWriter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BitWriter {
     pub fn new() -> Self {
         Self {
@@ -158,16 +164,14 @@ impl<'a> BitReader<'a> {
             }
             let b = self.data[self.pos];
             self.pos += 1;
-            if b == 0xFF {
-                if self.pos < self.data.len() {
-                    let next = self.data[self.pos];
-                    if next == 0x00 {
-                        self.pos += 1; // Unstuff
-                    } else if next >= 0xD0 && next <= 0xD7 {
-                        // Restart marker
-                        self.pos += 1;
-                        return self.read_bit();
-                    }
+            if b == 0xFF && self.pos < self.data.len() {
+                let next = self.data[self.pos];
+                if next == 0x00 {
+                    self.pos += 1; // Unstuff
+                } else if (0xD0..=0xD7).contains(&next) {
+                    // Restart marker
+                    self.pos += 1;
+                    return self.read_bit();
                 }
             }
             self.current_byte = b;
@@ -196,7 +200,9 @@ impl<'a> BitReader<'a> {
             for _ in 0..count {
                 if k < table.huffval.len() {
                     let val = table.huffval[k];
-                    if table.codes[val as usize] == code && table.code_lengths[val as usize] == len as u8 {
+                    if table.codes[val as usize] == code
+                        && table.code_lengths[val as usize] == len as u8
+                    {
                         return Ok(val);
                     }
                     k += 1;

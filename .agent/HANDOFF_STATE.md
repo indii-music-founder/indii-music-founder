@@ -1,3 +1,28 @@
+# Session Close — Video Editor Bridge (ISSUE-1416) & Mainline Convergence (2026-09-03)
+
+**Final state: all 21 agent wiring & editor tools tests passing (100%), all 64 format foundry & security tests passing (100%), monorepo typecheck 100% clean, 0 lint errors, delivered to `origin/main`.**
+
+## Shipped — Video Editor Bridge & Agent Wiring (ISSUE-1416)
+- **EditorTools Suite (`packages/renderer/src/services/agent/tools/EditorTools.ts`):**
+  - Implemented 4 core video editor tools: `video_list_renderable_assets`, `video_plan_sequence`, `video_render_stitch`, `video_get_render_status` plus sequential chain variants (`video_plan_chain`, `video_render_chain`).
+  - Integrated `calculateBeatSnappedTimeline` from `@indii/video-compiler` for rhythmic offset alignment to track BPM.
+  - Fail-closed gates: verified user-owned assets, known clip durations, `CostControlService` reservation preflight, and `ExecApprovalService` user approval for billable renders.
+  - Exact ISSUE-994 render contract: `{ compositionId, inputProps: { project } }` returning `renderId` without premature URLs.
+- **Risk Registry Hardening (`packages/renderer/src/services/agent/ToolRiskRegistry.ts`):**
+  - Registered discovery, sequence planning, and status tools as `read` (auto-approved, no side-effects).
+  - Registered stitch and chain renders as `destructive` / `core` (requires explicit user confirmation and cost approval).
+- **Agent Capabilities Wiring:**
+  - Exposed all 6 editor tools in `CreativeAgent.ts` (Creative Director) and `VideoAgent.ts` (Video Director) across `functions`, `authorizedTools`, and `tools[0].functionDeclarations`.
+  - Updated system prompts (`agents/creative/prompt.md`, `agents/video/prompt.md`) to remove outdated "cannot mix clips" claims and document first-class timeline sequencing tools.
+- **Automated Verification:**
+  - Added `EditorBridgeAgentWiring.test.ts` asserting exact risk classifications, function mapping, and schema declarations.
+  - 21/21 vitest tests passing across `EditorBridgeAgentWiring`, `EditorTools`, `CreativeAgent`, and `VideoAgent`.
+- **Mainline Convergence:**
+  - Merged hardened RAW converter and format foundry (`a17573c77`) and workflow cleanup (`380b93274`) onto `main`.
+  - Updated `OPEN_ISSUES_V3.md`: ISSUE-1416 marked `✅ FIXED`, resolved stale "push pending" labels on ISSUE-1403, 1404, 1405.
+
+---
+
 # Session Close — Local RAW-to-DNG Converter (indii RAW Converter) (2026-09-03)
 
 **Final state: all 5 Rust integration suites passing (100%), all 8 Electron & React unit/security tests passing (0 failures), real Sony ILCE-7M3 24MP fixture verified with 0 sample differences and bit-for-bit SHA-256 CFA hash match, recognized by Apple macOS sips as com.adobe.raw-image, 0 monorepo typecheck errors, 0 lint errors.**

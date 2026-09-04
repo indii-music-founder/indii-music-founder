@@ -1,9 +1,7 @@
 use clap::{Parser, Subcommand};
-use indii_raw::benchmark::run_benchmark;
+use indii_raw::benchmark::{run_benchmark, run_synthetic_benchmark};
 use indii_raw::verify::{decode_dng_cfa, verify_cfa_equality};
-use indii_raw::{
-    convert_raw, inspect_raw, DngCompression, DngWriterOptions,
-};
+use indii_raw::{convert_raw, inspect_raw, DngCompression, DngWriterOptions};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -72,10 +70,19 @@ enum Commands {
         #[arg(short, long)]
         source: Option<PathBuf>,
     },
-    /// Benchmarks conversion throughput and compression ratio over a fixture directory
+    /// Benchmarks conversion throughput and compression ratio over a fixture directory or synthetically
     Benchmark {
         /// Path to fixture directory containing RAW files
+        #[arg(default_value = ".")]
         directory: PathBuf,
+
+        /// Run multi-iteration synthetic benchmark across all compression paths
+        #[arg(long)]
+        synthetic: bool,
+
+        /// Number of benchmark iterations (default: 10)
+        #[arg(long, default_value_t = 10)]
+        runs: usize,
     },
 }
 
@@ -83,36 +90,45 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Inspect { input } => {
-            match inspect_raw(&input) {
-                Ok(report) => {
-                    if cli.json {
-                        println!("{}", serde_json::to_string_pretty(&report).unwrap());
-                    } else {
-                        println!("--- indii RAW Inspection Report ---");
-                        println!("File:             {}", report.file_path);
-                        println!("Camera:           {} {}", report.make, report.model);
-                        println!("Dimensions:       {} x {}", report.width, report.height);
-                        println!("Bit Depth:        {}-bit", report.bit_depth);
-                        println!("CFA Pattern:      {}", report.cfa_pattern);
-                        println!("Black / White:    {} / {}", report.black_level, report.white_level);
-                        println!("Baseline Lift:    +{:.2} EV", report.baseline_exposure);
-                        println!("White Balance:    [{:.3}, {:.3}, {:.3}]", report.as_shot_neutral[0], report.as_shot_neutral[1], report.as_shot_neutral[2]);
-                        if let Some(iso) = report.iso {
-                            println!("ISO:              {}", iso);
-                        }
-                        if let Some(ref lens) = report.lens_model {
-                            println!("Lens:             {}", lens);
-                        }
-                        println!("Supported:        Yes ({})", report.supported_reason.unwrap_or_default());
+        Commands::Inspect { input } => match inspect_raw(&input) {
+            Ok(report) => {
+                if cli.json {
+                    println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                } else {
+                    println!("--- indii RAW Inspection Report ---");
+                    println!("File:             {}", report.file_path);
+                    println!("Camera:           {} {}", report.make, report.model);
+                    println!("Dimensions:       {} x {}", report.width, report.height);
+                    println!("Bit Depth:        {}-bit", report.bit_depth);
+                    println!("CFA Pattern:      {}", report.cfa_pattern);
+                    println!(
+                        "Black / White:    {} / {}",
+                        report.black_level, report.white_level
+                    );
+                    println!("Baseline Lift:    +{:.2} EV", report.baseline_exposure);
+                    println!(
+                        "White Balance:    [{:.3}, {:.3}, {:.3}]",
+                        report.as_shot_neutral[0],
+                        report.as_shot_neutral[1],
+                        report.as_shot_neutral[2]
+                    );
+                    if let Some(iso) = report.iso {
+                        println!("ISO:              {}", iso);
                     }
-                }
-                Err(e) => {
-                    eprintln!("Error inspecting {}: {}", input.display(), e);
-                    std::process::exit(1);
+                    if let Some(ref lens) = report.lens_model {
+                        println!("Lens:             {}", lens);
+                    }
+                    println!(
+                        "Supported:        Yes ({})",
+                        report.supported_reason.unwrap_or_default()
+                    );
                 }
             }
-        }
+            Err(e) => {
+                eprintln!("Error inspecting {}: {}", input.display(), e);
+                std::process::exit(1);
+            }
+        },
         Commands::Convert {
             input,
             output,
@@ -246,8 +262,17 @@ fn main() {
                         } else {
                             println!("--- Verification Report ---");
                             println!("File:              {}", input.display());
-                            println!("Valid:             {}", if report.valid { "PASS" } else { "FAIL" });
-                            println!("Dimensions:        {}x{} -> {}x{}", report.source_width, report.source_height, report.dng_width, report.dng_height);
+                            println!(
+                                "Valid:             {}",
+                                if report.valid { "PASS" } else { "FAIL" }
+                            );
+                            println!(
+                                "Dimensions:        {}x{} -> {}x{}",
+                                report.source_width,
+                                report.source_height,
+                                report.dng_width,
+                                report.dng_height
+                            );
                             println!("Source CFA Hash:   {}", report.source_cfa_hash);
                             println!("DNG CFA Hash:      {}", report.dng_cfa_hash);
                             println!("Sample Diff Count: {}", report.sample_difference_count);
@@ -294,35 +319,88 @@ fn main() {
                 }
             }
         }
-        Commands::Benchmark { directory } => {
-            match run_benchmark(&directory) {
-                Ok(report) => {
-                    if cli.json {
-                        println!("{}", serde_json::to_string_pretty(&report).unwrap());
-                    } else {
-                        println!("--- indii RAW Conversion Benchmark ---");
-                        println!("Directory:       {}", directory.display());
-                        println!("Files Processed: {}", report.total_files);
-                        println!(
-                            "Input Size:      {:.2} MB",
-                            report.total_input_bytes as f64 / 1_048_576.0
-                        );
-                        println!(
-                            "Output Size:     {:.2} MB",
-                            report.total_output_bytes as f64 / 1_048_576.0
-                        );
-                        println!(
-                            "Avg Ratio:       {:.2}% of original (saved {:.2}%)",
-                            report.average_compression_ratio * 100.0,
-                            (1.0 - report.average_compression_ratio) * 100.0
-                        );
-                        println!("Total Duration:  {} ms", report.total_duration_ms);
-                        println!("Throughput:      {:.2} MP/sec", report.overall_throughput_mp_per_sec);
+        Commands::Benchmark {
+            directory,
+            synthetic,
+            runs,
+        } => {
+            if synthetic {
+                match run_synthetic_benchmark(runs) {
+                    Ok(report) => {
+                        if cli.json {
+                            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                        } else {
+                            println!("--- indii RAW Conversion Reproducible Benchmark ---");
+                            println!("Hardware:        {}", report.hardware);
+                            println!("OS:              {}", report.os);
+                            println!("Profile:         {}", report.profile);
+                            println!("Warmup Runs:     {}", report.warmup_runs);
+                            println!("Measured Runs:   {}", report.total_runs_per_path);
+                            println!();
+                            for res in &report.results {
+                                println!("Pipeline Stage:   {}", res.path_name);
+                                println!(
+                                    "  Dimensions:     {} ({:.1} MP)",
+                                    res.dimensions, res.megapixels
+                                );
+                                println!("  Throughput:     Median: {:.2} MP/s | Min: {:.2} MP/s | Max: {:.2} MP/s",
+                                    res.median_throughput_mp_per_sec,
+                                    res.min_throughput_mp_per_sec,
+                                    res.max_throughput_mp_per_sec
+                                );
+                                println!("  Duration (ms):  Median: {:.1}ms | P95: {:.1}ms | Min: {:.1}ms | Max: {:.1}ms",
+                                    res.median_duration_ms,
+                                    res.p95_duration_ms,
+                                    res.min_duration_ms,
+                                    res.max_duration_ms
+                                );
+                                println!(
+                                    "  Output Size:    {:.2} MB (ratio: {:.1}%)",
+                                    res.output_bytes as f64 / 1_048_576.0,
+                                    res.compression_ratio * 100.0
+                                );
+                                println!();
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Synthetic benchmark failed: {}", e);
+                        std::process::exit(1);
                     }
                 }
-                Err(e) => {
-                    eprintln!("Benchmark failed: {}", e);
-                    std::process::exit(1);
+            } else {
+                match run_benchmark(&directory) {
+                    Ok(report) => {
+                        if cli.json {
+                            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                        } else {
+                            println!("--- indii RAW Conversion Benchmark ---");
+                            println!("Directory:       {}", directory.display());
+                            println!("Files Processed: {}", report.total_files);
+                            println!(
+                                "Input Size:      {:.2} MB",
+                                report.total_input_bytes as f64 / 1_048_576.0
+                            );
+                            println!(
+                                "Output Size:     {:.2} MB",
+                                report.total_output_bytes as f64 / 1_048_576.0
+                            );
+                            println!(
+                                "Avg Ratio:       {:.2}% of original (saved {:.2}%)",
+                                report.average_compression_ratio * 100.0,
+                                (1.0 - report.average_compression_ratio) * 100.0
+                            );
+                            println!("Total Duration:  {} ms", report.total_duration_ms);
+                            println!(
+                                "Throughput:      {:.2} MP/sec",
+                                report.overall_throughput_mp_per_sec
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Benchmark failed: {}", e);
+                        std::process::exit(1);
+                    }
                 }
             }
         }

@@ -3,38 +3,31 @@ import {
   NormalizedStatementTransaction,
   QuarantinedRow,
   ParseOptions,
-  DecimalMoney,
-} from '@indii/shared';
+} from '../types.js';
+import { DecimalMoney } from '../DecimalMoney.js';
 
-export class DistroKidStatementAdapter {
-  readonly formatId = 'distrokid_statement';
-  readonly formatName = 'DistroKid TSV Sales Statement';
+export class TuneCoreStatementAdapter {
+  readonly formatId = 'tunecore_statement';
+  readonly formatName = 'TuneCore CSV Sales Statement';
   readonly version = '2026.1';
 
-  /**
-   * Determine if raw text looks like DistroKid statement
-   */
   canParse(content: string): boolean {
     const firstLine = content.split(/\r?\n/)[0] || '';
-    return firstLine.includes('Reporting Date') &&
-      firstLine.includes('Sale Month') &&
-      firstLine.includes('Store') &&
-      firstLine.includes('ISRC') &&
-      firstLine.includes('Earnings (USD)');
+    return firstLine.includes('Sales Period') &&
+      firstLine.includes('Posted Date') &&
+      firstLine.includes('Store Name') &&
+      firstLine.includes('Total Earned');
   }
 
-  /**
-   * Deterministically parse raw TSV into canonical NormalizedStatementReport
-   */
   parse(rawContent: string, _options: ParseOptions = {}): NormalizedStatementReport {
     const cleanContent = rawContent.charCodeAt(0) === 0xfeff ? rawContent.slice(1) : rawContent;
     const lines = cleanContent.split(/\r?\n/).filter((l) => l.trim().length > 0);
 
     if (lines.length < 2) {
-      throw new Error('DistroKid statement has no data rows');
+      throw new Error('TuneCore statement has no data rows');
     }
 
-    const headers = lines[0]!.split('\t').map((h) => h.trim());
+    const headers = lines[0]!.split(',').map((h) => h.trim());
     const headerMap = new Map<string, number>();
     headers.forEach((h, idx) => headerMap.set(h.toLowerCase(), idx));
 
@@ -48,47 +41,39 @@ export class DistroKidStatementAdapter {
 
     let grossAcc = DecimalMoney.zero();
     let netAcc = DecimalMoney.zero();
-    const feeAcc = DecimalMoney.zero();
     let totalQuantity = 0;
     let totalStreams = 0;
     let totalDownloads = 0;
+
     let periodStart: string | undefined;
     let periodEnd: string | undefined;
 
-    for (let lineIndex = 1; lineIndex < lines.length; lineIndex++) {
-      const line = lines[lineIndex]!;
-      const parts = line.split('\t');
+    const dataLines = lines.slice(1);
+    for (let i = 0; i < dataLines.length; i++) {
+      const lineIndex = i + 2;
+      const line = dataLines[i]!;
+      const parts = line.split(',').map((p) => p.replace(/^"|"$/g, '').trim());
 
-      if (parts.length < headers.length * 0.7) {
-        quarantinedRows.push({
-          lineIndex: lineIndex + 1,
-          rawContent: line,
-          reason: 'Incomplete row: column count significantly less than header',
-          errorCode: 'ERR_INCOMPLETE_ROW',
-          severity: 'warning',
-        });
-        continue;
-      }
+      const isrc = getCol(parts, 'isrc');
+      const upc = getCol(parts, 'upc');
+      const store = getCol(parts, 'store name') || 'Unknown Store';
+      const artist = getCol(parts, 'artist') || 'Unknown Artist';
+      const songTitle = getCol(parts, 'song title') || 'Untitled';
+      const releaseTitle = getCol(parts, 'release title');
+      const salesPeriod = getCol(parts, 'sales period');
+      const country = getCol(parts, 'country') || 'US';
+      const rawEarnings = getCol(parts, 'total earned');
+      const rawQuantity = getCol(parts, 'quantity');
 
-      const saleMonth = getCol(parts, 'Sale Month');
-      const store = getCol(parts, 'Store');
-      const artist = getCol(parts, 'Artist');
-      const title = getCol(parts, 'Title');
-      const isrc = getCol(parts, 'ISRC');
-      const upc = getCol(parts, 'UPC');
-      const quantityStr = getCol(parts, 'Quantity');
-      const earningsStr = getCol(parts, 'Earnings (USD)');
-      const country = getCol(parts, 'Country of Sale');
-
-      const quantity = parseInt(quantityStr, 10) || 1;
-      const earnings = parseFloat(earningsStr);
+      const earnings = parseFloat(rawEarnings.replace(/[^0-9.-]/g, ''));
+      const quantity = parseInt(rawQuantity.replace(/[^0-9-]/g, ''), 10) || 0;
 
       if (isNaN(earnings) || !isrc || isrc === 'MALFORMED_ISRC') {
         quarantinedRows.push({
-          lineIndex: lineIndex + 1,
+          lineIndex,
           rawContent: line,
-          reason: isNaN(earnings) ? `Invalid numeric value for Earnings (USD): "${earningsStr}"` : 'Missing or malformed ISRC',
-          errorCode: isNaN(earnings) ? 'ERR_INVALID_EARNINGS' : 'ERR_INVALID_ISRC',
+          reason: isNaN(earnings) ? 'Invalid total earned number' : 'Missing or malformed ISRC',
+          errorCode: isNaN(earnings) ? 'ERR_INVALID_NUMERIC' : 'ERR_INVALID_ISRC',
           severity: 'warning',
         });
         continue;
@@ -105,8 +90,8 @@ export class DistroKidStatementAdapter {
       netAcc = netAcc.add(earningsMoney);
       totalQuantity += quantity;
 
-      if (!periodStart && saleMonth) periodStart = saleMonth;
-      if (saleMonth) periodEnd = saleMonth;
+      if (!periodStart && salesPeriod) periodStart = salesPeriod;
+      if (salesPeriod) periodEnd = salesPeriod;
 
       const rawFields: Record<string, string> = {};
       headers.forEach((h, idx) => {
@@ -114,13 +99,14 @@ export class DistroKidStatementAdapter {
       });
 
       transactions.push({
-        sourceLineIndex: lineIndex + 1,
-        sourceHash: `dk-${lineIndex + 1}-${isrc}`,
-        transactionId: `TX-DK-${lineIndex + 1}`,
+        sourceLineIndex: lineIndex,
+        sourceHash: `tc-${lineIndex}-${isrc}`,
+        transactionId: `TX-TC-${lineIndex}`,
         isrc,
         upc: upc || undefined,
-        trackTitle: title,
+        trackTitle: songTitle,
         artistName: artist,
+        albumTitle: releaseTitle,
         dspName: store,
         transactionType: txnType,
         quantity,
@@ -128,8 +114,8 @@ export class DistroKidStatementAdapter {
         distributorFee: 0,
         netRevenue: earnings,
         currency: 'USD',
-        territory: country || 'US',
-        salePeriodStart: saleMonth,
+        territory: country,
+        salePeriodStart: salesPeriod,
         rawSourceFields: rawFields,
       });
     }
@@ -137,11 +123,11 @@ export class DistroKidStatementAdapter {
     return {
       formatId: this.formatId,
       adapterVersion: this.version,
-      reportId: `RPT-DK-${Date.now()}`,
-      reportingEntity: 'DistroKid',
+      reportId: `RPT-TC-${Date.now()}`,
+      reportingEntity: 'TuneCore',
       currency: 'USD',
       totalGrossRevenue: grossAcc.toFloat(),
-      totalDistributorFees: feeAcc.toFloat(),
+      totalDistributorFees: 0,
       totalNetRevenue: netAcc.toFloat(),
       totalQuantity,
       totalStreams,
@@ -153,7 +139,7 @@ export class DistroKidStatementAdapter {
       provenance: {
         evidenceSha256: 'computed-on-ingest',
         parsedAt: new Date().toISOString(),
-        deterministicHash: `det-dk-${transactions.length}-${netAcc.toCents()}`,
+        deterministicHash: `det-tc-${transactions.length}-${netAcc.toCents()}`,
       },
     };
   }

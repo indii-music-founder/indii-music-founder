@@ -1,4 +1,13 @@
 
+## 2026-09-03 FormatFoundryModule UI Test Async Timing Failure in Vitest Shard 9
+
+- **SEVERITY:** High (broke remote CI unit-test shard 9 and blocked production deployment)
+- **FILES:** `packages/renderer/src/modules/format-foundry/FormatFoundryModule.test.tsx`
+- **ERROR:** `Unable to find an element with the text: 7-Layer Validation Matrix.` in CI run 33783720720 (shard 9/20).
+- **CAUSE:** `FormatFoundryModule.tsx` runs `await LayeredValidator.validate(content, parsed)` inside `runAnalysis`. Because validation and Artist Business Graph normalization are asynchronous, the 7-Layer Validation Matrix and Graph sections render after the promise resolves. The test used synchronous `screen.getByText('7-Layer Validation Matrix')`, which executed before the microtask settled.
+- **FIX:** Replaced synchronous `screen.getByText` with `await screen.findByText` for `'7-Layer Validation Matrix'`, `'ALL LAYERS PASSED'`, `'Artist Business Graph Normalization'`, and `'Kira Novakowski'` in `FormatFoundryModule.test.tsx`.
+- **PREVENTION:** Any UI component with async parsing, validation, or pipeline stages must be tested with `findBy*` queries or `waitFor`, not synchronous `getBy*`.
+
 ## 2026-09-02 CI Capability Catalog Stale Discrepancy — Pre-commit Hook Missing CI Lint Prerequisites
 
 - **SEVERITY:** High (broke remote CI build step while local git commit passed clean)

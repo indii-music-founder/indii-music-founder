@@ -101,8 +101,11 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     // Production (read)
     breakdown_script: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
 
-    // Finance (read — analysis tools)
-    analyze_audio: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
+    // Video Editor Bridge (read) — ISSUE-1416
+    video_list_renderable_assets: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'List rendered video assets with duration and aspect ratio metadata' },
+    video_plan_sequence: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Plan beat-snapped video sequence without rendering' },
+    video_plan_chain: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Plan sequential beat-snapped video chain without rendering' },
+    video_get_render_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Check status of video render job' },
 
     // =========================================================================
     // WRITE — Creates/mutates data, default tier
@@ -271,6 +274,10 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     computer_scroll: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Scrolls on the host desktop — requires explicit user approval' },
     computer_drive: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Autonomously drives the host desktop toward a goal via a screenshot-reason-act loop — requires explicit user approval' },
     update_agent_memory: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: "Permanently modify an agent's system instructions (brain surgery)" },
+
+    // Video Editor Bridge (destructive — billable multi-segment / sequential render) — ISSUE-1416
+    video_render_stitch: { riskTier: 'destructive', permissionTier: 'core', requiresApproval: true, description: 'Billable multi-segment video stitch render requiring user approval' },
+    video_render_chain: { riskTier: 'destructive', permissionTier: 'core', requiresApproval: true, description: 'Billable sequential video chain render requiring user approval' },
 
     // =========================================================================
     // WRITE — OpenClaw Gap Tools
