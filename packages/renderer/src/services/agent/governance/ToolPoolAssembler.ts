@@ -29,7 +29,7 @@ export class ToolPoolAssembler {
     static assemble(
         specialistTools: FunctionDeclaration[],
         context: ToolPoolContext,
-        maxTools: number = 24
+        maxTools: number = 32
     ): FunctionDeclaration[] {
 
         // 1. Gather all potential tools
@@ -94,7 +94,8 @@ export class ToolPoolAssembler {
             return true;
         });
 
-        // 4. Truncate to limit and return
-        return pool.slice(0, maxTools);
+        // 4. Truncate to limit and return, ensuring specialist-declared tools are always preserved
+        const limit = Math.max(maxTools, specialistTools.length + collaborationTools.length);
+        return pool.slice(0, limit);
     }
 }

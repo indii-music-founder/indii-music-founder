@@ -142,6 +142,7 @@ describe('FeatureFlagService', () => {
         it('returns empty set when all gated flags are enabled', () => {
             featureFlags.override(FEATURE_FLAG_NAMES.MERCH_STORE, true);
             featureFlags.override(FEATURE_FLAG_NAMES.MARKETPLACE, true);
+            featureFlags.override(FEATURE_FLAG_NAMES.RAW_CONVERTER, true);
             const gated = getGatedModuleIds();
             expect(gated.size).toBe(0);
         });
@@ -229,6 +230,7 @@ describe('FeatureFlagService', () => {
             act(() => {
                 featureFlags.override(FEATURE_FLAG_NAMES.MERCH_STORE, true);
                 featureFlags.override(FEATURE_FLAG_NAMES.MARKETPLACE, true);
+                featureFlags.override(FEATURE_FLAG_NAMES.RAW_CONVERTER, true);
             });
 
             expect(result.current.size).toBe(0);
