@@ -146,8 +146,8 @@ describe('GeneralistAgent Routing Logic', () => {
         });
     };
 
-    it('routes Music-specific tasks (ISRC) to the Music Agent', async () => {
-        mockDelegationResponse('music', 'Assign ISRC code to Neon Nights');
+    it('routes Distribution-specific tasks (ISRC) to the Distribution Agent', async () => {
+        mockDelegationResponse('distribution', 'Assign ISRC code to Neon Nights');
         
         const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
@@ -155,7 +155,7 @@ describe('GeneralistAgent Routing Logic', () => {
         await agent.execute('Assign an ISRC code to my track Neon Nights');
 
         expect(delegateSpy.mock.calls[0][0]).toEqual(expect.objectContaining({
-            targetAgentId: 'music'
+            targetAgentId: 'distribution'
         }));
     });
 
