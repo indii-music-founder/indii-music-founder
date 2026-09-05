@@ -25,8 +25,10 @@ import {
 import type {
     CanvasPresenceState,
     CanvasViewport,
+    WebRTCPeerStatus,
 } from '../types';
 import { CanvasPresenceSchema } from '../types';
+import { WebRTCPresenceMesh } from '../services/WebRTCPresenceMesh';
 import { logger } from '@/utils/logger';
 
 export const COLLABORATOR_PALETTE = [
@@ -73,6 +75,8 @@ export interface UseCanvasPresenceReturn {
     activeCollaboratorCount: number;
     selfPresence: CanvasPresenceState | null;
     selfColor: string;
+    peerStatuses: WebRTCPeerStatus[];
+    isWebRTCActive: boolean;
     updateCursor: (clientPos: { clientX: number; clientY: number } | null) => void;
     clearCursor: () => void;
 }
@@ -90,6 +94,8 @@ export function useCanvasPresence({
     cursorThrottleMs = 60,
 }: UseCanvasPresenceOptions): UseCanvasPresenceReturn {
     const [collaborators, setCollaborators] = useState<CanvasPresenceState[]>([]);
+    const [peerStatuses, setPeerStatuses] = useState<WebRTCPeerStatus[]>([]);
+    const webrtcMeshRef = useRef<WebRTCPresenceMesh | null>(null);
     const lastCursorSentRef = useRef<number>(0);
     const pendingCursorRef = useRef<{ x: number; y: number } | null>(null);
     const cursorThrottleTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -144,7 +150,84 @@ export function useCanvasPresence({
         }
     }, [projectId, canvasId, currentUserId]);
 
-    // Send presence payload helper
+    // Initialize WebRTC Presence Mesh for sub-20ms peer-to-peer cursor presence
+    useEffect(() => {
+        if (!enabled || !projectId || !canvasId || !currentUserId) {
+            if (webrtcMeshRef.current) {
+                webrtcMeshRef.current.destroy();
+                webrtcMeshRef.current = null;
+            }
+            return;
+        }
+
+        try {
+            const mesh = new WebRTCPresenceMesh({
+                projectId,
+                canvasId,
+                userId: currentUserId,
+                userName: currentUserName,
+                userColor: selfColor,
+                avatarUrl: currentUserAvatar,
+                onCursorReceived: (peerId, cursor, state) => {
+                    setCollaborators((prev) => {
+                        const idx = prev.findIndex((p) => p.userId === peerId);
+                        if (idx >= 0) {
+                            const updated = [...prev];
+                            updated[idx] = {
+                                ...updated[idx],
+                                cursor,
+                                lastSeen: Date.now(),
+                            };
+                            return updated;
+                        }
+                        return [
+                            ...prev,
+                            {
+                                userId: peerId,
+                                userName: state.userName || 'Collaborator',
+                                userColor: state.userColor || getCollaboratorColor(peerId),
+                                avatarUrl: state.avatarUrl,
+                                cursor,
+                                selectedBlockIds: state.selectedBlockIds || [],
+                                lastSeen: Date.now(),
+                            },
+                        ];
+                    });
+                },
+                onSelectionReceived: (peerId, remoteSelectedBlockIds) => {
+                    setCollaborators((prev) => {
+                        const idx = prev.findIndex((p) => p.userId === peerId);
+                        if (idx >= 0) {
+                            const updated = [...prev];
+                            updated[idx] = {
+                                ...updated[idx],
+                                selectedBlockIds: remoteSelectedBlockIds,
+                                lastSeen: Date.now(),
+                            };
+                            return updated;
+                        }
+                        return prev;
+                    });
+                },
+                onPeerStatusChange: (statuses) => {
+                    setPeerStatuses(statuses);
+                },
+            });
+
+            webrtcMeshRef.current = mesh;
+        } catch (err) {
+            logger.warn('[useCanvasPresence] WebRTC initialization skipped or failed:', err);
+        }
+
+        return () => {
+            if (webrtcMeshRef.current) {
+                webrtcMeshRef.current.destroy();
+                webrtcMeshRef.current = null;
+            }
+        };
+    }, [enabled, projectId, canvasId, currentUserId, currentUserName, selfColor, currentUserAvatar]);
+
+    // Send presence payload helper (Firestore)
     const sendPresence = useCallback(
         async (payload: Partial<CanvasPresenceState>) => {
             if (!enabled || !presenceDocRef.current || !db) return;
@@ -165,13 +248,14 @@ export function useCanvasPresence({
         [enabled]
     );
 
-    // Update cursor position from client coordinates (throttled)
+    // Update cursor position from client coordinates (hybrid: WebRTC P2P first, Firestore fallback)
     const updateCursor = useCallback(
         (clientPos: { clientX: number; clientY: number } | null) => {
             if (!enabled || !presenceDocRef.current) return;
 
             if (!clientPos) {
                 pendingCursorRef.current = null;
+                webrtcMeshRef.current?.broadcastCursor(null);
                 sendPresence({ cursor: null });
                 return;
             }
@@ -191,6 +275,13 @@ export function useCanvasPresence({
             const newCursor = { x: Math.round(canvasX), y: Math.round(canvasY) };
             pendingCursorRef.current = newCursor;
 
+            // Instantaneous WebRTC DataChannel dispatch (0 Firestore writes)
+            const sentViaWebRTC = webrtcMeshRef.current?.broadcastCursor(newCursor);
+            if (sentViaWebRTC) {
+                return;
+            }
+
+            // Fallback to throttled Firestore writes when WebRTC has no open channels
             const now = Date.now();
             if (now - lastCursorSentRef.current >= cursorThrottleMs) {
                 lastCursorSentRef.current = now;
@@ -220,6 +311,7 @@ export function useCanvasPresence({
             isFirstSelectionRender.current = false;
             return;
         }
+        webrtcMeshRef.current?.broadcastSelection(selectedBlockIds);
         sendPresence({ selectedBlockIds });
     }, [selectedBlockIds, enabled, sendPresence]);
 
@@ -304,6 +396,9 @@ export function useCanvasPresence({
                 });
 
                 setCollaborators(peers);
+
+                // Reconcile active peers with WebRTC mesh
+                webrtcMeshRef.current?.syncPeers(peers.map((p) => p.userId));
             },
             (error) => {
                 logger.warn('[useCanvasPresence] Presence subscription error', error);
@@ -315,11 +410,18 @@ export function useCanvasPresence({
         };
     }, [enabled, projectId, canvasId, currentUserId, staleTimeoutMs]);
 
+    const isWebRTCActive = useMemo(
+        () => peerStatuses.some((s) => s.dataChannelState === 'open'),
+        [peerStatuses]
+    );
+
     return {
         collaborators,
         activeCollaboratorCount: collaborators.length,
         selfPresence,
         selfColor,
+        peerStatuses,
+        isWebRTCActive,
         updateCursor,
         clearCursor,
     };

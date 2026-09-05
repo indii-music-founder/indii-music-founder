@@ -421,7 +421,7 @@ export type CanvasPresenceState = z.infer<typeof CanvasPresenceSchema>;
 // View Virtualization & Level of Detail (LOD)
 // ============================================================================
 
-export type CanvasLODLevel = 'full' | 'low';
+export type CanvasLODLevel = 'full' | 'medium' | 'low' | 'cluster';
 
 export interface CanvasViewportBounds {
     minX: number;
@@ -430,8 +430,18 @@ export interface CanvasViewportBounds {
     maxY: number;
 }
 
+export interface CanvasClusterSummary {
+    id: string;
+    center: { x: number; y: number };
+    bounds: CanvasViewportBounds;
+    blockCount: number;
+    blocks: ProjectCanvasBlock[];
+    typeCounts: Record<string, number>;
+}
+
 export interface CanvasVirtualizationResult {
     visibleBlocks: ProjectCanvasBlock[];
+    clusterSummaries?: CanvasClusterSummary[];
     culledBlockCount: number;
     totalBlockCount: number;
     isVirtualizing: boolean;
@@ -439,5 +449,42 @@ export interface CanvasVirtualizationResult {
     lodLevel: CanvasLODLevel;
     visibleEdges: ProjectCanvasEdge[];
     viewportBounds: CanvasViewportBounds;
+}
+
+// ============================================================================
+// WebRTC Real-Time Multiplayer Presence Signaling
+// ============================================================================
+
+export const WebRTCSignalTypeSchema = z.enum(['offer', 'answer', 'candidate', 'leave']);
+export type WebRTCSignalType = z.infer<typeof WebRTCSignalTypeSchema>;
+
+export const WebRTCSignalMessageSchema = z.object({
+    id: z.string().min(1),
+    canvasId: z.string().min(1),
+    projectId: z.string().min(1),
+    fromUserId: z.string().min(1),
+    toUserId: z.string().min(1),
+    type: WebRTCSignalTypeSchema,
+    payload: z.record(z.unknown()),
+    createdAt: z.number(),
+});
+
+export type WebRTCSignalMessage = z.infer<typeof WebRTCSignalMessageSchema>;
+
+export type WebRTCConnectionState =
+    | 'new'
+    | 'connecting'
+    | 'connected'
+    | 'disconnected'
+    | 'failed'
+    | 'closed';
+
+export interface WebRTCPeerStatus {
+    peerId: string;
+    connectionState: WebRTCConnectionState;
+    dataChannelState: 'connecting' | 'open' | 'closing' | 'closed';
+    latencyMs?: number;
+    bytesSent: number;
+    bytesReceived: number;
 }
 

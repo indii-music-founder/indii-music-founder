@@ -22,6 +22,7 @@ import type {
     CanvasVirtualizationResult,
     CanvasLODLevel,
 } from '../types';
+import { SpatialGridIndex } from '../services/SpatialGridIndex';
 
 export interface UseCanvasVirtualizationOptions {
     blocks: ProjectCanvasBlock[];
@@ -98,11 +99,14 @@ export function useCanvasVirtualization({
     virtualizationThreshold = 500,
     enabled,
 }: UseCanvasVirtualizationOptions): CanvasVirtualizationResult {
-    // LOD calculation: low-zoom (< 0.4) uses lightweight representations
-    const isLowLOD = viewport.zoom < 0.4;
-    const lodLevel: CanvasLODLevel = isLowLOD ? 'low' : 'full';
+    // Spatial hash grid index rebuilt only when blocks change
+    const spatialIndex = useMemo(() => {
+        const index = new SpatialGridIndex({ cellSize: 800 });
+        index.rebuild(blocks);
+        return index;
+    }, [blocks]);
 
-    // Virtualization is active if explicitly enabled or if scene exceeds threshold (> 500 blocks)
+    // Virtualization is active if explicitly enabled or if scene exceeds threshold (>= 500 blocks)
     const isVirtualizing =
         typeof enabled === 'boolean' ? enabled : blocks.length >= virtualizationThreshold;
 
@@ -111,26 +115,74 @@ export function useCanvasVirtualization({
         [viewport, containerDimensions, cullingMargin]
     );
 
+    // 4-Tier Level of Detail (LOD) computation:
+    // 1. 'cluster': Overview zoom (< 0.25) on scenes >= 500 blocks collapses dense sectors into summary tiles
+    // 2. 'low': Zoom < 0.4 uses lightweight bounding boxes (LODBlock)
+    // 3. 'medium': 0.4 <= Zoom < 0.75 suppresses heavy media/waveform elements
+    // 4. 'full': Zoom >= 0.75 renders full interactive blocks
+    const lodLevel: CanvasLODLevel = useMemo(() => {
+        if (viewport.zoom < 0.25 && (blocks.length >= virtualizationThreshold || isVirtualizing)) {
+            return 'cluster';
+        }
+        if (viewport.zoom < 0.4) {
+            return 'low';
+        }
+        if (viewport.zoom < 0.75) {
+            return 'medium';
+        }
+        return 'full';
+    }, [viewport.zoom, blocks.length, virtualizationThreshold, isVirtualizing]);
+
+    const isLowLOD = lodLevel === 'low' || lodLevel === 'cluster';
+
+    // Spatial clustering for overview mode
+    const clusterSummaries = useMemo(() => {
+        if (lodLevel !== 'cluster') {
+            return [];
+        }
+        return spatialIndex.computeClusters(viewportBounds, 1200);
+    }, [lodLevel, spatialIndex, viewportBounds]);
+
+    // Visible blocks via sub-millisecond SpatialGridIndex query
     const visibleBlocks = useMemo(() => {
+        if (lodLevel === 'cluster') {
+            // When clustered, only actively selected or dragged blocks are rendered as individual elements
+            const selectedSet = new Set(selectedBlockIds);
+            return blocks.filter((b) => selectedSet.has(b.id) || (activeBlockId && activeBlockId === b.id));
+        }
+
         if (!isVirtualizing) {
             return blocks;
         }
 
         const selectedSet = new Set(selectedBlockIds);
+        const spatialMatches = spatialIndex.query(viewportBounds);
+        const matchIdSet = new Set(spatialMatches.map((b) => b.id));
 
-        return blocks.filter((block) => {
-            // Selected or active interacting blocks must NEVER be culled
-            if (selectedSet.has(block.id) || (activeBlockId && activeBlockId === block.id)) {
-                return true;
+        const result: ProjectCanvasBlock[] = [...spatialMatches];
+
+        // Ensure selected or actively dragged blocks are NEVER culled regardless of coordinates
+        for (const block of blocks) {
+            if (
+                (selectedSet.has(block.id) || (activeBlockId && activeBlockId === block.id)) &&
+                !matchIdSet.has(block.id)
+            ) {
+                result.push(block);
             }
+        }
 
-            return isBlockInViewport(block, viewportBounds);
-        });
-    }, [blocks, isVirtualizing, selectedBlockIds, activeBlockId, viewportBounds]);
+        return result;
+    }, [blocks, isVirtualizing, lodLevel, spatialIndex, viewportBounds, selectedBlockIds, activeBlockId]);
 
+    // Visible edges culling
     const visibleEdges = useMemo(() => {
-        if (!isVirtualizing) {
+        if (!isVirtualizing && lodLevel !== 'cluster') {
             return edges;
+        }
+
+        if (lodLevel === 'cluster') {
+            // In cluster mode, suppress individual edges to maintain 60fps
+            return [];
         }
 
         const visibleBlockIdSet = new Set(visibleBlocks.map((b) => b.id));
@@ -139,12 +191,13 @@ export function useCanvasVirtualization({
             // Retain edge if at least one endpoint is visible
             return visibleBlockIdSet.has(edge.sourceBlockId) || visibleBlockIdSet.has(edge.targetBlockId);
         });
-    }, [edges, isVirtualizing, visibleBlocks]);
+    }, [edges, isVirtualizing, lodLevel, visibleBlocks]);
 
     const culledBlockCount = Math.max(0, blocks.length - visibleBlocks.length);
 
     return {
         visibleBlocks,
+        clusterSummaries,
         culledBlockCount,
         totalBlockCount: blocks.length,
         isVirtualizing,

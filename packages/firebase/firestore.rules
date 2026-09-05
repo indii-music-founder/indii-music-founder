@@ -2180,6 +2180,51 @@ service cloud.firestore {
               (presenceUserId == 'founder-demo-uid' && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid')
             );
         }
+
+        match /signals/{signalId} {
+          allow read: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
+            (
+              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
+              (
+                isAuthenticated() &&
+                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
+                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
+                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
+              ) ||
+              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
+            );
+          allow create: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
+            (
+              (
+                isAuthenticated() &&
+                (
+                  get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid ||
+                  (
+                    ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
+                    get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
+                    isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
+                  )
+                ) &&
+                request.resource.data.fromUserId == request.auth.uid
+              ) ||
+              (request.resource.data.fromUserId == 'founder-demo-uid' && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid')
+            );
+          allow delete: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
+            (
+              (
+                isAuthenticated() &&
+                (
+                  get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid ||
+                  (
+                    ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
+                    get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
+                    isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
+                  )
+                )
+              ) ||
+              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
+            );
+        }
       }
     }
     match /proactive_tasks/{taskId} {

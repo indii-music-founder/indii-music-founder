@@ -26,6 +26,7 @@ import { AgentOutputBlock } from './components/blocks/AgentOutputBlock';
 import { DocumentBlock } from './components/blocks/DocumentBlock';
 import { ProjectEntityBlock } from './components/blocks/ProjectEntityBlock';
 import { LODBlock } from './components/blocks/LODBlock';
+import { ClusterBlock } from './components/blocks/ClusterBlock';
 import { AddEntityModal } from './components/modals/AddEntityModal';
 import { PromoteToWorkflowModal } from './components/modals/PromoteToWorkflowModal';
 import { VersionComparisonModal } from './components/modals/VersionComparisonModal';
@@ -136,8 +137,10 @@ export default function ProjectCanvas() {
     // View Virtualization & Level of Detail (LOD) downsampling
     const {
         visibleBlocks,
+        clusterSummaries = [],
         visibleEdges,
         isLowLOD,
+        lodLevel,
     } = useCanvasVirtualization({
         blocks,
         edges,
@@ -148,6 +151,22 @@ export default function ProjectCanvas() {
         cullingMargin: 400,
         virtualizationThreshold: 500,
     });
+
+    const handleZoomToCluster = useCallback((summary: import('./types').CanvasClusterSummary) => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const clusterW = Math.max(300, summary.bounds.maxX - summary.bounds.minX + 200);
+        const clusterH = Math.max(200, summary.bounds.maxY - summary.bounds.minY + 200);
+
+        const zoomX = rect.width / clusterW;
+        const zoomY = rect.height / clusterH;
+        const targetZoom = Math.min(Math.max(Math.min(zoomX, zoomY), 0.45), 1.2);
+
+        const newX = rect.width / 2 - summary.center.x * targetZoom;
+        const newY = rect.height / 2 - summary.center.y * targetZoom;
+
+        setCanvasViewport({ x: Math.round(newX), y: Math.round(newY), zoom: targetZoom });
+    }, [setCanvasViewport]);
 
     // Multiplayer Ephemeral Canvas Presence
     const {
@@ -520,6 +539,15 @@ export default function ProjectCanvas() {
 
                 {/* Multiplayer Presence Layer (Live collaborator cursors and selection halos) */}
                 <CanvasPresenceLayer collaborators={collaborators} blocks={blocks} />
+
+                {/* Aggregated Spatial Clusters (Ultra-dense scenes >= 500 blocks at overview zoom) */}
+                {lodLevel === 'cluster' && clusterSummaries.map((cluster) => (
+                    <ClusterBlock
+                        key={cluster.id}
+                        summary={cluster}
+                        onZoomToCluster={handleZoomToCluster}
+                    />
+                ))}
 
                 {/* Blocks Layer (Culled by viewport bounding-box) */}
                 {sortedBlocks.map((block) => {
