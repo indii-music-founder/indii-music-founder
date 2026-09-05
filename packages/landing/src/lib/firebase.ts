@@ -27,21 +27,33 @@ let db: Firestore | undefined;
 let storage: FirebaseStorage | undefined;
 let functions: Functions | undefined;
 
+const isPlaceholderKey = (key?: string): boolean =>
+  !key ||
+  key === 'dummy' ||
+  key === 'placeholder' ||
+  key === 'mock' ||
+  key.includes('placeholder') ||
+  key.trim().length === 0;
+
 if (typeof window !== 'undefined') {
   try {
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-    db = getFirestore(app);
-    storage = getStorage(app);
-    auth = getAuth(app);
-    functions = getFunctions(app, 'us-central1');
-    const appCheckKey = import.meta.env.VITE_FIREBASE_APP_CHECK_KEY;
-    if (appCheckKey) {
-      initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(appCheckKey),
-        isTokenAutoRefreshEnabled: true,
-      });
+    if (!firebaseConfig.apiKey || isPlaceholderKey(firebaseConfig.apiKey)) {
+      console.warn('[Firebase] Firebase API key not provided or placeholder — skipping Firebase client initialization.');
+    } else {
+      app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+      db = getFirestore(app);
+      storage = getStorage(app);
+      auth = getAuth(app);
+      functions = getFunctions(app, 'us-central1');
+      const appCheckKey = import.meta.env.VITE_FIREBASE_APP_CHECK_KEY;
+      if (appCheckKey && !isPlaceholderKey(appCheckKey)) {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaEnterpriseProvider(appCheckKey),
+          isTokenAutoRefreshEnabled: true,
+        });
+      }
+      console.log('[Firebase] Initialization successful');
     }
-    console.log('[Firebase] Initialization successful');
   } catch (error) {
     console.error('[Firebase] Initialization failed:', error);
   }

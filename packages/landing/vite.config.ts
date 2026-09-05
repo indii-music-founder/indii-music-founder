@@ -5,6 +5,7 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  envDir: path.resolve(__dirname, '../..'),
   envPrefix: [
     'VITE_FIREBASE_',
     'VITE_FOUNDER_MODE',

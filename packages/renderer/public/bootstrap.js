@@ -35,6 +35,25 @@
       );
     };
 
+    const isLocalhost = typeof window !== "undefined" && (
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.endsWith(".local") ||
+      Boolean(window.FIREBASE_E2E_MOCK)
+    );
+
+    const isInstallations = (input) => {
+      if (!isLocalhost || !input) return false;
+      const url = typeof input === "string" ? input : (input && input.url ? input.url : "");
+      return typeof url === "string" && url.includes("firebaseinstallations.googleapis.com");
+    };
+
+    const isRemoteConfig = (input) => {
+      if (!isLocalhost || !input) return false;
+      const url = typeof input === "string" ? input : (input && input.url ? input.url : "");
+      return typeof url === "string" && url.includes("firebaseremoteconfig.googleapis.com");
+    };
+
     if (typeof window !== "undefined" && typeof window.fetch === "function") {
       const originalFetch = window.fetch.bind(window);
       window.fetch = function (input, init) {
@@ -58,6 +77,75 @@
             text: async () => payload,
           });
         }
+
+        if (isInstallations(input)) {
+          const url = typeof input === "string" ? input : (input && input.url ? input.url : "");
+          let fid = "cDummyInstallationFid001";
+          try {
+            if (init && init.body && typeof init.body === "string") {
+              const parsed = JSON.parse(init.body);
+              if (parsed && parsed.fid) fid = parsed.fid;
+            }
+          } catch (_) {}
+
+          const payload = url.includes("/authTokens:generate")
+            ? JSON.stringify({
+                token: "local-dummy-installation-token",
+                expiresIn: "604800s",
+              })
+            : JSON.stringify({
+                name: "projects/indii-music-founder/installations/" + fid,
+                fid: fid,
+                refreshToken: "local-dummy-refresh-token",
+                authToken: {
+                  token: "local-dummy-installation-token",
+                  expiresIn: "604800s",
+                },
+              });
+
+          if (typeof Response !== "undefined") {
+            return Promise.resolve(new Response(payload, {
+              status: 200,
+              statusText: "OK",
+              headers: {
+                "Content-Type": "application/json",
+                "Cross-Origin-Resource-Policy": "cross-origin",
+              },
+            }));
+          }
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => JSON.parse(payload),
+            text: async () => payload,
+          });
+        }
+
+        if (isRemoteConfig(input)) {
+          const payload = JSON.stringify({
+            entries: {},
+            state: "EMPTY_CONFIG",
+          });
+          if (typeof Response !== "undefined") {
+            return Promise.resolve(new Response(payload, {
+              status: 200,
+              statusText: "OK",
+              headers: {
+                "Content-Type": "application/json",
+                "Cross-Origin-Resource-Policy": "cross-origin",
+              },
+            }));
+          }
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => JSON.parse(payload),
+            text: async () => payload,
+          });
+        }
+
         return originalFetch.apply(this, arguments);
       };
     }

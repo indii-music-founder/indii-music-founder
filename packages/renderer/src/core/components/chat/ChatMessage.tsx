@@ -14,6 +14,7 @@ import {
     GraduationCap,
     Handshake,
     Landmark,
+    LayoutGrid,
     Library,
     LockKeyhole,
     Megaphone,
@@ -621,6 +622,49 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                                         priority={json.priority} 
                                         markdownBody={json.markdownBody} 
                                     />
+                                </div>
+                            );
+                        }
+
+                        // Canvas Push Tool Handling (A2UI)
+                        if (toolName === 'canvas_push') {
+                            const title = (typeof json.title === 'string' && json.title.trim().length > 0)
+                                ? json.title.trim()
+                                : 'Pushed Document';
+                            const docType = typeof json.type === 'string' ? json.type : 'document';
+                            return (
+                                <div
+                                    key={`tool-res-${tIdx}`}
+                                    className="my-3 p-3.5 rounded-xl bg-blue-950/30 border border-blue-500/30 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500"
+                                    data-testid="canvas-push-output"
+                                >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0 text-blue-400">
+                                            <LayoutGrid size={16} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="text-xs font-semibold text-white truncate">
+                                                {title}
+                                            </div>
+                                            <div className="text-[10px] text-blue-300/70 font-mono flex items-center gap-1.5 mt-0.5">
+                                                <span>Agent Canvas</span>
+                                                <span>•</span>
+                                                <span className="uppercase">{docType}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const store = useStore.getState();
+                                            if (!store.isCanvasOpen) {
+                                                store.toggleCanvas();
+                                            }
+                                        }}
+                                        className="px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 text-xs font-medium shrink-0 transition-colors cursor-pointer flex items-center gap-1.5"
+                                        data-testid="view-in-canvas-btn"
+                                    >
+                                        <span>View in Canvas</span>
+                                    </button>
                                 </div>
                             );
                         }

@@ -86,7 +86,8 @@ export const departmentCssVars = {
     screenwriter: '--color-dept-creative',          // Screenwriter uses Creative purple
     crm: '--color-dept-marketing',                  // CRM uses Marketing magenta
     'raw-converter': '--color-dept-creative',       // RAW Converter uses Creative purple
-    'format-foundry': '--color-dept-distribution'   // Format Foundry uses Distribution blue
+    'format-foundry': '--color-dept-distribution',  // Format Foundry uses Distribution blue
+    'project-canvas': '--color-dept-creative'       // Project Canvas uses Creative purple
 } as const;
 
 /**
@@ -539,6 +540,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'group-hover:text-indigo-300',
         hoverBg: 'hover:bg-indigo-500/20',
         cssVar: '--color-dept-distribution'
+    },
+    'project-canvas': {
+        text: 'text-dept-creative',
+        bg: 'bg-dept-creative/10',
+        border: 'border-dept-creative',
+        ring: 'focus-within:ring-dept-creative/50',
+        hoverText: 'hover:text-dept-creative',
+        hoverBg: 'hover:bg-dept-creative/5',
+        cssVar: '--color-dept-creative'
     }
 };
 

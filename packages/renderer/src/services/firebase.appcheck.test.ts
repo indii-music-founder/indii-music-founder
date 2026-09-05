@@ -149,4 +149,19 @@ describe('Firebase App Check Initialization', () => {
     // a web origin and Electron has empty Referer headers which Firebase blocks.
     expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
   });
+
+  it('should NOT initialize App Check when key is a dummy or placeholder', async () => {
+    vi.doMock('@/config/env', () => ({
+      serverTimestamp: vi.fn(),
+      env: {
+        appCheckKey: 'dummy',
+        DEV: false
+      },
+      firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
+    }));
+
+    await import('./firebase');
+
+    expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
+  });
 });

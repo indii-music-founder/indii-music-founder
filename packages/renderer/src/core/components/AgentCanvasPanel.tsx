@@ -266,6 +266,18 @@ export const AgentCanvasPanel: React.FC = () => {
         }))
     );
 
+    // Escape key dismisses the drawer when open
+    React.useEffect(() => {
+        if (!isCanvasOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                toggleCanvas();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isCanvasOpen, toggleCanvas]);
+
     // Clamp activeIndex when panels change: always show the latest pushed panel,
     // and clamp to valid range if panels were removed.
     React.useEffect(() => {
@@ -273,119 +285,170 @@ export const AgentCanvasPanel: React.FC = () => {
         setActiveIndex(canvasPanels.length - 1);
     }, [canvasPanels.length]);
 
-    if (!isCanvasOpen || canvasPanels.length === 0) return null;
-
-    const activePanel = canvasPanels[activeIndex];
-    if (!activePanel) return null;
-
-    const TypeIcon = TYPE_ICONS[activePanel.type] || FileText;
+    const safeActiveIndex = Math.min(Math.max(0, activeIndex), Math.max(0, canvasPanels.length - 1));
+    const activePanel = canvasPanels[safeActiveIndex];
+    const hasPanels = canvasPanels.length > 0 && !!activePanel;
+    const TypeIcon = hasPanels && activePanel ? (TYPE_ICONS[activePanel.type] || FileText) : LayoutGrid;
 
     return (
         <AnimatePresence>
-            <motion.div
-                initial={{ x: '100%', opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: '100%', opacity: 0 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-                className="fixed top-0 right-0 bottom-0 w-[420px] z-40 bg-zinc-950/98 border-l border-white/10 shadow-2xl flex flex-col"
-            >
-                {/* Header */}
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-white/5">
-                    <TypeIcon size={16} className="text-blue-400 flex-shrink-0" />
-                    <h2 className="text-sm font-semibold text-white flex-1 truncate">
-                        {activePanel.title}
-                    </h2>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-zinc-500 font-mono">
-                        {activePanel.agentId}
-                    </span>
-                    <button
-                        onClick={() => removePanel(activePanel.id)}
-                        className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
-                        aria-label="Remove this panel"
-                    >
-                        <Trash2 size={14} className="text-zinc-600" />
-                    </button>
-                    <button
-                        onClick={toggleCanvas}
-                        className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
-                        aria-label="Close canvas"
-                    >
-                        <PanelRightClose size={14} className="text-zinc-500" />
-                    </button>
-                </div>
-
-                {/* Tab bar (when multiple panels) */}
-                {canvasPanels.length > 1 && (
-                    <div className="flex items-center gap-1 px-5 py-2 border-b border-white/5 overflow-x-auto">
-                        <button
-                            onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
-                            disabled={activeIndex === 0}
-                            className="p-1 hover:bg-white/5 rounded disabled:opacity-20"
-                        >
-                            <ChevronLeft size={12} className="text-zinc-500" />
-                        </button>
-                        {canvasPanels.map((panel, idx) => {
-                            const PIcon = TYPE_ICONS[panel.type] || FileText;
-                            return (
+            {isCanvasOpen && (
+                <motion.div
+                    key="agent-canvas-panel"
+                    initial={{ x: '100%', opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: '100%', opacity: 0 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+                    className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] max-w-full z-[650] bg-zinc-950/98 border-l border-white/10 shadow-2xl flex flex-col"
+                    data-testid="agent-canvas-panel"
+                >
+                    {!hasPanels ? (
+                        <>
+                            {/* Header */}
+                            <div className="flex items-center gap-3 px-5 py-4 border-b border-white/5">
+                                <LayoutGrid size={16} className="text-blue-400 flex-shrink-0" />
+                                <h2 className="text-sm font-semibold text-white flex-1 truncate">
+                                    Agent Canvas
+                                </h2>
                                 <button
-                                    key={panel.id}
-                                    onClick={() => setActiveIndex(idx)}
-                                    className={`px-2.5 py-1 rounded-lg text-[11px] flex items-center gap-1.5 transition-colors ${idx === activeIndex
-                                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                        : 'text-zinc-500 hover:bg-white/5'
-                                        }`}
+                                    onClick={toggleCanvas}
+                                    className="p-1.5 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                                    aria-label="Close canvas"
                                 >
-                                    <PIcon size={10} />
-                                    <span className="truncate max-w-[80px]">{panel.title}</span>
+                                    <PanelRightClose size={14} className="text-zinc-500" />
                                 </button>
-                            );
-                        })}
-                        <button
-                            onClick={() => setActiveIndex(Math.min(canvasPanels.length - 1, activeIndex + 1))}
-                            disabled={activeIndex === canvasPanels.length - 1}
-                            className="p-1 hover:bg-white/5 rounded disabled:opacity-20"
-                        >
-                            <ChevronRight size={12} className="text-zinc-500" />
-                        </button>
-                        <div className="flex-1" />
-                        <button
-                            onClick={clearCanvas}
-                            className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors"
-                        >
-                            Clear all
-                        </button>
-                    </div>
-                )}
+                            </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-5">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activePanel.id}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <PanelContent panel={activePanel} />
-                        </motion.div>
-                    </AnimatePresence>
-                </div>
+                            {/* Empty State Content */}
+                            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center" data-testid="agent-canvas-empty-state">
+                                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4 text-blue-400 shadow-inner">
+                                    <FileText size={26} />
+                                </div>
+                                <h3 className="text-sm font-semibold text-white mb-1.5">No Pushed Documents Yet</h3>
+                                <p className="text-xs text-zinc-400 max-w-xs leading-relaxed mb-6">
+                                    When agents compile master technical specifications, charts, comparison tables, or interactive blueprints, they push them directly to this canvas for your review.
+                                </p>
+                                <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/5 text-[11px] text-zinc-400 font-mono">
+                                    Ready for agent pushes
+                                </div>
+                            </div>
 
-                {/* Footer */}
-                <div className="px-5 py-2 border-t border-white/5 flex items-center justify-between">
-                    <span className="text-[10px] text-zinc-600">
-                        {canvasPanels.length} panel{canvasPanels.length !== 1 ? 's' : ''} • Agent Canvas
-                    </span>
-                    <button
-                        onClick={toggleCanvas}
-                        className="text-[10px] text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
-                    >
-                        <X size={10} />
-                        Close
-                    </button>
-                </div>
-            </motion.div>
+                            {/* Footer */}
+                            <div className="px-5 py-2 border-t border-white/5 flex items-center justify-between">
+                                <span className="text-[10px] text-zinc-600">
+                                    0 panels • Agent Canvas
+                                </span>
+                                <button
+                                    onClick={toggleCanvas}
+                                    className="text-[10px] text-zinc-500 hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                                >
+                                    <X size={10} />
+                                    Close
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* Header */}
+                            <div className="flex items-center gap-3 px-5 py-4 border-b border-white/5">
+                                <TypeIcon size={16} className="text-blue-400 flex-shrink-0" />
+                                <h2 className="text-sm font-semibold text-white flex-1 truncate">
+                                    {activePanel.title}
+                                </h2>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-zinc-500 font-mono">
+                                    {activePanel.agentId}
+                                </span>
+                                <button
+                                    onClick={() => removePanel(activePanel.id)}
+                                    className="p-1.5 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                                    aria-label="Remove this panel"
+                                >
+                                    <Trash2 size={14} className="text-zinc-600" />
+                                </button>
+                                <button
+                                    onClick={toggleCanvas}
+                                    className="p-1.5 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                                    aria-label="Close canvas"
+                                >
+                                    <PanelRightClose size={14} className="text-zinc-500" />
+                                </button>
+                            </div>
+
+                            {/* Tab bar (when multiple panels) */}
+                            {canvasPanels.length > 1 && (
+                                <div className="flex items-center gap-1 px-5 py-2 border-b border-white/5 overflow-x-auto">
+                                    <button
+                                        onClick={() => setActiveIndex(Math.max(0, safeActiveIndex - 1))}
+                                        disabled={safeActiveIndex === 0}
+                                        className="p-1 hover:bg-white/5 rounded disabled:opacity-20 cursor-pointer"
+                                    >
+                                        <ChevronLeft size={12} className="text-zinc-500" />
+                                    </button>
+                                    {canvasPanels.map((panel, idx) => {
+                                        const PIcon = TYPE_ICONS[panel.type] || FileText;
+                                        return (
+                                            <button
+                                                key={panel.id}
+                                                onClick={() => setActiveIndex(idx)}
+                                                className={`px-2.5 py-1 rounded-lg text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer ${idx === safeActiveIndex
+                                                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                                    : 'text-zinc-500 hover:bg-white/5'
+                                                    }`}
+                                            >
+                                                <PIcon size={10} />
+                                                <span className="truncate max-w-[80px]">{panel.title}</span>
+                                            </button>
+                                        );
+                                    })}
+                                    <button
+                                        onClick={() => setActiveIndex(Math.min(canvasPanels.length - 1, safeActiveIndex + 1))}
+                                        disabled={safeActiveIndex === canvasPanels.length - 1}
+                                        className="p-1 hover:bg-white/5 rounded disabled:opacity-20 cursor-pointer"
+                                    >
+                                        <ChevronRight size={12} className="text-zinc-500" />
+                                    </button>
+                                    <div className="flex-1" />
+                                    <button
+                                        onClick={clearCanvas}
+                                        className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors cursor-pointer"
+                                    >
+                                        Clear all
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Content */}
+                            <div className="flex-1 overflow-y-auto p-5">
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={activePanel.id}
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -8 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <PanelContent panel={activePanel} />
+                                    </motion.div>
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="px-5 py-2 border-t border-white/5 flex items-center justify-between">
+                                <span className="text-[10px] text-zinc-600">
+                                    {canvasPanels.length} panel{canvasPanels.length !== 1 ? 's' : ''} • Agent Canvas
+                                </span>
+                                <button
+                                    onClick={toggleCanvas}
+                                    className="text-[10px] text-zinc-500 hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                                >
+                                    <X size={10} />
+                                    Close
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </motion.div>
+            )}
         </AnimatePresence>
     );
 };

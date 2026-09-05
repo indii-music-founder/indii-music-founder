@@ -272,6 +272,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         accent: '#6366f1', // indigo-500
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.08), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.15 }
+    },
+    'project-canvas': {
+        officeName: 'Project Canvas',
+        accent: '#00ff66', // Creative accent
+        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(0, 255, 102, 0.08), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'grid', opacity: 0.15 }
     }
 };
 

@@ -113,6 +113,7 @@ const ScreenwriterDashboard = lazyWithRetry(() => import('../modules/screenwrite
 const CRMDashboard = lazyWithRetry(() => import('../modules/crm/CRMDashboard'));
 const RawConverterModule = lazyWithRetry(() => import('../modules/raw-converter/RawConverterModule'));
 const FormatFoundryModule = lazyWithRetry(() => import('../modules/format-foundry/FormatFoundryModule'));
+const ProjectCanvas = lazyWithRetry(() => import('../modules/project-canvas/ProjectCanvas'));
 
 // Lazy-load AudioVisualizer to defer Three.js initialization until component is rendered
 const AudioVisualizer = lazyWithRetry(() => import('@/components/shared/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
@@ -174,6 +175,7 @@ const MODULE_COMPONENTS: Record<ModuleId, React.LazyExoticComponent<React.Compon
     'crm': CRMDashboard,
     'raw-converter': RawConverterModule,
     'format-foundry': FormatFoundryModule,
+    'project-canvas': ProjectCanvas,
 };
 
 // Modules that require a verified (non-anonymous) account

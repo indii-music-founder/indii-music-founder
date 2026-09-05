@@ -7,7 +7,7 @@ import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, Camera, type LucideIcon } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, Camera, LayoutGrid, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'motion/react';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { useGatedModules } from '@/config/featureFlags';
 import { ProjectList } from './sidebar/ProjectList';
 import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
+import { AgentCanvasToggle } from './AgentCanvasToggle';
 
 // Navigation debounce interval in ms — prevents Firestore b815 crash from rapid module switching
 const NAV_DEBOUNCE_MS = 150;
@@ -189,6 +190,7 @@ export default function Sidebar() {
     ];
 
     const toolItems: SidebarItem[] = [
+        { id: 'project-canvas', icon: LayoutGrid, label: 'Project Canvas' },
         { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
         { id: 'raw-converter', icon: Camera, label: 'RAW Converter' },
         { id: 'format-foundry', icon: Layers, label: 'Capability Foundry' },
@@ -297,6 +299,11 @@ export default function Sidebar() {
               instruction. The same metrics are still served by the "Observability &
               Metrics" tab inside the Devops module.
             */}
+
+            {/* Agent Canvas Drawer Toggle */}
+            <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-2 border-b border-white/5 border-dashed'}`}>
+                <AgentCanvasToggle variant={isSidebarOpen ? 'sidebar' : 'compact'} />
+            </div>
 
             {/* Boardroom Zen Mode Toggle */}
             <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>

@@ -164,6 +164,17 @@ class FeatureFlagService {
 
     private async loadRemoteFlags(): Promise<void> {
         try {
+            const isLocalhost = typeof window !== 'undefined' && (
+                window.location.hostname === 'localhost' ||
+                window.location.hostname === '127.0.0.1' ||
+                window.location.hostname.endsWith('.local')
+            );
+            if (isLocalhost) {
+                Logger.debug('FeatureFlags', 'Skipping Remote Config fetch on localhost (using defaults)');
+                this.initialized = true;
+                return;
+            }
+
             const { getRemoteConfig, fetchAndActivate, getBoolean } = await import('firebase/remote-config');
             const { app } = await import('@/services/firebase');
 

@@ -4,6 +4,7 @@ import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { StoreState } from '@/core/store';
+import { AgentCanvasToggle } from '@/core/components/AgentCanvasToggle';
 
 interface AgentHeaderProps {
     uptime: string;
@@ -38,7 +39,8 @@ export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
                 </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-12">
+            <div className="hidden md:flex items-center gap-6">
+                <AgentCanvasToggle variant="header" />
                 <StatusPill label="Status" status={isProcessing ? 'Thinking' : 'Standby'} />
                 <div className="flex flex-col items-end">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Session Uptime</span>

@@ -31,6 +31,7 @@ import { BatchingStatus } from './agent/BatchingStatus';
 import { cn } from '@/lib/utils';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { AgentSwitcherStrip } from './AgentSwitcherStrip';
+import { AgentCanvasToggle } from './AgentCanvasToggle';
 import { getRightPanelLayout, MIN_RIGHT_PANEL_WIDTH } from '../layout/workspaceWidthBudget';
 export default function RightPanel() {
 
@@ -202,7 +203,8 @@ export default function RightPanel() {
                                 Archives
                             </button>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <AgentCanvasToggle variant="compact" />
                             <AgentSwitcherStrip />
                             <button
                                 onClick={toggleRightPanel}

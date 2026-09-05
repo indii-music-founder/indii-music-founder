@@ -48,9 +48,9 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 }
 
 export const app = initializeApp(firebaseConfig);
-const isLocalhostDev = typeof window !== 'undefined' &&
-    import.meta.env.DEV &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.endsWith('.local'));
+const isLocalhostDev = isLocalhost && import.meta.env.DEV;
 
 // ============================================================================
 // LAZY Firebase Autonomous Initialization
@@ -308,7 +308,7 @@ export { db, storage, functions, functionsWest1 };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let remoteConfig: any = null;
 try {
-    if (!isLocalhostDev) {
+    if (!isLocalhost && !import.meta.env.DEV) {
         // Initialize Remote Config
         remoteConfig = getRemoteConfig(app);
         remoteConfig.defaultConfig = {
@@ -347,6 +347,11 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
 
     if (!firebaseConfig.messagingSenderId) {
         logger.debug('[Firebase] Messaging skipped: missing messagingSenderId in current environment.');
+        return null;
+    }
+
+    if (isLocalhost) {
+        logger.debug('[Firebase] Messaging skipped on localhost.');
         return null;
     }
 
@@ -391,7 +396,7 @@ export function getFirebasePerf() {
 }
 // Auto-initialize on load
 if (typeof window !== 'undefined') {
-    if (!isLocalhostDev) {
+    if (!isLocalhost && !import.meta.env.DEV) {
         getFirebasePerf();
     }
 }
@@ -424,7 +429,10 @@ if (typeof window !== 'undefined') {
         env.VITE_USE_FUNCTIONS_EMULATOR === 'true' ||
         isLocalhostDev
     );
-    const shouldInitAppCheck = !skipAppCheckInEmulator && !!env.appCheckKey;
+    const isPlaceholderKey = !env.appCheckKey ||
+        env.appCheckKey === 'dummy' ||
+        env.appCheckKey.toLowerCase() === 'placeholder';
+    const shouldInitAppCheck = !skipAppCheckInEmulator && !isPlaceholderKey;
 
     if (skipAppCheckInEmulator) {
         logger.info('[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation.');
@@ -469,6 +477,8 @@ if (typeof window !== 'undefined') {
             // Security Rules still enforce authorization even without App Check.
             logger.error('[App Check] Initialization failed — app running without App Check:', e);
         }
+    } else if (isPlaceholderKey && env.appCheckKey) {
+        logger.warn(`[App Check] App Check key is a placeholder ("${env.appCheckKey}"). Skipping App Check initialization to prevent invalid API requests.`);
     } else if (env.appCheckKey) {
         logger.debug('[App Check] Skipping initialization (Electron/Dev constraints not met)');
     }

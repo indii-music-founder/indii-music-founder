@@ -14,6 +14,7 @@ import BrandAssetsDrawer from './BrandAssetsDrawer';
 import HistoryDrawer from './HistoryDrawer';
 import AgentCapabilityRegistry from './AgentCapabilityRegistry';
 import CanvasModePicker from './CanvasModePicker';
+import { AgentCanvasToggle } from '@/core/components/AgentCanvasToggle';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
@@ -196,6 +197,9 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         <Rocket size={11} className={studioControls.isPLPMode ? "text-indigo-400" : ""} />
                         <span className="hidden lg:inline">PLP</span>
                     </button>
+
+                    {/* Agent Canvas Drawer Toggle */}
+                    <AgentCanvasToggle variant="header" />
 
                     <div className="h-3.5 w-px bg-white/8 mx-0.5 shrink-0" />
 

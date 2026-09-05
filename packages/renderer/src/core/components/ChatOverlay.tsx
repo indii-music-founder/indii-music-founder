@@ -42,6 +42,7 @@ import { PromptArea } from './command-bar/PromptArea';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { cn } from '@/lib/utils';
 import { AgentSwitcherStrip } from './AgentSwitcherStrip';
+import { AgentCanvasToggle } from './AgentCanvasToggle';
 import {
     resolveAgentVisualIdentity,
     type AgentVisualIconKey,
@@ -317,6 +318,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
 
                                 {/* Action Buttons */}
                                 <div className="flex items-center gap-1 relative z-10">
+                                    <AgentCanvasToggle variant="compact" />
                                     <AgentSwitcherStrip />
                                     <div className="w-px h-4 bg-white/10 mx-1 hidden md:block" />
                                     <button onClick={() => setCommandBarDetached(!isCommandBarDetached)} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label={isCommandBarDetached ? "Dock Input" : "Detach Input"} title={isCommandBarDetached ? "Dock Input" : "Detach Input"} data-testid="detach-input-btn"><Maximize2 size={14} /></button>

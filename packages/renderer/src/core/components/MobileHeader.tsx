@@ -6,6 +6,7 @@ import { ChevronLeft } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
 import { MODULE_DISPLAY_NAMES, type ModuleId } from '@/core/constants';
 import { useMobile } from '@/hooks/useMobile';
+import { AgentCanvasToggle } from './AgentCanvasToggle';
 
 /**
  * MobileHeader — Compact header bar for phone-class viewports.
@@ -75,9 +76,9 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({ rightAction }) => {
                     </h1>
                 </div>
 
-                {/* Right: optional module-specific action */}
+                {/* Right: optional module-specific action or persistent Agent Canvas drawer toggle */}
                 <div className="w-10 flex-shrink-0 flex justify-end">
-                    {rightAction}
+                    {rightAction || <AgentCanvasToggle variant="compact" />}
                 </div>
             </div>
         </header>

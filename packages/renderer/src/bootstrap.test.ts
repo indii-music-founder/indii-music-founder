@@ -182,4 +182,133 @@ describe('renderer hosting bootstrap (structural)', () => {
         expect(result).toBe(true);
         expect(originalSendBeacon).toHaveBeenCalledWith(analyticsUrl, 'payload');
     });
+
+    it('intercepts Firebase Installations fetch on localhost and returns synthetic 200 registration payload', async () => {
+        const originalFetch = vi.fn();
+        const fakeWindow: any = {
+            location: {
+                hostname: 'localhost',
+                pathname: '/',
+                search: '',
+                hash: '',
+                replace: vi.fn(),
+            },
+            localStorage: { setItem: vi.fn() },
+            fetch: originalFetch,
+        };
+
+        runInNewContext(bootstrapSource, {
+            console,
+            localStorage: fakeWindow.localStorage,
+            URLSearchParams,
+            window: fakeWindow,
+            Response,
+        });
+
+        const installationsUrl = 'https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations';
+        const response = await fakeWindow.fetch(installationsUrl, {
+            method: 'POST',
+            body: JSON.stringify({ fid: 'cCustomFid1234567890' }),
+        });
+
+        expect(response.status).toBe(200);
+        expect(originalFetch).not.toHaveBeenCalled();
+        const body = await response.json();
+        expect(body.fid).toBe('cCustomFid1234567890');
+        expect(body.authToken.token).toBe('local-dummy-installation-token');
+        expect(body.authToken.expiresIn).toBe('604800s');
+    });
+
+    it('intercepts Firebase Installations authTokens:generate fetch on localhost', async () => {
+        const originalFetch = vi.fn();
+        const fakeWindow: any = {
+            location: {
+                hostname: '127.0.0.1',
+                pathname: '/',
+                search: '',
+                hash: '',
+                replace: vi.fn(),
+            },
+            localStorage: { setItem: vi.fn() },
+            fetch: originalFetch,
+        };
+
+        runInNewContext(bootstrapSource, {
+            console,
+            localStorage: fakeWindow.localStorage,
+            URLSearchParams,
+            window: fakeWindow,
+            Response,
+        });
+
+        const tokenUrl = 'https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations/cCustomFid1234567890/authTokens:generate';
+        const response = await fakeWindow.fetch(tokenUrl, { method: 'POST' });
+
+        expect(response.status).toBe(200);
+        expect(originalFetch).not.toHaveBeenCalled();
+        const body = await response.json();
+        expect(body.token).toBe('local-dummy-installation-token');
+        expect(body.expiresIn).toBe('604800s');
+    });
+
+    it('intercepts Firebase RemoteConfig fetch on localhost and returns synthetic 200 EMPTY_CONFIG', async () => {
+        const originalFetch = vi.fn();
+        const fakeWindow: any = {
+            location: {
+                hostname: 'localhost',
+                pathname: '/',
+                search: '',
+                hash: '',
+                replace: vi.fn(),
+            },
+            localStorage: { setItem: vi.fn() },
+            fetch: originalFetch,
+        };
+
+        runInNewContext(bootstrapSource, {
+            console,
+            localStorage: fakeWindow.localStorage,
+            URLSearchParams,
+            window: fakeWindow,
+            Response,
+        });
+
+        const rcUrl = 'https://firebaseremoteconfig.googleapis.com/v1/projects/indii-music-founder/namespaces/firebase:fetch?key=AIzaSyFakeKey';
+        const response = await fakeWindow.fetch(rcUrl, { method: 'POST' });
+
+        expect(response.status).toBe(200);
+        expect(originalFetch).not.toHaveBeenCalled();
+        const body = await response.json();
+        expect(body.state).toBe('EMPTY_CONFIG');
+        expect(body.entries).toEqual({});
+    });
+
+    it('passes Firebase Installations fetch through on production hosts', async () => {
+        const originalFetch = vi.fn().mockResolvedValue(new Response('{"data":1}', { status: 200 }));
+        const fakeWindow: any = {
+            location: {
+                hostname: 'indii.music',
+                pathname: '/',
+                search: '',
+                hash: '',
+                replace: vi.fn(),
+            },
+            localStorage: { setItem: vi.fn() },
+            fetch: originalFetch,
+        };
+
+        runInNewContext(bootstrapSource, {
+            console,
+            localStorage: fakeWindow.localStorage,
+            URLSearchParams,
+            window: fakeWindow,
+            Response,
+        });
+
+        const installationsUrl = 'https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations';
+        const response = await fakeWindow.fetch(installationsUrl, { method: 'POST' });
+
+        expect(originalFetch).toHaveBeenCalled();
+        expect(response.status).toBe(200);
+    });
 });

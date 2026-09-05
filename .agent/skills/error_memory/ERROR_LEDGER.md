@@ -1,3 +1,26 @@
+## 2026-09-05 Firebase Installations & Remote Config Localhost Referer 403 (FIREBASE_INSTALLATIONS_REFERER_BLOCKED)
+
+- **SEVERITY:** High (triggered red 403 console errors and unhandled promise rejections on localhost/preview)
+- **FILES:** `packages/renderer/public/bootstrap.js`, `packages/renderer/src/config/featureFlags.ts`, `packages/renderer/src/services/firebase.ts`, `packages/renderer/src/bootstrap.test.ts`
+- **ERROR:** `FirebaseError: Installations: Create Installation request failed with error "403 PERMISSION_DENIED: Requests from referer http://127.0.0.1:4173/ are blocked." (installations/request-failed).`
+- **CAUSE:** GCP Web API keys have HTTP referer restrictions allowing `https://indii.music/*`. On local preview servers (`http://127.0.0.1:4173`), calls from Firebase Messaging (`onForegroundMessage`) and Firebase Remote Config (`fetchAndActivate`) hit `firebaseinstallations.googleapis.com` and `firebaseremoteconfig.googleapis.com`, which Google API Gateway rejects with HTTP 403.
+- **FIX:**
+  1. In `bootstrap.js`, added synthetic 200 response interception for `firebaseinstallations.googleapis.com` and `firebaseremoteconfig.googleapis.com` when running on `localhost`, `127.0.0.1`, or mock mode, returning valid registration/EMPTY_CONFIG payloads without network calls.
+  2. In `featureFlags.ts`, added `isLocalhost` check in `loadRemoteFlags()` to skip remote config network fetching on localhost and rely on local defaults.
+  3. In `firebase.ts`, added `isLocalhost` check in `getFirebaseMessaging()` to gracefully skip Web Push FCM initialization on localhost.
+- **PREVENTION:** Never allow client-side SDKs that query GCP services requiring referer-restricted API keys to execute unintercepted on arbitrary local preview ports.
+
+## 2026-09-05 Missing envDir in Landing Vite Config Triggering auth/invalid-api-key (LANDING_VITE_MISSING_ENV_DIR)
+
+- **SEVERITY:** High (crashed Firebase Auth on landing page preview/build)
+- **FILES:** `packages/landing/vite.config.ts`, `packages/landing/src/lib/firebase.ts`
+- **ERROR:** `FirebaseError: Firebase: Error (auth/invalid-api-key).` in console on landing preview (`http://localhost:4174`).
+- **CAUSE:** `packages/landing/vite.config.ts` did not specify `envDir`, causing Vite to search for `.env` only within `packages/landing/` rather than the repository root. `import.meta.env.VITE_FIREBASE_API_KEY` was undefined, which Firebase Auth rejected on initialization. Additionally, `firebase.ts` did not check for missing or placeholder keys before calling `initializeApp` and `initializeAppCheck`.
+- **FIX:**
+  1. In `packages/landing/vite.config.ts`, configured `envDir: path.resolve(__dirname, '../..')`.
+  2. In `packages/landing/src/lib/firebase.ts`, added `isPlaceholderKey` validation to gracefully warn and skip initialization if the API key or App Check key is missing or a dummy placeholder.
+- **PREVENTION:** Monorepo Vite packages must explicitly configure `envDir: path.resolve(__dirname, '../..')` (or equivalent root path) to inherit workspace environment variables, and SDK entrypoints must always validate config before instantiating auth/app-check providers.
+
 ## 2026-09-05 Firestore Embedded Entity Index Limit Violation from Raw Base64 URI (FIRESTORE_NESTED_ENTITY_SIZE_EXCEEDED)
 
 - **SEVERITY:** High (broke asset creation and node persistence in creative studio infinite canvas)

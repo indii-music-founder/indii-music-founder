@@ -8,7 +8,7 @@ import {
     AudioWaveform, FolderOpen, Video, Map, Briefcase,
     Settings, PenTool, LayoutDashboard, Radio, CreditCard,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Building, ShieldAlert, Cpu, Workflow, Gem, AlertCircle, Lightbulb, HelpCircle, Activity
+    Building, ShieldAlert, Cpu, Workflow, Gem, AlertCircle, Lightbulb, HelpCircle, Activity, LayoutGrid, PanelRight
 } from 'lucide-react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { useBugReport } from '@/modules/debug';
@@ -112,6 +112,10 @@ export function UnifiedCommandMenu() {
                             <PenTool className="w-4 h-4 text-pink-400" />
                             <span>Creative Studio</span>
                         </Command.Item>
+                        <Command.Item onSelect={() => runCommand(() => setModule('project-canvas'))} className="flex items-center gap-3 cursor-pointer">
+                            <LayoutGrid className="w-4 h-4 text-purple-400" />
+                            <span>Project Canvas (Infinite Workspace)</span>
+                        </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('files'))} className="flex items-center gap-3 cursor-pointer">
                             <FolderOpen className="w-4 h-4 text-emerald-400" />
                             <span>Inbox & Project Files</span>
@@ -165,6 +169,10 @@ export function UnifiedCommandMenu() {
                         <Command.Item onSelect={() => runCommand(() => setModule('workflow'))} className="flex items-center gap-3 cursor-pointer">
                             <Workflow className="w-4 h-4 text-slate-400" />
                             <span>Workflow Blueprints</span>
+                        </Command.Item>
+                        <Command.Item onSelect={() => runCommand(() => useStore.getState().toggleCanvas())} className="flex items-center gap-3 cursor-pointer">
+                            <PanelRight className="w-4 h-4 text-blue-400" />
+                            <span>Toggle Agent Canvas (Pushed Specs & Documents)</span>
                         </Command.Item>
                     </Command.Group>
 
