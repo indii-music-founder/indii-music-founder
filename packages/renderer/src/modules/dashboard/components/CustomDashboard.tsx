@@ -179,7 +179,9 @@ export function CustomDashboard() {
                             </button>
                         </div>
                         <div className="grid grid-cols-1 gap-3 @sm:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @lg:gap-4">
-                            {(Object.entries(WIDGET_DEFINITIONS) as [WidgetType, (typeof WIDGET_DEFINITIONS)[WidgetType]][]).map(([type, def]) => {
+                            {(Object.entries(WIDGET_DEFINITIONS) as [WidgetType, (typeof WIDGET_DEFINITIONS)[WidgetType]][])
+                                .filter(([_, def]) => !def.deprecated)
+                                .map(([type, def]) => {
                                 const Icon = def.icon;
                                 const alreadyAdded = addedTypes.has(type);
                                 return (

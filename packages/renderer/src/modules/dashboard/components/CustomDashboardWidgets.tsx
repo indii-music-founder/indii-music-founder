@@ -15,6 +15,11 @@ import {
     MapPin,
     LucideIcon,
     Sparkles,
+    ShieldAlert,
+    ShieldCheck,
+    Check,
+    X,
+    ChevronRight,
 } from 'lucide-react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'motion/react';
@@ -25,6 +30,10 @@ import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
 import { MODEL_PRICING } from '@/core/config/intelligence-models';
 import { WidgetEmptyState } from './WidgetEmptyState';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import { timelineOrchestrator } from '@/services/timeline/TimelineOrchestratorService';
+import type { Timeline } from '@/services/timeline/TimelineTypes';
+import { toolApprovalService, type PendingToolApproval } from '@/services/agent/governance/ToolApprovalService';
+import { useToast } from '@/core/context/ToastContext';
 import type {
     DashboardRevenueStats,
     DashboardStreamsStats,
@@ -40,7 +49,24 @@ import type {
     DashboardTourStatus,
 } from '@/services/dashboard/schema';
 
-export type WidgetType = 'streams_today' | 'revenue_mtd' | 'revenue_aggregated' | 'next_release' | 'top_track' | 'agent_activity' | 'audience_growth' | 'active_campaigns' | 'pending_tasks' | 'social_engagement' | 'brand_identity' | 'merch_sales' | 'tour_status' | 'cost_estimator';
+export type WidgetType =
+    | 'streams_today'
+    | 'revenue_consolidated'
+    | 'revenue_mtd'
+    | 'revenue_aggregated'
+    | 'project_timeline'
+    | 'approval_gates'
+    | 'next_release'
+    | 'top_track'
+    | 'agent_activity'
+    | 'audience_growth'
+    | 'active_campaigns'
+    | 'pending_tasks'
+    | 'social_engagement'
+    | 'brand_identity'
+    | 'merch_sales'
+    | 'tour_status'
+    | 'cost_estimator';
 
 export interface Widget {
     id: string;
@@ -48,10 +74,13 @@ export interface Widget {
     order: number;
 }
 
-export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: LucideIcon; description: string }> = {
+export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: LucideIcon; description: string; deprecated?: boolean }> = {
     streams_today: { label: 'Streams Today', icon: Music, description: 'Daily stream count across all DSPs' },
-    revenue_mtd: { label: 'Revenue MTD', icon: DollarSign, description: 'Month-to-date royalty revenue' },
-    revenue_aggregated: { label: 'Revenue Aggregate', icon: TrendingUp, description: 'Total revenue from all sources' },
+    revenue_consolidated: { label: 'Revenue & Royalties', icon: DollarSign, description: 'Consolidated gross revenue, MTD earnings and income sources' },
+    project_timeline: { label: 'Project Timeline', icon: Calendar, description: 'Active rollout timeline, current phase, and milestone countdown' },
+    approval_gates: { label: 'Approval Gates', icon: ShieldCheck, description: 'Pending approval gates and one-click authorization' },
+    revenue_aggregated: { label: 'Revenue Aggregate', icon: TrendingUp, description: 'Total revenue from all sources', deprecated: true },
+    revenue_mtd: { label: 'Revenue MTD', icon: DollarSign, description: 'Month-to-date royalty revenue', deprecated: true },
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },
     top_track: { label: 'Top Track', icon: TrendingUp, description: 'Your best performing track right now' },
     agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent Autonomous agent tasks and completions' },
@@ -65,22 +94,76 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
     cost_estimator: { label: 'Cost Estimator', icon: DollarSign, description: 'Estimate API costs for generative intelligence' },
 };
 
-const DEFAULT_WIDGETS: Widget[] = [
+export const DEFAULT_WIDGETS: Widget[] = [
     { id: 'w1', type: 'streams_today', order: 0 },
-    { id: 'w2', type: 'revenue_aggregated', order: 1 },
-    { id: 'w3', type: 'next_release', order: 2 },
-    { id: 'w4', type: 'top_track', order: 3 },
-    { id: 'w5', type: 'audience_growth', order: 4 },
+    { id: 'w2', type: 'revenue_consolidated', order: 1 },
+    { id: 'w3', type: 'project_timeline', order: 2 },
+    { id: 'w4', type: 'approval_gates', order: 3 },
+    { id: 'w5', type: 'next_release', order: 4 },
     { id: 'w6', type: 'active_campaigns', order: 5 },
     { id: 'w7', type: 'cost_estimator', order: 6 },
 ];
 
 export const STORAGE_KEY = 'indii_custom_dashboard_widgets';
 
+export function migrateWidgets(savedWidgets: Widget[]): Widget[] {
+    const hasConsolidatedRevenue = savedWidgets.some((w) => w.type === 'revenue_consolidated');
+
+    let migrated: Widget[] = [];
+
+    // If has legacy revenue but not consolidated, replace the first legacy revenue with consolidated
+    let replacedRevenue = false;
+    for (const w of savedWidgets) {
+        if (w.type === 'revenue_aggregated' || w.type === 'revenue_mtd') {
+            if (!hasConsolidatedRevenue && !replacedRevenue) {
+                migrated.push({ id: w.id, type: 'revenue_consolidated', order: w.order });
+                replacedRevenue = true;
+            }
+            continue;
+        }
+        migrated.push(w);
+    }
+
+    // Ensure project_timeline is present
+    if (!migrated.some((w) => w.type === 'project_timeline')) {
+        migrated.push({ id: 'w_project_timeline', type: 'project_timeline', order: 2 });
+    }
+
+    // Ensure approval_gates is present
+    if (!migrated.some((w) => w.type === 'approval_gates')) {
+        migrated.push({ id: 'w_approval_gates', type: 'approval_gates', order: 3 });
+    }
+
+    // Deduplicate by widget type
+    const seen = new Set<WidgetType>();
+    migrated = migrated.filter((w) => {
+        if (seen.has(w.type)) return false;
+        seen.add(w.type);
+        return true;
+    });
+
+    // Re-index orders sequentially
+    migrated.sort((a, b) => a.order - b.order);
+    migrated = migrated.map((w, index) => ({ ...w, order: index }));
+
+    return migrated;
+}
+
 export function loadWidgets(): Widget[] {
     try {
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) return JSON.parse(saved) as Widget[];
+        if (saved) {
+            const parsed = JSON.parse(saved) as Widget[];
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                const migrated = migrateWidgets(parsed);
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+                } catch {
+                    // ignore storage errors
+                }
+                return migrated;
+            }
+        }
     } catch {
         // ignore
     }
@@ -963,8 +1046,532 @@ function TourStatusWidget() {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
+function ConsolidatedRevenueWidget({ initialMode = 'aggregate' }: { initialMode?: 'aggregate' | 'mtd' }) {
+    const userId = useAuthenticatedUserId();
+    const setModule = useStore(useShallow((s) => s.setModule));
+    const [mode, setMode] = useState<'aggregate' | 'mtd'>(initialMode);
+
+    // Aggregated stats
+    const [stats, setStats] = useState<RevenueStats | null>(null);
+    const [isLoadingAgg, setIsLoadingAgg] = useState(true);
+
+    // MTD stats
+    const [revenueData, setRevenueData] = useState<DashboardRevenueStats | null>(null);
+    const [isLoadingMtd, setIsLoadingMtd] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        let isMounted = true;
+
+        if (mode === 'aggregate') {
+            const fetchStats = async () => {
+                try {
+                    const data = await revenueService.getUserRevenueStats(userId, '30d');
+                    if (isMounted) setStats(data);
+                } catch (error) {
+                    Logger.error('CustomDashboardWidgets', 'Error fetching revenue stats', error);
+                } finally {
+                    if (isMounted) setIsLoadingAgg(false);
+                }
+            };
+            fetchStats();
+        } else {
+            const unsubscribe = AnalyticsService.subscribeToDashboardRevenue(
+                userId,
+                (data) => {
+                    if (isMounted) {
+                        setRevenueData(data);
+                        setIsLoadingMtd(false);
+                    }
+                },
+                () => {
+                    if (isMounted) {
+                        setRevenueData(AnalyticsService.getRevenueZeroState());
+                        setIsLoadingMtd(false);
+                    }
+                }
+            );
+            return () => {
+                isMounted = false;
+                unsubscribe();
+            };
+        }
+    }, [userId, mode]);
+
+    const isLoading = mode === 'aggregate' ? isLoadingAgg : isLoadingMtd;
+    const now = new Date();
+    const monthName = now.toLocaleString('default', { month: 'long' });
+    const mtdDisplay = revenueData?.mtdRevenue.formatted || '$0';
+
+    if (!isLoading && mode === 'aggregate' && (stats?.totalRevenue ?? 0) === 0) {
+        return (
+            <WidgetEmptyState
+                icon={TrendingUp}
+                label="Revenue & Royalties"
+                promise="Streaming, merch, sync and licensing income roll up here as it arrives."
+                ctaLabel="Set up revenue tracking"
+                ctaModule="finance"
+                accentClass="text-dept-royalties"
+            />
+        );
+    }
+
+    return (
+        <div
+            className="flex flex-col h-full justify-between group/widget cursor-pointer"
+            onClick={() => setModule('finance')}
+            data-testid="revenue-consolidated-widget"
+        >
+            <div>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.2)] group-hover/widget:bg-green-500 group-hover/widget:text-black transition-all duration-500">
+                            {mode === 'aggregate' ? (
+                                <TrendingUp size={18} className="group-hover/widget:scale-110 transition-transform" />
+                            ) : (
+                                <DollarSign size={20} className="group-hover/widget:rotate-12 transition-transform" />
+                            )}
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] block">Revenue & Royalties</span>
+                            <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">
+                                {mode === 'aggregate' ? 'Total Gross All Sources' : `${monthName} Earnings`}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Mode Toggle Pills */}
+                    <div
+                        className="flex items-center bg-black/40 border border-white/10 rounded-lg p-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setMode('aggregate')}
+                            className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded transition-all ${
+                                mode === 'aggregate'
+                                    ? 'bg-emerald-500 text-black shadow-sm'
+                                    : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                            Aggregate
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMode('mtd')}
+                            className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded transition-all ${
+                                mode === 'mtd'
+                                    ? 'bg-emerald-500 text-black shadow-sm'
+                                    : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                            MTD
+                        </button>
+                    </div>
+                </div>
+
+                <div className="space-y-1">
+                    {mode === 'aggregate' ? (
+                        <>
+                            <p className={`text-5xl font-black text-white tracking-tighter ${isLoadingAgg ? 'animate-pulse opacity-50' : ''}`}>
+                                ${stats?.totalRevenue.toLocaleString('en-US') || '0'}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Gross Revenue</p>
+                                {stats && stats.revenueChange !== 0 && (
+                                    <span className={`text-[10px] font-black ${stats.revenueChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        {stats.revenueChange >= 0 ? '+' : ''}{stats.revenueChange.toFixed(1)}%
+                                    </span>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <p className={`text-5xl font-black text-white tracking-tighter ${isLoadingMtd ? 'animate-pulse opacity-50' : ''}`}>
+                                {isLoadingMtd ? mtdDisplay : <CountUp value={parseFloat(mtdDisplay.replace(/[^0-9.]/g, '')) || 0} formatter={formatCurrency} />}
+                            </p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{monthName} MTD Earnings</p>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            <div className="mt-6">
+                {mode === 'aggregate' && stats && (
+                    <div>
+                        <div className="flex gap-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            {Object.entries(stats.sources).map(([key, value]) => {
+                                const percentage = stats.totalRevenue > 0 ? (value / stats.totalRevenue) * 100 : 0;
+                                const colors: Record<string, string> = {
+                                    streaming: 'bg-blue-500',
+                                    merch: 'bg-green-500',
+                                    licensing: 'bg-emerald-500',
+                                    social: 'bg-pink-500',
+                                };
+                                if (percentage === 0) return null;
+                                return (
+                                    <motion.div
+                                        key={key}
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${percentage}%` }}
+                                        transition={{ duration: 0.6 }}
+                                        className={`h-full ${colors[key] || 'bg-gray-500'}`}
+                                        title={`${key}: ${formatCurrency(value)}`}
+                                    />
+                                );
+                            })}
+                        </div>
+                        <div className="flex justify-between items-center mt-2 text-[9px] text-gray-400">
+                            <span>Streaming, Merch, Licensing & Social</span>
+                            <span className="text-emerald-400 font-bold uppercase tracking-wider">Open Finance →</span>
+                        </div>
+                    </div>
+                )}
+                {mode === 'mtd' && (
+                    <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                        <div className="flex flex-col">
+                            <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Next Payout</span>
+                            <span className="text-xs font-bold text-white/60">Not scheduled</span>
+                        </div>
+                        <div className="w-12 h-6 rounded-md bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                            <div className="w-full h-full bg-linear-to-r from-green-500/20 to-emerald-500/40 animate-pulse" />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+function ProjectTimelineWidget() {
+    const userId = useAuthenticatedUserId();
+    const setModule = useStore(useShallow((s) => s.setModule));
+    const [timeline, setTimeline] = useState<Timeline | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!userId) return;
+        let isMounted = true;
+
+        async function loadTimeline() {
+            try {
+                const active = await timelineOrchestrator.getActiveTimelines(userId);
+                if (!isMounted) return;
+                if (active && active.length > 0) {
+                    setTimeline(active[0]);
+                } else {
+                    const all = await timelineOrchestrator.getAllTimelines(userId);
+                    if (isMounted && all && all.length > 0) {
+                        setTimeline(all[0]);
+                    }
+                }
+            } catch (err) {
+                Logger.error('ProjectTimelineWidget', 'Failed to load timeline', err);
+            } finally {
+                if (isMounted) setIsLoading(false);
+            }
+        }
+        loadTimeline();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [userId]);
+
+    const activePhase = timeline?.phases?.find((p) => p.order === timeline?.currentPhaseOrder) || timeline?.phases?.[0];
+    const nextMilestone = timeline?.milestones?.find((m) => m.status === 'pending');
+    const completedCount = timeline?.completedCount ?? 0;
+    const totalCount = timeline?.totalCount || (timeline?.milestones?.length ?? 1);
+    const percent = Math.min(100, Math.round((completedCount / Math.max(1, totalCount)) * 100));
+
+    if (!isLoading && !timeline) {
+        return (
+            <div className="flex flex-col h-full justify-between group/widget" data-testid="project-timeline-widget">
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.2)] group-hover/widget:bg-blue-500 group-hover/widget:text-black transition-all duration-500">
+                                <Calendar size={18} className="group-hover/widget:scale-110 transition-transform" />
+                            </div>
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Project Timeline</span>
+                        </div>
+                        <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-400/10 px-2 py-1 rounded-lg border border-blue-400/20">
+                            Roadmap
+                        </span>
+                    </div>
+
+                    <div className="space-y-1">
+                        <p className="text-xl font-bold text-white tracking-tight">No Active Rollout</p>
+                        <p className="text-[10px] text-gray-400 leading-relaxed mt-1">
+                            Build an autonomous progressive timeline with phased releases, escalating cadence, and review checkpoints.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-4">
+                    <button
+                        onClick={() => setModule('campaign')}
+                        className="w-full py-2.5 px-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm"
+                    >
+                        <Calendar size={14} />
+                        Plan Release Timeline
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className="flex flex-col h-full justify-between group/widget cursor-pointer"
+            onClick={() => setModule('campaign')}
+            data-testid="project-timeline-widget"
+        >
+            <div>
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.2)] group-hover/widget:bg-blue-500 group-hover/widget:text-black transition-all duration-500">
+                            <Calendar size={18} className="group-hover/widget:scale-110 transition-transform" />
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] block">Project Timeline</span>
+                            <span className="text-xs font-bold text-white tracking-tight truncate max-w-[140px] block">{timeline?.title || 'Active Campaign'}</span>
+                        </div>
+                    </div>
+                    {activePhase && (
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest bg-blue-400/10 px-2 py-0.5 rounded border border-blue-400/20">
+                                {activePhase.name}
+                            </span>
+                            <span className="text-[8px] font-mono text-gray-500 uppercase mt-0.5">
+                                {activePhase.cadence} cadence
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-3 space-y-1">
+                    <div className="flex justify-between items-center text-[10px]">
+                        <span className="text-gray-400 font-medium">Milestone Progress</span>
+                        <span className="text-blue-400 font-bold">{percent}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percent}%` }}
+                            transition={{ duration: 0.8, ease: 'easeOut' }}
+                            className="h-full bg-linear-to-r from-blue-500 to-emerald-400"
+                        />
+                    </div>
+                    <p className="text-[9px] text-gray-500">{completedCount} of {totalCount} milestones completed</p>
+                </div>
+
+                {nextMilestone && (
+                    <div className="mt-3 p-2.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[8px] font-black uppercase tracking-wider text-emerald-400">Up Next</span>
+                            <span className="text-[8px] font-mono text-gray-400">
+                                {(() => {
+                                    if (!nextMilestone.scheduledAt) return 'Upcoming';
+                                    const d = new Date(nextMilestone.scheduledAt);
+                                    return isNaN(d.getTime()) ? 'Upcoming' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                })()}
+                            </span>
+                        </div>
+                        <p className="text-[11px] font-semibold text-white truncate">{nextMilestone.instruction}</p>
+                        {nextMilestone.platform && (
+                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400 uppercase font-mono">
+                                {nextMilestone.platform}
+                            </span>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] text-gray-400">
+                <span className="text-white/60">Status: <strong className="text-emerald-400 capitalize">{timeline?.status ?? 'Active'}</strong></span>
+                <span className="text-blue-400 font-bold hover:underline flex items-center gap-1">
+                    Timeline Details <ChevronRight size={12} />
+                </span>
+            </div>
+        </div>
+    );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+function ApprovalGatesWidget() {
+    const [approvals, setApprovals] = useState<(PendingToolApproval & { id: string })[]>([]);
+    const [busyId, setBusyId] = useState<string | null>(null);
+    const toast = useToast();
+
+    useEffect(() => {
+        const unsubscribe = toolApprovalService.onPendingApprovals(setApprovals);
+        return () => {
+            if (typeof unsubscribe === 'function') unsubscribe();
+        };
+    }, []);
+
+    const handleApprove = async (id: string, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setBusyId(id);
+        try {
+            const result = await toolApprovalService.approve(id);
+            if (result.success) {
+                if (toast?.success) {
+                    toast.success('Gate approved & executed');
+                } else {
+                    Logger.info('ApprovalGates', 'Approved');
+                }
+            } else {
+                if (toast?.error) {
+                    toast.error(result.error || 'Gate execution failed');
+                } else {
+                    Logger.error('ApprovalGates', result.error);
+                }
+            }
+        } catch (err) {
+            Logger.error('ApprovalGatesWidget', 'Approve error', err);
+            toast?.error?.('Failed to approve');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const handleDeny = async (id: string, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setBusyId(id);
+        try {
+            await toolApprovalService.deny(id, 'Denied from Quick-Action Approval Gate');
+            if (toast?.success) {
+                toast.success('Gate denied');
+            } else {
+                Logger.info('ApprovalGates', 'Denied');
+            }
+        } catch (err) {
+            Logger.error('ApprovalGatesWidget', 'Deny error', err);
+            toast?.error?.('Failed to deny');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const hasPending = approvals.length > 0;
+
+    return (
+        <div className="flex flex-col h-full justify-between group/widget" data-testid="approval-gates-widget">
+            <div>
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${
+                            hasPending
+                                ? 'bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse'
+                                : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                        }`}>
+                            {hasPending ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] block">Approval Gates</span>
+                            <span className="text-xs font-bold text-white tracking-tight">
+                                {hasPending ? `${approvals.length} Gate${approvals.length > 1 ? 's' : ''} Pending` : 'All Gates Clear'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${
+                        hasPending
+                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    }`}>
+                        {hasPending ? 'Action Required' : 'Enforced'}
+                    </span>
+                </div>
+
+                {hasPending ? (
+                    <div className="space-y-2 max-h-[130px] overflow-y-auto custom-scrollbar pr-1">
+                        {approvals.slice(0, 2).map((item) => {
+                            const isBusy = busyId === item.id;
+                            const riskColor = item.riskTier === 'destructive'
+                                ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                                : item.riskTier === 'write'
+                                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                : 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="p-2.5 rounded-xl bg-black/40 border border-white/5 space-y-2 hover:border-white/10 transition-colors"
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-[11px] font-bold text-white truncate">{item.toolName}</span>
+                                                <span className={`text-[7px] font-black uppercase px-1 py-0.2 rounded border ${riskColor}`}>
+                                                    {item.riskTier}
+                                                </span>
+                                            </div>
+                                            <p className="text-[9px] text-gray-400 truncate mt-0.5">{item.description || 'Action awaiting authorization'}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Quick Actions: Approve / Deny */}
+                                    <div className="flex items-center gap-1.5 pt-1">
+                                        <button
+                                            type="button"
+                                            disabled={isBusy}
+                                            onClick={(e) => handleApprove(item.id, e)}
+                                            data-testid={`gate-approve-${item.id}`}
+                                            className="flex-1 py-1 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black font-bold text-[9px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all disabled:opacity-50"
+                                        >
+                                            <Check size={10} />
+                                            {isBusy ? '...' : 'Approve'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={isBusy}
+                                            onClick={(e) => handleDeny(item.id, e)}
+                                            data-testid={`gate-deny-${item.id}`}
+                                            className="py-1 px-2 rounded-lg bg-red-500/15 hover:bg-red-500 text-red-400 hover:text-black font-bold text-[9px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all disabled:opacity-50"
+                                        >
+                                            <X size={10} />
+                                            Deny
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {approvals.length > 2 && (
+                            <div className="text-center pt-1">
+                                <span className="text-[8px] text-amber-400/80 font-bold uppercase tracking-wider">
+                                    +{approvals.length - 2} more gate{approvals.length - 2 > 1 ? 's' : ''} in Quick-Action Banner
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="space-y-1.5 py-1">
+                        <p className="text-xs font-semibold text-gray-300">Autonomous safeguards active</p>
+                        <p className="text-[10px] text-gray-500 leading-relaxed">
+                            Irreversible operations (DSP submissions, ad spend, contract signatures, file deletes) pause here for 1-click confirmation.
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[9px] text-gray-400">
+                <span>Governance: <strong>Strict Gate</strong></span>
+                <span className="text-emerald-400 font-bold">100% Safe</span>
+            </div>
+        </div>
+    );
+}
+
 export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     streams_today: () => <StreamsTodayWidget />,
+    revenue_consolidated: () => <ConsolidatedRevenueWidget initialMode="aggregate" />,
+    project_timeline: () => <ProjectTimelineWidget />,
+    approval_gates: () => <ApprovalGatesWidget />,
     revenue_mtd: () => <RevenueMTDWidget />,
     next_release: () => <NextReleaseWidget />,
     top_track: () => <TopTrackWidget />,

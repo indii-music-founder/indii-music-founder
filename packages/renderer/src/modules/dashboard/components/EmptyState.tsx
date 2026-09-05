@@ -17,6 +17,8 @@ import {
     Zap,
     Smartphone,
     ArrowRight,
+    Calendar,
+    Sparkles,
 } from 'lucide-react';
 import { getUserWorkflows } from '@/modules/workflow/services/workflowPersistence';
 import type { SavedWorkflow } from '@/modules/workflow/types';
@@ -26,6 +28,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { EntryOverlay } from './EntryOverlay';
 import { getDashboardEntryCommands, type EntryCommandDefinition } from '@/services/commands/EntryCommandRegistry';
+import { OperationalApprovalGateBanner } from './OperationalApprovalGateBanner';
 
 interface EmptyStateProps {
     /** Legacy: populate the prompt input box without submitting */
@@ -43,10 +46,12 @@ interface EmptyStateProps {
      * overlook forever. Composing them into one room removes the tab entirely.
      */
     studioSlot?: React.ReactNode;
+    /** Suppress the operational banner if already rendered at the parent container */
+    hideApprovalBanner?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: EmptyStateProps) {
+export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideApprovalBanner = false }: EmptyStateProps) {
     const { setModule, isEntryAssistantDismissed, setEntryAssistantDismissed, user, setNodes, setEdges } = useStore(useShallow(state => ({
         setModule: state.setModule,
         isEntryAssistantDismissed: state.isEntryAssistantDismissed,
@@ -77,32 +82,77 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
         'review-contract': FileCheck,
         'track-revenue': TrendingUp,
         'custom-workflow': Network,
+        'create-media': Sparkles,
+        'project-timeline': Calendar,
     };
 
-    const displayItems: Array<{
+    const rawCommands = getDashboardEntryCommands().filter(command => command.id !== 'connect-remote');
+    const hasVideo = rawCommands.some(c => c.id === 'create-video');
+    const hasCover = rawCommands.some(c => c.id === 'design-cover');
+
+    let consolidatedCommands: Array<{
         icon: React.ElementType;
         title: string;
         prompt: string | null;
         summary?: string;
         action?: () => void;
         isWorkflow?: boolean;
-    }> = [
-        // ISSUE-1292: saved workflows used to be prepended here and the combined list
-        // truncated with .slice(0, 10) — so every workflow an artist saved silently
-        // evicted one of indii's built-in actions, and with zero workflows saved there
-        // was no sign the Workflow Builder existed at all. Saved workflows retain
-        // their own listing while the builder now occupies a stable suggestion slot.
-        ...getDashboardEntryCommands()
-            .filter(command => command.id !== 'connect-remote')
-            .map((command: EntryCommandDefinition) => ({
+        mediaActions?: Array<{ label: string; prompt: string }>;
+    }> = [];
+
+    if (hasVideo && hasCover) {
+        // Consolidate redundant tool launchers (create-video & design-cover) into unified "Create Media"
+        consolidatedCommands.push({
+            icon: Sparkles,
+            title: 'Create Media',
+            prompt: '/create-media',
+            summary: 'AI cover art, social visuals & music videos',
+            action: () => onCommandSubmit('/create-media'),
+            mediaActions: [
+                { label: 'Cover Art', prompt: '/design-cover' },
+                { label: 'Music Video', prompt: '/create-video' },
+            ],
+        });
+
+        // Promote Project Timeline to prime suggestion slot
+        consolidatedCommands.push({
+            icon: Calendar,
+            title: 'Project Timeline',
+            prompt: '/timeline',
+            summary: 'Multi-week campaign rollout, cadence & milestone plan',
+            action: () => onCommandSubmit('/timeline'),
+        });
+
+        for (const command of rawCommands) {
+            if (
+                command.id === 'create-video' ||
+                command.id === 'design-cover' ||
+                command.id === 'create-media' ||
+                command.id === 'project-timeline'
+            ) {
+                continue;
+            }
+            consolidatedCommands.push({
                 icon: commandIcons[command.id] || Command,
                 title: command.id === 'custom-workflow' ? 'Build a Workflow' : command.title,
                 prompt: command.slash,
                 summary: command.summary,
                 action: command.id === 'custom-workflow' ? () => onCommandSubmit(command.slash) : undefined,
                 isWorkflow: command.id === 'custom-workflow',
-            }))
-    ].slice(0, 10); // keep to max 10 to fit the 5-column grid nicely
+            });
+        }
+    } else {
+        consolidatedCommands = rawCommands.map((command: EntryCommandDefinition) => ({
+            icon: commandIcons[command.id] || Command,
+            title: command.id === 'custom-workflow' ? 'Build a Workflow' : command.title,
+            prompt: command.slash,
+            summary: command.summary,
+            action: command.id === 'custom-workflow' ? () => onCommandSubmit(command.slash) : undefined,
+            isWorkflow: command.id === 'custom-workflow',
+        }));
+    }
+
+    const displayItems = consolidatedCommands.slice(0, 10);
 
     const openWorkflow = (wf: SavedWorkflow) => {
         setNodes(wf.nodes);
@@ -138,6 +188,9 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
                 Your Creative Intelligence Engine • What Would You Like To Do?
             </motion.p>
 
+            {/* Quick-Action Approval Gate Operational Banner (Promoted Visibility) */}
+            {!hideApprovalBanner && <OperationalApprovalGateBanner />}
+
             {/* ISSUE-1291: the artist's real numbers, formerly stranded behind a
                 second tab. Placed above the action grid deliberately — "how am I
                 doing" is the question you arrive with; "what can I make" is the one
@@ -166,33 +219,57 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 w-full px-4">
                 {displayItems.map((s, i) => (
-                    <motion.button
+                    <motion.div
                         key={s.title + i}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 + i * 0.05 }}
-                        onClick={() => {
-                            if (s.action) {
-                                s.action();
-                            } else if (s.prompt) {
-                                onCommandSubmit(s.prompt);
-                            }
-                        }}
                         className={`group relative flex flex-col p-5 rounded-2xl bg-white/[0.02] border hover:bg-white/[0.06] hover:shadow-lg transition-all duration-300 text-left overflow-hidden h-full ${
                             s.isWorkflow 
                             ? 'border-amber-500/20 hover:border-amber-500/40 hover:shadow-amber-500/5' 
                             : 'border-white/5 hover:border-emerald-500/40 hover:shadow-emerald-500/5'
                         }`}
                     >
-                        <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MousePointer2 size={12} className={s.isWorkflow ? "text-amber-400" : "text-emerald-400"} />
-                        </div>
-                        <s.icon size={22} className={`mb-3 group-hover:scale-110 transition-transform duration-300 ${s.isWorkflow ? 'text-amber-400' : 'text-emerald-400'}`} />
-                        <h3 className="text-xs font-semibold text-white tracking-wide mb-1.5 line-clamp-1">{s.title}</h3>
-                        <p className="text-[10px] text-slate-400 leading-relaxed font-normal group-hover:text-slate-300 transition-colors line-clamp-2">
-                            {s.isWorkflow ? 'Custom User Workflow' : (s.summary || s.prompt)}
-                        </p>
-                    </motion.button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (s.action) {
+                                    s.action();
+                                } else if (s.prompt) {
+                                    onCommandSubmit(s.prompt);
+                                }
+                            }}
+                            className="flex-1 flex flex-col text-left w-full h-full focus:outline-none"
+                            aria-label={s.title}
+                        >
+                            <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MousePointer2 size={12} className={s.isWorkflow ? "text-amber-400" : "text-emerald-400"} />
+                            </div>
+                            <s.icon size={22} className={`mb-3 group-hover:scale-110 transition-transform duration-300 ${s.isWorkflow ? 'text-amber-400' : 'text-emerald-400'}`} />
+                            <h3 className="text-xs font-semibold text-white tracking-wide mb-1.5 line-clamp-1">{s.title}</h3>
+                            <p className="text-[10px] text-slate-400 leading-relaxed font-normal group-hover:text-slate-300 transition-colors line-clamp-2">
+                                {s.isWorkflow ? 'Custom User Workflow' : (s.summary || s.prompt)}
+                            </p>
+                        </button>
+
+                        {s.mediaActions && (
+                            <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center gap-1.5 w-full">
+                                {s.mediaActions.map((sub) => (
+                                    <button
+                                        key={sub.label}
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onCommandSubmit(sub.prompt);
+                                        }}
+                                        className="flex-1 px-1.5 py-1 rounded-md bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-300 text-[9px] font-bold text-gray-400 border border-white/5 text-center transition-all truncate"
+                                    >
+                                        {sub.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
                 ))}
             </div>
 
