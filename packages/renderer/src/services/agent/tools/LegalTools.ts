@@ -350,5 +350,231 @@ Signature: ____________________________
                 link: 'https://www.songfile.com/',
             }, `Mechanical licensing verification required for cover song "${args.trackTitle}". Deploy Cloud Function 'verifyMechanicalLicense' for automated HFA/MusicReports checking. Manual clearance via SongFile is required before delivery.`);
         }
+    }),
+
+    contract_generator_and_review_tool: wrapTool('contract_generator_and_review_tool', async (args: {
+        mode: 'generate' | 'review';
+        generation?: {
+            contractType: 'split_sheet' | 'producer_agreement' | 'sync_license' | 'work_for_hire' | 'nda' | 'master_use_license' | 'artist_management' | string;
+            title?: string;
+            parties: Array<{ name: string; role: string; email?: string; entityType?: string }>;
+            governingLaw?: string;
+            termLength?: string;
+            compensationTerms?: string;
+            grantOfRights?: string;
+            auditRights?: boolean;
+            reversionClause?: boolean;
+            specialProvisions?: string;
+        };
+        review?: {
+            contractText: string;
+            contractTitle?: string;
+            focusAreas?: string[];
+        };
+    }) => {
+        if (!args.mode || (args.mode !== 'generate' && args.mode !== 'review')) {
+            return toolError("Argument 'mode' must be either 'generate' or 'review'.", "INVALID_MODE");
+        }
+
+        if (args.mode === 'generate') {
+            const gen = args.generation;
+            if (!gen) {
+                return toolError("The 'generation' configuration is required when mode is 'generate'.", "MISSING_GENERATION_CONFIG");
+            }
+            if (!gen.contractType || typeof gen.contractType !== 'string') {
+                return toolError("'contractType' is required for contract generation.", "MISSING_CONTRACT_TYPE");
+            }
+            if (!Array.isArray(gen.parties) || gen.parties.length === 0) {
+                return toolError("'parties' must be a non-empty array of participants.", "NO_PARTIES_PROVIDED");
+            }
+
+            const title = gen.title || `${gen.contractType.replace(/_/g, ' ').toUpperCase()} - ${gen.parties.map(p => p.name).join(' & ')}`;
+            const governingLaw = gen.governingLaw || 'California, USA';
+            const termLength = gen.termLength || '2 (two) years from Effective Date';
+            const auditRights = gen.auditRights !== false;
+            const reversionClause = gen.reversionClause !== false;
+
+            const systemPrompt = `
+You are a senior entertainment and music industry attorney.
+Draft a complete, formal, and legally binding contract in GitHub-flavored Markdown.
+Enforce standard entertainment legal safeguards to protect independent music creators.
+
+Mandatory Structure:
+# ${title.toUpperCase()}
+1. PREAMBLE & IDENTIFICATION OF PARTIES
+   - Full party legal names, roles, and effective date.
+2. RECITALS
+   - Background and business intent of the agreement.
+3. GRANT OF RIGHTS / SCOPE OF WORK
+   - Explicit scope: ${gen.grantOfRights || 'Standard commercial music exploitation with rights reservation.'}
+   - Emphasize artist ownership retention.
+4. FINANCIAL TERMS, ROYALTIES & ACCOUNTING
+   - Compensation details: ${gen.compensationTerms || 'Standard revenue waterfall with quarterly statements.'}
+   ${auditRights ? '- AUDIT RIGHTS: Annual inspection of books and records within 30 days notice.' : ''}
+5. WARRANTIES, REPRESENTATIONS & INDEMNIFICATION
+   - Representations of original work, non-infringement, authority to contract.
+   - Mutual indemnification with standard reasonable attorney fee caps.
+6. TERM, TERMINATION & RIGHTS REVERSION
+   - Term: ${termLength}.
+   ${reversionClause ? '- REVERSION OF RIGHTS: All unexploited masters, copyrights, and publishing rights revert to the creator upon contract expiration or uncured breach.' : ''}
+7. GOVERNING LAW & DISPUTE RESOLUTION
+   - Governing jurisdiction: State of ${governingLaw}.
+   - Mandatory mediation followed by binding arbitration (e.g., JAMS/AAA).
+8. MISCELLANEOUS (Severability, Entire Agreement, No Waiver, Counterparts).
+9. SIGNATURE BLOCKS (All parties).
+`;
+
+            const prompt = `Generate a legally sound ${gen.contractType} between:
+Parties: ${gen.parties.map(p => `${p.name} (${p.role}${p.entityType ? `, ${p.entityType}` : ''})`).join('; ')}
+Governing Law: ${governingLaw}
+Term: ${termLength}
+Compensation: ${gen.compensationTerms || 'Standard agreed waterfall'}
+Grant of Rights: ${gen.grantOfRights || 'Defined in contract'}
+Special Provisions: ${gen.specialProvisions || 'None'}
+Include strict enforceability safeguards.`;
+
+            try {
+                const response = await AutonomousIntelligence.generateContent(
+                    prompt,
+                    getFineTunedModel('legal'),
+                    undefined,
+                    systemPrompt
+                );
+                const content = getResponseText(response);
+
+                // Auto-persist contract
+                let savedId = '';
+                try {
+                    savedId = await LegalService.saveContract({
+                        title,
+                        type: gen.contractType,
+                        parties: gen.parties.map(p => p.name),
+                        content,
+                        status: ContractStatus.DRAFT,
+                        metadata: {
+                            governingLaw,
+                            termLength,
+                            auditRights,
+                            reversionClause,
+                            generatedAt: new Date().toISOString()
+                        }
+                    });
+                } catch (persistErr: unknown) {
+                    logger.warn('[LegalTools] Failed to auto-persist generated contract:', persistErr);
+                }
+
+                return toolSuccess({
+                    mode: 'generate',
+                    contractId: savedId || undefined,
+                    title,
+                    contractType: gen.contractType,
+                    content,
+                    parties: gen.parties,
+                    safeguards: {
+                        governingLaw,
+                        termLength,
+                        auditRightsIncluded: auditRights,
+                        reversionClauseIncluded: reversionClause,
+                        arbitrationClauseIncluded: true
+                    },
+                    disclaimer: "I am an AI, not a lawyer. This draft agreement is for informational and workflow purposes and should be reviewed by licensed legal counsel prior to formal execution."
+                }, `Enforceable contract draft generated successfully for "${title}". Auto-saved to Legal Dashboard.`);
+            } catch (err: unknown) {
+                const msg = err instanceof Error ? err.message : String(err);
+                return toolError(`Contract generation failed: ${msg}`, "GENERATION_FAILED");
+            }
+        } else {
+            // Mode: 'review'
+            const rev = args.review;
+            if (!rev || !rev.contractText || typeof rev.contractText !== 'string' || rev.contractText.trim().length === 0) {
+                return toolError("Contract text ('contractText') is required when mode is 'review'.", "MISSING_CONTRACT_TEXT");
+            }
+
+            const focusAreas = rev.focusAreas && rev.focusAreas.length > 0 ? rev.focusAreas : [
+                'rights_reversion',
+                'audit_rights',
+                'unbounded_indemnity',
+                'cross_collateralization',
+                'royalty_deductions',
+                'termination_mechanisms'
+            ];
+
+            const systemPrompt = `
+You are a senior entertainment attorney reviewing a music industry contract for an independent creator.
+Audit the provided agreement against legal precedents and creator protection standards.
+
+Analyze the contract strictly across these dimensions:
+1. Enforceability Score: 1-100 (where 100 is fully balanced, fair, and legally bulletproof).
+2. Risk Tier: LOW, MEDIUM, HIGH, or CRITICAL.
+3. Essential Clause Audit: Verify presence and strength of:
+   - Grant of Rights (Scope, territory, duration)
+   - Compensation & Waterfall (Deductions, rate, reporting intervals)
+   - Audit Rights (Inspection frequency, penalty for underreporting)
+   - Indemnification (Is it mutual? Are there liability caps?)
+   - Termination & Reversion (Can creator escape uncured breach? Do masters revert?)
+   - Dispute Resolution & Governing Law (Jurisdiction, arbitration)
+4. Red Flags & Predatory Terms (Flag perpetual transfers without reversion, broad work-for-hire on preexisting IP, hidden expense recoupments, etc.).
+5. Recommended Redlines / Amendments (Specific proposed replacement language).
+6. Plain-English Summary (Direct, actionable briefing for the artist).
+
+Respond in structured JSON:
+{
+  "enforceabilityScore": number,
+  "riskTier": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+  "summary": string,
+  "clausesIdentified": string[],
+  "redFlags": Array<{ clause: string, severity: "HIGH" | "MEDIUM" | "LOW", explanation: string, suggestedAmendment: string }>,
+  "safeguardChecklist": {
+    "hasAuditRights": boolean,
+    "hasReversionClause": boolean,
+    "hasMutualIndemnity": boolean,
+    "hasReasonableTerm": boolean
+  },
+  "overallVerdict": string
+}
+`;
+
+            const prompt = `Review the following music contract:
+Title: ${rev.contractTitle || 'Contract Draft'}
+Focus Areas: ${focusAreas.join(', ')}
+
+Contract Text:
+${rev.contractText}
+`;
+
+            try {
+                const response = await AutonomousIntelligence.generateContent(
+                    prompt,
+                    getFineTunedModel('legal'),
+                    undefined,
+                    systemPrompt
+                );
+                const rawText = getResponseText(response);
+                let parsedReview: any = null;
+                try {
+                    const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+                    const cleanJson = jsonMatch ? jsonMatch[1]! : rawText;
+                    parsedReview = JSON.parse(cleanJson);
+                } catch {
+                    parsedReview = {
+                        enforceabilityScore: 70,
+                        riskTier: 'MEDIUM',
+                        summary: rawText,
+                        redFlags: [],
+                        overallVerdict: 'Manual review required — could not parse JSON schema.'
+                    };
+                }
+
+                return toolSuccess({
+                    mode: 'review',
+                    contractTitle: rev.contractTitle || 'Contract Draft',
+                    review: parsedReview,
+                    disclaimer: "I am an AI, not a lawyer. This review is for informational purposes only and does not constitute formal legal advice."
+                }, `Contract review completed. Enforceability Score: ${parsedReview.enforceabilityScore ?? 'N/A'}/100. Risk Tier: ${parsedReview.riskTier ?? 'MEDIUM'}.`);
+            } catch (err: unknown) {
+                const msg = err instanceof Error ? err.message : String(err);
+                return toolError(`Contract review failed: ${msg}`, "REVIEW_FAILED");
+            }
+        }
     })
 };

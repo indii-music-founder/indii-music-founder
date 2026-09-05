@@ -418,6 +418,12 @@
     "distribution": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution",
       "skills": {
+        "render_distribution_bundle": {
+          "description": "Render a complete, DSP- and print-compliant distribution bundle from a master artwork with SHA-256 verifiable manifest and compliance/rights gates.",
+          "trigger_labels": [
+            "render_distribution_bundle"
+          ]
+        },
         "prepare_release": {
           "description": "Prepare a release for distribution by generating a DDEX ERN 4.3 message.",
           "trigger_labels": [
@@ -981,6 +987,36 @@
           "description": "Render a deterministic camera move (dolly/pan/tilt/ken-burns) over a still image into a short clip. Free, no generative model.",
           "trigger_labels": [
             "animate_still"
+          ]
+        },
+        "generate_mockup": {
+          "description": "Generate high-fidelity photorealistic merchandise or packaging mockup (vinyl, cassette, cd, poster, tee, hoodie) from artwork master reference.",
+          "trigger_labels": [
+            "generate_mockup"
+          ]
+        },
+        "render_distribution_bundle": {
+          "description": "Render a complete, DSP- and print-compliant distribution bundle from a master artwork with SHA-256 verifiable manifest and compliance/rights gates.",
+          "trigger_labels": [
+            "render_distribution_bundle"
+          ]
+        },
+        "record_asset_version": {
+          "description": "Create an immutable content-addressed asset version with cryptographic SHA-256 hash and parents.",
+          "trigger_labels": [
+            "record_asset_version"
+          ]
+        },
+        "promote_asset_version": {
+          "description": "Promote an asset version to production canonical status.",
+          "trigger_labels": [
+            "promote_asset_version"
+          ]
+        },
+        "set_asset_rights": {
+          "description": "Attach legal rights, provenance, and clearance metadata to an asset version.",
+          "trigger_labels": [
+            "set_asset_rights"
           ]
         }
       },

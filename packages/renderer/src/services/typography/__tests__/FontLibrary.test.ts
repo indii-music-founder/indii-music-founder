@@ -16,6 +16,13 @@ vi.mock('firebase/firestore', () => ({
     collection: (_db: unknown, ...segs: string[]) => ({ __path: segs.join('/') }),
     doc: (c: { __path: string }, id: string) => ({ __path: `${c.__path}/${id}` }),
     setDoc: vi.fn(async (ref: { __path: string }, data: Record<string, unknown>) => { store.set(ref.__path, data); }),
+    getDoc: vi.fn(async (ref: { __path: string }) => {
+        const data = store.get(ref.__path);
+        return { exists: () => !!data, data: () => data };
+    }),
+    deleteDoc: vi.fn(async (ref: { __path: string }) => {
+        store.delete(ref.__path);
+    }),
     getDocs: vi.fn(async (q: { __coll: { __path: string } }) => {
         const prefix = `${q.__coll.__path}/`;
         const docs = [...store.entries()].filter(([k]) => k.startsWith(prefix))
@@ -98,6 +105,38 @@ describe('FontLibrary (B1.1 — mocked Firebase)', () => {
         } finally {
             (globalThis as { fetch: unknown }).fetch = origFetch;
         }
+    });
+
+    it('registers, persists, and loads an .otf font correctly without falling back to .ttf', async () => {
+        const file = await fileFrom(buildFontBuffer(), 'diitest.otf', 'font/otf');
+        const meta = await FontLibrary.registerFont(file);
+
+        expect(meta.format).toBe('otf');
+        expect(meta.storageRef).toContain('.otf');
+
+        const origFetch = globalThis.fetch;
+        const buf = buildFontBuffer();
+        (globalThis as { fetch: unknown }).fetch = vi.fn(async () => ({ ok: true, status: 200, arrayBuffer: async () => buf })) as unknown as typeof fetch;
+
+        try {
+            const font = await FontLibrary.loadOpenTypeFont(meta.id);
+            expect(font).toBeDefined();
+            expect(font.getAdvanceWidth('D', 100)).toBeCloseTo(65, 6);
+        } finally {
+            (globalThis as { fetch: unknown }).fetch = origFetch;
+        }
+    });
+
+    it('deletes font removing both storage blob and firestore metadata', async () => {
+        const file = await fileFrom(buildFontBuffer(), 'delete_me.otf', 'font/otf');
+        const meta = await FontLibrary.registerFont(file);
+
+        expect(store.size).toBe(1);
+        await FontLibrary.deleteFont(meta.id);
+
+        expect(store.size).toBe(0);
+        const listed = await FontLibrary.listFonts();
+        expect(listed).toHaveLength(0);
     });
 
     it('rejects .woff2 with an actionable "convert" error (B1.3)', async () => {

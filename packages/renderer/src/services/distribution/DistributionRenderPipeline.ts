@@ -142,7 +142,8 @@ export async function renderDistributionBundle(
     // ---- Gates (D compliance + H2 rights) ------------------------------------
     const compliance = req.gates?.compliance;
     const rights = req.gates?.rights;
-    if (compliance && !compliance.passed && !compliance.overrideReason) {
+    const overrideReason = compliance?.overrideReason?.trim();
+    if (compliance && !compliance.passed && (!overrideReason || overrideReason.length === 0)) {
         return {
             results: [],
             manifest: { blocked: true, reason: 'compliance', reportRef: compliance.reportRef, profileIds: req.profileIds }

@@ -6,6 +6,37 @@ import { importWithRetry } from '@/utils/dynamicImport';
 import { limitedDropService } from '@/services/commerce/LimitedDropService';
 
 export const CommerceTools = {
+    /**
+     * Photorealistic Mockup Generator (Workstream F1 / Directive Part II.6).
+     * Physical merch/media staging (vinyl sleeves, CD jewel cases, cassettes, apparel, posters)
+     * via locked prompt templates enforcing 1:1 artwork fidelity.
+     */
+    generate_mockup: wrapTool('generate_mockup', async (args: {
+        productType?: string;
+        kind?: string;
+        designIdea?: string;
+        artworkUrl?: string;
+        artworkIndex?: number;
+        scene?: 'studio' | 'lifestyle' | 'flat';
+        aspectRatio?: string;
+    }) => {
+        let artworkUrl = args.artworkUrl;
+        if (!artworkUrl && args.artworkIndex !== undefined) {
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const store = useStore.getState();
+            artworkUrl = store.generatedHistory?.[args.artworkIndex]?.url ?? store.uploadedImages?.[args.artworkIndex]?.url;
+        }
+        const productType = args.productType || args.kind || 'poster';
+        const designIdea = args.designIdea || `Photorealistic mockup of ${productType}`;
+        return CommerceTools.mockup_merchandise({
+            productType,
+            designIdea,
+            artworkUrl,
+            scene: args.scene,
+            aspectRatio: args.aspectRatio
+        });
+    }),
+
     mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string; artworkUrl?: string; scene?: 'studio' | 'lifestyle' | 'flat'; aspectRatio?: string }) => {
         // F1 extension (plan §11): when real artwork is supplied, route through
         // MockupService — the artwork crosses as a sourceImages reference with
@@ -224,6 +255,7 @@ export const CommerceTools = {
 
 export const {
     mockup_merchandise,
+    generate_mockup,
     deploy_storefront_preview,
     recommend_merch_pricing,
     create_limited_drop_campaign

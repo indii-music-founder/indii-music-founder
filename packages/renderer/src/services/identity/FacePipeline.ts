@@ -262,3 +262,119 @@ export async function analyzeFace(dataUrl: string): Promise<FaceAnalysis> {
 
 /** Kept for A1.2 signature stability. */
 export type FaceAnalysisFn = (dataUrl: string) => Promise<FaceAnalysis>;
+
+export interface CalibrationSample {
+    id: string;
+    description?: string;
+    isSameIdentity: boolean;
+    a: {
+        embedding?: number[] | null;
+        landmarks?: Array<[number, number]>;
+        dataUrl?: string;
+    };
+    b: {
+        embedding?: number[] | null;
+        landmarks?: Array<[number, number]>;
+        dataUrl?: string;
+    };
+}
+
+export type LikenessCalibrationPair = CalibrationSample;
+
+export interface LikenessCalibrationStats {
+    sameCount: number;
+    differentCount: number;
+    sameMean: number;
+    sameMin: number;
+    sameMax: number;
+    differentMean: number;
+    differentMin: number;
+    differentMax: number;
+    separationMargin: number; // sameMin - differentMax
+    optimalThreshold: number; // midpoint
+    recommendedThreshold: number; // rounded to 2 decimals
+    isSeparable: boolean;
+}
+
+export interface LikenessCalibrationReport {
+    mode: EmbeddingMode;
+    sameScores: number[];
+    differentScores: number[];
+    stats: LikenessCalibrationStats;
+    evaluatedAt: number;
+}
+
+/**
+ * Pure, deterministic evaluation of likeness calibration samples.
+ * Computes same and different score distributions, checks separability,
+ * and calculates the optimal decision threshold.
+ */
+export function evaluateLikenessCalibration(
+    pairs: CalibrationSample[],
+    mode: EmbeddingMode = 'identity'
+): LikenessCalibrationReport {
+    if (!pairs || pairs.length === 0) {
+        throw new Error('evaluateLikenessCalibration: at least one calibration pair is required');
+    }
+
+    const sameScores: number[] = [];
+    const differentScores: number[] = [];
+
+    for (const pair of pairs) {
+        let score: number;
+        if (mode === 'identity') {
+            if (!pair.a.embedding || !pair.b.embedding) {
+                throw new Error(`evaluateLikenessCalibration: pair "${pair.id}" is missing embeddings for identity mode`);
+            }
+            score = cosineSimilarity(pair.a.embedding, pair.b.embedding);
+        } else {
+            if (!pair.a.landmarks || !pair.b.landmarks) {
+                throw new Error(`evaluateLikenessCalibration: pair "${pair.id}" is missing landmarks for geometry mode`);
+            }
+            score = geometryFitSimilarity(pair.a.landmarks, pair.b.landmarks);
+        }
+
+        if (pair.isSameIdentity) {
+            sameScores.push(score);
+        } else {
+            differentScores.push(score);
+        }
+    }
+
+    const sameCount = sameScores.length;
+    const differentCount = differentScores.length;
+
+    const sameMean = sameCount > 0 ? sameScores.reduce((s, x) => s + x, 0) / sameCount : 0;
+    const sameMin = sameCount > 0 ? Math.min(...sameScores) : 0;
+    const sameMax = sameCount > 0 ? Math.max(...sameScores) : 0;
+
+    const differentMean = differentCount > 0 ? differentScores.reduce((s, x) => s + x, 0) / differentCount : 0;
+    const differentMin = differentCount > 0 ? Math.min(...differentScores) : 0;
+    const differentMax = differentCount > 0 ? Math.max(...differentScores) : 0;
+
+    const separationMargin = sameCount > 0 && differentCount > 0 ? sameMin - differentMax : 0;
+    const isSeparable = separationMargin > 0;
+    const optimalThreshold = sameCount > 0 && differentCount > 0 ? (sameMin + differentMax) / 2 : (sameCount > 0 ? sameMin : 0.55);
+    const recommendedThreshold = Math.round(optimalThreshold * 100) / 100;
+
+    return {
+        mode,
+        sameScores,
+        differentScores,
+        stats: {
+            sameCount,
+            differentCount,
+            sameMean,
+            sameMin,
+            sameMax,
+            differentMean,
+            differentMin,
+            differentMax,
+            separationMargin,
+            optimalThreshold,
+            recommendedThreshold,
+            isSeparable
+        },
+        evaluatedAt: Date.now()
+    };
+}

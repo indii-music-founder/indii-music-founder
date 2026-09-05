@@ -22,6 +22,30 @@ vi.mock('../tools/DirectorTools', () => ({
         analyze_visual_trends: vi.fn(),
         fuse_likeness: vi.fn(),
         render_typography: vi.fn(),
+        generate_mockup: vi.fn(),
+        render_distribution_bundle: vi.fn(),
+        export_platform_assets: vi.fn(),
+        scan_brand_compliance: vi.fn(),
+        record_asset_version: vi.fn(),
+        promote_asset_version: vi.fn(),
+        set_asset_rights: vi.fn(),
+    }
+}));
+
+vi.mock('../tools/CanvasTools', () => ({
+    CanvasTools: {
+        canvas_open_image: vi.fn(),
+        canvas_add_layer: vi.fn(),
+        canvas_set_adjustments: vi.fn(),
+        canvas_export: vi.fn(),
+        canvas_push: vi.fn(),
+    }
+}));
+
+vi.mock('../tools/VideoTools', () => ({
+    VideoTools: {
+        animate_still: vi.fn(),
+        interpolate_sequence: vi.fn(),
     }
 }));
 
@@ -35,7 +59,6 @@ vi.mock('../tools/McpTools', () => ({
         audit_asset_resolutions: vi.fn(),
     }
 }));
-
 
 vi.mock('../tools/StorageTools', () => ({
     StorageTools: {
@@ -80,6 +103,18 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.authorizedTools).toContain('analyze_audio');
         expect(CreativeAgent.authorizedTools).toContain('fuse_likeness');
         expect(CreativeAgent.authorizedTools).toContain('render_typography');
+        expect(CreativeAgent.authorizedTools).toContain('generate_mockup');
+        expect(CreativeAgent.authorizedTools).toContain('render_distribution_bundle');
+        expect(CreativeAgent.authorizedTools).toContain('canvas_open_image');
+        expect(CreativeAgent.authorizedTools).toContain('canvas_add_layer');
+        expect(CreativeAgent.authorizedTools).toContain('canvas_set_adjustments');
+        expect(CreativeAgent.authorizedTools).toContain('canvas_export');
+        expect(CreativeAgent.authorizedTools).toContain('animate_still');
+        expect(CreativeAgent.authorizedTools).toContain('export_platform_assets');
+        expect(CreativeAgent.authorizedTools).toContain('scan_brand_compliance');
+        expect(CreativeAgent.authorizedTools).toContain('record_asset_version');
+        expect(CreativeAgent.authorizedTools).toContain('promote_asset_version');
+        expect(CreativeAgent.authorizedTools).toContain('set_asset_rights');
         expect(CreativeAgent.authorizedTools).toContain('canvas_push');
         expect(CreativeAgent.authorizedTools).toContain('generate_moodboard');
         expect(CreativeAgent.authorizedTools).toContain('analyze_visual_trends');
@@ -105,6 +140,18 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.functions!.add_character_reference).toBeDefined();
         expect(CreativeAgent.functions!.fuse_likeness).toBeDefined();
         expect(CreativeAgent.functions!.render_typography).toBeDefined();
+        expect(CreativeAgent.functions!.generate_mockup).toBeDefined();
+        expect(CreativeAgent.functions!.render_distribution_bundle).toBeDefined();
+        expect(CreativeAgent.functions!.canvas_open_image).toBeDefined();
+        expect(CreativeAgent.functions!.canvas_add_layer).toBeDefined();
+        expect(CreativeAgent.functions!.canvas_set_adjustments).toBeDefined();
+        expect(CreativeAgent.functions!.canvas_export).toBeDefined();
+        expect(CreativeAgent.functions!.animate_still).toBeDefined();
+        expect(CreativeAgent.functions!.export_platform_assets).toBeDefined();
+        expect(CreativeAgent.functions!.scan_brand_compliance).toBeDefined();
+        expect(CreativeAgent.functions!.record_asset_version).toBeDefined();
+        expect(CreativeAgent.functions!.promote_asset_version).toBeDefined();
+        expect(CreativeAgent.functions!.set_asset_rights).toBeDefined();
         expect(CreativeAgent.functions!.analyze_audio).toBeDefined();
         expect(CreativeAgent.functions!.canvas_push).toBeDefined();
         expect(CreativeAgent.functions!.generate_moodboard).toBeDefined();
@@ -117,5 +164,32 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.functions!.video_render_stitch).toBeDefined();
         expect(CreativeAgent.functions!.video_render_chain).toBeDefined();
         expect(CreativeAgent.functions!.video_get_render_status).toBeDefined();
+    });
+
+    it('should declare schemas for all specialized creative tools in functionDeclarations', () => {
+        const declaredNames = new Set(
+            (CreativeAgent.tools?.[0]?.functionDeclarations ?? []).map((d) => d.name)
+        );
+
+        const expectedSpecializedTools = [
+            'fuse_likeness',
+            'render_typography',
+            'canvas_open_image',
+            'canvas_add_layer',
+            'canvas_set_adjustments',
+            'canvas_export',
+            'animate_still',
+            'generate_mockup',
+            'export_platform_assets',
+            'scan_brand_compliance',
+            'record_asset_version',
+            'promote_asset_version',
+            'set_asset_rights',
+            'render_distribution_bundle'
+        ];
+
+        for (const toolName of expectedSpecializedTools) {
+            expect(declaredNames.has(toolName), `Tool declaration missing for: ${toolName}`).toBe(true);
+        }
     });
 });

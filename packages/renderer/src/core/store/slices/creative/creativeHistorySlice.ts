@@ -197,40 +197,43 @@ export function buildCreativeHistoryState(
                 }));
                 logger.debug("CreativeSlice: generatedHistory updated", enrichedItem.id);
 
-                // Auto-persistence to project asset folder
-                if (enrichedItem.type === 'image' || enrichedItem.type === 'video') {
-                    if (!user?.uid) {
-                        logger.error("CreativeSlice: Cannot sync generated asset to file system without an authenticated user");
-                    } else if (isAnonymousOrDemoUser(user)) {
-                        // ISSUE-1194 + ISSUE-1390: rules deny every file_nodes
-                        // write for anonymous/demo sessions (isVerifiedUser()
-                        // excludes them). Don't attempt a doomed round-trip —
-                        // declare the limitation instead of a red alert.
-                        logger.warn("CreativeSlice: Skipping file-node sync for guest/demo session (rules deny anonymous file writes)");
-                    } else {
-                        const { extension, mimeType } = inferMediaExtension(enrichedItem);
-                        const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.${extension}`;
-                        const persistedUrl = enrichedItem.storageUri || enrichedItem.url;
-                        createFileNode(
-                            filename,
-                            null, // root
-                            currentProjectId,
-                            user.uid,
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            enrichedItem.type as any,
-                            {
-                                url: persistedUrl,
-                                storagePath: enrichedItem.storageUri || undefined,
-                                origin: enrichedItem.origin,
-                                mimeType
-                            }
-                        ).catch(err => logger.error("CreativeSlice: File system sync error", err));
-                    }
-                }
-
                 import('@/services/StorageService').then(({ StorageService }) => {
                     StorageService.saveItem(enrichedItem)
-                        .then(() => { logger.debug("CreativeSlice: Saved to Storage", enrichedItem.id); })
+                        .then((savedInfo) => {
+                            logger.debug("CreativeSlice: Saved to Storage", enrichedItem.id);
+
+                            // Auto-persistence to project asset folder using durable cloud URL
+                            if (enrichedItem.type === 'image' || enrichedItem.type === 'video') {
+                                if (!user?.uid) {
+                                    logger.error("CreativeSlice: Cannot sync generated asset to file system without an authenticated user");
+                                } else if (isAnonymousOrDemoUser(user)) {
+                                    // ISSUE-1194 + ISSUE-1390: rules deny every file_nodes
+                                    // write for anonymous/demo sessions (isVerifiedUser()
+                                    // excludes them). Don't attempt a doomed round-trip —
+                                    // declare the limitation instead of a red alert.
+                                    logger.warn("CreativeSlice: Skipping file-node sync for guest/demo session (rules deny anonymous file writes)");
+                                } else {
+                                    const { extension, mimeType } = inferMediaExtension(enrichedItem);
+                                    const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.${extension}`;
+                                    const cloudUrl = savedInfo?.url || enrichedItem.storageUri || (enrichedItem.url?.startsWith('data:') ? undefined : enrichedItem.url);
+                                    const storagePath = savedInfo?.storageUri || enrichedItem.storageUri || undefined;
+                                    createFileNode(
+                                        filename,
+                                        null, // root
+                                        currentProjectId,
+                                        user.uid,
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        enrichedItem.type as any,
+                                        {
+                                            url: cloudUrl,
+                                            storagePath,
+                                            origin: enrichedItem.origin,
+                                            mimeType
+                                        }
+                                    ).catch(err => logger.error("CreativeSlice: File system sync error", err));
+                                }
+                            }
+                        })
                         .catch((err) => {
                             // ISSUE-1395 (audit): persistence failures were
                             // only logged — the item stayed visible as if

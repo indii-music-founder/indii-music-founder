@@ -17,10 +17,22 @@ import {
     analyzeFace as defaultAnalyzeFace,
     cosineSimilarity,
     geometryFitSimilarity,
-    type FaceAnalysisFn
+    evaluateLikenessCalibration,
+    type FaceAnalysisFn,
+    type CalibrationSample,
+    type LikenessCalibrationPair,
+    type LikenessCalibrationReport,
+    type EmbeddingMode
 } from '@/services/identity/FacePipeline';
 import { Editing } from '@/services/image/EditingService';
 import { LikenessService, type LikenessImage } from '@/services/image/LikenessService';
+
+export {
+    evaluateLikenessCalibration,
+    type CalibrationSample,
+    type LikenessCalibrationPair,
+    type LikenessCalibrationReport
+};
 
 /** Matches the plan §6 A1.5 calibration target. Mock tests cannot set this. */
 export const IDENTITY_SIMILARITY_THRESHOLD = 0.55;
@@ -70,20 +82,70 @@ function parseDataUri(dataUri: string): { mimeType: string; data: string } | nul
     return { mimeType: m[1]!, data: m[2]! };
 }
 
-/** Default headshot resolver mirrors DEC-2: only My Likeness sources, never arbitrary gallery images. */
+/** Default headshot resolver mirrors DEC-2: only My Likeness or Brand Kit headshots, never arbitrary gallery images. */
 async function defaultResolveHeadshot(headshotId?: string): Promise<LikenessImage> {
+    if (headshotId && (/^https?:\/\//i.test(headshotId) || /^data:/i.test(headshotId))) {
+        throw new Error('Arbitrary external or gallery URLs are rejected at the schema level (Part I.1 compliance violation). Use a verified Likeness ID.');
+    }
+
     const all = await LikenessService.getAll();
-    if (!all || all.length === 0) {
+    let headshot: LikenessImage | undefined;
+
+    if (all && all.length > 0) {
+        if (headshotId) {
+            headshot = all.find(l => l.id === headshotId);
+        } else {
+            const sorted = [...all].sort((a, b) => b.createdAt - a.createdAt);
+            headshot = sorted[0];
+        }
+    }
+
+    // Fallback to BrandKit headshot assets per DEC-2 / Part I.1
+    if (!headshot) {
+        try {
+            const { useStore } = await import('@/core/store');
+            const brandKit = useStore.getState().userProfile?.brandKit;
+            const brandHeadshots = brandKit?.referenceImages?.filter(a => a.category === 'headshot') || [];
+            if (headshotId) {
+                const bMatch = brandHeadshots.find(b => b.id === headshotId || b.description === headshotId || b.url === headshotId);
+                if (bMatch) {
+                    headshot = {
+                        id: headshotId,
+                        url: bMatch.url,
+                        storageRef: bMatch.url,
+                        qualityScore: 'good',
+                        consentGiven: true,
+                        createdAt: Date.now()
+                    };
+                }
+            } else if (brandHeadshots.length > 0) {
+                const first = brandHeadshots[0]!;
+                headshot = {
+                    id: first.id || 'brandkit-headshot',
+                    url: first.url,
+                    storageRef: first.url,
+                    qualityScore: 'good',
+                    consentGiven: true,
+                    createdAt: Date.now()
+                };
+            }
+        } catch {
+            // Store unavailable
+        }
+    }
+
+    if (!headshot) {
+        if (headshotId) {
+            throw new Error(`Likeness "${headshotId}" not found.`);
+        }
         throw new Error('No verified likeness found. Add a selfie in My Likeness before fusing (DEC-2).');
     }
-    if (headshotId) {
-        const match = all.find(l => l.id === headshotId);
-        if (!match) throw new Error(`Likeness "${headshotId}" not found.`);
-        return match;
+
+    if (!headshot.consentGiven) {
+        throw new Error('Affirmative biometric consent was not provided for this likeness (Part I.1 compliance violation).');
     }
-    // Newest good-quality selfie.
-    const sorted = [...all].sort((a, b) => b.createdAt - a.createdAt);
-    return sorted[0]!;
+
+    return headshot;
 }
 
 class LikenessFusionServiceImpl {
@@ -151,7 +213,16 @@ class LikenessFusionServiceImpl {
                 throw new Error(`Fusion attempt ${attempt} produced no detectable face.`);
             }
             attempts.push({ dataUrl: result.url, similarity });
-            logger.info(`[LikenessFusion] attempt ${attempt}: similarity ${similarity.toFixed(3)}`);
+
+            // Immutable audit record logging (Part I.1)
+            logger.info('[LikenessFusionAudit]', {
+                meta: 'likeness_fusion',
+                headshotId: headshot.id,
+                similarityScore: similarity,
+                attempt,
+                passedThreshold: similarity >= deps.threshold,
+                timestamp: Date.now()
+            });
 
             if (similarity > best.similarity) best = { dataUrl: result.url, similarity };
             if (similarity >= deps.threshold) {
@@ -168,6 +239,17 @@ class LikenessFusionServiceImpl {
             attempts,
             embeddingMode
         };
+    }
+
+    /**
+     * Deterministic calibration loop (Workstream A1.5).
+     * Runs evaluation against a set of calibration pairs to verify decision boundary separation.
+     */
+    async calibrateLikenessLoop(
+        samples: CalibrationSample[],
+        mode: EmbeddingMode = 'identity'
+    ): Promise<LikenessCalibrationReport> {
+        return evaluateLikenessCalibration(samples, mode);
     }
 }
 

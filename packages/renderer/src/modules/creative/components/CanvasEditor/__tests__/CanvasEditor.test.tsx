@@ -174,8 +174,10 @@ describe('CanvasEditor (C1.3 layer editor RTL + C1.4 export)', () => {
         // Default export settings: PNG at 2×.
         fireEvent.click(screen.getByTestId('canvas-export'));
 
+        const { getViewportProxy } = await import('../CanvasEditor');
+        const { proxyScale } = getViewportProxy(doc.width, doc.height);
         await waitFor(() => {
-            expect(mockCanvasRef.current?.toDataURL).toHaveBeenCalledWith({ format: 'png', multiplier: 2 });
+            expect(mockCanvasRef.current?.toDataURL).toHaveBeenCalledWith({ format: 'png', multiplier: 2 / proxyScale });
         });
         await waitFor(() => {
             expect(mockDownloadAsset).toHaveBeenCalledWith('data:image/png;base64,mock', expect.stringMatching(/^canvas-/));

@@ -3,6 +3,7 @@ import systemPrompt from "@agents/finance/prompt.md?raw";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { UniversalTools } from '../tools/UniversalTools';
+import { FinanceTools } from '../tools/FinanceTools';
 
 const financeRetrievalConfig = {
     'revenue': { path: 'revenue', requiresUserIdFilter: true },
@@ -25,6 +26,7 @@ export const FinanceAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     functions: {
         ...financeRetrievalTools,
+        royalty_distribution_calculator: FinanceTools.royalty_distribution_calculator,
         analyze_budget: async (args: { amount: number; breakdown: string }) => {
             const efficiency = args.amount < 50000 ? "High" : "Medium";
             const managerFeeSaved = args.amount * 0.20;
@@ -181,10 +183,54 @@ export const FinanceAgent: AgentConfig = {
         calculate_recoupment: McpTools.calculate_recoupment,
         stage_stripe_payouts: McpTools.stage_stripe_payouts,
     },
-    authorizedTools: ['list_domain_records', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue', 'calculate_recoupment', 'stage_stripe_payouts'],
+    authorizedTools: ['list_domain_records', 'royalty_distribution_calculator', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue', 'calculate_recoupment', 'stage_stripe_payouts'],
     tools: [{
         functionDeclarations: [
             ...financeRetrievalDeclarations,
+            {
+                name: "royalty_distribution_calculator",
+                description: "Deterministic music royalty distribution calculator. Calculates gross-to-net waterfall, distribution fees, recoupable expense deductions, participant split allocations, advance recoupments, and flags 1099 tax thresholds.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        trackTitle: { type: "STRING", description: "Title of the track or release." },
+                        grossRevenue: { type: "NUMBER", description: "Gross royalty revenue collected." },
+                        currency: { type: "STRING", description: "Currency code (default USD)." },
+                        distributionFeePercent: { type: "NUMBER", description: "Distributor fee percentage deducted off the top (e.g. 0 to 15)." },
+                        recoupableExpenses: {
+                            type: "ARRAY",
+                            description: "List of recoupable expenses deducted prior to split allocation.",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    category: { type: "STRING" },
+                                    description: { type: "STRING" },
+                                    amount: { type: "NUMBER" }
+                                },
+                                required: ["category", "amount"]
+                            }
+                        },
+                        parties: {
+                            type: "ARRAY",
+                            description: "List of split recipients whose percentages must sum to 100%.",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    name: { type: "STRING" },
+                                    role: { type: "STRING" },
+                                    percentage: { type: "NUMBER" },
+                                    shareType: { type: "STRING", enum: ["master", "publishing", "net_profit"] },
+                                    advancePaid: { type: "NUMBER" },
+                                    taxWithholdingPercent: { type: "NUMBER" },
+                                    payoutMethod: { type: "STRING" }
+                                },
+                                required: ["name", "percentage"]
+                            }
+                        }
+                    },
+                    required: ["trackTitle", "grossRevenue", "parties"]
+                }
+            },
             {
                 name: "analyze_budget",
                 description: "Analyze a project budget and calculate the 'indii Dividend' savings.",

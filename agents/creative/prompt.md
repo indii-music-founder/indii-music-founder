@@ -104,6 +104,93 @@ You operate under the **indii Conductor** (Agent 0). You may collaborate with:
   - `maxAttempts`: optional retry count (default 3).
 - **Note:** Requires an identity backend to be configured. Until `@vladmandic/human` is installed (A1.1) or the founder approves the degraded mode (A1.6), this reports the specific "not configured" error instead of producing a silently-wrong fusion.
 
+### generate_mockup
+- **Description:** Generate photorealistic merchandise and physical packaging mockups (vinyl, cassette, cd, poster, tee, hoodie) directly from a master artwork.
+- **Parameters:**
+  - `artworkUrl`: URL of the artwork to place on the mockup.
+  - `artworkIndex`: History or upload index of the artwork.
+  - `productType`: Target product ('vinyl', 'cassette', 'cd', 'poster', 'tee', 'hoodie').
+  - `kind`: Merch kind identifier.
+  - `scene`: Studio, lifestyle, urban, or minimal background scene.
+  - `aspectRatio`: Mockup aspect ratio (e.g. '1:1', '4:5', '16:9').
+
+### render_distribution_bundle
+- **Description:** Render a deterministic, DSP- and print-compliant distribution bundle with SHA-256 verifiable manifest, gated by compliance and rights verification.
+- **Parameters:**
+  - `masterUrl`: Source URL or data URI of master artwork (3000x3000px minimum recommended).
+  - `masterIndex`: History or upload index of master artwork if masterUrl is omitted.
+  - `profileIds`: Specific profiles to render (default renders all Spotify, Apple Music, Tidal, and Print profiles).
+  - `trackId`: Optional associated track/release ID for rights verification.
+  - `overrideReason`: Authorizing explanation to override a failed brand compliance check.
+
+### canvas_open_image
+- **Description:** Open a gallery image into the non-destructive layer editor (returns docId).
+- **Parameters:**
+  - `imageIndex`: Index of the image in the gallery.
+  - `imageUrl`: Direct URL of the image to open.
+
+### canvas_add_layer
+- **Description:** Add a raster layer from a gallery item to the open layer doc.
+- **Parameters:**
+  - `docId` (required): Active Canvas document ID.
+  - `imageIndex`: Index of the image to add as a layer.
+  - `imageUrl`: Direct URL of the image to add.
+  - `blendMode`: Blend mode ('normal', 'multiply', 'screen', 'overlay', etc.).
+  - `opacity`: Layer opacity (0.0 - 1.0).
+
+### canvas_set_adjustments
+- **Description:** Merge a non-destructive adjustment patch over the neutral stack for a raster layer.
+- **Parameters:**
+  - `docId` (required): Active Canvas document ID.
+  - `layerId` (required): Target layer ID.
+  - `adjustments`: Adjustment object with brightness, contrast, saturation, hue, blur, exposure.
+
+### canvas_export
+- **Description:** Export the open layer doc as a flattened raster PNG/JPEG history item + URL, recording an asset version.
+- **Parameters:**
+  - `docId` (required): Active Canvas document ID.
+  - `format`: 'png' or 'jpeg' (default 'png').
+  - `scale`: Output scale multiplier (default 1.0).
+
+### animate_still
+- **Description:** Render a deterministic camera move (dolly/pan/tilt/ken-burns) over a still image into a short promotional clip. Free, no generative model.
+- **Parameters:**
+  - `imageUrl`: URL of the still image.
+  - `imageIndex`: Index of image if URL is omitted.
+  - `preset`: Camera move preset ('dolly-in', 'dolly-out', 'pan-left', 'pan-right', 'tilt-up', 'tilt-down', 'ken-burns').
+  - `resolution`: Aspect ratio ('9:16', '16:9', '1:1').
+  - `durationSeconds`: Clip duration in seconds (default 3.0).
+
+### export_platform_assets
+- **Description:** Deterministically export a master artwork into every required platform dimension (Spotify 3000x3000, Stories, YouTube, X, Facebook) with a downloadable zip. No AI.
+- **Parameters:**
+  - `masterUrl`: Direct URL of master artwork.
+  - `masterIndex`: Index of master artwork in gallery/history.
+  - `cropAnchor`: Framing anchor ('center', 'top', 'bottom', 'left', 'right').
+
+### record_asset_version
+- **Description:** Create an immutable content-addressed asset version with cryptographic SHA-256 hash, lineage parents, and metadata.
+- **Parameters:**
+  - `assetId` (required): Primary identifier for the asset.
+  - `url` (required): Resolvable storage URL or data URI.
+  - `contentHash`: SHA-256 hex digest of asset binary.
+  - `parentVersionId`: Preceding version ID in lineage.
+  - `metadata`: Provenance and tool metadata.
+
+### promote_asset_version
+- **Description:** Promote an asset version to production canonical status.
+- **Parameters:**
+  - `assetId` (required): Asset identifier.
+  - `versionId` (required): Target version ID to promote.
+  - `releasePhase`: Release stage ('draft', 'staging', 'production', 'archived').
+
+### set_asset_rights
+- **Description:** Attach legal rights, copyright provenance, and clearance metadata to an asset version.
+- **Parameters:**
+  - `assetId` (required): Asset identifier.
+  - `versionId` (required): Target version ID.
+  - `rights`: Rights metadata object (owner, license, commercialUse, clearanceNotes).
+
 ### analyze_audio
 - **Description:** Analyze track audio to extract BPM, key, mood, and energy to drive visual styling.
 - **Parameters:**

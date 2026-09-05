@@ -21,6 +21,7 @@ declare module 'opentype.js' {
     unicode?: number;
     advanceWidth?: number;
     path?: Path;
+    index?: number;
   }
 
   export class Glyph {
@@ -29,6 +30,7 @@ declare module 'opentype.js' {
     unicode: number;
     advanceWidth: number;
     path: Path;
+    index?: number;
   }
 
   export interface FontOptions {
@@ -40,7 +42,10 @@ declare module 'opentype.js' {
     glyphs?: Glyph[];
   }
 
-  export interface GlyphPathOptions { kerning?: boolean; }
+  export interface GlyphPathOptions {
+    kerning?: boolean;
+    letterSpacing?: number;
+  }
 
   export class Font {
     constructor(options: FontOptions);
@@ -54,7 +59,7 @@ declare module 'opentype.js' {
     forEachGlyph(text: string, callback: (glyph: Glyph, index: number, x: number) => void, x?: number, fontSize?: number, options?: GlyphPathOptions): void;
     getPath(text: string, x: number, y: number, fontSize: number, options?: GlyphPathOptions): Path;
     getAdvanceWidth(text: string, fontSize: number, options?: GlyphPathOptions): number;
-    getKerningValue(left: string, right: string): number;
+    getKerningValue(left: string | Glyph, right: string | Glyph): number;
     toArrayBuffer(): ArrayBuffer;
   }
 

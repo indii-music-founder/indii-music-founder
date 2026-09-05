@@ -70,4 +70,30 @@ describe('FileSystemService Performance', () => {
         // Expect moveToTrash called for each item in the tree (4 items)
         expect(mockMoveToTrash).toHaveBeenCalledTimes(4);
     });
+
+    it('sanitizes raw base64 data URIs from data.url before creating nodes to prevent Firestore indexing error', async () => {
+        const mockAdd = vi.spyOn(fileSystemService as any, 'add').mockResolvedValue('new-node-id');
+
+        const created = await fileSystemService.createNode({
+            name: 'generation-test.png',
+            type: 'file',
+            fileType: 'image',
+            parentId: null,
+            projectId: 'p1',
+            userId: 'u1',
+            data: {
+                url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+                storagePath: 'users/u1/assets/test.png',
+                origin: 'generated',
+                mimeType: 'image/png'
+            }
+        });
+
+        expect(mockAdd).toHaveBeenCalled();
+        const addedPayload = mockAdd.mock.calls[0]![0] as { data: { url?: string; storagePath?: string } };
+        // The raw data URI must be stripped to protect Firestore's 1500-byte embedded entity limit
+        expect(addedPayload.data.url).toBeUndefined();
+        expect(addedPayload.data.storagePath).toBe('users/u1/assets/test.png');
+        expect(created.data?.url).toBeUndefined();
+    });
 });

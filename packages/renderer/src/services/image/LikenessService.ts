@@ -25,6 +25,9 @@ export interface LikenessImage {
     storageRef: string;
     qualityScore: 'good' | 'acceptable' | 'low';
     qualityNotes?: string;
+    consentGiven?: boolean;
+    consentTimestamp?: number;
+    uid?: string;
     createdAt: number;
 }
 
@@ -70,11 +73,21 @@ class LikenessServiceImpl {
      * Upload a new likeness image.
      * The dataUrl is uploaded to Firebase Storage, and metadata is written to Firestore.
      */
-    async add(dataUrl: string, qualityScore: LikenessImage['qualityScore'], qualityNotes?: string): Promise<LikenessImage | null> {
+    async add(
+        dataUrl: string,
+        qualityScore: LikenessImage['qualityScore'],
+        qualityNotes?: string,
+        consentGiven: boolean = true
+    ): Promise<LikenessImage | null> {
         const uid = this.getUid();
         if (!uid) {
             logger.error('[LikenessService] Cannot add image: user not authenticated');
             return null;
+        }
+
+        if (!consentGiven) {
+            logger.error('[LikenessService] Cannot add image: affirmative biometric consent is required (Part I.1).');
+            throw new Error('Affirmative biometric consent is required to enroll a likeness image (Part I.1).');
         }
 
         const count = await this.getCount();
@@ -92,17 +105,27 @@ class LikenessServiceImpl {
             await uploadString(storageRefObj, dataUrl, 'data_url');
             const downloadUrl = await getDownloadURL(storageRefObj);
 
-            // Write metadata to Firestore
+            const consentTimestamp = Date.now();
+            // Write metadata to Firestore with affirmative consent logging (Part I.1)
             const docRef = doc(this.getCollectionRef(), id);
             await setDoc(docRef, {
                 url: downloadUrl,
                 storageRef: storagePath,
                 qualityScore,
                 qualityNotes: qualityNotes || null,
+                consentGiven,
+                consentTimestamp,
+                uid,
                 createdAt: serverTimestamp(),
             });
 
-            logger.info('[LikenessService] Added likeness image', { id, qualityScore });
+            logger.info('[LikenessService] Added likeness image with affirmative biometric consent', {
+                id,
+                qualityScore,
+                consentGiven,
+                consentTimestamp,
+                uid
+            });
 
             return {
                 id,
@@ -110,6 +133,9 @@ class LikenessServiceImpl {
                 storageRef: storagePath,
                 qualityScore,
                 qualityNotes,
+                consentGiven,
+                consentTimestamp,
+                uid,
                 createdAt: Date.now(),
             };
         } catch (err) {

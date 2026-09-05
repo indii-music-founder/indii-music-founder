@@ -492,6 +492,172 @@ export const FinanceTools = {
                 'STATEMENT_NORMALIZATION_FAILED'
             );
         }
+    }),
+
+    royalty_distribution_calculator: wrapTool('royalty_distribution_calculator', async (args: {
+        trackTitle: string;
+        grossRevenue: number;
+        currency?: string;
+        distributionFeePercent?: number;
+        recoupableExpenses?: Array<{ category: string; description?: string; amount: number }>;
+        parties: Array<{
+            name: string;
+            role: string;
+            percentage: number;
+            shareType?: 'master' | 'publishing' | 'net_profit';
+            advancePaid?: number;
+            taxWithholdingPercent?: number;
+            payoutMethod?: string;
+        }>;
+    }) => {
+        // Validation
+        if (!args.trackTitle || typeof args.trackTitle !== 'string') {
+            return toolError("Track or release title is required.", "INVALID_TRACK_TITLE");
+        }
+        if (typeof args.grossRevenue !== 'number' || !Number.isFinite(args.grossRevenue) || args.grossRevenue < 0) {
+            return toolError("Gross revenue must be a non-negative number.", "INVALID_GROSS_REVENUE");
+        }
+        if (!Array.isArray(args.parties) || args.parties.length === 0) {
+            return toolError("At least one recipient party must be provided.", "NO_PARTIES_PROVIDED");
+        }
+
+        const distFeePercent = args.distributionFeePercent ?? 0;
+        if (typeof distFeePercent !== 'number' || !Number.isFinite(distFeePercent) || distFeePercent < 0 || distFeePercent >= 100) {
+            return toolError("Distribution fee percentage must be between 0 and 99.99%.", "INVALID_DISTRIBUTION_FEE");
+        }
+
+        // Percentage sum validation
+        const totalPercentage = args.parties.reduce((acc, p) => acc + (typeof p.percentage === 'number' ? p.percentage : 0), 0);
+        if (Math.abs(totalPercentage - 100) > 0.01) {
+            return toolError(
+                `Party split percentages must sum to 100%. Current sum: ${totalPercentage.toFixed(2)}%.`,
+                "INVALID_SPLIT_TOTAL",
+                { totalPercentage, discrepancy: Number((100 - totalPercentage).toFixed(2)) }
+            );
+        }
+
+        for (const party of args.parties) {
+            if (!party.name || typeof party.name !== 'string') {
+                return toolError("All parties must specify a valid name.", "INVALID_PARTY_NAME");
+            }
+            if (typeof party.percentage !== 'number' || party.percentage < 0) {
+                return toolError(`Invalid split percentage for party '${party.name}'. Must be non-negative.`, "INVALID_PARTY_PERCENTAGE");
+            }
+            if (party.advancePaid !== undefined && (typeof party.advancePaid !== 'number' || party.advancePaid < 0)) {
+                return toolError(`Advance paid for '${party.name}' must be a non-negative number.`, "INVALID_ADVANCE_AMOUNT");
+            }
+            if (party.taxWithholdingPercent !== undefined && (typeof party.taxWithholdingPercent !== 'number' || party.taxWithholdingPercent < 0 || party.taxWithholdingPercent > 100)) {
+                return toolError(`Tax withholding percentage for '${party.name}' must be between 0% and 100%.`, "INVALID_WITHHOLDING_PERCENT");
+            }
+        }
+
+        const currency = (args.currency || 'USD').toUpperCase();
+
+        // High precision math using integer cents
+        const grossCents = Math.round(args.grossRevenue * 100);
+        const distributionFeeCents = Math.round(grossCents * (distFeePercent / 100));
+        const postDistributorCents = grossCents - distributionFeeCents;
+
+        // Recoupable expenses
+        const rawExpenses = args.recoupableExpenses ?? [];
+        let totalExpensesCents = 0;
+        const itemizedExpenses = rawExpenses.map(exp => {
+            const amountCents = Math.max(0, Math.round((exp.amount || 0) * 100));
+            totalExpensesCents += amountCents;
+            return {
+                category: exp.category || 'General Expense',
+                description: exp.description || '',
+                amount: amountCents / 100
+            };
+        });
+
+        const expensesRecoupedCents = Math.min(postDistributorCents, totalExpensesCents);
+        const unrecoupedExpensesCents = totalExpensesCents - expensesRecoupedCents;
+        const distributablePoolCents = Math.max(0, postDistributorCents - expensesRecoupedCents);
+
+        let totalAllocatedCents = 0;
+        let totalAdvancesRecoupedCents = 0;
+        let totalTaxWithheldCents = 0;
+        let totalNetPayableCents = 0;
+
+        const partyDistributions = args.parties.map((party, index) => {
+            // Allocate share based on percentage
+            let allocatedCents = Math.round(distributablePoolCents * (party.percentage / 100));
+            // Prevent rounding leak on last item if distributablePool > 0
+            if (index === args.parties.length - 1 && distributablePoolCents > 0) {
+                const allocatedSoFar = totalAllocatedCents;
+                allocatedCents = Math.max(0, distributablePoolCents - allocatedSoFar);
+            }
+            totalAllocatedCents += allocatedCents;
+
+            // Recoup party advance
+            const advancePaidCents = Math.round((party.advancePaid || 0) * 100);
+            const advanceRecoupedCents = Math.min(allocatedCents, advancePaidCents);
+            const remainingAdvanceCents = advancePaidCents - advanceRecoupedCents;
+            totalAdvancesRecoupedCents += advanceRecoupedCents;
+
+            const postRecoupmentCents = allocatedCents - advanceRecoupedCents;
+
+            // Tax withholding
+            const withholdingRate = (party.taxWithholdingPercent || 0) / 100;
+            const taxWithheldCents = Math.round(postRecoupmentCents * withholdingRate);
+            totalTaxWithheldCents += taxWithheldCents;
+
+            const netPayableCents = postRecoupmentCents - taxWithheldCents;
+            totalNetPayableCents += netPayableCents;
+
+            const netPayable = netPayableCents / 100;
+            const requires1099 = netPayable >= 600;
+
+            return {
+                name: party.name,
+                role: party.role,
+                percentage: party.percentage,
+                shareType: party.shareType || 'net_profit',
+                allocatedGross: allocatedCents / 100,
+                advanceOriginal: advancePaidCents / 100,
+                advanceRecouped: advanceRecoupedCents / 100,
+                advanceRemaining: remainingAdvanceCents / 100,
+                taxWithholdingPercent: party.taxWithholdingPercent || 0,
+                taxWithheld: taxWithheldCents / 100,
+                netPayable,
+                requires1099,
+                payoutMethod: party.payoutMethod || 'Direct Deposit / ACH'
+            };
+        });
+
+        const total1099Count = partyDistributions.filter(p => p.requires1099).length;
+
+        const resultData = {
+            trackTitle: args.trackTitle,
+            currency,
+            summary: {
+                grossRevenue: grossCents / 100,
+                distributionFeePercent: distFeePercent,
+                distributionFeeAmount: distributionFeeCents / 100,
+                postDistributorRevenue: postDistributorCents / 100,
+                totalRecoupableExpenses: totalExpensesCents / 100,
+                expensesRecoupedThisPeriod: expensesRecoupedCents / 100,
+                remainingUnrecoupedExpenses: unrecoupedExpensesCents / 100,
+                distributablePool: distributablePoolCents / 100,
+                totalAdvancesRecouped: totalAdvancesRecoupedCents / 100,
+                totalTaxWithheld: totalTaxWithheldCents / 100,
+                totalNetPayable: totalNetPayableCents / 100,
+                isFullyRecouped: unrecoupedExpensesCents === 0
+            },
+            expenses: itemizedExpenses,
+            partyDistributions,
+            compliance: {
+                total1099FormsRequired: total1099Count,
+                auditStandard: 'indii Golden File Royalty Waterfall v2.1',
+                precision: 'integer-cents deterministic arithmetic',
+                timestamp: new Date().toISOString()
+            }
+        };
+
+        const message = `Deterministic royalty distribution calculated for "${args.trackTitle}": Gross ${currency} $${(grossCents / 100).toFixed(2)}, Distributable Pool $${(distributablePoolCents / 100).toFixed(2)}, Net Payable $${(totalNetPayableCents / 100).toFixed(2)}. ${total1099Count} party(s) flagged for 1099 tax reporting.`;
+
+        return toolSuccess(resultData, message);
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -508,5 +674,6 @@ export const {
     convert_multi_currency,
     onboard_stripe_connect,
     request_tax_forms,
-    normalize_distributor_statements
+    normalize_distributor_statements,
+    royalty_distribution_calculator
 } = FinanceTools;

@@ -43,11 +43,12 @@ const aestheticSchema: Schema = {
     required: ['violations', 'summary'],
 };
 
-/** True when the brand kit declares any soft visual identity to judge against. */
+/** True when the brand kit declares any soft visual identity or negative brand rules to judge against. */
 export function hasAestheticIdentity(brandKit: BrandKit): boolean {
     return Boolean(
         (brandKit.aestheticStyle ?? '').trim() ||
         (brandKit.visualIdentity ?? '').trim() ||
+        (brandKit.negativePrompt ?? '').trim() ||
         (brandKit.digitalAura ?? []).some((tag) => tag.trim())
     );
 }
@@ -58,11 +59,12 @@ function buildPrompt(brandKit: BrandKit): string {
         brandKit.visualIdentity ? `Visual identity: ${brandKit.visualIdentity}` : null,
         brandKit.digitalAura?.length ? `Vibe tags: ${brandKit.digitalAura.filter(Boolean).join(', ')}` : null,
         brandKit.brandDescription ? `Brand description: ${brandKit.brandDescription}` : null,
+        brandKit.negativePrompt ? `Negative brand rules (FORBIDDEN elements/styles): ${brandKit.negativePrompt}` : null,
     ].filter(Boolean);
 
     return [
         'You are a strict brand-compliance art director.',
-        'Judge ONLY whether this image adheres to the brand visual identity described below.',
+        'Judge ONLY whether this image adheres to the brand visual identity and respects negative brand rules described below.',
         'Do NOT comment on technical quality, palette hex values, or logo placement — other engines cover those.',
         ...identityLines.map((line) => `- ${line}`),
         'Return every deviation with a specific, actionable detail and a severity',

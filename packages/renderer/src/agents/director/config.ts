@@ -31,15 +31,23 @@ export const DirectorAgent: AgentConfig = {
             analyze_audio: MusicTools.analyze_audio,
             canvas_push: CanvasTools.canvas_push,
             mockup_merchandise: CommerceTools.mockup_merchandise,
+            generate_mockup: CommerceTools.generate_mockup,
             export_platform_assets: MediaTools.export_platform_assets,
+            render_distribution_bundle: MediaTools.render_distribution_bundle,
             animate_still: VideoTools.animate_still,
             canvas_open_image: CanvasTools.canvas_open_image,
             canvas_add_layer: CanvasTools.canvas_add_layer,
             canvas_set_adjustments: CanvasTools.canvas_set_adjustments,
             canvas_export: CanvasTools.canvas_export,
+            fuse_likeness: DirectorTools.fuse_likeness,
+            render_typography: DirectorTools.render_typography,
+            scan_brand_compliance: DirectorTools.scan_brand_compliance,
+            record_asset_version: DirectorTools.record_asset_version,
+            promote_asset_version: DirectorTools.promote_asset_version,
+            set_asset_rights: DirectorTools.set_asset_rights,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['generate_image', 'batch_edit_images', 'generate_video', 'batch_edit_videos', 'run_showroom_mockup', 'generate_high_res_asset', 'set_entity_anchor', 'generate_visual_script', 'render_cinematic_grid', 'extract_grid_frame', 'interpolate_sequence', 'analyze_audio', 'canvas_push', 'mockup_merchandise', 'export_platform_assets', 'animate_still', 'canvas_open_image', 'canvas_add_layer', 'canvas_set_adjustments', 'canvas_export'],
+    authorizedTools: ['generate_image', 'batch_edit_images', 'generate_video', 'batch_edit_videos', 'run_showroom_mockup', 'generate_high_res_asset', 'set_entity_anchor', 'generate_visual_script', 'render_cinematic_grid', 'extract_grid_frame', 'interpolate_sequence', 'analyze_audio', 'canvas_push', 'mockup_merchandise', 'generate_mockup', 'export_platform_assets', 'render_distribution_bundle', 'animate_still', 'canvas_open_image', 'canvas_add_layer', 'canvas_set_adjustments', 'canvas_export', 'fuse_likeness', 'render_typography', 'scan_brand_compliance', 'record_asset_version', 'promote_asset_version', 'set_asset_rights'],
     tools: [{
         functionDeclarations: [
             {
@@ -265,6 +273,123 @@ export const DirectorAgent: AgentConfig = {
                 name: "canvas_export",
                 description: "Export the open layer doc as a raster PNG/JPEG history item + URL.",
                 parameters: { type: "OBJECT", properties: { docId: { type: "STRING" }, format: { type: "STRING", enum: ['png','jpeg'] }, scale: { type: "NUMBER" } }, required: [] }
+            },
+            {
+                name: "generate_mockup",
+                description: "Generate photorealistic merchandise/media mockups (vinyl, CD, cassette, tee, hoodie, poster) using locked prompt templates enforcing 1:1 artwork fidelity.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        productType: { type: "STRING", description: "Product type (tee, hoodie, vinyl, cd, cassette, poster)." },
+                        artworkUrl: { type: "STRING", description: "Artwork URL or base64 data URI." },
+                        artworkIndex: { type: "NUMBER", description: "Optional index of generated image." },
+                        scene: { type: "STRING", enum: ['studio', 'lifestyle', 'flat'], description: "Staging scene." },
+                        aspectRatio: { type: "STRING", description: "Aspect ratio (e.g. '1:1', '4:5')." }
+                    }
+                }
+            },
+            {
+                name: "render_distribution_bundle",
+                description: "Direct distribution packaging enforcing DSP/print specs (DPI, bleed math, sRGB color space, file caps) with SHA-256 verifiable delivery manifests.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        masterUrl: { type: "STRING", description: "Data URI or hosted image URL of the master artwork." },
+                        masterIndex: { type: "NUMBER", description: "Index of the master image in generatedHistory." },
+                        profileIds: {
+                            type: "ARRAY",
+                            items: { type: "STRING" },
+                            description: "Target delivery profile IDs (e.g. 'spotify-cover', 'apple-itunes-cover', 'print-12in-sleeve-300dpi', 'cd-jewel-300dpi')."
+                        },
+                        trackId: { type: "STRING", description: "Track/Release ID for manifest association." },
+                        overrideReason: { type: "STRING", description: "Explicit reason if overriding brand compliance gate." }
+                    }
+                }
+            },
+            {
+                name: "fuse_likeness",
+                description: "Fuse verified user likeness onto generated subjects with cosine similarity scoring on 128-d face embeddings and best-of-N retry loop. Arbitrary external/gallery URLs rejected.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        targetImageIndex: { type: "NUMBER", description: "Index of generated subject image to fuse onto." },
+                        headshotId: { type: "STRING", description: "Verified Likeness ID from My Likeness or Brand Kit headshot. Arbitrary external URLs or gallery images are strictly rejected." },
+                        maxAttempts: { type: "NUMBER", description: "Maximum retry attempts (default 3)." }
+                    },
+                    required: ["targetImageIndex"]
+                }
+            },
+            {
+                name: "render_typography",
+                description: "Renders uploaded .ttf/.otf fonts as true vector glyphs via opentype.js with exact pair kerning and tracking, bypassing generative text artifacts.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        text: { type: "STRING", description: "Text string/wordmark to render." },
+                        fontId: { type: "STRING", description: "Optional uploaded font ID. If omitted, uses Brand Kit default font." },
+                        fontSize: { type: "NUMBER", description: "Font size in points (default 48)." },
+                        x: { type: "NUMBER", description: "Horizontal coordinate." },
+                        y: { type: "NUMBER", description: "Vertical coordinate." },
+                        letterSpacing: { type: "NUMBER", description: "Tracking/letter spacing in font units." },
+                        fill: { type: "STRING", description: "CSS color or hex fill (default #ffffff)." }
+                    },
+                    required: ["text"]
+                }
+            },
+            {
+                name: "scan_brand_compliance",
+                description: "CIEDE2000 delta-E color deviation and logo safe-zone analysis gating distribution export.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        assetIndex: { type: "NUMBER", description: "Index of asset in generated history or uploads." },
+                        assetId: { type: "STRING", description: "Explicit ID of asset to scan." }
+                    }
+                }
+            },
+            {
+                name: "record_asset_version",
+                description: "Append-only DAG version graph node recording for provenance and audit tracking.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        assetId: { type: "STRING", description: "Asset identifier." },
+                        url: { type: "STRING", description: "Asset URL or data URI." },
+                        source: { type: "STRING", enum: ['generation', 'edit', 'fusion', 'canvas-export', 'typography', 'mockup', 'export-bundle', 'upload'], description: "Creation source." },
+                        parentVersionId: { type: "STRING", description: "Parent version ID if deriving from an earlier node." },
+                        provenance: { type: "OBJECT", description: "Provenance metadata." },
+                        compliance: { type: "OBJECT", description: "Compliance scan results." },
+                        tags: { type: "ARRAY", items: { type: "STRING" }, description: "Asset tags." }
+                    },
+                    required: ["assetId", "url", "source"]
+                }
+            },
+            {
+                name: "promote_asset_version",
+                description: "Promote a historical version to the head of the asset version graph (non-destructive revert).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        assetId: { type: "STRING", description: "Asset identifier." },
+                        versionId: { type: "STRING", description: "Version ID to promote to head." }
+                    },
+                    required: ["assetId", "versionId"]
+                }
+            },
+            {
+                name: "set_asset_rights",
+                description: "Record statutory rights taxonomy and licensing metadata for an asset.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        assetId: { type: "STRING", description: "Asset identifier." },
+                        usageRights: { type: "STRING", enum: ['ai-generated', 'ai-assisted', 'owned-licensed', 'licensed-third-party'], description: "Statutory usage rights taxonomy." },
+                        releaseId: { type: "STRING", description: "Optional associated release ID." },
+                        licenseNotes: { type: "STRING", description: "License notes (required for licensed-third-party)." },
+                        disclosureRequired: { type: "BOOLEAN", description: "Whether statutory AI disclosure is required." }
+                    },
+                    required: ["assetId", "usageRights"]
+                }
             }
         ]
     }]

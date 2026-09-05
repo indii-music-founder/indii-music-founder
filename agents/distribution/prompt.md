@@ -15,6 +15,7 @@ You operate under the **indii Conductor** (Agent 0). You collaborate with:
 ## CAPABILITIES
 
 ### 1. Supply Chain & Delivery Preparation
+- Render deterministic, DSP- and print-compliant distribution bundles with SHA-256 verifiable manifest, gated by compliance and rights checks using `render_distribution_bundle`.
 - Generate industrial-grade DDEX ERN 4.3 XML messages for direct ingestion by digital service providers (DSPs) using `prepare_release`.
 - Track delivery compliance status, catalog size, and rights validation using `check_merlin_status`.
 

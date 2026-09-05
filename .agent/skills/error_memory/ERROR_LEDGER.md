@@ -1,3 +1,23 @@
+## 2026-09-05 Firestore Embedded Entity Index Limit Violation from Raw Base64 URI (FIRESTORE_NESTED_ENTITY_SIZE_EXCEEDED)
+
+- **SEVERITY:** High (broke asset creation and node persistence in creative studio infinite canvas)
+- **FILES:** `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts`, `packages/renderer/src/services/FileSystemService.ts`
+- **ERROR:** `FirebaseError: Property data contains an invalid nested entity.` in DevTools console during file/node creation.
+- **CAUSE:** When generating or editing an asset on the canvas, `creativeHistorySlice.addToHistory` fired `createFileNode` with raw base64 data URIs (`data:image/png;base64,...`, often >100KB) in `data.url` before Cloud Storage upload finished. Firestore automatically indexes embedded map fields (such as `data`), and each indexed string in an entity cannot exceed 1,500 UTF-8 bytes. Passing base64 strings into `data.url` violated the maximum nested entity size.
+- **FIX:**
+  1. In `creativeHistorySlice.ts`, serialized `createFileNode` inside `StorageService.saveItem(enrichedItem).then((savedInfo) => ...)` to ensure only durable Cloud Storage `https://` download URLs and `gs://` storage URIs are written to the database.
+  2. In `FileSystemService.ts`, implemented `sanitizeNodeData` defense-in-depth across `createNode` and `updateNode` to strip raw `data:` URIs from `data.url` if accidentally passed, preserving `previewUrl` as an ephemeral client hint or omitting it from the indexed Firestore document.
+- **PREVENTION:** Never write raw base64 data URIs into Firestore document fields that are indexed or nested within maps. Persist image binaries to Cloud Storage first, obtain the resolved download URL or `gs://` URI, and store only the URL reference in Firestore.
+
+## 2026-09-05 Passive Wheel Event Listener preventDefault Violation on InfiniteCanvas (PASSIVE_EVENT_LISTENER_PREVENT_DEFAULT)
+
+- **SEVERITY:** Medium (triggered browser console violation warnings and prevented custom canvas zoom/pan gesture handling)
+- **FILES:** `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx`
+- **ERROR:** `Unable to preventDefault inside passive event listener invocation.` in Chrome DevTools console on mouse wheel / trackpad pinch gestures.
+- **CAUSE:** React 18+ treats `onWheel` JSX event props as passive event listeners by default to improve scrolling performance. Inside `handleWheel`, the canvas logic called `e.preventDefault()` to stop whole-page scrolling while zooming canvas elements. Calling `preventDefault()` inside a passive listener triggers browser warnings and is ignored by the browser.
+- **FIX:** Removed `onWheel={handleWheel}` from the `<canvas>` JSX tag. Attached the wheel listener imperatively inside a `useEffect` using `canvasRef.current.addEventListener('wheel', handleWheel, { passive: false })`, ensuring the browser allows `e.preventDefault()`. Cleaned up the listener in the effect return.
+- **PREVENTION:** When an interactive HTML5 canvas or map requires gesture interception via `e.preventDefault()`, do not use React JSX `onWheel` or `onTouchMove`. Attach the event listener imperatively via `addEventListener(..., { passive: false })` on the element ref with clean removal in `useEffect`.
+
 ## 2026-09-05 Vitest Worker Teardown RPC Leak on Root App Mount (VITEST_RPC_TEARDOWN_APP_UNMOUNT)
 
 - **SEVERITY:** High (broke remote CI unit-test shard 15 and blocked production deployment)

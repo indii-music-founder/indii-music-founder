@@ -526,27 +526,37 @@ export default function InfiniteCanvas() {
         }
     };
 
-    const handleWheel = (e: React.WheelEvent) => {
-        e.preventDefault();
-        const scale = scaleRef.current;
-        const offset = offsetRef.current;
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-        const z = Math.exp(e.deltaY * -0.001);
-        const newScale = Math.min(Math.max(scale * z, 0.1), 5);
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            const scale = scaleRef.current;
+            const offset = offsetRef.current;
 
-        const rect = canvasRef.current!.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
+            const z = Math.exp(e.deltaY * -0.001);
+            const newScale = Math.min(Math.max(scale * z, 0.1), 5);
 
-        // Update refs directly
-        offsetRef.current = {
-            x: mx - (mx - offset.x) * (newScale / scale),
-            y: my - (my - offset.y) * (newScale / scale)
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            // Update refs directly
+            offsetRef.current = {
+                x: mx - (mx - offset.x) * (newScale / scale),
+                y: my - (my - offset.y) * (newScale / scale)
+            };
+            scaleRef.current = newScale;
+
+            requestDraw();
         };
-        scaleRef.current = newScale;
 
-        requestDraw();
-    };
+        canvas.addEventListener('wheel', onWheel, { passive: false });
+        return () => {
+            canvas.removeEventListener('wheel', onWheel);
+        };
+    }, []);
 
     /**
      * Draws the canvas content cleanly (no selection box, no selection borders, no tool overlays).
@@ -1442,7 +1452,6 @@ export default function InfiniteCanvas() {
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
                 onDoubleClick={handleDoubleClick}
-                onWheel={handleWheel}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
                 className="block w-full h-full cursor-crosshair touch-none"

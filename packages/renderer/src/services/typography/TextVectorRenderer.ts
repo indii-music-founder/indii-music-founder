@@ -62,9 +62,6 @@ export function renderTextPath(
     assertLatinText(text);
 
     const kerning = opts.kerning ?? true;
-    const path = font.getPath(text, opts.x, opts.y, opts.fontSize, { kerning });
-    const svgPathD = path.toPathData(2);
-
     const glyphCount = text.trim().length;
     const baseAdvance = font.getAdvanceWidth(text, opts.fontSize, { kerning });
 
@@ -75,6 +72,23 @@ export function renderTextPath(
     if (trackingPx !== 0 && glyphCount > 1) {
         advanceWidth = baseAdvance + trackingPx * gapCount;
     }
+
+    // Determine starting x coordinate based on alignment options
+    let startX = opts.x;
+    if (opts.align === 'center') {
+        startX = opts.x - advanceWidth / 2;
+    } else if (opts.align === 'right') {
+        startX = opts.x - advanceWidth;
+    }
+
+    // opentype.js applies options.letterSpacing as (letterSpacing * fontSize)
+    // to glyph advances, matching trackingPx when letterSpacing = spacingScale / unitsPerEm.
+    const letterSpacingRatio = spacingScale !== 0 ? spacingScale / font.unitsPerEm : undefined;
+    const path = font.getPath(text, startX, opts.y, opts.fontSize, {
+        kerning,
+        ...(letterSpacingRatio !== undefined ? { letterSpacing: letterSpacingRatio } : {})
+    });
+    const svgPathD = path.toPathData(2);
 
     const height = (font.ascender + Math.abs(font.descender)) * (opts.fontSize / font.unitsPerEm);
     const width = advanceWidth;

@@ -106,13 +106,29 @@ export class FileSystemService extends FirestoreService<FileNode> {
         }
     }
 
+    private sanitizeNodeData<N extends { data?: FileNode['data'] }>(node: N): N {
+        if (!node.data) return node;
+        const data = { ...node.data };
+        // Base64 data URIs can exceed the 1500-byte indexing limit for Firestore embedded entities,
+        // tripping "Property data contains an invalid nested entity." Strip raw data URIs before persisting.
+        if (typeof data.url === 'string' && data.url.startsWith('data:')) {
+            logger.warn('[FileSystemService] Sanitized raw data URI from node.data.url before Firestore write to avoid nested entity indexing error.');
+            delete data.url;
+        }
+        return {
+            ...node,
+            data
+        };
+    }
+
     async createNode(node: Omit<FileNode, 'id' | 'createdAt' | 'updatedAt'>): Promise<FileNode> {
         try {
+            const sanitized = this.sanitizeNodeData(node);
             // Use this.add to ensure pruneUndefined is applied, preventing "invalid nested entity" errors
-            const id = await this.add(node);
+            const id = await this.add(sanitized);
             return {
                 id,
-                ...node,
+                ...sanitized,
                 createdAt: Date.now(),
                 updatedAt: Date.now()
             } as FileNode;
@@ -125,8 +141,9 @@ export class FileSystemService extends FirestoreService<FileNode> {
 
     async updateNode(id: string, updates: Partial<FileNode>): Promise<void> {
         try {
+            const sanitized = this.sanitizeNodeData(updates);
             await this.update(id, {
-                ...updates,
+                ...sanitized,
                 updatedAt: Date.now()
             });
         } catch (error: unknown) {

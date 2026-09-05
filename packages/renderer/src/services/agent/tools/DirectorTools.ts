@@ -578,6 +578,13 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     fuse_likeness: wrapTool('fuse_likeness', async (args: { targetImageIndex: number; headshotId?: string; maxAttempts?: number }) => {
+        if (args.headshotId && (/^https?:\/\//i.test(args.headshotId) || /^data:/i.test(args.headshotId))) {
+            return toolError(
+                'Arbitrary external URLs and gallery images are rejected for biometric likeness fusion. You must use a verified user-uploaded selfie ID from My Likeness or Brand Kit headshot asset (Part I.1).',
+                'INVALID_INPUT'
+            );
+        }
+
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { generatedHistory, uploadedImages, addToHistory, currentProjectId } = useStore.getState();
         const target = args.targetImageIndex !== undefined
@@ -600,17 +607,40 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 maxAttempts: args.maxAttempts
             });
 
-            // History item per attempt carries meta 'likeness_fusion' + similarity details.
+            // History item per attempt carries immutable audit meta 'likeness_fusion' + similarityScore.
             for (const attempt of result.attempts) {
+                const historyId = crypto.randomUUID();
                 addToHistory({
-                    id: crypto.randomUUID(),
+                    id: historyId,
                     url: attempt.dataUrl,
                     prompt: `Likeness fusion attempt (similarity ${attempt.similarity.toFixed(3)})`,
                     type: 'image' as const,
                     timestamp: Date.now(),
                     projectId: currentProjectId,
-                    meta: JSON.stringify({ source: 'likeness_fusion', similarity: attempt.similarity, headshotId: args.headshotId ?? 'newest', passedThreshold: result.passedThreshold })
+                    meta: JSON.stringify({
+                        meta: 'likeness_fusion',
+                        source: 'likeness_fusion',
+                        similarityScore: attempt.similarity,
+                        similarity: attempt.similarity,
+                        headshotId: args.headshotId ?? 'newest',
+                        passedThreshold: result.passedThreshold
+                    })
                 });
+
+                // H1 producer hook: immutable version node in asset graph
+                try {
+                    const { AssetVersionService } = await importWithRetry(() => import('@/services/assets/AssetVersionService'));
+                    await AssetVersionService.recordVersion({
+                        assetId: historyId,
+                        parentVersionId: null,
+                        url: attempt.dataUrl,
+                        source: 'fusion',
+                        provenance: { provider: 'indii', note: `Likeness fusion audit: headshot ${args.headshotId ?? 'newest'}, similarity ${attempt.similarity.toFixed(3)}` },
+                        tags: ['likeness_fusion', `headshot:${args.headshotId ?? 'newest'}`]
+                    });
+                } catch (versionError) {
+                    logger.warn('[DirectorTools] Version record failed for fusion attempt:', versionError);
+                }
             }
 
             if (!result.passedThreshold) {
@@ -637,6 +667,78 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
 
     analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
         return MusicTools.analyze_audio!({ uploadedAudioIndex: args.uploadedAudioIndex });
+    }),
+
+    generate_mockup: wrapTool('generate_mockup', async (args: {
+        productType?: string;
+        kind?: string;
+        designIdea?: string;
+        artworkUrl?: string;
+        artworkIndex?: number;
+        scene?: 'studio' | 'lifestyle' | 'flat';
+        aspectRatio?: string;
+    }) => {
+        const { CommerceTools } = await import('./CommerceTools');
+        return CommerceTools.generate_mockup!(args);
+    }),
+
+    render_distribution_bundle: wrapTool('render_distribution_bundle', async (args: {
+        masterUrl?: string;
+        masterIndex?: number;
+        profileIds?: string[];
+        trackId?: string;
+        overrideReason?: string;
+    }) => {
+        const { MediaTools } = await import('./MediaTools');
+        return MediaTools.render_distribution_bundle!(args);
+    }),
+
+    export_platform_assets: wrapTool('export_platform_assets', async (args: {
+        masterUrl?: string;
+        masterIndex?: number;
+        platforms?: string[];
+        fit?: 'cover' | 'contain-blur-pad';
+        download?: boolean;
+    }) => {
+        const { MediaTools } = await import('./MediaTools');
+        return MediaTools.export_platform_assets!(args);
+    }),
+
+    scan_brand_compliance: wrapTool('scan_brand_compliance', async (args: {
+        assetIndex?: number;
+        assetId?: string;
+    }) => {
+        const { BrandTools } = await import('./BrandTools');
+        return BrandTools.scan_brand_compliance!(args);
+    }),
+
+    record_asset_version: wrapTool('record_asset_version', async (args: {
+        assetId: string;
+        url: string;
+        source: import('@/services/assets/AssetVersionService').VersionSource;
+        parentVersionId?: string | null;
+        provenance?: import('@/services/assets/AssetVersionService').AssetVersionProvenance;
+        compliance?: import('@/services/assets/AssetVersionService').AssetVersionCompliance;
+        tags?: string[];
+    }) => {
+        const { MediaTools } = await import('./MediaTools');
+        return MediaTools.record_asset_version!(args);
+    }),
+
+    promote_asset_version: wrapTool('promote_asset_version', async (args: { assetId: string; versionId: string }) => {
+        const { MediaTools } = await import('./MediaTools');
+        return MediaTools.promote_asset_version!(args);
+    }),
+
+    set_asset_rights: wrapTool('set_asset_rights', async (args: {
+        assetId: string;
+        usageRights: import('@/services/assets/AssetRightsService').UsageRights;
+        releaseId?: string;
+        licenseNotes?: string;
+        disclosureRequired?: boolean;
+    }) => {
+        const { MediaTools } = await import('./MediaTools');
+        return MediaTools.set_asset_rights!(args);
     }),
 
     canvas_push: wrapTool('canvas_push', async (args: { assetId: string; label?: string }) => {

@@ -17,7 +17,7 @@
 
 import * as opentype from 'opentype.js';
 import { auth, db, storage } from '@/services/firebase';
-import { collection, doc, setDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, getDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { logger } from '@/utils/logger';
 
@@ -110,23 +110,58 @@ class FontLibraryImpl {
      */
     async loadOpenTypeFont(id: string): Promise<opentype.Font> {
         const uid = this.requireUid();
-        const storageRef = ref(storage, `users/${uid}/brandKit/fonts/${id}.ttf`);
+        let downloadUrl: string | undefined;
+        let storagePath: string | undefined;
+
         try {
-            const url = await getDownloadURL(storageRef);
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`Failed to fetch font bytes (HTTP ${res.status})`);
-            const buf = await res.arrayBuffer();
-            return opentype.parse(buf);
+            const metaDoc = await getDoc(doc(this.metadataCollection(), id));
+            if (metaDoc.exists()) {
+                const data = metaDoc.data() as Partial<RegisteredFont> & { downloadUrl?: string };
+                downloadUrl = data.downloadUrl;
+                storagePath = data.storageRef;
+            }
         } catch (err) {
-            // Fall back to a Firestore metadata doc that may carry its own url.
-            logger.warn('[FontLibrary] loadOpenTypeFont storage fetch failed, trying metadata', err);
-            throw err;
+            logger.warn('[FontLibrary] loadOpenTypeFont metadata lookup failed, attempting storage path', err);
         }
+
+        if (!downloadUrl) {
+            const path = storagePath || `users/${uid}/brandKit/fonts/${id}.ttf`;
+            const storageRef = ref(storage, path);
+            downloadUrl = await getDownloadURL(storageRef);
+        }
+
+        const res = await fetch(downloadUrl);
+        if (!res.ok) throw new Error(`Failed to fetch font bytes (HTTP ${res.status})`);
+        const buf = await res.arrayBuffer();
+        return opentype.parse(buf);
     }
 
     async deleteFont(id: string): Promise<void> {
         const uid = this.requireUid();
-        await deleteObject(ref(storage, `users/${uid}/brandKit/fonts/${id}.ttf`));
+        let storagePath: string | undefined;
+
+        try {
+            const metaDoc = await getDoc(doc(this.metadataCollection(), id));
+            if (metaDoc.exists()) {
+                const data = metaDoc.data() as Partial<RegisteredFont>;
+                storagePath = data.storageRef;
+            }
+        } catch {
+            // Proceed to delete by fallback path
+        }
+
+        const path = storagePath || `users/${uid}/brandKit/fonts/${id}.ttf`;
+        try {
+            await deleteObject(ref(storage, path));
+        } catch (err) {
+            logger.warn('[FontLibrary] storage delete failed', err);
+        }
+
+        try {
+            await deleteDoc(doc(this.metadataCollection(), id));
+        } catch (err) {
+            logger.warn('[FontLibrary] firestore metadata delete failed', err);
+        }
     }
 
     private toDataUrl(file: File, buf: ArrayBuffer): string {

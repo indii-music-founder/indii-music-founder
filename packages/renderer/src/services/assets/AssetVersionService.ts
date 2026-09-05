@@ -38,6 +38,7 @@ export interface AssetVersionProvenance {
 export interface AssetVersionCompliance {
     passed: boolean;
     score: number;
+    overrideReason?: string;
 }
 
 export interface AssetVersion {

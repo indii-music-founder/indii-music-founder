@@ -349,15 +349,39 @@ export const CanvasTools = {
             if (!ctx) throw new Error('No 2D context');
             ctx.fillStyle = doc.background || '#000000';
             ctx.fillRect(0, 0, width, height);
-            for (const layer of [...doc.layers].reverse()) {
-                if (!layer.visible || layer.kind !== 'raster') continue; // text-vector bake is C3
-                const img = new Image();
-                img.src = layer.src;
-                await img.decode().catch(() => {});
-                if (img.width > 0) {
-                    const s = Math.max(width / img.width, height / img.height);
-                    const dw = img.width * s, dh = img.height * s;
-                    ctx.drawImage(img, (width - dw) / 2, (height - dh) / 2, dw, dh);
+            for (const layer of doc.layers) {
+                if (!layer.visible) continue;
+                if (layer.kind === 'text') {
+                    try {
+                        const { rasterizeTextLayer } = await import('@/services/canvas/textLayerRaster');
+                        const { dataUrl } = await rasterizeTextLayer(layer, scale);
+                        const img = new Image();
+                        img.src = dataUrl;
+                        await img.decode().catch(() => {});
+                        if (img.width > 0) {
+                            ctx.save();
+                            ctx.globalAlpha = layer.opacity ?? 1;
+                            ctx.drawImage(img, (layer.x ?? 0) * scale, (layer.y ?? 0) * scale);
+                            ctx.restore();
+                        }
+                    } catch (textErr) {
+                        logger.warn('[CanvasTools] Failed to rasterize text layer during export:', textErr);
+                    }
+                    continue;
+                }
+
+                if (layer.kind === 'raster') {
+                    const img = new Image();
+                    img.src = layer.src;
+                    await img.decode().catch(() => {});
+                    if (img.width > 0) {
+                        ctx.save();
+                        ctx.globalAlpha = layer.opacity ?? 1;
+                        const dw = img.width * (layer.scaleX ?? 1) * scale;
+                        const dh = img.height * (layer.scaleY ?? 1) * scale;
+                        ctx.drawImage(img, (layer.x ?? 0) * scale, (layer.y ?? 0) * scale, dw, dh);
+                        ctx.restore();
+                    }
                 }
             }
             const mime = args.format === 'jpeg' ? 'image/jpeg' : 'image/png';
@@ -369,6 +393,21 @@ export const CanvasTools = {
                 meta: JSON.stringify({ source: 'canvas_export', docId: doc.id }),
                 tags: ['canvas_export'], origin: 'canvas-export'
             });
+
+            try {
+                const { AssetVersionService } = await importWithRetry(() => import('@/services/assets/AssetVersionService'));
+                await AssetVersionService.recordVersion({
+                    assetId: historyId,
+                    parentVersionId: null,
+                    url,
+                    source: 'canvas-export',
+                    provenance: { provider: 'indii', note: `Canvas doc export ${doc.id} (${width}x${height})` },
+                    tags: ['canvas_export', `doc:${doc.id}`]
+                });
+            } catch (verErr) {
+                logger.warn('[CanvasTools] AssetVersionService recordVersion failed for canvas_export:', verErr);
+            }
+
             return toolSuccess({ url, width, height }, `Exported layer doc ${doc.id} as ${args.format ?? 'png'} (${width}×${height}).`);
         } catch (error) {
             logger.error('[CanvasTools] canvas_export error:', error);

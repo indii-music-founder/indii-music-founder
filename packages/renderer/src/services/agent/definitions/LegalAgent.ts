@@ -60,6 +60,7 @@ export const LegalAgent: AgentConfig = {
                     }
                 };
             },
+            contract_generator_and_review_tool: LegalTools.contract_generator_and_review_tool,
             browser_tool: UniversalTools.browser_tool,
             document_query: UniversalTools.document_query,
             draft_split_sheet: LegalTools.generate_split_sheet,
@@ -70,6 +71,7 @@ export const LegalAgent: AgentConfig = {
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: ['list_domain_records', 
+        'contract_generator_and_review_tool',
         'analyze_rights',
         'browser_tool',
         'document_query',
@@ -82,6 +84,61 @@ export const LegalAgent: AgentConfig = {
     tools: [{
         functionDeclarations: [
             ...legalRetrievalDeclarations,
+            {
+                name: "contract_generator_and_review_tool",
+                description: "Unified music contract generator and legal review tool. In 'generate' mode, drafts complete, legally enforceable agreements with mandatory artist safeguards (audit rights, rights reversion, dispute resolution) and auto-saves them to Legal Dashboard. In 'review' mode, audits contract text against legal precedent, calculates enforceability scores (1-100), flags predatory clauses, and recommends redlines.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        mode: { type: "STRING", enum: ["generate", "review"], description: "Operation mode: 'generate' to draft a contract, or 'review' to audit an existing agreement." },
+                        generation: {
+                            type: "OBJECT",
+                            description: "Configuration for contract generation.",
+                            properties: {
+                                contractType: { type: "STRING", description: "Contract type (e.g., 'producer_agreement', 'split_sheet', 'sync_license', 'work_for_hire', 'nda', 'master_use_license')." },
+                                title: { type: "STRING", description: "Optional contract title." },
+                                parties: {
+                                    type: "ARRAY",
+                                    description: "List of parties involved.",
+                                    items: {
+                                        type: "OBJECT",
+                                        properties: {
+                                            name: { type: "STRING" },
+                                            role: { type: "STRING" },
+                                            email: { type: "STRING" },
+                                            entityType: { type: "STRING" }
+                                        },
+                                        required: ["name", "role"]
+                                    }
+                                },
+                                governingLaw: { type: "STRING", description: "State or jurisdiction (default: California)." },
+                                termLength: { type: "STRING", description: "Duration of agreement." },
+                                compensationTerms: { type: "STRING", description: "Financial compensation and royalty structure." },
+                                grantOfRights: { type: "STRING", description: "Scope and exclusivity of rights granted." },
+                                auditRights: { type: "BOOLEAN", description: "Whether to mandate annual inspection of books (default true)." },
+                                reversionClause: { type: "BOOLEAN", description: "Whether unexploited rights revert to creator (default true)." },
+                                specialProvisions: { type: "STRING", description: "Custom clauses or requirements." }
+                            },
+                            required: ["contractType", "parties"]
+                        },
+                        review: {
+                            type: "OBJECT",
+                            description: "Configuration for contract review.",
+                            properties: {
+                                contractText: { type: "STRING", description: "Full text of agreement to audit." },
+                                contractTitle: { type: "STRING", description: "Title of agreement." },
+                                focusAreas: {
+                                    type: "ARRAY",
+                                    items: { type: "STRING" },
+                                    description: "Target focus areas (e.g., 'rights_reversion', 'audit_rights', 'cross_collateralization', 'indemnity')."
+                                }
+                            },
+                            required: ["contractText"]
+                        }
+                    },
+                    required: ["mode"]
+                }
+            },
             {
                 name: "analyze_rights",
                 description: "Analyze the copyright status of a track based on its composition.",

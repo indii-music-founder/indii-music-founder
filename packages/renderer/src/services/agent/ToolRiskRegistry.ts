@@ -203,6 +203,10 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     generate_nda: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     generate_split_sheet: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     generate_dmca_takedown: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+    contract_generator_and_review_tool: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Generate and review legally compliant, enforceable music industry contracts' },
+
+    // Finance & Royalties
+    royalty_distribution_calculator: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Calculate exact deterministic royalty waterfalls and split distributions' },
 
     // Music & Publishing
     create_music_metadata: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
@@ -229,8 +233,8 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     apply_watermark: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     require_biometric_auth: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
 
-    // Browser (write — actions)
-    browser_action: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+    // Browser (write — actions: interacting with external web forms/portals requires approval)
+    browser_action: { riskTier: 'write', permissionTier: 'plugin', requiresApproval: true, description: 'External browser DOM interaction (click, type, submit) — requires user approval' },
 
     // Computer (write — CE-1, ISSUE-1110). Screen contents and app launches are sensitive
     // even though they aren't "destructive" in the delete/rotate sense; require approval

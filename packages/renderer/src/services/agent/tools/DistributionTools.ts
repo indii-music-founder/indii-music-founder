@@ -814,5 +814,21 @@ export const DistributionTools = {
         } catch (error: unknown) {
             return toolError(error instanceof Error ? error.message : 'Failed to validate metadata readiness', 'METADATA_VALIDATION_ERROR');
         }
+    }),
+
+    /**
+     * Direct Distribution Packaging (Workstream I1 / Directive Part II.9).
+     * Enforces DSP/print specs (DPI, bleed math, sRGB color space, file caps)
+     * with SHA-256 verifiable delivery manifests.
+     */
+    render_distribution_bundle: wrapTool('render_distribution_bundle', async (args: {
+        masterUrl?: string;
+        masterIndex?: number;
+        profileIds?: string[];
+        trackId?: string;
+        overrideReason?: string;
+    }) => {
+        const { MediaTools } = await import('./MediaTools');
+        return MediaTools.render_distribution_bundle!(args);
     })
 } satisfies Record<string, AnyToolFunction>;
