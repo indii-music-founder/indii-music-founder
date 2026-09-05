@@ -65,7 +65,45 @@ export const CanvasTools = {
 
             // Push to the store — dynamically import to avoid circular deps
             const { useStore } = await importWithRetry(() => import('@/core/store'));
-            useStore.getState().pushCanvas(payload);
+            const store = useStore.getState();
+            store.pushCanvas(payload);
+
+            // Phase 2: If valid project context exists, also create a persistent agent_output block
+            const currentProjectId = store.currentProjectId;
+            if (currentProjectId && typeof store.addCanvasBlock === 'function') {
+                const now = Date.now();
+                const rawData = data as Record<string, unknown>;
+                const excerpt = typeof rawData.content === 'string'
+                    ? rawData.content.slice(0, 160)
+                    : Array.isArray(rawData.cards) && rawData.cards[0]
+                    ? `${(rawData.cards[0] as { title?: string }).title || ''}: ${(rawData.cards[0] as { value?: string }).value || ''}`
+                    : title.trim();
+
+                store.addCanvasBlock({
+                    type: 'agent_output',
+                    position: { x: 350, y: 200 },
+                    size: { width: 340, height: 260 },
+                    zIndex: 2,
+                    snapshot: {
+                        title: title.trim(),
+                        excerpt,
+                        cachedAt: now,
+                    },
+                    settings: {
+                        presentation: type,
+                        title: title.trim(),
+                        agentData: rawData,
+                    },
+                    provenance: {
+                        creatorType: 'agent',
+                        creatorId: agentId,
+                        agentName: agentId,
+                        operation: 'canvas_push',
+                        timestamp: now,
+                        correlationId: payload.id,
+                    },
+                });
+            }
 
             logger.info(`[CanvasTools] Pushed "${title}" (${type}) to canvas`);
             return toolSuccess(

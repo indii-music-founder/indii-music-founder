@@ -31,6 +31,7 @@ import type { CRMSlice } from "./slices/crmSlice";
 import type { MapSlice } from "./slices/mapSlice";
 import type { NotesSlice } from "./slices/notesSlice";
 import type { AgentSwarmSlice } from "./slices/agentSwarmSlice";
+import type { ProjectCanvasSlice } from "@/modules/project-canvas/store/projectCanvasSlice";
 
 export interface StoreState extends
     AppSlice,
@@ -65,4 +66,5 @@ export interface StoreState extends
     CRMSlice,
     MapSlice,
     NotesSlice,
-    AgentSwarmSlice { }
+    AgentSwarmSlice,
+    ProjectCanvasSlice { }

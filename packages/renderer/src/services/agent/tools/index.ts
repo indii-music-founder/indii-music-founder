@@ -42,6 +42,7 @@ import { CaptainsLogTools } from './CaptainsLogTools';
 import { SqueezerTools } from './SqueezerTools';
 import { HiveTools } from './HiveTools';
 import { CanvasTools } from './CanvasTools';
+import { ProjectCanvasTools } from './ProjectCanvasTools';
 import { NotificationTools } from './NotificationTools';
 import { BugReportTools } from './BugReportTools';
 import { LivingPlanTools } from './LivingPlanTools';
@@ -115,6 +116,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...HiveTools,
     // A2UI + Notifications (OpenClaw gaps)
     ...CanvasTools,
+    ...ProjectCanvasTools,
     ...NotificationTools,
     // Bug Reporting
     ...BugReportTools,

@@ -49,6 +49,9 @@ export const FEATURE_FLAG_NAMES = {
 
     // ---- Experimental tools (Part III: kept behind flag pending product placement) ----
     RAW_CONVERTER: 'enable_raw_converter',
+
+    // ---- Project Canvas (Spatial Multi-Modal Workspace) ----
+    PROJECT_CANVAS: 'enable_project_canvas',
 } as const;
 
 export type FeatureFlagName = typeof FEATURE_FLAG_NAMES[keyof typeof FEATURE_FLAG_NAMES];
@@ -81,6 +84,9 @@ const DEFAULTS: Record<string, boolean> = {
 
     // Experimental modules — disabled by default pending product placement
     [FEATURE_FLAG_NAMES.RAW_CONVERTER]: false,
+
+    // Project Canvas — enabled in dev or via VITE_ENABLE_PROJECT_CANVAS=true
+    [FEATURE_FLAG_NAMES.PROJECT_CANVAS]: import.meta.env.DEV || import.meta.env.VITE_ENABLE_PROJECT_CANVAS === 'true',
 };
 
 // ============================================================================

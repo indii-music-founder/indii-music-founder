@@ -247,10 +247,27 @@ vi.mock('firebase/auth', () => ({
 // Mock the @/core/store module to provide a valid userProfile with ID for tests
 vi.mock('@/core/store', () => {
     const mockState: Record<string, any> = {
-        userProfile: { id: 'test-uid', email: 'test@test.com', displayName: 'Test User' },
+        userProfile: {
+            id: 'test-uid',
+            email: 'test@test.com',
+            displayName: 'Solis Music',
+            bio: 'Independent neo-soul producer and songwriter.',
+            brandKit: {
+                releaseDetails: {
+                    genre: 'Neo-Soul',
+                },
+                socials: {
+                    spotify: 'https://spotify.com/artist/solis',
+                },
+            },
+        },
         currentOrganizationId: 'org-123',
         organizations: [{ id: 'org-123', plan: 'enterprise' }],
         inventory: { assets: [] },
+        currentModule: 'dashboard',
+        setModule: vi.fn(async (m: string) => {
+            mockState.currentModule = m;
+        }),
         app: { currentModule: 'dashboard' },
         auth: { status: 'authenticated' },
         backgroundJobs: [],
@@ -334,7 +351,95 @@ vi.mock('@/core/store', () => {
         }),
         setVolume: vi.fn(),
         updatePlaybackProgress: vi.fn(),
-        setFrequencyData: vi.fn()
+        setFrequencyData: vi.fn(),
+
+        // Project Canvas slice
+        currentCanvas: null,
+        canvasBlocks: [],
+        canvasEdges: [],
+        selectedBlockIds: [],
+        canvasViewport: { x: 0, y: 0, zoom: 1 },
+        activeCanvasTool: 'select',
+        isCanvasSaving: false,
+        isCanvasDirty: false,
+        canvasSaveError: null,
+        canvasLastSavedAt: null,
+        canvasHistoryPast: [],
+        canvasHistoryFuture: [],
+        loadProjectCanvas: vi.fn().mockResolvedValue(undefined),
+        setCanvasViewport: vi.fn((vp) => { Object.assign(mockState.canvasViewport, vp); }),
+        setActiveCanvasTool: vi.fn((tool) => { mockState.activeCanvasTool = tool; }),
+        selectCanvasBlock: vi.fn((id, multi) => {
+            if (multi) mockState.selectedBlockIds.push(id);
+            else mockState.selectedBlockIds = [id];
+        }),
+        clearCanvasSelection: vi.fn(() => { mockState.selectedBlockIds = []; }),
+        addCanvasBlock: vi.fn((block) => {
+            const id = `block_${Date.now()}`;
+            mockState.canvasBlocks.push({ id, ...block });
+            return id;
+        }),
+        updateCanvasBlockPosition: vi.fn(),
+        updateCanvasBlockSize: vi.fn(),
+        updateCanvasBlock: vi.fn(),
+        removeCanvasBlockPlacement: vi.fn((id) => {
+            mockState.canvasBlocks = mockState.canvasBlocks.filter((b: any) => b.id !== id);
+        }),
+        addCanvasEdge: vi.fn((sourceBlockId: string, targetBlockId: string, relationship: any, label?: string) => {
+            const id = `edge_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+            const newEdge = {
+                id,
+                canvasId: mockState.currentCanvas?.id || 'default_canvas',
+                projectId: mockState.currentProjectId || 'default_proj',
+                sourceBlockId,
+                targetBlockId,
+                relationship,
+                label,
+                createdAt: Date.now(),
+            };
+            mockState.canvasEdges = [...(mockState.canvasEdges || []), newEdge];
+            return id;
+        }),
+        removeCanvasEdge: vi.fn((id: string) => {
+            mockState.canvasEdges = (mockState.canvasEdges || []).filter((e: any) => e.id !== id);
+        }),
+        pushCanvas: vi.fn((payload: any) => {
+            mockState.canvasPanels = [...(mockState.canvasPanels || []), payload];
+        }),
+        undoCanvas: vi.fn(),
+        redoCanvas: vi.fn(),
+        saveProjectCanvas: vi.fn().mockResolvedValue(undefined),
+        retryCanvasSave: vi.fn().mockResolvedValue(undefined),
+        resetProjectCanvas: vi.fn(),
+
+        // Notes slice
+        notes: [],
+        selectedNoteId: null,
+        notesLoading: false,
+        notesSyncError: null,
+        addNote: vi.fn((noteData: any) => {
+            const id = `note_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+            const newNote = {
+                ...noteData,
+                id,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            };
+            mockState.notes = [newNote, ...(mockState.notes || [])];
+            return id;
+        }),
+        updateNote: vi.fn((id: string, updates: any) => {
+            mockState.notes = (mockState.notes || []).map((n: any) =>
+                n.id === id ? { ...n, ...updates, updatedAt: Date.now() } : n
+            );
+        }),
+        deleteNote: vi.fn((id: string) => {
+            mockState.notes = (mockState.notes || []).filter((n: any) => n.id !== id);
+        }),
+        setSelectedNote: vi.fn((id: string | null) => {
+            mockState.selectedNoteId = id;
+        }),
+        loadNotesFromCloud: vi.fn().mockResolvedValue(undefined),
     };
 
     const useStoreMock = Object.assign(

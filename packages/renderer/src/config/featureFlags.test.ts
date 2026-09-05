@@ -51,6 +51,11 @@ describe('FeatureFlagService', () => {
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.MARKETPLACE)).toBe(false);
         });
 
+        it('defines PROJECT_CANVAS flag name and default', () => {
+            expect(FEATURE_FLAG_NAMES.PROJECT_CANVAS).toBe('enable_project_canvas');
+            expect(typeof featureFlags.isEnabled(FEATURE_FLAG_NAMES.PROJECT_CANVAS)).toBe('boolean');
+        });
+
         it('returns false for unknown flags', () => {
             expect(featureFlags.isEnabled('nonexistent_flag')).toBe(false);
         });

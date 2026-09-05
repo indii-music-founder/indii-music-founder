@@ -38,6 +38,8 @@ import { MapSlice, createMapSlice } from './slices/mapSlice';
 import { NotesSlice, Note, createNotesSlice } from './slices/notesSlice';
 import { AgentSwarmSlice, createAgentSwarmSlice } from './slices/agentSwarmSlice';
 export type { AgentSwarmSlice, AgentActionLog, CampaignMetrics } from './slices/agentSwarmSlice';
+import { createProjectCanvasSlice, type ProjectCanvasSlice } from '@/modules/project-canvas/store/projectCanvasSlice';
+export type { ProjectCanvasSlice };
 import { useLivingPlanSlice } from './slices/livingPlanSlice';
 import type { LivingPlan } from '@/services/agent/LivingPlanService';
 import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
@@ -129,6 +131,7 @@ export const useStore = create<StoreState>()(
                 ...createMapSlice(...a),
                 ...createNotesSlice(...a),
                 ...createAgentSwarmSlice(...a),
+                ...createProjectCanvasSlice(...a),
             };
 
             return store;

@@ -238,6 +238,9 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         const prevProjectId = get().currentProjectId;
         if (prevProjectId && prevProjectId !== id) {
             const current = get() as any;
+            if (typeof current.resetProjectCanvas === 'function') {
+                current.resetProjectCanvas();
+            }
             if (Array.isArray(current.canvasImages) && current.canvasImages.length > 0) {
                 set({
                     currentProjectId: id,

@@ -2113,6 +2113,74 @@ service cloud.firestore {
           );
         allow delete: if false;
       }
+
+      match /canvases/{canvasId} {
+        allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
+          (
+            (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
+            (
+              isAuthenticated() &&
+              ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
+              get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
+              isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
+            ) ||
+            get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
+          );
+
+        match /blocks/{blockId} {
+          allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
+            (
+              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
+              (
+                isAuthenticated() &&
+                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
+                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
+                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
+              ) ||
+              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
+            );
+        }
+
+        match /edges/{edgeId} {
+          allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
+            (
+              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
+              (
+                isAuthenticated() &&
+                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
+                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
+                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
+              ) ||
+              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
+            );
+        }
+
+        match /presence/{presenceUserId} {
+          allow read: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
+            (
+              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
+              (
+                isAuthenticated() &&
+                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
+                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
+                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
+              ) ||
+              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
+            );
+          allow write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
+            (
+              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid && request.auth.uid == presenceUserId) ||
+              (
+                isAuthenticated() &&
+                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
+                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
+                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId) &&
+                request.auth.uid == presenceUserId
+              ) ||
+              (presenceUserId == 'founder-demo-uid' && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid')
+            );
+        }
+      }
     }
     match /proactive_tasks/{taskId} {
       allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
