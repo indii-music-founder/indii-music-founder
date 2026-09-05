@@ -22,4 +22,56 @@
       `https://indii.music${window.location.pathname}${window.location.search}${window.location.hash}`,
     );
   }
+
+  // Intercept Google Firelog telemetry to prevent COEP ERR_BLOCKED_BY_RESPONSE
+  // and subsequent infinite retry storms in cross-origin-isolated environments
+  try {
+    const isFirelog = (input) => {
+      if (!input) return false;
+      const url = typeof input === "string" ? input : (input && input.url ? input.url : "");
+      return typeof url === "string" && (
+        url.includes("firebaselogging-pa.googleapis.com") ||
+        url.includes("firebaselogging.googleapis.com")
+      );
+    };
+
+    if (typeof window !== "undefined" && typeof window.fetch === "function") {
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = function (input, init) {
+        if (isFirelog(input)) {
+          const payload = JSON.stringify({ nextRequestWaitMillis: "86400000", logResponseDetails: [] });
+          if (typeof Response !== "undefined") {
+            return Promise.resolve(new Response(payload, {
+              status: 200,
+              statusText: "OK",
+              headers: {
+                "Content-Type": "application/json",
+                "Cross-Origin-Resource-Policy": "cross-origin",
+              },
+            }));
+          }
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => JSON.parse(payload),
+            text: async () => payload,
+          });
+        }
+        return originalFetch.apply(this, arguments);
+      };
+    }
+
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const originalSendBeacon = navigator.sendBeacon.bind(navigator);
+      navigator.sendBeacon = function (url, data) {
+        if (isFirelog(url)) {
+          return true;
+        }
+        return originalSendBeacon(url, data);
+      };
+    }
+  } catch (err) {
+    // Non-critical telemetry defense failure, safe to ignore
+  }
 })();
