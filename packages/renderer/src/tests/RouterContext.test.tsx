@@ -142,7 +142,7 @@ describe('Router Context Verification', () => {
         const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         try {
-            const { container } = render(
+            const { container, unmount } = render(
                 <BrowserRouter>
                     <App />
                 </BrowserRouter>
@@ -157,13 +157,14 @@ describe('Router Context Verification', () => {
                 .map(args => args.map(String).join(' '))
                 .filter(text => /may be used only in the context of a <Router>/.test(text));
             expect(routerErrors).toEqual([]);
+            unmount();
         } finally {
             consoleError.mockRestore();
         }
     });
 
     it('eventually resolves the lazy dashboard boundary', async () => {
-        render(
+        const { unmount } = render(
             <BrowserRouter>
                 <App />
             </BrowserRouter>
@@ -174,5 +175,6 @@ describe('Router Context Verification', () => {
         expect(
             await screen.findByText('Dashboard Loaded', {}, { timeout: 15000 }),
         ).toBeInTheDocument();
+        unmount();
     }, 20000);
 });
