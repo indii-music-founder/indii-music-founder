@@ -43,16 +43,18 @@ export function resetCapabilityHealthForTests(): void {
 
 export function isCapabilityQuestion(task: string): boolean {
     const normalized = task.trim().replace(/[’]/g, "'").replace(/\s+/g, ' ');
-    const subject = String.raw`(?:you|indii)`;
+    const subject = String.raw`(?:you|indii|(?:the )?(?:other )?agents?|(?:the )?(?:other )?departments?|specialists?)`;
 
     return [
         new RegExp(String.raw`\bwhat can(?: and can(?:not|'t))? ${subject} do\b`, 'i'),
         new RegExp(String.raw`\bwhat (?:can(?:not|'t)|can't) ${subject} do\b`, 'i'),
-        new RegExp(String.raw`\bwhat are (?:your|indii(?:'s)?) capabilit(?:y|ies)\b`, 'i'),
-        new RegExp(String.raw`\b(?:tell|show|list|explain)(?: me)? (?:your|indii(?:'s)?) capabilit(?:y|ies)\b`, 'i'),
-        new RegExp(String.raw`\b(?:what|which) tools? (?:do|can) ${subject} (?:have(?: access to)?|access|use)\b`, 'i'),
+        new RegExp(String.raw`\bwhat are (?:your|indii(?:'s)?|the|the other) (?:agents?'? |departments?'? )?capabilit(?:y|ies)\b`, 'i'),
+        new RegExp(String.raw`\b(?:tell|show|list|explain)(?: me)? (?:your|indii(?:'s)?|the) (?:agents?'? |departments?'? )?capabilit(?:y|ies)\b`, 'i'),
+        new RegExp(String.raw`\b(?:what|which) tools? (?:do|can) ${subject} (?:have(?: access to)?|access|use|get)\b`, 'i'),
         new RegExp(String.raw`\b(?:do|can) ${subject} (?:have access to|access|use|have) (?:any |the )?tools?\b`, 'i'),
-        new RegExp(String.raw`\bare (?:your|indii(?:'s)?) tools? (?:available|ready|working|accessible)(?: right now| now)?\b`, 'i'),
+        new RegExp(String.raw`\bare (?:your|indii(?:'s)?|the|the other) (?:agents?'? |departments?'? )?tools? (?:available|ready|working|accessible|deployed|implemented)(?: right now| now)?\b`, 'i'),
+        new RegExp(String.raw`\bdid (?:the )?(?:other )?agents?(?: (?:the )?other \d+)? (?:get|have) (?:their )?(?:requested )?tools?\b`, 'i'),
+        new RegExp(String.raw`\bhave (?:the )?(?:other )?agents?(?: (?:the )?other \d+)? (?:gotten|received|got) (?:their )?(?:requested )?tools?\b`, 'i'),
         /\b(?:is|are) (?:image|video)(?: generation)? (?:available|ready|working)(?: right now| now)?\b/i,
         new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos)(?: right now| now)?\??$`, 'i'),
         new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos).{0,40}\b(?:ability|able|capable|available|ready)\b`, 'i'),
@@ -84,9 +86,25 @@ const SAFE_SPECIALIST_LABELS: Record<string, string> = {
     legal: 'contract review',
     distribution: 'release-readiness guidance',
     marketing: 'marketing planning',
-    director: 'creative direction',
-    creative: 'creative direction & visual production',
+    brand: 'brand identity & compliance',
     music: 'music and metadata review',
+    video: 'video production',
+    social: 'social scheduling & strategy',
+    publicist: 'PR & media outreach',
+    publishing: 'publishing & PRO catalog review',
+    licensing: 'licensing & sync opportunities',
+    road: 'tour routing & live logistics',
+    hospitality: 'artist hospitality & accommodation',
+    'event-planner': 'event production & planning',
+    merchandise: 'merchandise & product design',
+    creative: 'creative direction & visual production',
+    producer: 'production logistics & call sheets',
+    director: 'creative direction',
+    screenwriter: 'screenplay formatting & script analysis',
+    devops: 'cloud infrastructure & reliability',
+    security: 'security audits & access control',
+    curriculum: 'music business education',
+    keeper: 'context integrity & memory',
 };
 
 const SOCIAL_PUBLISHING_TOOLS = [
@@ -144,11 +162,11 @@ export function buildCapabilitySummary(input: {
 
     const specialists = [...new Set(input.registeredSpecialistIds)]
         .map(id => SAFE_SPECIALIST_LABELS[id])
-        .filter((label): label is string => Boolean(label))
-        .slice(0, 5);
+        .filter((label): label is string => Boolean(label));
     const canRouteSpecialists = (
         authorized.has('consult_specialist') || authorized.has('delegate_task')
     ) && effectiveStatus('specialist_routing') === 'available';
+
 
     const lines = ['Here’s what I can do in this Boardroom right now:'];
     if (available.length > 0) lines.push(`- Available now: ${available.join(', ')}.`);

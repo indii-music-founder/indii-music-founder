@@ -59,6 +59,9 @@ describe('Boardroom capability truthfulness', () => {
         'can you make can you make me an image or you have that ability yet',
         'Could you create me a picture, or are visuals available yet?',
         'Are you ready to create an image?',
+        'Did the other agents the other 23 get their requested tools?',
+        'Did the other agents get their requested tools?',
+        'Are the other departments tools deployed right now?',
     ])('recognizes explicit capability or readiness intent: %s', task => {
         expect(isCapabilityQuestion(task)).toBe(true);
     });
