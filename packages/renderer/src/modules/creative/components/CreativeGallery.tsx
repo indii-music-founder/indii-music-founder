@@ -410,6 +410,117 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                     >
                                                         <span>→ Timeline Editor</span>
                                                     </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedItem(item);
+                                                            useStore.getState().setRightPanelTab('context');
+                                                            toast.info("Target selected. Open 'Likeness Fusion' in Studio Controls.");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        data-testid="send-to-likeness-fusion"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-green-600/20 hover:text-green-300 transition-colors"
+                                                    >
+                                                        <span>→ Likeness Fusion</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedItem(item);
+                                                            useStore.getState().setRightPanelTab('context');
+                                                            toast.info("Target selected. Open 'Brand Compliance' in Studio Controls.");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        data-testid="send-to-brand-compliance"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
+                                                    >
+                                                        <span>→ Brand Compliance</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            setShowSendMenu(false);
+                                                            try {
+                                                                const { generateMockup } = await import('@/services/mockup/MockupService');
+                                                                const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                                                                const resolved = await resolveStorageUrl(item.url);
+                                                                toast.info("Generating vinyl mockup...");
+                                                                const res = await generateMockup({ artworkUrl: resolved, kind: 'vinyl-12', scene: 'studio' });
+                                                                if (res?.url) {
+                                                                    const projId = useStore.getState().currentProjectId || 'default';
+                                                                    useStore.getState().addToHistory?.({
+                                                                        id: `mockup_${Date.now()}`,
+                                                                        projectId: projId,
+                                                                        type: 'image',
+                                                                        url: res.url,
+                                                                        prompt: `Vinyl 12" Mockup for ${item.prompt || 'artwork'}`,
+                                                                        timestamp: Date.now(),
+                                                                        meta: 'mockup',
+                                                                    });
+                                                                    toast.success("Vinyl mockup created and added to history!");
+                                                                }
+                                                            } catch {
+                                                                toast.error("Mockup generation failed.");
+                                                            }
+                                                        }}
+                                                        data-testid="send-to-mockup"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-amber-600/20 hover:text-amber-300 transition-colors"
+                                                    >
+                                                        <span>→ Merch Mockup</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            setShowSendMenu(false);
+                                                            try {
+                                                                const { exportMasterAsset, downloadAsZip } = await import('@/services/export/AssetExporter');
+                                                                const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                                                                const resolved = await resolveStorageUrl(item.url);
+                                                                toast.info("Generating multi-platform asset crops...");
+                                                                const bundle = await exportMasterAsset({
+                                                                    masterUrl: resolved,
+                                                                    presets: [
+                                                                        { dimensionId: 'spotify_cover', fit: 'cover' },
+                                                                        { dimensionId: 'ig_story', fit: 'contain-blur-pad' },
+                                                                        { dimensionId: 'yt_banner', fit: 'contain-blur-pad' },
+                                                                        { dimensionId: 'x_post', fit: 'contain-blur-pad' },
+                                                                        { dimensionId: 'facebook_og', fit: 'contain-blur-pad' },
+                                                                    ],
+                                                                });
+                                                                await downloadAsZip(bundle, `platform-bundle-${Date.now()}`);
+                                                                toast.success("Platform export bundle downloaded!");
+                                                            } catch {
+                                                                toast.error("Platform bundle export failed.");
+                                                            }
+                                                        }}
+                                                        data-testid="send-to-platform-export"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-blue-600/20 hover:text-blue-300 transition-colors"
+                                                    >
+                                                        <span>→ Platform Bundle</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            setShowSendMenu(false);
+                                                            try {
+                                                                const { renderDistributionBundle } = await import('@/services/distribution/DistributionRenderPipeline');
+                                                                const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                                                                const resolved = await resolveStorageUrl(item.url);
+                                                                toast.info("Rendering DSP-compliant distribution bundle...");
+                                                                const bundle = await renderDistributionBundle({
+                                                                    masterUrl: resolved,
+                                                                    profileIds: ['spotify-cover', 'apple-itunes-cover', 'tidal-cover', 'print-12in-sleeve-300dpi'],
+                                                                });
+                                                                toast.success(`Rendered ${bundle.results.length} DSP delivery profiles with SHA-256 manifest!`);
+                                                            } catch (err) {
+                                                                toast.error(err instanceof Error ? err.message : "Distribution bundle failed.");
+                                                            }
+                                                        }}
+                                                        data-testid="send-to-distribution-bundle"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors"
+                                                    >
+                                                        <span>→ Distribution Bundle</span>
+                                                    </button>
                                                 </>
                                             )}
                                         </div>

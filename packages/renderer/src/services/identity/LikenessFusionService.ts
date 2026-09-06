@@ -254,3 +254,4 @@ class LikenessFusionServiceImpl {
 }
 
 export const LikenessFusionService = new LikenessFusionServiceImpl();
+export const fuseLikeness = LikenessFusionService.fuseLikeness.bind(LikenessFusionService);

@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Eye, Music, Type } from 'lucide-react';
+import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Eye, Music, Type, UserCheck, ShieldCheck } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
@@ -15,6 +14,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CharacterLibrary } from '@/modules/creative/components/CharacterLibrary';
 import { CostControlService } from '@/services/billing/CostControlService';
 import TypographyPanel from '@/services/typography/TypographyPanel';
+import LikenessFusionPanel from '@/modules/creative/components/LikenessFusionPanel';
+import BrandCompliancePanel from '@/modules/creative/components/BrandCompliancePanel';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -234,6 +235,22 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                         icon={<Type size={14} className="text-purple-400" />}
                     >
                         <TypographyPanel />
+                    </SectionCard>
+                    <SectionCard
+                        isOpen={expandedSection === 'likeness_fusion'}
+                        onToggle={() => setExpandedSection(expandedSection === 'likeness_fusion' ? '' : 'likeness_fusion')}
+                        title="Likeness Fusion"
+                        icon={<UserCheck size={14} className="text-green-400" />}
+                    >
+                        <LikenessFusionPanel />
+                    </SectionCard>
+                    <SectionCard
+                        isOpen={expandedSection === 'brand_compliance'}
+                        onToggle={() => setExpandedSection(expandedSection === 'brand_compliance' ? '' : 'brand_compliance')}
+                        title="Brand Compliance"
+                        icon={<ShieldCheck size={14} className="text-purple-400" />}
+                    >
+                        <BrandCompliancePanel />
                     </SectionCard>
                     {viewMode === 'omni' && (
                         <SectionCard

@@ -67,6 +67,14 @@ vi.mock('@/services/typography/TypographyPanel', () => ({
     default: () => <div data-testid="typography-panel-mock">Typography Content</div>,
 }));
 
+vi.mock('@/modules/creative/components/LikenessFusionPanel', () => ({
+    default: () => <div data-testid="likeness-fusion-panel-mock">Likeness Fusion Content</div>,
+}));
+
+vi.mock('@/modules/creative/components/BrandCompliancePanel', () => ({
+    default: () => <div data-testid="brand-compliance-panel-mock">Brand Compliance Content</div>,
+}));
+
 // Mock framer motion / motion/react
 vi.mock('motion/react', () => ({
     motion: new Proxy({}, {
@@ -491,5 +499,25 @@ describe('StudioControlsPanel', () => {
         expect(select).toBeDefined();
         fireEvent.change(select!, { target: { value: 'dj_stance' } });
         expect(mockSetStudioControls).toHaveBeenCalledWith({ activePosePreset: 'dj_stance' });
+    });
+
+    it('expands Likeness Fusion and Brand Compliance sections', () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
+            viewMode: 'canvas'
+        });
+        render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
+
+        // Likeness Fusion section toggle
+        const likenessBtn = screen.getByText('Likeness Fusion').closest('button');
+        expect(likenessBtn).toBeInTheDocument();
+        fireEvent.click(likenessBtn!);
+        expect(screen.getByTestId('likeness-fusion-panel-mock')).toBeInTheDocument();
+
+        // Brand Compliance section toggle
+        const complianceBtn = screen.getByText('Brand Compliance').closest('button');
+        expect(complianceBtn).toBeInTheDocument();
+        fireEvent.click(complianceBtn!);
+        expect(screen.getByTestId('brand-compliance-panel-mock')).toBeInTheDocument();
     });
 });

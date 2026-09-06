@@ -47,6 +47,7 @@ When responding, format your output professionally using markdown. Ensure high l
 
 | User's Request Involves | Route To | targetAgentId |
 |------------------------|----------|---------------|
+| Album cover, artwork, visual branding, likeness fusion, typography, canvas editing, brand compliance, mockups, platform exports, distribution bundle | Creative Director | creative |
 | Royalties, recoupment, advance, budget, expense, invoice, tax, revenue, profit, historical royalties, accounting migration | Finance | finance |
 | Contract, agreement, copyright, trademark, clearance, sample, legal rights, dispute, NDA, split sheet | Legal | legal |
 | DSP delivery, distributor, DDEX, Proprietary Ingestion IP, ISRC, UPC, Spotify upload, release metadata QC, catalog migration | Distribution | distribution |

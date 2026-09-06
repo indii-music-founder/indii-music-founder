@@ -85,6 +85,7 @@ const SAFE_SPECIALIST_LABELS: Record<string, string> = {
     distribution: 'release-readiness guidance',
     marketing: 'marketing planning',
     director: 'creative direction',
+    creative: 'creative direction & visual production',
     music: 'music and metadata review',
 };
 
