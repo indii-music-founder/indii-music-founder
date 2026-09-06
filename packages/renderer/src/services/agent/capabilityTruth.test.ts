@@ -3,10 +3,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
     buildCapabilitySummary,
+    buildDepartmentAuditReport,
+    detectUngroundedEngineeringHallucination,
     getCapabilityHealth,
     isCapabilityQuestion,
+    isDepartmentAuditOrReadinessQuestion,
     recordCapabilityHealth,
     resetCapabilityHealthForTests,
+    sanitizeAgentCapabilityOutput,
 } from './capabilityTruth';
 
 const NOW = Date.parse('2026-07-30T12:00:00.000Z');
@@ -217,5 +221,84 @@ describe('Boardroom capability truthfulness', () => {
         });
 
         expect(output).not.toMatch(/generate_image|consult_specialist|endpoint|provider|token|MCP|API gateway|No-Mock/i);
+    });
+
+    describe('Department tool audit and zero-hallucination guardrails', () => {
+        it.each([
+            'Did the other agents the other 23 get their requested tools?',
+            'Did the other agents get their requested tools?',
+            'Have the other 23 agents received their requested tools?',
+            'Are the other departments tools deployed right now?',
+            'Are all 23 departments tools ready?',
+            'What tools do the other 23 agents have?',
+            'Run a board-wide audit of all 23 department heads',
+            'Are any of the 23 agents in a holding pattern?',
+            'Are we in a holding pattern waiting for the engineering sprint?',
+            'status report on the 23 department heads',
+        ])('recognizes department tool audit and readiness questions: %s', query => {
+            expect(isDepartmentAuditOrReadinessQuestion(query)).toBe(true);
+            expect(isCapabilityQuestion(query)).toBe(true);
+        });
+
+        it('buildDepartmentAuditReport explicitly affirms all 23 departments and rejects holding pattern/engineering sprint myths', () => {
+            const report = buildDepartmentAuditReport();
+            expect(report).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
+            expect(report).toContain('None are in a "holding pattern"');
+            expect(report).toContain('no pending "engineering sprint"');
+            // Check all 23 departments are represented
+            const expectedDepartments = [
+                'Finance', 'Legal', 'Distribution', 'Marketing', 'Brand', 'Music', 'Video',
+                'Social', 'Publicist', 'Publishing', 'Licensing', 'Road', 'Hospitality',
+                'Event Planning', 'Merchandise', 'Creative', 'Producer', 'Director',
+                'Screenwriter', 'DevOps', 'Security', 'Curriculum', 'Keeper'
+            ];
+            for (const dept of expectedDepartments) {
+                expect(report).toContain(dept);
+            }
+        });
+
+        it('buildCapabilitySummary delegates to buildDepartmentAuditReport when given a department audit query', () => {
+            const output = buildCapabilitySummary({
+                authorizedTools: ['generate_image'],
+                registeredSpecialistIds: ['finance'],
+                snapshot: snapshot(),
+                query: 'Did the other agents the other 23 get their requested tools?',
+            });
+            expect(output).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
+            expect(output).toContain('None are in a "holding pattern"');
+        });
+
+        it('detectUngroundedEngineeringHallucination catches the exact ungrounded narrative and related tropes', () => {
+            const exactHallucination =
+                'I have completed a board-wide audit of all 23 department heads. The results are consistent across the board: ' +
+                'none of the specialized tools requested by the department heads have been implemented or delivered yet. ' +
+                'The engineering team has acknowledged receipt of the master technical specification document for all 23 departments, ' +
+                'but the build phase has not yet yielded any deployed tools. Every department head—from Legal and Finance to Marketing ' +
+                'and Distribution—is still operating with their original, baseline capabilities. We are all currently in a holding pattern, ' +
+                'waiting for the engineering sprint...';
+
+            const detection = detectUngroundedEngineeringHallucination(exactHallucination);
+            expect(detection.hasHallucination).toBe(true);
+            expect(detection.matchedPattern).toBeDefined();
+
+            // Sub-pattern tests
+            expect(detectUngroundedEngineeringHallucination('We are currently in a holding pattern for the build.').hasHallucination).toBe(true);
+            expect(detectUngroundedEngineeringHallucination('Waiting for the engineering sprint to start.').hasHallucination).toBe(true);
+            expect(detectUngroundedEngineeringHallucination('The master technical specification document was received.').hasHallucination).toBe(true);
+            expect(detectUngroundedEngineeringHallucination('None of the tools have been implemented yet.').hasHallucination).toBe(true);
+            expect(detectUngroundedEngineeringHallucination('Operating with their original baseline capabilities.').hasHallucination).toBe(true);
+        });
+
+        it('detectUngroundedEngineeringHallucination ignores normal verified responses', () => {
+            const normalResponse = 'Here is the campaign brief for your upcoming single release on Spotify.';
+            expect(detectUngroundedEngineeringHallucination(normalResponse).hasHallucination).toBe(false);
+        });
+
+        it('sanitizeAgentCapabilityOutput replaces hallucinated output with the verified department audit report', () => {
+            const hallucinated = 'Every department head is in a holding pattern waiting for the engineering sprint.';
+            const sanitized = sanitizeAgentCapabilityOutput(hallucinated);
+            expect(sanitized).not.toContain('waiting for the engineering sprint');
+            expect(sanitized).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
+        });
     });
 });

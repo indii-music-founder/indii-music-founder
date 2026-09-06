@@ -127,6 +127,7 @@ export class GeneralistAgent extends BaseAgent {
                     registeredSpecialistIds: agentRegistry.getAll().map(agent => agent.id),
                     snapshot,
                     health: getCapabilityHealth(),
+                    query: capabilityIntent,
                 }),
                 toolCalls: [],
             };

@@ -392,6 +392,16 @@ describe('buildExecutionContract', () => {
         expect(contract).toContain('DONE');
         expect(contract).toContain('LENGTH');
     });
+
+    it('always includes Section 4 CAPABILITY & STATUS GROUNDING affirming all 23 departments', () => {
+        for (const level of ['focused', 'balanced', 'ideas'] as const) {
+            const contract = buildExecutionContract(level);
+            expect(contract).toContain('4. CAPABILITY & STATUS GROUNDING');
+            expect(contract).toContain('ZERO TOLERANCE FOR FABRICATING ENGINEERING ROADMAPS, SPRINTS, JIRA/LINEAR TICKETS, OR HOLDING PATTERNS');
+            expect(contract).toContain('All 23 departments');
+            expect(contract).toContain('never invent narrative drama, fictional deficits, or bureaucratic roadmaps');
+        }
+    });
 });
 
 describe('AgentPromptBuilder.buildFullPrompt — Execution Contract injection', () => {
