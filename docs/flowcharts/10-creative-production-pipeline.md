@@ -35,7 +35,7 @@ graph TD
     %% ║        PROBABILISTIC TRACK (GEN-AI)      ║
     %% ╚══════════════════════════════════════════╝
     subgraph PROBABILISTIC ["🎨 Generative AI Execution"]
-        API["Nano Banana API<br/>(gemini-3.1-pro-image)"]
+        API["Nano Banana API<br/>(gemini-3-pro-image)"]
         STORE["Upload to Cloud Storage<br/>(Returns URI)"]
         DECOMPRESS["Off-thread Image Decompression<br/>(await htmlImg.decode)"]
         RENDER_IMG["Fabric.js Image.fromURL()"]
@@ -77,7 +77,7 @@ graph TD
     - **Z-Index Safeguard (ISSUE-035)**: Before drawing, the parameters are checked against a strict `MAX_Z_INDEX` (1000). If the LLM hallucinates `z: 999999` (which would permanently lock the user out of the UI), it is safely clamped.
     - Fabric.js executes the deterministic DOM/Canvas manipulation.
 3. **Probabilistic Track (MediaTools)**:
-    - The generative prompt is dispatched to the Nano Banana API (utilizing `gemini-3.1-pro-image`).
+    - The generative prompt is dispatched to the Nano Banana API (utilizing `gemini-3-pro-image`).
     - The resulting raw image buffer is uploaded to Firebase Cloud Storage, which returns a secure URI.
     - **Performance Optimization (ISSUE-026)**: Instead of locking the main UI thread while Fabric.js decompresses the base64/URI image data synchronously, the pipeline uses an off-thread `await htmlImg.decode()` helper.
     - Once decompressed in the background, the pre-computed raster data is injected into the Fabric.js canvas without causing UI stutter or jank.
