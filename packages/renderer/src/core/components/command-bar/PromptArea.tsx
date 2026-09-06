@@ -488,7 +488,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </div>
                         )}
 
-                        <PromptInputAction tooltip={isKnowledgeBaseEnabled ? "Knowledge Base Active" : "Connect Knowledge Base"}>
+                        <PromptInputAction tooltip={isKnowledgeBaseEnabled ? "Knowledge Grounding (RAG): Active" : "Enable Knowledge Grounding (RAG)"}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -496,8 +496,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     setKnowledgeBaseEnabled(next);
                                     if (isMobile) {
                                         toast.success(next
-                                            ? "Knowledge Base connected — Intelligence will reference your docs"
-                                            : "Knowledge Base disconnected"
+                                            ? "Knowledge Grounding connected — Intelligence will reference your docs"
+                                            : "Knowledge Grounding disconnected"
                                         );
                                     }
                                 }}
@@ -509,11 +509,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                         : isDocked ? "size-7" : "size-8",
                                     kbButtonClasses
                                 )}
-                                aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
+                                aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Grounding (RAG)" : "Enable Knowledge Grounding (RAG)"}
                                 aria-pressed={isKnowledgeBaseEnabled}
                              >
                                 <Database size={isDocked ? 10 : 12} />
-                                {isMobile && <span>KB</span>}
+                                {isMobile && <span>RAG</span>}
                             </button>
                         </PromptInputAction>
                     </div>

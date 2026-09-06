@@ -198,7 +198,7 @@ export default function RightPanel() {
                                     "flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-md transition-colors relative z-10 outline-none",
                                     view === 'archives' ? "text-white" : "text-gray-500 hover:text-gray-300"
                                 )}
-                                aria-label="View Archives"
+                                aria-label="View Chat Archives"
                             >
                                 Archives
                             </button>

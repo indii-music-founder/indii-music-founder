@@ -14,7 +14,6 @@ import BrandAssetsDrawer from './BrandAssetsDrawer';
 import HistoryDrawer from './HistoryDrawer';
 import AgentCapabilityRegistry from './AgentCapabilityRegistry';
 import CanvasModePicker from './CanvasModePicker';
-import { AgentCanvasToggle } from '@/core/components/AgentCanvasToggle';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
@@ -79,34 +78,35 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                     {/* ISSUE-1375: Back/Forward navigation — one-click return
                         to the previous page (module) and previous view
                         (studio/canvas and every other creative view). */}
-                    <div className="flex items-center gap-0.5 shrink-0">
+                    <div className="flex items-center gap-0.5 shrink-0 bg-white/[0.03] p-0.5 rounded-lg border border-white/5">
                         <button
                             onClick={() => void goBackModule()}
                             disabled={!canGoBackModule}
-                            title="Back to the page you came from"
-                            aria-label="Back to previous page"
+                            title="Exit Module: Back to previous dashboard/module"
+                            aria-label="Exit to previous module"
                             data-testid="creative-nav-back-module"
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         >
                             <ArrowLeft size={14} />
                         </button>
+                        <div className="h-3 w-px bg-white/10 mx-0.5" />
                         <button
                             onClick={() => viewModeBack()}
                             disabled={!canGoBackView}
-                            title="Back (e.g. canvas → studio)"
+                            title="Previous View Mode (e.g. canvas → studio)"
                             aria-label="Back to previous view"
                             data-testid="creative-nav-back-view"
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronLeft size={14} />
                         </button>
                         <button
                             onClick={() => viewModeForward()}
                             disabled={!canGoForwardView}
-                            title="Forward"
+                            title="Next View Mode"
                             aria-label="Forward to next view"
                             data-testid="creative-nav-forward-view"
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronRight size={14} />
                         </button>
@@ -197,9 +197,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         <Rocket size={11} className={studioControls.isPLPMode ? "text-indigo-400" : ""} />
                         <span className="hidden lg:inline">PLP</span>
                     </button>
-
-                    {/* Agent Canvas Drawer Toggle */}
-                    <AgentCanvasToggle variant="header" />
 
                     <div className="h-3.5 w-px bg-white/8 mx-0.5 shrink-0" />
 
