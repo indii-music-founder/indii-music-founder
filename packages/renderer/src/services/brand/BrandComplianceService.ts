@@ -260,11 +260,24 @@ export async function scanAsset(
     const errors = violations.filter((v) => v.severity === 'error').length;
     const warnings = violations.filter((v) => v.severity === 'warning').length;
     const score = Math.max(0, Math.min(100, 100 - errors * ERROR_PENALTY - warnings * WARNING_PENALTY));
+    const passed = errors === 0 && score >= cfg.passScore;
+
+    logger.info('[BrandComplianceAudit]', {
+        meta: 'brand_compliance_scan',
+        assetId: deps?.assetId ?? 'unknown',
+        score,
+        passScore: cfg.passScore,
+        passed,
+        errorCount: errors,
+        warningCount: warnings,
+        engine: aestheticRan ? 'hybrid' : 'pixel',
+        timestamp: Date.now(),
+    });
 
     return {
         assetId: deps?.assetId ?? 'unknown',
         assetUrl,
-        passed: errors === 0 && score >= cfg.passScore,
+        passed,
         score,
         violations,
         engine: aestheticRan ? 'hybrid' : 'pixel',

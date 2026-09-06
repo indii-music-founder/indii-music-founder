@@ -207,7 +207,7 @@ export default function BrandCompliancePanel({
                         </div>
                         <div className="text-right">
                             <span className="text-[9px] text-gray-400 block">Pass Threshold</span>
-                            <span className="text-xs text-gray-300 font-mono">≥ 85</span>
+                            <span className="text-xs text-gray-300 font-mono">≥ {DEFAULT_COMPLIANCE_CONFIG.passScore}</span>
                         </div>
                     </div>
 

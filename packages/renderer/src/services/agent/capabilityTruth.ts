@@ -43,7 +43,7 @@ export function resetCapabilityHealthForTests(): void {
 
 export function isDepartmentAuditOrReadinessQuestion(task: string): boolean {
     const normalized = task.trim().replace(/[’]/g, "'").replace(/\s+/g, ' ');
-    const targets = String.raw`(?:(?:the )?(?:other )?(?:23 )?(?:agents?|departments?|specialists?|department heads?)|(?:all|any)(?: of the)? (?:23 )?(?:agents?|departments?|specialists?|department heads?)|(?:all )?(?:23 )?departments?|all \d+ department heads?)`;
+    const targets = String.raw`(?:(?:the )?(?:other )?(?:23 )?(?:agents?|departments?|specialists?|department heads?)|(?:all|any)(?: of the)? (?:23 )?(?:agents?|departments?|specialists?|department heads?)|(?:all )?(?:23 )?departments?|all \d+ department heads?|(?:the )?other \d+|\ball \d+\b)`;
 
     return [
         new RegExp(String.raw`\bdid ${targets}(?: (?:the )?other \d+)? (?:get|have|receive) (?:their )?(?:requested )?tools?\b`, 'i'),
@@ -57,9 +57,19 @@ export function isDepartmentAuditOrReadinessQuestion(task: string): boolean {
         new RegExp(String.raw`\b(?:in a )?holding pattern\b`, 'i'),
         new RegExp(String.raw`\b(?:is there|are we in) (?:an? )?(?:holding pattern|engineering sprint|build phase)\b`, 'i'),
         new RegExp(String.raw`\bwaiting for (?:an? |the )?engineering sprint\b`, 'i'),
-        new RegExp(String.raw`\bengineering sprint\b`, 'i'),
+        new RegExp(String.raw`\bengineering[- ]sprint\b`, 'i'),
         new RegExp(String.raw`\bstatus of (?:the )?(?:23 )?(?:department heads?|departments?|specialists?|agents?)\b`, 'i'),
         new RegExp(String.raw`\bstatus (?:check|report) on (?:the )?(?:23 )?(?:department heads?|departments?|agents?)\b`, 'i'),
+        new RegExp(String.raw`\bhow are (?:all |the )?${targets} (?:doing|equipped|configured|faring)\b`, 'i'),
+        new RegExp(String.raw`\b(?:what is the|give me a) status of (?:all |the )?${targets}\b`, 'i'),
+        new RegExp(String.raw`\bare (?:all )?${targets} (?:ready|working|operational|online|set up|active)\b`, 'i'),
+        new RegExp(String.raw`\b(?:any|are there) (?:missing (?:tools|capabilities)|tool deficits?|unimplemented tools|unbuilt tools)\b`, 'i'),
+        /\btool deficit\b/i,
+        /\bmaster technical specification\b/i,
+        /\bbuild phase\b/i,
+        /\btechnical roadmap\b/i,
+        /\bawaits? (?:further )?engineering\b/i,
+        /\boperations remain restricted\b/i,
     ].some(pattern => pattern.test(normalized));
 }
 
@@ -278,6 +288,13 @@ const UNGROUNDED_ENGINEERING_PATTERNS: RegExp[] = [
     /\bwaiting for.*engineering.*sprint\b/i,
     /\bno specialized tools have been deployed\b/i,
     /\bbuild phase has not yet yielded any deployed tools\b/i,
+    /\btool deficit\b/i,
+    /\bnine advanced tools(?: essential)?(?: for a professional-grade workflow)? are currently unavailable\b/i,
+    /\boperations remain restricted to the core\b/i,
+    /\btechnical roadmap remains unchanged\b/i,
+    /\bawaits? (?:further )?engineering\b/i,
+    /\bescalated to a human professional\b/i,
+    /\bhave not been completed.{0,60}operations remain restricted\b/i,
 ];
 
 export function detectUngroundedEngineeringHallucination(text: string): HallucinationDetectionResult {
