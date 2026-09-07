@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard, Download } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard, Download, Receipt } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { remoteRelayService, waitForDispatchConfirmation } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
@@ -73,7 +73,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const [isFinalizingRecording, setIsFinalizingRecording] = useState(false);
     const [isDispatching, setIsDispatching] = useState(false);
     const [capturedAudioBlob, setCapturedAudioBlob] = useState<Blob | null>(null);
-    const [capturedImageBlob, setCapturedImageBlob] = useState<{file: File, type: 'photo' | 'document'} | null>(null);
+    const [capturedImageBlob, setCapturedImageBlob] = useState<{file: File, type: 'photo' | 'document' | 'receipt'} | null>(null);
     const [capturedVideoBlob, setCapturedVideoBlob] = useState<File | null>(null);
     const [momentText, setMomentText] = useState('');
     const [reviewUrl, setReviewUrl] = useState<string | null>(null);
@@ -81,6 +81,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     
     const photoInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
+    const receiptInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
     
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -91,13 +92,15 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
     const reviewKind = capturedAudioBlob
         ? 'voice memo'
-        : capturedImageBlob?.type === 'photo'
-            ? 'photo'
-            : capturedImageBlob?.type === 'document'
-                ? 'document scan'
-                : capturedVideoBlob
-                    ? 'video'
-                    : null;
+        : capturedImageBlob?.type === 'receipt'
+            ? 'expense receipt'
+            : capturedImageBlob?.type === 'photo'
+                ? 'photo'
+                : capturedImageBlob?.type === 'document'
+                    ? 'document scan'
+                    : capturedVideoBlob
+                        ? 'video'
+                        : null;
 
     const downloadReviewCopy = () => {
         const source = capturedAudioBlob ?? capturedImageBlob?.file ?? capturedVideoBlob;
@@ -275,7 +278,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         setCapturedVideoBlob(null);
     };
 
-    const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>, type: 'photo' | 'document') => {
+    const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>, type: 'photo' | 'document' | 'receipt') => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             clearMediaState();
@@ -419,14 +422,18 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 }
             } else if (capturedImageBlob) {
                 const file = capturedImageBlob.file;
-                const filename = `photo_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
-                const path = `users/${userId}/assets/captured_media/${filename}`;
+                const isReceipt = capturedImageBlob.type === 'receipt';
+                const filename = `${isReceipt ? 'receipt' : 'photo'}_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
+                const path = `users/${userId}/assets/${isReceipt ? 'receipts' : 'captured_media'}/${filename}`;
                 downloadUrl = await StorageService.uploadFile(file, path);
                 uploadedPath = path;
                 if (isPaired) {
                     taskId = await remoteRelayService.dispatchTask({
-                        type: capturedImageBlob.type === 'document' ? 'document_scan' : 'media_capture',
-                        payload: { imageUrl: downloadUrl }
+                        type: isReceipt ? 'receipt_log' : capturedImageBlob.type === 'document' ? 'document_scan' : 'media_capture',
+                        payload: {
+                            imageUrl: downloadUrl,
+                            ...(isReceipt ? { noteText: 'Expense receipt captured via mobile' } : {})
+                        }
                     });
                     dispatchAccepted = true;
                 }
@@ -451,13 +458,16 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     throw new Error(outcome.error?.message || 'Failed to save to Notes');
                 }
             } else {
+                const isReceipt = capturedImageBlob?.type === 'receipt';
                 useStore.getState().addNote({
-                    title: `Mobile capture — ${new Date().toLocaleString()}`,
-                    content: reviewKind ? `Captured ${reviewKind} from mobile web.` : 'Captured from mobile web.',
+                    title: isReceipt ? `Expense Receipt — ${new Date().toLocaleDateString()}` : `Mobile capture — ${new Date().toLocaleString()}`,
+                    content: isReceipt
+                        ? `Gear / Tour Expense Receipt captured via indiiREMOTE.\nReceipt Asset: ${downloadUrl || 'attached'}\nRecorded: ${new Date().toISOString()}`
+                        : reviewKind ? `Captured ${reviewKind} from mobile web.` : 'Captured from mobile web.',
                     attachments: downloadUrl ? [downloadUrl] : [],
-                    tags: ['mobile-capture'],
+                    tags: isReceipt ? ['receipt', 'expense', 'finance', 'mobile-capture'] : ['mobile-capture'],
                 });
-                toast.success('Capture saved directly to Notes.');
+                toast.success(isReceipt ? 'Receipt recorded directly to Expenses & Notes.' : 'Capture saved directly to Notes.');
             }
 
             clearCapture();
@@ -524,44 +534,55 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 </div>
 
                 {/* Secondary Actions Grid */}
-                <div className="grid grid-cols-4 gap-4 w-full max-w-sm">
+                <div className="grid grid-cols-5 gap-3 w-full max-w-sm">
+                    <button
+                        onClick={() => receiptInputRef.current?.click()}
+                        disabled={isDispatching || isRecording || isFinalizingRecording}
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-colors disabled:opacity-50 cursor-pointer"
+                        title="Scan Expense Receipt"
+                    >
+                        <Receipt className="w-5 h-5" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider">Receipt</span>
+                    </button>
+                    <input type="file" accept="image/*" capture="environment" className="hidden" ref={receiptInputRef} onChange={(e) => handleImageCapture(e, 'receipt')} />
+
                     <button
                         onClick={() => docInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-2 p-3 min-h-[64px] min-w-[44px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                        <FileText className="w-6 h-6" />
-                        <span className="text-[9px] font-bold uppercase tracking-wider">Doc</span>
+                        <FileText className="w-5 h-5" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider">Doc</span>
                     </button>
                     <input type="file" accept="image/*" capture="environment" className="hidden" ref={docInputRef} onChange={(e) => handleImageCapture(e, 'document')} />
 
                     <button
                         onClick={() => photoInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-2 p-3 min-h-[64px] min-w-[44px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                        <ImageIcon className="w-6 h-6" />
-                        <span className="text-[9px] font-bold uppercase tracking-wider">Photo</span>
+                        <ImageIcon className="w-5 h-5" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider">Photo</span>
                     </button>
                     <input type="file" accept="image/*" capture="environment" className="hidden" ref={photoInputRef} onChange={(e) => handleImageCapture(e, 'photo')} />
 
                     <button
                         onClick={() => videoInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-2 p-3 min-h-[64px] min-w-[44px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                        <Video className="w-6 h-6" />
-                        <span className="text-[9px] font-bold uppercase tracking-wider">Video</span>
+                        <Video className="w-5 h-5" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider">Video</span>
                     </button>
                     <input type="file" accept="video/*" capture="environment" className="hidden" ref={videoInputRef} onChange={handleVideoCapture} />
 
                     <button
                         onClick={handlePinDrop}
                         disabled={isDispatching || isRecording || isFinalizingRecording || !hasGeolocation}
-                        className="flex flex-col items-center justify-center gap-2 p-3 min-h-[64px] min-w-[44px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                        <MapPin className="w-6 h-6" />
-                        <span className="text-[9px] font-bold uppercase tracking-wider">{hasGeolocation ? 'Pin' : 'Pin N/A'}</span>
+                        <MapPin className="w-5 h-5" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider">{hasGeolocation ? 'Pin' : 'Pin N/A'}</span>
                     </button>
                 </div>
                 {!hasGeolocation && (

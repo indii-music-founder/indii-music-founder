@@ -1,3 +1,29 @@
+# Session Close — Browser Studio Executor & Cloud-Autonomous Mobile Remote (2026-09-07)
+
+**Final state: all 70 mobile-remote and lease service tests passing (100%), monorepo typecheck 100% clean across all 8 packages + test tsconfig, 0 lint errors, git diff --check clean.**
+
+## Shipped — Browser-as-Executor & Mobile Autonomy
+- **Browser-as-Executor Bridge (`packages/renderer/src/services/agent/StudioExecutorLeaseService.ts`):**
+  - Extended `isSupported()` and `getLease()` to support standard web browsers via `localStorage` device enrollment fallback (`studio-executor-enrollment-v1`) alongside Electron OS Keychain credentials.
+  - Allows artists to leave their desktop browser open on indii Studio before heading to shows or stores, enabling phone pairing without requiring the Electron build.
+  - Unit test in `StudioExecutorLeaseService.test.ts` asserts browser lease issuance, localStorage token storage, and callable payload structure.
+- **Autonomous Mobile Actions (`packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx`):**
+  - Unlocked `Live Moment`, `Log Receipt`, `Track Miles`, and `Road Mode` when `isPaired === false`, enabling full on-the-go utility (direct cloud storage upload, note capture, expense tracking, and touring navigation).
+- **Mobile Mileage & Travel Tracking (`packages/renderer/src/modules/mobile-remote/components/MobileMileageModal.tsx`):**
+  - Added on-the-go mileage tracking modal with automatic standard IRS business deduction calculation ($0.67/mile).
+  - Quick destination chips ("Guitar Center", "Local Music Store", "Venue / Gig", "Rehearsal Studio", "Audio Repair Shop"), round-trip toggle ("to and from" doubles mileage), and gear purchase purpose notes.
+  - Direct persistence to Firestore expenses collection via `FinanceService.addExpense` and local/synced Notes via `useStore.getState().addNote`.
+  - Seamless "Save Mileage & Snap Gear Receipt" flow transitioning directly to receipt capture.
+- **Mobile Receipt Capture (`packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx`):**
+  - Added dedicated receipt capture mode uploading to `users/${userId}/assets/receipts/`.
+  - Dispatches `receipt_log` task to paired desktop executor with valid payload.
+  - Standalone mode saves directly to Notes tagged `['receipt', 'expense', 'finance', 'mobile-capture']`.
+- **Automated Verification:**
+  - 70/70 tests passing across all 9 mobile remote test suites.
+  - Added unit tests in `StatusDashboard.test.tsx` verifying autonomous button availability when unpaired, IRS mileage calculation, and receipt navigation.
+
+---
+
 # Session Close — Video Editor Bridge (ISSUE-1416) & Mainline Convergence (2026-09-03)
 
 **Final state: all 21 agent wiring & editor tools tests passing (100%), all 64 format foundry & security tests passing (100%), monorepo typecheck 100% clean, 0 lint errors, delivered to `origin/main`.**

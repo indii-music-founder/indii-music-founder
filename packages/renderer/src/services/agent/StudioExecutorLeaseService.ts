@@ -22,26 +22,53 @@ function randomToken(): string {
     return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
-/** Electron-only bridge for a server-issued Studio executor lease. */
+/** Universal (Electron OS Keychain + Browser LocalStorage) bridge for a server-issued Studio executor lease. */
 class StudioExecutorLeaseService {
     private cached: StudioExecutorLease | null = null;
 
     isSupported(): boolean {
-        return typeof window !== 'undefined' && !!window.electronAPI?.credentials;
+        // Supported in Electron and any standard modern browser with crypto & storage
+        return typeof window !== 'undefined' && (!!window.electronAPI?.credentials || typeof window.localStorage !== 'undefined');
     }
 
     async getLease(): Promise<StudioExecutorLease> {
         if (this.cached && this.cached.expiresAt - Date.now() > 60_000) return this.cached;
+
+        let deviceId: string | undefined;
+        let enrollmentSecret: string | undefined;
+
         const credentials = typeof window !== 'undefined' ? window.electronAPI?.credentials : undefined;
-        if (!credentials) throw new Error('Studio executor leases can only be issued inside the Electron Studio app.');
-        const stored = await credentials.get(KEYCHAIN_ID) as { apiKey?: string; apiSecret?: string } | null;
-        let deviceId = stored?.apiKey;
-        let enrollmentSecret = stored?.apiSecret;
-        if (!deviceId || !enrollmentSecret) {
-            deviceId = crypto.randomUUID().replace(/-/g, '');
-            enrollmentSecret = randomToken();
-            await credentials.save(KEYCHAIN_ID, { apiKey: deviceId, apiSecret: enrollmentSecret });
+        if (credentials) {
+            // Electron mode: OS Keychain persistence
+            const stored = await credentials.get(KEYCHAIN_ID) as { apiKey?: string; apiSecret?: string } | null;
+            deviceId = stored?.apiKey;
+            enrollmentSecret = stored?.apiSecret;
+            if (!deviceId || !enrollmentSecret) {
+                deviceId = crypto.randomUUID().replace(/-/g, '');
+                enrollmentSecret = randomToken();
+                await credentials.save(KEYCHAIN_ID, { apiKey: deviceId, apiSecret: enrollmentSecret });
+            }
+        } else if (typeof window !== 'undefined' && window.localStorage) {
+            // Browser mode: persistent browser-scoped device enrollment
+            const rawStored = window.localStorage.getItem(KEYCHAIN_ID);
+            if (rawStored) {
+                try {
+                    const parsed = JSON.parse(rawStored) as { apiKey?: string; apiSecret?: string };
+                    deviceId = parsed?.apiKey;
+                    enrollmentSecret = parsed?.apiSecret;
+                } catch {
+                    // Stale or invalid JSON, will re-enroll
+                }
+            }
+            if (!deviceId || !enrollmentSecret) {
+                deviceId = crypto.randomUUID().replace(/-/g, '');
+                enrollmentSecret = randomToken();
+                window.localStorage.setItem(KEYCHAIN_ID, JSON.stringify({ apiKey: deviceId, apiSecret: enrollmentSecret }));
+            }
+        } else {
+            throw new Error('Studio executor leases require either the Electron Studio app or a supported browser with localStorage.');
         }
+
         const issue = httpsCallable<{ deviceId: string; enrollmentSecret: string }, StudioExecutorLease>(functions, 'issueStudioExecutorLease');
         const result = await issue({ deviceId, enrollmentSecret });
         this.cached = result.data;
@@ -50,7 +77,6 @@ class StudioExecutorLeaseService {
 
     async publishPresence(state: Record<string, unknown>): Promise<void> {
         if (!this.isSupported()) {
-            // Web browser mode — leases are Electron-only. Gracefully skip without spamming error logs.
             return;
         }
         // Record what the heartbeat loop actually observed so the Settings UI

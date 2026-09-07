@@ -3,10 +3,12 @@
  * Shows quick entry buttons for typical mobile tasks.
  */
 
-import { Mic, ShoppingBag, Receipt, PenTool, LayoutDashboard, Navigation } from 'lucide-react';
+import { useState } from 'react';
+import { Mic, ShoppingBag, Receipt, PenTool, LayoutDashboard, Navigation, Car } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
+import MobileMileageModal from './MobileMileageModal';
 
 interface StatusDashboardProps {
     connectionStatus: 'idle' | 'pairing' | 'connected' | 'error';
@@ -63,6 +65,8 @@ function ActionButton({ icon: Icon, label, description, delay = 0, onClick, disa
 }
 
 export default function StatusDashboard({ connectionStatus, isPaired, onTabChange }: StatusDashboardProps) {
+    const [showMileageModal, setShowMileageModal] = useState(false);
+
     return (
         <div className="space-y-6 pb-8">
             <div className="px-2 pt-2">
@@ -76,7 +80,7 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     label="Live Moment"
                     description="Capture what just happened"
                     delay={0.1}
-                    disabled={!isPaired}
+                    disabled={false}
                     onClick={() => onTabChange?.('capture')}
                 />
                 <ActionButton
@@ -84,8 +88,16 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     label="Log Receipt"
                     description="Snap a photo of an expense"
                     delay={0.2}
-                    disabled={!isPaired}
+                    disabled={false}
                     onClick={() => onTabChange?.('capture')}
+                />
+                <ActionButton
+                    icon={Car}
+                    label="Track Miles"
+                    description="Gear run & $0.67/mi deduction"
+                    delay={0.25}
+                    disabled={false}
+                    onClick={() => setShowMileageModal(true)}
                 />
                 <ActionButton
                     icon={ShoppingBag}
@@ -145,28 +157,21 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
             </motion.button>
 
             <motion.button
-                whileTap={isPaired ? { scale: 0.98 } : undefined}
+                whileTap={{ scale: 0.98 }}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.65, duration: 0.4 }}
                 onClick={() => {
-                    if (!isPaired) return;
                     triggerHaptic(40);
                     onTabChange?.('road');
                 }}
-                disabled={!isPaired}
                 className={cn(
                     "group relative overflow-hidden flex w-full items-center justify-between gap-4 p-5 rounded-[24px] border transition-all duration-300 text-left mt-4",
-                    isPaired
-                        ? "bg-gradient-to-r from-emerald-500/10 via-[#030303] to-cyan-500/10 border-emerald-400/20 hover:border-emerald-400/40 shadow-[0_8px_30px_rgba(16,185,129,0.08)] cursor-pointer"
-                        : "bg-[#1c1c1e] border-white/5 opacity-50 cursor-not-allowed"
+                    "bg-gradient-to-r from-emerald-500/10 via-[#030303] to-cyan-500/10 border-emerald-400/20 hover:border-emerald-400/40 shadow-[0_8px_30px_rgba(16,185,129,0.08)] cursor-pointer"
                 )}
             >
                 <div className="flex items-center gap-4 min-w-0">
-                    <div className={cn(
-                        "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0",
-                        isPaired ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-[#8e8e93]"
-                    )}>
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0 bg-emerald-500/15 text-emerald-400">
                         <Navigation className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
@@ -176,10 +181,7 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                         </p>
                     </div>
                 </div>
-                <span className={cn(
-                    "text-[10px] font-bold uppercase tracking-[0.2em]",
-                    isPaired ? "text-emerald-400" : "text-[#636366]"
-                )}>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">
                     Open
                 </span>
             </motion.button>
@@ -206,6 +208,14 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     <span className="text-[10px] font-mono font-bold text-green-400">SYNCED</span>
                 )}
             </motion.div>
+
+            {/* Mileage & Travel Expense Modal */}
+            <MobileMileageModal
+                isOpen={showMileageModal}
+                onClose={() => setShowMileageModal(false)}
+                isPaired={isPaired}
+                onOpenReceiptCapture={() => onTabChange?.('capture')}
+            />
         </div>
     );
 }

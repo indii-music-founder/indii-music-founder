@@ -179,11 +179,20 @@ describe('StudioExecutorLeaseService', () => {
         expect(renewed.leaseToken).toBe('token-b');
     });
 
-    it('refuses to act outside the Electron bridge — the browser can never hold a lease', async () => {
+    it('successfully issues a lease in standard web browsers using localStorage persistence', async () => {
         advanceClock(); // invalidate any prior cache
-        Object.defineProperty(window, 'electronAPI', { configurable: true, value: {} });
+        Object.defineProperty(window, 'electronAPI', { configurable: true, value: undefined });
+        window.localStorage.clear();
 
-        await expect(studioExecutorLeaseService.getLease()).rejects.toThrow(/only be issued inside the Electron Studio/);
-        expect(callables.issue).not.toHaveBeenCalled();
+        const lease = await studioExecutorLeaseService.getLease();
+        expect(lease.deviceId).toBe('studio-device-0001');
+        expect(callables.issue).toHaveBeenCalledWith(expect.objectContaining({
+            deviceId: expect.any(String),
+            enrollmentSecret: expect.any(String),
+        }));
+
+        const stored = JSON.parse(window.localStorage.getItem('studio-executor-enrollment-v1') || '{}');
+        expect(stored.apiKey).toBeDefined();
+        expect(stored.apiSecret).toBeDefined();
     });
 });

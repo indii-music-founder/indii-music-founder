@@ -13,6 +13,7 @@ function filterDomProps(props: Record<string, unknown>): Record<string, unknown>
 }
 
 vi.mock('motion/react', () => ({
+    AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
     motion: {
         button: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <button {...filterDomProps(props)}>{children}</button>,
         div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...filterDomProps(props)}>{children}</div>,
@@ -48,5 +49,56 @@ describe('StatusDashboard', () => {
         fireEvent.click(roadButton);
 
         expect(onTabChange).toHaveBeenCalledWith('road');
+    });
+
+    it('keeps Live Moment, Log Receipt, Track Miles, and Road Mode enabled when unpaired', () => {
+        render(<StatusDashboard connectionStatus="idle" isPaired={false} />);
+
+        const liveMoment = screen.getByText('Live Moment').closest('button');
+        const logReceipt = screen.getByText('Log Receipt').closest('button');
+        const trackMiles = screen.getByText('Track Miles').closest('button');
+        const roadMode = screen.getByRole('button', { name: /road mode/i });
+
+        expect(liveMoment).toBeEnabled();
+        expect(logReceipt).toBeEnabled();
+        expect(trackMiles).toBeEnabled();
+        expect(roadMode).toBeEnabled();
+
+        // Order Merch and Legal Review remain restricted/disabled
+        const orderMerch = screen.getByText('Order Merch').closest('button');
+        const legalReview = screen.getByText('Legal Review').closest('button');
+        expect(orderMerch).toBeDisabled();
+        expect(legalReview).toBeDisabled();
+    });
+
+    it('opens mileage modal and calculates IRS mileage deduction when tracking a gear run', () => {
+        render(<StatusDashboard connectionStatus="idle" isPaired={false} />);
+
+        const trackMiles = screen.getByText('Track Miles').closest('button');
+        expect(trackMiles).toBeInTheDocument();
+        fireEvent.click(trackMiles!);
+
+        expect(screen.getByText('Track Miles & Run')).toBeInTheDocument();
+        expect(screen.getByText('Auto-deductible at $0.67/mi')).toBeInTheDocument();
+
+        // Select destination chip
+        fireEvent.click(screen.getByRole('button', { name: 'Guitar Center' }));
+
+        // Enter miles: 10 miles (round trip = 20 miles * 0.67 = $13.40)
+        const milesInput = screen.getByPlaceholderText('e.g. 14.2');
+        fireEvent.change(milesInput, { target: { value: '10' } });
+
+        expect(screen.getByText(/Estimated Tax Deduction/i)).toBeInTheDocument();
+        expect(screen.getByText(/\$13\.40/)).toBeInTheDocument();
+    });
+
+    it('navigates to capture tab when Log Receipt is clicked', () => {
+        const onTabChange = vi.fn();
+        render(<StatusDashboard connectionStatus="connected" isPaired={true} onTabChange={onTabChange} />);
+
+        const logReceipt = screen.getByText('Log Receipt').closest('button');
+        fireEvent.click(logReceipt!);
+
+        expect(onTabChange).toHaveBeenCalledWith('capture');
     });
 });
