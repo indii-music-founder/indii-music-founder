@@ -70,7 +70,11 @@ export function useURLSync(options: URLSyncOptions = {}) {
 
         if (targetModule !== currentModule && isValidModule(targetModule)) {
             pendingPathModule.current = targetModule;
-            setModule(targetModule, targetTab ? { tab: targetTab } : undefined);
+            if (targetTab) {
+                setModule(targetModule, { tab: targetTab });
+            } else {
+                setModule(targetModule);
+            }
         } else {
             pendingPathModule.current = null;
             if (targetTab) {
