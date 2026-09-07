@@ -24,6 +24,8 @@ import {
     HardDrive,
     CheckSquare,
     Square,
+    LayoutGrid,
+    FolderTree,
 } from 'lucide-react';
 import { FileNode } from '@/services/FileSystemService';
 import { desktopFileIndexService } from '@/services/agent/DesktopFileIndexService';
@@ -46,13 +48,14 @@ import {
 type TrashSourceFilter = 'all' | 'user' | 'agent';
 
 export default function FileDashboard() {
-    const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode, fetchFileNodes } = useStore(
+    const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode, fetchFileNodes, setModule } = useStore(
         useShallow(state => ({
             fileNodes: state.fileNodes,
             currentProjectId: state.currentProjectId,
             selectedFileNodeId: state.selectedFileNodeId,
             setSelectedFileNode: state.setSelectedFileNode,
             fetchFileNodes: state.fetchFileNodes,
+            setModule: state.setModule,
         }))
     );
 
@@ -446,6 +449,25 @@ export default function FileDashboard() {
                                 </button>
                             </div>
                         )}
+
+                        {/* Dual-Mode Workspace Switcher [Spatial Canvas | File Explorer] */}
+                        <div className="flex items-center gap-1 bg-black/20 p-1 rounded-lg border border-white/5 mr-1 select-none">
+                            <button
+                                data-testid="project-view-canvas"
+                                onClick={() => setModule('project-canvas')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                            >
+                                <LayoutGrid size={14} />
+                                <span>Spatial Canvas</span>
+                            </button>
+                            <button
+                                data-testid="project-view-files"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-white/10 text-white shadow-sm transition-colors"
+                            >
+                                <FolderTree size={14} />
+                                <span>File Explorer</span>
+                            </button>
+                        </div>
 
                         <div className="flex items-center gap-2 bg-black/20 p-1 rounded-lg border border-white/5">
                             <button

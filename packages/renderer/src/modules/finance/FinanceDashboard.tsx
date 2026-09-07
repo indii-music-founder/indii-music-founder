@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { EarningsDashboard } from './components/EarningsDashboard';
 import { ExpenseTracker } from './components/ExpenseTracker';
 import { MerchandiseDashboard } from './components/MerchandiseDashboard';
@@ -15,6 +15,8 @@ import { LabelDealRecoupment } from './components/LabelDealRecoupment';
 import { RevenueView } from './components/RevenueView';
 import { HiddenCostHarnessPanel } from './components/HiddenCostHarnessPanel';
 import { useFinance } from './hooks/useFinance';
+import { FormatFoundryModule } from '@/modules/format-foundry/FormatFoundryModule';
+import { useStore } from '@/core/store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
@@ -24,7 +26,7 @@ import {
     Briefcase, TrendingUp,
     DollarSign, ArrowUpRight, Wallet, Clock, Scale,
     AlertTriangle, Calendar, PiggyBank, Globe, Users,
-    FileText, Activity, Shield, Camera, GitMerge, Loader2, Landmark, Sparkles
+    FileText, Activity, Shield, Camera, GitMerge, Loader2, Landmark, Sparkles, Search
 } from 'lucide-react';
 import type { EarningsSummary } from '@/services/revenue/schema';
 import { sumPaidExpenses, type Expense } from './schemas';
@@ -51,6 +53,22 @@ export default function FinanceDashboard() {
         expenses,
         expensesLoading,
     } = useFinance();
+    const rawFinanceTab = useStore(state => state.financeTab);
+    const setFinanceTab = useStore(state => state.setFinanceTab);
+    const [prevRawTab, setPrevRawTab] = useState(rawFinanceTab);
+    const [currentTab, setCurrentTab] = useState<string>(() =>
+        (rawFinanceTab === 'forensics' ? 'forensics' : (rawFinanceTab || 'overview'))
+    );
+
+    if (rawFinanceTab !== prevRawTab) {
+        setPrevRawTab(rawFinanceTab);
+        setCurrentTab(rawFinanceTab === 'forensics' ? 'forensics' : (rawFinanceTab || 'overview'));
+    }
+
+    const handleTabChange = (val: string) => {
+        setCurrentTab(val);
+        setFinanceTab?.(val);
+    };
 
     return (
         <ThreePanelDashboard
@@ -97,7 +115,7 @@ export default function FinanceDashboard() {
                 </>
             }
         >
-            <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+            <Tabs value={currentTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
                 <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
                     <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
                         <TabsTrigger value="overview" data-testid="finance-tab-overview" className="text-muted-foreground data-[state=active]:text-green-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-green-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
@@ -117,6 +135,9 @@ export default function FinanceDashboard() {
                         </TabsTrigger>
                         <TabsTrigger value="royalties" data-testid="finance-tab-royalties" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Briefcase size={14} /> {t('finance.tabs.royalties')}
+                        </TabsTrigger>
+                        <TabsTrigger value="forensics" data-testid="finance-tab-forensics" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                            <Search size={14} /> Royalty Statement Forensics
                         </TabsTrigger>
                         <TabsTrigger value="currency" data-testid="finance-tab-currency" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
                             <Globe size={14} /> {t('finance.tabs.currency')}
@@ -178,6 +199,11 @@ export default function FinanceDashboard() {
                         <TabsContent value="royalties" className="mt-0 outline-none">
                             <ModuleErrorBoundary moduleName="Finance / Royalties">
                                 <RoyaltiesPrediction />
+                            </ModuleErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="forensics" className="mt-0 outline-none">
+                            <ModuleErrorBoundary moduleName="Finance / Royalty Statement Forensics">
+                                <FormatFoundryModule />
                             </ModuleErrorBoundary>
                         </TabsContent>
                         <TabsContent value="currency" className="mt-0 outline-none">

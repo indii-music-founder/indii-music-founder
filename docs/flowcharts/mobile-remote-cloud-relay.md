@@ -8,7 +8,7 @@ sequenceDiagram
     participant D as Firestore
     participant C as Mobile Controller
 
-    U->>S: Open Settings / Mobile Remote
+    U->>S: Open Settings (Cmd+, / Bottom Rail) > Mobile Remote
     S->>F: Create five-minute handoff code
     F-->>S: Single-use pairing URL
     U->>C: Scan pairing URL

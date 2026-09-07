@@ -1,18 +1,20 @@
 ---
-description: Architectural map of the Knowledge Base Retrieval-Augmented Generation (RAG) system, outlining the Cloud Functions proxy and local-environment fallback protections.
+description: Architectural map of the Knowledge Base Retrieval-Augmented Generation (RAG) system, outlining the Cloud Functions proxy, local-environment fallback protections, and dual entry surfaces.
 ---
 
 # Knowledge Base RAG Architecture
 
-This flowchart tracks how natural language queries within the Knowledge Base module are parsed, vectorized, and retrieved against the document corpus. Following ISSUE-039, it specifically highlights the routing logic that prevents production clients from attempting to query dead localhost proxy servers.
+This flowchart tracks how natural language queries within the Knowledge Base system are parsed, vectorized, and retrieved against the document corpus. Elevated to the top-level **"Swarm Intelligence & Automations"** cluster alongside Boardroom and Agent Canvas, and accessible via a persistent **RightPanel slide-over** across all departments, it details the routing logic and backend retrieval protections (ISSUE-039) preventing clients from querying dead localhost proxy endpoints.
 
 ```mermaid
 graph TD
     %% ╔══════════════════════════════════════════╗
-    %% ║        KNOWLEDGE BASE UI                 ║
+    %% ║        KNOWLEDGE BASE ENTRY SURFACES     ║
     %% ╚══════════════════════════════════════════╝
-    subgraph UI ["🖥️ Knowledge Base UI"]
-        SEARCH_INPUT["User: 'How does mastering work?'"]
+    subgraph UI ["Knowledge Base Dual Access Surfaces"]
+        NAV_CLUSTER["Swarm Intelligence Cluster (Full Module View)"]
+        RIGHT_PANEL["Cross-Department RightPanel Slide-Over"]
+        SEARCH_INPUT["User Query: 'How does mastering work?'"]
         RESULTS["RAG Answer & Document Citations"]
     end
 
@@ -37,10 +39,12 @@ graph TD
     end
 
     %% Connections
+    NAV_CLUSTER --> SEARCH_INPUT
+    RIGHT_PANEL --> SEARCH_INPUT
     SEARCH_INPUT --> ENV_CHECK
     
-    ENV_CHECK -->|Yes (and in dev)| ROUTE_LOCAL
-    ENV_CHECK -->|No (or forced Prod)| ROUTE_PROD
+    ENV_CHECK -->|Yes and in dev| ROUTE_LOCAL
+    ENV_CHECK -->|No or forced Prod| ROUTE_PROD
     
     ROUTE_LOCAL --> PROXY
     ROUTE_PROD --> PROXY
@@ -54,16 +58,19 @@ graph TD
     classDef svc fill:#8B5CF6,stroke:#6D28D9,stroke-width:2px,color:#FFFFFF
     classDef backend fill:#FB923C,stroke:#C2410C,stroke-width:2px,color:#001018
 
-    class SEARCH_INPUT,RESULTS ui
+    class NAV_CLUSTER,RIGHT_PANEL,SEARCH_INPUT,RESULTS ui
     class ENV_CHECK,ROUTE_LOCAL,ROUTE_PROD svc
     class PROXY,EMBED,VECTOR_DB,LLM backend
 ```
 
-## Transition Breakdown
+## Step-by-Step Transition Breakdown
 
-1. **Query Initiation**: The user types a question into the Knowledge Base search bar.
-2. **Environment Protection (ISSUE-039)**: The `GeminiRetrievalService` evaluates the current environment configuration. Previously, a stale `.env.example` led to production builds attempting to hit `http://localhost:3001` (crashing the fetch). The service now explicitly detects localhost URLs and automatically falls back to the production Cloud Function endpoint (`ragProxy/v1beta`) if the client is not actively in development mode.
-3. **Endpoint Routing**: The query payload is securely dispatched to the chosen RAG Proxy endpoint.
-4. **Vectorization**: The backend uses Vertex AI text-embedding models to convert the user's natural language query into a mathematical vector.
-5. **Similarity Search**: The query vector is compared against the pre-computed document embeddings stored in the Vector Database (Firestore Vector Search integration, when the current Firestore SDK supports it). The system retrieves the top *K* most semantically similar text chunks.
-6. **Synthesis**: The retrieved contextual chunks are bundled with the original query and sent to the Gemini 3 Pro LLM, which synthesizes a precise, cited answer. The final text block and document links are returned to the UI.
+1. **Dual Entry Access Surfaces:** The Knowledge Base is accessible via two native surfaces:
+   - **Swarm Intelligence Cluster:** A dedicated full-page module elevated into the top-level "Swarm Intelligence & Automations" sidebar group alongside Boardroom and Agent Canvas.
+   - **RightPanel Slide-Over:** A persistent slide-over drawer accessible from any department (Creative, Distribution, Finance, Marketing) enabling instant context lookups without navigating away from the active workflow.
+2. **Query Initiation:** The user submits a question or query into the search bar from either surface.
+3. **Environment Protection (ISSUE-039):** The `GeminiRetrievalService` evaluates the current environment configuration. The service explicitly detects localhost URLs and automatically routes to the production Cloud Function endpoint (`ragProxy/v1beta`) when the client is not actively running in local development mode.
+4. **Endpoint Routing:** The query payload is securely dispatched to the active RAG Proxy endpoint.
+5. **Vectorization:** The backend uses Vertex AI text-embedding models to convert the user's natural language query into a high-dimensional vector.
+6. **Similarity Search:** The query vector is compared against pre-computed document embeddings stored in the Vector Database (Firestore Vector Search). The system retrieves the top *K* most semantically relevant text chunks.
+7. **Synthesis & Citation:** The retrieved contextual chunks are bundled with the query and sent to Gemini 3 Pro, which synthesizes a factual, cited response returned to the active UI surface (full view or slide-over).

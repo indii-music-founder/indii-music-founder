@@ -71,7 +71,7 @@ export interface AppSlice {
     currentModule: ModuleId;
     currentProjectId: string;
     projects: ProjectMetadata[]; // Changed from Project[] to enforce UI type
-    setModule: (module: AppSlice['currentModule']) => Promise<void>;
+    setModule: (module: AppSlice['currentModule'], options?: { tab?: string }) => Promise<void>;
     // ISSUE-1375: return to the module visited before the current one (the
     // store already tracks unique visited modules in _navigationHistory).
     goBackModule: () => Promise<void>;
@@ -91,12 +91,16 @@ export interface AppSlice {
     setApiKeyError: (error: boolean) => void;
     isSidebarOpen: boolean;
     isRightPanelOpen: boolean;
-    rightPanelTab: 'context' | 'assets' | 'agent' | 'artifacts' | 'approvals';
+    rightPanelTab: 'context' | 'assets' | 'agent' | 'artifacts' | 'approvals' | 'knowledge';
     toggleSidebar: () => void;
     toggleRightPanel: () => void;
-    setRightPanelTab: (tab: 'context' | 'assets' | 'agent' | 'artifacts' | 'approvals') => void;
+    setRightPanelTab: (tab: 'context' | 'assets' | 'agent' | 'artifacts' | 'approvals' | 'knowledge') => void;
     isCommandMenuOpen: boolean;
     setCommandMenuOpen: (open: boolean) => void;
+    isSettingsOpen: boolean;
+    setSettingsOpen: (open: boolean) => void;
+    isQuickNotesOpen: boolean;
+    setQuickNotesOpen: (open: boolean) => void;
     hasUnsavedChanges: boolean;
     setHasUnsavedChanges: (hasUnsaved: boolean) => void;
     isEntryAssistantDismissed: boolean;
@@ -145,7 +149,23 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }
         set({ isEntryAssistantDismissed: dismissed });
     },
-    setModule: async (module) => {
+    isSettingsOpen: false,
+    setSettingsOpen: (open) => set({ isSettingsOpen: open }),
+    isQuickNotesOpen: false,
+    setQuickNotesOpen: (open) => set({ isQuickNotesOpen: open }),
+    setModule: async (rawModule, options) => {
+        let module = rawModule;
+        let tab = options?.tab;
+
+        // Route aliases for absorbed tools
+        if (module === 'audio-analyzer') {
+            module = 'distribution';
+            tab = tab || 'qc';
+        } else if (module === 'format-foundry') {
+            module = 'finance';
+            tab = tab || 'forensics';
+        }
+
         const state = get();
         const now = Date.now();
 
@@ -187,6 +207,15 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         // This requires dynamic import of store to avoid circular dependency
         import('@/core/store').then(({ useStore }) => {
             const store = useStore.getState();
+
+            // Set tab if requested
+            if (tab) {
+                if (module === 'distribution') {
+                    store.setDistributionTab(tab);
+                } else if (module === 'finance') {
+                    store.setFinanceTab(tab);
+                }
+            }
             
             // Auto-align the active agent for the new module
             const targetAgent = MODULE_AGENT_MAP[module] || 'generalist';

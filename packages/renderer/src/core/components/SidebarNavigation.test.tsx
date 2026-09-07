@@ -129,6 +129,17 @@ describe('Sidebar Navigation Integration', () => {
         // throw "loadNotesFromCloud is not a function" for every test in this
         // file, a real regression (not a flake) caught via a CI run.
         loadNotesFromCloud: vi.fn().mockResolvedValue(undefined),
+        notes: [],
+        selectedNoteId: null,
+        addNote: vi.fn().mockReturnValue('note-test-1'),
+        updateNote: vi.fn(),
+        deleteNote: vi.fn(),
+        setSelectedNote: vi.fn(),
+        addCanvasBlock: vi.fn(),
+        isSettingsOpen: false,
+        setSettingsOpen: vi.fn(),
+        isQuickNotesOpen: false,
+        setQuickNotesOpen: vi.fn(),
         ...overrides,
     });
 
@@ -153,13 +164,14 @@ describe('Sidebar Navigation Integration', () => {
             </MemoryRouter>
         );
 
+        expect(screen.getByText('Workflow Builder')).toBeInTheDocument();
+        expect(screen.getByText('Knowledge Base')).toBeInTheDocument();
         expect(screen.getByText('Brand Manager')).toBeInTheDocument();
         expect(screen.getByText('Marketing Department')).toBeInTheDocument();
-        expect(screen.getByText('Notes')).toBeInTheDocument();
+        expect(screen.getByTestId('bottom-rail-notes-btn')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
 
         await waitFor(() => {
             expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
@@ -171,7 +183,6 @@ describe('Sidebar Navigation Integration', () => {
             expect(screen.queryByText('Publishing Department')).not.toBeInTheDocument();
             expect(screen.queryByText('Finance Department')).not.toBeInTheDocument();
             expect(screen.queryByText('Licensing Department')).not.toBeInTheDocument();
-            expect(screen.queryByText('Notes')).not.toBeInTheDocument();
         });
     });
 
@@ -185,7 +196,6 @@ describe('Sidebar Navigation Integration', () => {
 
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
 
         fireEvent.click(screen.getByText('Brand Manager'));
         expect(mockSetModule).toHaveBeenCalledWith('brand');
@@ -203,10 +213,52 @@ describe('Sidebar Navigation Integration', () => {
         expect(mockSetModule).toHaveBeenCalledWith('social');
 
         vi.advanceTimersByTime(200);
-        fireEvent.click(screen.getByText('Notes'));
-        expect(mockSetModule).toHaveBeenCalledWith('notes');
+        fireEvent.click(screen.getByText('Workflow Builder'));
+        expect(mockSetModule).toHaveBeenCalledWith('workflow');
+
+        vi.advanceTimersByTime(200);
+        fireEvent.click(screen.getByText('Knowledge Base'));
+        expect(mockSetModule).toHaveBeenCalledWith('knowledge');
 
         vi.useRealTimers();
+    });
+
+    it('opens Quick Notes from bottom rail dock', () => {
+        const setQuickNotesOpen = vi.fn();
+        const state = buildStoreState({ setQuickNotesOpen });
+        mockedUseStore.mockImplementation((selector?: (s: ReturnType<typeof buildStoreState>) => unknown) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
+        });
+        mockedUseStore.getState = vi.fn().mockReturnValue(state);
+
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
+
+        fireEvent.click(screen.getByTestId('bottom-rail-notes-btn'));
+        expect(setQuickNotesOpen).toHaveBeenCalledWith(true);
+    });
+
+    it('opens Settings modal from bottom rail dock', () => {
+        const setSettingsOpen = vi.fn();
+        const state = buildStoreState({ setSettingsOpen });
+        mockedUseStore.mockImplementation((selector?: (s: ReturnType<typeof buildStoreState>) => unknown) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
+        });
+        mockedUseStore.getState = vi.fn().mockReturnValue(state);
+
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
+
+        fireEvent.click(screen.getByTestId('bottom-rail-settings-btn'));
+        expect(setSettingsOpen).toHaveBeenCalledWith(true);
     });
 
     it('renders correct dashboard for Brand Manager', async () => {

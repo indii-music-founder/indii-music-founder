@@ -146,7 +146,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
         onClick={() => {
           if (isRenaming || isArchivedList) return;
           syncProject(project.id);
-          setModule('files');
+          setModule('project-canvas');
         }}
         className={cn(
           "w-[calc(100%-8px)] mx-1 flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all duration-200 relative group overflow-hidden mb-0.5",

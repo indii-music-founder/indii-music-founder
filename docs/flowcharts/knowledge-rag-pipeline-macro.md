@@ -3,7 +3,7 @@
 ```mermaid
 flowchart TD
     %% Roles
-    User["User"]
+    User["User<br/>(Swarm Intelligence / RightPanel Slide-Over)"]
     
     %% Storage
     Storage["Cloud Storage"]
@@ -46,7 +46,8 @@ flowchart TD
 ```
 
 ## Transition Breakdown
-This flowchart maps the strict, durable, and idempotent Knowledge pipeline for indii, fixing issues 1248-1253.
+This flowchart maps the strict, durable, and idempotent Knowledge pipeline for indii, fixing issues 1248-1253. Following the navigation realignment, the Knowledge Base is elevated to the top-level **"Swarm Intelligence & Automations"** cluster in the sidebar, alongside persistent cross-department **RightPanel slide-over** access.
+- **Dual Entry Surfaces**: Users trigger queries and uploads either from the full-page Knowledge Base module or via the contextual RightPanel drawer in functional departments.
 - **Upload Phase**: Enforces strict metadata constraints and validates SHA-256 and byte sizes to prevent rogue uploads.
 - **Task Dispatch**: Replaces a dangling promise with a reliable Cloud Task dispatch for the index worker.
 - **Worker Phase**: Uses a transactional lease to enter the `indexing` state and a `BulkWriter` for atomic promotion to `active`.

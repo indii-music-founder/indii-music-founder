@@ -4,7 +4,7 @@ description: Grand Unified Macro Architecture mapping the entire indii platform 
 
 # Grand Unified Macro Architecture
 
-This macro-level flowchart provides a 30,000ft view of the entire indii platform. It illustrates the relationships between the client interfaces, authentication layer, UI module router, the 36 specialized modules (managers, departments, tools, standalone), the Zustand global state, the monolithic service layer, the AI Agent Swarm (and Business Harness), the creative production pipelines, backend Firebase Gen 2 infrastructure, external integrations, and the CI/CD deployment flow.
+This macro-level flowchart provides a 30,000ft view of the entire indii platform. It illustrates the relationships between the client interfaces, authentication layer, UI module router, the specialized modules (Swarm Intelligence & Automations, Project Workspace, Managers, Departments, Standalone, and Sidebar Bottom Rail Dock), the Zustand global state, the monolithic service layer, the AI Agent Swarm (and Business Harness), the creative production pipelines, backend Firebase Gen 2 infrastructure, external integrations, and the CI/CD deployment flow.
 
 ```mermaid
 graph TB
@@ -38,10 +38,31 @@ graph TB
     %% ╚══════════════════════════════════════════╝
     subgraph NAV ["🧭 Navigation & Module Router"]
         direction TB
-        SIDEBAR["Sidebar Navigation<br/>(3 Sections: Managers, Departments, Tools)"]
+        SIDEBAR["Sidebar Navigation<br/>(Intelligence, Projects, Managers, Departments, Bottom Rail Dock)"]
         CMDBAR["Unified Command Menu<br/>(⌘K Fuzzy Search)"]
         URLSYNC["URL Sync Router<br/>(React Router 7)"]
         MODROUTER["MODULE_COMPONENTS Registry<br/>(40 Lazy-loaded Modules)"]
+    end
+
+    %% ╔══════════════════════════════════════════╗
+    %% ║   SWARM INTELLIGENCE & AUTOMATIONS       ║
+    %% ╚══════════════════════════════════════════╝
+    subgraph INTELLIGENCE ["🧠 Swarm Intelligence & Automations"]
+        direction LR
+        BOARDROOM_TOP["Executive Boardroom<br/>(A2A Decision Center)"]
+        AGENT_CANVAS_TOP["Agent Canvas Drawer<br/>(Visual Co-Work Space)"]
+        WORKFLOW["Workflow Builder<br/>(React Flow DAG + 1-Click Cards)"]
+        KNOWLEDGE["Knowledge Base<br/>(RAG + Cross-Dept RightPanel)"]
+    end
+
+    %% ╔══════════════════════════════════════════╗
+    %% ║        PROJECT WORKSPACE                 ║
+    %% ╚══════════════════════════════════════════╝
+    subgraph PROJECTS_WORKSPACE ["📂 Project Workspace"]
+        direction LR
+        PROJECT_CANVAS["Project Canvas<br/>(Primary Dropdown Landing)"]
+        WORKSPACE_SWITCHER["Workspace Switcher<br/>[ Spatial Canvas | File Explorer ]"]
+        NOTEBLOCK["Native NoteBlock<br/>(Canvas Embed & Sync)"]
     end
 
     %% ╔══════════════════════════════════════════╗
@@ -66,8 +87,8 @@ graph TB
         SOCIAL["Social Media Dept"]
         LEGAL["Legal Dept"]
         PUBLISHING["Publishing Dept"]
-        FINANCE["Finance Dept"]
-        DISTRIBUTION["Distribution Dept"]
+        FINANCE["Finance Dept<br/>(Royalty Statement Forensics)"]
+        DISTRIBUTION["Distribution Dept<br/>(Pre-Flight Audio & Acoustic QC)"]
         LICENSING["Licensing Dept"]
         MERCH["Art & Merch Dept"]
         REGISTRATION["Registration Center"]
@@ -75,16 +96,13 @@ graph TB
     end
 
     %% ╔══════════════════════════════════════════╗
-    %% ║         TOOLS (6 Modules)                ║
+    %% ║   SIDEBAR BOTTOM RAIL / FOOTER DOCK      ║
     %% ╚══════════════════════════════════════════╝
-    subgraph TOOLS ["🛠️ Tools"]
+    subgraph BOTTOM_DOCK ["⚓ Sidebar Bottom Rail / Dock"]
         direction LR
-        WORKFLOW["Workflow Builder<br/>(React Flow DAG)"]
-        AUDIO_ANALYZER["Audio Analyzer<br/>(Wavesurfer + Essentia)"]
-        KNOWLEDGE["Knowledge Base<br/>(RAG + File Search)"]
-        MEMORY_MOD["Memory Agent"]
-        OBSERVABILITY["Command Center<br/>(Observability)"]
-        SETTINGS["Settings Panel"]
+        USER_STATUS["User Identity & Live Status<br/>(Avatar & Online Indicator)"]
+        QUICK_NOTES["Quick-Capture Drawer<br/>(Cmd+J or Dock Trigger)"]
+        SETTINGS_MODAL["Settings Modal Overlay<br/>(Cmd+, or Gear Trigger)"]
     end
 
     %% ╔══════════════════════════════════════════╗
@@ -389,29 +407,39 @@ graph TB
     URLSYNC --> MODROUTER
 
     %% Module Router → Module Groups
+    MODROUTER --> INTELLIGENCE
+    MODROUTER --> PROJECTS_WORKSPACE
     MODROUTER --> MANAGERS
     MODROUTER --> DEPARTMENTS
-    MODROUTER --> TOOLS
+    MODROUTER --> BOTTOM_DOCK
     MODROUTER --> STANDALONE
 
     %% Modules → State (bidirectional)
+    INTELLIGENCE --> STATE
+    PROJECTS_WORKSPACE --> STATE
     MANAGERS --> STATE
     DEPARTMENTS --> STATE
-    TOOLS --> STATE
+    BOTTOM_DOCK --> STATE
     STANDALONE --> STATE
 
     %% Modules → Services
     CREATIVE -->|"Image/Video/3D"| CREATIVE_PIPELINE
-    AUDIO_ANALYZER --> AUDIO_PIPELINE
+    DISTRIBUTION -->|"Pre-Flight Audio QC (Wavesurfer+Essentia)"| AUDIO_PIPELINE
     DISTRIBUTION -->|"Release Pipeline"| DISTRO_ENGINE
-    PUBLISHING -->|"Rights/Splits"| RIGHTS_MGMT
+    FINANCE -->|"Royalty Statement Forensics"| REVENUE_SVC
     FINANCE -->|"Billing"| BILLING_SVC
+    PUBLISHING -->|"Rights/Splits"| RIGHTS_MGMT
     ROAD -->|"Tour Planning"| TOURING_SVC
     MARKETING -->|"Campaigns"| MARKETING_SVC
     LEGAL -->|"Contracts"| LEGAL_SVC
     MERCH -->|"Merch Design"| MERCH_SVC
     SOCIAL -->|"Cross-post"| SOCIAL_SVC
     LICENSING -->|"Sync Licensing"| LICENSING_SVC
+    KNOWLEDGE -->|"RAG / Vector Query"| RAG_AGENT
+    WORKFLOW -->|"Graph Traversal"| GRAPH_SVC
+    PROJECT_CANVAS -->|"Spatial Persistence"| FSSLICE
+    QUICK_NOTES -->|"Quick Notes Capture"| APPSLICE
+    SETTINGS_MODAL -->|"Preferences / Config"| PROFILESLICE
 
     %% Services → Agent System
     AGENT_SVC --> GRAPH_SVC
@@ -499,7 +527,9 @@ graph TB
     classDef nav fill:#110E2F,stroke:#6366F1,stroke-width:2px,color:#F8FAFC
     classDef manager fill:#2D1F10,stroke:#F59E0B,stroke-width:2px,color:#F8FAFC
     classDef dept fill:#062F24,stroke:#10B981,stroke-width:2px,color:#F8FAFC
-    classDef tool fill:#23173C,stroke:#8B5CF6,stroke-width:2px,color:#F8FAFC
+    classDef intelligence fill:#1E1B4B,stroke:#6366F1,stroke-width:2px,color:#F8FAFC
+    classDef projectws fill:#0D2847,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
+    classDef dock fill:#1C1917,stroke:#A8A29E,stroke-width:2px,color:#F8FAFC
     classDef standalone fill:#2D1225,stroke:#EC4899,stroke-width:2px,color:#F8FAFC
     classDef state fill:#0B230C,stroke:#39FF14,stroke-width:2px,color:#F8FAFC
     classDef service fill:#2E1A08,stroke:#FF8C00,stroke-width:2px,color:#F8FAFC
@@ -519,7 +549,9 @@ graph TB
     class SIDEBAR,CMDBAR,URLSYNC,MODROUTER nav
     class BRAND,ROAD,CAMPAIGN,BOOKING,PUBLICIST,CREATIVE manager
     class MARKETING,SOCIAL,LEGAL,PUBLISHING,FINANCE,DISTRIBUTION,LICENSING,MERCH,REGISTRATION,SECURITY_MOD dept
-    class WORKFLOW,AUDIO_ANALYZER,KNOWLEDGE,MEMORY_MOD,OBSERVABILITY,SETTINGS tool
+    class BOARDROOM_TOP,AGENT_CANVAS_TOP,WORKFLOW,KNOWLEDGE intelligence
+    class PROJECT_CANVAS,WORKSPACE_SWITCHER,NOTEBLOCK projectws
+    class USER_STATUS,QUICK_NOTES,SETTINGS_MODAL dock
     class DASHBOARD,FOUNDERS_CHECKOUT,FOUNDERS_PORTAL,ANALYTICS,SCREENWRITER,CRM,DEVOPS,MARKETPLACE,VIDEO_POPOUT,FILES,HISTORY,DEBUG,DESKTOP_MOD standalone
     class APPSLICE,AUTHSLICE,AGENTSLICE,CREATIVESLICE,DISTROSLICE,FSSLICE,FINANCESLICE,PROFILESLICE,WORKFLOWSLICE,AUDIOSLICE,MEMSLICE,SUBSLICE,EMAILSLICE,BOARDSLICE state
     class FIREBASE_SVC,MEMBERSHIP,STORAGE_SVC,FIRESTORE_SVC,ORG_SVC,USER_SVC,AGENT_SVC,BASE_AGENT,ORCH_SVC,A2A_CLIENT,CONTEXT_STACK,RAG_AGENT,GEMINI_SVC,REFLECTION,BROWSER_AGENT,NUCLEUS,WHISK,REVENUE_SVC,BILLING_SVC,DISTRIBUTION_SVC,PUBLISHING_SVC,LEGAL_SVC,MARKETING_SVC,MERCH_SVC,TOURING_SVC,SOCIAL_SVC,LICENSING_SVC,STORAGE_QUOTA,CLOUD_STORAGE,COST_BREAKER,SYNC_SVC,PERSISTENCE,NOTIFICATIONS,MONITORING_SVC,OBSERVABILITY_SVC service
@@ -538,8 +570,8 @@ graph TB
 ## Transition Breakdown
 
 1. **Client to Auth**: A user begins at one of six client interfaces (Landing Page, Web App, Desktop, Remote, Investor Portal, or Ghost Capture). The UI hands them off to the Firebase Auth Service via the Login/Signup UI. Firebase App Check (reCAPTCHA) verifies the client integrity.
-2. **Auth to Navigation**: Upon successful auth, credentials update the `authSlice` in Zustand. The user is then directed to the Navigation layer where the Sidebar, Command Bar (⌘K), or React Router map the user to the correct lazy-loaded module.
-3. **Module to State/Services**: One of the 40+ modules (Managers, Departments, Tools, or Standalone) mounts. It connects bidirectionally to the Zustand Global Store to read/write state, and calls downward into the Domain Services (e.g., Marketing, Legal, Creative) to execute business logic.
+2. **Auth to Navigation**: Upon successful auth, credentials update the `authSlice` in Zustand. The user is then directed to the Navigation layer where the redesigned Sidebar (Top-level Swarm Intelligence & Automations cluster, Projects dropdown landing on Project Canvas with `[ Spatial Canvas | File Explorer ]` switcher, Manager's Office, Departments, and persistent Bottom Rail Dock), Command Bar (⌘K), or React Router map the user to the correct workspace surface. The legacy Tools drawer is retired.
+3. **Module to State/Services**: The selected workspace module (Swarm Intelligence & Automations, Project Workspace, Managers, Departments, Standalone, or Bottom Rail Dock) mounts. Audio analysis is handled natively inside Distribution under Pre-Flight Audio & Acoustic QC, while distributor CSV auditing is handled inside Finance under Royalty Statement Forensics. Quick notes (`Cmd+J`) and settings (`Cmd+,`) are accessible globally. Each surface connects bidirectionally to the Zustand Global Store to read/write state, and calls downward into Domain Services.
 4. **Service to Agent System**: If an action requires AI reasoning, the Domain Service calls `AgentService.execute()`. This queries the `AgentGraphService` (the Conductor) which builds a DAG of tasks.
 5. **Swarm Execution**: The Conductor delegates to specific agents in the A2A Specialist Swarm. These agents use Genkit + Gemini APIs to reason. If they need cross-domain help, they use the `A2AClient` to consult peers.
 6. **Agent to Deterministic Harness**: If an agent needs to perform a highly sensitive database action (like transferring funds or releasing music), it calls the `indii-harness` MCP Server. The Harness compiles a deterministic "Harness Run" with strict human-approval gates before saving to Firestore.

@@ -83,8 +83,8 @@ stateDiagram-v2
 | **Bridge** | `packages/main/src/preload.ts` | Exposes `electronAPI.updater` via `contextBridge` |
 | **Types** | `packages/renderer/src/types/electron.d.ts` | TypeScript interface for `ElectronAPI.updater` |
 | **UI (Passive)** | `packages/renderer/src/core/components/UpdaterMonitor.tsx` | Global floating toast — reacts to auto-triggered update events |
-| **UI (Active)** | `packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx` | **NEW** — Manual check button, channel/source config, version display |
-| **UI (Shell)** | `packages/renderer/src/modules/settings/SettingsPanel.tsx` | Routes to DesktopSection via sidebar nav |
+| **UI (Active)** | `packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx` | Manual check button, channel/source config, version display |
+| **UI (Shell)** | `packages/renderer/src/modules/settings/SettingsPanel.tsx` | Rendered within SettingsModal (accessed via persistent Sidebar Bottom Rail / `Cmd+,`) |
 
 ## IPC Channel Reference
 
@@ -102,11 +102,11 @@ stateDiagram-v2
 | `updater:downloaded` | Main → Renderer | Download complete, ready to install |
 | `updater:error` | Main → Renderer | Error during check or download |
 
-## Transition Breakdown
+## Step-by-Step Transition Breakdown
 
 1. **Build & Release Trigger:** A git tag matching `v*.*.*` is pushed to GitHub, triggering `release.yml`.
 2. **Compile and Package:** GitHub Actions runner compiles the studio app and runs `electron-builder` to package installer formats and generate platform-specific update manifests (`latest-mac.yml`, `latest.yml`, `latest-linux.yml`).
 3. **Storage Deploy:** Packaged installers and update manifests are uploaded to Firebase Storage and published on GitHub Releases.
 4. **App Update Check:** On launch or every 4 hours, the Electron Main Process retrieves `latest-mac.yml` or `latest.yml` from GitHub/Firebase Storage.
-5. **UI Notification:** If a newer version is detected, the main process fires the `updater:available` event via IPC, showing a toast or settings page alert.
+5. **UI Notification & Settings Access:** If a newer version is detected, the main process fires the `updater:available` event via IPC, presenting a global toast alert and updating the Desktop section in the Settings overlay modal (opened via the persistent Sidebar Bottom Rail / Footer Dock or `Cmd+,`).
 6. **Download and Apply:** The main process downloads the binary, emits progress updates, and installs the update either on user click (`quitAndInstall`) or app quit.

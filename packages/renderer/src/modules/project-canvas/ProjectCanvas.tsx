@@ -42,6 +42,8 @@ import { CanvasToolbar } from './components/CanvasToolbar';
 import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import type { ProjectCanvasBlock } from './types';
 import { logger } from '@/utils/logger';
+import { LayoutGrid, FolderTree } from 'lucide-react';
+import { useStore } from '@/core/store';
 
 export default function ProjectCanvas() {
     const {
@@ -74,6 +76,7 @@ export default function ProjectCanvas() {
         handleAddFrame,
     } = useProjectCanvas();
 
+    const setModule = useStore(state => state.setModule);
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Pan / Drag State
@@ -658,6 +661,25 @@ export default function ProjectCanvas() {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Dual-Mode Workspace Switcher [Spatial Canvas | File Explorer] */}
+            <div className="absolute top-6 left-6 z-30 flex items-center gap-1 bg-zinc-900/90 backdrop-blur-md p-1 rounded-xl border border-zinc-800 shadow-2xl select-none">
+                <button
+                    data-testid="project-view-canvas"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-100 text-zinc-900 shadow-sm transition-all"
+                >
+                    <LayoutGrid size={14} />
+                    <span>Spatial Canvas</span>
+                </button>
+                <button
+                    data-testid="project-view-files"
+                    onClick={() => setModule('files')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all cursor-pointer"
+                >
+                    <FolderTree size={14} />
+                    <span>File Explorer</span>
+                </button>
             </div>
 
             {/* Floating Toolbar (Top) */}

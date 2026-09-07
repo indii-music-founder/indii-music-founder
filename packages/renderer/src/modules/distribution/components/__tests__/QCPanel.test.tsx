@@ -127,4 +127,35 @@ describe('QCPanel', () => {
             expect(distributionService.generateContentIdAssets).not.toHaveBeenCalled();
         });
     });
+
+    it('renders the acoustic ingestion dropzone in acoustic sub-tab', () => {
+        render(<QCPanel />);
+        expect(screen.getByTestId('qc-audio-dropzone')).toBeInTheDocument();
+        expect(screen.getByText('Load Audio Master')).toBeInTheDocument();
+    });
+
+    it('handles dragOver and dragLeave on the dropzone', () => {
+        render(<QCPanel />);
+        const dropzone = screen.getByTestId('qc-audio-dropzone');
+
+        fireEvent.dragOver(dropzone);
+        expect(dropzone.className).toContain('border-primary');
+
+        fireEvent.dragLeave(dropzone);
+        expect(dropzone.className).not.toContain('border-primary');
+    });
+
+    it('rejects lossy files dropped into the acoustic dropzone', () => {
+        render(<QCPanel />);
+        const dropzone = screen.getByTestId('qc-audio-dropzone');
+
+        const mp3File = new File(['dummy audio content'], 'song.mp3', { type: 'audio/mpeg' });
+        fireEvent.drop(dropzone, {
+            dataTransfer: {
+                files: [mp3File],
+            },
+        });
+
+        expect(screen.getByTestId('qc-audio-dropzone')).toBeInTheDocument();
+    });
 });

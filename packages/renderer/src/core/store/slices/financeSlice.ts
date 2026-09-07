@@ -7,6 +7,8 @@ import { logger } from '@/utils/logger';
 let financeUnsubscribe: (() => void) | null = null;
 
 export interface FinanceSlice {
+    financeTab: string;
+    setFinanceTab: (tab: string) => void;
     finance: {
         earningsSummary: EarningsSummary | null;
         loading: boolean;
@@ -16,6 +18,8 @@ export interface FinanceSlice {
 }
 
 export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & SubscriptionSlice, [], [], FinanceSlice> = (set, get) => ({
+    financeTab: 'overview',
+    setFinanceTab: (tab: string) => set({ financeTab: tab }),
     finance: {
         earningsSummary: null,
         loading: false,

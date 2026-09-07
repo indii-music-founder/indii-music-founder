@@ -3,7 +3,8 @@
 ```mermaid
 flowchart TD
     subgraph Client ["Renderer (Browser / Electron App)"]
-        UI["Knowledge Base UI"]
+        UI["Knowledge Base UI (Swarm Intelligence Cluster)"]
+        RP["RightPanel Slide-Over (Cross-Department Access)"]
         KRS["KnowledgeRetrievalService"]
     end
 
@@ -58,6 +59,7 @@ flowchart TD
 
     %% Retrieval & Query Flow
     UI -->|11. Ask Question| KRS
+    RP -->|Query Knowledge| KRS
     KRS -->|12. Call queryKnowledgeBase| QKB
     QKB -->|Verify Entitlement/AppCheck| QKB
     QKB -->|13. Embed Query| EMB_QUERY
@@ -75,10 +77,9 @@ flowchart TD
     DKD -->|State: deleted| DOCS
 ```
 
-## Transition Breakdown
+## Step-by-Step Transition Breakdown
 
-1. The authenticated owner requests an upload reservation and receives a
-   server-selected document ID and owner-scoped Storage path.
+1. The user initiates document uploads or contextual queries either from the full-page Knowledge Base module (elevated to the top-level **"Swarm Intelligence & Automations"** cluster in the sidebar) or from the persistent cross-department **RightPanel slide-over**. The authenticated owner requests an upload reservation and receives a server-selected document ID and owner-scoped Storage path.
 2. The client uploads the source bytes with their SHA-256 metadata, then asks
    the backend to finalize the exact object generation.
 3. Finalization revalidates ownership, generation, and content identity before

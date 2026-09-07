@@ -23,7 +23,7 @@ graph TD
     C --> D["Display QR or Manual Code"]
     
     %% Primary Device (Laptop/Desktop)
-    D -.->|"Scan QR or Enter Code"| E["📧 User Enters Code on Primary Device<br/>(Desktop/Laptop)"]
+    D -.->|"Scan QR or Enter Code"| E["📧 User Enters Code on Primary Device<br/>(Desktop/Laptop Settings Modal)"]
     
     %% Code Redemption (Secondary Device resumes)
     B -->|"After User Enters Code"| F["Redeem Handoff Code<br/>(redeemHandoffCode)"]
@@ -104,7 +104,7 @@ graph TD
 
 **Step 1A — Secondary Device Opens Pairing Modal**
 - Device: iPad, unauth'd or no prior pairing
-- Action: User navigates to Settings → Sync Device
+- Action: User navigates to Settings (Bottom Rail Dock / `Cmd+,`) → Sync Device
 - Trigger: `PairingModal` component renders
 - Files: `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx`
 
@@ -119,7 +119,7 @@ graph TD
 **Step 1C — User Enters Code on Primary Device**
 - Device: Laptop/Desktop (or manually from iPad if no QR scan)
 - Action: User copies code from iPad screen or scans QR
-- Location: Primary device's Settings → Link Device
+- Location: Primary device's Settings Modal (Bottom Rail Dock / `Cmd+,`) → Link Device
 - File: `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` (PairingModal handles both entry modes)
 
 ### Phase 2: Code Redemption & Authentication
@@ -298,7 +298,7 @@ interface WorkspaceDoc {
 | Scenario | Behavior |
 | --- | --- |
 | Code expired | Error: "Code expired. Try again." → retry from step 1B |
-| Redeem fails (network) | Retry prompt shown. Manual retry via Settings. |
+| Redeem fails (network) | Retry prompt shown. Manual retry via Settings modal. |
 | Pull fails (auth expired) | Skip load; device stays local. User re-authenticates. |
 | Push fails (permission denied) | Log error, retry on next debounce. User notified if persistent. |
 | Conflict (cloud newer) | Show ConfirmDialog; user chooses. If decline, push override follows. |

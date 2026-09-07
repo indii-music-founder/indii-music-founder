@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Radio, PlusCircle, Library, BarChart3, Activity, CheckSquare } from 'lucide-react';
 
@@ -28,6 +28,7 @@ import { useDistributionDashboard } from './hooks/useDistributionDashboard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useTranslation } from 'react-i18next';
 import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
+import { useStore } from '@/core/store';
 
 /* ================================================================== */
 /*  Distribution Dashboard — Three-Panel Layout                        */
@@ -36,6 +37,22 @@ import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
 export default function DistributionDashboard() {
     const { t } = useTranslation();
     const { releases, loading, error, handleRetry } = useDistributionDashboard();
+    const rawDistributionTab = useStore(state => state.distributionTab);
+    const setDistributionTab = useStore(state => state.setDistributionTab);
+    const [prevRawTab, setPrevRawTab] = useState(rawDistributionTab);
+    const [currentTab, setCurrentTab] = useState<string>(() =>
+        (rawDistributionTab === 'qc' ? 'brain' : (rawDistributionTab || 'releases'))
+    );
+
+    if (rawDistributionTab !== prevRawTab) {
+        setPrevRawTab(rawDistributionTab);
+        setCurrentTab(rawDistributionTab === 'qc' ? 'brain' : (rawDistributionTab || 'releases'));
+    }
+
+    const handleTabChange = (val: string) => {
+        setCurrentTab(val);
+        setDistributionTab?.(val);
+    };
 
     return (
         <ModuleErrorBoundary moduleName="Distribution">
@@ -83,7 +100,7 @@ export default function DistributionDashboard() {
                     </div>
 
                     {/* Tabs */}
-                    <Tabs defaultValue="releases" className="flex-1 flex flex-col overflow-hidden">
+                    <Tabs value={currentTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
                         <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto scrollbar-hide bg-black/5">
                             <TabsList className="bg-transparent gap-6 p-0 h-14 inline-flex">
                                 <TabsTrigger
@@ -133,7 +150,7 @@ export default function DistributionDashboard() {
                                     data-testid="distro-tab-brain"
                                     className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
                                 >
-                                    <Activity size={14} /> {t('distribution.tabs.brain')}
+                                    <Activity size={14} /> Pre-Flight Audio & QC
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="transmission"

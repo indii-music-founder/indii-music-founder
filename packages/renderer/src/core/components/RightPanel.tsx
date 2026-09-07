@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal, FileText, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal, FileText, ShieldAlert, Book } from 'lucide-react';
 // Lazy-load subpanels to reduce the eager bundle footprint of RightPanel and the core entry chunk
 const StudioControlsPanel = React.lazy(() => import('./right-panel/StudioControlsPanel'));
 const WorkflowPanel = React.lazy(() => import('./right-panel/WorkflowPanel'));
@@ -322,6 +322,15 @@ export default function RightPanel() {
             );
         }
 
+        // TAB: KNOWLEDGE BASE (Cross-department semantic grounding)
+        if (rightPanelTab === 'knowledge') {
+            return (
+                <PanelSuspense>
+                    <KnowledgePanel toggleRightPanel={toggleRightPanel} />
+                </PanelSuspense>
+            );
+        }
+
         // TAB: ARTIFACTS
         if (rightPanelTab === 'artifacts') {
             return (
@@ -408,6 +417,7 @@ export default function RightPanel() {
     const tabs = [
         { id: 'context', icon: SlidersHorizontal, label: 'Context Controls' },
         { id: 'assets', icon: Folder, label: 'Project Assets' },
+        { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
         { id: 'artifacts', icon: FileText, label: 'Artifacts' },
         { id: 'approvals', icon: ShieldAlert, label: 'Approvals' },
         { id: 'agent', icon: Bot, label: 'Omni Agent' }

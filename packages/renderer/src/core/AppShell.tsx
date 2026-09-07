@@ -58,6 +58,8 @@ import ChatOverlay from './components/ChatOverlay';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { setSentryUser, clearSentryUser } from '@/services/observability/SentryService';
 import { OrganizationAccessProvider, useOrganizationAccess } from './context/OrganizationAccessContext';
+import { SettingsModal } from '@/modules/settings/components/SettingsModal';
+import { QuickNotesDrawer } from '@/modules/notes/components/QuickNotesDrawer';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -437,13 +439,74 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
 
     const { subscription, loading: subLoading } = useSubscription();
 
-    const { isAgentOpen, toggleAgentWindow } = useStore(
+    const {
+        isAgentOpen,
+        toggleAgentWindow,
+        isSettingsOpen,
+        setSettingsOpen,
+        isQuickNotesOpen,
+        setQuickNotesOpen,
+    } = useStore(
         useShallow(s => ({
             isAgentOpen: s.isAgentOpen,
             toggleAgentWindow: s.toggleAgentWindow,
+            isSettingsOpen: s.isSettingsOpen,
+            setSettingsOpen: s.setSettingsOpen,
+            isQuickNotesOpen: s.isQuickNotesOpen,
+            setQuickNotesOpen: s.setQuickNotesOpen,
         }))
     );
     const userId = useStore(s => s.user?.uid);
+
+    // Global settings shortcut (Cmd+, / Ctrl+,)
+    useGlobalShortcut({
+        id: 'global-settings-meta',
+        key: ',',
+        meta: true,
+        priority: 'high',
+        ignoreInput: true,
+        handler: (e) => {
+            e.preventDefault();
+            setSettingsOpen(!isSettingsOpen);
+        }
+    }, [isSettingsOpen, setSettingsOpen]);
+
+    useGlobalShortcut({
+        id: 'global-settings-ctrl',
+        key: ',',
+        ctrl: true,
+        priority: 'high',
+        ignoreInput: true,
+        handler: (e) => {
+            e.preventDefault();
+            setSettingsOpen(!isSettingsOpen);
+        }
+    }, [isSettingsOpen, setSettingsOpen]);
+
+    // Global quick notes shortcut (Cmd+J / Ctrl+J)
+    useGlobalShortcut({
+        id: 'global-quick-notes-meta',
+        key: 'j',
+        meta: true,
+        priority: 'high',
+        ignoreInput: true,
+        handler: (e) => {
+            e.preventDefault();
+            setQuickNotesOpen(!isQuickNotesOpen);
+        }
+    }, [isQuickNotesOpen, setQuickNotesOpen]);
+
+    useGlobalShortcut({
+        id: 'global-quick-notes-ctrl',
+        key: 'j',
+        ctrl: true,
+        priority: 'high',
+        ignoreInput: true,
+        handler: (e) => {
+            e.preventDefault();
+            setQuickNotesOpen(!isQuickNotesOpen);
+        }
+    }, [isQuickNotesOpen, setQuickNotesOpen]);
 
     // Global save interceptor (Cmd+S)
     useGlobalShortcut({
@@ -600,6 +663,8 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                 <ConnectDistributorModal />
                 <CreateCampaignDialog />
                 <NewProjectModal />
+                <SettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} />
+                <QuickNotesDrawer isOpen={isQuickNotesOpen} onClose={() => setQuickNotesOpen(false)} />
             </GlobalDropZone>
         </div>
     );

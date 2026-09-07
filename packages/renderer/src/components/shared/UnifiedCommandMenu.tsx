@@ -8,7 +8,8 @@ import {
     AudioWaveform, FolderOpen, Video, Map, Briefcase,
     Settings, PenTool, LayoutDashboard, Radio, CreditCard,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Building, ShieldAlert, Cpu, Workflow, Gem, AlertCircle, Lightbulb, HelpCircle, Activity, LayoutGrid, PanelRight
+    Building, ShieldAlert, Cpu, Workflow, Gem, AlertCircle, Lightbulb, HelpCircle, Activity, LayoutGrid, PanelRight,
+    StickyNote, Book
 } from 'lucide-react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { useBugReport } from '@/modules/debug';
@@ -158,9 +159,17 @@ export function UnifiedCommandMenu() {
                     </Command.Group>
 
                     <Command.Group heading="Tools & Discovery" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
-                        <Command.Item onSelect={() => runCommand(() => setModule('audio-analyzer'))} className="flex items-center gap-3 cursor-pointer">
+                        <Command.Item onSelect={() => runCommand(() => setModule('distribution', { tab: 'qc' }))} className="flex items-center gap-3 cursor-pointer">
                             <AudioWaveform className="w-4 h-4 text-cyan-400" />
-                            <span>Audio Fidelity Analyzer</span>
+                            <span>Audio Pre-Flight QC (Acoustics & Loudness)</span>
+                        </Command.Item>
+                        <Command.Item onSelect={() => runCommand(() => useStore.getState().setQuickNotesOpen(true))} className="flex items-center gap-3 cursor-pointer">
+                            <StickyNote className="w-4 h-4 text-amber-400" />
+                            <span>Quick Notes Drawer (⌘J)</span>
+                        </Command.Item>
+                        <Command.Item onSelect={() => runCommand(() => setModule('knowledge'))} className="flex items-center gap-3 cursor-pointer">
+                            <Book className="w-4 h-4 text-emerald-400" />
+                            <span>Knowledge Base (Intelligence)</span>
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('history'))} className="flex items-center gap-3 cursor-pointer">
                             <FolderOpen className="w-4 h-4 text-green-300" />
@@ -192,9 +201,9 @@ export function UnifiedCommandMenu() {
                     </Command.Group>
 
                     <Command.Group heading="System" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
-                        <Command.Item onSelect={() => runCommand(() => setModule('settings'))} className="flex items-center gap-3 cursor-pointer">
+                        <Command.Item onSelect={() => runCommand(() => useStore.getState().setSettingsOpen(true))} className="flex items-center gap-3 cursor-pointer">
                             <Settings className="w-4 h-4 text-cyan-400" />
-                            <span>Settings & Preferences</span>
+                            <span>Settings & Preferences (⌘,)</span>
                         </Command.Item>
                         {isGodMode && (
                             // ISSUE-1269: the sidebar's "Command Center" pill was removed for routing to this

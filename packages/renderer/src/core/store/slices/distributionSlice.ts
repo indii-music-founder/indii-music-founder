@@ -7,6 +7,8 @@ import type { StoreState } from '../types';
 import { getE2ELocalStorageValue, isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export interface DistributionSlice {
+    distributionTab: string;
+    setDistributionTab: (tab: string) => void;
     distribution: {
         connections: DistributorConnection[];
         availableDistributors: DistributorId[];
@@ -23,6 +25,8 @@ export interface DistributionSlice {
 }
 
 export const createDistributionSlice: StateCreator<DistributionSlice> = (set, get) => ({
+    distributionTab: 'releases',
+    setDistributionTab: (tab: string) => set({ distributionTab: tab }),
     distribution: {
         connections: [],
         availableDistributors: [],

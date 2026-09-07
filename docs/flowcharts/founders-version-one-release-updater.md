@@ -4,7 +4,7 @@ Purpose: maps the desktop release identity and auto-update path for the Founders
 
 ```mermaid
 graph TD
-    UserSettings["User opens Settings Desktop Updates"] --> DesktopSection["DesktopSection release card"]
+    UserSettings["User opens Settings (Bottom Rail Dock / Cmd+,) > Desktop"] --> DesktopSection["DesktopSection release card"]
     DesktopSection --> ConfigIPC["electronAPI.updater.getConfig"]
     ConfigIPC --> UpdaterMain["updater.ts release identity and feed config"]
     UpdaterMain --> ReleaseLabel["Public label Founders Version One"]
@@ -40,9 +40,9 @@ graph TD
     style ReleaseWorkflow fill:#8A2BE2,stroke:#5b21b6,stroke-width:2px,color:#fff
 ```
 
-## Transition Breakdown
+## Step-by-Step Transition Breakdown
 
-1. `DesktopSection.tsx` asks `electronAPI.updater.getConfig()` for the current channel, source, updater availability, public release label, founder release number, and technical build version.
+1. The user opens Settings via the persistent Sidebar Bottom Rail / Footer Dock or `Cmd+,` floating overlay modal. Under the Desktop Updates section, `DesktopSection.tsx` asks `electronAPI.updater.getConfig()` for the current channel, source, updater availability, public release label, founder release number, and technical build version.
 2. `packages/main/src/updater.ts` returns `Founders Version One` as the human release identity and `app.getVersion()` as the semver value used by Electron updater. These must stay separate because Electron updater rejects lower versions when `allowDowngrade` is false.
 3. Manual update checks call `updater:check`, which queries the active feed. GitHub Releases is the default source; Firebase remains selectable only when its generic feed is correctly published and public.
 4. Missing manifest failures such as `latest-mac.yml` returning `404` are converted into a user-safe message explaining that the release needs repaired updater manifests.

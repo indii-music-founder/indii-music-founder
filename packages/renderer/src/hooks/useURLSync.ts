@@ -25,6 +25,8 @@ const ROUTE_ALIASES: Record<string, string> = {
     'video-studio': 'creative',
     'creative-director': 'creative',
     'knowledge-base': 'knowledge',
+    'audio-analyzer': 'distribution',
+    'format-foundry': 'finance',
 };
 
 function resolvePathModule(pathSegment: string): string {
@@ -62,13 +64,23 @@ export function useURLSync(options: URLSyncOptions = {}) {
             hasInitializedFromURL.current = false;
             return;
         }
-        const targetModule = resolvePathModule(pathSegments[0] || 'dashboard');
+        const rawSegment = pathSegments[0] || 'dashboard';
+        const targetModule = resolvePathModule(rawSegment);
+        const targetTab = rawSegment === 'audio-analyzer' ? 'qc' : rawSegment === 'format-foundry' ? 'forensics' : undefined;
 
         if (targetModule !== currentModule && isValidModule(targetModule)) {
             pendingPathModule.current = targetModule;
-            setModule(targetModule);
+            setModule(targetModule, targetTab ? { tab: targetTab } : undefined);
         } else {
             pendingPathModule.current = null;
+            if (targetTab) {
+                const store = useStore.getState();
+                if (targetModule === 'distribution') {
+                    store.setDistributionTab(targetTab);
+                } else if (targetModule === 'finance') {
+                    store.setFinanceTab(targetTab);
+                }
+            }
         }
 
         // Mark initialization complete after first run

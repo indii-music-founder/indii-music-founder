@@ -18,6 +18,7 @@ graph TD
         
         subgraph DesktopDevice ["💻 DESKTOP / LAPTOP VIEWPORT"]
             ED["Electron Desktop Shell (packages/main)<br/>[STRICT DESKTOP PATH: No browser-based studio login]"]
+            SA["indii Studio Workspace (packages/renderer)<br/>[Swarm Intelligence, Projects, Departments, Bottom Rail Dock]"]
         end
     end
 
@@ -116,7 +117,7 @@ graph TD
     classDef ai fill:#0F2F1D,stroke:#4ADE80,stroke-width:2px,color:#F8FAFC;
     classDef ext fill:#2D0C0F,stroke:#F87171,stroke-width:2px,color:#F8FAFC;
 
-    class LP,SA,ED,MR client;
+    class LP,SA,ED,MR,TR client;
     class ZS,COND,AGS,A2A,REG logic;
     class MCP,COMP,RUN,BMH harness;
     class LEGAL,MKT,BRAND,CRE,FIN,MUS,DIST,PUB,OTHER logic;
@@ -127,7 +128,7 @@ graph TD
 
 ## Transition Breakdown (Updated)
 
-1. **Entry & Auth (Client → State):** A user enters via Landing, Studio Web App, Desktop Shell, or indiiREMOTE. All client surfaces hydrate the **Zustand Global Store**.
+1. **Entry & Auth (Client → State):** A user enters via Landing, the Desktop Shell hosting the **indii Studio Workspace** (featuring the realigned navigation: elevated Swarm Intelligence & Automations cluster, active project landing on Project Canvas with `[ Spatial Canvas | File Explorer ]`, departments including Distribution Pre-Flight QC and Finance Statement Forensics, and persistent Bottom Rail Dock), or indiiREMOTE. All client surfaces hydrate the **Zustand Global Store**.
 2. **Orchestration Dispatch (State → Conductor):** A user request flows into the **indii Conductor** (AgentGraphService). The Conductor queries the Agent Registry before planning execution graphs.
 3. **Delegation (Conductor → Specialist Swarm → A2AClient):** Conductor orchestrates specialist agents via AgentRegistry, utilizing A2AClient to dispatch P2P requests with scope-guards.
 4. **Deterministic Harness Generation (Swarm → Harness Engine):** *[NEW]* Probabilistic Swarm Agents DO NOT invent execution readiness. They invoke the **`indii-harness` MCP Server**, executing deterministic **HarnessCompilers** for their respective domains. This outputs a normalized **HarnessRun** packet with attached, immutable Approval Gates (Draft, User Required, Attorney Required).

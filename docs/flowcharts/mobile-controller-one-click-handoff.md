@@ -5,7 +5,7 @@ This flowchart defines the domain, authentication, presence, and execution bound
 ```mermaid
 flowchart TD
     Founder["founder.indii.music marketing"] --> StudioPreview["indii.music Studio preview"]
-    Electron["Electron Desktop Studio"] --> RemoteSettings["Settings: Mobile Remote"]
+    Electron["Electron Desktop Studio"] --> RemoteSettings["Settings Modal (Bottom Rail / Cmd+,) > Mobile Remote"]
     RemoteSettings --> CreateCode["createHandoffCode Cloud Function"]
     CreateCode --> HandoffDoc["auth_handoffs one-time document"]
     CreateCode --> PairLink["app.indii.music/mobile-remote?code=..."]
@@ -45,7 +45,7 @@ flowchart TD
 
 ## Transition breakdown
 
-1. The native Electron Studio is the only Studio executor. In `Settings → Mobile Remote`, `RemoteSection.tsx` requests a pairing code using the desktop user’s current Firebase ID token.
+1. The native Electron Studio is the only Studio executor. In the Settings overlay modal (accessed via the persistent Sidebar Bottom Rail / Footer Dock or `Cmd+,`) under Mobile Remote, `RemoteSection.tsx` requests a pairing code using the desktop user’s current Firebase ID token.
 2. `createHandoffCode` verifies that ID token, creates a random 64-character hexadecimal code, and stores a five-minute `auth_handoffs/{code}` document containing the owner identity and expiry.
 3. The desktop renders a QR/link targeting `https://app.indii.music/mobile-remote?code=...`. The user opens that link on an iPhone or iPad; manual code entry is a fallback, not the primary flow.
 4. `App.tsx` treats the entire `app.indii.music` host as Controller-only and renders `MobileRemote` before the ordinary authentication gate. This ordering is required because the link itself establishes the phone’s Firebase session.

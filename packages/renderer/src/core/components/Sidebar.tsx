@@ -7,7 +7,7 @@ import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, Camera, LayoutGrid, type LucideIcon } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, StickyNote, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, Camera, LayoutGrid, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'motion/react';
@@ -137,14 +137,26 @@ export default function Sidebar() {
     const { canAccessModule } = useOrganizationAccess();
 
     // UI state for collapsible sections
+    // UI state for collapsible sections
     const [sectionsOpen, setSectionsOpen] = useState({
         managers: true,
         departments: true,
-        tools: true,
     });
 
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
-    const { currentModule, setModule, isSidebarOpen, toggleSidebar, conversationMode, setConversationMode } = useStore(
+    const {
+        currentModule,
+        setModule,
+        isSidebarOpen,
+        toggleSidebar,
+        conversationMode,
+        setConversationMode,
+        user,
+        userProfile,
+        isOffline,
+        setSettingsOpen,
+        setQuickNotesOpen,
+    } = useStore(
         useShallow((state) => ({
             currentModule: state.currentModule,
             setModule: state.setModule,
@@ -152,10 +164,24 @@ export default function Sidebar() {
             toggleSidebar: state.toggleSidebar,
             conversationMode: state.conversationMode,
             setConversationMode: state.setConversationMode,
+            user: state.user,
+            userProfile: state.userProfile,
+            isOffline: state.isOffline,
+            setSettingsOpen: state.setSettingsOpen,
+            setQuickNotesOpen: state.setQuickNotesOpen,
         }))
     );
     const isBoardroomMode = conversationMode === 'boardroom';
     const toggleBoardroomMode = () => setConversationMode(isBoardroomMode ? 'department' : 'boardroom');
+
+    const displayName = userProfile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Artist';
+    const photoUrl = userProfile?.photoURL || user?.photoURL;
+    const initials = displayName
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2) || 'IN';
 
     // Navigation throttle to prevent rapid-fire module switching (Firestore b815 crash fix)
     const lastNavTimeRef = useRef(0);
@@ -166,7 +192,12 @@ export default function Sidebar() {
         setModule(moduleId);
     }, [setModule]);
 
-    // Grouped navigation items based on the screenshot
+    // Grouped navigation items
+    const intelligenceItems: SidebarItem[] = [
+        { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
+        { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+    ];
+
     const managerItems: SidebarItem[] = [
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
         { id: 'road', icon: Users, label: 'Road/tour' },
@@ -189,25 +220,13 @@ export default function Sidebar() {
         { id: 'security', icon: Shield, label: 'Security Agent' },
     ];
 
-    const toolItems: SidebarItem[] = [
-        { id: 'project-canvas', icon: LayoutGrid, label: 'Project Canvas' },
-        { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
-        { id: 'raw-converter', icon: Camera, label: 'RAW Converter' },
-        { id: 'format-foundry', icon: Layers, label: 'Capability Foundry' },
-        { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
-        { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
-        { id: 'notes', icon: FileText, label: 'Notes' },
-        { id: 'memory', icon: AudioLines, label: 'Memory Agent' },
-        { id: 'settings', icon: Settings, label: 'Settings' },
-    ];
-
     // Pre-launch feature gating — filter out modules that are behind disabled flags
     const gatedModules = useGatedModules();
+    const visibleIntelligenceItems = intelligenceItems.filter(item =>
+        !gatedModules.has(item.id) && canAccessModule(item.id));
     const visibleManagerItems = managerItems.filter(item =>
         !gatedModules.has(item.id) && canAccessModule(item.id));
     const visibleDepartmentItems = departmentItems.filter(item =>
-        !gatedModules.has(item.id) && canAccessModule(item.id));
-    const visibleToolItems = toolItems.filter(item =>
         !gatedModules.has(item.id) && canAccessModule(item.id));
 
     return (
@@ -300,51 +319,68 @@ export default function Sidebar() {
               Metrics" tab inside the Devops module.
             */}
 
-            {/* Agent Canvas Drawer Toggle */}
-            <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-2 border-b border-white/5 border-dashed'}`}>
-                <AgentCanvasToggle variant={isSidebarOpen ? 'sidebar' : 'compact'} />
-            </div>
+            {/* Swarm Intelligence & Automations Cluster */}
+            <div className={`px-3 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-2 border-b border-white/5 border-dashed'}`}>
+                {isSidebarOpen && (
+                    <div className="px-2 pb-1.5 text-[10px] font-bold text-indigo-400/80 uppercase tracking-wider">
+                        Intelligence & Automations
+                    </div>
+                )}
+                <div className="space-y-1">
+                    {/* Boardroom Zen Mode Toggle */}
+                    <button
+                        onClick={toggleBoardroomMode}
+                        className={cn(
+                            "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
+                            isBoardroomMode
+                                ? "bg-indigo-500/20 border border-indigo-500/50"
+                                : "bg-linear-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_var(--color-dept-creative-glow)]",
+                            isSidebarOpen ? "gap-3" : ""
+                        )}
+                        style={{
+                            boxShadow: isBoardroomMode
+                                ? '0 0 20px var(--color-dept-creative-glow, rgba(0, 255, 102, 0.3))'
+                                : undefined
+                        }}
+                        aria-label="Enter Boardroom"
+                        title={!isSidebarOpen ? "Enter Boardroom" : undefined}
+                    >
+                        {isBoardroomMode && (
+                            <div className="absolute inset-0 rounded-xl border border-indigo-500/20 animate-pulse pointer-events-none" />
+                        )}
+                        <Network size={16} className={cn(
+                            "transition-all relative z-10",
+                            isBoardroomMode
+                                ? "text-indigo-300 drop-shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+                                : "text-indigo-400 group-hover:text-indigo-300 group-hover:scale-110"
+                        )} />
+                        {isSidebarOpen ? (
+                            <span className={cn(
+                                "text-sm font-bold tracking-wide transition-colors relative z-10",
+                                isBoardroomMode ? "text-indigo-200" : "text-indigo-300/90 group-hover:text-indigo-200"
+                            )}>
+                                Boardroom
+                            </span>
+                        ) : null}
 
-            {/* Boardroom Zen Mode Toggle */}
-            <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
-                <button
-                    onClick={toggleBoardroomMode}
-                    className={cn(
-                        "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
-                        isBoardroomMode
-                            ? "bg-indigo-500/20 border border-indigo-500/50"
-                            : "bg-linear-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_var(--color-dept-creative-glow)]",
-                        isSidebarOpen ? "gap-3" : ""
-                    )}
-                    style={{
-                        boxShadow: isBoardroomMode
-                            ? '0 0 20px var(--color-dept-creative-glow, rgba(0, 255, 102, 0.3))'
-                            : undefined
-                    }}
-                    aria-label="Enter Boardroom"
-                    title={!isSidebarOpen ? "Enter Boardroom" : undefined}
-                >
-                    {isBoardroomMode && (
-                        <div className="absolute inset-0 rounded-xl border border-indigo-500/20 animate-pulse pointer-events-none" />
-                    )}
-                    <Network size={16} className={cn(
-                        "transition-all relative z-10",
-                        isBoardroomMode
-                            ? "text-indigo-300 drop-shadow-[0_0_8px_rgba(99,102,241,0.8)]"
-                            : "text-indigo-400 group-hover:text-indigo-300 group-hover:scale-110"
-                    )} />
-                    {isSidebarOpen ? (
-                        <span className={cn(
-                            "text-sm font-bold tracking-wide transition-colors relative z-10",
-                            isBoardroomMode ? "text-indigo-200" : "text-indigo-300/90 group-hover:text-indigo-200"
-                        )}>
-                            Boardroom
-                        </span>
-                    ) : null}
+                        {/* Shimmer sweep */}
+                        <div className="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-indigo-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                    </button>
 
-                    {/* Shimmer sweep */}
-                    <div className="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-indigo-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
-                </button>
+                    {/* Agent Canvas Drawer Toggle */}
+                    <AgentCanvasToggle variant={isSidebarOpen ? 'sidebar' : 'compact'} />
+
+                    {/* Workflow Builder & Knowledge Base */}
+                    {visibleIntelligenceItems.map(item => (
+                        <NavItem
+                            key={item.id}
+                            item={item}
+                            isActive={currentModule === item.id}
+                            isSidebarOpen={isSidebarOpen}
+                            onNavigate={throttledSetModule}
+                        />
+                    ))}
+                </div>
             </div>
 
             {/* Founders Round — Primary Sales CTA */}
@@ -469,42 +505,142 @@ export default function Sidebar() {
                     </AnimatePresence>
                 </div>
 
-                {/* Tools */}
-                <div className="mb-2">
-                    {isSidebarOpen && (
-                        <button
-                            onClick={() => setSectionsOpen(s => ({ ...s, tools: !s.tools }))}
-                            aria-expanded={sectionsOpen.tools}
-                            className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
-                        >
-                            <span className="whitespace-nowrap">Tools</span>
-                            <ChevronDown size={14} className={cn("transition-transform duration-200", sectionsOpen.tools ? "rotate-180" : "")} />
-                        </button>
-                    )}
-                    <AnimatePresence initial={false}>
-                        {(!isSidebarOpen || sectionsOpen.tools) && (
-                            <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="space-y-0.5 overflow-hidden"
-                            >
-                                {visibleToolItems.map(item => (
-                                    <NavItem key={item.id} item={item} isActive={currentModule === item.id} isSidebarOpen={isSidebarOpen} onNavigate={throttledSetModule} />
-                                ))}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
             </div>
-            {/* Footer */}
-            <div className={`p-4 border-t border-white/5 mt-auto flex flex-col gap-2 ${!isSidebarOpen ? 'items-center' : ''}`}>
-                {isSidebarOpen && (
-                    <p className="text-[10px] text-secondary text-center italic">
+            {/* Persistent Bottom Rail Dock */}
+            {isSidebarOpen ? (
+                <div className="p-3 border-t border-white/10 mt-auto bg-black/40 backdrop-blur-md flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                        {/* User Identity Pill */}
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="relative shrink-0">
+                                {photoUrl ? (
+                                    <img src={photoUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover border border-white/20" />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                                        {initials}
+                                    </div>
+                                )}
+                                <span
+                                    className={cn(
+                                        "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[#0c1015]",
+                                        isOffline ? "bg-zinc-500" : "bg-emerald-500"
+                                    )}
+                                    title={isOffline ? "Offline" : "Online"}
+                                />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-semibold text-white truncate" title={displayName}>
+                                    {displayName}
+                                </p>
+                                <div className="flex items-center gap-1.5">
+                                    <span className={cn("w-1.5 h-1.5 rounded-full", isOffline ? "bg-zinc-500" : "bg-emerald-400 animate-pulse")} />
+                                    <span className="text-[10px] text-zinc-400 font-medium tracking-tight">
+                                        {isOffline ? "Offline" : "Online"}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quick Actions (Notes & Settings) */}
+                        <div className="flex items-center gap-1 shrink-0">
+                            <TooltipProvider delayDuration={150}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            onClick={() => setQuickNotesOpen(true)}
+                                            data-testid="bottom-rail-notes-btn"
+                                            className="p-1.5 rounded-lg text-zinc-400 hover:text-amber-300 hover:bg-amber-400/10 transition-colors cursor-pointer"
+                                            aria-label="Quick Notes (⌘J)"
+                                        >
+                                            <StickyNote size={16} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 text-xs">
+                                        Quick Notes (⌘J)
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+
+                            <TooltipProvider delayDuration={150}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            onClick={() => setSettingsOpen(true)}
+                                            data-testid="bottom-rail-settings-btn"
+                                            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                                            aria-label="Settings (⌘,)"
+                                        >
+                                            <Settings size={16} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 text-xs">
+                                        Settings (⌘,)
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
+                    </div>
+
+                    {/* Detroit Music Badge */}
+                    <p className="text-[9px] text-zinc-500 text-center italic tracking-wider">
                         made in Detroit exclusively for independent music artists
                     </p>
-                )}
-            </div>
+                </div>
+            ) : (
+                <div className="p-3 border-t border-white/10 mt-auto flex flex-col items-center gap-3 bg-black/40">
+                    <div className="relative">
+                        {photoUrl ? (
+                            <img src={photoUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover border border-white/20" />
+                        ) : (
+                            <div className="w-8 h-8 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                                {initials}
+                            </div>
+                        )}
+                        <span
+                            className={cn(
+                                "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-[#0c1015]",
+                                isOffline ? "bg-zinc-500" : "bg-emerald-500"
+                            )}
+                        />
+                    </div>
+
+                    <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={() => setQuickNotesOpen(true)}
+                                    data-testid="bottom-rail-notes-btn"
+                                    className="p-2 rounded-lg text-zinc-400 hover:text-amber-300 hover:bg-amber-400/10 transition-colors cursor-pointer"
+                                    aria-label="Quick Notes (⌘J)"
+                                >
+                                    <StickyNote size={18} />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 text-xs">
+                                Quick Notes (⌘J)
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider delayDuration={100}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={() => setSettingsOpen(true)}
+                                    data-testid="bottom-rail-settings-btn"
+                                    className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                                    aria-label="Settings (⌘,)"
+                                >
+                                    <Settings size={18} />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 text-xs">
+                                Settings (⌘,)
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            )}
         </motion.nav>
     );
 };
