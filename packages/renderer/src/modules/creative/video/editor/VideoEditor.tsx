@@ -14,6 +14,7 @@ import { useDesktopRenderRelay } from '@/services/video/DesktopRenderRelayServic
 import AnnotationPalette from "../../components/AnnotationPalette";
 import EditDefinitionsPanel from "../../components/EditDefinitionsPanel";
 import { STUDIO_COLORS, CreativeColor } from '../../constants';
+import { Clapperboard, Scissors, Layers } from 'lucide-react';
 
 interface VideoEditorProps {
     initialVideo?: HistoryItem;
@@ -159,15 +160,49 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
             <StudioToolbar
                 className="bg-gray-900 border-gray-800"
                 left={
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => useVideoEditorStore.getState().setViewMode('director')}
-                            className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-2 py-1 rounded-md text-[10px] font-bold uppercase transition-colors"
+                    <div className="flex items-center gap-3">
+                        {/* Consistent mode pill — matches the one in VideoWorkflow */}
+                        <div
+                            className="flex items-center gap-0 bg-gray-800 border border-gray-700 rounded-full p-0.5"
+                            role="tablist"
+                            aria-label="Video production mode"
+                            data-testid="video-editor-mode-switcher"
                         >
-                            &larr; Back to Director
-                        </button>
-                        <h2 className="font-bold text-sm border-l border-gray-800 pl-4">Studio Editor</h2>
-                        <span className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">{project.width}x{project.height} @ {project.fps}fps</span>
+                            <button
+                                role="tab"
+                                aria-selected={false}
+                                onClick={() => useVideoEditorStore.getState().setViewMode('director')}
+                                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-gray-300 hover:bg-gray-700 transition-all"
+                                title="Director — generate & preview video"
+                                data-testid="video-mode-director"
+                            >
+                                <Clapperboard size={11} className="opacity-60" />
+                                <span>Director</span>
+                            </button>
+                            <button
+                                role="tab"
+                                aria-selected={true}
+                                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-700 text-white shadow-sm transition-all"
+                                title="Timeline Editor — cut, trim & arrange clips (⌘E)"
+                                data-testid="video-mode-editor"
+                                disabled
+                            >
+                                <Scissors size={11} className="text-blue-400" />
+                                <span>Timeline Editor</span>
+                            </button>
+                            <button
+                                role="tab"
+                                aria-selected={false}
+                                onClick={() => useVideoEditorStore.getState().setViewMode('storyboard')}
+                                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-gray-300 hover:bg-gray-700 transition-all"
+                                title="Storyboard — plan & sequence your shots"
+                                data-testid="video-mode-storyboard"
+                            >
+                                <Layers size={11} className="opacity-60" />
+                                <span>Storyboard</span>
+                            </button>
+                        </div>
+                        <span className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700">{project.width}x{project.height} @ {project.fps}fps</span>
                     </div>
                 }
                 right={

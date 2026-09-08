@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { AgentHeader } from './AgentHeader';
 import { EmptyState } from './EmptyState';
 import { WorkspaceCanvas } from './WorkspaceCanvas';
@@ -44,6 +45,14 @@ export default function AgentWorkspace({ studioSlot }: AgentWorkspaceProps = {})
         removeCanvasItem: s.removeCanvasItem
     })));
 
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = 0;
+        }
+    }, []);
+
     return (
         <div className="flex-1 flex flex-col h-full bg-grid-white/[0.02] relative overflow-hidden" data-testid="agent-workspace">
             {/* Background Glows */}
@@ -54,7 +63,7 @@ export default function AgentWorkspace({ studioSlot }: AgentWorkspaceProps = {})
             <AgentHeader uptime={uptime} isProcessing={isAgentProcessing} />
 
             {/* Center: Canvas or Empty State */}
-            <div className="flex-1 overflow-y-auto pb-32">
+            <div ref={scrollContainerRef} data-workspace-scroller className="flex-1 overflow-y-auto pb-32">
                 {/* Prioritized Operational Flow: Approval gates are always visible when autonomous agents halt */}
                 <OperationalApprovalGateBanner className="mx-auto w-full max-w-6xl px-4 pt-4 mb-2" />
 

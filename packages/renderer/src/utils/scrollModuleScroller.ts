@@ -1,18 +1,23 @@
 /**
- * Scrolls the app shell's module scroller (the overflow container that holds
- * whatever module is active) back to the very top.
+ * Scrolls the app shell's module scroller and any internal workspace scroller
+ * back to the very top.
  *
- * Used when a dashboard overlay collapses: the removal shifts the layout, and
- * the founder wants the indii logo and "My Dashboard" title visible again
- * rather than wherever mid-scroll the viewport happened to be.
+ * Used when a dashboard overlay collapses or on module mount: the founder wants
+ * the top greeting / header visible rather than wherever mid-scroll the viewport
+ * happened to be.
  *
- * Returns true when a scroller was found and scrolled.
+ * Returns true when at least one scroller was found and scrolled.
  */
 export function scrollModuleScrollerToTop(): boolean {
     if (typeof document === 'undefined') return false;
-    const scroller = document.querySelector<HTMLElement>('[data-module-scroller]');
-    if (!scroller) return false;
-    scroller.scrollTo({ top: 0, behavior: 'auto' });
+    const scrollers = document.querySelectorAll<HTMLElement>('[data-module-scroller], [data-workspace-scroller]');
+    if (scrollers.length === 0) return false;
+    scrollers.forEach(scroller => {
+        if (typeof scroller.scrollTo === 'function') {
+            scroller.scrollTo({ top: 0, behavior: 'auto' });
+        }
+        scroller.scrollTop = 0;
+    });
     return true;
 }
 

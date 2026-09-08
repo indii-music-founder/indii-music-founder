@@ -12,7 +12,7 @@ import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '@/services/firebase';
 import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
 import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
-import { Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film, Send } from 'lucide-react';
+import { Clapperboard, Scissors, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film, Send, Settings } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { StoryboardTimeline } from './components/StoryboardTimeline';
 import { SessionIngestionPanel } from './components/SessionIngestionPanel';
@@ -1016,34 +1016,67 @@ export default function VideoWorkflow() {
                             )}
                 </div>
 
-                {/* Mode Switcher Shortcut buttons (Overlay) */}
+                {/* Video Production Mode Switcher — persistent labeled segmented pill */}
                 <div
-                    className={`absolute z-40 flex gap-2 ${
-                        workspaceMode === 'focused'
-                            ? 'left-3 top-3 flex-row'
-                            : 'left-4 top-24 flex-col'
-                    }`}
-                    data-testid="video-mode-actions"
+                    className="absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-0 bg-black/60 border border-white/10 rounded-full p-1 shadow-xl backdrop-blur-md"
+                    data-testid="video-mode-switcher"
+                    role="tablist"
+                    aria-label="Video production mode"
                 >
+                    <button
+                        role="tab"
+                        aria-selected={viewMode === 'director'}
+                        onClick={() => setViewMode('director')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                            viewMode === 'director'
+                                ? 'bg-white/15 text-white shadow-sm'
+                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/8'
+                        }`}
+                        title="Director — generate &amp; preview video (⌘E to toggle)"
+                        data-testid="video-mode-director"
+                    >
+                        <Clapperboard size={13} className={viewMode === 'director' ? 'text-green-400' : 'opacity-60'} />
+                        <span>Director</span>
+                    </button>
+                    <button
+                        role="tab"
+                        aria-selected={viewMode === 'editor'}
+                        onClick={() => setViewMode('editor')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                            viewMode === 'editor'
+                                ? 'bg-white/15 text-white shadow-sm'
+                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/8'
+                        }`}
+                        title="Timeline Editor — cut, trim &amp; arrange clips (⌘E to toggle)"
+                        data-testid="video-mode-editor"
+                    >
+                        <Scissors size={13} className={viewMode === 'editor' ? 'text-blue-400' : 'opacity-60'} />
+                        <span>Timeline Editor</span>
+                    </button>
+                    <button
+                        role="tab"
+                        aria-selected={viewMode === 'storyboard'}
+                        onClick={() => setViewMode('storyboard')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                            viewMode === 'storyboard'
+                                ? 'bg-white/15 text-white shadow-sm'
+                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/8'
+                        }`}
+                        title="Storyboard — plan &amp; sequence your shots"
+                        data-testid="video-mode-storyboard"
+                    >
+                        <Layers size={13} className={viewMode === 'storyboard' ? 'text-indigo-400' : 'opacity-60'} />
+                        <span>Storyboard</span>
+                    </button>
+                </div>
+
+                {/* Session Ingestion (keep in top-left, separate from mode pill) */}
+                <div className="absolute left-4 top-3 z-40" data-testid="video-mode-actions">
                     <SessionIngestionPanel
                         organizationId={currentOrganizationId}
                         projectId={currentProjectId}
                         onOpenProxy={openSessionProxy}
                     />
-                    <button
-                        onClick={() => setViewMode('editor')}
-                        className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-green-400 hover:bg-green-500/10 transition-all shadow-xl backdrop-blur-md"
-                        title="Open Timeline Editor"
-                    >
-                        <Settings size={18} />
-                    </button>
-                    <button
-                        onClick={() => setViewMode('storyboard')}
-                        className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all shadow-xl backdrop-blur-md"
-                        title="Open Storyboard Sync"
-                    >
-                        <Layers size={18} />
-                    </button>
                 </div>
 
                 {/* Technical Settings Panel (Collapsible, Bottom-Right) */}

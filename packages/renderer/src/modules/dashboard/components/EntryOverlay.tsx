@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Send, Sparkles, MessageSquare, Bot, X } from 'lucide-react';
@@ -31,13 +31,6 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
     const [input, setInput] = useState('');
     const [isCollapsed, setIsCollapsed] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
-
-    // Auto-focus on mount
-    useEffect(() => {
-        if (!isLoading) {
-            inputRef.current?.focus();
-        }
-    }, [isLoading]);
 
     const handleSubmit = (e?: React.FormEvent) => {
         e?.preventDefault();

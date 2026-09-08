@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import AgentWorkspace from './components/AgentWorkspace';
 import { CustomDashboard } from './components/CustomDashboard';
@@ -75,6 +75,10 @@ export default function Dashboard() {
     };
     const { isAnyPhone } = useMobile();
     const setModule = useStore(state => state.setModule);
+
+    useEffect(() => {
+        scrollModuleScrollerToTopAfterPaint();
+    }, []);
 
     return (
         <ModuleErrorBoundary moduleName="Dashboard">
