@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FUNCTION_INTELLIGENCE_MODELS, NANO_BANANA_CAPABILITIES } from '../config/models';
-import { getVertexAIClient, getVertexAIBaseUrl, resetVertexAIClient } from './vertexClient';
+import { getVertexAIClient, resetVertexAIClient } from './vertexClient';
 import { normalizeVideoAspectRatio, normalizeVideoDuration, normalizePersonGeneration } from '../shared/creativeNormalizers';
 import { z } from 'zod';
 
@@ -258,8 +258,8 @@ describe('indiiOS Layer 1: Vertex AI Integrations for indii.music', () => {
   });
 
   describe('4. Gemini Omni Flash: Multimodal Video Continuity & Remix', () => {
-    it('uses gemini-omni-flash-preview for conversational remix and visual QA', () => {
-      expect(FUNCTION_INTELLIGENCE_MODELS.VIDEO.OMNI).toBe('gemini-omni-flash-preview');
+    it('uses gemini-omni-1.1-flash-preview for conversational remix and visual QA', () => {
+      expect(FUNCTION_INTELLIGENCE_MODELS.VIDEO.OMNI).toBe('gemini-omni-1.1-flash-preview');
     });
 
     it('executes multimodal visual analysis across sequential video frames', async () => {
@@ -282,7 +282,7 @@ describe('indiiOS Layer 1: Vertex AI Integrations for indii.music', () => {
       });
 
       const ai = getVertexAIClient('indii-music-founder', 'global');
-      const result = await ai.models.generateContent({
+      await ai.models.generateContent({
         model: FUNCTION_INTELLIGENCE_MODELS.VIDEO.OMNI,
         contents: [
           {
@@ -301,7 +301,7 @@ describe('indiiOS Layer 1: Vertex AI Integrations for indii.music', () => {
 
       expect(mockGenerateContent).toHaveBeenCalledTimes(1);
       const callArgs = mockGenerateContent.mock.calls[0][0];
-      expect(callArgs.model).toBe('gemini-omni-flash-preview');
+      expect(callArgs.model).toBe(FUNCTION_INTELLIGENCE_MODELS.VIDEO.OMNI);
       expect(callArgs.contents[0].parts).toHaveLength(3);
     });
   });
