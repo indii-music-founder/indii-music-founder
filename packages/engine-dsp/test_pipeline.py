@@ -187,6 +187,8 @@ class AnalyzerTests(unittest.TestCase):
         self.assertEqual(profile["analyzer"], "librosa+soundfile")
         self.assertLess(profile["rmsDbfs"], 0)
         self.assertGreater(profile["peakLinear"], 0)
+        self.assertEqual(profile["beatTimestampsSec"], sorted(profile["beatTimestampsSec"]))
+        self.assertTrue(all(0 <= timestamp <= seconds for timestamp in profile["beatTimestampsSec"]))
         self.assertNotIn("lufs", {key.lower() for key in profile})
 
     def test_technical_probe_rejects_mono_even_when_extension_says_wav(self):

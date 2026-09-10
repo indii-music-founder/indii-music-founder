@@ -242,7 +242,7 @@ describe('OmniWorkflow (legacy structural-only; real generation unverified)', ()
             userId: 'user-123',
             metadata: expect.objectContaining({
                 durationSeconds: 8,
-                model: 'gemini-omni-flash-preview',
+                model: 'gemini-omni-1.1-flash-preview',
                 task: 'edit',
                 referenceCount: 0,
             }),
@@ -256,8 +256,8 @@ describe('OmniWorkflow (legacy structural-only; real generation unverified)', ()
             referenceVideoUri: 'gs://mock-bucket.appspot.com/creative/user-123/omni/reference.mp4',
         }));
 
-        await waitFor(() => expect(screen.getByText('AI watermark applied')).toBeInTheDocument());
-        expect(screen.getByText('AI provenance watermark')).toBeInTheDocument();
+        await waitFor(() => expect(screen.getByText(/SynthID Applied|AI watermark applied/i)).toBeInTheDocument());
+        expect(screen.getByText(/Automatic SynthID|AI provenance watermark/i)).toBeInTheDocument();
     });
 
     it('sends a timecoded storyboard through the validated Omni payload', async () => {

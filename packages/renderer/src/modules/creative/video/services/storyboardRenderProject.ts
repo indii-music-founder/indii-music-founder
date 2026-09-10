@@ -73,10 +73,14 @@ export function compileStoryboardRenderProject(input: {
                 `Storyboard slot ${index + 1} has only a preview/public source and cannot be rendered.`,
             );
         }
-        const startFrame = Math.round(slot.startBar * 4 * (60 / storyboard.bpm) * fps);
+        const startFrame = Math.round(
+            (slot.startSeconds ?? (slot.startBar * 4 * (60 / storyboard.bpm))) * fps,
+        );
         const durationInFrames = Math.max(
             1,
-            Math.round(slot.durationBars * 4 * (60 / storyboard.bpm) * fps),
+            Math.round(
+                (slot.durationSeconds ?? (slot.durationBars * 4 * (60 / storyboard.bpm))) * fps,
+            ),
         );
         return {
             id: `storyboard-slot-${slot.id}`,

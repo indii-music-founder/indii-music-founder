@@ -123,6 +123,33 @@ describe('Creative request schemas', () => {
         }).success).toBe(false);
     });
 
+    it('supports Omni draft-to-4K tiers, first/last interpolation, and bounded extension', () => {
+        const interpolated = GenerateOmniRemixSchema.safeParse({
+            prompt: 'Move naturally between the supplied frames',
+            task: 'image_to_video',
+            firstFrameUri: 'gs://indii-music-founder.firebasestorage.app/creative/user-1/start.png',
+            lastFrameUri: 'gs://indii-music-founder.firebasestorage.app/creative/user-1/end.png',
+            resolution: '4k',
+        });
+        expect(interpolated.success).toBe(true);
+
+        expect(GenerateOmniRemixSchema.safeParse({
+            prompt: 'Continue the camera move',
+            task: 'extend',
+            previousInteractionId: 'interaction-1',
+            previousJobId: 'job-1',
+            durationSeconds: 10,
+            resolution: '360p',
+        }).success).toBe(true);
+        expect(GenerateOmniRemixSchema.safeParse({
+            prompt: 'Continue the camera move',
+            task: 'extend',
+            previousInteractionId: 'interaction-1',
+            previousJobId: 'job-1',
+            durationSeconds: 8,
+        }).success).toBe(false);
+    });
+
     it('requires bounded text and a durable identity for speech requests', () => {
         expect(GenerateAudioSchema.safeParse({
             prompt: 'A short artist introduction.',

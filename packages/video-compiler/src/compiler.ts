@@ -134,7 +134,12 @@ const timingAttributes = (clip: IndiiVideoClip, fps: number, trackIndex: number)
     return `data-start="${framesToSeconds(clip.startFrame, fps)}" data-duration="${secondsString(clipDurationSeconds(clip, fps))}" data-track-index="${trackIndex}"${sourceStart}${playbackRate}`;
 };
 
-const mediaElementsFor = (clip: IndiiVideoClip, fps: number, track: CompiledTrack): string[] => {
+const mediaElementsFor = (
+    clip: IndiiVideoClip,
+    fps: number,
+    track: CompiledTrack,
+    suppressVideoAudio: boolean,
+): string[] => {
     const id = safeId(clip.id);
     const src = escapeHtml(clip.src ?? '');
     const timing = timingAttributes(clip, fps, track.index);
@@ -147,7 +152,7 @@ const mediaElementsFor = (clip: IndiiVideoClip, fps: number, track: CompiledTrac
             const elements = [
                 `<div id="${id}-box" data-hf-id="hf-${id}-box" data-name="${escapeHtml(clip.name)}" style="${boxStyleFor(clip)}"><div id="${id}" data-hf-id="hf-${id}" style="width:100%;height:100%;${motionStyleFor(clip)}"><video id="${id}-media" data-hf-id="hf-${id}-media" src="${src}" muted playsinline preload="auto" ${timing}${hidden} style="display:block;width:100%;height:100%;object-fit:cover;"></video></div></div>`,
             ];
-            if (clip.hasAudio === true) {
+            if (clip.hasAudio === true && !suppressVideoAudio) {
                 elements.push(`<audio id="${id}-audio" data-hf-id="hf-${id}-audio" data-name="${escapeHtml(clip.name)} audio" src="${src}" preload="auto" ${audioTiming} data-volume="${clip.audioFade ? '1' : volume}"${hidden}></audio>`);
             }
             return elements;
@@ -247,7 +252,7 @@ const mapEase = (ease: string | undefined): string => {
 };
 
 /** Transitions and keyframes become a finite, seekable GSAP plan. */
-const tweenPlanFor = (clip: IndiiVideoClip, fps: number): TweenPlan[] => {
+const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = false): TweenPlan[] => {
     const plan: TweenPlan[] = [];
     const id = safeId(clip.id);
     const startS = clip.startFrame / fps;
@@ -357,7 +362,7 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number): TweenPlan[] => {
     }
 
     // ── Audio fade automation (absolute-gain volume tweens)
-    if (clip.audioFade && (clip.type === 'audio' || clip.hasAudio === true)) {
+    if (clip.audioFade && (clip.type === 'audio' || (clip.hasAudio === true && !suppressVideoAudio))) {
         const audioId = clip.type === 'video' ? `${id}-audio` : id;
         const gain = clip.volume ?? 1;
         const fades = clip.audioFade;
@@ -457,6 +462,9 @@ export const compileProjectToHyperFrames = (
 
     const bodyClips: string[] = [];
     const tweenPlans: TweenPlan[] = [];
+    // An explicit audio lane is authoritative. Generated video commonly carries
+    // a model-created soundtrack; never mix it underneath the user's audio layer.
+    const suppressVideoAudio = project.clips.some(clip => clip.type === 'audio');
     for (const [clipIndex, clip] of project.clips.entries()) {
         const trackSettings = trackIndex.get(clip.trackId);
         if (!trackSettings) throw new Error(`compiler: clip ${clip.id} references unknown track ${clip.trackId}`);
@@ -476,8 +484,8 @@ export const compileProjectToHyperFrames = (
             index: clipIndex + 1,
             audioIndex: project.clips.length + clipIndex + 1,
         };
-        bodyClips.push(...mediaElementsFor(clip, fps, track).map(element => `      ${element}`));
-        tweenPlans.push(...tweenPlanFor(clip, fps));
+        bodyClips.push(...mediaElementsFor(clip, fps, track, suppressVideoAudio).map(element => `      ${element}`));
+        tweenPlans.push(...tweenPlanFor(clip, fps, suppressVideoAudio));
     }
 
     // Scene treatment: background layer + its ambient tween render behind all clips.

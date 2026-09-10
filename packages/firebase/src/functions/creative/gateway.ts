@@ -409,6 +409,11 @@ function estimateVideoCost(durationSeconds: number, model?: string, mode?: strin
   return Math.round(normalizedDuration * baseRate * modeMultiplier * 100) / 100;
 }
 
+function estimateOmniVideoCost(durationSeconds: number, resolution: OmniVideoRequest['resolution']): number {
+  const ratePerSecond = resolution === '360p' ? 0.034 : resolution === '1080p' ? 0.15 : resolution === '4k' ? 0.30 : 0.10;
+  return Math.round(Math.max(1, durationSeconds) * ratePerSecond * 100) / 100;
+}
+
 const TEMPORAL_INPAINT_ENABLED = process.env.GEMINI_VEO_TEMPORAL_INPAINT_ENABLED === 'true';
 
 function supportsTemporalInpaint(modelId: string): boolean {
@@ -627,17 +632,25 @@ function resolveOmniTask(data: OmniVideoRequest): OmniVideoTask {
 }
 
 function buildOmniPrompt(data: OmniVideoRequest, task: OmniVideoTask): string {
+  const firstFrameIndex = data.firstFrameUri ? 1 : undefined;
+  const lastFrameIndex = data.lastFrameUri ? (data.firstFrameUri ? 2 : 1) : undefined;
+  const referenceImageOffset = (data.firstFrameUri ? 1 : 0) + (data.lastFrameUri ? 1 : 0);
   const imageRolePrefix = [
-    ...(data.firstFrameUri ? ['[# Sources <FIRST_FRAME>@Image1]'] : []),
+    ...(firstFrameIndex ? [`[# Sources <FIRST_FRAME>@Image${firstFrameIndex}]`] : []),
+    ...(lastFrameIndex ? [`[# Destination <LAST_FRAME>@Image${lastFrameIndex}]`] : []),
     ...((data.referenceUris ?? []).length > 0
-      ? [`[# References ${(data.referenceUris ?? []).map((_, index) => `<IMAGE_REF_${index}>@Image${index + (data.firstFrameUri ? 2 : 1)}`).join(' ')}]`]
+      ? [`[# References ${(data.referenceUris ?? []).map((_, index) => `<IMAGE_REF_${index}>@Image${index + referenceImageOffset + 1}`).join(' ')}]`]
       : []),
   ].join(' ');
   const storyboardDirectives = [...(data.storyboard ?? [])]
     .sort((a, b) => a.timestamp - b.timestamp)
     .map((frame, index, frames) => {
       const nextTimestamp = frames[index + 1]?.timestamp ?? data.durationSeconds;
-      return `[${frame.timestamp}-${nextTimestamp}s] ${frame.prompt}`;
+      const storyboardReferenceOrdinal = frames.slice(0, index + 1).filter(candidate => candidate.referenceUri).length - 1;
+      const boardReference = frame.referenceUri
+        ? ` Use storyboard concept image Image${referenceImageOffset + (data.referenceUris?.length ?? 0) + storyboardReferenceOrdinal + 1} as the visual anchor.`
+        : '';
+      return `[${frame.timestamp}-${nextTimestamp}s] ${frame.prompt}${boardReference}`;
     });
   const directives = [
     task !== 'edit' ? `Target duration: approximately ${data.durationSeconds} seconds.` : undefined,
@@ -652,10 +665,12 @@ function buildOmniPrompt(data: OmniVideoRequest, task: OmniVideoTask): string {
     data.lyricsText ? `Kinetic lyrics: "${data.lyricsText}" using ${data.typographyStyle || 'minimal-infographic'} typography` : undefined,
     data.visualizerColor ? `Visualizer color cue: ${data.visualizerColor}` : undefined,
     data.firstFrameUri ? 'Use Image1 as the starting frame.' : undefined,
+    data.lastFrameUri ? `End precisely on Image${lastFrameIndex}.` : undefined,
     (data.referenceUris ?? []).length > 0
       ? 'Use the tagged images as subject/style references, not as literal starting frames unless explicitly tagged.'
       : undefined,
     task === 'edit' ? 'Keep everything else the same.' : undefined,
+    task === 'extend' ? 'Continue seamlessly from the existing final frame, preserving subject, wardrobe, environment, lighting, motion, and camera continuity.' : undefined,
   ].filter(Boolean);
 
   return [
@@ -1767,7 +1782,7 @@ async function assertOwnedPreviousOmniInteraction(
   userId: string,
   previousJobId: string,
   previousInteractionId: string,
-): Promise<void> {
+): Promise<Record<string, unknown>> {
   const snapshot = await getDb().collection('creative_jobs').doc(previousJobId).get();
   if (!snapshot.exists) {
     throw new HttpsError('not-found', 'Previous Omni job was not found.');
@@ -1783,6 +1798,7 @@ async function assertOwnedPreviousOmniInteraction(
   ) {
     throw new HttpsError('failed-precondition', 'Previous Omni interaction is not available for a stateful edit.');
   }
+  return previousJob;
 }
 
 async function waitForGeminiFileActive(ai: GoogleGenAI, file: GeminiFile, label: string): Promise<GeminiFile> {
@@ -1807,7 +1823,7 @@ async function uploadOwnedVideoToGeminiFiles(
   ai: GoogleGenAI,
   userId: string,
   gsUri: string,
-): Promise<{ input: { type: 'document'; uri: string }; providerFileName: string }> {
+): Promise<{ input: { type: 'document'; uri: string }; providerFileName: string; durationSeconds: number }> {
   const { bucket, path } = parseStorageUri(gsUri);
   const defaultBucket = getStorage().bucket().name;
   if (bucket !== defaultBucket) {
@@ -1858,6 +1874,7 @@ async function uploadOwnedVideoToGeminiFiles(
     return {
       input: { type: 'document', uri: active.uri },
       providerFileName: active.name,
+      durationSeconds,
     };
   } finally {
     await rm(tempPath, { force: true }).catch(() => undefined);
@@ -1957,7 +1974,7 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
   const durationSeconds = Math.min(10, Math.max(3, data.durationSeconds));
   // Official paid-tier Standard pricing is approximately $0.10 per second of
   // 720p output. This is deliberately independent of the retired pipelineMode.
-  const serverEstimatedCost = estimateVideoCost(durationSeconds, VIDEO_MODEL_IDS.fast);
+  const serverEstimatedCost = estimateOmniVideoCost(durationSeconds, data.resolution);
 
   if (!data.costReservationId) {
     throw new HttpsError('failed-precondition', 'Missing cost reservation. Reserve cost before submitting the job.');
@@ -1976,9 +1993,9 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
         'Gemini Omni Flash does not currently support uploaded audio references. Describe the desired soundtrack in the prompt instead.',
       );
     }
-    if (data.previousInteractionId && data.previousJobId) {
-      await assertOwnedPreviousOmniInteraction(userId, data.previousJobId, data.previousInteractionId);
-    }
+    const previousJob = data.previousInteractionId && data.previousJobId
+      ? await assertOwnedPreviousOmniInteraction(userId, data.previousJobId, data.previousInteractionId)
+      : undefined;
 
     const initialJob = {
       id: jobId,
@@ -2016,9 +2033,23 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
     const sourceVideo = data.referenceVideoUri && !data.previousInteractionId
       ? await uploadOwnedVideoToGeminiFiles(ai, userId, data.referenceVideoUri)
       : undefined;
+    const previousMetadata = previousJob?.metadata && typeof previousJob.metadata === 'object'
+      ? previousJob.metadata as Record<string, unknown>
+      : undefined;
+    const previousSequenceSeconds = Number(previousMetadata?.sequenceDurationSeconds ?? previousMetadata?.durationSeconds ?? 0);
+    const sequenceDurationSeconds = task === 'extend'
+      ? (sourceVideo?.durationSeconds ?? previousSequenceSeconds) + durationSeconds
+      : (previousSequenceSeconds || durationSeconds);
+    if (task === 'extend' && (!Number.isFinite(sequenceDurationSeconds) || sequenceDurationSeconds > 40.05)) {
+      throw new HttpsError('invalid-argument', 'Omni video extension is limited to a total sequence length of 40 seconds.');
+    }
     const referenceImages = await loadReferenceImages(userId, {
       referenceUri: data.firstFrameUri,
-      referenceUris: data.referenceUris,
+      referenceUris: [
+        ...(data.lastFrameUri ? [data.lastFrameUri] : []),
+        ...(data.referenceUris ?? []),
+        ...(data.storyboard ?? []).flatMap(frame => frame.referenceUri ? [frame.referenceUri] : []),
+      ],
     });
 
     const input = [
@@ -2041,6 +2072,7 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
       response_format: {
         type: 'video',
         aspect_ratio: data.aspectRatio,
+        resolution: data.resolution,
         duration: `${durationSeconds}s`,
         delivery: 'uri',
       },
@@ -2075,11 +2107,14 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
         model: modelId,
         task,
         aspectRatio: data.aspectRatio,
+        resolution: data.resolution,
         durationSeconds,
+        sequenceDurationSeconds,
         mimeType,
         providerInputFileName: sourceVideo?.providerFileName,
         hasSourceVideo: !!data.referenceVideoUri,
         hasFirstFrame: !!data.firstFrameUri,
+        hasLastFrame: !!data.lastFrameUri,
         referenceCount: data.referenceUris?.length ?? 0,
         storyboardFrameCount: data.storyboard?.length ?? 0,
         synthIdAppliedByProvider: true,

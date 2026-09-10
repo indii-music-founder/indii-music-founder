@@ -26,6 +26,7 @@ interface StoryboardFrame {
     id: string;
     timestamp: number;
     previewUrl?: string;
+    referenceUri?: string;
     prompt: string;
 }
 
@@ -39,16 +40,16 @@ interface Joint {
 interface ReferenceMedia {
     uri: string;
     label: string;
-    artistName?: string;
 }
 
-type OmniTask = 'text_to_video' | 'image_to_video' | 'reference_to_video' | 'edit';
+type OmniTask = 'text_to_video' | 'image_to_video' | 'reference_to_video' | 'edit' | 'extend';
+type OmniResolution = '360p' | '720p' | '1080p' | '4k';
 
 const OmniGatewayResponseSchema = z.object({
     jobId: z.string().trim().min(1),
     resultUri: z.string().startsWith('gs://'),
     interactionId: z.string().trim().min(1),
-    task: z.enum(['text_to_video', 'image_to_video', 'reference_to_video', 'edit']),
+    task: z.enum(['text_to_video', 'image_to_video', 'reference_to_video', 'edit', 'extend']),
     synthIdApplied: z.literal(true),
 });
 
@@ -57,6 +58,7 @@ const OMNI_TASKS: Array<{ value: OmniTask; label: string; description: string }>
     { value: 'image_to_video', label: 'Image to video', description: 'Animate the first image; use any others as references.' },
     { value: 'reference_to_video', label: 'Reference to video', description: 'Guide subjects and style with up to eight images.' },
     { value: 'edit', label: 'Edit video', description: 'Edit an uploaded clip or continue the last Omni result.' },
+    { value: 'extend', label: 'Extend video', description: 'Append a seamless 10-second continuation, up to 40 seconds total.' },
 ];
 
 interface Bone {
@@ -271,16 +273,16 @@ export default function OmniWorkflow() {
         sendToStage: state.sendToStage
     })));
 
-    const characterReferences = useStore(state => state.characterReferences);
-    const [likenessAllowed, setLikenessAllowed] = useState(false);
-    const likenessAllowedRef = useRef(false); const artistBusy = useRef(false);
-    const [addingArtist, setAddingArtist] = useState(false);
     // Local Interactive States
     const [isRemixing, setIsRemixing] = useState(false);
     const [remixPrompt, setRemixPrompt] = useState('Remix performance into a cyberpunk neon concert stage, dramatic volumetric fog');
     // Launch from the only input required by Omni: a text prompt. Users can
     // opt into image/reference/video editing modes when they add that media.
     const [omniTask, setOmniTask] = useState<OmniTask>('text_to_video');
+    const [omniResolution, setOmniResolution] = useState<OmniResolution>('720p');
+    const [cameraDirection, setCameraDirection] = useState('slow dolly in');
+    const [lightingDirection, setLightingDirection] = useState('cinematic motivated lighting');
+    const [physicalLocation, setPhysicalLocation] = useState('');
     const [refVideoFile, setRefVideoFile] = useState<File | null>(null);
     const [referenceVideoUri, setReferenceVideoUri] = useState<string | null>(null);
     const [referenceMedia, setReferenceMedia] = useState<ReferenceMedia[]>([]);
@@ -297,6 +299,7 @@ export default function OmniWorkflow() {
     const [isAddingFrame, setIsAddingFrame] = useState(false);
     const [newFrameTimestamp, setNewFrameTimestamp] = useState<number>(3);
     const [newFramePrompt, setNewFramePrompt] = useState<string>('');
+    const [newFrameImage, setNewFrameImage] = useState<File | null>(null);
 
     // Flow Storyboard frames (dynamic state)
     const [storyboard, setStoryboard] = useState<StoryboardFrame[]>([]);
@@ -410,21 +413,6 @@ export default function OmniWorkflow() {
         });
     }, [currentProjectId]);
 
-    const addArtistReference = async (reference: (typeof characterReferences)[number]) => {
-        if (!likenessAllowedRef.current || artistBusy.current || referenceMedia.length >= 8) return;
-        const owner = auth.currentUser?.uid;
-        if (!owner || auth.currentUser?.isAnonymous) { toast.error('Sign in to add artist references.'); return; }
-        artistBusy.current = true; setAddingArtist(true);
-        try {
-            const uri = await ensureOmniReferenceUri(reference.image, 'image');
-            if (!likenessAllowedRef.current || auth.currentUser?.uid !== owner || useStore.getState().currentProjectId !== currentProjectId) return;
-            const name = reference.name?.trim() || reference.image.subject || 'Artist';
-            setReferenceMedia(previous => previous.some(entry => entry.uri === uri) ? previous : [...previous, { uri, label: name, artistName: name }].slice(0, 8));
-            setOmniTask('reference_to_video');
-        } catch (error) { toast.error(error instanceof Error ? error.message : 'Could not add this artist reference.'); }
-        finally { artistBusy.current = false; setAddingArtist(false); }
-    };
-
     const handleCreativeAssetDrop = useCallback(async (event: React.DragEvent<HTMLDivElement>) => {
         event.preventDefault();
         event.stopPropagation();
@@ -480,8 +468,8 @@ export default function OmniWorkflow() {
 
     const handleStartRemix = async () => {
         const canContinueInteraction = !!previousInteractionId && !!previousJobId;
-        if (omniTask === 'edit' && !canContinueInteraction && !referenceVideoUri) {
-            toast.error('Edit mode needs an uploaded source video or a completed Omni result.');
+        if ((omniTask === 'edit' || omniTask === 'extend') && !canContinueInteraction && !referenceVideoUri) {
+            toast.error(`${omniTask === 'extend' ? 'Extension' : 'Edit'} mode needs an uploaded source video or a completed Omni result.`);
             return;
         }
         if (omniTask === 'image_to_video' && referenceMedia.length === 0) {
@@ -502,37 +490,50 @@ export default function OmniWorkflow() {
             toast.info(`Omni supports only 16:9 and 9:16, so ${coercedFrom} was mapped to ${aspectRatio}.`);
         }
 
-        const generationOwner = auth.currentUser?.uid;
-        const generationOrganization = useStore.getState().currentOrganizationId;
         setIsRemixing(true);
         setOutputVideoUrl(null);
         setOutputStorageUri(undefined);
         setSynthIdApplied(false);
-        toast.info(canContinueInteraction && omniTask === 'edit' ? 'Continuing the stored Omni edit…' : 'Generating with Omni Flash…');
+        toast.info(canContinueInteraction && omniTask === 'edit'
+            ? 'Continuing the stored Omni edit…'
+            : canContinueInteraction && omniTask === 'extend'
+                ? 'Extending the stored Omni video by 10 seconds…'
+                : 'Generating with Gemini Omni Flash…');
 
         try {
-            const durationSeconds = Math.min(10, Math.max(3, studioControls.duration || 8));
-            const estimatedCost = Math.round(durationSeconds * 0.1 * 100) / 100;
+            const durationSeconds = omniTask === 'extend' ? 10 : Math.min(10, Math.max(3, studioControls.duration || 8));
+            const directedPrompt = [
+                remixPrompt.trim(),
+                cameraDirection.trim() ? `Camera: ${cameraDirection.trim()}.` : '',
+                lightingDirection.trim() ? `Lighting: ${lightingDirection.trim()}.` : '',
+                physicalLocation.trim() ? `Physical location: ${physicalLocation.trim()}.` : '',
+            ].filter(Boolean).join('\n');
+            const ratePerSecond = omniResolution === '360p' ? 0.034 : omniResolution === '1080p' ? 0.15 : omniResolution === '4k' ? 0.30 : 0.10;
+            const estimatedCost = Math.round(durationSeconds * ratePerSecond * 100) / 100;
             const usePreviousInteraction = omniTask === 'edit' && canContinueInteraction;
+            const usePreviousExtension = omniTask === 'extend' && canContinueInteraction;
             const firstFrameUri = omniTask === 'image_to_video' ? referenceMedia[0]?.uri : undefined;
+            const lastFrameUri = omniTask === 'image_to_video' ? referenceMedia[1]?.uri : undefined;
             const referenceUris = omniTask === 'image_to_video'
-                ? referenceMedia.slice(1).map(entry => entry.uri)
+                ? referenceMedia.slice(2).map(entry => entry.uri)
                 : referenceMedia.map(entry => entry.uri);
             const basePayload = {
-                prompt: [remixPrompt, ...referenceMedia.flatMap((entry, index) => entry.artistName
-                    ? [`Reference image ${index + 1} depicts ${entry.artistName}. Preserve this person's facial identity and do not exchange identities between band members.`] : [])].join('\n'),
+                prompt: directedPrompt,
                 task: omniTask,
-                ...(omniTask === 'edit' && !usePreviousInteraction && referenceVideoUri ? { referenceVideoUri } : {}),
+                ...((omniTask === 'edit' || omniTask === 'extend') && !usePreviousInteraction && !usePreviousExtension && referenceVideoUri ? { referenceVideoUri } : {}),
                 ...(firstFrameUri ? { firstFrameUri } : {}),
+                ...(lastFrameUri ? { lastFrameUri } : {}),
                 referenceUris,
-                ...(usePreviousInteraction && previousInteractionId && previousJobId
+                ...((usePreviousInteraction || usePreviousExtension) && previousInteractionId && previousJobId
                     ? { previousInteractionId, previousJobId }
                     : {}),
                 storyboard: storyboard.map(frame => ({
                     timestamp: Math.min(durationSeconds, Math.max(0, frame.timestamp)),
                     prompt: frame.prompt,
+                    ...(frame.referenceUri ? { referenceUri: frame.referenceUri } : {}),
                 })),
                 aspectRatio,
+                resolution: omniResolution,
                 durationSeconds,
                 posePreservation: studioControls.posePreservation,
                 beatPulse: studioControls.beatPulse,
@@ -555,7 +556,7 @@ export default function OmniWorkflow() {
                 userId: auth.currentUser?.uid || '',
                 metadata: {
                     durationSeconds,
-                    model: 'gemini-omni-flash-preview',
+                    model: 'gemini-omni-1.1-flash-preview',
                     task: omniTask,
                     aspectRatio,
                     referenceCount: referenceMedia.length,
@@ -565,10 +566,6 @@ export default function OmniWorkflow() {
                 throw new Error(`Omni remix blocked: ${costCheck.reason || 'Cost reservation failed.'}`);
             }
 
-            if (auth.currentUser?.uid !== generationOwner || useStore.getState().currentProjectId !== currentProjectId || useStore.getState().currentOrganizationId !== generationOrganization) {
-                if (auth.currentUser?.uid === generationOwner) await CostControlService.voidUnclaimedVideoReservation(costCheck.operationId);
-                return;
-            }
             const generateOmniRemixV3 = httpsCallable(functions, 'generateOmniRemixV3');
             const payload = {
                 ...basePayloadValidation.data,
@@ -583,7 +580,6 @@ export default function OmniWorkflow() {
             const data = parsedResponse.data;
             const videoUrl = await resolveStorageUrl(data.resultUri);
             const storageUri = resolveStorageUri(data.resultUri) || (data.resultUri.startsWith('gs://') ? data.resultUri : undefined);
-            if (auth.currentUser?.uid !== generationOwner || useStore.getState().currentProjectId !== currentProjectId || useStore.getState().currentOrganizationId !== generationOrganization) return;
             setOutputVideoUrl(videoUrl);
             setOutputStorageUri(storageUri);
             setPreviousInteractionId(data.interactionId);
@@ -597,7 +593,7 @@ export default function OmniWorkflow() {
                 type: 'video',
                 url: videoUrl,
                 storageUri,
-                prompt: `Omni ${data.task}: ${remixPrompt}`,
+                prompt: `Omni ${data.task}: ${directedPrompt}`,
                 timestamp: Date.now(),
                 projectId: currentProjectId || '',
                 origin: 'generated',
@@ -616,6 +612,9 @@ export default function OmniWorkflow() {
                     lyricsText: studioControls.lyricsText || undefined,
                     typographyStyle: studioControls.typographyStyle,
                     visualizerColor: studioControls.visualizerColor,
+                    cameraDirection,
+                    lightingDirection,
+                    physicalLocation: physicalLocation || undefined,
                     firstFrameUri,
                     referenceUris,
                     storyboard: payload.storyboard,
@@ -623,7 +622,7 @@ export default function OmniWorkflow() {
                 })
             });
 
-            toast.success('Omni video completed with an AI provenance watermark. You can refine it with another edit.');
+            toast.success('Omni video completed with automatic SynthID. You can refine it with another edit.');
         } catch (error) {
             const message = callableErrorMessage(error);
             if (message.includes('not configured for API use yet')) {
@@ -670,7 +669,7 @@ export default function OmniWorkflow() {
                 timestamp: Date.now(),
                 parentJobId: sourceJobId || undefined,
             });
-            toast.success('Sent to Video Studio; its last frame will become the next shot’s first frame.');
+            toast.success('Sent to Veo; its last frame will become the next shot’s first frame.');
         } finally {
             setRoutingOutputTo(null);
         }
@@ -724,7 +723,7 @@ export default function OmniWorkflow() {
     };
 
     // Storyboard Frame Actions
-    const handleAddFrame = () => {
+    const handleAddFrame = async () => {
         if (!newFramePrompt.trim()) {
             toast.error("Please specify a scene prompt!");
             return;
@@ -735,15 +734,35 @@ export default function OmniWorkflow() {
             return;
         }
 
+        let referenceUri: string | undefined;
+        let previewUrl: string | undefined;
+        if (newFrameImage) {
+            const usedImageCount = referenceMedia.length + storyboard.filter(frame => frame.referenceUri).length;
+            if (usedImageCount >= 8) {
+                toast.error('Omni accepts at most eight images across frames and references.');
+                return;
+            }
+            const userId = auth.currentUser?.uid;
+            if (!userId) {
+                toast.error('Sign in before uploading a storyboard concept image.');
+                return;
+            }
+            referenceUri = await CreativeStorageService.uploadReferenceMedia(userId, newFrameImage, 'image');
+            previewUrl = URL.createObjectURL(newFrameImage);
+        }
+
         const newFrame: StoryboardFrame = {
             id: `frame_${Date.now()}`,
             timestamp: newFrameTimestamp,
-            prompt: newFramePrompt
+            prompt: newFramePrompt,
+            ...(referenceUri ? { referenceUri } : {}),
+            ...(previewUrl ? { previewUrl } : {}),
         };
 
         setStoryboard(prev => [...prev, newFrame].sort((a, b) => a.timestamp - b.timestamp));
         setIsAddingFrame(false);
         setNewFramePrompt('');
+        setNewFrameImage(null);
         toast.success("Added new scene frame to storyboard sequence!");
     };
 
@@ -760,7 +779,7 @@ export default function OmniWorkflow() {
     const hasPreviousInteraction = !!previousInteractionId && !!previousJobId;
     const canGenerate = !!remixPrompt.trim() && !isRemixing && (
         omniTask === 'text_to_video'
-        || (omniTask === 'edit' && (hasPreviousInteraction || !!referenceVideoUri))
+        || ((omniTask === 'edit' || omniTask === 'extend') && (hasPreviousInteraction || !!referenceVideoUri))
         || ((omniTask === 'image_to_video' || omniTask === 'reference_to_video') && referenceMedia.length > 0)
     );
     const selectedTask = OMNI_TASKS.find(task => task.value === omniTask) ?? OMNI_TASKS[0];
@@ -774,7 +793,7 @@ export default function OmniWorkflow() {
                         <div className="p-1 bg-green-500/10 rounded-lg">
                             <Video size={14} className="text-green-400" />
                         </div>
-                        Omni Flash
+                        Gemini Omni Stage
                     </h2>
                     {studioControls.omniReferenceVideo && (
                         <button
@@ -826,7 +845,8 @@ export default function OmniWorkflow() {
                             <video 
                                 src={outputVideoUrl} 
                                 className="w-full h-full object-cover rounded-xl"
-                                controls 
+                                controls
+                                muted
                                 autoPlay 
                                 loop
                             />
@@ -834,7 +854,7 @@ export default function OmniWorkflow() {
                             {synthIdApplied && (
                                 <div className="absolute top-6 right-6 flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md rounded-full shadow-lg pointer-events-none select-none z-30">
                                     <Shield size={10} className="text-emerald-400" />
-                                    <span className="text-[9px] font-bold text-emerald-400 font-mono uppercase tracking-widest">AI watermark applied</span>
+                                    <span className="text-[9px] font-bold text-emerald-400 font-mono uppercase tracking-widest">SynthID Applied</span>
                                 </div>
                             )}
 
@@ -1075,9 +1095,30 @@ export default function OmniWorkflow() {
                             ))}
                         </select>
                         <p className="text-[9px] text-gray-500 leading-relaxed">{selectedTask.description}</p>
-                        {hasPreviousInteraction && omniTask === 'edit' && (
-                            <p className="text-[9px] text-emerald-400 font-mono">Continuing the last stored Omni interaction.</p>
+                        {hasPreviousInteraction && (omniTask === 'edit' || omniTask === 'extend') && (
+                            <p className="text-[9px] text-emerald-400 font-mono">
+                                {omniTask === 'extend' ? 'Extending' : 'Continuing'} the last stored Omni interaction.
+                            </p>
                         )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono">
+                            Output resolution
+                        </label>
+                        <div className="grid grid-cols-4 gap-1">
+                            {(['360p', '720p', '1080p', '4k'] as const).map(resolution => (
+                                <button
+                                    key={resolution}
+                                    type="button"
+                                    onClick={() => setOmniResolution(resolution)}
+                                    className={`rounded border px-1 py-2 text-[9px] font-bold uppercase ${omniResolution === resolution ? 'border-green-400/50 bg-green-500/15 text-green-300' : 'border-white/10 bg-black/40 text-gray-500'}`}
+                                >
+                                    {resolution}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-[9px] text-gray-500">360p drafts use fewer credits; 1080p and 4K use model upscaling.</p>
                     </div>
 
                     {/* Conversational Remix Box */}
@@ -1092,6 +1133,29 @@ export default function OmniWorkflow() {
                             className="w-full bg-black/60 text-white text-xs p-3 rounded-xl border border-white/10 outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/10 h-24 resize-none placeholder:text-gray-600 transition-all font-mono leading-relaxed"
                             placeholder="Describe the result, action, camera, style, and soundtrack…"
                         />
+                        <div className="grid grid-cols-1 gap-2">
+                            <input
+                                value={cameraDirection}
+                                onChange={(event) => setCameraDirection(event.target.value)}
+                                className="w-full rounded-lg border border-white/10 bg-black/60 p-2 text-[10px] text-white outline-none focus:border-green-500/50"
+                                aria-label="Camera movement and shot control"
+                                placeholder="Camera: slow dolly in, locked medium close-up…"
+                            />
+                            <input
+                                value={lightingDirection}
+                                onChange={(event) => setLightingDirection(event.target.value)}
+                                className="w-full rounded-lg border border-white/10 bg-black/60 p-2 text-[10px] text-white outline-none focus:border-green-500/50"
+                                aria-label="Cinematic lighting control"
+                                placeholder="Lighting: neon rim light, soft key…"
+                            />
+                            <input
+                                value={physicalLocation}
+                                onChange={(event) => setPhysicalLocation(event.target.value)}
+                                className="w-full rounded-lg border border-white/10 bg-black/60 p-2 text-[10px] text-white outline-none focus:border-green-500/50"
+                                aria-label="Physical location control"
+                                placeholder="Physical location: Detroit rooftop at dusk…"
+                            />
+                        </div>
                     </div>
 
                     {/* Character X-ray */}
@@ -1181,17 +1245,6 @@ export default function OmniWorkflow() {
                                 aria-label="Upload Omni reference images"
                             />
                         </div>
-                        <label className="flex gap-2 text-xs text-gray-300">
-                            <input type="checkbox" checked={likenessAllowed} onChange={event => {
-                                likenessAllowedRef.current = event.target.checked; setLikenessAllowed(event.target.checked);
-                                if (!event.target.checked) setReferenceMedia(previous => previous.filter(entry => !entry.artistName));
-                            }} />I have permission to use these artist or band-member likenesses.
-                        </label>
-                        {likenessAllowed && <div className="flex flex-wrap gap-2">
-                            {characterReferences.filter(reference => reference.referenceType === 'subject' && reference.image.projectId === currentProjectId).map(reference =>
-                                <button type="button" key={reference.image.id} disabled={addingArtist || referenceMedia.length >= 8} onClick={() => { void addArtistReference(reference); }} className="rounded border border-white/20 px-2 py-1 text-xs disabled:opacity-50">Add {reference.name || reference.image.subject || 'artist reference'}</button>)}
-                            <p className="w-full text-xs text-gray-400">Name each person in Artist / band references. Review generated faces before publishing.</p>
-                        </div>}
                         {referenceMedia.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                                 {referenceMedia.map((entry) => (
@@ -1209,6 +1262,9 @@ export default function OmniWorkflow() {
                         ) : (
                             <p className="text-[9px] text-gray-500 leading-relaxed">Required for image and reference modes; optional during edits.</p>
                         )}
+                        {omniTask === 'image_to_video' && referenceMedia.length > 1 && (
+                            <p className="text-[9px] text-emerald-400">Image 1 is the start frame; image 2 is the exact end frame. Additional images guide identity and style.</p>
+                        )}
                     </div>
 
                     {/* Gemini applies SynthID automatically. */}
@@ -1216,9 +1272,9 @@ export default function OmniWorkflow() {
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
                                 <Shield size={12} className="text-emerald-400" />
-                                AI provenance watermark
+                                Automatic SynthID
                             </span>
-                            <span className="text-[9px] text-gray-500 mt-0.5">Generated videos include an AI provenance watermark.</span>
+                            <span className="text-[9px] text-gray-500 mt-0.5">Google watermarks every generated Omni video.</span>
                         </div>
                         <span className="text-[9px] font-bold font-mono text-emerald-400 uppercase">Always on</span>
                     </div>
@@ -1286,8 +1342,18 @@ export default function OmniWorkflow() {
                                         className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 outline-none focus:border-green-500/40 text-xs font-mono text-white resize-none"
                                     />
                                 </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Concept-board image (optional)</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        aria-label="Upload storyboard concept image"
+                                        onChange={(event) => setNewFrameImage(event.target.files?.[0] ?? null)}
+                                        className="block w-full rounded-lg border border-white/10 bg-black/60 p-2 text-[10px] text-gray-300 file:mr-2 file:rounded file:border-0 file:bg-green-500/15 file:px-2 file:py-1 file:text-green-300"
+                                    />
+                                </div>
                                 <button 
-                                    onClick={handleAddFrame}
+                                    onClick={() => { void handleAddFrame(); }}
                                     className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl text-xs font-bold uppercase tracking-widest font-mono transition-colors text-white"
                                 >
                                     Add Frame to Sequence

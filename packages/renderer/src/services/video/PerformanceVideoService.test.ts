@@ -53,6 +53,8 @@ import { performanceVideoService, sonicProfileFromAnalysisReceipt } from './Perf
 const SONIC_PROFILE = {
     bpm: 120,
     mood: 'energetic',
+    durationSeconds: 8,
+    beatTimestampsSec: [0, 0.5, 1],
 };
 
 const SCENE_JOB = {
@@ -72,7 +74,17 @@ const CANONICAL_RECEIPT = {
     generation: '987654321',
     masterFingerprint: 'SONIC-canonical-master',
     status: 'complete' as const,
-    openSourceProfile: { tempoBpm: 120 },
+    technical: {
+        container: 'wav' as const,
+        codec: 'PCM',
+        sampleRate: 48_000,
+        bitDepth: 24,
+        channels: 2,
+        frames: 384_000,
+        durationSeconds: 8,
+        sizeBytes: 1234,
+    },
+    openSourceProfile: { tempoBpm: 120, beatTimestampsSec: [0, 0.5, 1] },
     geminiProfile: {
         genres: ['pop'],
         moods: ['energetic'],

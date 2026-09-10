@@ -376,14 +376,19 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         }),
         generateStoryboardSlots: (bpm: number, durationSeconds: number) => set((state: VideoEditorState) => {
             const barDuration = 4 * (60 / bpm); // 4 beats per bar
-            const slotDuration = 4 * barDuration; // 4 bars per slot
+            // Provider outputs are at most eight seconds. Fixed physical chunks
+            // preserve master-audio sync when the clips are concatenated; bar
+            // metadata remains available for the editor grid.
+            const slotDuration = 8;
             const numSlots = Math.ceil(durationSeconds / slotDuration);
             
             const slots: StoryboardSlot[] = Array.from({ length: numSlots }).map((_, idx) => ({
                 id: uuidv4(),
                 barIndex: idx,
-                startBar: idx * 4,
-                durationBars: 4,
+                startBar: Math.round((idx * slotDuration) / barDuration),
+                durationBars: Math.max(1, Math.round(Math.min(slotDuration, durationSeconds - (idx * slotDuration)) / barDuration)),
+                startSeconds: idx * slotDuration,
+                durationSeconds: Math.max(1, Math.ceil(Math.min(slotDuration, durationSeconds - (idx * slotDuration)))),
                 prompt: '',
                 isGenerating: false,
                 progress: 0,

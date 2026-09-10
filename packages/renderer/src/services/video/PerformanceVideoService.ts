@@ -11,6 +11,16 @@ import type { MasterAudioReference } from '@/services/metadata/types';
 export interface SonicProfile {
   bpm: number;
   mood: string;
+  durationSeconds: number;
+  beatTimestampsSec: number[];
+}
+
+interface PerformanceScene {
+  prompt: string;
+  /** Exact amount of the canonical master covered by this timeline slot. */
+  durationSec: number;
+  /** Legal Veo request duration; the final segment may be trimmed by the master mix. */
+  generationDurationSec: 4 | 6 | 8;
 }
 
 export interface PerformanceVideoOptions {
@@ -48,12 +58,24 @@ export function sonicProfileFromAnalysisReceipt(receipt: AudioAnalysisReceipt): 
   const openSource = record(receipt.openSourceProfile);
   const gemini = record(receipt.geminiProfile);
   const bpm = Number(openSource?.tempoBpm);
+  const durationSeconds = Number(receipt.technical?.durationSeconds);
   if (!Number.isFinite(bpm) || bpm <= 0) {
     throw new Error('Canonical-master receipt does not contain a measured BPM.');
   }
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    throw new Error('Canonical-master receipt does not contain a measured duration.');
+  }
+  const beatTimestampsSec = Array.isArray(openSource?.beatTimestampsSec)
+    ? openSource.beatTimestampsSec
+        .map(Number)
+        .filter(timestamp => Number.isFinite(timestamp) && timestamp >= 0 && timestamp <= durationSeconds)
+        .sort((left, right) => left - right)
+    : [];
   return {
     bpm,
     mood: firstText(gemini?.moods) ?? 'undetermined',
+    durationSeconds,
+    beatTimestampsSec,
   };
 }
 
@@ -197,24 +219,35 @@ export class PerformanceVideoService {
     profile: SonicProfile,
     sceneCount?: number,
     style?: string
-  ): Promise<Array<{ prompt: string; durationSec: number }>> {
+  ): Promise<PerformanceScene[]> {
     const bpm = profile.bpm || 120;
-    const secondsPerBeat = 60 / bpm;
-    const barsPerScene = 8;
-    const sceneLength = barsPerScene * 4 * secondsPerBeat;
+    const maximumSceneSeconds = 8;
+    const minimumSceneCount = Math.ceil(profile.durationSeconds / maximumSceneSeconds);
+    // The cloud stitcher concatenates provider outputs. Keep every non-final
+    // clip at its physical eight-second duration so only the last clip needs a
+    // trim; otherwise equal fractional splits accumulate A/V drift.
+    const numScenes = minimumSceneCount;
+    if (sceneCount && sceneCount !== minimumSceneCount) {
+      logger.warn(
+        `[PerformanceVideo] Ignoring requested scene count ${sceneCount}; ` +
+        `${minimumSceneCount} provider-aligned scenes are required for the master duration.`,
+      );
+    }
 
-    const estimatedSongDuration = 180;
-    const numScenes = sceneCount || Math.ceil(estimatedSongDuration / sceneLength);
-
-    const scenes: Array<{ prompt: string; durationSec: number }> = [];
+    const scenes: PerformanceScene[] = [];
     for (let i = 0; i < numScenes; i++) {
       const moodPhrase = profile.mood === 'undetermined' ? 'musically aligned' : profile.mood;
       const stylePhrase = style || 'cinematic';
       const prompt = `Performance video scene ${i + 1}/${numScenes}. ${moodPhrase} ${stylePhrase} camera movement. Artist performing, dynamic lighting. No lyrics or talking.`;
 
+      const startSeconds = i * maximumSceneSeconds;
+      const endSeconds = Math.min(profile.durationSeconds, startSeconds + maximumSceneSeconds);
+      const durationSec = endSeconds - startSeconds;
+      const generationDurationSec: 4 | 6 | 8 = durationSec <= 4 ? 4 : durationSec <= 6 ? 6 : 8;
       scenes.push({
-        prompt,
-        durationSec: sceneLength,
+        prompt: `${prompt} Cover master time ${startSeconds.toFixed(3)}s–${endSeconds.toFixed(3)}s at ${bpm.toFixed(2)} BPM.`,
+        durationSec,
+        generationDurationSec,
       });
     }
 
@@ -227,7 +260,7 @@ export class PerformanceVideoService {
    */
   private async generateSceneClips(
     artistImageUrl: string,
-    scenes: Array<{ prompt: string; durationSec: number }>,
+    scenes: PerformanceScene[],
     aspectRatio: '9:16' | '16:9' | '1:1'
   ): Promise<string[]> {
     const clips: string[] = [];
@@ -242,7 +275,7 @@ export class PerformanceVideoService {
             referenceType: 'asset',
           },
         ],
-        durationSeconds: Math.ceil(scene.durationSec),
+        durationSeconds: scene.generationDurationSec,
         aspectRatio: aspectRatio as '16:9' | '9:16',
       };
 
@@ -269,7 +302,7 @@ export class PerformanceVideoService {
   private buildTimelineProject(
     sceneUrls: string[],
     masterAsset: MasterAudioReference,
-    scenes: Array<{ prompt: string; durationSec: number }>,
+    scenes: PerformanceScene[],
     aspectRatio: '9:16' | '16:9' | '1:1',
     masterFingerprint?: string,
     isrc?: string
@@ -289,8 +322,6 @@ export class PerformanceVideoService {
 
     for (let i = 0; i < sceneUrls.length; i++) {
       const durationFrames = Math.round(scenes[i].durationSec * fps);
-      const fade = { type: 'fade' as const, duration: Math.max(6, fps / 2) };
-
       clips.push({
         id: `scene-${i}`,
         type: 'video',
@@ -300,8 +331,6 @@ export class PerformanceVideoService {
         durationInFrames: durationFrames,
         trackId: 'video-1',
         name: `Scene ${i + 1}`,
-        transitionIn: fade,
-        transitionOut: fade,
       });
 
       startFrame += durationFrames;

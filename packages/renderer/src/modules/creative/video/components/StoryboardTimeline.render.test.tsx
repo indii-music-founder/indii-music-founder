@@ -8,6 +8,11 @@ vi.mock('@/core/context/ToastContext', () => ({ useToast: vi.fn() }));
 vi.mock('@/services/video/RenderService', () => ({ renderService: {} }));
 vi.mock('@/hooks/useResolvedStorageUrl', () => ({ useResolvedStorageUrl: vi.fn() }));
 vi.mock('@/services/storage/resolveStorageUrl', () => ({ resolveStorageUrl: vi.fn() }));
+vi.mock('@/services/ingestion/TrackIngestionService', () => ({
+    trackIngestion: { ingestTrack: vi.fn() },
+}));
+vi.mock('@/services/firebase', () => ({ storage: {} }));
+vi.mock('firebase/storage', () => ({ ref: vi.fn() }));
 vi.mock('@/core/config/intelligence-models', () => ({
     INTELLIGENCE_MODELS: { VIDEO: { PRO: 'pro' } },
 }));

@@ -29,8 +29,8 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
         PRO: 'veo-3.1-generate-001',
         FAST: 'veo-3.1-fast-generate-001',
         LITE: 'veo-3.1-lite-generate-001',
-        /** Gemini Omni public preview — native generation and conversational editing. */
-        OMNI: 'gemini-omni-flash-preview',
+        /** Gemini Omni 1.1 on Vertex — resolution, interpolation, and extension. */
+        OMNI: 'gemini-omni-1.1-flash-preview',
     },
     SPEECH: {
         GENERATION: 'gemini-3.1-flash-tts-preview',

@@ -153,6 +153,23 @@ describe('compileProjectToHyperFrames (pure package)', () => {
         expect(html).toContain('tl.to("#el-a1", { volume: 0');
     });
 
+    it('mutes generated video audio when an explicit audio layer exists', () => {
+        const project = baseProject({
+            tracks: [
+                { id: 't1', name: 'V1', type: 'video' },
+                { id: 't2', name: 'Master', type: 'audio' },
+            ],
+            clips: [
+                { ...baseProject({}).clips[0]!, hasAudio: true },
+                { id: 'master', type: 'audio', src: 'master.wav', name: 'Master', startFrame: 0, durationInFrames: 30, trackId: 't2' },
+            ],
+        });
+
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toContain('id="el-master"');
+        expect(html).not.toContain('id="el-c1-audio"');
+    });
+
     it('rejects a waterfall + count-up combination on one clip (fail closed)', () => {
         const project = baseProject({
             durationInFrames: 60,
@@ -261,6 +278,6 @@ describe('compileProjectToHyperFrames (pure package)', () => {
             cwd: dir,
             env: { ...process.env, HOME: envHome, XDG_CACHE_HOME: path.join(envHome, '.cache') },
         });
-        expect(true).toBe(true); // reaching here = treated composition linted clean
+        expect(compiled.html).toContain('data-hf-id='); // reaching here also proves the real CLI accepted it
     }, 240_000);
 });

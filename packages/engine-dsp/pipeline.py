@@ -436,16 +436,24 @@ def build_open_source_profile(staged: StagedMaster) -> dict[str, Any]:
     if analysis_audio.size:
         tempo, beat_frames = librosa.beat.beat_track(y=analysis_audio, sr=analysis_rate)
         tempo_bpm = float(np.asarray(tempo).reshape(-1)[0])
-        beat_count = int(np.asarray(beat_frames).size)
+        normalized_beat_frames = np.asarray(beat_frames).reshape(-1)
+        beat_count = int(normalized_beat_frames.size)
+        beat_timestamps = [
+            round(float(value), 3)
+            for value in librosa.frames_to_time(normalized_beat_frames, sr=analysis_rate)
+            if 0.0 <= float(value) <= min(staged.duration_seconds, 600.0)
+        ]
     else:
         tempo_bpm = 0.0
         beat_count = 0
+        beat_timestamps = []
 
     return {
         "analyzer": "librosa+soundfile",
         "analyzerVersion": ENGINE_VERSION,
         "tempoBpm": round(tempo_bpm, 4),
         "beatCountFirstTenMinutes": beat_count,
+        "beatTimestampsSec": beat_timestamps,
         "peakLinear": round(peak, 8),
         "rmsDbfs": round(rms_dbfs, 4),
         "clippingSampleRatio": round(clipping_ratio, 10),

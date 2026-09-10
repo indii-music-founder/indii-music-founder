@@ -890,7 +890,30 @@ export const renderVideo = onCall(
                     error instanceof Error ? error.message : 'The video project cannot be routed.',
                 );
             }
-            if (routeDecision.route === 'composed_visual') {
+            const canonicalMasterSequence = (() => {
+                const clips = project.clips.filter((clip): clip is Record<string, unknown> => !!clip && typeof clip === 'object');
+                const audioClips = clips.filter(clip => clip.type === 'audio');
+                const videoClips = clips
+                    .filter(clip => clip.type === 'video')
+                    .sort((left, right) => Number(left.startFrame) - Number(right.startFrame));
+                if (
+                    audioClips.length !== 1
+                    || videoClips.length === 0
+                    || clips.length !== audioClips.length + videoClips.length
+                    || !audioClips[0]?.canonicalMaster
+                    || audioClips[0]?.startFrame !== 0
+                    || audioClips[0]?.durationInFrames !== project.durationInFrames
+                ) return false;
+                let cursor = 0;
+                for (const clip of videoClips) {
+                    if (clip.startFrame !== cursor || !Number.isInteger(clip.durationInFrames) || Number(clip.durationInFrames) <= 0) return false;
+                    cursor += Number(clip.durationInFrames);
+                }
+                return cursor === project.durationInFrames;
+            })();
+            const canUseCanonicalMasterStitch = canonicalMasterSequence
+                && routeDecision.reason === 'audio-timeline';
+            if (routeDecision.route === 'composed_visual' && !canUseCanonicalMasterStitch) {
                 throw new HttpsError(
                     'failed-precondition',
                     'Cloud composition rendering is not active yet. Use the desktop local renderer or obtain approval to activate the HyperFrames Cloud Run worker.',

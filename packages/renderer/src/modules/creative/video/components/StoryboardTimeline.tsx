@@ -1,5 +1,4 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { validateMusicVideoDuration } from '../../creativeJourney';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -21,22 +20,9 @@ import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { compileStoryboardRenderProject } from '../services/storyboardRenderProject';
-
-function readAudioDuration(audioUrl: string): Promise<number> {
-    return new Promise((resolve, reject) => {
-        const audio = document.createElement('audio');
-        audio.preload = 'metadata';
-        audio.onloadedmetadata = () => {
-            if (Number.isFinite(audio.duration) && audio.duration > 0) {
-                resolve(audio.duration);
-            } else {
-                reject(new Error('Unable to read audio duration from uploaded file.'));
-            }
-        };
-        audio.onerror = () => reject(new Error('Unable to read audio metadata from uploaded file.'));
-        audio.src = audioUrl;
-    });
-}
+import { trackIngestion } from '@/services/ingestion/TrackIngestionService';
+import { storage } from '@/services/firebase';
+import { ref as storageRef } from 'firebase/storage';
 
 /** Converts the final decoded frame of a generated clip into a real image input for Veo. */
 async function extractLastVideoFrame(videoUri: string): Promise<string> {
@@ -155,12 +141,14 @@ export function StoryboardTimeline() {
         activeVideoProject,
         setStoryboardProject,
         updateStoryboardSlot,
+        setActiveVideoProject,
         generateStoryboardSlots
     } = useVideoEditorStore(useShallow(state => ({
         storyboardProject: state.storyboardProject,
         activeVideoProject: state.project,
         setStoryboardProject: state.setStoryboardProject,
         updateStoryboardSlot: state.updateStoryboardSlot,
+        setActiveVideoProject: state.setProject,
         generateStoryboardSlots: state.generateStoryboardSlots
     })));
 
@@ -196,23 +184,58 @@ export function StoryboardTimeline() {
         toast.info("Importing audio metadata...");
 
         try {
-            const audioUrl = URL.createObjectURL(file);
-            const durationSeconds = await readAudioDuration(audioUrl);
-            validateMusicVideoDuration(durationSeconds);
-            const editableGridBpm = 120;
+            const metadata = await trackIngestion.ingestTrack(file);
+            const master = metadata.masterAsset;
+            const durationSeconds = metadata.durationSeconds;
+            const measuredBpm = metadata.bpm;
+            if (!master?.generation || !durationSeconds || durationSeconds <= 0 || !measuredBpm || measuredBpm <= 0) {
+                throw new Error('Canonical audio analysis did not return a complete timing receipt.');
+            }
+            const canonicalUri = storageRef(storage, master.storagePath).toString();
+            const fps = activeVideoProject.fps;
+            const durationInFrames = Math.max(1, Math.round(durationSeconds * fps));
+            const audioTrackId = activeVideoProject.tracks.find(track => track.type === 'audio')?.id
+                ?? `storyboard-master-${Date.now()}`;
+            setActiveVideoProject({
+                ...activeVideoProject,
+                durationInFrames,
+                tracks: activeVideoProject.tracks.some(track => track.id === audioTrackId)
+                    ? activeVideoProject.tracks
+                    : [...activeVideoProject.tracks, { id: audioTrackId, name: 'Canonical master', type: 'audio' }],
+                clips: [
+                    ...activeVideoProject.clips.filter(clip => clip.type !== 'audio'),
+                    {
+                        id: `canonical-master-${master.contentHash.slice(0, 12)}`,
+                        type: 'audio',
+                        src: master.downloadUrl,
+                        canonicalMaster: {
+                            contentHash: master.contentHash,
+                            generation: master.generation,
+                            masterFingerprint: master.masterFingerprint,
+                            storagePath: master.storagePath,
+                            volume: 1,
+                        },
+                        startFrame: 0,
+                        durationInFrames,
+                        trackId: audioTrackId,
+                        name: file.name,
+                        volume: 1,
+                    },
+                ],
+            });
 
             setStoryboardProject({
                 id: 'sb-' + Date.now(),
                 name: file.name.replace(/\.[^/.]+$/, "") + " Storyboard",
-                audioUrl,
-                bpm: editableGridBpm,
-                key: undefined,
+                audioUrl: canonicalUri,
+                bpm: measuredBpm,
+                key: metadata.key || undefined,
                 durationSeconds,
                 slots: []
             });
 
-            generateStoryboardSlots(editableGridBpm, durationSeconds);
-            toast.warning("Audio imported. Beat, key, and stem analysis are not configured; using an editable 120 BPM grid.");
+            generateStoryboardSlots(measuredBpm, durationSeconds);
+            toast.success(`Canonical master analyzed at ${measuredBpm.toFixed(1)} BPM and locked to the storyboard.`);
         } catch (err) {
             logger.error('[StoryboardTimeline] Audio metadata import failed:', err);
             toast.error(err instanceof Error ? err.message : 'Unable to import audio metadata.');

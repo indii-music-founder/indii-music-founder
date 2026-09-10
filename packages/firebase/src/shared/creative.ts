@@ -61,18 +61,21 @@ export const OmniVideoTaskSchema = z.enum([
     'image_to_video',
     'reference_to_video',
     'edit',
+    'extend',
 ]);
 
 export const OmniStoryboardFrameSchema = z.object({
     timestamp: z.number().min(0).max(10),
     prompt: z.string().trim().min(1).max(500),
+    referenceUri: z.string().startsWith('gs://').optional(),
 });
 
 export const GenerateOmniRemixSchema = z.object({
-    prompt: z.string().trim().min(1).max(4000),
+    prompt: z.string().trim().min(1).max(4_194_304),
     task: OmniVideoTaskSchema.optional(),
     referenceVideoUri: z.string().startsWith('gs://').optional(),
     firstFrameUri: z.string().startsWith('gs://').optional(),
+    lastFrameUri: z.string().startsWith('gs://').optional(),
     audioUri: z.string().startsWith('gs://').optional(),
     referenceUris: z.array(z.string().startsWith('gs://')).max(8).optional(),
     previousInteractionId: z.string().trim().min(1).max(256).optional(),
@@ -86,6 +89,7 @@ export const GenerateOmniRemixSchema = z.object({
     // selection doesn't fail payload validation.
     pipelineMode: z.enum(['pure-omni', 'hybrid-veo']).default('pure-omni'),
     aspectRatio: z.enum(['16:9', '9:16']).default('16:9'),
+    resolution: z.enum(['360p', '720p', '1080p', '4k']).default('720p'),
     durationSeconds: z.number().min(3).max(10).default(8),
     parentId: z.string().optional(),
     posePreservation: z.number().min(0).max(1).optional(),
@@ -107,11 +111,11 @@ export const GenerateOmniRemixSchema = z.object({
                     ? 'reference_to_video'
                     : 'text_to_video');
 
-    if (task === 'edit' && !data.previousInteractionId && !data.referenceVideoUri) {
+    if ((task === 'edit' || task === 'extend') && !data.previousInteractionId && !data.referenceVideoUri) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['referenceVideoUri'],
-            message: 'Edit mode requires a source video or previous interaction ID.',
+            message: `${task === 'extend' ? 'Extension' : 'Edit'} mode requires a source video or previous interaction ID.`,
         });
     }
     if (data.previousInteractionId && data.referenceVideoUri) {
@@ -121,14 +125,14 @@ export const GenerateOmniRemixSchema = z.object({
             message: 'Choose either a stored interaction or an uploaded source video for one edit request.',
         });
     }
-    if (task !== 'edit' && (data.previousInteractionId || data.previousJobId || data.referenceVideoUri)) {
+    if (task !== 'edit' && task !== 'extend' && (data.previousInteractionId || data.previousJobId || data.referenceVideoUri)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['task'],
-            message: 'Previous interactions and source videos are valid only in edit mode.',
+            message: 'Previous interactions and source videos are valid only in edit or extension mode.',
         });
     }
-    if (task === 'text_to_video' && (data.firstFrameUri || data.referenceUris?.length)) {
+    if (task === 'text_to_video' && (data.firstFrameUri || data.lastFrameUri || data.referenceUris?.length)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['task'],
@@ -156,6 +160,13 @@ export const GenerateOmniRemixSchema = z.object({
             message: 'Image-to-video mode requires a first-frame image.',
         });
     }
+    if (data.lastFrameUri && task !== 'image_to_video') {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['lastFrameUri'],
+            message: 'A last frame is valid only in image-to-video mode.',
+        });
+    }
     if (task === 'reference_to_video' && !data.referenceUris?.length) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -163,11 +174,19 @@ export const GenerateOmniRemixSchema = z.object({
             message: 'Reference-to-video mode requires at least one reference image.',
         });
     }
-    if ((data.referenceUris?.length ?? 0) + (data.firstFrameUri ? 1 : 0) > 8) {
+    const storyboardReferenceCount = (data.storyboard ?? []).filter(frame => frame.referenceUri).length;
+    if ((data.referenceUris?.length ?? 0) + (data.firstFrameUri ? 1 : 0) + (data.lastFrameUri ? 1 : 0) + storyboardReferenceCount > 8) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['referenceUris'],
-            message: 'Omni accepts at most eight images across the first frame and references.',
+            message: 'Omni accepts at most eight images across start/end frames and references.',
+        });
+    }
+    if (task === 'extend' && data.durationSeconds !== 10) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['durationSeconds'],
+            message: 'Omni extensions are generated in 10-second increments.',
         });
     }
     for (const [index, frame] of (data.storyboard ?? []).entries()) {

@@ -1426,7 +1426,7 @@ describe('creative gateway generateOmniRemixV3', () => {
     });
 
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-omni-flash-preview',
+      model: 'gemini-omni-1.1-flash-preview',
       input: expect.arrayContaining([
         {
           type: 'document',
@@ -1443,6 +1443,7 @@ describe('creative gateway generateOmniRemixV3', () => {
         aspect_ratio: '16:9',
         duration: '8s',
         delivery: 'uri',
+        resolution: '720p',
       },
       background: false,
       stream: false,
