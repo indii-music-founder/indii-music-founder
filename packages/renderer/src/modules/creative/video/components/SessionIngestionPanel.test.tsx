@@ -33,7 +33,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 import { SessionIngestionPanel } from './SessionIngestionPanel';
 
-describe('SessionIngestionPanel', () => {
+describe('SessionIngestionPanel (legacy structural-only; real upload unverified)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         localStorage.clear();
@@ -159,6 +159,8 @@ describe('SessionIngestionPanel', () => {
                 onOpenProxy={vi.fn()}
             />,
         );
+        expect(screen.getByRole('button', { name: 'Import a long recording session' })).toHaveAttribute('aria-expanded', 'false');
+        fireEvent.click(screen.getByRole('button', { name: 'Import a long recording session' }));
         await waitFor(() => expect(screen.getByLabelText('Choose phone recording')).toBeInTheDocument());
     });
 });

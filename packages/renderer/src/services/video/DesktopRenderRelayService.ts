@@ -22,6 +22,7 @@ export interface RelayJobSnapshot {
     jobId: string;
     projectId: string;
     outputName?: string;
+    projectSnapshot?: IndiiVideoProject;
     status: 'queued' | 'running' | 'completed' | 'failed';
 }
 
@@ -63,6 +64,7 @@ const defaults = (): Required<DesktopRenderRelayDependencies> => ({
                 jobId: String(data.jobId ?? docSnapshot.id),
                 projectId: String(data.projectId ?? ''),
                 ...(typeof data.outputName === 'string' ? { outputName: data.outputName } : {}),
+                ...(data.projectSnapshot ? { projectSnapshot: data.projectSnapshot as IndiiVideoProject } : {}),
                 status: 'queued' as const,
             };
         });
@@ -123,7 +125,8 @@ export async function processNextRelayJob(dependencies: DesktopRenderRelayDepend
     try {
         await deps.claim(job.jobId);
 
-        const relayProject = await deps.loadProject(job.projectId);
+        const relayProject = job.projectSnapshot ?? await deps.loadProject(job.projectId);
+        if (relayProject.id !== job.projectId) throw new Error('Render snapshot does not match its project.');
         const localPath = await deps.render(relayProject, job.outputName ?? `${job.jobId}.mp4`);
         const dataUrl = await deps.readArtifact(localPath);
         const outputName = `${job.jobId}.mp4`;

@@ -37,7 +37,11 @@ async function idempotencyKey(
     return `session-${Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
-export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
+export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = props => {
+    const user = useStore(state => state.user);
+    return <ScopedSessionIngestionPanel key={JSON.stringify([user?.uid, user?.isAnonymous, props.organizationId, props.projectId])} {...props} />;
+};
+const ScopedSessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
     organizationId,
     projectId,
     onOpenProxy,
@@ -49,45 +53,56 @@ export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
     const [progress, setProgress] = React.useState<SessionUploadProgress>();
     const [error, setError] = React.useState<string>();
     const [starting, setStarting] = React.useState(false);
+    const [opening, setOpening] = React.useState(false);
+    const alive = React.useRef(true); const activeHandle = React.useRef<SessionUploadHandle>();
+    const startInFlight = React.useRef(false); const attempt = React.useRef(0);
+    const isAnonymous = useStore(state => state.user?.isAnonymous);
 
     const ownerUid = useStore(state => state.user?.uid);
     const effectiveOrganizationId = organizationId || 'org-default';
-    const canUpload = Boolean(ownerUid && projectId);
+    const canUpload = Boolean(ownerUid && !isAnonymous && projectId);
     const terminalSession = session?.status === 'failed' || session?.status === 'cancelled';
 
     React.useEffect(() => {
-        setSession(undefined);
-        setHandle(undefined);
-        setProgress(undefined);
-        setError(undefined);
-    }, [ownerUid, projectId]);
+        alive.current = true;
+        return () => {
+            alive.current = false;
+            if (activeHandle.current?.suspend) activeHandle.current.suspend(); else activeHandle.current?.pause();
+        };
+    }, []);
+    const acceptSession = React.useCallback((candidate: unknown) => {
+        const parsed = VideoSessionSchema.safeParse(candidate);
+        if (alive.current && parsed.success && parsed.data.ownerUid === ownerUid && parsed.data.projectId === projectId
+            && parsed.data.organizationId === effectiveOrganizationId) setSession(parsed.data);
+    }, [ownerUid, projectId, effectiveOrganizationId]);
 
     React.useEffect(() => {
-        if (!ownerUid || !projectId || session?.sessionId) return undefined;
-        const remembered = localStorage.getItem(storageKey(ownerUid, projectId));
+        if (!canUpload || !ownerUid || !projectId || session?.sessionId) return undefined;
+        let remembered: string | null;
+        try { remembered = localStorage.getItem(storageKey(ownerUid, projectId)); }
+        catch { setError('This browser cannot remember uploads. Keep this page open.'); return undefined; }
         if (!remembered) return undefined;
         return onSnapshot(doc(db, 'videoSessions', remembered), snapshot => {
-            const parsed = VideoSessionSchema.safeParse(snapshot.data());
-            if (parsed.success) setSession(parsed.data);
+            acceptSession(snapshot.data());
         }, snapshotError => {
             setError(snapshotError.message);
         });
-    }, [ownerUid, projectId, session?.sessionId]);
+    }, [ownerUid, projectId, canUpload, session?.sessionId, acceptSession]);
 
     React.useEffect(() => {
         if (!session?.sessionId) return undefined;
         return onSnapshot(doc(db, 'videoSessions', session.sessionId), snapshot => {
-            const parsed = VideoSessionSchema.safeParse(snapshot.data());
-            if (parsed.success) setSession(parsed.data);
+            acceptSession(snapshot.data());
         }, snapshotError => {
             setError(snapshotError.message);
         });
-    }, [session?.sessionId]);
+    }, [session?.sessionId, acceptSession]);
 
     const selectFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         event.target.value = '';
-        if (!file || !ownerUid || !projectId) return;
+        if (!file || !canUpload || !ownerUid || !projectId || startInFlight.current) return;
+        startInFlight.current = true; const currentAttempt = ++attempt.current;
         setStarting(true);
         setError(undefined);
         try {
@@ -98,24 +113,28 @@ export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
                 file,
                 terminalSession ? crypto.randomUUID() : undefined,
             );
+            if (!alive.current) return;
+            activeHandle.current?.suspend?.();
             const upload = await SessionVideoUploadService.start(file, {
                 organizationId: effectiveOrganizationId,
                 projectId,
                 idempotencyKey: key,
-            }, setProgress);
-            setHandle(upload);
-            setSession(upload.session);
-            localStorage.setItem(storageKey(ownerUid, projectId), upload.session.sessionId);
+            }, next => { if (alive.current && attempt.current === currentAttempt) setProgress(next); });
             void upload.completion.catch(uploadError => {
-                const message = uploadError instanceof Error ? uploadError.message : 'Session upload failed.';
-                setError(message);
+                if (alive.current && attempt.current === currentAttempt) setError(uploadError instanceof Error ? uploadError.message : 'Session upload failed.');
             });
+            if (!alive.current) { if (upload.suspend) upload.suspend(); else upload.pause(); return; }
+            activeHandle.current = upload; setHandle(upload); setSession(upload.session);
+            try { localStorage.setItem(storageKey(ownerUid, projectId), upload.session.sessionId); }
+            catch { setError('Upload started, but this browser cannot remember it. Keep this page open.'); }
         } catch (uploadError) {
+            if (!alive.current) return;
             const message = uploadError instanceof Error ? uploadError.message : 'Session upload failed.';
             setError(message);
             toast.error(message);
         } finally {
-            setStarting(false);
+            startInFlight.current = false;
+            if (alive.current) setStarting(false);
         }
     };
 
@@ -146,12 +165,12 @@ export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
             {open && (
                 <section
                     aria-label="Long recording session"
-                    className="absolute top-0 left-12 w-80 rounded-xl border border-cyan-500/20 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-xl text-xs"
+                    className="absolute top-12 left-0 w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-cyan-500/20 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-xl text-xs"
                 >
                     <div className="flex items-center justify-between gap-3 mb-3">
                         <div>
                             <h2 className="font-bold text-white">Long recording</h2>
-                            <p className="text-[10px] text-gray-400">Private resumable upload + edit proxy</p>
+                            <p className="text-[10px] text-gray-400">iPhone video · up to 20 GiB · original preserved</p>
                         </div>
                         <button type="button" onClick={() => setOpen(false)} aria-label="Close long recording panel">
                             <X size={15} className="text-gray-500 hover:text-white" />
@@ -176,7 +195,7 @@ export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
                                         : 'Choose phone recording'}
                             <input
                                 type="file"
-                                accept="video/mp4,video/quicktime,video/webm,video/x-m4v"
+                                accept="video/mp4,video/quicktime,video/webm,video/x-m4v,.mp4,.mov,.webm,.m4v"
                                 className="sr-only"
                                 disabled={starting}
                                 onChange={event => { void selectFile(event); }}
@@ -233,14 +252,24 @@ export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
                     {completed && session && (
                         <button
                             type="button"
-                            onClick={() => { void onOpenProxy(session); }}
+                            disabled={opening}
+                            onClick={async () => {
+                                setOpening(true);
+                                try { await onOpenProxy(session); }
+                                catch (cause) { if (alive.current) setError(cause instanceof Error ? cause.message : 'Could not open the recording.'); }
+                                finally { if (alive.current) setOpening(false); }
+                            }}
                             className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 font-bold text-white hover:bg-emerald-500"
                         >
                             <Film size={14} />
-                            Open edit proxy
+                            {opening ? 'Opening…' : 'Open edit proxy'}
                         </button>
                     )}
 
+                    {completed && <button type="button" className="mt-2 w-full text-cyan-200 underline" onClick={() => {
+                        if (ownerUid && projectId) { try { localStorage.removeItem(storageKey(ownerUid, projectId)); } catch { /* Original remains on server. */ } }
+                        setSession(undefined); setHandle(undefined); setProgress(undefined); setError(undefined);
+                    }}>Import another recording</button>}
                     {error && <p role="alert" className="mt-3 rounded bg-red-950/70 p-2 text-red-200">{error}</p>}
                 </section>
             )}

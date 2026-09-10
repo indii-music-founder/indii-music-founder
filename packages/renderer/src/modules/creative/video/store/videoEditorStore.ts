@@ -621,10 +621,14 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
 
             // Source-trim-aware: the µs window shifts with the split so the
             // two halves cover the same media region as the original.
-            if (clip.sourceInUs !== undefined && clip.sourceOutUs !== undefined) {
-                const splitUs = Math.round(leftFrames * 1_000_000 / state.project.fps);
-                left.sourceOutUs = clip.sourceInUs + splitUs;
-                right.sourceInUs = clip.sourceInUs + splitUs;
+            if (clip.type === 'video' || clip.type === 'audio') {
+                const rate = clip.playbackRate ?? 1;
+                const sourceIn = clip.sourceInUs ?? 0;
+                const sourceOut = clip.sourceOutUs ?? sourceIn + Math.round(clip.durationInFrames * rate * 1_000_000 / state.project.fps);
+                const boundary = sourceIn + Math.round(leftFrames * rate * 1_000_000 / state.project.fps);
+                if (!Number.isFinite(rate) || rate < 0.25 || rate > 4 || boundary >= sourceOut) return {};
+                left.sourceInUs = sourceIn; left.sourceOutUs = boundary;
+                right.sourceInUs = boundary; right.sourceOutUs = sourceOut;
             }
 
             const clips = [...state.project.clips.filter(c => c.id !== id), left, right]

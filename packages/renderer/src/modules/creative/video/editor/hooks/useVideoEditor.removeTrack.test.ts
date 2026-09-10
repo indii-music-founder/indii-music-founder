@@ -40,7 +40,7 @@ const EMPTY_TRACK = 'track-2';
  * Found by /qa on 2026-07-22 during the ISSUE-1180 step-1 audit.
  * Report: .agent/test_ledger/OPEN_ISSUES_V2.md
  */
-describe('useVideoEditor — destructive track removal', () => {
+describe('useVideoEditor — legacy structural-only editor guards', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         useVideoEditorStore.setState({
@@ -110,7 +110,7 @@ describe('useVideoEditor — destructive track removal', () => {
         expect(useVideoEditorStore.getState().project.clips).toHaveLength(2);
     });
 
-    it('stops a preview-only clip before it can invoke the cloud render callable', async () => {
+    it('requires a saved timeline before it can invoke the cloud render callable', async () => {
         const { result } = renderHook(() => useVideoEditor());
 
         await act(async () => {
@@ -118,10 +118,10 @@ describe('useVideoEditor — destructive track removal', () => {
         });
 
         expect(editorMocks.httpsCallable).not.toHaveBeenCalled();
-        expect(editorMocks.toast.error).toHaveBeenCalledWith(expect.stringContaining('secure media library'));
+        expect(editorMocks.toast.error).toHaveBeenCalledWith(expect.stringContaining('Save this timeline'));
     });
 
-    it('populates the preview artifact after a real local render result', async () => {
+    it('does not publish a local result into a different active app project', async () => {
         Object.defineProperty(window, 'electronAPI', {
             configurable: true,
             value: {
@@ -135,7 +135,7 @@ describe('useVideoEditor — destructive track removal', () => {
             await result.current.handleDownloadMP4();
         });
 
-        expect(useVideoEditorStore.getState().previewArtifactUrl)
-            .toBe('file:///tmp/exports/video-result.mp4');
+        expect(window.electronAPI?.video?.render).toHaveBeenCalledWith(expect.objectContaining({ compositionId: 'proj-1' }));
+        expect(useVideoEditorStore.getState().previewArtifactUrl).toBeNull();
     });
 });

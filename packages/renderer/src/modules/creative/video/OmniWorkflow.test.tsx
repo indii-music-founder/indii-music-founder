@@ -23,6 +23,7 @@ const mockMaterializeVideoFrame = vi.fn();
 const { mockStoreRef, createStoreState } = vi.hoisted(() => {
     const createStoreState = (overrides: Record<string, unknown> = {}) => {
         const store: Record<string, unknown> = {
+            characterReferences: [],
             currentProjectId: 'proj-omni',
             currentOrganizationId: 'org-omni',
             addToHistory: vi.fn(),
@@ -63,7 +64,7 @@ const { mockStoreRef, createStoreState } = vi.hoisted(() => {
 });
 
 vi.mock('@/core/store', () => ({
-    useStore: (selector?: any) => (selector ? selector(mockStoreRef.current) : mockStoreRef.current),
+    useStore: Object.assign((selector?: any) => (selector ? selector(mockStoreRef.current) : mockStoreRef.current), { getState: () => mockStoreRef.current }),
 }));
 
 vi.mock('motion/react', async () => {
@@ -173,7 +174,7 @@ vi.mock('lucide-react', async (importOriginal) => ({
     X: () => <div />,
 }));
 
-describe('OmniWorkflow', () => {
+describe('OmniWorkflow (legacy structural-only; real generation unverified)', () => {
     afterEach(() => {
         cleanup();
     });
@@ -255,8 +256,8 @@ describe('OmniWorkflow', () => {
             referenceVideoUri: 'gs://mock-bucket.appspot.com/creative/user-123/omni/reference.mp4',
         }));
 
-        await waitFor(() => expect(screen.getByText('SynthID Applied')).toBeInTheDocument());
-        expect(screen.getByText('Automatic SynthID')).toBeInTheDocument();
+        await waitFor(() => expect(screen.getByText('AI watermark applied')).toBeInTheDocument());
+        expect(screen.getByText('AI provenance watermark')).toBeInTheDocument();
     });
 
     it('sends a timecoded storyboard through the validated Omni payload', async () => {
@@ -333,9 +334,9 @@ describe('OmniWorkflow', () => {
         render(<OmniWorkflow />);
 
         fireEvent.click(screen.getByRole('button', { name: /generate omni video/i }));
-        await waitFor(() => expect(screen.getByRole('button', { name: 'Continue Omni video in Veo' })).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Continue Omni video in Video Studio' })).toBeInTheDocument());
 
-        fireEvent.click(screen.getByRole('button', { name: 'Continue Omni video in Veo' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Continue Omni video in Video Studio' }));
         expect(mockStoreRef.current.sendToStage).toHaveBeenCalledWith('veo', expect.objectContaining({
             role: 'source-video',
             originStage: 'omni',

@@ -1,3 +1,4 @@
+import { SocialClipPanel } from './components/SocialClipPanel';
 import React from 'react';
 import { useVideoEditorStore } from '../store/videoEditorStore';
 import { HistoryItem } from '@/core/store/slices/creative';
@@ -21,6 +22,7 @@ interface VideoEditorProps {
 }
 
 export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
+    const { flushSave } = useVideoProjectPersistence();
     const {
         project,
         previewArtifactUrl,
@@ -44,11 +46,10 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         removeClip,
         setProject,
         setCurrentTime
-    } = useVideoEditor(initialVideo);
+    } = useVideoEditor(initialVideo, flushSave);
 
     const { handleDragStart } = useTimelineDrag();
 
-    useVideoProjectPersistence();
     // Desktop only: execute queued cloud render jobs while the studio runs.
     useDesktopRenderRelay();
 
@@ -157,6 +158,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     <span className="font-bold">Not saved.</span> {projectSaveError}
                 </div>
             )}
+            <SocialClipPanel flushSave={flushSave} />
             <StudioToolbar
                 className="bg-gray-900 border-gray-800"
                 left={

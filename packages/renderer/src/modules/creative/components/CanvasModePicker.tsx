@@ -1,10 +1,11 @@
 import React from 'react';
 import { useStore } from '@/core/store';
-import { ImageIcon, Video } from 'lucide-react';
+import { ImageIcon, Video, Sparkles } from 'lucide-react';
 
 const MODES = [
     { id: 'canvas', label: 'Image Studio', icon: ImageIcon, gen: 'image' as const },
     { id: 'video_production', label: 'Video Studio', icon: Video, gen: 'video' as const },
+    { id: 'omni', label: 'Omni Flash', icon: Sparkles, gen: 'video' as const },
 ] as const;
 
 export default function CanvasModePicker() {
@@ -30,6 +31,7 @@ export default function CanvasModePicker() {
                         key={mode.id}
                         type="button"
                         onClick={() => handleSelectMode(mode)}
+                        aria-label={mode.label}
                         aria-pressed={isActive}
                         data-testid={`canvas-mode-${mode.id}`}
                         className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${

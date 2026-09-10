@@ -26,11 +26,12 @@ vi.mock('@/modules/creative/video/services/VideoProjectPersistenceService', () =
 const token = (projectId: string, revision: number | null = null): WriteToken =>
     ({ projectId, revision, fromLegacy: false }) as unknown as WriteToken;
 
-describe('useVideoProjectPersistence', () => {
+describe('useVideoProjectPersistence (legacy structural-only; real persistence unverified)', () => {
     const mockUser = { uid: 'test-user-123' };
 
     beforeEach(() => {
         vi.useFakeTimers();
+        useStore.getState = () => vi.mocked(useStore).getMockImplementation()?.(state => state) as ReturnType<typeof useStore.getState>;
         useVideoEditorStore.setState({
             project: INITIAL_PROJECT,
             isLoadingProject: false,

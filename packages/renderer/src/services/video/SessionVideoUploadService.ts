@@ -52,6 +52,14 @@ export interface SessionUploadHandle {
     pause(): boolean;
     resume(): boolean;
     cancel(): Promise<void>;
+    suspend?(): void;
+}
+
+export function normalizeSessionVideoFile(file: File | Blob): File | Blob {
+    if (file.type && file.type !== 'application/octet-stream') return file;
+    const extension = typeof File !== 'undefined' && file instanceof File ? file.name.split('.').pop()?.toLowerCase() : undefined;
+    const mime = extension && ({ mov: 'video/quicktime', mp4: 'video/mp4', m4v: 'video/x-m4v', webm: 'video/webm' } as Record<string, string>)[extension];
+    return mime ? file.slice(0, file.size, mime) : file;
 }
 
 function validateFile(file: File | Blob): void {
@@ -136,6 +144,7 @@ export class SessionVideoUploadService {
         request: CreateSessionUploadRequest,
         onProgress?: (progress: SessionUploadProgress) => void,
     ): Promise<SessionUploadHandle> {
+        file = normalizeSessionVideoFile(file);
         validateFile(file);
         const createSession = httpsCallable<
             CreateSessionUploadRequest & { expectedMimeType: string; expectedByteSize: number },
@@ -204,6 +213,11 @@ class GcsResumableSessionUploadHandle implements SessionUploadHandle {
         }
         this.report(this.committedBytes, 'paused');
         return true;
+    }
+
+    suspend(): void {
+        this.cancelled = true; this.paused = false;
+        this.activeRequest?.abort(); this.resumeWaiter?.(); this.resumeWaiter = undefined;
     }
 
     resume(): boolean {

@@ -12,6 +12,7 @@
  * stays the caller-facing shape; this module is its durable backbone.
  */
 
+import type { IndiiVideoProject } from '@indii/shared';
 import { randomUUID } from 'node:crypto';
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -31,6 +32,7 @@ export interface VideoRenderJob {
     userId: string;
     projectId: string;
     outputName?: string;
+    projectSnapshot?: IndiiVideoProject;
     status: VideoRenderJobStatus;
     executor: VideoRenderExecutor | null;
     artifactUrl: string | null;
@@ -101,6 +103,7 @@ export const queueCloudVideoRender = onCall(
             userId,
             projectId,
             ...(outputName ? { outputName } : {}),
+            projectSnapshot: projectData.project,
             status: 'queued',
             executor: null,
             artifactUrl: null,

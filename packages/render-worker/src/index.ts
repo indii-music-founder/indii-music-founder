@@ -72,10 +72,13 @@ const firestoreStore: JobStore = {
         const jobSnapshot = await db.doc(jobPath).get();
         const data = jobSnapshot.data();
         if (!jobSnapshot.exists || !data) throw new Error(`job ${jobPath} not found`);
-        const projectRef = db.collection('users').doc(data.userId as string).collection('videoProjects').doc(data.projectId as string);
-        const projectSnapshot = await projectRef.get();
-        const projectData = projectSnapshot.data();
-        if (!projectSnapshot.exists || !projectData?.project) throw new Error(`project ${data.projectId} not found for job ${jobPath}`);
+        let project = data.projectSnapshot;
+        if (!project) {
+            const projectRef = db.collection('users').doc(data.userId as string).collection('videoProjects').doc(data.projectId as string);
+            const snapshot = await projectRef.get(); project = snapshot.data()?.project;
+            if (!snapshot.exists || !project) throw new Error(`project ${data.projectId} not found for job ${jobPath}`);
+        }
+        if (project.id !== data.projectId) throw new Error('Render snapshot does not match its project.');
         return {
             data: {
                 status: data.status as 'queued' | 'running' | 'completed' | 'failed',
@@ -83,7 +86,7 @@ const firestoreStore: JobStore = {
                 userId: data.userId as string,
                 ...(typeof data.outputName === 'string' ? { outputName: data.outputName } : {}),
             },
-            project: projectData.project as never,
+            project: project as never,
         };
     },
     async setRunning(jobPath) {

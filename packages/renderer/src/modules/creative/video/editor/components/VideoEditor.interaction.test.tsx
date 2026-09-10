@@ -88,7 +88,7 @@ vi.mock('./VideoEditorSidebar', () => ({
     )
 }));
 
-describe('VideoEditor Integration', () => {
+describe('VideoEditor legacy structural-only interactions', () => {
     const mockSetProject = vi.fn();
     const mockUpdateClip = vi.fn();
     const mockAddClip = vi.fn();
@@ -225,25 +225,11 @@ describe('VideoEditor Integration', () => {
         expect(mockAddClip).toHaveBeenCalledWith(expect.objectContaining({ type: 'text' }));
     });
 
-    it('handles export flow', async () => {
-        render(<VideoEditor />);
-
-        const exportBtn = screen.getByTestId('video-export-btn');
-        fireEvent.click(exportBtn);
-
-        expect(mockToast.info).toHaveBeenCalledWith(expect.stringContaining('Starting cloud export'));
-
-        await waitFor(() => {
-            expect(httpsCallable).toHaveBeenCalled();
-            expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('Cloud render complete'));
-            expect(mockToast.error).not.toHaveBeenCalled();
-            expect(mockSetPreviewArtifactUrl).toHaveBeenCalledWith('https://storage.example/private-render.mp4');
-            expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
-                id: 'export_r1',
-                url: 'https://storage.example/private-render.mp4',
-                projectId: 'proj1',
-            }));
-        });
+    it('blocks export until the active timeline has a persistence token', async () => {
+        render(<VideoEditor />); fireEvent.click(screen.getByTestId('video-export-btn'));
+        await waitFor(() => { expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('wait for this project')); });
+        expect(httpsCallable).not.toHaveBeenCalled(); expect(mockToast.success).not.toHaveBeenCalled();
+        expect(mockSetPreviewArtifactUrl).not.toHaveBeenCalled(); expect(mockAddToHistory).not.toHaveBeenCalled();
     });
 
     it('handles drag and drop from library', async () => {

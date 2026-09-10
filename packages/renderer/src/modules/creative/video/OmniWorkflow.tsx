@@ -39,6 +39,7 @@ interface Joint {
 interface ReferenceMedia {
     uri: string;
     label: string;
+    artistName?: string;
 }
 
 type OmniTask = 'text_to_video' | 'image_to_video' | 'reference_to_video' | 'edit';
@@ -270,6 +271,10 @@ export default function OmniWorkflow() {
         sendToStage: state.sendToStage
     })));
 
+    const characterReferences = useStore(state => state.characterReferences);
+    const [likenessAllowed, setLikenessAllowed] = useState(false);
+    const likenessAllowedRef = useRef(false); const artistBusy = useRef(false);
+    const [addingArtist, setAddingArtist] = useState(false);
     // Local Interactive States
     const [isRemixing, setIsRemixing] = useState(false);
     const [remixPrompt, setRemixPrompt] = useState('Remix performance into a cyberpunk neon concert stage, dramatic volumetric fog');
@@ -405,6 +410,21 @@ export default function OmniWorkflow() {
         });
     }, [currentProjectId]);
 
+    const addArtistReference = async (reference: (typeof characterReferences)[number]) => {
+        if (!likenessAllowedRef.current || artistBusy.current || referenceMedia.length >= 8) return;
+        const owner = auth.currentUser?.uid;
+        if (!owner || auth.currentUser?.isAnonymous) { toast.error('Sign in to add artist references.'); return; }
+        artistBusy.current = true; setAddingArtist(true);
+        try {
+            const uri = await ensureOmniReferenceUri(reference.image, 'image');
+            if (!likenessAllowedRef.current || auth.currentUser?.uid !== owner || useStore.getState().currentProjectId !== currentProjectId) return;
+            const name = reference.name?.trim() || reference.image.subject || 'Artist';
+            setReferenceMedia(previous => previous.some(entry => entry.uri === uri) ? previous : [...previous, { uri, label: name, artistName: name }].slice(0, 8));
+            setOmniTask('reference_to_video');
+        } catch (error) { toast.error(error instanceof Error ? error.message : 'Could not add this artist reference.'); }
+        finally { artistBusy.current = false; setAddingArtist(false); }
+    };
+
     const handleCreativeAssetDrop = useCallback(async (event: React.DragEvent<HTMLDivElement>) => {
         event.preventDefault();
         event.stopPropagation();
@@ -482,11 +502,13 @@ export default function OmniWorkflow() {
             toast.info(`Omni supports only 16:9 and 9:16, so ${coercedFrom} was mapped to ${aspectRatio}.`);
         }
 
+        const generationOwner = auth.currentUser?.uid;
+        const generationOrganization = useStore.getState().currentOrganizationId;
         setIsRemixing(true);
         setOutputVideoUrl(null);
         setOutputStorageUri(undefined);
         setSynthIdApplied(false);
-        toast.info(canContinueInteraction && omniTask === 'edit' ? 'Continuing the stored Omni edit…' : 'Generating with Gemini Omni Flash…');
+        toast.info(canContinueInteraction && omniTask === 'edit' ? 'Continuing the stored Omni edit…' : 'Generating with Omni Flash…');
 
         try {
             const durationSeconds = Math.min(10, Math.max(3, studioControls.duration || 8));
@@ -497,7 +519,8 @@ export default function OmniWorkflow() {
                 ? referenceMedia.slice(1).map(entry => entry.uri)
                 : referenceMedia.map(entry => entry.uri);
             const basePayload = {
-                prompt: remixPrompt,
+                prompt: [remixPrompt, ...referenceMedia.flatMap((entry, index) => entry.artistName
+                    ? [`Reference image ${index + 1} depicts ${entry.artistName}. Preserve this person's facial identity and do not exchange identities between band members.`] : [])].join('\n'),
                 task: omniTask,
                 ...(omniTask === 'edit' && !usePreviousInteraction && referenceVideoUri ? { referenceVideoUri } : {}),
                 ...(firstFrameUri ? { firstFrameUri } : {}),
@@ -542,6 +565,10 @@ export default function OmniWorkflow() {
                 throw new Error(`Omni remix blocked: ${costCheck.reason || 'Cost reservation failed.'}`);
             }
 
+            if (auth.currentUser?.uid !== generationOwner || useStore.getState().currentProjectId !== currentProjectId || useStore.getState().currentOrganizationId !== generationOrganization) {
+                if (auth.currentUser?.uid === generationOwner) await CostControlService.voidUnclaimedVideoReservation(costCheck.operationId);
+                return;
+            }
             const generateOmniRemixV3 = httpsCallable(functions, 'generateOmniRemixV3');
             const payload = {
                 ...basePayloadValidation.data,
@@ -556,6 +583,7 @@ export default function OmniWorkflow() {
             const data = parsedResponse.data;
             const videoUrl = await resolveStorageUrl(data.resultUri);
             const storageUri = resolveStorageUri(data.resultUri) || (data.resultUri.startsWith('gs://') ? data.resultUri : undefined);
+            if (auth.currentUser?.uid !== generationOwner || useStore.getState().currentProjectId !== currentProjectId || useStore.getState().currentOrganizationId !== generationOrganization) return;
             setOutputVideoUrl(videoUrl);
             setOutputStorageUri(storageUri);
             setPreviousInteractionId(data.interactionId);
@@ -595,7 +623,7 @@ export default function OmniWorkflow() {
                 })
             });
 
-            toast.success('Omni video completed with automatic SynthID. You can refine it with another edit.');
+            toast.success('Omni video completed with an AI provenance watermark. You can refine it with another edit.');
         } catch (error) {
             const message = callableErrorMessage(error);
             if (message.includes('not configured for API use yet')) {
@@ -642,7 +670,7 @@ export default function OmniWorkflow() {
                 timestamp: Date.now(),
                 parentJobId: sourceJobId || undefined,
             });
-            toast.success('Sent to Veo; its last frame will become the next shot’s first frame.');
+            toast.success('Sent to Video Studio; its last frame will become the next shot’s first frame.');
         } finally {
             setRoutingOutputTo(null);
         }
@@ -746,7 +774,7 @@ export default function OmniWorkflow() {
                         <div className="p-1 bg-green-500/10 rounded-lg">
                             <Video size={14} className="text-green-400" />
                         </div>
-                        Gemini Omni Stage
+                        Omni Flash
                     </h2>
                     {studioControls.omniReferenceVideo && (
                         <button
@@ -806,7 +834,7 @@ export default function OmniWorkflow() {
                             {synthIdApplied && (
                                 <div className="absolute top-6 right-6 flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md rounded-full shadow-lg pointer-events-none select-none z-30">
                                     <Shield size={10} className="text-emerald-400" />
-                                    <span className="text-[9px] font-bold text-emerald-400 font-mono uppercase tracking-widest">SynthID Applied</span>
+                                    <span className="text-[9px] font-bold text-emerald-400 font-mono uppercase tracking-widest">AI watermark applied</span>
                                 </div>
                             )}
 
@@ -830,8 +858,8 @@ export default function OmniWorkflow() {
                                     onClick={handleSendOutputToVeo}
                                     disabled={routingOutputTo !== null}
                                     className="bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-cyan-400/30"
-                                    title="Continue from this video's last frame in Veo"
-                                    aria-label="Continue Omni video in Veo"
+                                    title="Continue from this video's last frame in Video Studio"
+                                    aria-label="Continue Omni video in Video Studio"
                                 >
                                     <Video size={16} />
                                 </button>
@@ -1153,6 +1181,17 @@ export default function OmniWorkflow() {
                                 aria-label="Upload Omni reference images"
                             />
                         </div>
+                        <label className="flex gap-2 text-xs text-gray-300">
+                            <input type="checkbox" checked={likenessAllowed} onChange={event => {
+                                likenessAllowedRef.current = event.target.checked; setLikenessAllowed(event.target.checked);
+                                if (!event.target.checked) setReferenceMedia(previous => previous.filter(entry => !entry.artistName));
+                            }} />I have permission to use these artist or band-member likenesses.
+                        </label>
+                        {likenessAllowed && <div className="flex flex-wrap gap-2">
+                            {characterReferences.filter(reference => reference.referenceType === 'subject' && reference.image.projectId === currentProjectId).map(reference =>
+                                <button type="button" key={reference.image.id} disabled={addingArtist || referenceMedia.length >= 8} onClick={() => { void addArtistReference(reference); }} className="rounded border border-white/20 px-2 py-1 text-xs disabled:opacity-50">Add {reference.name || reference.image.subject || 'artist reference'}</button>)}
+                            <p className="w-full text-xs text-gray-400">Name each person in Artist / band references. Review generated faces before publishing.</p>
+                        </div>}
                         {referenceMedia.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                                 {referenceMedia.map((entry) => (
@@ -1177,9 +1216,9 @@ export default function OmniWorkflow() {
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
                                 <Shield size={12} className="text-emerald-400" />
-                                Automatic SynthID
+                                AI provenance watermark
                             </span>
-                            <span className="text-[9px] text-gray-500 mt-0.5">Google watermarks every generated Omni video.</span>
+                            <span className="text-[9px] text-gray-500 mt-0.5">Generated videos include an AI provenance watermark.</span>
                         </div>
                         <span className="text-[9px] font-bold font-mono text-emerald-400 uppercase">Always on</span>
                     </div>

@@ -40,7 +40,9 @@ const safeOutputName = (project: IndiiVideoProject, requested: string | undefine
 
 const fileUrl = (output: string): string => output.startsWith('file://') ? output : `file://${output}`;
 
-const defaultDependencies = (): LocalVideoRenderDependencies => {
+const defaultDependencies = async (): Promise<LocalVideoRenderDependencies> => {
+    const { useStore } = await import('@/core/store');
+    const owner = useStore.getState().user?.uid;
     const videoApi = typeof window !== 'undefined' ? window.electronAPI?.video : undefined;
 
     return {
@@ -48,15 +50,16 @@ const defaultDependencies = (): LocalVideoRenderDependencies => {
         now: () => Date.now(),
         createRenderId: () => crypto.randomUUID(),
         recordArtifact: async (receipt, project, organizationId) => {
-            useVideoEditorStore.getState().setPreviewArtifactUrl(receipt.asset.url);
+
             try {
-                const { useStore } = await import('@/core/store');
                 const appStore = useStore.getState();
+                if (appStore.user?.uid !== owner || appStore.currentProjectId !== project.id || (organizationId && appStore.currentOrganizationId !== organizationId)) return;
+                if (useVideoEditorStore.getState().project === project) useVideoEditorStore.getState().setPreviewArtifactUrl(receipt.asset.url);
                 appStore.addToHistory?.({
                     id: `export_${receipt.renderId}`,
                     type: 'video',
                     url: receipt.asset.url,
-                    localPath: receipt.asset.url.replace(/^file:\/\//, ''),
+                    ...(receipt.asset.url.startsWith('file://') ? { localPath: receipt.asset.url.replace(/^file:\/\//, '') } : {}),
                     origin: 'editor',
                     prompt: `Export of ${project.name || 'Project'}`,
                     timestamp: Date.now(),
@@ -88,7 +91,7 @@ export async function renderVideoProjectLocally(
         throw new Error('The current video project has no clips to render.');
     }
 
-    const deps = dependencies ?? defaultDependencies();
+    const deps = dependencies ?? await defaultDependencies();
     const startedAt = deps.now();
     const outputName = safeOutputName(project, options.outputName, startedAt);
 

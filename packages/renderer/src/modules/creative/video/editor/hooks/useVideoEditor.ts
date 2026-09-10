@@ -1,3 +1,6 @@
+import { ProxyManifestSchema } from '@indii/shared';
+import { useStore } from '@/core/store';
+import { downloadAsset } from '@/utils/download';
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { previewPause, previewPlay, previewSeekToFrame } from '../previewTransport';
 import { useShallow } from 'zustand/react/shallow';
@@ -9,16 +12,14 @@ import { logger } from '@/utils/logger';
 import { resolveMediaDurationSeconds, durationSecondsToFrames } from '../utils/mediaMetadata';
 import { readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { cloudRenderEligibilityError } from '../utils/renderEligibility';
-import { RenderService } from '@/services/video/RenderService';
 import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
 import { platformBridge } from '@/services/platform/PlatformBridgeService';
 
-export function useVideoEditor(initialVideo?: HistoryItem) {
+export function useVideoEditor(initialVideo?: HistoryItem, beforeExport?: () => Promise<void>) {
     const {
         project, setProject, updateClip, addClip, removeClip,
         addTrack, removeTrack, setIsPlaying, setCurrentTime, currentTime,
-        setSelectedClipId, selectedClipId, setPreviewArtifactUrl,
+        setSelectedClipId, selectedClipId,
     } = useVideoEditorStore(useShallow(state => ({
         project: state.project,
         currentTime: state.currentTime,
@@ -32,10 +33,11 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         setCurrentTime: state.setCurrentTime,
         setSelectedClipId: state.setSelectedClipId,
         selectedClipId: state.selectedClipId,
-        setPreviewArtifactUrl: state.setPreviewArtifactUrl,
     })));
 
-    const initializedRef = useRef(false);
+    const initializedRef = useRef<string | null>(null);
+    const isLoadingProject = useVideoEditorStore(state => state.isLoadingProject);
+    const importScope = useStore(state => JSON.stringify([state.user?.uid, state.currentProjectId, state.currentOrganizationId]));
     const toast = useToast();
 
     // Local State
@@ -49,31 +51,41 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     );
 
     useEffect(() => {
-        if (!initialVideo || initializedRef.current) return;
-        initializedRef.current = true;
-
-        const existingClip = project.clips.find((c: VideoClip) => c.src === initialVideo.url);
-        if (existingClip) return;
-
-        const mediaType: 'video' | 'audio' | 'image' = initialVideo.type === 'video' ? 'video' : initialVideo.type === 'music' ? 'audio' : 'image';
-        const trackId = project.tracks[0]?.id;
-        if (!trackId) return;
-
-        resolveMediaDurationSeconds(initialVideo.url, mediaType).then((durationSeconds) => {
-            const fps = useVideoEditorStore.getState().project?.fps || 30;
-            const durationInFrames = mediaType === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);
-            addClip({
-                type: mediaType,
-                src: initialVideo.url,
-                startFrame: 0,
-                durationInFrames,
-                trackId,
-                name: initialVideo.prompt || 'Imported Video'
+        const state = useVideoEditorStore.getState();
+        if (!initialVideo || isLoadingProject || state.isLoadingProject || state.projectLoadError || initialVideo.projectId !== project.id) return;
+        const key = `${importScope}:${initialVideo.id}`;
+        if (initializedRef.current === key || project.clips.some(c => c.src === initialVideo.url)) return;
+        const trackId = project.tracks[0]?.id; if (!trackId) return;
+        let cancelled = false;
+        const mediaType = initialVideo.type === 'video' ? 'video' : initialVideo.type === 'music' ? 'audio' : 'image';
+        void (async () => {
+            let manifest;
+            if (initialVideo.meta) {
+                let metadata: unknown;
+                try { metadata = JSON.parse(initialVideo.meta); } catch { /* Legacy plain-text notes have no inspection. */ }
+                if (metadata && typeof metadata === 'object' && 'proxyManifest' in metadata) manifest = ProxyManifestSchema.parse(metadata.proxyManifest);
+            }
+            const duration = manifest ? manifest.inspection.proxyDurationUs / 1_000_000 : await resolveMediaDurationSeconds(initialVideo.url, mediaType);
+            const active = useStore.getState(); const editor = useVideoEditorStore.getState();
+            if (cancelled || JSON.stringify([active.user?.uid, active.currentProjectId, active.currentOrganizationId]) !== importScope
+                || editor.project.id !== project.id || editor.isLoadingProject || editor.projectLoadError) return;
+            if (manifest && (manifest.ownerUid !== active.user?.uid || manifest.projectId !== project.id)) throw new Error('This recording belongs to a different account or project.');
+            if (mediaType !== 'image' && (!Number.isFinite(duration) || duration <= 0)) throw new Error('Could not read this recording’s duration. Retry the import; the original is unchanged.');
+            if (editor.project.clips.some(c => c.src === initialVideo.url)) return;
+            initializedRef.current = key;
+            addClip({ type: mediaType, src: initialVideo.url, startFrame: 0,
+                durationInFrames: mediaType === 'image' ? 90 : durationSecondsToFrames(duration, editor.project.fps), trackId, name: initialVideo.prompt || 'Imported recording',
+                ...(mediaType !== 'image' ? { sourceInUs: 0, sourceOutUs: Math.round(duration * 1_000_000) } : {}),
+                ...(mediaType === 'video' && manifest ? { hasAudio: Boolean(manifest.inspection.sourceAudioCodec) } : {}),
+                ...(initialVideo.storageUri ? { canonicalSourceUri: initialVideo.storageUri } : {}),
+                ...(manifest ? { proxyGeneration: manifest.proxy.generation, sourceGeneration: manifest.proxy.generation } : {}),
             });
-        }).catch((error) => {
-            logger.error('Failed to resolve duration for imported media:', error);
+        })().catch(error => {
+            if (cancelled) return;
+            logger.error('Failed to import media:', error); toast.error(error instanceof Error ? error.message : 'Could not import the recording.');
         });
-    }, [initialVideo, addClip, project.clips, project.tracks]);
+        return () => { cancelled = true; };
+    }, [initialVideo, addClip, project.id, project.clips, project.tracks, isLoadingProject, importScope, toast]);
 
     // Sync player state with store
     useEffect(() => {
@@ -172,61 +184,27 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             return;
         }
 
-        const eligibilityError = cloudRenderEligibilityError(project);
-        if (eligibilityError) {
-            toast.error(eligibilityError);
-            return;
-        }
         setIsExporting(true);
-        toast.info('Starting cloud export…');
         try {
-            const { useStore } = await import('@/core/store');
-            const state = useStore.getState();
-            const projectId = state.currentProjectId || project.id;
-            const organizationId = state.currentOrganizationId;
-
-            if (!organizationId) {
-                throw new Error('Organization context required for cloud rendering');
-            }
-
-            const renderService = new RenderService();
-            const receipt = await renderService.renderCompositionCloud(
-                {
-                    compositionId: project.id,
-                    outputLocation: `gs://indii-cloud-renders/${projectId}/${Date.now()}.mp4`,
-                    inputProps: { project },
-                    projectId,
-                    organizationId
-                },
-                (progress) => {
-                    logger.info(`[VideoEditor] Cloud render progress: ${progress}%`);
-                }
-            );
-
-            if (receipt.asset?.url) {
-                setPreviewArtifactUrl(receipt.asset.url);
-                toast.success('Cloud render complete!');
-                // Auto-save to generatedHistory
-                state.addToHistory({
-                    id: `export_${receipt.renderId}`,
-                    type: 'video',
-                    url: receipt.asset.url,
-                    origin: 'editor',
-                    prompt: `Cloud export of ${project.name || 'Project'}`,
-                    timestamp: Date.now(),
-                    projectId,
-                    orgId: organizationId
-                });
-            }
+            if (!beforeExport) throw new Error('Save this timeline before requesting a cloud render.');
+            await beforeExport(); const active = useStore.getState();
+            if (active.currentProjectId !== project.id || useVideoEditorStore.getState().project !== project) throw new Error('The timeline changed. Review it and export again.');
+            toast.info('Rendering your saved timeline…');
+            await renderVideoProjectLocally(project, { organizationId: active.currentOrganizationId });
+            toast.success('Video rendered. Download MP4 is ready.');
         } catch (error: unknown) {
-            logger.error('Cloud export error:', error);
-            toast.error(`Cloud export failed: ${error instanceof Error ? error.message : String(error)}`);
-        } finally {
-            setIsExporting(false);
-        }
+            logger.error('Cloud export error:', error); toast.error(error instanceof Error ? error.message : 'Cloud export failed.');
+        } finally { setIsExporting(false); }
     };
 
     const handleDownloadMP4 = async () => {
+        if (!platformBridge.canRenderVideoLocally()) {
+            const url = useVideoEditorStore.getState().previewArtifactUrl;
+            if (!url?.startsWith('https://')) { toast.error('Render this timeline first, then download the completed MP4.'); return; }
+            try { if (!await downloadAsset(url, `${project.name || 'video'}.mp4`)) throw new Error('Download failed. Try again.'); }
+            catch (error) { toast.error(error instanceof Error ? error.message : 'Download failed.'); }
+            return;
+        }
         setIsExporting(true);
         toast.info('Starting local render... Please wait.');
         try {

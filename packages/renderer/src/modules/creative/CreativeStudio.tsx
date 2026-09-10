@@ -122,6 +122,7 @@ const PERSON_GEN_API_MAP: Record<string, string> = {
 const StudioControlsPanel = lazy(() => import('@/core/components/right-panel/StudioControlsPanel'));
 
 export default function CreativeStudio({ initialMode }: { initialMode?: 'image' | 'video' }) {
+    const creativeScope = useStore(state => JSON.stringify([state.user?.uid, state.currentOrganizationId, state.currentProjectId]));
     const {
         viewMode, setViewMode,
         selectedItem, setSelectedItem,
@@ -677,7 +678,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 <div className="w-full h-full pointer-events-auto">
                                     {viewMode === 'direct' && <DirectGenerationTab />}
                                     {viewMode === 'video_production' && <VideoWorkflow />}
-                                    {viewMode === 'omni' && <OmniWorkflow />}
+                                    {viewMode === 'omni' && <OmniWorkflow key={creativeScope} />}
                                     {viewMode === 'showroom' && <ShowroomUI />}
                                     {viewMode === "lab" && <AutonomousLab />}
                                 </div>

@@ -183,7 +183,7 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-describe('VideoWorkflow', () => {
+describe('VideoWorkflow (legacy structural-only)', () => {
     const _mockAddToHistory = vi.fn();
     const _mockSetJobId = vi.fn();
     const _mockSetJobStatus = vi.fn();
@@ -298,7 +298,7 @@ describe('VideoWorkflow', () => {
 
         expect(screen.getByTestId('video-workflow-workspace')).toHaveAttribute('data-workspace-mode', 'focused');
         expect(screen.getByTestId('video-primary-stage')).toHaveClass('px-3', 'pb-44');
-        expect(screen.getByTestId('video-mode-actions')).toHaveClass('flex-row', 'top-3');
+        expect(screen.getByTestId('video-mode-actions')).toHaveClass('left-4', 'top-3');
         expect(screen.getByTestId('video-technical-settings')).toHaveClass('top-3');
     });
 

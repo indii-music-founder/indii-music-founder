@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('firebase/functions', () => ({ httpsCallable: mocks.httpsCallable }));
 vi.mock('../firebase', () => ({ functions: { region: 'us-central1' } }));
 
-import { SessionVideoUploadService } from './SessionVideoUploadService';
+import { SessionVideoUploadService, normalizeSessionVideoFile } from './SessionVideoUploadService';
 
 const sessionId = 'a'.repeat(40);
 const now = '2026-07-21T18:00:00.000Z';
@@ -63,7 +63,7 @@ function response(byteSize: number) {
     };
 }
 
-describe('SessionVideoUploadService', () => {
+describe('SessionVideoUploadService (legacy structural-only; real transfer unverified)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.stubGlobal('fetch', mocks.fetch);
@@ -211,5 +211,15 @@ describe('SessionVideoUploadService', () => {
             idempotencyKey: 'session-upload-idempotency-1',
         })).rejects.toThrow('selected file');
         expect(mocks.fetch).not.toHaveBeenCalled();
+    });
+});
+
+describe('phone video MIME normalization (pure file metadata)', () => {
+    it('recognizes uppercase MOV names without changing byte size', () => {
+        const file = new File(['phone bytes'], 'IMG_0001.MOV'); const normalized = normalizeSessionVideoFile(file);
+        expect(normalized.type).toBe('video/quicktime'); expect(normalized.size).toBe(file.size);
+    });
+    it('retains unsupported explicit MIME for rejection', () => {
+        const file = new File(['image'], 'image.mov', { type: 'image/png' }); expect(normalizeSessionVideoFile(file)).toBe(file);
     });
 });

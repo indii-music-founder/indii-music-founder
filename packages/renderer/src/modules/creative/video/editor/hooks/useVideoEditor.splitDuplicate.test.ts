@@ -24,7 +24,7 @@ describe('videoEditorStore — split and duplicate', () => {
         const clips = useVideoEditorStore.getState().project.clips;
         expect(clips).toHaveLength(2);
         expect(clips[0]).toMatchObject({ startFrame: 0, durationInFrames: 12, name: 'Take 1 A' });
-        expect(clips[1]).toMatchObject({ startFrame:12, durationInFrames: 18, name: 'Take 1 B' });
+        expect(clips[1]).toMatchObject({ startFrame:12, durationInFrames: 18, name: 'Take 1 B', sourceInUs: 400_000, sourceOutUs: 1_000_000 });
         expect(clips[0]!.id).not.toBe(clips[1]!.id);
         expect(clips[0]!.id).not.toBe('c1');
     });

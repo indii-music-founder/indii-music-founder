@@ -1,4 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { validateMusicVideoDuration } from '../../creativeJourney';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -197,6 +198,7 @@ export function StoryboardTimeline() {
         try {
             const audioUrl = URL.createObjectURL(file);
             const durationSeconds = await readAudioDuration(audioUrl);
+            validateMusicVideoDuration(durationSeconds);
             const editableGridBpm = 120;
 
             setStoryboardProject({

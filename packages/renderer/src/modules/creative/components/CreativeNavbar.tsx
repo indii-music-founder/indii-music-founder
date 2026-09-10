@@ -13,6 +13,7 @@ import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import HistoryDrawer from './HistoryDrawer';
 import AgentCapabilityRegistry from './AgentCapabilityRegistry';
+import CreativeJourney from './CreativeJourney';
 import CanvasModePicker from './CanvasModePicker';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
@@ -224,6 +225,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 </div>
             </div>
 
+            <CreativeJourney />
             {/* Prompt Builder — Full-width horizontal overlay below navbar */}
             <AnimatePresence>
                 {showPromptBuilder && (

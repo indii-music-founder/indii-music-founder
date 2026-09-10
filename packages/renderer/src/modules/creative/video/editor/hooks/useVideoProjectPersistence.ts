@@ -70,8 +70,11 @@ export function useVideoProjectPersistence() {
             // Writing here is exactly the ISSUE-1193 data-loss path.
             if (!token || !user || project === lastSyncedProjectRef.current) return;
             if (token.projectId !== project.id) return;
+            const active = useStore.getState();
+            if (active.user?.uid !== user.uid || active.currentProjectId !== project.id || active.currentOrganizationId !== currentOrganizationId) return;
 
             const result = await saveVideoProject(token, project, user.uid, resolvedOrgId);
+            if (tokenRef.current !== token) return;
             if (result.success && result.token) {
                 tokenRef.current = result.token;
                 lastSyncedProjectRef.current = project;
@@ -94,7 +97,7 @@ export function useVideoProjectPersistence() {
         });
         saveInFlightRef.current = promise;
         return promise;
-    }, [user, resolvedOrgId]);
+    }, [user, resolvedOrgId, currentOrganizationId]);
 
     // ISSUE-1194: a guest session can never persist — Firestore's
     // `isAuthenticated()` excludes anonymous sign-ins, so every read and write is
@@ -104,14 +107,15 @@ export function useVideoProjectPersistence() {
     // it up front instead, and never mint a token — so autosave stays off by the
     // same mechanism that protects a failed load.
     const isGuestSession = Boolean(user?.isAnonymous);
+    const accountScope = JSON.stringify([user?.uid, isGuestSession, currentProjectId, resolvedOrgId]);
 
     // Load (or start fresh) whenever the app's active project changes.
     useEffect(() => {
-        if (!currentProjectId || !user) return;
-        if (loadedProjectIdRef.current === currentProjectId) return;
+        if (!currentProjectId || !user) { tokenRef.current = null; loadedProjectIdRef.current = null; return; }
+        if (loadedProjectIdRef.current === accountScope) return;
 
         if (isGuestSession) {
-            loadedProjectIdRef.current = currentProjectId;
+            loadedProjectIdRef.current = accountScope;
             tokenRef.current = null;
             const store = useVideoEditorStore.getState();
             store.setIsEphemeralSession(true);
@@ -122,7 +126,7 @@ export function useVideoProjectPersistence() {
             return;
         }
         useVideoEditorStore.getState().setIsEphemeralSession(false);
-        loadedProjectIdRef.current = currentProjectId;
+        loadedProjectIdRef.current = accountScope;
 
         // A new project means the previous token no longer authorises anything.
         tokenRef.current = null;
@@ -173,8 +177,9 @@ export function useVideoProjectPersistence() {
 
         return () => {
             cancelled = true;
+            if (loadedProjectIdRef.current === accountScope) loadedProjectIdRef.current = null;
         };
-    }, [currentProjectId, user, isGuestSession]);
+    }, [currentProjectId, user, isGuestSession, accountScope]);
 
     // Debounced autosave on every project mutation.
     useEffect(() => {
@@ -239,4 +244,16 @@ export function useVideoProjectPersistence() {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+    const flushSave = useCallback(async () => {
+        const expected = useVideoEditorStore.getState().project; const active = useStore.getState();
+        if (!tokenRef.current || !active.user || active.user.isAnonymous || active.currentProjectId !== expected.id) throw new Error('Sign in and wait for this project to finish loading before saving or exporting.');
+        await save();
+        while (saveInFlightRef.current) await saveInFlightRef.current;
+        if (useStore.getState().user?.uid !== active.user.uid || useStore.getState().currentProjectId !== expected.id
+            || lastSyncedProjectRef.current !== expected || useVideoEditorStore.getState().project !== expected) throw new Error('The timeline changed while saving. Review it and try again.');
+        const error = useVideoEditorStore.getState().projectSaveError;
+        if (error) throw new Error(error);
+    }, [save]);
+    return { flushSave };
+
 }
