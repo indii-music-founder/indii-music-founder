@@ -312,4 +312,45 @@ describe('RightPanel', () => {
         });
         expect(vi.mocked(Element.prototype.scrollTo).mock.calls.length).toBeGreaterThan(callsAfterInitialAnchor);
     });
+
+    it('scrolls to bottom when switching agents or departments even if message count does not increase', () => {
+        const message1 = {
+            id: 'm-1',
+            role: 'model' as const,
+            text: 'Hello from agent A',
+            timestamp: Date.now(),
+        };
+        const message2 = {
+            id: 'm-2',
+            role: 'model' as const,
+            text: 'Hello from agent B',
+            timestamp: Date.now(),
+        };
+        const agentAState = {
+            ...defaultState,
+            rightPanelTab: 'agent',
+            isRightPanelOpen: true,
+            directTargetAgentId: 'agent-a',
+            agentHistory: [message1],
+        };
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue(agentAState);
+
+        const { rerender } = render(<RightPanel />);
+        const callsCount = vi.mocked(Element.prototype.scrollTo).mock.calls.length;
+
+        // Switch to agent B with the same or fewer messages
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...agentAState,
+            directTargetAgentId: 'agent-b',
+            agentHistory: [message2],
+        });
+        rerender(<RightPanel />);
+
+        expect(Element.prototype.scrollTo).toHaveBeenCalledWith({
+            top: expect.any(Number),
+            behavior: 'auto',
+        });
+        expect(vi.mocked(Element.prototype.scrollTo).mock.calls.length).toBeGreaterThan(callsCount);
+    });
 });
+

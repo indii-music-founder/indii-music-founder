@@ -565,4 +565,13 @@ describe('DirectGenerationTab', () => {
             );
         });
     });
+
+    it('removes the redundant Studio Gallery in the middle and provides full area for Creative Hub', () => {
+        render(<DirectGenerationTab />);
+        expect(screen.queryByText('Studio Gallery')).not.toBeInTheDocument();
+        expect(screen.getByTestId('direct-generation-controls')).toHaveClass('w-full');
+        expect(screen.getByText('Upload Photo')).toBeInTheDocument();
+        expect(screen.getByText('Project Assets')).toBeInTheDocument();
+    });
 });
+

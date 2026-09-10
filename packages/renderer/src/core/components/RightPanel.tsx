@@ -51,6 +51,10 @@ export default function RightPanel() {
         rightPanelWidth,
         setRightPanelWidth,
         isSidebarOpen,
+        activeSessionId,
+        activeDepartmentId,
+        directTargetAgentId,
+        conversationMode,
     } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
@@ -68,12 +72,18 @@ export default function RightPanel() {
             rightPanelWidth: state.rightPanelWidth,
             setRightPanelWidth: state.setRightPanelWidth,
             isSidebarOpen: state.isSidebarOpen,
+            activeSessionId: state.activeSessionId,
+            activeDepartmentId: state.activeDepartmentId,
+            directTargetAgentId: state.directTargetAgentId,
+            conversationMode: state.conversationMode,
         }))
     );
 
     const chatScrollRef = React.useRef<HTMLDivElement>(null);
     const shouldFollowChatRef = React.useRef(true);
     const previousMessageCountRef = React.useRef(0);
+    const currentContextKey = `${activeSessionId || ''}:${activeDepartmentId || ''}:${directTargetAgentId || ''}:${conversationMode || ''}`;
+    const previousContextKeyRef = React.useRef<string>('');
     const [isCreationsCollapsed, setIsCreationsCollapsed] = React.useState(true);
     const [shouldPulseCreations, setShouldPulseCreations] = React.useState(false);
     const [viewportWidth, setViewportWidth] = React.useState(() =>
@@ -129,6 +139,12 @@ export default function RightPanel() {
             return;
         }
 
+        const contextSwitched = previousContextKeyRef.current !== currentContextKey;
+        if (contextSwitched) {
+            previousContextKeyRef.current = currentContextKey;
+            shouldFollowChatRef.current = true;
+        }
+
         if (agentHistory.length > previousMessageCountRef.current) {
             shouldFollowChatRef.current = true;
         }
@@ -140,6 +156,13 @@ export default function RightPanel() {
                 top: scrollContainer.scrollHeight,
                 behavior: 'auto',
             });
+            if (typeof requestAnimationFrame === 'function') {
+                requestAnimationFrame(() => {
+                    if (chatScrollRef.current && shouldFollowChatRef.current) {
+                        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+                    }
+                });
+            }
         }
     }, [
         agentHistory.length,
@@ -147,6 +170,7 @@ export default function RightPanel() {
         latestMessageSignature,
         rightPanelTab,
         view,
+        currentContextKey,
     ]);
 
     const handleChatScroll = React.useCallback(() => {

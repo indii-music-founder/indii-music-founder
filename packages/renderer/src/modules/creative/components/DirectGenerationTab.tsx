@@ -142,52 +142,110 @@ export default function DirectGenerationTab() {
 
     return (
         <div
-            className={`flex h-full min-h-0 w-full bg-[#050406] text-foreground select-none overflow-hidden ${
-                workspaceMode === 'focused' ? 'flex-col' : 'flex-row'
+            className={`flex flex-col h-full min-h-0 w-full bg-[#050406] text-foreground select-none overflow-y-auto ${
+                workspaceMode === 'focused' ? 'flex-col' : ''
             }`}
             data-testid="direct-generation-workspace"
             data-workspace-mode={workspaceMode}
         >
-            {/* LEFT COLUMN: Premium Glassmorphic Control Console */}
+            {/* FULL AREA: Premium Glassmorphic Creative Hub Workspace */}
             <div
-                className={`border-white/5 bg-[#0a090c]/80 backdrop-blur-3xl flex flex-col justify-between overflow-y-auto shrink-0 select-none relative ${
-                    workspaceMode === 'focused'
-                        ? 'h-[min(24rem,48%)] w-full border-b p-4'
-                        : workspaceMode === 'standard'
-                            ? 'h-full w-[min(23rem,42%)] border-r p-4'
-                            : 'h-full w-[38%] border-r p-6'
-                }`}
+                className="w-full flex-1 flex flex-col justify-between overflow-y-auto shrink-0 select-none relative p-6 max-w-6xl mx-auto"
                 data-testid="direct-generation-controls"
             >
                 
                 {/* Glowing subtle top gradient mesh for a premium look */}
                 <div className="absolute top-0 left-0 right-0 h-40 bg-radial-gradient from-dept-creative/10 to-transparent pointer-events-none" />
 
-                <div className="flex flex-col gap-6 z-10">
+                <div className="flex flex-col gap-6 z-10 w-full">
                     {/* Console Header */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="p-1.5 rounded-lg bg-dept-creative/10 border border-dept-creative/20 text-dept-creative shadow-[0_0_12px_rgba(var(--color-dept-creative-rgb),0.1)]">
-                                <Wand2 size={16} />
+                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-dept-creative/10 border border-dept-creative/20 text-dept-creative shadow-[0_0_12px_rgba(var(--color-dept-creative-rgb),0.1)]">
+                                <Wand2 size={18} />
                             </div>
                             <div>
-                                <h2 className="text-xs uppercase font-extrabold tracking-widest text-white/90">Creative Hub</h2>
-                                <p className="text-[10px] text-gray-500 font-medium">Direct Creative Generation</p>
+                                <h2 className="text-sm uppercase font-extrabold tracking-widest text-white/95">Creative Hub</h2>
+                                <p className="text-[10px] text-gray-400 font-medium">Direct Creative Generation Studio</p>
                             </div>
                         </div>
-                        {/* Dynamic Active Model Status Badge */}
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-                            <span className="text-[9px] font-mono text-gray-400 font-bold uppercase tracking-wider">
-                                {mode === 'image' 
-                                    ? (studioControls.model === 'pro' ? 'Nano Banana Pro' : 'Nano Banana 2') 
-                                    : 'Veo 3.1'}
-                            </span>
+
+                        {/* Quick Header Actions */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
+                                <span className="text-[9.5px] font-mono text-gray-300 font-bold uppercase tracking-wider">
+                                    {mode === 'image' 
+                                        ? (studioControls.model === 'pro' ? 'Nano Banana Pro' : 'Nano Banana 2') 
+                                        : 'Veo 3.1'}
+                                </span>
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    const input = document.createElement('input');
+                                    input.type = 'file';
+                                    input.accept = 'image/*';
+                                    input.onchange = (e) => {
+                                        const file = (e.target as HTMLInputElement).files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = async (event) => {
+                                                const dataUrl = event.target?.result as string;
+                                                const newId = `upload_${Date.now()}`;
+                                                const { useStore } = await import('@/core/store');
+                                                const { addUploadedImage, currentProjectId, setSelectedItem, setViewMode, setRightPanelTab } = useStore.getState();
+                                                
+                                                const uploadedItem = {
+                                                    id: newId,
+                                                    url: dataUrl,
+                                                    prompt: 'Uploaded Photo',
+                                                    type: 'image' as const,
+                                                    timestamp: Date.now(),
+                                                    projectId: currentProjectId,
+                                                    origin: 'uploaded' as const
+                                                };
+                                                
+                                                setRightPanelTab('assets');
+                                                setSelectedItem(uploadedItem);
+                                                setViewMode('editor');
+
+                                                addUploadedImage(uploadedItem).then((success) => {
+                                                    if (success) {
+                                                        toast.success('Photo saved to Project Assets');
+                                                    } else {
+                                                        toast.error('Photo available locally but failed to backup to cloud');
+                                                    }
+                                                }).catch(() => {
+                                                    toast.error('Photo available locally but failed to backup to cloud');
+                                                });
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    };
+                                    input.click();
+                                }}
+                                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-bold text-white transition-all flex items-center gap-1.5"
+                            >
+                                <ImageIcon size={12} />
+                                Upload Photo
+                            </button>
+                            
+                            <button
+                                onClick={async () => {
+                                    const { useStore } = await import('@/core/store');
+                                    useStore.getState().setRightPanelTab('assets');
+                                }}
+                                className="px-3 py-1.5 bg-dept-creative/20 hover:bg-dept-creative/30 border border-dept-creative/30 rounded-xl text-[10px] font-bold text-dept-creative transition-all flex items-center gap-1.5"
+                            >
+                                <Layers size={12} />
+                                Project Assets
+                            </button>
                         </div>
                     </div>
 
                     {/* Mode Toggle Tabs */}
-                    <div className="flex bg-white/4 rounded-xl p-1 border border-white/5 shadow-inner">
+                    <div className="flex bg-white/4 rounded-xl p-1 border border-white/5 shadow-inner max-w-md mx-auto w-full">
                         <button
                             onClick={() => handleModeSwitch('image')}
                             data-testid="direct-image-mode-btn"
@@ -686,247 +744,131 @@ export default function DirectGenerationTab() {
                 </div>
             </div>
 
-            {/* RIGHT COLUMN: Spacious Visual Canvas & Results Gallery */}
-            <div
-                className={`min-h-0 min-w-0 flex-1 bg-[#060507] overflow-y-auto flex flex-col justify-start relative select-none ${
-                    workspaceMode === 'wide' ? 'p-8' : 'p-4'
-                }`}
-                data-testid="direct-generation-results"
-            >
-                
-                {/* mesh background accent */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-radial-gradient from-green-900/10 to-transparent pointer-events-none filter blur-3xl" />
-
-                {results.length === 0 && activeJobs.length === 0 ? (
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="h-full w-full flex flex-col items-center justify-center text-center max-w-lg mx-auto"
-                    >
-                        <div className="relative mb-6">
-                            {/* Glowing animated orb */}
-                            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-dept-creative via-green-500 to-pink-500 opacity-20 blur-xl animate-pulse" />
-                            <div className="w-16 h-16 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center text-dept-creative shadow-2xl relative">
-                                <Sparkles size={28} className="animate-bounce" />
-                            </div>
+            {/* Live Generation Results & Active Jobs */}
+            <div data-testid="direct-generation-results" className="min-w-0 w-full max-w-5xl mx-auto px-6 mb-6">
+                {activeJobs.length > 0 && (
+                    <div className="flex flex-col gap-3 mb-4">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 flex items-center gap-1.5">
+                            <Loader2 size={12} className="animate-spin" />
+                            In-Flight Generation
+                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {activeJobs.map((job) => (
+                                <VideoGenerationProgress key={job.id} job={job} onCancel={cancelJob} />
+                            ))}
                         </div>
-
-                        <h3 className="text-sm font-extrabold text-white uppercase tracking-wider mb-2">Direct Creative Canvas</h3>
-                        <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                            Welcome to the Creative Studio. Generate photorealistic release art and high-fidelity video canvases, or bring your own assets to start editing.
-                        </p>
-
-                        <div className="flex gap-3 mb-8">
-                            <button
-                                onClick={() => {
-                                    const input = document.createElement('input');
-                                    input.type = 'file';
-                                    input.accept = 'image/*';
-                                    input.onchange = (e) => {
-                                        const file = (e.target as HTMLInputElement).files?.[0];
-                                        if (file) {
-                                            const reader = new FileReader();
-                                            reader.onload = async (event) => {
-                                                const dataUrl = event.target?.result as string;
-                                                const newId = `upload_${Date.now()}`;
-                                                const { useStore } = await import('@/core/store');
-                                                const { addUploadedImage, currentProjectId, setSelectedItem, setViewMode, setRightPanelTab } = useStore.getState();
-                                                
-                                                const uploadedItem = {
-                                                    id: newId,
-                                                    url: dataUrl,
-                                                    prompt: 'Uploaded Photo',
-                                                    type: 'image' as const,
-                                                    timestamp: Date.now(),
-                                                    projectId: currentProjectId,
-                                                    origin: 'uploaded' as const
-                                                };
-                                                
-                                                // ISSUE-1055: Optimistically update local UI state before network request
-                                                // so timeouts don't block the user from editing the image immediately.
-                                                setRightPanelTab('assets');
-                                                setSelectedItem(uploadedItem);
-                                                setViewMode('editor');
-
-                                                addUploadedImage(uploadedItem).then((success) => {
-                                                    if (success) {
-                                                        toast.success('Photo saved to Project Assets');
-                                                    } else {
-                                                        toast.error('Photo available locally but failed to backup to cloud');
-                                                    }
-                                                }).catch(() => {
-                                                    toast.error('Photo available locally but failed to backup to cloud');
-                                                });
-                                            };
-                                            reader.readAsDataURL(file);
-                                        }
-                                    };
-                                    input.click();
-                                }}
-                                className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-2"
-                            >
-                                <ImageIcon size={14} />
-                                Upload Photo
-                            </button>
-                            
+                    </div>
+                )}
+                {results.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-center">
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-white/80 flex items-center gap-1.5">
+                                <Sparkles size={12} className="text-dept-creative" />
+                                Latest Generated Asset
+                            </span>
                             <button
                                 onClick={async () => {
                                     const { useStore } = await import('@/core/store');
                                     useStore.getState().setRightPanelTab('assets');
                                 }}
-                                className="px-5 py-2.5 bg-dept-creative/20 hover:bg-dept-creative/30 border border-dept-creative/30 rounded-xl text-xs font-bold text-dept-creative transition-all flex items-center gap-2"
+                                className="text-[10px] text-dept-creative hover:underline flex items-center gap-1 font-bold uppercase tracking-wider"
                             >
-                                <Layers size={14} />
-                                Browse Project Assets
+                                View in Project Assets →
                             </button>
                         </div>
-
-                        <div className="w-full text-left">
-                            <p className="text-[10px] uppercase font-bold text-gray-500 mb-3 text-center tracking-wider">Or try one of these prompts</p>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button 
-                                    onClick={() => setLocalPrompt("A cinematic wide shot of a lone musician standing on a neon-lit bridge in Tokyo, rain falling, 8k photorealistic, cyberpunk vibe")}
-                                    className="p-3 bg-white/2 hover:bg-white/5 rounded-xl border border-white/5 transition-all text-left"
-                                >
-                                    <h4 className="text-[10px] uppercase font-bold text-white mb-1 flex items-center gap-1"><ImageIcon size={10} className="text-emerald-400" /> Album Cover</h4>
-                                    <p className="text-[9px] text-gray-500 leading-normal line-clamp-2">A cinematic wide shot of a lone musician standing on a neon-lit bridge...</p>
-                                </button>
-                                <button 
-                                    onClick={() => setLocalPrompt("Hyper-detailed 3D render of floating speakers in an abstract colorful void, slow orbit camera pan, cinematic lighting")}
-                                    className="p-3 bg-white/2 hover:bg-white/5 rounded-xl border border-white/5 transition-all text-left"
-                                >
-                                    <h4 className="text-[10px] uppercase font-bold text-white mb-1 flex items-center gap-1"><Video size={10} className="text-blue-400" /> Spotify Canvas Loop</h4>
-                                    <p className="text-[9px] text-gray-500 leading-normal line-clamp-2">Hyper-detailed 3D render of floating speakers in an abstract colorful void...</p>
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                ) : (
-                    <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full z-10">
-                        {/* Interactive Gallery Header */}
-                        <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                            <div>
-                                <h3 className="text-[11px] uppercase font-extrabold tracking-widest text-white/95">Studio Gallery</h3>
-                                <p className="text-[9.5px] text-gray-500">Live assets generated during this session</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <span className="px-2 py-0.5 bg-white/3 rounded-md text-[8.5px] font-mono text-gray-400 border border-white/5 font-bold uppercase">
-                                    {results.length} Asset{results.length !== 1 ? 's' : ''}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Grid container with spring animation */}
-                        <motion.div
-                            layout
-                            className={`grid gap-5 ${
-                                workspaceMode === 'wide'
-                                    ? 'grid-cols-4'
-                                    : workspaceMode === 'standard'
-                                        ? 'grid-cols-2'
-                                        : 'grid-cols-1'
-                            }`}
-                        >
-                            <AnimatePresence mode="popLayout">
-                                {activeJobs.map((job) => (
-                                    <VideoGenerationProgress key={job.id} job={job} onCancel={cancelJob} />
-                                ))}
-                                {results.filter(r => !activeJobs.some(j => j.id === r.id)).map((item) => (
-                                    <motion.div
-                                        layout
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        transition={{ type: 'spring', bounce: 0, duration: 0.45 }}
-                                        key={item.id}
-                                        className="group relative aspect-square bg-white/2 rounded-2xl overflow-hidden border border-white/5 hover:border-white/15 hover:shadow-2xl hover:shadow-green-500/5 transition-all cursor-pointer"
-                                        onClick={() => {
-                                            setSelectedItem(item);
+                        {(() => {
+                            const latestItem = results[0];
+                            if (!latestItem) return null;
+                            return (
+                                <div 
+                                    className="group relative rounded-2xl bg-white/2 border border-white/10 p-4 flex flex-col md:flex-row items-center gap-4 hover:border-white/20 transition-all cursor-pointer"
+                                    onClick={() => {
+                                        setSelectedItem(latestItem);
+                                        setViewMode('editor');
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setSelectedItem(latestItem);
                                             setViewMode('editor');
-                                        }}
-                                        role="button"
-                                        tabIndex={0}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault();
-                                                setSelectedItem(item);
-                                                setViewMode('editor');
-                                            }
-                                        }}
-                                        data-testid={`direct-result-${item.id}`}
-                                    >
-                                        {item.type === 'video' ? (
-                                            <div className="w-full h-full">
-                                                <CreativeVideoPlayer 
-                                                    jobId={item.url ? undefined : item.id} 
-                                                    url={item.url || undefined} 
-                                                    autoPlay={false}
-                                                    className="w-full h-full border-none rounded-none"
-                                                />
-                                                <div className="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/60 border border-white/5 backdrop-blur-md flex items-center gap-1 pointer-events-none">
-                                                    <Video size={9} className="text-green-400" />
-                                                    <span className="text-[8px] font-bold text-white uppercase tracking-widest font-mono">Video</span>
-                                                </div>
-                                            </div>
+                                        }
+                                    }}
+                                    data-testid={`direct-result-${latestItem.id}`}
+                                >
+                                    <div className="w-32 h-32 rounded-xl overflow-hidden bg-black/40 shrink-0 relative border border-white/5">
+                                        {latestItem.type === 'video' ? (
+                                            <CreativeVideoPlayer 
+                                                jobId={latestItem.url ? undefined : latestItem.id} 
+                                                url={latestItem.url || undefined} 
+                                                autoPlay={false}
+                                                className="w-full h-full border-none rounded-none"
+                                            />
                                         ) : (
-                                            <div className="w-full h-full relative">
-                                                <img src={item.url} alt={item.prompt} className="w-full h-full object-cover" />
-                                                <div className="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/60 border border-white/5 backdrop-blur-md flex items-center gap-1 pointer-events-none">
-                                                    <ImageIcon size={9} className="text-emerald-400" />
-                                                    <span className="text-[8px] font-bold text-white uppercase tracking-widest font-mono">Image</span>
-                                                </div>
-                                            </div>
+                                            <img src={latestItem.url} alt={latestItem.prompt} className="w-full h-full object-cover" />
                                         )}
-
-                                        {/* Hover Overlay styling */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 p-4 flex flex-col justify-end">
-                                            <p className="text-white text-[10px] leading-normal font-medium line-clamp-2 mb-3">{item.prompt}</p>
-                                            <div className="flex justify-between items-center border-t border-white/10 pt-2">
-                                                <span className="text-[8.5px] uppercase font-bold tracking-widest text-dept-creative">Open Editor</span>
-                                                <div className="flex items-center gap-1.5">
-                                                    <button 
-                                                        aria-label="Pin to visual clipboard" 
-                                                        className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-violet-400 hover:text-white hover:bg-violet-600/35 transition-colors" 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            pinToClipboard({
-                                                                id: item.id,
-                                                                url: item.url,
-                                                                prompt: item.prompt || 'Direct Asset',
-                                                                type: item.type as 'image' | 'video',
-                                                                timestamp: Date.now()
-                                                            });
-                                                            toast.success("Pinned to Creative Clipboard!");
-                                                        }}
-                                                    >
-                                                        <Pin size={11} />
-                                                    </button>
-                                                    <button 
-                                                        aria-label="Download asset" 
-                                                        className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors" 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            void (async () => {
-                                                                // ISSUE-1395 (audit): a raw gs:// href cannot be downloaded —
-                                                                // resolve to a download URL first.
-                                                                const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
-                                                                const { downloadAsset } = await import('@/utils/download');
-                                                                const resolvedUrl = await resolveStorageUrl(item.url);
-                                                                const ext = item.type === 'video' ? 'mp4' : 'png';
-                                                                await downloadAsset(resolvedUrl, `${item.type}_${item.id}.${ext}`);
-                                                            })();
-                                                        }}
-                                                    >
-                                                        <Download size={11} />
-                                                    </button>
-                                                </div>
+                                    </div>
+                                    <div className="flex-1 flex flex-col justify-between h-full gap-2">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-white font-mono">
+                                                    {latestItem.type}
+                                                </span>
+                                                <span className="text-[10px] text-gray-500">Ready for editing</span>
                                             </div>
+                                            <p className="text-white text-xs font-medium line-clamp-2">{latestItem.prompt}</p>
                                         </div>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        </motion.div>
+                                        <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedItem(latestItem);
+                                                    setViewMode('editor');
+                                                }}
+                                                className="px-3 py-1.5 rounded-lg bg-dept-creative/20 hover:bg-dept-creative/30 text-dept-creative text-[10px] font-bold uppercase tracking-wider border border-dept-creative/30 transition-all flex items-center gap-1.5"
+                                            >
+                                                <Settings2 size={12} />
+                                                Open in Canvas Editor
+                                            </button>
+                                            <button 
+                                                aria-label="Pin to visual clipboard" 
+                                                className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-violet-400 hover:text-white hover:bg-violet-600/35 transition-colors" 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    pinToClipboard({
+                                                        id: latestItem.id,
+                                                        url: latestItem.url,
+                                                        prompt: latestItem.prompt || 'Direct Asset',
+                                                        type: latestItem.type as 'image' | 'video',
+                                                        timestamp: Date.now()
+                                                    });
+                                                    toast.success("Pinned to Creative Clipboard!");
+                                                }}
+                                            >
+                                                <Pin size={12} />
+                                            </button>
+                                            <button 
+                                                aria-label="Download asset" 
+                                                className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors" 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    void (async () => {
+                                                        const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                                                        const { downloadAsset } = await import('@/utils/download');
+                                                        const resolvedUrl = await resolveStorageUrl(latestItem.url);
+                                                        const ext = latestItem.type === 'video' ? 'mp4' : 'png';
+                                                        await downloadAsset(resolvedUrl, `${latestItem.type}_${latestItem.id}.${ext}`);
+                                                    })();
+                                                }}
+                                            >
+                                                <Download size={12} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 )}
             </div>

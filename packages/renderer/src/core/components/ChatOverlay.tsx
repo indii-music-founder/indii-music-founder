@@ -208,6 +208,24 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
         </div>
     ), [userProfile]);
 
+    const activeSessionId = useStore(state => state.activeSessionId);
+    const activeContextKey = `${activeAgentId}:${activeSessionId || ''}`;
+    const previousOverlayContextRef = useRef('');
+
+    useEffect(() => {
+        if (previousOverlayContextRef.current !== activeContextKey) {
+            previousOverlayContextRef.current = activeContextKey;
+            setIsAutoScrolling(true);
+            if (virtuosoRef.current && filteredMessages.length > 0) {
+                virtuosoRef.current.scrollToIndex({
+                    index: filteredMessages.length - 1,
+                    behavior: 'auto',
+                    align: 'end',
+                });
+            }
+        }
+    }, [activeContextKey, filteredMessages.length]);
+
     // Resize handles component
     const ResizeHandles = useMemo(() => (
         <>
