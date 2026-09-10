@@ -96,8 +96,9 @@ const clipDurationSeconds = (clip: IndiiVideoClip, fps: number): number => {
         ) {
             throw new Error(`compiler: clip ${clip.id} has invalid source range`);
         }
-        const rate = clip.playbackRate ?? 1;
-        if (!Number.isFinite(rate) || rate < 0.25 || rate > 4) throw new Error(`compiler: clip ${clip.id} has invalid playbackRate`);
+        const requestedRate = clip.playbackRate ?? 1;
+        if (!Number.isFinite(requestedRate)) throw new Error(`compiler: clip ${clip.id} has invalid playbackRate`);
+        const rate = Math.min(4, Math.max(0.25, requestedRate));
         return (sourceOutUs - sourceInUs) / US_PER_SECOND / rate;
     }
     return clip.durationInFrames / fps;
