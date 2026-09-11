@@ -16,6 +16,7 @@ import type {
     IndiiVideoClip,
     IndiiVideoProject,
     IndiiVideoTrack,
+    IndiiTrackType,
 } from '@indii/shared';
 
 export type ClipType = IndiiVideoClip['type'];
@@ -39,6 +40,8 @@ void _CANONICAL_MASTER_REF_IN_SYNC;
 export type VideoClip = IndiiVideoClip;
 
 export type VideoTrack = IndiiVideoTrack;
+
+export type TrackType = IndiiTrackType;
 
 export type VideoProject = IndiiVideoProject;
 
@@ -69,9 +72,20 @@ interface VideoEditorState {
 
     addTrack: (type: VideoTrack['type']) => void;
     removeTrack: (id: string) => void;
+    toggleMuteTrack: (trackId: string) => void;
+    toggleSoloTrack: (trackId: string) => void;
+    toggleLockTrack: (trackId: string) => void;
+    reorderTracks: (startIndex: number, endIndex: number) => void;
+    moveTrack: (trackId: string, targetIndex: number) => void;
 
     addClip: (clip: Omit<VideoClip, 'id'>) => void;
     updateClip: (id: string, updates: Partial<VideoClip>) => void;
+    /** Update clip during active drag/trim without pushing to past undo history. */
+    updateClipTransient: (id: string, updates: Partial<VideoClip>) => void;
+    /** Commit final drag/trim state and record a single undo snapshot from pre-drag state. */
+    commitTransientClipUpdate: (id: string, updates?: Partial<VideoClip>) => void;
+    /** Abort active drag/trim and restore pre-drag project state without recording history. */
+    abortTransientClipUpdate: () => void;
     removeClip: (id: string) => void;
     /** Delete + close the gap: later clips on the same track slide left. */
     rippleDeleteClip: (id: string) => void;
@@ -82,6 +96,7 @@ interface VideoEditorState {
     addKeyframe: (clipId: string, property: string, frame: number, value: number) => void;
     removeKeyframe: (clipId: string, property: string, frame: number) => void;
     updateKeyframe: (clipId: string, property: string, frame: number, updates: Partial<{ value: number, easing: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }>) => void;
+    moveKeyframe: (clipId: string, property: string, oldFrame: number, newFrame: number) => void;
 
     // Job Tracking
     jobId: string | null;
@@ -276,6 +291,10 @@ if (typeof window !== 'undefined') {
 const HISTORY_LIMIT = 50;
 /** True while undo/redo is applying a snapshot — that change must not re-record itself. */
 let _restoring = false;
+/** True while continuous dragging/trimming is occurring — bypasses undo history recording. */
+let _transient = false;
+/** Project snapshot captured at the start of a continuous drag session. */
+let _dragInitialProject: VideoProject | null = null;
 
 export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
     // Custom set wrapper to broadcast project sync
@@ -287,11 +306,19 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         // Every user edit lands in the undo history (capped); a new edit
         // clears the redo stack. Undo/redo applications are exempt.
         if (state.project !== before.project && !_restoring) {
-            safeSet({
-                past: [...before.past, before.project].slice(-HISTORY_LIMIT),
-                future: [],
-            }, false);
-            state = get();
+            if (_transient) {
+                // In transient drag mode: capture the initial pre-drag project snapshot once.
+                if (_dragInitialProject === null) {
+                    _dragInitialProject = before.project;
+                }
+                // Do NOT push to past and do NOT clear future while dragging.
+            } else {
+                safeSet({
+                    past: [...before.past, before.project].slice(-HISTORY_LIMIT),
+                    future: [],
+                }, false);
+                state = get();
+            }
         }
         // A rendered artifact represents one exact project snapshot. Any
         // timeline mutation invalidates it so preview can never silently show
@@ -477,14 +504,18 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
             return MembershipService.getMaxVideoDurationFrames(membershipTier, project.fps);
         },
 
-        setProject: (project) => set((state) => ({
-            project: {
-                ...project,
-                width: isSafeDimension(project.width) ? project.width : state.project.width,
-                height: isSafeDimension(project.height) ? project.height : state.project.height,
-                fps: isSafeFps(project.fps) ? project.fps : state.project.fps,
-            }
-        })),
+        setProject: (project) => {
+            _dragInitialProject = null;
+            _transient = false;
+            set((state) => ({
+                project: {
+                    ...project,
+                    width: isSafeDimension(project.width) ? project.width : state.project.width,
+                    height: isSafeDimension(project.height) ? project.height : state.project.height,
+                    fps: isSafeFps(project.fps) ? project.fps : state.project.fps,
+                }
+            }));
+        },
         updateProjectSettings: (settings) => set((state) => {
             const newSettings = sanitizeProjectSettings(settings, state.project);
 
@@ -539,6 +570,9 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                 id: uuidv4(),
                 name: `${type} Track`,
                 type,
+                isMuted: false,
+                isLocked: false,
+                isSolo: false,
             };
             return {
                 project: {
@@ -553,11 +587,113 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
             // final track is safer than creating a zero-track project that later
             // import/drop operations cannot route into.
             if (state.project.tracks.length <= 1) return {};
+            const trackExists = state.project.tracks.some(t => t.id === id);
+            if (!trackExists) return {};
+
+            const clipsOnTrack = state.project.clips.filter(c => c.trackId === id);
+            const shouldClearSelection = state.selectedClipId !== null &&
+                clipsOnTrack.some(c => c.id === state.selectedClipId);
+
             return {
+                ...(shouldClearSelection ? { selectedClipId: null } : {}),
                 project: {
                     ...state.project,
                     tracks: state.project.tracks.filter(t => t.id !== id),
                     clips: state.project.clips.filter(c => c.trackId !== id)
+                }
+            };
+        }),
+
+        toggleMuteTrack: (trackId) => set((state) => {
+            const track = state.project.tracks.find(t => t.id === trackId);
+            if (!track) return {};
+            return {
+                project: {
+                    ...state.project,
+                    tracks: state.project.tracks.map(t =>
+                        t.id === trackId ? { ...t, isMuted: !t.isMuted } : t
+                    )
+                }
+            };
+        }),
+
+        toggleSoloTrack: (trackId) => set((state) => {
+            const track = state.project.tracks.find(t => t.id === trackId);
+            if (!track) return {};
+            return {
+                project: {
+                    ...state.project,
+                    tracks: state.project.tracks.map(t =>
+                        t.id === trackId ? { ...t, isSolo: !t.isSolo } : t
+                    )
+                }
+            };
+        }),
+
+        toggleLockTrack: (trackId) => set((state) => {
+            const track = state.project.tracks.find(t => t.id === trackId);
+            if (!track) return {};
+            const nextLocked = !track.isLocked;
+            // When locking a track, deselect any currently selected clip on that track
+            const shouldClearSelection = nextLocked && state.selectedClipId !== null &&
+                state.project.clips.some(c => c.id === state.selectedClipId && c.trackId === trackId);
+
+            return {
+                ...(shouldClearSelection ? { selectedClipId: null } : {}),
+                project: {
+                    ...state.project,
+                    tracks: state.project.tracks.map(t =>
+                        t.id === trackId ? { ...t, isLocked: nextLocked } : t
+                    )
+                }
+            };
+        }),
+
+        reorderTracks: (startIndex, endIndex) => set((state) => {
+            const tracks = state.project.tracks;
+            if (
+                !Number.isInteger(startIndex) ||
+                !Number.isInteger(endIndex) ||
+                startIndex < 0 ||
+                startIndex >= tracks.length ||
+                endIndex < 0 ||
+                endIndex >= tracks.length ||
+                startIndex === endIndex
+            ) {
+                return {};
+            }
+            const nextTracks = [...tracks];
+            const [moved] = nextTracks.splice(startIndex, 1);
+            if (!moved) return {};
+            nextTracks.splice(endIndex, 0, moved);
+            return {
+                project: {
+                    ...state.project,
+                    tracks: nextTracks
+                }
+            };
+        }),
+
+        moveTrack: (trackId, targetIndex) => set((state) => {
+            const tracks = state.project.tracks;
+            const startIndex = tracks.findIndex(t => t.id === trackId);
+            if (
+                startIndex === -1 ||
+                !Number.isInteger(targetIndex) ||
+                targetIndex < 0 ||
+                targetIndex >= tracks.length ||
+                startIndex === targetIndex
+            ) {
+                return {};
+            }
+            const nextTracks = [...tracks];
+            const [moved] = nextTracks.splice(startIndex, 1);
+            if (!moved) return {};
+            nextTracks.splice(targetIndex, 0, moved);
+            return {
+                project: {
+                    ...state.project,
+                    tracks: nextTracks
                 }
             };
         }),
@@ -589,11 +725,88 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
             return { project: { ...state.project, clips, durationInFrames: requiredDuration } };
         }),
 
+        updateClipTransient: (id, updates) => {
+            _transient = true;
+            try {
+                get().updateClip(id, updates);
+            } finally {
+                _transient = false;
+            }
+        },
+
+        commitTransientClipUpdate: (id, updates = {}) => {
+            const initial = _dragInitialProject;
+            _dragInitialProject = null;
+
+            const before = get();
+            const clips = before.project.clips.map(c => c.id === id ? { ...c, ...updates } : c);
+            const updated = clips.find(c => c.id === id);
+            const requiredDuration = updated
+                ? Math.max(before.project.durationInFrames, updated.startFrame + updated.durationInFrames)
+                : before.project.durationInFrames;
+            const finalProject: VideoProject = {
+                ...before.project,
+                clips,
+                durationInFrames: requiredDuration,
+            };
+
+            const baseProject = initial ?? before.project;
+            const didChange = finalProject !== baseProject && (
+                finalProject.clips.length !== baseProject.clips.length ||
+                finalProject.durationInFrames !== baseProject.durationInFrames ||
+                finalProject.clips.some((c, idx) => {
+                    const b = baseProject.clips[idx];
+                    return !b || c.id !== b.id || c.startFrame !== b.startFrame ||
+                        c.durationInFrames !== b.durationInFrames ||
+                        c.sourceInUs !== b.sourceInUs || c.sourceOutUs !== b.sourceOutUs ||
+                        c.trackId !== b.trackId;
+                })
+            );
+
+            if (!didChange) {
+                if (finalProject !== before.project) {
+                    _restoring = true;
+                    try {
+                        set({ project: finalProject });
+                    } finally {
+                        _restoring = false;
+                    }
+                }
+                return;
+            }
+
+            _restoring = true;
+            try {
+                set({
+                    project: finalProject,
+                    past: [...before.past, baseProject].slice(-HISTORY_LIMIT),
+                    future: [],
+                    previewArtifactUrl: null,
+                });
+            } finally {
+                _restoring = false;
+            }
+        },
+
+        abortTransientClipUpdate: () => {
+            if (_dragInitialProject !== null) {
+                const initial = _dragInitialProject;
+                _dragInitialProject = null;
+                _restoring = true;
+                try {
+                    set({ project: initial });
+                } finally {
+                    _restoring = false;
+                }
+            }
+        },
+
         removeClip: (id) => set((state) => ({
             project: {
                 ...state.project,
                 clips: state.project.clips.filter(c => c.id !== id)
-            }
+            },
+            ...(state.selectedClipId === id ? { selectedClipId: null } : {}),
         })),
 
         rippleDeleteClip: (id) => set((state) => {
@@ -610,6 +823,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                             : c))
                         .sort((a, b) => a.startFrame - b.startFrame),
                 },
+                ...(state.selectedClipId === id ? { selectedClipId: null } : {}),
             };
         }),
 
@@ -618,11 +832,45 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
             if (!clip) return {};
             const start = clip.startFrame;
             const end = start + clip.durationInFrames;
-            if (!Number.isInteger(atFrame) || atFrame <= start || atFrame >= end) return {};
+            const splitFrame = Math.round(atFrame);
+            if (!Number.isFinite(splitFrame) || splitFrame <= start || splitFrame >= end) return {};
 
-            const leftFrames = atFrame - start;
+            const leftFrames = splitFrame - start;
+            const rightFrames = end - splitFrame;
             const left: VideoClip = { ...clip, id: uuidv4(), name: `${clip.name} A`, durationInFrames: leftFrames };
-            const right: VideoClip = { ...clip, id: uuidv4(), name: `${clip.name} B`, startFrame: atFrame, durationInFrames: end - atFrame };
+            const right: VideoClip = { ...clip, id: uuidv4(), name: `${clip.name} B`, startFrame: splitFrame, durationInFrames: rightFrames };
+
+            // Partition and offset keyframes for left and right halves
+            if (clip.keyframes) {
+                const leftKeyframes: NonNullable<VideoClip['keyframes']> = {};
+                const rightKeyframes: NonNullable<VideoClip['keyframes']> = {};
+                let hasLeft = false;
+                let hasRight = false;
+
+                for (const [prop, kfs] of Object.entries(clip.keyframes)) {
+                    if (!Array.isArray(kfs)) continue;
+                    const leftKfs = kfs
+                        .filter(k => k.frame < leftFrames)
+                        .map(k => ({ ...k }))
+                        .sort((a, b) => a.frame - b.frame);
+                    const rightKfs = kfs
+                        .filter(k => k.frame >= leftFrames)
+                        .map(k => ({ ...k, frame: k.frame - leftFrames }))
+                        .sort((a, b) => a.frame - b.frame);
+
+                    if (leftKfs.length > 0) {
+                        leftKeyframes[prop] = leftKfs;
+                        hasLeft = true;
+                    }
+                    if (rightKfs.length > 0) {
+                        rightKeyframes[prop] = rightKfs;
+                        hasRight = true;
+                    }
+                }
+
+                left.keyframes = hasLeft ? leftKeyframes : undefined;
+                right.keyframes = hasRight ? rightKeyframes : undefined;
+            }
 
             // Source-trim-aware: the µs window shifts with the split so the
             // two halves cover the same media region as the original.
@@ -638,7 +886,10 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
 
             const clips = [...state.project.clips.filter(c => c.id !== id), left, right]
                 .sort((a, b) => a.startFrame - b.startFrame);
-            return { project: { ...state.project, clips } };
+            return {
+                project: { ...state.project, clips },
+                selectedClipId: right.id,
+            };
         }),
 
         duplicateClip: (id) => set((state) => {
@@ -649,8 +900,26 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                 id: uuidv4(),
                 name: `${clip.name} copy`,
                 startFrame: clip.startFrame + clip.durationInFrames,
+                keyframes: clip.keyframes
+                    ? Object.fromEntries(
+                        Object.entries(clip.keyframes).map(([prop, kfs]) => [
+                            prop,
+                            Array.isArray(kfs) ? kfs.map(k => ({ ...k })) : [],
+                        ])
+                    )
+                    : undefined,
             };
-            return { project: { ...state.project, clips: [...state.project.clips, copy] } };
+            const copyEndFrame = copy.startFrame + copy.durationInFrames;
+            const requiredDuration = Math.max(state.project.durationInFrames, copyEndFrame);
+
+            return {
+                project: {
+                    ...state.project,
+                    clips: [...state.project.clips, copy],
+                    durationInFrames: requiredDuration,
+                },
+                selectedClipId: copy.id,
+            };
         }),
 
         addKeyframe: (clipId: string, property: string, frame: number, value: number) => set((state) => {
@@ -711,11 +980,42 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                 }
             };
         }),
+
+        moveKeyframe: (clipId: string, property: string, oldFrame: number, newFrame: number) => set((state) => {
+            const clip = state.project.clips.find(c => c.id === clipId);
+            if (!clip || !clip.keyframes || !clip.keyframes[property]) return {};
+
+            const keyframes = clip.keyframes[property]!;
+            const targetKf = keyframes.find(k => k.frame === oldFrame);
+            if (!targetKf) return {};
+
+            // Discrete integer frame clamped to valid clip bounds [0, durationInFrames]
+            const targetFrame = Math.max(0, Math.min(Math.round(newFrame), clip.durationInFrames));
+            if (targetFrame === oldFrame) return {};
+
+            // Remove old keyframe and any colliding keyframe at the target destination
+            const remaining = keyframes.filter(k => k.frame !== oldFrame && k.frame !== targetFrame);
+            const updatedKf = { ...targetKf, frame: targetFrame };
+            const sorted = [...remaining, updatedKf].sort((a, b) => a.frame - b.frame);
+
+            return {
+                project: {
+                    ...state.project,
+                    clips: state.project.clips.map(c => c.id === clipId ? {
+                        ...c,
+                        keyframes: {
+                            ...c.keyframes,
+                            [property]: sorted
+                        }
+                    } : c)
+                }
+            };
+        }),
     };
 });
 
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
-    (window as any).useVideoEditorStore = useVideoEditorStore;
+    (window as unknown as Record<string, unknown>).useVideoEditorStore = useVideoEditorStore;
 }
 
 /** Raised when a compile is refused. Never partially applied — the project is untouched. */

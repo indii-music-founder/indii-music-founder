@@ -22,29 +22,87 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ artifactUrl, project
     const { html, error, isCompiling } = useCompiledVideoPreview(project);
     const aspectRatio = project.width / project.height;
 
+    const lastNonceRef = React.useRef<number | null>(null);
+
     React.useEffect(() => {
         const el = html ? playerRef.current : videoRef.current;
         attachPreviewElement(el);
+        if (el && seekRequest && seekRequest.nonce !== lastNonceRef.current) {
+            lastNonceRef.current = seekRequest.nonce;
+            previewSeekToFrame(seekRequest.frame, project.fps);
+        }
         return () => detachPreviewElement(el);
-    }, [html, artifactUrl]);
+    }, [html, artifactUrl, seekRequest, project.fps]);
+
 
     React.useEffect(() => {
         const el = html ? playerRef.current : videoRef.current;
         if (!el || !onFrameUpdate) return;
+
+        let rafId: number | null = null;
+        let lastFrame = -1;
+
+        const emitFrame = (seconds: number) => {
+            const frame = Math.round(seconds * (project.fps || 30));
+            if (Number.isFinite(frame) && frame !== lastFrame) {
+                lastFrame = frame;
+                onFrameUpdate(frame);
+            }
+        };
+
+        const tick = () => {
+            if (!el) return;
+            emitFrame(el.currentTime);
+            const isPaused = 'paused' in el ? (el as HTMLVideoElement).paused : false;
+            if (!isPaused) {
+                rafId = requestAnimationFrame(tick);
+            }
+        };
+
+        const onPlay = () => {
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(tick);
+        };
+
+        const onPause = () => {
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+        };
+
         const onTime = (event: Event) => {
             const detailTime = (event as CustomEvent<{ currentTime?: number }>).detail?.currentTime;
             const seconds = typeof detailTime === 'number' ? detailTime : el.currentTime;
-            const frame = Math.round(seconds * (project.fps || 30));
-            if (Number.isFinite(frame)) onFrameUpdate(frame);
+            emitFrame(seconds);
         };
+
+        el.addEventListener('play', onPlay);
+        el.addEventListener('pause', onPause);
         el.addEventListener('timeupdate', onTime);
-        return () => el.removeEventListener('timeupdate', onTime);
+
+        const isPaused = 'paused' in el ? (el as HTMLVideoElement).paused : false;
+        if (!isPaused) {
+            rafId = requestAnimationFrame(tick);
+        }
+
+        return () => {
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            el.removeEventListener('play', onPlay);
+            el.removeEventListener('pause', onPause);
+            el.removeEventListener('timeupdate', onTime);
+        };
     }, [html, onFrameUpdate, project.fps]);
 
     React.useEffect(() => {
         if (!seekRequest) return;
+        const el = html ? playerRef.current : videoRef.current;
+        if (!el) return;
+        if (seekRequest.nonce === lastNonceRef.current) return;
+        lastNonceRef.current = seekRequest.nonce;
         previewSeekToFrame(seekRequest.frame, project.fps);
     }, [html, project.fps, seekRequest]);
+
 
     const fallbackArtifact = !html && artifactUrl;
     const hasLiveProject = project.clips.length > 0;
@@ -57,7 +115,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ artifactUrl, project
                 {html ? React.createElement('hyperframes-player', {
                     ref: playerRef,
                     srcdoc: html,
-                    loop: true,
+                    loop: false,
                     width: project.width,
                     height: project.height,
                     'data-testid': 'hyperframes-preview',
@@ -66,7 +124,6 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ artifactUrl, project
                     <video
                         ref={videoRef}
                         src={fallbackArtifact}
-                        loop
                         playsInline
                         data-testid="preview-video"
                         style={{ width: '100%', maxWidth: '800px', maxHeight: '100%', aspectRatio }}

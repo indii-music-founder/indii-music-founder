@@ -158,4 +158,53 @@ describe('VideoTimeline', () => {
         fireEvent.click(keyframe);
         expect(mockUpdateKeyframe).toHaveBeenCalledWith('c1', 'scale', 10, { easing: 'easeIn' });
     });
+
+    it('renders dynamic frame-accurate timecode in transport bar', () => {
+        render(<VideoTimeline {...defaultProps} />);
+        const timecode = screen.getByTestId('timeline-timecode');
+        expect(timecode).toBeInTheDocument();
+        expect(timecode).toHaveTextContent('00:00:00');
+    });
+
+    describe('magnetic snapping visual guide (Feature 16)', () => {
+        it('does not render snap-guide when snapIndicatorFrame is null or undefined', () => {
+            render(<VideoTimeline {...defaultProps} snapIndicatorFrame={null} />);
+            expect(screen.queryByTestId('snap-guide')).toBeNull();
+        });
+
+        it('renders snap-guide at accurate horizontal position when snapIndicatorFrame is active', () => {
+            // TOTAL_TRACK_HEADER_OFFSET (200px) + (frame 50 * 2 px/frame * zoom 1) = 300px
+            render(<VideoTimeline {...defaultProps} snapIndicatorFrame={50} />);
+            const guide = screen.getByTestId('snap-guide');
+            expect(guide).toBeInTheDocument();
+            expect(guide).toHaveStyle({ left: '300px' });
+            expect(guide).toHaveClass('bg-yellow-400');
+        });
+
+        it('renders snap-guide accounting for timelineZoom multiplier', () => {
+            const mockStateWithZoom = {
+                addKeyframe: mockAddKeyframe,
+                removeKeyframe: mockRemoveKeyframe,
+                updateKeyframe: mockUpdateKeyframe,
+                currentTime: 0,
+                timelineZoom: 2, // 2x zoom -> 4px per frame
+            };
+            (useVideoEditorStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
+                if (selector && typeof selector === 'function') {
+                    try {
+                        return selector(mockStateWithZoom);
+                    } catch (_e: unknown) {
+                        return undefined;
+                    }
+                }
+                return mockStateWithZoom;
+            });
+
+            // 200px + (frame 25 * 2 px/frame * zoom 2) = 300px
+            render(<VideoTimeline {...defaultProps} snapIndicatorFrame={25} />);
+            const guide = screen.getByTestId('snap-guide');
+            expect(guide).toBeInTheDocument();
+            expect(guide).toHaveStyle({ left: '300px' });
+        });
+    });
 });

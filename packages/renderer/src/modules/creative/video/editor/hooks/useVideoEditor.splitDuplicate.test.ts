@@ -61,6 +61,123 @@ describe('videoEditorStore — split and duplicate', () => {
         expect(clips[1]).toMatchObject({ startFrame: 30, durationInFrames: 30, trackId: 'track-1', name: 'Take 1 copy', src: 'a.mp4' });
         expect(clips[1]!.id).not.toBe('c1');
     });
+
+    it('partitions keyframes between left and right halves and offsets right keyframes', () => {
+        useVideoEditorStore.setState(state => ({
+            project: {
+                ...state.project,
+                clips: [
+                    {
+                        id: 'c1',
+                        type: 'video',
+                        startFrame: 0,
+                        durationInFrames: 30,
+                        trackId: 'track-1',
+                        name: 'Take 1',
+                        src: 'a.mp4',
+                        keyframes: {
+                            opacity: [
+                                { frame: 5, value: 0.2 },
+                                { frame: 15, value: 0.5 },
+                                { frame: 25, value: 1.0 },
+                            ],
+                            scale: [
+                                { frame: 0, value: 1.0 },
+                                { frame: 20, value: 2.0 },
+                            ],
+                        },
+                    },
+                ],
+            },
+            selectedClipId: 'c1',
+        }));
+
+        useVideoEditorStore.getState().splitClip('c1', 15);
+
+        const clips = useVideoEditorStore.getState().project.clips;
+        expect(clips).toHaveLength(2);
+
+        const left = clips[0]!;
+        const right = clips[1]!;
+
+        expect(left.durationInFrames).toBe(15);
+        expect(left.keyframes?.opacity).toEqual([{ frame: 5, value: 0.2 }]);
+        expect(left.keyframes?.scale).toEqual([{ frame: 0, value: 1.0 }]);
+
+        expect(right.startFrame).toBe(15);
+        expect(right.durationInFrames).toBe(15);
+        expect(right.keyframes?.opacity).toEqual([
+            { frame: 0, value: 0.5 },
+            { frame: 10, value: 1.0 },
+        ]);
+        expect(right.keyframes?.scale).toEqual([{ frame: 5, value: 2.0 }]);
+
+        // Selection is updated to the active split piece (right half)
+        expect(useVideoEditorStore.getState().selectedClipId).toBe(right.id);
+    });
+
+    it('handles floating point split positions with Math.round', () => {
+        useVideoEditorStore.getState().splitClip('c1', 14.8);
+
+        const clips = useVideoEditorStore.getState().project.clips;
+        expect(clips).toHaveLength(2);
+        expect(clips[0]).toMatchObject({ startFrame: 0, durationInFrames: 15 });
+        expect(clips[1]).toMatchObject({ startFrame: 15, durationInFrames: 15 });
+    });
+
+    it('expands project duration when duplicate extends beyond existing duration', () => {
+        useVideoEditorStore.setState(state => ({
+            project: {
+                ...state.project,
+                durationInFrames: 45,
+                clips: [
+                    { id: 'c1', type: 'video', startFrame: 20, durationInFrames: 30, trackId: 'track-1', name: 'Take 1', src: 'a.mp4' },
+                ],
+            },
+            selectedClipId: 'c1',
+        }));
+
+        useVideoEditorStore.getState().duplicateClip('c1');
+
+        const state = useVideoEditorStore.getState();
+        expect(state.project.clips).toHaveLength(2);
+        const copy = state.project.clips[1]!;
+        expect(copy.startFrame).toBe(50);
+        expect(copy.durationInFrames).toBe(30);
+        // Project duration expanded to 50 + 30 = 80
+        expect(state.project.durationInFrames).toBe(80);
+        // Duplicate is selected
+        expect(state.selectedClipId).toBe(copy.id);
+    });
+
+    it('deep-clones keyframes during duplication so original and copy remain isolated', () => {
+        useVideoEditorStore.setState(state => ({
+            project: {
+                ...state.project,
+                clips: [
+                    {
+                        id: 'c1',
+                        type: 'video',
+                        startFrame: 0,
+                        durationInFrames: 30,
+                        trackId: 'track-1',
+                        name: 'Take 1',
+                        src: 'a.mp4',
+                        keyframes: {
+                            opacity: [{ frame: 0, value: 1 }],
+                        },
+                    },
+                ],
+            },
+        }));
+
+        useVideoEditorStore.getState().duplicateClip('c1');
+
+        const [orig, copy] = useVideoEditorStore.getState().project.clips;
+        expect(copy!.keyframes?.opacity).toEqual([{ frame: 0, value: 1 }]);
+        expect(copy!.keyframes).not.toBe(orig!.keyframes);
+        expect(copy!.keyframes?.opacity).not.toBe(orig!.keyframes?.opacity);
+    });
 });
 
 describe('videoEditorStore — ripple delete', () => {
@@ -114,5 +231,19 @@ describe('videoEditorStore — ripple delete', () => {
     it('no-ops on a missing clip', () => {
         useVideoEditorStore.getState().rippleDeleteClip('missing');
         expect(useVideoEditorStore.getState().project.clips).toHaveLength(4);
+    });
+
+    it('resets selectedClipId to null if the ripple-deleted clip was selected', () => {
+        useVideoEditorStore.setState({ selectedClipId: 'c2' });
+        useVideoEditorStore.getState().rippleDeleteClip('c2');
+
+        expect(useVideoEditorStore.getState().selectedClipId).toBeNull();
+    });
+
+    it('preserves selectedClipId if a different clip was selected during ripple delete', () => {
+        useVideoEditorStore.setState({ selectedClipId: 'c1' });
+        useVideoEditorStore.getState().rippleDeleteClip('c2');
+
+        expect(useVideoEditorStore.getState().selectedClipId).toBe('c1');
     });
 });

@@ -2,13 +2,16 @@ import React, { memo } from 'react';
 import { VideoTrack, VideoClip } from '../../store/videoEditorStore';
 import { TimelineTrack } from './TimelineTrack';
 
-interface TrackListProps {
+export interface TrackListProps {
     tracks: VideoTrack[];
     clipsByTrack: Record<string, VideoClip[]>;
     selectedClipId: string | null;
     expandedClipIds: Set<string>;
     onRemoveTrack: (id: string) => void;
     onAddSampleClip: (trackId: string, type: 'text' | 'video' | 'image' | 'audio') => void;
+    onToggleMuteTrack?: (id: string) => void;
+    onToggleSoloTrack?: (id: string) => void;
+    onToggleLockTrack?: (id: string) => void;
     onToggleExpand: (id: string) => void;
     onRemoveClip: (id: string) => void;
     onDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize-left' | 'resize-right') => void;
@@ -23,6 +26,9 @@ export const TrackList = memo(({
     expandedClipIds,
     onRemoveTrack,
     onAddSampleClip,
+    onToggleMuteTrack,
+    onToggleSoloTrack,
+    onToggleLockTrack,
     onToggleExpand,
     onRemoveClip,
     onDragStart,
@@ -40,6 +46,9 @@ export const TrackList = memo(({
                     expandedClipIds={expandedClipIds}
                     onRemoveTrack={onRemoveTrack}
                     onAddSampleClip={onAddSampleClip}
+                    onToggleMuteTrack={onToggleMuteTrack}
+                    onToggleSoloTrack={onToggleSoloTrack}
+                    onToggleLockTrack={onToggleLockTrack}
                     onToggleExpand={onToggleExpand}
                     onRemoveClip={onRemoveClip}
                     onDragStart={onDragStart}

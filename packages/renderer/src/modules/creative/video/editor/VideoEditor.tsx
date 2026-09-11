@@ -85,7 +85,27 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     }, []);
 
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
-    const handleFrameUpdate = React.useCallback((frame: number) => setCurrentTime(frame), [setCurrentTime]);
+
+    const [seekRequest, setSeekRequest] = React.useState<{ frame: number; nonce: number } | null>(null);
+
+    const handleEditorSeek = React.useCallback((frame: number) => {
+        handleSeek(frame);
+        setSeekRequest({ frame, nonce: Date.now() });
+    }, [handleSeek]);
+
+    const handleFrameUpdate = React.useCallback((frame: number) => {
+        const state = useVideoEditorStore.getState();
+        const loop = state.loopRegion;
+        if (state.isPlaying && loop && frame >= loop.b) {
+            handleEditorSeek(loop.a);
+            return;
+        }
+        if (state.isPlaying && !loop && frame >= state.project.durationInFrames) {
+            useVideoEditorStore.getState().setIsPlaying(false);
+            return;
+        }
+        setCurrentTime(frame);
+    }, [handleEditorSeek, setCurrentTime]);
 
     // Annotation Palette State
     const [activeColor, setActiveColor] = React.useState<CreativeColor>(STUDIO_COLORS[0]!);
@@ -359,7 +379,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                         <div className="flex-1 flex items-center justify-center relative">
                             <VideoPreview
                                 artifactUrl={previewArtifactUrl}
-                                seekRequest={{ frame: currentTime, nonce: currentTime }}
+                                seekRequest={seekRequest}
                                 project={project}
                                 onFrameUpdate={handleFrameUpdate}
                             />
@@ -392,7 +412,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     project={project}
                     selectedClipId={selectedClipIdState}
                     handlePlayPause={handlePlayPause}
-                    handleSeek={handleSeek}
+                    handleSeek={handleEditorSeek}
                     handleAddTrack={handleAddTrackVideo}
                     handleAddSampleClip={handleAddSampleClip}
                     removeTrack={removeTrack}

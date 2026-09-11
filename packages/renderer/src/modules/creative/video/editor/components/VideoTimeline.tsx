@@ -5,8 +5,10 @@ import { useShallow } from 'zustand/react/shallow';
 import { TimeRuler } from './TimeRuler';
 import { TrackList } from './TrackList';
 import { Playhead } from './Playhead';
-import { PIXELS_PER_FRAME } from '../constants';
+import { TimelineTimecode } from './TimelineTimecode';
+import { PIXELS_PER_FRAME, TOTAL_TRACK_HEADER_OFFSET } from '../constants';
 import { useStableGroupedClips } from '../hooks/useStableGroupedClips';
+import { useSnapIndicatorStore } from '../hooks/useTimelineDrag';
 
 interface VideoTimelineProps {
     project: VideoProject;
@@ -20,19 +22,29 @@ interface VideoTimelineProps {
     removeClip: (id: string) => void;
     handleDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize-left' | 'resize-right') => void;
     formatTime: (frame: number) => string;
+    snapIndicatorFrame?: number | null;
+    onToggleMuteTrack?: (id: string) => void;
+    onToggleSoloTrack?: (id: string) => void;
+    onToggleLockTrack?: (id: string) => void;
 }
 
 export const VideoTimeline = memo(({
     project, selectedClipId,
     handlePlayPause, handleSeek, handleAddTrack, handleAddSampleClip,
-    removeTrack, removeClip, handleDragStart, formatTime
+    removeTrack, removeClip, handleDragStart, formatTime: _formatTime,
+    snapIndicatorFrame: snapIndicatorFrameProp,
+    onToggleMuteTrack, onToggleSoloTrack, onToggleLockTrack
 }: VideoTimelineProps) => {
-    const { isPlaying, addKeyframe, removeKeyframe, updateKeyframe } = useVideoEditorStore(
+
+    const { isPlaying, addKeyframe, removeKeyframe, updateKeyframe, toggleMuteTrack, toggleSoloTrack, toggleLockTrack } = useVideoEditorStore(
         useShallow((state) => ({
             isPlaying: state.isPlaying,
             addKeyframe: state.addKeyframe,
             removeKeyframe: state.removeKeyframe,
             updateKeyframe: state.updateKeyframe,
+            toggleMuteTrack: state.toggleMuteTrack,
+            toggleSoloTrack: state.toggleSoloTrack,
+            toggleLockTrack: state.toggleLockTrack,
         }))
     );
     const [expandedClipIds, setExpandedClipIds] = useState<Set<string>>(() => new Set());
@@ -81,6 +93,14 @@ export const VideoTimeline = memo(({
     // This prevents re-rendering all tracks when only one track's clips change
     const clipsByTrack = useStableGroupedClips(project.clips);
 
+    const storeSnapFrame = useSnapIndicatorStore(state => state.snapIndicatorFrame);
+    const activeSnapFrame = snapIndicatorFrameProp !== undefined ? snapIndicatorFrameProp : storeSnapFrame;
+    const timelineZoom = useVideoEditorStore(state => state.timelineZoom);
+    const pxPerFrame = PIXELS_PER_FRAME * (timelineZoom || 1);
+    const snapGuideLeft = (activeSnapFrame !== null && activeSnapFrame !== undefined)
+        ? TOTAL_TRACK_HEADER_OFFSET + (activeSnapFrame * pxPerFrame)
+        : 0;
+
     return (
         <div className="h-full border-t border-[--border] bg-[--card] flex flex-col">
             {/* Timeline Controls */}
@@ -93,15 +113,7 @@ export const VideoTimeline = memo(({
                     <button onClick={() => handleSeek(project.durationInFrames)} data-testid="timeline-skip-end" className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white" aria-label="Skip to end"><SkipForward size={14} /></button>
                 </div>
                 <div className="h-4 w-px bg-gray-700 mx-1"></div>
-                {/* Use formatTime from props, but pass 0 for start or use a store-connected time display if needed.
-                    Since this is a control bar, showing current time might be needed.
-                    However, passing currentTime re-renders the whole component.
-                    We can make a separate ConnectedTimeDisplay if needed, but for now displaying 00:00:00 as start marker is fine
-                    or the user intention was to show current time.
-                    Wait, the original code showed `formatTime(0)`. That is static!
-                    It shows "00:00:00". So it's fine.
-                */}
-                <span className="text-[10px] text-[--primary] font-mono font-bold">{formatTime(0)}</span>
+                <TimelineTimecode />
                 <div className="flex-1"></div>
                 <button onClick={handleAddTrack} data-testid="timeline-add-track-top" className="flex items-center gap-1 text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-300 transition-colors">
                     <Plus size={12} /> Add Track
@@ -117,8 +129,17 @@ export const VideoTimeline = memo(({
                     onSeek={handleSeek}
                 />
 
-                {/* Playhead (Self-connected to store) */}
-                <Playhead />
+                {/* Playhead (Self-connected to store, aligned with 192px track header + 8px padding) */}
+                <Playhead trackHeaderOffset={TOTAL_TRACK_HEADER_OFFSET} />
+
+                {/* Magnetic Snapping Visual Guide Indicator */}
+                {activeSnapFrame !== null && activeSnapFrame !== undefined && (
+                    <div
+                        data-testid="snap-guide"
+                        className="absolute top-0 bottom-0 w-0.5 bg-yellow-400 z-40 pointer-events-none shadow-[0_0_8px_rgba(250,204,21,0.8)]"
+                        style={{ left: snapGuideLeft }}
+                    />
+                )}
 
                 {/* Optimized Track List */}
                 <TrackList
@@ -128,6 +149,9 @@ export const VideoTimeline = memo(({
                     expandedClipIds={expandedClipIds}
                     onRemoveTrack={removeTrack}
                     onAddSampleClip={handleAddSampleClip}
+                    onToggleMuteTrack={onToggleMuteTrack || toggleMuteTrack}
+                    onToggleSoloTrack={onToggleSoloTrack || toggleSoloTrack}
+                    onToggleLockTrack={onToggleLockTrack || toggleLockTrack}
                     onToggleExpand={toggleExpand}
                     onRemoveClip={removeClip}
                     onDragStart={handleDragStart}

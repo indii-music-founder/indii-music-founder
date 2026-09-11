@@ -150,11 +150,7 @@ export interface IndiiVideoClip {
     /** Volume automation for audio-bearing clips. */
     audioFade?: IndiiAudioFade;
     keyframes?: {
-        [key: string]: Array<{
-            frame: number; // Relative to clip start
-            value: number;
-            easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
-        }>;
+        [key: string]: IndiiVideoKeyframe[];
     };
     // Session Breakdown & Master Sync fields (ISSUE-1180) — µs is canonical
     sourceInUs?: number;
@@ -168,12 +164,26 @@ export interface IndiiVideoClip {
     planId?: string;
 }
 
+export type IndiiKeyframeEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
+
+export interface IndiiVideoKeyframe {
+    frame: number; // Relative to clip start
+    value: number;
+    easing?: IndiiKeyframeEasing;
+}
+
+export type IndiiAnimatableProperty = 'scale' | 'opacity' | 'rotation' | 'x' | 'y' | 'volume';
+
+export type IndiiTrackType = 'video' | 'audio' | 'text' | 'image';
+
 export interface IndiiVideoTrack {
     id: string;
     name: string;
-    type: 'video' | 'audio' | 'text'; // Simplified track types for now
+    type: IndiiTrackType;
     isMuted?: boolean;
     isHidden?: boolean;
+    isLocked?: boolean;
+    isSolo?: boolean;
 }
 
 export interface IndiiVideoProject {

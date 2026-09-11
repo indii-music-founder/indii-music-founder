@@ -6,6 +6,7 @@ import { blankProjectForId, useVideoEditorStore } from '@/modules/creative/video
 vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal) => importOriginal());
 
 const seed = () => {
+    useVideoEditorStore.getState().abortTransientClipUpdate();
     useVideoEditorStore.setState({
         project: {
             ...blankProjectForId('proj-1'),
@@ -63,5 +64,54 @@ describe('videoEditorStore — undo/redo history', () => {
             useVideoEditorStore.getState().updateClip('c1', { name: `Take ${i}` });
         }
         expect(useVideoEditorStore.getState().past.length).toBeLessThanOrEqual(50);
+    });
+
+    it('does not push undo history during updateClipTransient', () => {
+        useVideoEditorStore.getState().updateClipTransient('c1', { startFrame: 5 });
+        useVideoEditorStore.getState().updateClipTransient('c1', { startFrame: 10 });
+        useVideoEditorStore.getState().updateClipTransient('c1', { startFrame: 15 });
+
+        expect(useVideoEditorStore.getState().project.clips[0]!.startFrame).toBe(15);
+        expect(useVideoEditorStore.getState().past).toHaveLength(0);
+        expect(useVideoEditorStore.getState().future).toHaveLength(0);
+    });
+
+    it('commits single undo transaction on commitTransientClipUpdate with pre-drag snapshot', () => {
+        const preDragProject = useVideoEditorStore.getState().project;
+
+        useVideoEditorStore.getState().updateClipTransient('c1', { startFrame: 5 });
+        useVideoEditorStore.getState().updateClipTransient('c1', { startFrame: 10 });
+        useVideoEditorStore.getState().commitTransientClipUpdate('c1', { startFrame: 15 });
+
+        // Exactly one undo entry
+        expect(useVideoEditorStore.getState().past).toHaveLength(1);
+        expect(useVideoEditorStore.getState().project.clips[0]!.startFrame).toBe(15);
+
+        // Undo restores pre-drag position
+        useVideoEditorStore.getState().undo();
+        expect(useVideoEditorStore.getState().project.clips[0]!.startFrame).toBe(0);
+        expect(useVideoEditorStore.getState().project).toBe(preDragProject);
+
+        // Redo restores final dragged position
+        useVideoEditorStore.getState().redo();
+        expect(useVideoEditorStore.getState().project.clips[0]!.startFrame).toBe(15);
+    });
+
+    it('does not push undo history if commitTransientClipUpdate results in no net change', () => {
+        useVideoEditorStore.getState().updateClipTransient('c1', { startFrame: 10 });
+        // Dragged back to original frame
+        useVideoEditorStore.getState().commitTransientClipUpdate('c1', { startFrame: 0 });
+
+        expect(useVideoEditorStore.getState().project.clips[0]!.startFrame).toBe(0);
+        expect(useVideoEditorStore.getState().past).toHaveLength(0);
+    });
+
+    it('aborts transient drag and restores initial project without undo history', () => {
+        useVideoEditorStore.getState().updateClipTransient('c1', { startFrame: 20 });
+        expect(useVideoEditorStore.getState().project.clips[0]!.startFrame).toBe(20);
+
+        useVideoEditorStore.getState().abortTransientClipUpdate();
+        expect(useVideoEditorStore.getState().project.clips[0]!.startFrame).toBe(0);
+        expect(useVideoEditorStore.getState().past).toHaveLength(0);
     });
 });

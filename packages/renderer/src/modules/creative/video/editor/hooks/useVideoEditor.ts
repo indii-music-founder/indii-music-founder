@@ -102,6 +102,10 @@ export function useVideoEditor(initialVideo?: HistoryItem, beforeExport?: () => 
                     syncChannel?.postMessage({ type: 'SYNC_ACTION', action: state.isPlaying ? 'play' : 'pause' });
                 }
             }
+            // Loop wrap check: if playing and currentTime was wrapped back to loop.a
+            if (state.isPlaying && state.loopRegion && state.currentTime === state.loopRegion.a && prevState.currentTime >= state.loopRegion.b - 1) {
+                previewSeekToFrame(state.loopRegion.a, state.project.fps);
+            }
         });
         return unsub;
     }, []);

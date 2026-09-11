@@ -1,7 +1,7 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
-import { AudioWaveform } from '../components/AudioWaveform'; // Check path relative to new file location? No, this is in components dir.
+import { AudioWaveform } from './AudioWaveform';
 import { getKeyframeColor } from '../utils/keyframeUtils';
 import { PIXELS_PER_FRAME, ANIMATABLE_PROPERTIES } from '../constants';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
@@ -13,32 +13,117 @@ const XIcon = ({ size = 16 }: { size?: number }) => (
     </svg>
 );
 
-interface TimelineClipProps {
+export interface TimelineClipProps {
     key?: React.Key;
     clip: VideoClip;
     isSelected: boolean;
     isExpanded: boolean;
+    isLocked?: boolean;
     onToggleExpand: (id: string) => void;
     onRemove: (id: string) => void;
     onDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize-left' | 'resize-right') => void;
     onAddKeyframe: (e: React.MouseEvent, clip: VideoClip, property: string, defaultValue: number) => void;
     onKeyframeClick: (e: React.MouseEvent, clipId: string, property: string, frame: number, easing?: string) => void;
+    onMoveKeyframe?: (clipId: string, property: string, oldFrame: number, newFrame: number) => void;
 }
 
 export const TimelineClip = memo(({
-    clip, isSelected, isExpanded,
+    clip, isSelected, isExpanded, isLocked,
     onToggleExpand, onRemove, onDragStart,
-    onAddKeyframe, onKeyframeClick
+    onAddKeyframe, onKeyframeClick, onMoveKeyframe
 }: TimelineClipProps) => {
     const zoom = useVideoEditorStore(state => state.timelineZoom);
-    const pxPerFrame = PIXELS_PER_FRAME * zoom;
+    const fps = useVideoEditorStore(state => state.project?.fps ?? 30);
+    const pxPerFrame = Math.max(0.1, PIXELS_PER_FRAME * (zoom || 1));
     const urlToResolve = clip.src && !clip.src.startsWith('file://') ? clip.src : null;
     const { url: resolvedUrl } = useResolvedStorageUrl(urlToResolve);
     const displayUrl = resolvedUrl || clip.src;
 
+    // Feature 22: Keyframe dragging state and refs
+    const [draggingKeyframe, setDraggingKeyframe] = useState<{
+        propKey: string;
+        startFrame: number;
+        currentFrame: number;
+    } | null>(null);
+
+    const justDraggedRef = useRef(false);
+    const activeCleanupRef = useRef<(() => void) | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (activeCleanupRef.current) {
+                activeCleanupRef.current();
+            }
+        };
+    }, []);
+
+    const handleKeyframeMouseDown = useCallback((
+        e: React.MouseEvent,
+        propKey: string,
+        startFrame: number
+    ) => {
+        // Prevent event bubbling to clip onMouseDown (which would drag the entire clip)
+        e.stopPropagation();
+        if (isLocked) return;
+
+        const startX = e.clientX;
+        let hasMoved = false;
+        let newFrame = startFrame;
+
+        const cleanup = () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('keydown', handleKeyDown);
+            activeCleanupRef.current = null;
+        };
+        activeCleanupRef.current = cleanup;
+
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+            const deltaX = moveEvent.clientX - startX;
+            if (Math.abs(deltaX) >= 3) {
+                hasMoved = true;
+            }
+            const deltaFrames = Math.round(deltaX / pxPerFrame);
+            newFrame = Math.max(0, Math.min(clip.durationInFrames, startFrame + deltaFrames));
+
+            setDraggingKeyframe({
+                propKey,
+                startFrame,
+                currentFrame: newFrame,
+            });
+        };
+
+        const handleMouseUp = () => {
+            cleanup();
+            setDraggingKeyframe(null);
+
+            if (hasMoved) {
+                justDraggedRef.current = true;
+                if (newFrame !== startFrame) {
+                    if (onMoveKeyframe) {
+                        onMoveKeyframe(clip.id, propKey, startFrame, newFrame);
+                    } else {
+                        useVideoEditorStore.getState().moveKeyframe(clip.id, propKey, startFrame, newFrame);
+                    }
+                }
+            }
+        };
+
+        const handleKeyDown = (keyEvent: KeyboardEvent) => {
+            if (keyEvent.key === 'Escape') {
+                cleanup();
+                setDraggingKeyframe(null);
+            }
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('keydown', handleKeyDown);
+    }, [clip.id, clip.durationInFrames, isLocked, onMoveKeyframe, pxPerFrame]);
+
     return (
         <div
-            className={`absolute top-2 border rounded cursor-pointer transition-all group/clip ${isSelected ? 'bg-green-600 border-green-400 ring-1 ring-white' : 'bg-green-600/30 border-green-500/50 hover:bg-green-600/50'}`}
+            className={`absolute top-2 border rounded cursor-pointer transition-all group/clip ${isSelected ? 'bg-green-600 border-green-400 ring-1 ring-white' : 'bg-green-600/30 border-green-500/50 hover:bg-green-600/50'} ${isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}
             style={{
                 left: clip.startFrame * pxPerFrame,
                 width: clip.durationInFrames * pxPerFrame,
@@ -85,6 +170,10 @@ export const TimelineClip = memo(({
                         width={clip.durationInFrames * pxPerFrame}
                         height={64}
                         color="rgba(255, 255, 255, 0.6)"
+                        sourceInUs={clip.sourceInUs}
+                        sourceOutUs={clip.sourceOutUs}
+                        durationInFrames={clip.durationInFrames}
+                        fps={fps}
                     />
                 </div>
             )}
@@ -115,16 +204,36 @@ export const TimelineClip = memo(({
                             >
                                 <div className="absolute top-1/2 left-0 right-0 h-px bg-white/10 group-hover/row:bg-white/20"></div>
 
-                                {clip.keyframes?.[prop.key]?.map((kf, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`absolute top-1/2 -translate-y-1/2 w-2 h-2 rotate-45 hover:scale-150 transition-transform cursor-pointer z-30 shadow-sm shadow-black ${getKeyframeColor(kf.easing)}`}
-                                        style={{ left: kf.frame * pxPerFrame }}
-                                        onClick={(e) => onKeyframeClick(e, clip.id, prop.key, kf.frame, kf.easing)}
-                                        onContextMenu={(e) => onKeyframeClick(e, clip.id, prop.key, kf.frame, kf.easing)}
-                                        title={`${prop.label}: ${kf.value} @ f${kf.frame} (${kf.easing || 'linear'})`}
-                                    />
-                                ))}
+                                {clip.keyframes?.[prop.key]?.map((kf) => {
+                                    const isDraggingThis = draggingKeyframe?.propKey === prop.key && draggingKeyframe?.startFrame === kf.frame;
+                                    const currentDisplayFrame = isDraggingThis ? draggingKeyframe.currentFrame : kf.frame;
+
+                                    return (
+                                        <div
+                                            key={`${prop.key}-${kf.frame}`}
+                                            data-testid={`keyframe-diamond-${clip.id}-${prop.key}-${kf.frame}`}
+                                            className={`absolute top-1/2 -translate-y-1/2 w-2 h-2 rotate-45 transition-transform z-30 shadow-sm shadow-black cursor-grab active:cursor-grabbing ${
+                                                isDraggingThis ? 'scale-150 ring-2 ring-white cursor-grabbing' : 'hover:scale-150'
+                                            } ${getKeyframeColor(kf.easing)}`}
+                                            style={{ left: currentDisplayFrame * pxPerFrame }}
+                                            onMouseDown={(e) => handleKeyframeMouseDown(e, prop.key, kf.frame)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (justDraggedRef.current) {
+                                                    justDraggedRef.current = false;
+                                                    return;
+                                                }
+                                                onKeyframeClick(e, clip.id, prop.key, kf.frame, kf.easing);
+                                            }}
+                                            onContextMenu={(e) => {
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                                onKeyframeClick(e, clip.id, prop.key, kf.frame, kf.easing);
+                                            }}
+                                            title={`${prop.label}: ${kf.value} @ f${currentDisplayFrame} (${kf.easing || 'linear'})`}
+                                        />
+                                    );
+                                })}
                             </div>
                         </div>
                     ))}

@@ -1,15 +1,18 @@
 import React from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, act } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { IndiiVideoProject } from '@indii/shared';
 
+const mockSeek = vi.fn();
+
 vi.mock('@hyperframes/player', () => {
     class TestHyperframesPlayer extends HTMLElement {
         currentTime = 0;
+        loop = false;
         play = vi.fn();
         pause = vi.fn();
-        seek = vi.fn((seconds: number) => { this.currentTime = seconds; });
+        seek = mockSeek;
     }
     if (!customElements.get('hyperframes-player')) {
         customElements.define('hyperframes-player', TestHyperframesPlayer);
@@ -31,6 +34,7 @@ const project = (withClip = true): IndiiVideoProject => ({
 
 afterEach(() => {
     cleanup();
+    mockSeek.mockClear();
     Object.defineProperty(window, 'electronAPI', { configurable: true, value: undefined });
 });
 
@@ -40,7 +44,7 @@ describe('VideoPreview', () => {
         expect(screen.getByTestId('preview-empty')).toHaveTextContent('Add a clip to preview');
     });
 
-    it('compiles the project and embeds the seekable HyperFrames Player', async () => {
+    it('compiles the project and embeds the seekable HyperFrames Player without native loop', async () => {
         const compilePreview = vi.fn(async () => '<html><body data-composition-id="project-1"></body></html>');
         Object.defineProperty(window, 'electronAPI', {
             configurable: true,
@@ -53,12 +57,66 @@ describe('VideoPreview', () => {
         expect(compilePreview).toHaveBeenCalledWith(project());
         expect(player.getAttribute('srcdoc')).toContain('data-composition-id="project-1"');
         expect(screen.getByText(/Live timeline:/)).toBeInTheDocument();
+        // Native loop must be false so loop bounds are managed by timeline transport
+        expect(player.getAttribute('loop')).not.toBe('true');
     });
 
-    it('uses a real rendered artifact as a browser fallback', async () => {
+    it('uses a real rendered artifact as a browser fallback without native loop', async () => {
         render(<VideoPreview project={project()} artifactUrl="file:///tmp/render.mp4" />);
 
-        await waitFor(() => expect(screen.getByTestId('preview-video')).toHaveAttribute('src', 'file:///tmp/render.mp4'));
+        await waitFor(() => {
+            const video = screen.getByTestId('preview-video') as HTMLVideoElement;
+            expect(video).toHaveAttribute('src', 'file:///tmp/render.mp4');
+            // Native loop must not be active
+            expect(video.loop).toBe(false);
+        });
         expect(screen.getByText(/Rendered artifact:/)).toBeInTheDocument();
+    });
+
+    it('executes seekRequest only when nonce changes', async () => {
+        const compilePreview = vi.fn(async () => '<html><body data-composition-id="project-1"></body></html>');
+        Object.defineProperty(window, 'electronAPI', {
+            configurable: true,
+            value: { video: { compilePreview } },
+        });
+
+        const { rerender } = render(
+            <VideoPreview
+                project={project()}
+                artifactUrl={null}
+                seekRequest={{ frame: 15, nonce: 101 }}
+            />
+        );
+
+        await screen.findByTestId('hyperframes-preview');
+        // frame 15 @ 30fps = 0.5s
+        expect(mockSeek).toHaveBeenCalledWith(0.5);
+        expect(mockSeek).toHaveBeenCalledTimes(1);
+
+        // Re-rendering with identical nonce (e.g. parent re-rendered during playback) must NOT re-seek
+        act(() => {
+            rerender(
+                <VideoPreview
+                    project={project()}
+                    artifactUrl={null}
+                    seekRequest={{ frame: 15, nonce: 101 }}
+                />
+            );
+        });
+        expect(mockSeek).toHaveBeenCalledTimes(1);
+
+        // Re-rendering with a new nonce (intentional seek / loop wrap) must trigger seek
+        act(() => {
+            rerender(
+                <VideoPreview
+                    project={project()}
+                    artifactUrl={null}
+                    seekRequest={{ frame: 20, nonce: 102 }}
+                />
+            );
+        });
+        // frame 20 @ 30fps = 0.6666...s
+        expect(mockSeek).toHaveBeenCalledTimes(2);
+
     });
 });

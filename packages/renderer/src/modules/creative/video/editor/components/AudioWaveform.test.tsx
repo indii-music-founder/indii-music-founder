@@ -77,4 +77,173 @@ describe('AudioWaveform', () => {
             expect(getAudioDataSpy).toHaveBeenCalledTimes(2);
         });
     });
+
+    describe('Feature 21: Trim-Aware Audio Waveform Rendering', () => {
+        it('slices audio channel samples based on sourceInUs and sourceOutUs', async () => {
+            // Create 1000 samples: first 500 are 0.2, last 500 are 0.8
+            const sampleArray = new Float32Array(1000);
+            for (let i = 0; i < 500; i++) sampleArray[i] = 0.2;
+            for (let i = 500; i < 1000; i++) sampleArray[i] = 0.8;
+
+            const mockAudioData = {
+                channelWaveforms: [sampleArray],
+                sampleRate: 44100,
+                durationInSeconds: 10, // 10,000,000 us
+                numberOfChannels: 1,
+            };
+
+            vi.mocked(audioPeaks.fetchAudioData).mockResolvedValue(mockAudioData as any);
+
+            const fillRectCalls: { x: number; y: number; w: number; h: number }[] = [];
+            const originalGetContext = HTMLCanvasElement.prototype.getContext;
+            HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+                clearRect: vi.fn(),
+                fillRect: (x: number, y: number, w: number, h: number) => {
+                    fillRectCalls.push({ x, y, w, h });
+                },
+                fillStyle: '',
+            }) as any;
+
+            try {
+                // Render trimmed to first half (0 to 5s = 0 to 5,000,000 us)
+                const { rerender } = render(
+                    <AudioWaveform
+                        src="trim-test.mp3"
+                        width={10}
+                        height={100}
+                        sourceInUs={0}
+                        sourceOutUs={5_000_000}
+                    />
+                );
+
+                await waitFor(() => {
+                    expect(fillRectCalls.length).toBe(10);
+                });
+
+                // All bars should have height approx 0.2 * 100 = 20
+                for (const call of fillRectCalls) {
+                    expect(call.h).toBeCloseTo(20, 1);
+                }
+
+                fillRectCalls.length = 0;
+
+                // Re-render trimmed to second half (5s to 10s = 5,000,000 us to 10,000,000 us)
+                rerender(
+                    <AudioWaveform
+                        src="trim-test.mp3"
+                        width={10}
+                        height={100}
+                        sourceInUs={5_000_000}
+                        sourceOutUs={10_000_000}
+                    />
+                );
+
+                await waitFor(() => {
+                    expect(fillRectCalls.length).toBe(10);
+                });
+
+                // All bars should now have height approx 0.8 * 100 = 80
+                for (const call of fillRectCalls) {
+                    expect(call.h).toBeCloseTo(80, 1);
+                }
+            } finally {
+                HTMLCanvasElement.prototype.getContext = originalGetContext;
+            }
+        });
+
+        it('derives sourceOutUs from durationInFrames and fps when sourceOutUs is not specified', async () => {
+            const sampleArray = new Float32Array(1000);
+            for (let i = 0; i < 500; i++) sampleArray[i] = 0.3;
+            for (let i = 500; i < 1000; i++) sampleArray[i] = 0.9;
+
+            const mockAudioData = {
+                channelWaveforms: [sampleArray],
+                sampleRate: 44100,
+                durationInSeconds: 10, // 10s total
+                numberOfChannels: 1,
+            };
+
+            vi.mocked(audioPeaks.fetchAudioData).mockResolvedValue(mockAudioData as any);
+
+            const fillRectCalls: { x: number; y: number; w: number; h: number }[] = [];
+            const originalGetContext = HTMLCanvasElement.prototype.getContext;
+            HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+                clearRect: vi.fn(),
+                fillRect: (x: number, y: number, w: number, h: number) => {
+                    fillRectCalls.push({ x, y, w, h });
+                },
+                fillStyle: '',
+            }) as any;
+
+            try {
+                // sourceInUs = 0, durationInFrames = 150 at fps = 30 -> 5 seconds -> first half
+                render(
+                    <AudioWaveform
+                        src="derived-trim.mp3"
+                        width={10}
+                        height={100}
+                        sourceInUs={0}
+                        durationInFrames={150}
+                        fps={30}
+                    />
+                );
+
+                await waitFor(() => {
+                    expect(fillRectCalls.length).toBe(10);
+                });
+
+                for (const call of fillRectCalls) {
+                    expect(call.h).toBeCloseTo(30, 1);
+                }
+            } finally {
+                HTMLCanvasElement.prototype.getContext = originalGetContext;
+            }
+        });
+
+        it('resamples correctly without flat/blank bars when width exceeds sample count (high zoom)', async () => {
+            // Only 5 samples
+            const sampleArray = new Float32Array([0.1, 0.4, 0.7, 0.5, 0.9]);
+            const mockAudioData = {
+                channelWaveforms: [sampleArray],
+                sampleRate: 44100,
+                durationInSeconds: 1,
+                numberOfChannels: 1,
+            };
+
+            vi.mocked(audioPeaks.fetchAudioData).mockResolvedValue(mockAudioData as any);
+
+            const fillRectCalls: { x: number; y: number; w: number; h: number }[] = [];
+            const originalGetContext = HTMLCanvasElement.prototype.getContext;
+            HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+                clearRect: vi.fn(),
+                fillRect: (x: number, y: number, w: number, h: number) => {
+                    fillRectCalls.push({ x, y, w, h });
+                },
+                fillStyle: '',
+            }) as any;
+
+            try {
+                // width = 20 > samples.length = 5
+                render(
+                    <AudioWaveform
+                        src="zoom-test.mp3"
+                        width={20}
+                        height={100}
+                    />
+                );
+
+                await waitFor(() => {
+                    expect(fillRectCalls.length).toBe(20);
+                });
+
+                // All bars should have non-zero height
+                for (const call of fillRectCalls) {
+                    expect(call.h).toBeGreaterThan(0);
+                    expect(Number.isNaN(call.h)).toBe(false);
+                }
+            } finally {
+                HTMLCanvasElement.prototype.getContext = originalGetContext;
+            }
+        });
+    });
 });
