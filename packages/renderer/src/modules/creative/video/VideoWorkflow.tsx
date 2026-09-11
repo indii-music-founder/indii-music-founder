@@ -1010,11 +1010,13 @@ export default function VideoWorkflow() {
                                                 timestamp: Date.now()
                                             });
                                         }}
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-emerald-400/30"
+                                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-1.5 border border-emerald-400/30 text-xs font-semibold"
                                         title="Open this video in the timeline editor"
                                         aria-label="Open Veo video in timeline editor"
+                                        data-testid="open-in-timeline-btn"
                                     >
-                                        <Film size={16} />
+                                        <Scissors size={14} />
+                                        <span className="hidden sm:inline">Timeline Editor</span>
                                     </button>
                                 </div>
                             )}
@@ -1022,7 +1024,7 @@ export default function VideoWorkflow() {
 
                 {/* Video Production Mode Switcher — persistent labeled segmented pill */}
                 <div
-                    className="absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-0 bg-black/60 border border-white/10 rounded-full p-1 shadow-xl backdrop-blur-md"
+                    className="absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 bg-black/80 border border-white/20 rounded-full p-1 shadow-2xl backdrop-blur-xl"
                     data-testid="video-mode-switcher"
                     role="tablist"
                     aria-label="Video production mode"
@@ -1031,45 +1033,46 @@ export default function VideoWorkflow() {
                         role="tab"
                         aria-selected={viewMode === 'director'}
                         onClick={() => setViewMode('director')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
                             viewMode === 'director'
-                                ? 'bg-white/15 text-white shadow-sm'
-                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/8'
+                                ? 'bg-white/20 text-white shadow-sm ring-1 ring-white/20'
+                                : 'text-gray-300 hover:text-white hover:bg-white/10'
                         }`}
                         title="Director — generate &amp; preview video (⌘E to toggle)"
                         data-testid="video-mode-director"
                     >
-                        <Clapperboard size={13} className={viewMode === 'director' ? 'text-green-400' : 'opacity-60'} />
+                        <Clapperboard size={13} className={viewMode === 'director' ? 'text-green-400' : 'text-gray-400'} />
                         <span>Director</span>
                     </button>
                     <button
                         role="tab"
                         aria-selected={viewMode === 'editor'}
                         onClick={() => setViewMode('editor')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
                             viewMode === 'editor'
-                                ? 'bg-white/15 text-white shadow-sm'
-                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/8'
+                                ? 'bg-white/20 text-white shadow-sm ring-1 ring-white/20'
+                                : 'text-gray-300 hover:text-white hover:bg-white/10'
                         }`}
                         title="Timeline Editor — cut, trim &amp; arrange clips (⌘E to toggle)"
                         data-testid="video-mode-editor"
                     >
-                        <Scissors size={13} className={viewMode === 'editor' ? 'text-blue-400' : 'opacity-60'} />
+                        <Scissors size={13} className={viewMode === 'editor' ? 'text-blue-400' : 'text-gray-400'} />
                         <span>Timeline Editor</span>
+                        <kbd className="hidden md:inline-block ml-0.5 px-1 py-0.2 text-[9px] font-mono rounded bg-white/10 text-gray-400 border border-white/10">⌘E</kbd>
                     </button>
                     <button
                         role="tab"
                         aria-selected={viewMode === 'storyboard'}
                         onClick={() => setViewMode('storyboard')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
                             viewMode === 'storyboard'
-                                ? 'bg-white/15 text-white shadow-sm'
-                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/8'
+                                ? 'bg-white/20 text-white shadow-sm ring-1 ring-white/20'
+                                : 'text-gray-300 hover:text-white hover:bg-white/10'
                         }`}
                         title="Storyboard — plan &amp; sequence your shots"
                         data-testid="video-mode-storyboard"
                     >
-                        <Layers size={13} className={viewMode === 'storyboard' ? 'text-indigo-400' : 'opacity-60'} />
+                        <Layers size={13} className={viewMode === 'storyboard' ? 'text-indigo-400' : 'text-gray-400'} />
                         <span>Storyboard</span>
                     </button>
                 </div>

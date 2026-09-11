@@ -165,7 +165,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     <div className="flex items-center gap-3">
                         {/* Consistent mode pill — matches the one in VideoWorkflow */}
                         <div
-                            className="flex items-center gap-0 bg-gray-800 border border-gray-700 rounded-full p-0.5"
+                            className="flex items-center gap-0.5 bg-gray-900 border border-gray-700/80 rounded-full p-1 shadow-lg"
                             role="tablist"
                             aria-label="Video production mode"
                             data-testid="video-editor-mode-switcher"
@@ -174,33 +174,34 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                                 role="tab"
                                 aria-selected={false}
                                 onClick={() => useVideoEditorStore.getState().setViewMode('director')}
-                                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-gray-300 hover:bg-gray-700 transition-all"
+                                className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:text-white hover:bg-gray-800 transition-all"
                                 title="Director — generate & preview video"
                                 data-testid="video-mode-director"
                             >
-                                <Clapperboard size={11} className="opacity-60" />
+                                <Clapperboard size={11} className="text-gray-400" />
                                 <span>Director</span>
                             </button>
                             <button
                                 role="tab"
                                 aria-selected={true}
-                                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-700 text-white shadow-sm transition-all"
+                                className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white shadow-sm ring-1 ring-white/20 transition-all"
                                 title="Timeline Editor — cut, trim & arrange clips (⌘E)"
                                 data-testid="video-mode-editor"
                                 disabled
                             >
                                 <Scissors size={11} className="text-blue-400" />
                                 <span>Timeline Editor</span>
+                                <kbd className="hidden md:inline-block ml-0.5 px-1 py-0.2 text-[8px] font-mono rounded bg-white/10 text-gray-300 border border-white/10">⌘E</kbd>
                             </button>
                             <button
                                 role="tab"
                                 aria-selected={false}
                                 onClick={() => useVideoEditorStore.getState().setViewMode('storyboard')}
-                                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-gray-300 hover:bg-gray-700 transition-all"
+                                className="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:text-white hover:bg-gray-800 transition-all"
                                 title="Storyboard — plan & sequence your shots"
                                 data-testid="video-mode-storyboard"
                             >
-                                <Layers size={11} className="opacity-60" />
+                                <Layers size={11} className="text-gray-400" />
                                 <span>Storyboard</span>
                             </button>
                         </div>
