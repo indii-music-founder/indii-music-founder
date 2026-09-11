@@ -52,6 +52,10 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     move_to_trash: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Reversibly move an asset or file to the user-owned Trash vault' },
     restore_from_trash: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Restore an item from the Trash vault' },
 
+    // Canvas & Workspace Inspection (read)
+    canvas_inspect: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Inspect active agent canvas panels and content' },
+    canvas_get_project_canvas: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read and inspect blocks and edges on the Project Canvas' },
+
     // Security (read)
     check_api_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     scan_content: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
@@ -290,6 +294,19 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     // Canvas A2UI (write — pushes UI content, no destructive side effects)
     canvas_push: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Push visual content to user workspace' },
     canvas_clear: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Clear agent canvas panels' },
+    draw_shape: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Draw vector shape on creative canvas' },
+    canvas_open_image: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Open image into canvas layer editor' },
+    canvas_add_layer: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Add raster layer to canvas layer editor' },
+    canvas_set_adjustments: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Apply adjustment patch in canvas layer editor' },
+    canvas_export: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Export canvas layer editor doc' },
+
+    // Project Canvas (write — modifies project node canvas)
+    canvas_pin_note: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Pin note to Project Canvas' },
+    canvas_create_note: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create and place note on Project Canvas' },
+    canvas_place_asset: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Place asset on Project Canvas' },
+    canvas_create_frame: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create organizational frame on Project Canvas' },
+    canvas_suggest_relationship: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Connect blocks with semantic relationship on Project Canvas' },
+    canvas_post_recommendation: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Post recommendation block on Project Canvas' },
 
     // Notifications (write — sends alerts to the user)
     send_notification: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Send notification to user outside app' },

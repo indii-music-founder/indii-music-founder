@@ -53,7 +53,8 @@ export class GeneralistAgent extends BaseAgent {
         'report_bug', 'request_feature',
         'edit_image_with_annotations', 'edit_document_with_annotations', 'open_remote_setup', 'get_remote_status',
         'seat_agent', 'seat_all_department_heads', 'unseat_agent',
-        'list_trash', 'move_to_trash', 'restore_from_trash'
+        'list_trash', 'move_to_trash', 'restore_from_trash',
+        'canvas_inspect', 'canvas_push', 'canvas_clear', 'draw_shape', 'canvas_get_project_canvas'
     ];
 
     constructor() {
@@ -166,6 +167,30 @@ export class GeneralistAgent extends BaseAgent {
                 name: 'get_remote_status',
                 description: 'Read a bounded Mobile Remote status summary: authentication, fresh Studio readiness, supported transport, and protocol version. It never returns device IDs, pairing codes, or lease tokens.',
                 parameters: { type: 'OBJECT', properties: {}, required: [] }
+            },
+            {
+                name: 'canvas_inspect',
+                description: 'Inspect active agent canvas panels and layer editor state (Agent-to-UI / A2UI). Returns active visual dashboards, charts, tables, cards, markdown panels, and open document layers.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        panelId: { type: 'STRING', description: 'Optional specific panel ID to inspect in full detail.' },
+                        includeData: { type: 'BOOLEAN', description: 'Whether to include full data payloads for all active panels.' }
+                    },
+                    required: []
+                }
+            },
+            {
+                name: 'canvas_get_project_canvas',
+                description: 'Read and inspect blocks, notes, and semantic relationships currently on the Project Canvas.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        limit: { type: 'NUMBER', description: 'Maximum number of blocks to return (default 50).' },
+                        blockType: { type: 'STRING', description: 'Optional block type filter (note, asset, frame, agent_output).' }
+                    },
+                    required: []
+                }
             },
             {
                 name: 'canvas_push',

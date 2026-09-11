@@ -43,6 +43,13 @@ export function resetCapabilityHealthForTests(): void {
 
 export function isDepartmentAuditOrReadinessQuestion(task: string): boolean {
     const normalized = task.trim().replace(/[’]/g, "'").replace(/\s+/g, ' ');
+
+    // Specific functional inquiries targeting canvas, editor, or workspace artifacts
+    // are operational feature requests rather than broad department fleet audits.
+    if (/\b(?:agent canvas|project canvas|canvas|layer editor|timeline)\b/i.test(normalized)) {
+        return false;
+    }
+
     const targets = String.raw`(?:(?:the )?(?:other )?(?:23 )?(?:agents?|departments?|specialists?|department heads?)|(?:all|any)(?: of the)? (?:23 )?(?:agents?|departments?|specialists?|department heads?)|(?:all )?(?:23 )?departments?|all \d+ department heads?|(?:the )?other \d+|\ball \d+\b)`;
 
     return [
@@ -103,9 +110,9 @@ const SAFE_DIRECT_CAPABILITIES: Array<{
     label: string;
 }> = [
     {
-        tools: ['create_project', 'list_projects', 'list_files', 'search_files', 'search_knowledge'],
+        tools: ['create_project', 'list_projects', 'list_files', 'search_files', 'search_knowledge', 'canvas_inspect', 'canvas_push'],
         key: 'durable_workspace',
-        label: 'organize projects and find workspace material',
+        label: 'organize projects, inspect canvas, and find workspace material',
     },
     {
         tools: ['save_memory', 'recall_memories'],

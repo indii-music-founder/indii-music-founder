@@ -847,6 +847,26 @@ export class BaseAgent implements SpecializedAgent {
             agentIdentity: this.identityCard,
         };
 
+        // Agent Canvas Context Injection: If agent canvas has active panels, inject lightweight overview
+        try {
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const state = useStore.getState();
+            if (state.canvasPanels && state.canvasPanels.length > 0) {
+                (enrichedContext as Record<string, unknown>).activeAgentCanvas = {
+                    isCanvasOpen: Boolean(state.isCanvasOpen),
+                    panelCount: state.canvasPanels.length,
+                    panels: state.canvasPanels.map((p) => ({
+                        id: p.id,
+                        type: p.type,
+                        title: p.title,
+                        agentId: p.agentId,
+                    })),
+                };
+            }
+        } catch {
+            // Fail-open: Context injection is non-fatal
+        }
+
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
 

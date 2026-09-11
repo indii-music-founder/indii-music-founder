@@ -119,4 +119,14 @@ describe('GeneralistAgent Boardroom capability intent boundary', () => {
         expect(loadCapabilitySnapshot).toHaveBeenCalledOnce();
         expect(normalExecute).not.toHaveBeenCalled();
     });
+
+    it('does not intercept specific canvas inspection questions as generic department audits', async () => {
+        const result = await agent.execute('Can the agents look at the agent canvas?', {
+            conversationMode: 'direct',
+        });
+
+        expect(result.text).toBe('normal model response');
+        expect(normalExecute).toHaveBeenCalledOnce();
+        expect(loadCapabilitySnapshot).not.toHaveBeenCalled();
+    });
 });

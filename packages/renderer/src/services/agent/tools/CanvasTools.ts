@@ -132,6 +132,95 @@ export const CanvasTools = {
     }),
 
     /**
+     * Inspect active agent canvas panels (Agent-to-UI / A2UI).
+     * Returns whether the canvas drawer is open, total panel count,
+     * and a structured list of active panels with concise summaries.
+     * Optionally takes a specific panelId to fetch full data.
+     */
+    canvas_inspect: wrapTool('canvas_inspect', async (args?: {
+        panelId?: string;
+        includeData?: boolean;
+    }) => {
+        try {
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const store = useStore.getState();
+            const canvasPanels = store.canvasPanels ?? [];
+            const isCanvasOpen = Boolean(store.isCanvasOpen);
+            const currentDoc = store.currentDoc ?? null;
+
+            if (args?.panelId) {
+                const target = canvasPanels.find((p) => p.id === args.panelId);
+                if (!target) {
+                    return toolError(`Canvas panel with ID "${args.panelId}" not found.`, 'CANVAS_PANEL_NOT_FOUND');
+                }
+                return toolSuccess(
+                    {
+                        panel: target,
+                        isCanvasOpen,
+                    },
+                    `Retrieved canvas panel "${target.title}" (${target.type}).`
+                );
+            }
+
+            const panelsSummary = canvasPanels.map((p) => {
+                let excerpt = '';
+                const rawData = p.data as Record<string, unknown> | undefined;
+                if (p.type === 'markdown' || p.type === 'html') {
+                    excerpt = typeof rawData?.content === 'string' ? rawData.content.slice(0, 200) : '';
+                } else if (p.type === 'card' && Array.isArray(rawData?.cards)) {
+                    excerpt = (rawData.cards as Array<{ title?: string; value?: string | number }>)
+                        .slice(0, 3)
+                        .map((c) => `${c.title || 'Card'}: ${c.value ?? ''}`)
+                        .join(', ');
+                } else if (p.type === 'table' && Array.isArray(rawData?.rows)) {
+                    excerpt = `${rawData.rows.length} rows, columns: ${(rawData.columns as Array<{ label?: string }> || []).map((c) => c.label).join(', ')}`;
+                } else if (p.type === 'chart' && Array.isArray(rawData?.data)) {
+                    excerpt = `${rawData.chartType || 'chart'} with ${rawData.data.length} data points`;
+                }
+
+                return {
+                    id: p.id,
+                    type: p.type,
+                    title: p.title,
+                    agentId: p.agentId,
+                    createdAt: p.createdAt,
+                    excerpt,
+                    ...(args?.includeData ? { data: p.data } : {}),
+                };
+            });
+
+            const activeEditor = currentDoc
+                ? {
+                    id: currentDoc.id,
+                    width: currentDoc.width,
+                    height: currentDoc.height,
+                    layerCount: currentDoc.layers?.length ?? 0,
+                    layers: (currentDoc.layers || []).map((l) => ({ id: l.id, kind: l.kind, name: l.name, visible: l.visible })),
+                }
+                : null;
+
+            const summaryMessage = canvasPanels.length === 0
+                ? (activeEditor
+                    ? `Agent canvas drawer has 0 pushed panels, but layer editor is active on doc "${activeEditor.id}" (${activeEditor.layerCount} layers).`
+                    : 'Agent canvas drawer is currently empty (0 panels).')
+                : `Agent canvas has ${canvasPanels.length} active panel(s)${isCanvasOpen ? ' (drawer currently open)' : ' (drawer closed)'}.`;
+
+            return toolSuccess(
+                {
+                    isCanvasOpen,
+                    panelCount: canvasPanels.length,
+                    panels: panelsSummary,
+                    activeEditor,
+                },
+                summaryMessage
+            );
+        } catch (error: unknown) {
+            logger.error('[CanvasTools] canvas_inspect error:', error);
+            return toolError(`Failed to inspect canvas: ${String(error)}`, 'CANVAS_INSPECT_ERROR');
+        }
+    }),
+
+    /**
      * Draw a shape on the canvas with validated z-index (ISSUE-035 Fix).
      * Prevents agents from rendering shapes with excessively high z-index
      * that could obscure interactive UI elements.

@@ -285,4 +285,60 @@ export const ProjectCanvasTools = {
             return toolError(`Failed to post recommendation: ${String(error)}`, 'CANVAS_POST_RECOMMENDATION_ERROR');
         }
     }),
+
+    /**
+     * Inspect and read blocks, notes, and semantic edges currently on the Project Canvas.
+     */
+    canvas_get_project_canvas: wrapTool('canvas_get_project_canvas', async (args?: {
+        limit?: number;
+        blockType?: string;
+    }) => {
+        try {
+            const store = useStore.getState();
+
+            if (!store.currentProjectId) {
+                return toolError('No active project context found.', 'CANVAS_NO_PROJECT');
+            }
+
+            const currentCanvas = store.currentCanvas;
+            let blocks = store.canvasBlocks || [];
+            if (args?.blockType) {
+                blocks = blocks.filter((b) => b.type === args.blockType);
+            }
+            const limit = Math.min(Math.max(args?.limit ?? 50, 1), 100);
+            const truncatedBlocks = blocks.slice(0, limit).map((b) => ({
+                id: b.id,
+                type: b.type,
+                position: b.position,
+                size: b.size,
+                title: b.snapshot?.title || (b.settings as { title?: string } | undefined)?.title || '',
+                excerpt: b.snapshot?.excerpt || '',
+                createdAt: b.createdAt,
+            }));
+
+            const edges = (store.canvasEdges || []).map((e) => ({
+                id: e.id,
+                sourceBlockId: e.sourceBlockId,
+                targetBlockId: e.targetBlockId,
+                relationship: e.relationship,
+                label: e.label,
+            }));
+
+            return toolSuccess(
+                {
+                    canvasId: currentCanvas?.id || null,
+                    canvasTitle: currentCanvas?.title || 'Project Canvas',
+                    totalBlocks: blocks.length,
+                    returnedBlocks: truncatedBlocks.length,
+                    blocks: truncatedBlocks,
+                    totalEdges: edges.length,
+                    edges,
+                },
+                `Retrieved Project Canvas: ${blocks.length} block(s), ${edges.length} edge(s).`
+            );
+        } catch (error) {
+            logger.error('[ProjectCanvasTools] canvas_get_project_canvas error:', error);
+            return toolError(`Failed to get project canvas: ${String(error)}`, 'CANVAS_GET_ERROR');
+        }
+    }),
 };
