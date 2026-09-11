@@ -1,3 +1,32 @@
+# Session Close — Video Studio Timeline Editor NLE Overhaul (2026-09-11)
+
+**Final state: all 278 video editor & store unit tests passing (100%), full monorepo typecheck 100% clean across all 9 packages, 0 lint errors, git diff --check clean, delivered to `origin/main` (SHA: `c6a4c3035`), CI Run #34608452402 GREEN.**
+
+## Shipped — Video Studio Timeline Editor NLE Overhaul
+- **Frame-Accurate Transport & Playhead (R1):**
+  - Added self-subscribing `TimelineTimecode.tsx` component with SMPTE formatting (`HH:MM:SS:FF`), eliminating static `00:00:00` display and parent re-render lag.
+  - Aligned `TimeRuler` and `Playhead` with 192px track header offset and `timelineZoom` scaling.
+  - Added pointer capture drag scrubbing to `TimeRuler`.
+  - Loop region boundary enforcement during playback and seek nonce guarding in `VideoPreview.tsx` eliminating seek feedback loops.
+- **Precision Clip Editing, Resizing & Magnetic Snapping (R2):**
+  - Dual-edge magnetic snapping in `useTimelineDrag.ts` against cuts, playhead, and boundaries.
+  - Dynamic vertical snap guideline indicator (`data-testid="snap-guide"`).
+  - In-point and out-point trimming duration clamping preventing inverted or negative durations.
+  - Cross-track clip drag-and-drop with undo transaction isolation.
+- **Multi-Track Architecture & Audio Waveform (R3):**
+  - Track header controls for Mute, Solo, Lock, and Delete with locked drag/drop guards.
+  - Dynamic track container heights accommodating expanded keyframe lanes.
+  - Microsecond-windowed audio waveforms (`sourceInUs`/`sourceOutUs`) scaled with `timelineZoom`.
+- **Keyframe Parameter Animation System (R4):**
+  - Interactive keyframe diamond marker dragging with event bubbling isolation and clip duration boundary clamping.
+  - Visual easing badges/colors and volume parameter automation.
+  - Partitioned keyframes with relative offset shifting upon clip splitting.
+- **Automated Verification & CI Acceptance:**
+  - 278 unit tests passing across 29 test files.
+  - Remote CI workflow run #34608452402: 20/20 unit test shards, lint, typecheck, build, staging deploy, e2e, and production deploy ALL GREEN.
+
+---
+
 # Session Close — Browser Studio Executor & Cloud-Autonomous Mobile Remote (2026-09-07)
 
 **Final state: all 70 mobile-remote and lease service tests passing (100%), monorepo typecheck 100% clean across all 8 packages + test tsconfig, 0 lint errors, git diff --check clean.**
