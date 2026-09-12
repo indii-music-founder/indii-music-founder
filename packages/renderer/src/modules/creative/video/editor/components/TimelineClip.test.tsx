@@ -95,7 +95,7 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
         render(<TimelineClip {...defaultProps} />);
 
         const diamond = screen.getByTestId('keyframe-diamond-clip-test-1-opacity-10');
-        fireEvent.mouseDown(diamond, { clientX: 100 });
+        fireEvent.pointerDown(diamond, { clientX: 100 });
 
         // Clip-level dragStart should NOT be called
         expect(mockDragStart).not.toHaveBeenCalled();
@@ -107,9 +107,9 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
         const diamond = screen.getByTestId('keyframe-diamond-clip-test-1-opacity-10');
 
         // Mousedown, slight jitter < 3px, mouseup, click
-        fireEvent.mouseDown(diamond, { clientX: 100 });
-        fireEvent.mouseMove(window, { clientX: 101 });
-        fireEvent.mouseUp(window, { clientX: 101 });
+        fireEvent.pointerDown(diamond, { clientX: 100 });
+        fireEvent.pointerMove(window, { clientX: 101 });
+        fireEvent.pointerUp(window, { clientX: 101 });
         fireEvent.click(diamond);
 
         expect(mockMoveKeyframe).not.toHaveBeenCalled();
@@ -130,16 +130,16 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
 
         // Initial frame is 10. PIXELS_PER_FRAME = 2, zoom = 1 -> pxPerFrame = 2.
         // Dragging right by +40px: deltaFrames = 40 / 2 = +20 frames. New frame = 30.
-        fireEvent.mouseDown(diamond, { clientX: 100 });
+        fireEvent.pointerDown(diamond, { clientX: 100 });
         act(() => {
-            fireEvent.mouseMove(window, { clientX: 140 });
+            fireEvent.pointerMove(window, { clientX: 140 });
         });
 
         // While dragging, cursor changes to active grabbing
         expect(diamond.className).toContain('cursor-grabbing');
 
         act(() => {
-            fireEvent.mouseUp(window, { clientX: 140 });
+            fireEvent.pointerUp(window, { clientX: 140 });
         });
 
         expect(mockMoveKeyframe).toHaveBeenCalledTimes(1);
@@ -156,24 +156,24 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
         const diamond = screen.getByTestId('keyframe-diamond-clip-test-1-opacity-10');
 
         // Drag far left: startFrame 10, clientX from 100 to -500 (deltaX = -600 -> deltaFrames = -300)
-        fireEvent.mouseDown(diamond, { clientX: 100 });
+        fireEvent.pointerDown(diamond, { clientX: 100 });
         act(() => {
-            fireEvent.mouseMove(window, { clientX: -500 });
+            fireEvent.pointerMove(window, { clientX: -500 });
         });
         act(() => {
-            fireEvent.mouseUp(window, { clientX: -500 });
+            fireEvent.pointerUp(window, { clientX: -500 });
         });
 
         // Clamped to 0
         expect(mockMoveKeyframe).toHaveBeenCalledWith('clip-test-1', 'opacity', 10, 0);
 
         // Drag far right: startFrame 10, clientX from 100 to 1000 (deltaX = 900 -> deltaFrames = 450)
-        fireEvent.mouseDown(diamond, { clientX: 100 });
+        fireEvent.pointerDown(diamond, { clientX: 100 });
         act(() => {
-            fireEvent.mouseMove(window, { clientX: 1000 });
+            fireEvent.pointerMove(window, { clientX: 1000 });
         });
         act(() => {
-            fireEvent.mouseUp(window, { clientX: 1000 });
+            fireEvent.pointerUp(window, { clientX: 1000 });
         });
 
         // Clamped to clip.durationInFrames (100)
@@ -190,12 +190,12 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
         const diamond = screen.getByTestId('keyframe-diamond-clip-test-1-opacity-50');
 
         // Drag from 50: startX = 200, move to 220 -> deltaX = +20px -> deltaFrames = +10 -> frame = 60
-        fireEvent.mouseDown(diamond, { clientX: 200 });
+        fireEvent.pointerDown(diamond, { clientX: 200 });
         act(() => {
-            fireEvent.mouseMove(window, { clientX: 220 });
+            fireEvent.pointerMove(window, { clientX: 220 });
         });
         act(() => {
-            fireEvent.mouseUp(window, { clientX: 220 });
+            fireEvent.pointerUp(window, { clientX: 220 });
         });
 
         expect(mockMoveKeyframe).toHaveBeenCalledWith('clip-test-1', 'opacity', 50, 60);
@@ -206,9 +206,9 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
 
         const diamond = screen.getByTestId('keyframe-diamond-clip-test-1-opacity-10');
 
-        fireEvent.mouseDown(diamond, { clientX: 100 });
+        fireEvent.pointerDown(diamond, { clientX: 100 });
         act(() => {
-            fireEvent.mouseMove(window, { clientX: 160 });
+            fireEvent.pointerMove(window, { clientX: 160 });
         });
 
         // Press Escape
@@ -217,7 +217,7 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
         });
 
         act(() => {
-            fireEvent.mouseUp(window, { clientX: 160 });
+            fireEvent.pointerUp(window, { clientX: 160 });
         });
 
         expect(mockMoveKeyframe).not.toHaveBeenCalled();
@@ -228,12 +228,12 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
 
         const diamond = screen.getByTestId('keyframe-diamond-clip-test-1-opacity-10');
 
-        fireEvent.mouseDown(diamond, { clientX: 100 });
+        fireEvent.pointerDown(diamond, { clientX: 100 });
         act(() => {
-            fireEvent.mouseMove(window, { clientX: 160 });
+            fireEvent.pointerMove(window, { clientX: 160 });
         });
         act(() => {
-            fireEvent.mouseUp(window, { clientX: 160 });
+            fireEvent.pointerUp(window, { clientX: 160 });
         });
 
         expect(mockMoveKeyframe).not.toHaveBeenCalled();

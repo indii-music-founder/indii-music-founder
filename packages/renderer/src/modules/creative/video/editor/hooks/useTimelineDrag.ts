@@ -291,7 +291,7 @@ export function useTimelineDrag() {
     }, [setSelectedClipId]);
 
     useEffect(() => {
-        const _moveCb = (e: MouseEvent) => {
+        const _moveCb = (e: PointerEvent) => {
             const current = dragStateRef.current;
             if (!current) return;
 
@@ -331,7 +331,7 @@ export function useTimelineDrag() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- throttle HoF requires any[] constraint
         const handleMouseMove = throttle(_moveCb as (...a: any[]) => any, 16);
 
-        const handleMouseUp = (e: MouseEvent) => {
+        const handlePointerUp = (e: PointerEvent) => {
             const current = dragStateRef.current;
             if (current) {
                 let targetTrackId = current.currentTrackId;
@@ -365,6 +365,17 @@ export function useTimelineDrag() {
             setDragState(null);
         };
 
+        // Pointercancel (pen palm rejection, touch interruption, element removal)
+        // restores the pre-drag project exactly like Escape — never commit.
+        const handlePointerCancel = () => {
+            if (dragStateRef.current) {
+                abortTransientClipUpdateRef.current();
+                setSnapIndicatorFrame(null);
+                useSnapIndicatorStore.getState().setSnapIndicatorFrame(null);
+                setDragState(null);
+            }
+        };
+
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && dragStateRef.current) {
                 abortTransientClipUpdateRef.current();
@@ -374,13 +385,15 @@ export function useTimelineDrag() {
             }
         };
 
-        window.addEventListener('mousemove', handleMouseMove, { passive: true });
-        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('pointermove', handleMouseMove, { passive: true });
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerCancel);
         window.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('pointermove', handleMouseMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            window.removeEventListener('pointercancel', handlePointerCancel);
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, []);

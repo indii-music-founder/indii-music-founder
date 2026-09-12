@@ -57,12 +57,12 @@ export const TimelineClip = memo(({
         };
     }, []);
 
-    const handleKeyframeMouseDown = useCallback((
-        e: React.MouseEvent,
+    const handleKeyframePointerDown = useCallback((
+        e: React.PointerEvent,
         propKey: string,
         startFrame: number
     ) => {
-        // Prevent event bubbling to clip onMouseDown (which would drag the entire clip)
+        // Prevent event bubbling to the clip body (which would drag the entire clip)
         e.stopPropagation();
         if (isLocked) return;
 
@@ -71,14 +71,15 @@ export const TimelineClip = memo(({
         let newFrame = startFrame;
 
         const cleanup = () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            window.removeEventListener('pointercancel', handleCancel);
             window.removeEventListener('keydown', handleKeyDown);
             activeCleanupRef.current = null;
         };
         activeCleanupRef.current = cleanup;
 
-        const handleMouseMove = (moveEvent: MouseEvent) => {
+        const handlePointerMove = (moveEvent: PointerEvent) => {
             const deltaX = moveEvent.clientX - startX;
             if (Math.abs(deltaX) >= 3) {
                 hasMoved = true;
@@ -93,7 +94,7 @@ export const TimelineClip = memo(({
             });
         };
 
-        const handleMouseUp = () => {
+        const handlePointerUp = () => {
             cleanup();
             setDraggingKeyframe(null);
 
@@ -109,6 +110,12 @@ export const TimelineClip = memo(({
             }
         };
 
+        // Pen palm rejection or touch interruption: restore, never move.
+        const handleCancel = () => {
+            cleanup();
+            setDraggingKeyframe(null);
+        };
+
         const handleKeyDown = (keyEvent: KeyboardEvent) => {
             if (keyEvent.key === 'Escape') {
                 cleanup();
@@ -116,8 +123,9 @@ export const TimelineClip = memo(({
             }
         };
 
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handleCancel);
         window.addEventListener('keydown', handleKeyDown);
     }, [clip.id, clip.durationInFrames, isLocked, onMoveKeyframe, pxPerFrame]);
 
@@ -130,7 +138,7 @@ export const TimelineClip = memo(({
                 height: isExpanded ? 'auto' : '64px',
                 zIndex: isExpanded ? 20 : 10
             }}
-            onMouseDown={(e) => onDragStart(e, clip, 'move')}
+            onPointerDown={(e) => onDragStart(e, clip, 'move')}
         >
             {/* Clip Content */}
             <div className="px-2 py-1 flex items-center justify-between h-8 overflow-hidden pointer-events-none relative z-10">
@@ -216,7 +224,7 @@ export const TimelineClip = memo(({
                                                 isDraggingThis ? 'scale-150 ring-2 ring-white cursor-grabbing' : 'hover:scale-150'
                                             } ${getKeyframeColor(kf.easing)}`}
                                             style={{ left: currentDisplayFrame * pxPerFrame }}
-                                            onMouseDown={(e) => handleKeyframeMouseDown(e, prop.key, kf.frame)}
+                                            onPointerDown={(e) => handleKeyframePointerDown(e, prop.key, kf.frame)}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (justDraggedRef.current) {
@@ -243,12 +251,12 @@ export const TimelineClip = memo(({
             {/* Trim handles: both edges, source-aware */}
             <div
                 className="absolute left-0 top-0 bottom-0 w-2 cursor-w-resize hover:bg-white/50 transition-colors z-20"
-                onMouseDown={(e) => onDragStart(e, clip, 'resize-left')}
+                onPointerDown={(e) => onDragStart(e, clip, 'resize-left')}
                 data-testid={`clip-trim-left-${clip.id}`}
             />
             <div
                 className="absolute right-0 top-0 bottom-0 w-2 cursor-e-resize hover:bg-white/50 transition-colors z-20"
-                onMouseDown={(e) => onDragStart(e, clip, 'resize-right')}
+                onPointerDown={(e) => onDragStart(e, clip, 'resize-right')}
                 data-testid={`clip-trim-right-${clip.id}`}
             />
         </div>

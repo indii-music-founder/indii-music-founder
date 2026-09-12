@@ -24,6 +24,29 @@ beforeEach(() => {
     vi.useRealTimers();
 });
 
+// jsdom ships no PointerEvent, so @testing-library's fireEvent.pointer* falls
+// back to coordinate-less generic Events — clientX/clientY/pointerId arrive
+// undefined and pointer-driven drag tests measure NaN deltas. This polyfill
+// mirrors the browser contract these suites rely on (PointerEventInit is a
+// superset of MouseEventInit for our usage). It must stay FIRST-class: local
+// test-file polyfills (e.g. TimeRuler) key off `typeof window.PointerEvent`,
+// so a bare MouseEvent alias here would shadow a realer implementation.
+// Same spirit as the existing ResizeObserver/Canvas/matchMedia mocks.
+if (typeof window !== 'undefined' && typeof (window as { PointerEvent?: unknown }).PointerEvent === 'undefined') {
+    class PointerEventPolyfill extends MouseEvent {
+        readonly pointerId: number;
+        readonly pointerType: string;
+        readonly isPrimary: boolean;
+        constructor(type: string, params: PointerEventInit = {}) {
+            super(type, params);
+            this.pointerId = typeof params.pointerId === 'number' ? params.pointerId : 0;
+            this.pointerType = typeof params.pointerType === 'string' ? params.pointerType : '';
+            this.isPrimary = params.isPrimary === true;
+        }
+    }
+    (window as { PointerEvent: unknown }).PointerEvent = PointerEventPolyfill;
+}
+
 // Declare React 18 act testing environment globally to suppress environment warnings
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 

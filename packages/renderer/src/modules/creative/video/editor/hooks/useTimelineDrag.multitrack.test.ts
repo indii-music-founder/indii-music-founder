@@ -245,12 +245,12 @@ describe('multi-track dragging (Feature 18)', () => {
 
             // 2. Dispatch mousemove down to clientY: 90 (over track-v2)
             act(() => {
-                window.dispatchEvent(new MouseEvent('mousemove', { clientX: 20, clientY: 90 }));
+                window.dispatchEvent(new MouseEvent('pointermove', { clientX: 20, clientY: 90 }));
             });
 
             // 3. Dispatch mouseup at clientY: 90
             act(() => {
-                window.dispatchEvent(new MouseEvent('mouseup', { clientX: 20, clientY: 90 }));
+                window.dispatchEvent(new MouseEvent('pointerup', { clientX: 20, clientY: 90 }));
             });
 
             // Verify clip was moved to track-v2 in store
@@ -275,12 +275,12 @@ describe('multi-track dragging (Feature 18)', () => {
 
             // 2. Dispatch mousemove down to clientY: 150 (over audio track-a1)
             act(() => {
-                window.dispatchEvent(new MouseEvent('mousemove', { clientX: 20, clientY: 150 }));
+                window.dispatchEvent(new MouseEvent('pointermove', { clientX: 20, clientY: 150 }));
             });
 
             // 3. Dispatch mouseup at clientY: 150
             act(() => {
-                window.dispatchEvent(new MouseEvent('mouseup', { clientX: 20, clientY: 150 }));
+                window.dispatchEvent(new MouseEvent('pointerup', { clientX: 20, clientY: 150 }));
             });
 
             // Clip must stay on track-v1, NOT move to track-a1!

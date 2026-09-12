@@ -773,7 +773,14 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                     return !b || c.id !== b.id || c.startFrame !== b.startFrame ||
                         c.durationInFrames !== b.durationInFrames ||
                         c.sourceInUs !== b.sourceInUs || c.sourceOutUs !== b.sourceOutUs ||
-                        c.trackId !== b.trackId;
+                        c.trackId !== b.trackId ||
+                        // Drag sessions can also carry value edits (properties panel
+                        // commits, volume trims, renames). Keyframes compare by
+                        // reference: transient drags never rebuild that array, so a
+                        // reference difference is always a real user edit.
+                        c.name !== b.name || c.volume !== b.volume ||
+                        c.opacity !== b.opacity || c.scale !== b.scale ||
+                        c.playbackRate !== b.playbackRate || c.keyframes !== b.keyframes;
                 })
             );
 

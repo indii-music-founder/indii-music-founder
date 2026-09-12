@@ -106,6 +106,28 @@ describe('videoEditorStore — undo/redo history', () => {
         expect(useVideoEditorStore.getState().past).toHaveLength(0);
     });
 
+    it('records one undo entry for a volume-only transient commit (non-positional fields count)', () => {
+        useVideoEditorStore.getState().updateClipTransient('c1', { volume: 0.5 });
+        useVideoEditorStore.getState().commitTransientClipUpdate('c1', { volume: 0.5 });
+
+        expect(useVideoEditorStore.getState().project.clips[0]!.volume).toBe(0.5);
+        expect(useVideoEditorStore.getState().past).toHaveLength(1);
+
+        useVideoEditorStore.getState().undo();
+        expect(useVideoEditorStore.getState().project.clips[0]!.volume).toBeUndefined();
+    });
+
+    it('records one undo entry for a name-only transient commit', () => {
+        useVideoEditorStore.getState().updateClipTransient('c1', { name: 'Renamed mid-drag' });
+        useVideoEditorStore.getState().commitTransientClipUpdate('c1', { name: 'Renamed mid-drag' });
+
+        expect(useVideoEditorStore.getState().project.clips[0]!.name).toBe('Renamed mid-drag');
+        expect(useVideoEditorStore.getState().past).toHaveLength(1);
+
+        useVideoEditorStore.getState().undo();
+        expect(useVideoEditorStore.getState().project.clips[0]!.name).toBe('Take 1');
+    });
+
     it('aborts transient drag and restores initial project without undo history', () => {
         useVideoEditorStore.getState().updateClipTransient('c1', { startFrame: 20 });
         expect(useVideoEditorStore.getState().project.clips[0]!.startFrame).toBe(20);
