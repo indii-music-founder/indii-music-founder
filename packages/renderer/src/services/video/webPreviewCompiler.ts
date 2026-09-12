@@ -39,14 +39,13 @@ import type { IndiiVideoProject } from '@indii/shared';
 /**
  * Origin-root sidecar served from `packages/renderer/public/`.
  *
- * The `?v=` keys matter: production caches .js URLs with
- * `cache-control: immutable, max-age=1y` (the js/css header rule applies even
- * to SPA-rewrite responses), and these URLs were poisoned in the
- * edge with cached index.html before the assets first deployed. A versioned
- * query is a fresh cache key everywhere. Bump `v` whenever the underlying file
- * changes — `sidecarServing.test.ts` asserts these stay in lockstep with the
- * vendored versions. The HyperFrames runtime query must NOT break the player's
- * dedupe, which matches the literal substring `hyperframe.runtime.iife.js`.
+ * The `?v=` keys exist because production serves .js URLs with
+ * `cache-control: immutable, max-age=1y` — a changed sidecar under the same
+ * URL would never reach returning visitors. Bump `v` whenever the underlying
+ * file changes; `sidecarServing.test.ts` asserts these stay in lockstep with
+ * the vendored versions. The HyperFrames runtime query must NOT break the
+ * player's dedupe, which matches the literal substring
+ * `hyperframe.runtime.iife.js`.
  */
 export const GSAP_SIDECAR_SRC = '/gsap.min.js?v=3.14.2';
 /** Pinned HyperFrames runtime served from `packages/renderer/public/`. */
