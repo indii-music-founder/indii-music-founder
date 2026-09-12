@@ -764,7 +764,7 @@ describe('videoEditorStore — Milestone 1 Adversarial Stress Testing', () => {
             // 2. Dispatch 100 window mousemove events (moving rightward from 101 to 200)
             act(() => {
                 for (let x = 101; x <= 200; x++) {
-                    window.dispatchEvent(new MouseEvent('mousemove', { clientX: x }));
+                    window.dispatchEvent(new MouseEvent('pointermove', { clientX: x }));
                 }
             });
 
@@ -774,7 +774,7 @@ describe('videoEditorStore — Milestone 1 Adversarial Stress Testing', () => {
             // 3. Mouse up at clientX: 200
             // Delta X = 100px. At pxPerFrame = 2, deltaFrames = 50.
             act(() => {
-                window.dispatchEvent(new MouseEvent('mouseup', { clientX: 200 }));
+                window.dispatchEvent(new MouseEvent('pointerup', { clientX: 200 }));
             });
 
             // Drag finished
