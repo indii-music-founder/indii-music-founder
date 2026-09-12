@@ -70,8 +70,8 @@ describe('VideoPreview', () => {
         const srcdoc = player.getAttribute('srcdoc') ?? '';
         expect(srcdoc).toContain('data-composition-id="project-1"');
         // Web player plumbing: pinned sidecar + runtime, blob timeline.
-        expect(srcdoc).toContain('<script src="/gsap.min.js"></script>');
-        expect(srcdoc).toContain('<script src="/hyperframe.runtime.iife.js"></script>');
+        expect(srcdoc).toContain('<script src="/gsap.min.js?v=3.14.2"></script>');
+        expect(srcdoc).toContain('<script src="/hyperframe.runtime.iife.js?v=0.8.11"></script>');
         expect(srcdoc).toMatch(/<script src="blob:[^"]+"><\/script>/);
         expect(srcdoc).not.toContain('<script src="./gsap.min.js"></script>');
         expect(screen.getByText(/Live timeline:/)).toBeInTheDocument();

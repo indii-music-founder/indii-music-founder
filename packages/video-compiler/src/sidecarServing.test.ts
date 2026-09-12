@@ -61,3 +61,28 @@ describe('hyperframes runtime served to the web player', () => {
         expect(player.version).toBeDefined();
     });
 });
+
+describe('web player cache keys stay in lockstep with vendored versions', () => {
+    // Production caches .js URLs immutable for a year, so the transform's
+    // `?v=` query MUST be bumped whenever the vendored file changes — a stale
+    // key serves the old bytes (or pre-deploy SPA HTML) forever.
+    const transformSource = read('packages/renderer/src/services/video/webPreviewCompiler.ts').toString('utf8');
+
+    const constantValue = (name: string): string => {
+        const match = transformSource.match(new RegExp(`${name}\\s*=\\s*'([^']+)'`));
+        return match![1]!;
+    };
+
+    it('gsap ?v= matches the vendored gsap.min.js version', () => {
+        const src = read(COMPILER_SIDECAR).toString('utf8');
+        const gsapVersion = src.match(/GSAP (\d+\.\d+\.\d+)/)![1]!;
+        expect(constantValue('GSAP_SIDECAR_SRC')).toBe(`/gsap.min.js?v=${gsapVersion}`);
+    });
+
+    it('runtime ?v= matches the installed @hyperframes/core version', () => {
+        const core = JSON.parse(read('node_modules/@hyperframes/core/package.json').toString('utf8')) as {
+            version: string;
+        };
+        expect(constantValue('HYPERFRAMES_RUNTIME_SRC')).toBe(`/hyperframe.runtime.iife.js?v=${core.version}`);
+    });
+});

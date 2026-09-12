@@ -132,8 +132,8 @@ describe('PlatformBridgeService', () => {
                 const html = await bridge.compileVideoPreview(project);
 
                 expect(mockCompilePreview).not.toHaveBeenCalled();
-                expect(html).toContain('<script src="/gsap.min.js"></script>');
-                expect(html).toContain('<script src="/hyperframe.runtime.iife.js"></script>');
+                expect(html).toContain('<script src="/gsap.min.js?v=3.14.2"></script>');
+                expect(html).toContain('<script src="/hyperframe.runtime.iife.js?v=0.8.11"></script>');
                 expect(html).toContain('<script src="blob:web-preview-timeline"></script>');
                 expect(html).not.toContain('<script src="./gsap.min.js"></script>');
             } finally {

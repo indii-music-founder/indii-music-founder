@@ -138,8 +138,8 @@ describe('compileProjectForWebPreview', () => {
     it('compiles through the shared pure compiler and re-plumbs the document for the web player', () => {
         const out = compileProjectForWebPreview(baseProject());
 
-        expect(out).toContain('<script src="/gsap.min.js"></script>');
-        expect(out).toContain('<script src="/hyperframe.runtime.iife.js"></script>');
+        expect(out).toContain('<script src="/gsap.min.js?v=3.14.2"></script>');
+        expect(out).toContain('<script src="/hyperframe.runtime.iife.js?v=0.8.11"></script>');
         expect(out).toContain('<script src="blob:stub"></script>');
         expect(out).toContain('data-composition-id="web-preview"');
         expect(out).not.toContain('<script src="./gsap.min.js"></script>');

@@ -36,10 +36,21 @@
 import { compileProjectToHyperFrames } from '@indii/video-compiler';
 import type { IndiiVideoProject } from '@indii/shared';
 
-/** Origin-root sidecar served from `packages/renderer/public/`. */
-export const GSAP_SIDECAR_SRC = '/gsap.min.js';
+/**
+ * Origin-root sidecar served from `packages/renderer/public/`.
+ *
+ * The `?v=` keys matter: production caches .js URLs with
+ * `cache-control: immutable, max-age=1y` (the js/css header rule applies even
+ * to SPA-rewrite responses), and these URLs were poisoned in the
+ * edge with cached index.html before the assets first deployed. A versioned
+ * query is a fresh cache key everywhere. Bump `v` whenever the underlying file
+ * changes — `sidecarServing.test.ts` asserts these stay in lockstep with the
+ * vendored versions. The HyperFrames runtime query must NOT break the player's
+ * dedupe, which matches the literal substring `hyperframe.runtime.iife.js`.
+ */
+export const GSAP_SIDECAR_SRC = '/gsap.min.js?v=3.14.2';
 /** Pinned HyperFrames runtime served from `packages/renderer/public/`. */
-export const HYPERFRAMES_RUNTIME_SRC = '/hyperframe.runtime.iife.js';
+export const HYPERFRAMES_RUNTIME_SRC = '/hyperframe.runtime.iife.js?v=0.8.11';
 
 const DESKTOP_SIDECAR_TAG = '<script src="./gsap.min.js"></script>';
 const TIMELINE_SCRIPT_PATTERN = /<script>(\s*window\.__timelines[\s\S]*?)<\/script>/;
