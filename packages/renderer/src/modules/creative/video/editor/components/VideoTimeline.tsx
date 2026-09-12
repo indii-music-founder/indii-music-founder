@@ -25,6 +25,7 @@ interface VideoTimelineProps {
     snapIndicatorFrame?: number | null;
     onToggleMuteTrack?: (id: string) => void;
     onToggleSoloTrack?: (id: string) => void;
+    onToggleHideTrack?: (id: string) => void;
     onToggleLockTrack?: (id: string) => void;
 }
 
@@ -33,10 +34,10 @@ export const VideoTimeline = memo(({
     handlePlayPause, handleSeek, handleAddTrack, handleAddSampleClip,
     removeTrack, removeClip, handleDragStart, formatTime: _formatTime,
     snapIndicatorFrame: snapIndicatorFrameProp,
-    onToggleMuteTrack, onToggleSoloTrack, onToggleLockTrack
+    onToggleMuteTrack, onToggleSoloTrack, onToggleHideTrack, onToggleLockTrack
 }: VideoTimelineProps) => {
 
-    const { isPlaying, addKeyframe, removeKeyframe, updateKeyframe, toggleMuteTrack, toggleSoloTrack, toggleLockTrack } = useVideoEditorStore(
+    const { isPlaying, addKeyframe, removeKeyframe, updateKeyframe, toggleMuteTrack, toggleSoloTrack, toggleHideTrack, toggleLockTrack } = useVideoEditorStore(
         useShallow((state) => ({
             isPlaying: state.isPlaying,
             addKeyframe: state.addKeyframe,
@@ -44,6 +45,7 @@ export const VideoTimeline = memo(({
             updateKeyframe: state.updateKeyframe,
             toggleMuteTrack: state.toggleMuteTrack,
             toggleSoloTrack: state.toggleSoloTrack,
+            toggleHideTrack: state.toggleHideTrack,
             toggleLockTrack: state.toggleLockTrack,
         }))
     );
@@ -151,6 +153,7 @@ export const VideoTimeline = memo(({
                     onAddSampleClip={handleAddSampleClip}
                     onToggleMuteTrack={onToggleMuteTrack || toggleMuteTrack}
                     onToggleSoloTrack={onToggleSoloTrack || toggleSoloTrack}
+                    onToggleHideTrack={onToggleHideTrack || toggleHideTrack}
                     onToggleLockTrack={onToggleLockTrack || toggleLockTrack}
                     onToggleExpand={toggleExpand}
                     onRemoveClip={removeClip}

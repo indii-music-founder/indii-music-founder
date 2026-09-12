@@ -103,6 +103,7 @@ describe('VideoEditor legacy structural-only interactions', () => {
     const mockUndo = vi.fn();
     const mockRedo = vi.fn();
     const mockRippleDeleteClip = vi.fn();
+    const mockSplitClip = vi.fn();
 
     const mockToast = {
         info: vi.fn(),
@@ -160,6 +161,7 @@ describe('VideoEditor legacy structural-only interactions', () => {
             redo: mockRedo,
             selectedClipId: 'server-video-1',
             rippleDeleteClip: mockRippleDeleteClip,
+            splitClip: mockSplitClip,
             timelineZoom: 1,
             setTimelineZoom: vi.fn(),
             loopRegion: null,
@@ -314,8 +316,51 @@ describe('VideoEditor legacy structural-only interactions', () => {
             expect(mockUndo).not.toHaveBeenCalled();
             fireEvent.keyDown(input, { key: 'z', metaKey: true, shiftKey: true });
             expect(mockRedo).not.toHaveBeenCalled();
+
+            // Transport keys stay out of text fields too.
+            fireEvent.keyDown(input, { key: ' ' });
+            fireEvent.keyDown(input, { key: 's' });
+            expect(mockSetIsPlaying).not.toHaveBeenCalled();
+            expect(mockSplitClip).not.toHaveBeenCalled();
         } finally {
             input.remove();
         }
+    });
+
+    it('toggles playback with Space outside interactive elements', () => {
+        render(<VideoEditor />);
+
+        fireEvent.keyDown(window, { key: ' ' });
+
+        expect(mockSetIsPlaying).toHaveBeenCalledWith(true);
+    });
+
+    it('lets a focused button keep native Space activation instead of double-firing', () => {
+        render(<VideoEditor />);
+
+        fireEvent.keyDown(screen.getByTestId('play-pause-btn'), { key: ' ' });
+
+        expect(mockSetIsPlaying).not.toHaveBeenCalled();
+    });
+
+    it('splits the selected clip at the playhead with S', () => {
+        render(<VideoEditor />);
+
+        fireEvent.keyDown(window, { key: 's' });
+
+        expect(mockSplitClip).toHaveBeenCalledWith('server-video-1', 0);
+    });
+
+    it('nudges the playhead with J/L and pauses with K', () => {
+        render(<VideoEditor />);
+
+        fireEvent.keyDown(window, { key: 'l' });
+        expect(mockSetCurrentTime).toHaveBeenCalledWith(30);
+
+        fireEvent.keyDown(window, { key: 'j' });
+        expect(mockSetCurrentTime).toHaveBeenCalledWith(0);
+
+        fireEvent.keyDown(window, { key: 'k' });
+        expect(mockSetIsPlaying).toHaveBeenCalledWith(false);
     });
 });

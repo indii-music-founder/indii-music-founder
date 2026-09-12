@@ -11,7 +11,7 @@ import { QCPanel } from './components/QCPanel';
 import { KeysPanel } from './components/KeysPanel';
 import { TransferPanel } from './components/TransferPanel';
 import { QCVisualizer } from './components/QCVisualizer';
-import { FounderReadinessPanel } from './components/FounderReadinessPanel';
+import { FounderReadinessPanel } from '@/modules/registration/components/FounderReadinessPanel';
 
 /* ── Extracted Sub-components ── */
 import { ReleasesContent } from './components/ReleasesContent';
@@ -37,6 +37,7 @@ import { useStore } from '@/core/store';
 export default function DistributionDashboard() {
     const { t } = useTranslation();
     const { releases, loading, error, handleRetry } = useDistributionDashboard();
+    const user = useStore(state => state.user);
     const rawDistributionTab = useStore(state => state.distributionTab);
     const setDistributionTab = useStore(state => state.setDistributionTab);
     const [prevRawTab, setPrevRawTab] = useState(rawDistributionTab);
@@ -200,7 +201,7 @@ export default function DistributionDashboard() {
                                 </TabsContent>
                                 <TabsContent value="founder" data-testid="distro-content-founder" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Founder Readiness">
-                                        <FounderReadinessPanel />
+                                        <FounderReadinessPanel userId={user?.uid ?? ''} />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
                                 <TabsContent value="brain" data-testid="distro-content-brain" className="mt-0 border-none outline-none focus-visible:ring-0">

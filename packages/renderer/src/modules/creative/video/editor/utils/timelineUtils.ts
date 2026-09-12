@@ -47,6 +47,38 @@ export function formatTimecode(frame: number, fps: number = 30, showHours: boole
 }
 
 /**
+ * Resolves which track a container-level drop should target by vertical
+ * pointer position: clamps to the first/last track outside the span, otherwise
+ * picks the track whose vertical span contains or is nearest to the pointer.
+ * DOM-free (the caller supplies rects) so it is unit-testable in jsdom.
+ * Tracks without a measurable rect are skipped; if none are measurable the
+ * first track is returned.
+ */
+export function nearestTrackIdByY(
+    tracks: Array<{ id: string }>,
+    clientY: number,
+    getRect: (id: string) => { top: number; bottom: number } | null,
+): string | null {
+    if (tracks.length === 0) return null;
+    let nearest = tracks[0]!.id;
+    let nearestDistance = Infinity;
+    for (const track of tracks) {
+        const rect = getRect(track.id);
+        if (!rect || rect.bottom <= rect.top) continue;
+        const distance = clientY < rect.top
+            ? rect.top - clientY
+            : clientY > rect.bottom
+                ? clientY - rect.bottom
+                : 0;
+        if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearest = track.id;
+        }
+    }
+    return nearest;
+}
+
+/**
  * Verifies track compatibility for a clip when moving between tracks:
  * - Audio clips ('audio') can ONLY be placed on audio tracks ('audio').
  * - Audio tracks ('audio') NEVER accept visual clips ('video', 'image', 'text').

@@ -3001,3 +3001,17 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Minor:** seek nonce uses `Date.now()` (same-ms collisions); duplicated nonce-guarded seek effect in `VideoPreview.tsx`; outer timeline drop handler in `useVideoEditor.handleDrop` ignores `timelineZoom` and force-routes to `tracks[0]` (inner `TimelineTrack` drop zone is zoom-aware — inconsistent for drops landing in track gaps, pre-existing); duplicate `min-h-[64px] min-h-[220px]` classes in `TimelineTrack.tsx`; handoff doc misattributes loop enforcement to `VideoPreview.tsx` (actually `VideoEditor.handleFrameUpdate` + `useVideoEditor` subscription).
 - **Fix:** (1) derive effective audibility from solo/mute in the compiler and preview volume routing; (2) add reorder drag handles or up/down buttons in `TimelineTrack` header; (3) guard the ⌘⌫ handler against editable targets.
 - **Acceptance:** Soloing one track mutes all other audible tracks in live preview and render; tracks can be reordered by pointer from the timeline; ⌘⌫ inside any text input never mutates the timeline; no regression in the 29-file editor+store suite.
+
+### ISSUE-1433: Video feature audit — foundation strong, six gaps remain between current state and best-achievable
+
+- **Status:** 🟢 RESOLVED (Gaps 1–3 fixed & verified) / 🟡 PARTIAL (Gaps 4–6 backlogged)
+- **Severity:** 🟡 MEDIUM (items 1–3 resolved), 🟢 LOW (4–6)
+- **Module:** `packages/renderer/src/modules/creative/video/` + `packages/video-compiler/src/compiler.ts`
+- **Verified strong (2026-09-12):** zero TODO/FIXME debt across 49 video source files; one shared fail-closed compiler serves desktop preview, local render, and cloud; complete NLE state mechanics (transient-drag single-undo, dual-edge snapping, µs trims, keyframe partitioning on split, mute/solo/lock/reorder); adversarial store tests; Omni pipeline actively extended (multi-resolution, frame interpolation, beat alignment).
+- **Gap 1 — RESOLVED:** Compiler `tweenPlanFor` routes volume tweens to `#${id}-audio` for video clips and skips muted clips. Verified by `compiler.test.ts`.
+- **Gap 2 — RESOLVED:** Transport shortcuts wired in `VideoEditor.tsx` (Space play/pause, S split-at-playhead, J/K/L transport) with editable-target and interactive-button guards. Verified by `VideoEditor.interaction.test.tsx`.
+- **Gap 3 — RESOLVED:** `toggleHideTrack` added to `videoEditorStore` and `TimelineTrack` exposes eye button toggle with unit tests.
+- **Gap 4 — Mouse-only interaction:** clip drag, trim, and keyframe drag bind `onMouseDown` only; no pointer-event/touch/pen path.
+- **Gap 5 — RESOLVED:** Container-level drops (track gaps, padding) land on the track nearest the pointer's vertical position using `nearestTrackIdByY`. Verified by `timelineUtils.nearestTrack.test.ts`.
+- **Gap 6 — `commitTransientClipUpdate` undo comparison checks only positional fields (startFrame/duration/µs/trackId); commits that changed only name/volume/keyframes skip the undo snapshot.**
+- **Also noted:** live compiled preview is desktop-only (`platformBridge.canCompileVideoPreview`); browser artists get rendered-artifact fallback — product decision, not debt.

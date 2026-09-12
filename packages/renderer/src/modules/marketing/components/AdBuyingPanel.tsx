@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import {
     Megaphone, DollarSign, Users, MapPin, Play, Pause,
-    Loader2, TrendingUp, Target, Plus, Tag
+    TrendingUp, Target, Plus, Tag, AlertCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { AlertCircle } from 'lucide-react';
 
 interface Campaign {
     id: string;
@@ -32,18 +30,7 @@ export default function AdBuyingPanel() {
     const [genre, setGenre] = useState('Hip-Hop');
     const [ageRange, setAgeRange] = useState('18-24');
     const [location, setLocation] = useState('United States');
-    const [deploying, setDeploying] = useState(false);
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-    const [deployError, setDeployError] = useState<string | null>(null);
-
-    const handleDeploy = () => {
-        setDeploying(true);
-        setDeployError(null);
-        setTimeout(() => {
-            setDeployError(`${platform} ad platform integration is not yet connected to the backend API. Ad deployment is currently unavailable.`);
-            setDeploying(false);
-        }, 1000);
-    };
 
     const toggleCampaign = (id: string) => {
         setCampaigns(prev =>
@@ -154,42 +141,25 @@ export default function AdBuyingPanel() {
                 </div>
             </div>
 
-            {/* Deploy Button */}
-            <button
-                onClick={handleDeploy}
-                disabled={deploying}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl bg-dept-marketing text-white font-semibold text-sm hover:bg-dept-marketing/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-dept-marketing/20"
-            >
-                {deploying ? (
-                    <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Deploying Campaign...
-                    </>
-                ) : (
-                    <>
-                        <Plus size={16} />
-                        Deploy Campaign
-                    </>
-                )}
-            </button>
+            {/* Ad Platform Status */}
+            <div className="p-4 rounded-xl bg-dept-marketing/5 border border-dept-marketing/20 flex items-start gap-3">
+                <AlertCircle size={16} className="text-dept-marketing mt-0.5 flex-shrink-0" />
+                <div>
+                    <p className="text-sm font-semibold text-white">{platform} Integration In Development</p>
+                    <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
+                        Direct campaign deployment requires connecting an authorized {platform === 'Meta' ? 'Meta Ads' : 'TikTok Ads'} manager account via OAuth. Real ad spend and audience targeting cannot be executed until account authorization is completed.
+                    </p>
+                </div>
+            </div>
 
-            {/* Deploy Result */}
-            <AnimatePresence>
-                {deployError && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3"
-                    >
-                        <AlertCircle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                            <p className="text-sm font-semibold text-red-400">Deployment Failed</p>
-                            <p className="text-xs text-red-400/80 mt-0.5">{deployError}</p>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* Connect / Deploy Button */}
+            <button
+                disabled
+                className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/10 text-gray-500 font-semibold text-sm cursor-not-allowed select-none transition-all"
+            >
+                <Plus size={16} />
+                Connect {platform} Account (Coming Soon)
+            </button>
 
             {/* Running Campaigns */}
             <div>

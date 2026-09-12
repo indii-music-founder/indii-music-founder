@@ -13,6 +13,7 @@ vi.mock('../../store/videoEditorStore', () => ({
 describe('TimelineTrack', () => {
     const mockToggleMuteTrack = vi.fn();
     const mockToggleSoloTrack = vi.fn();
+    const mockToggleHideTrack = vi.fn();
     const mockToggleLockTrack = vi.fn();
     const mockMoveTrack = vi.fn();
     const mockRemoveTrack = vi.fn();
@@ -29,6 +30,7 @@ describe('TimelineTrack', () => {
         type: 'video',
         isMuted: false,
         isSolo: false,
+        isHidden: false,
         isLocked: false,
     };
 
@@ -55,6 +57,7 @@ describe('TimelineTrack', () => {
         onAddSampleClip: mockAddSampleClip,
         onToggleMuteTrack: mockToggleMuteTrack,
         onToggleSoloTrack: mockToggleSoloTrack,
+        onToggleHideTrack: mockToggleHideTrack,
         onToggleLockTrack: mockToggleLockTrack,
         onToggleExpand: mockToggleExpand,
         onRemoveClip: mockRemoveClip,
@@ -88,7 +91,25 @@ describe('TimelineTrack', () => {
 
             expect(screen.getByTestId(`track-mute-${mockTrack.id}`)).toBeInTheDocument();
             expect(screen.getByTestId(`track-solo-${mockTrack.id}`)).toBeInTheDocument();
+            expect(screen.getByTestId(`track-hide-${mockTrack.id}`)).toBeInTheDocument();
             expect(screen.getByTestId(`track-lock-${mockTrack.id}`)).toBeInTheDocument();
+        });
+
+        it('triggers onToggleHideTrack when Hide button is clicked', () => {
+            render(<TimelineTrack {...defaultProps} />);
+
+            const hideBtn = screen.getByTestId(`track-hide-${mockTrack.id}`);
+            fireEvent.click(hideBtn);
+
+            expect(mockToggleHideTrack).toHaveBeenCalledWith('track-1');
+        });
+
+        it('reflects hidden state with active styling', () => {
+            const hiddenTrack = { ...mockTrack, isHidden: true };
+            render(<TimelineTrack {...defaultProps} track={hiddenTrack} />);
+
+            const hideBtn = screen.getByTestId(`track-hide-${mockTrack.id}`);
+            expect(hideBtn).toHaveAttribute('aria-pressed', 'true');
         });
 
         it('triggers onToggleMuteTrack when Mute button is clicked', () => {

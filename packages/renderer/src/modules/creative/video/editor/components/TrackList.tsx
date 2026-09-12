@@ -11,6 +11,7 @@ export interface TrackListProps {
     onAddSampleClip: (trackId: string, type: 'text' | 'video' | 'image' | 'audio') => void;
     onToggleMuteTrack?: (id: string) => void;
     onToggleSoloTrack?: (id: string) => void;
+    onToggleHideTrack?: (id: string) => void;
     onToggleLockTrack?: (id: string) => void;
     onMoveTrack?: (id: string, targetIndex: number) => void;
     onToggleExpand: (id: string) => void;
@@ -29,6 +30,7 @@ export const TrackList = memo(({
     onAddSampleClip,
     onToggleMuteTrack,
     onToggleSoloTrack,
+    onToggleHideTrack,
     onToggleLockTrack,
     onMoveTrack,
     onToggleExpand,
@@ -52,6 +54,7 @@ export const TrackList = memo(({
                     onAddSampleClip={onAddSampleClip}
                     onToggleMuteTrack={onToggleMuteTrack}
                     onToggleSoloTrack={onToggleSoloTrack}
+                    onToggleHideTrack={onToggleHideTrack}
                     onToggleLockTrack={onToggleLockTrack}
                     onMoveTrack={onMoveTrack}
                     onToggleExpand={onToggleExpand}

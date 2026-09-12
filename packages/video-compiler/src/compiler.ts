@@ -313,12 +313,20 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
         for (const [property, unsortedKeys] of Object.entries(clip.keyframes)) {
             const keys = [...unsortedKeys].sort((a, b) => a.frame - b.frame);
             if (keys.length === 0) continue;
-            const propMap: Record<string, string> = { opacity: 'opacity', scale: 'scale', x: 'x', y: 'y', rotation: 'rotation' };
+            if (property === 'volume') {
+                if (!audible || (clip.type === 'video' && (clip.hasAudio !== true || suppressVideoAudio))) {
+                    continue;
+                }
+            }
+            const targetSelector = property === 'volume'
+                ? (clip.type === 'video' ? `#${id}-audio` : `#${id}`)
+                : `#${id}`;
+            const propMap: Record<string, string> = { opacity: 'opacity', scale: 'scale', x: 'x', y: 'y', rotation: 'rotation', volume: 'volume' };
             const gsapProp = propMap[property] ?? property;
             const firstAt = startS + keys[0]!.frame / fps;
             plan.push({
                 atSeconds: firstAt,
-                statement: `tl.set("#${id}", ${JSON.stringify({ [gsapProp]: keys[0]!.value })}, ${secondsString(firstAt)});`,
+                statement: `tl.set("${targetSelector}", ${JSON.stringify({ [gsapProp]: keys[0]!.value })}, ${secondsString(firstAt)});`,
             });
             for (let i = 0; i < keys.length - 1; i += 1) {
                 const segStartS = startS + keys[i]!.frame / fps;
@@ -326,7 +334,7 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
                 if (segDurS <= 0) continue;
                 plan.push({
                     atSeconds: segStartS,
-                    statement: `tl.to("#${id}", ${JSON.stringify({ [gsapProp]: keys[i + 1]!.value, duration: Number(secondsString(segDurS)), ease: mapEase(keys[i]!.easing) })}, ${secondsString(segStartS)});`,
+                    statement: `tl.to("${targetSelector}", ${JSON.stringify({ [gsapProp]: keys[i + 1]!.value, duration: Number(secondsString(segDurS)), ease: mapEase(keys[i]!.easing) })}, ${secondsString(segStartS)});`,
                 });
             }
         }

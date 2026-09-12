@@ -63,34 +63,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const timelineZoom = useVideoEditorStore(state => state.timelineZoom);
     const loopRegion = useVideoEditorStore(state => state.loopRegion);
 
-    React.useEffect(() => {
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (!(event.metaKey || event.ctrlKey)) return;
-            // Editable targets own their shortcuts: ⌘Z inside a text field must
-            // stay native text undo, and ⌘⌫ ("delete to line start") must never
-            // ripple-delete the selected timeline clip out from under the user.
-            const target = event.target as HTMLElement | null;
-            if (target && (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
-            if (event.key.toLowerCase() === 'z' && event.shiftKey) {
-                event.preventDefault();
-                useVideoEditorStore.getState().redo();
-            } else if (event.key.toLowerCase() === 'z') {
-                event.preventDefault();
-                useVideoEditorStore.getState().undo();
-            } else if (event.key === 'Backspace') {
-                const selected = useVideoEditorStore.getState().selectedClipId;
-                if (selected) {
-                    event.preventDefault();
-                    useVideoEditorStore.getState().rippleDeleteClip(selected);
-                }
-            }
-        };
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
-    }, []);
-
-    const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
-
     const [seekRequest, setSeekRequest] = React.useState<{ frame: number; nonce: number } | null>(null);
     // Monotonic nonce: Date.now() can collide for two seeks in the same millisecond.
     const seekNonceRef = React.useRef(0);
@@ -99,6 +71,89 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         handleSeek(frame);
         setSeekRequest({ frame, nonce: ++seekNonceRef.current });
     }, [handleSeek]);
+
+    React.useEffect(() => {
+        const isEditableTarget = (target: EventTarget | null): boolean => {
+            const el = target as HTMLElement | null;
+            if (!el) return false;
+            return el.isContentEditable === true || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA';
+        };
+        // Space keeps its native "press the focused control" meaning when an
+        // interactive element has focus — pressing Space on the play button must
+        // click the button once, not also toggle the store.
+        const isInteractiveTarget = (target: EventTarget | null): boolean => {
+            const el = target as HTMLElement | null;
+            if (!el || typeof el.closest !== 'function') return false;
+            return Boolean(el.closest('button, [role="button"], a, select, input, textarea, [contenteditable]'));
+        };
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (isEditableTarget(event.target)) return;
+
+            if (event.metaKey || event.ctrlKey) {
+                if (event.key.toLowerCase() === 'z' && event.shiftKey) {
+                    event.preventDefault();
+                    useVideoEditorStore.getState().redo();
+                } else if (event.key.toLowerCase() === 'z') {
+                    event.preventDefault();
+                    useVideoEditorStore.getState().undo();
+                } else if (event.key === 'Backspace') {
+                    const selected = useVideoEditorStore.getState().selectedClipId;
+                    if (selected) {
+                        event.preventDefault();
+                        useVideoEditorStore.getState().rippleDeleteClip(selected);
+                    }
+                }
+                return;
+            }
+
+            // NLE transport shortcuts (no modifiers). Every seek routes through
+            // handleEditorSeek so the preview element, playhead, and seek nonce
+            // stay in sync.
+            if (event.shiftKey || event.altKey) return;
+            const state = useVideoEditorStore.getState();
+            switch (event.key) {
+                case ' ': {
+                    if (isInteractiveTarget(event.target)) return;
+                    event.preventDefault();
+                    state.setIsPlaying(!state.isPlaying);
+                    break;
+                }
+                case 's':
+                case 'S': {
+                    if (state.selectedClipId) {
+                        event.preventDefault();
+                        state.splitClip(state.selectedClipId, state.currentTime);
+                    }
+                    break;
+                }
+                case 'j':
+                case 'J': {
+                    event.preventDefault();
+                    handleEditorSeek(Math.max(0, state.currentTime - state.project.fps));
+                    break;
+                }
+                case 'k':
+                case 'K': {
+                    event.preventDefault();
+                    state.setIsPlaying(false);
+                    break;
+                }
+                case 'l':
+                case 'L': {
+                    event.preventDefault();
+                    handleEditorSeek(Math.min(state.project.durationInFrames, state.currentTime + state.project.fps));
+                    break;
+                }
+                default:
+                    break;
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [handleEditorSeek]);
+
+    const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
 
     const handleFrameUpdate = React.useCallback((frame: number) => {
         const state = useVideoEditorStore.getState();

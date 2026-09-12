@@ -8,6 +8,7 @@ import { useVideoEditorStore, VideoClip, syncChannel } from '@/modules/creative/
 import { HistoryItem } from '@/core/store/slices/creative';
 import { useToast } from '@/core/context/ToastContext';
 import { PIXELS_PER_FRAME } from '../constants';
+import { nearestTrackIdByY } from '../utils/timelineUtils';
 import { logger } from '@/utils/logger';
 import { resolveMediaDurationSeconds, durationSecondsToFrames } from '../utils/mediaMetadata';
 import { readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
@@ -258,7 +259,19 @@ export function useVideoEditor(initialVideo?: HistoryItem, beforeExport?: () => 
             // Zoom-aware, matching the per-track drop zones in TimelineTrack.
             const zoom = useVideoEditorStore.getState().timelineZoom || 1;
             const dropFrame = Math.max(0, Math.round(x / (PIXELS_PER_FRAME * zoom)));
-            const trackId = project.tracks[0]?.id;
+            // Container-level drops (track gaps, padding) land on the track
+            // nearest the pointer's vertical position, not always the first.
+            const trackId = nearestTrackIdByY(
+                project.tracks,
+                e.clientY,
+                (id) => {
+                    const el = typeof document !== 'undefined' && typeof document.querySelector === 'function'
+                        ? document.querySelector(`[data-track-id="${id}"]`)
+                        : null;
+                    const rect = el?.getBoundingClientRect?.();
+                    return rect ? { top: rect.top, bottom: rect.bottom } : null;
+                },
+            ) ?? project.tracks[0]?.id;
             if (!trackId) return;
 
             if (!['image', 'video', 'music'].includes(payload.asset.type)) {

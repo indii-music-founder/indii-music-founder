@@ -74,6 +74,7 @@ interface VideoEditorState {
     removeTrack: (id: string) => void;
     toggleMuteTrack: (trackId: string) => void;
     toggleSoloTrack: (trackId: string) => void;
+    toggleHideTrack: (trackId: string) => void;
     toggleLockTrack: (trackId: string) => void;
     reorderTracks: (startIndex: number, endIndex: number) => void;
     moveTrack: (trackId: string, targetIndex: number) => void;
@@ -625,6 +626,19 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                     ...state.project,
                     tracks: state.project.tracks.map(t =>
                         t.id === trackId ? { ...t, isSolo: !t.isSolo } : t
+                    )
+                }
+            };
+        }),
+
+        toggleHideTrack: (trackId) => set((state) => {
+            const track = state.project.tracks.find(t => t.id === trackId);
+            if (!track) return {};
+            return {
+                project: {
+                    ...state.project,
+                    tracks: state.project.tracks.map(t =>
+                        t.id === trackId ? { ...t, isHidden: !t.isHidden } : t
                     )
                 }
             };

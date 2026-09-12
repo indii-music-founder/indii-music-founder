@@ -129,10 +129,10 @@ export interface ElectronComputerAPI {
     screenshot: (options?: { displayId?: number }) => Promise<{ success: boolean; data?: ComputerScreenshotData; error?: string }>;
     listApps: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
     openApp: (app: string) => Promise<{ success: boolean; data?: { app: string }; error?: string }>;
-    click: (x: number, y: number, button?: 'left' | 'right' | 'double') => Promise<{ success: boolean; data?: { x: number; y: number; button: string }; error?: string }>;
-    type: (text: string) => Promise<{ success: boolean; data?: { length: number }; error?: string }>;
-    key: (combo: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
-    scroll: (dx: number, dy: number) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
+    click: (x: number, y: number, button?: 'left' | 'right' | 'double', sessionId?: string) => Promise<{ success: boolean; data?: { x: number; y: number; button: string }; error?: string }>;
+    type: (text: string, sessionId?: string) => Promise<{ success: boolean; data?: { length: number }; error?: string }>;
+    key: (combo: string, sessionId?: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
+    scroll: (dx: number, dy: number, sessionId?: string) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
     abort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
     resetAbort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
     getAbortState: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;

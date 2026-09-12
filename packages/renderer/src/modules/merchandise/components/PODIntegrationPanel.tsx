@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, AlertCircle, RefreshCw, ExternalLink, Link2, Unlink, Key, X, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, RefreshCw, ExternalLink, Link2, Unlink, Key, X, Eye, EyeOff, Loader2, Clock } from 'lucide-react';
 import { PODCredentialService } from '@/services/pod/PODCredentialService';
 import { PrintOnDemandService, PODProvider } from '@/services/pod/PrintOnDemandService';
 import { useStore } from '@/core/store';
@@ -19,6 +19,7 @@ interface PODPartner {
     docsUrl: string;
     products: number;
     status: 'connected' | 'disconnected' | 'pending';
+    available?: boolean;
     lastSync?: string;
 }
 
@@ -29,6 +30,7 @@ const PARTNER_METADATA: Omit<PODPartner, 'products' | 'status' | 'lastSync'>[] =
         logo: 'PF',
         description: 'T-shirts, hoodies, posters, accessories worldwide.',
         docsUrl: 'https://www.printful.com/dashboard',
+        available: true,
     },
     {
         id: 'printify',
@@ -36,6 +38,7 @@ const PARTNER_METADATA: Omit<PODPartner, 'products' | 'status' | 'lastSync'>[] =
         logo: 'PY',
         description: 'Largest supplier network. Competitive margins.',
         docsUrl: 'https://printify.com/app/store/products',
+        available: false,
     },
     {
         id: 'gooten',
@@ -43,6 +46,7 @@ const PARTNER_METADATA: Omit<PODPartner, 'products' | 'status' | 'lastSync'>[] =
         logo: 'GT',
         description: 'Premium products, global fulfillment centers.',
         docsUrl: 'https://www.gooten.com',
+        available: false,
     },
 ];
 
@@ -273,12 +277,15 @@ export function PODIntegrationPanel() {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-0.5">
                                         <span className="text-sm font-bold text-white">{partner.name}</span>
-                                        {partner.status === 'connected' && (
+                                        {partner.available === false ? (
+                                            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-400/90 bg-amber-400/10 px-1.5 py-0.5 rounded">
+                                                <Clock size={10} /> Coming Soon
+                                            </span>
+                                        ) : partner.status === 'connected' ? (
                                             <span className="flex items-center gap-1 text-[10px] font-bold text-green-400">
                                                 <CheckCircle2 size={10} /> Live
                                             </span>
-                                        )}
-                                        {partner.status === 'disconnected' && (
+                                        ) : (
                                             <span className="flex items-center gap-1 text-[10px] font-bold text-neutral-600">
                                                 <AlertCircle size={10} /> Not connected
                                             </span>
@@ -299,7 +306,14 @@ export function PODIntegrationPanel() {
 
                                 {/* Actions */}
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                    {partner.status === 'connected' ? (
+                                    {partner.available === false ? (
+                                        <span
+                                            className="px-3 py-1.5 bg-white/5 border border-white/5 text-neutral-500 rounded-lg text-[10px] font-medium cursor-not-allowed select-none"
+                                            title="Integration in development"
+                                        >
+                                            In Development
+                                        </span>
+                                    ) : partner.status === 'connected' ? (
                                         <>
                                             <button
                                                 onClick={() => handleSync(partner.id)}

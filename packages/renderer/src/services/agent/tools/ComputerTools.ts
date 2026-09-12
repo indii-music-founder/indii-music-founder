@@ -115,10 +115,10 @@ export const ComputerTools = {
      * NEVER click into password/payment fields — the model must refuse if the screenshot
      * context suggests a credential entry field is targeted (see docs §5.5).
      */
-    computer_click: wrapTool('computer_click', async (args: { x: number; y: number; button?: 'left' | 'right' | 'double' }) => {
+    computer_click: wrapTool('computer_click', async (args: { x: number; y: number; button?: 'left' | 'right' | 'double'; sessionId?: string }) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.click(args.x, args.y, args.button ?? 'left');
+                const result = await window.electronAPI.computer.click(args.x, args.y, args.button ?? 'left', args.sessionId);
                 if (result.success) {
                     return toolSuccess(result.data, `Clicked at (${args.x}, ${args.y})`);
                 }
@@ -137,10 +137,10 @@ export const ComputerTools = {
      * NEVER type credentials, passwords, or payment details — this tool must refuse such
      * requests regardless of who issued them (see docs §5.5, no-credential-entry rule).
      */
-    computer_type: wrapTool('computer_type', async (args: { text: string }) => {
+    computer_type: wrapTool('computer_type', async (args: { text: string; sessionId?: string }) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.type(args.text);
+                const result = await window.electronAPI.computer.type(args.text, args.sessionId);
                 if (result.success) {
                     return toolSuccess(result.data, `Typed ${args.text.length} characters`);
                 }
@@ -157,10 +157,10 @@ export const ComputerTools = {
     /**
      * Presses a key combo, e.g. "return", "escape", "cmd+c". Destructive tier — requires approval.
      */
-    computer_key: wrapTool('computer_key', async (args: { combo: string }) => {
+    computer_key: wrapTool('computer_key', async (args: { combo: string; sessionId?: string }) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.key(args.combo);
+                const result = await window.electronAPI.computer.key(args.combo, args.sessionId);
                 if (result.success) {
                     return toolSuccess(result.data, `Pressed ${args.combo}`);
                 }
@@ -177,10 +177,10 @@ export const ComputerTools = {
     /**
      * Scrolls the wheel by (dx, dy) at the current pointer position. Destructive tier — requires approval.
      */
-    computer_scroll: wrapTool('computer_scroll', async (args: { dx: number; dy: number }) => {
+    computer_scroll: wrapTool('computer_scroll', async (args: { dx: number; dy: number; sessionId?: string }) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.scroll(args.dx, args.dy);
+                const result = await window.electronAPI.computer.scroll(args.dx, args.dy, args.sessionId);
                 if (result.success) {
                     return toolSuccess(result.data, `Scrolled (${args.dx}, ${args.dy})`);
                 }

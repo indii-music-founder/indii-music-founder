@@ -201,6 +201,52 @@ describe('compileProjectToHyperFrames (pure package)', () => {
         expect(compileProjectToHyperFrames(legacy).html).toMatch(/id="el-lg"[^>]*data-volume="0\.7"/);
     });
 
+    it('routes video clip volume keyframes to the companion audio element and animates volume property', () => {
+        const project = baseProject({
+            tracks: [{ id: 't1', name: 'V1', type: 'video' }],
+            clips: [
+                {
+                    ...baseProject({}).clips[0]!,
+                    id: 'v_kf',
+                    hasAudio: true,
+                    keyframes: {
+                        volume: [
+                            { frame: 0, value: 0.2, easing: 'linear' },
+                            { frame: 15, value: 0.9, easing: 'easeOut' },
+                        ],
+                    },
+                },
+            ],
+        });
+
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toContain('tl.set("#el-v_kf-audio", {"volume":0.2}');
+        expect(html).toContain('tl.to("#el-v_kf-audio", {"volume":0.9');
+    });
+
+    it('skips volume keyframes when the track is muted', () => {
+        const project = baseProject({
+            tracks: [{ id: 't1', name: 'V1', type: 'video', isMuted: true }],
+            clips: [
+                {
+                    ...baseProject({}).clips[0]!,
+                    id: 'v_muted_kf',
+                    hasAudio: true,
+                    keyframes: {
+                        volume: [
+                            { frame: 0, value: 0.2, easing: 'linear' },
+                            { frame: 15, value: 0.9, easing: 'easeOut' },
+                        ],
+                    },
+                },
+            ],
+        });
+
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).not.toContain('tl.set("#el-v_muted_kf-audio", {"volume":0.2}');
+        expect(html).not.toContain('tl.to("#el-v_muted_kf-audio", {"volume":0.9');
+    });
+
     it('mutes generated video audio when an explicit audio layer exists', () => {
         const project = baseProject({
             tracks: [

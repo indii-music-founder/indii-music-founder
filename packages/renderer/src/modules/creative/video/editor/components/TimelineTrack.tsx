@@ -1,5 +1,5 @@
 import React, { memo, useCallback } from 'react';
-import { Volume2, VolumeX, Headphones, Lock, Unlock, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Volume2, VolumeX, Headphones, Eye, EyeOff, Lock, Unlock, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { VideoTrack, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { TimelineClip } from './TimelineClip';
 import { PIXELS_PER_FRAME } from '../constants';
@@ -15,6 +15,7 @@ export interface TimelineTrackProps {
     onAddSampleClip: (trackId: string, type: 'text' | 'video' | 'image' | 'audio') => void;
     onToggleMuteTrack?: (id: string) => void;
     onToggleSoloTrack?: (id: string) => void;
+    onToggleHideTrack?: (id: string) => void;
     onToggleLockTrack?: (id: string) => void;
     /** This track's position in the project track list (for reorder controls). */
     trackIndex?: number;
@@ -33,7 +34,7 @@ export interface TimelineTrackProps {
 export const TimelineTrack = memo(({
     track, clips, selectedClipId, expandedClipIds,
     onRemoveTrack, onAddSampleClip,
-    onToggleMuteTrack, onToggleSoloTrack, onToggleLockTrack,
+    onToggleMuteTrack, onToggleSoloTrack, onToggleHideTrack, onToggleLockTrack,
     trackIndex = 0, trackCount = 1, onMoveTrack,
     onToggleExpand, onRemoveClip, onDragStart, onAddKeyframe, onKeyframeClick
 }: TimelineTrackProps) => {
@@ -54,6 +55,14 @@ export const TimelineTrack = memo(({
             useVideoEditorStore.getState().toggleSoloTrack?.(track.id);
         }
     }, [onToggleSoloTrack, track.id]);
+
+    const handleToggleHide = useCallback(() => {
+        if (onToggleHideTrack) {
+            onToggleHideTrack(track.id);
+        } else {
+            useVideoEditorStore.getState().toggleHideTrack?.(track.id);
+        }
+    }, [onToggleHideTrack, track.id]);
 
     const handleToggleLock = useCallback(() => {
         if (onToggleLockTrack) {
@@ -136,6 +145,21 @@ export const TimelineTrack = memo(({
                                 }`}
                             >
                                 {track.isLocked ? <Lock size={12} /> : <Unlock size={12} />}
+                            </button>
+
+                            {/* Hide / Visibility button */}
+                            <button
+                                type="button"
+                                onClick={handleToggleHide}
+                                data-testid={`track-hide-${track.id}`}
+                                aria-label={track.isHidden ? `Show track ${track.name}` : `Hide track ${track.name}`}
+                                aria-pressed={Boolean(track.isHidden)}
+                                title={track.isHidden ? "Show Track" : "Hide Track"}
+                                className={`p-1 rounded transition-colors ${
+                                    track.isHidden ? 'text-gray-500 bg-gray-950/30' : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                            >
+                                {track.isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
                             </button>
 
                             {/* Reorder buttons — structural, like remove: disabled while locked */}

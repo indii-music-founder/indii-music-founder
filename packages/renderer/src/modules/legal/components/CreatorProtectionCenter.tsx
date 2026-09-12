@@ -1,13 +1,20 @@
-import React, { useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle, FileText, Fingerprint, Gavel, Link, Scale, Shield, Siren } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle, FileText, Fingerprint, Gavel, Link, Loader2, Scale, Shield, Siren } from 'lucide-react';
 import { auth } from '@/services/firebase';
 import {
   CREATOR_PROTECTION_SOURCES,
   creatorProtectionHarnessService,
+  getLatestIdentityProtectionProfile,
+  saveIdentityProtectionProfile,
+  updateIdentityProtectionProfile,
+  saveReplicaIncident,
+  saveEvidencePacket,
+  saveTakedownCase,
   type IdentityProtectionProfile,
   type ReplicaIncident,
   type TakedownCase,
 } from '@/services/creator-protection';
+import { logger } from '@/utils/logger';
 
 export function CreatorProtectionCenter() {
   const userId = auth.currentUser?.uid ?? null;
@@ -22,6 +29,30 @@ export function CreatorProtectionCenter() {
   const [incidentUrl, setIncidentUrl] = useState('');
   const [incident, setIncident] = useState<ReplicaIncident | null>(null);
   const [takedown, setTakedown] = useState<TakedownCase | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Load existing profile from Firestore on mount
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const existing = await getLatestIdentityProtectionProfile(userId);
+        if (!cancelled && existing) {
+          setProfile(existing);
+          if (existing.artistName) setArtistName(existing.artistName);
+          if (existing.legalName) setLegalName(existing.legalName);
+          if (existing.state) setState(existing.state);
+          if (existing.aiVoiceLikenessPermission) setAiPermission(existing.aiVoiceLikenessPermission);
+          if (existing.monitoringOptIn !== undefined) setMonitoringOptIn(existing.monitoringOptIn);
+          if (existing.biometricFingerprintOptIn !== undefined) setBiometricOptIn(existing.biometricFingerprintOptIn);
+        }
+      } catch (err) {
+        logger.error('[CreatorProtectionCenter] Error loading existing profile:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
 
   const readinessRun = useMemo(() => {
     if (!profile) return null;
@@ -33,23 +64,36 @@ export function CreatorProtectionCenter() {
     });
   }, [profile]);
 
-  const handleCompile = () => {
+  const handleCompile = async () => {
     if (!userId) return;
-    const nextProfile = creatorProtectionHarnessService.createIdentityProtectionProfile({
-      userId,
-      artistName: artistName || undefined,
-      legalName: legalName || undefined,
-      state: state || undefined,
-      aiVoiceLikenessPermission: aiPermission,
-      monitoringOptIn,
-      biometricFingerprintOptIn: biometricOptIn,
-      trademarkStatus: 'search_needed',
-      copyrightStatus: 'unknown',
-    });
-    setProfile(nextProfile);
+    setSaving(true);
+    try {
+      const nextProfile = creatorProtectionHarnessService.createIdentityProtectionProfile({
+        userId,
+        artistName: artistName || undefined,
+        legalName: legalName || undefined,
+        state: state || undefined,
+        aiVoiceLikenessPermission: aiPermission,
+        monitoringOptIn,
+        biometricFingerprintOptIn: biometricOptIn,
+        trademarkStatus: profile?.trademarkStatus || 'search_needed',
+        copyrightStatus: profile?.copyrightStatus || 'unknown',
+      });
+      if (profile?.id) {
+        await updateIdentityProtectionProfile(userId, profile.id, nextProfile);
+        setProfile({ ...nextProfile, id: profile.id });
+      } else {
+        const newId = await saveIdentityProtectionProfile(nextProfile);
+        setProfile({ ...nextProfile, id: newId });
+      }
+    } catch (err) {
+      logger.error('[CreatorProtectionCenter] Error saving profile:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleClassifyIncident = () => {
+  const handleClassifyIncident = async () => {
     if (!userId) return;
     const nextIncident = creatorProtectionHarnessService.classifyIncident({
       userId,
@@ -72,6 +116,16 @@ export function CreatorProtectionCenter() {
     });
     setIncident(nextIncident);
     setTakedown(nextTakedown);
+
+    try {
+      await Promise.all([
+        saveReplicaIncident(nextIncident),
+        saveEvidencePacket(packet),
+        saveTakedownCase(nextTakedown),
+      ]);
+    } catch (err) {
+      logger.error('[CreatorProtectionCenter] Error persisting incident data:', err);
+    }
   };
 
   return (
@@ -105,11 +159,11 @@ export function CreatorProtectionCenter() {
           </div>
           <button
             onClick={handleCompile}
-            disabled={!userId}
-            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2"
+            disabled={!userId || saving}
+            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <CheckCircle size={14} />
-            Compile Protection Readiness
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+            {saving ? 'Saving Protection Profile…' : 'Compile Protection Readiness'}
           </button>
         </div>
 

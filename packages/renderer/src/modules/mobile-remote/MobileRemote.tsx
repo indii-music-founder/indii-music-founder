@@ -29,8 +29,9 @@ import { auth } from '@/services/firebase';
 import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
-  LayoutDashboard, LayoutGrid, Grip, MessageSquare, Navigation,
-  CheckSquare, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
+  LayoutDashboard, LayoutGrid, MessageSquare, Navigation,
+  Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw,
+  Camera, Radio, Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -64,11 +65,11 @@ interface Tab {
 
 const TABS: Tab[] = [
   { id: 'home', icon: LayoutDashboard, label: 'Home' },
-  { id: 'capture', icon: MessageSquare, label: 'Capture' },
-  { id: 'boardroom', icon: LayoutGrid, label: 'Boardroom' },
+  { id: 'capture', icon: Camera, label: 'Capture' },
+  { id: 'boardroom', icon: MessageSquare, label: 'Boardroom' },
   { id: 'road', icon: Navigation, label: 'Road' },
-  { id: 'stream', icon: CheckSquare, label: 'Stream' },
-  { id: 'settings', icon: Grip, label: 'Settings' },
+  { id: 'stream', icon: Radio, label: 'Stream' },
+  { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
 const TRANSIENT_HEARTBEAT_GRACE_MS = 10_000;
