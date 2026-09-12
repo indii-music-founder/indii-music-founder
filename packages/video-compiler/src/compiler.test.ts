@@ -14,7 +14,7 @@ import { promisify } from 'node:util';
 import ffmpegPath from 'ffmpeg-static';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { compileProjectToHyperFrames } from './compiler.js';
+import { compileProjectToHyperFrames, selectFontAsset } from './compiler.js';
 import type { IndiiVideoProject } from '@indii/shared';
 
 const require = createRequire(import.meta.url);
@@ -245,6 +245,54 @@ describe('compileProjectToHyperFrames (pure package)', () => {
         const { html } = compileProjectToHyperFrames(project);
         expect(html).not.toContain('tl.set("#el-v_muted_kf-audio", {"volume":0.2}');
         expect(html).not.toContain('tl.to("#el-v_muted_kf-audio", {"volume":0.9');
+    });
+
+    it('emits @font-face data-URIs only for the text families/weights a project uses', () => {
+        const fontAssets = {
+            'Archivo Black': { '400': 'QXJjaGl2bw==' },
+            'JetBrains Mono': { '400 800': 'SkVUQnJhaW5z' },
+            'Source Code Pro': { '400 900': 'U291cmNlQ29kZQ==' },
+        };
+        const project = baseProject({
+            tracks: [
+                { id: 't1', name: 'V1', type: 'video' },
+                { id: 't2', name: 'TXT', type: 'text' },
+            ],
+            clips: [
+                ...baseProject({}).clips,
+                {
+                    id: 'mono', type: 'text', text: '4', name: 'stat',
+                    startFrame: 0, durationInFrames: 30, trackId: 't2',
+                    fontFamily: 'JetBrains Mono', fontWeight: 'bold',
+                },
+                {
+                    id: 'code', type: 'text', text: 'X', name: 'code',
+                    startFrame: 0, durationInFrames: 30, trackId: 't2',
+                    fontFamily: 'Source Code Pro', fontWeight: '900',
+                },
+            ],
+        });
+
+        const withFonts = compileProjectToHyperFrames(project, { fontAssets });
+        expect(withFonts.html).toContain("@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400 800;");
+        // 'bold' maps to 700 → nearest available below the 400..800 range is the range itself.
+        expect(withFonts.html).toContain('data:font/woff2;base64,SkVUQnJhaW5z');
+        expect(withFonts.html).toContain("@font-face{font-family:'Source Code Pro'");
+        // Unused vendored family must not bloat the document.
+        expect(withFonts.html).not.toContain('Archivo Black');
+        expect(withFonts.html).toContain('.clip { position:absolute; }');
+
+        // No fonts option → exactly the current document shape (no @font-face).
+        const withoutFonts = compileProjectToHyperFrames(project);
+        expect(withoutFonts.html).not.toContain('@font-face');
+    });
+
+    it('selects deterministic nearest-weight font assets', () => {
+        const familyAssets: Record<string, string> = { '300': 'gw==', '400 700': 'Yw==', '800': 'ODA=' };
+        expect(selectFontAsset(familyAssets, 400)!.descriptor).toBe('400 700');
+        expect(selectFontAsset(familyAssets, 900)!.descriptor).toBe('800');
+        expect(selectFontAsset(familyAssets, 200)!.descriptor).toBe('300');
+        expect(selectFontAsset({}, 400)).toBeNull();
     });
 
     it('escapes script-context JSON so user text cannot break out of the timeline script', () => {

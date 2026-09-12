@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "e7569fb870316c6827bc4a2b8a1904e0fa8b164d8e4af6d6ee6ef5dff454b2c7",
+  "sourceDigest": "ac353bfc6a8f55bdeb02476551f0443297f8e502805798726e0c262f4f32ae6b",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 36,
     "conditional": 69,
-    "quarantined": 86,
+    "quarantined": 87,
     "deprecated": 1
   },
   "capabilities": [
@@ -1720,6 +1720,36 @@
       "description": "npm run build-storybook -w packages/renderer",
       "descriptionHash": "acc9a38607e7e2fb1a922003f28daeaec9ad422c7e1629140d6798bdfd40c752",
       "contentHash": "dd8ccb0aabf48d72352858ddc55f84ac2e6b6574568869f24aba330137fd7b23",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:sync:video-sidecars",
+      "name": "npm run sync:video-sidecars",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/sync-video-sidecars.mjs",
+      "descriptionHash": "f33d1fcfa7fbe7e8279ef12ce5791d5cac4babbb77e923b1e8ca135c7a3d490f",
+      "contentHash": "79998b14e7211292d5174fc7696b2382ac1a95e72436fe4053299de0e740f059",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [

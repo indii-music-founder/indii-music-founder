@@ -135,8 +135,8 @@ describe('compileProjectForWebPreview', () => {
         delete (URL as unknown as { revokeObjectURL?: unknown }).revokeObjectURL;
     });
 
-    it('compiles through the shared pure compiler and re-plumbs the document for the web player', () => {
-        const out = compileProjectForWebPreview(baseProject());
+    it('compiles through the shared pure compiler and re-plumbs the document for the web player', async () => {
+        const out = await compileProjectForWebPreview(baseProject());
 
         expect(out).toContain('<script src="/gsap.min.js?v=3.14.2"></script>');
         expect(out).toContain('<script src="/hyperframe.runtime.iife.js?v=0.8.11"></script>');
@@ -145,8 +145,21 @@ describe('compileProjectForWebPreview', () => {
         expect(out).not.toContain('<script src="./gsap.min.js"></script>');
     });
 
-    it('surfaces compiler validation errors instead of emitting a broken document', () => {
+    it('surfaces compiler validation errors instead of emitting a broken document', async () => {
         const broken = { ...baseProject(), durationInFrames: 0 };
-        expect(() => compileProjectForWebPreview(broken)).toThrow(/invalid durationInFrames/);
+        await expect(compileProjectForWebPreview(broken)).rejects.toThrow(/invalid durationInFrames/);
+    });
+
+    it('embeds vendored @font-face data-URIs for the text families a project uses', async () => {
+        const project = baseProject();
+        project.clips.push({
+            id: 't1', type: 'text', text: 'TITLE', name: 'Title', trackId: 't1',
+            startFrame: 0, durationInFrames: 30, fontWeight: 'bold',
+        });
+        const out = await compileProjectForWebPreview(project);
+        expect(out).toContain("@font-face{font-family:'Archivo Black';font-style:normal;font-weight:400;");
+        expect(out).toContain('data:font/woff2;base64,');
+        // Style block must keep its original rules too.
+        expect(out).toContain('.clip { position:absolute; }');
     });
 });

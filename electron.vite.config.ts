@@ -408,6 +408,7 @@ export default defineConfig({
                 '@agents': resolve(__dirname, 'agents'),
                 '@shared': resolve(__dirname, 'packages/shared/src'),
                 '@indii/shared': resolve(__dirname, 'packages/shared/src'),
+                '@indii/video-compiler/fontAssets': resolve(__dirname, 'packages/video-compiler/src/fontAssets.generated'),
                 '@indii/video-compiler': resolve(__dirname, 'packages/video-compiler/src'),
             },
         },

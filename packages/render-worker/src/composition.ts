@@ -9,12 +9,13 @@ import path from 'node:path';
 
 import type { IndiiVideoProject } from '@indii/shared';
 import { compileProjectToHyperFrames } from '@indii/video-compiler';
+import { EMBEDDED_FONT_FACE_ASSETS } from '@indii/video-compiler/fontAssets';
 
 import { GSAP_SOURCE } from './gsapAsset.js';
 
 export async function prepareComposition(project: IndiiVideoProject, compositionDir: string): Promise<void> {
     await mkdir(compositionDir, { recursive: true });
-    const compiled = compileProjectToHyperFrames(project);
+    const compiled = compileProjectToHyperFrames(project, { fontAssets: EMBEDDED_FONT_FACE_ASSETS });
     await writeFile(path.join(compositionDir, 'index.html'), compiled.html, 'utf8');
     await writeFile(path.join(compositionDir, 'gsap.min.js'), GSAP_SOURCE, 'utf8');
 }

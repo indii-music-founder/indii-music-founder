@@ -73,11 +73,12 @@ export const electronRenderService = {
         if (!project || typeof project !== 'object' || !Array.isArray(project.clips) || !Array.isArray(project.tracks)) {
             throw new Error('Preview compilation requires an IndiiVideoProject.');
         }
-        const [{ compileProjectToHyperFrames }, gsapSource] = await Promise.all([
+        const [{ compileProjectToHyperFrames }, { EMBEDDED_FONT_FACE_ASSETS }, gsapSource] = await Promise.all([
             import('@indii/video-compiler'),
+            import('@indii/video-compiler/fontAssets'),
             readGsapAsset(),
         ]);
-        const compiled = compileProjectToHyperFrames(project);
+        const compiled = compileProjectToHyperFrames(project, { fontAssets: EMBEDDED_FONT_FACE_ASSETS });
         return compiled.html.replace(
             '<script src="./gsap.min.js"></script>',
             `<script>${gsapSource.replace(/<\/script/gi, '<\\/script')}</script>`,
@@ -149,7 +150,8 @@ export const electronRenderService = {
                     }
                 })),
             };
-            const compiled = compilerModule.compileProjectToHyperFrames(probedProject);
+            const { EMBEDDED_FONT_FACE_ASSETS } = await import('@indii/video-compiler/fontAssets');
+            const compiled = compilerModule.compileProjectToHyperFrames(probedProject, { fontAssets: EMBEDDED_FONT_FACE_ASSETS });
             await writeFile(path.join(projectDir, 'index.html'), compiled.html, 'utf8');
             await copyGsapAsset(path.join(projectDir, 'gsap.min.js'));
 

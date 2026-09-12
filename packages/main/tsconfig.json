@@ -16,6 +16,9 @@
             ],
             "@shared/*": [
                 "../shared/src/*"
+            ],
+            "@indii/video-compiler/fontAssets": [
+                "../video-compiler/src/fontAssets.generated.ts"
             ]
         }
     },

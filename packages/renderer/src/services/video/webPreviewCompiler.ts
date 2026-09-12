@@ -136,5 +136,11 @@ export const rewriteCompiledHtmlForWebPlayer = (html: string, options: WebPrevie
 };
 
 /** Compile a canonical project and re-plumb it for the web player in one step. */
-export const compileProjectForWebPreview = (project: IndiiVideoProject): string =>
-    rewriteCompiledHtmlForWebPlayer(compileProjectToHyperFrames(project).html);
+export const compileProjectForWebPreview = async (project: IndiiVideoProject): Promise<string> => {
+    // Font binaries live in a generated, lazily-imported module so the main
+    // bundle never carries ~200KB of base64 typography.
+    const { EMBEDDED_FONT_FACE_ASSETS } = await import('@indii/video-compiler/fontAssets');
+    return rewriteCompiledHtmlForWebPlayer(
+        compileProjectToHyperFrames(project, { fontAssets: EMBEDDED_FONT_FACE_ASSETS }).html,
+    );
+};
