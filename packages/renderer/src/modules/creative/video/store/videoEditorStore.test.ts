@@ -515,6 +515,29 @@ describe('useVideoEditorStore', () => {
             expect(useVideoEditorStore.getState().past).toHaveLength(0);
         });
 
+        it('pushes undo history when commitTransientClipUpdate changes non-positional fields (ISSUE-1433 Gap 6)', () => {
+            const store = useVideoEditorStore.getState();
+            store.setProject({
+                id: 'p1',
+                name: 'P1',
+                fps: 30,
+                durationInFrames: 300,
+                width: 1920,
+                height: 1080,
+                tracks: [{ id: 't1', name: 'T1', type: 'video' }],
+                clips: [{ id: 'c1', name: 'C1', type: 'video', trackId: 't1', startFrame: 0, durationInFrames: 30, volume: 1 }],
+            });
+            useVideoEditorStore.setState({ past: [], future: [] });
+
+            store.commitTransientClipUpdate('c1', { volume: 0.5 });
+
+            expect(useVideoEditorStore.getState().past).toHaveLength(1);
+            expect(useVideoEditorStore.getState().project.clips[0]!.volume).toBe(0.5);
+
+            store.undo();
+            expect(useVideoEditorStore.getState().project.clips[0]!.volume).toBe(1);
+        });
+
         it('aborts transient drag and restores initial project without undo history', () => {
             const store = useVideoEditorStore.getState();
             store.setProject({
