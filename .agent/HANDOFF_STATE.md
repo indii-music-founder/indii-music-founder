@@ -1,3 +1,27 @@
+# Session Close — Custom Domain Live Deployment & SSL Provisioning for indii.music (2026-09-11)
+
+**Final state: `indii.music` domain ownership verified, SSL certificate minted, Fastly edge CDN cache purged, production web application live with HTTP 200 at `https://indii.music` and clean 301 redirects on apex and www HTTP.**
+
+## Shipped & Configured — Custom Domain Production Setup
+- **DNS Automation & Verification:**
+  - Automated Namecheap Advanced DNS to configure the authoritative `@` TXT record `hosting-site=indii-music-founder`.
+  - Configured `@` A record pointing to Google Firebase Hosting IP `199.36.158.100`.
+  - Verified DNS propagation across authoritative nameservers (`dns1.registrar-servers.com`) and Google Public DNS (`dns.google`).
+- **Firebase Hosting Custom Domain Integration:**
+  - Triggered Firebase Hosting domain verification in Firebase Console.
+  - Domain `indii.music` transitioned from `Needs setup` to `Minting certificate` to `Connected`.
+  - Full TLS 1.3 certificate minted and verified.
+- **Edge CDN Cache & Route Verification:**
+  - Sent edge cache invalidation to purge stale 404 cache keys at Fastly edge POPs.
+  - Verified `https://indii.music` returns `HTTP/2 200 OK` (ETag: `f45407601fc87a906a921b2bdd43020963ccfaa3e3b796274fb6dd5fc5d1ab39`, Title: "indii.music — music business at the speed of you").
+  - Verified redirect matrix:
+    - `http://indii.music` -> `301 Moved Permanently` to `https://indii.music/`
+    - `https://www.indii.music` -> `301 Moved Permanently` to `https://indii.music/`
+    - `http://www.indii.music` -> `301 Moved Permanently` to `https://indii.music/`
+    - `https://founder.indii.music` -> `HTTP/2 200 OK`
+
+---
+
 # Session Close — Video Studio Timeline Editor NLE Overhaul (2026-09-11)
 
 **Final state: all 278 video editor & store unit tests passing (100%), full monorepo typecheck 100% clean across all 9 packages, 0 lint errors, git diff --check clean, delivered to `origin/main` (SHA: `c6a4c3035`), CI Run #34608452402 GREEN.**
