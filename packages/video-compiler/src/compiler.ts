@@ -62,6 +62,19 @@ const framesToSeconds = (frames: number, fps: number): string =>
 const escapeHtml = (raw: string): string =>
     raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/**
+ * JSON literal safe for inline `<script>` context. Plain JSON.stringify keeps
+ * `<`, `/`, U+2028 and U+2029 verbatim, so a user string such as
+ * `</script><script>…` would terminate the timeline block and inject script
+ * into the composition origin. Escaping `<` (and the line separators) keeps
+ * JSON.parse-equivalent values while making breakout impossible.
+ */
+const jsonScriptSafe = (value: unknown): string =>
+    JSON.stringify(value)
+        .replace(/</g, '\\u003c')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+
 const filterToCss = (filter: NonNullable<IndiiVideoClip['filter']>): string => {
     switch (filter.type) {
         case 'blur': return `blur(${(filter.intensity / 10).toFixed(1)}px)`;
@@ -281,7 +294,7 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
     if (Object.keys(initial).length > 0) {
         plan.push({
             atSeconds: startS,
-            statement: `tl.set("#${id}", ${JSON.stringify(initial)}, ${secondsString(startS)});`,
+            statement: `tl.set("#${id}", ${jsonScriptSafe(initial)}, ${secondsString(startS)});`,
         });
     }
 
@@ -294,7 +307,7 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
         if (clip.transitionIn.type === 'wipe') { from.clipPath = 'inset(0 100% 0 0)'; to.clipPath = 'inset(0 0% 0 0)'; }
         plan.push({
             atSeconds: startS,
-            statement: `tl.fromTo("#${id}", ${JSON.stringify(from)}, ${JSON.stringify({ ...to, duration: durS, ease: 'power2.out', immediateRender: false })}, ${secondsString(startS)});`,
+            statement: `tl.fromTo("#${id}", ${jsonScriptSafe(from)}, ${jsonScriptSafe({ ...to, duration: durS, ease: 'power2.out', immediateRender: false })}, ${secondsString(startS)});`,
         });
     }
     if (clip.transitionOut) {
@@ -306,7 +319,7 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
         if (clip.transitionOut.type === 'wipe') to.clipPath = 'inset(0 0 0 100%)';
         plan.push({
             atSeconds: endS - durS,
-            statement: `tl.to("#${id}", ${JSON.stringify({ ...to, duration: durS, ease: 'power2.in' })}, ${secondsString(endS - durS)});`,
+            statement: `tl.to("#${id}", ${jsonScriptSafe({ ...to, duration: durS, ease: 'power2.in' })}, ${secondsString(endS - durS)});`,
         });
     }
     if (clip.keyframes) {
@@ -326,7 +339,7 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
             const firstAt = startS + keys[0]!.frame / fps;
             plan.push({
                 atSeconds: firstAt,
-                statement: `tl.set("${targetSelector}", ${JSON.stringify({ [gsapProp]: keys[0]!.value })}, ${secondsString(firstAt)});`,
+                statement: `tl.set("${targetSelector}", ${jsonScriptSafe({ [gsapProp]: keys[0]!.value })}, ${secondsString(firstAt)});`,
             });
             for (let i = 0; i < keys.length - 1; i += 1) {
                 const segStartS = startS + keys[i]!.frame / fps;
@@ -334,7 +347,7 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
                 if (segDurS <= 0) continue;
                 plan.push({
                     atSeconds: segStartS,
-                    statement: `tl.to("${targetSelector}", ${JSON.stringify({ [gsapProp]: keys[i + 1]!.value, duration: Number(secondsString(segDurS)), ease: mapEase(keys[i]!.easing) })}, ${secondsString(segStartS)});`,
+                    statement: `tl.to("${targetSelector}", ${jsonScriptSafe({ [gsapProp]: keys[i + 1]!.value, duration: Number(secondsString(segDurS)), ease: mapEase(keys[i]!.easing) })}, ${secondsString(segStartS)});`,
                 });
             }
         }
@@ -355,7 +368,7 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
         const boxId = clip.type === 'video' ? `${id}-box` : `${id}-clip`;
         plan.push({
             atSeconds: startS,
-            statement: `tl.fromTo("#${boxId}", { autoAlpha: 0.15, scale: 1.25, filter: "blur(10px)" }, { autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false }, ${secondsString(startS)});`,
+            statement: `tl.fromTo("#${boxId}", ${jsonScriptSafe({ autoAlpha: 0.15, scale: 1.25, filter: "blur(10px)" })}, ${jsonScriptSafe({ autoAlpha: 1, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false })}, ${secondsString(startS)});`,
         });
     }
 
@@ -368,7 +381,7 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
         const counterName = `__counter_${id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
         plan.push({
             atSeconds: startS,
-            statement: `tl.to(${counterName}, { v: ${to}, duration: ${secondsString(durS)}, ease: "power2.out", snap: { v: 1 }, onUpdate: function() { var el = document.getElementById("${id}-text"); if (el) { el.textContent = ${JSON.stringify(clip.countUp.prefix ?? '')} + Math.round(${counterName}.v) + ${JSON.stringify(clip.countUp.suffix ?? '')}; } } }, ${secondsString(startS)});`,
+            statement: `tl.to(${counterName}, { v: ${to}, duration: ${secondsString(durS)}, ease: "power2.out", snap: { v: 1 }, onUpdate: function() { var el = document.getElementById("${id}-text"); if (el) { el.textContent = ${jsonScriptSafe(clip.countUp.prefix ?? '')} + Math.round(${counterName}.v) + ${jsonScriptSafe(clip.countUp.suffix ?? '')}; } } }, ${secondsString(startS)});`,
         });
     }
 

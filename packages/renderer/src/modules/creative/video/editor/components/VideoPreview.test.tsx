@@ -61,8 +61,26 @@ describe('VideoPreview', () => {
         expect(player.getAttribute('loop')).not.toBe('true');
     });
 
-    it('uses a real rendered artifact as a browser fallback without native loop', async () => {
-        render(<VideoPreview project={project()} artifactUrl="file:///tmp/render.mp4" />);
+    it('compiles live on the web through the shared pure compiler and web player transform', async () => {
+        // No electronAPI: the bridge compiles locally (pure TS) and re-plumbs
+        // the document for the in-browser player (ISSUE-1433 browser preview).
+        render(<VideoPreview project={project()} artifactUrl={null} />);
+
+        const player = await screen.findByTestId('hyperframes-preview');
+        const srcdoc = player.getAttribute('srcdoc') ?? '';
+        expect(srcdoc).toContain('data-composition-id="project-1"');
+        // Web player plumbing: pinned sidecar + runtime, blob timeline.
+        expect(srcdoc).toContain('<script src="/gsap.min.js"></script>');
+        expect(srcdoc).toContain('<script src="/hyperframe.runtime.iife.js"></script>');
+        expect(srcdoc).toMatch(/<script src="blob:[^"]+"><\/script>/);
+        expect(srcdoc).not.toContain('<script src="./gsap.min.js"></script>');
+        expect(screen.getByText(/Live timeline:/)).toBeInTheDocument();
+    });
+
+    it('uses a real rendered artifact as a fallback when live compilation fails', async () => {
+        // Invalid project duration → compiler throws → artifact fallback.
+        const broken = { ...project(), durationInFrames: 0 };
+        render(<VideoPreview project={broken} artifactUrl="file:///tmp/render.mp4" />);
 
         await waitFor(() => {
             const video = screen.getByTestId('preview-video') as HTMLVideoElement;

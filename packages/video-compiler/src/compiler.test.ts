@@ -147,7 +147,7 @@ describe('compileProjectToHyperFrames (pure package)', () => {
             ],
         });
         const { html } = compileProjectToHyperFrames(project);
-        expect(html).toContain('tl.fromTo("#el-c1-box", { autoAlpha: 0.15, scale: 1.25, filter: "blur(10px)" }');
+        expect(html).toContain('tl.fromTo("#el-c1-box", {"autoAlpha":0.15,"scale":1.25,"filter":"blur(10px)"}');
         expect(html).toContain('data-volume="1"');
         expect(html).toContain('tl.fromTo("#el-a1", { volume: 0 }, { volume: 1');
         expect(html).toContain('tl.to("#el-a1", { volume: 0');
@@ -245,6 +245,26 @@ describe('compileProjectToHyperFrames (pure package)', () => {
         const { html } = compileProjectToHyperFrames(project);
         expect(html).not.toContain('tl.set("#el-v_muted_kf-audio", {"volume":0.2}');
         expect(html).not.toContain('tl.to("#el-v_muted_kf-audio", {"volume":0.9');
+    });
+
+    it('escapes script-context JSON so user text cannot break out of the timeline script', () => {
+        const breakout = '</script><script>window.__pwned=1</script>';
+        const project = baseProject({
+            clips: [
+                { ...baseProject({}).clips[0]!, id: 'v_escape', opacity: 0.5 },
+                {
+                    id: 't_escape', type: 'text', text: '4', name: 'stat',
+                    startFrame: 0, durationInFrames: 30, trackId: 't1',
+                    countUp: { to: 4, prefix: breakout },
+                },
+            ],
+        });
+
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).not.toContain('</script><script>window.__pwned');
+        expect(html).toContain('"opacity":0.5');
+        // The escaped literal is valid JS string source: JS parses \u003c back to '<'.
+        expect(html).toContain('\\u003c/script>\\u003cscript>');
     });
 
     it('mutes generated video audio when an explicit audio layer exists', () => {

@@ -24,7 +24,7 @@ export const useCompiledVideoPreview = (project: IndiiVideoProject): CompiledPre
         if (!platformBridge.canCompileVideoPreview()) {
             setState({
                 html: null,
-                error: 'Live timeline preview is available in the desktop app.',
+                error: 'Live timeline preview is unavailable on this device.',
                 isCompiling: false,
             });
             return;

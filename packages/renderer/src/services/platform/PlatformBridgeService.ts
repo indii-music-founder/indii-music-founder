@@ -10,6 +10,8 @@
  */
 
 import { logger } from '@/utils/logger';
+import { compileProjectForWebPreview } from '@/services/video/webPreviewCompiler';
+import type { IndiiVideoProject } from '@indii/shared';
 
 export interface PlatformCapabilities {
     isElectron: boolean;
@@ -45,7 +47,9 @@ export class ElectronPlatformAdapter implements PlatformBridge {
             isElectron: Boolean(api),
             canSelectDirectory: Boolean(api?.selectDirectory),
             canSelectFile: Boolean(api?.selectFile),
-            canCompileVideoPreview: Boolean(api?.video?.compilePreview),
+            // The pure-TS compiler ships in the renderer bundle, so live
+            // preview works on the web too; desktop additionally exposes IPC.
+            canCompileVideoPreview: true,
             canRenderVideoLocally: Boolean(api?.video?.render),
             canPersistLocalHistory: Boolean(api?.agent?.saveHistory),
         };
@@ -88,14 +92,19 @@ export class ElectronPlatformAdapter implements PlatformBridge {
     }
 
     canCompileVideoPreview(): boolean {
-        return Boolean(this.api?.video?.compilePreview);
+        // Pure-TS compiler runs in every environment; see compileVideoPreview.
+        return true;
     }
 
     async compileVideoPreview(project: unknown): Promise<string> {
-        if (!this.api?.video?.compilePreview) {
-            throw new Error('Live video timeline compilation is available in the desktop application.');
+        if (this.api?.video?.compilePreview) {
+            // Desktop: compile through main so preview and final render share
+            // the exact same temp-dir document + sidecar flow.
+            return this.api.video.compilePreview(project as Parameters<NonNullable<NonNullable<Window['electronAPI']>['video']>['compilePreview']>[0]);
         }
-        return this.api.video.compilePreview(project as Parameters<NonNullable<NonNullable<Window['electronAPI']>['video']>['compilePreview']>[0]);
+        // Web: compile locally with the same pure compiler, then re-plumb the
+        // document for the in-browser player (sidecar + runtime + CSP paths).
+        return compileProjectForWebPreview(project as IndiiVideoProject);
     }
 
     canRenderVideoLocally(): boolean {

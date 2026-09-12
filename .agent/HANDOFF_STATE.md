@@ -1,3 +1,23 @@
+# Session Close — Browser Live Compiled Video Preview + Sidecar Serving (2026-09-12)
+
+**Final state: browser artists get the live compiled timeline preview — pure-TS compiler runs in-browser, `gsap.min.js` sidecar + pinned HyperFrames runtime served same-origin, timeline plan moved to a CSP-safe blob script, `/creative/**` CSP scoped for `blob:`. CSP-replica Chromium harness PASS; 454 affected tests green; full typecheck 0.**
+
+## Shipped — Browser Live Compiled Preview (ISSUE-1433 "Also noted")
+- **Investigation findings (why this needed its own workstream):** (a) `@hyperframes-player` executes compositions in a sandboxed srcdoc iframe that inherits the parent page CSP — production `/creative/**` `script-src` has no `unsafe-inline`, so the compiler's inline GSAP plan could never run on web; (b) the player auto-injects its runtime from jsDelivr when timelines lack a bridge — blocked by prod CSP and unnecessary offline; (c) `./gsap.min.js` inside srcdoc resolves against the parent SPA route, not origin root.
+- **Web player plumbing (`packages/renderer/src/services/video/webPreviewCompiler.ts`):** pins the sidecar to `/gsap.min.js`, pre-injects `/hyperframe.runtime.iife.js` (byte-identical to the `@hyperframes/core` dist the installed player pins; player dedupe then skips jsDelivr), moves the byte-identical GSAP plan into a same-origin blob script with a bounded (8-entry) blob retention window. Fails loud on compiler output shape drift.
+- **Same-origin sidecar assets:** `packages/renderer/public/gsap.min.js` + `packages/renderer/public/hyperframe.runtime.iife.js` (Vite dev :4243 serving verified byte-identical; `vite build` copies public → `dist/renderer` → Firebase `app` target).
+- **CSP scoping (`firebase.json`):** `blob:` added to `script-src` for `/creative` and `/creative/**` ONLY — landing and the app-wide `**` blocks stay strict. No `unsafe-inline` anywhere.
+- **Bridge:** `PlatformBridgeService` web fallback compiles locally through `@indii/video-compiler`; desktop keeps the IPC path (same compiler + temp-dir sidecar, render parity unchanged). `canCompileVideoPreview` is now true everywhere.
+- **Security hardening (compiler root fix):** script-context JSON now goes through `jsonScriptSafe` (escapes `<`, U+2028, U+2029) — `</script>` in countUp prefix/suffix or keyframe strings can no longer break out of the timeline script (latent on desktop, live same-origin injection once web preview shipped). Also carries the pre-existing ISSUE-1433 Gap-1 volume-keyframe→companion-audio routing that was uncommitted in the working tree (validated in the same suite).
+- **Tests:** new `webPreviewCompiler.test.ts` (17 with bridge), `sidecarServing.test.ts` drift guard (byte-compares 3 sidecar copies + runtime pin), VideoPreview web-path component test; 405 video-tree + 32 compiler tests green; full typecheck rc=0; lint clean on all touched files.
+- **CSP-replica browser verification:** real Chromium harness under the exact `/creative` meta-CSP replica (no inline, no CDN allowances): transform checks pass, `play()` → timeline time advanced, frame evidence `gsap=true timelines=true runtimeBridge=true`, zero `securitypolicyviolation` events.
+- **Honest limits:** in-app validation with a real signed-in browser artist is still pending (REAL_USER_AUTHENTICITY — not claimed). Desktop Electron behavior unchanged. Production impact goes live only after the next Firebase deploy of the `app` target.
+
+## Still pending in worktree (untouched, unrelated WIP)
+- CreatorProtection, AdBuyingPanel, PODIntegrationPanel, MobileRemote, ComputerTools, preload/electron-api IPC types, DistributionDashboard, VideoTimeline family edits — pre-existing uncommitted work from other sessions; not bundled here. Also `packages/renderer/src/modules/creative/video/editor/components/VideoPopout.tsx` consumes the same hook and inherits the web path automatically.
+
+---
+
 # Session Close — Custom Domain Live Deployment & SSL Provisioning for indii.music (2026-09-11)
 
 **Final state: `indii.music` domain ownership verified, SSL certificate minted, Fastly edge CDN cache purged, production web application live with HTTP 200 at `https://indii.music` and clean 301 redirects on apex and www HTTP.**

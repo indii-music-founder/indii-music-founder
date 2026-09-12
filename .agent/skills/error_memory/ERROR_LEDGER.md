@@ -1,3 +1,15 @@
+## 2026-09-12 Srcdoc Preview Silently Dead Under Production CSP (SRCDOC_CSP_SCRIPT_BLOCK)
+
+- **SEVERITY:** High (entire live compiled video preview non-functional on production web; scripts fail with zero product-code errors — silent blank/static preview)
+- **FILES:** `firebase.json` (/creative CSP), `packages/renderer/src/services/video/webPreviewCompiler.ts`, `packages/renderer/public/gsap.min.js`, `packages/renderer/public/hyperframe.runtime.iife.js`, `packages/video-compiler/src/compiler.ts`
+- **ERROR:** No thrown error — `@hyperframes-player` srcdoc iframe shows a static first frame on `indii.music` while dev (:4243, no CSP) works fine. Console shows `Refused to execute inline script … Content-Security-Policy` and `Refused to load … cdn.jsdelivr.net` inside the iframe context only.
+- **CAUSE:** Three stacked facts: (1) srcdoc iframes INHERIT the embedding page's CSP, and the app-target `/creative/**` header had `script-src 'self' 'unsafe-eval' …` with no `unsafe-inline` — the compiler's inline `window.__timelines` GSAP plan was blocked; (2) `@hyperframes-player` injects its runtime from `cdn.jsdelivr.net` when a document has timelines but no runtime bridge — not in `script-src`, and the runtime is what orchestrates `<video>`/`<audio>` against `data-start`/`data-media-start`; (3) the compiler's `<script src="./gsap.min.js">` resolves against the PARENT SPA route (`/creative/gsap.min.js`), not origin root, in srcdoc.
+- **FIX:**
+  1. Serve the sidecar and the PINNED runtime same-origin from `packages/renderer/public/` (`/gsap.min.js`, `/hyperframe.runtime.iife.js` — byte-identical to `@hyperframes/core` dist; drift guard `packages/video-compiler/src/sidecarServing.test.ts`).
+  2. `webPreviewCompiler.ts` rewrites `./gsap.min.js` → `/gsap.min.js`, pre-injects the runtime tag (the player's own dedupe `/hyperframe\.runtime\.iife\.js|__hyperframes\s*=/` then skips jsDelivr entirely), and moves the byte-identical GSAP plan into a same-origin blob script.
+  3. `firebase.json`: add `blob:` to `script-src` for `/creative` and `/creative/**` ONLY — never broaden the app-wide `**` or landing blocks.
+- **PREVENTION:** Any feature that executes generated documents inside srcdoc/blob iframes must treat the parent page CSP as its own sandbox ceiling. Before claiming preview works, verify under a meta-CSP replica of the production header (see CSP-replica harness pattern in ISSUE-1433 ledger note), not just on the CSP-less dev server. Related hardening: compiler script-context JSON must use `jsonScriptSafe` (escapes `<`, U+2028, U+2029) — plain `JSON.stringify` lets `</script>` in user strings break out of inline scripts.
+
 ## 2026-09-05 Firebase Installations & Remote Config Localhost Referer 403 (FIREBASE_INSTALLATIONS_REFERER_BLOCKED)
 
 - **SEVERITY:** High (triggered red 403 console errors and unhandled promise rejections on localhost/preview)

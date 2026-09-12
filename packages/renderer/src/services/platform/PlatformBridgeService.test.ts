@@ -101,9 +101,44 @@ describe('PlatformBridgeService', () => {
 
             expect(caps.isElectron).toBe(false);
             expect(caps.canSelectDirectory).toBe(false);
-            expect(caps.canCompileVideoPreview).toBe(false);
+            // The pure-TS compiler runs in the browser: live compiled preview
+            // is no longer desktop-only.
+            expect(caps.canCompileVideoPreview).toBe(true);
             expect(caps.canRenderVideoLocally).toBe(false);
             expect(bridge.isElectron()).toBe(false);
+        });
+
+        it('compiles the live preview locally with the shared pure compiler', async () => {
+            // jsdom lacks URL.createObjectURL; stub the blob factory path.
+            const createObjectURL = vi.fn(() => 'blob:web-preview-timeline');
+            (URL as unknown as { createObjectURL?: unknown }).createObjectURL = createObjectURL;
+
+            try {
+                const bridge = new ElectronPlatformAdapter();
+                const project = {
+                    id: 'web-cap',
+                    name: 'Web capability',
+                    fps: 30,
+                    width: 320,
+                    height: 180,
+                    durationInFrames: 30,
+                    tracks: [{ id: 't1', name: 'V1', type: 'video' }],
+                    clips: [{
+                        id: 'c1', type: 'video', src: 'input.mp4', name: 'src',
+                        startFrame: 0, durationInFrames: 30, trackId: 't1',
+                        sourceInUs: 0, sourceOutUs: 1_000_000,
+                    }],
+                };
+                const html = await bridge.compileVideoPreview(project);
+
+                expect(mockCompilePreview).not.toHaveBeenCalled();
+                expect(html).toContain('<script src="/gsap.min.js"></script>');
+                expect(html).toContain('<script src="/hyperframe.runtime.iife.js"></script>');
+                expect(html).toContain('<script src="blob:web-preview-timeline"></script>');
+                expect(html).not.toContain('<script src="./gsap.min.js"></script>');
+            } finally {
+                delete (URL as unknown as { createObjectURL?: unknown }).createObjectURL;
+            }
         });
 
         it('throws descriptive error on selectDirectory without crashing', async () => {
