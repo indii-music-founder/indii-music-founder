@@ -101,7 +101,9 @@ export const planRenderRoute = (input: RoutePlanInput): VideoRouteDecision => {
     // 6. Track-level presentation controls need the
     //    composition/mix engine. The direct executor intentionally has no
     //    implicit policy for inventing picture or applying timeline controls.
-    if (project.tracks.some(track => track.isMuted || track.isHidden)) {
+    //    Solo counts here too: it silences every non-soloed track, which the
+    //    direct executor cannot express.
+    if (project.tracks.some(track => track.isMuted || track.isHidden || track.isSolo)) {
         return { route: 'composed_visual', reason: 'track-controls-require-composition' };
     }
 

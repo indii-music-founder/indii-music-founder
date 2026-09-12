@@ -153,6 +153,54 @@ describe('compileProjectToHyperFrames (pure package)', () => {
         expect(html).toContain('tl.to("#el-a1", { volume: 0');
     });
 
+    it('silences non-soloed tracks and keeps the soloed track audible', () => {
+        const project = baseProject({
+            tracks: [
+                { id: 't1', name: 'V1', type: 'video' },
+                { id: 't2', name: 'A-excluded', type: 'audio' },
+                { id: 't3', name: 'A-solo', type: 'audio', isSolo: true },
+            ],
+            clips: [
+                { id: 'excluded', type: 'audio', src: 'bed.mp3', name: 'bed', startFrame: 0, durationInFrames: 30, trackId: 't2', volume: 0.8 },
+                { id: 'solo', type: 'audio', src: 'lead.mp3', name: 'lead', startFrame: 0, durationInFrames: 30, trackId: 't3', volume: 0.5 },
+            ],
+        });
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toMatch(/id="el-excluded"[^>]*data-volume="0"/);
+        expect(html).toMatch(/id="el-solo"[^>]*data-volume="0\.5"/);
+    });
+
+    it('keeps muted tracks silent even with audio fades — fade tweens are skipped, not overridden', () => {
+        const project = baseProject({
+            tracks: [{ id: 't2', name: 'A1', type: 'audio', isMuted: true }],
+            clips: [
+                { id: 'faded', type: 'audio', src: 'bed.mp3', name: 'bed', startFrame: 0, durationInFrames: 30, trackId: 't2', volume: 1, audioFade: { inSeconds: 1, outSeconds: 2 } },
+            ],
+        });
+        const { html } = compileProjectToHyperFrames(project);
+        expect(html).toMatch(/id="el-faded"[^>]*data-volume="0"/);
+        expect(html).not.toContain('tl.fromTo("#el-faded", { volume: 0 }');
+        expect(html).not.toContain('tl.to("#el-faded", { volume: 0');
+    });
+
+    it('solo never overrides mute, and legacy tracks without isSolo stay audible when nothing is soloed', () => {
+        const soloMuted = baseProject({
+            tracks: [{ id: 't2', name: 'A1', type: 'audio', isSolo: true, isMuted: true }],
+            clips: [
+                { id: 'sm', type: 'audio', src: 'bed.mp3', name: 'bed', startFrame: 0, durationInFrames: 30, trackId: 't2' },
+            ],
+        });
+        expect(compileProjectToHyperFrames(soloMuted).html).toMatch(/id="el-sm"[^>]*data-volume="0"/);
+
+        const legacy = baseProject({
+            tracks: [{ id: 't2', name: 'A1', type: 'audio' }],
+            clips: [
+                { id: 'lg', type: 'audio', src: 'bed.mp3', name: 'bed', startFrame: 0, durationInFrames: 30, trackId: 't2', volume: 0.7 },
+            ],
+        });
+        expect(compileProjectToHyperFrames(legacy).html).toMatch(/id="el-lg"[^>]*data-volume="0\.7"/);
+    });
+
     it('mutes generated video audio when an explicit audio layer exists', () => {
         const project = baseProject({
             tracks: [

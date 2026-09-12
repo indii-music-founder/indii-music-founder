@@ -100,6 +100,9 @@ describe('VideoEditor legacy structural-only interactions', () => {
     const mockSetSelectedClipId = vi.fn();
     const mockSetPreviewArtifactUrl = vi.fn();
     const mockAddToHistory = vi.fn();
+    const mockUndo = vi.fn();
+    const mockRedo = vi.fn();
+    const mockRippleDeleteClip = vi.fn();
 
     const mockToast = {
         info: vi.fn(),
@@ -153,8 +156,10 @@ describe('VideoEditor legacy structural-only interactions', () => {
             loadProjectFromDoc: vi.fn(),
             past: [],
             future: [],
-            undo: vi.fn(),
-            redo: vi.fn(),
+            undo: mockUndo,
+            redo: mockRedo,
+            selectedClipId: 'server-video-1',
+            rippleDeleteClip: mockRippleDeleteClip,
             timelineZoom: 1,
             setTimelineZoom: vi.fn(),
             loopRegion: null,
@@ -283,5 +288,34 @@ describe('VideoEditor legacy structural-only interactions', () => {
             }));
         });
         expect(mockToast.success).toHaveBeenCalledWith('Asset added to timeline');
+    });
+
+    it('ripple-deletes the selected clip via ⌘⌫ outside text fields', () => {
+        render(<VideoEditor />);
+
+        fireEvent.keyDown(window, { key: 'Backspace', metaKey: true });
+
+        expect(mockRippleDeleteClip).toHaveBeenCalledWith('server-video-1');
+    });
+
+    it('never ripple-deletes or store-undoes while the focus is in a text field', () => {
+        render(<VideoEditor />);
+
+        const input = document.createElement('input');
+        document.body.appendChild(input);
+        try {
+            // ⌘⌫ is "delete to line start" in macOS text fields — it must never
+            // reach the timeline as a destructive ripple delete.
+            fireEvent.keyDown(input, { key: 'Backspace', metaKey: true });
+            expect(mockRippleDeleteClip).not.toHaveBeenCalled();
+
+            // ⌘Z / ⌘⇧Z inside a field stay native text undo/redo.
+            fireEvent.keyDown(input, { key: 'z', metaKey: true });
+            expect(mockUndo).not.toHaveBeenCalled();
+            fireEvent.keyDown(input, { key: 'z', metaKey: true, shiftKey: true });
+            expect(mockRedo).not.toHaveBeenCalled();
+        } finally {
+            input.remove();
+        }
     });
 });

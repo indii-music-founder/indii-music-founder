@@ -66,6 +66,11 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     React.useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
             if (!(event.metaKey || event.ctrlKey)) return;
+            // Editable targets own their shortcuts: ⌘Z inside a text field must
+            // stay native text undo, and ⌘⌫ ("delete to line start") must never
+            // ripple-delete the selected timeline clip out from under the user.
+            const target = event.target as HTMLElement | null;
+            if (target && (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
             if (event.key.toLowerCase() === 'z' && event.shiftKey) {
                 event.preventDefault();
                 useVideoEditorStore.getState().redo();
@@ -87,10 +92,12 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
 
     const [seekRequest, setSeekRequest] = React.useState<{ frame: number; nonce: number } | null>(null);
+    // Monotonic nonce: Date.now() can collide for two seeks in the same millisecond.
+    const seekNonceRef = React.useRef(0);
 
     const handleEditorSeek = React.useCallback((frame: number) => {
         handleSeek(frame);
-        setSeekRequest({ frame, nonce: Date.now() });
+        setSeekRequest({ frame, nonce: ++seekNonceRef.current });
     }, [handleSeek]);
 
     const handleFrameUpdate = React.useCallback((frame: number) => {

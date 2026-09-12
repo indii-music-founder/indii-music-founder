@@ -94,15 +94,6 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ artifactUrl, project
         };
     }, [html, onFrameUpdate, project.fps]);
 
-    React.useEffect(() => {
-        if (!seekRequest) return;
-        const el = html ? playerRef.current : videoRef.current;
-        if (!el) return;
-        if (seekRequest.nonce === lastNonceRef.current) return;
-        lastNonceRef.current = seekRequest.nonce;
-        previewSeekToFrame(seekRequest.frame, project.fps);
-    }, [html, project.fps, seekRequest]);
-
 
     const fallbackArtifact = !html && artifactUrl;
     const hasLiveProject = project.clips.length > 0;

@@ -255,7 +255,9 @@ export function useVideoEditor(initialVideo?: HistoryItem, beforeExport?: () => 
 
             const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX - rect.left;
-            const dropFrame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
+            // Zoom-aware, matching the per-track drop zones in TimelineTrack.
+            const zoom = useVideoEditorStore.getState().timelineZoom || 1;
+            const dropFrame = Math.max(0, Math.round(x / (PIXELS_PER_FRAME * zoom)));
             const trackId = project.tracks[0]?.id;
             if (!trackId) return;
 

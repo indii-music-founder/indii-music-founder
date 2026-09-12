@@ -76,6 +76,9 @@ interface CompiledTrack {
     index: number;
     audioIndex: number;
     isMuted: boolean;
+    isSolo: boolean;
+    /** True when this track's audio should actually be heard: not muted, and not excluded by another track's solo. */
+    audible: boolean;
     isHidden: boolean;
 }
 
@@ -144,7 +147,7 @@ const mediaElementsFor = (
     const src = escapeHtml(clip.src ?? '');
     const timing = timingAttributes(clip, fps, track.index);
     const hidden = hiddenAttribute(track);
-    const volume = Math.max(0, Math.min(3.98, track.isMuted ? 0 : (clip.volume ?? 1)));
+    const volume = Math.max(0, Math.min(3.98, track.audible ? (clip.volume ?? 1) : 0));
 
     switch (clip.type) {
         case 'video': {
@@ -153,7 +156,7 @@ const mediaElementsFor = (
                 `<div id="${id}-box" data-hf-id="hf-${id}-box" data-name="${escapeHtml(clip.name)}" style="${boxStyleFor(clip)}"><div id="${id}" data-hf-id="hf-${id}" style="width:100%;height:100%;${motionStyleFor(clip)}"><video id="${id}-media" data-hf-id="hf-${id}-media" src="${src}" muted playsinline preload="auto" ${timing}${hidden} style="display:block;width:100%;height:100%;object-fit:cover;"></video></div></div>`,
             ];
             if (clip.hasAudio === true && !suppressVideoAudio) {
-                elements.push(`<audio id="${id}-audio" data-hf-id="hf-${id}-audio" data-name="${escapeHtml(clip.name)} audio" src="${src}" preload="auto" ${audioTiming} data-volume="${clip.audioFade ? '1' : volume}"${hidden}></audio>`);
+                elements.push(`<audio id="${id}-audio" data-hf-id="hf-${id}-audio" data-name="${escapeHtml(clip.name)} audio" src="${src}" preload="auto" ${audioTiming} data-volume="${track.audible ? (clip.audioFade ? '1' : volume) : '0'}"${hidden}></audio>`);
             }
             return elements;
         }
@@ -163,7 +166,7 @@ const mediaElementsFor = (
             ];
         case 'audio':
             return [
-                `<audio id="${id}" data-hf-id="hf-${id}" data-name="${escapeHtml(clip.name)}" src="${src}" preload="auto" ${timing} data-volume="${clip.audioFade ? '1' : volume}"${hidden}></audio>`,
+                `<audio id="${id}" data-hf-id="hf-${id}" data-name="${escapeHtml(clip.name)}" src="${src}" preload="auto" ${timing} data-volume="${track.audible ? (clip.audioFade ? '1' : volume) : '0'}"${hidden}></audio>`,
             ];
         case 'text': {
             const align = clip.textAlign ?? 'center';
@@ -252,7 +255,7 @@ const mapEase = (ease: string | undefined): string => {
 };
 
 /** Transitions and keyframes become a finite, seekable GSAP plan. */
-const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = false): TweenPlan[] => {
+const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = false, audible = true): TweenPlan[] => {
     const plan: TweenPlan[] = [];
     const id = safeId(clip.id);
     const startS = clip.startFrame / fps;
@@ -362,7 +365,10 @@ const tweenPlanFor = (clip: IndiiVideoClip, fps: number, suppressVideoAudio = fa
     }
 
     // ── Audio fade automation (absolute-gain volume tweens)
-    if (clip.audioFade && (clip.type === 'audio' || (clip.hasAudio === true && !suppressVideoAudio))) {
+    // A muted or solo-excluded track stays silent: data-volume="0" holds the
+    // static floor, and the fade tween (which ramps to an absolute gain and
+    // would otherwise override it) is skipped entirely.
+    if (audible && clip.audioFade && (clip.type === 'audio' || (clip.hasAudio === true && !suppressVideoAudio))) {
         const audioId = clip.type === 'video' ? `${id}-audio` : id;
         const gain = clip.volume ?? 1;
         const fades = clip.audioFade;
@@ -454,9 +460,14 @@ export const compileProjectToHyperFrames = (
         throw new Error('compiler: project dimensions must be positive integers');
     }
 
+    // Solo semantics: when any track is soloed, only soloed tracks are audible.
+    // Mute always wins over solo. Legacy projects without isSolo are unaffected.
+    const anySolo = project.tracks.some(track => track.isSolo === true);
     const trackIndex = new Map<string, Omit<CompiledTrack, 'index' | 'audioIndex'>>();
     project.tracks.forEach((track: IndiiVideoTrack) => trackIndex.set(track.id, {
         isMuted: track.isMuted === true,
+        isSolo: track.isSolo === true,
+        audible: track.isMuted !== true && (!anySolo || track.isSolo === true),
         isHidden: track.isHidden === true,
     }));
 
@@ -485,7 +496,7 @@ export const compileProjectToHyperFrames = (
             audioIndex: project.clips.length + clipIndex + 1,
         };
         bodyClips.push(...mediaElementsFor(clip, fps, track, suppressVideoAudio).map(element => `      ${element}`));
-        tweenPlans.push(...tweenPlanFor(clip, fps, suppressVideoAudio));
+        tweenPlans.push(...tweenPlanFor(clip, fps, suppressVideoAudio, track.audible));
     }
 
     // Scene treatment: background layer + its ambient tween render behind all clips.

@@ -14,6 +14,7 @@ describe('TimelineTrack', () => {
     const mockToggleMuteTrack = vi.fn();
     const mockToggleSoloTrack = vi.fn();
     const mockToggleLockTrack = vi.fn();
+    const mockMoveTrack = vi.fn();
     const mockRemoveTrack = vi.fn();
     const mockAddSampleClip = vi.fn();
     const mockToggleExpand = vi.fn();
@@ -220,6 +221,51 @@ describe('TimelineTrack', () => {
             expect(dropZone.className).toContain('h-auto');
             expect(dropZone.className).toContain('min-h-');
             expect(dropZone.className).not.toContain('overflow-hidden');
+        });
+    });
+
+    describe('Track Reorder Controls', () => {
+        it('calls onMoveTrack with the adjacent index when reorder buttons are clicked', () => {
+            render(<TimelineTrack {...defaultProps} trackIndex={1} trackCount={3} onMoveTrack={mockMoveTrack} />);
+
+            fireEvent.click(screen.getByTestId(`track-move-up-${mockTrack.id}`));
+            expect(mockMoveTrack).toHaveBeenCalledWith('track-1', 0);
+
+            fireEvent.click(screen.getByTestId(`track-move-down-${mockTrack.id}`));
+            expect(mockMoveTrack).toHaveBeenCalledWith('track-1', 2);
+        });
+
+        it('disables move-up on the first track and move-down on the last track', () => {
+            const { rerender } = render(<TimelineTrack {...defaultProps} trackIndex={0} trackCount={3} onMoveTrack={mockMoveTrack} />);
+            expect(screen.getByTestId(`track-move-up-${mockTrack.id}`)).toBeDisabled();
+            expect(screen.getByTestId(`track-move-down-${mockTrack.id}`)).not.toBeDisabled();
+
+            rerender(<TimelineTrack {...defaultProps} trackIndex={2} trackCount={3} onMoveTrack={mockMoveTrack} />);
+            expect(screen.getByTestId(`track-move-up-${mockTrack.id}`)).not.toBeDisabled();
+            expect(screen.getByTestId(`track-move-down-${mockTrack.id}`)).toBeDisabled();
+        });
+
+        it('disables reorder controls on locked tracks', () => {
+            const lockedTrack = { ...mockTrack, isLocked: true };
+            render(<TimelineTrack {...defaultProps} track={lockedTrack} trackIndex={1} trackCount={3} onMoveTrack={mockMoveTrack} />);
+
+            expect(screen.getByTestId(`track-move-up-${mockTrack.id}`)).toBeDisabled();
+            expect(screen.getByTestId(`track-move-down-${mockTrack.id}`)).toBeDisabled();
+            fireEvent.click(screen.getByTestId(`track-move-up-${mockTrack.id}`));
+            expect(mockMoveTrack).not.toHaveBeenCalled();
+        });
+
+        it('falls back to the store moveTrack action when no callback is provided', () => {
+            const storeMove = vi.fn();
+            (useVideoEditorStore.getState as unknown as import('vitest').Mock).mockReturnValue({
+                timelineZoom: 1,
+                project: { fps: 30 },
+                moveTrack: storeMove,
+            });
+
+            render(<TimelineTrack {...defaultProps} trackIndex={2} trackCount={3} onMoveTrack={undefined} />);
+            fireEvent.click(screen.getByTestId(`track-move-up-${mockTrack.id}`));
+            expect(storeMove).toHaveBeenCalledWith('track-1', 1);
         });
     });
 });

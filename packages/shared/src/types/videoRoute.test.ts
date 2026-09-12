@@ -110,6 +110,12 @@ describe('planRenderRoute', () => {
         expect(planRenderRoute({ project: muted }).reason).toBe('track-controls-require-composition');
     });
 
+    it('routes soloed tracks to composition — the direct executor cannot express solo exclusion', () => {
+        const soloed = project([clip()]);
+        soloed.tracks[0] = { ...soloed.tracks[0]!, isSolo: true };
+        expect(planRenderRoute({ project: soloed }).reason).toBe('track-controls-require-composition');
+    });
+
     it('fast-paths a single trimmed source clip to µs-precision trim', () => {
         const d = planRenderRoute({
             project: project([clip({ sourceInUs: 500_000, sourceOutUs: 3_500_000 })]),

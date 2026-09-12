@@ -1,5 +1,5 @@
 import React, { memo, useCallback } from 'react';
-import { Volume2, VolumeX, Headphones, Lock, Unlock, Plus, Trash2 } from 'lucide-react';
+import { Volume2, VolumeX, Headphones, Lock, Unlock, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { VideoTrack, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { TimelineClip } from './TimelineClip';
 import { PIXELS_PER_FRAME } from '../constants';
@@ -16,6 +16,11 @@ export interface TimelineTrackProps {
     onToggleMuteTrack?: (id: string) => void;
     onToggleSoloTrack?: (id: string) => void;
     onToggleLockTrack?: (id: string) => void;
+    /** This track's position in the project track list (for reorder controls). */
+    trackIndex?: number;
+    /** Total track count (for reorder edge disabling). */
+    trackCount?: number;
+    onMoveTrack?: (id: string, targetIndex: number) => void;
 
     // Passthrough props for clip
     onToggleExpand: (id: string) => void;
@@ -29,6 +34,7 @@ export const TimelineTrack = memo(({
     track, clips, selectedClipId, expandedClipIds,
     onRemoveTrack, onAddSampleClip,
     onToggleMuteTrack, onToggleSoloTrack, onToggleLockTrack,
+    trackIndex = 0, trackCount = 1, onMoveTrack,
     onToggleExpand, onRemoveClip, onDragStart, onAddKeyframe, onKeyframeClick
 }: TimelineTrackProps) => {
     const hasExpandedClip = clips.some(clip => expandedClipIds.has(clip.id));
@@ -57,13 +63,31 @@ export const TimelineTrack = memo(({
         }
     }, [onToggleLockTrack, track.id]);
 
+    const handleMoveUp = useCallback(() => {
+        if (trackIndex <= 0) return;
+        if (onMoveTrack) {
+            onMoveTrack(track.id, trackIndex - 1);
+        } else {
+            useVideoEditorStore.getState().moveTrack?.(track.id, trackIndex - 1);
+        }
+    }, [onMoveTrack, track.id, trackIndex]);
+
+    const handleMoveDown = useCallback(() => {
+        if (trackIndex >= trackCount - 1) return;
+        if (onMoveTrack) {
+            onMoveTrack(track.id, trackIndex + 1);
+        } else {
+            useVideoEditorStore.getState().moveTrack?.(track.id, trackIndex + 1);
+        }
+    }, [onMoveTrack, track.id, trackIndex, trackCount]);
+
     return (
         <div
             data-track-id={track.id}
             data-testid={`timeline-track-${track.id}`}
             className="bg-gray-900 rounded flex flex-col relative group border border-gray-800 hover:border-gray-700 transition-colors mb-1"
         >
-            <div className={`flex ${hasExpandedClip ? 'min-h-[64px] min-h-[220px] h-auto pb-2' : 'h-16'}`}>
+            <div className={`flex ${hasExpandedClip ? 'min-h-[220px] h-auto pb-2' : 'h-16'}`}>
                 {/* Track Header */}
                 <div className={`w-48 border-r border-gray-800 p-2 flex flex-col justify-between bg-gray-900 shrink-0 z-10 ${hasExpandedClip ? 'min-h-[220px] self-stretch' : ''}`}>
                     <div className="flex items-center justify-between">
@@ -112,6 +136,30 @@ export const TimelineTrack = memo(({
                                 }`}
                             >
                                 {track.isLocked ? <Lock size={12} /> : <Unlock size={12} />}
+                            </button>
+
+                            {/* Reorder buttons — structural, like remove: disabled while locked */}
+                            <button
+                                type="button"
+                                onClick={handleMoveUp}
+                                disabled={trackIndex <= 0 || track.isLocked}
+                                data-testid={`track-move-up-${track.id}`}
+                                aria-label={`Move track ${track.name} up`}
+                                title="Move Track Up"
+                                className="p-1 rounded transition-colors text-gray-500 hover:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-500"
+                            >
+                                <ChevronUp size={12} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleMoveDown}
+                                disabled={trackIndex >= trackCount - 1 || track.isLocked}
+                                data-testid={`track-move-down-${track.id}`}
+                                aria-label={`Move track ${track.name} down`}
+                                title="Move Track Down"
+                                className="p-1 rounded transition-colors text-gray-500 hover:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-500"
+                            >
+                                <ChevronDown size={12} />
                             </button>
                         </div>
                     </div>
@@ -167,7 +215,7 @@ export const TimelineTrack = memo(({
                 <div
                     data-testid={`track-drop-zone-${track.id}`}
                     className={`flex-1 relative bg-gray-900/50 ${
-                        hasExpandedClip ? 'min-h-[64px] min-h-[220px] h-auto pb-2 overflow-visible' : 'overflow-hidden'
+                        hasExpandedClip ? 'min-h-[220px] h-auto pb-2 overflow-visible' : 'overflow-hidden'
                     } ${track.isMuted ? 'opacity-60' : ''} ${track.isLocked ? 'cursor-not-allowed' : ''}`}
                     onDragOver={(e) => {
                         e.preventDefault();
