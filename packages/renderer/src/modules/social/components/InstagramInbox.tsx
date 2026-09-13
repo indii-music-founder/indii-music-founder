@@ -10,6 +10,7 @@ export const InstagramInbox: React.FC = () => {
 
     // DM State
     const [recipientIgUserId, setRecipientIgUserId] = useState('');
+    const [inboundEventId, setInboundEventId] = useState('');
     const [dmText, setDmText] = useState('');
     const [dmMediaUrl, setDmMediaUrl] = useState('');
     const [sendingDm, setSendingDm] = useState(false);
@@ -26,8 +27,8 @@ export const InstagramInbox: React.FC = () => {
 
     const handleSendDm = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!recipientIgUserId.trim()) {
-            toast.error('Recipient Instagram User ID is required');
+        if (!recipientIgUserId.trim() || !inboundEventId.trim()) {
+            toast.error('Select a current inbound Instagram event before replying');
             return;
         }
         if (!dmText.trim() && !dmMediaUrl.trim()) {
@@ -39,6 +40,7 @@ export const InstagramInbox: React.FC = () => {
         try {
             const res = await sendInstagramMessage({
                 recipientIgUserId: recipientIgUserId.trim(),
+                inboundEventId: inboundEventId.trim(),
                 messageText: dmText.trim() || undefined,
                 mediaUrl: dmMediaUrl.trim() || undefined,
             });
@@ -141,6 +143,17 @@ export const InstagramInbox: React.FC = () => {
             {/* Direct Messages Tab */}
             {activeTab === 'dm' && (
                 <form onSubmit={handleSendDm} className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-zinc-300 mb-1.5">Inbound Event ID</label>
+                        <input
+                            type="text"
+                            value={inboundEventId}
+                            onChange={(e) => setInboundEventId(e.target.value)}
+                            placeholder="Signed message, Story reply, or reaction event"
+                            className="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-100 text-sm focus:outline-none focus:border-rose-500 transition-colors"
+                            required
+                        />
+                    </div>
                     <div>
                         <label className="block text-xs font-medium text-zinc-300 mb-1.5">Recipient Instagram User ID</label>
                         <input

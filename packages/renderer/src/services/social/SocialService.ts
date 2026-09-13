@@ -23,7 +23,7 @@ import {
   CampaignStatus,
 } from "./types";
 import { ScheduledPostSchema, CreatePostRequestSchema } from "@/modules/social/schemas";
-import { validateInstagramPublishingPayload } from '@indii/shared';
+import { validateInstagramPublishingPayload, type InstagramPublishingPayload } from '@indii/shared';
 
 type DeliveryPlatform = "twitter" | "instagram";
 
@@ -174,11 +174,12 @@ export class SocialService {
     const deliveryPlatform = toDeliveryPlatform(validPost.platform);
     const scheduledTime = validPost.scheduledTime || Date.now();
     const mediaUrl = validPost.imageAsset?.imageUrl;
-    if (deliveryPlatform === 'instagram' && !validPost.instagramPayload) {
+    const instagramPayload = validPost.instagramPayload as InstagramPublishingPayload | undefined;
+    if (deliveryPlatform === 'instagram' && !instagramPayload) {
       throw new Error('Instagram scheduling requires validated media metadata.');
     }
-    if (validPost.instagramPayload) {
-      const policy = validateInstagramPublishingPayload(validPost.instagramPayload);
+    if (instagramPayload) {
+      const policy = validateInstagramPublishingPayload(instagramPayload);
       if (!policy.valid) throw new Error(`Instagram policy rejected this post: ${policy.errors.join(' ')}`);
     }
 
@@ -190,11 +191,11 @@ export class SocialService {
       text: validPost.copy,
       mediaUrl: mediaUrl || null,
       mediaType: mediaUrl ? "image" : null,
-      ...(validPost.instagramPayload ? {
-        mediaType: validPost.instagramPayload.surface === 'feed' ? 'image' : validPost.instagramPayload.surface,
-        hashtags: validPost.instagramPayload.hashtags,
-        instagramPayload: validPost.instagramPayload,
-        ...(validPost.instagramPayload.surface === 'story' ? { storyTtlHours: validPost.instagramPayload.storyExtend ? 48 : 24 } : {}),
+      ...(instagramPayload ? {
+        mediaType: instagramPayload.surface === 'feed' ? 'image' : instagramPayload.surface,
+        hashtags: instagramPayload.hashtags,
+        instagramPayload,
+        ...(instagramPayload.surface === 'story' ? { storyTtlHours: instagramPayload.storyExtend ? 48 : 24 } : {}),
       } : {}),
       day: validPost.day || 1,
       scheduledTime,
