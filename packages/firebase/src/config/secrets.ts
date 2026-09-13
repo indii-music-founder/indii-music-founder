@@ -171,6 +171,7 @@ export const tiktokClientKey = defineSecret("TIKTOK_CLIENT_KEY");
 export const tiktokClientSecret = defineSecret("TIKTOK_CLIENT_SECRET");
 export const metaAppId = defineSecret("META_APP_ID");
 export const metaAppSecret = defineSecret("META_APP_SECRET");
+export const metaWebhookVerifyToken = defineSecret("META_WEBHOOK_VERIFY_TOKEN");
 
 // ---------------------------------------------------------------------------
 // Email OAuth Secrets (Gmail / Outlook)

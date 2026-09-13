@@ -23,6 +23,7 @@ import {
   CampaignStatus,
 } from "./types";
 import { ScheduledPostSchema, CreatePostRequestSchema } from "@/modules/social/schemas";
+import { validateInstagramPublishingPayload, type InstagramPublishingPayload } from '@indii/shared';
 
 type DeliveryPlatform = "twitter" | "instagram";
 
@@ -173,6 +174,14 @@ export class SocialService {
     const deliveryPlatform = toDeliveryPlatform(validPost.platform);
     const scheduledTime = validPost.scheduledTime || Date.now();
     const mediaUrl = validPost.imageAsset?.imageUrl;
+    const instagramPayload = validPost.instagramPayload as InstagramPublishingPayload | undefined;
+    if (deliveryPlatform === 'instagram' && !instagramPayload) {
+      throw new Error('Instagram scheduling requires validated media metadata.');
+    }
+    if (instagramPayload) {
+      const policy = validateInstagramPublishingPayload(instagramPayload);
+      if (!policy.valid) throw new Error(`Instagram policy rejected this post: ${policy.errors.join(' ')}`);
+    }
 
     const docRef = await addDoc(collection(db, "scheduledPosts"), {
       userId: userProfile.id,
@@ -182,6 +191,12 @@ export class SocialService {
       text: validPost.copy,
       mediaUrl: mediaUrl || null,
       mediaType: mediaUrl ? "image" : null,
+      ...(instagramPayload ? {
+        mediaType: instagramPayload.surface === 'feed' ? 'image' : instagramPayload.surface,
+        hashtags: instagramPayload.hashtags,
+        instagramPayload,
+        ...(instagramPayload.surface === 'story' ? { storyTtlHours: instagramPayload.storyExtend ? 48 : 24 } : {}),
+      } : {}),
       day: validPost.day || 1,
       scheduledTime,
       scheduledAt: Timestamp.fromMillis(scheduledTime),

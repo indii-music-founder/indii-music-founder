@@ -585,27 +585,38 @@ const EXECUTION_CONTRACT = `## EXECUTION CONTRACT (non-negotiable)
 - Stop the moment the request is satisfied. No polishing or follow-on work.
 - Capability & Status Grounding: ZERO TOLERANCE FOR FABRICATING ENGINEERING ROADMAPS, SPRINTS, JIRA/LINEAR TICKETS, OR HOLDING PATTERNS. Never claim that tools, agents, departments, or capabilities are missing, pending an engineering sprint, unbuilt, or waiting on technical specifications. All 23 departments (Finance, Legal, Distribution, Marketing, Brand, Music, Video, Social, Publicist, Publishing, Licensing, Road, Hospitality, Event Planning, Merchandise, Creative, Producer, Director, Screenwriter, DevOps, Security, Curriculum, Keeper) are fully implemented and operational with their specialized tool suites deployed in production. If asked about status or audit, never invent narrative drama, fictional deficits, or bureaucratic roadmaps. For specific functional questions about UI components, canvas inspection, or file operations, execute the available tools and answer the user's operational question directly and concisely rather than generating generic departmental status verdicts.`;
 
+const INSTAGRAM_GROWTH_POLICY = `## Instagram growth and safety contract
+- Feed/carousel: exactly 1080x1350 and 3-5 specific hashtags. Reel/Story/Live: exactly 1080x1920. Reels require 5-8 targeted non-generic hashtags at the caption end.
+- Discovery Reels are under 15 seconds; nurture/education Reels are over 30 seconds. Stories split into sequential clips of at most 15 seconds. Live stops at 60 minutes.
+- Unified Views is primary. Reel engagement = (likes + shares + comments) / Views x 100. Prioritize verified DM shares; label aggregate shares only as a proxy.
+- Never send automated welcome or sales DMs on follows. Reply only to an inbound message, Story reply, or reaction. Commerce follow-up requires human review.
+- Use trending audio only when an identifier and source metadata were observed. Treat blue engagement uplift as an experiment hypothesis, never a guarantee.`;
+
+function withInstagramPolicy(prompt: string): string {
+    return `${prompt}\n\n${INSTAGRAM_GROWTH_POLICY}`;
+}
+
 /**
  * Map of agent IDs to their system prompts.
  * Used by processRelayCommand to configure Gemini's systemInstruction.
  */
 export const AGENT_PROMPTS: Record<string, string> = {
     'generalist': CONDUCTOR_PROMPT,
-    'analytics': ANALYTICS_PROMPT,
+    'analytics': withInstagramPolicy(ANALYTICS_PROMPT),
     'brand': BRAND_PROMPT,
-    'creative': CREATIVE_DIRECTOR_PROMPT,
-    'creative-director': CREATIVE_DIRECTOR_PROMPT, // Legacy Alias
-    'marketing': MARKETING_PROMPT,
+    'creative': withInstagramPolicy(CREATIVE_DIRECTOR_PROMPT),
+    'creative-director': withInstagramPolicy(CREATIVE_DIRECTOR_PROMPT), // Legacy Alias
+    'marketing': withInstagramPolicy(MARKETING_PROMPT),
     'finance': FINANCE_PROMPT,
     'legal': LEGAL_PROMPT,
     'music': MUSIC_PROMPT,
     'distribution': DISTRIBUTION_PROMPT,
-    'social': SOCIAL_PROMPT,
+    'social': withInstagramPolicy(SOCIAL_PROMPT),
     'publishing': PUBLISHING_PROMPT,
     'road': ROAD_PROMPT,
     'road-manager': ROAD_PROMPT, // Legacy Alias
     'publicist': PUBLICIST_PROMPT,
-    'video': VIDEO_PROMPT,
+    'video': withInstagramPolicy(VIDEO_PROMPT),
     'licensing': LICENSING_PROMPT,
     'merchandise': MERCHANDISE_PROMPT,
     'security': SECURITY_PROMPT,

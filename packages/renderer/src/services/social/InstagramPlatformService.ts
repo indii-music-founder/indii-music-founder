@@ -21,9 +21,10 @@ export async function sendInstagramMessage(params: {
     recipientIgUserId: string;
     messageText?: string;
     mediaUrl?: string;
+    inboundEventId: string;
 }): Promise<{ ok: boolean; messageId?: string; recipientId: string; sentAt: number }> {
     const fn = httpsCallable<
-        { recipientIgUserId: string; messageText?: string; mediaUrl?: string },
+        { recipientIgUserId: string; messageText?: string; mediaUrl?: string; inboundEventId: string },
         { ok: boolean; messageId?: string; recipientId: string; sentAt: number }
     >(functions, 'sendInstagramMessageCallable');
     const res = await fn(params);

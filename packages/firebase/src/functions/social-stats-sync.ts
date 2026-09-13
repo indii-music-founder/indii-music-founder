@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { calculateReelEngagementPercent, resolveReelShareSignal, resolveUnifiedViews } from '@indii/shared';
 
 const SyncStatsRequestSchema = z.object({
   platform: z.enum(['spotify', 'instagram', 'tiktok', 'twitter', 'youtube']),
@@ -14,8 +15,15 @@ export interface PlatformStats {
   followers?: number;
   impressions?: number;
   plays?: number;
+  views?: number;
+  viewsSource?: string;
+  viewsLabel?: string;
   likes?: number;
   shares?: number;
+  shareSignalKind?: string;
+  shareSignalLabel?: string;
+  reelEngagementPercent?: number | null;
+  contentViewsByFormat?: Partial<Record<'photo' | 'carousel' | 'story' | 'reel', number>>;
   fetchedAt: number;
 }
 
@@ -85,9 +93,15 @@ function cachedStats(platform: SocialStatsPlatform, data: Record<string, unknown
     platform,
     fetchedAt: typeof data.fetchedAt === 'number' ? data.fetchedAt : 0,
   };
-  for (const field of ['followers', 'impressions', 'plays', 'likes', 'shares'] as const) {
+  for (const field of ['followers', 'impressions', 'plays', 'views', 'likes', 'shares'] as const) {
     if (typeof data[field] === 'number' && Number.isFinite(data[field])) result[field] = data[field];
   }
+  if (typeof data.viewsSource === 'string') result.viewsSource = data.viewsSource;
+  if (typeof data.viewsLabel === 'string') result.viewsLabel = data.viewsLabel;
+  if (typeof data.shareSignalKind === 'string') result.shareSignalKind = data.shareSignalKind;
+  if (typeof data.shareSignalLabel === 'string') result.shareSignalLabel = data.shareSignalLabel;
+  if (typeof data.reelEngagementPercent === 'number' || data.reelEngagementPercent === null) result.reelEngagementPercent = data.reelEngagementPercent;
+  if (data.contentViewsByFormat && typeof data.contentViewsByFormat === 'object') result.contentViewsByFormat = data.contentViewsByFormat as PlatformStats['contentViewsByFormat'];
   return Object.keys(result).length > 2 ? result : undefined;
 }
 
@@ -136,7 +150,7 @@ async function fetchLiveStats(
       if (!instagramUserId) {
         const me = await fetchJson(
           deps.fetch,
-          `https://graph.facebook.com/v20.0/me?fields=instagram_business_account&access_token=${encodeURIComponent(accessToken)}`,
+        `https://graph.facebook.com/v23.0/me?fields=instagram_business_account&access_token=${encodeURIComponent(accessToken)}`,
           { signal: timeout() },
         );
         if (!me.ok) return failed(platform, now, `instagram_${me.status}`);
@@ -146,13 +160,62 @@ async function fetchLiveStats(
       if (!instagramUserId) return failed(platform, now, 'instagram_account_missing');
       const response = await fetchJson(
         deps.fetch,
-        `https://graph.facebook.com/v20.0/${encodeURIComponent(instagramUserId)}?fields=followers_count,media_count&access_token=${encodeURIComponent(accessToken)}`,
+        `https://graph.facebook.com/v23.0/${encodeURIComponent(instagramUserId)}?fields=followers_count,media_count&access_token=${encodeURIComponent(accessToken)}`,
         { signal: timeout() },
       );
       if (!response.ok) return failed(platform, now, `instagram_${response.status}`);
+      const mediaFields = 'id,media_type,media_product_type,like_count,comments_count';
+      const [mediaResponse, storyResponse] = await Promise.all([
+        fetchJson(deps.fetch, `https://graph.facebook.com/v23.0/${encodeURIComponent(instagramUserId)}/media?fields=${mediaFields}&limit=50&access_token=${encodeURIComponent(accessToken)}`, { signal: timeout() }),
+        fetchJson(deps.fetch, `https://graph.facebook.com/v23.0/${encodeURIComponent(instagramUserId)}/stories?fields=${mediaFields}&limit=50&access_token=${encodeURIComponent(accessToken)}`, { signal: timeout() }),
+      ]);
+      type MediaRow = { id?: unknown; media_type?: unknown; media_product_type?: unknown; like_count?: unknown; comments_count?: unknown };
+      const media = [
+        ...(mediaResponse.ok && Array.isArray(mediaResponse.body.data) ? mediaResponse.body.data as MediaRow[] : []),
+        ...(storyResponse.ok && Array.isArray(storyResponse.body.data) ? storyResponse.body.data as MediaRow[] : []),
+      ];
+      const insightResults = await Promise.allSettled(media.map(async item => {
+        if (typeof item.id !== 'string') return undefined;
+        const insight = await fetchJson(deps.fetch, `https://graph.facebook.com/v23.0/${encodeURIComponent(item.id)}/insights?metric=views,shares&period=lifetime&access_token=${encodeURIComponent(accessToken)}`, { signal: timeout() });
+        if (!insight.ok || !Array.isArray(insight.body.data)) return undefined;
+        const rows = insight.body.data as Array<{ name?: unknown; value?: unknown; values?: Array<{ value?: unknown }> }>;
+        const value = (name: string) => {
+          const row = rows.find(candidate => candidate.name === name);
+          const candidate = row?.value ?? row?.values?.[0]?.value;
+          return typeof candidate === 'number' && Number.isFinite(candidate) ? candidate : 0;
+        };
+        const product = String(item.media_product_type ?? '').toUpperCase();
+        const mediaType = String(item.media_type ?? '').toUpperCase();
+        const format: 'photo' | 'carousel' | 'story' | 'reel' = product === 'STORY' ? 'story' : product === 'REELS' ? 'reel' : mediaType === 'CAROUSEL_ALBUM' ? 'carousel' : 'photo';
+        return { format, views: value('views'), shares: value('shares'), likes: Number(item.like_count ?? 0), comments: Number(item.comments_count ?? 0) };
+      }));
+      const totals = { views: 0, shares: 0, likes: 0, comments: 0, successful: 0, contentViewsByFormat: {} as Record<string, number> };
+      const reelTotals = { views: 0, shares: 0, likes: 0, comments: 0 };
+      for (const result of insightResults) {
+        if (result.status !== 'fulfilled' || !result.value) continue;
+        totals.successful += 1;
+        totals.views += result.value.views; totals.shares += result.value.shares;
+        totals.likes += result.value.likes; totals.comments += result.value.comments;
+        totals.contentViewsByFormat[result.value.format] = (totals.contentViewsByFormat[result.value.format] ?? 0) + result.value.views;
+        if (result.value.format === 'reel') {
+          reelTotals.views += result.value.views; reelTotals.shares += result.value.shares;
+          reelTotals.likes += result.value.likes; reelTotals.comments += result.value.comments;
+        }
+      }
+      const unified = resolveUnifiedViews({ views: totals.successful > 0 ? totals.views : undefined });
+      const shareSignal = resolveReelShareSignal({ shares: totals.shares });
       return {
         platform,
         ...(typeof response.body.followers_count === 'number' ? { followers: response.body.followers_count } : {}),
+        ...(unified.views !== null ? { views: unified.views } : {}),
+        viewsSource: unified.source,
+        viewsLabel: unified.label,
+        likes: totals.likes,
+        shares: totals.shares,
+        shareSignalKind: shareSignal.kind,
+        shareSignalLabel: shareSignal.label,
+        reelEngagementPercent: calculateReelEngagementPercent({ views: reelTotals.views, likes: reelTotals.likes, shares: reelTotals.shares, comments: reelTotals.comments }),
+        contentViewsByFormat: totals.contentViewsByFormat,
         fetchedAt: now,
       };
     }

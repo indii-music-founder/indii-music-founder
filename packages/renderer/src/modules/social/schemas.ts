@@ -1,5 +1,21 @@
 import { z } from "zod";
 
+const InstagramPublishingPayloadSchema = z.object({
+    surface: z.enum(['feed', 'carousel', 'reel', 'story', 'live']),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    caption: z.string(),
+    hashtags: z.array(z.string()),
+    durationSeconds: z.number().positive().optional(),
+    reelAudienceIntent: z.enum(['discovery', 'nurture']).optional(),
+    storyExtend: z.boolean().optional(),
+    storySegments: z.array(z.object({
+        mediaUrl: z.string().url(),
+        durationSeconds: z.number().positive(),
+        sequence: z.number().int().positive(),
+    })).optional(),
+});
+
 export const CampaignStatusSchema = z.enum(['PENDING', 'EXECUTING', 'DONE', 'FAILED']);
 
 export const ImageAssetSchema = z.object({
@@ -25,7 +41,8 @@ export const ScheduledPostSchema = z.object({
         message: "Post must be scheduled for a future time"
     }).optional(),
     status: CampaignStatusSchema.default('PENDING'),
-    authorId: z.string().optional() // Assigned by backend/service
+    authorId: z.string().optional(), // Assigned by backend/service
+    instagramPayload: InstagramPublishingPayloadSchema.optional(),
 });
 
 export const CreatePostRequestSchema = z.object({

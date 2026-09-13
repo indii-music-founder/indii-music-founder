@@ -406,9 +406,15 @@ export const analyticsRevokeToken = onCall(
                     logger.warn(`[analyticsRevokeToken] Spotify token revocation failed for user ${uid}:`, err);
                 });
             }
+            if (platform === 'instagram' && typeof stored.igUserId === 'string') {
+                const registryRef = admin.firestore().collection('socialChannelRegistry').doc(`instagram_${stored.igUserId}`);
+                const registry = await registryRef.get();
+                if (registry.exists && registry.get('ownerId') === uid) await registryRef.delete();
+            }
         }
 
         await tokenPath(uid, platform).delete();
+        await admin.firestore().collection('users').doc(uid).collection('socialTokens').doc(platform).delete();
         return { ok: true };
     });
 
@@ -513,12 +519,33 @@ function connectionFromPage(
 }
 
 async function storeInstagramConnection(uid: string, connection: FacebookInstagramConnection): Promise<void> {
+    const subscription = new URLSearchParams({
+        subscribed_fields: 'messages,messaging_postbacks,message_reactions',
+        access_token: connection.accessToken,
+    });
+    const subscriptionResponse = await fetch(
+        `https://graph.facebook.com/v23.0/${encodeURIComponent(connection.igUserId)}/subscribed_apps`,
+        { method: 'POST', body: subscription, signal: AbortSignal.timeout(15_000) },
+    );
+    if (!subscriptionResponse.ok) {
+        logger.error('[storeInstagramConnection] Instagram webhook subscription failed', { status: subscriptionResponse.status });
+        throw new HttpsError('failed-precondition', 'Instagram connected, but inbound messaging subscription could not be verified. Reconnect after confirming webhook permissions.');
+    }
     await storeToken(uid, 'instagram', {
         accessToken: connection.accessToken,
         expiresAt: Date.now() + connection.expiresIn * 1000,
         igUserId: connection.igUserId,
         facebookPageId: connection.facebookPageId,
         ...(connection.instagramUsername ? { instagramUsername: connection.instagramUsername } : {}),
+    });
+    await admin.firestore().collection('socialChannelRegistry').doc(`instagram_${connection.igUserId}`).set({
+        ownerId: uid,
+        platform: 'instagram',
+        igUserId: connection.igUserId,
+        facebookPageId: connection.facebookPageId,
+        subscriptionStatus: 'subscribed',
+        automatedWelcomeDmEnabled: false,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 }
 

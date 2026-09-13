@@ -8,6 +8,10 @@
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
 import { MarketingProviderUnavailableError } from './providerErrors';
+import {
+    validateInstagramPublishingPayload,
+    type InstagramPublishingPayload,
+} from '@indii/shared';
 
 export type SocialPlatform = 'tiktok' | 'youtube_shorts' | 'meta_reels';
 
@@ -18,6 +22,7 @@ export interface PostContent {
     hashtags: string[];
     scheduledTime?: number;
     platform: SocialPlatform;
+    instagramPayload?: InstagramPublishingPayload;
 }
 
 export interface PostStatus {
@@ -38,6 +43,11 @@ export class SocialAutoPosterService {
         const jobId = `post_${Date.now()}`;
 
         logger.info(`[SocialPost] Queuing ${content.platform} post: ${content.id}`);
+        if (content.platform === 'meta_reels') {
+            if (!content.instagramPayload) throw new Error('Instagram publishing requires validated media metadata.');
+            const policy = validateInstagramPublishingPayload(content.instagramPayload);
+            if (!policy.valid) throw new Error(`Instagram policy rejected this post: ${policy.errors.join(' ')}`);
+        }
 
         // 1. Log job for UI feedback
         store.addJob({
@@ -58,6 +68,7 @@ export class SocialAutoPosterService {
                 mediaUrl: string;
                 platform: string;
                 caption: string;
+                instagramPayload?: InstagramPublishingPayload;
             }
 
             const dispatchFunction = httpsCallable<DispatchPayload, { success: boolean; externalId: string; timestamp: string }>(
@@ -70,7 +81,8 @@ export class SocialAutoPosterService {
             const result = await dispatchFunction({
                 mediaUrl: content.mediaUrl,
                 platform: content.platform,
-                caption: content.caption
+                caption: content.caption,
+                instagramPayload: content.instagramPayload,
             });
 
             if (result.data.success) {
