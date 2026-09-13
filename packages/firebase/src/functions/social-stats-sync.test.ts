@@ -131,4 +131,29 @@ describe('syncPlatformStatsForUser', () => {
     expect(result.followers).toBeUndefined();
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('ingests provider Views by Instagram format and labels aggregate shares as a proxy', async () => {
+    const { dependencies, fetchMock } = harness({
+      'users/user-1/analyticsTokens/instagram': {
+        accessToken: 'server-token', igUserId: 'ig-1', expiresAt: 1_900_000_000_000,
+      },
+    });
+    const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    fetchMock
+      .mockResolvedValueOnce(json({ followers_count: 120 }))
+      .mockResolvedValueOnce(json({ data: [{ id: 'reel-1', media_type: 'VIDEO', media_product_type: 'REELS', like_count: 10, comments_count: 5 }] }))
+      .mockResolvedValueOnce(json({ data: [] }))
+      .mockResolvedValueOnce(json({ data: [{ name: 'views', value: 100 }, { name: 'shares', value: 5 }] }));
+
+    const result = await syncPlatformStatsForUser('user-1', { platform: 'instagram' }, dependencies);
+
+    expect(result).toMatchObject({
+      views: 100,
+      viewsSource: 'views',
+      shareSignalKind: 'all_shares_proxy',
+      shareSignalLabel: 'All shares (DM-share proxy)',
+      reelEngagementPercent: 20,
+      contentViewsByFormat: { reel: 100 },
+    });
+  });
 });

@@ -55,15 +55,29 @@ export const sendInstagramMessageCallable = onCall(
         validateAppCheckV2(request);
         const uid = assertAuth(request);
 
-        const { recipientIgUserId, messageText, mediaUrl } = (request.data ?? {}) as {
+        const { recipientIgUserId, messageText, mediaUrl, inboundEventId } = (request.data ?? {}) as {
             recipientIgUserId?: string;
             messageText?: string;
             mediaUrl?: string;
+            inboundEventId?: string;
         };
 
-        if (!recipientIgUserId || (!messageText && !mediaUrl)) {
-            throw new HttpsError('invalid-argument', 'recipientIgUserId and either messageText or mediaUrl are required.');
+        if (!recipientIgUserId || !inboundEventId || (!messageText && !mediaUrl)) {
+            throw new HttpsError('invalid-argument', 'inboundEventId, recipientIgUserId, and either messageText or mediaUrl are required.');
         }
+
+        const inboxRef = admin.firestore().collection('socialInbox').doc(inboundEventId);
+        await admin.firestore().runTransaction(async transaction => {
+            const inbox = await transaction.get(inboxRef);
+            const data = inbox.data();
+            const eligible = inbox.exists && data?.ownerId === uid && data?.platform === 'instagram'
+                && data?.senderId === recipientIgUserId
+                && ['message', 'story_reply', 'reaction'].includes(data?.sourceType)
+                && data?.responseStatus === 'pending'
+                && data?.expiresAt?.toMillis?.() > Date.now();
+            if (!eligible) throw new HttpsError('failed-precondition', 'A current user-initiated Instagram event is required before replying.');
+            transaction.update(inboxRef, { responseStatus: 'responding', responseStartedAt: admin.firestore.FieldValue.serverTimestamp() });
+        });
 
         const token = await getStoredInstagramToken(uid);
         if (token.expiresAt && token.expiresAt <= Date.now()) {
@@ -93,6 +107,7 @@ export const sendInstagramMessageCallable = onCall(
             }
 
             const data = await res.json() as { message_id?: string; recipient_id?: string };
+            await inboxRef.update({ responseStatus: 'responded', responseMessageId: data.message_id ?? null, respondedAt: admin.firestore.FieldValue.serverTimestamp() });
             return {
                 ok: true,
                 messageId: data.message_id,
@@ -100,6 +115,7 @@ export const sendInstagramMessageCallable = onCall(
                 sentAt: Date.now(),
             };
         } catch (e) {
+            await inboxRef.update({ responseStatus: 'pending', lastResponseErrorAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => undefined);
             if (e instanceof HttpsError) throw e;
             logger.error('[sendInstagramMessageCallable] Exception:', e);
             throw new HttpsError('internal', `Failed to deliver Instagram DM: ${String(e)}`);

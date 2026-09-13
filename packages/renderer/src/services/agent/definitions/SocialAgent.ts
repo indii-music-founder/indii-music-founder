@@ -26,8 +26,9 @@ export const SocialAgent: AgentConfig = {
     get functions() {
         return {
             ...socialRetrievalTools,
-            analyze_trends: async (args: { topic: string }) => {
-                const prompt = `Analyze current social media trends for the topic: "${args.topic}". Return a JSON with trend_score (0-100), sentiment (positive/neutral/negative), keywords (array), and a summary.`;
+            analyze_trends: async (args: { topic: string; observedSignals?: string[] }) => {
+                if (!args.observedSignals?.length) return { success: false, error: 'Observed platform signals are required; trend metrics will not be fabricated.' };
+                const prompt = `Analyze these observed social signals for "${args.topic}": ${args.observedSignals.join(' | ')}. Return JSON with trend_score, sentiment, keywords, source labels, and summary. Never infer an audio trend without an observed audio identifier.`;
                 try {
                     const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
                     return { success: true, data: response };
@@ -107,9 +108,10 @@ export const SocialAgent: AgentConfig = {
                     properties: {
                         platform: { type: "STRING" },
                         content: { type: "STRING" },
-                        scheduleTime: { type: "STRING", description: "ISO 8601 timestamp" }
+                        scheduledTime: { type: "STRING", description: "ISO 8601 timestamp" },
+                        instagramPayload: { type: "OBJECT", description: "Required for Instagram: surface, exact dimensions, caption, hashtags, and applicable duration intent." }
                     },
-                    required: ["platform", "content", "scheduleTime"]
+                    required: ["platform", "content", "scheduledTime"]
                 }
             },
             {
@@ -131,7 +133,8 @@ export const SocialAgent: AgentConfig = {
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        topic: { type: "STRING", description: "Topic to analyze." }
+                        topic: { type: "STRING", description: "Topic to analyze." },
+                        observedSignals: { type: "ARRAY", items: { type: "STRING" }, description: "Observed platform signals with source metadata." }
                     },
                     required: ["topic"]
                 }
@@ -207,6 +210,10 @@ export const SocialAgent: AgentConfig = {
                         videoUrl: { type: "STRING", description: "Public URL of the 9:16 short form video to upload." },
                         caption: { type: "STRING", description: "The caption to include across all platforms." },
                         hashtags: { type: "ARRAY", items: { type: "STRING" }, description: "List of hashtags to append." },
+                        width: { type: "NUMBER", description: "Required exact media width for IG Reels (1080)." },
+                        height: { type: "NUMBER", description: "Required exact media height for IG Reels (1920)." },
+                        durationSeconds: { type: "NUMBER", description: "Required Reel duration." },
+                        reelAudienceIntent: { type: "STRING", enum: ["discovery", "nurture"], description: "Discovery is under 15 seconds; nurture is over 30 seconds." },
                         platforms: {
                             type: "ARRAY",
                             items: { type: "STRING", enum: ["TikTok", "YouTube Shorts", "IG Reels"] },

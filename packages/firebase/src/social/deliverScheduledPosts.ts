@@ -30,7 +30,7 @@ interface ScheduledPostDoc {
     platform: SocialPlatform;
     text?: string;
     mediaUrl?: string;
-    mediaType?: 'video' | 'image' | 'reel' | 'story' | 'carousel';
+    mediaType?: 'video' | 'image' | 'reel' | 'story' | 'carousel' | 'live';
     carouselUrls?: string[];
     shareToFeed?: boolean;
     hashtags?: string[];
@@ -52,6 +52,7 @@ interface ScheduledPostDoc {
      * of creating a new container and publishing a duplicate.
      */
     igContainerId?: string;
+    igStorySegmentReceipts?: Record<string, string>;
 }
 
 interface PlatformToken {
@@ -173,10 +174,39 @@ async function deliverToInstagram(
     if (!policy.valid) {
         return { success: false, terminal: true, error: `Instagram policy rejected this post: ${policy.errors.join(' ')}` };
     }
+    if (post.instagramPayload.surface === 'live') {
+        return { success: false, terminal: true, error: 'Instagram Live requires a manual/provider-native broadcast session; the content-publishing API cannot start it.' };
+    }
     const base = 'https://graph.facebook.com/v23.0';
     const caption = policy.publishCaption;
 
     try {
+        if (post.instagramPayload.surface === 'story' && (post.instagramPayload.storySegments?.length ?? 0) > 1) {
+            const receipts = { ...(post.igStorySegmentReceipts ?? {}) };
+            let lastPostId: string | undefined;
+            const segments = [...post.instagramPayload.storySegments!].sort((a, b) => a.sequence - b.sequence);
+            for (const segment of segments) {
+                const receiptKey = String(segment.sequence);
+                if (validDeliveredPostId(receipts[receiptKey])) { lastPostId = receipts[receiptKey]; continue; }
+                const params = new URLSearchParams({ access_token: token.accessToken, media_type: 'STORIES', video_url: segment.mediaUrl });
+                const createResponse = await fetch(`${base}/${token.igUserId}/media?${params}`, { method: 'POST', signal: AbortSignal.timeout(30_000) });
+                if (!createResponse.ok) return { success: false, error: `IG Story segment ${segment.sequence} container failed: ${createResponse.status}` };
+                const created = await createResponse.json() as { id?: string };
+                if (!validDeliveredPostId(created.id)) return { success: false, error: `IG Story segment ${segment.sequence} returned no container ID` };
+                const ready = await waitForInstagramContainerReady(base, created.id, token.accessToken);
+                if (!ready.ready) return { success: false, error: `IG Story segment ${segment.sequence}: ${ready.error ?? 'processing failed'}` };
+                const publishResponse = await fetch(`${base}/${token.igUserId}/media_publish`, {
+                    method: 'POST', body: new URLSearchParams({ creation_id: created.id, access_token: token.accessToken }), signal: AbortSignal.timeout(15_000),
+                });
+                if (!publishResponse.ok) return { success: false, error: `IG Story segment ${segment.sequence} publish failed: ${publishResponse.status}` };
+                const published = await publishResponse.json() as { id?: string };
+                if (!validDeliveredPostId(published.id)) return { success: false, error: `IG Story segment ${segment.sequence} returned no post ID` };
+                receipts[receiptKey] = published.id;
+                lastPostId = published.id;
+                await postRef.update({ igStorySegmentReceipts: receipts, updatedAt: FieldValue.serverTimestamp() });
+            }
+            return requireDeliveredPostId('Instagram Story segments', lastPostId);
+        }
         let containerId: string | undefined;
 
         // A previous attempt may have created the container and lost the
@@ -216,10 +246,12 @@ async function deliverToInstagram(
             const params = new URLSearchParams({ access_token: token.accessToken });
             if (post.mediaType === 'story') {
                 params.set('media_type', 'STORIES');
-                if (post.mediaUrl?.match(/\.(mp4|mov)$/i)) {
+                if (post.instagramPayload.durationSeconds !== undefined && post.mediaUrl) {
                     params.set('video_url', post.mediaUrl);
                 } else if (post.mediaUrl) {
                     params.set('image_url', post.mediaUrl);
+                } else {
+                    return { success: false, terminal: true, error: 'Instagram Stories require a media URL.' };
                 }
             } else if ((post.mediaType === 'reel' || post.mediaType === 'video') && post.mediaUrl) {
                 params.set('media_type', 'REELS');
@@ -256,7 +288,7 @@ async function deliverToInstagram(
         }
 
         // Poll container readiness for videos/reels/carousels
-        if (post.mediaType === 'video' || post.mediaType === 'reel' || post.mediaType === 'carousel') {
+        if (post.mediaType === 'video' || post.mediaType === 'reel' || post.mediaType === 'carousel' || post.mediaType === 'story') {
             const statusCheck = await waitForInstagramContainerReady(base, containerId, token.accessToken);
             if (!statusCheck.ready) {
                 return { success: false, error: statusCheck.error || 'Instagram media container processing failed' };

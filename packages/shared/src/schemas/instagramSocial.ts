@@ -41,7 +41,7 @@ const GENERIC_HASHTAGS = new Set([
     'instagram', 'love', 'music', 'reels', 'trending', 'viral',
 ]);
 
-const HASHTAG_PATTERN = /(^|\s)#[\p{L}\p{N}_]+/gu;
+const HASHTAG_PATTERN = /#[\p{L}\p{N}_]+/u;
 
 export function normalizeInstagramHashtags(hashtags: readonly string[]): string[] {
     const normalized = hashtags
@@ -86,12 +86,13 @@ function validateHashtags(payload: InstagramPublishingPayload, hashtags: string[
     if (payload.surface !== 'story' && payload.surface !== 'live' && (hashtags.length < minimum || hashtags.length > maximum)) {
         errors.push(`${payload.surface} requires ${minimum}-${maximum} specific hashtags.`);
     }
-    const generic = hashtags.filter(tag => GENERIC_HASHTAGS.has(tag));
+    const generic = payload.surface === 'story' || payload.surface === 'live'
+        ? []
+        : hashtags.filter(tag => GENERIC_HASHTAGS.has(tag));
     if (generic.length > 0) errors.push(`Generic hashtags are not allowed: ${generic.map(tag => `#${tag}`).join(', ')}.`);
-    if (payload.surface === 'reel' && HASHTAG_PATTERN.test(payload.caption)) {
-        errors.push('Reel caption text must not contain hashtags; provide them separately so they are appended only at the end.');
+    if (['feed', 'carousel', 'reel'].includes(payload.surface) && HASHTAG_PATTERN.test(payload.caption)) {
+        errors.push('Caption text must not contain hashtags; provide them separately so the validated set is appended only at the end.');
     }
-    HASHTAG_PATTERN.lastIndex = 0;
 }
 
 function validateDuration(payload: InstagramPublishingPayload, errors: string[]): void {

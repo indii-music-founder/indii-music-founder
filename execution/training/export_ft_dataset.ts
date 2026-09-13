@@ -71,6 +71,14 @@ interface VertexAIExample {
     contents: VertexAIContent[];
 }
 
+const INSTAGRAM_AGENT_SUPPLEMENTS: Partial<Record<string, string>> = {
+    social: 'Enforce indii Instagram dimensions, duration branches, hashtag placement, inbound-only DM, observed-audio, Unified Views, and DM-share policy.',
+    marketing: 'Prefer searchable intent-driven copy, low-risk Trial Reel tests, owned-audience evidence, and human-reviewed commerce follow-up.',
+    analytics: 'Use Unified Views by format; preserve metric provenance; calculate Reel engagement from Views; never relabel aggregate shares as DM shares.',
+    director: 'For social image briefs use one focal point, human presence, and restrained blue accents; treat uplift as a hypothesis.',
+    video: 'Generate under-15-second discovery and over-30-second nurture branches; split Stories into sequential clips of at most 15 seconds.',
+};
+
 // ─── Agent System Prompt Registry ────────────────────────────────────────────
 // Maps agent_id → a comprehensive system prompt for fine-tuning examples.
 // These prompts define each agent's mission, domain boundaries, tool inventory,
@@ -214,6 +222,14 @@ async function exportAgent(
     }
 
     let examples = await readJsonl(datasetPath);
+    const supplementDir = path.join(__dirname, '../../docs/agent-training/datasets/supplements');
+    if (fs.existsSync(supplementDir)) {
+        const supplementFiles = fs.readdirSync(supplementDir)
+            .filter(file => file.startsWith(`${agentId}.`) && file.endsWith('.jsonl'))
+            .sort();
+        for (const file of supplementFiles) examples.push(...await readJsonl(path.join(supplementDir, file)));
+    }
+    examples = [...new Map(examples.map(example => [example.scenario_id, example])).values()];
 
     // Filter by quality tier if specified
     if (options.tier) {
@@ -226,7 +242,9 @@ async function exportAgent(
         return;
     }
 
-    const prompt = systemPrompt || `You are the ${agentId} agent for indii.`;
+    const prompt = [systemPrompt || `You are the ${agentId} agent for indii.`, INSTAGRAM_AGENT_SUPPLEMENTS[agentId]]
+        .filter(Boolean)
+        .join('\n\n');
 
     if (options.split) {
         const { train, eval: evalSet } = splitTrainEval(examples);

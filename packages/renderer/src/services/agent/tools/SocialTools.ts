@@ -5,6 +5,7 @@ import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { getFineTunedModel } from '../fine-tuned-models';
 import { importWithRetry } from '@/utils/dynamicImport';
+import type { InstagramPublishingPayload } from '@indii/shared';
 
 // ============================================================================
 // SocialTools Implementation
@@ -99,13 +100,14 @@ Be specific and data-driven based on the post content above.`;
         );
     }),
 
-    schedule_social_post: wrapTool('schedule_social_post', async (args: { platform: string; content: string; scheduledTime: string; mediaUrls?: string[] }) => {
+    schedule_social_post: wrapTool('schedule_social_post', async (args: { platform: string; content: string; scheduledTime: string; mediaUrls?: string[]; instagramPayload?: InstagramPublishingPayload }) => {
         try {
             const postId = await SocialService.schedulePost({
                 platform: args.platform as 'Twitter' | 'Instagram' | 'LinkedIn',
                 copy: args.content,
-                day: 0, // Fallback for relative schedule
+                day: 1, // Backward-compatible relative schedule value
                 scheduledTime: new Date(args.scheduledTime).getTime(),
+                instagramPayload: args.instagramPayload,
                 ...(args.mediaUrls?.length ? {
                     imageAsset: {
                         assetType: 'image',
@@ -139,6 +141,10 @@ Be specific and data-driven based on the post content above.`;
         caption: string;
         hashtags?: string[];
         platforms: Array<'TikTok' | 'YouTube Shorts' | 'IG Reels'>;
+        width?: number;
+        height?: number;
+        durationSeconds?: number;
+        reelAudienceIntent?: 'discovery' | 'nurture';
     }) => {
         try {
             const { socialAutoPosterService } = await importWithRetry(() => import('@/services/marketing/SocialAutoPosterService'));
@@ -149,12 +155,22 @@ Be specific and data-driven based on the post content above.`;
             } as const;
 
             const posts = await Promise.all(args.platforms.map(async platform => {
+                const instagramPayload: InstagramPublishingPayload | undefined = platform === 'IG Reels' ? {
+                    surface: 'reel',
+                    width: args.width ?? 0,
+                    height: args.height ?? 0,
+                    durationSeconds: args.durationSeconds,
+                    reelAudienceIntent: args.reelAudienceIntent,
+                    caption: args.caption,
+                    hashtags: args.hashtags ?? [],
+                } : undefined;
                 const jobId = await socialAutoPosterService.queuePost({
                     id: `autopost-${crypto.randomUUID()}`,
                     mediaUrl: args.videoUrl,
                     caption: args.caption,
                     hashtags: args.hashtags || [],
                     platform: platformMap[platform],
+                    instagramPayload,
                 });
                 return { platform, status: 'queued', jobId };
             }));

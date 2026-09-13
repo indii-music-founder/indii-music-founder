@@ -50,6 +50,15 @@ export const ScheduledPostSchema = z.object({
     status: CampaignStatusSchema,
     errorMessage: z.string().max(2_000).optional(),
     postId: z.string().max(200).optional(),
+    instagramPayload: z.custom<InstagramPublishingPayload>(value => (
+        typeof value === 'object'
+        && value !== null
+        && validateInstagramPublishingPayload(value as InstagramPublishingPayload).valid
+    )).optional(),
+}).superRefine((post, context) => {
+    if (post.platform === 'Instagram' && !post.instagramPayload) {
+        context.addIssue({ code: z.ZodIssueCode.custom, path: ['instagramPayload'], message: 'Instagram campaign posts require validated publishing metadata.' });
+    }
 });
 
 export const CampaignExecutionRequestSchema = z.object({
@@ -126,6 +135,7 @@ function queueContentHash(post: z.infer<typeof ScheduledPostSchema>): string {
         platform: post.platform,
         copy: post.copy,
         mediaUrl: post.imageAsset?.imageUrl || null,
+        instagramPayload: post.instagramPayload ?? null,
         day: post.day ?? 1,
     })).digest('hex');
 }
@@ -286,6 +296,12 @@ export const executeCampaign = onCall(
                         text: entry.post.copy,
                         mediaUrl: mediaUrl || null,
                         mediaType: mediaUrl ? 'image' : null,
+                        ...(entry.post.instagramPayload ? {
+                            hashtags: entry.post.instagramPayload.hashtags,
+                            mediaType: entry.post.instagramPayload.surface === 'feed' ? 'image' : entry.post.instagramPayload.surface,
+                            instagramPayload: entry.post.instagramPayload,
+                            ...(entry.post.instagramPayload.surface === 'story' ? { storyTtlHours: entry.post.instagramPayload.storyExtend ? 48 : 24 } : {}),
+                        } : {}),
                         scheduledAt: entry.scheduledAt,
                         status: 'pending',
                         source: 'campaign_manager',
@@ -380,6 +396,7 @@ export const dispatchSocialPost = onCall(
                 hashtags: validatedInstagramPayload.hashtags,
                 mediaType: validatedInstagramPayload.surface === 'feed' ? 'image' : validatedInstagramPayload.surface,
                 instagramPayload: validatedInstagramPayload,
+                ...(validatedInstagramPayload.surface === 'story' ? { storyTtlHours: validatedInstagramPayload.storyExtend ? 48 : 24 } : {}),
             } : {}),
             scheduledAt: admin.firestore.Timestamp.now(),
             status: 'pending',

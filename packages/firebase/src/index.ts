@@ -218,6 +218,7 @@ export {
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analyticsGetConnectionStatus, analyticsRefreshToken, analyticsRevokeToken, auditInstagramConnectionCallable } from './analytics/platformTokenExchange';
 export { sendInstagramMessageCallable, replyInstagramCommentCallable, getInstagramMediaCommentsCallable } from './social/instagramMessaging';
+export { instagramWebhook } from './social/instagramWebhook';
 export { syncPlatformStats } from './functions/social-stats-sync';
 
 // Growth Intelligence Engine — Autonomous Marketing Swarm (ClickHouse read path)

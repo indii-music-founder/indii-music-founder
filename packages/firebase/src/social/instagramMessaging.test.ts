@@ -6,18 +6,26 @@ vi.mock('../middleware/appCheck', () => ({
 
 vi.mock('firebase-admin', () => {
     const mockGet = vi.fn();
+    const mockUpdate = vi.fn();
     const mockDoc = vi.fn();
     const mockCollection = vi.fn().mockReturnValue({ doc: mockDoc });
-    mockDoc.mockReturnValue({ get: mockGet, collection: mockCollection });
+    mockDoc.mockReturnValue({ get: mockGet, update: mockUpdate, collection: mockCollection });
+    const firestore = () => ({
+        collection: mockCollection,
+        runTransaction: async (callback: (transaction: { get: () => Promise<unknown>; update: ReturnType<typeof vi.fn> }) => Promise<unknown>) => callback({
+            get: async () => ({
+                exists: true,
+                data: () => ({ ownerId: 'user-1', platform: 'instagram', senderId: '123456', sourceType: 'message', responseStatus: 'pending', expiresAt: { toMillis: () => Date.now() + 60_000 } }),
+            }),
+            update: vi.fn(),
+        }),
+    });
+    Object.assign(firestore, { FieldValue: { serverTimestamp: () => 'SERVER_TIMESTAMP' } });
     return {
         default: {
-            firestore: () => ({
-                collection: mockCollection,
-            }),
+            firestore,
         },
-        firestore: () => ({
-            collection: mockCollection,
-        }),
+        firestore,
     };
 });
 
@@ -39,7 +47,7 @@ describe('instagramMessaging Cloud Functions', () => {
             data: {},
         };
         // @ts-expect-error - testing callable request
-        await expect(sendInstagramMessageCallable.run(req)).rejects.toThrow('recipientIgUserId and either messageText or mediaUrl are required.');
+        await expect(sendInstagramMessageCallable.run(req)).rejects.toThrow('inboundEventId, recipientIgUserId, and either messageText or mediaUrl are required.');
     });
 
     it('sendInstagramMessageCallable sends DM via Meta Graph API', async () => {
@@ -63,7 +71,7 @@ describe('instagramMessaging Cloud Functions', () => {
 
         const req = {
             auth: { uid: 'user-1' },
-            data: { recipientIgUserId: '123456', messageText: 'Hello from indii!' },
+            data: { inboundEventId: 'event-1', recipientIgUserId: '123456', messageText: 'Hello from indii!' },
         };
 
         // @ts-expect-error - testing callable request

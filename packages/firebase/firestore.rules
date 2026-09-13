@@ -2903,6 +2903,25 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Signed social webhooks and CRM ingestion are server-owned. Artists may
+    // read only their own normalized records; browser writes are prohibited.
+    match /socialChannelRegistry/{channelId} {
+      allow read: if isAuthenticated() && resource.data.get('ownerId', '') == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+    match /socialWebhookEvents/{eventId} {
+      allow read: if isAuthenticated() && resource.data.get('ownerId', '') == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+    match /socialInbox/{eventId} {
+      allow read: if isAuthenticated() && resource.data.get('ownerId', '') == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+    match /users/{userId}/crmLeads/{leadId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update, delete: if false;
+    }
+
     // =========================================================================
     // Deny all other access by default
     // =========================================================================
