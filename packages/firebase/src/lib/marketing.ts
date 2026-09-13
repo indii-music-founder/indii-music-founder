@@ -3,6 +3,10 @@ import * as admin from "firebase-admin";
 import { defineString } from "firebase-functions/params";
 import { z } from "zod";
 import crypto from "crypto";
+import {
+    validateInstagramPublishingPayload,
+    type InstagramPublishingPayload,
+} from '@indii/shared';
 
 // Default empty — runtime code below already fails closed with a clean
 // HttpsError when this resolves empty (see the bounty-link handler); the
@@ -340,7 +344,7 @@ export const dispatchSocialPost = onCall(
     async (request) => {
         if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
 
-        const { mediaUrl, platform, caption } = (request.data ?? {}) as Record<string, unknown>;
+        const { mediaUrl, platform, caption, instagramPayload } = (request.data ?? {}) as Record<string, unknown>;
         const normalizedPlatform = normalizeDispatchPlatform(platform);
         if (normalizedPlatform === 'tiktok') {
             throw new HttpsError(
@@ -354,6 +358,15 @@ export const dispatchSocialPost = onCall(
                 'YouTube posting is not production-enabled: a youtube.upload OAuth connection is not connected.',
             );
         }
+        let validatedInstagramPayload: InstagramPublishingPayload | undefined;
+        if (normalizedPlatform === 'instagram') {
+            if (!instagramPayload || typeof instagramPayload !== 'object') {
+                throw new HttpsError('invalid-argument', 'Instagram publishing requires an instagramPayload with surface, dimensions, duration intent, caption, and hashtags.');
+            }
+            validatedInstagramPayload = instagramPayload as InstagramPublishingPayload;
+            const policy = validateInstagramPublishingPayload(validatedInstagramPayload);
+            if (!policy.valid) throw new HttpsError('invalid-argument', policy.errors.join(' '));
+        }
         console.info(`[SocialPost] Queueing ${normalizedPlatform}: ${mediaUrl}`);
 
         const docRef = await admin.firestore().collection('scheduledPosts').add({
@@ -362,6 +375,12 @@ export const dispatchSocialPost = onCall(
             text: String(caption || ''),
             mediaUrl: typeof mediaUrl === 'string' ? mediaUrl : null,
             mediaType: typeof mediaUrl === 'string' && mediaUrl ? 'video' : null,
+            ...(validatedInstagramPayload ? {
+                text: validatedInstagramPayload.caption,
+                hashtags: validatedInstagramPayload.hashtags,
+                mediaType: validatedInstagramPayload.surface === 'feed' ? 'image' : validatedInstagramPayload.surface,
+                instagramPayload: validatedInstagramPayload,
+            } : {}),
             scheduledAt: admin.firestore.Timestamp.now(),
             status: 'pending',
             source: 'social_auto_poster',

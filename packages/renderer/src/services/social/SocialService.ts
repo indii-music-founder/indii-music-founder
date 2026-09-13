@@ -173,6 +173,9 @@ export class SocialService {
     const deliveryPlatform = toDeliveryPlatform(validPost.platform);
     const scheduledTime = validPost.scheduledTime || Date.now();
     const mediaUrl = validPost.imageAsset?.imageUrl;
+    if (deliveryPlatform === 'instagram' && !validPost.instagramPayload) {
+      throw new Error('Instagram scheduling requires validated media metadata.');
+    }
 
     const docRef = await addDoc(collection(db, "scheduledPosts"), {
       userId: userProfile.id,
@@ -182,6 +185,11 @@ export class SocialService {
       text: validPost.copy,
       mediaUrl: mediaUrl || null,
       mediaType: mediaUrl ? "image" : null,
+      ...(validPost.instagramPayload ? {
+        mediaType: validPost.instagramPayload.surface === 'feed' ? 'image' : validPost.instagramPayload.surface,
+        hashtags: validPost.instagramPayload.hashtags,
+        instagramPayload: validPost.instagramPayload,
+      } : {}),
       day: validPost.day || 1,
       scheduledTime,
       scheduledAt: Timestamp.fromMillis(scheduledTime),

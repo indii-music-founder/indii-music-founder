@@ -18,6 +18,10 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
+import {
+    validateInstagramPublishingPayload,
+    type InstagramPublishingPayload,
+} from '@indii/shared';
 
 type SocialPlatform = 'twitter' | 'instagram' | 'tiktok' | 'youtube';
 
@@ -30,6 +34,7 @@ interface ScheduledPostDoc {
     carouselUrls?: string[];
     shareToFeed?: boolean;
     hashtags?: string[];
+    instagramPayload?: InstagramPublishingPayload;
     title?: string;
     description?: string;
     scheduledAt: Timestamp;
@@ -159,10 +164,17 @@ async function deliverToInstagram(
     postRef: DeliveryDocumentReference,
     token: PlatformToken,
     post: ScheduledPostDoc,
-): Promise<{ success: boolean; postId?: string; error?: string }> {
+): Promise<DeliveryResult> {
     if (!token.igUserId) return { success: false, error: 'Missing Instagram user ID' };
+    if (!post.instagramPayload) {
+        return { success: false, terminal: true, error: 'Instagram delivery requires a validated instagramPayload.' };
+    }
+    const policy = validateInstagramPublishingPayload(post.instagramPayload);
+    if (!policy.valid) {
+        return { success: false, terminal: true, error: `Instagram policy rejected this post: ${policy.errors.join(' ')}` };
+    }
     const base = 'https://graph.facebook.com/v23.0';
-    const caption = [post.text, post.hashtags?.map(h => `#${h.replace('#', '')}`).join(' ')].filter(Boolean).join('\n\n');
+    const caption = policy.publishCaption;
 
     try {
         let containerId: string | undefined;

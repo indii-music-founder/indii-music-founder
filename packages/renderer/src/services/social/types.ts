@@ -60,4 +60,5 @@ export interface ScheduledPost {
     errorMessage?: string;
     postId?: string; // If posted, reference to the actual post
     authorId: string;
+    instagramPayload?: import('@indii/shared').InstagramPublishingPayload;
 }

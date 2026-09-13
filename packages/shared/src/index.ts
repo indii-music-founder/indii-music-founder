@@ -17,6 +17,7 @@ export * from './schemas/artistOperatingProfile.js';
 export * from './schemas/knowledge.js';
 export * from './schemas/conversionEvent.js';
 export * from './schemas/trash.js';
+export * from './schemas/instagramSocial.js';
 
 
 
