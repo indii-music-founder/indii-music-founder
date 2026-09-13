@@ -1,18 +1,83 @@
 name: Nightly Jules Agent Optimization
 on:
   schedule:
-    - cron: '0 2 * * *'  # 2 AM daily
+    - cron: '0 7 * * *'  # 7 AM UTC (3 AM ET) daily
   workflow_dispatch:
 
 jobs:
   optimize:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - name: Invoke Jules AutoAgent Harness
-        uses: google-labs-code/jules-action@v1.0.0
+      - uses: google-labs-code/jules-action@v1.0.0
         with:
           prompt: |
-            Read optimization/autoagent/program.md and execute the optimization experiment loop.
-            Focus on improving routing accuracy for the indii Conductor.
+            You are a routing-accuracy auditor for the indii Conductor — a hub-and-spoke
+            AI agent orchestration system for independent music artists.
+
+            ## Your Task
+
+            Audit and improve the Conductor's routing prompt so that user requests are
+            dispatched to the correct specialist agent with maximum accuracy.
+
+            ## Files to Read
+
+            1. **Conductor system prompt:** `agents/conductor/prompt.md`
+               This contains the SPECIALIST ROUTING TABLE — a lookup table mapping user
+               intent keywords to `targetAgentId` values. This is the primary file you
+               will be improving.
+
+            2. **Spoke agent prompts** (read ALL of these to understand each specialist's
+               actual scope):
+               - `agents/analytics/prompt.md`
+               - `agents/brand/prompt.md`
+               - `agents/creative/prompt.md`
+               - `agents/distribution/prompt.md`
+               - `agents/event-planner/prompt.md`
+               - `agents/finance/prompt.md`
+               - `agents/hospitality/prompt.md`
+               - `agents/indii_curriculum/prompt.md`
+               - `agents/legal/prompt.md`
+               - `agents/licensing/prompt.md`
+               - `agents/marketing/prompt.md`
+               - `agents/merchandise/prompt.md`
+               - `agents/music/prompt.md`
+               - `agents/publicist/prompt.md`
+               - `agents/publishing/prompt.md`
+               - `agents/road/prompt.md`
+               - `agents/social/prompt.md`
+               - `agents/video/prompt.md`
+
+            3. **Conductor skills** (deeper domain SOPs loaded by the Conductor):
+               Read the SKILL.md in each subdirectory of `agents/conductor/skills/`
+
+            ## Evaluation Criteria
+
+            For each specialist, cross-reference:
+            - The keywords in the Conductor's ROUTING TABLE against the specialist's
+              own IN SCOPE / OUT OF SCOPE sections in their prompt.
+            - Look for **coverage gaps** — capabilities listed in a specialist's prompt
+              that have NO matching keyword in the Conductor's routing table.
+            - Look for **routing conflicts** — keywords that could match multiple
+              specialists, with no disambiguation rule.
+            - Look for **stale references** — specialist IDs in the routing table that
+              don't match any `agents/*/` directory name.
+            - Look for **missing specialists** — agent directories that exist but have
+              no row in the routing table.
+
+            ## Output
+
+            If you find improvements:
+            - Edit `agents/conductor/prompt.md` to add missing keywords, fix stale
+              references, and resolve routing conflicts.
+            - Do NOT change the specialist prompts — only the Conductor's routing table.
+            - Do NOT change the Conductor's MISSION, OPERATING MODES, ARCHITECTURE,
+              or FAILURE BEHAVIOR sections.
+            - Keep changes minimal and surgical — add missing keywords, don't rewrite
+              prose.
+            - Run no tests (there are none for prompt files).
+
+            If no improvements are found, do nothing — an empty diff is a valid outcome.
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           starting_branch: main

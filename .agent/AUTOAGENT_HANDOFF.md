@@ -2,7 +2,11 @@
 
 **Branch:** `claude/review-autoagent-library-mFRAD`
 **Written:** 2026-04-07 (mobile session, continue on desktop IDE)
-**Status:** Plan locked, zero code written yet. Bootstrap done.
+**Status:** ⚠️ SUPERSEDED — Phase A was never built. The nightly workflow was
+migrated to use `google-labs-code/jules-action` instead of `kevinrgu/autoagent`.
+See `docs/AUTOAGENT_SETUP.md` for the current architecture. This file is
+preserved for historical context only.
+
 
 ---
 
