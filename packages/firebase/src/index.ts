@@ -1585,7 +1585,19 @@ export const generateContentStream = onRequest(
                 logger.error("[generateContentStream] Error:", error);
                 await voidAgentStreamReservation(clientDisconnected ? 'client-cancelled' : 'stream-failed');
                 if (!res.headersSent) {
-                    res.status(500).send(error.message);
+                    const message = error.message;
+                    const is429 = message.includes('429') || message.includes('RESOURCE_EXHAUSTED') || message.includes('Resource exhausted');
+                    if (is429) {
+                        res.status(429).json({
+                            error: {
+                                code: 429,
+                                message: 'Resource exhausted. Quota limit reached or AI service busy. Please retry shortly.',
+                                status: 'RESOURCE_EXHAUSTED'
+                            }
+                        });
+                    } else {
+                        res.status(500).send(error.message);
+                    }
                 } else {
                     res.end();
                 }

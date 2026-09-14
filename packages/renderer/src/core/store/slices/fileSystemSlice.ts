@@ -36,12 +36,13 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
     fetchFileNodes: async (projectId: string) => {
         set({ isFileSystemLoading: true, fileSystemError: null });
         try {
-            const nodes = await fileSystemService.getProjectNodes(projectId);
+            const currentUserId = get().user?.uid;
+            const nodes = await fileSystemService.getProjectNodes(projectId, currentUserId);
             set({ fileNodes: nodes });
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to fetch file nodes';
             set({ fileSystemError: message });
-            logger.error('Error fetching file nodes:', error);
+            logger.warn('Could not fetch file nodes for project:', { projectId, error });
         } finally {
             set({ isFileSystemLoading: false });
         }

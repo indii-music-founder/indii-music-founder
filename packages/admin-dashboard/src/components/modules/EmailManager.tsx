@@ -28,10 +28,11 @@ export const EmailManager: React.FC = () => {
   const [approving, setApproving] = useState<string | null>(null);
 
   const aliases = [
-    { email: 'admin@indii.music', destination: 'the.walking.agency.det@gmail.com', status: 'Active', type: 'Core' },
-    { email: 'support@indii.music', destination: 'the.walking.agency.det@gmail.com', status: 'Active', type: 'Core' },
-    { email: 'info@indii.music', destination: 'the.walking.agency.det@gmail.com', status: 'Pending DNS', type: 'Routing' },
-    { email: 'agent@indii.music', destination: 'Webhook (server.ts)', status: 'Active', type: 'System' },
+    { email: 'founder@indii.music', destination: 'the.walking.agency.det@gmail.com', status: 'Active', type: 'Founder Direct' },
+    { email: 'support@indii.music', destination: 'the.walking.agency.det@gmail.com', status: 'Active', type: 'Support & Help' },
+    { email: 'admin@indii.music', destination: 'the.walking.agency.det@gmail.com', status: 'Active', type: 'Core Operations' },
+    { email: 'info@indii.music', destination: 'the.walking.agency.det@gmail.com', status: 'Active', type: 'General Inquiries' },
+    { email: 'agent@indii.music', destination: 'Webhook (server.ts)', status: 'Active', type: 'System Automation' },
   ];
 
   const fetchInbox = useCallback(async () => {

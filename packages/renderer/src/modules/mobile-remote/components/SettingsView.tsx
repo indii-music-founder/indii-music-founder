@@ -141,24 +141,24 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
     return (
         <div className="space-y-6 pb-8 pt-4">
             <div className="px-2">
-                <h2 className="text-2xl font-bold text-[#F0F0F0] tracking-tight mb-1">Settings</h2>
-                <p className="text-sm text-[#a1a1a6] font-medium">Control how <span className="indii-name">indii</span> sleeps and wakes.</p>
+                <h2 className="text-2xl font-bold font-display text-white tracking-tight mb-1">Settings</h2>
+                <p className="text-sm text-[#a1a1a6] font-medium font-sans">Control how <span className="indii-name">indii</span> sleeps and wakes.</p>
             </div>
 
             {/* ─── Desktop Status + Wake ─────────────────────────────── */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-[24px] bg-[#030303] border border-white/10 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                className="rounded-[24px] bg-[#1a1512]/80 backdrop-blur-md border border-white/10 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
             >
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#2E2EFE]/10 text-[#2E2EFE] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#00ff66]/10 text-[#00ff66] flex items-center justify-center">
                         <MonitorSmartphone className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                             <span className={cn('w-2 h-2 rounded-full', meta.dot)} />
-                            <span className="text-sm font-bold text-[#F0F0F0]">{meta.label}</span>
+                            <span className="text-sm font-bold font-display text-white">{meta.label}</span>
                         </div>
                         <p className="text-[11px] text-[#8e8e93] font-medium leading-tight mt-0.5">{meta.copy}</p>
                     </div>
@@ -169,10 +169,10 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                         onClick={handleWake}
                         disabled={isWaking || !isPaired}
                         className={cn(
-                            'w-full mt-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm transition-all duration-300',
+                            'w-full mt-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-bold font-display text-sm transition-all duration-300 cursor-pointer',
                             isWaking
-                                ? 'bg-[#2E2EFE]/40 text-white/70 cursor-wait'
-                                : 'bg-[#2E2EFE] text-white hover:bg-[#2E2EFE]/90 shadow-[0_4px_20px_rgba(46,46,254,0.3)]'
+                                ? 'bg-[#00ff66]/40 text-black/70 cursor-wait'
+                                : 'bg-[#00ff66] text-black hover:bg-[#00ff66]/90 shadow-[0_4px_20px_rgba(0,255,102,0.3)]'
                         )}
                     >
                         <Power className="w-4 h-4" />
@@ -187,9 +187,9 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.03 }}
-                    className="rounded-[24px] bg-[#030303] border border-white/10 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                    className="rounded-[24px] bg-[#1a1512]/80 backdrop-blur-md border border-white/10 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
                 >
-                    <p className="text-[11px] font-bold text-[#8e8e93] uppercase tracking-widest mb-3">
+                    <p className="text-[11px] font-bold font-mono text-[#8e8e93] uppercase tracking-widest mb-3">
                         Studio capabilities
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -207,7 +207,7 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                                     className={cn(
                                         'px-2.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border',
                                         available
-                                            ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                                            ? 'text-[#00ff66] bg-[#00ff66]/10 border-[#00ff66]/30'
                                             : 'text-[#636366] bg-white/[0.03] border-white/5 line-through'
                                     )}
                                 >
@@ -228,19 +228,19 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
-                className="rounded-[24px] bg-[#030303] border border-white/10 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                className="rounded-[24px] bg-[#1a1512]/80 backdrop-blur-md border border-white/10 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
             >
                 <button
                     onClick={() => { triggerHaptic(40); persist({ ...settings, sleepEnabled: !settings.sleepEnabled }); }}
-                    className="w-full flex items-center justify-between gap-3"
+                    className="w-full flex items-center justify-between gap-3 cursor-pointer"
                 >
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#2E2EFE]/10 text-[#2E2EFE] flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-[#D936D9]/15 text-[#D936D9] flex items-center justify-center">
                             {settings.sleepEnabled ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                         </div>
                         <div className="text-left">
-                            <p className="text-sm font-bold text-[#F0F0F0]">Auto-sleep</p>
-                            <p className="text-[11px] text-[#8e8e93] font-medium leading-tight mt-0.5">
+                            <p className="text-sm font-bold font-display text-white">Auto-sleep</p>
+                            <p className="text-[11px] text-[#8e8e93] font-medium leading-tight mt-0.5 font-sans">
                                 Rest to the tray after a quiet stretch
                             </p>
                         </div>
@@ -248,13 +248,13 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                     <span
                         className={cn(
                             'relative w-12 h-7 rounded-full transition-colors duration-300 flex-shrink-0',
-                            settings.sleepEnabled ? 'bg-[#2E2EFE]' : 'bg-white/10'
+                            settings.sleepEnabled ? 'bg-[#00ff66]' : 'bg-white/10'
                         )}
                     >
                         <span
                             className={cn(
-                                'absolute top-1 w-5 h-5 rounded-full bg-white transition-transform duration-300',
-                                settings.sleepEnabled ? 'translate-x-6' : 'translate-x-1'
+                                'absolute top-1 w-5 h-5 rounded-full transition-transform duration-300',
+                                settings.sleepEnabled ? 'translate-x-6 bg-black' : 'translate-x-1 bg-white'
                             )}
                         />
                     </span>
@@ -262,7 +262,7 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
 
                 {settings.sleepEnabled && (
                     <div className="mt-5 pt-5 border-t border-white/5">
-                        <p className="text-[10px] font-bold text-[#8e8e93] uppercase tracking-widest mb-3">
+                        <p className="text-[10px] font-bold font-mono text-[#8e8e93] uppercase tracking-widest mb-3">
                             Sleep after
                         </p>
                         <div className="grid grid-cols-4 gap-2">
@@ -275,11 +275,11 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                                         className={cn(
                                             'relative px-2 py-3 min-h-[44px] flex items-center justify-center rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer',
                                             selected
-                                                ? 'bg-[#2E2EFE]/15 border-[#2E2EFE]/50 text-[#2E2EFE]'
-                                                : 'bg-white/[0.02] border-white/10 text-[#a1a1a6] hover:border-white/20'
+                                                ? 'bg-[#00ff66]/15 border-[#00ff66]/50 text-[#00ff66]'
+                                                : 'bg-white/[0.02] border-white/10 text-white/70 hover:border-white/20'
                                         )}
                                     >
-                                        {selected && <Check className="w-3 h-3 absolute top-1.5 right-1.5" />}
+                                        {selected && <Check className="w-3 h-3 absolute top-1.5 right-1.5 text-[#00ff66]" />}
                                         {timeoutLabel(minutes)}
                                     </button>
                                 );

@@ -47,13 +47,23 @@ The heavy-duty, native desktop application (Mac, Windows, Linux). This is the tr
 The mobile remote is a **companion control surface, not a third standalone app.** It turns your mobile device into a remote control for your desktop session.
 
 **How it works:**
-It connects to your desktop runtime using either the indii Cloud Relay (via Firestore) or directly via the indiiREMOTE secure tunnel, depending on your connection. When you issue a voice command or tap an action on your phone, the heavy lifting actually executes on your desktop machine at home or in the studio.
+It connects to your active studio session (running either in the **Electron Desktop App** or **in-browser** via `app.indii.music`) using the indii Cloud Relay (via Firestore) or direct secure tunnel. When you issue a voice command or tap an action on your phone, execution routes to your active studio runtime.
 
 **When to use it:**
-- **On The Go:** When you're out of the studio but need to tell your desktop agents to start a long-running task (e.g., "Tell the Creative Director to start rendering my video").
-- **Second Screen:** As a companion remote on your desk while you work in the main desktop app.
+- **On The Go:** When you're out of the studio but need to tell your agents to start a long-running task.
+- **Second Screen:** As a companion remote on your desk while you work in the main desktop or browser app.
 
-**Beta User Path:** **Use this last.** Once you have the Desktop App running and logged in at home, open the remote on your phone to pair them.
+**Beta User Path:** **Use this last.** Once you have indii Studio open and logged in (either in your browser or desktop app), open the remote on your phone to pair them.
+
+---
+
+## 4. Multi-Device "Road & Studio" Live Sync Topology
+
+A primary advantage of indii OS's real-time cloud-relay architecture is concurrent multi-device collaboration:
+
+- **The Road Laptop Workflow:** You can keep the Web App open on a laptop (e.g. traveling with a MacBook) while your main studio workstation (e.g. M4 Mac) is also active.
+- **Unified Voice Control:** When you speak to the Mobile Remote on your phone in Boardroom mode, the input and agent responses register simultaneously across both computers in real time.
+- **Location Independence:** You can review, audit, and direct agent operations while traveling without losing continuity with your primary studio installation.
 
 ---
 
@@ -61,4 +71,4 @@ It connects to your desktop runtime using either the indii Cloud Relay (via Fire
 
 1. **Create Account:** Go to the **Web App** (`https://indii.music`) to sign up and configure your basic profile.
 2. **Install Desktop:** Download and log into the **Electron Desktop App**. Treat this as your main headquarters.
-3. **Pair Mobile:** Open the **Mobile Remote** on your phone to control your desktop agents from the couch.
+3. **Pair Mobile:** Open the **Mobile Remote** on your phone to control your desktop agents from the couch or on the road.

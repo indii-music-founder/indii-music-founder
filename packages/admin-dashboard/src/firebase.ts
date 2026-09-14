@@ -32,3 +32,17 @@ export const functions = getFunctions(app, 'us-central1');
 
 /** localStorage key the data modules read their Bearer token from. */
 export const ADMIN_TOKEN_KEY = 'indii_admin_token';
+
+/** Helper to retrieve or proactively refresh the admin ID token. */
+export const getAdminToken = async (): Promise<string | null> => {
+  try {
+    if (auth.currentUser) {
+      const token = await auth.currentUser.getIdToken();
+      localStorage.setItem(ADMIN_TOKEN_KEY, token);
+      return token;
+    }
+    return localStorage.getItem(ADMIN_TOKEN_KEY);
+  } catch {
+    return localStorage.getItem(ADMIN_TOKEN_KEY);
+  }
+};

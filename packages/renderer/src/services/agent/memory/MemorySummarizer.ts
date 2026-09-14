@@ -6,6 +6,7 @@ import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { AlwaysOnMemory, ConsolidationInsight, MemoryConnection, MemoryEntity } from '@/types/AlwaysOnMemory';
 import { cleanPrompt } from '@/utils/prompt';
 import { Timestamp } from 'firebase/firestore';
+import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 
 /**
  * Robust JSON parser for Intelligence responses.
@@ -253,6 +254,25 @@ export class MemorySummarizer {
     public static async scoreImportance(text: string, category: string = 'fact'): Promise<number> {
         if (!text.trim()) return 0.3;
 
+        // Fast deterministic heuristic based on category and high-value keywords
+        let heuristicScore = 0.5;
+        const lowerText = text.toLowerCase();
+        const highValueCategories = ['identity', 'preference', 'project', 'correction', 'contract', 'finance'];
+        if (highValueCategories.includes(category.toLowerCase())) {
+            heuristicScore = 0.75;
+        }
+        if (
+            lowerText.includes('deadline') ||
+            lowerText.includes('release date') ||
+            lowerText.includes('master') ||
+            lowerText.includes('distribut') ||
+            lowerText.includes('split') ||
+            lowerText.includes('isrc') ||
+            lowerText.includes('upc')
+        ) {
+            heuristicScore = Math.min(1.0, heuristicScore + 0.15);
+        }
+
         try {
             const prompt = cleanPrompt(`
                 Rate the importance of the following information for a music/visual creative professional.
@@ -280,19 +300,19 @@ export class MemorySummarizer {
 
             const response = await AIService.getInstance().generateText(
                 prompt,
-                0,
+                APPROVED_MODELS.TEXT_FAST,
                 {
                     temperature: 0.1,
                     responseMimeType: 'application/json',
                 } as Record<string, unknown>
             );
 
-            const parsed = safeParseJson(response, { importance: 0.5 });
+            const parsed = safeParseJson(response, { importance: heuristicScore });
             const score = parseFloat(String(parsed.importance));
-            return isNaN(score) ? 0.5 : Math.max(0, Math.min(1, score));
+            return isNaN(score) ? heuristicScore : Math.max(0, Math.min(1, score));
         } catch (error: unknown) {
-            logger.error('[MemorySummarizer] Importance scoring failed:', error);
-            return 0.5;
+            logger.warn('[MemorySummarizer] Importance scoring failed, using heuristic score:', { category, error });
+            return heuristicScore;
         }
     }
 }

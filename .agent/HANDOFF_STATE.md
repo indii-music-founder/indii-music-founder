@@ -1,3 +1,128 @@
+# Session Close — Console & Sentry Diagnostic Fixes (2026-09-13)
+
+**Final state: All 5 DevTools console and Sentry errors resolved, validated, and verified. Firestore file_nodes query permissions fixed via userId filter constraint; Chromium certificate verify proc updated to recognize 'OK' and 0 (eliminating securetoken.googleapis.com net::ERR_CONNECTION_CLOSED and Sentry issue INDII-MUSIC-FOUNDER-K); useAuthHealth updated with cached token checks; Vertex AI 429 RESOURCE_EXHAUSTED classified cleanly with fast heuristic scoring in MemorySummarizer; SummaryService timeout calibrated to 15s (resolving Sentry issue INDII-MUSIC-FOUNDER-J); studio executor functions configured with cors: true. Monorepo typecheck 100% clean (exit code 0 across all 9 packages); all unit tests passing (90/90 passing across touched suites); Sentry issues verified resolved.**
+
+## Shipped — Console & Sentry Diagnostics
+- **Firestore Query Rule Alignment (`packages/renderer/src/services/FileSystemService.ts` & `fileSystemSlice.ts`):**
+  - Added `userId` query filter constraint to `getProjectNodes()` so queries satisfy Firestore security rule `resource.data.userId == request.auth.uid`.
+  - Added unauthenticated session check returning `[]` during startup before auth hydrates.
+- **Chromium Certificate Verification & Auth Health (`packages/main/src/security/index.ts` & `useAuthHealth.ts`):**
+  - Updated `setCertificateVerifyProc` to accept Chromium success values: `'net::OK'`, `'OK'`, and `0`, fixing `net::ERR_CONNECTION_CLOSED`.
+  - Configured `useAuthHealth` to use `getIdToken(false)` and filter transient network disruptions from session expiration alerts.
+- **AI Quota Resilience & Memory Summarizer (`MemorySummarizer.ts`, `HighLevelAPI.ts`, `packages/firebase/src/index.ts`):**
+  - Added deterministic category/keyword heuristic and routed to `APPROVED_MODELS.TEXT_FAST`.
+  - Fixed `HighLevelAPI.ts` parameter parsing to retain config when thinking budget is numeric.
+  - Classify 429 / `RESOURCE_EXHAUSTED` in `generateContentStream` to respond with HTTP 429 instead of 500.
+- **SummaryService Timeout Calibration (`SummaryService.ts`):**
+  - Increased timeout from 5,000ms to 15,000ms and downgraded fallback logging to `Logger.warn`.
+- **Remote Studio Functions CORS (`issueStudioExecutorLease.ts` & `StudioExecutorLeaseService.ts`):**
+  - Added `cors: true` to all 6 studio callable functions and added graceful 403 backoff in `StudioExecutorLeaseService.ts`.
+- **Verification & Sentry Status:**
+  - Sentry issues `INDII-MUSIC-FOUNDER-K` and `INDII-MUSIC-FOUNDER-J` marked resolved.
+  - Full repository `npm run typecheck`: clean 0 errors across all packages.
+  - 90/90 unit tests passing across all touched security, filesystem, auth, memory, and backend suites.
+
+---
+
+# Session Close — Electron App Check Lazy-Init, Sentry CSP & Screenshot Enablement (2026-09-13)
+
+**Final state: Electron Desktop App stabilized, verified, and packaged directly to `/Applications/indii.music.app`. Resolved App Check failure on Boardroom backend AI requests via `isElectronRuntime()` and lazy `getAppCheck()` getter in `packages/renderer/src/services/firebase.ts`. Sentry CSP violations eliminated by including `ALLOWED_ORIGINS.analytics` in connect/img directives. Enabled macOS screenshots and screen capture by setting `win.setContentProtection` to false by default. Auto-cleared false-alarm 10s auth timeout warning on login screen mount. Monorepo typecheck 100% clean (code 0 across all 8 packages); all security, auth, and remote unit tests passing (91/91 passing).**
+
+## Shipped — Electron Desktop Stabilization & App Check
+- **App Check Runtime Lazy Initialization (`packages/renderer/src/services/firebase.ts` & `FirebaseIntelligenceService.ts`):**
+  - Added `isElectronRuntime()` to detect Electron environment reliably at runtime.
+  - Implemented lazy `getAppCheck()` initializing `CustomProvider` with `mintElectronAppCheckToken` on demand.
+  - Updated `FirebaseIntelligenceService.ts` `prepareBackendRequestHeaders()` to use `getAppCheck()`.
+- **macOS Screenshot Capability (`packages/main/src/main.ts`):**
+  - Changed `win.setContentProtection` to default to `false`, restoring `Cmd+Shift+4` window capture and screen sharing.
+- **Login Screen Clean Startup (`packages/renderer/src/core/components/auth/LoginForm.tsx`):**
+  - Added mount hook to dismiss false-alarm 10s auth timeout error when login screen is displayed.
+- **CSP & CORS Hardening (`packages/main/src/security/csp.ts` & `index.ts`):**
+  - Added Sentry domains from `ALLOWED_ORIGINS.analytics` to CSP directives.
+  - Aligned CORS headers for credentialed requests from `file://`.
+- **Verification & Deployment:**
+  - Full repository `npm run typecheck`: clean 0 errors.
+  - Security & auth Vitest suites: 91/91 passing.
+  - Packaged via `electron-builder` and installed directly to `/Applications/indii.music.app`.
+  - Process verified live (PID 68912) running cleanly without CSP blocks or API infobars.
+
+---
+
+# Session Close — Mobile Remote Redesign & Live Viewing Stage (2026-09-13)
+
+**Final state: Mobile Remote Controller (`packages/renderer/src/modules/mobile-remote/` + `RoadMode.tsx`) completely overhauled to match official repository design documents. Integrated expandable Live Viewing Stage with real-time acoustic waveform visualizer and haptic controls. Warm studio dark palette (`#14100c` / `#1a1512`), Orchid (`#D936D9`) / Spring Green (`#00ff66`) / Cyan (`#3BEAF0`) brand colorways, and Geist / Inter / JetBrains Mono typography applied across all views. All 72 unit tests passing; TypeScript typecheck 100% clean (exit code 0); 0 ESLint errors.**
+
+## Shipped — Mobile Remote Visual Architecture & Viewing Stage
+- **Live Viewing Stage (`packages/renderer/src/modules/mobile-remote/components/VoiceTextViewingStage.tsx`):**
+  - Live transcription review area with real-time audio waveform visualizer while recording.
+  - Ergonomic mobile action controls (`Clear`, `Edit Text`, `Send`) with haptics.
+  - Character counter & timing metrics formatted in JetBrains Mono (`font-mono`).
+- **Boardroom Agent Chat (`packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx`):**
+  - Integrated `VoiceTextViewingStage` replacing cramped input dock.
+  - Upgraded connection status pill (`Studio Connected` in Spring Green, `Standby` in Amber).
+  - Modernized chat bubbles to warm studio glass (`#1c1815]/90`) and aligned mode picker popover.
+- **Home Dashboard (`packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx`):**
+  - Replaced rogue `#2E2EFE` blue with authentic department colorways (Spring Green, Gold, Touring Orange, Brand Amber, Legal Slate).
+  - Glass cards styled to `#1a1512]/80 backdrop-blur-md border-white/10`.
+- **Quick Capture (`packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx`):**
+  - Central acoustic ring with Spring Green audio glow and pulse animation.
+  - Redesigned quick mode tiles (Receipt, Doc, Photo, Video, Pin) and silent text input bar.
+- **Road Mode Cockpit (`packages/renderer/src/modules/touring/components/RoadMode.tsx`):**
+  - Replaced `#0d1117` with `#14100c` warm studio dark background.
+  - Modernized Next Stop strip with Spring Green navigation badge and JetBrains Mono GPS coordinates.
+  - Voice command bar styled with `#00ff66` action button.
+- **Cloud Vault & Transport Bar (`packages/renderer/src/modules/mobile-remote/components/StreamView.tsx` & `TransportBar.tsx`):**
+  - Warm studio glass cards with Spring Green active playback highlights.
+  - Multi-color remote brand gradient (`#00ff66` -> `#3BEAF0` -> `#D936D9`) for audio progress bar.
+- **Settings View (`packages/renderer/src/modules/mobile-remote/components/SettingsView.tsx`):**
+  - Replaced `#2E2EFE` toggle and timeout chips with `#00ff66` Spring Green and Orchid.
+- **Shell & Navigation (`packages/renderer/src/modules/mobile-remote/MobileRemote.tsx`):**
+  - Embedded official Orchid remote SVG logo mark.
+  - Bottom 6-tab dock styled with `#14100c]/85` backdrop blur, Spring Green active glow, and Geist labels.
+- **Verification:**
+  - All 10 test files and 72 tests passing in `packages/renderer/src/modules/mobile-remote/`.
+  - Full repository `npm run typecheck` (`tsc -b` across all 9 packages) passed with exit code 0.
+  - ESLint passing with 0 errors. `git diff --check` passing with 0 whitespace errors.
+
+---
+
+# Session Milestone — Real Multi-Device 3-Way Live Sync Confirmed (2026-09-12)
+
+**Real-device breakthrough verified by founder:**
+- **Topology:** iPhone running Mobile Remote (`/remote`), 2018 MacBook Pro running Web App with Boardroom open, Apple Silicon M4 running Web App with Boardroom open.
+- **Observed Behavior:** Spoken voice commands to the iPhone remote dispatch directly to the Boardroom and update concurrently on **both** the 2018 MacBook and the M4 workstation in real time.
+- **Workflow Established:** Enables "Laptop on the Road" operations — founder on the road with a MacBook maintains continuous synchronization with their main studio workstation.
+- **Next Test Frontier:** Triangulation: Electron App on M4 only + Web App on 2018 MacBook only + Mobile Remote on iPhone.
+- **Documentation Updated:** `docs/USER_MANUAL_REMOTE_SETUP_AND_SYNC.md`, `docs/APP_ACCESS_POINTS_GUIDE.md`, `docs/REMOTE_TWO_DEVICE_CHECKLIST.md`.
+
+---
+
+# Session Close — Founding Artist Waitlist CRM & Google Workspace Email Hub (2026-09-12)
+
+**Final state: Full Artist Communication & Follow-Up CRM built and verified in Admin Dashboard (`packages/admin-dashboard`). Google Cloud APIs (`gmail`, `calendar`, `drive`) enabled on `indii-music-founder`. OAuth 2.0 Client credentials configured in `.env`. All 31 backend server tests passing; frontend build 100% clean; dev stack running live on :5173 / :3333.**
+
+## Shipped — Artist CRM & Direct Email Infrastructure
+- **Admin Backend API (`packages/admin-dashboard/server.ts`):**
+  - Enhanced `GET /api/waitlist` with CRM attributes: `followUpStatus`, `lastContactedAt`, `contactCount`, `notes`.
+  - Added `POST /api/waitlist/send-direct-email` supporting sender aliases (`founder@indii.music`, `support@indii.music`) with primary Gmail API dispatch and Resend fallback.
+  - Durable Firestore logging on email dispatch: writes timeline record to `/artist_communications`, message copy to `/messages` (messaging hub parity), artist status to `/foundingArtistWaitlist/{uid}`, and audit log to `/foundingArtistEvents`.
+  - Added `GET /api/waitlist/artist/history` with resilient in-memory sorting (no composite index blockage).
+  - Added `POST /api/waitlist/artist-notes` for private founder notes and status tagging (`not_contacted`, `contacted`, `follow_up_needed`, `in_discussion`, `invited`).
+- **Admin Frontend UI (`packages/admin-dashboard/src/components/modules/WaitlistPanel.tsx`):**
+  - **Waitlist Table CRM Columns:** Added Follow-Up stage badges, contact counts, notes previews, and action buttons (`CRM`, `Email`).
+  - **Artist History & CRM Drawer:** Profile overview, interactive stage selector, private notes editor with auto-save, and communications history timeline.
+  - **Smart Compose Modal:** Sender alias toggles (`founder@` vs `support@`), quick templates (*Beta Invitation*, *Follow-Up Check-in*, *Artist Support / Q&A*, *Custom*), and direct dispatch.
+- **Google Cloud & Workspace Integration:**
+  - Google APIs enabled on `indii-music-founder`: `gmail.googleapis.com`, `calendar-json.googleapis.com`, `drive.googleapis.com`.
+  - OAuth 2.0 Web Client ID and Secret created in Google Cloud Console and persisted to root `.env` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`).
+  - Account linking flow wired to `http://localhost:5173/api/google/oauth/callback`.
+- **Verification:**
+  - All 31 tests passing in `packages/admin-dashboard/server.test.ts`.
+  - `npm --prefix packages/admin-dashboard run build` builds cleanly with 0 TypeScript/Vite errors.
+  - Live dev server active in background on port 5173 (Vite) and port 3333 (Express API).
+
+---
+
 # Session Close — Browser Live Compiled Video Preview + Sidecar Serving (2026-09-12)
 
 **Final state: browser artists get the live compiled timeline preview — pure-TS compiler runs in-browser, `gsap.min.js` sidecar + pinned HyperFrames runtime served same-origin, timeline plan moved to a CSP-safe blob script, `/creative/**` CSP scoped for `blob:`. CSP-replica Chromium harness PASS; 454 affected tests green; full typecheck 0.**

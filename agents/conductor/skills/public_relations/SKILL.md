@@ -40,3 +40,10 @@ description: Press releases, EPK development, blog outreach, crisis management, 
 
 - Automatically generate tailored Pitch Emails based on the user's inputted "Target Blogs" (e.g., Pitchfork, FADER, Pigeons & Planes).
 - Audit user-uploaded EPKs to ensure all links are active and high-res photos are present.
+
+## 5. Official Copywriting & Product Messaging
+
+When drafting copy, press releases, landing page sections, or publicist communications regarding indii platform capabilities, always consult:
+- **Product Copywriting & Messaging Brief:** [`docs/product/PRODUCT_COPYWRITING_BRIEF.md`](../../../../docs/product/PRODUCT_COPYWRITING_BRIEF.md)
+- **Brand Voice Directive:** [`directives/brand_voice_and_copy.md`](../../../../directives/brand_voice_and_copy.md)
+- **Product Skills Manual:** [`docs/product/PRODUCT_SKILLS_MANUAL.md`](../../../../docs/product/PRODUCT_SKILLS_MANUAL.md)

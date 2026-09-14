@@ -61,25 +61,25 @@ export default function StreamView() {
         <div className="flex flex-col space-y-6 pt-4 min-h-[60vh]">
             <div className="flex items-center justify-between px-2">
                 <div>
-                    <h2 className="text-xl font-bold text-white tracking-tight">Cloud Vault</h2>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-[#8e8e93] mt-1 flex items-center gap-1.5">
-                        <Cloud className="w-3 h-3" /> Secure Stream
+                    <h2 className="text-xl font-bold font-display text-white tracking-tight">Cloud Vault</h2>
+                    <p className="text-[11px] font-bold font-mono uppercase tracking-widest text-[#8e8e93] mt-1 flex items-center gap-1.5">
+                        <Cloud className="w-3 h-3 text-[#3BEAF0]" /> Secure Stream
                     </p>
                 </div>
             </div>
 
-            <div className="flex-1 bg-[#1c1c1e]/50 border border-white/5 rounded-3xl p-4 min-h-[300px]">
+            <div className="flex-1 bg-[#1a1512]/80 backdrop-blur-md border border-white/10 rounded-3xl p-4 min-h-[300px] shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center h-full text-[#8e8e93] space-y-4 py-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                        <p className="text-xs font-bold uppercase tracking-widest">Decrypting Vault...</p>
+                        <Loader2 className="w-8 h-8 animate-spin text-[#00ff66]" />
+                        <p className="text-xs font-bold font-mono uppercase tracking-widest">Decrypting Vault...</p>
                     </div>
                 ) : tracks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-[#8e8e93] space-y-4 py-12">
                         <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
                             <Music className="w-8 h-8 text-white/20" />
                         </div>
-                        <p className="text-xs font-bold uppercase tracking-widest">No Tracks Available</p>
+                        <p className="text-xs font-bold font-mono uppercase tracking-widest">No Tracks Available</p>
                     </div>
                 ) : (
                     <div className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
@@ -92,21 +92,21 @@ export default function StreamView() {
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => handlePlayTrack(track)}
                                     className={cn(
-                                        "w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all",
+                                        "w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all cursor-pointer",
                                         isPlaying 
-                                            ? "bg-blue-500/10 border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]" 
-                                            : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05]"
+                                            ? "bg-[#00ff66]/10 border-[#00ff66]/30 shadow-[0_0_15px_rgba(0,255,102,0.1)]"
+                                            : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/10"
                                     )}
                                 >
                                     <div className={cn(
-                                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                                        isPlaying ? "bg-blue-500 text-white" : "bg-white/5 text-white/40"
+                                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                                        isPlaying ? "bg-[#00ff66] text-black shadow-md shadow-[#00ff66]/20" : "bg-white/5 text-white/40"
                                     )}>
                                         {isPlaying ? (
                                             <div className="flex gap-0.5 h-3">
-                                                <div className="w-1 bg-white animate-pulse" />
-                                                <div className="w-1 bg-white animate-pulse delay-75" />
-                                                <div className="w-1 bg-white animate-pulse delay-150" />
+                                                <div className="w-1 bg-black animate-pulse" />
+                                                <div className="w-1 bg-black animate-pulse delay-75" />
+                                                <div className="w-1 bg-black animate-pulse delay-150" />
                                             </div>
                                         ) : (
                                             <Play className="w-4 h-4 ml-0.5" />
@@ -114,12 +114,12 @@ export default function StreamView() {
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <h4 className={cn(
-                                            "text-sm font-bold truncate",
-                                            isPlaying ? "text-blue-400" : "text-white"
+                                            "text-sm font-bold truncate font-sans",
+                                            isPlaying ? "text-[#00ff66]" : "text-white"
                                         )}>
                                             {title}
                                         </h4>
-                                        <p className="text-[10px] text-[#8e8e93] font-bold uppercase tracking-wider mt-0.5">
+                                        <p className="text-[10px] text-[#8e8e93] font-bold font-mono uppercase tracking-wider mt-0.5">
                                             {new Date(track.timestamp).toLocaleDateString('en-US')}
                                         </p>
                                     </div>

@@ -52,3 +52,18 @@ Run top to bottom; any failure is a real defect to report, not a config hint.
 - All green → the remote system is real-world confirmed.
 - Any red → capture the desktop **Cloud Relay Heartbeat** text and the phone's
   header state, and report both.
+
+### Confirmed Milestones
+- **2026-09-12 (Founder Real-Device Sign-Off):** Verified phone remote pairing and connection hold with indii Studio open **only in the browser** (via `StudioExecutorLeaseService` device enrollment fallback). Real-world cross-device pairing holds without requiring native Electron app.
+- **2026-09-12 (3-Device Simultaneous Live Sync Confirmed):** Verified concurrent multi-device Boardroom dispatch:
+  - Device 1: iPhone running Mobile Remote.
+  - Device 2: 2018 MacBook Pro running web app with Boardroom open.
+  - Device 3: M4 Mac workstation running web app with Boardroom open.
+  - *Result:* Speaking voice commands into the iPhone remote registers and updates concurrently across both MacBook and M4 web apps in real time.
+
+### Next Testing Frontier (Pending)
+- **Triangulation: Electron (M4) + Web (2018 MacBook) + Remote (iPhone):**
+  - M4 running native Electron Studio only.
+  - 2018 MacBook running web app only.
+  - iPhone running Mobile Remote.
+  - Verify lease arbitration, native desktop execution feedback, and real-time state reflection on the secondary web client.

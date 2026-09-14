@@ -89,7 +89,9 @@ describe('WaitlistPanel', () => {
     expect(screen.getAllByText('Unverified')).toHaveLength(2);
     expect(screen.getByText(/not eligible for invitations/)).toBeDefined();
     expect(fetch).toHaveBeenCalledWith('/api/waitlist', expect.objectContaining({
-      headers: { Authorization: 'Bearer admin-token' },
+      headers: expect.objectContaining({
+        Authorization: expect.stringMatching(/^Bearer (admin-token|test-token)$/),
+      }),
     }));
   });
 
@@ -172,5 +174,100 @@ describe('WaitlistPanel', () => {
       expect.any(String),
     ));
     expect(confirm).toHaveBeenCalledWith(expect.stringContaining('1 opted-in artist'));
+  });
+
+  it('opens CRM history drawer and displays artist details and communications', async () => {
+    vi.mocked(fetch).mockImplementation((url) => {
+      if (typeof url === 'string' && url.includes('/api/waitlist/artist/history')) {
+        return Promise.resolve(jsonResponse({
+          email: 'verified@example.com',
+          notes: 'Looking for mastering tools',
+          followUpStatus: 'in_discussion',
+          communications: [
+            {
+              id: 'comm-1',
+              artistEmail: 'verified@example.com',
+              from: 'founder@indii.music',
+              subject: 'Welcome to indii.music',
+              message: 'Thanks for signing up!',
+              sentAt: '2026-08-05T12:00:00.000Z',
+              provider: 'gmail',
+              status: 'delivered',
+            },
+          ],
+        }));
+      }
+      return Promise.resolve(jsonResponse({
+        count: 1,
+        totalSubmissions: 1,
+        verifiedCount: 1,
+        unverifiedCount: 0,
+        milestoneOptInCount: 1,
+        verificationEnabled: true,
+        entries: [{
+          id: 'verified:uid-1',
+          email: 'verified@example.com',
+          joinedAt: '2026-08-02T10:00:00.000Z',
+          source: 'landing_page',
+          submissionCount: 1,
+          submissionOrder: 1,
+          verificationStatus: 'verified',
+          status: 'waitlisted',
+          invitationStatus: 'not_queued',
+          majorMilestoneUpdates: true,
+          followUpStatus: 'in_discussion',
+          contactCount: 1,
+          notes: 'Looking for mastering tools',
+        }],
+      }));
+    });
+
+    render(<WaitlistPanel />);
+
+    const crmButton = await screen.findByTitle('View CRM history & private notes');
+    fireEvent.click(crmButton);
+
+    await waitFor(() => expect(screen.getByText('Private Founder Notes')).toBeDefined());
+    expect(screen.getAllByText('Looking for mastering tools').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Welcome to indii.music')).toBeDefined();
+    expect(screen.getByText('Thanks for signing up!')).toBeDefined();
+  });
+
+  it('opens direct email compose modal with templates and sender alias toggle', async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({
+      count: 1,
+      totalSubmissions: 1,
+      verifiedCount: 1,
+      unverifiedCount: 0,
+      milestoneOptInCount: 1,
+      verificationEnabled: true,
+      entries: [{
+        id: 'verified:uid-1',
+        email: 'verified@example.com',
+        joinedAt: '2026-08-02T10:00:00.000Z',
+        source: 'landing_page',
+        submissionCount: 1,
+        submissionOrder: 1,
+        verificationStatus: 'verified',
+        status: 'waitlisted',
+        invitationStatus: 'not_queued',
+        majorMilestoneUpdates: true,
+      }],
+    }));
+
+    render(<WaitlistPanel />);
+
+    const emailButton = await screen.findByTitle('Direct email to verified@example.com');
+    fireEvent.click(emailButton);
+
+    await waitFor(() => expect(screen.getByText('Direct Email to Artist')).toBeDefined());
+    expect(screen.getByText('founder@indii.music')).toBeDefined();
+    expect(screen.getByText('support@indii.music')).toBeDefined();
+    expect(screen.getByText('Beta Invitation')).toBeDefined();
+    expect(screen.getByText('Follow-Up Check-in')).toBeDefined();
+
+    // Switch to support alias
+    fireEvent.click(screen.getByText('support@indii.music'));
+    expect(screen.getByRole('button', { name: /Send from support@indii\.music/ })).toBeDefined();
   });
 });

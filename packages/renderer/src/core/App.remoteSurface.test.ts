@@ -16,14 +16,14 @@ describe('isRemoteSurfaceDevice', () => {
         ).toBe(true);
     });
 
-    it('routes touch-capable tablets like iPad to the remote surface', () => {
+    it('routes touch-capable tablets like iPad to the studio surface instead of remote', () => {
         expect(
             isRemoteSurfaceDevice({
                 isAnyPhone: false,
                 isTablet: true,
                 isTouchDevice: true,
             })
-        ).toBe(true);
+        ).toBe(false);
     });
 
     it('keeps non-touch tablet-sized desktop windows on the studio surface', () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { onIdTokenChanged, signOut, type User } from 'firebase/auth';
 import {
   Users,
   LayoutDashboard,
@@ -47,7 +47,7 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (u) => {
+    const unsub = onIdTokenChanged(auth, async (u) => {
       if (u && u.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
         try {
           const token = await u.getIdToken();
@@ -62,6 +62,23 @@ const App: React.FC = () => {
       }
       setChecking(false);
     });
+
+    const onFocus = async () => {
+      if (auth.currentUser && auth.currentUser.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
+        try {
+          const token = await auth.currentUser.getIdToken();
+          localStorage.setItem(ADMIN_TOKEN_KEY, token);
+        } catch {
+          /* ignore background refresh errors */
+        }
+      }
+    };
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      unsub();
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   if (checking) {

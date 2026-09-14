@@ -96,4 +96,30 @@ describe('FileSystemService Performance', () => {
         expect(addedPayload.data.storagePath).toBe('users/u1/assets/test.png');
         expect(created.data?.url).toBeUndefined();
     });
+
+    it('returns empty array when no authenticated user is present without throwing', async () => {
+        const { auth } = await import('./firebase');
+        const originalUser = auth.currentUser;
+        (auth as any).currentUser = null;
+
+        const nodes = await fileSystemService.getProjectNodes('p1');
+        expect(nodes).toEqual([]);
+
+        (auth as any).currentUser = originalUser;
+    });
+
+    it('includes userFilter constraint when querying project nodes', async () => {
+        const { where, query, getDocs } = await import('firebase/firestore');
+        (getDocs as any).mockResolvedValueOnce({
+            docs: [{
+                id: 'n1',
+                data: () => ({ name: 'Track 1', projectId: 'p1', userId: 'u1', createdAt: 100, isTrashed: false })
+            }]
+        });
+
+        const nodes = await fileSystemService.getProjectNodes('p1');
+        expect(where).toHaveBeenCalledWith('userId', '==', 'u1');
+        expect(query).toHaveBeenCalled();
+        expect(nodes.length).toBe(1);
+    });
 });

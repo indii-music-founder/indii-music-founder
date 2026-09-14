@@ -16,7 +16,7 @@ import {
     Send, Bot, User, Loader2, Wifi, WifiOff, LogIn, 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ChevronDown, LayoutGrid, Users, User as UserIcon,
-    Sparkles, Mic, Star
+    Sparkles, Star
 } from 'lucide-react';
 import {
     DESKTOP_HEARTBEAT_STALE_MS,
@@ -37,6 +37,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useVoice } from '@/core/context/VoiceContext';
 import { resolveEntryCommand } from '@/services/commands/EntryCommandRegistry';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
+import VoiceTextViewingStage from './VoiceTextViewingStage';
 
 interface ChatMessage {
     id: string;
@@ -375,21 +376,14 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         }
     }, [input, isWaiting, isAuthenticated, isPaired, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
-
     if (!isAuthenticated) {
         return (
             <div className="flex flex-col h-[60vh] items-center justify-center text-center p-8">
-                <div className="w-16 h-16 rounded-3xl bg-blue-500/10 flex items-center justify-center mb-6 border border-blue-500/20">
-                    <LogIn className="w-8 h-8 text-blue-400" />
+                <div className="w-16 h-16 rounded-3xl bg-[#D936D9]/15 flex items-center justify-center mb-6 border border-[#D936D9]/30 shadow-[0_0_20px_rgba(217,54,217,0.15)]">
+                    <LogIn className="w-8 h-8 text-[#D936D9]" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Secure Connection Required</h3>
-                <p className="text-sm text-[#a1a1a6] leading-relaxed max-w-[280px]">
+                <h3 className="text-xl font-bold font-display text-white mb-2">Secure Connection Required</h3>
+                <p className="text-sm text-[#a1a1a6] font-sans leading-relaxed max-w-[280px]">
                     Please log in to your indii account to access your studio agents remotely.
                 </p>
             </div>
@@ -400,14 +394,14 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         <div className="flex flex-col h-full relative">
             {/* Connection Banner */}
             <div className={cn(
-                "flex items-center gap-2 px-3.5 py-3 mb-4 rounded-xl text-[10px] font-extrabold uppercase tracking-widest transition-all duration-500",
+                "flex items-center gap-2 px-3.5 py-2.5 mb-4 rounded-xl text-[10px] font-extrabold uppercase tracking-widest transition-all duration-500 font-mono",
                 isStudioOnline
-                    ? "text-blue-400 bg-blue-500/5 border border-blue-500/10 shadow-[0_2px_8px_rgba(59,130,246,0.05)]" 
-                    : "text-amber-400 bg-amber-500/5 border border-amber-500/10 shadow-[0_2px_8px_rgba(245,158,11,0.05)]"
+                    ? "text-[#00ff66] bg-[#00ff66]/10 border border-[#00ff66]/20 shadow-[0_2px_8px_rgba(0,255,102,0.1)]"
+                    : "text-amber-400 bg-amber-500/10 border border-amber-500/20 shadow-[0_2px_8px_rgba(245,158,11,0.05)]"
             )}>
                 <div className={cn(
                     "w-2 h-2 rounded-full",
-                    isStudioOnline ? "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" : "bg-amber-400"
+                    isStudioOnline ? "bg-[#00ff66] animate-pulse shadow-[0_0_8px_rgba(0,255,102,0.8)]" : "bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.6)]"
                 )} />
                 {isStudioOnline ? "Studio Connected" : "Studio Standby — Send to Wake"}
             </div>
@@ -423,13 +417,13 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar pb-4"
             >
                 {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
-                        <Sparkles className="w-12 h-12 text-blue-400 mb-4 animate-pulse" />
-                        <p className="text-sm font-bold text-white uppercase tracking-[0.2em]">Start a Session</p>
-                        <p className="text-xs text-[#8e8e93] mt-2 max-w-[200px]">Your agents are ready to assist with distribution, creative, and more.</p>
+                    <div className="flex flex-col items-center justify-center py-20 text-center opacity-70">
+                        <Sparkles className="w-12 h-12 text-[#00ff66] mb-4 animate-pulse" />
+                        <p className="text-sm font-bold text-white uppercase tracking-[0.2em] font-display">Start a Session</p>
+                        <p className="text-xs text-stone-400 mt-2 max-w-[220px] font-sans">Your agents are ready to assist with distribution, creative, and more.</p>
                     </div>
                 ) : (
-                    messages.map((msg, idx) => {
+                    messages.map((msg) => {
                         const isUser = msg.role === 'user';
                         const showAgentHeader = !isUser && msg.agentId && msg.agentId !== 'generalist';
                         const agentIdentity = msg.agentId ? resolveAgentVisualIdentity(msg.agentId) : null;
@@ -447,7 +441,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                             >
                                 {showAgentHeader && agentIdentity && (
                                     <span 
-                                        className="text-[10px] font-bold uppercase tracking-[0.2em] ml-2 mb-0.5"
+                                        className="text-[10px] font-bold uppercase tracking-[0.2em] ml-2 mb-0.5 font-display"
                                         style={{ color: agentIdentity.cssProperties['--agent-accent'] }}
                                     >
                                         {agentIdentity.displayName}
@@ -455,10 +449,10 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                 )}
                                 
                                 <div className={cn(
-                                    "max-w-[85%] px-4 py-3.5 rounded-[22px] text-sm leading-[1.6] shadow-lg",
+                                    "max-w-[85%] px-4 py-3.5 rounded-[22px] text-sm leading-[1.6] shadow-lg font-sans",
                                     isUser 
-                                        ? "bg-blue-600 text-white rounded-tr-none shadow-blue-900/20" 
-                                        : "bg-white/[0.05] border border-white/5 text-[#d1d1d6] rounded-tl-none"
+                                        ? "bg-linear-to-br from-stone-800 to-stone-900 border border-white/10 text-stone-100 rounded-tr-none shadow-black/40"
+                                        : "bg-[#1c1815]/90 border border-white/10 text-[#f5f2eb] rounded-tl-none backdrop-blur-md shadow-xl"
                                 )}>
                                     {msg.text}
                                     {msg.imageUrls && msg.imageUrls.length > 0 && (
@@ -495,7 +489,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                         />
                                     ))}
                                     {msg.isStreaming && (
-                                        <span className="inline-block w-1.5 h-3 bg-blue-400/60 animate-pulse ml-1 align-middle" />
+                                        <span className="inline-block w-2 h-3.5 bg-[#00ff66] animate-pulse ml-1 align-middle rounded-xs" />
                                     )}
                                     {/* Agent Grading / Feedback */}
                                     {!isUser && !msg.isStreaming && msg.boardroomMessageId && (
@@ -503,7 +497,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                     )}
                                 </div>
                                 
-                                <span className="text-[9px] text-[#48484a] font-bold uppercase tracking-widest mx-2">
+                                <span className="text-[9px] text-stone-500 font-bold uppercase tracking-widest mx-2 font-mono">
                                     {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </motion.div>
@@ -519,10 +513,10 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="flex items-center gap-3 px-4 py-3.5 rounded-[20px] bg-white/[0.03] border border-white/5 w-fit"
+                            className="flex items-center gap-3 px-4 py-3.5 rounded-[20px] bg-white/[0.04] border border-white/10 w-fit"
                         >
-                            <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
-                            <span className="text-[10px] font-bold text-[#8e8e93] uppercase tracking-widest">Agent is thinking…</span>
+                            <Loader2 className="w-4 h-4 text-[#00ff66] animate-spin" />
+                            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest font-mono">Agent is thinking…</span>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -535,7 +529,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="absolute bottom-24 left-0 right-0 z-50 overflow-hidden rounded-[32px] bg-[#1c1c1e] border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]"
+                        className="absolute bottom-24 left-0 right-0 z-50 overflow-hidden rounded-[32px] bg-[#1a1512]/95 backdrop-blur-2xl border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]"
                     >
                         <div className="p-2">
                             <AgentModePicker 
@@ -560,82 +554,36 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 )}
             </AnimatePresence>
 
-            {/* Input Bar */}
-            <div className="mt-auto pt-4 relative z-40 bg-transparent">
-                <div className="flex items-end gap-3.5 p-3.5 rounded-[28px] bg-white/[0.03] border border-white/10 shadow-inner">
-                    <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setShowAgentPicker(!showAgentPicker)}
-                        className={cn(
-                            "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 cursor-pointer",
-                            selectedMode === 'boardroom' ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
-                            selectedMode === 'department' ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" :
-                            "bg-green-500/10 text-green-400 border border-green-500/20"
-                        )}
-                        style={{ minWidth: '44px', minHeight: '44px' }}
-                    >
-                        {selectedMode === 'boardroom' ? <LayoutGrid className="w-5.5 h-5.5" /> :
-                         selectedMode === 'department' ? <Users className="w-5.5 h-5.5" /> :
-                         <UserIcon className="w-5.5 h-5.5" />}
-                    </motion.button>
-                    
-                    <div className="flex-1 min-h-[48px] flex items-center">
-                        <textarea
-                            ref={textareaRef}
-                            value={input}
-                            onChange={e => setInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            rows={Math.min(3, input.split('\n').length)}
-                            placeholder={
-                                isListening ? "Listening… speak now" :
-                                selectedMode === 'boardroom' ? "Broadcast to Boardroom…" :
-                                selectedMode === 'department' ? `Message ${selectedDept || 'Dept'}…` :
-                                `Direct message ${selectedAgent || 'Agent'}…`
-                            }
-                            disabled={isWaiting || !isPaired}
-                            className="w-full bg-transparent border-none px-2 py-2 text-sm text-white placeholder:text-[#636366] focus:ring-0 resize-none max-h-32 custom-scrollbar"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2.5 pr-1 pb-1">
-                        {voiceSupported && (
-                            <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.9 }}
-                                onClick={toggleListening}
-                                aria-label={isListening ? 'Stop dictation' : 'Start voice dictation'}
-                                className={cn(
-                                    "w-11 h-11 rounded-xl flex items-center justify-center transition-colors cursor-pointer",
-                                    isListening
-                                        ? "bg-red-500/15 text-red-400 border border-red-500/30"
-                                        : "text-[#636366] hover:text-white"
-                                )}
-                                style={{ minWidth: '44px', minHeight: '44px' }}
-                            >
-                                <Mic className={cn("w-5.5 h-5.5", isListening && "animate-pulse")} />
-                            </motion.button>
-                        )}
-                        
-                        <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            onClick={handleSend}
-                            disabled={!input.trim() || isWaiting || !isPaired}
-                            className={cn(
-                                "w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-lg cursor-pointer",
-                                input.trim() && !isWaiting && isPaired
-                                    ? "bg-white text-black shadow-white/10" 
-                                    : "bg-white/5 text-[#48484a] cursor-not-allowed"
-                            )}
-                            style={{ minWidth: '44px', minHeight: '44px' }}
-                        >
-                            {isWaiting ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <Send className="w-5 h-5" />
-                            )}
-                        </motion.button>
-                    </div>
-                </div>
+            {/* Input Bar & Live Viewing Stage */}
+            <div className="mt-auto pt-3 relative z-40 bg-transparent">
+                <VoiceTextViewingStage
+                    value={input}
+                    onChange={setInput}
+                    onSubmit={handleSend}
+                    placeholder={
+                        isListening ? "Listening… speak now" :
+                        selectedMode === 'boardroom' ? "Broadcast to Boardroom…" :
+                        selectedMode === 'department' ? `Message ${selectedDept || 'Dept'}…` :
+                        `Direct message ${selectedAgent || 'Agent'}…`
+                    }
+                    isWaiting={isWaiting}
+                    isPaired={isPaired}
+                    isListening={isListening}
+                    onToggleListening={toggleListening}
+                    voiceSupported={voiceSupported}
+                    targetLabel={
+                        selectedMode === 'boardroom' ? 'Boardroom' :
+                        selectedMode === 'department' ? (selectedDept || 'Department') :
+                        (selectedAgent || 'Agent')
+                    }
+                    onTargetClick={() => setShowAgentPicker(!showAgentPicker)}
+                    targetIcon={
+                        selectedMode === 'boardroom' ? <LayoutGrid className="w-5 h-5 text-[#00ff66]" /> :
+                        selectedMode === 'department' ? <Users className="w-5 h-5 text-indigo-400" /> :
+                        <UserIcon className="w-5 h-5 text-amber-400" />
+                    }
+                    submitLabel="Send"
+                />
             </div>
         </div>
     );

@@ -1,6 +1,7 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import type { AddressInfo } from 'node:net';
+import type { Server } from 'node:http';
 
 vi.mock('firebase-admin', () => ({
   default: {
@@ -32,32 +33,53 @@ vi.mock('node:dns', () => ({
   promises: { resolveTxt: vi.fn() },
 }));
 
+const mockResendSend = vi.fn().mockResolvedValue({ data: { id: 'mock-msg-id-123' }, error: null });
+vi.mock('resend', () => {
+  class MockResend {
+    emails = {
+      send: mockResendSend,
+    };
+  }
+  return { Resend: MockResend };
+});
+
 import admin from 'firebase-admin';
 import { promises as dns } from 'node:dns';
 import { app, resolveRange } from './server';
 
-/** Start the real app on an ephemeral port and issue a real HTTP request against it. */
+let testServer: Server | undefined;
+let testPort = 0;
+
+beforeAll(async () => {
+  testServer = app.listen(0);
+  await new Promise<void>((resolve) => testServer?.once('listening', resolve));
+  testPort = (testServer?.address() as AddressInfo).port;
+});
+
+afterAll(async () => {
+  testServer?.closeAllConnections?.();
+  await new Promise<void>((resolve) => testServer?.close(() => resolve()));
+});
+
+/** Issue a real HTTP request against the running in-process test server. */
 async function request(method: string, path: string, opts: { headers?: Record<string, string>; body?: unknown } = {}) {
-  const server = app.listen(0);
-  try {
-    await new Promise<void>((resolve) => server.once('listening', resolve));
-    const port = (server.address() as AddressInfo).port;
-    const res = await fetch(`http://127.0.0.1:${port}${path}`, {
-      method,
-      headers: { 'Content-Type': 'application/json', ...(opts.headers ?? {}) },
-      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-    });
-    const text = await res.text();
-    let json: unknown;
-    try {
-      json = JSON.parse(text);
-    } catch {
-      json = text;
-    }
-    return { status: res.status, body: json };
-  } finally {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
+  const headers: Record<string, string> = { Connection: 'close', ...(opts.headers ?? {}) };
+  if (opts.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
   }
+  const res = await fetch(`http://127.0.0.1:${testPort}${path}`, {
+    method,
+    headers,
+    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+  });
+  const text = await res.text();
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = text;
+  }
+  return { status: res.status, body: json };
 }
 
 /** Chainable Firestore query/doc stub — each terminal call is a fresh vi.fn(). */
@@ -104,6 +126,23 @@ describe('admin-dashboard server.ts', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         process.env = { ...ORIGINAL_ENV };
+        const defaultDoc = {
+            get: vi.fn().mockResolvedValue({ exists: false, data: () => ({}) }),
+            set: vi.fn().mockResolvedValue(undefined),
+            update: vi.fn().mockResolvedValue(undefined),
+        };
+        const defaultCollection: Record<string, unknown> = {
+            add: vi.fn().mockResolvedValue({ id: 'mock-id' }),
+            doc: vi.fn(() => defaultDoc),
+            where: vi.fn(() => defaultCollection),
+            orderBy: vi.fn(() => defaultCollection),
+            limit: vi.fn(() => defaultCollection),
+            get: vi.fn().mockResolvedValue(makeSnapshot([])),
+        };
+        vi.mocked(admin.firestore).mockReturnValue({
+            collection: vi.fn(() => defaultCollection),
+            runTransaction: vi.fn(),
+        } as unknown as ReturnType<typeof admin.firestore>);
     });
 
     afterEach(() => {
@@ -293,6 +332,225 @@ describe('admin-dashboard server.ts', () => {
             const res = await request('GET', '/api/waitlist', { headers: { Authorization: 'Bearer good-token' } });
             expect(res.status).toBe(500);
             expect(res.body).toEqual({ error: 'Failed to load waitlist' });
+        });
+    });
+
+    describe('POST /api/waitlist/send-direct-email', () => {
+        beforeEach(() => {
+            mockResendSend.mockClear();
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => ({
+                    add: vi.fn().mockResolvedValue({ id: 'audit-log-id' }),
+                    doc: vi.fn(() => ({ set: vi.fn().mockResolvedValue(undefined) })),
+                })),
+            } as unknown as ReturnType<typeof admin.firestore>);
+        });
+
+        it('rejects unauthenticated access', async () => {
+            const res = await request('POST', '/api/waitlist/send-direct-email', {
+                body: { to: 'artist@example.com', subject: 'Hello', message: 'Welcome' },
+            });
+            expect(res.status).toBe(401);
+        });
+
+        it('rejects non-admin caller', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'artist@example.com', uid: 'user-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+
+            const res = await request('POST', '/api/waitlist/send-direct-email', {
+                headers: { Authorization: 'Bearer user-token' },
+                body: { to: 'artist@example.com', subject: 'Hello', message: 'Welcome' },
+            });
+            expect(res.status).toBe(403);
+        });
+
+        it('validates required fields', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+
+            const res = await request('POST', '/api/waitlist/send-direct-email', {
+                headers: { Authorization: 'Bearer good-token' },
+                body: { to: '', subject: 'Hi', message: 'Body' },
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it('returns 422 when RESEND_API_KEY is not configured or is dummy', async () => {
+            const prevKey = process.env.RESEND_API_KEY;
+            process.env.RESEND_API_KEY = 'dummy';
+            try {
+                vi.mocked(admin.auth).mockReturnValue({
+                    verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+                } as unknown as ReturnType<typeof admin.auth>);
+
+                const res = await request('POST', '/api/waitlist/send-direct-email', {
+                    headers: { Authorization: 'Bearer good-token' },
+                    body: { to: 'artist@example.com', subject: 'Welcome', message: 'Test message' },
+                });
+                expect(res.status).toBe(422);
+                expect(res.body).toMatchObject({ code: 'resend_key_missing' });
+            } finally {
+                process.env.RESEND_API_KEY = prevKey;
+            }
+        });
+
+        it('dispatches email from founder@indii.music when apiKey is present', async () => {
+            const prevKey = process.env.RESEND_API_KEY;
+            process.env.RESEND_API_KEY = 're_test_live_key_123';
+            try {
+                vi.mocked(admin.auth).mockReturnValue({
+                    verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+                } as unknown as ReturnType<typeof admin.auth>);
+
+                const res = await request('POST', '/api/waitlist/send-direct-email', {
+                    headers: { Authorization: 'Bearer good-token' },
+                    body: { to: 'artist@example.com', subject: 'Your Beta Access', message: 'You are in!' },
+                });
+                expect(res.status).toBe(200);
+                expect(res.body).toMatchObject({ success: true, messageId: 'mock-msg-id-123' });
+                expect(mockResendSend).toHaveBeenCalledWith(expect.objectContaining({
+                    to: 'artist@example.com',
+                    subject: 'Your Beta Access',
+                    text: 'You are in!',
+                }));
+            } finally {
+                process.env.RESEND_API_KEY = prevKey;
+            }
+        });
+
+        it('supports sending from support@indii.music alias', async () => {
+            const prevKey = process.env.RESEND_API_KEY;
+            process.env.RESEND_API_KEY = 're_test_live_key_123';
+            try {
+                vi.mocked(admin.auth).mockReturnValue({
+                    verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+                } as unknown as ReturnType<typeof admin.auth>);
+
+                const res = await request('POST', '/api/waitlist/send-direct-email', {
+                    headers: { Authorization: 'Bearer good-token' },
+                    body: {
+                        to: 'artist@example.com',
+                        subject: 'Support Help',
+                        message: 'Here is help',
+                        fromAlias: 'support@indii.music',
+                    },
+                });
+                expect(res.status).toBe(200);
+                expect(mockResendSend).toHaveBeenCalledWith(expect.objectContaining({
+                    from: expect.stringContaining('support@indii.music'),
+                    to: 'artist@example.com',
+                }));
+            } finally {
+                process.env.RESEND_API_KEY = prevKey;
+            }
+        });
+    });
+
+    describe('Artist CRM History & Notes Endpoints', () => {
+        beforeEach(() => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+        });
+
+        it('rejects history requests without valid email', async () => {
+            const res = await request('GET', '/api/waitlist/artist/history?email=invalid', {
+                headers: { Authorization: 'Bearer good-token' },
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it('retrieves artist communication history and notes', async () => {
+            const commsQuery = makeQuery(makeSnapshot([
+                {
+                    id: 'comm-1',
+                    data: {
+                        artistEmail: 'artist@example.com',
+                        from: 'founder@indii.music',
+                        subject: 'Welcome',
+                        message: 'Hello artist',
+                        sentAt: '2026-09-12T12:00:00Z',
+                        provider: 'gmail',
+                    },
+                },
+            ]));
+
+            const waitlistQuery = makeQuery(makeSnapshot([
+                {
+                    id: 'waitlist-doc',
+                    data: {
+                        email: 'artist@example.com',
+                        notes: 'Great conversation about stems',
+                        followUpStatus: 'in_discussion',
+                        queuePosition: 2,
+                    },
+                },
+            ]));
+
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn((name: string) => {
+                    if (name === 'artist_communications') return commsQuery;
+                    if (name === 'foundingArtistWaitlist') return waitlistQuery;
+                    return makeQuery(makeSnapshot([]));
+                }),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('GET', '/api/waitlist/artist/history?email=artist@example.com', {
+                headers: { Authorization: 'Bearer good-token' },
+            });
+
+            expect(res.status).toBe(200);
+            expect(res.body).toMatchObject({
+                email: 'artist@example.com',
+                notes: 'Great conversation about stems',
+                followUpStatus: 'in_discussion',
+                queuePosition: 2,
+                communications: [
+                    expect.objectContaining({
+                        id: 'comm-1',
+                        subject: 'Welcome',
+                        from: 'founder@indii.music',
+                    }),
+                ],
+            });
+        });
+
+        it('updates artist notes and follow-up status', async () => {
+            const setStub = vi.fn().mockResolvedValue(undefined);
+            const waitlistQuery = {
+                where: vi.fn(() => ({
+                    limit: vi.fn(() => ({
+                        get: vi.fn().mockResolvedValue({
+                            empty: false,
+                            docs: [{ ref: { set: setStub } }],
+                        }),
+                    })),
+                })),
+            };
+
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => waitlistQuery),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('POST', '/api/waitlist/artist-notes', {
+                headers: { Authorization: 'Bearer good-token' },
+                body: {
+                    email: 'artist@example.com',
+                    notes: 'Followed up via DM',
+                    followUpStatus: 'follow_up_needed',
+                },
+            });
+
+            expect(res.status).toBe(200);
+            expect(setStub).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    notes: 'Followed up via DM',
+                    followUpStatus: 'follow_up_needed',
+                }),
+                { merge: true }
+            );
         });
     });
 

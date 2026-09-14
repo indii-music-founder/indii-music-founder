@@ -53,8 +53,8 @@ const QUICK_ACTIONS: QuickAction[] = [
         id: 'restroom',
         icon: Bath,
         label: 'Restroom',
-        color: 'text-blue-400',
-        bgColor: 'bg-blue-500/15 border-blue-500/20',
+        color: 'text-cyan-400',
+        bgColor: 'bg-[#1a1512]/80 border-white/10 hover:border-cyan-500/40 shadow-[0_4px_16px_rgba(0,0,0,0.4)]',
         prompt: 'Find me the nearest clean restroom or bathroom. I need one right now. Use my current GPS location.',
         usePlacesAPI: true,
     },
@@ -62,8 +62,8 @@ const QUICK_ACTIONS: QuickAction[] = [
         id: 'gas',
         icon: Fuel,
         label: 'Gas',
-        color: 'text-orange-400',
-        bgColor: 'bg-orange-500/15 border-orange-500/20',
+        color: 'text-amber-400',
+        bgColor: 'bg-[#1a1512]/80 border-white/10 hover:border-amber-500/40 shadow-[0_4px_16px_rgba(0,0,0,0.4)]',
         prompt: 'Find the nearest gas station close to my current location. Show me which ones are open right now with their prices if possible.',
         usePlacesAPI: true,
     },
@@ -71,8 +71,8 @@ const QUICK_ACTIONS: QuickAction[] = [
         id: 'food',
         icon: UtensilsCrossed,
         label: 'Food',
-        color: 'text-green-400',
-        bgColor: 'bg-green-500/15 border-green-500/20',
+        color: 'text-yellow-400',
+        bgColor: 'bg-[#1a1512]/80 border-white/10 hover:border-yellow-500/40 shadow-[0_4px_16px_rgba(0,0,0,0.4)]',
         prompt: 'Find me somewhere good to eat nearby. Show me options — fast food, sit-down, whatever is close and open right now.',
         usePlacesAPI: true,
     },
@@ -80,8 +80,8 @@ const QUICK_ACTIONS: QuickAction[] = [
         id: 'reroute',
         icon: RefreshCw,
         label: 'Reroute',
-        color: 'text-green-400',
-        bgColor: 'bg-green-500/15 border-green-500/20',
+        color: 'text-[#00ff66]',
+        bgColor: 'bg-[#1a1512]/80 border-white/10 hover:border-[#00ff66]/40 shadow-[0_4px_16px_rgba(0,0,0,0.4)]',
         prompt: 'I need to change my route. Check for traffic issues or road closures on my current path and suggest an alternative route to my next destination.',
         usePlacesAPI: false, // Conversational — needs the agent
     },
@@ -89,8 +89,8 @@ const QUICK_ACTIONS: QuickAction[] = [
         id: 'lodging',
         icon: Hotel,
         label: 'Lodging',
-        color: 'text-cyan-400',
-        bgColor: 'bg-cyan-500/15 border-cyan-500/20',
+        color: 'text-teal-400',
+        bgColor: 'bg-[#1a1512]/80 border-white/10 hover:border-teal-500/40 shadow-[0_4px_16px_rgba(0,0,0,0.4)]',
         prompt: 'Find me a place to stay tonight. Show me hotels or motels near my current location with availability and prices. Budget-friendly options preferred.',
         usePlacesAPI: true,
     },
@@ -99,7 +99,7 @@ const QUICK_ACTIONS: QuickAction[] = [
         icon: ShieldAlert,
         label: 'Emergency',
         color: 'text-red-400',
-        bgColor: 'bg-red-500/15 border-red-500/20',
+        bgColor: 'bg-[#1a1512]/80 border-white/10 hover:border-red-500/40 shadow-[0_4px_16px_rgba(0,0,0,0.4)]',
         prompt: 'I need emergency assistance. Please identify the nearest hospital, police station, and emergency services from my current location. Also show me my current coordinates.',
         usePlacesAPI: true,
     },
@@ -368,22 +368,22 @@ export const RoadMode: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0d1117] overflow-hidden">
+        <div className="flex flex-col h-full bg-[#14100c] overflow-hidden">
             {/* ═══════════════════════════════════════════════════════════ */}
             {/* Status Strip — Next stop, ETA, location                     */}
             {/* ═══════════════════════════════════════════════════════════ */}
-            <div className="flex-shrink-0 bg-[#161b22] border-b border-white/5 px-4 py-3">
+            <div className="flex-shrink-0 bg-[#1a1512]/80 backdrop-blur-md border-b border-white/10 px-4 py-3">
                 <div className="flex items-center justify-between">
                     {/* Next destination */}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                            <Navigation size={16} className="text-blue-400" />
+                        <div className="w-8 h-8 rounded-lg bg-[#00ff66]/15 flex items-center justify-center flex-shrink-0">
+                            <Navigation size={16} className="text-[#00ff66]" />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-xs text-slate-500 font-mono uppercase tracking-widest">
+                            <div className="text-xs text-slate-400 font-mono uppercase tracking-widest">
                                 Next Stop
                             </div>
-                            <div className="text-sm font-bold text-white truncate">
+                            <div className="text-sm font-bold text-white truncate font-display">
                                 {nextStop?.city || 'No itinerary active'}
                             </div>
                         </div>
@@ -405,10 +405,10 @@ export const RoadMode: React.FC = () => {
 
                 {/* GPS coordinates */}
                 {currentLocationText && (
-                    <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-500 font-mono">
+                    <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-400 font-mono">
                         <MapPin size={10} />
                         <span>GPS: {currentLocationText}</span>
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse ml-1" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#00ff66] animate-pulse ml-1" />
                     </div>
                 )}
             </div>
@@ -492,7 +492,7 @@ export const RoadMode: React.FC = () => {
             {/* ═══════════════════════════════════════════════════════════ */}
             {/* Voice Command Bar — Push-to-talk mic + text fallback         */}
             {/* ═══════════════════════════════════════════════════════════ */}
-            <div className="flex-shrink-0 bg-[#161b22] border-t border-white/5 px-4 pt-4 pb-safe-bottom">
+            <div className="flex-shrink-0 bg-[#14100c]/90 backdrop-blur-xl border-t border-white/10 px-4 pt-4 pb-safe-bottom">
                 {/* Expandable text input */}
                 <AnimatePresence>
                     {showInput && (
@@ -510,13 +510,13 @@ export const RoadMode: React.FC = () => {
                                     onChange={(e) => setManualInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
                                     placeholder={t('touring.hints.agent_request')}
-                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#00ff66]/50"
                                     autoFocus
                                 />
                                 <button
                                     onClick={handleManualSubmit}
                                     disabled={!manualInput.trim()}
-                                    className="p-3 bg-indigo-500 rounded-xl text-white disabled:opacity-30 transition-opacity"
+                                    className="p-3 bg-[#00ff66] text-black font-bold rounded-xl hover:bg-[#00ff66]/90 disabled:opacity-30 transition-all cursor-pointer"
                                 >
                                     <Send size={18} />
                                 </button>
@@ -544,11 +544,11 @@ export const RoadMode: React.FC = () => {
 
                     {/* Main mic button */}
                     <motion.button
-                        whileTap={{ scale: 0.9 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={toggleListening}
-                        className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-sm transition-all ${isListening
+                        className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold font-display text-sm transition-all cursor-pointer ${isListening
                             ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
-                            : 'bg-linear-to-r from-indigo-500 to-green-600 text-white shadow-lg shadow-indigo-500/20'
+                            : 'bg-[#00ff66] text-black shadow-lg shadow-[#00ff66]/20 hover:brightness-105 active:scale-[0.98]'
                             }`}
                     >
                         {isListening ? (
@@ -570,7 +570,7 @@ export const RoadMode: React.FC = () => {
                     <motion.div
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mt-3 p-3 bg-white/5 rounded-xl text-sm text-slate-300 italic"
+                        className="mt-3 p-3 bg-[#1a1512] border border-white/10 rounded-xl text-sm text-slate-300 italic"
                     >
                         "{transcript}"
                     </motion.div>

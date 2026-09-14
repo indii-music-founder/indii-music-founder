@@ -15,19 +15,10 @@ import {
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from './lib/founderFunnel';
 import { isFounderPreviewEnabled } from './lib/previewAccess';
 import { emitSystemPulse } from './three/signals';
-import { detectTier, detectInputs } from './three/quality';
 import Hero from './components/sections/Hero';
 import WaitlistSection from './components/sections/WaitlistSection';
 import FooterSection from './components/sections/FooterSection';
 
-/**
- * The WebGL system layer is lazy-loaded: the DOM paints and the hero words
- * animate first; the canvas fades in over it a beat later. This keeps the
- * critical path free of the three.js chunk. When the device cannot or should
- * not run WebGL (reduced motion, no WebGL2, weak hardware), the chunk is not
- * even downloaded — the DOM background carries the design instead.
- */
-const ExperienceShell = lazy(() => import('./components/ExperienceShell'));
 const ThesisCrawl = lazy(() => import('./components/ThesisCrawl'));
 
 // Below-the-fold sections are code-split: their JS is fetched and parsed only
@@ -43,45 +34,6 @@ const PrinciplesSection = lazy(() => import('./components/sections/PrinciplesSec
 const OnboardingSection = lazy(() => import('./components/sections/OnboardingSection'));
 const FounderAccessSection = lazy(() => import('./components/sections/FounderAccessSection'));
 const PricingSection = lazy(() => import('./components/sections/PricingSection'));
-const systemTier = typeof window === 'undefined' ? 'FALLBACK' : detectTier(detectInputs());
-const shouldMountSystem = systemTier !== 'FALLBACK';
-
-/**
- * The WebGL canvas layer is decorative (aria-hidden): it must never compete
- * with first paint, the hero, or the waitlist form for the main thread. The
- * chunk is fetched and WebGL initialized only after the window load event
- * (plus a small grace beat so LCP wins the race), with a hard failsafe so
- * the canvas still appears on slow networks where load is late.
- */
-function DeferredExperienceShell() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    const start = () => {
-      if (cancelled) return;
-      window.setTimeout(() => {
-        if (!cancelled) setReady(true);
-      }, 300);
-    };
-    if (document.readyState === 'complete') {
-      start();
-    } else {
-      window.addEventListener('load', start, { once: true });
-    }
-    const failsafe = window.setTimeout(start, 6000);
-    return () => {
-      cancelled = true;
-      window.removeEventListener('load', start);
-      window.clearTimeout(failsafe);
-    };
-  }, []);
-  if (!ready) return null;
-  return (
-    <Suspense fallback={null}>
-      <ExperienceShell />
-    </Suspense>
-  );
-}
 
 /**
  * LazySection — renders below-the-fold marketing sections only when they
@@ -365,8 +317,6 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,transparent_20%,#000000_85%)]" />
         <div className="absolute inset-0 opacity-[0.02] [background-image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:80px_80px]" />
       </div>
-
-      {shouldMountSystem && <DeferredExperienceShell />}
 
       <nav className="fixed inset-x-0 top-0 z-50 border-b border-amber-400/20 bg-[#14100C]/85 shadow-[0_10px_35px_rgba(0,0,0,0.7)] backdrop-blur-2xl" aria-label="Main navigation">
         <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/30 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black shadow-[0_1px_15px_rgba(255,184,0,0.3)]">

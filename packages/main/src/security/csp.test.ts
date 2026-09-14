@@ -37,6 +37,8 @@ describe('Content Security Policy', () => {
             expect(policy).toContain("font-src 'self' data:");
             expect(policy).toContain("media-src 'self' blob:");
             expect(policy).toContain("object-src 'none'");
+            expect(policy).toContain("https://*.sentry.io");
+            expect(policy).toContain("https://*.ingest.sentry.io");
         });
     });
 

@@ -119,8 +119,8 @@ export function setupAutoUpdater(): void {
 
     // Configure basic autoUpdater settings
     autoUpdater.logger = log;
-    autoUpdater.autoDownload = true;
-    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = false;
     autoUpdater.allowDowngrade = false;
 
     // Load persisted settings.
@@ -155,15 +155,36 @@ export function setupAutoUpdater(): void {
         sendToRenderer('updater:checking');
     });
 
+    function isNewerVersion(remote: string, current: string): boolean {
+        const parse = (v: string) => v.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+        const r = parse(remote);
+        const c = parse(current);
+        for (let i = 0; i < Math.max(r.length, c.length); i++) {
+            const rPart = r[i] ?? 0;
+            const cPart = c[i] ?? 0;
+            if (rPart > cPart) return true;
+            if (rPart < cPart) return false;
+        }
+        return false;
+    }
+
     autoUpdater.on('update-available', (info: unknown) => {
         const updateInfo = info as Record<string, unknown>;
         const version = (updateInfo.version as string) || 'Unknown';
-        log.info(`[Updater] Update available: ${version}`);
+        const currentVersion = app.getVersion();
+
+        if (!isNewerVersion(version, currentVersion)) {
+            log.info(`[Updater] Ignored update: remote ${version} is not newer than current ${currentVersion}`);
+            sendToRenderer('updater:not-available');
+            return;
+        }
+
+        log.info(`[Updater] Update available: ${version} (current: ${currentVersion})`);
         sendToRenderer('updater:available', { version });
 
         showUpdaterNotification(
             'indii Update Available',
-            `Version ${version} is available. Downloading now in the background...`
+            `Version ${version} is available.`
         );
     });
 

@@ -188,7 +188,7 @@ export interface AuthSlice {
 }
 
 // Create the slice
-export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
+export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     user: null,
     authLoading: true,
     authError: null,
@@ -420,6 +420,11 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
             hasResolved = true;
             clearTimeout(timeoutId);
 
+            // Clear any lingering timeout error once auth state resolves
+            if (get().authError?.includes('timed out')) {
+                set({ authError: null });
+            }
+
             // If transitioning FROM a valid user TO null, debounce it.
             // This prevents the brief null flash during Firebase Auth token refresh.
             if (!user && lastKnownUser) {
@@ -431,11 +436,11 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                     if (!auth.currentUser) {
                         logger.info('[Auth] Confirmed logout after debounce.');
                         lastKnownUser = null;
-                        set({ user: null, authLoading: false });
+                        set({ user: null, authLoading: false, authError: null });
                     } else {
                         logger.info('[Auth] Token refresh resolved — user is still authenticated.');
                         lastKnownUser = auth.currentUser;
-                        set({ user: auth.currentUser, authLoading: false });
+                        set({ user: auth.currentUser, authLoading: false, authError: null });
                     }
                 }, 500);
                 return;
@@ -465,7 +470,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                     if (currentUser) {
                         logger.info('[Auth] Confirmed login after debounce. Setting authLoading to false.');
                         lastKnownUser = currentUser;
-                        set({ user: currentUser, authLoading: false });
+                        set({ user: currentUser, authLoading: false, authError: null });
 
                         if (isFirebaseE2EMockEnabled() || isAnonymousOrDemoUser(currentUser)) {
                             logger.warn('[Auth] Mock/Anonymous user detected — skipping Firestore user sync.');
@@ -497,7 +502,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                         }
                     } else {
                         logger.info('[Auth] Debounce finished but currentUser is null. Setting authLoading to false.');
-                        set({ authLoading: false });
+                        set({ authLoading: false, authError: null });
                     }
                 }, 500);
                 return;
@@ -511,7 +516,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
             logger.info(`[Auth] Steady state reached. Setting authLoading to false. User: ${user ? user.uid : 'null'}`);
             lastKnownUser = user;
-            set({ user, authLoading: false });
+            set({ user, authLoading: false, authError: null });
 
             if (user && !isFirebaseE2EMockEnabled() && !isAnonymousOrDemoUser(user)) {
                 // Optional: Ensure user document exists in Firestore

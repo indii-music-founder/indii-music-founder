@@ -497,18 +497,18 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         <div className="flex flex-col h-full min-h-[70vh] items-center justify-between pb-24 pt-8 px-4">
             <div className="w-full flex flex-col items-center space-y-10">
                 <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-bold text-[#F0F0F0] tracking-tight">Live Moment Capture</h2>
-                    <p className="text-[#a1a1a6] text-sm font-medium">Capture every moment live and keep the whole team in your pocket.</p>
+                    <h2 className="text-2xl font-bold text-stone-100 tracking-tight font-display">Live Moment Capture</h2>
+                    <p className="text-stone-400 text-sm font-medium">Capture every moment live and keep the whole team in your pocket.</p>
                 </div>
 
-                {/* Primary Action: Mic */}
+                {/* Primary Action: Acoustic Mic Ring */}
                 <div className="relative flex items-center justify-center">
                     {isRecording && (
                         <motion.div 
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1.5, opacity: 0 }}
                             transition={{ repeat: Infinity, duration: 1.5 }}
-                            className="absolute inset-0 bg-[#2E2EFE] rounded-full pointer-events-none"
+                            className="absolute inset-0 bg-[#00ff66] rounded-full pointer-events-none"
                         />
                     )}
                     
@@ -519,88 +519,88 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                         aria-pressed={isRecording}
                         aria-label={isRecording ? 'Stop recording' : 'Start recording a voice memo'}
                         className={cn(
-                            "relative z-10 w-36 h-36 rounded-full flex flex-col items-center justify-center gap-2 transition-colors shadow-[0_0_40px_rgba(46,46,254,0.15)] border-4",
+                            "relative z-10 w-36 h-36 rounded-full flex flex-col items-center justify-center gap-2 transition-all shadow-[0_0_50px_rgba(0,0,0,0.6)] border-4 backdrop-blur-xl",
                             isRecording
-                                ? "bg-[#2E2EFE] border-[#2E2EFE] text-[#F0F0F0]"
-                                : "bg-[#030303] border-white/10 text-[#F0F0F0] hover:border-[#2E2EFE]/50",
-                            !isPaired && !isRecording && "border-blue-500/30"
+                                ? "bg-[#00ff66] border-[#00ff66] text-[#061806] shadow-[0_0_40px_rgba(0,255,102,0.4)]"
+                                : "bg-[#1a1512]/90 border-white/10 text-stone-100 hover:border-[#00ff66]/50 hover:shadow-[0_0_30px_rgba(0,255,102,0.15)]",
+                            !isPaired && !isRecording && "border-white/10 opacity-70"
                         )}
                     >
-                        <Mic className={cn("w-10 h-10", isRecording && "animate-pulse")} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest" role="status">
+                        <Mic className={cn("w-10 h-10", isRecording ? "animate-pulse text-[#061806]" : "text-[#00ff66]")} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest font-mono" role="status">
                             {isRecording ? 'Listening — tap to stop' : 'Speak'}
                         </span>
                     </motion.button>
                 </div>
 
                 {/* Secondary Actions Grid */}
-                <div className="grid grid-cols-5 gap-3 w-full max-w-sm">
+                <div className="grid grid-cols-5 gap-3 w-full max-w-sm font-sans">
                     <button
                         onClick={() => receiptInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-[#FFC107]/25 bg-[#FFC107]/10 text-[#FFC107] hover:text-white hover:bg-[#FFC107]/20 transition-colors disabled:opacity-50 cursor-pointer"
                         title="Scan Expense Receipt"
                     >
                         <Receipt className="w-5 h-5" />
-                        <span className="text-[8px] font-bold uppercase tracking-wider">Receipt</span>
+                        <span className="text-[8px] font-bold uppercase tracking-wider font-mono">Receipt</span>
                     </button>
                     <input type="file" accept="image/*" capture="environment" className="hidden" ref={receiptInputRef} onChange={(e) => handleImageCapture(e, 'receipt')} />
 
                     <button
                         onClick={() => docInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                        <FileText className="w-5 h-5" />
-                        <span className="text-[8px] font-bold uppercase tracking-wider">Doc</span>
+                        <FileText className="w-5 h-5 text-stone-300" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider font-mono">Doc</span>
                     </button>
                     <input type="file" accept="image/*" capture="environment" className="hidden" ref={docInputRef} onChange={(e) => handleImageCapture(e, 'document')} />
 
                     <button
                         onClick={() => photoInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                        <ImageIcon className="w-5 h-5" />
-                        <span className="text-[8px] font-bold uppercase tracking-wider">Photo</span>
+                        <ImageIcon className="w-5 h-5 text-cyan-400" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider font-mono">Photo</span>
                     </button>
                     <input type="file" accept="image/*" capture="environment" className="hidden" ref={photoInputRef} onChange={(e) => handleImageCapture(e, 'photo')} />
 
                     <button
                         onClick={() => videoInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                        <Video className="w-5 h-5" />
-                        <span className="text-[8px] font-bold uppercase tracking-wider">Video</span>
+                        <Video className="w-5 h-5 text-purple-400" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider font-mono">Video</span>
                     </button>
                     <input type="file" accept="video/*" capture="environment" className="hidden" ref={videoInputRef} onChange={handleVideoCapture} />
 
                     <button
                         onClick={handlePinDrop}
                         disabled={isDispatching || isRecording || isFinalizingRecording || !hasGeolocation}
-                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-2 p-2.5 min-h-[64px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                        <MapPin className="w-5 h-5" />
-                        <span className="text-[8px] font-bold uppercase tracking-wider">{hasGeolocation ? 'Pin' : 'Pin N/A'}</span>
+                        <MapPin className="w-5 h-5 text-emerald-400" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider font-mono">{hasGeolocation ? 'Pin' : 'Pin N/A'}</span>
                     </button>
                 </div>
                 {!hasGeolocation && (
-                    <p className="w-full max-w-sm text-center text-[11px] text-[#8e8e93] -mt-2">
+                    <p className="w-full max-w-sm text-center text-[11px] text-stone-500 -mt-2">
                         Location capture is unavailable in this browser.
                     </p>
                 )}
                 {geoError && (
-                    <p className="w-full max-w-sm text-center text-[11px] text-[#ff8f8f] -mt-2">
+                    <p className="w-full max-w-sm text-center text-[11px] text-red-400 -mt-2">
                         {geoError}
                     </p>
                 )}
             </div>
 
             {/* Silent Text Command */}
-            <div className="w-full max-w-sm mt-8">
+            <div className="w-full max-w-sm mt-8 font-sans">
                 <form onSubmit={handleTextSubmit} className="relative flex items-center">
-                    <div className="absolute left-4 text-[#8e8e93]">
+                    <div className="absolute left-4 text-stone-400">
                         <Keyboard className="w-5 h-5" />
                     </div>
                         <input
@@ -609,13 +609,13 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                             onChange={(e) => setMomentText(e.target.value)}
                             placeholder="Capture a live moment..."
                             disabled={isDispatching || isRecording || isFinalizingRecording}
-                            className="w-full bg-[#1c1c1e] border border-white/10 rounded-[20px] py-4 pl-12 pr-14 text-sm text-[#F0F0F0] placeholder:text-[#8e8e93] focus:outline-none focus:border-[#2E2EFE]/50 transition-colors"
+                            className="w-full bg-[#1a1512]/90 border border-white/10 rounded-[22px] py-3.5 pl-12 pr-14 text-sm text-stone-100 placeholder:text-stone-500 focus:outline-none focus:border-[#00ff66]/50 shadow-[0_8px_24px_rgba(0,0,0,0.4)] transition-all"
                         />
                         <button
                             type="submit"
                             aria-label="Save live moment"
                             disabled={!momentText.trim() || isDispatching}
-                            className="absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center bg-[#2E2EFE] text-white disabled:opacity-50 disabled:bg-white/10 transition-all hover:bg-[#2E2EFE]/80"
+                            className="absolute right-2 w-9 h-9 rounded-xl flex items-center justify-center bg-[#00ff66] text-[#061806] disabled:opacity-40 disabled:bg-white/10 disabled:text-stone-500 transition-all hover:bg-[#36D96F] cursor-pointer"
                         >
                             {isDispatching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                         </button>
@@ -629,22 +629,22 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
-                        className="fixed bottom-24 inset-x-6 z-50 mx-auto w-[calc(100%-3rem)] max-w-sm overflow-hidden rounded-[28px] border border-white/10 bg-[#1c1c1e] shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
+                        className="fixed bottom-24 inset-x-6 z-50 mx-auto w-[calc(100%-3rem)] max-w-sm overflow-hidden rounded-[28px] border border-white/10 bg-[#1a1512]/95 backdrop-blur-2xl shadow-[0_24px_60px_rgba(0,0,0,0.7)] font-sans"
                     >
-                        <div className="p-4">
+                        <div className="p-5">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-blue-400">Review before saving</p>
-                                    <p className="mt-2 text-sm font-semibold text-white">Uploads to your vault, then writes it into Notes for the team.</p>
-                                    <p className="mt-1 text-[11px] text-[#8e8e93]">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#00ff66] font-mono">Review before saving</p>
+                                    <p className="mt-1.5 text-sm font-semibold text-stone-100 font-display">Uploads to your vault, then writes it into Notes for the team.</p>
+                                    <p className="mt-1 text-[11px] text-stone-400">
                                         {reviewKind ? `Captured ${reviewKind}` : 'Captured media'}
                                     </p>
                                 </div>
-                                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/20">
-                                    {capturedAudioBlob && <Mic className="w-5 h-5 text-blue-400" />}
-                                    {capturedImageBlob?.type === 'photo' && <ImageIcon className="w-5 h-5 text-blue-400" />}
-                                    {capturedImageBlob?.type === 'document' && <FileText className="w-5 h-5 text-blue-400" />}
-                                    {capturedVideoBlob && <Video className="w-5 h-5 text-blue-400" />}
+                                <div className="w-10 h-10 rounded-2xl bg-[#00ff66]/10 flex items-center justify-center shrink-0 border border-[#00ff66]/20">
+                                    {capturedAudioBlob && <Mic className="w-5 h-5 text-[#00ff66]" />}
+                                    {capturedImageBlob?.type === 'photo' && <ImageIcon className="w-5 h-5 text-cyan-400" />}
+                                    {capturedImageBlob?.type === 'document' && <FileText className="w-5 h-5 text-stone-300" />}
+                                    {capturedVideoBlob && <Video className="w-5 h-5 text-purple-400" />}
                                 </div>
                             </div>
 
@@ -670,7 +670,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                                 <button
                                     onClick={downloadReviewCopy}
                                     disabled={isDispatching}
-                                    className="h-12 w-12 shrink-0 rounded-2xl border border-white/10 bg-white/5 text-white/80 transition-colors hover:bg-white/10 disabled:opacity-50"
+                                    className="h-12 w-12 shrink-0 rounded-2xl border border-white/10 bg-white/5 text-white/80 transition-colors hover:bg-white/10 disabled:opacity-50 cursor-pointer"
                                     aria-label="Download local copy"
                                     title="Download local copy"
                                 >
@@ -679,14 +679,14 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                                 <button 
                                     onClick={clearCapture}
                                     disabled={isDispatching}
-                                    className="flex-1 h-12 rounded-2xl border border-white/10 bg-white/5 text-white/80 text-sm font-semibold transition-colors hover:bg-white/10 disabled:opacity-50"
+                                    className="flex-1 h-12 rounded-2xl border border-white/10 bg-white/5 text-stone-300 hover:text-white text-sm font-semibold transition-colors hover:bg-white/10 disabled:opacity-50 cursor-pointer"
                                 >
                                     Retake
                                 </button>
                                 <button
                                     onClick={handleDispatchMedia}
                                     disabled={isDispatching}
-                                    className="flex-1 h-12 rounded-2xl bg-white text-[#2E2EFE] text-sm font-semibold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+                                    className="flex-1 h-12 rounded-2xl bg-[#00ff66] text-[#061806] text-sm font-bold shadow-lg transition-all active:scale-[0.98] hover:bg-[#36D96F] disabled:opacity-50 cursor-pointer"
                                 >
                                     {isDispatching ? (
                                         <span className="inline-flex items-center gap-2">

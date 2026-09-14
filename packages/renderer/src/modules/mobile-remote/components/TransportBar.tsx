@@ -134,7 +134,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-white/[0.05] via-[#1c1c1e] to-white/[0.02] border border-white/10 shadow-2xl p-6"
+            className="relative overflow-hidden rounded-[32px] bg-[#1a1512]/90 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] p-6"
         >
             <audio ref={audioRef} style={{ display: 'none' }} playsInline crossOrigin="anonymous" />
 
@@ -148,10 +148,10 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                         className="flex flex-col items-center justify-center py-6 text-center"
                     >
                         <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center mb-4">
-                            <Headphones className="w-8 h-8 text-white/10" />
+                            <Headphones className="w-8 h-8 text-white/20" />
                         </div>
-                        <h4 className="text-[10px] font-bold text-[#636366] uppercase tracking-[0.2em] mb-1">Secure Streaming</h4>
-                        <p className="text-xs text-white/40">Select a track to stream from Cloud</p>
+                        <h4 className="text-[10px] font-bold font-mono text-[#8e8e93] uppercase tracking-[0.2em] mb-1">Secure Streaming</h4>
+                        <p className="text-xs text-white/50">Select a track to stream from Cloud</p>
                     </motion.div>
                 ) : (
                     <motion.div 
@@ -165,16 +165,16 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                         <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <Activity className="w-3 h-3 text-blue-400" />
-                                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Streaming Now</span>
+                                    <Activity className="w-3 h-3 text-[#00ff66]" />
+                                    <span className="text-[10px] font-bold font-mono text-[#00ff66] uppercase tracking-widest">Streaming Now</span>
                                 </div>
-                                <h4 className="text-base font-bold text-white truncate tracking-tight">
+                                <h4 className="text-base font-bold font-display text-white truncate tracking-tight">
                                     {trackTitle || 'Master Preview'}
                                 </h4>
-                                <p className="text-[11px] font-bold text-[#8e8e93] uppercase tracking-widest mt-1">Cloud Storage</p>
+                                <p className="text-[11px] font-bold font-mono text-[#8e8e93] uppercase tracking-widest mt-1">Cloud Storage</p>
                             </div>
-                            <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center shadow-inner">
-                                <Music2 className="w-6 h-6 text-blue-400" />
+                            <div className="w-12 h-12 rounded-2xl bg-[#00ff66]/10 border border-[#00ff66]/20 flex items-center justify-center shadow-inner">
+                                <Music2 className="w-6 h-6 text-[#00ff66]" />
                             </div>
                         </div>
 
@@ -185,7 +185,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                                     initial={{ width: 0 }}
                                     animate={{ width: `${progress}%` }}
                                     transition={{ duration: 0.3, ease: "linear" }}
-                                    className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-green-600 shadow-[0_0_15px_rgba(59,130,246,0.6)]"
+                                    className="absolute inset-0 bg-gradient-to-r from-[#00ff66] via-[#3BEAF0] to-[#D936D9] shadow-[0_0_15px_rgba(0,255,102,0.4)]"
                                 />
                             </div>
                             <div className="flex justify-between items-center px-1">
@@ -200,7 +200,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                                 whileTap={{ scale: 0.9 }}
                                 onClick={toggleMute}
                                 aria-label={isMuted ? 'Unmute' : 'Mute'}
-                                className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/5 text-[#8e8e93] hover:text-white transition-all"
+                                className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/5 text-[#8e8e93] hover:text-white transition-all cursor-pointer"
                             >
                                 {isMuted ? <VolumeX className="w-5 h-5 text-red-400" /> : <Volume2 className="w-5 h-5" />}
                             </motion.button>
@@ -210,7 +210,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                                     whileTap={{ scale: 0.9 }}
                                     onClick={handleStop}
                                     aria-label="Stop"
-                                    className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/5 text-white/60 hover:text-white transition-all"
+                                    className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/5 text-white/60 hover:text-white transition-all cursor-pointer"
                                 >
                                     <Square className="w-5 h-5" />
                                 </motion.button>
@@ -219,7 +219,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                                     whileTap={{ scale: 0.92 }}
                                     onClick={togglePlay}
                                     aria-label={isPlaying ? 'Pause' : 'Play'}
-                                    className="w-20 h-20 rounded-[28px] bg-white flex items-center justify-center text-black shadow-[0_20px_40px_-8px_rgba(255,255,255,0.2)]"
+                                    className="w-20 h-20 rounded-[28px] bg-[#00ff66] flex items-center justify-center text-black shadow-[0_12px_28px_rgba(0,255,102,0.3)] hover:brightness-105 active:scale-[0.96] transition-all cursor-pointer"
                                 >
                                     {isPlaying ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
                                 </motion.button>
@@ -245,8 +245,8 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
             </AnimatePresence>
 
             {/* Ambient Background Blur */}
-            <div className="absolute -top-12 -left-12 w-32 h-32 bg-blue-500/10 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-green-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute -top-12 -left-12 w-32 h-32 bg-[#D936D9]/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-[#00ff66]/10 blur-3xl pointer-events-none" />
         </motion.div>
     );
 }

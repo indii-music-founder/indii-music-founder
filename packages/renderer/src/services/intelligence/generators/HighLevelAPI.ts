@@ -19,7 +19,6 @@ import type {
     GenerateContentOptions,
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { safeJsonParse } from '@/services/utils/json';
 import { PromptSanitizer } from '@/services/security/PromptSanitizer';
 import { aiCache } from '../IntelligenceResponseCache';
 import { logger } from '@/utils/logger';
@@ -56,7 +55,14 @@ export async function generateText(
             thinkingBudget: thinkingBudgetOrModelOrConfig,
             includeThoughts: true
         };
-        systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
+        if (typeof systemInstructionOrConfig === 'string') {
+            systemInstruction = systemInstructionOrConfig;
+        } else if (typeof systemInstructionOrConfig === 'object' && systemInstructionOrConfig !== null) {
+            config = { ...config, ...(systemInstructionOrConfig as Record<string, unknown>) };
+            if ('systemInstruction' in config && typeof config.systemInstruction === 'string') {
+                systemInstruction = config.systemInstruction;
+            }
+        }
     } else if (typeof thinkingBudgetOrModelOrConfig === 'string') {
         if (typeof systemInstructionOrConfig === 'string') {
             systemInstruction = systemInstructionOrConfig;

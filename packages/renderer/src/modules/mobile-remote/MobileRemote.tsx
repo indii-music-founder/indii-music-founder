@@ -29,14 +29,15 @@ import { auth } from '@/services/firebase';
 import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
-  LayoutDashboard, LayoutGrid, MessageSquare, Navigation,
-  Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw,
+  LayoutDashboard, MessageSquare, Navigation,
+  LucideIcon, WifiOff, AlertCircle, RefreshCw,
   Camera, Radio, Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { getRemoteConnectionPhase } from './RemoteConnectionState';
-import { isRemoteSurfaceDevice } from './routing';
+import { isIpadOrTabletDevice, isRemoteSurfaceDevice } from './routing';
+import IpadSurfacePrompt, { IPAD_REMOTE_PROMPT_KEY } from './components/IpadSurfacePrompt';
 import { useMobile } from '@/hooks/useMobile';
 
 // Helper for haptic feedback
@@ -89,6 +90,16 @@ function TabFallback() {
 export default function MobileRemote() {
   const mobile = useMobile();
   const looksLikeRemoteDevice = isRemoteSurfaceDevice(mobile);
+  const isIpadOrTablet = isIpadOrTabletDevice(mobile);
+  const [showIpadPrompt, setShowIpadPrompt] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const dismissed = sessionStorage.getItem(IPAD_REMOTE_PROMPT_KEY);
+      return isIpadOrTablet && dismissed !== 'true';
+    } catch {
+      return isIpadOrTablet;
+    }
+  });
   const [isPaired, setIsPaired] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'pairing' | 'connected' | 'error'>(() =>
     remoteRelayService.isAuthenticated() ? 'pairing' : 'idle'
@@ -577,22 +588,27 @@ export default function MobileRemote() {
     >
       {/* ─── Premium Background ────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[#0a0a0c]" />
+        <div className="absolute inset-0 bg-[#14100c]" />
         <div 
-          className="absolute inset-0 opacity-40 mix-blend-soft-light"
+          className="absolute inset-0 opacity-30 mix-blend-soft-light"
           style={{ 
-            backgroundImage: `radial-gradient(circle at 50% -20%, #1e293b 0%, transparent 50%), 
-                              radial-gradient(circle at 0% 100%, #0c1117 0%, transparent 50%),
-                              radial-gradient(circle at 100% 100%, #111827 0%, transparent 50%)`
+            backgroundImage: `radial-gradient(circle at 50% -20%, #2e2318 0%, transparent 60%),
+                              radial-gradient(circle at 0% 100%, #1a120b 0%, transparent 50%),
+                              radial-gradient(circle at 100% 100%, #241a12 0%, transparent 50%)`
           }} 
         />
         {/* Grain Texture */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay indii-noise-overlay" />
       </div>
 
+      <IpadSurfacePrompt
+        isOpen={showIpadPrompt}
+        onDismiss={() => setShowIpadPrompt(false)}
+      />
+
       {/* ─── Header ─────────────────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-40 bg-black/40 backdrop-blur-2xl border-b border-white/5"
+        className="sticky top-0 z-40 bg-[#14100c]/80 backdrop-blur-2xl border-b border-white/5"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="flex items-center justify-between px-6 py-4">
@@ -601,11 +617,29 @@ export default function MobileRemote() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-3"
           >
-            <div className="w-8 h-8 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Smartphone className="w-4 h-4 text-white" />
+            {/* Official Orchid Remote Surface Mark (design-assets/favicon-remote.svg) */}
+            <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg shadow-[#D936D9]/20 shrink-0">
+              <svg width="32" height="32" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="tile-orchid-hdr" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#D936D9"/>
+                    <stop offset="100%" stopColor="#700A64"/>
+                  </linearGradient>
+                  <linearGradient id="mark-orchid-hdr" x1="0" y1="126" x2="0" y2="386" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#3BEAF0"/>
+                    <stop offset="100%" stopColor="#12C6D4"/>
+                  </linearGradient>
+                </defs>
+                <rect width="512" height="512" rx="115" fill="url(#tile-orchid-hdr)"/>
+                <rect x="72" y="72" width="368" height="368" rx="104" fill="#180618" stroke="url(#mark-orchid-hdr)" strokeWidth="16"/>
+                <circle cx="218" cy="155" r="29" fill="url(#mark-orchid-hdr)"/>
+                <circle cx="294" cy="155" r="29" fill="url(#mark-orchid-hdr)"/>
+                <rect x="189" y="208" width="58" height="178" rx="29" fill="url(#mark-orchid-hdr)"/>
+                <rect x="265" y="208" width="58" height="178" rx="29" fill="url(#mark-orchid-hdr)"/>
+              </svg>
             </div>
-            <h1 className="text-base font-bold text-white tracking-tight">
-              indii<span className="font-light opacity-60 uppercase tracking-widest text-[10px] ml-1">CONTROLLER</span>
+            <h1 className="text-base font-bold text-white tracking-tight font-display">
+              <span className="indii-name">indii</span><span className="font-light opacity-60 uppercase tracking-widest text-[10px] ml-1.5 font-mono">CONTROLLER</span>
             </h1>
           </motion.div>
 
@@ -714,14 +748,14 @@ export default function MobileRemote() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="mb-6 p-4 rounded-[24px] bg-linear-to-r from-amber-500/10 via-[#1c1c1e] to-amber-500/5 border border-amber-500/20 shadow-[0_15px_30px_rgba(245,158,11,0.08)] flex items-center justify-between"
+                className="mb-6 p-4 rounded-[24px] bg-linear-to-r from-amber-500/10 via-[#1a1512] to-amber-500/5 border border-amber-500/20 shadow-[0_15px_30px_rgba(245,158,11,0.08)] flex items-center justify-between backdrop-blur-md"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
                     <RefreshCw className="w-4 h-4 text-amber-400 animate-spin" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">Session Connection Interrupted</h4>
+                    <h4 className="text-xs font-bold font-display text-white uppercase tracking-wider">Session Connection Interrupted</h4>
                     <p className="text-[10px] text-[#8e8e93] font-medium mt-0.5">Attempting seamless handshake recovery…</p>
                   </div>
                 </div>
@@ -739,8 +773,8 @@ export default function MobileRemote() {
               className="flex flex-col items-center justify-center mt-20 text-center"
             >
               <div className="relative mb-10">
-                <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                <div className="relative w-24 h-24 rounded-3xl bg-[#1c1c1e] border border-white/10 flex items-center justify-center shadow-2xl">
+                <div className="absolute inset-0 bg-[#D936D9]/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                <div className="relative w-24 h-24 rounded-3xl bg-[#1a1512] border border-white/10 flex items-center justify-center shadow-2xl">
                   <WifiOff className="w-10 h-10 text-white/20" />
                 </div>
                 <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shadow-lg">
@@ -806,9 +840,9 @@ export default function MobileRemote() {
         className="fixed bottom-0 inset-x-0 z-40 px-6 pointer-events-none"
         style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
       >
-        <div className="max-w-md mx-auto h-[72px] bg-white/3 backdrop-blur-3xl border border-white/10 rounded-[28px] shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex items-center justify-around px-2 pointer-events-auto relative overflow-hidden">
-          {/* Subtle Inner Glow */}
-          <div className="absolute inset-0 bg-linear-to-b from-white/2 to-transparent pointer-events-none" />
+        <div className="max-w-md mx-auto h-[72px] bg-[#14100c]/85 backdrop-blur-3xl border border-white/10 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex items-center justify-around px-2 pointer-events-auto relative overflow-hidden">
+          {/* Subtle Inner Warm Glow */}
+          <div className="absolute inset-0 bg-linear-to-b from-white/[0.03] to-transparent pointer-events-none" />
           
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -826,7 +860,7 @@ export default function MobileRemote() {
                 className={cn(
                   "relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-300 cursor-pointer",
                   !isPaired ? "opacity-20 grayscale cursor-not-allowed" : "active:scale-90",
-                  isActive ? "text-white" : "text-[#636366] hover:text-[#8e8e93]"
+                  isActive ? "text-white" : "text-stone-500 hover:text-stone-300"
                 )}
                 style={{ minHeight: '56px' }}
               >
@@ -834,7 +868,7 @@ export default function MobileRemote() {
                   {isActive && (
                     <motion.div
                       layoutId="active-tab-bg"
-                      className="absolute inset-1.5 rounded-2xl bg-white/5"
+                      className="absolute inset-1.5 rounded-2xl bg-white/[0.06] border border-white/5"
                       initial={false}
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                     />
@@ -847,13 +881,13 @@ export default function MobileRemote() {
                 )}>
                   <tab.icon className={cn(
                     "w-6 h-6",
-                    isActive ? "text-blue-400 drop-shadow-[0_0_12px_rgba(96,165,250,0.4)]" : "text-inherit"
+                    isActive ? "text-[#00ff66] drop-shadow-[0_0_12px_rgba(0,255,102,0.5)]" : "text-inherit"
                   )} />
                 </div>
                 
                 <span className={cn(
-                  "relative z-10 text-[9px] font-bold uppercase tracking-widest transition-all duration-300",
-                  isActive ? "opacity-100 scale-100" : "opacity-60 scale-90"
+                  "relative z-10 text-[9px] font-bold uppercase tracking-widest transition-all duration-300 font-display",
+                  isActive ? "opacity-100 scale-100 text-stone-100" : "opacity-60 scale-90 text-stone-500"
                 )}>
                   {tab.label}
                 </span>
@@ -861,7 +895,7 @@ export default function MobileRemote() {
                 {isActive && (
                   <motion.div 
                     layoutId="active-pill"
-                    className="absolute bottom-1.5 w-1 h-1 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(96,165,250,0.8)]" 
+                    className="absolute bottom-1.5 w-1 h-1 bg-[#00ff66] rounded-full shadow-[0_0_8px_rgba(0,255,102,0.9)]"
                   />
                 )}
               </button>

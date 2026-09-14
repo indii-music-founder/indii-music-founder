@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { google } from 'googleapis';
+import { Resend } from 'resend';
 import { randomBytes } from 'node:crypto';
 import { promises as dns } from 'node:dns';
 import path from 'path';
@@ -12,6 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const ADMIN_EMAIL_DOMAIN = '@indii.music';
 
@@ -130,7 +132,8 @@ const requireAdminAuth = async (req: express.Request, res: express.Response, nex
     } else {
       res.status(403).json({ error: 'Forbidden: Requires indii.music admin identity' });
     }
-  } catch {
+  } catch (err) {
+    console.error('[Admin] requireAdminAuth token verification failed:', err instanceof Error ? err.message : err);
     res.status(401).json({ error: 'Invalid token' });
   }
 };
@@ -320,6 +323,10 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
       status: 'waitlisted' | 'invited' | 'accepted' | 'declined' | 'revoked' | 'legacy_unverified';
       invitationStatus: 'not_queued' | 'queued' | 'sent' | 'failed';
       majorMilestoneUpdates: boolean;
+      followUpStatus?: string;
+      lastContactedAt?: string | null;
+      contactCount?: number;
+      notes?: string;
     }>();
 
     const toIso = (value: unknown): string | null => {
@@ -346,6 +353,10 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
         status?: unknown;
         invitation?: { status?: unknown } | null;
         communicationPreferences?: { majorMilestoneUpdates?: unknown };
+        followUpStatus?: unknown;
+        lastContactedAt?: unknown;
+        contactCount?: unknown;
+        notes?: unknown;
       };
       if (typeof data.email !== 'string') continue;
       const email = data.email.trim().toLowerCase();
@@ -369,6 +380,10 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
         status,
         invitationStatus,
         majorMilestoneUpdates: data.communicationPreferences?.majorMilestoneUpdates === true,
+        followUpStatus: typeof data.followUpStatus === 'string' ? data.followUpStatus : 'not_contacted',
+        lastContactedAt: toIso(data.lastContactedAt),
+        contactCount: typeof data.contactCount === 'number' ? data.contactCount : 0,
+        notes: typeof data.notes === 'string' ? data.notes : '',
       });
     }
 
@@ -431,6 +446,334 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
   }
 });
 
+// Record direct communication across audit, messaging inbox, and waitlist CRM records
+async function recordArtistCommunication(opts: {
+  artistEmail: string;
+  fromAddress: string;
+  subject: string;
+  message: string;
+  provider: 'gmail' | 'resend';
+  messageId?: string;
+  adminUid: string;
+  adminEmail: string;
+}) {
+  const nowIso = new Date().toISOString();
+  const firestore = admin.firestore();
+
+  // 1. Primary CRM communication timeline record
+  try {
+    await firestore.collection('artist_communications').add({
+      artistEmail: opts.artistEmail,
+      from: opts.fromAddress,
+      subject: opts.subject,
+      message: opts.message,
+      provider: opts.provider,
+      messageId: opts.messageId || null,
+      sentAt: nowIso,
+      sentByAdminUid: opts.adminUid,
+      sentByAdminEmail: opts.adminEmail,
+      type: 'direct_email',
+      status: 'delivered',
+    });
+  } catch (e) {
+    console.error('[Waitlist] Failed to save artist_communications record:', e);
+  }
+
+  // 2. Mirror into messages collection for Consolidated Messaging Hub
+  try {
+    await firestore.collection('messages').add({
+      from: opts.fromAddress,
+      to: opts.artistEmail,
+      subject: opts.subject,
+      snippet: opts.message.slice(0, 140),
+      date: nowIso,
+      isAiDraft: false,
+      status: 'delivered',
+      source: 'admin_direct_outreach',
+    });
+  } catch (e) {
+    console.error('[Waitlist] Failed to mirror to messages collection:', e);
+  }
+
+  // 3. Update foundingArtistWaitlist document if verified entry exists
+  try {
+    const waitlistSnap = await firestore
+      .collection('foundingArtistWaitlist')
+      .where('email', '==', opts.artistEmail)
+      .limit(1)
+      .get();
+    if (!waitlistSnap.empty) {
+      const docRef = waitlistSnap.docs[0].ref;
+      await docRef.set({
+        lastContactedAt: nowIso,
+        lastContactSubject: opts.subject,
+        lastContactFrom: opts.fromAddress,
+        contactCount: admin.firestore.FieldValue?.increment ? admin.firestore.FieldValue.increment(1) : 1,
+        followUpStatus: 'contacted',
+      }, { merge: true });
+    }
+  } catch (e) {
+    console.error('[Waitlist] Failed to update foundingArtistWaitlist record:', e);
+  }
+
+  // 4. Immutable event trail in foundingArtistEvents
+  try {
+    await firestore.collection('foundingArtistEvents').add({
+      email: opts.artistEmail,
+      eventType: 'direct_email_sent',
+      subject: opts.subject,
+      from: opts.fromAddress,
+      provider: opts.provider,
+      adminUid: opts.adminUid,
+      timestamp: nowIso,
+    });
+  } catch (e) {
+    console.error('[Waitlist] Failed to log event to foundingArtistEvents:', e);
+  }
+}
+
+// Direct email dispatch from founder@indii.music or support@indii.music to any waitlisted artist
+// Supports connected Google Workspace (Gmail API) or Resend fallback, and records full audit trail
+app.post('/api/waitlist/send-direct-email', requireAdminAuth, async (req, res) => {
+  const { to, subject, message, fromAlias } = req.body;
+  if (!to || typeof to !== 'string' || !to.includes('@')) {
+    return res.status(400).json({ error: 'A valid recipient email address is required.' });
+  }
+  if (!subject || typeof subject !== 'string' || !subject.trim()) {
+    return res.status(400).json({ error: 'Email subject is required.' });
+  }
+  if (!message || typeof message !== 'string' || !message.trim()) {
+    return res.status(400).json({ error: 'Email message body is required.' });
+  }
+
+  const cleanTo = to.trim().toLowerCase();
+  const cleanSubject = subject.trim();
+  const cleanMessage = message.trim();
+  const allowedAliases = ['founder@indii.music', 'support@indii.music', 'admin@indii.music'];
+  const senderEmail = typeof fromAlias === 'string' && allowedAliases.includes(fromAlias.trim().toLowerCase())
+    ? fromAlias.trim().toLowerCase()
+    : 'founder@indii.music';
+
+  const user = (req as express.Request & { user?: admin.auth.DecodedIdToken }).user;
+  const adminUid = user?.uid ?? 'unknown';
+  const adminEmail = user?.email ?? 'unknown';
+
+  const safeHtml = cleanMessage.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>');
+  const emailHtml = `
+    <div style="background:#090909;color:#f5f5f5;font-family:Arial,sans-serif;padding:32px">
+      <div style="max-width:560px;margin:0 auto;border:1px solid #2f2f2f;border-radius:16px;padding:32px">
+        <p style="color:#fbbf24;font-weight:700;letter-spacing:.08em;text-transform:uppercase">indii.music</p>
+        <h2 style="font-size:22px;line-height:1.3;margin-top:8px">${cleanSubject}</h2>
+        <div style="color:#c7c7c7;line-height:1.7;margin:20px 0">${safeHtml}</div>
+        <hr style="border:none;border-top:1px solid #222;margin:24px 0" />
+        <p style="color:#666;font-size:12px;line-height:1.5">Sent from ${senderEmail}</p>
+      </div>
+    </div>
+  `;
+
+  // 1. Try Google Workspace (Gmail API) if connected
+  const googleAuth = await getGoogleAuthClient();
+  if (googleAuth) {
+    try {
+      const gmail = google.gmail({ version: 'v1', auth: googleAuth });
+      const utf8Subject = `=?utf-8?B?${Buffer.from(cleanSubject).toString('base64')}?=`;
+      const messageParts = [
+        `From: ${senderEmail}`,
+        `To: ${cleanTo}`,
+        'Content-Type: text/html; charset=utf-8',
+        'MIME-Version: 1.0',
+        `Subject: ${utf8Subject}`,
+        '',
+        emailHtml,
+      ];
+      const encodedMessage = Buffer.from(messageParts.join('\n'))
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      const result = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: { raw: encodedMessage },
+      });
+
+      const messageId = result.data.id || undefined;
+      await recordArtistCommunication({
+        artistEmail: cleanTo,
+        fromAddress: senderEmail,
+        subject: cleanSubject,
+        message: cleanMessage,
+        provider: 'gmail',
+        messageId,
+        adminUid,
+        adminEmail,
+      });
+
+      return res.json({
+        success: true,
+        messageId,
+        provider: 'gmail',
+        from: senderEmail,
+      });
+    } catch (gmailError) {
+      console.error('[Waitlist] Gmail API direct send failed:', gmailError);
+      // Fall through to Resend if Google Workspace fails
+    }
+  }
+
+  // 2. Fallback to Resend if configured
+  const apiKey = process.env.RESEND_API_KEY;
+  if (apiKey && apiKey !== 'dummy') {
+    try {
+      const resend = new Resend(apiKey);
+      const fromAddress = `${senderEmail.split('@')[0].toUpperCase()} | indii <${senderEmail}>`;
+
+      const result = await resend.emails.send({
+        from: fromAddress,
+        to: cleanTo,
+        subject: cleanSubject,
+        text: cleanMessage,
+        html: emailHtml,
+      });
+
+      if (result.error) {
+        console.error('[Waitlist] Resend direct send error:', result.error);
+        return res.status(500).json({ error: result.error.message });
+      }
+
+      const messageId = result.data?.id || undefined;
+      await recordArtistCommunication({
+        artistEmail: cleanTo,
+        fromAddress: senderEmail,
+        subject: cleanSubject,
+        message: cleanMessage,
+        provider: 'resend',
+        messageId,
+        adminUid,
+        adminEmail,
+      });
+
+      return res.json({
+        success: true,
+        messageId,
+        provider: 'resend',
+        from: fromAddress,
+      });
+    } catch (resendError) {
+      console.error('[Waitlist] Failed to send direct email via Resend:', resendError);
+      return res.status(500).json({ error: resendError instanceof Error ? resendError.message : 'Failed to send email' });
+    }
+  }
+
+  // Neither provider available
+  return res.status(422).json({
+    error: 'No email service is connected. Link your Google Workspace in the Google Workspace Hub tab, or add RESEND_API_KEY to your .env file.',
+    code: 'resend_key_missing',
+    hint: 'You can connect Google Workspace via the dashboard or add a Resend key to .env.',
+  });
+});
+
+// Fetch communication history and CRM notes for a specific artist
+app.get('/api/waitlist/artist/history', requireAdminAuth, async (req, res) => {
+  const email = typeof req.query.email === 'string' ? req.query.email.trim().toLowerCase() : '';
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid artist email is required' });
+  }
+
+  try {
+    const firestore = admin.firestore();
+    const commsSnap = await firestore
+      .collection('artist_communications')
+      .where('artistEmail', '==', email)
+      .limit(100)
+      .get();
+
+    const communications: Record<string, unknown>[] = [];
+    commsSnap.forEach((doc) => communications.push({ id: doc.id, ...doc.data() }));
+    communications.sort((a, b) => {
+      const timeA = typeof a.sentAt === 'string' ? new Date(a.sentAt).getTime() : 0;
+      const timeB = typeof b.sentAt === 'string' ? new Date(b.sentAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    let notes = '';
+    let followUpStatus = 'not_contacted';
+    let lastContactedAt: string | null = null;
+    let queuePosition: number | null = null;
+
+    const waitlistSnap = await firestore
+      .collection('foundingArtistWaitlist')
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+
+    if (!waitlistSnap.empty) {
+      const data = waitlistSnap.docs[0].data() as {
+        notes?: string;
+        followUpStatus?: string;
+        lastContactedAt?: string;
+        queuePosition?: number;
+      };
+      notes = typeof data.notes === 'string' ? data.notes : '';
+      followUpStatus = typeof data.followUpStatus === 'string' ? data.followUpStatus : 'not_contacted';
+      lastContactedAt = typeof data.lastContactedAt === 'string' ? data.lastContactedAt : null;
+      queuePosition = typeof data.queuePosition === 'number' ? data.queuePosition : null;
+    }
+
+    res.json({
+      email,
+      queuePosition,
+      notes,
+      followUpStatus,
+      lastContactedAt,
+      communications,
+    });
+  } catch (error) {
+    console.error('[Waitlist] Failed to fetch artist history:', error);
+    res.status(500).json({ error: 'Failed to fetch artist history' });
+  }
+});
+
+// Update founder private notes and follow-up status for an artist
+app.post('/api/waitlist/artist-notes', requireAdminAuth, async (req, res) => {
+  const { email, notes, followUpStatus } = req.body;
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid artist email is required' });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const allowedStatuses = ['not_contacted', 'contacted', 'follow_up_needed', 'in_discussion', 'invited'];
+  const validStatus = typeof followUpStatus === 'string' && allowedStatuses.includes(followUpStatus)
+    ? followUpStatus
+    : undefined;
+
+  try {
+    const firestore = admin.firestore();
+    const waitlistSnap = await firestore
+      .collection('foundingArtistWaitlist')
+      .where('email', '==', cleanEmail)
+      .limit(1)
+      .get();
+
+    const updatePayload: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
+    };
+    if (typeof notes === 'string') updatePayload.notes = notes.trim();
+    if (validStatus) updatePayload.followUpStatus = validStatus;
+
+    if (!waitlistSnap.empty) {
+      await waitlistSnap.docs[0].ref.set(updatePayload, { merge: true });
+    } else {
+      await firestore.collection('artist_crm_metadata').doc(cleanEmail).set(updatePayload, { merge: true });
+    }
+
+    res.json({ success: true, email: cleanEmail, ...updatePayload });
+  } catch (error) {
+    console.error('[Waitlist] Failed to update artist notes:', error);
+    res.status(500).json({ error: 'Failed to update artist notes' });
+  }
+});
+
 // Phase 4: Agentic System Integration - Webhooks
 
 const requireWebhookSecret = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -486,7 +829,7 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID || 'dummy_client_id',
   process.env.GOOGLE_CLIENT_SECRET || 'dummy_client_secret',
-  process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/api/google/oauth/callback'
+  process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5173/api/google/oauth/callback'
 );
 
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
@@ -525,7 +868,7 @@ async function getGoogleAuthClient() {
     const auth = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/api/google/oauth/callback'
+      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5173/api/google/oauth/callback'
     );
     auth.setCredentials(tokens);
     return auth;

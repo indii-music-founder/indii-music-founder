@@ -643,7 +643,7 @@ const [isThesisOpen, setIsThesisOpen] = useState(() => {
 - CAUSE: The phone treats the desktop as offline if no fresh presence heartbeat arrives within `DESKTOP_HEARTBEAT_STALE_MS`. That was **15s**, but the desktop heartbeat is a `setTimeout`-based 5s loop. When the desktop studio tab is **backgrounded** (the normal case while controlling from a phone) or the machine dims/locks, browsers throttle background-tab timers to **~once per minute**, so beats arrive ~every 60s — past the 15s gate. The phone fires `markDesktopOffline`, exhausts `maxReconnectAttempts`, and tears down to `idle` + `setIsPaired(false)`. It recovers on the next throttled beat, then drops again — a permanent flap. This is distinct from the 2026-06-11 navigation-desync heartbeat bug.
 - FIX: (1) Widen `DESKTOP_HEARTBEAT_STALE_MS` 15s → **65s** so a single throttled beat keeps the pairing alive; a genuinely closed desktop is still detected within ~65s. (2) On the desktop, push an immediate heartbeat on `visibilitychange→visible` so recovery on tab refocus is instant instead of waiting for the next throttled tick.
 - PREVENTION: Never gate a cross-device "is it alive" check on a window tighter than the **background-throttled** beat interval (~60s), not the foreground interval. Any presence/heartbeat consumed by a phone must assume the producer tab is frequently hidden. Where sub-minute liveness truly matters, drive the producer's heartbeat from a Web Worker (less aggressively throttled) rather than a main-thread `setTimeout`.
-- VERIFICATION: Unit — `RemoteRelayService.test.ts` (10 tests, boundary cases reference the constant symbolically, still green). Real-world hold requires a two-device test (desktop backgrounded + iPhone remote) — NOT yet confirmed on-device.
+- VERIFICATION: Unit — `RemoteRelayService.test.ts` (10 tests, boundary cases reference the constant symbolically, still green). Real-world hold: CONFIRMED on-device by founder (2026-09-12) — phone companion remote connects cleanly and holds connection to indii Studio open only in the browser.
 
 ## 2026-06-20 Vitest Zustand Mock Property Missing (useStore.getState()... is not a function)
 **SEVERITY:** High (Causes test suite crashes in components accessing new Zustand slice methods)
@@ -2338,3 +2338,49 @@ committing.
   2. Implemented client-side defense-in-depth interceptor in `packages/renderer/public/bootstrap.js` wrapping `window.fetch` and `navigator.sendBeacon` for firelog endpoints (`firebaselogging-pa.googleapis.com` and `firebaselogging.googleapis.com`), returning a synthetic 200 OK with `nextRequestWaitMillis: "86400000"`. This halts retry loops in all environments (including local dev, previews, and Electron) without impacting core services.
 - EVIDENCE: `packages/renderer/src/bootstrap.test.ts` (8/8 passing), `packages/renderer/src/services/firebase.appcheck.test.ts` (3/3 passing), `npm run typecheck:renderer` (0 errors), `npm run validate:capabilities` (192 entries valid).
 - PREVENTION: When enabling `crossOriginIsolated` on any route, always prefer `Cross-Origin-Embedder-Policy: credentialless` over `require-corp` to avoid breaking third-party Google/Firebase logging endpoints that omit CORP headers. Provide defensive fetch/sendBeacon handlers in `bootstrap.js` to silence non-critical telemetry failures.
+
+## 2026-09-13 Electron App Startup API Warnings & Boardroom Context Summarization Hang
+
+- SEVERITY: High (Startup infobars, 10s auth network timeout red banner, and Boardroom turn freeze after conversation reached 15-25 messages)
+- FILES: `packages/main/src/security/index.ts`, `packages/main/src/main.ts`, `packages/main/src/updater.ts`, `packages/renderer/src/services/agent/utils/SummaryService.ts`
+- ERROR:
+  1. Chromium Infobar on startup: "Google API keys are missing. Some functionality of indii.music will be disabled."
+  2. Auth timeout banner: "Authentication timed out. The service may be temporarily unavailable." with `[AuthHealth] Token refresh failed: Firebase: Error (auth/network-request-failed)`.
+  3. Boardroom comments received no response; subsequent turns were queued indefinitely.
+  4. Electron app was protected from OS screenshots (`win.setContentProtection(true)`).
+  5. Auto-updater was downloading older remote release `1.64.6` over local `1.80.1`.
+- CAUSE:
+  1. In Electron (`file://`), Chromium displays an infobar unless `GOOGLE_API_KEY`, `GOOGLE_DEFAULT_CLIENT_ID`, and `GOOGLE_DEFAULT_CLIENT_SECRET` are explicitly set in `process.env`.
+  2. Firebase Auth network requests (`securetoken.googleapis.com`, `identitytoolkit.googleapis.com`) require `Referer` and `Origin: https://indii.music` to satisfy GCP web API key domain restrictions. Missing headers caused token refresh to fail with `API_KEY_SERVICE_BLOCKED` and tripped the 10-second timeout failsafe.
+  3. When conversation history exceeded 15 turns, `HistoryManager.getCompiledView()` called `SummaryService.summarize()`, which lacked a timeout. Token refresh failure or backend latency hung `AI.generateContent` indefinitely, freezing agent turn execution in `buildContext()`.
+  4. `setContentProtection(true)` was active in `main.ts` for DRM window protection, causing macOS to black out window contents in screenshots.
+  5. Workspace package versions were `0.0.1` and `updater.ts` auto-downloaded GitHub release `1.64.6` without semver checking.
+- FIX:
+  1. Suppressed Chromium infobar via `GOOGLE_API_KEY = 'no'`, `GOOGLE_DEFAULT_CLIENT_ID = 'no'`, and `GOOGLE_DEFAULT_CLIENT_SECRET = 'no'` in `packages/main/src/main.ts`.
+  2. Injected both `Referer: https://indii.music/` and `Origin: https://indii.music` in `packages/main/src/security/index.ts` for all `*.googleapis.com`, `*.firebaseapp.com`, and Cloud Function URLs.
+  3. Added a 5-second `Promise.race` safety timeout in `SummaryService.ts` that falls back to truncated history, ensuring `HistoryManager` never stalls Boardroom turns.
+  4. Updated workspace versions to `1.80.1`, set `autoDownload = false`, and added `isNewerVersion` check in `updater.ts` to ignore older remote releases.
+- EVIDENCE: Monorepo `npm run typecheck` clean (0 errors), Vitest security & updater unit tests passed (15/15), Studio bundle (`electron-vite build`) clean, electron-builder packaged `mac-arm64/indii.music.app`, deployed to `/Applications/indii.music.app`. Live verification confirmed clean startup without API warnings or token refresh stalls.
+- PREVENTION: Never await un-bounded LLM summarization calls on the critical path of context building. Always inject both `Referer` and `Origin` headers for Google API endpoints in Electron.
+
+## 2026-09-13 Electron App Check Initialization, Sentry CSP, and Window Screenshot Blackout
+
+- SEVERITY: High (App Check required error on AI calls in Boardroom, Sentry events blocked by CSP, and Electron window blacked out in OS screenshots)
+- FILES: `packages/main/src/security/csp.ts`, `packages/main/src/main.ts`, `packages/renderer/src/services/firebase.ts`, `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`, `packages/renderer/src/core/components/auth/LoginForm.tsx`
+- ERROR:
+  1. Boardroom AI requests failed with `Error: App Check is required for backend AI requests.`
+  2. Sentry reporting failed with CSP violation: `Connecting to 'https://...ingest...sentry.io' violates the following Content Security Policy directive: connect-src ...`
+  3. Attempting to take macOS screenshots or copy/paste window contents failed because the window was invisible/blacked out in captures.
+  4. Cold startup displayed a false-alarm red timeout warning on the login screen.
+- CAUSE:
+  1. `window.electronAPI` is not always attached at static evaluation time of `firebase.ts`, causing `isElectron` to evaluate false and App Check initialization to be skipped with `'dummy'` key.
+  2. `ALLOWED_ORIGINS.analytics` was defined in `packages/main/src/security/csp.ts` but never included in `connect-src` or `img-src` in `buildCSPDirectives()`.
+  3. `win.setContentProtection(true)` in `main.ts` marked the window as protected against OS screen capture.
+  4. The 10-second timeout in `authSlice.ts` set `authError` whenever cold start took >10s before Firebase auth resolved.
+- FIX:
+  1. Added `isElectronRuntime()` (checking `navigator.userAgent.includes('Electron')`) and exported lazy getter `getAppCheck()` in `firebase.ts`; updated `FirebaseIntelligenceService.ts` to call `activeAppCheck = appCheck || getAppCheck()`.
+  2. Spread `...ALLOWED_ORIGINS.analytics` into `connect-src` and `img-src` in `csp.ts`. Handled CORS in `onHeadersReceived` using `(initiator && initiator !== 'null') ? initiator : 'null'` to comply with Chromium credentialed request rules.
+  3. Changed `win.setContentProtection` default to `false` unless explicitly opted into via `process.env.INDII_CONTENT_PROTECTION === 'true'`.
+  4. Cleared timeout auth errors on mount in `LoginForm.tsx` if `authError?.includes('timed out')`.
+- EVIDENCE: Vitest unit tests passed (82/82 across security, auth, and intelligence suites), full monorepo typecheck clean (0 errors), packaged with `electron-builder --dir`, deployed to `/Applications/indii.music.app`. Live logs show clean startup, 0 Sentry CSP blocks, valid CORS headers, and clean login screen.
+- PREVENTION: Always use runtime user-agent checks alongside bridge checks for Electron detection in web code. Ensure all defined `ALLOWED_ORIGINS` groups in CSP are referenced in the policy generator.

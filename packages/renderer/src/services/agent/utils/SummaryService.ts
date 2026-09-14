@@ -42,7 +42,7 @@ export class SummaryService {
             
             SUMMARY:`;
 
-            const response = await AI.generateContent(
+            const summarizePromise = AI.generateContent(
                 [{ role: 'user', parts: [{ text: prompt }] }],
                 INTELLIGENCE_MODELS.TEXT.FAST,
                 {
@@ -50,6 +50,12 @@ export class SummaryService {
                     maxOutputTokens: 512
                 }
             );
+
+            const timeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(() => reject(new Error('SummaryService generation timed out after 15000ms')), 15000);
+            });
+
+            const response = await Promise.race([summarizePromise, timeoutPromise]);
 
             if (!response || !response.response) {
                 throw new Error('Invalid response structure from AutonomousIntelligence');
@@ -61,7 +67,7 @@ export class SummaryService {
             Logger.info('SummaryService', 'Summary generated successfully.');
             return summary;
         } catch (error: unknown) {
-            Logger.error('SummaryService', 'Failed to generate summary:', error);
+            Logger.warn('SummaryService', 'Failed to generate summary, using truncated history fallback:', error);
             // Fallback: return truncated original text if summarization fails
             return `[Truncated History] ... ${text.slice(-500)}`;
         }

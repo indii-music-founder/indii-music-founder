@@ -68,7 +68,13 @@ export class FileSystemService extends FirestoreService<FileNode> {
         super('file_nodes');
     }
 
-    async getProjectNodes(projectId: string): Promise<FileNode[]> {
+    async getProjectNodes(projectId: string, overrideUserId?: string): Promise<FileNode[]> {
+        const userId = overrideUserId || auth.currentUser?.uid;
+        if (!userId) {
+            // Unauthenticated sessions or during startup before auth is ready cannot query file_nodes
+            return [];
+        }
+
         // The default/unassigned bucket historically carries TWO sentinel values
         // ('default' from appSlice, 'default-project' from StorageService) — both
         // exist in production data, so default-bucket reads must match both.
@@ -76,9 +82,12 @@ export class FileSystemService extends FirestoreService<FileNode> {
             ? where('projectId', 'in', [DEFAULT_PROJECT_ID, LEGACY_DEFAULT_PROJECT_ID])
             : where('projectId', '==', projectId);
 
+        const userFilter = where('userId', '==', userId);
+
         try {
             const q = query(
                 this.collection,
+                userFilter,
                 projectFilter,
                 orderBy('createdAt', 'asc')
             );
@@ -93,7 +102,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             // Fallback for missing index error
             if (error && typeof error === 'object' && 'code' in error && error.code === 'failed-precondition') {
                 logger.warn('Firestore index missing, falling back to client-side sort', error);
-                const q = query(this.collection, projectFilter);
+                const q = query(this.collection, userFilter, projectFilter);
                 const snapshot = await getDocs(q);
                 return snapshot.docs.map(doc => ({
                     id: doc.id,

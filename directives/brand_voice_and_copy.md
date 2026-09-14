@@ -2,6 +2,7 @@
 
 **Status:** Active
 **Target:** All UI copy, marketing pages, email communications, and user-facing text.
+**Product Brief:** [`docs/product/PRODUCT_COPYWRITING_BRIEF.md`](../docs/product/PRODUCT_COPYWRITING_BRIEF.md) (Living Playbook, 23 Specialist Team & Brand Cascading messaging assets)
 
 ## The Core Philosophy
 indii.music is an operating system and a virtual team for independent musicians. Our target audience is artists who want to focus on music while we handle the heavy lifting.

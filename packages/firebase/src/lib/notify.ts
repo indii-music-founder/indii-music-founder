@@ -40,7 +40,7 @@ export async function sendTransactionalEmail(
     const resend = new Resend(apiKey);
     const result = await resend.emails.send(
         {
-            from: process.env.RESEND_FROM_EMAIL || 'indii <hello@indii.music>',
+            from: process.env.RESEND_FROM_EMAIL || 'Founder | indii <founder@indii.music>',
             to,
             subject,
             html,

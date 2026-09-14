@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     buildMobileRemotePairingUrl,
     buildMobileRemoteUrl,
+    isIpadOrTabletDevice,
     isMobileRemoteHost,
     isMobileRemotePath,
     isRemoteSurfaceDevice,
@@ -45,7 +46,7 @@ describe('remote surface device and executor boundaries', () => {
         vi.unstubAllGlobals();
     });
 
-    it('routes phones and touch tablets to the Controller', () => {
+    it('routes phones to the Controller and tablets to the Web Studio', () => {
         expect(isRemoteSurfaceDevice({
             isAnyPhone: true,
             isTablet: false,
@@ -53,6 +54,10 @@ describe('remote surface device and executor boundaries', () => {
         })).toBe(true);
         expect(isRemoteSurfaceDevice({
             isAnyPhone: false,
+            isTablet: true,
+            isTouchDevice: true,
+        })).toBe(false);
+        expect(isIpadOrTabletDevice({
             isTablet: true,
             isTouchDevice: true,
         })).toBe(true);
@@ -64,26 +69,25 @@ describe('remote surface device and executor boundaries', () => {
         expect(isStudioExecutorSurface('dashboard', false)).toBe(true);
     });
 
-    it('does not misclassify a desktop-width Mac browser with touch points as an iPad', () => {
+    it('identifies touch-capable iPadOS browser as iPad and routes away from phone remote', () => {
         vi.stubGlobal('navigator', {
             userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
             platform: 'MacIntel',
             maxTouchPoints: 5,
         });
 
-        expect(isRemoteSurfaceDevice({
-            isAnyPhone: false,
-            isTablet: false,
+        expect(isIpadOrTabletDevice({
+            isTablet: true,
             isTouchDevice: true,
-        })).toBe(false);
+        })).toBe(true);
         expect(isRemoteSurfaceDevice({
             isAnyPhone: false,
             isTablet: true,
             isTouchDevice: true,
-        })).toBe(true);
+        })).toBe(false);
     });
 
-    it('routes mobile/tablet devices to Controller and computer browsers to regular Studio app on app.indii.music', () => {
+    it('routes mobile phone devices to Controller and tablets/computer browsers to regular Studio app on app.indii.music', () => {
         expect(shouldUseMobileRemoteSurface({
             hostname: 'app.indii.music',
             pathname: '/dashboard',

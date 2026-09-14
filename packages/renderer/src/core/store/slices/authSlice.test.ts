@@ -566,6 +566,27 @@ describe('AuthSlice', () => {
             expect(useStore.getState().authError).toContain('timed out');
         });
 
+        it('should clear timeout error when onAuthStateChanged eventually resolves after timeout', async () => {
+            const { auth } = await import('@/services/firebase');
+            let authCallback: (user: unknown) => void = () => { };
+            vi.mocked(onAuthStateChanged).mockImplementation((_auth, cb) => {
+                authCallback = cb as (user: unknown) => void;
+                return () => { };
+            });
+
+            const { initializeAuthListener } = useStore.getState();
+            initializeAuthListener();
+
+            // Advance past 10s timeout
+            vi.advanceTimersByTime(10_000);
+            expect(useStore.getState().authLoading).toBe(false);
+            expect(useStore.getState().authError).toContain('timed out');
+
+            // Now onAuthStateChanged fires with null (ready on login screen)
+            authCallback(null);
+            expect(useStore.getState().authError).toBeNull();
+        });
+
         it('should cancel debounce if valid user arrives during debounce window', async () => {
             const { auth } = await import('@/services/firebase');
 

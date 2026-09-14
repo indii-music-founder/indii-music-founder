@@ -376,32 +376,6 @@ footer span {
   filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35));
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
- * System canvas layer — fixed WebGL presentation layer behind all content.
- * Fades in only after the first frame is ready; never intercepts input.
- * ──────────────────────────────────────────────────────────────────────────*/
-.system-canvas-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  animation: system-canvas-fade-in 0.8s ease-out both;
-}
-
-@keyframes system-canvas-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .system-canvas-layer {
-    animation: none;
-  }
-}
 
 /* ──────────────────────────────────────────────────────────────────────────
  * SONIC OS STUDIO LIGHTING & GLASS UTILITIES

@@ -327,9 +327,6 @@ export { remoteConfig };
 // The messaging module itself is also loaded lazily (dynamic import inside
 // getFirebaseMessaging) so its ~200KB stays out of the eager startup bundle.
 import type { Messaging } from 'firebase/messaging';
-import { Logger } from '@/core/logger/Logger';
-
-const TAG = 'firebase';
 
 
 let _messagingInstance: Messaging | null = null;
@@ -401,62 +398,61 @@ if (typeof window !== 'undefined') {
     }
 }
 
+// Helper to reliably detect Electron runtime at any point in lifecycle
+export function isElectronRuntime(): boolean {
+    if (typeof window === 'undefined') return false;
+    return !!(window as any).electronAPI ||
+        navigator.userAgent.includes('Electron') ||
+        !!(window as any).process?.versions?.electron;
+}
+
 // Initialize App Check
-let appCheck = null;
-if (typeof window !== 'undefined') {
-    // Debug token is already set at module scope (see top of file)
-    // This ensures the Installations API uses the debug token before any Firebase service loads
+let appCheck: any = null;
+
+export function getAppCheck(): any {
+    if (appCheck) return appCheck;
+    if (typeof window === 'undefined') return null;
 
     if (env.DEV) {
         logger.debug('[App Check] Auto-debug mode enabled (check console for debug token)');
     }
 
-    // SECURITY: Warn in production if App Check is not configured
-    // This is a critical security control - App Check prevents unauthorized API access
     if (!env.DEV && !env.appCheckKey) {
         const errorMessage = 'SECURITY WARNING: App Check key missing in production. Application running without App Check.';
         logger.warn(errorMessage);
     }
 
-    // Initialize App Check if we have a valid key
-    const isElectron = !!window.electronAPI;
+    const isElectron = isElectronRuntime();
 
-    // Logic:
-    // 1. Must have a key.
-    // 2. Electron uses a CustomProvider backed by a Cloud Function since ReCaptcha requires a web origin.
-    // 3. CRITICAL: In DEV mode with Functions emulator, skip App Check entirely to avoid Installations API blocking.
     const skipAppCheckInEmulator = env.DEV && (
         env.VITE_USE_FUNCTIONS_EMULATOR === 'true' ||
-        isLocalhostDev
+        (!isElectron && isLocalhostDev)
     );
     const isPlaceholderKey = !env.appCheckKey ||
         env.appCheckKey === 'dummy' ||
         env.appCheckKey.toLowerCase() === 'placeholder';
-    const shouldInitAppCheck = !skipAppCheckInEmulator && !isPlaceholderKey;
+    const shouldInitAppCheck = isElectron
+        ? !(env.DEV && env.VITE_USE_FUNCTIONS_EMULATOR === 'true')
+        : (!skipAppCheckInEmulator && !isPlaceholderKey);
 
     if (skipAppCheckInEmulator) {
         logger.info('[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation.');
-    } else if (shouldInitAppCheck) {
-        if (env.DEV && isLocalhostDev && !isElectron) {
-            Logger.warn(TAG,
-                '[indii][AppCheck] Running on localhost without a debug token.\n' +
-                'Google Maps and other protected services will fail until you:\n' +
-                '1. Check the console for "App Check debug token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"\n' +
-                '2. Register this token in the Firebase Console under App Check > Manage Debug Tokens.'
-            );
-        }
-
+    } else if (shouldInitAppCheck && !appCheck) {
         try {
             const provider = isElectron
               ? new CustomProvider({
                   getToken: async () => {
+                      if (!auth.currentUser && typeof auth.authStateReady === 'function') {
+                          await auth.authStateReady();
+                      }
                       if (!auth.currentUser) {
                           logger.warn('[App Check] Cannot mint token: User not authenticated yet.');
                           throw new Error('User not authenticated');
                       }
                       try {
                           const mintFn = httpsCallable<{appId: string}, {token: string, expireTimeMillis: number}>(functions, 'mintElectronAppCheckToken');
-                          const result = await mintFn({ appId: firebaseConfig.appId });
+                          const targetAppId = firebaseConfig.appId || '1:148015878263:web:febc76c0bd56f28cdbb672';
+                          const result = await mintFn({ appId: targetAppId });
                           return result.data;
                       } catch (err) {
                           logger.error('[App Check] Failed to mint custom token:', err);
@@ -472,17 +468,20 @@ if (typeof window !== 'undefined') {
             });
             logger.info(isElectron ? '[App Check] Initialized custom provider for Electron' : '[App Check] Initialized successfully');
         } catch (e: unknown) {
-            // CRITICAL: Do NOT re-throw here. A failed App Check must not crash
-            // the entire app (killing React before it mounts). Firestore/Storage
-            // Security Rules still enforce authorization even without App Check.
             logger.error('[App Check] Initialization failed — app running without App Check:', e);
         }
-    } else if (isPlaceholderKey && env.appCheckKey) {
+    } else if (isPlaceholderKey && env.appCheckKey && !isElectron) {
         logger.warn(`[App Check] App Check key is a placeholder ("${env.appCheckKey}"). Skipping App Check initialization to prevent invalid API requests.`);
-    } else if (env.appCheckKey) {
-        logger.debug('[App Check] Skipping initialization (Electron/Dev constraints not met)');
     }
+
+    return appCheck;
 }
+
+// Eager initialization attempt
+if (typeof window !== 'undefined') {
+    getAppCheck();
+}
+
 export { appCheck };
 
 // Expose for e2e testing

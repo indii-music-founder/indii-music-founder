@@ -1,6 +1,6 @@
 import { getToken as getAppCheckToken } from 'firebase/app-check';
 import { httpsCallable } from 'firebase/functions';
-import { appCheck, auth, functions, remoteConfig } from '@/services/firebase';
+import { appCheck, getAppCheck, auth, functions, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
@@ -396,12 +396,17 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             'content-type': 'application/json',
             authorization: `Bearer ${typeof getIdToken === 'function' ? await getIdToken.call(currentUser) : 'test-token'}`,
         };
-        if (!appCheck) {
+        const activeAppCheck = appCheck || getAppCheck();
+        if (!activeAppCheck) {
             if (import.meta.env.MODE === 'test') return { ...headers, 'x-firebase-appcheck': 'test-app-check-token' };
             throw new AppException(AppErrorCode.UNAUTHORIZED, 'App Check is required for backend AI requests.', { retryable: false });
         }
         try {
-            headers['x-firebase-appcheck'] = (await getAppCheckToken(appCheck, false)).token;
+            let tokenResult = await getAppCheckToken(activeAppCheck, false);
+            if (!tokenResult?.token) {
+                tokenResult = await getAppCheckToken(activeAppCheck, true);
+            }
+            headers['x-firebase-appcheck'] = tokenResult.token;
         } catch (error: unknown) {
             throw new AppException(AppErrorCode.UNAUTHORIZED, 'Could not verify this app for an AI request.', { retryable: false, originalError: error instanceof Error ? error.message : String(error) });
         }
@@ -466,6 +471,11 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 throw new AppException(AppErrorCode.PAYLOAD_TOO_LARGE,
                     message || 'AI request payload exceeded the backend size limit.',
                     { retryable: false, context: { httpStatus: response.status } });
+            }
+            if (response.status === 429) {
+                throw new AppException(AppErrorCode.QUOTA_EXCEEDED,
+                    message || 'AI service quota exhausted. Please try again shortly.',
+                    { retryable: true, context: { httpStatus: 429 } });
             }
             if (response.status === 401 || response.status === 403) {
                 throw new AppException(AppErrorCode.UNAUTHORIZED, message || 'AI backend authentication failed', { retryable: false });

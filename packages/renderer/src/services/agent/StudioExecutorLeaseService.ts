@@ -95,6 +95,12 @@ class StudioExecutorLeaseService {
             recordPresencePublishSuccess();
         } catch (error) {
             recordPresencePublishFailure(error);
+            const errorStr = String(error);
+            const code = (error as { code?: string })?.code;
+            if (code === 'permission-denied' || errorStr.includes('403') || errorStr.includes('permission-denied')) {
+                logger.warn('[StudioExecutorLeaseService] publishStudioPresence blocked by policy or auth (403). Standing by for lease renewal.');
+                return;
+            }
             throw error;
         }
     }

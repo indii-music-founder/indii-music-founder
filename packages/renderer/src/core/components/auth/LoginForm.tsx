@@ -137,6 +137,13 @@ export default function LoginForm() {
         }
     }, [setSignUpMode]);
 
+    // Clear any startup timeout error on mount so the user isn't greeted with a false-alarm warning banner
+    useEffect(() => {
+        if (authError?.includes('timed out')) {
+            clearAuthError();
+        }
+    }, [authError, clearAuthError]);
+
     const switchView = (newView: AuthView) => {
         clearAuthError();
         setIsForgotPassword(newView === 'forgot-password');

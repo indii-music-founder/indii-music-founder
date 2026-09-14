@@ -1,8 +1,14 @@
 import { registerTrustedRendererWebContents, validateSender } from './utils/ipc-security';
-import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter, protocol, net, globalShortcut } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter, protocol, net, globalShortcut, session } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import { accessControlService } from './security/AccessControlService';
+
+// Suppress Chromium's internal Google API key warning doorhanger ("Google API keys are missing. Some functionality of Chromium will be disabled.")
+// Chromium checks these environment variables and explicitly disables the infobar when set to 'no'.
+if (!process.env.GOOGLE_API_KEY) process.env.GOOGLE_API_KEY = 'no';
+if (!process.env.GOOGLE_DEFAULT_CLIENT_ID) process.env.GOOGLE_DEFAULT_CLIENT_ID = 'no';
+if (!process.env.GOOGLE_DEFAULT_CLIENT_SECRET) process.env.GOOGLE_DEFAULT_CLIENT_SECRET = 'no';
 
 // Item 86: isDev must be defined early for logging config
 const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
@@ -158,7 +164,7 @@ const createWindow = async () => {
         x: windowState.x,
         y: windowState.y,
         webPreferences: {
-            devTools: !app.isPackaged,
+            devTools: true,
             preload: path.join(__dirname, '../preload/index.cjs'),
             contextIsolation: true,
             nodeIntegration: false,
@@ -211,11 +217,15 @@ const createWindow = async () => {
         }
     });
 
-    // Configure Security for the session
-    configureSecurity(win.webContents.session);
+    // Configure Security for the session if isolated
+    if (win.webContents.session !== session.defaultSession) {
+        configureSecurity(win.webContents.session);
+    }
 
-    // Content Protection (MacOS/Windows only)
-    win.setContentProtection(true);
+    // Content Protection (MacOS/Windows only) — defaults to false to allow user screenshots/recording;
+    // can be toggled on demand via privacy:toggle-protection IPC or INDII_CONTENT_PROTECTION=true
+    const contentProtectionEnabled = process.env.INDII_CONTENT_PROTECTION === 'true';
+    win.setContentProtection(contentProtectionEnabled);
 
     // Console message logging from renderer
     win.webContents.on('console-message', (_event, level, message) => {
@@ -449,7 +459,8 @@ if (!gotTheLock) {
     app.on('ready', () => {
         log.info('App Ready (Primary Instance)');
 
-        // Apply Content Security Policy headers
+        // Apply security configurations and Content Security Policy headers
+        configureSecurity(session.defaultSession);
         applyCSP();
 
         // Register secure `safe-file` protocol handler

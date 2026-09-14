@@ -3,20 +3,31 @@ import type { MobileState } from '@/hooks/useMobile';
 export const MOBILE_REMOTE_ORIGIN = 'https://app.indii.music';
 export const MOBILE_REMOTE_PATH = '/mobile-remote';
 
+/**
+ * Detects whether the device is an iPad or a tablet.
+ * iPadOS 13+ Safari presents as `MacIntel` with multi-touch support (`navigator.maxTouchPoints > 1`).
+ */
+export function isIpadOrTabletDevice(
+    mobile: Pick<MobileState, 'isTablet' | 'isTouchDevice'>
+): boolean {
+    const isIpadUA = typeof navigator !== 'undefined' &&
+                     ((/iPad/i.test(navigator.userAgent)) ||
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
+    // Tablets (iPadOS, Android tablets) within tablet range or touch-enabled iPad UA
+    return (mobile.isTablet && (mobile.isTouchDevice || isIpadUA)) ||
+           (isIpadUA && (mobile.isTouchDevice || (typeof window !== 'undefined' && window.innerWidth <= 1366)));
+}
+
 export function isRemoteSurfaceDevice(
     mobile: Pick<MobileState, 'isAnyPhone' | 'isTablet' | 'isTouchDevice'>
 ): boolean {
-    // iPadOS 13+ Safari presents as MacIntel with multi-touch support
-    const isIpadUA = typeof navigator !== 'undefined' && 
-                     ((/iPad/i.test(navigator.userAgent)) || 
-                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
-
-    // Mac browser automation and some touch-capable laptops can expose
-    // `MacIntel` plus multiple touch points at a full desktop width. Treat the
-    // iPad compatibility signal as authoritative only inside the tablet
-    // breakpoint; otherwise a normal Studio reload can escape to the remote
-    // Controller and lose the authenticated host.
-    return mobile.isAnyPhone || (mobile.isTablet && (mobile.isTouchDevice || isIpadUA));
+    // Companion Remote Controller is only for actual mobile phones.
+    // Tablets and iPads route to the full Web Studio.
+    if (isIpadOrTabletDevice(mobile)) {
+        return false;
+    }
+    return Boolean(mobile.isAnyPhone);
 }
 
 /**
@@ -86,7 +97,7 @@ export function shouldUseMobileRemoteSurface(input: {
     // applies to Studio paths.
     if (isMobileRemoteBypassPath(input.pathname)) return false;
 
-    // Mobile phones and tablets (specifically iPad) open the Remote Control surface.
-    // Desktop / computer browsers loading app.indii.music or any web domain load the regular Studio app.
+    // Mobile phones open the Remote Control surface.
+    // Tablets (iPad) and desktop / computer browsers loading app.indii.music or any web domain load the regular Studio app.
     return input.isRemoteDevice;
 }

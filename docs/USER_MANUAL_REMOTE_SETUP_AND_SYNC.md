@@ -41,6 +41,28 @@ The following are not promised by this connection:
 - Conflict-resolution dialogs for edits made on multiple devices
 - A supported LAN, WebSocket, or Ngrok fallback
 
+## Multi-Device Triangulation & The "Road MacBook" Workflow
+
+**Live Multi-Client Boardroom Sync (Confirmed Real-Device Behavior):**
+The authenticated Cloud Relay and Firestore state layer support simultaneous multi-client presence and real-time event distribution. When a founder has multiple active sessions open on the same account:
+
+- **Mobile Controller (iPhone):** Running `app.indii.music/remote` (or paired mobile remote).
+- **Travel Machine (e.g. 2018 MacBook Pro):** Running the web app with the **Boardroom** open.
+- **Main Studio Workstation (e.g. Apple Silicon M4):** Running the web app with the **Boardroom** open.
+
+**Observed Real-World Action:**
+Speaking voice prompts directly into the iPhone remote control dispatches into the Boardroom and reflects/updates across **both** the travel laptop and the main studio workstation concurrently in real time.
+
+**Value & Operational Workflow:**
+If an artist or founder travels on the road with a MacBook, they can maintain active sessions that stay in lockstep synchronization with their primary studio computer at home/office while driving the conversation from their phone.
+
+**Pending Validation Scenario (Next Frontier):**
+- **Machine 1 (M4 Workstation):** Native **Electron Studio** app running in the background.
+- **Machine 2 (2018 MacBook Pro):** **Web app** running in the browser with Boardroom open.
+- **Device 3 (iPhone):** **Mobile Remote** controller actively connected.
+- *Objective:* Validate executor lease arbitration, native tool delegation, and cross-boundary sync between native desktop runtime and secondary web viewer when initiated via phone.
+
+
 ## Troubleshooting
 
 ### The pairing link expired

@@ -95,7 +95,7 @@ export default function ApprovalQueue({ onSendCommand }: ApprovalQueueProps) {
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                        className="relative overflow-hidden rounded-[32px] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#1c1c1e] to-red-500/10 shadow-[0_32px_64px_-16px_rgba(251,191,36,0.15)]"
+                        className="relative overflow-hidden rounded-[32px] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#1a1512] to-red-500/10 shadow-[0_32px_64px_-16px_rgba(251,191,36,0.15)] backdrop-blur-xl"
                     >
                         {/* Status Header */}
                         <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">

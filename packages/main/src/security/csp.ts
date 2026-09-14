@@ -33,11 +33,16 @@ const ALLOWED_ORIGINS = {
         'https://*.firebaseapp.com',
         'https://*.firebasestorage.app',
         'https://*.cloudfunctions.net',
+        'https://*.run.app',
+        'https://*.a.run.app',
     ],
     // Analytics & monitoring (add as needed)
     analytics: [
         'https://*.google-analytics.com',
         'https://*.googletagmanager.com',
+        'https://*.sentry.io',
+        'https://*.ingest.sentry.io',
+        'https://*.ingest.us.sentry.io',
     ],
     // CDNs for fonts/assets
     cdn: [
@@ -66,7 +71,7 @@ const ALLOWED_ORIGINS = {
 // CSP Policy Builder
 // ============================================================================
 
-interface CSPDirectives {
+export interface CSPDirectives {
     'default-src': string[];
     'script-src': string[];
     'style-src': string[];
@@ -83,7 +88,7 @@ interface CSPDirectives {
     'child-src': string[];
 }
 
-function buildCSPDirectives(isDevelopment: boolean): CSPDirectives {
+export function buildCSPDirectives(isDevelopment: boolean): CSPDirectives {
     const directives: CSPDirectives = {
         // Default: only allow same-origin
         'default-src': ["'self'"],
@@ -110,6 +115,7 @@ function buildCSPDirectives(isDevelopment: boolean): CSPDirectives {
             'data:',
             'blob:',
             ...ALLOWED_ORIGINS.google,
+            ...ALLOWED_ORIGINS.analytics,
             'https://*.googleusercontent.com',
         ],
 
@@ -120,6 +126,7 @@ function buildCSPDirectives(isDevelopment: boolean): CSPDirectives {
         'connect-src': [
             "'self'",
             ...ALLOWED_ORIGINS.google,
+            ...ALLOWED_ORIGINS.analytics,
             ...ALLOWED_ORIGINS.websocket,
             ...ALLOWED_ORIGINS.integrations,
             ...(isDevelopment ? ['ws://localhost:*', 'http://localhost:*'] : []),
@@ -153,7 +160,7 @@ function buildCSPDirectives(isDevelopment: boolean): CSPDirectives {
     return directives;
 }
 
-function serializeCSP(directives: CSPDirectives): string {
+export function serializeCSP(directives: CSPDirectives): string {
     return Object.entries(directives)
         .map(([key, values]) => `${key} ${values.join(' ')}`)
         .join('; ');
@@ -172,34 +179,61 @@ export function applyCSP(): void {
     const cspHeader = serializeCSP(cspDirectives);
 
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-        callback({
-            responseHeaders: {
-                ...details.responseHeaders,
-                // Content Security Policy
-                'Content-Security-Policy': [cspHeader],
-                // Prevent MIME sniffing
-                'X-Content-Type-Options': ['nosniff'],
-                // XSS protection (legacy, but still useful)
-                'X-XSS-Protection': ['1; mode=block'],
-                // Clickjacking protection
-                'X-Frame-Options': ['SAMEORIGIN'],
-                // Referrer policy
-                'Referrer-Policy': ['strict-origin-when-cross-origin'],
-                // Device APIs are used by Studio capture and road-mode tools.
-                // Electron's permission handler still restricts these grants to
-                // the trusted main renderer.
-                'Permissions-Policy': [
-                    'accelerometer=()',
-                    'camera=(self)',
-                    'geolocation=(self)',
-                    'gyroscope=()',
-                    'magnetometer=()',
-                    'microphone=(self)',
-                    'payment=()',
-                    'usb=()',
-                ].join(', '),
-            },
-        });
+        const responseHeaders: Record<string, string | string[]> = {
+            ...details.responseHeaders,
+            // Content Security Policy
+            'Content-Security-Policy': [cspHeader],
+            // Prevent MIME sniffing
+            'X-Content-Type-Options': ['nosniff'],
+            // XSS protection (legacy, but still useful)
+            'X-XSS-Protection': ['1; mode=block'],
+            // Clickjacking protection
+            'X-Frame-Options': ['SAMEORIGIN'],
+            // Referrer policy
+            'Referrer-Policy': ['strict-origin-when-cross-origin'],
+            // Device APIs are used by Studio capture and road-mode tools.
+            // Electron's permission handler still restricts these grants to
+            // the trusted main renderer.
+            'Permissions-Policy': [
+                'accelerometer=()',
+                'camera=(self)',
+                'geolocation=(self)',
+                'gyroscope=()',
+                'magnetometer=()',
+                'microphone=(self)',
+                'payment=()',
+                'usb=()',
+            ].join(', '),
+            'Cross-Origin-Opener-Policy': ['same-origin-allow-popups'],
+            'Cross-Origin-Embedder-Policy': ['unsafe-none'],
+        };
+
+        const url = details?.url || '';
+        const isGoogleOrFirebase = url.includes('.googleapis.com') ||
+            url.includes('.firebaseapp.com') ||
+            url.includes('.cloudfunctions.net') ||
+            url.includes('.run.app') ||
+            url.includes('localhost') ||
+            url.includes('127.0.0.1');
+
+        if (isGoogleOrFirebase) {
+            for (const key of Object.keys(responseHeaders)) {
+                if (key.toLowerCase().startsWith('access-control-')) {
+                    delete (responseHeaders as Record<string, unknown>)[key];
+                }
+            }
+            const initiator = (details as any).initiator;
+            const allowedOrigin = (initiator && initiator !== 'null') ? initiator : 'null';
+            responseHeaders['access-control-allow-origin'] = [allowedOrigin];
+            responseHeaders['access-control-allow-credentials'] = ['true'];
+            responseHeaders['access-control-allow-methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD'];
+            responseHeaders['access-control-allow-headers'] = ['*'];
+            responseHeaders['access-control-expose-headers'] = ['*'];
+            responseHeaders['access-control-max-age'] = ['86400'];
+            log.info(`[CORS Applied] ${details.method} ${url} origin=${allowedOrigin} initiator=${initiator}`);
+        }
+
+        callback({ responseHeaders });
     });
 
     log.info(`[Security] CSP applied (${isDev ? 'development' : 'production'} mode)`);

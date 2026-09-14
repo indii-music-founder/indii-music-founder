@@ -21,16 +21,29 @@ export function useAuthHealth(intervalMs = 5 * 60 * 1000): void {
         if (!auth.currentUser) return;
 
         try {
-            await auth.currentUser.getIdToken(/* forceRefresh */ true);
+            await auth.currentUser.getIdToken(/* forceRefresh */ false);
             if (hasNotified.current) {
                 logger.info('[AuthHealth] Session recovered — token refresh succeeded.');
                 hasNotified.current = false;
             }
         } catch (error: unknown) {
+            const errorCode = (error as { code?: string })?.code || '';
+            const message = error instanceof Error ? error.message : String(error);
+            const isNetworkError =
+                errorCode === 'auth/network-request-failed' ||
+                message.includes('network-request-failed') ||
+                message.includes('ERR_CONNECTION_CLOSED') ||
+                message.includes('Failed to fetch');
+
+            if (isNetworkError) {
+                // Transient network disruption is not an expired session — do not alarm user
+                logger.warn('[AuthHealth] Token refresh encountered network interruption, will retry next interval:', message);
+                return;
+            }
+
             if (!hasNotified.current) {
                 hasNotified.current = true;
-                const message = error instanceof Error ? error.message : 'Unknown auth error';
-                logger.error('[AuthHealth] Token refresh failed:', message);
+                logger.warn('[AuthHealth] Token refresh failed (session invalid):', message);
                 events.emit('SYSTEM_ALERT', {
                     level: 'warning' as const,
                     message: 'Your session has expired. Please sign in again to continue using all features.'

@@ -16,14 +16,29 @@ interface StatusDashboardProps {
     onTabChange?: (tab: 'home' | 'capture' | 'boardroom' | 'road' | 'stream' | 'settings') => void;
 }
 
-function ActionButton({ icon: Icon, label, description, delay = 0, onClick, disabled }: {
+interface ActionButtonProps {
     icon: React.ElementType;
     label: string;
     description: string;
     delay?: number;
     onClick?: () => void;
     disabled?: boolean;
-}) {
+    iconColor?: string;
+    iconBg?: string;
+    iconBorder?: string;
+}
+
+function ActionButton({
+    icon: Icon,
+    label,
+    description,
+    delay = 0,
+    onClick,
+    disabled,
+    iconColor = 'text-stone-300',
+    iconBg = 'bg-white/[0.04]',
+    iconBorder = 'border-white/10',
+}: ActionButtonProps) {
     return (
         <motion.button 
             whileTap={!disabled ? { scale: 0.95 } : undefined}
@@ -38,24 +53,24 @@ function ActionButton({ icon: Icon, label, description, delay = 0, onClick, disa
             }}
             disabled={disabled}
             className={cn(
-                "group relative overflow-hidden flex flex-col gap-3 p-5 rounded-[24px] border transition-all duration-300 text-left",
+                "group relative overflow-hidden flex flex-col gap-3 p-5 rounded-[24px] border transition-all duration-300 text-left font-sans",
                 disabled 
-                    ? "bg-[#1c1c1e] border-white/5 opacity-50 cursor-not-allowed" 
-                    : "bg-[#030303] border-white/10 hover:border-[#2E2EFE]/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_20px_rgba(46,46,254,0.1)] cursor-pointer"
+                    ? "bg-[#181411]/60 border-white/5 opacity-50 cursor-not-allowed"
+                    : "bg-[#1a1512]/80 border-white/10 hover:border-[#00ff66]/40 shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_24px_rgba(0,255,102,0.08)] backdrop-blur-xl cursor-pointer"
             )}
         >
             <div className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
-                disabled ? "bg-white/5 text-[#8e8e93]" : "bg-[#2E2EFE]/10 text-[#2E2EFE] group-hover:scale-110"
+                "w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-300",
+                disabled ? "bg-white/5 text-stone-500 border-white/5" : cn(iconBg, iconColor, iconBorder, "group-hover:scale-110")
             )}>
                 <Icon className="w-5 h-5" />
             </div>
 
             <div className="flex-1 min-w-0 mt-2">
-                <p className="text-sm font-bold text-[#F0F0F0] tracking-tight">{label}</p>
-                <p className="text-[10px] text-[#8e8e93] font-medium leading-tight mt-1">{description}</p>
+                <p className="text-sm font-bold text-stone-100 tracking-tight font-display">{label}</p>
+                <p className="text-[10px] text-stone-400 font-medium leading-tight mt-1">{description}</p>
                 {disabled && (
-                    <span className="mt-3 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#8e8e93]">
+                    <span className="mt-3 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-stone-500 font-mono">
                         Unavailable
                     </span>
                 )}
@@ -68,10 +83,10 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
     const [showMileageModal, setShowMileageModal] = useState(false);
 
     return (
-        <div className="space-y-6 pb-8">
+        <div className="space-y-6 pb-8 font-sans">
             <div className="px-2 pt-2">
-                <h2 className="text-2xl font-bold text-[#F0F0F0] tracking-tight mb-1">Welcome Back</h2>
-                <p className="text-sm text-[#a1a1a6] font-medium">Ready to dispatch tasks to the studio.</p>
+                <h2 className="text-2xl font-bold text-stone-100 tracking-tight mb-1 font-display">Welcome Back</h2>
+                <p className="text-sm text-stone-400 font-medium">Ready to dispatch tasks to the studio.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -81,6 +96,9 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     description="Capture what just happened"
                     delay={0.1}
                     disabled={false}
+                    iconColor="text-[#00ff66]"
+                    iconBg="bg-[#00ff66]/10"
+                    iconBorder="border-[#00ff66]/20"
                     onClick={() => onTabChange?.('capture')}
                 />
                 <ActionButton
@@ -89,6 +107,9 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     description="Snap a photo of an expense"
                     delay={0.2}
                     disabled={false}
+                    iconColor="text-[#FFC107]"
+                    iconBg="bg-[#FFC107]/10"
+                    iconBorder="border-[#FFC107]/20"
                     onClick={() => onTabChange?.('capture')}
                 />
                 <ActionButton
@@ -97,6 +118,9 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     description="Gear run & $0.67/mi deduction"
                     delay={0.25}
                     disabled={false}
+                    iconColor="text-[#FF5722]"
+                    iconBg="bg-[#FF5722]/10"
+                    iconBorder="border-[#FF5722]/20"
                     onClick={() => setShowMileageModal(true)}
                 />
                 <ActionButton
@@ -105,6 +129,9 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     description="Request stock via agent"
                     delay={0.3}
                     disabled={!isPaired}
+                    iconColor="text-[#FFB300]"
+                    iconBg="bg-[#FFB300]/10"
+                    iconBorder="border-[#FFB300]/20"
                     onClick={() => onTabChange?.('capture')}
                 />
                 <ActionButton
@@ -113,6 +140,9 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     description="Remote legal approvals are not wired up in mobile yet."
                     delay={0.4}
                     disabled
+                    iconColor="text-[#90A4AE]"
+                    iconBg="bg-[#455A64]/20"
+                    iconBorder="border-[#455A64]/30"
                 />
             </div>
 
@@ -128,29 +158,29 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                 }}
                 disabled={!isPaired}
                 className={cn(
-                    "group relative overflow-hidden flex w-full items-center justify-between gap-4 p-5 rounded-[24px] border transition-all duration-300 text-left mt-4",
+                    "group relative overflow-hidden flex w-full items-center justify-between gap-4 p-5 rounded-[24px] border transition-all duration-300 text-left mt-4 font-sans",
                     isPaired
-                        ? "bg-gradient-to-r from-blue-500/12 via-[#030303] to-indigo-500/12 border-blue-400/20 hover:border-blue-400/40 shadow-[0_8px_30px_rgba(46,46,254,0.08)] cursor-pointer"
-                        : "bg-[#1c1c1e] border-white/5 opacity-50 cursor-not-allowed"
+                        ? "bg-linear-to-r from-[#00ff66]/10 via-[#1a1512] to-amber-500/10 border-[#00ff66]/20 hover:border-[#00ff66]/40 shadow-[0_8px_30px_rgba(0,0,0,0.5)] cursor-pointer"
+                        : "bg-[#181411]/60 border-white/5 opacity-50 cursor-not-allowed"
                 )}
             >
                 <div className="flex items-center gap-4 min-w-0">
                     <div className={cn(
-                        "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0",
-                        isPaired ? "bg-blue-500/15 text-blue-400" : "bg-white/5 text-[#8e8e93]"
+                        "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0 border",
+                        isPaired ? "bg-[#00ff66]/15 text-[#00ff66] border-[#00ff66]/25" : "bg-white/5 text-stone-500 border-white/5"
                     )}>
                         <LayoutDashboard className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-sm font-bold text-[#F0F0F0] tracking-tight">Talk to Boardroom</p>
-                        <p className="text-[10px] text-[#8e8e93] font-medium leading-tight mt-1">
+                        <p className="text-sm font-bold text-stone-100 tracking-tight font-display">Talk to Boardroom</p>
+                        <p className="text-[10px] text-stone-400 font-medium leading-tight mt-1">
                             Open the boardroom thread and message the seated agents directly.
                         </p>
                     </div>
                 </div>
                 <span className={cn(
-                    "text-[10px] font-bold uppercase tracking-[0.2em]",
-                    isPaired ? "text-blue-400" : "text-[#636366]"
+                    "text-[10px] font-bold uppercase tracking-[0.2em] font-mono",
+                    isPaired ? "text-[#00ff66]" : "text-stone-500"
                 )}>
                     Open
                 </span>
@@ -166,22 +196,22 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     onTabChange?.('road');
                 }}
                 className={cn(
-                    "group relative overflow-hidden flex w-full items-center justify-between gap-4 p-5 rounded-[24px] border transition-all duration-300 text-left mt-4",
-                    "bg-gradient-to-r from-emerald-500/10 via-[#030303] to-cyan-500/10 border-emerald-400/20 hover:border-emerald-400/40 shadow-[0_8px_30px_rgba(16,185,129,0.08)] cursor-pointer"
+                    "group relative overflow-hidden flex w-full items-center justify-between gap-4 p-5 rounded-[24px] border transition-all duration-300 text-left mt-4 font-sans",
+                    "bg-linear-to-r from-[#FF5722]/10 via-[#1a1512] to-amber-500/10 border-[#FF5722]/20 hover:border-[#FF5722]/40 shadow-[0_8px_30px_rgba(0,0,0,0.5)] cursor-pointer"
                 )}
             >
                 <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0 bg-emerald-500/15 text-emerald-400">
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0 bg-[#FF5722]/15 text-[#FF5722] border border-[#FF5722]/25">
                         <Navigation className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-sm font-bold text-[#F0F0F0] tracking-tight">Road Mode</p>
-                        <p className="text-[10px] text-[#8e8e93] font-medium leading-tight mt-1">
+                        <p className="text-sm font-bold text-stone-100 tracking-tight font-display">Road Mode</p>
+                        <p className="text-[10px] text-stone-400 font-medium leading-tight mt-1">
                             Touring controls for today&apos;s stop, nearby fuel, food, lodging, and emergency support.
                         </p>
                     </div>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF5722] font-mono">
                     Open
                 </span>
             </motion.button>
@@ -191,21 +221,21 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="mt-8 px-5 py-4 rounded-[20px] bg-[#1c1c1e] border border-white/5 flex items-center justify-between"
+                className="mt-8 px-5 py-4 rounded-[20px] bg-[#1a1512]/80 border border-white/10 backdrop-blur-xl flex items-center justify-between"
             >
                 <div className="flex items-center gap-3">
                     <div className={cn(
                         "w-2 h-2 rounded-full",
-                        connectionStatus === 'connected' ? "bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" :
+                        connectionStatus === 'connected' ? "bg-[#00ff66] shadow-[0_0_8px_rgba(0,255,102,0.6)] animate-pulse" :
                             isPaired ? "bg-amber-400" : "bg-red-400"
                     )} />
-                    <span className="text-[11px] font-bold text-[#8e8e93] uppercase tracking-widest">
+                    <span className="text-[11px] font-bold text-stone-400 uppercase tracking-widest font-mono">
                         {connectionStatus === 'connected' ? 'Studio Executor Active' :
                             isPaired ? 'Studio Standby' : 'Studio Disconnected'}
                     </span>
                 </div>
                 {isPaired && connectionStatus === 'connected' && (
-                    <span className="text-[10px] font-mono font-bold text-green-400">SYNCED</span>
+                    <span className="text-[10px] font-mono font-bold text-[#00ff66]">SYNCED</span>
                 )}
             </motion.div>
 

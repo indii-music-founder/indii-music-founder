@@ -69,6 +69,8 @@ describe('security/index.ts', () => {
                 webRequest: {
                     onHeadersReceived: vi.fn(),
                     onBeforeSendHeaders: vi.fn(),
+                    onErrorOccurred: vi.fn(),
+                    onCompleted: vi.fn(),
                 },
                 setPermissionRequestHandler: vi.fn(),
                 setPermissionCheckHandler: vi.fn(),
@@ -84,6 +86,8 @@ describe('security/index.ts', () => {
             expect(mockSession.setPermissionCheckHandler).toHaveBeenCalled();
             expect(mockSession.setCertificateVerifyProc).toHaveBeenCalled();
             expect(mockSession.webRequest.onBeforeSendHeaders).toHaveBeenCalled();
+            expect(mockSession.webRequest.onErrorOccurred).toHaveBeenCalled();
+            expect(mockSession.webRequest.onCompleted).toHaveBeenCalled();
         });
 
         describe('Header Hardening (onHeadersReceived)', () => {
@@ -108,6 +112,71 @@ describe('security/index.ts', () => {
                 expect(response.responseHeaders['Cross-Origin-Embedder-Policy']).toEqual(['unsafe-none']);
                 expect(response.responseHeaders['Content-Security-Policy']).toBeUndefined();
                 expect(response.responseHeaders['Some-Header']).toEqual(['value']);
+            });
+
+            it('injects CORS wildcard headers for Google and Firebase endpoints', () => {
+                configureSecurity(mockSession as unknown as Session);
+
+                const handler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
+                const callback = vi.fn();
+                const details = {
+                    url: 'https://securetoken.googleapis.com/v1/token',
+                    responseHeaders: {
+                        'access-control-allow-origin': ['https://indii.music'],
+                        'content-type': ['application/json']
+                    }
+                };
+
+                handler(details, callback);
+
+                expect(callback).toHaveBeenCalled();
+                const response = callback.mock.calls[0][0];
+                expect(response.responseHeaders['access-control-allow-origin']).toEqual(['null']);
+                expect(response.responseHeaders['access-control-allow-credentials']).toEqual(['true']);
+                expect(response.responseHeaders['access-control-allow-methods'][0]).toContain('POST');
+                expect(response.responseHeaders['access-control-allow-headers']).toEqual(['*']);
+                expect(response.responseHeaders['content-type']).toEqual(['application/json']);
+            });
+
+            it('injects CORS wildcard headers for Cloud Functions and Cloud Run endpoints', () => {
+                configureSecurity(mockSession as unknown as Session);
+
+                const handler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
+                const callback = vi.fn();
+                const details = {
+                    url: 'https://us-central1-indii-music-founder.cloudfunctions.net/mintElectronAppCheckToken',
+                    responseHeaders: {
+                        'access-control-allow-origin': ['https://indii.music']
+                    }
+                };
+
+                handler(details, callback);
+
+                expect(callback).toHaveBeenCalled();
+                const response = callback.mock.calls[0][0];
+                expect(response.responseHeaders['access-control-allow-origin']).toEqual(['null']);
+                expect(response.responseHeaders['access-control-allow-credentials']).toEqual(['true']);
+            });
+
+            it('preserves file:// initiator and enables credentials for local Electron requests', () => {
+                configureSecurity(mockSession as unknown as Session);
+
+                const handler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
+                const callback = vi.fn();
+                const details = {
+                    url: 'https://securetoken.googleapis.com/v1/token',
+                    initiator: 'file://',
+                    responseHeaders: {
+                        'access-control-allow-origin': ['https://indii.music']
+                    }
+                };
+
+                handler(details, callback);
+
+                expect(callback).toHaveBeenCalled();
+                const response = callback.mock.calls[0][0];
+                expect(response.responseHeaders['access-control-allow-origin']).toEqual(['file://']);
+                expect(response.responseHeaders['access-control-allow-credentials']).toEqual(['true']);
             });
         });
 
@@ -169,16 +238,18 @@ describe('security/index.ts', () => {
                 expect(callback).toHaveBeenCalledWith(0);
             });
 
-            it('should trust Google/Firebase domains on valid cert', () => {
+            it('should trust Google/Firebase domains on valid cert (net::OK, OK, 0)', () => {
                 configureSecurity(mockSession as unknown as Session);
                 const handler = mockSession.setCertificateVerifyProc.mock.calls[0][0];
 
                 const domains = ['api.googleapis.com', 'google.com', 'app.firebaseapp.com', 'img.googleusercontent.com', 'cdn.jsdelivr.net'];
 
                 for (const domain of domains) {
-                    const callback = vi.fn();
-                    handler({ hostname: domain, verificationResult: 'net::OK' }, callback);
-                    expect(callback).toHaveBeenCalledWith(0);
+                    for (const validResult of ['net::OK', 'OK', 0]) {
+                        const callback = vi.fn();
+                        handler({ hostname: domain, verificationResult: validResult }, callback);
+                        expect(callback).toHaveBeenCalledWith(0);
+                    }
                 }
             });
 
@@ -232,6 +303,7 @@ describe('security/index.ts', () => {
                         requestHeaders: {
                             'User-Agent': 'test',
                             'Referer': 'https://indii.music/',
+                            'Origin': 'https://indii.music',
                             'X-App-Client-Type': 'electron-desktop-app'
                         }
                     });
