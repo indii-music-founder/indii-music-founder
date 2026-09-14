@@ -332,7 +332,7 @@ describe('VideoGenerationService', () => {
                 aspectRatio: '16:9',
                 model: 'pro',
                 resolution: '1080p',
-                durationSeconds: 6,
+                durationSeconds: 8,
                 personGeneration: 'allow_adult',
                 negativePrompt: 'blurry',
                 seed: 42,
@@ -343,9 +343,58 @@ describe('VideoGenerationService', () => {
                 ],
                 directorSettings: expect.objectContaining({
                     fps: 24,
-                    totalFrames: 144
+                    durationSeconds: 8,
+                    totalFrames: 192
                 })
             }));
+        });
+
+        it('normalizes duration to 6s for text-to-video 720p without frame inputs', async () => {
+            await VideoGeneration.generateVideo({
+                prompt: 'text only prompt',
+                duration: 6,
+                resolution: '720p',
+            });
+
+            const callArgs = mockHttpsCallable.mock.calls[0]?.[0];
+            expect(callArgs).toEqual(expect.objectContaining({
+                durationSeconds: 6,
+                directorSettings: expect.objectContaining({
+                    fps: 24,
+                    durationSeconds: 6,
+                    totalFrames: 144,
+                }),
+                costEstimate: 0.60,
+            }));
+        });
+
+        it('normalizes duration to 8s for image-to-video even if 4s is requested', async () => {
+            await VideoGeneration.generateVideo({
+                prompt: 'animate this image',
+                firstFrame: 'data:image/png;base64,start',
+                duration: 4,
+            });
+
+            const callArgs = mockHttpsCallable.mock.calls[0]?.[0];
+            expect(callArgs).toEqual(expect.objectContaining({
+                durationSeconds: 8,
+                directorSettings: expect.objectContaining({
+                    fps: 24,
+                    durationSeconds: 8,
+                    totalFrames: 192,
+                }),
+                costEstimate: 0.80,
+            }));
+        });
+
+        it('calculates cost estimates matching backend pricing rules', () => {
+            expect(VideoGeneration.estimateVideoCost(4, 'fast')).toBe(0.40);
+            expect(VideoGeneration.estimateVideoCost(6, 'fast')).toBe(0.60);
+            expect(VideoGeneration.estimateVideoCost(8, 'fast')).toBe(0.80);
+            expect(VideoGeneration.estimateVideoCost(8, 'pro')).toBe(3.20);
+            expect(VideoGeneration.estimateVideoCost(8, 'lite')).toBe(0.40);
+            expect(VideoGeneration.estimateVideoCost(8, 'fast', 'temporal_inpaint')).toBe(1.08);
+            expect(VideoGeneration.estimateVideoCost(10, 'fast', 'long_form')).toBe(1.20);
         });
 
         it('should reject client-side MediaGenerator usage', async () => {

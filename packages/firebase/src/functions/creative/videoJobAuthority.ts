@@ -210,7 +210,8 @@ export async function createClaimedVideoJob(
     if (data.type !== 'video') throw new HttpsError('failed-precondition', 'Cost reservation type mismatch.');
     if (data.status !== 'APPROVED') throw new HttpsError('failed-precondition', 'Cost reservation is already claimed or finalized.');
     const estimatedCost = Number(data.estimatedCost);
-    if (!Number.isFinite(estimatedCost) || Math.abs(estimatedCost - input.expectedCost) > 0.01) {
+    const costDiff = estimatedCost - input.expectedCost;
+    if (!Number.isFinite(estimatedCost) || costDiff < -0.01 || costDiff > 0.05) {
       throw new HttpsError('failed-precondition', 'Cost reservation estimate does not match the video job.');
     }
     transaction.update(reservationRef, {

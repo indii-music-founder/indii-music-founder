@@ -292,7 +292,7 @@ export class GeneralistAgent extends BaseAgent {
                     properties: {
                         prompt: { type: 'STRING', description: 'Description of the motion and scene.' },
                         image: { type: 'STRING', description: 'Optional base64 starting image.' },
-                        duration: { type: 'NUMBER', description: 'Duration in seconds (default 5).' }
+                        duration: { type: 'NUMBER', description: 'Duration in seconds (4, 6, or 8 seconds; image-to-video requires 8 seconds).' }
                     },
                     required: ['prompt']
                 }

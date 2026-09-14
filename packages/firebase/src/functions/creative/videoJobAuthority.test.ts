@@ -185,6 +185,52 @@ describe('video job authority', () => {
     expect(harness.create).not.toHaveBeenCalled();
   });
 
+  it('accepts a cost reservation with safe positive variance within tolerance', async () => {
+    const harness = firestoreHarness({
+      reservation: { userId: 'owner-1', type: 'video', status: 'APPROVED', estimatedCost: 0.83 },
+    });
+    await createClaimedVideoJob(harness.db as never, {
+      ownerUid: 'owner-1',
+      reservationId: 'reservation-1',
+      jobId: 'job-1',
+      expectedCost: 0.80,
+      jobRecord: { id: 'job-1' },
+    });
+    expect(harness.update).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      status: 'CLAIMED',
+      claimedJobId: 'job-1',
+    }));
+    expect(harness.create).toHaveBeenCalledWith(expect.anything(), { id: 'job-1' });
+  });
+
+  it('rejects an under-reserved cost reservation', async () => {
+    const harness = firestoreHarness({
+      reservation: { userId: 'owner-1', type: 'video', status: 'APPROVED', estimatedCost: 0.70 },
+    });
+    await expect(createClaimedVideoJob(harness.db as never, {
+      ownerUid: 'owner-1',
+      reservationId: 'reservation-1',
+      jobId: 'job-1',
+      expectedCost: 0.80,
+      jobRecord: { id: 'job-1' },
+    })).rejects.toMatchObject({ code: 'failed-precondition' });
+    expect(harness.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a grossly mismatched reservation exceeding tolerance', async () => {
+    const harness = firestoreHarness({
+      reservation: { userId: 'owner-1', type: 'video', status: 'APPROVED', estimatedCost: 1.20 },
+    });
+    await expect(createClaimedVideoJob(harness.db as never, {
+      ownerUid: 'owner-1',
+      reservationId: 'reservation-1',
+      jobId: 'job-1',
+      expectedCost: 0.80,
+      jobRecord: { id: 'job-1' },
+    })).rejects.toMatchObject({ code: 'failed-precondition' });
+    expect(harness.create).not.toHaveBeenCalled();
+  });
+
   it('claims a queued V3 job exactly once at the authoritative document', async () => {
     const first = firestoreHarness({
       job: { id: 'job-1', type: 'video', status: 'queued', workerVersion: GATEWAY_VIDEO_WORKER_VERSION },

@@ -130,7 +130,7 @@ export const VideoAgent: AgentConfig = {
                         image: { type: "STRING", description: "Optional base64 start image or HTTPS image URL." },
                         assetId: { type: "STRING", description: "Optional saved image asset ID to use as the first frame." },
                         recentImageIndex: { type: "NUMBER", description: "Optional zero-based index from the most recent generated/uploaded images to use as the first frame." },
-                        duration: { type: "NUMBER", description: "Duration in seconds." }
+                        duration: { type: "NUMBER", description: "Duration in seconds (4, 6, or 8 seconds; image-to-video requires 8 seconds)." }
                     },
                     required: ["prompt"]
                 }

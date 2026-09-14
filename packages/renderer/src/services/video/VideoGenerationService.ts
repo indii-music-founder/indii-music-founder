@@ -1,4 +1,4 @@
-import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -7,7 +7,11 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
-import { GenerateVideoSchema } from '@indii/shared';
+import {
+    GenerateVideoSchema,
+    normalizeVideoDuration,
+    normalizeVideoResolution,
+} from '@indii/shared';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema, DirectorSettingsSchema } from '@/modules/creative/video/schemas';
 import { z } from 'zod';
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
@@ -24,8 +28,6 @@ import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
-
-const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-001' (GA)
 
 const VIDEO_MODEL_TIERS = {
     'veo-3.1-lite-generate-001': 'lite',
@@ -80,17 +82,13 @@ export class VideoGenerationService {
     }
 
 
-    public estimateVideoCost(durationSeconds: number, model?: string): number {
-        const actualModel = model || DEFAULT_VIDEO_MODEL;
-        let rate = 0.10; // Default/fast rate
-        // Match GA and legacy-preview IDs so old saved jobs still price correctly.
-        if (actualModel.includes('lite')) {
-            rate = 0.05;
-        } else if (!actualModel.includes('fast') && /veo-3\.1-generate-(001|preview)/.test(actualModel)) {
-            // The pro model id carries no 'pro' marker — it's the bare generate id.
-            rate = 0.40;
-        }
-        return durationSeconds * rate;
+    public estimateVideoCost(durationSeconds: number, model?: string, mode?: string): number {
+        const actualModel = model || 'fast';
+        const isPro = actualModel === 'pro' || actualModel.includes('pro') || /veo-3\.1-generate-(001|preview)/.test(actualModel);
+        const isLite = actualModel === 'lite' || actualModel.includes('lite');
+        const rate = isPro ? 0.40 : isLite ? 0.05 : 0.10;
+        const modeMultiplier = mode === 'temporal_inpaint' ? 1.35 : mode === 'long_form' ? 1.2 : 1;
+        return Math.round(Math.max(1, durationSeconds) * rate * modeMultiplier * 100) / 100;
     }
 
     private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number, thinkingLevel?: 'none' | 'minimal' | 'low' | 'medium' | 'high' }, userProfile?: UserProfile): string {
@@ -147,6 +145,22 @@ export class VideoGenerationService {
         // never reserve spend and a canonical GA ID must not later fail the
         // shared gateway schema that accepts only tier names.
         const modelTier = normalizeVideoModelTier(options.model);
+        const effectiveAspectRatio = options.aspectRatio ?? '16:9';
+        const effectiveResolution = options.resolution ?? '720p';
+
+        // Check if frame input is provided (image-to-video / references)
+        const hasFrameInput = Boolean(
+            options.firstFrame
+            || (options.image && !!options.image.imageBytes)
+            || options.lastFrame
+            || (options.referenceImages && options.referenceImages.length > 0)
+            || (options.inputManifest && options.inputManifest.length > 0)
+            || options.useGrounding
+        );
+
+        const normalizedResolution = normalizeVideoResolution(effectiveResolution, modelTier);
+        const rawRequestedDuration = options.durationSeconds ?? options.duration;
+        const normalizedDuration = normalizeVideoDuration(rawRequestedDuration, normalizedResolution, hasFrameInput);
 
         const currentUser = auth.currentUser;
         if (!currentUser) {
@@ -161,8 +175,7 @@ export class VideoGenerationService {
             throw new QuotaExceededError('video_duration', tierInfo.tier as any, quotaCheck.reason || 'Limit reached', 1, 1);
         }
 
-        const videoDuration = options.durationSeconds || options.duration || 8;
-        const estimatedCost = this.estimateVideoCost(videoDuration, modelTier);
+        const estimatedCost = this.estimateVideoCost(normalizedDuration, modelTier, options.mode);
         let costReservationId: string | undefined;
         if (!options.costReservationId) {
             const costCheck = await CostControlService.checkAndReserve({
@@ -170,10 +183,10 @@ export class VideoGenerationService {
                 estimatedCost,
                 userId,
                 metadata: {
-                    durationSeconds: videoDuration,
+                    durationSeconds: normalizedDuration,
                     model: modelTier,
-                    resolution: options.resolution,
-                    aspectRatio: options.aspectRatio,
+                    resolution: normalizedResolution,
+                    aspectRatio: effectiveAspectRatio,
                     mode: options.mode || 'video_remix',
                     sourceVideoUri: options.sourceVideoUri,
                     maskFrameUri: options.maskFrameUri,
@@ -265,24 +278,13 @@ export class VideoGenerationService {
             referenceUris = referenceUris.filter(Boolean);
         }
 
-        const durationSec = options.duration || options.durationSeconds;
-        const clampedDuration = durationSec ? Math.min(8, Math.max(4, durationSec)) : undefined;
         const fps = options.fps ?? 24;
-        const directorDuration = clampedDuration ?? durationSec ?? 6;
-        // ISSUE-1379: never let aspectRatio/resolution reach serialization as
-        // undefined/null — zod's .default()/.optional() reject null (observed
-        // live: the agent's generate_video tool omits them and the gateway
-        // rejected 'directorSettings.aspectRatio: Expected 16:9|9:16|1:1,
-        // received null'). Default here so every caller (tool, studio, API)
-        // sends a valid shape.
-        const effectiveAspectRatio = options.aspectRatio ?? '16:9';
-        const effectiveResolution = options.resolution ?? '720p';
         const directorSettings = DirectorSettingsSchema.parse({
             fps,
-            durationSeconds: directorDuration,
-            totalFrames: Math.round(directorDuration * fps),
+            durationSeconds: normalizedDuration,
+            totalFrames: Math.round(normalizedDuration * fps),
             aspectRatio: effectiveAspectRatio,
-            resolution: effectiveResolution,
+            resolution: normalizedResolution,
             seed: options.seed,
             firstFrameUri,
             lastFrameUri,
@@ -326,8 +328,8 @@ export class VideoGenerationService {
                     : undefined,
                 aspectRatio: normalizeVideoAspectRatio(effectiveAspectRatio),
                 model: modelTier,
-                resolution: effectiveResolution,
-                durationSeconds: clampedDuration,
+                resolution: normalizedResolution,
+                durationSeconds: normalizedDuration,
                 directorSettings: cleanDirectorSettings,
                 personGeneration: options.personGeneration,
                 negativePrompt: options.negativePrompt,
