@@ -340,6 +340,7 @@ ${boardroom}
 ${interAgentNotes}
 ${delegationScopeSection || ''}
 ${capabilityTruthSection || ''}
+${context?.activeProductSkillBlock ? `\n# ACTIVE PRODUCT SKILL PLAYBOOK\n${context.activeProductSkillBlock}\n` : ''}
 
 # HISTORY
 ${safeHistory}

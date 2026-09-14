@@ -280,6 +280,8 @@ export interface AgentContext {
     streamAgent?: (agentId: string, task: string, onChunk: (chunk: string) => void) => Promise<void>;
     /** Emit a single token to the user-facing UI during streaming */
     emitToken?: (token: string) => void;
+    /** Injected hermetic product skill playbook XML block */
+    activeProductSkillBlock?: string;
 }
 
 export type AgentRunner = (

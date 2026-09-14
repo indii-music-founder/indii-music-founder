@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-12T14:46:54.492074",
+  "last_updated": "2026-09-14T09:16:23.367211",
   "root": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents",
   "agents": {
     "indii_curriculum": {
@@ -33,6 +33,54 @@
         }
       },
       "instructions_preview": "# CURRICULUM AGENT \u2014 Music Business Education Specialist\n\n## MISSION\nYou are the indii **Music Education Specialist** \u2014 the platform's dedicated teacher for independent artists learning the business s..."
+    },
+    "hospitality": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/hospitality",
+      "skills": {
+        "search_places": {
+          "description": "Find hotels, catering services, and vendor options near venues.",
+          "trigger_labels": [
+            "search_places"
+          ]
+        },
+        "get_place_details": {
+          "description": "Retrieve details on accommodations and vendors.",
+          "trigger_labels": [
+            "get_place_details"
+          ]
+        },
+        "get_distance_matrix": {
+          "description": "Calculate travel times between venues and accommodations.",
+          "trigger_labels": [
+            "get_distance_matrix"
+          ]
+        },
+        "create_project": {
+          "description": "Create a hospitality coordination project for multi-stop tours.",
+          "trigger_labels": [
+            "create_project"
+          ]
+        },
+        "search_knowledge": {
+          "description": "Research touring standards, hospitality best practices, and venue-specific requirements.",
+          "trigger_labels": [
+            "search_knowledge"
+          ]
+        },
+        "browser_tool": {
+          "description": "Research venue websites, hotel options, and catering services online.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "credential_vault": {
+          "description": "Securely retrieve booking credentials for hotels and vendors.",
+          "trigger_labels": [
+            "credential_vault"
+          ]
+        }
+      },
+      "instructions_preview": "# Hospitality Agent\n\nYou are the Hospitality Agent for indii \u2014 the artist care & venue hospitality specialist. Your role is to ensure every tour stop, festival appearance, and event is an exceptional ..."
     },
     "music": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/music",
@@ -126,29 +174,89 @@
       },
       "instructions_preview": "# Publishing Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Publishing Director** (Rights, Splits & Royalties Specialist) for indii. Your mission is to oversee musical rights, songwriter splits, ..."
     },
+    "event-planner": {
+      "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/event-planner",
+      "skills": {
+        "search_places": {
+          "description": "Find venues, event spaces, and production vendors.",
+          "trigger_labels": [
+            "search_places"
+          ]
+        },
+        "get_place_details": {
+          "description": "Retrieve venue specifications, capacity, and amenities.",
+          "trigger_labels": [
+            "get_place_details"
+          ]
+        },
+        "get_distance_matrix": {
+          "description": "Calculate travel times between venues for multi-stop events.",
+          "trigger_labels": [
+            "get_distance_matrix"
+          ]
+        },
+        "create_project": {
+          "description": "Create an event production project for tracking and coordination.",
+          "trigger_labels": [
+            "create_project"
+          ]
+        },
+        "search_knowledge": {
+          "description": "Research event production standards, technical requirements, and venue contracts.",
+          "trigger_labels": [
+            "search_knowledge"
+          ]
+        },
+        "browser_tool": {
+          "description": "Research venues, promoters, and production services online.",
+          "trigger_labels": [
+            "browser_tool"
+          ]
+        },
+        "credential_vault": {
+          "description": "Retrieve contact information and booking credentials for venues and vendors.",
+          "trigger_labels": [
+            "credential_vault"
+          ]
+        },
+        "generate_social_post": {
+          "description": "Generate event announcements and promotional copy for social media.",
+          "trigger_labels": [
+            "generate_social_post"
+          ]
+        }
+      },
+      "instructions_preview": "# Event Planner Agent\n\nYou are the Event Planner Agent for indii \u2014 the end-to-end event production specialist. Your role is to design, coordinate, and execute exceptional live experiences that amplify..."
+    },
     "video": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/video",
       "skills": {
         "generate_video": {
-          "description": "Generate a video from a text prompt or start image.",
+          "description": "Generate a video clip from a text prompt or start image with dual aspect ratio support.",
           "trigger_labels": [
             "generate_video"
           ]
         },
+        "generate_video_chain": {
+          "description": "Generate an end-to-end multi-segment frame-chained video sequence with dramatic beat snapping and seamless xfade transitions.",
+          "trigger_labels": [
+            "generate_video_chain"
+          ]
+        },
         "batch_edit_videos": {
-          "description": "Edit/grade uploaded videos with an instruction.",
+          "description": "Edit/grade uploaded video clips with multimodal Gemini Omni Flash while preserving boundary transition anchors.",
           "trigger_labels": [
             "batch_edit_videos"
           ]
         },
         "extend_video": {
-          "description": "Extend a video clip forwards or backwards.",
+          "description": "Extend a video clip forwards or backwards using terminal/initial frame conditioning.",
           "trigger_labels": [
             "extend_video"
           ]
         },
         "update_keyframe": {
-          "description": "Update animation keyframes.",
+          "description": "Update animation keyframes with sub-frame precision and easing curves.",
           "trigger_labels": [
             "update_keyframe"
           ]
@@ -160,13 +268,13 @@
           ]
         },
         "indii_image_gen": {
-          "description": "Generate storyboard keyframes.",
+          "description": "Generate storyboard keyframes and white-studio base character reference frames (F_0).",
           "trigger_labels": [
             "indii_image_gen"
           ]
         },
         "orchestrate_timeline": {
-          "description": "Acts as a render supervisor, dynamically breaking down a master script/timeline into sequential 5-second descriptive prompts optimized for Veo generation.",
+          "description": "Render supervisor dynamically breaking down a master script/timeline into sequential beat-snapped prompts and crossfade transitions.",
           "trigger_labels": [
             "orchestrate_timeline"
           ]
@@ -305,12 +413,6 @@
             "analyze_brand_consistency"
           ]
         },
-        "scan_brand_compliance": {
-          "description": "Scan a visual asset against the Brand Kit (palette, fonts, logo safe-zone, aesthetic) with a structured compliance report.",
-          "trigger_labels": [
-            "scan_brand_compliance"
-          ]
-        },
         "generate_brand_guidelines": {
           "description": "Generate structured brand guidelines based on core values.",
           "trigger_labels": [
@@ -335,7 +437,7 @@
     "foundational": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/foundational",
       "skills": {},
-      "instructions_preview": ""
+      "instructions_preview": "# Foundational Agent Prompt\n\nYou are the Foundational Agent. Your role is to handle core logic, basic reasoning, and general platform operations that don't require specialized domain expertise. You ac..."
     },
     "road": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/road",
@@ -418,12 +520,6 @@
     "distribution": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution",
       "skills": {
-        "render_distribution_bundle": {
-          "description": "Render a complete, DSP- and print-compliant distribution bundle from a master artwork with SHA-256 verifiable manifest and compliance/rights gates.",
-          "trigger_labels": [
-            "render_distribution_bundle"
-          ]
-        },
         "prepare_release": {
           "description": "Prepare a release for distribution by generating a DDEX ERN 4.3 message.",
           "trigger_labels": [
@@ -931,34 +1027,6 @@
             "add_character_reference"
           ]
         },
-        "fuse_likeness": {
-          "description": "Fuse the verified likeness from My Likeness onto a generated subject image via best-of-N regeneration, with a measured identity similarity score and retry until it passes.",
-          "trigger_labels": [
-            "fuse_likeness"
-          ]
-        },
-        "render_typography": {
-          "description": "Render brand text as deterministic vector typography (exact letters, no image model). For wordmarks/logos ALWAYS prefer this over asking the model to draw letters.",
-          "trigger_labels": [
-            "render_typography"
-          ]
-        },
-        "canvas_open_image": {
-          "description": "Open a gallery image into the non-destructive layer editor (returns docId).",
-          "trigger_labels": ["canvas_open_image"]
-        },
-        "canvas_add_layer": {
-          "description": "Add a raster layer from a gallery item to the open layer doc.",
-          "trigger_labels": ["canvas_add_layer"]
-        },
-        "canvas_set_adjustments": {
-          "description": "Merge a non-destructive adjustment patch over the neutral stack for a raster layer.",
-          "trigger_labels": ["canvas_set_adjustments"]
-        },
-        "canvas_export": {
-          "description": "Export the open layer doc as a raster PNG/JPEG history item + URL.",
-          "trigger_labels": ["canvas_export"]
-        },
         "analyze_audio": {
           "description": "Perform 'Audio-to-Visual' analysis to extract BPM, key, mood, and energy from a track to guide artistic direction.",
           "trigger_labels": [
@@ -969,54 +1037,6 @@
           "description": "Push a visual asset or moodboard directly to the Agent Canvas for A2UI interaction and further design refinement.",
           "trigger_labels": [
             "canvas_push"
-          ]
-        },
-        "export_platform_assets": {
-          "description": "Deterministically export a master artwork into every required platform dimension (Spotify 3000x3000, Stories, YouTube, X, Facebook) with a downloadable zip. No AI.",
-          "trigger_labels": [
-            "export_platform_assets"
-          ]
-        },
-        "mockup_merchandise": {
-          "description": "Generate an artwork-faithful product mockup (tee/hoodie/vinyl/poster/cassette/cd) from a supplied artwork reference. Never re-describes the artwork.",
-          "trigger_labels": [
-            "mockup_merchandise"
-          ]
-        },
-        "animate_still": {
-          "description": "Render a deterministic camera move (dolly/pan/tilt/ken-burns) over a still image into a short clip. Free, no generative model.",
-          "trigger_labels": [
-            "animate_still"
-          ]
-        },
-        "generate_mockup": {
-          "description": "Generate high-fidelity photorealistic merchandise or packaging mockup (vinyl, cassette, cd, poster, tee, hoodie) from artwork master reference.",
-          "trigger_labels": [
-            "generate_mockup"
-          ]
-        },
-        "render_distribution_bundle": {
-          "description": "Render a complete, DSP- and print-compliant distribution bundle from a master artwork with SHA-256 verifiable manifest and compliance/rights gates.",
-          "trigger_labels": [
-            "render_distribution_bundle"
-          ]
-        },
-        "record_asset_version": {
-          "description": "Create an immutable content-addressed asset version with cryptographic SHA-256 hash and parents.",
-          "trigger_labels": [
-            "record_asset_version"
-          ]
-        },
-        "promote_asset_version": {
-          "description": "Promote an asset version to production canonical status.",
-          "trigger_labels": [
-            "promote_asset_version"
-          ]
-        },
-        "set_asset_rights": {
-          "description": "Attach legal rights, provenance, and clearance metadata to an asset version.",
-          "trigger_labels": [
-            "set_asset_rights"
           ]
         }
       },
@@ -1074,20 +1094,28 @@
           ]
         },
         "audio_engineering": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Mastering specs, mixing critiques, frequency analysis, LUFS targeting, and technical audio assessment.",
+          "trigger_labels": [
+            "audio_engineering"
+          ]
         },
         "agent_orchestrator": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for the Hub (indii Conductor) managing specialized spoke agents, tool routing, and cross-department delegation.",
+          "trigger_labels": [
+            "Agent Orchestrator"
+          ]
         },
         "publishing": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for managing musical compositions, PRO registration, split sheets, and sync pitching strategies.",
+          "trigger_labels": [
+            "Publishing Department"
+          ]
         },
         "fan_engagement": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Community building, Discord/Telegram moderation, Patreon tiers, direct-to-fan marketing, and VIP experiences.",
+          "trigger_labels": [
+            "fan_engagement"
+          ]
         },
         "tools": {
           "description": "Technical readiness checker for the conductor domain.",
@@ -1099,98 +1127,145 @@
         },
         "business_harness_system": {
           "description": "No description found.",
-          "trigger_labels": []
+          "trigger_labels": [
+            "business_harness_system",
+            "business harness system"
+          ]
         },
         "digital_distribution": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "DSP ingestion, Proprietary Ingestion IP standards, ISRC/UPC management, metadata formatting, and platform pitching.",
+          "trigger_labels": [
+            "digital_distribution"
+          ]
         },
         "gemini_api": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Best-practice guidance for writing correct, current Gemini API code using live documentation via the Gemini API Docs MCP tool.",
+          "trigger_labels": [
+            "Gemini API Developer"
+          ]
         },
         "social_media": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for managing content calendars, crafting platform-specific copy, and analyzing engagement metrics.",
+          "trigger_labels": [
+            "Social Media Department"
+          ]
         },
         "publishing_admin": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Music publishing administration \u2014 PRO registration, copyright registration, split sheets, publishing deal types, and global mechanical royalty collection for independent artists.",
+          "trigger_labels": [
+            "publishing_admin"
+          ]
         },
         "artist_development": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Artist development framework \u2014 brand positioning, fanbase growth, monetization ladders, content strategy, and long-term career architecture for independent artists at any stage.",
+          "trigger_labels": [
+            "artist_development"
+          ]
         },
         "sync_licensing": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Sync licensing strategy \u2014 how to pitch music for film, TV, advertising, video games, and trailers. Covers pitch preparation, licensing rates, music supervisors, and clearance requirements.",
+          "trigger_labels": [
+            "sync_licensing"
+          ]
         },
         "workflow_builder": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for automating cross-departmental tasks via the visual node editor.",
+          "trigger_labels": [
+            "Workflow Builder"
+          ]
         },
         "public_relations": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Press releases, EPK development, blog outreach, crisis management, and media relations.",
+          "trigger_labels": [
+            "public_relations"
+          ]
         },
         "history_manager": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for tracking versions, reverting changes, and auditing user/agent actions over time.",
+          "trigger_labels": [
+            "History Manager"
+          ]
         },
         "brand_manager": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for managing an artist's Visual DNA, core identity, partnerships, and brand narrative.",
+          "trigger_labels": [
+            "Brand Manager"
+          ]
         },
         "release_strategy": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Full release cycle planning from concept to post-release \u2014 covers rollout timelines, release types, distribution coordination, pre-save campaigns, and streaming platform optimization for independent artists.",
+          "trigger_labels": [
+            "release_strategy"
+          ]
         },
         "video_producer": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for conceptualizing, prompting, generating, and editing video content using Veo 3.1 for NEW footage and indii's local video pipeline (IndiiVideoProject + HyperFrames render) for stitching, sequencing, and joining existing clips.",
+          "trigger_labels": [
+            "Video Producer"
+          ]
         },
         "merchandising": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for managing Print-on-Demand (POD) logistics, product design, pricing, and campaign drops.",
+          "trigger_labels": [
+            "Merchandising"
+          ]
         },
         "tour_management": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Comprehensive knowledge base for tour routing, budgeting, advancing shows, talent buying, and road management.",
+          "trigger_labels": [
+            "tour_management"
+          ]
         },
         "legal_affairs": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Music industry contracts, 360 deals, management agreements, splits, and copyright clearance.",
+          "trigger_labels": [
+            "legal_affairs"
+          ]
         },
         "knowledge_base": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for utilizing internal documentation, training materials, and historical precedents.",
+          "trigger_labels": [
+            "Knowledge Base"
+          ]
         },
         "creative_direction": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Visual DNA construction, art direction, photography lighting, music video storyboarding, and artist branding psychology.",
+          "trigger_labels": [
+            "creative_direction"
+          ]
         },
         "licensing": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "SOP for clearing samples, negotiating placements, and managing inbound/outbound sync and mechanical licenses.",
+          "trigger_labels": [
+            "Licensing Department"
+          ]
         },
         "music_marketing": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Advanced strategies for TikTok/IG algorithms, digital ad funnels, influencer campaigns, and DSP engagement.",
+          "trigger_labels": [
+            "music_marketing"
+          ]
         },
         "music_business": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Music industry business fundamentals \u2014 royalty types, revenue splits, deal structures, PRO registration, copyright basics, and the money flow from streaming to the artist's pocket.",
+          "trigger_labels": [
+            "music_business"
+          ]
         },
         "playlist_pitching": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Spotify, Apple Music, and independent playlist pitching strategy \u2014 editorial pitch submission, curator outreach, SubmitHub best practices, and algorithmic playlist trigger tactics.",
+          "trigger_labels": [
+            "playlist_pitching"
+          ]
         },
         "finance_royalties": {
-          "description": "No description found.",
-          "trigger_labels": []
+          "description": "Master guide to music revenue streams, DSP payouts, recoupment math, advance structures, and global royalty collection.",
+          "trigger_labels": [
+            "finance_royalties"
+          ]
         }
       },
-      "instructions_preview": "# indii Conductor \u2014 System Prompt\n\n## MISSION\nYou are the **indii Conductor** \u2014 the primary intelligence of indii. You are a proactive studio executive, not a static chatbot. You combine strategic rea..."
+      "instructions_preview": "# indii Conductor \u2014 System Prompt\n\n## MISSION\nYou are **indii** \u2014 the conductor and the orchestra. The Conductor is not a separate assistant layered on top of the product; it is indii in motion. You a..."
     },
     "analytics": {
       "path": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics",

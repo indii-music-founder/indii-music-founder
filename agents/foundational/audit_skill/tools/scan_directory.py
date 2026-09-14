@@ -56,8 +56,39 @@ def scan_indii_directory(root_path: str) -> str:
                     if os.path.isdir(skill_path):
                         skill_data = {"description": "No description found.", "trigger_labels": []}
                         
+                        skill_file = os.path.join(skill_path, "SKILL.md")
                         desc_file = os.path.join(skill_path, "description.txt")
-                        if os.path.exists(desc_file):
+
+                        if os.path.exists(skill_file):
+                            try:
+                                with open(skill_file, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                if content.startswith("---"):
+                                    parts = content.split("---", 2)
+                                    if len(parts) >= 3:
+                                        for line in parts[1].strip().split("\n"):
+                                            line_str = line.strip()
+                                            if line_str.startswith("description:"):
+                                                desc = line_str.split("description:", 1)[1].strip().strip('"').strip("'")
+                                                if desc:
+                                                    skill_data["description"] = desc
+                                            elif line_str.startswith("name:"):
+                                                name_val = line_str.split("name:", 1)[1].strip().strip('"').strip("'")
+                                                if name_val and not skill_data["trigger_labels"]:
+                                                    skill_data["trigger_labels"] = [name_val]
+                                            elif "trigger_labels:" in line_str:
+                                                labels_str = line_str.split("trigger_labels:")[1].strip()
+                                                skill_data["trigger_labels"] = [l.strip().strip('"').strip("'") for l in labels_str.strip("[]").split(",") if l.strip()]
+                                            elif line_str.startswith("allowed-tools:"):
+                                                tools_str = line_str.split("allowed-tools:", 1)[1].strip().strip('"').strip("'")
+                                                skill_data["allowed_tools"] = [t.strip() for t in tools_str.split() if t.strip()]
+                                            elif line_str.startswith("argument-hint:"):
+                                                skill_data["argument_hint"] = line_str.split("argument-hint:", 1)[1].strip().strip('"').strip("'")
+                                if not skill_data["trigger_labels"]:
+                                    skill_data["trigger_labels"] = [skill, skill.replace("_", " ")]
+                            except Exception as e:
+                                skill_data["error"] = str(e)
+                        elif os.path.exists(desc_file):
                             try:
                                 with open(desc_file, 'r', encoding='utf-8') as f:
                                     lines = f.readlines()

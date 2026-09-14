@@ -6,6 +6,7 @@ import { validateHubAndSpoke } from '../types';
 import { agentIdentityService } from '../governance/AgentIdentity';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { DelegationLoopDetector } from '../LoopDetector';
+import { ProductSkillRegistry } from '../skills/ProductSkillRegistry';
 
 /**
  * consult_specialist - A2A Swarm communication tool (canonical, single source of truth).
@@ -248,3 +249,66 @@ export const unseat_agent = wrapTool(
         }
     }
 );
+
+/**
+ * consult_product_skill - Hermetic product playbook consultation tool.
+ * Enables any agent in the A2A swarm to dynamically read another department's
+ * authoritative product playbook (e.g., DSP packaging, legal clauses, tour budgeting).
+ */
+export const consult_product_skill = wrapTool(
+    'consult_product_skill',
+    async (args: { skillName: string; query?: string }): Promise<ToolFunctionResult> => {
+        const { skillName, query } = args;
+        if (!skillName && !query) {
+            return toolError('consult_product_skill requires a skillName or search query.');
+        }
+
+        let skill = skillName ? ProductSkillRegistry.getProductSkill(skillName) : undefined;
+        if (!skill && query) {
+            skill = ProductSkillRegistry.searchProductSkillByIntent(query);
+        }
+
+        if (!skill) {
+            const available = ProductSkillRegistry.getAllProductSkills().map(s => s.id).join(', ');
+            return toolError(`Product skill "${skillName || query}" not found. Available skills: ${available}`);
+        }
+
+        return toolSuccess(
+            {
+                id: skill.id,
+                name: skill.name,
+                description: skill.description,
+                allowedTools: skill.allowedTools,
+                argumentHint: skill.argumentHint,
+                body: skill.body,
+            },
+            `Authoritative playbook for "${skill.name}" loaded successfully.`
+        );
+    }
+);
+
+/**
+ * list_product_skills - Product skills catalog discovery tool.
+ * Lists all hermetically bundled Conductor playbooks and their trigger keywords.
+ */
+export const list_product_skills = wrapTool(
+    'list_product_skills',
+    async (): Promise<ToolFunctionResult> => {
+        const skills = ProductSkillRegistry.getAllProductSkills();
+        return toolSuccess(
+            {
+                count: skills.length,
+                skills: skills.map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    description: s.description,
+                    userInvocable: s.userInvocable,
+                    disableModelInvocation: s.disableModelInvocation,
+                    triggers: s.triggerLabels,
+                })),
+            },
+            `Discovered ${skills.length} hermetic product skills.`
+        );
+    }
+);
+

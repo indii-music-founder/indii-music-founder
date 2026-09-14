@@ -11,6 +11,7 @@ import { auth } from '@/services/firebase';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { IdeaParkingService } from '../tools/IdeaParking';
 import { buildAmbitionDialPrompt } from '../builders/AmbitionDialPrompt';
+import { ProductSkillRegistry } from '../skills/ProductSkillRegistry';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
@@ -167,7 +168,24 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             IdeaParkingService.clearAmbitionPromptFlag();
         }
 
-        // 8. Assemble Pipeline Context
+        // 8. Resolve Active Product Skill Playbook
+        let activeProductSkillBlock = '';
+        try {
+            const recentContext = this.extractRecentContext(chatHistoryString);
+            let skill = recentContext ? ProductSkillRegistry.searchProductSkillByIntent(recentContext) : undefined;
+
+            if (!skill && stateContext.activeModule) {
+                skill = ProductSkillRegistry.getSkillForModule(stateContext.activeModule);
+            }
+
+            if (skill && !skill.disableModelInvocation) {
+                activeProductSkillBlock = ProductSkillRegistry.formatSkillForPrompt(skill);
+            }
+        } catch (err) {
+            logger.warn('[ContextPipeline] Failed to resolve active product skill:', err);
+        }
+
+        // 9. Assemble Pipeline Context
         return {
             ...stateContext,
             chatHistoryString,
@@ -176,6 +194,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             memoryContext,
             autoRecallBlock,
             activePlanBlock,
+            activeProductSkillBlock,
             directive,
             // Judgment layer: user-owned ambition dial (default 'balanced' if unset)
             ambitionLevel: userProfile?.preferences?.agentAmbition || 'balanced',

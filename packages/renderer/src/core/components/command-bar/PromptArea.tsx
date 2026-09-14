@@ -26,6 +26,7 @@ import { logger } from '@/utils/logger';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { AgentModePicker } from '@/components/AgentModePicker';
+import { ProductSkillRegistry } from '@/services/agent/skills/ProductSkillRegistry';
 
 interface PromptAreaProps {
     className?: string;
@@ -297,13 +298,23 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 return;
             }
 
-            // --- DNA INFUSION: Slash Command Interceptor ---
+            // --- Hermetic Product Skill Interceptor ---
             if (currentInput.trim().startsWith('/') && !currentInput.trim().startsWith('/deploy-plp') && !currentInput.trim().startsWith('/status-blitz')) {
                 const parts = currentInput.trim().split(' ');
-                const command = parts[0]!.substring(1); // Extract 'mega' from '/mega'
+                const command = parts[0]!.substring(1); // Extract skill name from '/skill_name'
+                const userRemainder = parts.slice(1).join(' ').trim();
                 
-                // Wrap the user's input with a system directive forcing the agent into the skill
-                currentInput = `[SYSTEM INTERCEPT: User executed slash command /${command}. Please immediately load the skill from \`.agent/skills/${command}/SKILL.md\` and follow its protocol strictly without deviating.]\n\n${currentInput}`;
+                const skill = ProductSkillRegistry.getProductSkill(command);
+                if (skill) {
+                    if (!skill.userInvocable) {
+                        toast.error(`Skill /${command} is an internal background playbook and cannot be invoked directly.`);
+                        setIsLocalProcessing(false);
+                        return;
+                    }
+                    
+                    const promptContext = ProductSkillRegistry.formatSkillForPrompt(skill);
+                    currentInput = `[PRODUCT SKILL INVOKED: ${skill.name} (${skill.id})]\n${promptContext}\n\nUser Request: ${userRemainder || 'Execute this playbook.'}`;
+                }
             }
 
             // On mobile Agent Dashboard, chat is displayed inline — don't open a ChatOverlay on top

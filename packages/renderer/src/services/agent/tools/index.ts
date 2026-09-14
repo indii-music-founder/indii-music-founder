@@ -51,7 +51,7 @@ import { ArtifactTools } from './ArtifactTools';
 import { ReleaseHarnessTools } from './ReleaseHarnessTools';
 import { CreatorProtectionTools } from './CreatorProtectionTools';
 import { HarnessTools } from './HarnessTools';
-import { consult_specialist, seat_agent, seat_all_department_heads, unseat_agent } from './SwarmTools';
+import { consult_specialist, seat_agent, seat_all_department_heads, unseat_agent, consult_product_skill, list_product_skills } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
 import { EmailTools } from './EmailTools';
@@ -68,6 +68,8 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...UniversalTools,
     ...BillingTools,
     consult_specialist,
+    consult_product_skill,
+    list_product_skills,
     seat_agent,
     seat_all_department_heads,
     unseat_agent,
@@ -294,6 +296,8 @@ AVAILABLE TOOLS:
 119. update_agent_memory(agentId: string, action: 'add'|'remove', knowledge: string) - Permanently update an agent's procedural instructions.
 120. create_artifact(filename: string, content: string, artifactType?: string, requestFeedback?: boolean) - Create an artifact document to present structured information to the user.
 121. multi_replace_file_content(targetFile: string, instruction: string, description: string, replacementChunks: array) - Modify multiple non-contiguous blocks of text in a single file.
+122. consult_product_skill(skillName: string, query?: string) - Load and consult an authoritative Conductor product playbook (e.g. digital_distribution, legal_affairs, release_strategy).
+123. list_product_skills() - Discover all available hermetically bundled Conductor playbooks.
 --- EMAIL ---
 271. list_email_accounts() - List connected email accounts for the user.
 272. read_emails(provider: string, forceSync?: boolean, maxResults?: number) - Read recent emails from a connected provider (e.g. 'gmail').

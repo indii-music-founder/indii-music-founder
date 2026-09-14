@@ -119,6 +119,63 @@ This document specifies the proprietary technical processes, system architecture
 
 ---
 
+### Method 6: Hermetic Progressive Disclosure & Compile-Time Playbook Bundling Protocol (IP-PROCESS-006)
+
+- **Technical Moat:** Solves context window bloat and runtime file access vulnerabilities by compiling modular domain SOP playbooks directly into the client binary, progressively disclosing instructions to runtime LLMs on-demand.
+- **Architectural Implementation:**
+  - `docs/product/PRODUCT_SKILLS_MANUAL.md`
+  - `docs/flowcharts/product-skill-runtime-architecture.md`
+  - `packages/renderer/src/services/agent/skills/ProductSkillRegistry.ts`
+  - `packages/renderer/src/services/agent/components/ContextPipeline.ts`
+- **Key Algorithmic & Workflow Innovations:**
+  1. **Build-Time Static Glob Compilation:** Utilizes compile-time static raw imports to package external domain playbooks (`SKILL.md`) into immutable in-memory records within the web and Electron application binaries, operating 100% offline without filesystem traversal.
+  2. **Three-Tier Progressive Disclosure:**
+     - *Level 1 (Discovery):* Lightweight metadata extraction (name, domain, trigger labels, description) pre-cached in memory (~50 tokens per skill).
+     - *Level 2 (Activation):* Intent-driven context injection that dynamically injects the active domain SOP into the system prompt context only when triggered.
+     - *Level 3 (Execution):* Sandboxed execution of deterministic TypeScript tools, returning only structured outputs to the LLM context.
+  3. **Zero Host-Leak Isolation:** Fully severs in-app agent reasoning from developer environments, preventing hallucinated local file reads or token leaks.
+- **Legal Protection Strategy:**
+  - **Patent Candidate:** System and method for hermetic progressive disclosure and compile-time domain playbook injection in multi-agent client applications.
+  - **Trademark:** `indii Product Skills™` / `Studio Skills™`.
+  - **Copyright:** Form TX registration for the 27 Conductor Domain Playbook Corpus.
+
+---
+
+### Method 7: Dual-State Dynamic Invocability & Approval-Gated Tool Sandboxing Protocol (IP-PROCESS-007)
+
+- **Technical Moat:** Enforces strict cryptographic and operational safety boundaries preventing autonomous AI agents from taking irreversible music business actions without explicit human artist consent.
+- **Architectural Implementation:**
+  - `agents/conductor/skills/`
+  - `packages/renderer/src/services/business-harness/ApprovalGateRegistry.ts`
+  - `packages/renderer/src/services/agent/tools/`
+  - `packages/renderer/src/core/components/command-bar/PromptArea.tsx`
+- **Key Algorithmic & Workflow Innovations:**
+  1. **Dual-State Model/User Decoupling:** Implements orthogonal control attributes (`disable-model-invocation: boolean` and `user-invocable: boolean`) to distinguish between interactive slash-command utilities and autonomous background reasoning heuristics.
+  2. **Dynamic Tool Permission Whitelisting:** Enforces `allowed-tools` scoping derived from active skill frontmatter, physically preventing agents executing creative or audio skills from accessing financial, legal, or distribution endpoints.
+  3. **Synchronous Cryptographic Gate Interception:** Intercepts high-risk operations (royalties, DSP transfers, copyright registrations) prior to tool execution, holding sidecar tasks in a suspended state until verified artist confirmation is provided via `ConfirmDialog`.
+- **Legal Protection Strategy:**
+  - **Patent Candidate:** Method and system for multi-state operational visibility, dynamic parameter autocompletion, and cryptographic approval gating in AI domain execution frameworks.
+  - **Trade Secret:** Approval gate evaluation algorithms and risk tiering mapping tables.
+
+---
+
+### Method 8: Multi-Domain Business Harness Conflict Reconciliation & Meta-Arbitration Engine (IP-PROCESS-008)
+
+- **Technical Moat:** Reconciles multi-disciplinary enterprise trade-offs across independent specialized agents without requiring human project management.
+- **Architectural Implementation:**
+  - `packages/renderer/src/services/business-harness/BoardroomMetaHarnessService.ts`
+  - `packages/renderer/src/services/business-harness/HarnessCatalog.ts`
+  - `agents/conductor/skills/business_harness_system/SKILL.md`
+- **Key Algorithmic & Workflow Innovations:**
+  1. **Deterministic Harness Run State Synthesis:** Collects structured run outputs (`HarnessRun`) across 22 business domains (Song DNA, Marketing, Finance, Legal, Tour, Merch).
+  2. **Multi-Domain Conflict Arbitration:** Detects contradictions between specialist recommendations (e.g., Marketing budget expansion vs. Finance tour balance deficit) and executes an automated meta-decision matrix.
+  3. **Risk-Weighted Strategic Output:** Renders an executive briefing to the artist with categorized severity scores, confidence metrics, and prioritized action paths.
+- **Legal Protection Strategy:**
+  - **Patent Candidate:** Automated cross-domain risk reconciliation and decision arbitration system in autonomous enterprise swarms.
+  - **Trademark:** `The Boardroom™` / `Boardroom Meta-Harness™`.
+
+---
+
 ## 3. Intellectual Property Asset Classification Summary
 
 | Asset Name | Legal Form | Status | Owning Entity |
@@ -132,14 +189,23 @@ This document specifies the proprietary technical processes, system architecture
 | **Project White Glove©** | Service Mark & Copyright | In Use / Documented | New Detroit Music LLC |
 | **Format Foundry©** | Trademark & Copyright | In Use / Documented | New Detroit Music LLC |
 | **Digital Handshake©** | Trademark & Copyright | In Use / Documented | New Detroit Music LLC |
+| **indii Product Skills© / Studio Skills™** | Trademark (Classes 009, 042) | In Use / Documented | New Detroit Music LLC |
+| **The Sonic Director© / The Sonic Director™** | Trademark (Classes 009, 041, 042) | In Use / Documented | New Detroit Music LLC |
+| **The Boardroom© / Boardroom Meta-Harness™** | Trademark (Classes 009, 042) | In Use / Documented | New Detroit Music LLC |
 | **Spectral Cutoff Audio Fraud Gate** | Patent Candidate / Trade Secret | Implemented & Tested | New Detroit Music LLC |
 | **Multi-Agent Context Propagation Protocol** | Patent Candidate / Trade Secret | Implemented & Tested | New Detroit Music LLC |
 | **Write-Only Ad Executor & Halt Switch** | Trade Secret | Implemented & Tested | New Detroit Music LLC |
 | **3-Tier Waterfall & Tax Lockdown Engine** | Trade Secret / Copyright | Implemented & Tested | New Detroit Music LLC |
 | **Ephemeral LAN WebSocket Vault Pairing** | Trade Secret | Implemented & Tested | New Detroit Music LLC |
+| **Hermetic Progressive Disclosure & Playbook Bundling** | Patent Candidate (IP-PROCESS-006) | Implemented & Documented | New Detroit Music LLC |
+| **Dual-State Dynamic Invocability & Tool Sandboxing** | Patent Candidate (IP-PROCESS-007) | Implemented & Documented | New Detroit Music LLC |
+| **Multi-Domain Harness Conflict Reconciliation** | Patent Candidate (IP-PROCESS-008) | Implemented & Documented | New Detroit Music LLC |
+| **indii Conductor 27 Domain Playbook Corpus** | Copyright (Form TX: IP-COPYRIGHT-001) | Authored & Verified | New Detroit Music LLC |
+| **Product Skills Manual & Runtime Architecture** | Copyright (Form TX: IP-COPYRIGHT-002) | Authored & Verified | New Detroit Music LLC |
 
 ---
 
 **Certified & Maintained by:** New Detroit Music LLC  
 **Founder:** William Roberts  
 **Review Cadence:** Quarterly / Pre-Funding / Pre-Acquisition Diligence
+
