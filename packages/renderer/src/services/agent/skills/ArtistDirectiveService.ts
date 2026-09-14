@@ -298,3 +298,7 @@ export class ArtistDirectiveService {
 }
 
 export const artistDirectiveService = new ArtistDirectiveService();
+
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+    (window as any).artistDirectiveService = artistDirectiveService;
+}

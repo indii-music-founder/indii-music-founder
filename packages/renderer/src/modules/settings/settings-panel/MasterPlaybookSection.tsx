@@ -51,6 +51,8 @@ const SECTION_METAS: SectionMeta[] = [
     { key: 'customPlaybook', label: 'Custom Playbook', icon: FileText },
 ];
 
+const EMPTY_BRAND_COLORS: string[] = [];
+
 export const MasterPlaybookSection: React.FC = () => {
     const { success, error, info } = useToast();
     const moduleColor = getColorForModule('settings');
@@ -62,7 +64,7 @@ export const MasterPlaybookSection: React.FC = () => {
     const [rawMarkdown, setRawMarkdown] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const brandColors = useStore((state) => state.userProfile?.brandKit?.colors || []);
+    const brandColors = useStore((state) => state.userProfile?.brandKit?.colors) ?? EMPTY_BRAND_COLORS;
 
     useEffect(() => {
         let isMounted = true;
@@ -263,6 +265,8 @@ export const MasterPlaybookSection: React.FC = () => {
                                 <button
                                     key={meta.key}
                                     type="button"
+                                    data-testid={`directive-section-${meta.key}`}
+                                    data-section-key={meta.key}
                                     onClick={() => setSelectedKey(meta.key)}
                                     className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
                                         isSelected
@@ -364,6 +368,7 @@ export const MasterPlaybookSection: React.FC = () => {
                         <div className="flex gap-2 pt-2 border-t border-slate-700/40">
                             <input
                                 type="text"
+                                data-testid="add-rule-input"
                                 value={newRule}
                                 onChange={(e) => setNewRule(e.target.value)}
                                 onKeyDown={(e) => {
@@ -374,6 +379,7 @@ export const MasterPlaybookSection: React.FC = () => {
                             />
                             <button
                                 type="button"
+                                data-testid="add-rule-button"
                                 onClick={handleAddRule}
                                 disabled={!newRule.trim()}
                                 className={`flex items-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg transition-colors border ${moduleColor.bg} ${moduleColor.text} ${moduleColor.border} disabled:opacity-40 disabled:cursor-not-allowed`}
@@ -417,6 +423,7 @@ export const MasterPlaybookSection: React.FC = () => {
 
                 <button
                     type="button"
+                    data-testid="save-playbook-button"
                     onClick={handleSave}
                     disabled={isSaving}
                     className={`flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-lg text-white transition-all shadow-md ${

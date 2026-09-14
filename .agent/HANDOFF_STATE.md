@@ -1,3 +1,60 @@
+# Session Close — Tier 0 Artist Master Directive Living UI & Visual DNA Live Browser Verification (2026-09-14)
+
+**Final state: Tier 0 Artist Master Directive Living UI, Visual DNA Brand Color Cascading Engine, and AI Conductor Swarm Context Reflection validated live in the browser on localhost (`http://localhost:4243`) under authentic user conditions adhering strictly to `.agent/REAL_USER_AUTHENTICITY.md`. Playwright E2E verification test passed all 3 sequences in 14.7s; 3 high-resolution UI evidence screenshots and summary JSON captured in `.agent/artifacts/browser_verification/`; Firestore security rules for user skills subcollection deployed to live project `indii-music-founder`; all unit tests (70+) and full renderer typecheck 100% clean.**
+
+## Shipped & Verified — Master Directive Living UI & Visual DNA
+- **Master Directive Living UI (`MasterPlaybookSection.tsx` & `SettingsPanel.tsx`):**
+  - Resolved infinite re-render loop (`Maximum update depth exceeded`) by stabilizing Zustand store selector fallback with module-level constant `EMPTY_BRAND_COLORS: string[] = []`.
+  - Added semantic `data-testid` and `data-tab` hooks across tabs (`settings-tab-playbook`), section pills (`directive-section-${meta.key}`), rule input/add controls (`add-rule-input`, `add-rule-button`), and persistence buttons (`save-playbook-button`).
+  - Added live Visual DNA palette swatch bar (`live-brand-swatch-bar`) displaying active brand colors.
+- **Firestore Security Rules (`firestore.rules`):**
+  - Added owner-scoped rule for `/users/{userId}/skills/{docId}`:
+    ```javascript
+    match /users/{userId}/skills/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+    ```
+  - Deployed to live Firebase project `indii-music-founder` via `firebase deploy --only firestore`.
+- **Live Browser Verification Protocol (`e2e/live-master-directive-verification.spec.ts`):**
+  - Sequence 1: Navigated to Settings -> Master Directive tab; verified all 5 section cards mount (`sonicSpecs`, `businessLegal`, `brandingAesthetics`, `releaseDistribution`, `customPlaybook`); added custom mastering constraint (`Mastering target ceiling: -14.0 LUFS integrated, 48kHz, 24-bit PCM`); persisted to Firestore with confirmation toast.
+  - Sequence 2: Switched to Brand & Aesthetics section; verified Visual DNA swatch bar mounts; updated brand colors in store (`#00ff66`, `#d936d9`, `#3beaf0`, `#ffb800`); confirmed dynamic cascade to root DOM CSS custom property `--artist-brand-primary: #00ff66`.
+  - Sequence 3: Executed reflective Conductor tool `refineSection` on `businessLegal`; confirmed instant reactive update to living UI with section rule count incremented and status banner displaying `"AI Conductor Refined — Artist stated contract non-negotiable in chat session"`.
+- **Evidence & Quality Gates:**
+  - Playwright E2E spec `e2e/live-master-directive-verification.spec.ts`: 1 passed (14.7s).
+  - Screenshots captured: `02_seq1_master_directive_saved.png`, `03_seq2_brand_visual_dna_cascading.png`, `04_seq3_swarm_reflection_updated.png`.
+  - Renderer typecheck (`npm run typecheck:renderer`): 0 errors.
+  - Shared and Firebase typecheck: 0 errors.
+  - ESLint: 0 errors.
+  - Unit tests: 10/10 `ArtistDirectiveService.test.ts`, 7/7 `MasterPlaybookSection.test.tsx`, 17/17 `SettingsPanel.test.tsx`, 10/10 `BrandSyncService.test.ts`, 7/7 `BrandTools.test.ts`.
+
+---
+
+# Session Close — Video Generation Cost Reservation Alignment (2026-09-14)
+
+**Final state: Resolved client-server cost reservation drift in the video generation pipeline that caused `Error: Cost reservation estimate does not match the video job.` (surfaced by Conductor as Error 402: Insufficient Compute Allocation). Aligned duration normalization (Veo 3.1 8-second enforcement on frame inputs/1080p, discrete durations 4/6/8), explicit `durationSeconds` in outbound payload, model tiers and mode pricing multipliers on client, and safe positive tolerance on backend video job authority. Monorepo typecheck 100% clean (exit code 0 across all 9 packages); all unit tests passing (27/27 passing across touched suites); 0 ESLint errors/warnings on modified files; production Vite build verified.**
+
+## Shipped — Video Generation Cost Reservation Alignment
+- **Client-Side Duration Normalization & Cost Reservation (`VideoGenerationService.ts`):**
+  - Imported and applied `normalizeVideoDuration` and `normalizeVideoResolution` from `@indii/shared` upfront before reservation.
+  - Aligned `estimateVideoCost(duration, model, mode)` to support model tiers (`lite: 0.05`, `fast: 0.10`, `pro: 0.40`), mode multipliers (`temporal_inpaint: 1.35`, `long_form: 1.20`), and 2-decimal rounding matching backend `gateway.ts`.
+  - Computed `hasFrameInput` across `firstFrame`, `image.imageBytes`, `lastFrame`, `referenceImages`, `inputManifest`, and `useGrounding`.
+  - Explicitly passed `normalizedDuration` in payload and `directorSettings` (eliminates drift from server schema default of 6s).
+  - Cleaned up unused constants (`DEFAULT_VIDEO_MODEL`) and imports (`INTELLIGENCE_MODELS`).
+- **Agent Tool Declarations (`GeneralistAgent.ts` & `VideoAgent.ts`):**
+  - Updated `generate_video` duration parameter documentation: `'Duration in seconds (4, 6, or 8 seconds; image-to-video requires 8 seconds).'` (removed misleading `default 5`).
+- **Server Job Authority Tolerance (`videoJobAuthority.ts`):**
+  - Updated `createClaimedVideoJob` tolerance check: accepts safe precision variance ($\le \$0.05$) while strictly failing closed on under-reservation ($< -\$0.01$).
+- **Verification:**
+  - `VideoGenerationService.test.ts`: 15/15 passed.
+  - `videoJobAuthority.test.ts`: 12/12 passed.
+  - `VideoTools.test.ts`: 30/30 passed.
+  - `GeneralistAgent.test.ts`: 4/4 passed.
+  - Full monorepo typecheck (`npm run typecheck`): exit code 0 across all 9 packages.
+  - ESLint: 0 errors, 0 warnings across all modified files.
+  - Vite production bundle (`npm run build:studio`): succeeded in 1m 17s.
+
+---
+
 # Session Close — Console & Sentry Diagnostic Fixes (2026-09-13)
 
 **Final state: All 5 DevTools console and Sentry errors resolved, validated, and verified. Firestore file_nodes query permissions fixed via userId filter constraint; Chromium certificate verify proc updated to recognize 'OK' and 0 (eliminating securetoken.googleapis.com net::ERR_CONNECTION_CLOSED and Sentry issue INDII-MUSIC-FOUNDER-K); useAuthHealth updated with cached token checks; Vertex AI 429 RESOURCE_EXHAUSTED classified cleanly with fast heuristic scoring in MemorySummarizer; SummaryService timeout calibrated to 15s (resolving Sentry issue INDII-MUSIC-FOUNDER-J); studio executor functions configured with cors: true. Monorepo typecheck 100% clean (exit code 0 across all 9 packages); all unit tests passing (90/90 passing across touched suites); Sentry issues verified resolved.**

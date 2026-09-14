@@ -1770,6 +1770,11 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Tier 0 Artist Master Directive & living user skills
+    match /users/{userId}/skills/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Cross-device notes. The path owns the document and every stored identity
     // field is pinned to that path so queries cannot be shifted across users.
     match /users/{userId}/notes/{noteId} {

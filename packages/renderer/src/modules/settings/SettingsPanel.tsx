@@ -116,6 +116,8 @@ const SettingsPanel: React.FC = () => {
                     return (
                         <button
                             key={section.id}
+                            data-tab={section.id}
+                            data-testid={`settings-tab-${section.id}`}
                             onClick={() => selectSection(section.id)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
                                 isActive
@@ -137,6 +139,8 @@ const SettingsPanel: React.FC = () => {
                     return (
                         <button
                             key={section.id}
+                            data-tab={section.id}
+                            data-testid={`settings-tab-${section.id}-mobile`}
                             onClick={() => selectSection(section.id)}
                             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                                 activeSection === section.id
