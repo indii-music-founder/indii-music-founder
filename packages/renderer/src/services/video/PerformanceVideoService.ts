@@ -19,7 +19,7 @@ interface PerformanceScene {
   prompt: string;
   /** Exact amount of the canonical master covered by this timeline slot. */
   durationSec: number;
-  /** Legal Veo request duration; the final segment may be trimmed by the master mix. */
+  /** Legal Veo request duration; every segment may be trimmed by the master mix. */
   generationDurationSec: 4 | 6 | 8;
 }
 
@@ -223,10 +223,30 @@ export class PerformanceVideoService {
     const bpm = profile.bpm || 120;
     const maximumSceneSeconds = 8;
     const minimumSceneCount = Math.ceil(profile.durationSeconds / maximumSceneSeconds);
-    // The cloud stitcher concatenates provider outputs. Keep every non-final
-    // clip at its physical eight-second duration so only the last clip needs a
-    // trim; otherwise equal fractional splits accumulate A/V drift.
-    const numScenes = minimumSceneCount;
+    // All boundaries live on the same 30 fps grid as the project and stitcher.
+    // Prefer a measured beat in the last two seconds of each provider slot.
+    const totalFrames = Math.round(profile.durationSeconds * 30);
+    const beatFrames = [...new Set(profile.beatTimestampsSec.map(second => Math.round(second * 30)))]
+      .filter(frame => frame > 0 && frame < totalFrames)
+      .sort((left, right) => left - right);
+    const boundaries = [0];
+    while (totalFrames - boundaries[boundaries.length - 1] > maximumSceneSeconds * 30) {
+      const start = boundaries[boundaries.length - 1];
+      const ideal = start + maximumSceneSeconds * 30;
+      const candidates = beatFrames.filter(frame => {
+        if (frame < start + 6 * 30 || frame > ideal) return false;
+        const remainder = totalFrames - frame;
+        if (remainder <= 8 * 30 || remainder >= 11 * 30) return true;
+        // A 9–10 second remainder can still make two useful beat-aligned
+        // shots when another measured beat falls in the next provider slot.
+        return beatFrames.some(nextFrame => nextFrame >= frame + 6 * 30
+          && nextFrame <= frame + 8 * 30
+          && totalFrames - nextFrame <= 8 * 30);
+      });
+      boundaries.push(candidates.at(-1) ?? ideal);
+    }
+    boundaries.push(totalFrames);
+    const numScenes = boundaries.length - 1;
     if (sceneCount && sceneCount !== minimumSceneCount) {
       logger.warn(
         `[PerformanceVideo] Ignoring requested scene count ${sceneCount}; ` +
@@ -240,10 +260,12 @@ export class PerformanceVideoService {
       const stylePhrase = style || 'cinematic';
       const prompt = `Performance video scene ${i + 1}/${numScenes}. ${moodPhrase} ${stylePhrase} camera movement. Artist performing, dynamic lighting. No lyrics or talking.`;
 
-      const startSeconds = i * maximumSceneSeconds;
-      const endSeconds = Math.min(profile.durationSeconds, startSeconds + maximumSceneSeconds);
+      const startSeconds = boundaries[i] / 30;
+      const endSeconds = boundaries[i + 1] / 30;
       const durationSec = endSeconds - startSeconds;
-      const generationDurationSec: 4 | 6 | 8 = durationSec <= 4 ? 4 : durationSec <= 6 ? 6 : 8;
+      // Cloud Transcoder requires source videos of at least five seconds, so
+      // generate eight seconds even when the visible tail is shorter.
+      const generationDurationSec: 4 | 6 | 8 = 8;
       scenes.push({
         prompt: `${prompt} Cover master time ${startSeconds.toFixed(3)}s–${endSeconds.toFixed(3)}s at ${bpm.toFixed(2)} BPM.`,
         durationSec,

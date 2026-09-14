@@ -631,6 +631,9 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
         const segmentUrls = Array.isArray(eventData.segmentUrls)
             ? eventData.segmentUrls.filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
             : [];
+        const segmentDurationsSeconds = Array.isArray(eventData.segmentDurationsSeconds)
+            ? eventData.segmentDurationsSeconds.map(Number)
+            : undefined;
         const includeAudio = eventData.includeAudio === true;
         const costReservationId = typeof eventData.costReservationId === 'string'
             ? eventData.costReservationId
@@ -799,6 +802,7 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                     resolution: renderResolution(options.resolution),
                     timelineDurationSeconds: Number(options.timelineDurationSeconds),
                     segmentUris: segmentUrls,
+                    ...(segmentDurationsSeconds ? { segmentDurationsSeconds } : {}),
                     masterAudio,
                     ...(privateOutputIdentity ? { privateOutputIdentity } : {}),
                 });

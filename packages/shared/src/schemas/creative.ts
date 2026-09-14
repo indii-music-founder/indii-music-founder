@@ -72,11 +72,11 @@ export const OmniStoryboardFrameSchema = z.object({
 });
 
 export const GenerateOmniRemixSchema = z.object({
-    // Gemini Omni 1.1 exposes a 1,048,576-token context window. Keep a bounded
-    // four-byte-per-token request ceiling while allowing long structural briefs.
+    // Provider context is checked server-side; character count is not token count.
     prompt: z.string().trim().min(1).max(4_194_304),
     task: OmniVideoTaskSchema.optional(),
     referenceVideoUri: z.string().startsWith('gs://').optional(),
+    referenceVideoUris: z.array(z.string().startsWith('gs://')).max(3).optional(),
     firstFrameUri: z.string().startsWith('gs://').optional(),
     lastFrameUri: z.string().startsWith('gs://').optional(),
     audioUri: z.string().startsWith('gs://').optional(),
@@ -110,7 +110,7 @@ export const GenerateOmniRemixSchema = z.object({
             ? 'edit'
             : data.firstFrameUri
                 ? 'image_to_video'
-                : data.referenceUris?.length
+                : data.referenceUris?.length || data.referenceVideoUris?.length
                     ? 'reference_to_video'
                     : 'text_to_video');
 
@@ -135,11 +135,11 @@ export const GenerateOmniRemixSchema = z.object({
             message: 'Previous interactions and source videos are valid only in edit or extension mode.',
         });
     }
-    if (task === 'text_to_video' && (data.firstFrameUri || data.lastFrameUri || data.referenceUris?.length)) {
+    if (task === 'text_to_video' && (data.firstFrameUri || data.lastFrameUri || data.referenceUris?.length || data.referenceVideoUris?.length)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['task'],
-            message: 'Text-to-video mode cannot include image inputs.',
+            message: 'Text-to-video mode cannot include visual reference inputs.',
         });
     }
     if (data.previousInteractionId && !data.previousJobId) {
@@ -170,11 +170,11 @@ export const GenerateOmniRemixSchema = z.object({
             message: 'A last frame is valid only in image-to-video mode.',
         });
     }
-    if (task === 'reference_to_video' && !data.referenceUris?.length) {
+    if (task === 'reference_to_video' && !data.referenceUris?.length && !data.referenceVideoUris?.length) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['referenceUris'],
-            message: 'Reference-to-video mode requires at least one reference image.',
+            message: 'Reference-to-video mode requires at least one reference image or video clip.',
         });
     }
     const storyboardReferenceCount = (data.storyboard ?? []).filter(frame => frame.referenceUri).length;

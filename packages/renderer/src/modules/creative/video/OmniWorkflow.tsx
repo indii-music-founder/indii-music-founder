@@ -56,7 +56,7 @@ const OmniGatewayResponseSchema = z.object({
 const OMNI_TASKS: Array<{ value: OmniTask; label: string; description: string }> = [
     { value: 'text_to_video', label: 'Text to video', description: 'Generate from the prompt and storyboard.' },
     { value: 'image_to_video', label: 'Image to video', description: 'Animate the first image; use any others as references.' },
-    { value: 'reference_to_video', label: 'Reference to video', description: 'Guide subjects and style with up to eight images.' },
+    { value: 'reference_to_video', label: 'Reference to video', description: 'Guide subjects and style with up to eight images and three short video clips.' },
     { value: 'edit', label: 'Edit video', description: 'Edit an uploaded clip or continue the last Omni result.' },
     { value: 'extend', label: 'Extend video', description: 'Append a seamless 10-second continuation, up to 40 seconds total.' },
 ];
@@ -286,6 +286,7 @@ export default function OmniWorkflow() {
     const [refVideoFile, setRefVideoFile] = useState<File | null>(null);
     const [referenceVideoUri, setReferenceVideoUri] = useState<string | null>(null);
     const [referenceMedia, setReferenceMedia] = useState<ReferenceMedia[]>([]);
+    const [referenceVideos, setReferenceVideos] = useState<ReferenceMedia[]>([]);
     const [activeFrameIndex, setActiveFrameIndex] = useState(0);
     const [outputVideoUrl, setOutputVideoUrl] = useState<string | null>(null);
     const [outputStorageUri, setOutputStorageUri] = useState<string | undefined>();
@@ -348,7 +349,7 @@ export default function OmniWorkflow() {
                     toast.info('Reference images are unavailable for this asset.');
                 }
             } else if (handoff.role === 'reference-audio' && handoff.item.type === 'music') {
-                toast.info('Omni Flash does not accept uploaded audio references yet. Describe the soundtrack in the prompt.');
+                toast.info('Add the uploaded audio on the editor timeline. Final export replaces generated video audio with your mixer master.');
             }
             // Consume the handoff (clear pending)
             consumeStageHandoff('omni');
@@ -395,6 +396,26 @@ export default function OmniWorkflow() {
             toast.success(`Loaded ${uploaded.length} visual reference${uploaded.length === 1 ? '' : 's'}.`);
         } catch (error) {
             toast.error(`Image upload failed: ${callableErrorMessage(error)}`);
+        } finally {
+            e.target.value = '';
+        }
+    };
+
+    const handleReferenceClipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files ?? []).slice(0, Math.max(0, 3 - referenceVideos.length));
+        if (files.length === 0) return;
+        try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) throw new Error('Sign in before uploading reference clips.');
+            const uploaded = await Promise.all(files.map(async file => ({
+                uri: await CreativeStorageService.uploadReferenceMedia(userId, file, 'video'),
+                label: file.name,
+            })));
+            setReferenceVideos(previous => [...previous, ...uploaded].slice(0, 3));
+            if (omniTask === 'text_to_video') setOmniTask('reference_to_video');
+            toast.success(`Loaded ${uploaded.length} video reference${uploaded.length === 1 ? '' : 's'}.`);
+        } catch (error) {
+            toast.error(`Reference clip upload failed: ${callableErrorMessage(error)}`);
         } finally {
             e.target.value = '';
         }
@@ -457,7 +478,7 @@ export default function OmniWorkflow() {
             }
 
             if (item?.type === 'music') {
-                toast.info('Omni does not accept audio reference files yet; describe the soundtrack in the prompt.');
+                toast.info('Add this music on the editor timeline. Omni video audio is discarded in the final mix.');
                 return;
             }
             toast.info(`${payload.asset.name} cannot be used in Omni’s current media inputs.`);
@@ -476,8 +497,8 @@ export default function OmniWorkflow() {
             toast.error('Image-to-video needs at least one image.');
             return;
         }
-        if (omniTask === 'reference_to_video' && referenceMedia.length === 0) {
-            toast.error('Reference-to-video needs at least one reference image.');
+        if (omniTask === 'reference_to_video' && referenceMedia.length === 0 && referenceVideos.length === 0) {
+            toast.error('Reference-to-video needs at least one reference image or video clip.');
             return;
         }
         if (!remixPrompt.trim()) {
@@ -524,6 +545,7 @@ export default function OmniWorkflow() {
                 ...(firstFrameUri ? { firstFrameUri } : {}),
                 ...(lastFrameUri ? { lastFrameUri } : {}),
                 referenceUris,
+                referenceVideoUris: referenceVideos.map(entry => entry.uri),
                 ...((usePreviousInteraction || usePreviousExtension) && previousInteractionId && previousJobId
                     ? { previousInteractionId, previousJobId }
                     : {}),
@@ -780,7 +802,8 @@ export default function OmniWorkflow() {
     const canGenerate = !!remixPrompt.trim() && !isRemixing && (
         omniTask === 'text_to_video'
         || ((omniTask === 'edit' || omniTask === 'extend') && (hasPreviousInteraction || !!referenceVideoUri))
-        || ((omniTask === 'image_to_video' || omniTask === 'reference_to_video') && referenceMedia.length > 0)
+        || (omniTask === 'image_to_video' && referenceMedia.length > 0)
+        || (omniTask === 'reference_to_video' && (referenceMedia.length > 0 || referenceVideos.length > 0))
     );
     const selectedTask = OMNI_TASKS.find(task => task.value === omniTask) ?? OMNI_TASKS[0];
 
@@ -1131,7 +1154,7 @@ export default function OmniWorkflow() {
                             value={remixPrompt}
                             onChange={(e) => setRemixPrompt(e.target.value)}
                             className="w-full bg-black/60 text-white text-xs p-3 rounded-xl border border-white/10 outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/10 h-24 resize-none placeholder:text-gray-600 transition-all font-mono leading-relaxed"
-                            placeholder="Describe the result, action, camera, style, and soundtrack…"
+                            placeholder="Describe the visual action, camera, lighting, and style…"
                         />
                         <div className="grid grid-cols-1 gap-2">
                             <input
@@ -1210,14 +1233,14 @@ export default function OmniWorkflow() {
                         </div>
                     </div>
 
-                    {/* Audio is prompt-directed; uploaded audio is not supported by Omni preview. */}
+                    {/* Omni visuals and the user's canonical audio master remain separate layers. */}
                     <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
                         <span className="text-[10px] font-bold text-white uppercase tracking-widest font-mono flex items-center gap-1.5">
                             <Info size={12} className="text-green-400" />
-                            Generated soundtrack
+                            Final soundtrack
                         </span>
                         <p className="text-[9px] text-gray-500 leading-relaxed">
-                            Describe dialogue, ambience, sound effects, and music in the prompt. Uploaded audio and voice editing are not supported in this preview.
+                            Add your uploaded audio in the timeline mixer. Generated video audio is muted in the final export; your master audio is the only soundtrack.
                         </p>
                     </div>
 
@@ -1260,11 +1283,23 @@ export default function OmniWorkflow() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[9px] text-gray-500 leading-relaxed">Required for image and reference modes; optional during edits.</p>
+                            <p className="text-[9px] text-gray-500 leading-relaxed">Images are required for image mode; reference mode also accepts short video clips.</p>
                         )}
                         {omniTask === 'image_to_video' && referenceMedia.length > 1 && (
                             <p className="text-[9px] text-emerald-400">Image 1 is the start frame; image 2 is the exact end frame. Additional images guide identity and style.</p>
                         )}
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
+                        <label className="text-[10px] font-bold text-white uppercase tracking-widest font-mono">Video reference clips ({referenceVideos.length}/3)</label>
+                        <input type="file" accept="video/*" multiple disabled={referenceVideos.length >= 3}
+                            onChange={handleReferenceClipUpload} aria-label="Upload Omni video reference clips"
+                            className="block w-full text-[10px] text-gray-400 file:mr-2 file:rounded file:border-0 file:bg-green-500/10 file:px-2 file:py-1 file:text-green-300" />
+                        <p className="text-[9px] text-gray-500">Each clip must be 3 seconds or shorter. Its audio is ignored; clips guide visuals only.</p>
+                        {referenceVideos.map(entry => <button key={entry.uri} type="button"
+                            onClick={() => setReferenceVideos(previous => previous.filter(video => video.uri !== entry.uri))}
+                            className="mr-1 rounded-full border border-green-500/20 px-2 py-1 text-[10px] text-green-200"
+                            title={`Remove ${entry.label}`}>{entry.label} ×</button>)}
                     </div>
 
                     {/* Gemini applies SynthID automatically. */}

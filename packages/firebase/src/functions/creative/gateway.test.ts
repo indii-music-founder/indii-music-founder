@@ -1375,6 +1375,55 @@ describe('creative gateway generateVideoV3', () => {
 });
 
 describe('creative gateway generateOmniRemixV3', () => {
+  it('accepts short visual reference clips separately from an edit source', async () => {
+    mockProbeDurationSeconds.mockResolvedValue(2.5);
+    mockInteractionsCreate.mockResolvedValueOnce({
+      id: 'interaction-reference', status: 'completed',
+      output_video: { data: Buffer.from('video').toString('base64'), mime_type: 'video/mp4' },
+    });
+    await callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Keep the performer and wardrobe consistent', task: 'reference_to_video',
+        referenceVideoUris: [
+          'gs://test-bucket/creative/user-123/video/assets/one.mp4',
+          'gs://test-bucket/creative/user-123/video/assets/two.mp4',
+        ],
+        aspectRatio: '16:9', durationSeconds: 8, costReservationId: 'cost-op-1',
+      },
+    });
+    expect(mockFilesUpload).toHaveBeenCalledTimes(2);
+    expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
+      input: expect.arrayContaining([expect.objectContaining({
+        type: 'text', text: expect.stringContaining('<VIDEO_REF_1>@Video2'),
+      })]),
+      generation_config: { video_config: { task: 'reference_to_video' } },
+    }));
+  });
+
+  it('rejects reference clips longer than three seconds before calling Omni', async () => {
+    mockProbeDurationSeconds.mockResolvedValue(3.2);
+    await expect(callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Use this dancer as a reference', task: 'reference_to_video',
+        referenceVideoUris: ['gs://test-bucket/creative/user-123/video/assets/long.mp4'],
+        aspectRatio: '16:9', durationSeconds: 8, costReservationId: 'cost-op-1',
+      },
+    })).rejects.toMatchObject({ code: 'invalid-argument' });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized structural prompts before any billable provider call', async () => {
+    await expect(callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'x'.repeat(1_048_576), task: 'text_to_video',
+        aspectRatio: '16:9', durationSeconds: 8, costReservationId: 'cost-op-1',
+      },
+    })).rejects.toMatchObject({ code: 'resource-exhausted' });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mockInteractionsCreate.mockReset();
@@ -1429,7 +1478,7 @@ describe('creative gateway generateOmniRemixV3', () => {
       model: 'gemini-omni-1.1-flash-preview',
       input: expect.arrayContaining([
         {
-          type: 'document',
+          type: 'video',
           uri: 'https://generativelanguage.googleapis.com/v1beta/files/source-123',
         },
         expect.objectContaining({
@@ -1661,7 +1710,7 @@ describe('creative gateway generateOmniRemixV3', () => {
       },
     })).rejects.toMatchObject({
       code: 'failed-precondition',
-      message: expect.stringContaining('does not currently support uploaded audio references'),
+      message: expect.stringContaining('Add your audio in the timeline mixer'),
     });
     expect(mockInteractionsCreate).not.toHaveBeenCalled();
     expect(mockFinalizeReservation).toHaveBeenCalledWith({

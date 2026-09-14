@@ -12,6 +12,7 @@ describe('GenerateOmniRemixSchema', () => {
         ['text_to_video', {}],
         ['image_to_video', { firstFrameUri: 'gs://bucket/creative/user/images/start.png' }],
         ['reference_to_video', { referenceUris: ['gs://bucket/creative/user/images/artist.png'] }],
+        ['reference_to_video', { referenceVideoUris: ['gs://bucket/creative/user/video/artist.mp4'] }],
         ['edit', { referenceVideoUri: 'gs://bucket/creative/user/video/source.mp4' }],
     ] as const)('accepts a valid %s request', (task, inputs) => {
         expect(GenerateOmniRemixSchema.safeParse({ ...baseRequest, task, ...inputs }).success).toBe(true);
@@ -97,6 +98,19 @@ describe('GenerateOmniRemixSchema', () => {
             task: 'image_to_video',
             firstFrameUri: 'gs://bucket/creative/user/images/first.png',
             referenceUris: references,
+        }).success).toBe(false);
+    });
+
+    it('allows at most three short-clip references and keeps edit sources separate', () => {
+        const references = Array.from({ length: 4 }, (_, index) => `gs://bucket/creative/user/video/${index}.mp4`);
+        expect(GenerateOmniRemixSchema.safeParse({
+            ...baseRequest, task: 'reference_to_video', referenceVideoUris: references.slice(0, 3),
+        }).success).toBe(true);
+        expect(GenerateOmniRemixSchema.safeParse({
+            ...baseRequest, task: 'reference_to_video', referenceVideoUris: references,
+        }).success).toBe(false);
+        expect(GenerateOmniRemixSchema.safeParse({
+            ...baseRequest, task: 'reference_to_video', referenceVideoUri: references[0],
         }).success).toBe(false);
     });
 });

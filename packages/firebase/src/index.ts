@@ -932,6 +932,10 @@ export const renderVideo = onCall(
             // project-bucket media owned by this authenticated caller.
             const bucketName = admin.storage().bucket().name;
             const segmentUrls = parseProjectCanonicalVideoSegments(userId, bucketName, project.clips);
+            const segmentDurationsSeconds = project.clips
+                .filter((clip): clip is Record<string, unknown> => !!clip && typeof clip === 'object' && (clip as Record<string, unknown>).type === 'video')
+                .sort((left, right) => Number(left.startFrame) - Number(right.startFrame))
+                .map(clip => Number(clip.durationInFrames) / project.fps);
 
             const canonicalMaster = parseProjectCanonicalMaster(userId, project.clips);
             if (isPrivateProjectRender && !canonicalMaster) {
@@ -1003,6 +1007,7 @@ export const renderVideo = onCall(
                     jobId: jobId,
                     userId: userId,
                     segmentUrls: segmentUrls,
+                    segmentDurationsSeconds,
                     costReservationId,
                     ...(isPrivateProjectRender ? {
                         privateOutputIdentity: {

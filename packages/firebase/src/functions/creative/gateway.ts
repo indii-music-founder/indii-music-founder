@@ -627,7 +627,7 @@ function resolveOmniTask(data: OmniVideoRequest): OmniVideoTask {
   if (data.task) return data.task;
   if (data.previousInteractionId || data.referenceVideoUri) return 'edit';
   if (data.firstFrameUri) return 'image_to_video';
-  if (data.referenceUris?.length) return 'reference_to_video';
+  if (data.referenceUris?.length || data.referenceVideoUris?.length) return 'reference_to_video';
   return 'text_to_video';
 }
 
@@ -635,12 +635,19 @@ function buildOmniPrompt(data: OmniVideoRequest, task: OmniVideoTask): string {
   const firstFrameIndex = data.firstFrameUri ? 1 : undefined;
   const lastFrameIndex = data.lastFrameUri ? (data.firstFrameUri ? 2 : 1) : undefined;
   const referenceImageOffset = (data.firstFrameUri ? 1 : 0) + (data.lastFrameUri ? 1 : 0);
+  const referenceVideoOffset = data.referenceVideoUri ? 1 : 0;
+  const referenceTags = [
+    ...(data.referenceUris ?? []).map((_, index) => `<IMAGE_REF_${index}>@Image${index + referenceImageOffset + 1}`),
+    ...(data.referenceVideoUris ?? []).map((_, index) => `<VIDEO_REF_${index}>@Video${index + referenceVideoOffset + 1}`),
+  ];
+  const sourceTags = [
+    ...(data.referenceVideoUri ? ['<VIDEO_0>@Video1'] : []),
+    ...(firstFrameIndex ? [`<FIRST_FRAME>@Image${firstFrameIndex}`] : []),
+    ...(lastFrameIndex ? [`<LAST_FRAME>@Image${lastFrameIndex}`] : []),
+  ];
   const imageRolePrefix = [
-    ...(firstFrameIndex ? [`[# Sources <FIRST_FRAME>@Image${firstFrameIndex}]`] : []),
-    ...(lastFrameIndex ? [`[# Destination <LAST_FRAME>@Image${lastFrameIndex}]`] : []),
-    ...((data.referenceUris ?? []).length > 0
-      ? [`[# References ${(data.referenceUris ?? []).map((_, index) => `<IMAGE_REF_${index}>@Image${index + referenceImageOffset + 1}`).join(' ')}]`]
-      : []),
+    ...(sourceTags.length ? [`[# Sources ${sourceTags.join(' ')}]`] : []),
+    ...(referenceTags.length ? [`[# References ${referenceTags.join(' ')}]`] : []),
   ].join(' ');
   const storyboardDirectives = [...(data.storyboard ?? [])]
     .sort((a, b) => a.timestamp - b.timestamp)
@@ -669,6 +676,9 @@ function buildOmniPrompt(data: OmniVideoRequest, task: OmniVideoTask): string {
     (data.referenceUris ?? []).length > 0
       ? 'Use the tagged images as subject/style references, not as literal starting frames unless explicitly tagged.'
       : undefined,
+    (data.referenceVideoUris ?? []).length > 0
+      ? 'Use the tagged video clips only as subject, motion, wardrobe, or scene references; do not edit them or reproduce their audio.'
+      : undefined,
     task === 'edit' ? 'Keep everything else the same.' : undefined,
     task === 'extend' ? 'Continue seamlessly from the existing final frame, preserving subject, wardrobe, environment, lighting, motion, and camera continuity.' : undefined,
   ].filter(Boolean);
@@ -679,6 +689,24 @@ function buildOmniPrompt(data: OmniVideoRequest, task: OmniVideoTask): string {
     ...storyboardDirectives,
     ...directives,
   ].filter(Boolean).join('\n');
+}
+
+const OMNI_CONTEXT_TOKENS = 1_048_576;
+/**
+ * A conservative input preflight, not a tokenizer: UTF-8 byte length is an
+ * upper bound for ordinary text tokenization. Leave explicit space for image,
+ * video, interaction-history, and request framing costs before provider work.
+ */
+function assertOmniContextBudget(data: OmniVideoRequest, prompt: string): void {
+  const imageCount = (data.firstFrameUri ? 1 : 0) + (data.lastFrameUri ? 1 : 0)
+    + (data.referenceUris?.length ?? 0) + (data.storyboard ?? []).filter(frame => frame.referenceUri).length;
+  const videoCount = (data.referenceVideoUri ? 1 : 0) + (data.referenceVideoUris?.length ?? 0);
+  const reservedTokens = 65_536 + imageCount * 8_192 + videoCount * 32_768
+    + (data.previousInteractionId ? 131_072 : 0);
+  if (Buffer.byteLength(prompt, 'utf8') + reservedTokens > OMNI_CONTEXT_TOKENS) {
+    throw new HttpsError('resource-exhausted',
+      'Omni request exceeds the safe 1,048,576-token context budget. Shorten the brief or remove visual references.');
+  }
 }
 
 /** Article + noun for user-facing copy, e.g. "an image", "a video", "audio". */
@@ -1823,7 +1851,8 @@ async function uploadOwnedVideoToGeminiFiles(
   ai: GoogleGenAI,
   userId: string,
   gsUri: string,
-): Promise<{ input: { type: 'document'; uri: string }; providerFileName: string; durationSeconds: number }> {
+  maxDurationSeconds = 10,
+): Promise<{ input: { type: 'video'; uri: string }; providerFileName: string; durationSeconds: number }> {
   const { bucket, path } = parseStorageUri(gsUri);
   const defaultBucket = getStorage().bucket().name;
   if (bucket !== defaultBucket) {
@@ -1857,8 +1886,8 @@ async function uploadOwnedVideoToGeminiFiles(
     } catch (error) {
       throw new HttpsError('failed-precondition', 'Source video could not be decoded for duration validation.', error);
     }
-    if (durationSeconds > 10.05) {
-      throw new HttpsError('invalid-argument', 'Gemini Omni Flash edit inputs must be 10 seconds or shorter.');
+    if (durationSeconds > maxDurationSeconds + 0.05) {
+      throw new HttpsError('invalid-argument', `Gemini Omni Flash ${maxDurationSeconds === 3 ? 'reference clips' : 'edit inputs'} must be ${maxDurationSeconds} seconds or shorter.`);
     }
     const uploaded = await ai.files.upload({
       file: tempPath,
@@ -1872,7 +1901,7 @@ async function uploadOwnedVideoToGeminiFiles(
       throw new HttpsError('internal', 'Gemini Files did not return a usable source video URI.');
     }
     return {
-      input: { type: 'document', uri: active.uri },
+      input: { type: 'video', uri: active.uri },
       providerFileName: active.name,
       durationSeconds,
     };
@@ -1971,6 +2000,8 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
   const jobId = getDb().collection('creative_jobs').doc().id;
   const modelId = resolveOmniFlashModel();
   const task = resolveOmniTask(data);
+  const omniPrompt = buildOmniPrompt(data, task);
+  assertOmniContextBudget(data, omniPrompt);
   const durationSeconds = Math.min(10, Math.max(3, data.durationSeconds));
   // Official paid-tier Standard pricing is approximately $0.10 per second of
   // 720p output. This is deliberately independent of the retired pipelineMode.
@@ -1990,7 +2021,7 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
     if (data.audioUri) {
       throw new HttpsError(
         'failed-precondition',
-        'Gemini Omni Flash does not currently support uploaded audio references. Describe the desired soundtrack in the prompt instead.',
+        'Gemini Omni Flash does not accept uploaded audio references. Add your audio in the timeline mixer; final export replaces generated video audio.',
       );
     }
     const previousJob = data.previousInteractionId && data.previousJobId
@@ -2016,6 +2047,7 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
         aspectRatio: data.aspectRatio,
         durationSeconds,
         hasSourceVideo: !!data.referenceVideoUri,
+        referenceVideoCount: data.referenceVideoUris?.length ?? 0,
         hasFirstFrame: !!data.firstFrameUri,
         referenceCount: data.referenceUris?.length ?? 0,
         storyboardFrameCount: data.storyboard?.length ?? 0,
@@ -2033,6 +2065,8 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
     const sourceVideo = data.referenceVideoUri && !data.previousInteractionId
       ? await uploadOwnedVideoToGeminiFiles(ai, userId, data.referenceVideoUri)
       : undefined;
+    const referenceVideos = await Promise.all((data.referenceVideoUris ?? []).map(uri =>
+      uploadOwnedVideoToGeminiFiles(ai, userId, uri, 3)));
     const previousMetadata = previousJob?.metadata && typeof previousJob.metadata === 'object'
       ? previousJob.metadata as Record<string, unknown>
       : undefined;
@@ -2054,11 +2088,12 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
 
     const input = [
       ...(sourceVideo ? [sourceVideo.input] : []),
+      ...referenceVideos.map(video => video.input),
       // NOTE: the Omni interactions API uses its own Step schema where
       // {type:'image', mime_type, data} IS the canonical shape — do NOT
       // convert these to inlineData (that is the generateContent Part shape).
       ...referenceImages.map(r => ({ type: 'image' as const, mime_type: r.mimeType, data: r.data })),
-      { type: 'text' as const, text: buildOmniPrompt(data, task) },
+      { type: 'text' as const, text: omniPrompt },
     ];
 
     const interaction = await ai.interactions.create({
@@ -2112,10 +2147,12 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
         sequenceDurationSeconds,
         mimeType,
         providerInputFileName: sourceVideo?.providerFileName,
+        providerReferenceFileNames: referenceVideos.map(video => video.providerFileName),
         hasSourceVideo: !!data.referenceVideoUri,
         hasFirstFrame: !!data.firstFrameUri,
         hasLastFrame: !!data.lastFrameUri,
         referenceCount: data.referenceUris?.length ?? 0,
+        referenceVideoCount: referenceVideos.length,
         storyboardFrameCount: data.storyboard?.length ?? 0,
         synthIdAppliedByProvider: true,
         usage: finished.usage,

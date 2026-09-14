@@ -116,6 +116,34 @@ function baseOptions() {
 }
 
 describe('PerformanceVideoService.generate (ISSUE-994)', () => {
+    it('cuts visual slots on measured beats and snaps durations to the 30 fps master timeline', async () => {
+        mockWaitForTerminalReceipt.mockResolvedValueOnce({
+            ...CANONICAL_RECEIPT,
+            technical: { ...CANONICAL_RECEIPT.technical, durationSeconds: 20, frames: 960_000 },
+            openSourceProfile: { tempoBpm: 120, beatTimestampsSec: [7, 14] },
+        });
+        mockRenderVideo.mockResolvedValue({ data: { success: true, renderId: 'job-1', message: 'Queued.' } });
+        resolvedSceneThenRender({ id: 'job-1', status: 'completed', videoUrl: 'https://cdn.example/final.mp4' });
+        await performanceVideoService.generate(baseOptions());
+        const project = mockRenderVideo.mock.calls[0]![0].inputProps.project;
+        const videoClips = project.clips.filter((clip: { type: string }) => clip.type === 'video');
+        expect(videoClips.map((clip: { durationInFrames: number }) => clip.durationInFrames)).toEqual([210, 210, 180]);
+        expect(project.durationInFrames).toBe(600);
+        expect(mockGenerateVideo).toHaveBeenCalledTimes(3);
+    });
+    it('keeps a beat cut with a 10-second remainder when a later beat supports the tail', async () => {
+        mockWaitForTerminalReceipt.mockResolvedValueOnce({
+            ...CANONICAL_RECEIPT,
+            technical: { ...CANONICAL_RECEIPT.technical, durationSeconds: 17, frames: 816_000 },
+            openSourceProfile: { tempoBpm: 120, beatTimestampsSec: [7, 14] },
+        });
+        mockRenderVideo.mockResolvedValue({ data: { success: true, renderId: 'job-1', message: 'Queued.' } });
+        resolvedSceneThenRender({ id: 'job-1', status: 'completed', videoUrl: 'https://cdn.example/final.mp4' });
+        await performanceVideoService.generate(baseOptions());
+        const project = mockRenderVideo.mock.calls[0]![0].inputProps.project;
+        expect(project.clips.filter((clip: { type: string }) => clip.type === 'video')
+            .map((clip: { durationInFrames: number }) => clip.durationInFrames)).toEqual([210, 210, 90]);
+    });
     beforeEach(() => {
         vi.clearAllMocks();
         mockWaitForTerminalReceipt.mockResolvedValue(CANONICAL_RECEIPT);

@@ -321,6 +321,20 @@ describe('OmniWorkflow (legacy structural-only; real generation unverified)', ()
         expect(payload).not.toHaveProperty('audioUri');
     });
 
+    it('uploads short video references as guidance rather than an edit source', async () => {
+        render(<OmniWorkflow />);
+        fireEvent.change(screen.getByLabelText('Upload Omni video reference clips'), {
+            target: { files: [new File(['video'], 'dancer.mp4', { type: 'video/mp4' })] },
+        });
+        await waitFor(() => expect(screen.getByText('dancer.mp4 ×')).toBeInTheDocument());
+        fireEvent.click(screen.getByRole('button', { name: /generate omni video/i }));
+        await waitFor(() => expect(mockGenerateOmniRemixFn).toHaveBeenCalled());
+        const [payload] = mockGenerateOmniRemixFn.mock.calls[0]!;
+        expect(payload.task).toBe('reference_to_video');
+        expect(payload.referenceVideoUris).toEqual(['gs://mock-bucket.appspot.com/creative/user-123/omni/reference.mp4']);
+        expect(payload).not.toHaveProperty('referenceVideoUri');
+    });
+
     it('routes a completed Omni output to Veo continuity, the editor, and Image Studio', async () => {
         mockGenerateOmniRemixFn.mockResolvedValueOnce({
             data: {
