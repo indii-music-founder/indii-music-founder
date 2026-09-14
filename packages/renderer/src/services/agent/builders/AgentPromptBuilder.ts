@@ -324,8 +324,11 @@ ${context?.brandKit ? `
 ## BRAND & IDENTITY
 - **Brand Description:** ${context.brandKit.brandDescription || 'Not provided'}
 - **Aesthetic Style:** ${context.brandKit.aestheticStyle || 'Not provided'}
+- **Brand Colors & Visual Palette:** ${context.brandKit.colors?.length ? context.brandKit.colors.join(', ') : 'Not set'}
+- **Brand Typography:** ${context.brandKit.fonts || 'Not provided'}
 - **Career Stage:** ${context.userProfile?.careerStage || 'Not provided'}
 - **Primary Goal:** ${context.userProfile?.goals?.[0] || 'Not set'}
+- **Visual DNA Constraint:** All image generation, video color grading, canvas elements, and marketing copy must honor and integrate these brand colors and aesthetics.
 ${context.brandKit.releaseDetails ? `
 	- **CURRENT PROJECT (ALBUM/SINGLE):** ${context.brandKit.releaseDetails.title || 'Not provided'}
 	- **ARTIST NAME:** ${context.brandKit.releaseDetails.artists || 'Not provided'}

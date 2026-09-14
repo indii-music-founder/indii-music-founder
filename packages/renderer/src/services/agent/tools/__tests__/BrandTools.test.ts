@@ -20,7 +20,41 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
+vi.mock('@/services/brand/BrandSyncService', () => ({
+    brandSyncService: {
+        syncBrandPalette: vi.fn().mockResolvedValue({
+            success: true,
+            message: 'Brand palette successfully updated with 2 colors.',
+            palette: [
+                { hex: '#00f0ff', label: 'Cyan', raw: 'Cyan (#00f0ff)' },
+                { hex: '#ff0055', label: 'Magenta', raw: 'Magenta (#ff0055)' },
+            ],
+            formattedRules: ['Brand Color Palette: Cyan (#00f0ff), Magenta (#ff0055)'],
+        }),
+        getActivePalette: vi.fn().mockResolvedValue([
+            { hex: '#00f0ff', label: 'Cyan', raw: 'Cyan (#00f0ff)' },
+        ]),
+    },
+}));
+
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn(() => ({
+            userProfile: {
+                brandKit: {
+                    colors: ['Cyan (#00f0ff)'],
+                    aestheticStyle: 'Neon Noir',
+                    fonts: 'Inter, Orbitron',
+                    visualIdentity: 'Cyberpunk minimalism',
+                    brandDescription: 'Futuristic electronic duo',
+                },
+            },
+        })),
+    },
+}));
+
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { brandSyncService } from '@/services/brand/BrandSyncService';
 
 describe('BrandTools', () => {
     beforeEach(() => {
@@ -95,4 +129,43 @@ describe('BrandTools', () => {
         expect(result.data).toEqual(expect.objectContaining(expectedResponse));
         expect((window as any).electronAPI.brand.analyzeConsistency).toHaveBeenCalledWith('image1.jpg', {});
     });
+
+    it('set_brand_palette delegates to brandSyncService and returns success', async () => {
+        const result = await BrandTools.set_brand_palette({
+            colors: ['#00f0ff', '#ff0055'],
+            aestheticStyle: 'Cyberpunk',
+            reason: 'Album launch theme',
+        });
+
+        expect(result.success).toBe(true);
+        expect(brandSyncService.syncBrandPalette).toHaveBeenCalledWith(
+            ['#00f0ff', '#ff0055'],
+            {
+                aestheticStyle: 'Cyberpunk',
+                reason: 'Album launch theme',
+                modifiedBy: 'agent',
+            }
+        );
+        expect(result.data.palette.length).toBe(2);
+    });
+
+    it('set_brand_palette rejects empty color list', async () => {
+        const result = await BrandTools.set_brand_palette({
+            colors: [],
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('At least one color is required');
+        expect(result.metadata?.errorCode).toBe('INVALID_ARGS');
+    });
+
+    it('get_brand_identity returns current palette and brand metadata', async () => {
+        const result = await BrandTools.get_brand_identity({});
+
+        expect(result.success).toBe(true);
+        expect(result.data.aestheticStyle).toBe('Neon Noir');
+        expect(result.data.fonts).toBe('Inter, Orbitron');
+        expect(result.data.colors.length).toBe(1);
+    });
 });
+

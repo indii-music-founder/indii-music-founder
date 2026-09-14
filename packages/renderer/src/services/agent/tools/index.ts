@@ -194,6 +194,9 @@ AVAILABLE TOOLS:
 35. analyze_brand_consistency(content: string, type: string) - Analyze brand consistency.
 36. generate_brand_guidelines(name: string, values: string[]) - Generate brand guidelines.
 37. audit_visual_assets(assets: string[]) - Audit visual assets.
+37b. set_brand_palette(colors: string[], aestheticStyle?: string, reason?: string) - Universally set artist brand colors, cascading immediately to store, CSS variables, Artist Master Directive, and UI.
+37c. get_brand_identity() - Retrieve current brand colors, fonts, aesthetic style, and visual identity.
+37d. update_brand_color(from: string, to: string) - Rename or update an existing brand color with automatic cascade.
 38. create_campaign_brief(product: string, goal: string) - Create marketing campaign brief.
 39. analyze_audience(platform: string) - Analyze target audience.
 40. schedule_content(posts: any[]) - Create content schedule.

@@ -34,6 +34,8 @@ import {
 } from '@indii/shared';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { logger } from '@/utils/logger';
+import { useStore } from '@/core/store';
+import { parseColor } from '@/utils/colorUtils';
 
 interface SectionMeta {
     key: DirectiveSectionKey;
@@ -60,6 +62,7 @@ export const MasterPlaybookSection: React.FC = () => {
     const [rawMarkdown, setRawMarkdown] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const brandColors = useStore((state) => state.userProfile?.brandKit?.colors || []);
 
     useEffect(() => {
         let isMounted = true;
@@ -286,7 +289,49 @@ export const MasterPlaybookSection: React.FC = () => {
                             <p className="text-xs text-slate-400 mt-0.5">{activeSection.description}</p>
                         </div>
 
+                        {/* Live Brand Palette Preview for Brand & Aesthetics */}
+                        {selectedKey === 'brandingAesthetics' && (
+                            <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-700/60 space-y-2" data-testid="live-brand-swatch-bar">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                                        <Palette size={13} className="text-pink-400" />
+                                        Active Visual DNA Palette
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                        Cascaded across all 23 agents
+                                    </span>
+                                </div>
+                                {brandColors.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2 pt-1">
+                                        {brandColors.map((colorStr, i) => {
+                                            const parsed = parseColor(colorStr);
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700/80 text-xs text-slate-200"
+                                                    title={`${parsed.label} (${parsed.hex})`}
+                                                >
+                                                    <span
+                                                        className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-sm flex-shrink-0"
+                                                        style={{ backgroundColor: parsed.hex }}
+                                                        aria-label={`Color swatch for ${parsed.label}`}
+                                                    />
+                                                    <span className="font-medium text-[11px]">{parsed.label}</span>
+                                                    <span className="font-mono text-[10px] text-slate-400">{parsed.hex}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-500 italic">
+                                        No brand colors defined yet. Add a palette rule or ask your Brand Manager agent.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
                         {/* Rules List */}
+
                         <div className="space-y-2">
                             {activeSection.rules.length === 0 ? (
                                 <p className="text-xs text-slate-500 italic py-2">

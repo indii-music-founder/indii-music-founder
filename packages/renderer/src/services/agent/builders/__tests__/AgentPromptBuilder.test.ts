@@ -482,4 +482,26 @@ describe('AgentPromptBuilder.buildFullPrompt — Execution Contract injection', 
         );
         expect(prompt).toContain('Do NOT offer suggestions or extra ideas');
     });
+
+    it('injects brand colors and visual DNA constraints into system prompt', () => {
+        const context = createMockContext({
+            brandKit: {
+                brandDescription: 'Futuristic Hyperpop Pioneer',
+                aestheticStyle: 'Y2K Cyberpunk Gloss',
+                colors: ['Electric Purple (#8a2be2)', 'Acid Lime (#32cd32)', '#00ffff'],
+                fonts: 'Syne, Space Grotesk',
+            } as any,
+        });
+
+        const prompt = AgentPromptBuilder.buildFullPrompt(
+            'Test mission', 'Generate album cover art', 'CreativeAgent', 'creative', context, {}, '', '', '', '',
+        );
+
+        expect(prompt).toContain('## BRAND & IDENTITY');
+        expect(prompt).toContain('- **Brand Colors & Visual Palette:** Electric Purple (#8a2be2), Acid Lime (#32cd32), #00ffff');
+        expect(prompt).toContain('- **Brand Typography:** Syne, Space Grotesk');
+        expect(prompt).toContain('- **Visual DNA Constraint:**');
+
+    });
 });
+

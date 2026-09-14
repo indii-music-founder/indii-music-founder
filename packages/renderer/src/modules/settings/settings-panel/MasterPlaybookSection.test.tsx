@@ -18,9 +18,20 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 const mockGetDirective = vi.fn();
 const mockSaveDirective = vi.fn();
-const mockSubscribeToDirective = vi.fn((_uid, cb) => {
+const mockSubscribeToDirective = vi.fn((_uid, _cb) => {
     return () => {};
 });
+
+vi.mock('@/core/store', () => ({
+    useStore: (selector: any) =>
+        selector({
+            userProfile: {
+                brandKit: {
+                    colors: ['Neon Cyan (#00f0ff)', 'Electric Purple (#8a2be2)'],
+                },
+            },
+        }),
+}));
 
 vi.mock('@/services/agent/skills/ArtistDirectiveService', () => ({
     artistDirectiveService: {
@@ -106,4 +117,18 @@ describe('MasterPlaybookSection', () => {
         expect(screen.getByText('Direct Playbook Document')).toBeInTheDocument();
         expect(screen.getByRole('textbox')).toBeInTheDocument();
     });
+
+    it('renders live visual DNA palette swatches when selecting Brand & Aesthetics tab', async () => {
+        render(<MasterPlaybookSection />);
+
+        await screen.findByText('Artist Master Directive');
+        const brandTab = screen.getByRole('button', { name: /Brand & Aesthetics/i });
+        fireEvent.click(brandTab);
+
+        expect(await screen.findByTestId('live-brand-swatch-bar')).toBeInTheDocument();
+        expect(screen.getByText('Active Visual DNA Palette')).toBeInTheDocument();
+        expect(screen.getByText('Neon Cyan')).toBeInTheDocument();
+        expect(screen.getByText('Electric Purple')).toBeInTheDocument();
+    });
 });
+

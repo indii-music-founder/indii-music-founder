@@ -197,6 +197,26 @@ This document specifies the proprietary technical processes, system architecture
 
 ---
 
+### Method 10: Universal Visual DNA & Dynamic Brand Asset Swarm Cascading Protocol (IP-PROCESS-010)
+
+- **Technical Moat:** Eliminates conversational interrogation loops and cross-agent aesthetic drift by implementing an instantaneous 5-tier simultaneous cascading engine for artist brand colors, aesthetic rules, and visual DNA across client store, master directive, DOM styles, specialist agent prompts, and decoupled UI event buses.
+- **Architectural Implementation:**
+  - `packages/renderer/src/services/brand/BrandSyncService.ts`
+  - `packages/renderer/src/services/agent/tools/BrandTools.ts`
+  - `packages/renderer/src/services/agent/builders/AgentPromptBuilder.ts`
+  - `packages/renderer/src/modules/settings/settings-panel/MasterPlaybookSection.tsx`
+  - `agents/conductor/skills/brand_manager/SKILL.md`
+- **Key Algorithmic & Workflow Innovations:**
+  1. **Decisive Action First Anti-Interrogation Doctrine:** Agents immediately invoke `set_brand_palette` or `update_brand_color` upon receiving brand color requests rather than subjecting the human artist to sequential multi-turn surveys or interrogations.
+  2. **Simultaneous 5-Tier Instantaneous Cascade:** A single operation atomically propagates to (1) Zustand store & Firestore profile (`brandKit.colors`), (2) Tier 0 Artist Master Directive (`brandingAesthetics` rule override), (3) Root DOM CSS custom properties (`--artist-brand-primary`, `--artist-brand-secondary`, `--artist-brand-accent`, `--artist-brand-palette`), (4) Specialist agent prompt context pipelines (`AgentPromptBuilder.ts`), and (5) UI React event bus (`indii:brand-colors-updated`).
+  3. **Universal Specialist Grounding:** Guarantees that Creative visual generation, Video color grading, Canvas overlays, and Publicist copywriters immediately respect the active visual palette without requiring re-prompting or cross-agent synchronization latency.
+- **Legal Protection Strategy:**
+  - **Patent Candidate:** Real-time multi-tier visual DNA synchronization and autonomous swarm brand asset cascading protocol.
+  - **Trademark:** `Visual DNA Cascading Engine™` / `Visual DNA™`.
+  - **Trade Secret:** Color normalization, hex reconciliation, and CSS/prompt synthesis algorithms.
+
+---
+
 ## 3. Intellectual Property Asset Classification Summary
 
 | Asset Name | Legal Form | Status | Owning Entity |
@@ -214,6 +234,7 @@ This document specifies the proprietary technical processes, system architecture
 | **The Sonic Director© / The Sonic Director™** | Trademark (Classes 009, 041, 042) | In Use / Documented | New Detroit Music LLC |
 | **The Boardroom© / Boardroom Meta-Harness™** | Trademark (Classes 009, 042) | In Use / Documented | New Detroit Music LLC |
 | **Artist Master Directive™ / Living Skill Protocol™** | Trademark (Classes 009, 042) | In Use / Documented | New Detroit Music LLC |
+| **Visual DNA Cascading Engine™ / Visual DNA™** | Trademark (Classes 009, 042) | In Use / Documented | New Detroit Music LLC |
 | **Spectral Cutoff Audio Fraud Gate** | Patent Candidate / Trade Secret | Implemented & Tested | New Detroit Music LLC |
 | **Multi-Agent Context Propagation Protocol** | Patent Candidate / Trade Secret | Implemented & Tested | New Detroit Music LLC |
 | **Write-Only Ad Executor & Halt Switch** | Trade Secret | Implemented & Tested | New Detroit Music LLC |
@@ -223,10 +244,12 @@ This document specifies the proprietary technical processes, system architecture
 | **Dual-State Dynamic Invocability & Tool Sandboxing** | Patent Candidate (IP-PROCESS-007) | Implemented & Documented | New Detroit Music LLC |
 | **Multi-Domain Harness Conflict Reconciliation** | Patent Candidate (IP-PROCESS-008) | Implemented & Documented | New Detroit Music LLC |
 | **Bi-Directional Dynamic Playbook Inheritance Protocol** | Patent Candidate (IP-PROCESS-009) | Implemented & Documented | New Detroit Music LLC |
+| **Universal Visual DNA Swarm Cascading Protocol** | Patent Candidate (IP-PROCESS-010) | Implemented & Documented | New Detroit Music LLC |
 | **indii Conductor 27 Domain Playbook Corpus** | Copyright (Form TX: IP-COPYRIGHT-001) | Authored & Verified | New Detroit Music LLC |
 | **Product Skills Manual & Runtime Architecture** | Copyright (Form TX: IP-COPYRIGHT-002) | Authored & Verified | New Detroit Music LLC |
 
 ---
+
 
 **Certified & Maintained by:** New Detroit Music LLC  
 **Founder:** William Roberts  

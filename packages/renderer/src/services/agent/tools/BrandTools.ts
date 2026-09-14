@@ -6,6 +6,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { updateBrandColorByName } from '@/services/brand/updateBrandColor';
+import { brandSyncService } from '@/services/brand/BrandSyncService';
 
 /** Typed Electron IPC bridge for brand tools */
 interface ElectronBrandBridge {
@@ -67,6 +68,12 @@ const GenerateBrandKitSchema = z.object({
     typography: z.array(z.string()),
     voice_description: z.string(),
     logo_concept: z.string()
+});
+
+const SetBrandPaletteSchema = z.object({
+    colors: z.array(z.string()).min(1, 'At least one color is required'),
+    aestheticStyle: z.string().optional(),
+    reason: z.string().optional()
 });
 
 // --- Tools Implementation ---
@@ -323,10 +330,64 @@ export const BrandTools = {
         if (!result.success) {
             return toolError(result.message, 'COLOR_NOT_FOUND', { availableColors: result.availableColors });
         }
+        try {
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const colors = useStore.getState().userProfile?.brandKit?.colors || [];
+            if (colors.length > 0) {
+                await brandSyncService.syncBrandPalette(colors, {
+                    reason: `Renamed brand color from "${args.from}" to "${args.to}"`,
+                    modifiedBy: 'agent',
+                });
+            }
+        } catch (syncErr) {
+            logger.warn('[BrandTools] Secondary cascade failed for update_brand_color:', syncErr);
+        }
         return toolSuccess(
             { matchedColor: result.matchedColor, newColor: result.newColor },
             result.message
         );
+    }),
+
+    set_brand_palette: wrapTool('set_brand_palette', async (args: {
+        colors: string[];
+        aestheticStyle?: string;
+        reason?: string;
+    }) => {
+        const validated = SetBrandPaletteSchema.safeParse(args);
+        if (!validated.success) {
+            return toolError(`Invalid parameters for set_brand_palette: ${validated.error.message}`, 'INVALID_ARGS');
+        }
+        const result = await brandSyncService.syncBrandPalette(validated.data.colors, {
+            aestheticStyle: validated.data.aestheticStyle,
+            reason: validated.data.reason || 'Agent synchronized brand palette',
+            modifiedBy: 'agent'
+        });
+        if (!result.success) {
+            return toolError(result.message, result.error || 'SYNC_FAILED');
+        }
+        return toolSuccess({
+            palette: result.palette,
+            formattedRules: result.formattedRules,
+        }, result.message);
+    }),
+
+    get_brand_identity: wrapTool('get_brand_identity', async () => {
+        try {
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const brandKit = useStore.getState().userProfile?.brandKit;
+            const palette = await brandSyncService.getActivePalette();
+
+            return toolSuccess({
+                colors: palette,
+                rawColors: brandKit?.colors || [],
+                aestheticStyle: brandKit?.aestheticStyle || 'Not set',
+                fonts: brandKit?.fonts || 'Not set',
+                visualIdentity: brandKit?.visualIdentity || 'Not set',
+                brandDescription: brandKit?.brandDescription || 'Not set',
+            }, `Retrieved active brand identity (${palette.length} colors defined).`);
+        } catch (err) {
+            return toolError(`Failed to retrieve brand identity: ${err instanceof Error ? err.message : String(err)}`);
+        }
     }),
 
     generate_brand_kit: wrapTool('generate_brand_kit', async (args: { description: string; core_values: string[] }) => {
@@ -360,5 +421,8 @@ export const {
     load_brand_kit,
     analyze_brand_sentiment,
     generate_brand_kit,
-    update_brand_color
+    update_brand_color,
+    set_brand_palette,
+    get_brand_identity
 } = BrandTools;
+
