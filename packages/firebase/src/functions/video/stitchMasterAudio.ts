@@ -138,6 +138,8 @@ export function buildMasterAudioStitchPlan(input: {
     /** Final visual timeline duration; the canonical master is trimmed to it. */
     timelineDurationSeconds: number;
     segmentUris: string[];
+    /** Exact visible duration of each source, snapped to the project frame grid. */
+    segmentDurationsSeconds?: number[];
     masterAudio: VerifiedMasterAudioForStitch;
     privateOutputIdentity?: PrivateRenderOutputIdentity;
 }): MasterAudioStitchPlan {
@@ -160,6 +162,13 @@ export function buildMasterAudioStitchPlan(input: {
         uri,
         `segmentUris[${index}]`,
     ));
+    if (input.segmentDurationsSeconds && (
+        input.segmentDurationsSeconds.length !== segmentUris.length
+        || input.segmentDurationsSeconds.some(seconds => !Number.isFinite(seconds) || seconds <= 0)
+        || Math.abs(input.segmentDurationsSeconds.reduce((sum, seconds) => sum + seconds, 0) - input.timelineDurationSeconds) > 0.05
+    )) {
+        throw new Error('Segment trims must be positive, match the source count, and cover the timeline.');
+    }
     validateMaster(bucketName, userId, input.masterAudio);
 
     const privateUris = input.privateOutputIdentity
@@ -194,7 +203,11 @@ export function buildMasterAudioStitchPlan(input: {
         finalVideoUri,
         concatenateConfig: {
             inputs: segmentUris.map((uri, index) => ({ key: `scene-${index}`, uri })),
-            editList: segmentUris.map((_uri, index) => ({ key: `scene-atom-${index}`, inputs: [`scene-${index}`] })),
+            editList: segmentUris.map((_uri, index) => ({
+                key: `scene-atom-${index}`,
+                inputs: [`scene-${index}`],
+                ...(input.segmentDurationsSeconds ? { endTimeOffset: durationOffset(input.segmentDurationsSeconds[index]) } : {}),
+            })),
             elementaryStreams: [{ key: 'video-stream', videoStream }],
             muxStreams: [{
                 key: 'concatenated-video',
