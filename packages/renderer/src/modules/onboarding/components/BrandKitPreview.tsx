@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, Edit3, RotateCcw, Check } from 'lucide-react';
 import type { UserProfile } from '@/types/User';
+import { parseColor } from '@/utils/colorUtils';
 
 interface BrandKitPreviewProps {
     userProfile: UserProfile;
@@ -123,14 +124,17 @@ export function BrandKitPreview({
                 <div className="mt-8 pt-6 border-t border-white/5">
                     <p className="text-[10px] text-gray-500 mb-3 uppercase font-bold tracking-[0.15em]">Atmosphere</p>
                     <div className="flex gap-2 flex-wrap">
-                        {userProfile.brandKit.colors.map((color: string, idx: number) => (
-                            <div
-                                key={idx}
-                                className="w-9 h-9 rounded-xl border border-white/10 shadow-lg hover:scale-110 transition-transform cursor-help"
-                                style={{ backgroundColor: color }}
-                                title={color}
-                            />
-                        ))}
+                        {userProfile.brandKit.colors.map((color: string, idx: number) => {
+                            const parsed = parseColor(color);
+                            return (
+                                <div
+                                    key={idx}
+                                    className="w-9 h-9 rounded-xl border border-white/10 shadow-lg hover:scale-110 transition-transform cursor-help"
+                                    style={{ backgroundColor: parsed.hex }}
+                                    title={parsed.label !== parsed.hex ? `${parsed.label} (${parsed.hex})` : parsed.hex}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
             )}

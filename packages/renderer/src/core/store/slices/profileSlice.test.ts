@@ -85,6 +85,43 @@ describe('ProfileSlice Persistence', () => {
         expect(saveProfileToStorage).toHaveBeenCalledWith(stateProfile);
     });
 
+    it('updateBrandKit with colors cascades to CSS custom properties and store', async () => {
+        const { setUserProfile, updateBrandKit } = useStore.getState();
+        setUserProfile(mockProfile);
+        vi.mocked(saveProfileToStorage).mockClear();
+
+        await updateBrandKit({ colors: ['#ff007f', '#0070f3', '#fcd34d'] });
+
+        const stateProfile = useStore.getState().userProfile;
+        expect(stateProfile.brandKit.colors).toEqual(['#ff007f', '#0070f3', '#fcd34d']);
+        expect(saveProfileToStorage).toHaveBeenCalledWith(stateProfile);
+
+        // Verify CSS custom properties set on documentElement
+        expect(document.documentElement.style.getPropertyValue('--artist-brand-primary')).toBe('#ff007f');
+        expect(document.documentElement.style.getPropertyValue('--artist-brand-secondary')).toBe('#0070f3');
+        expect(document.documentElement.style.getPropertyValue('--artist-brand-accent')).toBe('#fcd34d');
+    });
+
+    it('loadUserProfile should load profile from storage and hydrate brand colors', async () => {
+        const profileWithColors = {
+            ...mockProfile,
+            brandKit: {
+                ...mockProfile.brandKit,
+                colors: ['Neon Green (#22c55e)', 'Midnight (#0b0c10)'],
+            },
+        };
+        vi.mocked(getProfileFromStorage).mockResolvedValue(profileWithColors);
+        const { loadUserProfile } = useStore.getState();
+
+        await loadUserProfile('test-uid');
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        expect(getProfileFromStorage).toHaveBeenCalledWith('test-uid');
+        expect(useStore.getState().userProfile.brandKit.colors).toEqual(['Neon Green (#22c55e)', 'Midnight (#0b0c10)']);
+        expect(document.documentElement.style.getPropertyValue('--artist-brand-primary')).toBe('#22c55e');
+        expect(document.documentElement.style.getPropertyValue('--artist-brand-secondary')).toBe('#0b0c10');
+    });
+
     it('loadUserProfile should load profile from storage', async () => {
         vi.mocked(getProfileFromStorage).mockResolvedValue(mockProfile);
         const { loadUserProfile } = useStore.getState();

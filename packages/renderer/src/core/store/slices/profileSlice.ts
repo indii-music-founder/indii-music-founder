@@ -108,6 +108,14 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         set({ userProfile: newProfile });
         // Persistence Strategy: Hybrid (IndexedDB for speed + Firestore for cloud backup)
         saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save profile:", err));
+
+        if (newProfile.brandKit?.colors && newProfile.brandKit.colors.length > 0) {
+            import('@/services/brand/BrandSyncService').then(({ brandSyncService }) => {
+                const normalized = brandSyncService.normalizeColors(newProfile.brandKit!.colors);
+                brandSyncService.applyCssVariables(normalized);
+                brandSyncService.broadcastUpdate(normalized);
+            }).catch(() => {});
+        }
     },
     updateBrandKit: async (updates) => {
         const state = get();
@@ -120,6 +128,27 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         set({ userProfile: newProfile });
         // Await persistence before returning so caller knows the write succeeded
         await saveProfileToStorage(newProfile);
+
+        // Automated Visual DNA Cascading Protocol:
+        // When brand colors change, cascade to DOM CSS variables, UI event bus,
+        // and Tier 0 Artist Master Directive
+        if (updates.colors && updates.colors.length > 0) {
+            try {
+                const { brandSyncService } = await import('@/services/brand/BrandSyncService');
+                const normalized = brandSyncService.normalizeColors(updates.colors);
+                brandSyncService.applyCssVariables(normalized);
+                brandSyncService.broadcastUpdate(normalized);
+                brandSyncService.syncToArtistDirective(
+                    normalized,
+                    updates.aestheticStyle || currentBrandKit.aestheticStyle,
+                    'Store updateBrandKit synchronized brand palette'
+                ).catch((err: unknown) => {
+                    logger.warn('[ProfileSlice] Failed to cascade brand colors to Artist Directive:', err);
+                });
+            } catch (syncErr: unknown) {
+                logger.warn('[ProfileSlice] BrandSyncService cascade failed:', syncErr);
+            }
+        }
     },
     loadUserProfile: async (uid: string) => {
         logger.info('[Profile] Loading user profile for:', uid);
@@ -216,6 +245,14 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                 // A profile is presentation state only. Founder and paid access
                 // are resolved by server-owned entitlements before any spend.
                 set({ userProfile: profile });
+
+                if (profile.brandKit?.colors && profile.brandKit.colors.length > 0) {
+                    import('@/services/brand/BrandSyncService').then(({ brandSyncService }) => {
+                        const normalized = brandSyncService.normalizeColors(profile.brandKit!.colors);
+                        brandSyncService.applyCssVariables(normalized);
+                        brandSyncService.broadcastUpdate(normalized);
+                    }).catch(() => {});
+                }
             } else {
                 logger.info('[Profile] No profile found, creating default for:', uid);
                 // Create a new profile for this user
@@ -263,6 +300,14 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         }
 
                         set({ userProfile: cloudProfile });
+
+                        if (cloudProfile.brandKit?.colors && cloudProfile.brandKit.colors.length > 0) {
+                            import('@/services/brand/BrandSyncService').then(({ brandSyncService }) => {
+                                const normalized = brandSyncService.normalizeColors(cloudProfile.brandKit!.colors);
+                                brandSyncService.applyCssVariables(normalized);
+                                brandSyncService.broadcastUpdate(normalized);
+                            }).catch(() => {});
+                        }
                     }
                 }, (error) => {
                     if (isCurrentLoad()) logger.error('[Profile] Real-time listener error:', error);
