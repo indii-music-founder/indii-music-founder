@@ -61,12 +61,14 @@ import { EditorTools } from './EditorTools';
 import { RemoteSupportTools } from './RemoteSupportTools';
 import { TrashTools } from './TrashTools';
 import { FormatFoundryTools } from './FormatFoundryTools';
+import { ArtistDirectiveTools } from './ArtistDirectiveTools';
 import { AnyToolFunction } from '../types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...CoreTools,
     ...UniversalTools,
     ...BillingTools,
+    ...ArtistDirectiveTools,
     consult_specialist,
     consult_product_skill,
     list_product_skills,
@@ -298,6 +300,8 @@ AVAILABLE TOOLS:
 121. multi_replace_file_content(targetFile: string, instruction: string, description: string, replacementChunks: array) - Modify multiple non-contiguous blocks of text in a single file.
 122. consult_product_skill(skillName: string, query?: string) - Load and consult an authoritative Conductor product playbook (e.g. digital_distribution, legal_affairs, release_strategy).
 123. list_product_skills() - Discover all available hermetically bundled Conductor playbooks.
+124. read_artist_directive(sectionKey?: string) - Inspect the living Artist Master Directive (supreme overrides, sonic specs, legal red lines, brand rules, release protocols).
+125. refine_artist_directive(sectionKey: string, ruleOrContent: string, action: 'add_rule'|'remove_rule'|'set_content', reason?: string) - Autonomously refine or append rules to the living Artist Master Directive based on artist interaction.
 --- EMAIL ---
 271. list_email_accounts() - List connected email accounts for the user.
 272. read_emails(provider: string, forceSync?: boolean, maxResults?: number) - Read recent emails from a connected provider (e.g. 'gmail').

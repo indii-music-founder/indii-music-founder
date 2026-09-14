@@ -284,6 +284,11 @@
         "title": "Profile",
         "description": "Manage your personal information and how others see you."
       },
+      "playbook": {
+        "label": "Master Directive",
+        "title": "Artist Master Directive",
+        "description": "Living supreme rules, sonic specs, and custom playbooks."
+      },
       "connections": {
         "label": "Connected Services",
         "title": "Connected Services",

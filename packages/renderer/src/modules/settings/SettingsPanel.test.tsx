@@ -245,4 +245,12 @@ describe('SettingsPanel', () => {
         const profileButtons = screen.getAllByText('settings.sections.profile.label');
         expect(profileButtons.length).toBeGreaterThanOrEqual(2);
     });
+
+    it('switches to Master Directive section when clicked', async () => {
+        render(<SettingsPanel />);
+        const playbookButtons = screen.getAllByText('settings.sections.playbook.label');
+        expect(playbookButtons.length).toBeGreaterThanOrEqual(1);
+        fireEvent.click(playbookButtons[0]);
+        expect(await screen.findByText('Artist Master Directive')).toBeInTheDocument();
+    });
 });

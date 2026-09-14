@@ -85,6 +85,12 @@ Prior to executing any function registered in `TOOL_REGISTRY`, the execution wra
 ### Architecture Component 4: The Boardroom Meta-Harness (`BoardroomMetaHarnessService.ts`)
 When handling multi-disciplinary tasks, the orchestrator invokes `compile_harness` across multiple domains. The meta-harness collects the resulting run states, checks for constraint violations (e.g., Marketing Budget > Finance Available Cash), applies the prioritization hierarchy (Legal/Finance > Operations > Creative), and outputs a resolved Living Plan step.
 
+### Architecture Component 5: Bi-Directional Co-Authored Living User Directive System (`ArtistDirectiveService.ts`)
+Provides a Tier 0 supreme override layer dynamically inheriting over the static compile-time playbooks. A living master directive document (`users/{uid}/skills/artist_master_directive`) is maintained in real time with bidirectional co-authoring:
+1. The human user adds, edits, or deletes operational rules, sonic targets, legal boundaries, and custom playbooks via an interactive studio settings interface (`MasterPlaybookSection.tsx`).
+2. Autonomous agents inspect the active directive (`read_artist_directive`) and reflectively append or calibrate rules (`refine_artist_directive`) based on conversational exchanges or mastering feedback.
+3. The prompt assembly pipeline wraps the compiled markdown document in an authoritative container tag `<artist_master_directive priority="SUPREME_OVERRIDE">` positioned above all domain playbooks, strictly overriding default platform behaviors and base skill instructions.
+
 ---
 
 ## 6. Patent Claims
@@ -126,3 +132,20 @@ When handling multi-disciplinary tasks, the orchestrator invokes `compile_harnes
      - generate an integrated risk-weighted strategic decision tree comprising actionable recommendations and user approval gates.
 
 8. **A non-transitory computer-readable storage medium comprising instructions that, when executed by a computing device, cause the computing device to perform the method of claim 1.**
+
+9. **A method for bi-directional co-authored dynamic playbook inheritance in an autonomous multi-agent swarm, the method comprising:**
+   - maintaining a structured user-specific Tier 0 living master directive comprising a plurality of domain sections including sonic specifications, business and legal boundaries, brand aesthetics, and distribution constraints;
+   - persisting the Tier 0 living master directive across a user interface layer and an autonomous agent execution layer;
+   - intercepting, by an autonomous agent during task execution or conversation analysis, an operational constraint or preference expressed by a user;
+   - executing, by the autonomous agent, a reflective directive refinement tool to mutate the structured Tier 0 living master directive with an audit rationale;
+   - dynamically assembling, by a context pipeline, an execution prompt for a multi-agent swarm wherein the structured Tier 0 living master directive is spliced with a supreme override precedence above a plurality of base domain playbooks; and
+   - enforcing, across all agents in the multi-agent swarm, constraints specified in the Tier 0 living master directive over conflicting base domain playbook instructions.
+
+10. **The method of claim 9, further comprising:**
+    - presenting, in the user interface layer, a graphical visual rule editor and an inline Markdown document editor synchronized in real time with the Tier 0 living master directive;
+    - receiving an edit to a rule or custom playbook section from the user interface layer; and
+    - synchronizing the edit to a distributed document store with a user attribution indicator, overriding previous agent-authored refinements.
+
+11. **The method of claim 9, wherein the structured Tier 0 living master directive strictly constrains audio mastering targets, master sound recording copyright retention, non-consented synthetic voice generation, and digital service provider pitch lead times.**
+
+12. **The method of claim 9, wherein mutating the structured Tier 0 living master directive comprises deduplicating rule strings, updating section timestamps, validating against a strict schema version, and broadcasting a state change event to real-time client subscribers.**

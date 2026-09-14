@@ -12,6 +12,7 @@ import { importWithRetry } from '@/utils/dynamicImport';
 import { IdeaParkingService } from '../tools/IdeaParking';
 import { buildAmbitionDialPrompt } from '../builders/AmbitionDialPrompt';
 import { ProductSkillRegistry } from '../skills/ProductSkillRegistry';
+import { artistDirectiveService } from '../skills/ArtistDirectiveService';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
@@ -185,6 +186,16 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             logger.warn('[ContextPipeline] Failed to resolve active product skill:', err);
         }
 
+        // 8.5 Resolve Tier 0 Artist Master Directive (Living User Skill)
+        let artistMasterDirectiveBlock = '';
+        try {
+            const directiveObj = await artistDirectiveService.getDirective(userId);
+            artistMasterDirectiveBlock = artistDirectiveService.formatDirectiveForPrompt(directiveObj);
+        } catch (err) {
+            logger.warn('[ContextPipeline] Failed to resolve artist master directive:', err);
+            artistMasterDirectiveBlock = artistDirectiveService.formatDirectiveForPrompt(null);
+        }
+
         // 9. Assemble Pipeline Context
         return {
             ...stateContext,
@@ -195,6 +206,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             autoRecallBlock,
             activePlanBlock,
             activeProductSkillBlock,
+            artistMasterDirectiveBlock,
             directive,
             // Judgment layer: user-owned ambition dial (default 'balanced' if unset)
             ambitionLevel: userProfile?.preferences?.agentAmbition || 'balanced',

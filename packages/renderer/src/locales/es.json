@@ -285,6 +285,11 @@
         "label": "Automatización",
         "title": "Automatización",
         "description": "Tu Perfil Operativo de Artista — preferencias y límites que los agentes verifican antes de actuar de forma autónoma."
+      },
+      "playbook": {
+        "label": "Directiva Maestra",
+        "title": "Directiva Maestra del Artista",
+        "description": "Reglas vivas, especificaciones sónicas y libros de jugadas personalizados."
       }
     },
     "hints": {

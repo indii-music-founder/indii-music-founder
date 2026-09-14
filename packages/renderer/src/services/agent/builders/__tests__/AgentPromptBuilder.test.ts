@@ -308,6 +308,33 @@ describe('AgentPromptBuilder.buildFullPrompt', () => {
         expect(prompt).toContain('distributor section');
     });
 
+    it('injects the Tier 0 Artist Master Directive block above active product skills when present', () => {
+        const context = createMockContext({
+            artistMasterDirectiveBlock: '<artist_master_directive priority="SUPREME_OVERRIDE">\n# Artist Master Directive: Luna Apex\n</artist_master_directive>',
+            activeProductSkillBlock: '<product_skill id="digital_distribution">\nPlaybook content\n</product_skill>',
+        });
+        const prompt = AgentPromptBuilder.buildFullPrompt(
+            'Test mission',
+            'Test task',
+            'TestAgent',
+            'test',
+            context,
+            {},
+            '',
+            '',
+            '',
+            ''
+        );
+
+        expect(prompt).toContain('# ARTIST MASTER DIRECTIVE (SUPREME OVERRIDE)');
+        expect(prompt).toContain('Luna Apex');
+        expect(prompt).toContain('# ACTIVE PRODUCT SKILL PLAYBOOK');
+        // Tier 0 sits before Tier 1 in prompt precedence
+        expect(prompt.indexOf('ARTIST MASTER DIRECTIVE (SUPREME OVERRIDE)')).toBeLessThan(
+            prompt.indexOf('ACTIVE PRODUCT SKILL PLAYBOOK')
+        );
+    });
+
     it('should sanitize injection attempts in the task', () => {
         const context = createMockContext();
         const prompt = AgentPromptBuilder.buildFullPrompt(

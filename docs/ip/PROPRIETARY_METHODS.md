@@ -176,6 +176,27 @@ This document specifies the proprietary technical processes, system architecture
 
 ---
 
+### Method 9: Bi-Directional Co-Authored Dynamic Playbook Inheritance Protocol (IP-PROCESS-009)
+
+- **Technical Moat:** Solves the rigid domain playbook limitation in autonomous multi-agent architectures by enabling a Tier 0 living artist directive that is bi-directionally co-authored in real time by both the human artist and the AI Conductor, possessing supreme override precedence over all compile-time domain playbooks.
+- **Architectural Implementation:**
+  - `packages/shared/src/schemas/artistMasterDirective.ts`
+  - `packages/renderer/src/services/agent/skills/ArtistDirectiveService.ts`
+  - `packages/renderer/src/services/agent/tools/ArtistDirectiveTools.ts`
+  - `packages/renderer/src/services/agent/components/ContextPipeline.ts`
+  - `packages/renderer/src/services/agent/builders/AgentPromptBuilder.ts`
+  - `packages/renderer/src/modules/settings/settings-panel/MasterPlaybookSection.tsx`
+- **Key Algorithmic & Workflow Innovations:**
+  1. **Hierarchical 3-Tier Precedence Architecture:** Tier 0 (Artist Master Directive) strictly supersedes Tier 1 (27 Domain Product Skills), which parameterizes Tier 2 (Deterministic Execution Tools).
+  2. **Bi-Directional Co-Authoring & Reflective Distillation:** Human artists edit visual rules or raw markdown in Studio Settings, while autonomous swarm agents continuously inspect (`read_artist_directive`) and reflectively distill implicit conversation preferences into codified rules (`refine_artist_directive`) with timestamped rationale.
+  3. **Strict In-Memory Prompt Splicing with Override Framing:** Assembles real-time living directives directly into prompt context inside `<artist_master_directive priority="SUPREME_OVERRIDE">`, preventing generic LLM hallucinations from overriding user-declared mastering targets, legal red lines, or brand aesthetic bans.
+- **Legal Protection Strategy:**
+  - **Patent Candidate:** System and method for bi-directional co-authored dynamic playbook inheritance and multi-tier prompt precedence in autonomous multi-agent swarms.
+  - **Trademarks:** `Artist Master Directive™`, `Living Skill Protocol™`, `Studio DNA Playbook™`.
+  - **Trade Secret:** AST-merging and Conductor reflection/distillation algorithms for user preference extraction.
+
+---
+
 ## 3. Intellectual Property Asset Classification Summary
 
 | Asset Name | Legal Form | Status | Owning Entity |
@@ -192,6 +213,7 @@ This document specifies the proprietary technical processes, system architecture
 | **indii Product Skills© / Studio Skills™** | Trademark (Classes 009, 042) | In Use / Documented | New Detroit Music LLC |
 | **The Sonic Director© / The Sonic Director™** | Trademark (Classes 009, 041, 042) | In Use / Documented | New Detroit Music LLC |
 | **The Boardroom© / Boardroom Meta-Harness™** | Trademark (Classes 009, 042) | In Use / Documented | New Detroit Music LLC |
+| **Artist Master Directive™ / Living Skill Protocol™** | Trademark (Classes 009, 042) | In Use / Documented | New Detroit Music LLC |
 | **Spectral Cutoff Audio Fraud Gate** | Patent Candidate / Trade Secret | Implemented & Tested | New Detroit Music LLC |
 | **Multi-Agent Context Propagation Protocol** | Patent Candidate / Trade Secret | Implemented & Tested | New Detroit Music LLC |
 | **Write-Only Ad Executor & Halt Switch** | Trade Secret | Implemented & Tested | New Detroit Music LLC |
@@ -200,6 +222,7 @@ This document specifies the proprietary technical processes, system architecture
 | **Hermetic Progressive Disclosure & Playbook Bundling** | Patent Candidate (IP-PROCESS-006) | Implemented & Documented | New Detroit Music LLC |
 | **Dual-State Dynamic Invocability & Tool Sandboxing** | Patent Candidate (IP-PROCESS-007) | Implemented & Documented | New Detroit Music LLC |
 | **Multi-Domain Harness Conflict Reconciliation** | Patent Candidate (IP-PROCESS-008) | Implemented & Documented | New Detroit Music LLC |
+| **Bi-Directional Dynamic Playbook Inheritance Protocol** | Patent Candidate (IP-PROCESS-009) | Implemented & Documented | New Detroit Music LLC |
 | **indii Conductor 27 Domain Playbook Corpus** | Copyright (Form TX: IP-COPYRIGHT-001) | Authored & Verified | New Detroit Music LLC |
 | **Product Skills Manual & Runtime Architecture** | Copyright (Form TX: IP-COPYRIGHT-002) | Authored & Verified | New Detroit Music LLC |
 
@@ -208,4 +231,5 @@ This document specifies the proprietary technical processes, system architecture
 **Certified & Maintained by:** New Detroit Music LLC  
 **Founder:** William Roberts  
 **Review Cadence:** Quarterly / Pre-Funding / Pre-Acquisition Diligence
+
 

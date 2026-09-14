@@ -282,6 +282,8 @@ export interface AgentContext {
     emitToken?: (token: string) => void;
     /** Injected hermetic product skill playbook XML block */
     activeProductSkillBlock?: string;
+    /** Injected Tier 0 Artist Master Directive (living supreme playbook) */
+    artistMasterDirectiveBlock?: string;
 }
 
 export type AgentRunner = (

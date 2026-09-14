@@ -12,6 +12,28 @@ const masterAudio = {
 };
 
 describe('buildMasterAudioStitchPlan', () => {
+    it('trims every visual source before concatenation to preserve beat-aligned cut points', () => {
+        const plan = buildMasterAudioStitchPlan({
+            bucketName: 'indii-music-founder.firebasestorage.app', jobId: 'job-1', userId: 'user-1',
+            resolution: { width: 1920, height: 1080 }, timelineDurationSeconds: 12,
+            segmentUris: [
+                'gs://indii-music-founder.firebasestorage.app/creative/user-1/video/outputs/one.mp4',
+                'gs://indii-music-founder.firebasestorage.app/creative/user-1/video/outputs/two.mp4',
+            ],
+            segmentDurationsSeconds: [7.5, 4.5],
+            masterAudio,
+        });
+        expect((plan.concatenateConfig.editList as Array<{ endTimeOffset?: string }>).map((atom: { endTimeOffset?: string }) => atom.endTimeOffset)).toEqual(['7.5s', '4.5s']);
+    });
+    it('rejects trim plans that drift from the canonical master duration', () => {
+        expect(() => buildMasterAudioStitchPlan({
+            bucketName: 'indii-music-founder.firebasestorage.app', jobId: 'job-1', userId: 'user-1',
+            resolution: { width: 1920, height: 1080 }, timelineDurationSeconds: 12,
+            segmentUris: ['gs://indii-music-founder.firebasestorage.app/creative/user-1/video/outputs/one.mp4'],
+            segmentDurationsSeconds: [11.5],
+            masterAudio,
+        })).toThrow('cover the timeline');
+    });
     it('preserves the legacy output contract byte-for-byte when no private identity is present', () => {
         const plan = buildMasterAudioStitchPlan({
             bucketName: 'indii-music-founder.firebasestorage.app',

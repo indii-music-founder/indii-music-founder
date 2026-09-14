@@ -340,6 +340,7 @@ ${boardroom}
 ${interAgentNotes}
 ${delegationScopeSection || ''}
 ${capabilityTruthSection || ''}
+${context?.artistMasterDirectiveBlock ? `\n# ARTIST MASTER DIRECTIVE (SUPREME OVERRIDE)\n${context.artistMasterDirectiveBlock}\n` : ''}
 ${context?.activeProductSkillBlock ? `\n# ACTIVE PRODUCT SKILL PLAYBOOK\n${context.activeProductSkillBlock}\n` : ''}
 
 # HISTORY
