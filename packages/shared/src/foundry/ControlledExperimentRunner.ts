@@ -3,7 +3,7 @@ import {
   ExperimentResult,
   ExperimentMutation
 } from './types.js';
-import { FormatForensicsEngine } from './FormatForensicsEngine';
+import { FormatForensicsEngine } from './FormatForensicsEngine.js';
 
 export class ControlledExperimentRunner {
   /**

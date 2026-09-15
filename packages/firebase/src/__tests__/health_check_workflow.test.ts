@@ -72,4 +72,16 @@ describe('Deploy workflow staging gate contract', () => {
     expect(workflow).toContain('needs: [deploy-staging, e2e-staging, rules-tests]');
     expect(workflow).toContain("needs.e2e-staging.result == 'success'");
   });
+
+  it('fails closed on Firebase Functions errors and verifies the cloud render dispatcher', () => {
+    const workflow = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8');
+
+    expect(workflow).not.toContain('firebase functions:delete dispatchCloudVideoRender');
+    expect(workflow).toContain('deploy_status=${PIPESTATUS[0]}');
+    expect(workflow).toContain('[ "$deploy_status" -eq 0 ]');
+    expect(workflow).toContain("--format='value(eventTrigger.eventType)'");
+    expect(workflow).toContain(
+      'dispatchCloudVideoRender is missing or does not have the required Firestore created trigger.',
+    );
+  });
 });

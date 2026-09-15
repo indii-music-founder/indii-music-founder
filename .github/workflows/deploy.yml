@@ -722,11 +722,6 @@ jobs:
           npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete calculateFuelLogistics --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete agentLoopCron --region us-central1 --project indii-music-founder --force --non-interactive || true
-          # MIG-010: dispatchCloudVideoRender was partially deployed as an HTTPS
-          # function; Gen2 cannot change trigger type in place. Delete so the
-          # background-triggered version deploys fresh. Idempotent — safe on
-          # repeat deploys once the stale version is gone.
-          npx --no-install firebase functions:delete dispatchCloudVideoRender --region us-central1 --project indii-music-founder --force --non-interactive || true
           # Gen1 -> Gen2 cutover (ISSUE-1243). Cloud Functions cannot change
           # generation in place, so each former Gen1 endpoint must be deleted
           # before the Gen2 replacement can deploy. Idempotent and re-runnable:
@@ -889,8 +884,11 @@ jobs:
           # "specified filters do not match" output from the pre-delete steps,
           # so the check keys on the deploy's own failure marker.
           for attempt in 1 2 3; do
+            set +e
             npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force 2>&1 | tee /tmp/functions-deploy.log
-            if ! grep -Eq "failed to (update|create) function" /tmp/functions-deploy.log; then
+            deploy_status=${PIPESTATUS[0]}
+            set -e
+            if [ "$deploy_status" -eq 0 ] && ! grep -Eq "failed to (update|create) function" /tmp/functions-deploy.log; then
               echo "::notice::All Cloud Functions updated successfully on attempt $attempt."
               break
             fi
@@ -902,6 +900,14 @@ jobs:
             echo "::error::Some Cloud Functions failed to update — see the deploy log above. The pipeline must not report success while functions are stale."
             exit 1
           done
+
+          dispatcher_trigger="$(gcloud functions describe dispatchCloudVideoRender \
+            --gen2 --region us-central1 --project indii-music-founder \
+            --format='value(eventTrigger.eventType)' 2>/dev/null || true)"
+          if [ "$dispatcher_trigger" != "google.cloud.firestore.document.v1.created" ]; then
+            echo "::error::dispatchCloudVideoRender is missing or does not have the required Firestore created trigger."
+            exit 1
+          fi
 
       - name: Deploy landing page to Firebase Hosting
         run: |

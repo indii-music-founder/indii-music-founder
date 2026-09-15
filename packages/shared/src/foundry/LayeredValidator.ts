@@ -9,7 +9,7 @@ import {
   HumanReviewValidationReceipt,
   NormalizedStatementReport
 } from './types.js';
-import { EvidenceIntakeService } from './EvidenceIntakeService';
+import { EvidenceIntakeService } from './EvidenceIntakeService.js';
 
 export class LayeredValidator {
   /**

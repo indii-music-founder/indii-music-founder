@@ -3,8 +3,8 @@ import {
   ParseOptions,
   HypothesisLedgerState
 } from './types.js';
-import { DistroKidStatementAdapter } from './adapters/DistroKidStatementAdapter';
-import { TuneCoreStatementAdapter } from './adapters/TuneCoreStatementAdapter';
+import { DistroKidStatementAdapter } from './adapters/DistroKidStatementAdapter.js';
+import { TuneCoreStatementAdapter } from './adapters/TuneCoreStatementAdapter.js';
 
 export interface DeterministicAdapter {
   readonly formatId: string;
