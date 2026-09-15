@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowDown, Check, CornerDownRight } from 'lucide-react';
+import { ArrowDown, Check, CornerDownRight, BookOpen, Users, Zap } from 'lucide-react';
 
 interface RoutedDept {
   name: string;
@@ -178,12 +178,80 @@ export default function ConductorSection() {
           </div>
         </div>
 
+        {/* Master Directive feature panel */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-24"
+        >
+          <div className="mb-8 text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-white/[0.03] px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
+              <BookOpen size={12} />
+              Your Master Directive governs everything
+            </div>
+            <h3 className="mt-4 text-3xl font-black tracking-tight text-white md:text-5xl">
+              Set your studio rules once.{' '}
+              <span className="text-amber-400 [text-shadow:0_0_25px_rgba(255,184,0,0.4)]">Your team obeys them always.</span>
+            </h3>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/55">
+              Your Living Playbook in Studio Settings defines your sound profile, contract red lines, and visual aesthetic. Every specialist on your team reads it before they act.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              {
+                Icon: BookOpen,
+                hex: '#FFB800',
+                label: 'Studio Rules',
+                title: 'Sound & Contract Standards',
+                body: 'Define your target loudness, minimum royalty splits, and audit requirements. Your specialists never produce work that violates your standards.',
+              },
+              {
+                Icon: Users,
+                hex: '#00B8D4',
+                label: 'Your 23-piece team',
+                title: 'Domain Specialists, Not Generalists',
+                body: 'Legal questions go to legal specialists. Campaign decisions go to marketing specialists. Each of your 23 team members knows only their domain and executes with precision.',
+              },
+              {
+                Icon: Zap,
+                hex: '#00FF66',
+                label: 'Instant Brand Sync',
+                title: 'Visual Identity Cascades Everywhere',
+                body: 'Update your palette once and your entire studio, social assets, and design briefs update in seconds. You never have to re-explain your aesthetic.',
+              },
+            ].map(({ Icon, hex, label, title, body }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="lacquer-card relative overflow-hidden rounded-2xl p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9)] backdrop-blur-xl"
+              >
+                <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
+                <div className="flex items-center gap-2.5">
+                  <Icon size={14} style={{ color: hex }} />
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-[0.22em]" style={{ color: hex }}>
+                    {label}
+                  </span>
+                </div>
+                <h4 className="mt-3 text-base font-black leading-tight tracking-tight text-white">{title}</h4>
+                <p className="mt-2 text-xs leading-relaxed text-white/60">{body}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 1 }}
-          className="mt-24 rounded-2xl border border-white/10 bg-black/60 py-10 text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
+          className="mt-16 rounded-2xl border border-white/10 bg-black/60 py-10 text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
         >
           <p className="text-2xl font-semibold tracking-[-0.025em] text-white md:text-4xl">Less tab management. Connected Intelligence© across every department.</p>
         </motion.div>
