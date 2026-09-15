@@ -5,6 +5,7 @@ const mockInteractionsCreate = vi.fn();
 const mockInteractionsGet = vi.fn();
 const mockGenerateVideos = vi.fn();
 const mockGenerateContent = vi.fn();
+const mockCountTokens = vi.fn();
 const mockGetVideosOperation = vi.fn();
 const mockDownload = vi.fn();
 const mockFilesUpload = vi.fn();
@@ -44,6 +45,7 @@ vi.mock('@google/genai', () => ({
         get: mockInteractionsGet,
       },
       models: {
+        countTokens: mockCountTokens,
         generateVideos: mockGenerateVideos,
         generateContent: mockGenerateContent,
       },
@@ -1393,6 +1395,13 @@ describe('creative gateway generateOmniRemixV3', () => {
       },
     });
     expect(mockFilesUpload).toHaveBeenCalledTimes(2);
+    expect(mockCountTokens).toHaveBeenCalledWith(expect.objectContaining({
+      contents: [expect.objectContaining({
+        parts: expect.arrayContaining([
+          expect.objectContaining({ fileData: expect.objectContaining({ mimeType: 'video/mp4' }) }),
+        ]),
+      })],
+    }));
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
       input: expect.arrayContaining([expect.objectContaining({
         type: 'text', text: expect.stringContaining('<VIDEO_REF_1>@Video2'),
@@ -1414,20 +1423,27 @@ describe('creative gateway generateOmniRemixV3', () => {
     expect(mockInteractionsCreate).not.toHaveBeenCalled();
   });
 
-  it('rejects oversized structural prompts before any billable provider call', async () => {
+  it('rejects an exact provider-counted context that exceeds the Omni input limit', async () => {
+    mockCountTokens.mockResolvedValueOnce({ totalTokens: 1_048_577 });
     await expect(callGenerateOmniRemix({
       auth: { uid: 'user-123' },
       data: {
-        prompt: 'x'.repeat(1_048_576), task: 'text_to_video',
+        prompt: 'An oversized structural request', task: 'text_to_video',
         aspectRatio: '16:9', durationSeconds: 8, costReservationId: 'cost-op-1',
       },
     })).rejects.toMatchObject({ code: 'resource-exhausted' });
+    expect(mockCountTokens).toHaveBeenCalledWith(expect.objectContaining({
+      model: 'gemini-omni-1.1-flash-preview',
+      contents: expect.any(Array),
+    }));
     expect(mockInteractionsCreate).not.toHaveBeenCalled();
   });
   beforeEach(() => {
     vi.clearAllMocks();
     mockInteractionsCreate.mockReset();
     mockInteractionsGet.mockReset();
+    mockCountTokens.mockReset();
+    mockCountTokens.mockResolvedValue({ totalTokens: 512 });
     mockDownload.mockReset();
     mockFilesUpload.mockReset();
     mockFilesGet.mockReset();
@@ -1585,6 +1601,7 @@ describe('creative gateway generateOmniRemixV3', () => {
         type: 'omni-video',
         status: 'completed',
         interactionId: 'interaction-previous',
+        metadata: { usage: { total_input_tokens: 700 } },
       }),
     });
     mockInteractionsCreate.mockResolvedValueOnce({
@@ -1614,11 +1631,51 @@ describe('creative gateway generateOmniRemixV3', () => {
       previous_interaction_id: 'interaction-previous',
       generation_config: { video_config: { task: 'edit' } },
     }));
+    expect(mockCountTokens).toHaveBeenCalledWith(expect.objectContaining({
+      contents: [expect.objectContaining({
+        parts: expect.arrayContaining([expect.objectContaining({ text: expect.stringContaining('cobalt blue') })]),
+      })],
+    }));
     expect(mockFilesUpload).not.toHaveBeenCalled();
     expect(result).toEqual(expect.objectContaining({
       interactionId: 'interaction-next',
       task: 'edit',
     }));
+  });
+
+  it('refuses a stateful edit when the provider cannot verify legacy context usage', async () => {
+    mockJobGet.mockResolvedValueOnce({
+      exists: true,
+      data: () => ({
+        userId: 'user-123', type: 'omni-video', status: 'completed', interactionId: 'interaction-previous',
+      }),
+    });
+    mockInteractionsGet.mockResolvedValueOnce({ id: 'interaction-previous', status: 'completed' });
+
+    await expect(callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Change the lighting', task: 'edit', previousInteractionId: 'interaction-previous', previousJobId: 'job-previous',
+        aspectRatio: '16:9', durationSeconds: 8, costReservationId: 'cost-op-1',
+      },
+    })).rejects.toMatchObject({ code: 'failed-precondition', message: expect.stringContaining('no verifiable context usage') });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when Gemini token counting is unavailable', async () => {
+    mockCountTokens.mockRejectedValueOnce(new Error('countTokens unavailable'));
+
+    await expect(callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A kinetic performance film', task: 'text_to_video',
+        aspectRatio: '16:9', durationSeconds: 8, costReservationId: 'cost-op-1',
+      },
+    })).rejects.toMatchObject({ code: 'failed-precondition', message: expect.stringContaining('token accounting') });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123', operationId: 'cost-op-1', outcome: 'VOIDED',
+    });
   });
 
   it('rejects a stateful interaction that is not backed by an owned Omni job', async () => {

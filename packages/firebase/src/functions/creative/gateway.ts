@@ -691,22 +691,79 @@ function buildOmniPrompt(data: OmniVideoRequest, task: OmniVideoTask): string {
   ].filter(Boolean).join('\n');
 }
 
-const OMNI_CONTEXT_TOKENS = 1_048_576;
+/** Gemini Omni Flash's documented maximum input context window. */
+const OMNI_INPUT_CONTEXT_TOKENS = 1_048_576;
+
+interface OmniContextBudget {
+  limitTokens: number;
+  currentInputTokens: number;
+  previousInteractionInputTokens: number;
+  totalInputTokens: number;
+  accounting: 'provider-count-tokens-and-cumulative-interaction-usage';
+}
+
 /**
- * A conservative input preflight, not a tokenizer: UTF-8 byte length is an
- * upper bound for ordinary text tokenization. Leave explicit space for image,
- * video, interaction-history, and request framing costs before provider work.
+ * Enforce the context limit with Gemini's own tokenizer. Images and Files API
+ * videos are represented as standard Content parts here because countTokens
+ * accepts Content, while interactions.create has a distinct Step input shape.
+ *
+ * Stateful Interaction usage is cumulative according to Gemini's API. That
+ * makes the completed predecessor's total_input_tokens the authoritative
+ * history size for a follow-up edit; we add the exact token count of this new
+ * turn before creating a billable interaction.
  */
-function assertOmniContextBudget(data: OmniVideoRequest, prompt: string): void {
-  const imageCount = (data.firstFrameUri ? 1 : 0) + (data.lastFrameUri ? 1 : 0)
-    + (data.referenceUris?.length ?? 0) + (data.storyboard ?? []).filter(frame => frame.referenceUri).length;
-  const videoCount = (data.referenceVideoUri ? 1 : 0) + (data.referenceVideoUris?.length ?? 0);
-  const reservedTokens = 65_536 + imageCount * 8_192 + videoCount * 32_768
-    + (data.previousInteractionId ? 131_072 : 0);
-  if (Buffer.byteLength(prompt, 'utf8') + reservedTokens > OMNI_CONTEXT_TOKENS) {
-    throw new HttpsError('resource-exhausted',
-      'Omni request exceeds the safe 1,048,576-token context budget. Shorten the brief or remove visual references.');
+async function assertOmniContextBudget(
+  ai: GoogleGenAI,
+  modelId: string,
+  prompt: string,
+  referenceImages: Array<{ mimeType: string; data: string }>,
+  videos: Array<{ uri: string; mimeType: string }>,
+  previousInteractionInputTokens = 0,
+): Promise<OmniContextBudget> {
+  let countResponse: { totalTokens?: number };
+  try {
+    countResponse = await ai.models.countTokens({
+      model: modelId,
+      contents: [{
+        role: 'user',
+        parts: [
+          ...videos.map(video => ({ fileData: { fileUri: video.uri, mimeType: video.mimeType } })),
+          ...referenceImages.map(image => ({ inlineData: { mimeType: image.mimeType, data: image.data } })),
+          { text: prompt },
+        ],
+      }],
+    });
+  } catch (error) {
+    console.error('[generateOmniRemixV3] Provider token accounting failed', error);
+    throw new HttpsError(
+      'failed-precondition',
+      'Gemini token accounting is temporarily unavailable, so this video request was not submitted. Please try again.',
+    );
   }
+
+  const currentInputTokens = countResponse.totalTokens;
+  if (typeof currentInputTokens !== 'number' || !Number.isSafeInteger(currentInputTokens) || currentInputTokens < 0) {
+    throw new HttpsError('failed-precondition', 'Gemini did not return a valid token count, so this video request was not submitted.');
+  }
+  if (!Number.isSafeInteger(previousInteractionInputTokens) || previousInteractionInputTokens < 0) {
+    throw new HttpsError('failed-precondition', 'The prior Omni edit has no verifiable context usage. Start a new clip before continuing this edit.');
+  }
+
+  const totalInputTokens = currentInputTokens + previousInteractionInputTokens;
+  if (totalInputTokens > OMNI_INPUT_CONTEXT_TOKENS) {
+    throw new HttpsError(
+      'resource-exhausted',
+      `This Omni request uses ${totalInputTokens.toLocaleString()} input tokens; the maximum is ${OMNI_INPUT_CONTEXT_TOKENS.toLocaleString()}. Shorten the brief, remove references, or start a new edit chain.`,
+    );
+  }
+
+  return {
+    limitTokens: OMNI_INPUT_CONTEXT_TOKENS,
+    currentInputTokens,
+    previousInteractionInputTokens,
+    totalInputTokens,
+    accounting: 'provider-count-tokens-and-cumulative-interaction-usage',
+  };
 }
 
 /** Article + noun for user-facing copy, e.g. "an image", "a video", "audio". */
@@ -1806,6 +1863,17 @@ interface OmniInteractionResponse {
   };
 }
 
+function getPreviousOmniInputTokens(previousJob: Record<string, unknown> | undefined): number {
+  const metadata = previousJob?.metadata;
+  const usage = metadata && typeof metadata === 'object'
+    ? (metadata as Record<string, unknown>).usage
+    : undefined;
+  const totalInputTokens = usage && typeof usage === 'object'
+    ? (usage as Record<string, unknown>).total_input_tokens
+    : undefined;
+  return typeof totalInputTokens === 'number' ? totalInputTokens : Number.NaN;
+}
+
 async function assertOwnedPreviousOmniInteraction(
   userId: string,
   previousJobId: string,
@@ -1852,7 +1920,7 @@ async function uploadOwnedVideoToGeminiFiles(
   userId: string,
   gsUri: string,
   maxDurationSeconds = 10,
-): Promise<{ input: { type: 'video'; uri: string }; providerFileName: string; durationSeconds: number }> {
+): Promise<{ input: { type: 'video'; uri: string }; providerFileName: string; durationSeconds: number; mimeType: string }> {
   const { bucket, path } = parseStorageUri(gsUri);
   const defaultBucket = getStorage().bucket().name;
   if (bucket !== defaultBucket) {
@@ -1904,6 +1972,7 @@ async function uploadOwnedVideoToGeminiFiles(
       input: { type: 'video', uri: active.uri },
       providerFileName: active.name,
       durationSeconds,
+      mimeType,
     };
   } finally {
     await rm(tempPath, { force: true }).catch(() => undefined);
@@ -2001,7 +2070,6 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
   const modelId = resolveOmniFlashModel();
   const task = resolveOmniTask(data);
   const omniPrompt = buildOmniPrompt(data, task);
-  assertOmniContextBudget(data, omniPrompt);
   const durationSeconds = Math.min(10, Math.max(3, data.durationSeconds));
   // Official paid-tier Standard pricing is approximately $0.10 per second of
   // 720p output. This is deliberately independent of the retired pipelineMode.
@@ -2086,6 +2154,27 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
       ],
     });
 
+    // `usage.total_input_tokens` is cumulative for stateful Interactions. For
+    // jobs created before we began persisting it, retrieve the owned provider
+    // interaction once; if it cannot supply usage, fail closed rather than
+    // pretending a byte estimate is provider token accounting.
+    let previousInteractionInputTokens = getPreviousOmniInputTokens(previousJob);
+    if (previousJob && !Number.isSafeInteger(previousInteractionInputTokens)) {
+      const providerPrevious = await ai.interactions.get(data.previousInteractionId!) as OmniInteractionResponse;
+      previousInteractionInputTokens = providerPrevious.usage?.total_input_tokens ?? Number.NaN;
+    }
+    const contextBudget = await assertOmniContextBudget(
+      ai,
+      modelId,
+      omniPrompt,
+      referenceImages,
+      [sourceVideo, ...referenceVideos]
+        .filter((video): video is NonNullable<typeof video> => Boolean(video))
+        .map(video => ({ uri: video.input.uri, mimeType: video.mimeType })),
+      previousJob ? previousInteractionInputTokens : 0,
+    );
+    await safeDbUpdate(jobId, { 'metadata.contextBudget': contextBudget });
+
     const input = [
       ...(sourceVideo ? [sourceVideo.input] : []),
       ...referenceVideos.map(video => video.input),
@@ -2156,6 +2245,7 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
         storyboardFrameCount: data.storyboard?.length ?? 0,
         synthIdAppliedByProvider: true,
         usage: finished.usage,
+        contextBudget,
       },
       completedAt: new Date().toISOString()
     }));
