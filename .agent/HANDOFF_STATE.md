@@ -1,4 +1,53 @@
+# Session Close — Landing Page Breakthrough Showcase (2026-09-15)
+
+**Final state: Landing page updated to showcase the three core architectural breakthroughs (Living Master Directive, 23-Piece Dedicated Team, Instant Brand Sync) using approved copy from `docs/product/PRODUCT_COPYWRITING_BRIEF.md`. Two commits delivered to `origin/main`. Local validation: tsc + vite build clean, lint 0 errors, 9/9 preservation tests green. CI run `34970804494` pending on fix SHA `e331e1d1a`.**
+
+## Shipped — Landing Page Breakthrough Showcase
+
+### Commit 1: `9fd0dffa7` — feat(landing): showcase Living Master Directive, 23-specialist team, and Instant Brand Sync
+- **`packages/landing/src/components/LegacyComparison.tsx`** — Complete rewrite:
+  - Replaced 4 generic comparison pillars (Ownership & Control / Disconnected Work / Operating Support / Financial Context) with 3 breakthrough cards using approved copy verbatim.
+  - Card 01 — *Your Living Master Directive*: generic tools forget you vs. your Living Playbook your team never deviates from.
+  - Card 02 — *Your 23-Piece Dedicated Team*: one confused chatbot vs. 23 domain-isolated specialists.
+  - Card 03 — *Instant Brand Sync*: manual updates across every tool vs. one change, full cascade in seconds.
+  - Section headline updated to approved Option 2: "Stop explaining your brand to generic software."
+  - Closing banner updated: elevator pitch copy from brief (30-second pitch, "your 23-piece team executes everything around the clock").
+- **`packages/landing/src/components/ConductorSection.tsx`** — Added Master Directive feature panel:
+  - Positioned between the routing card and the closing callout banner.
+  - 3-column mini-card grid: Sound & Contract Standards / Domain Specialists, Not Generalists / Visual Identity Cascades Everywhere.
+  - "Your Master Directive governs everything" eyebrow label; "Set your studio rules once. Your team obeys them always." headline.
+
+### Commit 2: `e331e1d1a` — fix(test): update preservation tripwire for new LegacyComparison headlines
+- **`packages/landing/src/page.preservation.test.tsx`** — Updated 2 stale assertions:
+  - Removed: `expect(text).toContain('The music industry was built')` and `'upside-down.'`
+  - Added: assertions for new headline split, plus 3 breakthrough card title guards (`Your Living Master Directive`, `Your 23-Piece Dedicated Team`, `Instant Brand Sync`).
+  - Local result: 9/9 tests passed.
+
+## Brand Voice Compliance (All Copy)
+- Lowercase `indii` and `indii.music` throughout.
+- Zero "AI" or "Artificial Intelligence" mentions.
+- "Your team" / "Your specialists" / "Your 23-piece team" language enforced.
+- No tech-spiritualism, no corporate aggression.
+- Source of truth: `docs/product/PRODUCT_COPYWRITING_BRIEF.md`.
+
+## Quality Gates
+- `npm run build:landing` → tsc + vite: ✅ 0 errors, 2328 modules, built in 1.90s.
+- `npm run lint` → 0 errors, 173 warnings (all pre-existing, none in touched files).
+- `page.preservation.test.tsx` → 9/9 ✅ local.
+- Pre-commit hooks (both commits): lint, typecheck, API security, agent catalog, unit tests — all ✅.
+
+## Pending
+- CI run `34970804494` on `e331e1d1a` — status `pending` at session close. Next agent should confirm green before declaring done.
+- CI run `34969517439` on `9fd0dffa7` — `failure` (root cause: stale preservation assertions, fixed by `e331e1d1a`).
+
+## Next Opportunities
+- Hero section copy lift: update `Hero.tsx` headline to Option 2 from the brief.
+- `AgentGrid.tsx`: surface the 23-specialist count and domain names explicitly.
+
+---
+
 # Session Close — Tier 0 Artist Master Directive Living UI & Visual DNA Live Browser Verification (2026-09-14)
+
 
 **Final state: Tier 0 Artist Master Directive Living UI, Visual DNA Brand Color Cascading Engine, and AI Conductor Swarm Context Reflection validated live in the browser on localhost (`http://localhost:4243`) under authentic user conditions adhering strictly to `.agent/REAL_USER_AUTHENTICITY.md`. Playwright E2E verification test passed all 3 sequences in 14.7s; 3 high-resolution UI evidence screenshots and summary JSON captured in `.agent/artifacts/browser_verification/`; Firestore security rules for user skills subcollection deployed to live project `indii-music-founder`; delivered to `origin/main` (commit `4e521c677`); GitHub Actions CI run `34907965394` SUCCESS (all 26 jobs green including staging e2e and production deployment).**
 
