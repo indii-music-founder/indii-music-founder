@@ -695,6 +695,30 @@ jobs:
             --project indii-music-founder \
             --data-file=-
 
+      - name: Sync Meta webhook verify token
+        env:
+          META_WEBHOOK_VERIFY_TOKEN: ${{ secrets.META_WEBHOOK_VERIFY_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${META_WEBHOOK_VERIFY_TOKEN:-}" ]; then
+            echo "::warning::META_WEBHOOK_VERIFY_TOKEN GitHub secret is not configured; keeping existing Secret Manager version."
+            exit 0
+          fi
+
+          # Ensure the secret resource exists before adding a version.
+          gcloud secrets describe META_WEBHOOK_VERIFY_TOKEN \
+            --project indii-music-founder \
+            --quiet 2>/dev/null || \
+          gcloud secrets create META_WEBHOOK_VERIFY_TOKEN \
+            --project indii-music-founder \
+            --replication-policy automatic \
+            --quiet
+
+          printf '%s' "$META_WEBHOOK_VERIFY_TOKEN" | gcloud secrets versions add META_WEBHOOK_VERIFY_TOKEN \
+            --project indii-music-founder \
+            --data-file=-
+
       - name: Deploy Cloud Functions
         env:
           INFLUENCER_BOUNTY_BASE_URL: https://app.indii.music
