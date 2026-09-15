@@ -231,8 +231,11 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('Shared project context');
     expect(text).toContain('Artist Review');
     expect(text).toContain('0% royalty share');
-    expect(text).toContain('The music industry was built');
-    expect(text).toContain('upside-down.');
+    expect(text).toContain('Stop explaining your brand');
+    expect(text).toContain('to generic software.');
+    expect(text).toContain('Your Living Master Directive');
+    expect(text).toContain('Your 23-Piece Dedicated Team');
+    expect(text).toContain('Instant Brand Sync');
     expect(text).toContain('Run the whole release.');
     expect(text).toContain('Keep the context connected.');
     expect(text).toContain('One direction.');
