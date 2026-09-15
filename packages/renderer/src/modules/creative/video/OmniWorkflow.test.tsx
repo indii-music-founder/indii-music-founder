@@ -242,7 +242,7 @@ describe('OmniWorkflow (legacy structural-only; real generation unverified)', ()
             userId: 'user-123',
             metadata: expect.objectContaining({
                 durationSeconds: 8,
-                model: 'gemini-omni-1.1-flash-preview',
+                model: 'gemini-omni-1.1-flash',
                 task: 'edit',
                 referenceCount: 0,
             }),

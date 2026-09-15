@@ -1433,7 +1433,7 @@ describe('creative gateway generateOmniRemixV3', () => {
       },
     })).rejects.toMatchObject({ code: 'resource-exhausted' });
     expect(mockCountTokens).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-omni-1.1-flash-preview',
+      model: 'gemini-omni-1.1-flash',
       contents: expect.any(Array),
     }));
     expect(mockInteractionsCreate).not.toHaveBeenCalled();
@@ -1491,7 +1491,7 @@ describe('creative gateway generateOmniRemixV3', () => {
     });
 
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-omni-1.1-flash-preview',
+      model: 'gemini-omni-1.1-flash',
       input: expect.arrayContaining([
         {
           type: 'video',

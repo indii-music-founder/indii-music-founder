@@ -578,7 +578,7 @@ export default function OmniWorkflow() {
                 userId: auth.currentUser?.uid || '',
                 metadata: {
                     durationSeconds,
-                    model: 'gemini-omni-1.1-flash-preview',
+                    model: 'gemini-omni-1.1-flash',
                     task: omniTask,
                     aspectRatio,
                     referenceCount: referenceMedia.length,

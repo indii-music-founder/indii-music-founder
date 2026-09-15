@@ -389,8 +389,8 @@ function resolveVideoModel(model: string | undefined): VideoModelId {
 }
 
 /**
- * Gemini Omni Flash entered public preview on 2026-06-30. Keep an environment
- * override for rollout testing, while defaulting to the documented model ID.
+ * Gemini Omni Flash is GA. Keep an environment override for controlled
+ * rollouts, while defaulting to the documented stable model ID.
  */
 function resolveOmniFlashModel(): string {
   return OMNI_FLASH_MODEL_ID;

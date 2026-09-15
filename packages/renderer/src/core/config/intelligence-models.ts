@@ -29,7 +29,7 @@ export const APPROVED_MODELS = {
     VIDEO_FAST: 'veo-3.1-fast-generate-001',  // Fast mode — lower latency, lower cost
     VIDEO_LITE: 'veo-3.1-lite-generate-001',  // Lite mode — lowest cost, good quality
     VIDEO_GEN: 'veo-3.1-generate-001',        // Alias for backward compatibility
-    VIDEO_OMNI: 'gemini-omni-flash-preview',  // Gemini Omni Flash — multimodal video QA and continuity
+    VIDEO_OMNI: 'gemini-omni-1.1-flash',  // Gemini Omni Flash GA — multimodal video QA and continuity
     BROWSER_AGENT: 'gemini-3.1-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;

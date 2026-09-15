@@ -258,8 +258,8 @@ describe('indiiOS Layer 1: Vertex AI Integrations for indii.music', () => {
   });
 
   describe('4. Gemini Omni Flash: Multimodal Video Continuity & Remix', () => {
-    it('uses gemini-omni-1.1-flash-preview for conversational remix and visual QA', () => {
-      expect(FUNCTION_INTELLIGENCE_MODELS.VIDEO.OMNI).toBe('gemini-omni-1.1-flash-preview');
+    it('uses Gemini Omni Flash GA for conversational remix and visual QA', () => {
+      expect(FUNCTION_INTELLIGENCE_MODELS.VIDEO.OMNI).toBe('gemini-omni-1.1-flash');
     });
 
     it('executes multimodal visual analysis across sequential video frames', async () => {

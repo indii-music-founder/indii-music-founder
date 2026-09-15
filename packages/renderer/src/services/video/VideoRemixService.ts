@@ -31,7 +31,7 @@ export async function remixVideo(source: string, prompt: string): Promise<VideoR
         operationType: 'video',
         estimatedCost,
         userId,
-        metadata: { durationSeconds, model: 'gemini-omni-flash-preview', task: 'edit' },
+        metadata: { durationSeconds, model: 'gemini-omni-1.1-flash', task: 'edit' },
     });
     if (!reservation.allowed || !reservation.operationId) {
         throw new Error(`Video edit blocked: ${reservation.reason || 'Cost reservation failed.'}`);
