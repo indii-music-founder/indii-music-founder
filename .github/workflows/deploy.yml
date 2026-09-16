@@ -746,6 +746,12 @@ jobs:
           npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete calculateFuelLogistics --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete agentLoopCron --region us-central1 --project indii-music-founder --force --non-interactive || true
+          # MIG-010: dispatchCloudVideoRender was partially deployed as an HTTPS
+          # function; Gen2 cannot change trigger type in place. Delete so the
+          # Firestore-triggered version deploys fresh. Idempotent — safe on
+          # repeat deploys once the correct trigger is live (gcloud verify below
+          # confirms the right trigger before CI declares success).
+          npx --no-install firebase functions:delete dispatchCloudVideoRender --region us-central1 --project indii-music-founder --force --non-interactive || true
           # Gen1 -> Gen2 cutover (ISSUE-1243). Cloud Functions cannot change
           # generation in place, so each former Gen1 endpoint must be deleted
           # before the Gen2 replacement can deploy. Idempotent and re-runnable:
@@ -888,9 +894,15 @@ jobs:
             > packages/firebase/.env.indii-music-founder
           rm -rf packages/firebase/lib packages/firebase/shared-pkg
           npx tsc -b packages/shared
-          mkdir -p packages/firebase/shared-pkg
-          cp -r packages/shared/dist packages/shared/package.json packages/firebase/shared-pkg/
-          npm pkg set dependencies.@indii/shared='file:./shared-pkg' -w packages/firebase
+          # Inject shared package directly into node_modules instead of using a
+          # file: dep rewrite. The file: dep triggers a Cloud Build npm bug:
+          # "Cannot read properties of null (reading 'edgesOut')" — npm tries to
+          # resolve the file: symlink during the remote install and crashes on
+          # every function that imports @indii/shared, failing ~30 functions.
+          # Direct injection bypasses the install step entirely: Cloud Build sees
+          # the package already present in node_modules and skips resolution.
+          mkdir -p packages/firebase/node_modules/@indii/shared
+          cp -r packages/shared/dist packages/shared/package.json packages/firebase/node_modules/@indii/shared/
           npm run build -w packages/firebase
           if [ ! -f packages/firebase/lib/index.js ]; then
             echo "::error::tsc reported success but packages/firebase/lib/index.js was not produced. Re-running with full diagnostics:"
