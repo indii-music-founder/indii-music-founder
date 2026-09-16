@@ -14,3 +14,10 @@
 .gitignore
 
 node_modules
+# Exception: @indii/shared is pre-built and injected by CI into node_modules
+# before the firebase deploy upload. Cloud Build must receive it so it does not
+# attempt npm resolution of the workspace symlink, which crashes with:
+#   npm error Cannot read properties of null (reading 'edgesOut')
+!node_modules/@indii
+!node_modules/@indii/shared
+!node_modules/@indii/shared/**
