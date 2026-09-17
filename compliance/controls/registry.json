@@ -717,6 +717,115 @@
       "status": "implemented",
       "policy_ref": "compliance/policies/13-acceptable-use-policy.md",
       "description": "Developer machines accessing production or source repositories must enforce full-disk encryption (FileVault/BitLocker), automatic screen locks (<=10 mins), and OS auto-updates."
+    },
+    {
+      "control": "INDII-FIELD-001",
+      "name": "User-scoped encounter authorization",
+      "criteria": "Security, Confidentiality",
+      "owner": "Engineering",
+      "system": [
+        "Cloud Firestore",
+        "Firebase Security Rules"
+      ],
+      "evidence": [
+        "firestore-rule-tests",
+        "storage-rule-tests",
+        "integration-tests"
+      ],
+      "frequency": "continuous",
+      "status": "verify",
+      "policy_ref": "compliance/policies/02-access-control-policy.md",
+      "description": "Encounters and associated field assets are strictly partitioned under users/{userId}/encounters and cannot be read, updated, or deleted by any other user or tenant."
+    },
+    {
+      "control": "INDII-FIELD-002",
+      "name": "Ephemeral media ingestion & signed URL isolation",
+      "criteria": "Security, Confidentiality",
+      "owner": "Engineering",
+      "system": [
+        "Cloud Storage",
+        "Firebase Storage Rules"
+      ],
+      "evidence": [
+        "storage-rule-tests",
+        "packages/firebase/storage.rules"
+      ],
+      "frequency": "continuous",
+      "status": "verify",
+      "policy_ref": "compliance/policies/08-data-classification-handling-policy.md",
+      "description": "Voice memo recordings and business card photos uploaded during mobile quick capture are isolated to user storage paths with short-lived access controls."
+    },
+    {
+      "control": "INDII-FIELD-003",
+      "name": "Server-side multimodal extraction via ADC",
+      "criteria": "Security, Confidentiality",
+      "owner": "Engineering",
+      "system": [
+        "Cloud Functions",
+        "Vertex AI",
+        "Google Secret Manager"
+      ],
+      "evidence": [
+        "scripts/guard-frontend-api-boundary.mjs",
+        "packages/firebase/src/functions/encounters/processEncounterPipeline.ts"
+      ],
+      "frequency": "continuous",
+      "status": "done",
+      "policy_ref": "compliance/policies/09-cryptography-encryption-policy.md",
+      "description": "Mobile devices never handle master AI API tokens. Audio transcription and contact extraction execute entirely server-side in Cloud Functions using Google Cloud ADC."
+    },
+    {
+      "control": "INDII-FIELD-004",
+      "name": "Idempotent processing lock & replay prevention",
+      "criteria": "Security, Processing Integrity",
+      "owner": "Engineering",
+      "system": [
+        "Cloud Firestore",
+        "Cloud Functions"
+      ],
+      "evidence": [
+        "packages/firebase/src/functions/encounters/processEncounterPipeline.test.ts"
+      ],
+      "frequency": "continuous",
+      "status": "done",
+      "policy_ref": "compliance/policies/03-secure-software-development-lifecycle.md",
+      "description": "Background processing of mobile encounter events uses Firestore atomic transactions to claim processing locks, preventing race conditions or duplicate AI execution."
+    },
+    {
+      "control": "INDII-FIELD-005",
+      "name": "Client-side vCard export & zero-exfiltration contact creation",
+      "criteria": "Confidentiality, Security",
+      "owner": "Engineering",
+      "system": [
+        "packages/renderer",
+        "packages/renderer/src/utils/vcard.ts"
+      ],
+      "evidence": [
+        "packages/renderer/src/utils/vcard.test.ts",
+        "e2e/mobile-remote-encounters.spec.ts"
+      ],
+      "frequency": "continuous",
+      "status": "done",
+      "policy_ref": "compliance/policies/08-data-classification-handling-policy.md",
+      "description": "Apple iOS vCard (.vcf) files are generated directly on the device with standard MIME types and data-URIs, ensuring discovered contact information is never leaked to external brokers."
+    },
+    {
+      "control": "INDII-FIELD-006",
+      "name": "Auditable field contact capture & deletion lifecycle",
+      "criteria": "Security, Confidentiality",
+      "owner": "Engineering",
+      "system": [
+        "Cloud Firestore",
+        "Structured Audit Logger"
+      ],
+      "evidence": [
+        "packages/shared/src/security/auditLog.test.ts",
+        "packages/firebase/src/functions/encounters/processEncounterPipeline.ts"
+      ],
+      "frequency": "event-driven",
+      "status": "verify",
+      "policy_ref": "compliance/policies/12-logging-monitoring-policy.md",
+      "description": "Creation, AI enrichment, and user deletion of field contacts emit structured audit log events conforming to the SOC 2 audit schema with actor ID and timestamp."
     }
   ]
 }

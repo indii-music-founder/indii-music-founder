@@ -40,19 +40,34 @@ const requiredFields = [
   'description',
 ];
 
-const validStatuses = new Set(['implemented', 'in_progress', 'planned']);
-const controlIdRegex = /^INDII-[A-Z]{2,3}-\d{3}$/;
+const validStatuses = new Set([
+  'done',
+  'verify',
+  'build',
+  'document',
+  'implemented',
+  'in_progress',
+  'planned',
+]);
+
+const controlIdRegex = /^INDII-[A-Z]{2,6}-\d{3}$/;
 
 let errors = [];
 let controlIds = new Set();
 let stats = {
   total: registry.controls.length,
-  implemented: 0,
-  in_progress: 0,
-  planned: 0,
+  done: 0,
+  verify: 0,
+  build: 0,
+  document: 0,
 };
 
 for (const ctrl of registry.controls) {
+  // Support either 'id' or 'control'
+  if (ctrl.id && !ctrl.control) {
+    ctrl.control = ctrl.id;
+  }
+
   // Required fields check
   for (const field of requiredFields) {
     if (!ctrl[field]) {
@@ -63,7 +78,7 @@ for (const ctrl of registry.controls) {
   // ID format check
   if (ctrl.control) {
     if (!controlIdRegex.test(ctrl.control)) {
-      errors.push(`[${ctrl.control}] Invalid ID format. Expected INDII-XX-000.`);
+      errors.push(`[${ctrl.control}] Invalid ID format. Expected INDII-XX-000 or INDII-FAMILY-000.`);
     }
     if (controlIds.has(ctrl.control)) {
       errors.push(`[${ctrl.control}] Duplicate control ID detected.`);
@@ -76,7 +91,12 @@ for (const ctrl of registry.controls) {
     if (!validStatuses.has(ctrl.status)) {
       errors.push(`[${ctrl.control}] Invalid status '${ctrl.status}'. Must be one of: ${[...validStatuses].join(', ')}`);
     } else {
-      stats[ctrl.status] = (stats[ctrl.status] || 0) + 1;
+      // Map implemented -> done, in_progress -> verify, planned -> build for summary
+      const canonicalStatus = 
+        ctrl.status === 'implemented' ? 'done' :
+        ctrl.status === 'in_progress' ? 'verify' :
+        ctrl.status === 'planned' ? 'build' : ctrl.status;
+      stats[canonicalStatus] = (stats[canonicalStatus] || 0) + 1;
     }
   }
 
@@ -114,7 +134,8 @@ fs.writeFileSync(jsonOutputPath, JSON.stringify(registry, null, 2), 'utf8');
 console.log(`✅ SOC 2 Control Registry is valid!`);
 console.log(`📊 Statistics:`);
 console.log(`   - Total Controls: ${stats.total}`);
-console.log(`   - Implemented:    ${stats.implemented}`);
-console.log(`   - In Progress:    ${stats.in_progress}`);
-console.log(`   - Planned:        ${stats.planned}`);
+console.log(`   - Done / Impl:    ${stats.done}`);
+console.log(`   - Verify / InProg:${stats.verify}`);
+console.log(`   - Build / Plan:   ${stats.build}`);
+console.log(`   - Document:       ${stats.document}`);
 console.log(`📁 Synced JSON registry to ${path.relative(rootDir, jsonOutputPath)}\n`);
