@@ -1,0 +1,600 @@
+# indii.music SOC 2 Master Control Registry
+# Framework: AICPA Trust Services Criteria (Security, Availability, Confidentiality)
+# Version: 1.0.0
+# Last Updated: 2026-09-17
+
+controls:
+  - control: INDII-AC-001
+    name: "Production Administrative MFA"
+    criteria: "Security (CC6.1, CC6.2)"
+    owner: "Founder / Head of Engineering"
+    system:
+      - "GitHub"
+      - "Google Cloud / Firebase"
+      - "Cloudflare / DNS"
+    evidence:
+      - "github-org-mfa-enforcement"
+      - "gcp-iam-mfa-settings"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/02-access-control-policy.md"
+    description: "Multi-Factor Authentication (MFA/2FA) is strictly enforced for all administrative and developer accounts accessing production infrastructure, source code repositories, and identity providers."
+
+  - control: INDII-AC-002
+    name: "Least-Privilege IAM & Role-Based Access Control"
+    criteria: "Security (CC6.1, CC6.3)"
+    owner: "Founder / Head of Engineering"
+    system:
+      - "Google Cloud IAM"
+      - "Firebase Rules"
+    evidence:
+      - "gcp-iam-policy-export"
+      - "packages/firebase/firestore.rules"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/02-access-control-policy.md"
+    description: "Production permissions are granted strictly on the principle of least privilege using predefined IAM roles. Write/admin privileges are segregated from read-only service accounts."
+
+  - control: INDII-AC-003
+    name: "Rapid Deprovisioning & Access Revocation"
+    criteria: "Security (CC6.2, CC6.5)"
+    owner: "Founder / Operations"
+    system:
+      - "GitHub"
+      - "Google Cloud / Firebase"
+      - "Slack / Workspace"
+    evidence:
+      - "deprovisioning-checklists"
+      - "audit-log-revocations"
+    frequency: "event-driven"
+    status: "implemented"
+    policy_ref: "compliance/policies/02-access-control-policy.md"
+    description: "Access to all systems within the production boundary is revoked within 8 hours of personnel departure or contract termination."
+
+  - control: INDII-AC-004
+    name: "Privileged Account Inventory & Break-Glass Access"
+    criteria: "Security (CC6.1, CC6.2)"
+    owner: "Founder / Head of Engineering"
+    system:
+      - "Google Cloud"
+      - "Firebase"
+    evidence:
+      - "security/access/privileged-account-registry.md"
+      - "security/access/break-glass-procedure.md"
+    frequency: "quarterly"
+    status: "implemented"
+    policy_ref: "compliance/policies/02-access-control-policy.md"
+    description: "Master inventory of privileged accounts is documented. Emergency break-glass access follows a documented protocol with post-incident credential rotation and audit log review."
+
+  - control: INDII-AC-005
+    name: "Quarterly User Access Reviews"
+    criteria: "Security (CC6.2, CC6.3)"
+    owner: "Founder / Head of Engineering"
+    system:
+      - "GitHub"
+      - "Google Cloud / Firebase"
+      - "Stripe / Meta Developer Console"
+    evidence:
+      - "security/access/quarterly-access-review-template.md"
+      - "compliance/access-reviews/"
+    frequency: "quarterly"
+    status: "implemented"
+    policy_ref: "compliance/policies/02-access-control-policy.md"
+    description: "Formal access audits are conducted quarterly to verify that active users, roles, and API key privileges remain minimal and aligned with current business requirements."
+
+  - control: INDII-CM-001
+    name: "Mandatory Peer Review & Branch Protection"
+    criteria: "Security (CC8.1), Confidentiality (C1.1)"
+    owner: "Lead Engineer"
+    system:
+      - "GitHub"
+    evidence:
+      - "github-branch-protection-rules"
+      - "pull-request-merge-logs"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/04-change-management-policy.md"
+    description: "The main branch is protected. Direct commits are blocked. Every production change requires a documented Pull Request, code review approval, and passing CI validation."
+
+  - control: INDII-CM-002
+    name: "Automated CI/CD Quality, Lint & Security Gates"
+    criteria: "Security (CC8.1), Availability (A1.2)"
+    owner: "Lead Engineer"
+    system:
+      - "GitHub Actions"
+    evidence:
+      - ".github/workflows/"
+      - "scripts/guard-frontend-api-boundary.mjs"
+    frequency: "per-change"
+    status: "implemented"
+    policy_ref: "compliance/policies/03-secure-software-development-lifecycle.md"
+    description: "Automated GitHub Actions CI pipeline enforces type checking, unit tests, integration tests, boundary security linters, and build verification prior to merging."
+
+  - control: INDII-CM-003
+    name: "Deployment Tracking & Change Provenance"
+    criteria: "Security (CC8.1), Processing Integrity (PI1.1)"
+    owner: "Lead Engineer"
+    system:
+      - "GitHub Releases"
+      - "Firebase Hosting"
+      - "Cloud Functions"
+    evidence:
+      - "git-commit-tags"
+      - "firebase-deployment-history"
+    frequency: "per-deployment"
+    status: "implemented"
+    policy_ref: "compliance/policies/04-change-management-policy.md"
+    description: "Every production release is tied to an immutable git SHA, semantic version release tag, and audit log in the deployment pipeline."
+
+  - control: INDII-CM-004
+    name: "Emergency Hotfix Protocol"
+    criteria: "Security (CC8.1), Availability (A1.2)"
+    owner: "Founder / Lead Engineer"
+    system:
+      - "GitHub"
+      - "Production Release Pipeline"
+    evidence:
+      - "emergency-pr-records"
+      - "hotfix-postmortem-logs"
+    frequency: "event-driven"
+    status: "implemented"
+    policy_ref: "compliance/policies/04-change-management-policy.md"
+    description: "Critical security or availability hotfixes may bypass standard review delays but still require automated CI passage, explicit founder authorization, and retroactive 24h peer review."
+
+  - control: INDII-CR-001
+    name: "Centralized Secrets Management & Zero-Commit Policy"
+    criteria: "Security (CC6.1), Confidentiality (C1.1, C1.2)"
+    owner: "Lead Engineer"
+    system:
+      - "Google Secret Manager"
+      - "GitHub Secrets"
+    evidence:
+      - "scripts/guard-frontend-api-boundary.mjs"
+      - "gcp-secret-manager-config"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/09-cryptography-encryption-policy.md"
+    description: "Production API keys, private tokens, and database credentials are stored exclusively in Google Cloud Secret Manager or encrypted CI secrets. Secret scanning actively blocks repository commits."
+
+  - control: INDII-CR-002
+    name: "Frontend API Boundary & Token Isolation"
+    criteria: "Security (CC6.6), Confidentiality (C1.2)"
+    owner: "Lead Engineer"
+    system:
+      - "packages/renderer"
+      - "packages/firebase"
+    evidence:
+      - "scripts/guard-frontend-api-boundary.mjs"
+      - "scripts/guard-vertex-only-backend.mjs"
+    frequency: "per-change"
+    status: "implemented"
+    policy_ref: "compliance/policies/09-cryptography-encryption-policy.md"
+    description: "Client applications (web/Electron) never hold long-lived server secrets or provider master keys. Requests route through authenticated Cloud Functions/backend proxies."
+
+  - control: INDII-CR-003
+    name: "Data-at-Rest Encryption"
+    criteria: "Security (CC6.1, CC6.7), Confidentiality (C1.1)"
+    owner: "Lead Engineer"
+    system:
+      - "Cloud Firestore"
+      - "Cloud Storage (Audio Vault)"
+    evidence:
+      - "gcp-storage-encryption-config"
+      - "firestore-encryption-attestation"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/09-cryptography-encryption-policy.md"
+    description: "All artist audio files, metadata, documents, and credentials at rest are encrypted using Google-managed or customer-managed AES-256 encryption."
+
+  - control: INDII-CR-004
+    name: "Data-in-Transit Encryption"
+    criteria: "Security (CC6.6, CC6.7)"
+    owner: "Lead Engineer"
+    system:
+      - "Firebase Hosting"
+      - "Cloud Run / Functions API"
+      - "Remote Relay WebSockets"
+    evidence:
+      - "ssl-labs-scan-reports"
+      - "tls-configuration-enforcement"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/09-cryptography-encryption-policy.md"
+    description: "All network communications in transit are encrypted via TLS 1.3 / TLS 1.2 minimum with strict cipher suites. HTTP is automatically redirected to HTTPS with HSTS enabled."
+
+  - control: INDII-CR-005
+    name: "OAuth Token Storage & Revocation Architecture"
+    criteria: "Security (CC6.1), Confidentiality (C1.1)"
+    owner: "Lead Engineer"
+    system:
+      - "Meta Graph API"
+      - "Spotify / Apple DSP Integrations"
+      - "Cloud Functions"
+    evidence:
+      - "security/architecture/oauth-integrations-meta-dsp.md"
+      - "firestore-token-vault-rules"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/09-cryptography-encryption-policy.md"
+    description: "Third-party OAuth tokens (e.g. Meta, Spotify) are encrypted at application level, isolated to private backend subcollections, and validated with state parameters, signature verification, and instant revocation hooks."
+
+  - control: INDII-DS-001
+    name: "Data Classification Policy & Tiering"
+    criteria: "Confidentiality (C1.1), Security (CC6.1)"
+    owner: "Founder"
+    system:
+      - "All Systems"
+    evidence:
+      - "compliance/policies/08-data-classification-handling-policy.md"
+    frequency: "annual"
+    status: "implemented"
+    policy_ref: "compliance/policies/08-data-classification-handling-policy.md"
+    description: "Data is formally categorized into Public, Internal, Confidential, and Restricted. Storage, access controls, logging, and destruction rules are defined and enforced per tier."
+
+  - control: INDII-DS-002
+    name: "Artist Audio Vault Isolation & Access Control"
+    criteria: "Confidentiality (C1.1, C1.2), Security (CC6.3)"
+    owner: "Lead Engineer"
+    system:
+      - "Cloud Storage"
+      - "packages/firebase/storage.rules"
+    evidence:
+      - "packages/firebase/storage.rules"
+      - "vitest.rules.config.ts"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/08-data-classification-handling-policy.md"
+    description: "Unreleased artist audio files and stem vaults are treated as Confidential/Restricted assets. Storage rules strictly isolate tenant namespaces; signed URLs have short TTLs (<=15 mins)."
+
+  - control: INDII-DS-003
+    name: "User Account Deletion & Right to Be Forgotten"
+    criteria: "Confidentiality (C1.2), Security (CC6.5)"
+    owner: "Lead Engineer"
+    system:
+      - "Cloud Functions (deleteUserData)"
+      - "Cloud Firestore"
+    evidence:
+      - "e2e/account-deletion.spec.ts"
+      - "packages/firebase/src/users/deletion.ts"
+    frequency: "event-driven"
+    status: "implemented"
+    policy_ref: "compliance/policies/16-data-retention-deletion-policy.md"
+    description: "User account deletion triggers cascading deletion of tenant audio files, metadata, AI conversation history, and credentials within 30 days, leaving an anonymized tombstone record."
+
+  - control: INDII-DS-004
+    name: "Data Retention Schedule Enforcement"
+    criteria: "Confidentiality (C1.2)"
+    owner: "Founder / Lead Engineer"
+    system:
+      - "Cloud Firestore TTL Policies"
+      - "Cloud Storage Lifecycle Rules"
+    evidence:
+      - "gcp-storage-lifecycle-rules"
+      - "firestore-ttl-configuration"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/16-data-retention-deletion-policy.md"
+    description: "Temporary audio render cache, sidecar video files, and ephemeral session data are automatically expired and purged via Google Cloud lifecycle policies."
+
+  - control: INDII-RR-001
+    name: "Remote Relay Cryptographic Authentication"
+    criteria: "Security (CC6.1, CC6.6)"
+    owner: "Lead Engineer"
+    system:
+      - "Remote Relay Service"
+      - "Studio Executor (Local Desktop)"
+    evidence:
+      - "security/architecture/remote-relay-studio-executor.md"
+      - "packages/main/src/services/remoteRelay.ts"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/02-access-control-policy.md"
+    description: "Remote Studio Executor instances authenticate to the Relay using short-lived cryptographically signed session tokens tied to the verified artist identity."
+
+  - control: INDII-RR-002
+    name: "Command Expiration & Nonce Replay Protection"
+    criteria: "Security (CC6.1, CC6.8), Processing Integrity (PI1.1)"
+    owner: "Lead Engineer"
+    system:
+      - "Remote Relay Service"
+    evidence:
+      - "packages/shared/src/relay/replayProtection.ts"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/02-access-control-policy.md"
+    description: "Every remote execution payload includes a monotonic nonce, timestamp, and maximum 60-second time-to-live to completely eliminate replay attacks across network boundaries."
+
+  - control: INDII-RR-003
+    name: "Studio Executor Audit Trail & Execution Logging"
+    criteria: "Security (CC7.2), Processing Integrity (PI1.1)"
+    owner: "Lead Engineer"
+    system:
+      - "Studio Executor"
+      - "Firestore Audit Collection"
+    evidence:
+      - "packages/main/src/services/executorLogger.ts"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/12-logging-monitoring-policy.md"
+    description: "Every executed DAW command, script render, or system interaction records structured audit metadata containing actor ID, machine signature, execution status, and timestamp."
+
+  - control: INDII-MN-001
+    name: "Structured Audit Event Logging"
+    criteria: "Security (CC7.2), Confidentiality (C1.1)"
+    owner: "Lead Engineer"
+    system:
+      - "Cloud Functions"
+      - "Cloud Firestore"
+      - "Google Cloud Logging"
+    evidence:
+      - "security/architecture/audit-log-event-spec.md"
+      - "packages/firebase/src/monitoring/auditLogger.ts"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/12-logging-monitoring-policy.md"
+    description: "Meaningful operations (auth events, data export, role change, audio download, credential update) emit structured audit logs with actor ID, organization ID, action, resource, and status. Sensitive data is redacted."
+
+  - control: INDII-MN-002
+    name: "Production Log Retention & Tamper-Resistance"
+    criteria: "Security (CC7.2), Availability (A1.2)"
+    owner: "Lead Engineer"
+    system:
+      - "Google Cloud Logging"
+      - "Cloud Storage Log Bucket"
+    evidence:
+      - "gcp-logging-bucket-retention-policy"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/12-logging-monitoring-policy.md"
+    description: "Production audit and access logs are retained in append-only Google Cloud Logging storage for a minimum of 365 days with Object Lock / Bucket Lock to prevent tampering or deletion."
+
+  - control: INDII-MN-003
+    name: "Real-Time Security Alerting on Privileged Operations"
+    criteria: "Security (CC7.1, CC7.3)"
+    owner: "Founder / Lead Engineer"
+    system:
+      - "Google Cloud Monitoring"
+      - "PagerDuty / Slack Alerting"
+    evidence:
+      - "gcp-alerting-policy-definitions"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/12-logging-monitoring-policy.md"
+    description: "Real-time alerts fire immediately on suspicious activity: excessive failed logins, IAM role modifications, administrative break-glass events, and anomalous data egress spikes."
+
+  - control: INDII-VM-001
+    name: "Automated Dependency Vulnerability Scanning"
+    criteria: "Security (CC7.1)"
+    owner: "Lead Engineer"
+    system:
+      - "GitHub Dependabot"
+      - "npm audit"
+    evidence:
+      - ".github/dependabot.yml"
+      - "npm-audit-ci-results"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/06-vulnerability-management-policy.md"
+    description: "Dependabot and npm audit run continuously on pull requests and on a weekly schedule. Alerts automatically generate issues and PRs for vulnerable dependencies."
+
+  - control: INDII-VM-002
+    name: "Static Application Security Testing (SAST) & Linters"
+    criteria: "Security (CC7.1, CC8.1)"
+    owner: "Lead Engineer"
+    system:
+      - "GitHub Actions"
+      - "Custom Security Linters"
+    evidence:
+      - "scripts/guard-frontend-api-boundary.mjs"
+      - "scripts/guard-vertex-only-backend.mjs"
+      - "scripts/guard-vertex-routing.mjs"
+    frequency: "per-change"
+    status: "implemented"
+    policy_ref: "compliance/policies/06-vulnerability-management-policy.md"
+    description: "Custom boundary linters and ESLint security plugins block unescaped frontend secrets, disallowed third-party API hosts, and insecure cloud function routes during CI."
+
+  - control: INDII-VM-003
+    name: "Vulnerability Remediation SLAs"
+    criteria: "Security (CC7.1)"
+    owner: "Lead Engineer"
+    system:
+      - "Issue Tracker (GitHub Projects)"
+    evidence:
+      - "vulnerability-remediation-tracking"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/06-vulnerability-management-policy.md"
+    description: "Identified vulnerabilities follow strict remediation SLAs: Critical <= 24 hours, High <= 7 calendar days, Medium <= 30 calendar days, Low <= 90 calendar days."
+
+  - control: INDII-IR-001
+    name: "Documented Incident Response Plan & Runbook"
+    criteria: "Security (CC7.3, CC7.4)"
+    owner: "Founder"
+    system:
+      - "All Systems"
+    evidence:
+      - "compliance/incidents/incident-response-runbook.md"
+      - "compliance/incidents/incident-report-template.md"
+    frequency: "annual"
+    status: "implemented"
+    policy_ref: "compliance/policies/05-incident-response-policy.md"
+    description: "A formal Incident Response Plan details detection, triage, containment, eradication, recovery, customer notification, and postmortem analysis workflows."
+
+  - control: INDII-IR-002
+    name: "Incident Response Tabletop Simulation"
+    criteria: "Security (CC7.4)"
+    owner: "Founder"
+    system:
+      - "Engineering Team"
+    evidence:
+      - "compliance/incidents/tabletop-drill-records/"
+    frequency: "annual"
+    status: "implemented"
+    policy_ref: "compliance/policies/05-incident-response-policy.md"
+    description: "Annual simulated incident exercises (e.g. leaked OAuth credential, compromised audio bucket) are conducted to test escalation paths, containment speed, and communication readiness."
+
+  - control: INDII-IR-003
+    name: "Postmortem Review & Corrective Action Tracking"
+    criteria: "Security (CC7.4), Availability (A1.2)"
+    owner: "Founder / Lead Engineer"
+    system:
+      - "Incident Tracker"
+    evidence:
+      - "compliance/incidents/incident-log.md"
+    frequency: "event-driven"
+    status: "implemented"
+    policy_ref: "compliance/policies/05-incident-response-policy.md"
+    description: "Every P0/P1 security or operational incident results in a blameless postmortem within 5 business days, identifying root causes, timeline, and corrective preventive actions."
+
+  - control: INDII-BC-001
+    name: "Multi-Zone Cloud Redundancy"
+    criteria: "Availability (A1.1, A1.2)"
+    owner: "Lead Engineer"
+    system:
+      - "Google Cloud Run"
+      - "Cloud Firestore (Multi-Region)"
+    evidence:
+      - "firebase.json"
+      - "gcp-architecture-spec"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/11-business-continuity-disaster-recovery.md"
+    description: "Production Firestore database is deployed in a multi-region configuration; Cloud Functions/Run workloads automatically distribute traffic across multiple availability zones."
+
+  - control: INDII-BC-002
+    name: "Automated Daily Backups with Point-in-Time Recovery"
+    criteria: "Availability (A1.2, A1.3)"
+    owner: "Lead Engineer"
+    system:
+      - "Google Cloud Firestore Backups"
+      - "Cloud Storage Versioning"
+    evidence:
+      - "gcp-firestore-backup-schedule"
+      - "gcs-bucket-versioning-rules"
+    frequency: "daily"
+    status: "implemented"
+    policy_ref: "compliance/policies/10-backup-recovery-policy.md"
+    description: "Automated daily snapshots of Firestore collections are captured and retained for 30 days. Cloud Storage buckets enforce object versioning with 30-day noncurrent version retention."
+
+  - control: INDII-BC-003
+    name: "Periodic Backup Restoration & Integrity Testing"
+    criteria: "Availability (A1.3)"
+    owner: "Lead Engineer"
+    system:
+      - "Disaster Recovery Sandbox"
+    evidence:
+      - "compliance/business-continuity/dr-drill-log.md"
+    frequency: "semi-annual"
+    status: "implemented"
+    policy_ref: "compliance/policies/10-backup-recovery-policy.md"
+    description: "Database and audio storage backups are restored to an isolated staging environment at least semi-annually to verify backup integrity, data consistency, and recovery mechanics."
+
+  - control: INDII-BC-004
+    name: "Defined RPO & RTO Performance Metrics"
+    criteria: "Availability (A1.2)"
+    owner: "Founder / Lead Engineer"
+    system:
+      - "Production Infrastructure"
+    evidence:
+      - "compliance/business-continuity/rpo-rto-targets.md"
+    frequency: "annual"
+    status: "implemented"
+    policy_ref: "compliance/policies/11-business-continuity-disaster-recovery.md"
+    description: "Recovery Point Objective (RPO <= 1 hour) and Recovery Time Objective (RTO <= 4 hours) are formally documented, reviewed annually, and validated against disaster recovery drills."
+
+  - control: INDII-VD-001
+    name: "Third-Party Vendor Inventory & Criticality Assessment"
+    criteria: "Security (CC9.2)"
+    owner: "Founder"
+    system:
+      - "Vendor Register"
+    evidence:
+      - "compliance/vendors/vendor-inventory.md"
+    frequency: "annual"
+    status: "implemented"
+    policy_ref: "compliance/policies/07-vendor-management-policy.md"
+    description: "All third-party software, cloud infrastructure, and API providers handling customer or production data are inventoried with documented business purpose and risk tier."
+
+  - control: INDII-VD-002
+    name: "Annual Vendor Security & SOC 2 Attestation Review"
+    criteria: "Security (CC9.2)"
+    owner: "Founder"
+    system:
+      - "Vendor Register"
+    evidence:
+      - "compliance/vendors/vendor-security-review-procedure.md"
+    frequency: "annual"
+    status: "implemented"
+    policy_ref: "compliance/policies/07-vendor-management-policy.md"
+    description: "Critical vendors (Google Cloud, GitHub, Meta, AI providers) are reviewed annually to verify current SOC 2 Type II reports, ISO 27001 certifications, or equivalent security audits."
+
+  - control: INDII-RS-001
+    name: "Annual Risk Assessment & Register Maintenance"
+    criteria: "Security (CC3.1, CC3.2, CC3.3)"
+    owner: "Founder"
+    system:
+      - "Risk Register"
+    evidence:
+      - "compliance/risk/risk-register.md"
+      - "compliance/risk/risk-assessment-matrix.md"
+    frequency: "annual"
+    status: "implemented"
+    policy_ref: "compliance/policies/14-risk-management-policy.md"
+    description: "An enterprise risk assessment is performed at least annually to identify, score, and mitigate technical, operational, and organizational security risks."
+
+  - control: INDII-RS-002
+    name: "Threat Modeling for High-Risk Subsystems"
+    criteria: "Security (CC3.2, CC8.1)"
+    owner: "Lead Engineer"
+    system:
+      - "Remote Relay"
+      - "Meta OAuth Integration"
+      - "Audio Storage Vault"
+    evidence:
+      - "security/threat-models/threat-model-remote-relay.md"
+      - "security/threat-models/threat-model-meta-social.md"
+      - "security/threat-models/threat-model-audio-vault-cloud-storage.md"
+    frequency: "per-architecture-change"
+    status: "implemented"
+    policy_ref: "compliance/policies/14-risk-management-policy.md"
+    description: "Threat modeling (STRIDE methodology) is conducted and maintained for critical architectural components handling artist IP, remote command execution, or third-party credentials."
+
+  - control: INDII-HR-001
+    name: "Personnel Security Agreements & Background Vetting"
+    criteria: "Security (CC1.1, CC1.2, CC1.4)"
+    owner: "Founder"
+    system:
+      - "Personnel Records"
+    evidence:
+      - "signed-nda-templates"
+      - "contractor-agreements"
+    frequency: "onboarding"
+    status: "implemented"
+    policy_ref: "compliance/policies/15-personnel-contractor-security-policy.md"
+    description: "All employees, contractors, and contributors sign confidentiality agreements and intellectual property assignments prior to receiving access to repositories or infrastructure."
+
+  - control: INDII-HR-002
+    name: "Annual Security Awareness & Phishing Training"
+    criteria: "Security (CC2.2)"
+    owner: "Founder"
+    system:
+      - "Security Training Platform"
+    evidence:
+      - "security-training-completion-logs"
+    frequency: "annual"
+    status: "implemented"
+    policy_ref: "compliance/policies/15-personnel-contractor-security-policy.md"
+    description: "Team members undergo annual security awareness training covering phishing defense, password/passkey management, social engineering, data classification, and incident reporting."
+
+  - control: INDII-AU-001
+    name: "Acceptable Use & Workstation Security Baseline"
+    criteria: "Security (CC6.1, CC6.6)"
+    owner: "Founder"
+    system:
+      - "Developer Workstations"
+    evidence:
+      - "workstation-security-checklists"
+    frequency: "continuous"
+    status: "implemented"
+    policy_ref: "compliance/policies/13-acceptable-use-policy.md"
+    description: "Developer machines accessing production or source repositories must enforce full-disk encryption (FileVault/BitLocker), automatic screen locks (<=10 mins), and OS auto-updates."

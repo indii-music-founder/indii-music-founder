@@ -44,6 +44,8 @@
     "security:frontend-api-boundary": "node scripts/guard-frontend-api-boundary.mjs",
     "security:vertex-only": "node scripts/guard-vertex-only-backend.mjs",
     "security:vertex-routing": "node scripts/guard-vertex-routing.mjs",
+    "check:soc2": "node scripts/verify-soc2-controls.mjs",
+    "audit:soc2:cron": "bash scripts/cron-soc2-audit.sh",
     "lint:fix": "eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src --fix",
     "lint:renderer": "eslint packages/renderer/src",
     "lint:main": "eslint packages/main/src",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "ac353bfc6a8f55bdeb02476551f0443297f8e502805798726e0c262f4f32ae6b",
+  "sourceDigest": "be584c6271c06c51f16d8184ff7ea2e4978e1104c7a2e5ee43c443c10ad8d07d",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 36,
     "conditional": 69,
-    "quarantined": 87,
+    "quarantined": 89,
     "deprecated": 1
   },
   "capabilities": [
@@ -39,6 +39,36 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Follow the upstream skill's repeat-safety rules.",
       "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:audit:soc2:cron",
+      "name": "npm run audit:soc2:cron",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "bash scripts/cron-soc2-audit.sh",
+      "descriptionHash": "7c279990bfa72596ada03726a80d52fc63baee46fb466a4f23560b1c98142c12",
+      "contentHash": "4c90921d0537f839f7e837eb949f9ef47f89193801700c15427429c1b863a361",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
       "conflicts": []
     },
     {
@@ -737,6 +767,36 @@
       "description": "node scripts/check-no-gen1.cjs",
       "descriptionHash": "1d4efe8c1457fedd5b66ee697e42deeba7bf70e906559f92243fcc67b0a90466",
       "contentHash": "484bfdd44432ff4bbb054f6947cea465c32d560d3b9278137bbf0be9ea94cea9",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:check:soc2",
+      "name": "npm run check:soc2",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/verify-soc2-controls.mjs",
+      "descriptionHash": "a1a1b450e9d1bb09ae32656f6895f9edc717d4828309e2728eaf7d5dfa2fd23b",
+      "contentHash": "34805fd71911b701123c8e8d93d5a1b3b19e2b47d9be07f7331ba0d8b5f1824d",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
