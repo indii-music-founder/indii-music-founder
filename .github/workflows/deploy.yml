@@ -895,6 +895,9 @@ jobs:
           npx tsc -b packages/shared
           mkdir -p packages/firebase/shared-pkg
           cp -r packages/shared/dist packages/shared/package.json packages/firebase/shared-pkg/
+          # Strip sub-dependencies from shared-pkg so Cloud Build npm arborist
+          # treats it as a leaf package and does not hit the 'edgesOut' null pointer crash.
+          npm pkg delete dependencies --prefix packages/firebase/shared-pkg
           npm pkg set dependencies.@indii/shared='file:./shared-pkg' -w packages/firebase
           npm run build -w packages/firebase
           if [ ! -f packages/firebase/lib/index.js ]; then
