@@ -66,12 +66,13 @@ jobs:
       - name: 5. Generate Auditable Evidence Snapshot (INDII-MN-001)
         run: |
           mkdir -p compliance-evidence
-          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          ISO_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          FILE_TIMESTAMP=$(date -u +"%Y%m%d_%H%M%SZ")
           GIT_SHA=$(git rev-parse HEAD)
           
-          cat << EOREP > compliance-evidence/evidence-summary-${TIMESTAMP}.json
+          cat << EOREP > compliance-evidence/evidence-summary-${FILE_TIMESTAMP}.json
           {
-            "timestamp": "${TIMESTAMP}",
+            "timestamp": "${ISO_TIMESTAMP}",
             "git_sha": "${GIT_SHA}",
             "runner": "github-actions-scheduled-cron",
             "controls_status": "PASS",
@@ -82,7 +83,7 @@ jobs:
           }
           EOREP
           
-          cp compliance/controls/registry.json compliance-evidence/controls-registry-${TIMESTAMP}.json
+          cp compliance/controls/registry.json compliance-evidence/controls-registry-${FILE_TIMESTAMP}.json
 
       - name: 6. Archive Immutable SOC 2 Evidence Artifact
         uses: actions/upload-artifact@v4
