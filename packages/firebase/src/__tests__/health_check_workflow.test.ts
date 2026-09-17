@@ -29,7 +29,7 @@ describe('Health Check workflow clean-install contract', () => {
     expect(workflow).toMatch(/node-version:\s*['"]24\.x['"]/);
   });
 
-  it('keeps clean installs workspace-native and injects shared directly for Firebase deploys', () => {
+  it('keeps clean installs workspace-native and packages shared for Firebase deploys', () => {
     const lock = JSON.parse(readFileSync(join(repoRoot, 'package-lock.json'), 'utf8')) as {
       packages: Record<string, {
         dependencies?: Record<string, string>;
@@ -43,14 +43,11 @@ describe('Health Check workflow clean-install contract', () => {
       .toBe('*');
     expect(lock.packages['node_modules/@indii/shared'])
       .toEqual({ resolved: 'packages/shared', link: true });
-    // Shared package is injected directly into node_modules to bypass the
-    // Cloud Build npm 'edgesOut' crash triggered by file: dep resolution.
     expect(deployWorkflow).toMatch(
-      /cp -r packages\/shared\/dist packages\/shared\/package\.json packages\/firebase\/node_modules\/@indii\/shared\//,
+      /cp -r packages\/shared\/dist packages\/shared\/package\.json packages\/firebase\/shared-pkg\//,
     );
-    // The old file: dep rewrite must NOT be present — it triggers the crash.
-    expect(deployWorkflow).not.toContain(
-      "npm pkg set dependencies.@indii/shared='file:./shared-pkg' -w packages/firebase",
+    expect(deployWorkflow).toMatch(
+      /npm pkg set dependencies\.@indii\/shared='file:\.\/shared-pkg' -w packages\/firebase/,
     );
   });
 });
@@ -79,9 +76,7 @@ describe('Deploy workflow staging gate contract', () => {
   it('fails closed on Firebase Functions errors and verifies the cloud render dispatcher', () => {
     const workflow = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8');
 
-    // MIG-010: dispatchCloudVideoRender still has a stale HTTPS trigger in prod.
-    // Pre-delete is required until the Firestore trigger is live and confirmed.
-    expect(workflow).toContain('firebase functions:delete dispatchCloudVideoRender');
+    expect(workflow).not.toContain('firebase functions:delete dispatchCloudVideoRender');
     expect(workflow).toContain('deploy_status=${PIPESTATUS[0]}');
     expect(workflow).toContain('[ "$deploy_status" -eq 0 ]');
     expect(workflow).toContain("--format='value(eventTrigger.eventType)'");
