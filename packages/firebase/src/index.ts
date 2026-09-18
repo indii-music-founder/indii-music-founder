@@ -1705,6 +1705,19 @@ export const findPlaces = touringService.findPlaces;
 export const executeCampaign = marketingService.executeCampaign;
 export const dispatchSocialPost = marketingService.dispatchSocialPost;
 export const createInfluencerBounty = marketingService.createInfluencerBounty;
+export {
+    createAdCampaign,
+    createAdSet,
+    createAd,
+    getAdInsights,
+    pauseAdCampaign,
+    getSocialPostInsights,
+    syncEmailList,
+    deployEmailCampaign,
+    getEmailCampaignStats,
+    sendSMSBlast,
+    getSMSDeliveryStatus,
+} from './marketing/marketingCallables';
 
 /**
  * Get GKE Cluster Status

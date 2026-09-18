@@ -44,10 +44,13 @@ describe('Health Check workflow clean-install contract', () => {
     expect(lock.packages['node_modules/@indii/shared'])
       .toEqual({ resolved: 'packages/shared', link: true });
     expect(deployWorkflow).toMatch(
-      /cp -r packages\/shared\/dist packages\/shared\/package\.json packages\/firebase\/shared-pkg\//,
+      /npm pack \.\/packages\/shared --pack-destination packages\/firebase/,
     );
     expect(deployWorkflow).toMatch(
-      /npm pkg set dependencies\.@indii\/shared='file:\.\/shared-pkg' -w packages\/firebase/,
+      /npm pkg set "dependencies\.@indii\/shared=file:\.\/\$SHARED_TGZ_NAME" -w packages\/firebase/,
+    );
+    expect(deployWorkflow).toMatch(
+      /npm install --package-lock-only --prefix packages\/firebase --quiet/,
     );
   });
 });
