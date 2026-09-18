@@ -8,6 +8,7 @@ import { auth, functions } from './firebase';
 
 const WAITLIST_EMAIL_STORAGE_KEY = 'indii_founding_artist_email';
 const WAITLIST_MILESTONE_CONSENT_STORAGE_KEY = 'indii_founding_artist_milestones';
+const WAITLIST_SOURCE_STORAGE_KEY = 'indii_founding_artist_source';
 
 export interface FoundingArtistEnrollmentResult {
   status: 'waitlisted';
@@ -44,17 +45,33 @@ export function getStoredMilestoneConsent(): boolean {
   }
 }
 
-async function finalizeEnrollment(majorMilestoneUpdates: boolean): Promise<FoundingArtistEnrollmentResult> {
+export function getStoredWaitlistSource(): 'landing_page' | 'free_demo' {
+  try {
+    const stored = localStorage.getItem(WAITLIST_SOURCE_STORAGE_KEY);
+    return stored === 'free_demo' ? 'free_demo' : 'landing_page';
+  } catch {
+    return 'landing_page';
+  }
+}
+
+async function finalizeEnrollment(
+  majorMilestoneUpdates: boolean,
+  source: 'landing_page' | 'free_demo' = 'landing_page',
+): Promise<FoundingArtistEnrollmentResult> {
   const { firebaseFunctions } = requireFirebase();
   const callable = httpsCallable<
-    { source: 'landing_page'; majorMilestoneUpdates: boolean },
+    { source: 'landing_page' | 'free_demo'; majorMilestoneUpdates: boolean },
     FoundingArtistEnrollmentResult
   >(firebaseFunctions, 'joinFoundingArtistWaitlist');
-  const response = await callable({ source: 'landing_page', majorMilestoneUpdates });
+  const response = await callable({ source, majorMilestoneUpdates });
   return response.data;
 }
 
-export async function beginFoundingArtistVerification(email: string, majorMilestoneUpdates: boolean): Promise<void> {
+export async function beginFoundingArtistVerification(
+  email: string,
+  majorMilestoneUpdates: boolean,
+  source: 'landing_page' | 'free_demo' = 'landing_page',
+): Promise<void> {
   const { firebaseAuth } = requireFirebase();
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) throw new Error('Enter an email address.');
@@ -62,6 +79,7 @@ export async function beginFoundingArtistVerification(email: string, majorMilest
   try {
     localStorage.setItem(WAITLIST_EMAIL_STORAGE_KEY, normalizedEmail);
     localStorage.setItem(WAITLIST_MILESTONE_CONSENT_STORAGE_KEY, String(majorMilestoneUpdates));
+    localStorage.setItem(WAITLIST_SOURCE_STORAGE_KEY, source);
   } catch {
     // The email can be entered again after the link opens if storage is blocked.
   }
@@ -79,12 +97,14 @@ export async function beginFoundingArtistVerification(email: string, majorMilest
 export async function completeFoundingArtistVerification(
   email: string,
   majorMilestoneUpdates: boolean,
+  source?: 'landing_page' | 'free_demo',
 ): Promise<FoundingArtistEnrollmentResult> {
   const { firebaseAuth } = requireFirebase();
   if (!isSignInWithEmailLink(firebaseAuth, window.location.href)) {
     throw new Error('This verification link is invalid or has expired. Request a new link.');
   }
 
+  const effectiveSource = source || getStoredWaitlistSource();
   const normalizedEmail = normalizeEmail(email);
   const credential = await signInWithEmailLink(firebaseAuth, normalizedEmail, window.location.href);
   await credential.user.getIdToken(true);
@@ -95,15 +115,17 @@ export async function completeFoundingArtistVerification(
   try {
     localStorage.removeItem(WAITLIST_EMAIL_STORAGE_KEY);
     localStorage.removeItem(WAITLIST_MILESTONE_CONSENT_STORAGE_KEY);
+    localStorage.removeItem(WAITLIST_SOURCE_STORAGE_KEY);
   } catch {
     // A blocked storage cleanup must not invalidate a verified enrollment.
   }
-  return finalizeEnrollment(majorMilestoneUpdates);
+  return finalizeEnrollment(majorMilestoneUpdates, effectiveSource);
 }
 
 export async function enrollCurrentVerifiedArtist(
   email: string,
   majorMilestoneUpdates: boolean,
+  source: 'landing_page' | 'free_demo' = 'landing_page',
 ): Promise<FoundingArtistEnrollmentResult | null> {
   const { firebaseAuth } = requireFirebase();
   const currentUser = firebaseAuth.currentUser;
@@ -111,5 +133,5 @@ export async function enrollCurrentVerifiedArtist(
     return null;
   }
   await currentUser.getIdToken(true);
-  return finalizeEnrollment(majorMilestoneUpdates);
+  return finalizeEnrollment(majorMilestoneUpdates, source);
 }

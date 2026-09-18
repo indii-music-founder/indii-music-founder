@@ -132,4 +132,24 @@ describe('Founding Artist waitlist verification', () => {
     await expect(enrollCurrentVerifiedArtist('someone-else@example.com', false)).resolves.toBeNull();
     expect(mocks.callable).not.toHaveBeenCalled();
   });
+
+  it('preserves and forwards free_demo source through verification', async () => {
+    const getIdToken = vi.fn().mockResolvedValue('fresh-token');
+    mocks.isSignInWithEmailLink.mockReturnValue(true);
+    mocks.signInWithEmailLink.mockResolvedValue({
+      user: { emailVerified: true, getIdToken },
+    });
+
+    await beginFoundingArtistVerification('demo-artist@example.com', true, 'free_demo');
+    expect(localStorage.getItem('indii_founding_artist_source')).toBe('free_demo');
+
+    const result = await completeFoundingArtistVerification('demo-artist@example.com', true);
+
+    expect(mocks.callable).toHaveBeenCalledWith({
+      source: 'free_demo',
+      majorMilestoneUpdates: true,
+    });
+    expect(result.queuePosition).toBe(12);
+    expect(localStorage.getItem('indii_founding_artist_source')).toBeNull();
+  });
 });

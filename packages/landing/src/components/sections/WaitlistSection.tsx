@@ -113,6 +113,18 @@ export default function WaitlistSection({
               {message}
             </p>
           )}
+          {status === 'success' && !preferenceMode && (
+            <div className="mt-3">
+              <a
+                href={`${getStudioUrl()}?mode=free_demo&module=creative`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-4 py-2 text-xs font-black text-black shadow-[0_0_20px_rgba(255,184,0,0.5)] transition-all hover:scale-105"
+              >
+                Launch Free Mini-Campaign →
+              </a>
+            </div>
+          )}
           <a
             href={getStudioUrl()}
             target="_blank"

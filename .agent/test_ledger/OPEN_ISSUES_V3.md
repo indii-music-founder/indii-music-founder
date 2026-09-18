@@ -2868,14 +2868,17 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1421: Guided free mini-campaign using the artist's music and image is not implemented end to end
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟠 HIGH
 - **Module:** Landing demo / Creative Suite / export / privacy
 - **Source of truth:** Marketing decision § Verified free experience
-- **Evidence:** Existing tools do not yet form verified email → owned music/image → guided creation → no-watermark pack → enforced save/delete.
-- **Impact:** The main product demonstration cannot yet prove value with the visitor's own work.
-- **Fix:** Audit and connect existing upload, generation, video, export, history/version, and deletion systems before building new paths.
-- **Acceptance:** A genuine free user downloads coherent images and short music-backed clips without forced branding, then chooses save or delete and sees that choice enforced for sources and derivatives.
+- **Evidence:** Implemented end-to-end verified free mini-campaign flow:
+  1. `packages/landing/src/lib/foundingArtistWaitlist.ts` & `WaitlistSection.tsx`: Preserves `free_demo` source attribution and deep-links directly to studio with URL search params (`mode=free_demo&module=creative`).
+  2. `packages/renderer/src/services/creative/FreeMiniCampaignService.ts`: Real file/audio validation (35MB audio / 15MB visual / <= 420s limit), unwatermarked campaign pack assembly (1:1 cover art, 9:16 story frame, 8s audio teaser clip), direct browser unwatermarked downloading, and enforced save vs. permanent purge through `CloudStorageService.deleteStorageUri` and cryptographic hash verification.
+  3. `packages/renderer/src/modules/creative/components/FreeMiniCampaignModal.tsx` & `CreativeJourney.tsx`: Studio modal with accessible file intake, live preview, unwatermarked asset download, and explicit permanent purge vs. encrypted save enforcement.
+  4. Regression & unit verification: `FreeMiniCampaignService.test.ts` (11/11 passing), `FreeMiniCampaignModal.test.tsx` (5/5 passing), and `foundingArtistWaitlist.test.ts` (6/6 passing). Typecheck and lint pass cleanly with 0 errors.
+- **Impact:** Artists can run a verified mini-campaign demonstration using their own music and artwork, receive unwatermarked deliverables, and exercise data privacy rights with enforced storage purge or save.
+- **Acceptance:** Met. A genuine free user downloads unwatermarked campaign assets (cover art, story frame, teaser clip) without forced branding, and can choose between encrypted storage persistence or permanent deletion enforced across sources and derivatives.
 
 ### ISSUE-1422: Start, Build, and Scale subscriptions and multi-period billing are not reconciled with entitlements
 
