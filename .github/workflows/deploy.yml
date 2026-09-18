@@ -898,7 +898,7 @@ jobs:
           SHARED_TGZ_NAME="$(basename "$(ls packages/firebase/indii-shared-*.tgz | head -n 1)")"
           npm pkg set "dependencies.@indii/shared=file:./$SHARED_TGZ_NAME" -w packages/firebase
           # Generate hermetic package-lock.json directly inside packages/firebase to satisfy Cloud Build prerequisite.
-          npm install --package-lock-only --prefix packages/firebase --quiet
+          (cd packages/firebase && npm install --package-lock-only --no-audit --no-fund --quiet)
           npm run build -w packages/firebase
           if [ ! -f packages/firebase/lib/index.js ]; then
             echo "::error::tsc reported success but packages/firebase/lib/index.js was not produced. Re-running with full diagnostics:"
