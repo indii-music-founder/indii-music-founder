@@ -33,5 +33,8 @@ export { syncPlatformStats } from './social-stats-sync';
 // Ingestion Pipeline
 export * from './ingestion';
 
+// Autonomous Field Encounter Pipeline
+export * from './encounters';
+
 // Universal Trash Purge & Intent Gateway
 export * from './trash/trashFunctions';

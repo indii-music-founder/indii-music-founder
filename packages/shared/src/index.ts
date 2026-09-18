@@ -47,3 +47,5 @@ export * from './security/organizationAccess.js';
 export * from './security/auditLog.js';
 export * from './raw/types.js';
 export * from './foundry/index.js';
+export * from './types/contacts.js';
+export * from './types/encounter.js';

@@ -31,7 +31,7 @@ import { logger } from '@/utils/logger';
 import {
   LayoutDashboard, MessageSquare, Navigation,
   LucideIcon, WifiOff, AlertCircle, RefreshCw,
-  Camera, Radio, Settings
+  Camera, Radio, Settings, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,7 @@ import { triggerHaptic } from './haptics';
 // Lazy load sub-components for performance on remote devices
 const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
 const QuickCaptureView = lazy(() => import('./components/QuickCaptureView'));
+const EncounterFeedView = lazy(() => import('./components/EncounterFeedView'));
 const StreamView = lazy(() => import('./components/StreamView'));
 const SettingsView = lazy(() => import('./components/SettingsView'));
 const AgentChat = lazy(() => import('./components/AgentChat'));
@@ -56,7 +57,7 @@ const RoadMode = lazy(() =>
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'home' | 'capture' | 'boardroom' | 'road' | 'stream' | 'settings';
+type TabId = 'home' | 'capture' | 'encounters' | 'boardroom' | 'road' | 'stream' | 'settings';
 
 interface Tab {
   id: TabId;
@@ -67,6 +68,7 @@ interface Tab {
 const TABS: Tab[] = [
   { id: 'home', icon: LayoutDashboard, label: 'Home' },
   { id: 'capture', icon: Camera, label: 'Capture' },
+  { id: 'encounters', icon: Sparkles, label: 'Encounters' },
   { id: 'boardroom', icon: MessageSquare, label: 'Boardroom' },
   { id: 'road', icon: Navigation, label: 'Road' },
   { id: 'stream', icon: Radio, label: 'Stream' },
@@ -552,6 +554,12 @@ export default function MobileRemote() {
             <QuickCaptureView isPaired={isPaired} />
           </Suspense>
         );
+      case 'encounters':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <EncounterFeedView />
+          </Suspense>
+        );
       case 'boardroom':
         return (
           <Suspense fallback={<TabFallback />}>
@@ -766,7 +774,7 @@ export default function MobileRemote() {
             )}
           </AnimatePresence>
 
-          {!isPaired && (connectionStatus === 'idle' || connectionStatus === 'error') && !isReconnecting ? (
+          {!isPaired && (connectionStatus === 'idle' || connectionStatus === 'error') && !isReconnecting && activeTab !== 'encounters' && activeTab !== 'capture' && activeTab !== 'settings' ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -846,20 +854,22 @@ export default function MobileRemote() {
           
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
+            // Field-independent tabs (Encounters, Capture, Settings) can function standalone in the field
+            const isFieldReadyTab = tab.id === 'encounters' || tab.id === 'capture' || tab.id === 'settings' || isPaired;
             return (
                 <button
                 key={tab.id}
                 onClick={() => {
-                  if (isPaired) {
+                  if (isFieldReadyTab) {
                     triggerHaptic(40);
                     setActiveTab(tab.id);
                   }
                 }}
-                disabled={!isPaired}
+                disabled={!isFieldReadyTab}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
                   "relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-300 cursor-pointer",
-                  !isPaired ? "opacity-20 grayscale cursor-not-allowed" : "active:scale-90",
+                  !isFieldReadyTab ? "opacity-20 grayscale cursor-not-allowed" : "active:scale-90",
                   isActive ? "text-white" : "text-stone-500 hover:text-stone-300"
                 )}
                 style={{ minHeight: '56px' }}

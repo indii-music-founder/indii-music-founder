@@ -9,6 +9,8 @@ import { triggerHaptic } from '../haptics';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
+import { EncounterService } from '@/services/encounters/EncounterService';
+import type { EncounterAsset } from '@/types/encounter';
 
 /**
  * ISSUE-987: candidates in priority order — WebKit/Safari commonly can't
@@ -450,6 +452,32 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 return;
             }
 
+            // Create a durable FieldEncounter document in Firestore so cloud AI processes it directly
+            if (downloadUrl) {
+                const assetType = capturedAudioBlob
+                    ? 'audio'
+                    : capturedVideoBlob
+                        ? 'video'
+                        : capturedImageBlob?.type === 'receipt'
+                            ? 'receipt'
+                            : capturedImageBlob?.type === 'document'
+                                ? 'document'
+                                : 'photo';
+
+                await EncounterService.createEncounter({
+                    assets: [{
+                        type: assetType,
+                        storagePath: uploadedPath || '',
+                        downloadUrl: downloadUrl,
+                        mimeType: capturedAudioBlob?.type || capturedImageBlob?.file.type || capturedVideoBlob?.type || 'application/octet-stream',
+                        filename: uploadedPath ? uploadedPath.split('/').pop() : undefined,
+                    }],
+                    clientContext: momentText.trim() || undefined,
+                }).catch((err) => {
+                    logger.warn('[QuickCapture] Non-blocking encounter doc creation notice:', err);
+                });
+            }
+
             if (isPaired && taskId) {
                 // ISSUE-983: don't clear the capture until the desktop confirms a
                 // note actually exists — queue acceptance alone is not success.
@@ -467,7 +495,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     attachments: downloadUrl ? [downloadUrl] : [],
                     tags: isReceipt ? ['receipt', 'expense', 'finance', 'mobile-capture'] : ['mobile-capture'],
                 });
-                toast.success(isReceipt ? 'Receipt recorded directly to Expenses & Notes.' : 'Capture saved directly to Notes.');
+                toast.success(isReceipt ? 'Receipt recorded directly to Expenses & Notes.' : 'Capture saved and synced to Encounters.');
             }
 
             clearCapture();

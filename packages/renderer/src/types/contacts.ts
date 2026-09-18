@@ -41,6 +41,7 @@ export interface FieldContact {
     phone?: string;
     email?: string;
     instagram?: string;
+    organization?: string;
     role: FieldContactRole;
     notes?: string;
 
@@ -49,7 +50,9 @@ export interface FieldContact {
     capturedLocation?: CaptureLocation;
     capturedContext?: string; // e.g. "Detroit Techno Show @ The Loft"
     photoUrl?: string;       // Business card or person photo
-    source: 'quick_capture' | 'manual' | 'import';
+    audioMemoUrl?: string;   // Voice note recording asset
+    encounterId?: string;    // Associated encounter
+    source: 'quick_capture' | 'manual' | 'import' | 'encounter_ai';
 }
 
 /**
