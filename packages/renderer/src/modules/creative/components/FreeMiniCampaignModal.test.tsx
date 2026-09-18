@@ -7,6 +7,10 @@ import { FreeMiniCampaignService } from '@/services/creative/FreeMiniCampaignSer
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
         showToast: vi.fn(),
+        success: vi.fn(),
+        info: vi.fn(),
+        error: vi.fn(),
+        warning: vi.fn(),
     }),
 }));
 
