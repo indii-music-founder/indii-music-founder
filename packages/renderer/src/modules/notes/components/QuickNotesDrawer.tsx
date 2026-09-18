@@ -10,6 +10,10 @@ import {
     Trash2,
     Check,
     Mic,
+    Image as ImageIcon,
+    Video as VideoIcon,
+    Music as AudioIcon,
+    FileText,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -99,8 +103,51 @@ const ActiveNoteEditor: React.FC<ActiveNoteEditorProps> = ({
                 value={contentInput}
                 onChange={handleContentChange}
                 placeholder="Jot down lyrics, chord progressions, tour logistics, or marketing angles..."
-                className="flex-1 w-full bg-white/[0.02] border border-white/5 rounded-xl p-3.5 text-sm text-gray-200 placeholder-gray-600 outline-none resize-none custom-scrollbar focus:border-amber-400/30 transition-colors font-sans leading-relaxed"
+                className="flex-1 w-full bg-white/[0.02] border border-white/5 rounded-xl p-3.5 text-sm text-gray-200 placeholder-gray-600 outline-none resize-none custom-scrollbar focus:border-amber-400/30 transition-colors font-sans leading-relaxed min-h-[100px]"
             />
+
+            {/* Media Attachments Player & Gallery */}
+            {note && Array.isArray(note.attachments) && note.attachments.length > 0 && (
+                <div className="flex flex-col gap-2 p-3 bg-black/40 border border-white/10 rounded-xl overflow-y-auto max-h-56 custom-scrollbar">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                        <ImageIcon size={12} className="text-amber-400" />
+                        Attached Media ({note.attachments.length})
+                    </span>
+                    <div className="flex flex-col gap-2.5">
+                        {note.attachments.map((url, idx) => {
+                            const isVideo = url.includes('.mp4') || url.includes('.webm') || url.includes('video');
+                            const isAudio = url.includes('.m4a') || url.includes('.webm') || url.includes('.mp3') || url.includes('.wav') || url.includes('voice_memo') || url.includes('audio');
+                            const isImage = !isVideo && !isAudio;
+
+                            if (isVideo) {
+                                return (
+                                    <div key={idx} className="rounded-lg overflow-hidden border border-white/10 bg-black">
+                                        <video src={url} controls playsInline preload="metadata" className="w-full max-h-40 object-cover" />
+                                    </div>
+                                );
+                            }
+
+                            if (isAudio) {
+                                return (
+                                    <div key={idx} className="flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/5">
+                                        <AudioIcon size={14} className="text-emerald-400 shrink-0" />
+                                        <audio src={url} controls preload="metadata" className="w-full h-8" />
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-white/10 bg-black group relative">
+                                    <img src={url} alt="Attachment" className="w-full max-h-36 object-contain" />
+                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs text-white">
+                                        Click to open
+                                    </div>
+                                </a>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Canvas Pin & Audio Action Bar */}
             <div className="flex items-center justify-between gap-2 pt-1">
