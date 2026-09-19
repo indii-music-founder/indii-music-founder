@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "1472519cbd3b13f01aba1dd110aa37bb841e44e46a90514dffff1c9c2185c8cf",
+  "sourceDigest": "922f3e13c11b2dac69b165d3c82265e28d279694e312cd4c9055c08acdc83f00",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
   "dynamicOverlayRule": "At runtime, merge only tools actually exposed by the current host. Session tools inherit active authority and require the same contract checks.",
   "counts": {
     "certified": 36,
-    "conditional": 69,
+    "conditional": 70,
     "quarantined": 89,
     "deprecated": 1
   },
@@ -4819,6 +4819,39 @@
       "locked": true,
       "upstream": "heygen-com/hyperframes",
       "lockHash": "414bcbebc52eba6455b76a2e78bebcd8dd6929abc76fcdeb1ad8a70043d96186"
+    },
+    {
+      "id": "skill:vendored:typesafe-ai",
+      "name": "typesafe-ai",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/typesafe-ai/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Build AI-powered software with TypeSafe: small units of AI intelligence you can use like programming primitives. Its System One models, including Jev, turn natural language and application state into typed judgments and probabilities that code can combine. Use when a feature needs programmable common sense, when brainstorming what AI could make possible in an app, or when an LLM prompt-and-parse step could become a structured decision. Applications include routing, ranking, extraction, verification, and interactive experiences; these are starting points, not the limits. Read live docs and cookbooks to find useful patterns and discover new combinations.",
+      "descriptionHash": "4562815935fed175c23a26d45d931306d31d3624961eb075775bbee0556a984f",
+      "contentHash": "71ea90d7906c6554c4f4c460ef7361b2d26f59116ccdae986dc6d997b9389f52",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": true,
+      "upstream": "typesafe-ai/skills",
+      "lockHash": "9cd84c5e535dec8dec59917c110f9c00b4a61faadb86b432ec7e41051170af12"
     },
     {
       "id": "workflow:20m",
