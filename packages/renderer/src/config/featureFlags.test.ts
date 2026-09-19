@@ -44,6 +44,7 @@ describe('FeatureFlagService', () => {
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.KNOWLEDGE_API)).toBe(true);
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.ADVANCED_AUDIO_ANALYSIS)).toBe(true);
             expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.CANONICAL_MUSIC_ENTITIES)).toBe(false);
+            expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.DDEX_ECM)).toBe(false);
         });
 
         it('loads pre-launch gates with correct defaults', () => {
@@ -186,6 +187,7 @@ describe('FeatureFlagService', () => {
             expect(FEATURE_FLAG_NAMES.VIDEO_INTERPOLATION).toBe('enable_video_interpolation');
             expect(FEATURE_FLAG_NAMES.MAINTENANCE_MODE).toBe('maintenance_mode');
             expect(FEATURE_FLAG_NAMES.CANONICAL_MUSIC_ENTITIES).toBe('enable_canonical_music_entities');
+            expect(FEATURE_FLAG_NAMES.DDEX_ECM).toBe('enable_ddex_ecm');
         });
     });
 
