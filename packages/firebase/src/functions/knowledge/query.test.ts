@@ -86,7 +86,9 @@ describe('Knowledge Base Query Endpoint', () => {
             text: 'Music distribution overview',
             ordinal: 0,
             pageNumber: 1,
-            distance: 0.1, // Relevance will be 1 - 0.1 = 0.9
+            startOffset: 0,
+            endOffset: 27,
+            vectorDistance: 0.1
           }),
         },
       ],
@@ -116,12 +118,14 @@ describe('Knowledge Base Query Endpoint', () => {
     expect(res.query).toBe('how to distribute music');
     expect(res.citations).toHaveLength(1);
     expect(res.citations[0].documentId).toBe('doc-1');
+    expect(res.citations[0].relevanceScore).toBeCloseTo(0.9);
     expect(mocks.mockFindNearest).toHaveBeenCalledWith(
       'embedding',
       dummyEmbedding, // mock ignores FieldValue.vector wrapper differences
       {
         limit: 3,
         distanceMeasure: 'COSINE',
+        distanceResultField: 'vectorDistance',
       }
     );
     expect(mocks.mockSet).toHaveBeenCalledWith(
@@ -132,6 +136,53 @@ describe('Knowledge Base Query Endpoint', () => {
         citations: expect.any(Array),
       })
     );
+  });
+
+  it('enforces minRelevance using Firestore cosine distance', async () => {
+    mocks.mockEmbedContent.mockResolvedValue({ embeddings: [{ values: new Array(768).fill(0.01) }] });
+    mocks.mockGet.mockResolvedValue({
+      docs: [
+        {
+          data: () => ({
+            documentId: 'doc-high',
+            text: 'Directly relevant evidence',
+            ordinal: 0,
+            startOffset: 0,
+            endOffset: 26,
+            vectorDistance: 0.1,
+          }),
+        },
+        {
+          data: () => ({
+            documentId: 'doc-low',
+            text: 'Only loosely related evidence',
+            ordinal: 1,
+            startOffset: 27,
+            endOffset: 56,
+            vectorDistance: 0.55,
+          }),
+        },
+      ],
+    });
+
+    const fakeDocs = [
+      { id: 'doc-high', data: () => ({ title: 'High relevance', state: 'active' }) },
+      { id: 'doc-low', data: () => ({ title: 'Low relevance', state: 'active' }) },
+    ];
+    mocks.mockGetDocs.mockResolvedValue({
+      docs: fakeDocs,
+      forEach: (cb: any) => fakeDocs.forEach(cb),
+    });
+
+    const handler = queryKnowledgeBase as any;
+    const res = await handler({
+      auth: { uid: 'user-1' },
+      data: { query: 'find direct evidence', topK: 5, minRelevance: 0.8 },
+    });
+
+    expect(res.citations).toHaveLength(1);
+    expect(res.citations[0].documentId).toBe('doc-high');
+    expect(res.citations[0].relevanceScore).toBeCloseTo(0.9);
   });
 
   it('rejects unauthenticated queries', async () => {

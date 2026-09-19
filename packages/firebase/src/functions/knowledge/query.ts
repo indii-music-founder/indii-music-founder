@@ -10,6 +10,7 @@ import {
   type KnowledgeDocument,
   type KnowledgeQueryRequest,
 } from '@indii/shared';
+import { vectorDistanceToRelevance } from './evidenceJudgment';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -30,13 +31,17 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
 
   const uid = request.auth.uid;
   const startTimeMs = Date.now();
-  const { query, topK = 5, documentIdFilters } = request.data || {};
+  const { query, topK = 5, documentIdFilters, minRelevance = 0.5 } = request.data || {};
 
   if (!query || typeof query !== 'string' || query.trim().length === 0) {
     throw new HttpsError('invalid-argument', 'Query string must not be empty.');
   }
 
   const k = Math.min(Math.max(1, Number(topK) || 5), 20);
+  const requestedMinRelevance = Number(minRelevance);
+  const minRelevanceScore = Number.isFinite(requestedMinRelevance)
+    ? Math.min(1, Math.max(0, requestedMinRelevance))
+    : 0.5;
 
   // 1. Generate query embedding via Vertex AI
   let queryEmbedding: number[];
@@ -67,6 +72,7 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
     vectorQuerySnap = await filteredChunks.findNearest('embedding', queryEmbedding, {
       limit: k,
       distanceMeasure: 'COSINE',
+      distanceResultField: 'vectorDistance',
     }).get();
   } catch (vectorErr: unknown) {
     const errorMsg = vectorErr instanceof Error ? vectorErr.message : String(vectorErr);
@@ -93,14 +99,20 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
 
   const citations: KnowledgeCitation[] = [];
   vectorQuerySnap.docs.forEach((doc) => {
-    const chunkData = doc.data() as KnowledgeChunk;
+    const chunkData = doc.data() as KnowledgeChunk & { vectorDistance?: number };
+    const relevanceScore = vectorDistanceToRelevance(chunkData.vectorDistance);
+
+    // Fail closed when Firestore does not return a usable distance. The caller's
+    // minRelevance contract must not be bypassed with a fabricated score.
+    if (relevanceScore === null || relevanceScore < minRelevanceScore) return;
+
     citations.push({
       documentId: chunkData.documentId,
       documentTitle: docsMap.get(chunkData.documentId) || 'Unknown Document',
       pageNumber: chunkData.pageNumber,
       startOffset: chunkData.startOffset,
       endOffset: chunkData.endOffset,
-      relevanceScore: 1.0, // Distance cosine metric representation
+      relevanceScore,
       snippet: chunkData.text,
     });
   });
