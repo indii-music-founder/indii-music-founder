@@ -1366,17 +1366,39 @@ export class AgentService {
 
                     return { agentId, result };
                 } catch (err) {
-                    logger.error(`[AgentService] Boardroom Swarm dispatch failed for agent ${agentId}:`, err);
-                    useStore.getState().updateAgentMessage(resId, {
-                        text: `❌ **Error:** ${(err as Error).message || 'Request failed.'}`,
-                        isStreaming: false,
-                        thoughts: [{
-                            id: uuidv4(),
-                            text: 'Execution failed in boardroom swarm dispatch',
-                            timestamp: Date.now(),
-                            type: 'error'
-                        }]
-                    });
+                    const isCancelled = signal?.aborted || (err instanceof Error && (
+                        err.message.includes('Operation cancelled') ||
+                        err.message.includes('User requested stop') ||
+                        err.name === 'AbortError'
+                    ));
+
+                    if (isCancelled) {
+                        logger.info(`[AgentService] Boardroom Swarm dispatch cancelled for agent ${agentId}`);
+                        useStore.getState().updateAgentMessage(resId, {
+                            text: currentStreamedText.length > 0
+                                ? currentStreamedText
+                                : '*(Discussion paused by user.)*',
+                            isStreaming: false,
+                            thoughts: [{
+                                id: uuidv4(),
+                                text: 'Discussion stopped by user',
+                                timestamp: Date.now(),
+                                type: 'logic'
+                            }]
+                        });
+                    } else {
+                        logger.error(`[AgentService] Boardroom Swarm dispatch failed for agent ${agentId}:`, err);
+                        useStore.getState().updateAgentMessage(resId, {
+                            text: `❌ **Error:** ${(err as Error).message || 'Request failed.'}`,
+                            isStreaming: false,
+                            thoughts: [{
+                                id: uuidv4(),
+                                text: 'Execution failed in boardroom swarm dispatch',
+                                timestamp: Date.now(),
+                                type: 'error'
+                            }]
+                        });
+                    }
 
                     // Sync error/failure state
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any

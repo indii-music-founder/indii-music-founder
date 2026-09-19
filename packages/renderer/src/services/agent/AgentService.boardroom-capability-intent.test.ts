@@ -624,4 +624,59 @@ describe('AgentService Boardroom capability intent dispatch', () => {
         }));
         expect(messages[0]?.text).toBe('styled Provider response');
     });
+
+    it('gracefully handles boardroom swarm dispatch cancellation without rendering raw execution failure', async () => {
+        const messages: Array<{
+            id: string;
+            role: string;
+            text: string;
+            timestamp: number;
+            isStreaming?: boolean;
+            thoughts?: Array<{ id: string; text: string; timestamp: number; type: string }>;
+        }> = [{
+            id: 'response-cancel',
+            role: 'model',
+            text: '',
+            timestamp: Date.now(),
+            isStreaming: true,
+        }];
+        const state = {
+            conversationMode: 'boardroom',
+            activeAgents: ['legal'],
+            referencedAssets: [],
+            agentHistory: messages,
+            addAgentMessage: vi.fn(message => messages.push(message)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const finalizer = vi.fn(async ({ response }) => ({ text: response.text }));
+        const service = new AgentService(finalizer);
+        (
+            service as unknown as {
+                getStore: () => Promise<{ getState: () => typeof state }>;
+            }
+        ).getStore = vi.fn(async () => ({ getState: () => state }));
+
+        const abortController = new AbortController();
+        abortController.abort('User requested stop');
+
+        await (
+            service as unknown as {
+                executeFlow: (
+                    text: string,
+                    attachments: undefined,
+                    context: AgentContext,
+                    responseId: string,
+                    forcedAgentId?: string,
+                    signal?: AbortSignal
+                ) => Promise<void>;
+            }
+        ).executeFlow('Review this contract immediately', undefined, {}, 'response-cancel', undefined, abortController.signal);
+
+        expect(messages[0]?.text).toBe('*(Discussion paused by user.)*');
+        expect(messages[0]?.isStreaming).toBe(false);
+        expect((messages[0] as { thoughts?: Array<{ text: string }> }).thoughts?.[0]?.text).toBe('Discussion stopped by user');
+    });
 });
