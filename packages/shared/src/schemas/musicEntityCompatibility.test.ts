@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { projectLegacyTrackToCanonical } from './musicEntityCompatibility';
+import {
+  projectLegacyReleaseToCanonical,
+  projectLegacyTrackToCanonical,
+} from './musicEntityCompatibility';
 
 const now = '2026-09-19T20:00:00.000Z';
 
@@ -56,5 +59,38 @@ describe('projectLegacyTrackToCanonical', () => {
     }, now);
 
     expect(result.identifiers).toEqual([]);
+  });
+});
+
+describe('projectLegacyReleaseToCanonical', () => {
+  it('attaches product identifiers to a release entity rather than a recording', () => {
+    const result = projectLegacyReleaseToCanonical({
+      id: 'release-123',
+      releaseTitle: 'Example Single',
+      releaseType: 'Single',
+      upc: '012345678905',
+      catalogNumber: 'CAT-001',
+    }, now);
+
+    expect(result.release.id).toBe('legacy-release:release-123:release');
+    expect(result.release.releaseType).toBe('SINGLE');
+    expect(result.identifiers.map(item => item.type)).toEqual(['UPC', 'CATALOG_NUMBER']);
+    expect(result.identifiers.every(item => item.entityId === result.release.id)).toBe(true);
+  });
+
+  it('keeps identical UPC values on distinct imported releases without merging identities', () => {
+    const first = projectLegacyReleaseToCanonical({
+      id: 'release-a',
+      title: 'Release A',
+      upc: '012345678905',
+    }, now);
+    const second = projectLegacyReleaseToCanonical({
+      id: 'release-b',
+      title: 'Release B',
+      upc: '012345678905',
+    }, now);
+
+    expect(first.release.id).not.toBe(second.release.id);
+    expect(first.identifiers[0]?.value).toBe(second.identifiers[0]?.value);
   });
 });
