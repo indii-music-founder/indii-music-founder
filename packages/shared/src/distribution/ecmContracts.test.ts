@@ -62,7 +62,7 @@ describe('ECM adapter intent contracts',()=>{
           displayArtistName:'Artist',
         },
         disambiguation:{
-          membershipType:'AudioFileAndMetadata',
+          membershipType:'AudioFile',
           confidencePercent:98,
           linkVerification:'CrossChecked',
         },
