@@ -103,7 +103,7 @@
     "storybook:build": "npm run build-storybook -w packages/renderer",
     "prepare": "npm run repo:assert-canonical && npm run build:shared && npm run build:video-compiler && husky",
     "build:shared": "tsc -b packages/shared",
-    "bootstrap": "npm run repo:assert-canonical && npm install && cp -n .env.example .env 2>/dev/null || true && npm run typecheck",
+    "bootstrap": "npm run repo:assert-canonical && npm install && (cp -n .env.example .env 2>/dev/null || true) && npm run typecheck",
     "ci": "bash scripts/ci.sh",
     "preflight:dev": "npm run repo:assert-canonical && node --import tsx scripts/production-gate.ts --dev",
     "preflight:prod": "npm run repo:assert-canonical && node --import tsx scripts/production-gate.ts --prod",
