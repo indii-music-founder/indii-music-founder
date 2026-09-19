@@ -14,6 +14,7 @@ export * from './schemas/audioRecipe.js';
 export * from './schemas/approvalReceipt.js';
 export * from './schemas/derivativeHandoff.js';
 export * from './schemas/artistOperatingProfile.js';
+export * from './schemas/musicEntity.js';
 export * from './schemas/knowledge.js';
 export * from './schemas/conversionEvent.js';
 export * from './schemas/trash.js';
