@@ -25,7 +25,7 @@ export const EcmMessageContextSchema = z.object({
 }).strict();
 export type EcmMessageContext = z.infer<typeof EcmMessageContextSchema>;
 
-export const EcmResourceTypeSchema = z.enum(['SoundRecording', 'MusicVideo']);
+export const EcmResourceTypeSchema = z.enum(['SoundRecording', 'Video']);
 export type EcmResourceType = z.infer<typeof EcmResourceTypeSchema>;
 
 const EcmResourceReferenceBaseSchema = z.object({
@@ -58,7 +58,12 @@ const EcmTimedResourceReferenceSchema = EcmResourceReferenceBaseSchema.extend({
 }).strict().superRefine(requireResourceIdentity);
 
 export const EcmClusterMemberMetadataSchema = z.object({
-  membershipType: z.enum(['AudioFile', 'Metadata', 'AudioFileAndMetadata', 'UserDefined']).optional(),
+  /**
+   * DDEX ClusterMembershipType AVS value.
+   * Kept opaque until AVS 012 is imported from the authoritative DDEX
+   * data dictionary/XSD; do not invent or normalize combined values here.
+   */
+  membershipType: NonBlank.optional(),
   confidencePercent: z.number().min(0).max(100).optional(),
   linkVerification: z.enum(['VerifiedByHuman', 'CrossChecked', 'NotVerified', 'UserDefined']).optional(),
 }).strict();
