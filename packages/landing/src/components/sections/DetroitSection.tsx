@@ -55,7 +55,7 @@ export default function DetroitSection() {
                 The answer is not another dashboard full of promises. It is a working place for the files, decisions, business records, creative work, and approvals already surrounding the artist.
               </p>
               <p className="mt-9 flex items-center gap-3 text-sm font-semibold text-white">
-                <span className="h-px w-9 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] shadow-[0_0_8px_rgba(255,184,0,0.6)]" />
+                <span className="h-px w-9 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] shadow-[0_0_8px_rgba(255,184,0,0.6),0_0_12px_rgba(229,57,53,0.3)]" />
                 <span className="wiil-name text-[#FFB800] font-bold">wiil</span>, Founder
               </p>
             </div>

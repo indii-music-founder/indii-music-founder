@@ -95,7 +95,7 @@ export default function AppStudioShowcase() {
               <span key={fact} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">{fact}</span>
             ))}
           </div>
-          <a href="#waitlist" className="mt-7 inline-flex rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-7 py-3.5 text-xs font-black text-black shadow-[0_0_25px_rgba(255,184,0,0.45)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(255,184,0,0.7)]">
+          <a href="#waitlist" className="mt-7 inline-flex rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-7 py-3.5 text-xs font-black text-black shadow-[0_0_25px_rgba(255,184,0,0.45),0_0_35px_rgba(229,57,53,0.25)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(255,184,0,0.7),0_0_50px_rgba(229,57,53,0.45)]">
             See how indii.music works
           </a>
           <p className="mt-5 text-xs text-white/45">
@@ -114,7 +114,7 @@ export default function AppStudioShowcase() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`group relative flex items-center gap-2.5 rounded-full border px-5 py-3 text-xs font-bold transition-all duration-300 ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_25px_rgba(255,184,0,0.4)] border-amber-400 scale-[1.03]'
+                    ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] text-black shadow-[0_0_25px_rgba(255,184,0,0.45),0_0_35px_rgba(229,57,53,0.25)] border-amber-400 scale-[1.03]'
                     : 'border-white/10 bg-black/70 text-white/70 hover:border-white/25 hover:text-white'
                 }`}
               >

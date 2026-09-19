@@ -60,7 +60,7 @@ export default function ThesisSection({ setIsThesisOpen }: ThesisSectionProps) {
           <button
             type="button"
             onClick={() => setIsThesisOpen(true)}
-            className="group mt-10 inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-9 py-4 text-sm font-black text-black shadow-[0_0_45px_rgba(255,184,0,0.6)] transition-all hover:scale-[1.04] hover:shadow-[0_0_65px_rgba(255,184,0,0.85)]"
+            className="group mt-10 inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-9 py-4 text-sm font-black text-black shadow-[0_0_40px_rgba(255,184,0,0.55),0_0_60px_rgba(229,57,53,0.3)] transition-all hover:scale-[1.04] hover:shadow-[0_0_60px_rgba(255,184,0,0.8),0_0_80px_rgba(229,57,53,0.5)]"
           >
             Launch cinematic thesis
             <Play size={14} fill="currentColor" />

@@ -23,7 +23,7 @@ interface FounderAccessSectionProps {
 export default function FounderAccessSection({ trackPreview }: FounderAccessSectionProps) {
   return (
     <section id="founder-access" data-system-section="founder-access" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-black">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(255,184,0,0.16),transparent_60%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(255,184,0,0.16),rgba(229,57,53,0.06)_40%,transparent_65%)]" />
       <div className="absolute right-[-12rem] top-1/2 h-[42rem] w-[42rem] -translate-y-1/2 rounded-full border border-amber-400/20">
         <div className="absolute inset-[16%] rounded-full border border-amber-400/10" />
         <div className="absolute inset-[34%] rounded-full bg-amber-400/10 blur-3xl" />
@@ -74,7 +74,7 @@ export default function FounderAccessSection({ trackPreview }: FounderAccessSect
                 emitSystemPulse('cta', 7, 1);
               }}
               onMouseEnter={() => emitSystemPulse('cta', 7, 0.5)}
-              className="group mt-4 inline-flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-8 py-5 text-base font-black text-black shadow-[0_0_45px_rgba(255,184,0,0.55)] transition-all hover:scale-[1.02] hover:shadow-[0_0_65px_rgba(255,184,0,0.85)]"
+              className="group mt-4 inline-flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-8 py-5 text-base font-black text-black shadow-[0_0_40px_rgba(255,184,0,0.55),0_0_60px_rgba(229,57,53,0.3)] transition-all hover:scale-[1.02] hover:shadow-[0_0_60px_rgba(255,184,0,0.8),0_0_80px_rgba(229,57,53,0.5)]"
             >
               Get Founding Owner access
               <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />

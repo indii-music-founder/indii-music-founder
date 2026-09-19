@@ -83,7 +83,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
 
   return (
     <section id="pricing" data-system-section="pricing" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-black">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,184,0,0.08),transparent_42%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,184,0,0.09),rgba(229,57,53,0.04)_35%,transparent_50%)]" />
       <div className="relative mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -120,7 +120,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
                 type="button"
                 aria-pressed={billingCycle === cycle.id}
                 onClick={() => setBillingCycle(cycle.id)}
-                className={`rounded-xl px-3 py-3 text-xs font-bold transition-all ${billingCycle === cycle.id ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_16px_rgba(255,184,0,0.4)]' : 'text-white/55 hover:bg-white/[0.04] hover:text-white'}`}
+                className={`rounded-xl px-3 py-3 text-xs font-bold transition-all ${billingCycle === cycle.id ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] text-black shadow-[0_0_16px_rgba(255,184,0,0.45),0_0_24px_rgba(229,57,53,0.2)]' : 'text-white/55 hover:bg-white/[0.04] hover:text-white'}`}
               >
                 <span className="block">{cycle.label}</span>
                 <span className={`mt-1 block font-mono text-[8px] uppercase tracking-[0.12em] ${billingCycle === cycle.id ? 'text-black/75 font-bold' : 'text-amber-400'}`}>
@@ -156,7 +156,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
                   <h3 className="text-2xl font-black tracking-[-0.03em] text-white">{plan.name}</h3>
                 </div>
                 {plan.featured && (
-                  <span className="rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-3 py-1 font-mono text-[8px] font-black uppercase tracking-[0.16em] text-black shadow-[0_0_15px_rgba(255,184,0,0.5)]">
+                  <span className="rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-3 py-1 font-mono text-[8px] font-black uppercase tracking-[0.16em] text-black shadow-[0_0_15px_rgba(255,184,0,0.5),0_0_20px_rgba(229,57,53,0.3)]">
                     Active artist
                   </span>
                 )}
@@ -180,7 +180,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
                 onClick={() => onPlanSelect(plan.name)}
                 className={`group mt-7 inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-xs font-black transition-all hover:scale-[1.02] ${
                   plan.featured
-                    ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] text-black shadow-[0_0_30px_rgba(255,184,0,0.5)] hover:shadow-[0_0_40px_rgba(255,184,0,0.7)]'
+                    ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] text-black shadow-[0_0_30px_rgba(255,184,0,0.5),0_0_40px_rgba(229,57,53,0.25)] hover:shadow-[0_0_40px_rgba(255,184,0,0.7),0_0_55px_rgba(229,57,53,0.45)]'
                     : 'bg-white text-black hover:bg-[#FFB800] hover:shadow-[0_0_20px_rgba(255,184,0,0.4)]'
                 }`}
               >

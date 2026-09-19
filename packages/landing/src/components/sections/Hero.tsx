@@ -34,11 +34,11 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
       className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1600px] flex-col justify-between px-5 pb-6 pt-24 md:px-10 md:pb-8 md:pt-28"
       aria-label="indii.music founder introduction"
     >
-      {/* Warm Studio Atmospheric Halo — Champagne Gold & Smoked Petroleum Teal */}
+      {/* Warm Studio Atmospheric Halo — Champagne Gold & Molten Ruby Embers on Gloss Piano Black */}
       <div
-        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[1100px] blur-[150px] opacity-80"
+        className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[1100px] blur-[150px] opacity-85"
         style={{
-          background: 'radial-gradient(ellipse at center, rgba(255,184,0,0.12) 0%, rgba(0,184,212,0.06) 45%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(255,184,0,0.14) 0%, rgba(229,57,53,0.07) 35%, rgba(0,184,212,0.05) 60%, transparent 75%)',
         }}
       />
 
@@ -186,7 +186,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                     pulseHero(1);
                   }}
                   onMouseEnter={() => pulseHero(0.55)}
-                  className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-5 py-3 text-xs md:text-sm font-black text-black shadow-[0_0_30px_rgba(255,184,0,0.45)] transition-all hover:scale-[1.03] hover:shadow-[0_0_45px_rgba(255,184,0,0.7)]"
+                  className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-5 py-3 text-xs md:text-sm font-black text-black shadow-[0_0_28px_rgba(255,184,0,0.48),0_0_45px_rgba(229,57,53,0.28)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(255,184,0,0.7),0_0_55px_rgba(229,57,53,0.45)]"
                 >
                   <span>
                     {previewEnabled

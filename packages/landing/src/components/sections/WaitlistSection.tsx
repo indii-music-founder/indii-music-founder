@@ -82,7 +82,7 @@ export default function WaitlistSection({
               <button
                 type="submit"
                 disabled={status === 'loading' || status === 'success'}
-                className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-6 py-2.5 text-sm font-black text-black shadow-[0_0_28px_rgba(255,184,0,0.45)] transition-all hover:scale-[1.02] hover:shadow-[0_0_38px_rgba(255,184,0,0.7)] disabled:opacity-50"
+                className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-6 py-2.5 text-sm font-black text-black shadow-[0_0_28px_rgba(255,184,0,0.45),0_0_36px_rgba(229,57,53,0.25)] transition-all hover:scale-[1.02] hover:shadow-[0_0_38px_rgba(255,184,0,0.7),0_0_50px_rgba(229,57,53,0.4)] disabled:opacity-50"
               >
                 {status === 'loading'
                   ? 'Verifying...'
@@ -119,7 +119,7 @@ export default function WaitlistSection({
                 href={`${getStudioUrl()}?mode=free_demo&module=creative`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-4 py-2 text-xs font-black text-black shadow-[0_0_20px_rgba(255,184,0,0.5)] transition-all hover:scale-105"
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-4 py-2 text-xs font-black text-black shadow-[0_0_20px_rgba(255,184,0,0.45),0_0_30px_rgba(229,57,53,0.25)] transition-all hover:scale-105"
               >
                 Launch Free Mini-Campaign →
               </a>

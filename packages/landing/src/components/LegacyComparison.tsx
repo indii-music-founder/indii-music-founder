@@ -192,7 +192,7 @@ export default function LegacyComparison() {
           <div className="mt-8 flex justify-center">
             <a
               href="#studio-preview"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-8 py-3.5 text-xs font-black uppercase tracking-wider text-black shadow-[0_0_35px_rgba(255,184,0,0.5)] transition-all hover:scale-[1.03] hover:shadow-[0_0_50px_rgba(255,184,0,0.75)]"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-8 py-3.5 text-xs font-black uppercase tracking-wider text-black shadow-[0_0_30px_rgba(255,184,0,0.5),0_0_45px_rgba(229,57,53,0.3)] transition-all hover:scale-[1.03] hover:shadow-[0_0_45px_rgba(255,184,0,0.75),0_0_60px_rgba(229,57,53,0.5)]"
             >
               <span>Explore the Studio Workspace</span>
               <ArrowRight size={14} />

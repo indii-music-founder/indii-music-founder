@@ -308,18 +308,22 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             />
           ))}
         </div>
-        {/* Warm Studio Atmospheric Lighting — Champagne Gold pools + Petroleum Teal accents on Gloss Piano Black */}
+        {/* Warm Studio Atmospheric Lighting — Champagne Gold pools + Molten Ruby embers + Petroleum Teal accents on Gloss Piano Black */}
         <div className="absolute left-1/2 top-[-20rem] h-[65rem] w-[65rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-500/[0.12] via-[#FFB800]/[0.06] to-transparent blur-[160px]" />
+        {/* Molten Ruby Kiln Core — Subsurface arousal and urgency pulse */}
+        <div className="absolute left-[55%] top-[-8rem] h-[48rem] w-[48rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-[#E53935]/[0.07] via-[#C62828]/[0.03] to-transparent blur-[180px]" />
         <div className="absolute right-[-14rem] top-[30rem] h-[50rem] w-[50rem] rounded-full bg-[#00B8D4]/[0.05] blur-[180px]" />
         <div className="absolute left-[-14rem] top-[90rem] h-[50rem] w-[50rem] rounded-full bg-amber-500/[0.06] blur-[180px]" />
+        {/* Deep Crimson Horizon pool */}
+        <div className="absolute left-[30%] top-[140rem] h-[42rem] w-[42rem] rounded-full bg-[#D50032]/[0.04] blur-[190px]" />
         <div className="absolute right-[-10rem] top-[170rem] h-[45rem] w-[45rem] rounded-full bg-[#00B8D4]/[0.04] blur-[180px]" />
-        <div className="absolute left-1/2 top-[260rem] h-[55rem] w-[55rem] -translate-x-1/2 rounded-full bg-amber-500/[0.08] blur-[180px]" />
+        <div className="absolute left-1/2 top-[260rem] h-[55rem] w-[55rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-500/[0.08] via-[#E53935]/[0.04] to-transparent blur-[180px]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,transparent_20%,#000000_85%)]" />
         <div className="absolute inset-0 opacity-[0.02] [background-image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:80px_80px]" />
       </div>
 
       <nav className="fixed inset-x-0 top-0 z-50 border-b border-amber-400/20 bg-[#14100C]/85 shadow-[0_10px_35px_rgba(0,0,0,0.7)] backdrop-blur-2xl" aria-label="Main navigation">
-        <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/30 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black shadow-[0_1px_15px_rgba(255,184,0,0.3)]">
+        <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/30 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black shadow-[0_1px_15px_rgba(255,184,0,0.3),0_1px_25px_rgba(229,57,53,0.15)]">
           <span>Founding Artist Beta — working software, still being refined</span>
           <a href="#waitlist" className="underline decoration-black/40 underline-offset-2 hover:decoration-black">
             Join the waitlist
@@ -365,7 +369,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               target={previewEnabled ? '_blank' : undefined}
               rel={previewEnabled ? 'noopener noreferrer' : undefined}
               onClick={() => trackPreview('nav')}
-              className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-4 py-2.5 text-xs font-black text-black shadow-[0_0_20px_rgba(255,184,0,0.4)] transition-all hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(255,184,0,0.65)] md:px-5"
+              className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-4 py-2.5 text-xs font-black text-black shadow-[0_0_20px_rgba(255,184,0,0.45),0_0_35px_rgba(229,57,53,0.25)] transition-all hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(255,184,0,0.65),0_0_45px_rgba(229,57,53,0.4)] md:px-5"
             >
               <span>{previewEnabled ? (loading ? 'Verifying…' : user ? 'Resume session' : 'Enter preview') : 'Get access'}</span>
               <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
