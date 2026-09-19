@@ -33,6 +33,7 @@ export const AgentSidebar: React.FC<AgentSidebarProps> = ({ activeTab, setActive
                         <button
                             key={id}
                             onClick={() => setActiveTab(id)}
+                            data-testid={`agent-tab-${id}`}
                             className={`p-3 rounded-xl transition-all duration-200 group relative ${activeTab === id
                                 ? `${getColorForModule('agent').bg.replace('/10', '')} text-white shadow-lg`
                                 : 'text-slate-400 hover:text-white hover:bg-slate-800'

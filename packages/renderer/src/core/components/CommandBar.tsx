@@ -102,6 +102,7 @@ function CommandBar() {
             {shouldShow && (
                 <motion.div
                     key="standalone-command-bar"
+                    data-testid="command-bar"
                     initial={isCommandBarDetached ? false : { opacity: 0, scale: 0.95, y: 20 }}
                     variants={variants}
                     animate={isCommandBarDetached ? "detached" : "docked"}

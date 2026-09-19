@@ -3,10 +3,10 @@ import { test, expect } from './fixtures/auth';
 /**
  * Hardened Distribution Workflow E2E Tests
  * 
- * This test suite is designed for "Zero Errors" CI runs:
- * 1. Mocks all external Firestore and Cloud Function dependencies.
- * 2. Mocks the Electron IPC layer for SFTP and credentials.
- * 3. Uses robust locator strategies with explicit timeouts.
+ * Validates distributor connection flow, metadata QC validation,
+ * and release creation modal sequences with zero bypass workarounds.
+ *
+ * Run: npx playwright test e2e/hardened-distribution.spec.ts
  */
 
 test.describe('Distribution Module Hardened Suite', () => {
@@ -31,84 +31,87 @@ test.describe('Distribution Module Hardened Suite', () => {
             });
         });
 
-        console.log('[E2E] Navigating to /distribution...');
         await page.goto('/distribution', { waitUntil: 'domcontentloaded' });
-        await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 20_000 });
-        console.log('[E2E] Dashboard loaded.');
+        await expect(page.getByTestId('distribution-dashboard')).toBeVisible({ timeout: 20_000 });
     });
 
     test('Core distribution tabs are accessible', async ({ authedPage: page }) => {
-        await expect(page.locator('[data-testid="distro-tab-new"]')).toBeVisible();
-        await expect(page.locator('[data-testid="distro-tab-catalogue"]')).toBeVisible();
-        await expect(page.locator('[data-testid="distro-tab-brain"]')).toBeVisible();
+        const dashboard = page.getByTestId('distribution-dashboard');
+        await expect(dashboard.getByTestId('distro-tab-new')).toBeVisible();
+        await expect(dashboard.getByTestId('distro-tab-catalogue')).toBeVisible();
+        await expect(dashboard.getByTestId('distro-tab-brain')).toBeVisible();
     });
 
     test('Distributor connection flow works end-to-end', async ({ authedPage: page }) => {
-        console.log('[E2E] Opening Catalogue...');
-        await page.locator('[data-testid="distro-tab-catalogue"]').click();
-        await expect(page.locator('[data-testid="distro-content-catalogue"]')).toBeVisible({ timeout: 10_000 });
+        // Open Catalogue
+        await page.getByTestId('distro-tab-catalogue').click();
+        const content = page.getByTestId('distro-content-catalogue');
+        await expect(content).toBeVisible({ timeout: 10_000 });
 
-        console.log('[E2E] Locating connection grid...');
-        const grid = page.locator('[data-testid="distributors-grid"]');
+        // Connection grid
+        const grid = page.getByTestId('distributors-grid');
         await expect(grid).toBeVisible({ timeout: 15_000 });
 
-        console.log('[E2E] Clicking Authorize for DistroKid...');
-        const distBtn = page.locator('[data-testid="connect-button-distrokid"]').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        // Authorize DistroKid
+        const distBtn = page.getByTestId('connect-button-distrokid');
         await expect(distBtn).toBeVisible({ timeout: 10_000 });
         await distBtn.click();
 
-        console.log('[E2E] Waiting for Authorize modal...');
-        const modal = page.locator('[data-testid="connect-distributor-modal"]').first(); // bypass-strict: select active panel/modal layer among stacked containers
+        // Connect modal
+        const modal = page.getByTestId('connect-distributor-modal');
         await expect(modal).toBeVisible({ timeout: 15_000 });
 
-        console.log('[E2E] Filling account details...');
-        await page.locator('[data-testid="distro-auth-username"]').fill('e2e-test-user');
-        await page.locator('[data-testid="distro-auth-password"]').fill('e2e-password');
+        // Fill credentials
+        await modal.getByTestId('distro-auth-username').fill('e2e-test-user');
+        await modal.getByTestId('distro-auth-password').fill('e2e-password');
 
-        console.log('[E2E] Finalizing connection...');
-        const finalizeBtn = page.locator('[data-testid="distro-finalize-connection"]');
+        // Finalize
+        const finalizeBtn = modal.getByTestId('distro-finalize-connection');
         await expect(finalizeBtn).toBeVisible();
         await finalizeBtn.click();
 
-        console.log('[E2E] Expecting modal to close...');
-        await expect(modal).not.toBeVisible({ timeout: 20_000 });
-        console.log('[E2E] Connection successful, modal closed.');
+        // Expect modal to close
+        await expect(modal).toHaveCount(0, { timeout: 20_000 });
     });
 
     test('Metadata QC validation triggers and completes', async ({ authedPage: page }) => {
-        console.log('[E2E] Opening Brain tab...');
-        await page.locator('[data-testid="distro-tab-brain"]').click();
-        await expect(page.locator('[data-testid="distro-content-brain"]')).toBeVisible({ timeout: 10_000 });
+        // Open Brain tab
+        await page.getByTestId('distro-tab-brain').click();
+        const qcContent = page.getByTestId('distro-content-brain');
+        await expect(qcContent).toBeVisible({ timeout: 10_000 });
 
-        console.log('[E2E] Pre-filling QC metadata...');
-        await page.locator('[data-testid="qc-input-title"]').fill('E2E Test Track');
-        await page.locator('[data-testid="qc-input-artist"]').fill('E2E Test Artist');
+        // Fill QC metadata
+        await qcContent.getByTestId('qc-input-title').fill('E2E Test Track');
+        await qcContent.getByTestId('qc-input-artist').fill('E2E Test Artist');
 
-        console.log('[E2E] Starting QC analysis...');
-        const runBtn = page.locator('[data-testid="qc-run-analysis"]').first(); // bypass-strict: candidate element present across multiple viewport containers
+        // Start QC analysis
+        const runBtn = qcContent.getByTestId('qc-run-analysis');
         await expect(runBtn).toBeVisible({ timeout: 10_000 });
         await runBtn.click();
 
-        console.log('[E2E] Waiting for QC passed badge...');
-        const passedBadge = page.locator('[data-testid="qc-passed-badge"]').first(); // bypass-strict: candidate element present across multiple viewport containers
+        // Wait for QC passed badge
+        const passedBadge = qcContent.getByTestId('qc-passed-badge');
         await expect(passedBadge).toBeVisible({ timeout: 30_000 });
-        console.log('[E2E] QC workflow verified.');
     });
 
     test('Create Release sequence opens release modal', async ({ authedPage: page }) => {
-        console.log('[E2E] Opening New Release tab...');
-        await page.locator('[data-testid="distro-tab-new"]').click();
-        await expect(page.locator('[data-testid="distro-content-new"]')).toBeVisible({ timeout: 10_000 });
+        // Open New Release tab
+        await page.getByTestId('distro-tab-new').click();
+        const content = page.getByTestId('distro-content-new');
+        await expect(content).toBeVisible({ timeout: 10_000 });
 
-        console.log('[E2E] Clicking Create Release...');
-        const createBtn = page.locator('[data-testid="releases-submit-button"]').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        // Click Submit Release
+        const createBtn = content.getByTestId('releases-submit-button');
         await expect(createBtn).toBeVisible({ timeout: 10_000 });
         await createBtn.click();
 
-        console.log('[E2E] Verifying Metadata modal visibility...');
-        const metadataModal = page.locator('[data-testid="metadata-modal"]').first(); // bypass-strict: select active panel/modal layer among stacked containers
-        await expect(metadataModal).toBeVisible({ timeout: 15_000 });
-        await expect(page.locator('[data-testid="release-title-input"]')).toBeVisible();
-        console.log('[E2E] Release sequence verified.');
+        // Verify modal opened
+        const modal = page.getByTestId('metadata-modal');
+        await expect(modal).toBeVisible({ timeout: 15_000 });
+        await expect(modal.getByTestId('release-title-input')).toBeVisible({ timeout: 10_000 });
+
+        // Close modal
+        await modal.getByRole('button', { name: 'Close modal' }).click();
+        await expect(modal).toHaveCount(0);
     });
 });

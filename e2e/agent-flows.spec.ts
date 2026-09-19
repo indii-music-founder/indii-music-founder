@@ -14,8 +14,6 @@ test.describe('Agent Dashboard', () => {
     test.use({ viewport: { width: 1280, height: 800 } }); // Desktop only — mobile shows warning
 
     test.beforeEach(async ({ authedPage: page }) => {
-        // Redundant Guest Login logic removed as it's handled by authedPage fixture
-
         // Mock Firestore agent_traces collection
         await page.route('**/firestore.googleapis.com/**/agent_traces**', async route => {
             await route.fulfill({
@@ -26,157 +24,89 @@ test.describe('Agent Dashboard', () => {
         });
 
         console.log('[AGENT TEST] Navigating to Agent module...');
-        // Navigate directly to agent module for speed and stability
         await page.goto('/agent', { waitUntil: 'domcontentloaded' });
 
-        console.log('[AGENT TEST] Waiting for navigation item...');
-        // Wait for the specific module container to be rendered
-        await page.locator('[data-testid="nav-item-agent"]').first().waitFor({ state: 'visible', timeout: 15_000 }); // bypass-strict: navigation element rendered across desktop and mobile layouts
-
-        console.log('[AGENT TEST] Checking for "The Scout" content...');
-        // "The Scout" is the default view in Agent module
-        await page.locator('h1:has-text("The Scout")').waitFor({ state: 'visible', timeout: 15_000 });
+        // Wait for scout content container
+        await page.locator('[data-testid="agent-content-scout"]').waitFor({ state: 'visible', timeout: 20_000 });
+        await expect(page.locator('h1:has-text("The Scout")')).toBeVisible({ timeout: 15_000 });
     });
 
     test('agent module loads without crashing on desktop viewport', async ({ authedPage: page }) => {
-        await expect(page.locator('#root')).toBeVisible();
-        // Should NOT show mobile warning on desktop
-        const mobileWarning = page.locator('text=mobile only, text=desktop required').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
-        const warningVisible = await mobileWarning.isVisible().catch(() => false);
-        expect(warningVisible).toBe(false);
+        await expect(page.locator('[data-testid="agent-content-scout"]')).toBeVisible();
+        await expect(page.locator('h1:has-text("The Scout")')).toBeVisible();
+        await expect(page.locator('text=mobile only, text=desktop required')).not.toBeVisible();
     });
 
     test('agent dashboard tab navigation works and shows distinct content', async ({ authedPage: page }) => {
-        // Try clicking available tabs and verify content changes
         const tabs = [
-            { name: 'scout', testid: 'scout-tab-content' },
-            { name: 'browser', testid: 'browser-tab-content' },
-            { name: 'campaigns', testid: 'campaigns-tab-content' },
-            { name: 'inbox', testid: 'inbox-tab-content' },
+            { id: 'browser', contentId: 'agent-content-browser' },
+            { id: 'campaigns', contentId: 'agent-content-campaigns' },
+            { id: 'inbox', contentId: 'agent-content-inbox' },
+            { id: 'scout', contentId: 'agent-content-scout' },
         ];
 
         for (const tab of tabs) {
-            const tabEl = page.locator(`[role="tab"]:has-text("${tab.name}"), button:has-text("${tab.name}")`).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
-            const tabVisible = await tabEl.isVisible().catch(() => false);
+            const tabBtn = page.locator(`[data-testid="agent-tab-${tab.id}"]`);
+            await expect(tabBtn).toBeVisible({ timeout: 10_000 });
+            await tabBtn.click();
 
-            if (tabVisible) {
-                await tabEl.click();
-                await page.waitForTimeout(1_000);
-
-                // Verify tab is now marked as active
-                const activeTab = tabEl.evaluate((el) => el.getAttribute('aria-selected') === 'true' || el.classList.contains('active'));
-                if (activeTab) {
-                    console.log(`✓ Tab "${tab.name}" is active after click`);
-                }
-
-                // App should remain stable after tab switch
-                await expect(page.locator('#root')).toBeVisible();
-            }
+            const content = page.locator(`[data-testid="${tab.contentId}"]`);
+            await expect(content).toBeVisible({ timeout: 10_000 });
         }
     });
 
     test('scout tab shows map or venue interface', async ({ authedPage: page }) => {
-        const scoutTab = page.locator('[role="tab"]:has-text("Scout"), button:has-text("Scout")').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
-        const scoutVisible = await scoutTab.isVisible().catch(() => false);
+        const scoutTab = page.locator('[data-testid="agent-tab-scout"]');
+        await scoutTab.click();
 
-        if (scoutVisible) {
-            await scoutTab.click();
-            await page.waitForTimeout(1_000);
-
-            // Should show some form of scout UI
-            const scoutContent = page.locator(
-                '[class*="scout"], [class*="map"], [class*="venue"], canvas'
-            ).first(); // bypass-strict: target first visible element in DOM matching selector
-            // Don't assert visibility — just confirm no crash
-            await expect(page.locator('#root')).toBeVisible();
-        }
+        await expect(page.locator('[data-testid="agent-content-scout"]')).toBeVisible();
+        await expect(page.locator('[data-testid="scout-controls"]')).toBeVisible();
+        await expect(page.locator('[data-testid="deploy-scout-btn"]')).toBeVisible();
     });
 
     test('campaigns and inbox tabs show stub or content (regression guard)', async ({ authedPage: page }) => {
-        for (const tabName of ['Campaigns', 'Inbox']) {
-            const tab = page.locator(`button:has-text("${tabName}"), [role="tab"]:has-text("${tabName}")`).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
-            const tabVisible = await tab.isVisible().catch(() => false);
+        // Test Campaigns tab
+        await page.locator('[data-testid="agent-tab-campaigns"]').click();
+        await expect(page.locator('[data-testid="agent-content-campaigns"]')).toBeVisible({ timeout: 10_000 });
 
-            if (tabVisible) {
-                await tab.click();
-                await page.waitForTimeout(800);
-                // App must not crash — either shows content or "coming soon"
-                await expect(page.locator('#root')).toBeVisible();
-            }
-        }
+        // Test Inbox tab
+        await page.locator('[data-testid="agent-tab-inbox"]').click();
+        await expect(page.locator('[data-testid="agent-content-inbox"]')).toBeVisible({ timeout: 10_000 });
     });
 
     test('agent responds to user messages with streaming response', async ({ authedPage: page }) => {
-        // Navigate to chat tab
-        const chatTab = page.locator('[role="tab"]:has-text("chat"), button:has-text("chat")').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
-        const chatVisible = await chatTab.isVisible().catch(() => false);
-
-        if (!chatVisible) {
-            console.log('[AGENT] Chat tab not available, skipping message test');
-            return;
-        }
-
+        const chatTab = page.locator('[data-testid="agent-tab-chat"]');
         await chatTab.click();
-        await page.waitForTimeout(1_000);
+        await expect(page.locator('[data-testid="agent-content-chat"]')).toBeVisible({ timeout: 10_000 });
 
-        // Find message input field
-        const messageInput = page.locator('textarea, input[placeholder*="message" i], input[placeholder*="ask" i]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
-        if (!await messageInput.isVisible().catch(() => false)) {
-            console.log('[AGENT] Message input not found');
-            return;
-        }
+        const messageInput = page.locator('[data-testid="agent-content-chat"]').getByTestId('main-prompt-input');
+        await expect(messageInput).toBeVisible({ timeout: 10_000 });
 
-        // Send a test message
         await messageInput.fill('What are my upcoming releases?');
-        const sendBtn = page.locator('button:has-text("Send"), button[aria-label*="send" i]').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        const sendBtn = page.locator('[data-testid="agent-content-chat"]').getByTestId('command-bar-run-btn');
         if (await sendBtn.isVisible()) {
             await sendBtn.click();
         } else {
             await messageInput.press('Enter');
         }
 
-        // Wait for response message to appear
-        const responseMsg = page.locator('[data-testid="agent-response"], [class*="message"]:has-text("releases")').first(); // bypass-strict: candidate element present across multiple viewport containers
-        const hasResponse = await responseMsg.isVisible({ timeout: 10_000 }).catch(() => false);
-
-        if (hasResponse) {
-            console.log('✓ Agent responded to user message');
-        } else {
-            console.log('[AGENT] Response message not detected (may be mocked or loading)');
-        }
-
-        // App should remain stable
-        await expect(page.locator('#root')).toBeVisible();
+        const userMsg = page.locator('[data-testid="agent-content-chat"]').getByTestId('user-message');
+        await expect(userMsg).toBeVisible({ timeout: 15_000 });
     });
 
     test('agent specializes tasks by routing to appropriate agent', async ({ authedPage: page }) => {
-        // This tests the hub-and-spoke architecture
-        const chatTab = page.locator('[role="tab"]:has-text("chat"), button:has-text("chat")').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
-        if (!await chatTab.isVisible().catch(() => false)) {
-            console.log('[AGENT] Chat tab not available');
-            return;
-        }
-
+        const chatTab = page.locator('[data-testid="agent-tab-chat"]');
         await chatTab.click();
-        await page.waitForTimeout(1_000);
+        await expect(page.locator('[data-testid="agent-content-chat"]')).toBeVisible({ timeout: 10_000 });
 
-        // Send a distribution-specific task
-        const messageInput = page.locator('textarea, input[placeholder*="message" i]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
-        if (await messageInput.isVisible()) {
-            await messageInput.fill('I need to submit my album to DistroKid');
-            await messageInput.press('Enter');
-            await page.waitForTimeout(2_000);
+        const messageInput = page.locator('[data-testid="agent-content-chat"]').getByTestId('main-prompt-input');
+        await expect(messageInput).toBeVisible({ timeout: 10_000 });
 
-            // Should delegate to distribution/legal agent
-            const distributionRef = page.locator('text=/distribution|ddex|distrokid|distributor/i').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
-            const delegated = await distributionRef.isVisible().catch(() => false);
+        await messageInput.fill('I need to submit my album to DistroKid');
+        await messageInput.press('Enter');
 
-            if (delegated) {
-                console.log('✓ Agent correctly routed distribution task');
-            }
-        }
-
-        await expect(page.locator('#root')).toBeVisible();
+        const userMsg = page.locator('[data-testid="agent-content-chat"]').getByTestId('user-message');
+        await expect(userMsg).toBeVisible({ timeout: 15_000 });
     });
 });
 
@@ -184,41 +114,24 @@ test.describe('Agent Mobile Warning', () => {
     test.use({ viewport: { width: 375, height: 812 } }); // iPhone SE
 
     test('agent module shows mobile warning on small viewports', async ({ authedPage: page }) => {
-        // IMPORTANT: authedPage fixture only sets up mocks — it does NOT navigate.
-        // Navigate directly to the agent route.
         await page.goto('/agent', { waitUntil: 'domcontentloaded' });
 
-        // Root must always be present once React mounts
-        await page.waitForSelector('#root', { state: 'visible', timeout: 20_000 });
+        const remoteLoc = page.getByRole('heading', { name: /indiiCONTROLLER|indiiREMOTE/i });
+        const warningLoc = page.getByText(/requires a larger screen|wider screen|desktop/i);
+        const containerLoc = page.locator('[data-testid="app-container"]');
 
-        // On a 375px phone viewport, App.tsx auto-routes to 'mobile-remote' via
-        // the isAnyPhone useEffect. Acceptable outcomes:
-        //   1. MobileRemote rendered ("indiiCONTROLLER" header)
-        //   2. AgentDashboard MobileOnlyWarning (requires larger screen text)
-        //   3. app-container present (app stable, content loading)
-        const remoteLoc = page.locator('h1:has-text("indiiCONTROLLER"), h1:has-text("indiiREMOTE")').first(); // bypass-strict: heading text rendered across responsive layout breakpoints
-        const warningLoc = page.locator('text=/requires a larger screen|wider screen|desktop/i').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
-        const containerLoc = page.locator('[data-testid="app-container"]').first(); // bypass-strict: candidate element present across multiple viewport containers
-
-        // Wait up to 20s for one of the valid outcomes to appear
         await Promise.race([
             remoteLoc.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => { }),
             warningLoc.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => { }),
             containerLoc.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => { }),
         ]);
 
-        const [remoteSeen, warningSeen, containerSeen] = await Promise.all([
-            remoteLoc.isVisible(),
-            warningLoc.isVisible(),
-            containerLoc.isVisible(),
-        ]);
+        const remoteSeen = await remoteLoc.isVisible().catch(() => false);
+        const warningSeen = await warningLoc.isVisible().catch(() => false);
+        const containerSeen = await containerLoc.isVisible().catch(() => false);
 
         console.log(`[AGENT MOBILE] mobileRemote=${remoteSeen} mobileWarning=${warningSeen} appContainer=${containerSeen}`);
 
-        // App must not have crashed — root always visible
-        await expect(page.locator('#root')).toBeVisible();
-
-        // At least one mobile-appropriate content indicator must be present
         expect(remoteSeen || warningSeen || containerSeen,
             'Expected mobile-remote, a mobile warning, or app-container to be visible on phone viewport'
         ).toBe(true);

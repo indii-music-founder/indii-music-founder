@@ -37,7 +37,7 @@ export const SubscriptionTab = () => {
     const currentTierConfig = getTierConfig(currentTier);
 
     return (
-        <div className="space-y-8 pb-20">
+        <div data-testid="subscription-tab-content" className="space-y-8 pb-20">
             {/* Active Subscription Summary */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <motion.div
@@ -210,6 +210,7 @@ export const SubscriptionTab = () => {
                             </div>
 
                             <button
+                                data-testid={`tier-upgrade-${tierId}`}
                                 disabled={isCurrent || loading}
                                 onClick={() => createCheckoutSession(tierId)}
                                 className={`

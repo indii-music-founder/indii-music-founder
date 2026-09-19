@@ -268,7 +268,7 @@ const AgentDashboard: React.FC = () => {
                     <div className="flex-1 flex flex-col overflow-hidden relative">
 
                         {activeTab === 'scout' && (
-                            <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-8">
+                            <div data-testid="agent-content-scout" className="absolute inset-0 overflow-y-auto custom-scrollbar p-8">
                                 <div className="max-w-7xl mx-auto space-y-10">
 
                                     {/* Hero Section */}
@@ -336,13 +336,13 @@ const AgentDashboard: React.FC = () => {
                         )}
 
                         {activeTab === 'browser' && (
-                            <div className="h-full bg-[--background]">
+                            <div data-testid="agent-content-browser" className="h-full bg-[--background]">
                                 <BrowserAgentTester />
                             </div>
                         )}
 
                         {activeTab === 'chat' && (
-                            <div className="flex flex-col h-full overflow-hidden">
+                            <div data-testid="agent-content-chat" className="flex flex-col h-full overflow-hidden">
                                 {/* Specialist selector toolbar */}
                                 <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-800 shrink-0">
                                     <span className="text-xs text-slate-500 font-medium">{t('agent.chat.routeTo')}</span>
@@ -395,13 +395,13 @@ const AgentDashboard: React.FC = () => {
                         )}
 
                         {activeTab === 'tasks' && (
-                            <div className="h-full overflow-hidden">
+                            <div data-testid="agent-content-tasks" className="h-full overflow-hidden">
                                 <TaskTracker />
                             </div>
                         )}
                         
                         {activeTab === 'loops' && (
-                            <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-8 bg-[--background]">
+                            <div data-testid="agent-content-loops" className="absolute inset-0 overflow-y-auto custom-scrollbar p-8 bg-[--background]">
                                 <div className="max-w-4xl mx-auto space-y-6">
                                     <h1 className="text-2xl font-bold text-white tracking-tight">Autonomous Agent Loops</h1>
                                     <AgentLoopMonitor />
@@ -418,13 +418,17 @@ const AgentDashboard: React.FC = () => {
                         )}
 
                         {activeTab === 'campaigns' && (
-                            <CampaignsTab />
+                            <div data-testid="agent-content-campaigns" className="h-full relative">
+                                <CampaignsTab />
+                            </div>
                         )}
 
                         {activeTab === 'inbox' && (
-                            <React.Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-sm text-slate-500">{t('agent.inbox.loading')}</div></div>}>
-                                <InboxTabNew />
-                            </React.Suspense>
+                            <div data-testid="agent-content-inbox" className="h-full relative">
+                                <React.Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-sm text-slate-500">{t('agent.inbox.loading')}</div></div>}>
+                                    <InboxTabNew />
+                                </React.Suspense>
+                            </div>
                         )}
 
                     </div>

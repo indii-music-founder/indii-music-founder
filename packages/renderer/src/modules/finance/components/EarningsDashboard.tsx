@@ -133,7 +133,7 @@ export const EarningsDashboard: React.FC = () => {
     );
 
     if (!earningsSummary) return (
-        <div className="flex flex-col items-center justify-center h-96 bg-black/20 rounded-3xl border border-white/5 m-8 border-dashed">
+        <div data-testid="earnings-empty-state" className="flex flex-col items-center justify-center h-96 bg-black/20 rounded-3xl border border-white/5 m-8 border-dashed">
             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-gray-600 mb-4">
                 <DollarSign size={24} />
             </div>
@@ -195,7 +195,7 @@ export const EarningsDashboard: React.FC = () => {
                     <TabsTrigger value="overview" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 rounded-lg">Overview</TabsTrigger>
                     <TabsTrigger value="platforms" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 rounded-lg">By Platform</TabsTrigger>
                     <TabsTrigger value="releases" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 rounded-lg">By Release</TabsTrigger>
-                    <TabsTrigger value="subscription" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 rounded-lg">Subscription</TabsTrigger>
+                    <TabsTrigger value="subscription" data-testid="earnings-subtab-subscription" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 rounded-lg">Subscription</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-6 outline-none">

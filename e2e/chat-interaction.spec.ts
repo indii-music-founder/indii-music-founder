@@ -48,83 +48,42 @@ test.describe('Chat / CommandBar Interaction', () => {
         });
 
         await page.goto('/', { waitUntil: 'domcontentloaded' });
-        await page.waitForSelector('#root', { timeout: 15_000 });
-        await page.waitForTimeout(2_000);
+        await page.locator('[data-testid="dev-bypass-button"]').click({ timeout: 10_000 }).catch(() => { });
+        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        await expect(input).toBeVisible({ timeout: 30_000 });
     });
 
     test('prompt input renders and accepts keyboard input', async ({ authedPage: page }) => {
-        const input = page
-            .locator('[data-testid="prompt-input"], textarea[placeholder], [role="textbox"]')
-            .first(); // bypass-strict: target first visible element in DOM matching selector
+        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        await expect(input).toBeVisible({ timeout: 15_000 });
 
-        const isVisible = await input.isVisible().catch(() => false);
-        if (!isVisible) {
-            // CommandBar may be in a different state — try clicking to open it
-            const commandBar = page.locator('[class*="command"], [class*="prompt"]').first(); // bypass-strict: target first visible element in DOM matching selector
-            await commandBar.click().catch(() => { });
-            await page.waitForTimeout(500);
-        }
-
-        const inputRetry = page
-            .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first(); // bypass-strict: target first visible element in DOM matching selector
-
-        const retryVisible = await inputRetry.isVisible().catch(() => false);
-        if (!retryVisible) {
-            // Cannot find input — pass test with warning
-            console.log('Warning: prompt input not found, skipping interaction checks');
-            return;
-        }
-
-        await inputRetry.click({ force: true });
-        await inputRetry.fill('hello indii');
-
-        const value = await inputRetry.inputValue().catch(() =>
-            inputRetry.textContent()
-        );
-        expect(value).toContain('hello');
+        await input.fill('hello indii');
+        await expect(input).toHaveValue('hello indii');
     });
 
     test('submitting empty prompt is rejected gracefully', async ({ authedPage: page }) => {
-        const input = page
-            .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first(); // bypass-strict: target first visible element in DOM matching selector
+        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        await expect(input).toBeVisible({ timeout: 15_000 });
 
-        const isVisible = await input.isVisible().catch(() => false);
-        if (!isVisible) {
-            test.skip();
-            return;
-        }
-
-        // Ensure field is empty
         await input.fill('');
-
-        // Try pressing Enter on empty input — should not crash
         await input.press('Enter');
-        await page.waitForTimeout(500);
 
-        // App must still be alive
-        await expect(page.locator('#root')).toBeVisible();
+        // Input should still be empty and visible (no crash, no phantom submission)
+        await expect(input).toBeVisible();
+        await expect(input).toHaveValue('');
     });
+
     test('app remains stable during rapid input changes', async ({ authedPage: page }) => {
-        const input = page
-            .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first(); // bypass-strict: target first visible element in DOM matching selector
+        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        await expect(input).toBeVisible({ timeout: 15_000 });
 
-        const isVisible = await input.isVisible().catch(() => false);
-        if (!isVisible) {
-            test.skip();
-            return;
-        }
-
-        // Rapid typing and clearing
         for (let i = 0; i < 5; i++) {
             await input.fill(`test message ${i}`);
-            await page.waitForTimeout(100);
+            await expect(input).toHaveValue(`test message ${i}`);
             await input.fill('');
+            await expect(input).toHaveValue('');
         }
 
-        // App should still be alive
-        await expect(page.locator('#root')).toBeVisible();
+        await expect(input).toBeVisible();
     });
 });

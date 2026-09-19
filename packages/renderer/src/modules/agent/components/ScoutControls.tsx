@@ -23,7 +23,7 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
     isScanning
 }) => {
     return (
-        <div className="relative group">
+        <div data-testid="scout-controls" className="relative group">
             <div className="absolute -inset-1 bg-dept-creative/20 rounded-2xl blur-lg opacity-50 group-hover:opacity-100 transition duration-1000"></div>
             <div className="relative bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 p-1.5 rounded-2xl shadow-2xl flex items-center gap-2">
 

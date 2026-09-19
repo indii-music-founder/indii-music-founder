@@ -64,13 +64,13 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
         });
 
         await page.goto('/', { waitUntil: 'domcontentloaded' });
-        await page.waitForSelector('#root', { timeout: 15_000 });
         await page.locator('[data-testid="dev-bypass-button"]').click({ timeout: 10_000 }).catch(() => { });
-        await page.waitForSelector('[data-testid="main-prompt-input"]', { state: 'visible', timeout: 30_000 });
+        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        await expect(input).toBeVisible({ timeout: 30_000 });
     });
 
     test('specialist reply renders in the chat', async ({ authedPage: page }) => {
-        const input = page.locator('[data-testid="main-prompt-input"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
+        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
         await input.waitFor({ state: 'visible', timeout: 15_000 });
         await input.click({ force: true });
         await input.fill('Help me launch my new album');

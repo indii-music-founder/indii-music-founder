@@ -20,7 +20,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
     const maxValue = Math.max(...data.map(d => d.value), 1); // Avoid division by zero
 
     return (
-        <div className="flex flex-col h-full">
+        <div data-testid="earnings-chart" className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-white">{title}</h3>
                 <div className="flex items-center gap-2">

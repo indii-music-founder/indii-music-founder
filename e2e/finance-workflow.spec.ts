@@ -25,16 +25,14 @@ test.describe('Finance Module', () => {
         });
 
         console.log('[FINANCE TEST] Navigating to Finance module...');
-        // Direct navigation to Finance module for stability
         await page.goto('/finance', { waitUntil: 'domcontentloaded' });
 
-        console.log('[FINANCE TEST] Waiting for finance-specific content...');
-        // Wait for finance-specific content
-        await page.locator('h1, h2, [data-testid="finance-header"], [data-testid="finance-tab-expenses"]').first().waitFor({ state: 'visible', timeout: 30_000 }); // bypass-strict: navigation element rendered across desktop and mobile layouts
+        console.log('[FINANCE TEST] Waiting for finance header...');
+        await page.locator('[data-testid="finance-header"]').waitFor({ state: 'visible', timeout: 30_000 });
     });
 
     test('finance module loads without crashing', async ({ authedPage: page }) => {
-        await expect(page.getByRole('heading', { name: /Finance/i }).first()).toBeVisible({ timeout: 15_000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
+        await expect(page.locator('[data-testid="finance-header"] h1')).toContainText(/Finance/i);
     });
 
     test('should switch between Finance tabs', async ({ authedPage: page }) => {
@@ -55,13 +53,9 @@ test.describe('Finance Module', () => {
     });
 
     test('EarningsDashboard summary is visible on selecting Earnings tab', async ({ authedPage: page }) => {
-        // Select Earnings tab first
         await page.locator('[data-testid="finance-tab-earnings"]').click();
 
-        const chart = page.locator('[data-testid="earnings-chart"]');
-        // Match the heading in the tabpanel (No Reports Found) or the actual chart
-        const emptyState = page.getByRole('heading', { name: /No Reports Found/i });
-
-        await expect(chart.or(emptyState)).toBeVisible({ timeout: 20_000 });
+        const chartOrEmpty = page.locator('[data-testid="earnings-chart"], [data-testid="earnings-empty-state"]');
+        await expect(chartOrEmpty).toBeVisible({ timeout: 20_000 });
     });
 });
