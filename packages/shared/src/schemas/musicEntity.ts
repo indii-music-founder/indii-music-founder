@@ -111,6 +111,63 @@ export const MusicIdentifierSchema = z.object({
 }).strict();
 export type MusicIdentifier = z.infer<typeof MusicIdentifierSchema>;
 
+
+export const RightsClaimTypeSchema = z.enum([
+  'MASTER',
+  'COMPOSITION',
+  'PUBLISHING',
+  'PERFORMANCE',
+  'MECHANICAL',
+  'SYNC',
+  'OTHER',
+]);
+export type RightsClaimType = z.infer<typeof RightsClaimTypeSchema>;
+
+export const RightsClaimStatusSchema = z.enum([
+  'ASSERTED',
+  'CONFIRMED',
+  'DISPUTED',
+  'WITHDRAWN',
+  'UNKNOWN',
+]);
+export type RightsClaimStatus = z.infer<typeof RightsClaimStatusSchema>;
+
+/**
+ * Canonical rights-claim base model.
+ *
+ * A claim is an assertion about rights in a canonical entity, not proof of
+ * ownership. Provenance/evidence determine how much authority indii may assign
+ * to it. Weight is deliberately modeled as a generic non-negative number:
+ * RDR-N 1.5 introduced Weight on rights-claim/request composites, but indii
+ * does not reinterpret that value as a percentage unless an adapter/profile
+ * explicitly defines that meaning.
+ */
+export const RightsClaimSchema = z.object({
+  schemaVersion: z.literal('rights-claim.v1'),
+  id: IdSchema,
+  targetEntityId: IdSchema,
+  claimantEntityId: IdSchema.optional(),
+  type: RightsClaimTypeSchema,
+  status: RightsClaimStatusSchema.default('ASSERTED'),
+  sharePercentage: z.number().min(0).max(100).optional(),
+  weight: z.number().finite().nonnegative().optional(),
+  territoryCodes: z.array(z.string().trim().min(1).max(32)).max(300).default([]),
+  validFrom: z.string().date().optional(),
+  validThrough: z.string().date().optional(),
+  provenance: ProvenanceSchema,
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+}).strict().superRefine((claim, ctx) => {
+  if (claim.validFrom && claim.validThrough && claim.validThrough < claim.validFrom) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['validThrough'],
+      message: 'validThrough cannot be earlier than validFrom.',
+    });
+  }
+});
+export type RightsClaim = z.infer<typeof RightsClaimSchema>;
+
 const CanonicalEntityBaseSchema = z.object({
   schemaVersion: z.literal('canonical-music-entity.v1'),
   id: IdSchema,
