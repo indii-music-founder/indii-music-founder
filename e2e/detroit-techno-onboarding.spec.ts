@@ -780,7 +780,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await page.locator('[data-testid="distro-tab-catalogue"]').click();
             await expect(page.locator('[data-testid="distributors-grid"]')).toBeVisible({ timeout: 10000 });
 
-            const connectBtn = page.locator('[data-testid="connect-button-distrokid"]').or(page.locator('[data-testid="distributor-card-connect"]')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+            const connectBtn = page.locator('[data-testid="connect-button-distrokid"]');
             await expect(connectBtn).toBeVisible({ timeout: 10000 });
             await connectBtn.click({ force: true });
 
@@ -810,7 +810,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await page.locator('[data-testid="distro-tab-new"]').click();
             await page.waitForTimeout(1000);
             
-            const createReleaseBtn = page.locator('[data-testid="releases-submit-button"]').or(page.locator('[data-testid="create-release-btn"]')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+            const createReleaseBtn = page.locator('[data-testid="releases-submit-button"]');
             await expect(createReleaseBtn).toBeVisible({ timeout: 10000 });
             await createReleaseBtn.click({ force: true });
 

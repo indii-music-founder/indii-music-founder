@@ -62,6 +62,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
+            data-testid="entry-overlay"
             className="w-full mt-12 mb-8 max-w-3xl mx-auto relative group/overlay"
         >
             <div className="relative p-6 rounded-3xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl shadow-2xl overflow-hidden group">
@@ -124,7 +125,7 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                                         onChange={(e) => setInput(e.target.value)}
                                         placeholder="Ask me anything — stats, royalties, or start a new project..."
                                         className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-5 pr-14 text-sm text-white placeholder:text-white/20 focus:outline-hidden focus:border-emerald-500/50 focus:bg-white/[0.05] transition-all"
-                                        data-testid="main-prompt-input"
+                                        data-testid="entry-overlay-prompt-input"
                                     />
                                     <button
                                         type="submit"

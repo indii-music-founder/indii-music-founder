@@ -63,6 +63,95 @@ function getModifiedFiles() {
   }
 }
 
+function stripCommentsAndStrings(code) {
+  let result = '';
+  let inSingle = false;
+  let inDouble = false;
+  let inTemplate = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  for (let i = 0; i < code.length; i++) {
+    const ch = code[i];
+    const next = code[i + 1];
+
+    if (inLineComment) {
+      if (ch === '\n') {
+        inLineComment = false;
+        result += '\n';
+      }
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (ch === '*' && next === '/') {
+        inBlockComment = false;
+        i++;
+      } else if (ch === '\n') {
+        result += '\n';
+      }
+      continue;
+    }
+
+    if (inSingle) {
+      if (ch === '\\' && next) {
+        i++;
+      } else if (ch === "'") {
+        inSingle = false;
+      }
+      continue;
+    }
+
+    if (inDouble) {
+      if (ch === '\\' && next) {
+        i++;
+      } else if (ch === '"') {
+        inDouble = false;
+      }
+      continue;
+    }
+
+    if (inTemplate) {
+      if (ch === '\\' && next) {
+        i++;
+      } else if (ch === '`') {
+        inTemplate = false;
+      }
+      continue;
+    }
+
+    if (ch === '/' && next === '/') {
+      inLineComment = true;
+      i++;
+      continue;
+    }
+
+    if (ch === '/' && next === '*') {
+      inBlockComment = true;
+      i++;
+      continue;
+    }
+
+    if (ch === "'") {
+      inSingle = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      inDouble = true;
+      continue;
+    }
+
+    if (ch === '`') {
+      inTemplate = true;
+      continue;
+    }
+
+    result += ch;
+  }
+  return result;
+}
+
 function scanFile(filePath) {
   const ext = path.extname(filePath);
   if (!['.ts', '.tsx', '.js', '.jsx', '.cjs', '.mjs'].includes(ext)) {
@@ -76,18 +165,83 @@ function scanFile(filePath) {
   const lines = content.split('\n');
   const issues = [];
 
-  const isTestFile = filePath.includes('.spec.ts') || 
-                     filePath.includes('.test.ts') || 
-                     filePath.includes('.spec.tsx') || 
-                     filePath.includes('.test.tsx') || 
-                     filePath.includes('e2e/');
+  let isTestFile = filePath.includes('.spec.ts') ||
+                   filePath.includes('.test.ts') ||
+                   filePath.includes('.spec.tsx') ||
+                   filePath.includes('.test.tsx') ||
+                   filePath.includes('e2e/');
+
+  // Check lifecycle hook ordering in test files (beforeEach must precede tests in the same describe scope)
+  if (isTestFile) {
+    const cleanContent = stripCommentsAndStrings(content);
+    const cleanLines = cleanContent.split('\n');
+    let scopeDepth = 0;
+    const describeStack = [];
+    let pendingDescribe = false;
+
+    for (let idx = 0; idx < cleanLines.length; idx++) {
+      const cLine = cleanLines[idx];
+      const origLine = lines[idx] || '';
+      const lineNum = idx + 1;
+
+      if (/\b(describe|test\.describe)\s*\(/.test(cLine)) {
+        pendingDescribe = true;
+      }
+
+      const isTestDecl = /(?<![\w$.])(test|it)(\.(only|skip|concurrent|each))?\s*\(/.test(cLine);
+      if (isTestDecl && describeStack.length > 0) {
+        const top = describeStack[describeStack.length - 1];
+        if (top.firstTestLine === 0) {
+          top.firstTestLine = lineNum;
+        }
+      }
+
+      const isBeforeEach = /(?<![\w$.])(test\.beforeEach|beforeEach)\s*\(/.test(cLine);
+      if (isBeforeEach && describeStack.length > 0) {
+        const top = describeStack[describeStack.length - 1];
+        if (top.firstTestLine > 0 && !origLine.includes('bypass-test-quality')) {
+          issues.push({
+            lineNum,
+            pattern: 'beforeEach after test',
+            message: `Out-of-order lifecycle hook: beforeEach declared on line ${lineNum} after test() on line ${top.firstTestLine}. Place beforeEach at top of describe scope.`,
+          });
+        }
+      }
+
+      for (let j = 0; j < cLine.length; j++) {
+        const ch = cLine[j];
+        if (ch === '{') {
+          scopeDepth++;
+          if (pendingDescribe) {
+            describeStack.push({ depth: scopeDepth, lineNum, firstTestLine: 0 });
+            pendingDescribe = false;
+          }
+        } else if (ch === '}') {
+          while (describeStack.length > 0 && describeStack[describeStack.length - 1].depth >= scopeDepth) {
+            describeStack.pop();
+          }
+          scopeDepth--;
+        }
+      }
+    }
+  }
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lineNum = i + 1;
+    const trimmed = line.trim();
 
     // Test file specific checks
     if (isTestFile) {
+      // Stale deleted prop resurrection check
+      if (line.includes('onPromptImproved') && !line.includes('bypass-test-quality')) {
+        issues.push({
+          lineNum,
+          pattern: 'onPromptImproved',
+          message: 'Resurrected stale prop "onPromptImproved" detected (deleted prop resurrected during merge). Use "onSetPrompt".',
+        });
+      }
+
       // 1. Check for commented out assertions
       const commentedAssertMatch = line.match(/\/\/\s*expect\(/) || line.match(/\/\*\s*expect\(/);
       if (commentedAssertMatch && !line.includes('bypass-test-quality')) {

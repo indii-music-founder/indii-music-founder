@@ -116,6 +116,12 @@ function baseOptions() {
 }
 
 describe('PerformanceVideoService.generate (ISSUE-994)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockWaitForTerminalReceipt.mockResolvedValue(CANONICAL_RECEIPT);
+        mockGenerateVideo.mockResolvedValue([{ id: 'clip-1', url: '' }]);
+    });
+
     it('cuts visual slots on measured beats and snaps durations to the 30 fps master timeline', async () => {
         mockWaitForTerminalReceipt.mockResolvedValueOnce({
             ...CANONICAL_RECEIPT,
@@ -143,11 +149,6 @@ describe('PerformanceVideoService.generate (ISSUE-994)', () => {
         const project = mockRenderVideo.mock.calls[0]![0].inputProps.project;
         expect(project.clips.filter((clip: { type: string }) => clip.type === 'video')
             .map((clip: { durationInFrames: number }) => clip.durationInFrames)).toEqual([210, 210, 90]);
-    });
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockWaitForTerminalReceipt.mockResolvedValue(CANONICAL_RECEIPT);
-        mockGenerateVideo.mockResolvedValue([{ id: 'clip-1', url: '' }]);
     });
 
     it('sends the request in the shape the callable actually requires', async () => {

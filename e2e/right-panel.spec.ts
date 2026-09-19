@@ -51,8 +51,8 @@ test.describe('Right Panel & Swarm Tabs', () => {
         const boxExpanded = await panel.boundingBox();
         expect(boxExpanded?.width).toBeGreaterThanOrEqual(300);
 
-        // 4. Verify default "No Tool Selected" or "Messages" fallback content
-        await expect(page.locator('text=No Tool Selected').first().or(page.locator('text=Messages').first())).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        // 4. Verify default "No Tool Selected" fallback content
+        await expect(page.locator('[data-testid="no-tool-selected"]')).toBeVisible();
 
         // 5. Collapse Panel using Close button inside
         const closeBtn = page.locator('[aria-label="Close Panel"]').first(); // bypass-strict: select active panel/modal layer among stacked containers
@@ -158,13 +158,9 @@ test.describe('Right Panel & Swarm Tabs', () => {
         await contextTab.click();
         await page.waitForTimeout(1000);
 
-        // Should render the StudioControlsPanel (contains style presets or specific labels)
+        // Should render the StudioControlsPanel
         const rightPanel = page.locator('[aria-label="Context panel"]');
-        await expect(
-            rightPanel.locator('text=Studio Controls').first().or( // bypass-strict: select active panel/modal layer among stacked containers
-                rightPanel.locator('text=Generate Soundtrack').first() // bypass-strict: select active panel/modal layer among stacked containers
-            )
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(rightPanel.locator('[data-testid="studio-controls-panel"]')).toBeVisible({ timeout: 10_000 });
     });
 
     test('should interact with filters and search in Project Assets tab', async ({ authedPage: page }) => {

@@ -191,7 +191,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
     if (!whiskState) return null;
 
     return (
-        <div className="flex flex-col h-full bg-[#060608]/95 border-l border-white/5 backdrop-blur-xl relative z-10">
+        <div data-testid="studio-controls-panel" className="flex flex-col h-full bg-[#060608]/95 border-l border-white/5 backdrop-blur-xl relative z-10">
             <div className="p-4 border-b border-white/5 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                     <div className="p-1.5 bg-white/5 rounded-lg border border-white/10">

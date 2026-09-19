@@ -64,20 +64,20 @@ test.describe('indii Macro Flywheel Integration', () => {
         await page.goto('/crm', { waitUntil: 'domcontentloaded' });
         
         // Verify we are on the CRM page
-        await expect(page.getByRole('heading', { name: 'Superfan CRM' }).or(page.getByRole('heading', { name: 'Audience' }))).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('[data-testid="crm-heading"]')).toBeVisible({ timeout: 15_000 });
 
-        // Click create new drop (simulated selectors based on typical indii structure)
-        const createDropBtn = page.locator('button:has-text("New Drop"), button:has-text("Create Campaign")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        // Click create new drop
+        const createDropBtn = page.locator('[data-testid="crm-new-drop-button"]');
         if (await createDropBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
             await createDropBtn.click();
             
             // Fill out campaign form
-            await page.fill('input[name="campaignName"]', 'Cyberpunk Digital Vinyl Run');
-            await page.fill('input[name="supply"]', '100');
-            await page.fill('input[name="price"]', '10.00');
+            await page.fill('[data-testid="crm-campaign-name-input"]', 'Cyberpunk Digital Vinyl Run');
+            await page.fill('[data-testid="crm-campaign-supply-input"]', '100');
+            await page.fill('[data-testid="crm-campaign-price-input"]', '10.00');
 
             // Save Campaign
-            await page.click('button:has-text("Launch")');
+            await page.click('[data-testid="crm-campaign-submit-button"]');
 
             // Assert Campaign appears in active list
             await expect(page.locator('text=Cyberpunk Digital Vinyl Run')).toBeVisible({ timeout: 10_000 });

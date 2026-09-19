@@ -6,11 +6,6 @@ vi.unmock('@/modules/creative/video/store/videoEditorStore');
 vi.unmock('@/services/MembershipService');
 
 describe('useVideoEditorStore', () => {
-    it('starts a production project without a framework title clip', () => {
-        expect(INITIAL_PROJECT.clips).toEqual([]);
-        expect(INITIAL_PROJECT.clips.some(clip => clip.text === 'Welcome to Remotion')).toBe(false);
-    });
-
     beforeEach(() => {
         const store = useVideoEditorStore.getState();
         store.setProject({
@@ -24,6 +19,11 @@ describe('useVideoEditorStore', () => {
             clips: []
         });
         useVideoEditorStore.setState({ past: [], future: [] });
+    });
+
+    it('starts a production project without a framework title clip', () => {
+        expect(INITIAL_PROJECT.clips).toEqual([]);
+        expect(INITIAL_PROJECT.clips.some(clip => clip.text === 'Welcome to Remotion')).toBe(false);
     });
 
     it('enforces standard duration limit', () => {

@@ -19,11 +19,8 @@ interface HeroProps {
 export default function Hero({ founder, previewEnabled, previewHref, trackPreview }: HeroProps) {
   const reducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll();
-  // Under prefers-reduced-motion the hero stays put: no scroll-linked
-  // translation or scale (opacity fade only, and only if the OS allows it).
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.13], [1, reducedMotion ? 1 : 0.14]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.16], [1, reducedMotion ? 1 : 0.93]);
-  const heroY = useTransform(scrollYProgress, [0, 0.16], [0, reducedMotion ? 0 : 90]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.16], [1, reducedMotion ? 1 : 0.96]);
+  const heroY = useTransform(scrollYProgress, [0, 0.16], [0, reducedMotion ? 0 : 40]);
 
   const pulseHero = (strength: number) => {
     emitSystemPulse('cta', 0, strength);
@@ -33,8 +30,8 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
     <motion.section
       id="home"
       data-system-section="hero"
-      style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
-      className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1600px] flex-col justify-between px-5 pb-8 pt-28 md:px-10 md:pb-10 md:pt-32"
+      style={{ scale: heroScale, y: heroY }}
+      className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1600px] flex-col justify-between px-5 pb-6 pt-24 md:px-10 md:pb-8 md:pt-28"
       aria-label="indii.music founder introduction"
     >
       {/* Warm Studio Atmospheric Halo — Champagne Gold & Smoked Petroleum Teal */}
@@ -50,9 +47,9 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
         <span className="hidden sm:inline">Detroit, Michigan / Founding Artist Beta</span>
       </div>
 
-      <div className="relative my-auto py-16 md:py-12">
+      <div className="relative my-auto py-6 md:py-8">
         <h1
-          className="relative max-w-[1450px] text-[15.4vw] font-black leading-[0.73] tracking-[-0.075em] text-white sm:text-[12.3vw] lg:text-[10.6rem]"
+          className="relative max-w-[1450px] text-[12vw] font-black leading-[0.80] tracking-[-0.065em] text-white sm:text-[9.5vw] md:text-[7.5vw] lg:text-[5.5rem] xl:text-[6.8rem]"
           aria-label="Run your music career without giving it away."
         >
           {heroWords.map((word, index) => (
@@ -75,7 +72,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                 <span className="relative inline-flex items-baseline" aria-hidden="true">
                   <span className="relative inline-block">
                     <motion.span
-                      className="absolute -top-[0.26em] left-[50%] -translate-x-1/2 text-[0.34em] font-black text-[#FFB800] [text-shadow:0_0_20px_rgba(255,184,0,0.95)]"
+                      className="absolute -top-[0.24em] left-[50%] -translate-x-1/2 text-[0.34em] font-black text-[#FFB800] [text-shadow:0_0_20px_rgba(255,184,0,0.95)]"
                       animate={{ scale: [1, 1.25, 1], opacity: [0.85, 1, 0.85] }}
                       transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                     >
@@ -99,9 +96,9 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.62, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="relative mt-9 flex flex-col gap-3 md:mt-11"
+          className="relative mt-5 flex flex-col gap-2 md:mt-6"
         >
-          <p className="text-xl font-black tracking-[-0.025em] text-white md:text-3xl">
+          <p className="text-lg font-black tracking-[-0.025em] text-white sm:text-xl md:text-2xl lg:text-3xl">
             The operating system for your music independence.
           </p>
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] tracking-[0.22em] text-white/55">
@@ -115,7 +112,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.72, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative mt-12 grid gap-9 border-t border-white/15 pt-8 lg:grid-cols-[1.1fr_0.9fr]"
+          className="relative mt-7 grid gap-6 border-t border-white/15 pt-6 lg:grid-cols-[1.1fr_0.9fr] xl:gap-8"
         >
           {/* Left Column: Hero Manifesto & Gatekeeper Card */}
           <div>
@@ -124,16 +121,16 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
               Run the business behind your music
             </div>
 
-            <h2 className="mt-3 text-2xl font-black tracking-tight text-white md:text-3xl lg:text-4xl">
+            <h2 className="mt-2 text-xl font-black tracking-tight text-white md:text-2xl lg:text-3xl">
               One connected workspace. <span className="text-[#FFB800] [text-shadow:0_0_25px_rgba(255,184,0,0.6)]">Your direction.</span>
             </h2>
 
-            <p className="mt-4 text-lg font-medium leading-relaxed text-white/80 md:text-xl">
+            <p className="mt-2.5 text-base font-medium leading-relaxed text-white/80 md:text-lg">
               indii.music brings the business behind your music together—from planning and rights to distribution preparation, campaigns, and money.
             </p>
 
             {/* No More Gatekeepers / Handlers Card */}
-            <div className="mt-6 lacquer-card-gold relative overflow-hidden rounded-2xl p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
+            <div className="mt-5 lacquer-card-gold relative overflow-hidden rounded-2xl p-5 md:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
               <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.4)]">
@@ -144,8 +141,8 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                 </span>
               </div>
 
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/60 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/20">
+              <div className="mt-3.5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-black/60 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/20">
                   <div className="text-xs font-black uppercase tracking-wider text-white/90 flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#2196F3] shadow-[0_0_8px_#2196F3]" />
                     The release stays connected
@@ -154,7 +151,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                     Keep assets, rights, plans, campaigns, and financial records attached to the same project.
                   </p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/60 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/20">
+                <div className="rounded-xl border border-white/10 bg-black/60 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/20">
                   <div className="text-xs font-black uppercase tracking-wider text-white/90 flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#00C853] shadow-[0_0_8px_#00C853]" />
                     Connected Intelligence©
@@ -168,18 +165,18 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
           </div>
 
           {/* Right Column: Primary CTAs & Product Status */}
-          <div className="lacquer-card relative flex flex-col justify-between overflow-hidden rounded-2xl p-7 shadow-[0_25px_70px_rgba(0,0,0,0.95)]">
+          <div className="lacquer-card relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 md:p-6 shadow-[0_25px_70px_rgba(0,0,0,0.95)]">
             <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
             <div>
               <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#FFB800]">
                 <span className="h-2 w-2 rounded-full bg-[#00C853] shadow-[0_0_10px_#00C853]" />
                 Working software / Founding Artist Beta
               </div>
-              <p className="mt-3 text-base text-white/90">
+              <p className="mt-2.5 text-sm md:text-base text-white/90 leading-relaxed">
                 Join the waitlist for working software that is still being refined with independent artists.
               </p>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
                 <a
                   href={previewHref}
                   target={previewEnabled ? '_blank' : undefined}
@@ -189,43 +186,45 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                     pulseHero(1);
                   }}
                   onMouseEnter={() => pulseHero(0.55)}
-                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-7 py-4 text-sm font-black text-black shadow-[0_0_35px_rgba(255,184,0,0.5)] transition-all hover:scale-[1.03] hover:shadow-[0_0_50px_rgba(255,184,0,0.75)]"
+                  className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] px-5 py-3 text-xs md:text-sm font-black text-black shadow-[0_0_30px_rgba(255,184,0,0.45)] transition-all hover:scale-[1.03] hover:shadow-[0_0_45px_rgba(255,184,0,0.7)]"
                 >
-                  {previewEnabled
-                    ? founder
-                      ? 'Enter Founder Preview'
-                      : 'Enter indii.music'
-                    : 'Get Founding Artist access'}
-                  <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                  <span>
+                    {previewEnabled
+                      ? founder
+                        ? 'Enter Founder Preview'
+                        : 'Enter indii.music'
+                      : 'Get Founding Artist access'}
+                  </span>
+                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
                 </a>
                 <a
                   href={getStudioUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackPreview('hero_login')}
-                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-7 py-4 text-sm font-bold text-white shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all hover:border-amber-400/50 hover:text-amber-300"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-5 py-3 text-xs md:text-sm font-bold text-white shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all hover:border-amber-400/50 hover:text-amber-300"
                 >
                   Log in
                 </a>
                 <a
                   href="#studio-preview"
-                  className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/15 bg-white/[0.03] px-7 py-4 text-sm font-bold text-white/80 backdrop-blur-md transition-all hover:border-[#FFB800]/50 hover:bg-white/[0.06] hover:text-white"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-5 py-3 text-xs md:text-sm font-bold text-white/80 backdrop-blur-md transition-all hover:border-[#FFB800]/50 hover:bg-white/[0.06] hover:text-white"
                 >
-                  <Play size={14} fill="currentColor" />
+                  <Play size={13} fill="currentColor" />
                   See how indii.music works
                 </a>
               </div>
             </div>
 
-            <div className="mt-8 border-t border-white/10 pt-4">
+            <div className="mt-6 border-t border-white/10 pt-3.5">
               <div className="grid grid-cols-3 gap-2 text-center font-mono text-[9px] uppercase tracking-wider">
-                <div className="rounded-xl bg-black/70 p-2.5 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <div className="rounded-xl bg-black/70 p-2 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                   <span className="block font-black text-white [text-shadow:0_0_8px_rgba(255,255,255,0.4)]">Keep</span> Your rights
                 </div>
-                <div className="rounded-xl bg-black/70 p-2.5 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <div className="rounded-xl bg-black/70 p-2 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                   <span className="block font-black text-[#FFB800] [text-shadow:0_0_8px_rgba(255,184,0,0.5)]">0%</span> Royalty Cut
                 </div>
-                <div className="rounded-xl bg-black/70 p-2.5 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <div className="rounded-xl bg-black/70 p-2 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                   <span className="block font-black text-[#00C853] [text-shadow:0_0_8px_rgba(0,200,83,0.5)]">Live</span> Working beta
                 </div>
               </div>

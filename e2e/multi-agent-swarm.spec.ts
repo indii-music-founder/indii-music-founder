@@ -73,26 +73,20 @@ test.describe('Multi-Agent Swarm Delegation', () => {
     });
 
     test('Conductor routes task to specialist successfully', async ({ authedPage: page }) => {
-        const input = page.locator('[data-testid="prompt-input"], textarea[placeholder], [role="textbox"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
-        await input.waitFor({ state: 'visible', timeout: 5000 }).catch(() => { });
-
-        const isVisible = await input.isVisible().catch(() => false);
-        if (!isVisible) {
-            // Open CommandBar if collapsed
-            const commandBar = page.locator('[class*="command"], [class*="prompt"]').first(); // bypass-strict: target first visible element in DOM matching selector
-            await commandBar.click().catch(() => { });
-            await page.waitForTimeout(500);
+        const expandBtn = page.locator('[data-testid="command-bar-expand-button"]');
+        if (await expandBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await expandBtn.click();
         }
 
-        const inputReady = page.locator('[data-testid="prompt-input"], textarea, [role="textbox"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
-        await inputReady.click({ force: true });
-        await inputReady.fill('Help me design a marketing campaign for my new album');
-        await inputReady.press('Enter');
+        const input = page.locator('[data-testid="main-prompt-input"]');
+        await expect(input).toBeVisible({ timeout: 10_000 });
+        await input.click({ force: true });
+        await input.fill('Help me design a marketing campaign for my new album');
+        await input.press('Enter');
 
-        // Wait for agent history to update
-        await page.waitForTimeout(2000);
-
-        // App should survive the complex delegation flow
-        await expect(page.locator('#root')).toBeVisible();
+        // Verify that the specialist marketing agent received the task and completed it
+        const agentMessage = page.locator('[data-agent-id="marketing"] [data-testid="agent-message"]');
+        await expect(agentMessage).toBeVisible({ timeout: 15_000 });
+        await expect(agentMessage).toContainText('Specialist marketing agent completed the task');
     });
 });

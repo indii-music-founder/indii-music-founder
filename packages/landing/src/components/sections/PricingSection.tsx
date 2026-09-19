@@ -193,7 +193,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
         </div>
         <div className="mt-8 grid gap-5 rounded-2xl border border-white/10 bg-black/55 p-6 md:grid-cols-[1fr_1.4fr] md:p-8">
           <div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-amber-400">Choose your billing rhythm</div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-amber-400">Term Commitments & Savings</div>
             <p className="mt-3 text-xl font-bold tracking-tight text-white">Monthly, quarterly, six-month, or annual.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">

@@ -17,6 +17,7 @@ interface ModuleDashboardProps {
     className?: string;
     /** Optional moduleId override - defaults to current module from store */
     moduleId?: ModuleId;
+    'data-testid'?: string;
 }
 
 /**
@@ -38,7 +39,8 @@ export function ModuleDashboard({
     activeTab,
     onTabChange,
     className = "",
-    moduleId: propModuleId
+    moduleId: propModuleId,
+    'data-testid': testId
 }: ModuleDashboardProps) {
     // Get current module from store if not provided
     const currentModule = useStore(useShallow((state: StoreState) => state.currentModule));
@@ -47,6 +49,7 @@ export function ModuleDashboard({
 
     return (
         <div
+            data-testid={testId || `${moduleId}-dashboard`}
             className={`h-full flex flex-col bg-bg-dark text-white overflow-hidden ${className}`}
             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
         >

@@ -146,6 +146,7 @@ function CommandBar() {
                                     boxShadow: `0 0 20px color-mix(in srgb, ${orbColor} 50%, transparent)`,
                                 }}
                                 aria-label="Expand Chat"
+                                data-testid="command-bar-expand-button"
                             >
                                 <div
                                     className="w-3 h-3 rounded-full animate-pulse"

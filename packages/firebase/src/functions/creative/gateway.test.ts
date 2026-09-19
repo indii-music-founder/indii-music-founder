@@ -1377,6 +1377,35 @@ describe('creative gateway generateVideoV3', () => {
 });
 
 describe('creative gateway generateOmniRemixV3', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockInteractionsCreate.mockReset();
+    mockInteractionsGet.mockReset();
+    mockCountTokens.mockReset();
+    mockCountTokens.mockResolvedValue({ totalTokens: 512 });
+    mockDownload.mockReset();
+    mockFilesUpload.mockReset();
+    mockFilesGet.mockReset();
+    mockFilesDownload.mockReset();
+    mockGetMetadata.mockReset();
+    mockSave.mockReset();
+    mockSet.mockReset();
+    mockSet.mockResolvedValue(undefined);
+    mockUpdate.mockReset();
+    mockUpdate.mockResolvedValue(undefined);
+    mockJobGet.mockReset();
+    mockProbeDurationSeconds.mockReset();
+    mockProbeDurationSeconds.mockResolvedValue(8);
+    mockDownload.mockResolvedValue([Buffer.from('video-bytes')]);
+    mockGetMetadata.mockResolvedValue([{ contentType: 'video/mp4', size: '1024' }]);
+    mockFilesUpload.mockResolvedValue({
+      name: 'files/source-123',
+      uri: 'https://generativelanguage.googleapis.com/v1beta/files/source-123',
+      state: 'ACTIVE',
+      mimeType: 'video/mp4',
+    });
+  });
+
   it('accepts short visual reference clips separately from an edit source', async () => {
     mockProbeDurationSeconds.mockResolvedValue(2.5);
     mockInteractionsCreate.mockResolvedValueOnce({
@@ -1437,34 +1466,6 @@ describe('creative gateway generateOmniRemixV3', () => {
       contents: expect.any(Array),
     }));
     expect(mockInteractionsCreate).not.toHaveBeenCalled();
-  });
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockInteractionsCreate.mockReset();
-    mockInteractionsGet.mockReset();
-    mockCountTokens.mockReset();
-    mockCountTokens.mockResolvedValue({ totalTokens: 512 });
-    mockDownload.mockReset();
-    mockFilesUpload.mockReset();
-    mockFilesGet.mockReset();
-    mockFilesDownload.mockReset();
-    mockGetMetadata.mockReset();
-    mockSave.mockReset();
-    mockSet.mockReset();
-    mockSet.mockResolvedValue(undefined);
-    mockUpdate.mockReset();
-    mockUpdate.mockResolvedValue(undefined);
-    mockJobGet.mockReset();
-    mockProbeDurationSeconds.mockReset();
-    mockProbeDurationSeconds.mockResolvedValue(8);
-    mockDownload.mockResolvedValue([Buffer.from('video-bytes')]);
-    mockGetMetadata.mockResolvedValue([{ contentType: 'video/mp4', size: '1024' }]);
-    mockFilesUpload.mockResolvedValue({
-      name: 'files/source-123',
-      uri: 'https://generativelanguage.googleapis.com/v1beta/files/source-123',
-      state: 'ACTIVE',
-      mimeType: 'video/mp4',
-    });
   });
 
   it('uploads an owned edit source and sends the official Omni interaction contract', async () => {

@@ -88,6 +88,8 @@ export const CreateCampaignDialog = createCallable<Record<string, never>, boolea
                         <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Campaign Name</label>
                         <input
                             type="text"
+                            name="campaignName"
+                            data-testid="crm-campaign-name-input"
                             required
                             value={campaignName}
                             onChange={e => setCampaignName(e.target.value)}
@@ -99,6 +101,8 @@ export const CreateCampaignDialog = createCallable<Record<string, never>, boolea
                     <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Campaign Type</label>
                         <select
+                            name="campaignType"
+                            data-testid="crm-campaign-type-select"
                             value={campaignType}
                             onChange={e => setCampaignType(e.target.value as Campaign['type'])}
                             className="px-3.5 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-accent-primary text-sm transition-all"
@@ -115,6 +119,8 @@ export const CreateCampaignDialog = createCallable<Record<string, never>, boolea
                             <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Supply</label>
                             <input
                                 type="number"
+                                name="supply"
+                                data-testid="crm-campaign-supply-input"
                                 required
                                 min="1"
                                 placeholder="100"
@@ -128,6 +134,8 @@ export const CreateCampaignDialog = createCallable<Record<string, never>, boolea
                             <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Price (USD)</label>
                             <input
                                 type="number"
+                                name="price"
+                                data-testid="crm-campaign-price-input"
                                 required
                                 min="0.01"
                                 step="0.01"
@@ -145,6 +153,8 @@ export const CreateCampaignDialog = createCallable<Record<string, never>, boolea
                         </label>
                         <input
                             type="url"
+                            name="deliverableUrl"
+                            data-testid="crm-campaign-deliverable-input"
                             value={deliverableUrl}
                             onChange={e => setDeliverableUrl(e.target.value)}
                             placeholder="Where fans get this once they buy it (file link, store page, ticket page...)"
@@ -168,6 +178,7 @@ export const CreateCampaignDialog = createCallable<Record<string, never>, boolea
                         </button>
                         <button
                             type="submit"
+                            data-testid="crm-campaign-submit-button"
                             className="flex items-center justify-center gap-2 px-5 py-2 bg-accent-primary hover:bg-accent-secondary text-white rounded-xl font-semibold transition-all duration-200 text-sm disabled:opacity-50 disabled:pointer-events-none"
                             disabled={isSubmitting || !campaignName || !supply || !price}
                         >

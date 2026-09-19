@@ -389,9 +389,17 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         />
       )}
 
-      <LazySection id="detroit">{founder && <DetroitSection />}</LazySection>
+      {founder && (
+        <LazySection id="detroit">
+          <DetroitSection />
+        </LazySection>
+      )}
 
-      <LazySection>{founder && <ThesisSection setIsThesisOpen={setIsThesisOpen} />}</LazySection>
+      {founder && (
+        <LazySection>
+          <ThesisSection setIsThesisOpen={setIsThesisOpen} />
+        </LazySection>
+      )}
 
       <LazySection>
         <StatsBand />
@@ -413,7 +421,11 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         <PrinciplesSection />
       </LazySection>
 
-      <LazySection>{founder && <OnboardingSection />}</LazySection>
+      {founder && (
+        <LazySection>
+          <OnboardingSection />
+        </LazySection>
+      )}
 
       <LazySection id="founder-access">
         <FounderAccessSection trackPreview={trackPreview} />

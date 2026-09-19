@@ -71,15 +71,16 @@ export default function CRMDashboard() {
     };
 
     return (
-        <div className="flex flex-col h-full w-full bg-surface text-text-primary p-6 gap-6 overflow-y-auto">
+        <div data-testid="crm-dashboard" className="flex flex-col h-full w-full bg-surface text-text-primary p-6 gap-6 overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-text-primary via-text-primary to-text-secondary bg-clip-text">Superfan CRM</h1>
+                    <h1 data-testid="crm-heading" className="text-3xl font-bold bg-gradient-to-r from-text-primary via-text-primary to-text-secondary bg-clip-text">Superfan CRM</h1>
                     <p className="text-text-secondary mt-1 text-sm md:text-base">Manage your SoundLocker campaign ecosystem, sales, and fan drops.</p>
                 </div>
                 <button
                     onClick={handleNewDrop}
+                    data-testid="crm-new-drop-button"
                     className="flex items-center gap-2 px-4 py-2.5 bg-accent-primary hover:bg-accent-secondary text-white rounded-lg font-medium transition-all duration-200 shadow-md shadow-accent-primary/20 hover:shadow-accent-secondary/30 active:scale-95"
                 >
                     <Plus className="w-5 h-5" />

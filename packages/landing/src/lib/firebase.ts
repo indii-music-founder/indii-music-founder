@@ -47,10 +47,14 @@ if (typeof window !== 'undefined') {
       functions = getFunctions(app, 'us-central1');
       const appCheckKey = import.meta.env.VITE_FIREBASE_APP_CHECK_KEY;
       if (appCheckKey && !isPlaceholderKey(appCheckKey)) {
-        initializeAppCheck(app, {
-          provider: new ReCaptchaEnterpriseProvider(appCheckKey),
-          isTokenAutoRefreshEnabled: true,
-        });
+        try {
+          initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider(appCheckKey),
+            isTokenAutoRefreshEnabled: true,
+          });
+        } catch (appCheckError) {
+          console.warn('[Firebase] AppCheck initialization skipped or unsupported in this context:', appCheckError);
+        }
       }
       console.log('[Firebase] Initialization successful');
     }

@@ -424,7 +424,7 @@ export default function RightPanel() {
                                 <Layers size={24} className="text-gray-500" />
                             </motion.div>
                             <div>
-                                <h3 className="text-sm font-medium text-gray-300">No Tool Selected</h3>
+                                <h3 data-testid="no-tool-selected" className="text-sm font-medium text-gray-300">No Tool Selected</h3>
                                 <p className="text-xs text-gray-500 mt-1 max-w-[200px] mx-auto">Select a tool from the sidebar to view its controls.</p>
                                 <div className="mt-4 flex items-center justify-center text-[10px] text-gray-500 font-medium">
                                     <kbd className="px-1.5 py-px bg-white/5 border border-white/10 rounded font-mono mr-1">⌘</kbd>

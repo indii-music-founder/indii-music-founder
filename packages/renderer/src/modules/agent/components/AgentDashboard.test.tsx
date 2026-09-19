@@ -1,9 +1,15 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import AgentDashboard from './AgentDashboard';
 
 // Mock dependencies
+vi.mock('@/services/marketing/MarketingService', () => ({
+    MarketingService: {
+        getCampaigns: vi.fn().mockResolvedValue([]),
+    }
+}));
+
 vi.mock('../services/VenueScoutService', () => ({
     VenueScoutService: {
         searchVenues: vi.fn(),
@@ -79,7 +85,7 @@ describe('AgentDashboard', () => {
         expect(screen.getByTestId('scout-controls')).toBeDefined();
     });
 
-    it('switches tabs correctly', () => {
+    it('switches tabs correctly', async () => {
         render(<AgentDashboard />);
 
         // Click Browser Tab (mocked sidebar)
@@ -93,6 +99,8 @@ describe('AgentDashboard', () => {
         fireEvent.click(campaignsButton);
 
         // Campaigns panel heading uses i18n key; appears in toolbar breadcrumb + panel heading
-        expect(screen.getAllByText('agent.tabs.campaigns').length).toBeGreaterThan(0);
+        await waitFor(() => {
+            expect(screen.getAllByText('agent.tabs.campaigns').length).toBeGreaterThan(0);
+        });
     });
 });
