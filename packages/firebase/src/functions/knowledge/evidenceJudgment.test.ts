@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   VectorScoreEvidenceProvider,
   evaluateEvidenceProvider,
-  vectorDistanceToRelevance,
+  cosineSimilarityRelevance,
   type EvidenceFixtureFamily,
 } from './evidenceJudgment';
 import { EVIDENCE_EVALUATION_FIXTURES } from './evidenceEvaluationFixtures';
@@ -17,12 +17,13 @@ const REQUIRED_FAMILIES: EvidenceFixtureFamily[] = [
 ];
 
 describe('evidence judgment proof-of-concept harness', () => {
-  it('converts Firestore cosine distance to bounded relevance', () => {
-    expect(vectorDistanceToRelevance(0)).toBe(1);
-    expect(vectorDistanceToRelevance(0.1)).toBeCloseTo(0.9);
-    expect(vectorDistanceToRelevance(1.4)).toBe(0);
-    expect(vectorDistanceToRelevance(-0.1)).toBeNull();
-    expect(vectorDistanceToRelevance(undefined)).toBeNull();
+  it('computes bounded cosine relevance from query and candidate embeddings', () => {
+    expect(cosineSimilarityRelevance([1, 0], [1, 0])).toBeCloseTo(1);
+    expect(cosineSimilarityRelevance([1, 0], [0.6, 0.8])).toBeCloseTo(0.6);
+    expect(cosineSimilarityRelevance([1, 0], [0, 1])).toBe(0);
+    expect(cosineSimilarityRelevance([1, 0], [-1, 0])).toBe(0);
+    expect(cosineSimilarityRelevance([1, 0], [1])).toBeNull();
+    expect(cosineSimilarityRelevance([0, 0], [1, 0])).toBeNull();
   });
 
   it('covers all six required fixture families with valid expected IDs', () => {

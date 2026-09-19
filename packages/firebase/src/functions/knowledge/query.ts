@@ -10,7 +10,7 @@ import {
   type KnowledgeDocument,
   type KnowledgeQueryRequest,
 } from '@indii/shared';
-import { vectorDistanceToRelevance } from './evidenceJudgment';
+import { cosineSimilarityRelevance } from './evidenceJudgment';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -72,7 +72,6 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
     vectorQuerySnap = await filteredChunks.findNearest('embedding', queryEmbedding, {
       limit: k,
       distanceMeasure: 'COSINE',
-      distanceResultField: 'vectorDistance',
     }).get();
   } catch (vectorErr: unknown) {
     const errorMsg = vectorErr instanceof Error ? vectorErr.message : String(vectorErr);
@@ -99,10 +98,10 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
 
   const citations: KnowledgeCitation[] = [];
   vectorQuerySnap.docs.forEach((doc) => {
-    const chunkData = doc.data() as KnowledgeChunk & { vectorDistance?: number };
-    const relevanceScore = vectorDistanceToRelevance(chunkData.vectorDistance);
+    const chunkData = doc.data() as KnowledgeChunk;
+    const relevanceScore = cosineSimilarityRelevance(queryEmbedding, chunkData.embedding);
 
-    // Fail closed when Firestore does not return a usable distance. The caller's
+    // Fail closed when a stored embedding is missing or unusable. The caller's
     // minRelevance contract must not be bypassed with a fabricated score.
     if (relevanceScore === null || relevanceScore < minRelevanceScore) return;
 

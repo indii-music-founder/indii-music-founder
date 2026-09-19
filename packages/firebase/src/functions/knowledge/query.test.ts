@@ -72,7 +72,8 @@ describe('Knowledge Base Query Endpoint', () => {
   });
 
   it('generates embedding and executes vector search returning citations and receipt', async () => {
-    const dummyEmbedding = new Array(768).fill(0.01);
+    const dummyEmbedding = new Array(768).fill(0);
+    dummyEmbedding[0] = 1;
     mocks.mockEmbedContent.mockResolvedValue({
       embeddings: [{ values: dummyEmbedding }],
     });
@@ -88,7 +89,7 @@ describe('Knowledge Base Query Endpoint', () => {
             pageNumber: 1,
             startOffset: 0,
             endOffset: 27,
-            vectorDistance: 0.1
+            embedding: dummyEmbedding
           }),
         },
       ],
@@ -118,14 +119,13 @@ describe('Knowledge Base Query Endpoint', () => {
     expect(res.query).toBe('how to distribute music');
     expect(res.citations).toHaveLength(1);
     expect(res.citations[0].documentId).toBe('doc-1');
-    expect(res.citations[0].relevanceScore).toBeCloseTo(0.9);
+    expect(res.citations[0].relevanceScore).toBeCloseTo(1);
     expect(mocks.mockFindNearest).toHaveBeenCalledWith(
       'embedding',
       dummyEmbedding, // mock ignores FieldValue.vector wrapper differences
       {
         limit: 3,
         distanceMeasure: 'COSINE',
-        distanceResultField: 'vectorDistance',
       }
     );
     expect(mocks.mockSet).toHaveBeenCalledWith(
@@ -138,8 +138,15 @@ describe('Knowledge Base Query Endpoint', () => {
     );
   });
 
-  it('enforces minRelevance using Firestore cosine distance', async () => {
-    mocks.mockEmbedContent.mockResolvedValue({ embeddings: [{ values: new Array(768).fill(0.01) }] });
+  it('enforces minRelevance using cosine similarity from stored embeddings', async () => {
+    const queryEmbedding = new Array(768).fill(0);
+    queryEmbedding[0] = 1;
+    const highEmbedding = [...queryEmbedding];
+    const lowEmbedding = new Array(768).fill(0);
+    lowEmbedding[0] = 0.6;
+    lowEmbedding[1] = 0.8;
+
+    mocks.mockEmbedContent.mockResolvedValue({ embeddings: [{ values: queryEmbedding }] });
     mocks.mockGet.mockResolvedValue({
       docs: [
         {
@@ -149,7 +156,7 @@ describe('Knowledge Base Query Endpoint', () => {
             ordinal: 0,
             startOffset: 0,
             endOffset: 26,
-            vectorDistance: 0.1,
+            embedding: highEmbedding,
           }),
         },
         {
@@ -159,7 +166,7 @@ describe('Knowledge Base Query Endpoint', () => {
             ordinal: 1,
             startOffset: 27,
             endOffset: 56,
-            vectorDistance: 0.55,
+            embedding: lowEmbedding,
           }),
         },
       ],
@@ -182,7 +189,7 @@ describe('Knowledge Base Query Endpoint', () => {
 
     expect(res.citations).toHaveLength(1);
     expect(res.citations[0].documentId).toBe('doc-high');
-    expect(res.citations[0].relevanceScore).toBeCloseTo(0.9);
+    expect(res.citations[0].relevanceScore).toBeCloseTo(1);
   });
 
   it('rejects unauthenticated queries', async () => {

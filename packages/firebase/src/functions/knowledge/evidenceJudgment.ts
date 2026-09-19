@@ -53,12 +53,34 @@ export interface EvidenceEvaluationResult {
   noAnswerFalsePositive: boolean;
 }
 
-/** Convert Firestore COSINE distance (0 = identical, up to 2) to a 0..1 relevance score. */
-export function vectorDistanceToRelevance(distance: unknown): number | null {
-  if (typeof distance !== 'number' || !Number.isFinite(distance) || distance < 0) {
+/**
+ * Computes the same semantic quantity used by COSINE nearest-neighbor search,
+ * but from the query/chunk vectors already present in the result documents.
+ * Negative cosine similarity is treated as zero relevance for this 0..1 API.
+ */
+export function cosineSimilarityRelevance(
+  queryEmbedding: readonly number[],
+  candidateEmbedding: readonly number[],
+): number | null {
+  if (queryEmbedding.length === 0 || queryEmbedding.length !== candidateEmbedding.length) {
     return null;
   }
-  return clamp01(1 - distance);
+
+  let dotProduct = 0;
+  let queryNormSquared = 0;
+  let candidateNormSquared = 0;
+
+  for (let index = 0; index < queryEmbedding.length; index++) {
+    const queryValue = queryEmbedding[index];
+    const candidateValue = candidateEmbedding[index];
+    if (!Number.isFinite(queryValue) || !Number.isFinite(candidateValue)) return null;
+    dotProduct += queryValue * candidateValue;
+    queryNormSquared += queryValue * queryValue;
+    candidateNormSquared += candidateValue * candidateValue;
+  }
+
+  if (queryNormSquared === 0 || candidateNormSquared === 0) return null;
+  return clamp01(dotProduct / Math.sqrt(queryNormSquared * candidateNormSquared));
 }
 
 /** Deterministic baseline provider for the evaluation harness. */
