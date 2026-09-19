@@ -70,6 +70,8 @@ jobs:
 
     - name: Typecheck
       run: npm run typecheck
+      env:
+        NODE_OPTIONS: "--max-old-space-size=4096"
 
   build:
     needs: [test, setup-matrix]
