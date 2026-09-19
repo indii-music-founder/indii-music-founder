@@ -3,6 +3,7 @@ import {
   CanonicalMusicEntitySchema,
   MusicIdentifierSchema,
   ProvenanceSchema,
+  RightsClaimSchema,
   isAuthoritativeProvenance,
 } from './musicEntity';
 
@@ -102,4 +103,45 @@ describe('CanonicalMusicEntitySchema', () => {
       isrc: 'USABC2600003',
     })).toThrow();
   });
+  it('models rights claims as assertions with provenance and optional RDR weight', () => {
+    const claim = RightsClaimSchema.parse({
+      schemaVersion: 'rights-claim.v1',
+      id: 'claim_001',
+      targetEntityId: 'recording_internal_001',
+      claimantEntityId: 'organization_001',
+      type: 'MASTER',
+      status: 'ASSERTED',
+      sharePercentage: 50,
+      weight: 2,
+      territoryCodes: ['US'],
+      provenance: {
+        state: 'USER_DECLARED',
+        sourceType: 'USER',
+        sourceId: 'intake',
+        evidence: [],
+        observedAt: now,
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    expect(claim.status).toBe('ASSERTED');
+    expect(claim.weight).toBe(2);
+    expect(isAuthoritativeProvenance(claim.provenance.state)).toBe(false);
+  });
+
+  it('rejects invalid rights-claim date ranges', () => {
+    expect(() => RightsClaimSchema.parse({
+      schemaVersion: 'rights-claim.v1',
+      id: 'claim_bad_dates',
+      targetEntityId: 'recording_internal_001',
+      type: 'MASTER',
+      validFrom: '2026-09-20',
+      validThrough: '2026-09-19',
+      provenance: detected,
+      createdAt: now,
+      updatedAt: now,
+    })).toThrow();
+  });
+
 });
