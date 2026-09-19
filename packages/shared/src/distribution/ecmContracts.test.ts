@@ -21,7 +21,7 @@ describe('ECM adapter intent contracts',()=>{
       messageType:'MusicalWorkClusterRequest',
       context,
       requestClusterId:{namespace:'indii.music',value:'request-1'},
-      musicalWork:{iswc:'T1234567890',title:'Example Work'},
+      musicalWork:{iswc:'T1234567890'},
     });
     expect(parsed.musicalWork?.iswc).toBe('T1234567890');
   });
@@ -35,11 +35,25 @@ describe('ECM adapter intent contracts',()=>{
     })).toThrow();
   });
 
-  it('requires resource identity in a resource-driven request',()=>{
-    expect(()=>DuplicateIsrcClusterRequestIntentSchema.parse({
+  it('accepts a Part 3 descriptive resource request without an identifier',()=>{
+    const parsed=DuplicateIsrcClusterRequestIntentSchema.parse({
       messageType:'DuplicateIsrcClusterRequest',
       context,
       requestClusterId:{value:'request-3'},
+      resource:{
+        resourceType:'SoundRecording',
+        title:'Recording',
+        displayArtistName:'Artist',
+      },
+    });
+    expect(parsed.resource.isrc).toBeUndefined();
+  });
+
+  it('still requires identity for a Part 2 resource-driven request',()=>{
+    expect(()=>MusicalWorkClusterRequestIntentSchema.parse({
+      messageType:'MusicalWorkClusterRequest',
+      context,
+      requestClusterId:{value:'request-resource'},
       resource:{
         resourceType:'SoundRecording',
         title:'Recording',
