@@ -22,7 +22,7 @@ const request: EvidenceJudgmentRequest = {
 
 describe('TypeSafeEvidenceProvider', () => {
   it('maps Noul probabilities onto indii-owned evidence judgments', async () => {
-    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
+    const fetchImpl = vi.fn(async (_input: string, _init?: RequestInit) => new Response(JSON.stringify({
       model: 'jev-latest',
       answers: {
         candidate_0: { type: 'noul', noul: 0.96 },
