@@ -12,18 +12,32 @@ export interface LegacyTrackLike {
   artist?: string;
   isrc?: string;
   iswc?: string;
-  upc?: string;
-  ean?: string;
-  catalogNumber?: string;
   durationSeconds?: number;
   duration?: number;
+}
+
+export interface LegacyReleaseLike {
+  id: string;
+  releaseTitle?: string;
+  title?: string;
+  releaseType?: string;
   releaseDate?: string;
   originalReleaseDate?: string;
+  upc?: string;
+  ean?: string;
+  icpn?: string;
+  gridId?: string;
+  catalogNumber?: string;
 }
 
 export interface CanonicalTrackProjection {
   recording: Extract<CanonicalMusicEntity, { entityType: 'sound_recording' }>;
   musicalWork: Extract<CanonicalMusicEntity, { entityType: 'musical_work' }>;
+  identifiers: MusicIdentifier[];
+}
+
+export interface CanonicalReleaseProjection {
+  release: Extract<CanonicalMusicEntity, { entityType: 'release' }>;
   identifiers: MusicIdentifier[];
 }
 
@@ -34,7 +48,7 @@ function importedUnknown(sourceId: string, observedAt: string): Provenance {
     sourceId,
     evidence: [],
     observedAt,
-    note: 'Projected from a legacy track record; authority has not been re-confirmed.',
+    note: 'Projected from a legacy record; authority has not been re-confirmed.',
   };
 }
 
@@ -44,12 +58,32 @@ function normalizeOptional(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function mapLegacyReleaseType(value: string | undefined): CanonicalReleaseProjection['release']['releaseType'] {
+  switch (value?.trim().toLowerCase()) {
+    case 'single': return 'SINGLE';
+    case 'ep': return 'EP';
+    case 'album': return 'ALBUM';
+    case 'compilation': return 'COMPILATION';
+    case 'mixtape': return 'MIXTAPE';
+    case 'videosingle':
+    case 'video single':
+      return 'VIDEO_SINGLE';
+    default:
+      return 'OTHER';
+  }
+}
+
 /**
  * Non-destructively projects an existing track record into canonical v1 shapes.
  *
  * This function does not persist, mutate, merge, or delete anything. It is a
- * compatibility boundary only. Legacy identifiers are retained as identifier
- * objects and deliberately do not determine the canonical entity IDs.
+ * compatibility boundary only. Track-level ISRC and ISWC values remain
+ * identifier objects and deliberately do not determine canonical entity IDs.
+ *
+ * Release identifiers are intentionally NOT accepted here: UPC/EAN/ICPN,
+ * catalog numbers, and GRID identify releases/products and must be projected
+ * through projectLegacyReleaseToCanonical instead of being attached to a
+ * recording just because they happen to be present on a legacy track row.
  */
 export function projectLegacyTrackToCanonical(
   track: LegacyTrackLike,
@@ -120,9 +154,67 @@ export function projectLegacyTrackToCanonical(
 
   pushIdentifier('ISRC', track.isrc, recordingId, 'isrc');
   pushIdentifier('ISWC', track.iswc, musicalWorkId, 'iswc');
-  pushIdentifier('UPC', track.upc, recordingId, 'upc');
-  pushIdentifier('EAN', track.ean, recordingId, 'ean');
-  pushIdentifier('CATALOG_NUMBER', track.catalogNumber, recordingId, 'catalog-number');
 
   return { recording, musicalWork, identifiers };
+}
+
+/**
+ * Projects a legacy release/product record without deriving identity from
+ * UPC/EAN/ICPN/GRID/catalog-number values.
+ */
+export function projectLegacyReleaseToCanonical(
+  legacy: LegacyReleaseLike,
+  observedAt: string,
+): CanonicalReleaseProjection {
+  const legacyId = normalizeOptional(legacy.id);
+  if (!legacyId) throw new Error('Legacy release id is required');
+
+  const title = normalizeOptional(legacy.releaseTitle)
+    ?? normalizeOptional(legacy.title)
+    ?? 'Untitled Release';
+
+  const provenance = importedUnknown(`legacy-release:${legacyId}`, observedAt);
+  const releaseId = `legacy-release:${legacyId}:release`;
+
+  const release: CanonicalReleaseProjection['release'] = {
+    schemaVersion: 'canonical-music-entity.v1',
+    id: releaseId,
+    entityType: 'release',
+    title,
+    releaseType: mapLegacyReleaseType(legacy.releaseType),
+    ...(normalizeOptional(legacy.releaseDate) ? { releaseDate: normalizeOptional(legacy.releaseDate)! } : {}),
+    ...(normalizeOptional(legacy.originalReleaseDate)
+      ? { originalReleaseDate: normalizeOptional(legacy.originalReleaseDate)! }
+      : {}),
+    createdAt: observedAt,
+    updatedAt: observedAt,
+    provenance,
+  };
+
+  const identifiers: MusicIdentifier[] = [];
+
+  const pushIdentifier = (
+    type: MusicIdentifier['type'],
+    value: string | undefined,
+    suffix: string,
+  ) => {
+    const normalized = normalizeOptional(value);
+    if (!normalized) return;
+    identifiers.push({
+      id: `legacy-release:${legacyId}:identifier:${suffix}`,
+      entityId: releaseId,
+      type,
+      value: normalized,
+      status: 'ACTIVE',
+      provenance,
+    });
+  };
+
+  pushIdentifier('UPC', legacy.upc, 'upc');
+  pushIdentifier('EAN', legacy.ean, 'ean');
+  pushIdentifier('ICPN', legacy.icpn, 'icpn');
+  pushIdentifier('GRID', legacy.gridId, 'grid');
+  pushIdentifier('CATALOG_NUMBER', legacy.catalogNumber, 'catalog-number');
+
+  return { release, identifiers };
 }
