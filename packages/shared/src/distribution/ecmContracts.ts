@@ -28,14 +28,19 @@ export type EcmMessageContext = z.infer<typeof EcmMessageContextSchema>;
 export const EcmResourceTypeSchema = z.enum(['SoundRecording', 'MusicVideo']);
 export type EcmResourceType = z.infer<typeof EcmResourceTypeSchema>;
 
-export const EcmResourceReferenceSchema = z.object({
+const EcmResourceReferenceBaseSchema = z.object({
   resourceType: EcmResourceTypeSchema,
   isrc: OptionalId,
   proprietaryId: EcmProprietaryIdSchema.optional(),
   title: NonBlank,
   displayArtistName: NonBlank,
   durationIso8601: OptionalId,
-}).strict().superRefine((resource, ctx) => {
+}).strict();
+
+function requireResourceIdentity(
+  resource: { isrc?: string; proprietaryId?: EcmProprietaryId },
+  ctx: z.RefinementCtx,
+): void {
   if (!resource.isrc && !resource.proprietaryId) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -43,8 +48,14 @@ export const EcmResourceReferenceSchema = z.object({
       message: 'An ECM resource reference needs an ISRC or proprietary identifier.',
     });
   }
-});
+}
+
+export const EcmResourceReferenceSchema = EcmResourceReferenceBaseSchema.superRefine(requireResourceIdentity);
 export type EcmResourceReference = z.infer<typeof EcmResourceReferenceSchema>;
+
+const EcmTimedResourceReferenceSchema = EcmResourceReferenceBaseSchema.extend({
+  durationIso8601: NonBlank,
+}).strict().superRefine(requireResourceIdentity);
 
 export const EcmClusterMemberMetadataSchema = z.object({
   membershipType: z.enum(['AudioFile', 'Metadata', 'AudioFileAndMetadata', 'UserDefined']).optional(),
@@ -126,14 +137,10 @@ export const DuplicateIsrcClusterNotificationIntentSchema = z.object({
   messageType: z.literal('DuplicateIsrcClusterNotification'),
   context: EcmMessageContextSchema,
   clusterId: EcmProprietaryIdSchema,
-  clusterRoot: EcmResourceReferenceSchema.extend({
-    durationIso8601: NonBlank,
-  }).strict(),
+  clusterRoot: EcmTimedResourceReferenceSchema,
   members: z.array(
     z.object({
-      resource: EcmResourceReferenceSchema.extend({
-        durationIso8601: NonBlank,
-      }).strict(),
+      resource: EcmTimedResourceReferenceSchema,
       disambiguation: EcmClusterMemberMetadataSchema.default({}),
       recordingMode: NonBlank.optional(),
       fingerprint: z.object({
