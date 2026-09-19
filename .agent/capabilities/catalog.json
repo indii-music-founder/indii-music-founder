@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "922f3e13c11b2dac69b165d3c82265e28d279694e312cd4c9055c08acdc83f00",
+  "sourceDigest": "b3b245f80c6474c7bd398a3234de439e0a8f4ccf811b76f4bbddd976b6141a44",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 36,
     "conditional": 70,
-    "quarantined": 89,
+    "quarantined": 90,
     "deprecated": 1
   },
   "capabilities": [
@@ -79,9 +79,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm install && cp -n .env.example .env 2>/dev/null || true && npm run typecheck",
-      "descriptionHash": "8dfaec0185ed70251602ade5fc5b6625dac4c25415952319a65bc4a53a0f84fd",
-      "contentHash": "26196959ebc29eba0c10bbc4e0ad6ef564e899d96292cc98a6f035d571692071",
+      "description": "npm run repo:assert-canonical && npm install && (cp -n .env.example .env 2>/dev/null || true) && npm run typecheck",
+      "descriptionHash": "dc4a52d39120c26207cf7a63dbf2fd6d9c06bec63f6411587073ae7919193d85",
+      "contentHash": "947b4df95e45a851874e736e1c9248a8b9e9257496aeac36194cfa935ad58c4c",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -1510,9 +1510,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "node --import tsx scripts/production-gate.ts --dev",
-      "descriptionHash": "55e3d332e2ac6f5cff10c19ec1f1bf2f929ccf2b521ce361ca02c03e283596a7",
-      "contentHash": "153023fbe4033898d805cc2e8175f56e2e6b77e83bfe205cd11a324c5d501372",
+      "description": "npm run repo:assert-canonical && node --import tsx scripts/production-gate.ts --dev",
+      "descriptionHash": "f463846907f67337a6babb982c4b4c346304d7eb853a15faa86928fcf51f9d38",
+      "contentHash": "849dae322b914463f98082cab5a3dcfae5ad1a484c7e1e265810909893555b15",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -1540,9 +1540,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "node --import tsx scripts/production-gate.ts --prod",
-      "descriptionHash": "f23786e6a8fbc5c95e4e49215e98cbab111ae9f7681afb4a6286b9e6c192d153",
-      "contentHash": "bc9a241222030a420681abe233bddac0882c38fa9d8354637a38ea472fdabfec",
+      "description": "npm run repo:assert-canonical && node --import tsx scripts/production-gate.ts --prod",
+      "descriptionHash": "83c32cc5345140dde40f43908d93cfe9c89f26db5de8ad35435ad7083467ba81",
+      "contentHash": "8fdea1857256725156157ee110d52073873f18d5b5d8055f1736978d50158394",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -1570,9 +1570,39 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run build:shared && npm run build:video-compiler && husky",
-      "descriptionHash": "a5f66c86995508119e11ddb355a6d30c87f09cb3a464b8500f7530383502b522",
-      "contentHash": "391c5b9f7bb683f056e6d17b9e6693a2536bb9f0d98866b29d6394f178cc3ecd",
+      "description": "npm run repo:assert-canonical && npm run build:shared && npm run build:video-compiler && husky",
+      "descriptionHash": "5ecf5003149dbde64ea16c40638c5b77f47a1ccc22b0a518934eb1d71185442f",
+      "contentHash": "984b27d4722b84bc1930b3cba2a6147ff0ca2f7f4da1daf9fdcc1bfd5d0de531",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:repo:assert-canonical",
+      "name": "npm run repo:assert-canonical",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/assert-canonical-repo.mjs",
+      "descriptionHash": "17ebafef5b2039d558ed068475213691b493854d5b09125d5172481c32ef8466",
+      "contentHash": "dea7f7efb93af576539a05e2520c45aa0456e71b98784f56bc04e9d2a7fad50b",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
