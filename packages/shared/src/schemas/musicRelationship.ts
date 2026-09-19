@@ -30,11 +30,7 @@ export const MusicRelationshipTypeSchema = z.enum([
   'REFERENCES_RELEASE_ONLY',
   'NO_MUSIC_EMBEDDED',
   'DERIVED_FROM',
-  'IDENTIFIED_BY',
   'REGISTERED_WITH',
-  'CLAIM_APPLIES_TO',
-  'USAGE_USES_RESOURCE',
-  'PROMOTES',
   'OTHER',
 ]);
 export type MusicRelationshipType = z.infer<typeof MusicRelationshipTypeSchema>;
