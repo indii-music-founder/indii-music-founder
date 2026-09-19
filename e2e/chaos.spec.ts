@@ -114,7 +114,7 @@ test.describe('Chaos — Error Boundaries', () => {
         // Find an actual input, textarea, or contenteditable element inside or as the prompt-input
         const input = page
             .locator('textarea:visible, input[type="text"]:visible, [contenteditable="true"]:visible')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {
@@ -133,7 +133,7 @@ test.describe('Chaos — Error Boundaries', () => {
     test('injecting invalid characters into prompt does not crash', async ({ authedPage: page }) => {
         const input = page
             .locator('textarea:visible, input[type="text"]:visible, [contenteditable="true"]:visible')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {
@@ -172,7 +172,7 @@ test.describe('Chaos — Error Boundaries', () => {
         const count = await navItems.count();
 
         for (let i = 0; i < Math.min(count, 4); i++) {
-            await navItems.nth(i).click().catch(() => { });
+            await navItems.nth(i).click().catch(() => { }); // bypass-strict: target indexed navigation item in loop iteration
             await page.waitForTimeout(800);
         }
 

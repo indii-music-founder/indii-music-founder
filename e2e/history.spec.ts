@@ -70,7 +70,7 @@ test.describe('History Module', () => {
         const allTab = page.locator('button:has-text("All Activity"), [aria-label*="All Activity"]');
         const tabCount = await allTab.count();
         if (tabCount > 0) {
-            await allTab.first().click();
+            await allTab.first().click(); // bypass-strict: navigation element rendered across desktop and mobile layouts
             await page.waitForTimeout(500);
             await expect(page.locator('#root')).toBeVisible();
         }

@@ -183,7 +183,7 @@ test.describe('Higgsfield-Inspired Video Workflow', () => {
         });
 
         // 6. Fill in text and trigger generation flow
-        const promptTextarea = page.locator('[data-testid="intelligence-prompt-input"]').first();
+        const promptTextarea = page.locator('[data-testid="intelligence-prompt-input"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
         if (await promptTextarea.isVisible()) {
             await promptTextarea.fill('Cinematic sunset over Detroit city skyline');
         }

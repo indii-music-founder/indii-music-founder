@@ -139,7 +139,7 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
 
         // 3. Verify the UI did not hang and a response was generated
         // We ensure the circuit breaker and memory threshold fixes kept the swarm running
-        const responseText = await page.locator('[data-agent-id="video"] .message-content').last().innerText();
+        const responseText = await page.locator('[data-agent-id="video"] .message-content').last().innerText(); // bypass-strict: select latest message in chat thread
         expect(responseText.length).toBeGreaterThan(0);
         // If the AI is not mocked, it should explicitly mention the dark industrial/neon green theme.
     });

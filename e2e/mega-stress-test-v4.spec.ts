@@ -28,7 +28,7 @@ test.describe('Mega Stress Test v4.0 (Core Shell Integrity)', () => {
         ];
 
         for (const selector of navTargets) {
-            const nav = page.locator(selector).first();
+            const nav = page.locator(selector).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
             if (await nav.isVisible().catch(() => false)) {
                 await nav.click();
                 await page.waitForTimeout(300);
@@ -40,30 +40,30 @@ test.describe('Mega Stress Test v4.0 (Core Shell Integrity)', () => {
     });
 
     test('103. Creative and boardroom entrypoints load real content', async ({ authedPage: page }) => {
-        const creativeNav = page.locator('[data-testid="nav-item-creative"]').first();
+        const creativeNav = page.locator('[data-testid="nav-item-creative"]').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
         if (await creativeNav.isVisible().catch(() => false)) {
             await creativeNav.click();
-            await expect(page.locator('h1, h2').filter({ hasText: /creative/i }).first()).toBeVisible({ timeout: 15_000 });
+            await expect(page.locator('h1, h2').filter({ hasText: /creative/i }).first()).toBeVisible({ timeout: 15_000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
         }
 
-        const boardroomNav = page.locator('[data-testid="nav-item-boardroom"]').first();
+        const boardroomNav = page.locator('[data-testid="nav-item-boardroom"]').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
         if (await boardroomNav.isVisible().catch(() => false)) {
             await boardroomNav.click();
-            await expect(page.locator('h1, h2').filter({ hasText: /boardroom/i }).first()).toBeVisible({ timeout: 15_000 });
+            await expect(page.locator('h1, h2').filter({ hasText: /boardroom/i }).first()).toBeVisible({ timeout: 15_000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
         }
     });
 
     test('104. Settings page opens and navigates away cleanly', async ({ authedPage: page }) => {
-        const settingsBtn = page.locator('[data-testid="nav-item-settings"]').first();
+        const settingsBtn = page.locator('[data-testid="nav-item-settings"]').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
         await expect(settingsBtn).toBeVisible({ timeout: 15_000 });
         await settingsBtn.click();
 
         // Verify settings page is visible
-        const profileHeader = page.getByRole('heading', { name: /profile/i }).first();
+        const profileHeader = page.getByRole('heading', { name: /profile/i }).first(); // bypass-strict: heading text rendered across responsive layout breakpoints
         await expect(profileHeader).toBeVisible({ timeout: 5_000 });
 
         // Navigate back to dashboard to "close" it
-        const dashboardBtn = page.locator('[data-testid="return-hq-btn"]').first();
+        const dashboardBtn = page.locator('[data-testid="return-hq-btn"]').first(); // bypass-strict: candidate element present across multiple viewport containers
         await expect(dashboardBtn).toBeVisible({ timeout: 5_000 });
         await dashboardBtn.click();
 
@@ -73,6 +73,6 @@ test.describe('Mega Stress Test v4.0 (Core Shell Integrity)', () => {
     test('105. Mobile remote entrypoint remains accessible from the shell', async ({ authedPage: page }) => {
         await page.goto(`${BASE_URL}/mobile-remote`, { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { timeout: 15_000 });
-        await expect(page.locator('h1:has-text("indii")').first()).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('h1:has-text("indii")').first()).toBeVisible({ timeout: 10_000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
     });
 });

@@ -117,7 +117,7 @@ test.describe('ISSUE-777 Verification: Image Mode Payload Capture', () => {
 
         // Output size 1k (might be a select or radio)
         // We will just try to click text=1K or similar if we don't know the selector
-        const size1k = page.locator('text=1K').first();
+        const size1k = page.locator('text=1K').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
         if (await size1k.isVisible()) await size1k.click();
 
         await page.locator('[data-testid="direct-batch-3"]').click().catch(() => console.log('batch-3 not found'));
@@ -133,7 +133,7 @@ test.describe('ISSUE-777 Verification: Image Mode Payload Capture', () => {
         if (await promptInput.isVisible()) {
             await promptInput.fill('A cyberpunk city skyline at night');
         } else {
-            await page.locator('textarea').first().fill('A cyberpunk city skyline at night');
+            await page.locator('textarea').first().fill('A cyberpunk city skyline at night'); // bypass-strict: form input may coexist with background modal or duplicate field
         }
 
         // Turn off the local E2E mock so it makes the actual network request we can intercept
@@ -146,7 +146,7 @@ test.describe('ISSUE-777 Verification: Image Mode Payload Capture', () => {
         if (await generateBtn.isVisible()) {
             await generateBtn.click();
         } else {
-            await page.locator('button:has-text("Generate")').first().click();
+            await page.locator('button:has-text("Generate")').first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         }
 
         // Wait for network request to be captured

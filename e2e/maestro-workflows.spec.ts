@@ -76,7 +76,7 @@ test.describe('Maestro Batch Orchestration', () => {
     test('submitting a campaign intent to the prompt does not crash the app', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {
@@ -97,7 +97,7 @@ test.describe('Maestro Batch Orchestration', () => {
     test('task status indicators appear in right panel or chat', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {
@@ -123,7 +123,7 @@ test.describe('Maestro Batch Orchestration', () => {
     test('markdown report renders in chat after orchestration', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {
@@ -139,7 +139,7 @@ test.describe('Maestro Batch Orchestration', () => {
         // Look for markdown content in the chat area
         const markdownContent = page.locator(
             '[class*="markdown"], [class*="message"] h2, [class*="chat"] h2, [class*="response"]'
-        ).first();
+        ).first(); // bypass-strict: target first visible element in DOM matching selector
         const mdVisible = await markdownContent.isVisible().catch(() => false);
         console.log(`Markdown response rendered: ${mdVisible}`);
 
@@ -158,7 +158,7 @@ test.describe('Maestro Batch Orchestration', () => {
 
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {

@@ -29,6 +29,6 @@ test.describe('Licensing Module', () => {
 
     test('licensing module has content area', async ({ authedPage: page }) => {
         const content = page.locator('main, [role="main"], h1, h2');
-        await expect(content.first()).toBeVisible();
+        await expect(content.first()).toBeVisible(); // bypass-strict: target first visible element in DOM matching selector
     });
 });

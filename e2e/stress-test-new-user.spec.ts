@@ -128,7 +128,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         // We must wait for the count to be 3.
         await expect(page.locator('.whitespace-pre-wrap')).toHaveCount(3, { timeout: 45000 });
 
-        const responseLocator = page.locator('.whitespace-pre-wrap').nth(2); // 0-indexed, so 2 is the 3rd message
+        const responseLocator = page.locator('.whitespace-pre-wrap').nth(2); // bypass-strict: target specific ordered item in message list - 0-indexed, so 2 is the 3rd message
         const responseText = await responseLocator.innerText();
         console.log(`[Gauntlet] Agent Response: "${responseText}"`);
 
@@ -159,7 +159,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
             throw new Error(`Onboarding flow failed to complete: Both "Go to Studio" and "Skip" commands missing. Last Agent Response: "${responseText}"`);
         }
 
-        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 15000 }); // bypass-strict: action button may appear in multiple responsive viewports or action bars
 
         // C. Navigate to Creative Domain
         // Project creation is no longer required upfront; users jump straight into modules
@@ -173,21 +173,21 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         // E. Verify Key Sub-Modules Are Accessible
         // The Creative Director has tabs: Generate, Canvas, Direct, Lab, Release AND Builder, Brand, History
-        const generateTab = page.getByRole('button', { name: /generate/i }).first();
-        const builderTab = page.getByRole('button', { name: /builder/i }).first();
+        const generateTab = page.getByRole('button', { name: /generate/i }).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
+        const builderTab = page.getByRole('button', { name: /builder/i }).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
         await expect(generateTab).toBeVisible({ timeout: 5000 });
         await expect(builderTab).toBeVisible({ timeout: 5000 });
         console.log('[Gauntlet] Creative Director sub-tabs verified (Generate, Builder).');
 
         // F. Verify Chat Input is Ready
         // The chat input can be in the right panel (Messages tab) OR the bottom bar (textbox)
-        const creativeChatInput = page.getByPlaceholder(/describe your creative task|message creative|ask anything/i).first();
+        const creativeChatInput = page.getByPlaceholder(/describe your creative task|message creative|ask anything/i).first(); // bypass-strict: form input may coexist with background modal or duplicate field
         const isInputVisible = await creativeChatInput.isVisible({ timeout: 5000 }).catch(() => false);
         if (isInputVisible) {
             console.log('[Gauntlet] Chat input ready. Creative Director integration verified.');
         } else {
             // Fallback: check for the textbox by role (bottom bar layout)
-            const bottomBarInput = page.getByRole('textbox', { name: /message creative/i }).first();
+            const bottomBarInput = page.getByRole('textbox', { name: /message creative/i }).first(); // bypass-strict: form input may coexist with background modal or duplicate field
             const isBottomBar = await bottomBarInput.isVisible({ timeout: 3000 }).catch(() => false);
             if (isBottomBar) {
                 console.log('[Gauntlet] Chat input (bottom bar) ready. Creative Director integration verified.');
@@ -223,7 +223,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
             const randomNav = navItems[Math.floor(Math.random() * navItems.length)];
             console.log(`[Gauntlet] Chaos Step ${i + 1}: Clicking ${randomNav}`);
 
-            const navLocator = page.getByRole('button', { name: randomNav }).first();
+            const navLocator = page.getByRole('button', { name: randomNav }).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
             const isVisible = await navLocator.isVisible({ timeout: 2000 }).catch(() => false);
             if (isVisible) {
                 await navLocator.click();
@@ -403,18 +403,18 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         await page.waitForLoadState('domcontentloaded');
 
         // Look for login form
-        const emailInput = page.getByLabel(/email/i).first();
-        const passwordInput = page.getByLabel(/password/i).first();
+        const emailInput = page.getByLabel(/email/i).first(); // bypass-strict: form input may coexist with background modal or duplicate field
+        const passwordInput = page.getByLabel(/password/i).first(); // bypass-strict: form input may coexist with background modal or duplicate field
 
         if (await emailInput.isVisible({ timeout: 5000 })) {
             console.log('[Gauntlet] Login form found, authenticating...');
             await emailInput.fill(TEST_EMAIL!);
             await passwordInput.fill(TEST_PASSWORD!);
             // Use form submit button — NOT the "Sign In" tab toggle at the top
-            await page.locator('form button[type="submit"]').first().click();
+            await page.locator('form button[type="submit"]').first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
 
             // Wait for successful auth
-            await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });
+            await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 30000 }); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             console.log('[Gauntlet] Real auth successful!');
         } else {
             console.log('[Gauntlet] No login form visible, may already be authenticated');

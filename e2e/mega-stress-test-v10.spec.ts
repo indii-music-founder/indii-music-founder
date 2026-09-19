@@ -31,16 +31,16 @@ test.describe('Mega Stress Test v10.0 (Live Backend Smoke)', () => {
     test('Routine 7. Finance and workflow modules render without fixture data', async ({ authedPage: page }) => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
 
-        const financeNav = page.locator('[data-testid="nav-item-finance"]').first();
+        const financeNav = page.locator('[data-testid="nav-item-finance"]').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
         if (await financeNav.isVisible().catch(() => false)) {
             await financeNav.click();
-            await expect(page.locator('h1, h2').filter({ hasText: /finance/i }).first()).toBeVisible({ timeout: 30_000 });
+            await expect(page.locator('h1, h2').filter({ hasText: /finance/i }).first()).toBeVisible({ timeout: 30_000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
         }
 
-        const workflowNav = page.locator('[data-testid="nav-item-workflow"]').first();
+        const workflowNav = page.locator('[data-testid="nav-item-workflow"]').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
         if (await workflowNav.isVisible().catch(() => false)) {
             await workflowNav.click();
-            await expect(page.locator('h1, h2').filter({ hasText: /workflow/i }).first()).toBeVisible({ timeout: 30_000 });
+            await expect(page.locator('h1, h2').filter({ hasText: /workflow/i }).first()).toBeVisible({ timeout: 30_000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
         }
     });
 

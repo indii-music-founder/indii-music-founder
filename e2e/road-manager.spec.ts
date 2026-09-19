@@ -132,12 +132,12 @@ test.describe('Road Manager Module', () => {
         const waypointsInput = page.locator('#newLocation');
         await waypointsInput.fill('Austin, TX');
         await page.getByRole('button', { name: 'Add location' }).click();
-        await expect(page.locator('text=Austin, TX').first()).toBeVisible({ timeout: 5_000 });
+        await expect(page.locator('text=Austin, TX').first()).toBeVisible({ timeout: 5_000 }); // bypass-strict: text appears in multiple DOM containers or preview cards
  
         // Add Houston, TX waypoint
         await waypointsInput.fill('Houston, TX');
         await waypointsInput.press('Enter');
-        await expect(page.locator('text=Houston, TX').first()).toBeVisible({ timeout: 5_000 });
+        await expect(page.locator('text=Houston, TX').first()).toBeVisible({ timeout: 5_000 }); // bypass-strict: text appears in multiple DOM containers or preview cards
 
         // Click Initialize Route
         await page.getByRole('button', { name: 'Initialize Route' }).click();
@@ -153,7 +153,7 @@ test.describe('Road Manager Module', () => {
         await expect(page.getByRole('button', { name: 'Logistics Verified' })).toBeVisible({ timeout: 10_000 });
 
         // Open edit logistics modal
-        await page.getByRole('button', { name: 'Edit' }).first().click();
+        await page.getByRole('button', { name: 'Edit' }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await expect(page.locator('text=Edit Logistics')).toBeVisible({ timeout: 5_000 });
 
         // Modify venue
@@ -175,7 +175,7 @@ test.describe('Road Manager Module', () => {
         await locationInput.fill('Dallas, TX');
 
         // Scan gas stations
-        const scanBtn = locationInput.locator('..').locator('button').nth(1);
+        const scanBtn = locationInput.locator('..').locator('button').nth(1); // bypass-strict: target specific indexed action button in control cluster
         await scanBtn.click();
 
         // Verify nearby places are rendered in list

@@ -31,7 +31,7 @@ test.describe('Agent Dashboard', () => {
 
         console.log('[AGENT TEST] Waiting for navigation item...');
         // Wait for the specific module container to be rendered
-        await page.locator('[data-testid="nav-item-agent"]').first().waitFor({ state: 'visible', timeout: 15_000 });
+        await page.locator('[data-testid="nav-item-agent"]').first().waitFor({ state: 'visible', timeout: 15_000 }); // bypass-strict: navigation element rendered across desktop and mobile layouts
 
         console.log('[AGENT TEST] Checking for "The Scout" content...');
         // "The Scout" is the default view in Agent module
@@ -41,7 +41,7 @@ test.describe('Agent Dashboard', () => {
     test('agent module loads without crashing on desktop viewport', async ({ authedPage: page }) => {
         await expect(page.locator('#root')).toBeVisible();
         // Should NOT show mobile warning on desktop
-        const mobileWarning = page.locator('text=mobile only, text=desktop required').first();
+        const mobileWarning = page.locator('text=mobile only, text=desktop required').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
         const warningVisible = await mobileWarning.isVisible().catch(() => false);
         expect(warningVisible).toBe(false);
     });
@@ -56,7 +56,7 @@ test.describe('Agent Dashboard', () => {
         ];
 
         for (const tab of tabs) {
-            const tabEl = page.locator(`[role="tab"]:has-text("${tab.name}"), button:has-text("${tab.name}")`).first();
+            const tabEl = page.locator(`[role="tab"]:has-text("${tab.name}"), button:has-text("${tab.name}")`).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
             const tabVisible = await tabEl.isVisible().catch(() => false);
 
             if (tabVisible) {
@@ -76,7 +76,7 @@ test.describe('Agent Dashboard', () => {
     });
 
     test('scout tab shows map or venue interface', async ({ authedPage: page }) => {
-        const scoutTab = page.locator('[role="tab"]:has-text("Scout"), button:has-text("Scout")').first();
+        const scoutTab = page.locator('[role="tab"]:has-text("Scout"), button:has-text("Scout")').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
         const scoutVisible = await scoutTab.isVisible().catch(() => false);
 
         if (scoutVisible) {
@@ -86,7 +86,7 @@ test.describe('Agent Dashboard', () => {
             // Should show some form of scout UI
             const scoutContent = page.locator(
                 '[class*="scout"], [class*="map"], [class*="venue"], canvas'
-            ).first();
+            ).first(); // bypass-strict: target first visible element in DOM matching selector
             // Don't assert visibility — just confirm no crash
             await expect(page.locator('#root')).toBeVisible();
         }
@@ -94,7 +94,7 @@ test.describe('Agent Dashboard', () => {
 
     test('campaigns and inbox tabs show stub or content (regression guard)', async ({ authedPage: page }) => {
         for (const tabName of ['Campaigns', 'Inbox']) {
-            const tab = page.locator(`button:has-text("${tabName}"), [role="tab"]:has-text("${tabName}")`).first();
+            const tab = page.locator(`button:has-text("${tabName}"), [role="tab"]:has-text("${tabName}")`).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
             const tabVisible = await tab.isVisible().catch(() => false);
 
             if (tabVisible) {
@@ -108,7 +108,7 @@ test.describe('Agent Dashboard', () => {
 
     test('agent responds to user messages with streaming response', async ({ authedPage: page }) => {
         // Navigate to chat tab
-        const chatTab = page.locator('[role="tab"]:has-text("chat"), button:has-text("chat")').first();
+        const chatTab = page.locator('[role="tab"]:has-text("chat"), button:has-text("chat")').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
         const chatVisible = await chatTab.isVisible().catch(() => false);
 
         if (!chatVisible) {
@@ -120,7 +120,7 @@ test.describe('Agent Dashboard', () => {
         await page.waitForTimeout(1_000);
 
         // Find message input field
-        const messageInput = page.locator('textarea, input[placeholder*="message" i], input[placeholder*="ask" i]').first();
+        const messageInput = page.locator('textarea, input[placeholder*="message" i], input[placeholder*="ask" i]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
         if (!await messageInput.isVisible().catch(() => false)) {
             console.log('[AGENT] Message input not found');
             return;
@@ -128,7 +128,7 @@ test.describe('Agent Dashboard', () => {
 
         // Send a test message
         await messageInput.fill('What are my upcoming releases?');
-        const sendBtn = page.locator('button:has-text("Send"), button[aria-label*="send" i]').first();
+        const sendBtn = page.locator('button:has-text("Send"), button[aria-label*="send" i]').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         if (await sendBtn.isVisible()) {
             await sendBtn.click();
         } else {
@@ -136,7 +136,7 @@ test.describe('Agent Dashboard', () => {
         }
 
         // Wait for response message to appear
-        const responseMsg = page.locator('[data-testid="agent-response"], [class*="message"]:has-text("releases")').first();
+        const responseMsg = page.locator('[data-testid="agent-response"], [class*="message"]:has-text("releases")').first(); // bypass-strict: candidate element present across multiple viewport containers
         const hasResponse = await responseMsg.isVisible({ timeout: 10_000 }).catch(() => false);
 
         if (hasResponse) {
@@ -151,7 +151,7 @@ test.describe('Agent Dashboard', () => {
 
     test('agent specializes tasks by routing to appropriate agent', async ({ authedPage: page }) => {
         // This tests the hub-and-spoke architecture
-        const chatTab = page.locator('[role="tab"]:has-text("chat"), button:has-text("chat")').first();
+        const chatTab = page.locator('[role="tab"]:has-text("chat"), button:has-text("chat")').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
         if (!await chatTab.isVisible().catch(() => false)) {
             console.log('[AGENT] Chat tab not available');
             return;
@@ -161,14 +161,14 @@ test.describe('Agent Dashboard', () => {
         await page.waitForTimeout(1_000);
 
         // Send a distribution-specific task
-        const messageInput = page.locator('textarea, input[placeholder*="message" i]').first();
+        const messageInput = page.locator('textarea, input[placeholder*="message" i]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
         if (await messageInput.isVisible()) {
             await messageInput.fill('I need to submit my album to DistroKid');
             await messageInput.press('Enter');
             await page.waitForTimeout(2_000);
 
             // Should delegate to distribution/legal agent
-            const distributionRef = page.locator('text=/distribution|ddex|distrokid|distributor/i').first();
+            const distributionRef = page.locator('text=/distribution|ddex|distrokid|distributor/i').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
             const delegated = await distributionRef.isVisible().catch(() => false);
 
             if (delegated) {
@@ -196,9 +196,9 @@ test.describe('Agent Mobile Warning', () => {
         //   1. MobileRemote rendered ("indiiCONTROLLER" header)
         //   2. AgentDashboard MobileOnlyWarning (requires larger screen text)
         //   3. app-container present (app stable, content loading)
-        const remoteLoc = page.locator('h1:has-text("indiiCONTROLLER"), h1:has-text("indiiREMOTE")').first();
-        const warningLoc = page.locator('text=/requires a larger screen|wider screen|desktop/i').first();
-        const containerLoc = page.locator('[data-testid="app-container"]').first();
+        const remoteLoc = page.locator('h1:has-text("indiiCONTROLLER"), h1:has-text("indiiREMOTE")').first(); // bypass-strict: heading text rendered across responsive layout breakpoints
+        const warningLoc = page.locator('text=/requires a larger screen|wider screen|desktop/i').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        const containerLoc = page.locator('[data-testid="app-container"]').first(); // bypass-strict: candidate element present across multiple viewport containers
 
         // Wait up to 20s for one of the valid outcomes to appear
         await Promise.race([

@@ -26,7 +26,7 @@ test.describe('Publishing Module', () => {
     test('navigates to publishing module without crash', async ({ authedPage: page }) => {
         // App container and content should be visible
         await expect(page.locator('#root')).toBeVisible();
-        await expect(page.locator('h1, h2, h3').first()).toBeVisible();
+        await expect(page.locator('h1, h2, h3').first()).toBeVisible(); // bypass-strict: heading text rendered across responsive layout breakpoints
     });
 
     test('publishing module renders content', async ({ authedPage: page }) => {

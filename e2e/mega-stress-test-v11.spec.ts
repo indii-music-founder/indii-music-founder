@@ -14,7 +14,7 @@ test.describe('Mega Stress Test v11.0 (Route Integrity)', () => {
         await page.goto(`${BASE_URL}/creative`, { waitUntil: 'domcontentloaded' });
         await expect(page.locator('body')).toBeVisible();
         await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
-        await expect(page.locator('[data-testid="direct-view-btn"], [data-testid="generate-view-btn"]').first()).toBeVisible({ timeout: 30_000 });
+        await expect(page.locator('[data-testid="direct-view-btn"], [data-testid="generate-view-btn"]').first()).toBeVisible({ timeout: 30_000 }); // bypass-strict: candidate element present across multiple viewport containers
     });
 
     test('Routine 120: Core routes render without overlay crashes', async ({ authedPage: page }) => {

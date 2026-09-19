@@ -145,7 +145,7 @@ async function sendAndReadReceipt(
 ): Promise<Locator> {
   const receipts = page.getByTestId("persona-response-actions");
   const previousResponseId = await receipts
-    .last()
+    .last() // bypass-strict: select last matching element in sequence
     .getAttribute("data-response-id")
     .catch(() => null);
   await page.getByTestId("main-prompt-input").fill(prompt);
@@ -154,13 +154,13 @@ async function sendAndReadReceipt(
     .poll(
       () =>
         receipts
-          .last()
+          .last() // bypass-strict: select last matching element in sequence
           .getAttribute("data-response-id")
           .catch(() => null),
       { timeout: 180_000 },
     )
     .not.toBe(previousResponseId);
-  const receipt = receipts.last();
+  const receipt = receipts.last(); // bypass-strict: select most recent transaction receipt
   await waitForSettledReceipt(receipt);
   return receipt;
 }

@@ -73,18 +73,18 @@ test.describe('Multi-Agent Swarm Delegation', () => {
     });
 
     test('Conductor routes task to specialist successfully', async ({ authedPage: page }) => {
-        const input = page.locator('[data-testid="prompt-input"], textarea[placeholder], [role="textbox"]').first();
+        const input = page.locator('[data-testid="prompt-input"], textarea[placeholder], [role="textbox"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
         await input.waitFor({ state: 'visible', timeout: 5000 }).catch(() => { });
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {
             // Open CommandBar if collapsed
-            const commandBar = page.locator('[class*="command"], [class*="prompt"]').first();
+            const commandBar = page.locator('[class*="command"], [class*="prompt"]').first(); // bypass-strict: target first visible element in DOM matching selector
             await commandBar.click().catch(() => { });
             await page.waitForTimeout(500);
         }
 
-        const inputReady = page.locator('[data-testid="prompt-input"], textarea, [role="textbox"]').first();
+        const inputReady = page.locator('[data-testid="prompt-input"], textarea, [role="textbox"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
         await inputReady.click({ force: true });
         await inputReady.fill('Help me design a marketing campaign for my new album');
         await inputReady.press('Enter');

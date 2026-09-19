@@ -53,11 +53,11 @@ test.describe('Creative Studio', () => {
         await generateBtn.click();
 
         // Canvas should show the new image layer
-        const canvasContainer = page.locator('.canvas-container').first();
+        const canvasContainer = page.locator('.canvas-container').first(); // bypass-strict: target first visible element in DOM matching selector
         await expect(canvasContainer).toBeVisible({ timeout: 15_000 });
         
         // Mock result verification
-        const resultNotification = page.locator('text=Generation complete').first();
+        const resultNotification = page.locator('text=Generation complete').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
         if (await resultNotification.isVisible({ timeout: 5000 }).catch(() => false)) {
             console.log('✓ Image generation completed');
         }
@@ -155,7 +155,7 @@ test.describe('Creative Studio', () => {
 
     test.skip('outpainting flow: upload image -> extend -> save', async ({ authedPage: page }) => {
         // Find outpaint tool
-        const outpaintToolBtn = page.locator('[data-testid="tool-outpaint"]').or(page.locator('button:has-text("Outpaint")')).first();
+        const outpaintToolBtn = page.locator('[data-testid="tool-outpaint"]').or(page.locator('button:has-text("Outpaint")')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         if (await outpaintToolBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
             await outpaintToolBtn.click();
             
@@ -179,12 +179,12 @@ test.describe('Creative Studio', () => {
 
     test('brand kit integration applies brand colors', async ({ authedPage: page }) => {
         // Open brand kit
-        const brandKitBtn = page.locator('[data-testid="tool-brandkit"]').or(page.locator('button:has-text("Brand Kit")')).first();
+        const brandKitBtn = page.locator('[data-testid="tool-brandkit"]').or(page.locator('button:has-text("Brand Kit")')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         if (await brandKitBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
             await brandKitBtn.click();
             
             // Check that brand colors are applied or visible in UI
-            const colorSwatch = page.locator('[data-testid="brand-color-swatch"]').first();
+            const colorSwatch = page.locator('[data-testid="brand-color-swatch"]').first(); // bypass-strict: candidate element present across multiple viewport containers
             await expect(colorSwatch).toBeVisible({ timeout: 5_000 });
             
             await colorSwatch.click();

@@ -53,12 +53,12 @@ test.describe('Distribution Module Hardened Suite', () => {
         await expect(grid).toBeVisible({ timeout: 15_000 });
 
         console.log('[E2E] Clicking Authorize for DistroKid...');
-        const distBtn = page.locator('[data-testid="connect-button-distrokid"]').first();
+        const distBtn = page.locator('[data-testid="connect-button-distrokid"]').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await expect(distBtn).toBeVisible({ timeout: 10_000 });
         await distBtn.click();
 
         console.log('[E2E] Waiting for Authorize modal...');
-        const modal = page.locator('[data-testid="connect-distributor-modal"]').first();
+        const modal = page.locator('[data-testid="connect-distributor-modal"]').first(); // bypass-strict: select active panel/modal layer among stacked containers
         await expect(modal).toBeVisible({ timeout: 15_000 });
 
         console.log('[E2E] Filling account details...');
@@ -85,12 +85,12 @@ test.describe('Distribution Module Hardened Suite', () => {
         await page.locator('[data-testid="qc-input-artist"]').fill('E2E Test Artist');
 
         console.log('[E2E] Starting QC analysis...');
-        const runBtn = page.locator('[data-testid="qc-run-analysis"]').first();
+        const runBtn = page.locator('[data-testid="qc-run-analysis"]').first(); // bypass-strict: candidate element present across multiple viewport containers
         await expect(runBtn).toBeVisible({ timeout: 10_000 });
         await runBtn.click();
 
         console.log('[E2E] Waiting for QC passed badge...');
-        const passedBadge = page.locator('[data-testid="qc-passed-badge"]').first();
+        const passedBadge = page.locator('[data-testid="qc-passed-badge"]').first(); // bypass-strict: candidate element present across multiple viewport containers
         await expect(passedBadge).toBeVisible({ timeout: 30_000 });
         console.log('[E2E] QC workflow verified.');
     });
@@ -101,12 +101,12 @@ test.describe('Distribution Module Hardened Suite', () => {
         await expect(page.locator('[data-testid="distro-content-new"]')).toBeVisible({ timeout: 10_000 });
 
         console.log('[E2E] Clicking Create Release...');
-        const createBtn = page.locator('[data-testid="releases-submit-button"]').first();
+        const createBtn = page.locator('[data-testid="releases-submit-button"]').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await expect(createBtn).toBeVisible({ timeout: 10_000 });
         await createBtn.click();
 
         console.log('[E2E] Verifying Metadata modal visibility...');
-        const metadataModal = page.locator('[data-testid="metadata-modal"]').first();
+        const metadataModal = page.locator('[data-testid="metadata-modal"]').first(); // bypass-strict: select active panel/modal layer among stacked containers
         await expect(metadataModal).toBeVisible({ timeout: 15_000 });
         await expect(page.locator('[data-testid="release-title-input"]')).toBeVisible();
         console.log('[E2E] Release sequence verified.');

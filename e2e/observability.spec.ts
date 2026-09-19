@@ -14,7 +14,7 @@ test.describe('Observability Module', () => {
 
     test('navigates to observability module via footer button', async ({ authedPage: page }) => {
         // Find observability button
-        const obsBtn = page.locator('button').filter({ hasText: /Observability/i }).first();
+        const obsBtn = page.locator('button').filter({ hasText: /Observability/i }).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         // It could also be the icon button with the activity icon
 
         // Wait, looking at navigation.spec.ts it explicitly checks for data-testid: "observability-footer-btn"

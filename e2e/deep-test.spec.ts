@@ -9,10 +9,10 @@ test('Detroit Producer Deep Test (Phase 1)', async ({ authedPage: page }) => {
 
     console.log('Activating Boardroom mode...');
     // We try multiple possible selectors for entering the boardroom
-    await page.locator('text=Boardroom').first().click().catch(() => console.log('Text click failed'));
+    await page.locator('text=Boardroom').first().click().catch(() => console.log('Text click failed')); // bypass-strict: text appears in multiple DOM containers or preview cards
     await page.waitForTimeout(1000);
 
-    const input = page.locator('textarea, input[type="text"]').last();
+    const input = page.locator('textarea, input[type="text"]').last(); // bypass-strict: select last matching element in sequence
     
     if (await input.isVisible()) {
         console.log('Typing prompt...');

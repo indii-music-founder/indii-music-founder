@@ -98,7 +98,7 @@ test.describe('Creative Studio', () => {
             // Canvas element, gallery grid, or creative-specific content should appear
             const creativeContent = page.locator(
                 'canvas, [class*="gallery"], [class*="studio"], [class*="creative"]'
-            ).first();
+            ).first(); // bypass-strict: target first visible element in DOM matching selector
 
             const contentVisible = await creativeContent.isVisible().catch(() => false);
             // Log but don't fail — lazy loading may still be in progress

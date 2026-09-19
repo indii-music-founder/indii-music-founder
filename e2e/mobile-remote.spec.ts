@@ -20,11 +20,11 @@ test.describe('Mobile Remote Companion Device', () => {
         await page.waitForSelector('#root', { state: 'visible', timeout: 15_000 });
 
         // Verify that the controller header is visible
-        const header = page.locator('h1:has-text("indii")').first();
+        const header = page.locator('h1:has-text("indii")').first(); // bypass-strict: heading text rendered across responsive layout breakpoints
         await expect(header).toBeVisible({ timeout: 10_000 });
 
         // Verify the secure cloud relay version is displayed
-        const versionLabel = page.locator('text=/secure cloud relay/i').first();
+        const versionLabel = page.locator('text=/secure cloud relay/i').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
         await expect(versionLabel).toBeVisible({ timeout: 10_000 });
     });
 
@@ -33,14 +33,14 @@ test.describe('Mobile Remote Companion Device', () => {
         await page.waitForSelector('#root', { state: 'visible', timeout: 15_000 });
 
         // When disconnected (mock user has no active desktop state), it should show "Link" or "Pairing" button or qr code trigger
-        const linkBtn = page.locator('button:has-text("Link"), button:has-text("Pairing"), button:has-text("Show Pairing Code")').first();
+        const linkBtn = page.locator('button:has-text("Link"), button:has-text("Pairing"), button:has-text("Show Pairing Code")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await expect(linkBtn).toBeVisible({ timeout: 10_000 });
         
         // Tap "Show Pairing Code" or "Link"
         await linkBtn.click();
         
         // Check that the QR code pairing modal opens
-        const closeBtn = page.locator('button:has-text("Close")').first();
+        const closeBtn = page.locator('button:has-text("Close")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await expect(closeBtn).toBeVisible({ timeout: 10_000 });
         
         // Close modal

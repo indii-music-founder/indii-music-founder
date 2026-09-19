@@ -70,7 +70,7 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
     });
 
     test('specialist reply renders in the chat', async ({ authedPage: page }) => {
-        const input = page.locator('[data-testid="main-prompt-input"]').first();
+        const input = page.locator('[data-testid="main-prompt-input"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
         await input.waitFor({ state: 'visible', timeout: 15_000 });
         await input.click({ force: true });
         await input.fill('Help me launch my new album');

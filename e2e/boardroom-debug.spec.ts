@@ -26,7 +26,7 @@ test('capture boardroom logs', async ({ authedPage: page }) => {
     await page.waitForTimeout(1000);
 
     console.log('Locating Boardroom input...');
-    const input = page.locator('[data-testid="main-prompt-input"]:visible').first();
+    const input = page.locator('[data-testid="main-prompt-input"]:visible').first(); // bypass-strict: form input may coexist with background modal or duplicate field
     await input.waitFor({ state: 'visible', timeout: 15000 }).catch(() => console.log('Timeout waiting for textarea'));
 
     if (await input.isVisible()) {

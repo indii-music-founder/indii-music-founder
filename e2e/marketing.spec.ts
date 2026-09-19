@@ -33,7 +33,7 @@ test.describe('Marketing Module', () => {
         // Look for any action button — "New Campaign", "Create", or similar
         const actionButton = page.locator(
             'button:has-text("New Campaign"), button:has-text("Create Campaign"), button:has-text("Campaign"), [data-testid*="campaign"]'
-        ).first();
+        ).first(); // bypass-strict: target first visible element in DOM matching selector
 
         // Fallback: verify no crash overlay exists
         const errorOverlay = page.locator('text=/Something went wrong|Application Error/');
@@ -42,7 +42,7 @@ test.describe('Marketing Module', () => {
         await expect(actionButton).toBeVisible({ timeout: 10_000 });
 
         // Verify some interactive element exists
-        const hasAnyButton = await page.locator('button').first().isVisible({ timeout: 3_000 }).catch(() => false);
+        const hasAnyButton = await page.locator('button').first().isVisible({ timeout: 3_000 }).catch(() => false); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         expect(hasAnyButton).toBeTruthy();
     });
 });

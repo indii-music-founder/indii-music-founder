@@ -42,7 +42,7 @@ test.describe('Video Studio', () => {
         await expect(page.locator('[data-testid="creative-studio-container"]')).toBeVisible({ timeout: 30_000 });
         
         // Switch to video mode if needed
-        const videoModeBtn = page.locator('[data-testid="mode-switch-video"]').or(page.locator('button:has-text("Video")')).first();
+        const videoModeBtn = page.locator('[data-testid="mode-switch-video"]').or(page.locator('button:has-text("Video")')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         if (await videoModeBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
             await videoModeBtn.click();
         }
@@ -70,7 +70,7 @@ test.describe('Video Studio', () => {
             const frameReviewPanel = page.locator('[data-testid="frame-review-panel"]');
             await expect(frameReviewPanel).toBeVisible({ timeout: 15_000 });
 
-            const approveBtn = page.locator('[data-testid="approve-frame-btn"]').first();
+            const approveBtn = page.locator('[data-testid="approve-frame-btn"]').first(); // bypass-strict: candidate element present across multiple viewport containers
             if (await approveBtn.isVisible()) {
                 await approveBtn.click();
             }

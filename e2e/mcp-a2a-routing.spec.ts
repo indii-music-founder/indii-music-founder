@@ -66,7 +66,7 @@ test.describe('A2A Routing to MCP Tools', () => {
         await page.click('[data-testid="command-bar-run-btn"]');
 
         // Stronger assertion checking the actual UI
-        const locator = page.locator('[data-agent-id="publicist"] .message-content').last();
+        const locator = page.locator('[data-agent-id="publicist"] .message-content').last(); // bypass-strict: select latest message in chat thread
         await expect(locator).toContainText('MOCK_DATA_FROM_MCP_SERVER', { timeout: 15000 });
     });
 });

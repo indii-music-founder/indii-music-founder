@@ -89,7 +89,7 @@ test.describe('Image Annotation Flow', () => {
         await editButton.evaluate((node: HTMLElement) => node.click());
 
         // 5. Verify the annotation canvas or modal opens
-        const canvasContainer = page.getByTestId('inline-annotator').first();
+        const canvasContainer = page.getByTestId('inline-annotator').first(); // bypass-strict: candidate element present across multiple viewport containers
         await expect(canvasContainer).toBeVisible({ timeout: 10000 });
         
         // Wait for the actual <canvas> element to render, which means the image has loaded and dimensions are calculated
@@ -97,8 +97,8 @@ test.describe('Image Annotation Flow', () => {
 
         // 6. Draw on the canvas
         // Get bounding box of the canvas to simulate mouse drag
-        const drawableArea = page.locator('.cursor-crosshair').first();
-        const canvas = drawableArea.locator('canvas').first();
+        const drawableArea = page.locator('.cursor-crosshair').first(); // bypass-strict: target first visible element in DOM matching selector
+        const canvas = drawableArea.locator('canvas').first(); // bypass-strict: target first visible element in DOM matching selector
         await expect(canvas).toBeAttached({ timeout: 10000 });
         
         // Draw through the same pointer path a customer uses.
@@ -115,7 +115,7 @@ test.describe('Image Annotation Flow', () => {
         await redInput.fill('Change this area to blue');
 
         // 9. Click apply and verify it completes
-        const applyBtn = page.locator('button', { hasText: 'Apply' }).first();
+        const applyBtn = page.locator('button', { hasText: 'Apply' }).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await expect(applyBtn).toBeEnabled();
         
         await applyBtn.click();

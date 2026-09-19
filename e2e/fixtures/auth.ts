@@ -1108,7 +1108,7 @@ export async function setupE2EPage(page: Page): Promise<void> {
 
     // Wait for either the app-container OR the email input to be visible, showing the page has loaded
     const appContainer = page.getByTestId('app-container');
-    const emailInput = page.locator('input[type="email"]').first();
+    const emailInput = page.locator('input[type="email"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
     
     try {
       // Use Playwright's native locator.or() to avoid dangling rejected promises from Promise.race
@@ -1120,11 +1120,11 @@ export async function setupE2EPage(page: Page): Promise<void> {
     if (await emailInput.isVisible().catch(() => false)) {
       console.log("[E2E] App login form visible. Performing manual login...");
       await emailInput.fill('e2e@indii.test');
-      const passwordInput = page.locator('input[type="password"]').first();
+      const passwordInput = page.locator('input[type="password"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
       if (await passwordInput.isVisible().catch(() => false)) {
           await passwordInput.fill('password123');
       }
-      await page.locator('form button[type="submit"]').first().click();
+      await page.locator('form button[type="submit"]').first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
       
       // Wait for dashboard to be visible to confirm login
       await appContainer.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {

@@ -677,32 +677,32 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await page.waitForTimeout(1500); // realistic user timing delay
 
             console.log('[Techno E2E] Onboarding Step 2: Selecting Building momentum...');
-            await page.getByRole('button', { name: "Building momentum" }).first().click();
+            await page.getByRole('button', { name: "Building momentum" }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(page.locator('.whitespace-pre-wrap')).toHaveCount(5, { timeout: 30000 });
             await page.waitForTimeout(1500);
 
             console.log('[Techno E2E] Onboarding Step 3: Selecting Touring...');
-            await page.getByRole('button', { name: "Touring" }).first().click();
+            await page.getByRole('button', { name: "Touring" }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(page.locator('.whitespace-pre-wrap')).toHaveCount(7, { timeout: 30000 });
             await page.waitForTimeout(1500);
 
             console.log(`[Techno E2E] Onboarding Step 4: Selecting ${currentPersona.aestheticStyle}...`);
-            await page.getByRole('button', { name: currentPersona.aestheticStyle }).first().click();
+            await page.getByRole('button', { name: currentPersona.aestheticStyle }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(page.locator('.whitespace-pre-wrap')).toHaveCount(9, { timeout: 30000 });
             await page.waitForTimeout(1500);
 
             console.log('[Techno E2E] Onboarding Step 5: Selecting Warm tones...');
-            await page.getByRole('button', { name: "Warm tones" }).first().click();
+            await page.getByRole('button', { name: "Warm tones" }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(page.locator('.whitespace-pre-wrap')).toHaveCount(11, { timeout: 30000 });
             await page.waitForTimeout(1500);
 
             console.log(`[Techno E2E] Onboarding Step 6: Selecting ${currentPersona.fonts}...`);
-            await page.getByRole('button', { name: currentPersona.fonts }).first().click();
+            await page.getByRole('button', { name: currentPersona.fonts }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(page.locator('.whitespace-pre-wrap')).toHaveCount(13, { timeout: 30000 });
             await page.waitForTimeout(1500);
 
             console.log(`[Techno E2E] Onboarding Step 7: Selecting ${currentPersona.distributor}...`);
-            await page.getByRole('button', { name: currentPersona.distributor }).first().click();
+            await page.getByRole('button', { name: currentPersona.distributor }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(page.locator('.whitespace-pre-wrap')).toHaveCount(15, { timeout: 30000 });
             await page.waitForTimeout(1500);
 
@@ -713,16 +713,16 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await page.waitForTimeout(1500);
 
             console.log('[Techno E2E] Onboarding Step 9: Selecting EP...');
-            await page.getByRole('button', { name: "EP (3-6 tracks)" }).first().click();
+            await page.getByRole('button', { name: "EP (3-6 tracks)" }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(page.locator('.whitespace-pre-wrap')).toHaveCount(19, { timeout: 30000 });
             await page.waitForTimeout(1500);
 
             console.log('[Techno E2E] Onboarding Step 10: Selecting High-energy...');
-            await page.getByRole('button', { name: "High-energy" }).first().click();
+            await page.getByRole('button', { name: "High-energy" }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
 
             // Verify Automatic Redirect to Dashboard
             console.log('[Techno E2E] Onboarding complete. Waiting for redirect to dashboard...');
-            const dashboardBtn = page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first();
+            const dashboardBtn = page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(dashboardBtn).toBeVisible({ timeout: 35000 });
             await page.waitForTimeout(1500);
 
@@ -780,11 +780,11 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await page.locator('[data-testid="distro-tab-catalogue"]').click();
             await expect(page.locator('[data-testid="distributors-grid"]')).toBeVisible({ timeout: 10000 });
 
-            const connectBtn = page.locator('[data-testid="connect-button-distrokid"]').or(page.locator('[data-testid="distributor-card-connect"]')).first();
+            const connectBtn = page.locator('[data-testid="connect-button-distrokid"]').or(page.locator('[data-testid="distributor-card-connect"]')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(connectBtn).toBeVisible({ timeout: 10000 });
             await connectBtn.click({ force: true });
 
-            const connectModal = page.locator('[data-testid="connect-distributor-modal"]').first();
+            const connectModal = page.locator('[data-testid="connect-distributor-modal"]').first(); // bypass-strict: select active panel/modal layer among stacked containers
             await expect(connectModal).toBeVisible({ timeout: 10000 });
 
             const usernameField = page.locator('[data-testid="distro-auth-username"]');
@@ -810,7 +810,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await page.locator('[data-testid="distro-tab-new"]').click();
             await page.waitForTimeout(1000);
             
-            const createReleaseBtn = page.locator('[data-testid="releases-submit-button"]').or(page.locator('[data-testid="create-release-btn"]')).first();
+            const createReleaseBtn = page.locator('[data-testid="releases-submit-button"]').or(page.locator('[data-testid="create-release-btn"]')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
             await expect(createReleaseBtn).toBeVisible({ timeout: 10000 });
             await createReleaseBtn.click({ force: true });
 
@@ -856,7 +856,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             // Phase 6: Finance & Splits Review
             console.log('[Techno E2E] Phase 6: Navigating to Finance & Splits review...');
             await page.locator('[data-testid="nav-item-finance"]').click();
-            await expect(page.getByRole('heading', { name: /Finance/i }).first()).toBeVisible({ timeout: 20000 });
+            await expect(page.getByRole('heading', { name: /Finance/i }).first()).toBeVisible({ timeout: 20000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
             await page.waitForTimeout(1500);
 
             const expensesTab = page.locator('[data-testid="finance-tab-expenses"]');

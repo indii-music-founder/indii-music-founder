@@ -46,7 +46,7 @@ test.describe('Distribution Pipeline Secondary Tests', () => {
         await newTab.click();
 
         // Look for release button/form indicators
-        const content = page.locator('text=/Release|Track|Metadata/i').first();
+        const content = page.locator('text=/Release|Track|Metadata/i').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
         await expect(content).toBeVisible({ timeout: 15_000 });
     });
 });

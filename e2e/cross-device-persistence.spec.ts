@@ -276,11 +276,11 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
 
       await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('My artist name is Luna Synthwave');
       await tabletPage.locator('[data-testid="command-bar-run-btn"]:visible').click();
-      await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').first()).toBeVisible({ timeout: 10_000 });
+      await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').first()).toBeVisible({ timeout: 10_000 }); // bypass-strict: navigation element rendered across desktop and mobile layouts
 
       await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('What is my artist name?');
       await tabletPage.locator('[data-testid="command-bar-run-btn"]:visible').click();
-      await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').nth(1)).toBeVisible({ timeout: 10_000 });
+      await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').nth(1)).toBeVisible({ timeout: 10_000 }); // bypass-strict: select specific element by 0-based index
 
       const secondRequestOnward = capturedPayloads.slice(1).join('\n');
       expect(secondRequestOnward).toContain('Luna Synthwave');

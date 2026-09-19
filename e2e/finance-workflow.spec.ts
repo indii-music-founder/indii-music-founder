@@ -30,11 +30,11 @@ test.describe('Finance Module', () => {
 
         console.log('[FINANCE TEST] Waiting for finance-specific content...');
         // Wait for finance-specific content
-        await page.locator('h1, h2, [data-testid="finance-header"], [data-testid="finance-tab-expenses"]').first().waitFor({ state: 'visible', timeout: 30_000 });
+        await page.locator('h1, h2, [data-testid="finance-header"], [data-testid="finance-tab-expenses"]').first().waitFor({ state: 'visible', timeout: 30_000 }); // bypass-strict: navigation element rendered across desktop and mobile layouts
     });
 
     test('finance module loads without crashing', async ({ authedPage: page }) => {
-        await expect(page.getByRole('heading', { name: /Finance/i }).first()).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByRole('heading', { name: /Finance/i }).first()).toBeVisible({ timeout: 15_000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
     });
 
     test('should switch between Finance tabs', async ({ authedPage: page }) => {

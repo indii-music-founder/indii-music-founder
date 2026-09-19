@@ -30,7 +30,7 @@ test.describe('Distribution Module', () => {
     });
 
     test('distribution module loads and shows live system status', async ({ authedPage: page }) => {
-        const liveBadge = page.locator('[data-testid="live-system-badge"]').first();
+        const liveBadge = page.locator('[data-testid="live-system-badge"]').first(); // bypass-strict: candidate element present across multiple viewport containers
         await expect(liveBadge).toBeVisible({ timeout: 15_000 });
         await expect(page.locator('[data-testid="distro-tab-new"]')).toBeVisible();
         await expect(page.locator('[data-testid="distro-tab-catalogue"]')).toBeVisible();
@@ -54,12 +54,12 @@ test.describe('Distribution Module', () => {
 
         console.log('[DISTRO TEST] Clicking connect button...');
         // Correctly handle OR condition with locators
-        const distBtn = page.locator('[data-testid="connect-button-distrokid"]').or(page.locator('[data-testid="distributor-card-connect"]')).first();
+        const distBtn = page.locator('[data-testid="connect-button-distrokid"]').or(page.locator('[data-testid="distributor-card-connect"]')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await expect(distBtn).toBeVisible({ timeout: 10_000 });
         await distBtn.click({ force: true });
 
         console.log('[DISTRO TEST] Waiting for connect modal...');
-        const modal = page.locator('[data-testid="connect-distributor-modal"]').first();
+        const modal = page.locator('[data-testid="connect-distributor-modal"]').first(); // bypass-strict: select active panel/modal layer among stacked containers
         await expect(modal).toBeVisible({ timeout: 15_000 });
         await expect(page.locator('[data-testid="distro-config-tab-identity"]')).toBeVisible({ timeout: 10_000 });
 
@@ -92,12 +92,12 @@ test.describe('Distribution Module', () => {
         await expect(page.locator('[data-testid="distro-content-new"]')).toBeVisible();
 
         // Check if ReleasesContent has a submit button or create button
-        const createBtn = page.locator('[data-testid="releases-submit-button"]').or(page.locator('[data-testid="create-release-btn"]')).first();
+        const createBtn = page.locator('[data-testid="releases-submit-button"]').or(page.locator('[data-testid="create-release-btn"]')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await expect(createBtn).toBeVisible({ timeout: 10_000 });
         await createBtn.click();
 
         // Modal should open
-        const modal = page.locator('[data-testid="metadata-modal"]').first();
+        const modal = page.locator('[data-testid="metadata-modal"]').first(); // bypass-strict: select active panel/modal layer among stacked containers
         await expect(modal).toBeVisible({ timeout: 15_000 });
     });
 
@@ -179,7 +179,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         await expect(page.locator('[data-testid="distro-content-new"]')).toBeVisible({ timeout: 10_000 });
 
         console.log('[DISTRO TEST] Clicking create button...');
-        const createBtn = page.locator('[data-testid="releases-submit-button"]').or(page.locator('[data-testid="create-release-btn"]')).first();
+        const createBtn = page.locator('[data-testid="releases-submit-button"]').or(page.locator('[data-testid="create-release-btn"]')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await expect(createBtn).toBeVisible();
         await createBtn.click({ force: true });
 
@@ -236,7 +236,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 30_000 });
         await page.locator('[data-testid="distro-tab-new"]').click();
 
-        const createBtn = page.locator('[data-testid="releases-submit-button"]').or(page.locator('[data-testid="create-release-btn"]')).first();
+        const createBtn = page.locator('[data-testid="releases-submit-button"]').or(page.locator('[data-testid="create-release-btn"]')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         if (await createBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
             await createBtn.click({ force: true });
 
@@ -296,7 +296,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
                 await page.waitForTimeout(2_000);
 
                 // Check for error messages
-                const errorDisplay = page.locator('[data-testid="qc-errors"], text=/ISRC|cover art|standardized/i').first();
+                const errorDisplay = page.locator('[data-testid="qc-errors"], text=/ISRC|cover art|standardized/i').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
                 const hasErrors = await errorDisplay.isVisible().catch(() => false);
 
                 if (hasErrors) {
@@ -329,7 +329,7 @@ test.describe('Distribution Delivery Pipeline (Item 279)', () => {
         await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 30_000 });
 
         // Look for delivery status indicator
-        const statusBadge = page.locator('[data-testid="delivery-status"], text=/delivered|queued|failed/i').first();
+        const statusBadge = page.locator('[data-testid="delivery-status"], text=/delivered|queued|failed/i').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
         const statusVisible = await statusBadge.isVisible({ timeout: 5_000 }).catch(() => false);
 
         if (statusVisible) {

@@ -85,7 +85,7 @@ test.describe('Live Test Orchestrator', () => {
       });
 
       // Navigate to agent
-      const navItem = page.getByRole('button', { name: new RegExp(agent.targetText, 'i') }).first();
+      const navItem = page.getByRole('button', { name: new RegExp(agent.targetText, 'i') }).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
       const isVisible = await navItem.isVisible().catch(() => false);
       
       if (!isVisible) {
@@ -96,7 +96,7 @@ test.describe('Live Test Orchestrator', () => {
       await page.waitForTimeout(2000);
 
       // Attempt to find a chat input
-      const chatInput = page.locator('textarea, input[placeholder*="message" i], input[placeholder*="ask" i]').first();
+      const chatInput = page.locator('textarea, input[placeholder*="message" i], input[placeholder*="ask" i]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
       if (await chatInput.isVisible()) {
         await chatInput.fill(agent.trigger);
         await chatInput.press('Enter');

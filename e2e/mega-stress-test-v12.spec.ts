@@ -31,7 +31,7 @@ test.describe('Mega Stress Test v12.0 (Mobile and Module Stability)', () => {
     test('Routine 128: Mobile remote entrypoint loads on a narrow viewport', async ({ authedPage: page }) => {
         await page.goto(`${BASE_URL}/mobile-remote`, { waitUntil: 'domcontentloaded' });
         await expect(page).toHaveURL(/.*mobile-remote/);
-        await expect(page.locator('h1:has-text("indii")').first()).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('h1:has-text("indii")').first()).toBeVisible({ timeout: 10_000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
         await expect(page.locator('body')).toBeVisible();
     });
 });

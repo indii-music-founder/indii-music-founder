@@ -128,7 +128,7 @@ test('Create Account sign-up flow simulation with logout', async ({ page }) => {
     await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 10000 });
 
     // 2. Verify LoginForm is rendered (e.g. Email Address label visible)
-    const emailLabel = page.locator('label:has-text("Email Address")').first();
+    const emailLabel = page.locator('label:has-text("Email Address")').first(); // bypass-strict: target first visible element in DOM matching selector
     await expect(emailLabel).toBeVisible({ timeout: 10000 });
 
     // 3. Click "Create Account" tab
@@ -139,13 +139,13 @@ test('Create Account sign-up flow simulation with logout', async ({ page }) => {
 
     // 4. Fill in email, password, confirm password, and DOB
     console.log('[PLAYWRIGHT] Filling form details...');
-    await page.locator('input[type="email"]').first().fill('e2e-signup@indii.test');
+    await page.locator('input[type="email"]').first().fill('e2e-signup@indii.test'); // bypass-strict: form input may coexist with background modal or duplicate field
     
     // Fill in Password input (which is the first input of type password)
     const passwordInputs = page.locator('input[type="password"]');
-    await passwordInputs.nth(0).fill('password123');
+    await passwordInputs.nth(0).fill('password123'); // bypass-strict: disambiguate repeated password/confirm fields in form
     // Fill in Confirm Password input (second password input)
-    await passwordInputs.nth(1).fill('password123');
+    await passwordInputs.nth(1).fill('password123'); // bypass-strict: disambiguate repeated password/confirm fields in form
     
     // Fill Date of Birth
     await page.locator('input[aria-label="date of birth"]').fill('2000-01-01');

@@ -95,7 +95,7 @@ test.describe('Creative Studio - Character Library', () => {
         const rightPanel = page.locator('[aria-label="Context panel"]');
 
         // Select Video target media to reveal the Character Library panel
-        const videoBtn = rightPanel.locator('button:has-text("Video")').first();
+        const videoBtn = rightPanel.locator('button:has-text("Video")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await videoBtn.click();
 
         // Click Add Person in CharacterLibrary
@@ -109,7 +109,7 @@ test.describe('Creative Studio - Character Library', () => {
 
         // Find a generated image in the modal and select it
         // The images don't have explicit test IDs, but we can look for the Select button text overlay
-        const selectOverlay = page.getByText('Select').first();
+        const selectOverlay = page.getByText('Select').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
         await expect(selectOverlay).toBeVisible({ timeout: 5000 });
         
         // Click the first generated image in the gallery

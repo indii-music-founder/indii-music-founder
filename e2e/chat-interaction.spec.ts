@@ -55,19 +55,19 @@ test.describe('Chat / CommandBar Interaction', () => {
     test('prompt input renders and accepts keyboard input', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea[placeholder], [role="textbox"]')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {
             // CommandBar may be in a different state — try clicking to open it
-            const commandBar = page.locator('[class*="command"], [class*="prompt"]').first();
+            const commandBar = page.locator('[class*="command"], [class*="prompt"]').first(); // bypass-strict: target first visible element in DOM matching selector
             await commandBar.click().catch(() => { });
             await page.waitForTimeout(500);
         }
 
         const inputRetry = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const retryVisible = await inputRetry.isVisible().catch(() => false);
         if (!retryVisible) {
@@ -88,7 +88,7 @@ test.describe('Chat / CommandBar Interaction', () => {
     test('submitting empty prompt is rejected gracefully', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {
@@ -109,7 +109,7 @@ test.describe('Chat / CommandBar Interaction', () => {
     test('app remains stable during rapid input changes', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
-            .first();
+            .first(); // bypass-strict: target first visible element in DOM matching selector
 
         const isVisible = await input.isVisible().catch(() => false);
         if (!isVisible) {

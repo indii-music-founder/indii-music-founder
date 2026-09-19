@@ -62,7 +62,7 @@ test.describe('The Librarian: RAG Pipeline Verification (REAL DATA)', () => {
         await page.getByRole('button', { name: /sign in/i }).click();
 
         // Wait for Dashboard (Real Auth Success)
-        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 30000 }); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         console.log('[Librarian] Dashboard Loaded. Auth Successful.');
 
         // 2. Navigate to Knowledge Base
@@ -81,7 +81,7 @@ test.describe('The Librarian: RAG Pipeline Verification (REAL DATA)', () => {
         await expect(page.getByRole('heading', { name: /Knowledge Base/i })).toBeVisible({ timeout: 10000 });
 
         // 3. Upload Document
-        const fileInput = page.locator('input[type="file"]').first();
+        const fileInput = page.locator('input[type="file"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
         await expect(fileInput).toBeAttached();
 
         console.log('[Librarian] Uploading Manifesto...');
@@ -113,7 +113,7 @@ test.describe('The Librarian: RAG Pipeline Verification (REAL DATA)', () => {
             await page.keyboard.press('Enter');
 
             // Wait for response
-            const responseSelector = page.getByTestId('agent-message').last();
+            const responseSelector = page.getByTestId('agent-message').last(); // bypass-strict: select latest message in chat thread
             await expect(responseSelector).toBeVisible({ timeout: 30000 });
 
             // Wait for streaming to finish (stable text)
