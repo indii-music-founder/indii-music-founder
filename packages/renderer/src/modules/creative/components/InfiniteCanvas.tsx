@@ -1498,6 +1498,7 @@ export default function InfiniteCanvas() {
                         value={promptText}
                         onChange={e => setPromptText(e.target.value)}
                         placeholder="Describe what you want to see..."
+                        data-testid="infinite-canvas-outpaint-prompt"
                         className="w-full bg-black/40 border border-white/10 rounded p-2 text-sm text-white resize-none focus:outline-none focus:border-green-500/50"
                         rows={3}
                         onKeyDown={(e) => {
@@ -1540,6 +1541,7 @@ export default function InfiniteCanvas() {
 
             {cropOverlay && (
                 <div
+                    data-testid="infinite-canvas-crop-dialog"
                     className="absolute z-50 flex flex-col gap-2 p-3 bg-[#111] border border-white/10 rounded-lg shadow-2xl backdrop-blur-md"
                     style={{
                         left: Math.max(160, Math.min(cropOverlay.sx + cropOverlay.w / 2, window.innerWidth - 160)),

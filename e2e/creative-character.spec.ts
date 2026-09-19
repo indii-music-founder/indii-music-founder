@@ -77,15 +77,17 @@ test.describe('Creative Studio - Character Library', () => {
         await expect(generateBtn).toBeEnabled({ timeout: 10_000 });
         await generateBtn.click();
         
-        // Wait for generation to complete (mock takes ~2s)
-        await page.waitForTimeout(3000);
+        // Wait for generation to complete (store isGenerating turns false and generatedHistory records asset)
+        await expect.poll(() => page.evaluate(() => {
+            const store = (window as any).useStore?.getState();
+            return store?.isGenerating === false && (store?.generatedHistory?.length ?? 0) > 0;
+        }), { timeout: 15_000 }).toBe(true);
 
         // 2. Open context controls in right panel
         await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15_000 });
         await page.evaluate(() => {
             (window as any).useStore.getState().setRightPanelTab('context');
         });
-        await page.waitForTimeout(1000);
 
         const rightPanel = page.locator('[aria-label="Context panel"]');
         await expect(rightPanel).toBeVisible({ timeout: 10_000 });

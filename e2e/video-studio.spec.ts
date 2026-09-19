@@ -122,6 +122,7 @@ test.describe('Video Studio', () => {
 
         const generateBtn = page.getByTestId('video-generate-btn');
         await expect(generateBtn).toBeVisible();
+        await expect(generateBtn).toBeEnabled();
         await generateBtn.click();
 
         // Verify editor store receives job status or queues generation

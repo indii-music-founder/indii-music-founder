@@ -65,7 +65,10 @@ test.describe('Higgsfield-Inspired Video Workflow', () => {
             }
         });
 
-        await page.waitForTimeout(1000);
+        await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10_000 });
+        await expect.poll(() => page.evaluate(() => {
+            return (window as any).useVideoEditorStore?.getState().viewMode;
+        })).toBe('director');
     });
 
     test('should verify video model settings, cost calculations, visual guidance, and mock generation lifecycle', async ({ authedPage: page }) => {
@@ -112,7 +115,9 @@ test.describe('Higgsfield-Inspired Video Workflow', () => {
             }
         });
 
-        await page.waitForTimeout(500);
+        await expect.poll(() => page.evaluate(() => {
+            return (window as any).useStore?.getState().studioControls?.cameraMovement;
+        })).toBe('Pan Left');
 
         // 3. Populate start/end frame references (Visual Guidance)
         await page.evaluate(() => {

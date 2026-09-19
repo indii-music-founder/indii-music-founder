@@ -122,7 +122,7 @@ test.describe('Creative Studio', () => {
         await page.mouse.down();
         await page.mouse.move(canvasBox.x + 240, canvasBox.y + 220, { steps: 5 });
         await page.mouse.up();
-        await expect(page.getByPlaceholder('Describe what you want to see...')).toBeVisible();
+        await expect(page.getByTestId('infinite-canvas-outpaint-prompt')).toBeVisible();
         await page.getByRole('button', { name: 'Cancel' }).click();
 
         await page.getByRole('button', { name: 'Adaptive Crop & Fill' }).click();
@@ -130,7 +130,7 @@ test.describe('Creative Studio', () => {
         await page.mouse.down();
         await page.mouse.move(canvasBox.x + 280, canvasBox.y + 260, { steps: 5 });
         await page.mouse.up();
-        await expect(page.getByRole('button', { name: 'Crop & Fill' })).toBeVisible();
+        await expect(page.getByTestId('infinite-canvas-crop-dialog')).toBeVisible();
         await page.getByRole('button', { name: 'Cancel' }).click();
 
         for (let expectedCount = 1; expectedCount <= 2; expectedCount += 1) {
