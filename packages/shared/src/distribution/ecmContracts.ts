@@ -28,7 +28,7 @@ export type EcmMessageContext = z.infer<typeof EcmMessageContextSchema>;
 export const EcmResourceTypeSchema = z.enum(['SoundRecording', 'Video']);
 export type EcmResourceType = z.infer<typeof EcmResourceTypeSchema>;
 
-const EcmResourceReferenceBaseSchema = z.object({
+const EcmResourceDescriptionSchema = z.object({
   resourceType: EcmResourceTypeSchema,
   isrc: OptionalId,
   proprietaryId: EcmProprietaryIdSchema.optional(),
@@ -50,12 +50,19 @@ function requireResourceIdentity(
   }
 }
 
-export const EcmResourceReferenceSchema = EcmResourceReferenceBaseSchema.superRefine(requireResourceIdentity);
+export const EcmResourceReferenceSchema = EcmResourceDescriptionSchema.superRefine(requireResourceIdentity);
 export type EcmResourceReference = z.infer<typeof EcmResourceReferenceSchema>;
 
-const EcmTimedResourceReferenceSchema = EcmResourceReferenceBaseSchema.extend({
+const EcmTimedResourceReferenceSchema = EcmResourceDescriptionSchema.extend({
   durationIso8601: NonBlank,
 }).strict().superRefine(requireResourceIdentity);
+
+/**
+ * Part 3 requests permit descriptive lookup using ResourceType, Title, and
+ * DisplayArtistName; identifier/duration may be supplied when available.
+ */
+export const EcmResourceLookupSchema = EcmResourceDescriptionSchema;
+export type EcmResourceLookup = z.infer<typeof EcmResourceLookupSchema>;
 
 export const EcmClusterMemberMetadataSchema = z.object({
   /**
@@ -69,21 +76,38 @@ export const EcmClusterMemberMetadataSchema = z.object({
 }).strict();
 export type EcmClusterMemberMetadata = z.infer<typeof EcmClusterMemberMetadataSchema>;
 
-export const EcmMusicalWorkReferenceSchema = z.object({
+export const EcmMusicalWorkLookupSchema = z.object({
+  iswc: OptionalId,
+  proprietaryId: EcmProprietaryIdSchema.optional(),
+  title: NonBlank.optional(),
+  writers: z.array(NonBlank).max(200).default([]),
+}).strict().superRefine((work, ctx) => {
+  const hasIdentifier=Boolean(work.iswc || work.proprietaryId);
+  const hasTitleAndWriter=Boolean(work.title && work.writers.length>0);
+  if (!hasIdentifier && !hasTitleAndWriter) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'A musical-work lookup needs an identifier or title plus at least one writer.',
+    });
+  }
+});
+export type EcmMusicalWorkLookup = z.infer<typeof EcmMusicalWorkLookupSchema>;
+
+export const EcmMusicalWorkClusterRootSchema = z.object({
   iswc: OptionalId,
   proprietaryId: EcmProprietaryIdSchema.optional(),
   title: NonBlank,
   writers: z.array(NonBlank).max(200).default([]),
 }).strict().superRefine((work, ctx) => {
-  if (!work.iswc && !work.proprietaryId && work.writers.length === 0) {
+  if (!work.iswc && !work.proprietaryId) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ['writers'],
-      message: 'A musical work without ISWC/proprietary ID needs at least one writer for disambiguation.',
+      path: ['iswc'],
+      message: 'A MusicalWorkClusterNotification root needs a musical-work identifier.',
     });
   }
 });
-export type EcmMusicalWorkReference = z.infer<typeof EcmMusicalWorkReferenceSchema>;
+export type EcmMusicalWorkClusterRoot = z.infer<typeof EcmMusicalWorkClusterRootSchema>;
 
 const NotificationCorrelationSchema = z.object({
   requestedClusterIds: z.array(EcmProprietaryIdSchema).max(100).default([]),
@@ -101,7 +125,7 @@ export const MusicalWorkClusterNotificationIntentSchema = z.object({
   messageType: z.literal('MusicalWorkClusterNotification'),
   context: EcmMessageContextSchema,
   clusterId: EcmProprietaryIdSchema,
-  clusterRoot: EcmMusicalWorkReferenceSchema,
+  clusterRoot: EcmMusicalWorkClusterRootSchema,
   members: z.array(
     z.object({
       resource: EcmResourceReferenceSchema,
@@ -121,7 +145,7 @@ export const MusicalWorkClusterRequestIntentSchema = z.object({
   messageType: z.literal('MusicalWorkClusterRequest'),
   context: EcmMessageContextSchema,
   requestClusterId: EcmProprietaryIdSchema,
-  musicalWork: EcmMusicalWorkReferenceSchema.optional(),
+  musicalWork: EcmMusicalWorkLookupSchema.optional(),
   resource: EcmResourceReferenceSchema.optional(),
 }).strict().superRefine((request, ctx) => {
   if (!request.musicalWork && !request.resource) {
@@ -162,6 +186,6 @@ export const DuplicateIsrcClusterRequestIntentSchema = z.object({
   messageType: z.literal('DuplicateIsrcClusterRequest'),
   context: EcmMessageContextSchema,
   requestClusterId: EcmProprietaryIdSchema,
-  resource: EcmResourceReferenceSchema,
+  resource: EcmResourceLookupSchema,
 }).strict();
 export type DuplicateIsrcClusterRequestIntent = z.infer<typeof DuplicateIsrcClusterRequestIntentSchema>;
