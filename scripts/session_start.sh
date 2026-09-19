@@ -1,7 +1,6 @@
 #!/bin/bash
-set -e
 
-node scripts/assert-canonical-repo.mjs
+node scripts/assert-canonical-repo.mjs || exit $?
 
 echo "🧹 Cleaning environment..."
 
