@@ -27,13 +27,13 @@ describe('IntelligenceResponseCache', () => {
 
     it('should generate a consistent key', () => {
         const options: GenerateContentOptions = {
-            model: 'gemini-pro',
+            model: 'gemini-3.1-pro-preview',
             contents: [{ role: 'user', parts: [{ text: 'Hello' }] }]
         };
         const key1 = cache.generateKey(options);
 
         const options2: GenerateContentOptions = {
-            model: 'gemini-pro',
+            model: 'gemini-3.1-pro-preview',
             contents: [{ role: 'user', parts: [{ text: 'Hello' }] }]
         };
         const key2 = cache.generateKey(options2);
@@ -42,8 +42,8 @@ describe('IntelligenceResponseCache', () => {
     });
 
     it('should differentiate keys with different models', () => {
-        const key1 = cache.generateKey({ model: 'gemini-pro', contents: [] });
-        const key2 = cache.generateKey({ model: 'gemini-flash', contents: [] });
+        const key1 = cache.generateKey({ model: 'gemini-3.1-pro-preview', contents: [] });
+        const key2 = cache.generateKey({ model: 'gemini-3-flash-preview', contents: [] });
         expect(key1).not.toBe(key2);
     });
 

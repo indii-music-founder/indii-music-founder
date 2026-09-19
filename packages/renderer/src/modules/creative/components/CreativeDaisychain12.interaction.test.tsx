@@ -313,7 +313,6 @@ describe('Creative Director 12-Click Daisychain', () => {
         fireEvent.change(magicInput, { target: { value: 'Add a dragon' } });
 
         fireEvent.click(refineBtn);
-        // expect(mockAddWhiskItem).toHaveBeenCalled(); // Behavior changed
         expect(mockToastInfo).toHaveBeenCalled();
 
         // --- CLICK 4: Open Prompt Builder ---

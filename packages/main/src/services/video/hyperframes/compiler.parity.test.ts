@@ -68,7 +68,7 @@ describe('parity fixtures through the shared compiler', () => {
                 env: { ...process.env, HOME: envHome, XDG_CACHE_HOME: `${envHome}/.cache` },
             });
         }
-        expect(true).toBe(true); // reaching here = all lints exited 0
+        expect(Object.keys(PARITY_FIXTURES).length).toBeGreaterThan(0); // reaching here = all lints exited 0
     }, 240_000);
 
     it('renders a compiled composed fixture end-to-end through the desktop adapter and probes the artifact', async () => {

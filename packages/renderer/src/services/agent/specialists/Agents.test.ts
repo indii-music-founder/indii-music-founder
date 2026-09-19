@@ -46,7 +46,6 @@ describe('Agent System Verification', () => {
         const agentIds = AGENT_CONFIGS.map(a => a.id);
         expect(agentIds).toContain('brand');
         expect(agentIds).toContain('marketing');
-        // expect(agentIds).toContain('road'); // Road might be removed or renamed
         expect(agentIds).toContain('security');
         expect(agentIds).toContain('publicist');
     });

@@ -10,6 +10,8 @@ import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragSer
 
 const getCurrentTime = () => Date.now();
 
+const EMPTY_CLIPBOARD_ITEMS: any[] = [];
+
 export default function CreativeClipboard() {
     const toast = useToast();
     const [isOpen, setIsOpen] = useState(false);
@@ -21,7 +23,7 @@ export default function CreativeClipboard() {
         clearClipboard,
         sendToModule
     } = useStore(useShallow(state => ({
-        clipboardItems: state.clipboardItems || [],
+        clipboardItems: state.clipboardItems ?? EMPTY_CLIPBOARD_ITEMS,
         unpinFromClipboard: state.unpinFromClipboard,
         clearClipboard: state.clearClipboard,
         sendToModule: state.sendToModule

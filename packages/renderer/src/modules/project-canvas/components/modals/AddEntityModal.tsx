@@ -110,6 +110,9 @@ interface AddEntityModalProps {
 
 type TabType = 'notes' | 'workflows' | 'assets' | 'create_note';
 
+const EMPTY_GENERATED_HISTORY: any[] = [];
+const EMPTY_UPLOADED_IMAGES: any[] = [];
+
 export const AddEntityModal: React.FC<AddEntityModalProps> = ({
     isOpen,
     onClose,
@@ -121,8 +124,8 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({
 }) => {
     const notes = useStore((state) => state.notes);
     const addNote = useStore((state) => state.addNote);
-    const generatedHistory = useStore((state) => state.generatedHistory || []);
-    const uploadedImages = useStore((state) => state.uploadedImages || []);
+    const generatedHistory = useStore((state) => state.generatedHistory ?? EMPTY_GENERATED_HISTORY);
+    const uploadedImages = useStore((state) => state.uploadedImages ?? EMPTY_UPLOADED_IMAGES);
 
     const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
     const [prevDefaultTab, setPrevDefaultTab] = useState<TabType>(defaultTab);

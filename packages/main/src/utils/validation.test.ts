@@ -31,7 +31,7 @@ describe('Electron Validation Schemas', () => {
 
         it('should block trickery', () => {
             expect(() => FetchUrlSchema.parse('http://0.0.0.0')).toThrow();
-            // expect(() => FetchUrlSchema.parse('http://0177.0.0.1')).toThrow(); // Octal - node isIP handles this differently often, but schema blocks 0-leading
+            expect(() => FetchUrlSchema.parse('http://0177.0.0.1')).toThrow();
         });
     });
 

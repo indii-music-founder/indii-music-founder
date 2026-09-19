@@ -1,14 +1,15 @@
 
 import React from 'react';
 import { useStore } from '@/core/store';
-import { useShallow } from 'zustand/react/shallow';
 import type { StoreState } from '@/core/store';
 import { FileText, Image, Clock, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { ThreeDCardContainer, ThreeDCardBody, ThreeDCardItem } from '@/components/ui/ThreeDCard';
 
+const EMPTY_KNOWLEDGE_BASE: any[] = [];
+
 export const KnowledgeBaseList: React.FC = () => {
-    // Access knowledgeBase safely, defaulting to empty array if undefined
-    const knowledgeBase = useStore(useShallow((state: StoreState) => state.knowledgeBase || []));
+    // Access knowledgeBase safely, defaulting to stable empty array if undefined
+    const knowledgeBase = useStore((state: StoreState) => state.knowledgeBase ?? EMPTY_KNOWLEDGE_BASE);
 
     if (knowledgeBase.length === 0) {
         return null;

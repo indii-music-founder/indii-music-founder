@@ -10,19 +10,19 @@ vi.mock('@/core/config/intelligence-models', () => ({
 
     INTELLIGENCE_MODELS: {
         TEXT: {
-            AGENT: 'gemini-pro',
-            FAST: 'gemini-flash'
+            AGENT: 'gemini-3.1-pro-preview',
+            FAST: 'gemini-3-flash-preview'
         }
     },
     APPROVED_MODELS: {
-        TEXT_AGENT: 'gemini-pro',
-        TEXT_FAST: 'gemini-flash',
+        TEXT_AGENT: 'gemini-3.1-pro-preview',
+        TEXT_FAST: 'gemini-3-flash-preview',
         IMAGE_GEN: 'mock-image-model',
         IMAGE_FAST: 'mock-image-model',
-        AUDIO_PRO: 'gemini-pro',
-        AUDIO_FLASH: 'gemini-flash',
+        AUDIO_PRO: 'gemini-3.1-pro-preview',
+        AUDIO_FLASH: 'gemini-3-flash-preview',
         VIDEO_GEN: 'mock-video-model',
-        BROWSER_AGENT: 'gemini-pro',
+        BROWSER_AGENT: 'gemini-3.1-pro-preview',
         EMBEDDING_DEFAULT: 'gemini-embedding-001'
     },
     validateModels: () => { },

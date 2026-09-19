@@ -62,17 +62,9 @@ describe('Agent Tools Validation', () => {
         it('verify_output handles invalid JSON response gracefully', async () => {
             vi.mocked(AutonomousIntelligence.generateStructuredData).mockRejectedValue(new Error("AI Generation Failed"));
 
-            try {
-                await BrandTools.verify_output({ goal: "Test", content: "Test content" });
-            } catch (_error: unknown) {
-                // Should probably return a failed tool result, but if it throws, we catch it here.
-                // Assuming tool wraps error:
-            }
-            // If the tool catches the error and returns success: false:
-            // const result = await ...
-            // expect(result.success).toBe(false);
-            // However, looking at the code, if it mocks rejected value, verify_output might throw or return error.
-            // Let's assume standard tool wrapper behavior (returns error object).
+            const result = await BrandTools.verify_output({ goal: "Test", content: "Test content" });
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("AI Generation Failed");
         });
 
     });

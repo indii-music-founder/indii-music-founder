@@ -42,7 +42,7 @@ describe('TokenUsageService', () => {
 
     describe('trackUsage', () => {
         it('should try to update existing doc first', async () => {
-            await TokenUsageService.trackUsage(mockUserId, 'gemini-pro', 100, 50);
+            await TokenUsageService.trackUsage(mockUserId, 'unpriced-model', 100, 50);
 
             expect(firestore.doc).toHaveBeenCalledWith(expect.anything(), 'user_usage_stats', docId);
             // increment() is mocked to return undefined, so incremented fields read as undefined.
@@ -53,8 +53,8 @@ describe('TokenUsageService', () => {
                 outputTokens: undefined,
                 requestCount: undefined,
                 estimatedCostUsd: undefined,
-                'models.gemini-pro.model': 'gemini-pro',
-                'models.gemini-pro.costUsd': undefined,
+                'models.unpriced-model.model': 'unpriced-model',
+                'models.unpriced-model.costUsd': undefined,
                 lastUpdated: undefined
             }));
         });
@@ -78,7 +78,7 @@ describe('TokenUsageService', () => {
         it('should create new doc if update fails with not-found', async () => {
             vi.mocked(firestore.updateDoc).mockRejectedValueOnce({ code: 'not-found' });
 
-            await TokenUsageService.trackUsage(mockUserId, 'gemini-pro', 100, 50);
+            await TokenUsageService.trackUsage(mockUserId, 'unpriced-model', 100, 50);
 
             expect(firestore.setDoc).toHaveBeenCalledWith(undefined, expect.objectContaining({
                 userId: mockUserId,

@@ -93,10 +93,11 @@ describe('loadSoundtrackSource', () => {
             ),
         );
 
-        await loadSoundtrackSource('http://example.test/fast.mp3', { timeoutMs: 15000 });
+        const result = await loadSoundtrackSource('http://example.test/fast.mp3', { timeoutMs: 15000 });
         await vi.advanceTimersByTimeAsync(20000);
 
         // No unhandled abort rejection: the timer was cleared in finally.
-        expect(true).toBe(true);
+        expect(result).not.toBeNull();
+        expect(result?.url).toBeDefined();
     });
 });

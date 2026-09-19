@@ -132,12 +132,7 @@ describe('CreateCampaignModal Interaction', () => {
 
         // 3. Assert Validation Feedback
         expect(MarketingService.createCampaign).not.toHaveBeenCalled();
-        // Removed generic toast expectation in favor of inline check
-        // expect(mockToastError).toHaveBeenCalledWith('Please fix the errors below');
         expect(screen.getByText('Start date is required')).toBeInTheDocument();
-
-        // Removed generic toast expectation in favor of inline check
-        // expect(mockToastError).toHaveBeenCalledWith('Please fill in required fields');
 
         // Check for inline error messages (which I added in the implementation)
         expect(screen.getByText('Campaign name is required')).toBeInTheDocument();

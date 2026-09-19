@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EvolutionEngine } from './EvolutionEngine';
 import { AgentGene, EvolutionConfig } from './types';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 /**
  * HELIX TEST SUITE: LIFECYCLE & STATE INTEGRITY
@@ -27,7 +28,7 @@ describe('🧬 Helix: Lifecycle & State Integrity', () => {
     id: 'parent',
     name: 'Parent Agent',
     systemPrompt: 'Legacy Prompt',
-    parameters: { temp: 0.8, model: 'gemini-pro' }, // Genetic Payload
+    parameters: { temp: 0.8, model: AI_MODELS.TEXT.FAST }, // Genetic Payload
     fitness: 1.0,
     generation: 0,
     lineage: []
@@ -109,7 +110,7 @@ describe('🧬 Helix: Lifecycle & State Integrity', () => {
     // Assert Parameters still exist
     expect(child!.parameters).toBeDefined();
     expect(child!.parameters.temp).toBe(0.8);
-    expect(child!.parameters.model).toBe('gemini-pro');
+    expect(child!.parameters.model).toBe(AI_MODELS.TEXT.FAST);
 
     // Assert Metadata was updated
     expect(child!.generation).toBe(1);

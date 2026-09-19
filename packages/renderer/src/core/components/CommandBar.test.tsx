@@ -296,7 +296,6 @@ describe('CommandBar', () => {
 
         // Drag leave
         fireEvent.dragLeave(dropZone!);
-        // expect(screen.getByPlaceholderText('Describe your task, drop files, or take a picture...')).toBeInTheDocument();
         // Animation might take time to exit or re-render, but our mock removes it immediately if logic is correct
         await waitFor(() => {
             expect(screen.queryByText('Drop to attach')).not.toBeInTheDocument();
@@ -316,12 +315,4 @@ describe('CommandBar', () => {
         // Check if attachment is added (rendered in preview)
         expect(screen.getByText('hello.png')).toBeInTheDocument();
     });
-
-    // Camera button is currently removed from PromptArea
-    // it('triggers camera input when camera button is clicked', () => {
-    //     render(<CommandBar />);
-    //     // Mock click on input
-    //     fireEvent.click(cameraButton);
-    //     expect(clickSpy).toHaveBeenCalled();
-    // });
 });
