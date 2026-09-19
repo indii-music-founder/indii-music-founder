@@ -1,5 +1,6 @@
 import { AgentContext, WhiskState } from '../types';
 import { cleanPrompt } from '@/utils/prompt';
+import { elideBase64Payloads } from '@/services/intelligence/StreamPayloadGuard';
 
 // Patterns that indicate prompt injection attempts in user task input.
 // These are checked AFTER Unicode normalization (NFKC) and invisible-char stripping,
@@ -314,7 +315,7 @@ export class AgentPromptBuilder {
 ${systemPrompt}
 
 # CONTEXT
-${JSON.stringify(enrichedContext, null, 2)}
+${elideBase64Payloads(JSON.stringify(enrichedContext, null, 2))}
 
 ${temporalContext}
 
@@ -381,14 +382,20 @@ ${safeTask}
         lines.push(`- Precise Mode: ${preciseReference ? 'ON (strict adherence to references)' : 'OFF (creative freedom)'}`);
         lines.push('The following items are "Locked" in the Reference Mixer. They represent the current visual direction:');
 
+        const formatWhiskItem = (item: { intelligenceCaption?: string; content: string }) => {
+            if (item.intelligenceCaption) return item.intelligenceCaption;
+            if (item.content && item.content.startsWith('data:')) return '[reference image]';
+            return item.content;
+        };
+
         if (checkedSubjects.length > 0) {
-            lines.push('- SUBJECTS: ' + checkedSubjects.map(s => s.intelligenceCaption || s.content).join(', '));
+            lines.push('- SUBJECTS: ' + checkedSubjects.map(formatWhiskItem).join(', '));
         }
         if (checkedScenes.length > 0) {
-            lines.push('- SCENES: ' + checkedScenes.map(s => s.intelligenceCaption || s.content).join(', '));
+            lines.push('- SCENES: ' + checkedScenes.map(formatWhiskItem).join(', '));
         }
         if (checkedStyles.length > 0) {
-            lines.push('- STYLES: ' + checkedStyles.map(s => s.intelligenceCaption || s.content).join(', '));
+            lines.push('- STYLES: ' + checkedStyles.map(formatWhiskItem).join(', '));
         }
 
         lines.push('IMPORTANT: When generating images or videos, you MUST incorporate these locked references. Synthesize the subject, scene, and style into a cohesive prompt.');

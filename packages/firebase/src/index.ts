@@ -1378,7 +1378,7 @@ export const generateContentStream = onRequest(
                     res.status(400).send('Invalid content payload.');
                     return;
                 }
-                if (JSON.stringify(contents).length > 200_000) {
+                if (JSON.stringify(contents).length > 10_000_000) {
                     await voidAgentStreamReservation('oversized-contents');
                     res.status(413).send('Content payload is too large.');
                     return;

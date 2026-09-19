@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { compressStreamImageAttachments, assertContentsWithinStreamBudget, elideBase64Payloads } from '@/services/intelligence/StreamPayloadGuard';
+import { compressStreamImageAttachments, assertContentsWithinStreamBudget, elideBase64Payloads, sanitizeObjectForPrompt } from '@/services/intelligence/StreamPayloadGuard';
 import {
     SpecializedAgent,
     AgentResponse,
@@ -837,15 +837,16 @@ export class BaseAgent implements SpecializedAgent {
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
         // KEEPER: Prevent Context Duplication
-        const { chatHistoryString, chatHistory, memoryContext, ...leanContext } = context || {};
+        const { chatHistoryString, chatHistory, memoryContext, boardroomTask: _boardroomTask, ...leanContext } = (context || {}) as Record<string, unknown>;
 
-        const enrichedContext = {
+        const enrichedContext: AgentContext & { agentIdentity: AgentIdentityCard; [key: string]: unknown } = sanitizeObjectForPrompt({
             ...leanContext,
+            userId: context?.userId,
             orgId: context?.orgId,
             projectId: context?.projectId,
             // GEAP: Inject agent identity into context for provenance tracking
             agentIdentity: this.identityCard,
-        };
+        });
 
         // Agent Canvas Context Injection: If agent canvas has active panels, inject lightweight overview
         try {
@@ -1169,7 +1170,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 // 2026-08-27). Fail-open: compression errors keep the original.
                 const streamAttachments = await compressStreamImageAttachments(finalAttachments);
 
-                const requestContents = [{
+                let requestContents = [{
                     role: 'user' as const,
                     parts: [
                         { text: fullPrompt },
@@ -1179,18 +1180,38 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     ]
                 }];
 
-                // Server-guard mirror: fail HERE with a controlled, honest
-                // halt instead of an opaque backend 413 mid-consultation.
+                // Server-guard mirror: fail-safe auto-compaction before network call.
+                // If the initial payload exceeds the 10MB budget, auto-heal by:
+                // 1. Eliding raw base64 data URLs in prompt text.
+                // 2. Aggressively compressing attachments (overridePerImageTarget = 250_000).
+                // Only halt if even after compaction the payload cannot fit within budget.
                 try {
                     assertContentsWithinStreamBudget(requestContents, `${this.id}#iteration-${iterations}`);
                 } catch (payloadError) {
-                    logger.warn(`[BaseAgent] Payload budget halted execution in ${this.id}.`, payloadError);
-                    executionContext.rollback();
-                    return {
-                        text: 'Task halted: request payload exceeds the ~200KB backend limit even after image compression. Reduce image attachments or start a fresh conversation.',
-                        error: 'Payload Too Large',
-                        toolCalls
-                    };
+                    logger.warn(`[BaseAgent] Payload budget exceeded in ${this.id}, attempting self-healing compaction...`, payloadError);
+                    const compactedPrompt = elideBase64Payloads(fullPrompt);
+                    const compactedAttachments = await compressStreamImageAttachments(finalAttachments, 250_000);
+                    requestContents = [{
+                        role: 'user' as const,
+                        parts: [
+                            { text: compactedPrompt },
+                            ...compactedAttachments.map(a => ({
+                                inlineData: { mimeType: a.mimeType, data: a.base64 }
+                            }))
+                        ]
+                    }];
+                    try {
+                        assertContentsWithinStreamBudget(requestContents, `${this.id}#iteration-${iterations}-compacted`);
+                        logger.info(`[BaseAgent] Self-healing compaction succeeded for ${this.id}`);
+                    } catch (compactError) {
+                        logger.warn(`[BaseAgent] Payload budget halted execution in ${this.id} even after compaction.`, compactError);
+                        executionContext.rollback();
+                        return {
+                            text: 'Task halted: request payload exceeds the backend limit even after image compression and context compaction. Reduce image attachments or start a fresh conversation.',
+                            error: 'Payload Too Large',
+                            toolCalls
+                        };
+                    }
                 }
 
                 // Pre-flight Token Estimation (Primitive #5)

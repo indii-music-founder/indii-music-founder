@@ -13,7 +13,7 @@ import { livingPlanService } from './LivingPlanService';
 // Workflow coordinator removed for indii Conductor standard routing
 import { maestroBatchingService } from './MaestroBatchingService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { compressStreamImageAttachments } from '@/services/intelligence/StreamPayloadGuard';
+import { compressStreamImageAttachments, elideBase64Payloads } from '@/services/intelligence/StreamPayloadGuard';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { agentGraphService } from './orchestration/AgentGraphService';
 import { agentGraphStateService } from './orchestration/AgentGraphStateService';
@@ -1192,8 +1192,11 @@ export class AgentService {
         let assetContext = '';
         if (referencedAssets.length > 0) {
             assetContext = '\n\n[BOARDROOM REFERENCED ASSETS]\n' + referencedAssets.map(a => {
+                const safeVal = (typeof a.value === 'string' && a.value.startsWith('data:'))
+                    ? elideBase64Payloads(a.value)
+                    : a.value;
                 const details = [
-                    `- ${a.name} (${a.type}): ${a.value}`,
+                    `- ${a.name} (${a.type}): ${safeVal}`,
                     a.sourceType ? `sourceType=${a.sourceType}` : null,
                     a.prompt ? `prompt=${a.prompt}` : null,
                     a.origin ? `origin=${a.origin}` : null,
@@ -1412,7 +1415,10 @@ export class AgentService {
             const chunkResults = await Promise.all(chunkPromises);
             for (const { agentId, result } of chunkResults) {
                 if (agentId && result?.text) {
-                    accumulatedContext += `\n[${agentId.toUpperCase()}]: ${result.text}`;
+                    const clippedText = result.text.length > 2000
+                        ? result.text.slice(0, 2000) + '... [discussion truncated for length]'
+                        : result.text;
+                    accumulatedContext += `\n[${agentId.toUpperCase()}]: ${clippedText}`;
                 }
             }
         }

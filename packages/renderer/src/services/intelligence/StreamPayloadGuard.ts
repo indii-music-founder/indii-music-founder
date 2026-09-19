@@ -27,24 +27,25 @@ import type { Content } from '@/shared/types/ai.dto';
 import { CloudStorageService } from '@/services/CloudStorageService';
 import { logger } from '@/utils/logger';
 
-/** Must match the server guard in packages/firebase/src/index.ts exactly. */
-export const AGENT_STREAM_CHAR_BUDGET = 200_000;
+/** Must match the server guard in packages/firebase/src/index.ts exactly (10MB limit). */
+export const AGENT_STREAM_CHAR_BUDGET = 10_000_000;
 
 /**
  * Attachments at or under this many base64 chars pass through untouched.
- * ~120K base64 chars ≈ 90KB binary — comfortably inside the server budget
- * even with prompt, history, and config overhead added.
+ * ~1M base64 chars ≈ 750KB binary — high quality for Gemini 3 vision while
+ * keeping multiple attachments well within the 10MB budget.
  */
-const IMAGE_ATTACHMENT_TARGET_BASE64_CHARS = 120_000;
+export const IMAGE_ATTACHMENT_TARGET_BASE64_CHARS = 1_000_000;
 
 /**
  * Escalating downscale/re-encode ladder. JPEG re-encode intentionally drops
  * alpha: these images are AI context, not display assets.
  */
 const COMPRESSION_LADDER = [
-    { maxEdge: 1024, quality: 0.8 },
-    { maxEdge: 768, quality: 0.7 },
-    { maxEdge: 512, quality: 0.6 },
+    { maxEdge: 1536, quality: 0.85 },
+    { maxEdge: 1024, quality: 0.75 },
+    { maxEdge: 768, quality: 0.65 },
+    { maxEdge: 512, quality: 0.55 },
 ] as const;
 
 export interface StreamImageAttachment {
@@ -66,7 +67,7 @@ export function estimateContentsCharLength(contents: Content[]): number {
 
 /**
  * Fail loudly BEFORE the network call when the serialized contents would be
- * rejected by the server's 200K-char guard. Callers get a specific,
+ * rejected by the server's 10M-char guard. Callers get a specific,
  * actionable PAYLOAD_TOO_LARGE instead of an opaque backend INTERNAL_ERROR.
  */
 export function assertContentsWithinStreamBudget(contents: Content[], label: string): void {
@@ -75,7 +76,7 @@ export function assertContentsWithinStreamBudget(contents: Content[], label: str
 
     throw new AppException(
         AppErrorCode.PAYLOAD_TOO_LARGE,
-        `AI request payload is too large to send (${Math.round(lengthChars / 1000)}KB serialized against a ~200KB limit). ` +
+        `AI request payload is too large to send (${Math.round(lengthChars / 1000)}KB serialized against a ~10MB limit). ` +
         'Reduce image attachments or start a fresh conversation.',
         {
             retryable: false,
@@ -94,8 +95,11 @@ function toDataUri(att: StreamImageAttachment): string {
     return `data:${att.mimeType};base64,${att.base64}`;
 }
 
-async function compressImageAttachment(att: StreamImageAttachment): Promise<StreamImageAttachment> {
-    if (att.base64.length <= IMAGE_ATTACHMENT_TARGET_BASE64_CHARS) return att;
+async function compressImageAttachment(
+    att: StreamImageAttachment,
+    targetChars: number = IMAGE_ATTACHMENT_TARGET_BASE64_CHARS
+): Promise<StreamImageAttachment> {
+    if (att.base64.length <= targetChars) return att;
 
     let current = toDataUri(att);
     for (const step of COMPRESSION_LADDER) {
@@ -108,7 +112,7 @@ async function compressImageAttachment(att: StreamImageAttachment): Promise<Stre
             });
             current = dataUri;
             const parts = parseDataUri(dataUri);
-            if (parts && parts.base64.length <= IMAGE_ATTACHMENT_TARGET_BASE64_CHARS) {
+            if (parts && parts.base64.length <= targetChars) {
                 logger.info('[StreamPayloadGuard]', `Image attachment compressed ${att.base64.length} → ${parts.base64.length} base64 chars.`);
                 return parts;
             }
@@ -125,18 +129,29 @@ async function compressImageAttachment(att: StreamImageAttachment): Promise<Stre
 
 /**
  * Compress oversized raster image attachments for the AI stream boundary.
- * Non-image attachments (audio, video, pdf) pass through untouched — they are
- * not canvas-decodable, and the budget assertion handles them honestly.
+ * Dynamically computes a per-image target when multiple images are attached
+ * so the total attachment payload remains safely below 6MB (leaving plenty of
+ * headroom for prompt text, history, and tools within the 10MB ceiling).
+ * Non-image attachments (audio, video, pdf) pass through untouched.
  */
 export async function compressStreamImageAttachments<
     T extends StreamImageAttachment
->(attachments: readonly T[]): Promise<T[]> {
+>(attachments: readonly T[], overridePerImageTarget?: number): Promise<T[]> {
     if (!attachments || attachments.length === 0) return [];
+
+    const imageCount = attachments.filter(
+        att => att && typeof att.base64 === 'string' && att.mimeType?.startsWith('image/')
+    ).length;
+    // Shared attachment budget: max 6M chars across all images combined
+    const perImageTarget = overridePerImageTarget ?? Math.min(
+        IMAGE_ATTACHMENT_TARGET_BASE64_CHARS,
+        Math.floor(6_000_000 / Math.max(1, imageCount))
+    );
 
     return Promise.all(attachments.map(async (att): Promise<T> => {
         if (!att || typeof att.base64 !== 'string' || !att.mimeType?.startsWith('image/')) return att;
-        if (att.base64.length <= IMAGE_ATTACHMENT_TARGET_BASE64_CHARS) return att;
-        const compressed = await compressImageAttachment(att);
+        if (att.base64.length <= perImageTarget) return att;
+        const compressed = await compressImageAttachment(att, perImageTarget);
         // Preserve any extra fields the caller's attachment shape carries.
         return { ...att, mimeType: compressed.mimeType, base64: compressed.base64 };
     }));
@@ -161,4 +176,27 @@ export function elideBase64Payloads(text: string): string {
     return text.replace(EMBEDDED_BASE64_PATTERN, (_match: string, mime: string, payload: string) =>
         `data:${mime};base64,[elided ${Math.max(1, Math.round((payload.length * 3) / 4 / 1024))}KB — delivered to the model as inlineData when needed]`
     );
+}
+
+/**
+ * Recursively sanitizes an object for prompt injection by replacing any raw
+ * base64 data-URL strings with elided placeholders. Keeps the object structure,
+ * keys, and non-base64 values completely intact, preventing multi-megabyte ghost
+ * bloat in `# CONTEXT` and prompt serialization.
+ */
+export function sanitizeObjectForPrompt<T>(obj: T): T {
+    if (obj === null || typeof obj !== 'object') {
+        if (typeof obj === 'string') {
+            return elideBase64Payloads(obj) as unknown as T;
+        }
+        return obj;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(item => sanitizeObjectForPrompt(item)) as unknown as T;
+    }
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+        result[key] = sanitizeObjectForPrompt(value);
+    }
+    return result as T;
 }

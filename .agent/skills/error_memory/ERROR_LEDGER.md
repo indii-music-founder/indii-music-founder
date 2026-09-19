@@ -2384,3 +2384,22 @@ committing.
   4. Cleared timeout auth errors on mount in `LoginForm.tsx` if `authError?.includes('timed out')`.
 - EVIDENCE: Vitest unit tests passed (82/82 across security, auth, and intelligence suites), full monorepo typecheck clean (0 errors), packaged with `electron-builder --dir`, deployed to `/Applications/indii.music.app`. Live logs show clean startup, 0 Sentry CSP blocks, valid CORS headers, and clean login screen.
 - PREVENTION: Always use runtime user-agent checks alongside bridge checks for Electron detection in web code. Ensure all defined `ALLOWED_ORIGINS` groups in CSP are referenced in the policy generator.
+
+## 2026-09-19 Boardroom Task Halted on ~200KB Backend Limit — Multi-Agent & Multimodal Payload Explosion
+
+- SEVERITY: P1 (Recurring failure halting user tasks in Boardroom: "Task halted: request payload exceeds the ~200KB backend limit even after image compression. Reduce image attachments or start a fresh conversation.")
+- FILES: `packages/firebase/src/index.ts`, `packages/renderer/src/services/intelligence/StreamPayloadGuard.ts`, `packages/renderer/src/services/intelligence/StreamPayloadGuard.test.ts`, `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.test.ts`, `packages/renderer/src/services/agent/BaseAgent.ts`, `packages/renderer/src/services/agent/__tests__/AgentMultimodal.test.ts`, `packages/renderer/src/services/agent/builders/AgentPromptBuilder.ts`, `packages/renderer/src/services/agent/builders/__tests__/AgentPromptBuilder.test.ts`, `packages/renderer/src/services/agent/AgentService.ts`
+- ERROR: User received recurrent "Task halted: request payload exceeds the ~200KB backend limit even after image compression..." halts, particularly in the Boardroom.
+- CAUSE: 4 intersecting factors:
+  1. Archaic 200,000 char budget in `generateContentStream` server guard and client `StreamPayloadGuard` (set in July 2026 as a text-only sanity check, severely undersized for Gemini 3 multimodal vision and long boardroom dialogues).
+  2. Over-aggressive per-image target (120,000 chars): two images alone (240,000 chars) breached the limit before prompt text was added.
+  3. Ghost base64 text bloat in `# CONTEXT`, `whiskState`, and `referencedAssets`: raw base64 data URLs entered serialized prompt text where image compression never reached them.
+  4. Quadratic boardroom accumulation: `handleBoardroomSwarmFlow` concatenated uncompacted responses of all seated agents into `accumulatedContext`, ballooning prompt size with each subsequent turn.
+- FIX:
+  1. Raised stream payload budget from 200KB to 10MB (`10_000_000` chars) on both backend (`packages/firebase/src/index.ts`) and client (`StreamPayloadGuard.ts`), comfortably under Vertex AI (20MB) and Cloud Functions (32MB) ceilings.
+  2. Modernized image compression ladder (1536→1024→768→512) and increased base image target to 1,000,000 base64 chars (~750KB binary), with dynamic per-image budgeting to keep all attachments under 6MB combined.
+  3. Added `sanitizeObjectForPrompt` and prompt sanitizers in `AgentPromptBuilder.ts` and `AgentService.ts` to recursively elide raw base64 data URLs in `# CONTEXT`, `whiskState`, and `referencedAssets`.
+  4. Bounded boardroom swarm history: clipped individual agent contributions in `accumulatedContext` to 2,000 characters.
+  5. Implemented self-healing auto-compaction in `BaseAgent.ts`: instead of immediately halting, it elides text data URLs and aggressively re-compresses attachments to 250KB before re-evaluating budget.
+- EVIDENCE: Vitest passed across all suites (79/79 unit tests in intelligence & agent, 18/18 in boardroom, 1165/1165 in firebase); monorepo `npm run typecheck` clean (0 errors); `npm run lint` clean (0 errors).
+- PREVENTION: Never place an arbitrary low sub-megabyte ceiling on multimodal streaming endpoints when modern LLM vision models have 1M+ token contexts. Always sanitize structured context objects to prevent raw base64 strings from infiltrating prompt text. Implement self-healing auto-compaction before hard-failing user turns.

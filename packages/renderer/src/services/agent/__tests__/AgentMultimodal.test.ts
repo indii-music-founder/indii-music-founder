@@ -120,14 +120,27 @@ describe('Agent Multimodal Support', () => {
             {},
             undefined,
             undefined,
-            [{ mimeType: 'image/png', base64: 'A'.repeat(250_000) }]
+            [{ mimeType: 'image/png', base64: 'A'.repeat(10_000_001) }]
         );
 
         expect(result.error).toBe('Payload Too Large');
         expect(result.text).toContain('Task halted');
-        expect(result.text).toContain('200KB');
+        expect(result.text).toContain('backend limit');
         // Decisive: the oversize request never reached the model layer.
         expect(AutonomousIntelligence.generateContentStream).not.toHaveBeenCalled();
         expect(AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
+    });
+
+    it('allows attachments larger than the old 200KB limit (e.g. 500KB) up to the modern 10MB budget', async () => {
+        const result = await agent.execute(
+            'Analyze this high-res logo',
+            {},
+            undefined,
+            undefined,
+            [{ mimeType: 'image/jpeg', base64: 'A'.repeat(500_000) }]
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(AutonomousIntelligence.generateContentStream).toHaveBeenCalled();
     });
 });

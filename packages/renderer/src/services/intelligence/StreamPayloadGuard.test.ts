@@ -5,6 +5,7 @@ import {
     assertContentsWithinStreamBudget,
     compressStreamImageAttachments,
     elideBase64Payloads,
+    sanitizeObjectForPrompt,
 } from './StreamPayloadGuard';
 import { CloudStorageService } from '@/services/CloudStorageService';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
@@ -72,20 +73,20 @@ describe('compressStreamImageAttachments', () => {
         });
 
         const [result] = await compressStreamImageAttachments([
-            { mimeType: 'image/png', base64: 'A'.repeat(200_000) },
+            { mimeType: 'image/png', base64: 'A'.repeat(1_200_000) },
         ]);
 
         expect(result.mimeType).toBe('image/jpeg');
         expect(result.base64).toBe('compressed-small');
         expect(compressImage).toHaveBeenCalledTimes(1);
-        expect(compressImage.mock.calls[0]?.[1]).toMatchObject({ maxWidth: 1024, format: 'jpeg' });
+        expect(compressImage.mock.calls[0]?.[1]).toMatchObject({ maxWidth: 1536, format: 'jpeg' });
     });
 
     it('walks the ladder when the first compression still exceeds the target', async () => {
         compressImage
             .mockResolvedValueOnce({
                 blob: new Blob(['x']),
-                dataUri: `data:image/jpeg;base64,${'A'.repeat(150_000)}`,
+                dataUri: `data:image/jpeg;base64,${'A'.repeat(1_100_000)}`,
             })
             .mockResolvedValueOnce({
                 blob: new Blob(['x']),
@@ -93,26 +94,26 @@ describe('compressStreamImageAttachments', () => {
             });
 
         const [result] = await compressStreamImageAttachments([
-            { mimeType: 'image/jpeg', base64: 'A'.repeat(300_000) },
+            { mimeType: 'image/jpeg', base64: 'A'.repeat(1_500_000) },
         ]);
 
         expect(result.base64).toBe('small-enough');
         expect(compressImage).toHaveBeenCalledTimes(2);
-        expect(compressImage.mock.calls[0]?.[1]).toMatchObject({ maxWidth: 1024 });
-        expect(compressImage.mock.calls[1]?.[1]).toMatchObject({ maxWidth: 768 });
+        expect(compressImage.mock.calls[0]?.[1]).toMatchObject({ maxWidth: 1536 });
+        expect(compressImage.mock.calls[1]?.[1]).toMatchObject({ maxWidth: 1024 });
     });
 
     it('fails open: keeps the original attachment when compression throws', async () => {
         compressImage.mockRejectedValueOnce(new Error('canvas unavailable'));
 
-        const original = { mimeType: 'image/png', base64: 'A'.repeat(200_000) };
+        const original = { mimeType: 'image/png', base64: 'A'.repeat(1_200_000) };
         const [result] = await compressStreamImageAttachments([original]);
 
         expect(result).toEqual(original);
     });
 
     it('never compresses non-image attachments', async () => {
-        const audio = { mimeType: 'audio/mpeg', base64: 'A'.repeat(300_000) };
+        const audio = { mimeType: 'audio/mpeg', base64: 'A'.repeat(1_200_000) };
         const result = await compressStreamImageAttachments([audio]);
         expect(result).toEqual([audio]);
         expect(compressImage).not.toHaveBeenCalled();
@@ -125,7 +126,7 @@ describe('compressStreamImageAttachments', () => {
         });
 
         const [result] = await compressStreamImageAttachments([
-            { mimeType: 'image/png', base64: 'A'.repeat(200_000), name: 'tigers-reference.png' } as
+            { mimeType: 'image/png', base64: 'A'.repeat(1_200_000), name: 'tigers-reference.png' } as
                 { mimeType: string; base64: string; name: string },
         ]);
 
@@ -162,5 +163,35 @@ describe('elideBase64Payloads', () => {
         const text = '[Tool Call: generate_image({"prompt":"Old English D style"})] Result: Success: done';
         expect(elideBase64Payloads(text)).toBe(text);
         expect(elideBase64Payloads('')).toBe('');
+    });
+});
+
+describe('sanitizeObjectForPrompt', () => {
+    it('recursively elides base64 data-URLs within nested objects and arrays', () => {
+        const largeBase64 = 'A'.repeat(2048);
+        const input = {
+            brand: {
+                logo: `data:image/png;base64,${largeBase64}`,
+                name: 'Indii Records',
+            },
+            whisk: [
+                { id: '1', content: `data:image/jpeg;base64,${largeBase64}` },
+                { id: '2', content: 'normal text' },
+            ],
+            plainNumber: 42,
+            plainBoolean: true,
+            nullable: null,
+        };
+
+        const result = sanitizeObjectForPrompt(input);
+
+        expect(result.brand.name).toBe('Indii Records');
+        expect(result.brand.logo).toContain('data:image/png;base64,[elided');
+        expect(result.brand.logo).not.toContain(largeBase64);
+        expect(result.whisk[0]?.content).toContain('data:image/jpeg;base64,[elided');
+        expect(result.whisk[1]?.content).toBe('normal text');
+        expect(result.plainNumber).toBe(42);
+        expect(result.plainBoolean).toBe(true);
+        expect(result.nullable).toBeNull();
     });
 });

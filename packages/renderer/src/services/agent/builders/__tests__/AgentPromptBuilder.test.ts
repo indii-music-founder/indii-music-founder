@@ -501,7 +501,39 @@ describe('AgentPromptBuilder.buildFullPrompt — Execution Contract injection', 
         expect(prompt).toContain('- **Brand Colors & Visual Palette:** Electric Purple (#8a2be2), Acid Lime (#32cd32), #00ffff');
         expect(prompt).toContain('- **Brand Typography:** Syne, Space Grotesk');
         expect(prompt).toContain('- **Visual DNA Constraint:**');
+    });
 
+    it('elides raw base64 data URLs in enrichedContext to protect the payload budget', () => {
+        const rawBase64 = 'data:image/png;base64,' + 'A'.repeat(5000);
+        const context = createMockContext();
+        const enrichedContext = {
+            customImage: rawBase64,
+            nested: {
+                thumbnail: rawBase64,
+            }
+        };
+
+        const prompt = AgentPromptBuilder.buildFullPrompt(
+            'Test mission', 'Test task', 'CreativeAgent', 'creative', context, enrichedContext, '', '', '', '',
+        );
+
+        expect(prompt).not.toContain(rawBase64);
+        expect(prompt).toContain('[elided 4KB — delivered to the model as inlineData when needed]');
+    });
+
+    it('sanitizes base64 data URLs in buildWhiskContext', () => {
+        const whiskState = {
+            subjects: [{ id: '1', checked: true, content: 'data:image/png;base64,' + 'B'.repeat(5000) }],
+            scenes: [{ id: '2', checked: true, content: 'Cyberpunk alley', intelligenceCaption: 'Neon alley' }],
+            styles: [{ id: '3', checked: true, content: 'Synthwave' }],
+            preciseReference: false,
+        };
+
+        const whiskContext = AgentPromptBuilder.buildWhiskContext(whiskState as any);
+        expect(whiskContext).toContain('- SUBJECTS: [reference image]');
+        expect(whiskContext).toContain('- SCENES: Neon alley');
+        expect(whiskContext).toContain('- STYLES: Synthwave');
+        expect(whiskContext).not.toContain('data:image/png;base64');
     });
 });
 
