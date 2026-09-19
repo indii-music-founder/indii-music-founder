@@ -52,25 +52,30 @@ We are adopting a composite strategy using three specialized libraries to accele
   * `AI Input Search`: Potential candidate for the global "Omnibar".
   * `Bento Grid`: For the Dashboard and Landing Page feature showcases.
 
-## 4. Design Token System
+## 4. Design Token System & Neuro-Aesthetics
 
-### A. Color Palette ("The Frequency Theme")
+*Reference Master Specification:* `docs/design/DESIGN_AESTHETICS.md`
 
-* `--void` (`#030303`): The deepest black background.
-* `--resonance-blue` (`#2E2EFE`): Primary action/brand color. Electric, digital.
-* `--frequency-pink` (`#FE2E9A`): Accent/Highlight color. Creative energy.
-* `--signal-white` (`#F0F0F0`): Primary text. High contrast but not harsh.
+### A. Color Palette ("Sovereign Luxury: Champagne Gold + Molten Ruby")
+
+* `--piano-black` (`#000000`): Pure void baseline; OLED true black lacquer.
+* `--studio-obsidian` (`#14100C`): Warm studio acoustic dark backdrop.
+* `--champagne-gold` (`#FFD700` / `#FFB800`): Primary identity, prestige, and dopamine activation.
+* `--molten-ruby` (`#E53935` / `#C62828`): Subsurface kiln ember pools; urgency and spend catalyst.
+* `--amber-ember` (`#E65100`): Terminal gradient anchor for molten CTA buttons.
+* `--petroleum-teal` (`#00B8D4`): Cold studio analog accent balancing warm gold/ruby pools.
+* `--signal-white` (`#FFFFFF`): Primary headlines and high-contrast typography.
 
 ### B. Typography
 
-* **Sans**: `Geist Sans` (Modern, legible, technical but human).
-* **Mono**: `Geist Mono` (For code, IDs, and metadata).
+* **Sans**: Geist Sans / System Display (Modern, legible, technical but human). Fluid clamped for desktop 1440x900 fold compliance.
+* **Mono**: Geist Mono / JetBrains Mono (For code, DDEX IDs, and timestamps).
 
-### C. Effects
+### C. Effects & Component Styling
 
-* `.glass-panel`: Standard container style.
-  * `bg-white/2`, `blur-xl`, `border-white/5`
-* `.text-glow`: Used for emphasis. A soft bloom behind text.
+* `.lacquer-card`: Semi-translucent obsidian container (`bg-black/70`, `backdrop-blur-2xl`, `shadow-[0_25px_70px_rgba(0,0,0,0.95)]`).
+* `.specular-line-gold`: Hairline razor reflection across top borders (`linear-gradient(90deg, transparent 0%, rgba(255,184,0,0.7) 50%, transparent 100%)`).
+* `Molten CTA Gradient`: `bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100]` with dual aura `shadow-[0_0_28px_rgba(255,184,0,0.48),0_0_45px_rgba(229,57,53,0.28)]`.
 
 ## 5. Implementation Roadmap
 
