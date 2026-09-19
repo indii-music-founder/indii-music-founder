@@ -62,6 +62,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Canonical music unit tests
+      run: npx vitest run packages/shared/src/schemas/musicEntity.test.ts packages/shared/src/schemas/musicEntityCompatibility.test.ts
+
     - name: Lint
       run: npm run lint
 
