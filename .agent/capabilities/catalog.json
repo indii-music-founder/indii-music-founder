@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "be584c6271c06c51f16d8184ff7ea2e4978e1104c7a2e5ee43c443c10ad8d07d",
+  "sourceDigest": "1472519cbd3b13f01aba1dd110aa37bb841e44e46a90514dffff1c9c2185c8cf",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -5063,7 +5063,7 @@
       "available": true,
       "description": "Bounded improvement pass for an existing artifact. Finds and applies material quality gains inside the active scope without changing the acceptance contract, expanding authority, or creating independent commits.",
       "descriptionHash": "855b40a449a7481551ae7fe1590f5e16ff2c4473230d24ffbbc0f727ca0b92ca",
-      "contentHash": "20eda6c66da9fd2ecd6f2c290ca5ed5900edbfdfe37a20947c54e3729689f639",
+      "contentHash": "27e14cd18e72241b23840f091d9943bb5b613ed4e4a41c7c7cb3e9e759dbc5a7",
       "state": "certified",
       "authority": "bounded-local-writes",
       "prerequisites": [

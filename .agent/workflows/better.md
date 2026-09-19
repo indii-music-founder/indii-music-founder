@@ -4,69 +4,88 @@ description: Bounded improvement pass for an existing artifact. Finds and applie
 
 # /better — Elevation Pass
 
-Use after an artifact works or when the user explicitly asks to improve it. `/better` does not authorize a new feature, repository-wide cleanup, external publishing, or delivery.
+Use after an artifact works or when explicitly requested. `/better` does not authorize new features, repository-wide cleanups, external publishing, or independent commits.
 
-## 1. Lock the target
+## 1. Lock target & mode
 
 State:
+- **Target:** exact artifact/files and active objective.
+- **Mode:**
+  - **AUDIT:** Default for standalone user invocation without flags. Emits findings and proposed changes; makes zero edits.
+  - **ELEVATE:** Used when invoked automatically by [`go.md`](go.md) or [`end.md`](end.md), or when user requests bounded changes directly. Applies smallest complete fix.
+- **Scope boundary:** Inherit parent unit's file scope when called from [`go.md`](go.md) or [`end.md`](end.md). Never search repository for extra work.
 
-- exact artifact/files and active objective;
-- current acceptance contract and proof already obtained;
-- improvement dimensions relevant to this target;
-- exclusions and unrelated dirty files;
-- mode: **AUDIT** for findings only, or **ELEVATE** when bounded changes are requested.
+## 2. The Anti-Churn Guardrail (Zero-Churn Honor Code)
 
-When invoked by `/go` or `/end`, inherit that parent unit's file scope. Do not search the whole repository for extra work.
+`/better` targets **material functional and contractual gaps**, NOT cosmetic churn.
+**Do NOT touch:**
+- Code formatting or import re-ordering if linter already passes.
+- Variable or parameter names unless resolving clear ambiguity or naming violations.
+- Working loops or routines to make them "fancier" or compressed.
+- Redundant JSDoc or comments that restate code.
 
-## 2. Inspect from relevant angles
+> **Clean Pass:** If artifact satisfies all standards with zero material gaps, output `VERDICT: NO MATERIAL CHANGE`. Zero edits is a win.
 
-Choose only applicable dimensions:
+## 3. Inspect by artifact archetype
 
-- correctness and failure/recovery states;
-- security, ownership, privacy, and input boundaries;
-- accessibility and responsive interaction;
-- performance and resource lifetime;
-- clarity, maintainability, and duplication;
-- test quality and contract coverage;
-- documentation truth and terminology;
-- state/sequence/architecture coherence.
+Select matching archetype and inspect against concrete failure modes:
 
-Look for a material gap, not a cosmetic excuse to churn code. A pre-existing issue outside the target is reported separately and left untouched.
+### A. UI / React Components
+- **Render stability:** Selectors use `useShallow` where applicable; fallback arrays/objects are module-level constants (e.g. `EMPTY_ARRAY = []`) to prevent infinite re-render loops (`Maximum update depth exceeded`).
+- **State coverage:** Complete loading, error, empty, and edge states rendered.
+- **Dialog standards:** Modals use `react-call` exclusively (`ConfirmDialog.call`, `AlertDialog.call`). Zero native `window.alert/confirm/prompt`.
+- **Accessibility & layout:** Keyboard interactive, ARIA attributes present, no viewport overflow on mobile.
 
-## 3. Improve safely
+### B. Backend / Services / Cloud Functions
+- **Recovery & resilience:** No dropped `try/catch` or fallback paths (Platinum Anti-Pattern 2).
+- **Async execution:** Durable mutations awaited before returning client success (Platinum Anti-Pattern 13).
+- **AI model safety:** Zero banned model strings (`gemini-1.5-*`, `gemini-2.0-*`). All imports use `AI_MODELS` from `@/core/config/ai-models`.
+- **Security boundaries:** Validated caller auth (`context.auth.uid`), strict input schemas via Zod.
 
-For each proposed change:
+### C. Tests (Vitest / Playwright)
+- **Quality scanner:** Passes `node scripts/check-test-quality.js`.
+- **Assertion truth:** Zero tautological/fake assertions (`expect(true).toBe(true)`).
+- **Locator safety:** Zero unannotated `.first()`, `.last()`, or `.nth()` locator bypasses (requires `// bypass-strict` if legitimate).
+- **Mock determinism:** Mocks branch on arguments/endpoints rather than call-order FIFO queues.
 
-1. Explain the user/system value and possible regression.
-2. Confirm it remains inside the target and existing authority.
-3. Apply the smallest complete change.
-4. Preserve public contracts unless the active task explicitly changes them.
-5. Add or update evidence when behavior changes.
-6. Stop after two failed attempts with the same mechanism and reconsider the design.
+### D. Documentation / Prompts / Workflows
+- **Truthfulness:** All file paths, symbols, and links exist and resolve.
+- **Prompt hygiene:** Zero template literal whitespace bloat (`.replace(/^\s+/gm, '')`).
+- **Brand voice:** Lowercase `indii` / `indii.music`, "your 23-piece team", zero tech-spiritualism.
 
-Do not stage, commit, push, publish, deploy, edit secrets, rewrite ledgers, or invoke broad fix sweeps independently.
+Cross-reference [`PLATINUM_QUALITY_STANDARDS.md`](../../docs/PLATINUM_QUALITY_STANDARDS.md) for full anti-pattern definitions.
 
-## 4. Verify proportionally
+## 4. Improve safely (ELEVATE mode)
 
-- Documentation: re-read structure, validate links/paths, inspect focused diff.
-- Logic: targeted tests and relevant typecheck/lint.
-- Shared contracts: dependent tests, build, and integration checks.
-- UI: approved available browser capability and honest DOM/screenshot evidence when the real state is reachable.
-- Live/production: `.agent/REAL_USER_AUTHENTICITY.md` and genuine credentials/real path.
+1. Explain value and regression risk before touching code.
+2. Apply smallest complete change using surgical chunk replacements.
+3. Preserve existing public contracts.
+4. **Two-Strike Rollback:** If a fix fails tests or compilation twice with same mechanism, immediately revert all changes, halt, and report `BLOCKED (REVERTED)`.
+5. **The McClear Rule:** Never declare complete victory; report exact status and remaining caveats honestly.
 
-Any edit invalidates earlier evidence it could affect.
+Do not stage, commit, push, publish, deploy, edit secrets, or invoke broad fix sweeps independently.
 
-## 5. Output
+## 5. Verify proportionally
+
+- Run `node scripts/check-test-quality.js` on touched files.
+- Run targeted tests: `npx vitest run <file>` or package test runner.
+- Run package typecheck: `npm run typecheck:renderer` (or applicable package).
+- Real-user / production claims require [`REAL_USER_AUTHENTICITY.md`](../REAL_USER_AUTHENTICITY.md).
+- Any edit invalidates prior test evidence.
+
+## 6. Output
 
 ```text
 TARGET / MODE: <artifact> / <AUDIT|ELEVATE>
-MATERIAL GAPS: <findings>
-CHANGES: <bounded files and mechanisms>
-EVIDENCE: <commands/observable proof>
+ARCHETYPE: <UI | BACKEND | TEST | DOC>
+PLATINUM SCAN: <PASS | FIXED Anti-Pattern X | N/A>
+MATERIAL GAPS: <concrete gaps found, or "None (Clean Pass)">
+CHANGES: <bounded files and mechanisms | none>
+EVIDENCE: <commands and test verdicts>
 OUT-OF-SCOPE: <untouched findings>
-VERDICT: IMPROVED | NO MATERIAL CHANGE | PARTIAL | BLOCKED
+VERDICT: IMPROVED | NO MATERIAL CHANGE | PARTIAL | BLOCKED (REVERTED)
 ```
 
-Return changed files to the parent workflow's coherent delivery. `/better` never creates its own commit.
+Return changed files to parent workflow's delivery. `/better` never creates its own commit.
 
 > **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
