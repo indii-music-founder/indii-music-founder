@@ -146,6 +146,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         </button>
                         <button
                             onClick={() => togglePanel('brand')}
+                            data-testid="brand-assets-btn"
                             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                 ${showBrandAssets
                                     ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'

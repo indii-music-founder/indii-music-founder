@@ -4,7 +4,7 @@ import { test, expect } from './fixtures/auth';
  * Image Annotation E2E Tests
  *
  * Covers: Opening the Image Annotator from a generated image in the chat,
- * drawing an annotation, entering a color prompt, and submitting.
+ * drawing an annotation on the canvas, entering a color prompt, and submitting.
  *
  * Run: npx playwright test e2e/image-annotation.spec.ts
  */
@@ -52,12 +52,12 @@ test.describe('Image Annotation Flow', () => {
     test('can open inline annotator and submit an edit', async ({ authedPage: page }) => {
         // 1. Navigate to Creative Studio explicitly
         await page.goto('/creative', { waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(1000); // Wait for module to render
+        await page.waitForTimeout(1000);
 
-        // 1.5 Inject an image message into the store and open the agent panel
+        // 2. Inject an image message into the store and open the agent panel
         await page.evaluate(async () => {
             const store = (window as any).useStore.getState();
-            store.setRightPanelTab('agent'); // Opens the right panel to the chat
+            store.setRightPanelTab('agent');
             store.addAgentMessage({
                 id: 'msg-e2e-image',
                 agentId: 'creative',
@@ -76,32 +76,27 @@ test.describe('Image Annotation Flow', () => {
             });
         });
 
-        // 2. Wait for the image to render in the chat
-        const imageElement = page.locator('img[alt*="Generated Image"], img[alt*="test image"]');
+        // 3. Wait for the image to render in the chat
+        const imageElement = page.locator('img[alt*="Generated Image"], img[alt*="test image"]').first(); // bypass-strict: chat feed can contain multiple rendered previews
         await expect(imageElement).toBeVisible({ timeout: 5000 });
 
-        // 3. Hover over the image container to reveal the annotator button
-        const imageContainer = imageElement.locator('..').locator('..'); // go up a few levels
-
-        // 4. Click the edit/annotate button using evaluate to bypass hover/interception issues
+        // 4. Click the edit/annotate button
+        const imageContainer = imageElement.locator('..').locator('..');
         const editButton = imageContainer.locator('button[title="Inline Annotator"]');
         await expect(editButton).toBeAttached();
         await editButton.evaluate((node: HTMLElement) => node.click());
 
-        // 5. Verify the annotation canvas or modal opens
-        const canvasContainer = page.getByTestId('inline-annotator').first(); // bypass-strict: candidate element present across multiple viewport containers
-        await expect(canvasContainer).toBeVisible({ timeout: 10000 });
+        // 5. Verify the annotation canvas modal opens
+        const annotator = page.getByTestId('inline-annotator');
+        await expect(annotator).toBeVisible({ timeout: 10000 });
         
-        // Wait for the actual <canvas> element to render, which means the image has loaded and dimensions are calculated
-        await expect(canvasContainer.locator('canvas')).toBeAttached({ timeout: 5000 });
-
-        // 6. Draw on the canvas
-        // Get bounding box of the canvas to simulate mouse drag
-        const drawableArea = page.locator('.cursor-crosshair').first(); // bypass-strict: target first visible element in DOM matching selector
-        const canvas = drawableArea.locator('canvas').first(); // bypass-strict: target first visible element in DOM matching selector
+        // 6. Wait for canvas element to render
+        const drawableArea = annotator.locator('.cursor-crosshair');
+        await expect(drawableArea).toBeVisible({ timeout: 5000 });
+        const canvas = drawableArea.locator('canvas');
         await expect(canvas).toBeAttached({ timeout: 10000 });
         
-        // Draw through the same pointer path a customer uses.
+        // 7. Draw through pointer simulation
         const box = await drawableArea.boundingBox();
         expect(box).not.toBeNull();
         await page.mouse.move(box!.x + box!.width * 0.25, box!.y + box!.height * 0.5);
@@ -110,17 +105,16 @@ test.describe('Image Annotation Flow', () => {
         await page.mouse.up();
 
         // 8. The text input for the red annotation should appear
-        const redInput = page.locator('input[placeholder*="red regions"]');
+        const redInput = annotator.locator('input[placeholder*="red regions"]');
         await expect(redInput).toBeVisible();
         await redInput.fill('Change this area to blue');
 
         // 9. Click apply and verify it completes
-        const applyBtn = page.locator('button', { hasText: 'Apply' }).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        const applyBtn = annotator.getByRole('button', { name: /Apply Edits/ });
         await expect(applyBtn).toBeEnabled();
-        
         await applyBtn.click();
         
-        // After submission, it should be disabled (either due to isSubmitting or because annotations were cleared)
+        // After submission, it should be disabled
         await expect(applyBtn).toBeDisabled({ timeout: 5000 });
     });
 });

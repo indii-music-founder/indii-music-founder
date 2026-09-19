@@ -3,7 +3,7 @@ import { test, expect } from './fixtures/auth';
 
 /**
  * Creative Studio E2E Tests
- * Optimized for CI/CD stability.
+ * Optimized for CI/CD stability, strict locator compliance, and deep workflow validation.
  */
 
 test.describe('Creative Studio', () => {
@@ -32,7 +32,6 @@ test.describe('Creative Studio', () => {
             });
         });
 
-        console.log('[CREATIVE TEST] Navigating to /creative client-side...');
         await page.waitForSelector('[data-testid="app-container"]', { timeout: 30_000 });
         await page.evaluate(() => {
             const store = (window as any).useStore;
@@ -40,27 +39,34 @@ test.describe('Creative Studio', () => {
                 store.getState().setModule('creative');
             }
         });
-        await expect(page.locator('[data-testid="creative-studio-container"]')).toBeVisible({ timeout: 30_000 });
+        await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 30_000 });
     });
 
     test('image generation flow: prompt -> generate -> display', async ({ authedPage: page }) => {
-        const promptInput = page.locator('[data-testid="direct-prompt-input"]');
+        // Ensure direct generation view or switch to direct mode
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            if (store) {
+                store.getState().setViewMode('direct');
+            }
+        });
+
+        const promptInput = page.getByTestId('direct-prompt-input');
         await expect(promptInput).toBeVisible({ timeout: 10_000 });
         await promptInput.fill('A cyberpunk city skyline at night, neon lights');
 
-        const generateBtn = page.locator('[data-testid="direct-generate-btn"]');
+        const generateBtn = page.getByTestId('direct-generate-btn');
         await expect(generateBtn).toBeVisible();
         await generateBtn.click();
 
-        // Canvas should show the new image layer
-        const canvasContainer = page.locator('.canvas-container').first(); // bypass-strict: target first visible element in DOM matching selector
-        await expect(canvasContainer).toBeVisible({ timeout: 15_000 });
+        // Canvas base layer must be mounted
+        const infiniteCanvas = page.getByTestId('infinite-canvas-surface');
+        await expect(infiniteCanvas).toBeVisible({ timeout: 15_000 });
         
-        // Mock result verification
-        const resultNotification = page.locator('text=Generation complete').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
-        if (await resultNotification.isVisible({ timeout: 5000 }).catch(() => false)) {
-            console.log('✓ Image generation completed');
-        }
+        // Assert generation state completed
+        await expect.poll(() => page.evaluate(() => {
+            return (window as any).useStore?.getState().isGenerating;
+        })).toBe(false);
     });
 
     test('Image Studio toolbar stays interactive through upload and delete', async ({ authedPage: page }) => {
@@ -153,42 +159,30 @@ test.describe('Creative Studio', () => {
         await expect(undoButton).toBeDisabled();
     });
 
-    test.skip('outpainting flow: upload image -> extend -> save', async ({ authedPage: page }) => {
-        // Find outpaint tool
-        const outpaintToolBtn = page.locator('[data-testid="tool-outpaint"]').or(page.locator('button:has-text("Outpaint")')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
-        if (await outpaintToolBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-            await outpaintToolBtn.click();
-            
-            const extendBtn = page.locator('[data-testid="run-outpaint-button"]');
-            if (await extendBtn.isVisible()) {
-                await extendBtn.click();
-                
-                // Verify save
-                const saveBtn = page.locator('[data-testid="save-canvas-button"]');
-                await expect(saveBtn).toBeVisible({ timeout: 10_000 });
-                console.log('✓ Outpainting flow successful');
-            }
-        }
-    });
+    test('Brand Assets drawer opens, switches tabs, and closes deterministically', async ({ authedPage: page }) => {
+        // Open brand drawer via navbar button
+        const brandBtn = page.getByTestId('brand-assets-btn');
+        await expect(brandBtn).toBeVisible();
+        await brandBtn.click();
 
-    test.skip('asset management: create -> rename -> delete', async () => {
-        // Obsolete test: Assets drawer was replaced by CreativeClipboard
-        // Skipping until e2e tests are updated for CreativeClipboard functionality.
-        console.log('✓ Asset management checked (skipped - obsolete UI)');
-    });
+        // Drawer must open
+        const drawer = page.getByTestId('brand-assets-drawer');
+        await expect(drawer).toBeVisible({ timeout: 5000 });
 
-    test('brand kit integration applies brand colors', async ({ authedPage: page }) => {
-        // Open brand kit
-        const brandKitBtn = page.locator('[data-testid="tool-brandkit"]').or(page.locator('button:has-text("Brand Kit")')).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
-        if (await brandKitBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-            await brandKitBtn.click();
-            
-            // Check that brand colors are applied or visible in UI
-            const colorSwatch = page.locator('[data-testid="brand-color-swatch"]').first(); // bypass-strict: candidate element present across multiple viewport containers
-            await expect(colorSwatch).toBeVisible({ timeout: 5_000 });
-            
-            await colorSwatch.click();
-            console.log('✓ Brand kit integration accessed');
-        }
+        // Switch to Generate Intelligence tab
+        const genTab = drawer.getByRole('button', { name: 'Generate Intelligence' });
+        await expect(genTab).toBeVisible();
+        await genTab.click();
+
+        // Switch back to Upload tab
+        const uploadTab = drawer.getByRole('button', { name: 'Upload' });
+        await expect(uploadTab).toBeVisible();
+        await uploadTab.click();
+
+        // Close drawer
+        const closeBtn = drawer.getByRole('button', { name: 'Close brand assets' });
+        await expect(closeBtn).toBeVisible();
+        await closeBtn.click();
+        await expect(drawer).toHaveCount(0);
     });
 });

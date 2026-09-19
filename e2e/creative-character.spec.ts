@@ -3,7 +3,7 @@ import { test, expect } from './fixtures/auth';
 /**
  * Creative Studio Character Library E2E Tests
  *
- * Covers: Adding a character reference via the generated gallery selector.
+ * Covers: Adding a character reference via the generated gallery selector with strict locators.
  *
  * Run: npx playwright test e2e/creative-character.spec.ts
  */
@@ -61,74 +61,66 @@ test.describe('Creative Studio - Character Library', () => {
             const store = (window as any).useStore;
             if (store) {
                 store.getState().setModule('creative');
+                store.getState().setViewMode('direct');
             }
         });
-
-        // Ensure Direct mode is active
-        const directBtn = page.locator('[data-testid="direct-view-btn"]');
-        await directBtn.waitFor({ state: 'attached', timeout: 30_000 });
-        if (await directBtn.isVisible().catch(() => false)) {
-            await directBtn.click();
-            await page.waitForTimeout(1_000);
-        }
+        await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 30_000 });
     });
 
     test('should allow selecting a generated image from Character Library gallery', async ({ authedPage: page }) => {
-        // First, generate an image so it appears in the generated history
-        const promptInput = page.locator('[data-testid="direct-prompt-input"]');
+        // 1. Generate an image so it appears in the generated history
+        const promptInput = page.getByTestId('direct-prompt-input');
+        await expect(promptInput).toBeVisible({ timeout: 10_000 });
         await promptInput.fill('A cyberpunk character portrait');
         
-        const generateBtn = page.locator('[data-testid="direct-generate-btn"]');
+        const generateBtn = page.getByTestId('direct-generate-btn');
         await expect(generateBtn).toBeEnabled({ timeout: 10_000 });
         await generateBtn.click();
         
         // Wait for generation to complete (mock takes ~2s)
         await page.waitForTimeout(3000);
 
-        // Ensure right panel is set to context controls and is open
-        await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15000 });
+        // 2. Open context controls in right panel
+        await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15_000 });
         await page.evaluate(() => {
             (window as any).useStore.getState().setRightPanelTab('context');
         });
         await page.waitForTimeout(1000);
 
         const rightPanel = page.locator('[aria-label="Context panel"]');
+        await expect(rightPanel).toBeVisible({ timeout: 10_000 });
 
-        // Select Video target media to reveal the Character Library panel
-        const videoBtn = rightPanel.locator('button:has-text("Video")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
-        await videoBtn.click();
+        // 3. Select Video target media to reveal the Character Library panel
+        const videoTargetBtn = rightPanel.getByTestId('target-media-video');
+        await expect(videoTargetBtn).toBeVisible();
+        await videoTargetBtn.click();
 
-        // Click Add Person in CharacterLibrary
-        const addPersonBtn = rightPanel.locator('button:has-text("Add Person")');
+        // 4. Click Add Person in CharacterLibrary
+        const addPersonBtn = rightPanel.getByRole('button', { name: 'Add Person' });
         await expect(addPersonBtn).toBeVisible({ timeout: 10_000 });
         await addPersonBtn.click();
 
-        // Wait for the modal to open
+        // 5. Wait for modal to open
         const modalTitle = page.getByText('ADD CHARACTER REFERENCE');
         await expect(modalTitle).toBeVisible({ timeout: 5000 });
 
-        // Find a generated image in the modal and select it
-        // The images don't have explicit test IDs, but we can look for the Select button text overlay
-        const selectOverlay = page.getByText('Select').first(); // bypass-strict: text appears in multiple DOM containers or preview cards
-        await expect(selectOverlay).toBeVisible({ timeout: 5000 });
-        
-        // Click the first generated image in the gallery
-        await selectOverlay.click({ force: true });
+        // 6. Select generated reference image directly via deterministic testid
+        const generatedRef = page.getByTestId('generated-reference-0');
+        await expect(generatedRef).toBeVisible({ timeout: 5000 });
+        await generatedRef.click();
 
-        // Wait for the modal to close and the toast to appear
-        await expect(modalTitle).not.toBeVisible();
+        // 7. Verify modal closes
+        await expect(modalTitle).toHaveCount(0);
         
-        // Check if the reference was added to the Character Library UI
-        // It renders with the name "Character 1"
+        // 8. Assert reference was added to the Character Library UI with default Subject/Face tag
         const characterLabel = rightPanel.getByText('Character 1');
         await expect(characterLabel).toBeVisible({ timeout: 5000 });
 
-        // The default reference type should be 'subject' (Face)
-        const faceToggle = rightPanel.locator('[data-testid="ref-type-face-0"]');
+        const faceToggle = rightPanel.getByTestId('ref-type-face-0');
         await expect(faceToggle).toBeVisible();
         await expect(faceToggle).toHaveClass(/bg-blue-500/);
 
-        // App stable
-        await expect(page.locator('[data-testid="app-container"]')).toBeVisible();
+        // App remains stable
+        await expect(page.getByTestId('app-container')).toBeVisible();
     });
 });

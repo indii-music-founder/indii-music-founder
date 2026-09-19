@@ -505,6 +505,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 </button>
                                 <button
                                     onClick={() => setTargetMedia('video')}
+                                    data-testid="target-media-video"
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'video'
                                         ? 'bg-blue-500/30 text-blue-300 shadow-[0_0_8px_rgba(59,130,246,0.3)]'
                                         : 'text-gray-500 hover:text-gray-300'

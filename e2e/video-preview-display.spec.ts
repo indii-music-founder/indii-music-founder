@@ -62,7 +62,7 @@ test('video editor preview mounts a real, full-size player for a decoded clip', 
         });
     }
 
-    const player = page.locator('[data-testid="video-player"]').first(); // bypass-strict: candidate element present across multiple viewport containers
+    const player = page.getByTestId('video-primary-stage').getByTestId('video-player');
     await expect(player).toBeVisible({ timeout: 15_000 });
 
     // THE regression assertion: the player must occupy real space, not the

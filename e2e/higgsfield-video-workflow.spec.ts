@@ -183,10 +183,10 @@ test.describe('Higgsfield-Inspired Video Workflow', () => {
         });
 
         // 6. Fill in text and trigger generation flow
-        const promptTextarea = page.locator('[data-testid="intelligence-prompt-input"]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
-        if (await promptTextarea.isVisible()) {
-            await promptTextarea.fill('Cinematic sunset over Detroit city skyline');
-        }
+        const promptTextarea = page.getByTestId('direct-prompt-input');
+        await expect(promptTextarea).toBeVisible();
+        await promptTextarea.fill('Cinematic sunset over Detroit city skyline');
+        await expect(promptTextarea).toHaveValue('Cinematic sunset over Detroit city skyline');
 
         // Mock generate click by evaluating workflow handleGenerate to bypass UI animation delays
         await page.evaluate(async () => {
