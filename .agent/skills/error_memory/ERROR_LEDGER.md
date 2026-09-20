@@ -1,3 +1,16 @@
+## 2026-09-20 Admin Dashboard Server Telemetry Import & Unused React Import (ADMIN_DASHBOARD_TELEMETRY_IMPORT_AND_UNUSED_REACT)
+
+- **SEVERITY:** High (broke CI `unit-tests (13)` in deploy.yml and `typecheck` in build.yml)
+- **FILES:** `packages/admin-dashboard/Dockerfile`, `packages/admin-dashboard/providerTelemetry.ts`, `packages/admin-dashboard/providerTelemetry.test.ts`, `packages/admin-dashboard/src/components/modules/AIProviderMonitor.test.tsx`, `packages/admin-dashboard/tsconfig.node.json`
+- **ERROR:** `Cannot find module './providerTelemetry' imported from packages/admin-dashboard/server.ts` during Vitest / TS2307 in `packages/admin-dashboard/server.ts`, and `error TS6133: 'React' is declared but its value is never read` in `AIProviderMonitor.test.tsx`.
+- **CAUSE:** When the AI provider telemetry monitor was introduced, `providerTelemetry.ts` and `providerTelemetry.test.ts` were placed in `packages/admin-dashboard/src/` instead of alongside `server.ts` and `server.test.ts` in `packages/admin-dashboard/`. `server.ts` imported from `'./providerTelemetry'`, which failed module resolution. Furthermore, Dockerfile runner stage only copied `server.ts` and `dist/`, not `src/`. Separately, `AIProviderMonitor.test.tsx` imported `React` unnecessarily with `jsx: react-jsx` and `noUnusedLocals: true`.
+- **FIX:**
+  1. Moved `providerTelemetry.ts` and `providerTelemetry.test.ts` to `packages/admin-dashboard/` alongside `server.ts` and `server.test.ts`.
+  2. Updated `tsconfig.node.json` to include `"providerTelemetry.ts"` and `"providerTelemetry.test.ts"`.
+  3. Updated `packages/admin-dashboard/Dockerfile` to copy `providerTelemetry.ts` alongside `server.ts` in the runner stage.
+  4. Removed unused `import React from 'react';` from `AIProviderMonitor.test.tsx`.
+- **PREVENTION:** Server-side helpers for `admin-dashboard/server.ts` must reside alongside `server.ts` (outside `src/`, which is frontend-only) and be explicitly listed in `tsconfig.node.json` and Dockerfile. Never import `React` in test files when JSX runtime is `react-jsx` and `noUnusedLocals` is enabled.
+
 ## 2026-09-12 Srcdoc Preview Silently Dead Under Production CSP (SRCDOC_CSP_SCRIPT_BLOCK)
 
 - **SEVERITY:** High (entire live compiled video preview non-functional on production web; scripts fail with zero product-code errors — silent blank/static preview)

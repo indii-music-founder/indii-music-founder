@@ -1,0 +1,112 @@
+.rain-glass {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  contain: layout paint style;
+}
+
+/*
+ * Mobile-first: this is water sitting on the display glass, not "rain".
+ * The viewport remains crystal clear. A droplet only becomes visible through
+ * a tiny change in the pixels below it plus a specular rim/caustic highlight.
+ */
+.rain-glass__drop {
+  position: absolute;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at 27% 21%, rgba(255, 255, 255, 0.78) 0 4%, rgba(255, 255, 255, 0.22) 5% 10%, transparent 11%),
+    radial-gradient(circle at 72% 79%, rgba(255, 255, 255, 0.09) 0 8%, rgba(255, 255, 255, 0.025) 9% 24%, transparent 25%),
+    radial-gradient(circle at 52% 54%, rgba(255, 255, 255, 0.025) 0 38%, rgba(0, 0, 0, 0.07) 70%, rgba(0, 0, 0, 0.12) 100%);
+  box-shadow:
+    inset 0.6px 0.7px 1px rgba(255, 255, 255, 0.42),
+    inset -1px -1.5px 2.5px rgba(0, 0, 0, 0.22),
+    0 0.5px 1px rgba(0, 0, 0, 0.14);
+  backdrop-filter: brightness(1.035) contrast(1.035) saturate(1.06);
+  -webkit-backdrop-filter: brightness(1.035) contrast(1.035) saturate(1.06);
+  transform: translate3d(0, 0, 0);
+}
+
+.rain-glass__drop--round {
+  border-radius: 49% 51% 50% 50% / 48% 49% 51% 52%;
+}
+
+.rain-glass__drop--soft {
+  border-radius: 55% 45% 52% 48% / 46% 50% 50% 54%;
+}
+
+.rain-glass__drop--pear {
+  border-radius: 58% 42% 54% 46% / 38% 43% 57% 62%;
+}
+
+/* A second highlight makes larger drops read like curved water, not glass beads. */
+.rain-glass__drop::before {
+  content: '';
+  position: absolute;
+  right: 12%;
+  bottom: 14%;
+  width: 28%;
+  height: 18%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  transform: rotate(-18deg);
+}
+
+.rain-glass__drop::after {
+  content: '';
+  position: absolute;
+  left: 24%;
+  top: 16%;
+  width: 20%;
+  height: 13%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.48);
+  filter: blur(0.2px);
+}
+
+.rain-glass__drop:nth-child(3n + 2)::after {
+  left: 31%;
+  top: 12%;
+  width: 16%;
+}
+
+.rain-glass__drop:nth-child(4n)::before {
+  right: 18%;
+  bottom: 10%;
+  transform: rotate(-7deg);
+}
+
+/*
+ * iPhone/touch screens are the reference case:
+ * fewer droplets, no animation, and no blur. The effect should be noticed
+ * only when a drop crosses bright text or a colored highlight.
+ */
+@media (max-width: 640px), (hover: none) and (pointer: coarse) {
+  .rain-glass__drop:nth-child(n + 10) {
+    display: none;
+  }
+
+  .rain-glass__drop {
+    border-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: brightness(1.03) contrast(1.03) saturate(1.045);
+    -webkit-backdrop-filter: brightness(1.03) contrast(1.03) saturate(1.045);
+  }
+}
+
+@supports not ((backdrop-filter: brightness(1.03)) or (-webkit-backdrop-filter: brightness(1.03))) {
+  .rain-glass__drop {
+    background:
+      radial-gradient(circle at 27% 21%, rgba(255, 255, 255, 0.72) 0 4%, rgba(255, 255, 255, 0.2) 5% 10%, transparent 11%),
+      radial-gradient(circle at 72% 79%, rgba(255, 255, 255, 0.08) 0 8%, transparent 24%),
+      rgba(255, 255, 255, 0.018);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  .rain-glass {
+    display: none;
+  }
+}
