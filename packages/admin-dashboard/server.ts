@@ -5,6 +5,7 @@ import admin from 'firebase-admin';
 import { google } from 'googleapis';
 import { Resend } from 'resend';
 import { randomBytes } from 'node:crypto';
+import { aggregateProviderUsage, normalizeProviderEvent } from './providerTelemetry';
 import { promises as dns } from 'node:dns';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -262,6 +263,32 @@ app.get('/api/usage/summary', requireAdminAuth, async (req, res) => {
   } catch (error) {
     console.error('[Usage] Failed to aggregate user_usage_stats:', error);
     res.status(500).json({ error: 'Failed to load usage data' });
+  }
+});
+
+// ─── AI Provider Telemetry ────────────────────────────────────────────────────
+// Founder-facing view of provider participation. The underlying event records
+// deliberately exclude prompts, document text, API keys, user content, and
+// provider response bodies. This endpoint reports only operational metadata.
+app.get('/api/ai-providers/summary', requireAdminAuth, async (_req, res) => {
+  try {
+    const since = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000));
+    const snapshot = await admin
+      .firestore()
+      .collection('ai_provider_usage_events')
+      .where('occurredAt', '>=', since)
+      .orderBy('occurredAt', 'desc')
+      .limit(500)
+      .get();
+
+    const events = snapshot.docs
+      .map((document) => normalizeProviderEvent(document.id, document.data()))
+      .filter((event): event is NonNullable<typeof event> => event !== null);
+
+    res.json(aggregateProviderUsage(events));
+  } catch (error) {
+    console.error('[AI Providers] Failed to aggregate provider telemetry:', error);
+    res.status(500).json({ error: 'Failed to load AI provider telemetry' });
   }
 });
 

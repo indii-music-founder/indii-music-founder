@@ -12,7 +12,8 @@ import {
   Mail,
   Globe,
   Activity,
-  History
+  History,
+  BrainCircuit
 } from 'lucide-react';
 import { FoundersPortal } from './components/modules/FoundersPortal';
 import { TokenUsage } from './components/modules/TokenUsage';
@@ -21,6 +22,7 @@ import { GoogleHub } from './components/modules/GoogleHub';
 import { DDEXTracker } from './components/modules/DDEXTracker';
 import { NexusMonitor } from './components/modules/NexusMonitor';
 import { AccessLog } from './components/modules/AccessLog';
+import { AIProviderMonitor } from './components/modules/AIProviderMonitor';
 import { LoginScreen } from './components/LoginScreen';
 import { auth, ADMIN_TOKEN_KEY } from './firebase';
 
@@ -118,6 +120,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
 
   const modules = [
     { name: 'Token Usage', icon: <BarChart3 className="w-5 h-5" />, color: 'text-[#4bd5ee]' },
+    { name: 'AI Providers', icon: <BrainCircuit className="w-5 h-5" />, color: 'text-violet-400' },
     { name: 'Founders Portal', icon: <Users className="w-5 h-5" />, color: 'text-[#ffb800]' },
     { name: 'Inbox & Messaging', icon: <Mail className="w-5 h-5" />, color: 'text-purple-500' },
     { name: 'Google Workspace Hub', icon: <Globe className="w-5 h-5" />, color: 'text-[#4bd5ee]' },
@@ -221,6 +224,8 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
           <div className="max-w-6xl mx-auto space-y-10">
             {activeModule === 'Token Usage' ? (
               <TokenUsage />
+            ) : activeModule === 'AI Providers' ? (
+              <AIProviderMonitor />
             ) : activeModule === 'Founders Portal' ? (
               <FoundersPortal />
             ) : activeModule === 'Inbox & Messaging' ? (
