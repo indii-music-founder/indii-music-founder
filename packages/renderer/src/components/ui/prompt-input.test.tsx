@@ -123,4 +123,19 @@ describe('PromptInput', () => {
 
     expect(onSubmit).not.toHaveBeenCalled()
   })
+
+  it('keeps height auto when empty and resets on focus', () => {
+    render(
+      <PromptInput value="">
+        <PromptInputTextarea />
+      </PromptInput>
+    )
+
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
+    expect(textarea.style.height).toBe('auto')
+
+    // Simulate focus event triggering adjustHeight
+    fireEvent.focus(textarea)
+    expect(textarea.style.height).toBe('auto')
+  })
 })
