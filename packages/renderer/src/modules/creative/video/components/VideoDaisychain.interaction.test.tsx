@@ -83,7 +83,8 @@ vi.mock('@/core/store', () => {
         addCharacterReference: vi.fn(),
         removeCharacterReference: vi.fn(),
         updateCharacterReference: vi.fn(),
-        addUploadedImage: vi.fn()
+        addUploadedImage: vi.fn(),
+        projects: [],
     }));
     (mockStore as any).subscribe = vi.fn();
     return { useStore: mockStore };
@@ -320,7 +321,8 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 addCharacterReference: vi.fn(),
                 removeCharacterReference: vi.fn(),
                 updateCharacterReference: vi.fn(),
-                addUploadedImage: vi.fn()
+                addUploadedImage: vi.fn(),
+                projects: [],
             }), [state, setVideoInput, setVideoInputs, setGenerationMode, setViewMode, setCreativePrompt, addToHistory]);
 
             // Sync useStore mock to this local state

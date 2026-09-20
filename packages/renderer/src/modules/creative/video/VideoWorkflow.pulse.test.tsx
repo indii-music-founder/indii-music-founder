@@ -38,7 +38,8 @@ const { mockStoreState, mockVideoEditorState, mockUseStore, mockUseVideoEditorSt
         toggleRightPanel: vi.fn(),
         addJob: vi.fn(),
         updateJobProgress: vi.fn(),
-        updateJobStatus: vi.fn()
+        updateJobStatus: vi.fn(),
+        projects: [],
     };
 
     const editorStore = {

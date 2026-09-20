@@ -40,7 +40,7 @@ async function idempotencyKey(
 export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = props => {
     const user = useStore(state => state.user);
     const projectOrganizationId = useStore(state =>
-        state.projects.find(project => project.id === props.projectId)?.orgId,
+        state.projects?.find(project => project.id === props.projectId)?.orgId,
     );
     const organizationId = projectOrganizationId || props.organizationId;
     return <ScopedSessionIngestionPanel

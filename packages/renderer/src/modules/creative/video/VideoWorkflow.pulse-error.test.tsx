@@ -51,7 +51,8 @@ vi.mock('@/core/store', () => {
             targetMedia: 'video'
         },
         isRightPanelOpen: false,
-        toggleRightPanel: vi.fn()
+        toggleRightPanel: vi.fn(),
+        projects: [],
     }));
     (useStoreMock as any).getState = vi.fn(() => ({ updateJobStatus: mockUpdateJobStatus }));
 
