@@ -25,6 +25,7 @@ export const ProjectMetadataSchema = z.object({
     id: z.string(),
     name: z.string(),
     type: z.string(),
+    orgId: z.string(),
     lastModified: z.number(),
     assetCount: z.number(),
     status: z.enum(['active', 'paused', 'archived']).optional().default('active'),
@@ -56,6 +57,7 @@ export function projectToMetadata(
         id: validatedProject.id,
         name: validatedProject.name,
         type: validatedProject.type as ProjectMetadata['type'],
+        orgId: validatedProject.orgId,
         status: validatedProject.status as ProjectMetadata['status'],
         lastModified: validatedProject.date, // KEY CONVERSION: date → lastModified
         assetCount,

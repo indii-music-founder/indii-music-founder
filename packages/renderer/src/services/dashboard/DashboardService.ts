@@ -10,6 +10,7 @@ export interface ProjectMetadata {
     id: string;
     name: string;
     type: ModuleId;
+    orgId: string;
     lastModified: number;
     assetCount: number;
     status?: 'active' | 'paused' | 'archived';
@@ -122,6 +123,7 @@ export class DashboardService {
                     id: p.id,
                     name: p.name,
                     type: p.type || 'creative', // Default to creative if missing in old projects
+                    orgId: p.orgId,
                     lastModified: p.lastModified || p.date || 0,
                     assetCount: p.assetCount || 0,
                     thumbnail: p.thumbnail

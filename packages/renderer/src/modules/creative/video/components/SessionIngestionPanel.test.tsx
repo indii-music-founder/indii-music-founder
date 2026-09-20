@@ -21,8 +21,11 @@ vi.mock('@/services/firebase', () => ({
     db: {},
 }));
 vi.mock('@/core/store', () => ({
-    useStore: (selector: (state: { user: { uid: string } }) => unknown) =>
-        selector({ user: { uid: 'artist-1' } }),
+    useStore: (selector: (state: { user: { uid: string }; projects: Array<{ id: string; orgId: string }> }) => unknown) =>
+        selector({
+            user: { uid: 'artist-1' },
+            projects: [{ id: 'project-1', orgId: 'personal' }],
+        }),
 }));
 vi.mock('@/services/video/SessionVideoUploadService', () => ({
     SessionVideoUploadService: { start: mocks.start },
@@ -86,7 +89,7 @@ describe('SessionIngestionPanel (legacy structural-only; real upload unverified)
         await waitFor(() => expect(mocks.start).toHaveBeenCalledWith(
             file,
             expect.objectContaining({
-                organizationId: 'org-1',
+                organizationId: 'personal',
                 projectId: 'project-1',
                 idempotencyKey: expect.stringMatching(/^session-[a-f0-9]{64}$/),
             }),

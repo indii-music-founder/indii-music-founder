@@ -2416,3 +2416,13 @@ committing.
   5. Implemented self-healing auto-compaction in `BaseAgent.ts`: instead of immediately halting, it elides text data URLs and aggressively re-compresses attachments to 250KB before re-evaluating budget.
 - EVIDENCE: Vitest passed across all suites (79/79 unit tests in intelligence & agent, 18/18 in boardroom, 1165/1165 in firebase); monorepo `npm run typecheck` clean (0 errors); `npm run lint` clean (0 errors).
 - PREVENTION: Never place an arbitrary low sub-megabyte ceiling on multimodal streaming endpoints when modern LLM vision models have 1M+ token contexts. Always sanitize structured context objects to prevent raw base64 strings from infiltrating prompt text. Implement self-healing auto-compaction before hard-failing user turns.
+
+## 2026-09-20 Long-video authorization used a placeholder organization instead of the selected project's organization
+
+- SEVERITY: High (real production users could select a valid recording, but upload authorization failed before any bytes transferred)
+- FILES: `packages/renderer/src/services/dashboard/DashboardService.ts`, `packages/renderer/src/services/dashboard/projectTypeUtils.ts`, `packages/renderer/src/modules/creative/video/components/SessionIngestionPanel.tsx`
+- ERROR: Selecting a real iPhone QuickTime recording in Creative → Video → Long recording returned `Project is not available to this owner and organization.`
+- CAUSE: `projectToMetadata()` discarded the project's `orgId`. The long-recording panel therefore paired the selected project ID with the global startup placeholder `org-default`, even when the project had been loaded from the user's `personal` workspace. The server correctly rejected that mismatched project/organization pair.
+- FIX: Preserve `orgId` in `ProjectMetadata` and make the long-recording panel use the selected project's organization as the authoritative upload scope, with the global organization only as a fallback.
+- EVIDENCE: Regression tests first failed on the missing metadata and wrong authorization request, then passed after the fix. The related upload/client/server suites pass 15/15, renderer typecheck passes, and targeted lint passes. Production upload verification remains required after deployment.
+- PREVENTION: Never discard ownership or tenancy fields when converting persistent resources into UI metadata. Any operation scoped to a selected resource must derive its authorization boundary from that resource, not from a separately initialized global placeholder.
