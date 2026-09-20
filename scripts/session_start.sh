@@ -1,4 +1,7 @@
 #!/bin/bash
+
+node scripts/assert-canonical-repo.mjs || exit $?
+
 echo "🧹 Cleaning environment..."
 
 # 1. Faster dependency check
