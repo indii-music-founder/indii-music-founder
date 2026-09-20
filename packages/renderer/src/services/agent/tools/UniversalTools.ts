@@ -79,27 +79,36 @@ export const UniversalTools = {
         try {
             const { useStore } = await import('@/core/store');
             const uid = useStore.getState().userProfile?.id || useStore.getState().user?.uid;
-            if (uid && (action === 'get' || action === 'retrieve' || action === 'check' || action === 'status')) {
+            const isWriteAction = action === 'save' || action === 'store' || action === 'set' || action === 'delete' || action === 'remove';
+            if (uid && !isWriteAction) {
                 const { doc, getDoc } = await import('firebase/firestore');
                 const { db } = await import('@/services/firebase');
-                const s = service.toLowerCase();
-                let tokenSnap = await getDoc(doc(db, 'users', uid, 'socialTokens', s));
+                const rawService = (service || '').toLowerCase();
+                const targetService = rawService.includes('insta') ? 'instagram' : rawService.includes('face') || rawService.includes('meta') ? 'facebook' : rawService;
+                let tokenSnap = await getDoc(doc(db, 'users', uid, 'socialTokens', targetService));
                 if (!tokenSnap.exists()) {
-                    tokenSnap = await getDoc(doc(db, 'users', uid, 'analyticsTokens', s));
+                    tokenSnap = await getDoc(doc(db, 'users', uid, 'analyticsTokens', targetService));
                 }
                 if (tokenSnap.exists()) {
                     const data = tokenSnap.data() as Record<string, unknown>;
                     return toolSuccess({
                         credentials: {
                             connected: true,
-                            service,
+                            service: targetService,
                             hasToken: !!(data.accessToken || data.token),
                             permissions: data.permissions || ['instagram_basic', 'instagram_content_publish', 'instagram_manage_comments', 'instagram_manage_messages'],
                             username: data.username || data.instagramUsername,
                             igUserId: data.igUserId,
                         }
-                    }, `Retrieved credentials for ${service} from user account.`);
+                    }, `Retrieved active credentials for ${service} from user account.`);
                 }
+                return toolSuccess({
+                    credentials: {
+                        connected: false,
+                        service,
+                        hasToken: false,
+                    }
+                }, `No active credentials found for ${service}.`);
             }
         } catch {
             // Web fallback failed, proceed to fail-closed
