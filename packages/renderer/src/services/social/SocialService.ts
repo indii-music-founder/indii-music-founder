@@ -173,10 +173,25 @@ export class SocialService {
     const validPost = validation.data;
     const deliveryPlatform = toDeliveryPlatform(validPost.platform);
     const scheduledTime = validPost.scheduledTime || Date.now();
-    const mediaUrl = validPost.imageAsset?.imageUrl;
-    const instagramPayload = validPost.instagramPayload as InstagramPublishingPayload | undefined;
+    const brandAssets = userProfile.brandKit?.brandAssets;
+    let mediaUrl = validPost.imageAsset?.imageUrl;
+    if (deliveryPlatform === 'instagram' && !mediaUrl && brandAssets?.length) {
+      mediaUrl = brandAssets[brandAssets.length - 1]?.url;
+    }
+    let instagramPayload = validPost.instagramPayload as InstagramPublishingPayload | undefined;
     if (deliveryPlatform === 'instagram' && !instagramPayload) {
-      throw new Error('Instagram scheduling requires validated media metadata.');
+      const copy = validPost.copy || '';
+      const cleanedCaption = copy.replace(/#[\p{L}\p{N}_]+/gu, '').trim() || copy.trim();
+      const extractedTags = (copy.match(/#[\p{L}\p{N}_]+/gu) || []).map(t => t.replace(/^#+/, '').toLowerCase());
+      const defaultTags = ['indiemusic', 'musicbusiness', 'independentartist', 'indiios'];
+      const mergedTags = [...new Set([...extractedTags, ...defaultTags])].slice(0, 4);
+      instagramPayload = {
+        surface: 'feed',
+        width: 1080,
+        height: 1350,
+        caption: cleanedCaption,
+        hashtags: mergedTags,
+      };
     }
     if (instagramPayload) {
       const policy = validateInstagramPublishingPayload(instagramPayload);

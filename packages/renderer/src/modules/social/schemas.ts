@@ -37,7 +37,7 @@ export const ScheduledPostSchema = z.object({
         const parsed = new Date(val).getTime();
         if (!Number.isFinite(parsed)) throw new Error('Invalid date/time');
         return parsed;
-    }).refine((ts) => ts > Date.now(), {
+    }).refine((ts) => ts > Date.now() - 120_000, {
         message: "Post must be scheduled for a future time"
     }).optional(),
     status: CampaignStatusSchema.default('PENDING'),

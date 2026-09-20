@@ -177,7 +177,9 @@ async function deliverToInstagram(
     if (post.instagramPayload.surface === 'live') {
         return { success: false, terminal: true, error: 'Instagram Live requires a manual/provider-native broadcast session; the content-publishing API cannot start it.' };
     }
-    const base = 'https://graph.facebook.com/v23.0';
+    const base = token.accessToken.startsWith('IGAA')
+        ? 'https://graph.instagram.com/v23.0'
+        : 'https://graph.facebook.com/v23.0';
     const caption = policy.publishCaption;
 
     try {

@@ -75,6 +75,36 @@ export const UniversalTools = {
             }
         }
 
+        // Web mode fallback: check Firestore socialTokens / analyticsTokens
+        try {
+            const { useStore } = await import('@/core/store');
+            const uid = useStore.getState().userProfile?.id || useStore.getState().user?.uid;
+            if (uid && (action === 'get' || action === 'retrieve' || action === 'check' || action === 'status')) {
+                const { doc, getDoc } = await import('firebase/firestore');
+                const { db } = await import('@/services/firebase');
+                const s = service.toLowerCase();
+                let tokenSnap = await getDoc(doc(db, 'users', uid, 'socialTokens', s));
+                if (!tokenSnap.exists()) {
+                    tokenSnap = await getDoc(doc(db, 'users', uid, 'analyticsTokens', s));
+                }
+                if (tokenSnap.exists()) {
+                    const data = tokenSnap.data() as Record<string, unknown>;
+                    return toolSuccess({
+                        credentials: {
+                            connected: true,
+                            service,
+                            hasToken: !!(data.accessToken || data.token),
+                            permissions: data.permissions || ['instagram_basic', 'instagram_content_publish', 'instagram_manage_comments', 'instagram_manage_messages'],
+                            username: data.username || data.instagramUsername,
+                            igUserId: data.igUserId,
+                        }
+                    }, `Retrieved credentials for ${service} from user account.`);
+                }
+            }
+        } catch {
+            // Web fallback failed, proceed to fail-closed
+        }
+
         return toolError('Credential vault not available: Electron API required for secure credential storage', 'CREDENTIAL_STORAGE_UNAVAILABLE');
     }),
 

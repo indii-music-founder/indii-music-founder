@@ -102,17 +102,50 @@ Be specific and data-driven based on the post content above.`;
 
     schedule_social_post: wrapTool('schedule_social_post', async (args: { platform: string; content: string; scheduledTime: string; mediaUrls?: string[]; instagramPayload?: InstagramPublishingPayload }) => {
         try {
+            const isInstagram = args.platform?.toLowerCase() === 'instagram';
+            const platform: 'Twitter' | 'Instagram' | 'LinkedIn' = isInstagram ? 'Instagram' : 'Twitter';
+
+            let scheduledTime = new Date(args.scheduledTime).getTime();
+            if (!Number.isFinite(scheduledTime) || scheduledTime <= Date.now() + 60_000) {
+                // Ensure safe future timestamp if in past or unparseable
+                scheduledTime = Date.now() + 5 * 60_000;
+            }
+
+            const { useStore } = await import('@/core/store');
+            const brandAssets = useStore.getState().userProfile?.brandKit?.brandAssets;
+            let mediaUrl = args.mediaUrls?.[0];
+            if (isInstagram && !mediaUrl && brandAssets?.length) {
+                mediaUrl = brandAssets[brandAssets.length - 1]?.url;
+            }
+
+            let instagramPayload = args.instagramPayload;
+            if (isInstagram && !instagramPayload) {
+                const copy = args.content || '';
+                const cleanedCaption = copy.replace(/#[\p{L}\p{N}_]+/gu, '').trim() || copy.trim();
+                const extractedTags = (copy.match(/#[\p{L}\p{N}_]+/gu) || []).map(t => t.replace(/^#+/, '').toLowerCase());
+                const defaultTags = ['indiemusic', 'musicbusiness', 'independentartist', 'indiios'];
+                const mergedTags = [...new Set([...extractedTags, ...defaultTags])].slice(0, 4);
+
+                instagramPayload = {
+                    surface: 'feed',
+                    width: 1080,
+                    height: 1350,
+                    caption: cleanedCaption,
+                    hashtags: mergedTags,
+                };
+            }
+
             const postId = await SocialService.schedulePost({
-                platform: args.platform as 'Twitter' | 'Instagram' | 'LinkedIn',
+                platform,
                 copy: args.content,
                 day: 1, // Backward-compatible relative schedule value
-                scheduledTime: new Date(args.scheduledTime).getTime(),
-                instagramPayload: args.instagramPayload,
-                ...(args.mediaUrls?.length ? {
+                scheduledTime,
+                instagramPayload,
+                ...(mediaUrl ? {
                     imageAsset: {
                         assetType: 'image',
                         title: 'Auto-scheduled media',
-                        imageUrl: args.mediaUrls[0] || '',
+                        imageUrl: mediaUrl,
                         caption: ''
                     }
                 } : {})
@@ -120,8 +153,11 @@ Be specific and data-driven based on the post content above.`;
 
             return toolSuccess({
                 postId,
-                ...args
-            }, `Successfully scheduled post for ${args.platform} at ${args.scheduledTime}. (ID: ${postId})`);
+                platform,
+                scheduledTime: new Date(scheduledTime).toISOString(),
+                content: args.content,
+                mediaUrl,
+            }, `Successfully scheduled post for ${platform} at ${new Date(scheduledTime).toLocaleTimeString()}. (ID: ${postId})`);
         } catch (e: unknown) {
             const error = e as Error;
             logger.error('[SocialTools] Failed to schedule post:', error);

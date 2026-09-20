@@ -54,7 +54,8 @@ export default function SocialDashboard() {
                 copy: post.copy,
                 imageAsset: post.imageAsset,
                 day: post.day,
-                scheduledTime: scheduledTimeNum
+                scheduledTime: scheduledTimeNum,
+                instagramPayload: post.instagramPayload,
             });
         } catch (error: unknown) {
             logger.error("Operation failed:", error);

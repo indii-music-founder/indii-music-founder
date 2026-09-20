@@ -16,12 +16,13 @@ export interface ScheduledPost {
     id: string;
     platform: 'Twitter' | 'Instagram' | 'LinkedIn';
     copy: string;
-    imageAsset: ImageAsset;
+    imageAsset?: ImageAsset;
     day: number; // Keep for backward compatibility or relative scheduling
     scheduledTime?: Date | number;
     status: CampaignStatus;
     errorMessage?: string;
     postId?: string;
+    instagramPayload?: import('@indii/shared').InstagramPublishingPayload;
 }
 
 export interface CampaignAsset {

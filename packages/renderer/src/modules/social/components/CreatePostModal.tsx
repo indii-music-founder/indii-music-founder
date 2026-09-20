@@ -23,11 +23,20 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
     const dialogRef = useModalAccessibility(true, onClose);
     const { t } = useTranslation();
     const toast = useToast();
+    const defaultFutureTime = () => {
+        const d = new Date(Date.now() + 60 * 60 * 1000);
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(Math.floor(d.getMinutes() / 5) * 5).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
+
     const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>('Twitter');
     const [copy, setCopy] = useState('');
     const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(null);
+    const [imageUrlInput, setImageUrlInput] = useState('');
+    const [showUrlInput, setShowUrlInput] = useState(false);
     const [scheduledDate, setScheduledDate] = useState<string>(initialScheduledDate || new Date().toLocaleDateString('sv-SE'));
-    const [scheduledTime, setScheduledTime] = useState<string>('12:00');
+    const [scheduledTime, setScheduledTime] = useState<string>(defaultFutureTime);
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [isAssetDrawerOpen, setIsAssetDrawerOpen] = useState(false);
@@ -63,9 +72,32 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
         }
     };
 
+    const handleApplyUrl = () => {
+        const trimmed = imageUrlInput.trim();
+        if (!trimmed) return;
+        try {
+            new URL(trimmed);
+            setSelectedImage({
+                assetType: 'image',
+                title: 'Attached Media',
+                imageUrl: trimmed,
+                caption: ''
+            });
+            setImageUrlInput('');
+            setShowUrlInput(false);
+        } catch {
+            toast.error('Please enter a valid image URL');
+        }
+    };
+
     const handleSave = async () => {
         if (isOverLimit) {
             toast.error(`Post exceeds character limit for ${platform}`);
+            return;
+        }
+
+        if (platform === 'Instagram' && !selectedImage?.imageUrl) {
+            toast.error('Instagram posts require an image asset');
             return;
         }
 
@@ -82,6 +114,23 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
             return;
         }
 
+        let instagramPayload: import('@indii/shared').InstagramPublishingPayload | undefined;
+        if (platform === 'Instagram') {
+            const cleanedCaption = copy.replace(/#[\p{L}\p{N}_]+/gu, '').trim() || copy.trim();
+            const extractedTags = (copy.match(/#[\p{L}\p{N}_]+/gu) || [])
+                .map(t => t.replace(/^#+/, '').toLowerCase());
+            const defaultTags = ['indiemusic', 'independentartist', 'indierecords', 'musictech'];
+            const mergedTags = [...new Set([...extractedTags, ...defaultTags])].slice(0, 4);
+
+            instagramPayload = {
+                surface: 'feed',
+                width: 1080,
+                height: 1350,
+                caption: cleanedCaption,
+                hashtags: mergedTags,
+            };
+        }
+
         const newPostData = {
             id: crypto.randomUUID(),
             platform,
@@ -90,7 +139,8 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
             day: new Date(scheduledDate).getDate(),
             scheduledTime: timestamp,
             status: CampaignStatus.PENDING,
-            authorId: 'client-pending' // Will be overwritten by service
+            authorId: 'client-pending', // Will be overwritten by service
+            instagramPayload
         };
 
         // Zod Validation (Client-Side)
@@ -202,7 +252,21 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
 
                     {/* Media Section */}
                     <div>
-                        <span className="block text-sm font-medium text-gray-400 mb-2">Media</span>
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="block text-sm font-medium text-gray-400">
+                                Media {platform === 'Instagram' && <span className="text-amber-400 font-normal text-xs">(Required for Instagram)</span>}
+                            </span>
+                            {!selectedImage && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowUrlInput(!showUrlInput)}
+                                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                >
+                                    {showUrlInput ? 'Pick from Assets' : 'Paste Image URL'}
+                                </button>
+                            )}
+                        </div>
+
                         {selectedImage ? (
                             <div className="relative group rounded-lg overflow-hidden border border-gray-700 inline-block">
                                 <img src={selectedImage.imageUrl} alt={selectedImage.title || "Selected image"} className="h-40 w-auto object-cover" />
@@ -216,6 +280,24 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
                                 <div className="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-xs text-white truncate" aria-hidden="true">
                                     {selectedImage.title}
                                 </div>
+                            </div>
+                        ) : showUrlInput ? (
+                            <div className="flex gap-2">
+                                <input
+                                    type="url"
+                                    value={imageUrlInput}
+                                    onChange={(e) => setImageUrlInput(e.target.value)}
+                                    placeholder="https://.../image.jpg"
+                                    className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyUrl(); } }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleApplyUrl}
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors"
+                                >
+                                    Attach
+                                </button>
                             </div>
                         ) : (
                             <button
@@ -280,19 +362,22 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
 
             {/* Brand Assets Drawer Integration */}
             {isAssetDrawerOpen && (
-                <BrandAssetsDrawer
-                    onClose={() => setIsAssetDrawerOpen(false)}
-                    onSelect={(asset) => {
-                        // Adapt the asset to ImageAsset type if needed, assuming compatibility for now
-                        setSelectedImage({
-                            assetType: 'image',
-                            title: asset.description || 'Untitled',
-                            imageUrl: asset.url,
-                            caption: ''
-                        });
-                        setIsAssetDrawerOpen(false);
-                    }}
-                />
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
+                    <BrandAssetsDrawer
+                        className="relative w-full max-w-md bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in duration-150"
+                        onClose={() => setIsAssetDrawerOpen(false)}
+                        onSelect={(asset) => {
+                            // Adapt the asset to ImageAsset type if needed, assuming compatibility for now
+                            setSelectedImage({
+                                assetType: 'image',
+                                title: asset.description || 'Untitled',
+                                imageUrl: asset.url,
+                                caption: ''
+                            });
+                            setIsAssetDrawerOpen(false);
+                        }}
+                    />
+                </div>
             )}
         </div>
     );

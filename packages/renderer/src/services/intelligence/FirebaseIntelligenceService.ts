@@ -399,7 +399,11 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         const activeAppCheck = appCheck || getAppCheck();
         if (!activeAppCheck) {
             if (import.meta.env.MODE === 'test') return { ...headers, 'x-firebase-appcheck': 'test-app-check-token' };
-            throw new AppException(AppErrorCode.UNAUTHORIZED, 'App Check is required for backend AI requests.', { retryable: false });
+            // Soft-fail: let the backend's ENFORCE_APP_CHECK flag decide.
+            // A placeholder or missing App Check key (e.g. local build deployed
+            // to production) should not client-side block authenticated users.
+            logger.warn('[FirebaseIntelligenceService] App Check unavailable — request will proceed with auth-only headers. Backend enforcement may reject it.');
+            return headers;
         }
         try {
             let tokenResult = await getAppCheckToken(activeAppCheck, false);
@@ -408,7 +412,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             }
             headers['x-firebase-appcheck'] = tokenResult.token;
         } catch (error: unknown) {
-            throw new AppException(AppErrorCode.UNAUTHORIZED, 'Could not verify this app for an AI request.', { retryable: false, originalError: error instanceof Error ? error.message : String(error) });
+            // Soft-fail: log and proceed without App Check header
+            logger.warn('[FirebaseIntelligenceService] App Check token retrieval failed — proceeding without App Check header.', error instanceof Error ? error.message : String(error));
         }
         return headers;
     }

@@ -16,9 +16,10 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 interface BrandAssetsDrawerProps {
     onClose: () => void;
     onSelect?: (asset: BrandAsset) => void; // Optional prop for selection mode
+    className?: string;
 }
 
-export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDrawerProps) {
+export default function BrandAssetsDrawer({ onClose, onSelect, className }: BrandAssetsDrawerProps) {
     const {
         userProfile,
         updateBrandKit,
@@ -318,7 +319,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     };
 
     return (
-        <div data-testid="brand-assets-drawer" className="absolute top-full right-0 mt-2 w-80 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-drawer overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-top-2 fade-in duration-200">
+        <div data-testid="brand-assets-drawer" className={className || "absolute top-full right-0 mt-2 w-80 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl z-drawer overflow-hidden flex flex-col max-h-[80vh] animate-in slide-in-from-top-2 fade-in duration-200"}>
             {/* Header */}
             <div className="p-3 border-b border-gray-800 flex justify-between items-center bg-[#111]">
                 <h3 className="text-sm font-bold text-gray-200 flex items-center gap-2">
