@@ -35,7 +35,10 @@ Summarize what was last built, what branch you're on, and what's pending.
 
 ### Step 2 — Detect machine state
 
+**Canonical repository check (must pass before any work):**
+
 ```bash
+node scripts/assert-canonical-repo.mjs
 echo "node_modules: $(ls node_modules 2>/dev/null | wc -l) packages"
 git status --short
 git branch --show-current

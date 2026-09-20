@@ -282,7 +282,7 @@ export default function RightPanel() {
                                 </div>
 
                                 {/* Inline PromptArea for Right Panel */}
-                                <div className="p-4 border-t border-border bg-black/20">
+                                <div className="p-4 border-t border-border bg-black/20 shrink-0">
                                     <PromptArea isDocked className="static! translate-x-0! w-full! max-w-none! shadow-none border-none bg-transparent" />
                                 </div>
 

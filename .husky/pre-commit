@@ -5,6 +5,10 @@
 
 set -e
 
+# Stage 0: Repository identity guard — fail closed before any work.
+echo "  0️⃣  Verifying canonical repository..."
+node scripts/assert-canonical-repo.mjs
+
 echo "🔐 Running pre-commit quality gates..."
 
 # Stage 1: Lint all staged files

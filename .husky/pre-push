@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+
+node scripts/assert-canonical-repo.mjs

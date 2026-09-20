@@ -4,7 +4,7 @@ import { DEPARTMENTS } from '@/services/agent/departments';
 import { VALID_AGENT_IDS } from '@/services/agent/types';
 import type { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, User, LayoutGrid, Check } from 'lucide-react';
+import { Users, User, LayoutGrid, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { agentRegistry } from '@/services/agent/registry';
@@ -23,6 +23,7 @@ interface AgentModePickerProps {
     onDepartmentChange?: (deptId: string | null) => void;
     agentId?: string | null;
     onAgentChange?: (agentId: string | null) => void;
+    onClose?: () => void;
 }
 
 export function AgentModePicker({ 
@@ -33,7 +34,8 @@ export function AgentModePicker({
     departmentId: controlledDeptId,
     onDepartmentChange,
     agentId: controlledAgentId,
-    onAgentChange
+    onAgentChange,
+    onClose,
 }: AgentModePickerProps) {
     const store = useStore(useShallow(state => ({
         conversationMode: state.conversationMode,
@@ -61,7 +63,21 @@ export function AgentModePicker({
     ] as const).filter(mode => allowAutomaticRouting || mode.id !== 'orchestrated');
 
     return (
-        <div className={cn("flex flex-col gap-3 p-1 rounded-2xl bg-black/40 border border-white/5 backdrop-blur-xl shadow-2xl", className)}>
+        <div className={cn("flex flex-col gap-3 p-1.5 rounded-2xl bg-[#0c0e12] border border-white/10 backdrop-blur-2xl shadow-2xl", className)}>
+            {/* Header with Title and Close Button if onClose is provided */}
+            {onClose && (
+                <div className="flex items-center justify-between px-2 pt-1 pb-0.5">
+                    <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Agent Mode</span>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-1 rounded-md text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                        aria-label="Close Agent Mode Picker"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            )}
             {/* Mode Segmented Switch */}
             <div className="flex p-1 bg-white/5 rounded-xl border border-white/5 relative overflow-hidden">
                 {modes.map((mode) => {
@@ -167,7 +183,10 @@ export function AgentModePicker({
                                                             key={agentId}
                                                             data-testid={`agent-direct-${agentId}`}
                                                             data-selected={isSelected ? 'true' : 'false'}
-                                                            onClick={() => setDirectTargetAgentId(agentId)}
+                                                            onClick={() => {
+                                                                setDirectTargetAgentId(agentId);
+                                                                onClose?.();
+                                                            }}
                                                             className={cn(
                                                                 "flex items-center justify-between p-2 rounded-lg border transition-all duration-200",
                                                                 isSelected 

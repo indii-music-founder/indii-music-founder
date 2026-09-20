@@ -173,7 +173,42 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setTypeaheadContext(null);
     }, [commandBarInput, typeaheadContext, setCommandBarInput]);
 
+    const modePickerDetailsRef = useRef<HTMLDetailsElement>(null);
 
+    const closeModePicker = useCallback(() => {
+        if (modePickerDetailsRef.current) {
+            modePickerDetailsRef.current.open = false;
+        }
+    }, []);
+
+    useEffect(() => {
+        const handlePointerDown = (e: MouseEvent | PointerEvent) => {
+            const details = modePickerDetailsRef.current;
+            if (!details || !details.open) return;
+            if (!details.contains(e.target as Node)) {
+                details.open = false;
+            }
+        };
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const details = modePickerDetailsRef.current;
+            if (!details || !details.open) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                details.open = false;
+                const summary = details.querySelector('summary');
+                summary?.focus();
+            }
+        };
+
+        document.addEventListener('pointerdown', handlePointerDown);
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('pointerdown', handlePointerDown);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
 
     // ─── Talkback (TalkButton) wiring ─────────────────────────────────────────
     // One button on the left: click to talk, click again to release-and-send.
@@ -400,7 +435,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1" : "rounded-3xl",
                 isIndiiMode
                     ? "border-green-500/50 ring-green-500/20 shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-green-950/30"
-                    : `${colors.border} ${colors.ring} bg-white/4 shadow-panel`,
+                    : `${!isDocked ? colors.border : ''} ${colors.ring} bg-white/4 shadow-panel`,
                 isDragging && "ring-4 ring-blue-500/50 bg-blue-500/20",
                 className
             )}
@@ -533,7 +568,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         {/* Dock Position Toggle — removed entirely. Position is now locked to right in boardroom mode. */}
 
                         {/* Hierarchical Agent Mode Picker */}
-                        <details className="relative group">
+                        <details ref={modePickerDetailsRef} className="relative group">
                             <summary
                                 role="button"
                                 className={cn(
@@ -548,12 +583,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </summary>
 
                             <div
-                                className="fixed z-[9999] right-3 bottom-16 max-h-[calc(100vh-5rem)] max-w-[calc(100vw-1.5rem)] overflow-y-auto origin-bottom-right"
+                                className="absolute bottom-full right-0 mb-3 z-50 max-h-[calc(100vh-14rem)] max-w-[calc(100vw-2rem)] overflow-y-auto origin-bottom-right"
                                 onWheel={(e) => e.stopPropagation()}
                                 onTouchStart={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
                             >
-                                <AgentModePicker className="w-80 max-w-full shadow-float border-white/10" />
+                                <AgentModePicker
+                                    className="w-80 max-w-full shadow-float border-white/10"
+                                    onClose={closeModePicker}
+                                />
                             </div>
                         </details>
 

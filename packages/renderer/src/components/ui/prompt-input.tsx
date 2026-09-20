@@ -12,6 +12,7 @@ import { logger } from "@/utils/logger"
 import React, {
   createContext,
   useContext,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -148,13 +149,15 @@ const PromptInputTextarea = memo(function PromptInputTextarea({
   const adjustHeight = useCallback((el: HTMLTextAreaElement | null) => {
     if (!el || disableAutosize) return
 
-    el.style.height = "auto"
-
-    if (typeof maxHeight === "number") {
-      el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`
-    } else {
-      el.style.height = `min(${el.scrollHeight}px, ${maxHeight})`
+    if (!el.value || el.value.trim() === '') {
+      el.style.height = "auto"
+      return
     }
+
+    el.style.height = "0px"
+    const numericMaxHeight = typeof maxHeight === "number" ? maxHeight : 240
+    const nextHeight = Math.max(44, Math.min(el.scrollHeight, numericMaxHeight))
+    el.style.height = `${nextHeight}px`
   }, [disableAutosize, maxHeight])
 
   const handleRef = useCallback((el: HTMLTextAreaElement | null) => {
@@ -164,17 +167,22 @@ const PromptInputTextarea = memo(function PromptInputTextarea({
 
   useLayoutEffect(() => {
     if (!textareaRef.current || disableAutosize) return
+    adjustHeight(textareaRef.current)
+  }, [value, maxHeight, disableAutosize, adjustHeight, textareaRef])
 
+  useEffect(() => {
     const el = textareaRef.current
-    el.style.height = "auto"
+    if (!el || disableAutosize || typeof ResizeObserver === 'undefined') return
 
-    if (typeof maxHeight === "number") {
-      el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`
-    } else {
-      el.style.height = `min(${el.scrollHeight}px, ${maxHeight})`
+    const observer = new ResizeObserver(() => {
+      adjustHeight(el)
+    })
+    observer.observe(el)
+
+    return () => {
+      observer.disconnect()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, maxHeight, disableAutosize])
+  }, [adjustHeight, disableAutosize, textareaRef])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     adjustHeight(e.target)
@@ -196,6 +204,10 @@ const PromptInputTextarea = memo(function PromptInputTextarea({
       value={value}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
+      onFocus={(e) => {
+        adjustHeight(e.target)
+        props.onFocus?.(e)
+      }}
       className={cn(
         "text-primary min-h-[44px] w-full resize-none border-none bg-transparent shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
         className

@@ -11,12 +11,29 @@ const MAX_CANDIDATES_PER_REQUEST = 20;
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
+export type TypeSafeTelemetryMode = 'evaluation' | 'shadow' | 'live';
+
+export interface TypeSafeEvidenceTelemetryEvent {
+  provider: 'typesafe';
+  model: string;
+  feature: string;
+  mode: TypeSafeTelemetryMode;
+  status: 'success' | 'error' | 'timeout';
+  durationMs: number;
+  requestId?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+}
+
 export interface TypeSafeEvidenceProviderConfig {
   apiKey: string;
   baseURL?: string;
   model?: string;
   timeoutMs?: number;
   fetchImpl?: FetchLike;
+  telemetry?: (event: TypeSafeEvidenceTelemetryEvent) => void | Promise<void>;
+  telemetryMode?: TypeSafeTelemetryMode;
+  feature?: string;
 }
 
 interface TypeSafeNoulAnswer {
@@ -50,6 +67,9 @@ export class TypeSafeEvidenceProvider implements EvidenceJudgmentProvider {
   private readonly model: string;
   private readonly timeoutMs: number;
   private readonly fetchImpl: FetchLike;
+  private readonly telemetry?: TypeSafeEvidenceProviderConfig['telemetry'];
+  private readonly telemetryMode: TypeSafeTelemetryMode;
+  private readonly feature: string;
 
   constructor(config: TypeSafeEvidenceProviderConfig) {
     const apiKey = config.apiKey.trim();
@@ -67,6 +87,9 @@ export class TypeSafeEvidenceProvider implements EvidenceJudgmentProvider {
     this.model = config.model?.trim() || DEFAULT_TYPESAFE_MODEL;
     this.timeoutMs = timeoutMs;
     this.fetchImpl = config.fetchImpl ?? ((input, init) => globalThis.fetch(input, init));
+    this.telemetry = config.telemetry;
+    this.telemetryMode = config.telemetryMode ?? 'evaluation';
+    this.feature = config.feature?.trim() || 'knowledge_evidence_rerank';
   }
 
   async judgeRelevance(request: EvidenceJudgmentRequest): Promise<EvidenceJudgment[]> {
@@ -114,6 +137,11 @@ export class TypeSafeEvidenceProvider implements EvidenceJudgmentProvider {
       ]),
     );
 
+    const startedAt = Date.now();
+    let requestId: string | undefined;
+    let inputTokens: number | undefined;
+    let outputTokens: number | undefined;
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -133,33 +161,71 @@ export class TypeSafeEvidenceProvider implements EvidenceJudgmentProvider {
         signal: controller.signal,
       });
 
+      requestId = response.headers.get('x-typesafe-request-id') ?? undefined;
+
       if (!response.ok) {
-        const requestId = response.headers.get('x-typesafe-request-id');
         throw new Error(
           `TypeSafe evidence evaluation failed with HTTP ${response.status}${requestId ? ` (request ${requestId})` : ''}.`,
         );
       }
 
       const payload = (await response.json()) as TypeSafeSystemOneResponse;
+      const usage = asRecord(payload.usage);
+      inputTokens = finiteNonNegativeNumber(usage?.input_tokens);
+      outputTokens = finiteNonNegativeNumber(usage?.output_tokens);
+
       const answers = asRecord(payload.answers);
       if (!answers) {
         throw new Error('TypeSafe evidence evaluation returned no answers object.');
       }
 
-      return candidateRefs.map(({ ref, candidate }) => {
+      const judgments = candidateRefs.map(({ ref, candidate }) => {
         const answer = parseNoulAnswer(answers[ref], ref);
         return {
           candidateId: candidate.id,
           relevance: answer.noul,
         };
       });
+      await this.emitTelemetry({
+        status: 'success',
+        durationMs: Date.now() - startedAt,
+        requestId,
+        inputTokens,
+        outputTokens,
+      });
+      return judgments;
     } catch (error: unknown) {
-      if (controller.signal.aborted) {
+      const timedOut = controller.signal.aborted;
+      await this.emitTelemetry({
+        status: timedOut ? 'timeout' : 'error',
+        durationMs: Date.now() - startedAt,
+        requestId,
+        inputTokens,
+        outputTokens,
+      });
+      if (timedOut) {
         throw new Error(`TypeSafe evidence evaluation timed out after ${this.timeoutMs}ms.`);
       }
       throw error;
     } finally {
       clearTimeout(timeout);
+    }
+  }
+
+  private async emitTelemetry(
+    event: Omit<TypeSafeEvidenceTelemetryEvent, 'provider' | 'model' | 'feature' | 'mode'>,
+  ): Promise<void> {
+    if (!this.telemetry) return;
+    try {
+      await this.telemetry({
+        provider: 'typesafe',
+        model: this.model,
+        feature: this.feature,
+        mode: this.telemetryMode,
+        ...event,
+      });
+    } catch {
+      // Telemetry must never change provider behavior or block a user request.
     }
   }
 }
@@ -186,4 +252,8 @@ function parseNoulAnswer(value: unknown, ref: string): TypeSafeNoulAnswer {
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
+}
+
+function finiteNonNegativeNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
 }

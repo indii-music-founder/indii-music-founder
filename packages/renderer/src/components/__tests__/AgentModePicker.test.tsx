@@ -167,4 +167,23 @@ describe('AgentModePicker', () => {
             expect(screen.queryByText(/select agent/i)).not.toBeInTheDocument();
         });
     });
+
+    describe('close affordance and dismiss', () => {
+        it('renders close button when onClose is passed and invokes it on click', () => {
+            const onClose = vi.fn();
+            render(<AgentModePicker mode="direct" onClose={onClose} />);
+            const closeBtn = screen.getByRole('button', { name: /close agent mode picker/i });
+            expect(closeBtn).toBeInTheDocument();
+
+            fireEvent.click(closeBtn);
+            expect(onClose).toHaveBeenCalledTimes(1);
+        });
+
+        it('invokes onClose when an agent is selected in Direct mode', () => {
+            const onClose = vi.fn();
+            render(<AgentModePicker mode="direct" onClose={onClose} />);
+            fireEvent.click(screen.getByTestId('agent-direct-finance.tax'));
+            expect(onClose).toHaveBeenCalledTimes(1);
+        });
+    });
 });
