@@ -159,6 +159,18 @@ describe('SocialService', () => {
         });
     });
     describe('schedulePost', () => {
+        it('refuses legacy Instagram callers that omit validated publishing metadata', async () => {
+            await expect(SocialService.schedulePost({
+                platform: 'Instagram',
+                copy: 'New release',
+                imageAsset: { assetType: 'image', title: 'Feed asset', imageUrl: 'https://test.com/feed.png', caption: '' },
+                day: 1,
+                scheduledTime: Date.now() + 60_000,
+            })).rejects.toThrow('requires validated publishing metadata');
+
+            expect(mockAddDoc).not.toHaveBeenCalled();
+        });
+
         it('should add a post to scheduledPosts collection for delivery worker processing', async () => {
             mockAddDoc.mockResolvedValueOnce({ id: 'scheduled-id' });
 

@@ -38,6 +38,9 @@ export interface LayerInfo {
     isAnnotation: boolean;
 }
 
+/** Properties that carry edit identity and annotation semantics through an export restore. */
+export const CANVAS_SERIALIZATION_PROPERTIES = ['data', 'id'] as const;
+
 export class CanvasOperationsService {
     private canvas: fabric.Canvas | null = null;
     private _pathCreatedHandler: ((e: { path: fabric.FabricObject }) => void) | null = null;
@@ -701,7 +704,7 @@ export class CanvasOperationsService {
 
         const originalWidth = this.canvas.getWidth();
         const originalHeight = this.canvas.getHeight();
-        const jsonState = JSON.stringify(this.canvas.toJSON());
+        const jsonState = JSON.stringify(this.canvas.toJSON([...CANVAS_SERIALIZATION_PROPERTIES]));
 
         const exportForDimensions = async (targetWidth: number, targetHeight: number): Promise<string> => {
             this.canvas!.setDimensions({ width: targetWidth, height: targetHeight });
@@ -758,8 +761,11 @@ export class CanvasOperationsService {
             // fabric's loadFromJSON directly — same base-image-drop risk as the
             // undo()/redo() bug this export restore step shared the pattern with.
             this._isUndoingRedoing = true;
-            await this.loadFromJSON(jsonState);
-            this._isUndoingRedoing = false;
+            try {
+                await this.loadFromJSON(jsonState);
+            } finally {
+                this._isUndoingRedoing = false;
+            }
             return dataUrl;
         };
 
@@ -767,8 +773,8 @@ export class CanvasOperationsService {
             // TikTok / Reels (9:16)
             const tiktok = await exportForDimensions(1080, 1920);
 
-            // Instagram Post (1:1)
-            const instagram = await exportForDimensions(1080, 1080);
+            // Instagram Feed / Carousel (4:5)
+            const instagram = await exportForDimensions(1080, 1350);
 
             // YouTube Wide (16:9)
             const youtube = await exportForDimensions(1920, 1080);
@@ -780,7 +786,14 @@ export class CanvasOperationsService {
             return { tiktok, instagram, youtube };
         } catch (error: unknown) {
             logger.error('[CanvasBatching] Failed to export batch dimensions:', error);
-            this.canvas.setDimensions({ width: originalWidth, height: originalHeight });
+            this._isUndoingRedoing = true;
+            try {
+                await this.loadFromJSON(jsonState);
+                this.canvas.setDimensions({ width: originalWidth, height: originalHeight });
+                this.canvas.renderAll();
+            } finally {
+                this._isUndoingRedoing = false;
+            }
             return null;
         }
     }

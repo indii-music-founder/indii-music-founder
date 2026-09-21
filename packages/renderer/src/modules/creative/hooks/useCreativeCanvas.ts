@@ -1210,12 +1210,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 };
 
                 await Promise.all([
-                    saveToCloud(results.tiktok, '9-16-tiktok'),
-                    saveToCloud(results.instagram, '1-1-ig'),
+                    saveToCloud(results.tiktok, '9-16-reels-stories-live'),
+                    saveToCloud(results.instagram, '4-5-instagram-feed'),
                     saveToCloud(results.youtube, '16-9-yt')
                 ]);
 
-                toast.success("Batch formats saved to gallery! (TikTok, IG, YT)");
+                toast.success("Channel-ready formats saved to gallery! (Feed, Vertical, YouTube)");
             }
         } catch (_error: unknown) {
             toast.error("Batch export failed.");

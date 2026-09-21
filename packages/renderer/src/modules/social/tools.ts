@@ -17,7 +17,7 @@ export const SOCIAL_TOOLS = {
         Topic: ${args.topic}
         Tone: ${args.tone}
 
-        Include hashtags and emojis.
+        Write keyword-rich, intent-driven copy. Do not include hashtags; the publisher validates and appends them separately.
         `;
 
         try {

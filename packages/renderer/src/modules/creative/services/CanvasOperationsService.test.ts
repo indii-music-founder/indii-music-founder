@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CanvasOperationsService } from './CanvasOperationsService';
+import { CanvasOperationsService, CANVAS_SERIALIZATION_PROPERTIES } from './CanvasOperationsService';
 
 let mockCanvasInstance: any;
 
@@ -21,15 +21,18 @@ vi.mock('fabric', () => {
             this.objects = this.objects.filter((item) => item !== obj);
         });
         renderAll = vi.fn();
-        setDimensions = vi.fn();
+        setDimensions = vi.fn(({ width, height }: { width: number; height: number }) => { this.width = width; this.height = height; });
         set = vi.fn();
         toJSON = vi.fn(() => ({ objects: this.objects.map((obj) => ({ id: obj.id, data: obj.data, type: obj.type })) }));
+        toDataURL = vi.fn(() => 'data:image/png;base64,export');
+        loadFromJSON = vi.fn();
         getObjects = vi.fn(() => this.objects);
         getActiveObject = vi.fn(() => this.activeObject);
         setActiveObject = vi.fn((obj: any) => {
             this.activeObject = obj;
         });
         discardActiveObject = vi.fn();
+        centerObject = vi.fn();
         bringObjectForward = vi.fn();
         sendObjectBackwards = vi.fn();
         getWidth = vi.fn(() => this.width);
@@ -48,9 +51,17 @@ vi.mock('fabric', () => {
         }
     }
 
+    class MockGroup {
+        scale = vi.fn();
+        removeAll = vi.fn();
+        setCoords = vi.fn();
+        constructor(_objects: unknown[]) {}
+    }
+
     return {
         Canvas: MockCanvas,
         Path: MockPath,
+        Group: MockGroup,
     };
 });
 
@@ -90,5 +101,26 @@ describe('CanvasOperationsService blank sketch layers', () => {
                 }),
             ])
         );
+    });
+
+    it('serializes annotation identity when exporting so restores do not turn edits into artwork', () => {
+        expect(CANVAS_SERIALIZATION_PROPERTIES).toEqual(['data', 'id']);
+    });
+
+    it('exports a 4:5 Instagram derivative and preserves identity in every restore snapshot', async () => {
+        const service = new CanvasOperationsService();
+        const wrapper = document.createElement('div');
+        wrapper.style.width = '800px';
+        wrapper.style.height = '600px';
+        const canvasEl = document.createElement('canvas');
+        wrapper.appendChild(canvasEl);
+        document.body.appendChild(wrapper);
+        service.initialize(canvasEl);
+
+        const result = await service.exportBatchDimensions();
+
+        expect(result?.instagram).toContain('data:image/png');
+        expect(mockCanvasInstance.setDimensions).toHaveBeenCalledWith({ width: 1080, height: 1350 });
+        expect(mockCanvasInstance.toJSON).toHaveBeenCalledWith(['data', 'id']);
     });
 });

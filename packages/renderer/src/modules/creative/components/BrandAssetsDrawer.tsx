@@ -25,13 +25,17 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
         updateBrandKit,
         addUploadedImage,
         currentProjectId,
-        setActiveReferenceImage
+        setActiveReferenceImage,
+        generatedHistory,
+        uploadedImages,
     } = useStore(useShallow((state: StoreState) => ({
         userProfile: state.userProfile,
         updateBrandKit: state.updateBrandKit,
         addUploadedImage: state.addUploadedImage,
         currentProjectId: state.currentProjectId,
-        setActiveReferenceImage: state.setActiveReferenceImage
+        setActiveReferenceImage: state.setActiveReferenceImage,
+        generatedHistory: state.generatedHistory,
+        uploadedImages: state.uploadedImages,
     })));
     const toast = useToast();
     const [activeTab, setActiveTab] = useState<'upload' | 'generate'>('upload');
@@ -42,6 +46,9 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
     // Derived state for assets
     const assets = userProfile?.brandKit?.brandAssets || [];
     const refImages = userProfile?.brandKit?.referenceImages || [];
+    const projectImages = [...generatedHistory, ...uploadedImages]
+        .filter(item => item.type === 'image' && (!currentProjectId || item.projectId === currentProjectId))
+        .filter((item, index, all) => all.findIndex(candidate => candidate.id === item.id) === index);
 
 
     const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -431,6 +438,30 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
 
                 {/* Assets Grid */}
                 <div className="space-y-6">
+                    {onSelect && (
+                        <div>
+                            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Project Assets</h4>
+                            {projectImages.length === 0 ? (
+                                <p className="text-xs text-gray-600 italic text-center py-4">No project images yet.</p>
+                            ) : (
+                                <div className="grid grid-cols-3 gap-2">
+                                    {projectImages.map((item) => (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 overflow-hidden p-1 group relative text-left hover:border-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                                            aria-label={`Select ${item.prompt || 'project asset'}`}
+                                            onClick={() => onSelect({ id: item.id, url: item.url, storageUri: item.storageUri, description: item.prompt || 'Project asset', category: 'other' })}
+                                        >
+                                            <img src={item.url} alt={item.prompt || 'Project asset'} className="w-full h-full object-cover" />
+                                            <span className="absolute bottom-0 inset-x-0 bg-black/70 p-1 text-[9px] text-gray-200 line-clamp-1">{item.prompt || 'Project asset'}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Reference Images Section */}
                     <div>
                         <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex justify-between">

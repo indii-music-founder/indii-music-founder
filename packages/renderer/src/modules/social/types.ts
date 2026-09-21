@@ -10,6 +10,9 @@ export interface ImageAsset {
     title: string;
     imageUrl: string;
     caption: string;
+    storageUri?: string;
+    width?: number;
+    height?: number;
 }
 
 export interface ScheduledPost {

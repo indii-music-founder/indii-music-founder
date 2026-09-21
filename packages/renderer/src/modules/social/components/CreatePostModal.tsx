@@ -7,11 +7,22 @@ import { SOCIAL_TOOLS } from '../tools';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { ScheduledPostSchema } from '../schemas';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
+import { buildInstagramFeedPayload, instagramCaptionLength, isPublishableMediaUrl } from '../instagramComposer';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 const PLATFORM_LIMITS = {
     Twitter: 280,
     Instagram: 2200
 };
+
+function measureImage(url: string): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+        image.onerror = () => reject(new Error('Could not read the selected image dimensions.'));
+        image.src = url;
+    });
+}
 
 interface CreatePostModalProps {
     onClose: () => void;
@@ -32,6 +43,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
 
     const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>('Twitter');
     const [copy, setCopy] = useState('');
+    const [hashtagInput, setHashtagInput] = useState('');
     const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(null);
     const [imageUrlInput, setImageUrlInput] = useState('');
     const [showUrlInput, setShowUrlInput] = useState(false);
@@ -51,7 +63,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
     const platformLabelId = useId();
 
     const charLimit = PLATFORM_LIMITS[platform];
-    const currentLength = copy.length;
+    const currentLength = platform === 'Instagram' ? instagramCaptionLength(copy, hashtagInput) : copy.length;
     const isOverLimit = currentLength > charLimit;
     const isApproachingLimit = currentLength > charLimit * 0.9;
 
@@ -72,21 +84,23 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
         }
     };
 
-    const handleApplyUrl = () => {
+    const handleApplyUrl = async () => {
         const trimmed = imageUrlInput.trim();
         if (!trimmed) return;
         try {
             new URL(trimmed);
+            const dimensions = await measureImage(trimmed);
             setSelectedImage({
                 assetType: 'image',
                 title: 'Attached Media',
                 imageUrl: trimmed,
-                caption: ''
+                caption: '',
+                ...dimensions,
             });
             setImageUrlInput('');
             setShowUrlInput(false);
         } catch {
-            toast.error('Please enter a valid image URL');
+            toast.error('Please enter a valid image URL with readable dimensions');
         }
     };
 
@@ -96,8 +110,8 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
             return;
         }
 
-        if (platform === 'Instagram' && !selectedImage?.imageUrl) {
-            toast.error('Instagram posts require an image asset');
+        if (platform === 'Instagram' && (!selectedImage?.imageUrl || !selectedImage.width || !selectedImage.height)) {
+            toast.error('Instagram posts require an image with verified dimensions');
             return;
         }
 
@@ -116,19 +130,16 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
 
         let instagramPayload: import('@indii/shared').InstagramPublishingPayload | undefined;
         if (platform === 'Instagram') {
-            const cleanedCaption = copy.replace(/#[\p{L}\p{N}_]+/gu, '').trim() || copy.trim();
-            const extractedTags = (copy.match(/#[\p{L}\p{N}_]+/gu) || [])
-                .map(t => t.replace(/^#+/, '').toLowerCase());
-            const defaultTags = ['indiemusic', 'independentartist', 'indierecords', 'musictech'];
-            const mergedTags = [...new Set([...extractedTags, ...defaultTags])].slice(0, 4);
-
-            instagramPayload = {
-                surface: 'feed',
-                width: 1080,
-                height: 1350,
-                caption: cleanedCaption,
-                hashtags: mergedTags,
-            };
+            try {
+                instagramPayload = buildInstagramFeedPayload(copy, hashtagInput, {
+                    publishUrl: selectedImage!.imageUrl,
+                    width: selectedImage!.width!,
+                    height: selectedImage!.height!,
+                });
+            } catch (error) {
+                toast.error(error instanceof Error ? error.message : 'Instagram publishing details are invalid.');
+                return;
+            }
         }
 
         const newPostData = {
@@ -209,6 +220,22 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
                             ))}
                         </div>
                     </div>
+
+                    {platform === 'Instagram' && (
+                        <div className="space-y-2">
+                            <label htmlFor="instagram-hashtags" className="block text-sm font-medium text-gray-400">
+                                Feed hashtags <span className="text-amber-400 font-normal text-xs">(3–5 specific tags)</span>
+                            </label>
+                            <input
+                                id="instagram-hashtags"
+                                value={hashtagInput}
+                                onChange={(event) => setHashtagInput(event.target.value)}
+                                placeholder="#detroitindie #synthpop #newrelease"
+                                className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors"
+                            />
+                            <p className="text-xs text-gray-500">These are validated and appended at the end of the published caption.</p>
+                        </div>
+                    )}
 
                     {/* Copy Section */}
                     <div className="space-y-2">
@@ -366,15 +393,26 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
                     <BrandAssetsDrawer
                         className="relative w-full max-w-md bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in duration-150"
                         onClose={() => setIsAssetDrawerOpen(false)}
-                        onSelect={(asset) => {
+                        onSelect={async (asset) => {
                             // Adapt the asset to ImageAsset type if needed, assuming compatibility for now
-                            setSelectedImage({
-                                assetType: 'image',
-                                title: asset.description || 'Untitled',
-                                imageUrl: asset.url,
-                                caption: ''
-                            });
-                            setIsAssetDrawerOpen(false);
+                            try {
+                                const publishUrl = await resolveStorageUrl(asset.storageUri || asset.url);
+                                if (!isPublishableMediaUrl(publishUrl)) {
+                                    throw new Error('This asset has not finished syncing to publishable storage.');
+                                }
+                                const dimensions = await measureImage(publishUrl);
+                                setSelectedImage({
+                                    assetType: 'image',
+                                    title: asset.description || 'Untitled',
+                                    imageUrl: publishUrl,
+                                    storageUri: asset.storageUri,
+                                    caption: '',
+                                    ...dimensions,
+                                });
+                                setIsAssetDrawerOpen(false);
+                            } catch (error) {
+                                toast.error(error instanceof Error ? error.message : 'Could not read the selected image dimensions.');
+                            }
                         }}
                     />
                 </div>

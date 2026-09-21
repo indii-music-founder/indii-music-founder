@@ -288,8 +288,15 @@ describe('DirectGenerationTab', () => {
         fireEvent.click(screen.getByTestId('direct-image-mode-btn'));
 
         expect(screen.getByText('Square')).toBeInTheDocument();
+        expect(screen.getByText('Feed Portrait')).toBeInTheDocument();
         expect(screen.getByText('Classic')).toBeInTheDocument();
         expect(screen.getByText('Portrait')).toBeInTheDocument();
+    });
+
+    it('selects the 4:5 feed format for an image generation', () => {
+        render(<DirectGenerationTab />);
+        fireEvent.click(screen.getByText('Feed Portrait'));
+        expect(useMockStore.getState().studioControls.aspectRatio).toBe('4:5');
     });
 
     it('ISSUE-788: snaps aspectRatio to 16:9 when switching into video mode with an image-only ratio selected', async () => {
@@ -574,4 +581,3 @@ describe('DirectGenerationTab', () => {
         expect(screen.getByText('Project Assets')).toBeInTheDocument();
     });
 });
-

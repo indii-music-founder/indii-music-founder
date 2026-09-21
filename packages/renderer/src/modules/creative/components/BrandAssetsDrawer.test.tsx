@@ -42,7 +42,11 @@ describe('BrandAssetsDrawer', () => {
         updateBrandKit: mockUpdateBrandKit,
         addUploadedImage: mockAddUploadedImage,
         currentProjectId: 'test-project',
-        setActiveReferenceImage: mockSetActiveReferenceImage
+        setActiveReferenceImage: mockSetActiveReferenceImage,
+        generatedHistory: [
+            { id: 'project-image', type: 'image', url: 'http://test.com/project.png', prompt: 'Project card', timestamp: 1, projectId: 'test-project' }
+        ],
+        uploadedImages: []
     };
 
     beforeEach(() => {
@@ -106,5 +110,15 @@ describe('BrandAssetsDrawer', () => {
             prompt: 'Ref 1'
         }));
         expect(mockToast.success).toHaveBeenCalled();
+    });
+
+    it('selects project-derived assets without copying them into the brand kit', () => {
+        const onSelect = vi.fn();
+        render(<BrandAssetsDrawer onClose={mockOnClose} onSelect={onSelect} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Select Project card' }));
+
+        expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'project-image', url: 'http://test.com/project.png' }));
+        expect(mockUpdateBrandKit).not.toHaveBeenCalled();
     });
 });

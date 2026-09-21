@@ -94,6 +94,7 @@ export default function DirectGenerationTab() {
 
     const aspectRatios = [
         { id: '1:1', label: 'Square', desc: 'Cover Art / Social', w: 'w-6', h: 'h-6' },
+        { id: '4:5', label: 'Feed Portrait', desc: 'Instagram Feed', w: 'w-5', h: 'h-6' },
         { id: '16:9', label: 'Cinema', desc: 'YouTube / Widescreen', w: 'w-8', h: 'h-4.5' },
         { id: '9:16', label: 'Vertical', desc: 'TikTok / Canvas', w: 'w-4.5', h: 'h-8' },
         { id: '4:3', label: 'Classic', desc: 'Traditional NTSC', w: 'w-7', h: 'h-5.25' },

@@ -22,7 +22,10 @@ export const ImageAssetSchema = z.object({
     assetType: z.literal('image'),
     title: z.string(),
     imageUrl: z.string().url(),
-    caption: z.string().optional().default('')
+    caption: z.string().optional().default(''),
+    storageUri: z.string().optional(),
+    width: z.number().int().positive().optional(),
+    height: z.number().int().positive().optional(),
 });
 
 export const ScheduledPostSchema = z.object({
