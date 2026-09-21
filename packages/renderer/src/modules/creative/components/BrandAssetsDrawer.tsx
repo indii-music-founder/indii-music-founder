@@ -46,7 +46,9 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
     // Derived state for assets
     const assets = userProfile?.brandKit?.brandAssets || [];
     const refImages = userProfile?.brandKit?.referenceImages || [];
-    const projectImages = [...generatedHistory, ...uploadedImages]
+    // Older persisted sessions and focused component tests may not yet include
+    // these newer store fields. Treat their absence as an empty project library.
+    const projectImages = [...(generatedHistory ?? []), ...(uploadedImages ?? [])]
         .filter(item => item.type === 'image' && (!currentProjectId || item.projectId === currentProjectId))
         .filter((item, index, all) => all.findIndex(candidate => candidate.id === item.id) === index);
 
