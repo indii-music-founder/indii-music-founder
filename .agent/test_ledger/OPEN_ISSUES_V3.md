@@ -3126,7 +3126,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1440: Control-dense screens dump 16–30 simultaneous controls with no progressive disclosure
 
-- **Status:** 🟡 PARTIAL (2026-09-22 — OmniWorkflow controller + shared SectionCard primitive landed; ReleaseWizard, QCPanel, Finance, Marketing grouping in progress this pass; MerchDesigner / StudioControlsPanel reorder / DirectGenerationTab / MemoryDashboard remain OPEN)
+- **Status:** 🟡 PARTIAL (2026-09-22 — OmniWorkflow controller + shared SectionCard primitive + ReleaseWizard densification landed; QCPanel, Finance, Marketing grouping in progress this pass; MerchDesigner / StudioControlsPanel reorder / DirectGenerationTab / MemoryDashboard remain OPEN)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative video / Publishing wizard / Finance / Distribution QC / Merch
 - **Evidence (all verified):**
@@ -3142,6 +3142,9 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Evidence:** `packages/renderer/src/components/ui/SectionCard.tsx` (new primitive), `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:290` (single-open state), `:1166-1196` (Camera & lighting section), `:1199-1256` (Advanced motion), `:1267-1315` (References merge), `:1317-1324` (compressed info line), `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:23` (shared import), `packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx` (updated to open the References section before uploading; 8/8 passing).
 - **Files:** `packages/renderer/src/components/ui/SectionCard.tsx` (new), `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx`, `packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx`, `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx`
 - **Verification:** typecheck 0 errors; eslint 0 errors on touched files; OmniWorkflow 8/8, StudioControlsPanel + RightPanel + QA_RuntimeVerification suites 34/34 passing.
+- **Fix (partial 2, 2026-09-22 — ReleaseWizard):** New thin `components/ui/DropdownMenu.tsx` wrapper over the already-installed `@radix-ui/react-dropdown-menu`. Metadata step: DPID/ISRC/BPM/Key/Energy moved into a collapsed "Advanced metadata (optional)" SectionCard — required grid drops 12→7 visible fields. Distribution step: 8 territory toggle buttons → one multi-select dropdown with count badge ("2 territories selected" / "Worldwide"), Worldwide-exclusive semantics preserved (`event.preventDefault()` keeps the menu open for multi-pick); 8 distributor cards → compact two-column selectable rows. Metadata step visible controls 21→12; distribution step 30→~14.
+- **Evidence (ReleaseWizard):** `packages/renderer/src/components/ui/DropdownMenu.tsx` (new wrapper), `packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx:331-412` (Advanced metadata SectionCard), `:425-436` (territory label computation), `:440-481` (territories multi-select), `:354-374` (compact distributor rows), `packages/renderer/src/modules/publishing/components/ReleaseWizard.test.tsx:126-157` (2 new tests: disclosure collapsed-until-opened, territory count badge; 8/8 passing).
+- **Files (ReleaseWizard pass):** `packages/renderer/src/components/ui/DropdownMenu.tsx` (new), `packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx`, `packages/renderer/src/modules/publishing/components/ReleaseWizard.test.tsx`
 
 ### ISSUE-1441: Dead and duplicated UI inventory (dead buttons, twin components, orphaned layout code)
 

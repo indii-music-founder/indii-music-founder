@@ -121,4 +121,34 @@ describe('ReleaseWizard Integration', () => {
         expect(screen.getAllByText(/WAV/i)[0]).toBeInTheDocument();
     });
 
+    // ISSUE-1440: optional identifier fields are secondaries — they must stay
+    // collapsed out of the required grid until the user asks for them.
+    it('keeps Advanced metadata collapsed until opened', () => {
+        render(<ReleaseWizard />);
+
+        const toggle = screen.getByRole('button', { name: /Advanced metadata/i });
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+        // Field labels were never programmatically associated with their inputs
+        // (pre-existing), so assert on the label text instead of getByLabelText.
+        expect(screen.queryByText('ISRC code')).not.toBeInTheDocument();
+
+        fireEvent.click(toggle);
+        expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        expect(screen.getByText('ISRC code')).toBeInTheDocument();
+    });
+
+    it('shows the territory multi-select trigger with selection count (ISSUE-1440)', () => {
+        (useDDEXRelease as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultHookValues,
+            currentStep: 'distribution',
+            toggleDistributor: vi.fn(),
+            selectedDistributors: [],
+            metadata: { ...defaultHookValues.metadata, territories: ['US', 'CA'] }
+        });
+
+        render(<ReleaseWizard />);
+
+        expect(screen.getByTestId('territories-select')).toHaveTextContent('2 territories selected');
+    });
+
 });

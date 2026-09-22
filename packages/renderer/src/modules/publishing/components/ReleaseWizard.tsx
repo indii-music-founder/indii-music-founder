@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
  * Step-by-step wizard for creating DDEX-compliant releases
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Music,
   Globe,
@@ -19,6 +19,14 @@ import {
 } from 'lucide-react';
 import { useDDEXRelease, WizardStep } from '../hooks/useDDEXRelease';
 import { ReleaseHarnessWorkspace } from './ReleaseHarnessWorkspace';
+// ISSUE-1440: shared disclosure + dropdown primitives for denser steps.
+import SectionCard from '@/components/ui/SectionCard';
+import {
+  DropdownMenu,
+  DropdownMenuTriggerButton,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+} from '@/components/ui/DropdownMenu';
 import type { DistributorId } from '@/services/distribution/types/distributor';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
@@ -95,6 +103,10 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     submitError,
     releaseId
   } = useDDEXRelease();
+
+  // ISSUE-1440: optional identifier fields are secondaries — collapsed by default
+  // so the required metadata grid stays scannable.
+  const [advancedMetadataOpen, setAdvancedMetadataOpen] = useState(false);
 
   // Handle submission
   const handleSubmit = async () => {
@@ -225,78 +237,9 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
         </div>
 
-        {/* DPID */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            DPID (DDEX Party ID)
-          </label>
-          <input
-            type="text"
-            value={metadata.dpid || ''}
-            onChange={e => updateMetadata({ dpid: e.target.value.toUpperCase() })}
-            placeholder={t('publishing.hints.pro_work_id')}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-          />
-        </div>
-
-        {/* ISRC */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            ISRC code
-          </label>
-          <input
-            type="text"
-            value={metadata.isrc || ''}
-            onChange={e => updateMetadata({ isrc: e.target.value.toUpperCase() })}
-            placeholder={t('publishing.hints.isrc_optional')}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-          />
-        </div>
-
-        {/* BPM */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            BPM
-          </label>
-          <input
-            type="number"
-            value={metadata.bpm || ''}
-            onChange={e => updateMetadata({ bpm: parseFloat(e.target.value) || undefined })}
-            placeholder={t('publishing.hints.bpm_example')}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-          />
-        </div>
-
-        {/* Key */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Key
-          </label>
-          <input
-            type="text"
-            value={metadata.key || ''}
-            onChange={e => updateMetadata({ key: e.target.value })}
-            placeholder={t('publishing.hints.key_example')}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-          />
-        </div>
-
-        {/* Energy */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Energy
-          </label>
-          <input
-            type="number"
-            value={metadata.energy || ''}
-            onChange={e => updateMetadata({ energy: parseFloat(e.target.value) || undefined })}
-            placeholder={t('publishing.hints.confidence_score')}
-            step="0.01"
-            min="0"
-            max="1"
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-          />
-        </div>
+        {/* ISSUE-1440: DPID / ISRC / BPM / Key / Energy moved into the collapsed
+            "Advanced metadata" disclosure below — optional secondaries were
+            inflating the required grid. */}
 
         {/* Release Date */}
         <div>
@@ -324,6 +267,86 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             <span className="text-gray-300">This release contains explicit content</span>
           </label>
         </div>
+
+        {/* ISSUE-1440: optional identifiers/descriptors behind a collapsed disclosure. */}
+        <div className="md:col-span-2">
+          <SectionCard
+            title="Advanced metadata (optional)"
+            icon={<Sparkles size={12} className="text-blue-400" />}
+            isOpen={advancedMetadataOpen}
+            onToggle={() => setAdvancedMetadataOpen(open => !open)}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  DPID (DDEX Party ID)
+                </label>
+                <input
+                  type="text"
+                  value={metadata.dpid || ''}
+                  onChange={e => updateMetadata({ dpid: e.target.value.toUpperCase() })}
+                  placeholder={t('publishing.hints.pro_work_id')}
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  ISRC code
+                </label>
+                <input
+                  type="text"
+                  value={metadata.isrc || ''}
+                  onChange={e => updateMetadata({ isrc: e.target.value.toUpperCase() })}
+                  placeholder={t('publishing.hints.isrc_optional')}
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  BPM
+                </label>
+                <input
+                  type="number"
+                  value={metadata.bpm || ''}
+                  onChange={e => updateMetadata({ bpm: parseFloat(e.target.value) || undefined })}
+                  placeholder={t('publishing.hints.bpm_example')}
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Key
+                </label>
+                <input
+                  type="text"
+                  value={metadata.key || ''}
+                  onChange={e => updateMetadata({ key: e.target.value })}
+                  placeholder={t('publishing.hints.key_example')}
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Energy
+                </label>
+                <input
+                  type="number"
+                  value={metadata.energy || ''}
+                  onChange={e => updateMetadata({ energy: parseFloat(e.target.value) || undefined })}
+                  placeholder={t('publishing.hints.confidence_score')}
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                />
+              </div>
+            </div>
+          </SectionCard>
+        </div>
       </div>
     </div>
   );
@@ -331,6 +354,13 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
   // Render distribution step
   const renderDistributionStep = () => {
     const isDesktop = typeof window !== 'undefined' && !!window.electronAPI;
+    // ISSUE-1440: 8 territory toggle buttons collapsed into one multi-select.
+    const selectedTerritories = metadata.territories || [];
+    const territoryLabel = selectedTerritories.includes('Worldwide')
+      ? 'Worldwide'
+      : selectedTerritories.length > 0
+        ? `${selectedTerritories.length} ${selectedTerritories.length === 1 ? 'territory' : 'territories'} selected`
+        : 'Select territories';
 
     return (
       <div className="space-y-8">
@@ -347,70 +377,69 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           </div>
         )}
 
-        {/* Distributors */}
+        {/* Distributors — ISSUE-1440: compact selectable list instead of large cards. */}
         <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
           <h3 className="text-lg font-medium text-white mb-4">Select Distributors</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {DISTRIBUTORS.map(dist => (
               <button
                 key={dist.id}
                 onClick={() => toggleDistributor(dist.id)}
                 disabled={!isDesktop}
                 className={`
-                  p-4 rounded-xl border transition-all text-left
+                  px-3 py-2.5 rounded-lg border transition-all text-sm text-left flex items-center justify-between
                   ${selectedDistributors.includes(dist.id)
                     ? 'bg-blue-500/10 border-blue-500/50 text-blue-400'
                     : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
                   }
                 `}
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{dist.name}</span>
+                <span className="font-medium">{dist.name}</span>
                 {selectedDistributors.includes(dist.id) && (
-                  <CheckCircle size={18} className="text-blue-400" />
+                  <CheckCircle size={16} className="text-blue-400 shrink-0" />
                 )}
-              </div>
-            </button>
-          ))}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-        {/* Territories */}
+        {/* Territories — ISSUE-1440: toggle grid → multi-select dropdown with
+            Worldwide default semantics preserved. */}
         <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
           <h3 className="text-lg font-medium text-white mb-4">Distribution Territories</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {TERRITORIES.map(territory => {
-              const isSelected = metadata.territories?.includes(territory.code);
-              return (
-                <button
-                  key={territory.code}
-                  disabled={!isDesktop}
-                  onClick={() => {
-                    const current = metadata.territories || [];
-                    if (territory.code === 'Worldwide') {
-                      updateMetadata({ territories: isSelected ? [] : ['Worldwide'] });
-                    } else {
-                      const withoutWorldwide = current.filter(t => t !== 'Worldwide');
-                      updateMetadata({
-                        territories: isSelected
-                          ? withoutWorldwide.filter(t => t !== territory.code)
-                          : [...withoutWorldwide, territory.code]
-                      });
-                    }
-                  }}
-                  className={`
-                    px-4 py-2 rounded-lg border text-sm transition-all
-                    ${isSelected
-                      ? 'bg-green-500/10 border-green-500/50 text-green-400'
-                      : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
-                    }
-                  `}
-                >
-                  {territory.name}
-                </button>
-              );
-            })}
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTriggerButton data-testid="territories-select" disabled={!isDesktop}>
+              <span>{territoryLabel}</span>
+            </DropdownMenuTriggerButton>
+            <DropdownMenuContent>
+              {TERRITORIES.map(territory => {
+                const isSelected = selectedTerritories.includes(territory.code);
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={territory.code}
+                    checked={isSelected}
+                    onSelect={event => {
+                      // Keep the menu open — this is a multi-select, not a pick-one.
+                      event.preventDefault();
+                      const current = metadata.territories || [];
+                      if (territory.code === 'Worldwide') {
+                        updateMetadata({ territories: isSelected ? [] : ['Worldwide'] });
+                      } else {
+                        const withoutWorldwide = current.filter(t => t !== 'Worldwide');
+                        updateMetadata({
+                          territories: isSelected
+                            ? withoutWorldwide.filter(t => t !== territory.code)
+                            : [...withoutWorldwide, territory.code]
+                        });
+                      }
+                    }}
+                  >
+                    {territory.name}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Distribution Channels */}
