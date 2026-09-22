@@ -3079,7 +3079,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1437: Phantom module IDs and mobile/desktop gating drift route users to the wrong places
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-09-22 — nav surfaces fixed: gating filter, phantom entry removal, phone Workspace access. Orphan surfacing/cutting decisions remain Tier 3 product calls)
 - **Severity:** 🟠 HIGH
 - **Module:** `appSlice.ts` / `MobileTabBar.tsx` / module reachability
 - **Evidence:**
@@ -3090,6 +3090,10 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Impact:** Wrong-screen navigation on phone; gated modules leak into nav; ~10 modules are unreachably buried or dead weight.
 - **Fix:** Apply `useGatedModules` filter in MobileTabBar; either delete phantom IDs (`audio-analyzer`, `format-foundry`) or keep aliases but remove the nav entries; decide per orphan — surface (files/notes/project-canvas into More drawer; screenwriter via creative video link; analytics via sidebar/⌘K) or cut (crm competes with publicist Superfan CRM; capture module is superseded by QuickCapture sheet).
 - **Acceptance:** No nav entry on any surface leads to a gated/redirected module without disclosure; every reachable module has ≥1 discoverable entry on desktop AND phone; orphans are deliberately surfaced or deleted.
+- **Fix (2026-09-22):** `MobileTabBar` now applies `useGatedModules()` to both the tab strip and every More-drawer section, matching the Sidebar's filter — prod users can no longer tap a flag-gated module and land on `GatedModuleFallback`. The phantom `audio-analyzer` entry was removed from the Tools section (the `setModule` alias and `/audio-analyzer` URL alias are preserved, so old links land in Distribution/QC). A new "Workspace" section adds `files`, `notes`, `project-canvas` — previously unreachable on phones because ⌘K is keyboard-only. The `setModule('audio-analyzer')`/`format-foundry` alias shims in `appSlice.ts:161-165` stay for backward compatibility; their unreachable AppShell component-map entries are dead code tracked under ISSUE-1441 cleanup scope.
+- **Evidence:** `packages/renderer/src/core/components/MobileTabBar.tsx:88-91` (gated filter applied), `:71-90` (Workspace section + audio-analyzer removal comment), `packages/renderer/src/core/components/MobileTabBar.test.tsx` (5 tests: gated merch absent, Audio Analyzer absent, Files/Notes/Project Canvas present, navigation + org-access filtering).
+- **Files:** `packages/renderer/src/core/components/MobileTabBar.tsx`, `packages/renderer/src/core/components/MobileTabBar.test.tsx` (new)
+- **Verification:** typecheck 0 errors; eslint 0 errors on touched files; MobileTabBar suite 5/5 passing.
 
 ### ISSUE-1438: UnifiedCommandMenu is a hardcoded ~22-item list, not an index of the app
 

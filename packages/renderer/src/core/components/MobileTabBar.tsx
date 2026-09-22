@@ -11,6 +11,7 @@ import { motion, AnimatePresence, PanInfo } from 'motion/react';
 import { useMobile } from '@/hooks/useMobile';
 import { QuickCapture } from '@/modules/capture/QuickCapture';
 import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
+import { useGatedModules } from '@/config/featureFlags';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
@@ -68,10 +69,22 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
         ],
     },
     {
+        title: 'Workspace',
+        items: [
+            // ISSUE-1437: files/notes/project-canvas had no phone entry point at all —
+            // the command menu that reaches them on desktop is keyboard-only (⌘K).
+            { id: 'files', label: 'Files' },
+            { id: 'notes', label: 'Notes' },
+            { id: 'project-canvas', label: 'Project Canvas' },
+        ],
+    },
+    {
         title: 'Tools',
         items: [
             { id: 'merch', label: 'Merchandise' },
-            { id: 'audio-analyzer', label: 'Audio Analyzer' },
+            // ISSUE-1437: 'audio-analyzer' removed — it is a phantom id that silently
+            // rewrites to Distribution/QC (appSlice setModule alias); offering it as a
+            // destination landed users in a different module than the label promised.
             { id: 'workflow', label: 'Workflow Builder' },
             { id: 'knowledge', label: 'Knowledge Base' },
             { id: 'distribution', label: 'Distribution' },
@@ -83,6 +96,10 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
 export const MobileTabBar: React.FC = () => {
     const { isAnyPhone } = useMobile();
     const { canAccessModule } = useOrganizationAccess();
+    // ISSUE-1437: the drawer filtered only by org access, so prod users could tap a
+    // pre-launch (feature-flag-gated) module like merch and hit GatedModuleFallback.
+    // Apply the same gated-module filter the desktop Sidebar applies.
+    const gatedModules = useGatedModules();
     const { currentModule, setModule, isAgentOpen } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
@@ -104,11 +121,11 @@ export const MobileTabBar: React.FC = () => {
     // Only render on phone-class viewports
     if (!isAnyPhone) return null;
 
-    const visibleTabs = TABS.filter(tab => tab.id === 'more' || canAccessModule(tab.id));
+    const visibleTabs = TABS.filter(tab => tab.id === 'more' || (!gatedModules.has(tab.id) && canAccessModule(tab.id)));
     const visibleMoreSections = MORE_SECTIONS
         .map(section => ({
             ...section,
-            items: section.items.filter(item => canAccessModule(item.id)),
+            items: section.items.filter(item => !gatedModules.has(item.id) && canAccessModule(item.id)),
         }))
         .filter(section => section.items.length > 0);
 
