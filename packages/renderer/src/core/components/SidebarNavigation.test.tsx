@@ -170,6 +170,10 @@ describe('Sidebar Navigation Integration', () => {
         expect(screen.getByText('Marketing Department')).toBeInTheDocument();
         expect(screen.getByTestId('bottom-rail-notes-btn')).toBeInTheDocument();
 
+        // ISSUE-1436: "Campaign Manager" rendered the identical CampaignDashboard as
+        // "Marketing Department" — the duplicate nav entry must not come back.
+        expect(screen.queryByText('Campaign Manager')).not.toBeInTheDocument();
+
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
 

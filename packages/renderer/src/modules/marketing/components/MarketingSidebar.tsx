@@ -130,45 +130,48 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
                     </div>
                 </div>
 
-                {/* Secondary Section */}
-                <div>
-                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                        Resources
-                    </h3>
-                    <div className="space-y-1">
-                        {secondaryNav.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => item.available && onTabChange(item.id)}
-                                disabled={!item.available}
-                                aria-disabled={!item.available}
-                                title={item.available ? item.label : item.reason}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${item.available
-                                    ? activeTab === item.id
-                                        ? 'bg-dept-marketing/10 text-dept-marketing font-medium'
-                                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                                    : 'text-gray-600 opacity-70 cursor-not-allowed'
-                                    }`}
-                            >
-                                <item.icon
-                                    size={18}
-                                    className={`transition-colors ${item.available
+                {/* Secondary Section — ISSUE-1436: hidden entirely while every entry is a
+                    "Not connected yet" stub; advertising unbuilt features read as broken UI. */}
+                {secondaryNav.some((item) => item.available) && (
+                    <div>
+                        <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            Resources
+                        </h3>
+                        <div className="space-y-1">
+                            {secondaryNav.filter((item) => item.available).map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => item.available && onTabChange(item.id)}
+                                    disabled={!item.available}
+                                    aria-disabled={!item.available}
+                                    title={item.available ? item.label : item.reason}
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${item.available
                                         ? activeTab === item.id
-                                            ? 'text-dept-marketing'
-                                            : 'text-gray-500 group-hover:text-gray-400'
-                                        : 'text-gray-600'
+                                            ? 'bg-dept-marketing/10 text-dept-marketing font-medium'
+                                            : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                                        : 'text-gray-600 opacity-70 cursor-not-allowed'
                                         }`}
-                                />
-                                <span>{item.label}</span>
-                                {!item.available && (
-                                    <span className="ml-auto rounded-full border border-white/10 px-2 py-0.5 text-[9px] uppercase tracking-widest text-gray-500">
-                                        Soon
-                                    </span>
-                                )}
-                            </button>
-                        ))}
+                                >
+                                    <item.icon
+                                        size={18}
+                                        className={`transition-colors ${item.available
+                                            ? activeTab === item.id
+                                                ? 'text-dept-marketing'
+                                                : 'text-gray-500 group-hover:text-gray-400'
+                                            : 'text-gray-600'
+                                            }`}
+                                    />
+                                    <span>{item.label}</span>
+                                    {!item.available && (
+                                        <span className="ml-auto rounded-full border border-white/10 px-2 py-0.5 text-[9px] uppercase tracking-widest text-gray-500">
+                                            Soon
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <div className="px-3 mt-auto">
                     <div className="p-4 rounded-xl bg-dept-marketing/10 border border-dept-marketing/20 relative overflow-hidden group">

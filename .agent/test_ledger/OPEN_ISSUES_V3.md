@@ -3,7 +3,7 @@
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-09-17 (**Resolved ISSUE-1434 Cloud Functions tarball lockfile packaging & ISSUE-1435 Meta/Marketing callable contract discrepancy**)
+> **Last updated:** 2026-09-22 (**Opened ISSUE-1436–1441 from the studio UI/UX architecture audit** — navigation duplicates, phantom modules, wayfinding gaps, control-dense screens, dead UI)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V3):** This is the ACTIVE master ledger. It operates with strict discipline:
@@ -3055,3 +3055,89 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
   4. Added unit test suite `packages/firebase/src/marketing/marketingCallables.test.ts` (16/16 tests passing).
   5. Added contract test suite `packages/renderer/src/services/marketing/marketingContract.test.ts` verifying that all 18 marketing callable names used by renderer services exist in the backend exports and that client callers handle errors gracefully without unhandled promise rejections (2/2 tests passing).
   6. Verified functions check (`npm run check:functions` passing across all 82 Gen2 exports), full typecheck (`npm run typecheck` 0 errors), and lint (`npm run lint` 0 errors).
+
+---
+
+# UI/UX Architecture Audit — 2026-09-22 (ISSUE-1436–1441)
+
+> Findings from a read-only studio UI/UX audit (navigation/IA + control density + dashboard consistency).
+> All evidence verified against `packages/renderer/src` on `main`.
+
+### ISSUE-1436: Sidebar lists "Marketing Department" and "Campaign Manager" as two nav items that render the same screen
+
+- **Status:** 🟡 PARTIAL (2026-09-22 — nav dedupe + stub hiding landed; 14→6 tab grouping tracked below, lands with the ISSUE-1440 density pass)
+- **Severity:** 🟠 HIGH
+- **Module:** Core navigation (`Sidebar.tsx`) / Marketing (`MarketingDashboard`, `CampaignDashboard`)
+- **Evidence:** `packages/renderer/src/modules/marketing/MarketingDashboard.tsx:11-13` renders `CampaignDashboard` verbatim. Sidebar registers both `campaign` ("Campaign Manager", `Sidebar.tsx:204`) and `marketing` ("Marketing Department", `Sidebar.tsx:211`), so two nav entries land on one identical screen. Related: the marketing rail exposes 14 active tabs + 5 permanently disabled "Not connected yet" stubs (`marketing/components/MarketingSidebar.tsx:35-59`).
+- **Impact:** Users conclude two departments exist and duplicate work configuring both; the 5 dead stubs advertise unbuilt features.
+- **Fix:** Keep one entry point (recommend "Marketing" under Departments; drop `campaign` from `managerItems` or alias it to a filtered view). Group the 14 tabs → ~6 (Overview+Campaigns+Momentum; Email+SMS+Community → Channels; Ad Buying+Influencer Board → Paid & Partners; Pre-Save+EPK+Auto-Poster+Asset Generator → Release Assets; Swarm+Fan Enrichment → Intelligence). Hide disabled stubs instead of listing them.
+- **Acceptance:** `campaign` and `marketing` no longer resolve to the identical rendered screen; no permanently-disabled nav stubs visible; tab count ≤ 8 with grouping.
+- **Fix (partial, 2026-09-22):** Removed the `campaign` entry from the desktop sidebar Manager's Office (`managerItems`) and the mobile More drawer Managers section. The `campaign` ModuleId remains valid — deep links (`CustomDashboardWidgets.tsx:1315,1329`) and `currentModule: 'campaign'` routing still render the same dashboard. MarketingSidebar's Resources section now renders only `available` entries and hides entirely while all five are "Not connected yet" stubs. Added a tripwire test asserting the Campaign Manager nav item stays gone.
+- **Evidence:** `packages/renderer/src/core/components/Sidebar.tsx:201-206` (managerItems without campaign), `packages/renderer/src/core/components/MobileTabBar.tsx:51-56` (More drawer without campaign), `packages/renderer/src/modules/marketing/components/MarketingSidebar.tsx:134-137` (`secondaryNav.some(available)` guard), `packages/renderer/src/core/components/SidebarNavigation.test.tsx:173-175` (absence assertion). Snapshots updated (`Sidebar.test.tsx.snap`, 2 snapshots).
+- **Files:** `packages/renderer/src/core/components/Sidebar.tsx`, `packages/renderer/src/core/components/MobileTabBar.tsx`, `packages/renderer/src/modules/marketing/components/MarketingSidebar.tsx`, `packages/renderer/src/core/components/SidebarNavigation.test.tsx`, `packages/renderer/src/core/components/__snapshots__/Sidebar.test.tsx.snap`
+- **Verification:** typecheck 0 errors; eslint 0 errors on touched files; Sidebar + SidebarNavigation + MarketingDashboard suites 21/21 passing.
+
+### ISSUE-1437: Phantom module IDs and mobile/desktop gating drift route users to the wrong places
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** `appSlice.ts` / `MobileTabBar.tsx` / module reachability
+- **Evidence:**
+  1. `setModule('audio-analyzer')` silently rewrites to Distribution QC tab and `format-foundry` to Finance forensics (`appSlice.ts:161-165`); the phone tab bar still offers "Audio Analyzer" (`MobileTabBar.tsx:75`), landing users in Distribution with no explanation. `AudioAnalyzer` component entry (`AppShell.tsx:156`) is unreachable dead code.
+  2. `MobileTabBar` filters only by org access, not `useGatedModules` (`MobileTabBar.tsx:108-114` vs `Sidebar.tsx:224-226`): in prod, phone users can tap Merch and hit `GatedModuleFallback`.
+  3. Hard-orphan modules with no UI entry of any kind (URL/agent-tool only): `crm`, `analytics`, `screenwriter`, `devops`, `capture`, `founders-portal`. Double-dead (no entry AND prod-gated): `debug`, `memory`, `marketplace`, `raw-converter`.
+  4. Mobile has NO path to `files`, `notes`, or `project-canvas`: the command menu is ⌘K keyboard-only and these are absent from the More drawer (`MobileTabBar.tsx:48-82`).
+- **Impact:** Wrong-screen navigation on phone; gated modules leak into nav; ~10 modules are unreachably buried or dead weight.
+- **Fix:** Apply `useGatedModules` filter in MobileTabBar; either delete phantom IDs (`audio-analyzer`, `format-foundry`) or keep aliases but remove the nav entries; decide per orphan — surface (files/notes/project-canvas into More drawer; screenwriter via creative video link; analytics via sidebar/⌘K) or cut (crm competes with publicist Superfan CRM; capture module is superseded by QuickCapture sheet).
+- **Acceptance:** No nav entry on any surface leads to a gated/redirected module without disclosure; every reachable module has ≥1 discoverable entry on desktop AND phone; orphans are deliberately surfaced or deleted.
+
+### ISSUE-1438: UnifiedCommandMenu is a hardcoded ~22-item list, not an index of the app
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** `components/shared/UnifiedCommandMenu.tsx`
+- **Evidence:** `UnifiedCommandMenu.tsx:107-218` hardcodes ~22 static `Command.Item`s. Of ~50 registered `MODULE_IDS`, most (social, publishing, merch, road, publicist, notes, memory, marketplace, crm, screenwriter, analytics, security, registration, raw-converter, format-foundry…) have no command-menu entry. No recent items, no in-module actions (e.g. "Upload release", "New expense"), no content search. Placeholder promises "Search commands, navigate modules…".
+- **Impact:** The app's universal wayfinding surface covers <half the app and duplicates a slice of the sidebar; power users and keyboard users can't reach the rest.
+- **Fix:** Generate Navigation items from a single source of truth (module registry with display names/groups — `MODULE_DISPLAY_NAMES` already exists in `core/constants.ts:76`), add "recent modules" (data already in `appSlice._navigationHistory`), and seed per-module actions later.
+- **Acceptance:** ⌘K lists every module the current user can access, grouped; typing a module's display name finds it; recents section present.
+
+### ISSUE-1439: Module navigation never syncs to the URL — no deep links, browser Back, or refresh-to-place
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** `core/store/slices/appSlice.ts` / `core/App.tsx`
+- **Evidence:** The module is read from `window.location.pathname` once at init (`appSlice.ts:46-54`) but `setModule` never calls `history.pushState/replaceState` (grep: zero occurrences in `core/`). Browser Back/Forward are bypassed by a custom `_navigationHistory` stack (`appSlice.ts:199-203,246`). React Router 7 is a dependency but only used for OAuth/remote bypass routes.
+- **Impact:** Refresh loses your place (falls back to URL/dashboard); Back button exits the app instead of the previous module; no shareable/bookmarkable module links; per-module tab state is unshareable.
+- **Fix:** Write `history.replaceState` on module change and `pushState` on deliberate navigation (respect the existing 150ms nav debounce), listen to `popstate` to `setModule` back; optionally encode tab (`/finance/royalties`) using the existing URL-alias table (`useURLSync.ts`).
+- **Acceptance:** Navigating 3 modules then pressing Back returns through them; refresh restores the current module; a copied URL opens the same module+tab.
+- **Correction (2026-09-22, fix agent):** Investigation for the fix pass found the original Evidence was wrong in its strong form. `hooks/useURLSync.ts` — mounted at `core/App.tsx:162` — already syncs Store→URL via react-router `navigate()` (push by default) and handles Back/Forward plus deep links, with deep links winning over the persisted `currentModule` (`useURLSync.ts:47-51,58-60`). The original `grep pushState` in `core/` missed this because the URL write goes through the router, not the History API directly. The residual real gap is **tab-level deep links**: only the two alias tabs (`audio-analyzer`→distribution/qc, `format-foundry`→finance/forensics, `useURLSync.ts:28-29,69`) encode a tab; no arbitrary tab is URL-addressable. Issue re-scoped to tab deep links (`?tab=` for store-backed tabs). The module-level parts of Acceptance above are already met on `main`.
+
+### ISSUE-1440: Control-dense screens dump 16–30 simultaneous controls with no progressive disclosure
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative video / Publishing wizard / Finance / Distribution QC / Merch
+- **Evidence (all verified):**
+  1. `creative/video/OmniWorkflow.tsx:1099-1336` — right "Omni Controller" is a fixed 320px scroll column with 16 always-visible controls (~32-35 loaded): mode select, 4 resolution buttons, X-ray toggle, 2 upload cards, textarea, 3 directive inputs, 2 sliders, Generate. Only disclosure in the file is the add-frame modal.
+  2. `publishing/components/ReleaseWizard.tsx:353-446` — distribution step renders 30 controls including 21 toggle buttons (8 distributors + 8+ territories + 3 channels); metadata step is a flat 12-field grid (`:148-327`).
+  3. `finance/FinanceDashboard.tsx:121-168` — 16 tabs in one strip with `overflow-x-auto` (:119); tab triggers pasted 30+ times across modules.
+  4. `distribution/components/QCPanel.tsx:716-815` — metadata tab shows 13 controls; only Title/Artist are required for Run QC; CID attestation block could auto-open on validation failure (gates exist `:333-348`).
+  5. `merchandise/MerchDesigner.tsx:549-582,724-735` — 19 header controls; 6 align buttons are permanent no-ops with no selection gating; 6 fixed swatches always visible.
+- **Impact:** Highest-frequency creation surfaces (release, video, QC) have the steepest control walls; new users cannot find the spine of any of these screens.
+- **Fix:** Fold secondaries behind disclosures (existing pattern to promote: `StudioControlsPanel.tsx:27-57` `SectionCard` single-open accordion): OmniWorkflow → visible spine of mode/resolution/prompt/Generate; ReleaseWizard territories → multi-select popover with Worldwide default; Finance 16 → 5 grouped tabs (Overview / Spending / Royalties / Compliance & Tools / Merch); QCPanel optional fields collapsed; MerchDesigner align cluster gated on ≥2 objects selected. Healthy in-repo models to copy: `InfiniteCanvas.tsx` (gesture-gated popovers) and `VideoWorkflow.tsx` (tablist + collapsible Settings).
+- **Acceptance:** No audited screen shows >12 controls in its default state; every disclosure is content- or validation-triggered where possible; unit tests updated per screen.
+
+### ISSUE-1441: Dead and duplicated UI inventory (dead buttons, twin components, orphaned layout code)
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** StudioControlsPanel / publishing+distribution twins / MobileAdaptiveLayout / dashboard widgets
+- **Evidence:**
+  1. `core/components/right-panel/StudioControlsPanel.tsx:1154-1163` — "Camera Movement" buttons (Zoom In/Pan Left/Tilt Up) have no `onClick`; `:1186-1192` FPS bar is decorative; `:1203-1228` Shot List is mock. Top card slots (:231-254) are occupied by Typography/Likeness/Brand Compliance governance cards above the core creation flow.
+  2. Twin components drifted forks: `publishing/components/DistributorConnectionsPanel.tsx` (4.0KB) vs `distribution/components/` (4.9KB); `publishing/components/EarningsDashboard.tsx` (7.0KB) vs `finance/components/` (18.1KB); `FounderReadinessPanel` mounted as a full tab in BOTH `DistributionDashboard.tsx:204` and `RegistrationCenter.tsx:248`.
+  3. `components/layout/MobileAdaptiveLayout.tsx` is dead code (0 imports outside its own test).
+  4. Stats-grid card pattern re-implemented inline 5× (finance :315/:380, publishing :356, social :226, publicist :92/:297, licensing DealHealthPanel); two competing empty-state components (`components/shared/EmptyState.tsx` with 4 consumers vs `licensing/components/EmptyActionState.tsx`).
+  5. `dashboard/components/CustomDashboardWidgets.tsx` registers deprecated `RevenueAggregatedWidget`/`RevenueMTDWidget` alongside the toggled revenue card (:1575/:1586 vs :329-392/:1591-1683); dead-end CTAs "Initialize Release" (:449) and "Connect Storefront" (:992) have no onClick.
+- **Impact:** Mock controls erode trust ("the app pretends to work"); forks accumulate divergent bugs; duplicate surfaces confuse ownership.
+- **Fix:** Delete or wire every dead control (prefer delete for mock AI features); collapse twins into the richer original and re-export; delete MobileAdaptiveLayout; extract one `StatCard` + one empty-state (promote licensing's CTA-bearing version); unregister deprecated revenue widgets; wire or remove dead-end CTAs.
+- **Acceptance:** Zero buttons without handlers in audited surfaces (grep-verifiable); each duplicated component exists once; deprecated widget registrations removed.

@@ -7,7 +7,8 @@ import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, StickyNote, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, Camera, LayoutGrid, type LucideIcon } from 'lucide-react';
+// ISSUE-1436: Megaphone was only used by the removed duplicate "Campaign Manager" nav item.
+import { Scale, Music, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, StickyNote, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, Camera, LayoutGrid, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'motion/react';
@@ -201,7 +202,6 @@ export default function Sidebar() {
     const managerItems: SidebarItem[] = [
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
         { id: 'road', icon: Users, label: 'Road/tour' },
-        { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
         { id: 'agent', icon: CalendarDays, label: 'Booking Agent' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
