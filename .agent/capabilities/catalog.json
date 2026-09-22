@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "b3b245f80c6474c7bd398a3234de439e0a8f4ccf811b76f4bbddd976b6141a44",
+  "sourceDigest": "646923e2eada27536c695a20de290ac5becd7c980d4a83eb6bce8777ce5e4ad6",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 36,
     "conditional": 70,
-    "quarantined": 90,
+    "quarantined": 92,
     "deprecated": 1
   },
   "capabilities": [
@@ -667,6 +667,36 @@
       "conflicts": []
     },
     {
+      "id": "script:npm:check:deploy-guards",
+      "name": "npm run check:deploy-guards",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/check-production-deploy-guards.mjs",
+      "descriptionHash": "8728abd493cc0d7d9a9e2937de179cd7d6ce8abdcbd046b9557f3db15e638428",
+      "contentHash": "4b371a843d1ee791f8d2a319638b2e131fbecff0b4d62577b6d1f09a0ac62aeb",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
       "id": "script:npm:check:fn-memory",
       "name": "npm run check:fn-memory",
       "kind": "script",
@@ -847,6 +877,36 @@
       "conflicts": []
     },
     {
+      "id": "script:npm:check:workflow-exits",
+      "name": "npm run check:workflow-exits",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/check-workflow-pipeline-exits.mjs",
+      "descriptionHash": "2412acc95264783a8adb0bb0162b33cf9119e595282632ef87130e46beaba992",
+      "contentHash": "a1a48b409ae9e78ef233d12d11da2e8725033a2c1da93d597442787560b0528c",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
       "id": "script:npm:ci",
       "name": "npm run ci",
       "kind": "script",
@@ -913,9 +973,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run preflight:prod && electron-vite build && firebase deploy --only hosting:app",
-      "descriptionHash": "85de8401a57d144d906fa77b224fcc560799df3d2e5593deaa77746a53310da6",
-      "contentHash": "ef12df67ca6c2148db5a525b1a0dcc1cc080967e0b0a3744625abfcd771e7b51",
+      "description": "npm run repo:assert-canonical && npm run preflight:prod && electron-vite build && firebase deploy --only hosting:app",
+      "descriptionHash": "675cedc8b7c7e25da17ed3b100b8b2526cf5d5395d3f5a0ef838d10f3783bb46",
+      "contentHash": "7442e0ff83fb7f3d290ffdca231d76c18926549ef5f373fe7245404573f830d4",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -943,9 +1003,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run preflight:prod && npm run build && npm run build:firebase && npm run build:landing && firebase deploy",
-      "descriptionHash": "98bfa0b108a5071a4b15438b89c4641ae65ceaa8ae897f24c6177bc88c2f32b2",
-      "contentHash": "c4641a077fa97714f209f4dd2502d4ee2b9998aac48c856abcf291d76529e94f",
+      "description": "npm run repo:assert-canonical && npm run preflight:prod && npm run build && npm run build:firebase && npm run build:landing && firebase deploy",
+      "descriptionHash": "f20b624c6c8045e2c8b09456ea2565fad918c7bd9eb7cdf60c16bc7bc396b535",
+      "contentHash": "5306d6a6052f38a97294bdfac613ee20bcf040eaa7d4cb1a537593a52789d8b5",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -973,9 +1033,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run build -w packages/shared && npm run build -w packages/firebase && firebase deploy --only functions",
-      "descriptionHash": "ee505530e56e470b9740771970ae9199d599e4f0dbf99fdd62049a2b13111c16",
-      "contentHash": "7fc8b9e0ff3c85fc6ee9e17af707a727d8644585b341248bbb4f2219a8f2ccac",
+      "description": "npm run repo:assert-canonical && npm run build -w packages/shared && npm run build -w packages/firebase && firebase deploy --only functions",
+      "descriptionHash": "0e7b4bc083cb4d50cceba9fa875dad029cf2d34af3680845ee778140857e9978",
+      "contentHash": "f2cf849c9dd7503889d5ae579c5233a241ca637c4a0e7ba8417bf3a0a70d3b66",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -1003,9 +1063,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run build -w packages/landing && firebase deploy --only hosting:landing",
-      "descriptionHash": "bcc1b36639827f8c22ad805a2f0684f9744aa5e79094cf9248285bd82564a1c7",
-      "contentHash": "02ce567bab3695aaefdc675068ffc4b0a4710ec13c12fca48e79793e10be7100",
+      "description": "npm run repo:assert-canonical && npm run build -w packages/landing && firebase deploy --only hosting:landing",
+      "descriptionHash": "a0bcce7d942a7fcf99def2f634b91c976afc14fdad5a70c86a71a03444673869",
+      "contentHash": "523ff71b5e0d4b38b9e23dd1973cae9ad8a17a83f731ce2473c5b89af153d758",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -1361,9 +1421,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run check:test-quality && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
-      "descriptionHash": "eb48db8805690252305f8262dfff35f8fad2aec26239bbe4b5fab130842ab5c2",
-      "contentHash": "bd2b96640b82f2c164d84bc0b5c3ea6d9fee509938bf1bd0df16087d59f82a9c",
+      "description": "npm run check:test-quality && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
+      "descriptionHash": "50eb05e9ba59fd5330a35a2461d9c2bf8446ad07d8bda753b26cf44b5f985e76",
+      "contentHash": "565b33d79a95393fabfb6a86ee61488733faf7f1647fab3b095b6c1089009cf8",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [

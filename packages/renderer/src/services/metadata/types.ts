@@ -4,6 +4,7 @@
  */
 
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
+import type { SongIntake } from '@indii/shared';
 
 export interface MasterAudioReference {
     audioProperties?: {
@@ -87,6 +88,8 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     id?: string;
     userId?: string;
     masterAsset?: MasterAudioReference;
+    /** Phase 4 progressive intake state; identifiers remain evidence, never identity. */
+    songIntake?: SongIntake;
     /** Measured properties of the immutable master used in DDEX technical details. */
     audioTechnical?: {
         bitDepth: number;

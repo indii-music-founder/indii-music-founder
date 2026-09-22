@@ -7,6 +7,8 @@ import { Logger } from '@/core/logger/Logger';
 import { auth } from '@/services/firebase';
 import { masterAudioService } from '@/services/audio/MasterAudioService';
 import type { MasterAudioReference } from '@/services/metadata/types';
+import { withPlannedSongIntakeQuestions, type ArtistContext, type DetectedAudioTagSchema } from '@indii/shared';
+import type { z } from 'zod';
 
 export class TrackIngestionService {
 
@@ -18,7 +20,7 @@ export class TrackIngestionService {
      * 4. Maps to Golden Metadata
      * 5. Saves
      */
-    async ingestTrack(file: File, options?: { forceReanalyze?: boolean }): Promise<ExtendedGoldenMetadata> {
+    async ingestTrack(file: File, options?: { forceReanalyze?: boolean; artistContext?: ArtistContext }): Promise<ExtendedGoldenMetadata> {
         Logger.info('TrackIngestion', `Starting ingestion for: ${file.name}`);
 
         // 1. Generate Fingerprint
@@ -37,15 +39,44 @@ export class TrackIngestionService {
             masterFingerprint: fingerprint,
         });
 
+        const observedAt = new Date().toISOString();
+        const embeddedTags = await this.extractEmbeddedTags(file, observedAt);
+
         // 2. Check Library (Idempotency)
         if (!options?.forceReanalyze) {
             const existing = await trackLibrary.getByFingerprint(fingerprint);
             if (existing) {
                 Logger.info('TrackIngestion', `Track already exists: ${fingerprint}`);
-                const hydrated = { ...existing, userId, masterAsset };
-                if (existing.userId !== userId || existing.masterAsset?.storagePath !== masterAsset.storagePath) {
-                    await trackLibrary.saveTrack(hydrated);
-                }
+                const hydrated = {
+                    ...existing,
+                    userId,
+                    masterAsset,
+                    songIntake: withPlannedSongIntakeQuestions({
+                        schemaVersion: 'song-intake.v1',
+                        intakeId: `intake:${fingerprint}`,
+                        ownerUid: userId,
+                        recordingEntityId: existing.songIntake?.recordingEntityId ?? `recording:${fingerprint}`,
+                        contentHash: masterAsset.contentHash,
+                        fingerprint,
+                        originalFileName: file.name,
+                        recordingKind: existing.songIntake?.recordingKind ?? 'UNKNOWN',
+                        technicalAnalysisComplete: true,
+                        embeddedTags: { ...(existing.songIntake?.embeddedTags ?? {}), ...embeddedTags },
+                        catalogMatches: [{
+                            legacyTrackId: existing.id ?? fingerprint,
+                            entityId: existing.songIntake?.recordingEntityId,
+                            matchType: 'EXACT_FINGERPRINT', confidence: 1,
+                            provenance: { state: 'DETECTED', sourceType: 'SYSTEM', sourceId: 'track-library', evidence: [], observedAt },
+                        }],
+                        possibleExistingRelease: existing.releaseDate ? 'YES' : 'UNKNOWN',
+                        artistContext: options?.artistContext,
+                        createdAt: existing.songIntake?.createdAt ?? observedAt,
+                        updatedAt: observedAt,
+                    }),
+                };
+                // Persist the refreshed intake evidence even when ownership and
+                // the protected master reference were already current.
+                await trackLibrary.saveTrack(hydrated);
                 return hydrated;
             }
         } else {
@@ -67,12 +98,56 @@ export class TrackIngestionService {
 
         // 4. Map to Golden Metadata
         const metadata = this.mapProfileToMetadata(file, profile, fingerprint, userId, masterAsset);
+        metadata.songIntake = withPlannedSongIntakeQuestions({
+            schemaVersion: 'song-intake.v1',
+            intakeId: `intake:${fingerprint}`,
+            ownerUid: userId,
+            recordingEntityId: `recording:${fingerprint}`,
+            contentHash: masterAsset.contentHash,
+            fingerprint,
+            originalFileName: file.name,
+            recordingKind: 'UNKNOWN',
+            technicalAnalysisComplete: true,
+            embeddedTags,
+            catalogMatches: [],
+            possibleExistingRelease: 'UNKNOWN',
+            artistContext: options?.artistContext,
+            createdAt: observedAt,
+            updatedAt: observedAt,
+        });
 
         // 5. Save to Library
         Logger.info('TrackIngestion', 'Saving new track metadata...');
         await trackLibrary.saveTrack(metadata);
 
         return metadata;
+    }
+
+    private async extractEmbeddedTags(file: File, observedAt: string): Promise<Record<string, z.infer<typeof DetectedAudioTagSchema>>> {
+        const filePath = (file as File & { path?: string }).path;
+        if (!filePath || !window.electronAPI) return {};
+        try {
+            const result = await window.electronAPI.audio.analyze(filePath);
+            if (result.status !== 'success') return {};
+            const supported: Record<string, string> = {
+                title: 'title', artist: 'artist', album: 'album', date: 'date',
+                isrc: 'isrc', tsrc: 'isrc', iswc: 'iswc', upc: 'upc', barcode: 'upc',
+                originaltitle: 'originaltitle',
+            };
+            const detected: Record<string, z.infer<typeof DetectedAudioTagSchema>> = {};
+            for (const [rawKey, rawValue] of Object.entries(result.metadata.tags ?? {})) {
+                const key = supported[rawKey.toLowerCase()];
+                const value = typeof rawValue === 'string' ? rawValue.trim() : '';
+                if (!key || !value) continue;
+                detected[key] = {
+                    key, value, requiresHumanConfirmation: true,
+                    provenance: { state: 'DETECTED', sourceType: 'SYSTEM', sourceId: `embedded-tag:${rawKey}`, evidence: [], observedAt },
+                };
+            }
+            return detected;
+        } catch {
+            return {};
+        }
     }
 
     private mapProfileToMetadata(

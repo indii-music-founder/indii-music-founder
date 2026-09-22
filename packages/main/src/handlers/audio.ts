@@ -134,7 +134,12 @@ export function registerAudioHandlers() {
                 metadata: {
                     duration: probeData.format.duration ? Number(probeData.format.duration) : 0,
                     format: probeData.format.format_name ?? '',
-                    bitrate: probeData.format.bit_rate ? Number(probeData.format.bit_rate) : 0
+                    bitrate: probeData.format.bit_rate ? Number(probeData.format.bit_rate) : 0,
+                    // Container tags are untrusted detected evidence. Renderer
+                    // intake requires human confirmation before authoritative use.
+                    tags: Object.fromEntries(Object.entries(probeData.format.tags ?? {})
+                        .filter(([, value]) => typeof value === 'string')
+                        .map(([key, value]) => [key.toLowerCase(), String(value)])),
                 },
                 streams: probeData.streams ?? [],
                 features: loudness ? {

@@ -33,6 +33,7 @@ export interface AudioAnalysisResult {
         duration: number;
         format: string;
         bitrate: number;
+        tags?: Record<string, string>;
     };
     streams?: Array<{
         codec_type?: string;

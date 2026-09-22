@@ -126,11 +126,15 @@ describe('TrackIngestionService', () => {
         });
         expect(trackLibrary.getByFingerprint).toHaveBeenCalledWith(mockFingerprint);
         expect(audioIntelligence.analyzeCanonicalMaster).not.toHaveBeenCalled(); // Crucial check
-        expect(result).toEqual({
+        expect(result).toEqual(expect.objectContaining({
             ...existingMetadata,
             userId: 'owner-1',
             masterAsset: mockMasterAsset,
-        });
+        }));
+        expect(result.songIntake?.catalogMatches[0]).toEqual(expect.objectContaining({
+            matchType: 'EXACT_FINGERPRINT',
+            confidence: 1,
+        }));
         expect(trackLibrary.saveTrack).toHaveBeenCalledWith(result);
     });
 
@@ -159,6 +163,11 @@ describe('TrackIngestionService', () => {
         expect(result.genre).toBe('Pop'); // From ddexGenre
         expect(result.language).toBe('eng');
         expect(result.explicit).toBe(false);
+        expect(result.songIntake).toEqual(expect.objectContaining({
+            recordingEntityId: `recording:${mockFingerprint}`,
+            technicalAnalysisComplete: true,
+            possibleExistingRelease: 'UNKNOWN',
+        }));
 
         // Verify Save
         expect(trackLibrary.saveTrack).toHaveBeenCalledWith(result);
