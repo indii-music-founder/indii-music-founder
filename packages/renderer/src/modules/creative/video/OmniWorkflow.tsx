@@ -21,6 +21,8 @@ import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
 import { GenerateOmniRemixSchema } from '@indii/shared';
 import { downloadAsset } from '@/utils/download';
 import { z } from 'zod';
+// ISSUE-1440: shared single-open disclosure primitive for controller secondaries.
+import SectionCard from '@/components/ui/SectionCard';
 
 interface StoryboardFrame {
     id: string;
@@ -283,6 +285,9 @@ export default function OmniWorkflow() {
     const [cameraDirection, setCameraDirection] = useState('slow dolly in');
     const [lightingDirection, setLightingDirection] = useState('cinematic motivated lighting');
     const [physicalLocation, setPhysicalLocation] = useState('');
+    // ISSUE-1440: controller secondaries collapsed behind disclosures — the visible
+    // spine is mode + resolution + prompt + Generate.
+    const [openControllerSection, setOpenControllerSection] = useState<'camera' | 'references' | 'motion' | null>(null);
     const [refVideoFile, setRefVideoFile] = useState<File | null>(null);
     const [referenceVideoUri, setReferenceVideoUri] = useState<string | null>(null);
     const [referenceMedia, setReferenceMedia] = useState<ReferenceMedia[]>([]);
@@ -1156,6 +1161,16 @@ export default function OmniWorkflow() {
                             className="w-full bg-black/60 text-white text-xs p-3 rounded-xl border border-white/10 outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/10 h-24 resize-none placeholder:text-gray-600 transition-all font-mono leading-relaxed"
                             placeholder="Describe the visual action, camera, lighting, and style…"
                         />
+                    </div>
+
+                    {/* ISSUE-1440: directive inputs are secondaries — collapsed by default,
+                        since the prompt itself already covers camera/lighting/style. */}
+                    <SectionCard
+                        title="Camera & lighting directives"
+                        icon={<Sparkle size={11} className="text-green-400" />}
+                        isOpen={openControllerSection === 'camera'}
+                        onToggle={() => setOpenControllerSection(prev => prev === 'camera' ? null : 'camera')}
+                    >
                         <div className="grid grid-cols-1 gap-2">
                             <input
                                 value={cameraDirection}
@@ -1179,8 +1194,15 @@ export default function OmniWorkflow() {
                                 placeholder="Physical location: Detroit rooftop at dusk…"
                             />
                         </div>
-                    </div>
+                    </SectionCard>
 
+                    {/* ISSUE-1440: X-ray + motion sliders collapsed as advanced secondaries. */}
+                    <SectionCard
+                        title="Advanced motion"
+                        icon={<Eye size={11} className="text-green-400" />}
+                        isOpen={openControllerSection === 'motion'}
+                        onToggle={() => setOpenControllerSection(prev => prev === 'motion' ? null : 'motion')}
+                    >
                     {/* Character X-ray */}
                     <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/20 transition-all group">
                         <div className="flex flex-col">
@@ -1205,8 +1227,7 @@ export default function OmniWorkflow() {
                     </div>
 
                     {/* Sliders */}
-                    <div className="space-y-4">
-                        <div className="space-y-2">
+                    <div className="space-y-2">
                             <div className="flex justify-between text-[10px] font-bold text-gray-404 uppercase font-mono tracking-wider">
                                 <span>Pose Preservation</span>
                                 <span className="font-mono text-green-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
@@ -1224,95 +1245,86 @@ export default function OmniWorkflow() {
                                 <span>Beat Motion Pulse</span>
                                 <span className="font-mono text-green-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
                             </div>
-                            <input 
+                            <input
                                 type="range" min="0" max="1" step="0.05"
-                                value={studioControls.beatPulse} 
+                                value={studioControls.beatPulse}
                                 onChange={(e) => setStudioControls({ beatPulse: parseFloat(e.target.value) })}
                                 className="w-full accent-purple-500 bg-black/60 h-1.5 rounded-full outline-none cursor-pointer"
                             />
                         </div>
-                    </div>
+                    </SectionCard>
 
-                    {/* Omni visuals and the user's canonical audio master remain separate layers. */}
-                    <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
-                        <span className="text-[10px] font-bold text-white uppercase tracking-widest font-mono flex items-center gap-1.5">
-                            <Info size={12} className="text-green-400" />
-                            Final soundtrack
-                        </span>
+                    {/* ISSUE-1440: the soundtrack + SynthID info cards compressed to one
+                        muted line — facts worth keeping, chrome worth losing. */}
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-white/[0.02] border border-white/5">
+                        <Info size={12} className="text-green-400 mt-0.5 shrink-0" />
                         <p className="text-[9px] text-gray-500 leading-relaxed">
-                            Add your uploaded audio in the timeline mixer. Generated video audio is muted in the final export; your master audio is the only soundtrack.
+                            SynthID watermark is always applied. Generated audio is muted in the export — add your uploaded audio in the timeline mixer; your master is the only soundtrack.
                         </p>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-bold text-white uppercase tracking-widest font-mono flex items-center gap-1.5">
-                                <Image size={12} className="text-green-400" />
-                                Visual references ({referenceMedia.length}/8)
-                            </span>
-                            <button
-                                onClick={() => imageInputRef.current?.click()}
-                                disabled={referenceMedia.length >= 8}
-                                className="px-2 py-1 bg-green-500/10 hover:bg-green-500/15 disabled:opacity-40 border border-green-500/20 rounded text-[9px] font-bold uppercase font-mono text-green-300"
-                            >
-                                Add images
-                            </button>
-                            <input
-                                type="file"
-                                id="omni-image-file-input"
-                                ref={imageInputRef}
-                                accept="image/*"
-                                multiple
-                                onChange={handleImageUpload}
-                                className="sr-only"
-                                aria-label="Upload Omni reference images"
-                            />
-                        </div>
-                        {referenceMedia.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                                {referenceMedia.map((entry) => (
-                                    <button
-                                        key={entry.uri}
-                                        onClick={() => setReferenceMedia(prev => prev.filter(ref => ref.uri !== entry.uri))}
-                                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono bg-green-500/10 border border-green-500/20 text-green-200 hover:bg-green-500/20 transition-colors"
-                                        title={`Remove ${entry.label}`}
-                                    >
-                                        <span className="max-w-36 truncate">{entry.label}</span>
-                                        <X size={10} />
-                                    </button>
-                                ))}
+                    {/* ISSUE-1440: image + clip references merged into one section. */}
+                    <SectionCard
+                        title={`References (${referenceMedia.length}/8 img · ${referenceVideos.length}/3 clips)`}
+                        icon={<Image size={11} className="text-green-400" />}
+                        isOpen={openControllerSection === 'references' || referenceMedia.length > 0 || referenceVideos.length > 0}
+                        onToggle={() => setOpenControllerSection(prev => prev === 'references' ? null : 'references')}
+                    >
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-bold text-white uppercase tracking-widest font-mono flex items-center gap-1.5">
+                                    Reference images
+                                </span>
+                                <button
+                                    onClick={() => imageInputRef.current?.click()}
+                                    disabled={referenceMedia.length >= 8}
+                                    className="px-2 py-1 bg-green-500/10 hover:bg-green-500/15 disabled:opacity-40 border border-green-500/20 rounded text-[9px] font-bold uppercase font-mono text-green-300"
+                                >
+                                    Add images
+                                </button>
+                                <input
+                                    type="file"
+                                    id="omni-image-file-input"
+                                    ref={imageInputRef}
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleImageUpload}
+                                    className="sr-only"
+                                    aria-label="Upload Omni reference images"
+                                />
                             </div>
-                        ) : (
-                            <p className="text-[9px] text-gray-500 leading-relaxed">Images are required for image mode; reference mode also accepts short video clips.</p>
-                        )}
-                        {omniTask === 'image_to_video' && referenceMedia.length > 1 && (
-                            <p className="text-[9px] text-emerald-400">Image 1 is the start frame; image 2 is the exact end frame. Additional images guide identity and style.</p>
-                        )}
-                    </div>
+                            {referenceMedia.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {referenceMedia.map((entry) => (
+                                        <button
+                                            key={entry.uri}
+                                            onClick={() => setReferenceMedia(prev => prev.filter(ref => ref.uri !== entry.uri))}
+                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono bg-green-500/10 border border-green-500/20 text-green-200 hover:bg-green-500/20 transition-colors"
+                                            title={`Remove ${entry.label}`}
+                                        >
+                                            <span className="max-w-36 truncate">{entry.label}</span>
+                                            <X size={10} />
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-[9px] text-gray-500 leading-relaxed">Images are required for image mode; reference mode also accepts short video clips.</p>
+                            )}
+                            {omniTask === 'image_to_video' && referenceMedia.length > 1 && (
+                                <p className="text-[9px] text-emerald-400">Image 1 is the start frame; image 2 is the exact end frame. Additional images guide identity and style.</p>
+                            )}
 
-                    <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
-                        <label className="text-[10px] font-bold text-white uppercase tracking-widest font-mono">Video reference clips ({referenceVideos.length}/3)</label>
-                        <input type="file" accept="video/*" multiple disabled={referenceVideos.length >= 3}
-                            onChange={handleReferenceClipUpload} aria-label="Upload Omni video reference clips"
-                            className="block w-full text-[10px] text-gray-400 file:mr-2 file:rounded file:border-0 file:bg-green-500/10 file:px-2 file:py-1 file:text-green-300" />
-                        <p className="text-[9px] text-gray-500">Each clip must be 3 seconds or shorter. Its audio is ignored; clips guide visuals only.</p>
-                        {referenceVideos.map(entry => <button key={entry.uri} type="button"
-                            onClick={() => setReferenceVideos(previous => previous.filter(video => video.uri !== entry.uri))}
-                            className="mr-1 rounded-full border border-green-500/20 px-2 py-1 text-[10px] text-green-200"
-                            title={`Remove ${entry.label}`}>{entry.label} ×</button>)}
-                    </div>
-
-                    {/* Gemini applies SynthID automatically. */}
-                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
-                                <Shield size={12} className="text-emerald-400" />
-                                Automatic SynthID
-                            </span>
-                            <span className="text-[9px] text-gray-500 mt-0.5">Google watermarks every generated Omni video.</span>
+                            <label className="text-[10px] font-bold text-white uppercase tracking-widest font-mono block pt-1">Reference video clips ({referenceVideos.length}/3)</label>
+                            <input type="file" accept="video/*" multiple disabled={referenceVideos.length >= 3}
+                                onChange={handleReferenceClipUpload} aria-label="Upload Omni video reference clips"
+                                className="block w-full text-[10px] text-gray-400 file:mr-2 file:rounded file:border-0 file:bg-green-500/10 file:px-2 file:py-1 file:text-green-300" />
+                            <p className="text-[9px] text-gray-500">Each clip must be 3 seconds or shorter. Its audio is ignored; clips guide visuals only.</p>
+                            {referenceVideos.map(entry => <button key={entry.uri} type="button"
+                                onClick={() => setReferenceVideos(previous => previous.filter(video => video.uri !== entry.uri))}
+                                className="mr-1 rounded-full border border-green-500/20 px-2 py-1 text-[10px] text-green-200"
+                                title={`Remove ${entry.label}`}>{entry.label} ×</button>)}
                         </div>
-                        <span className="text-[9px] font-bold font-mono text-emerald-400 uppercase">Always on</span>
-                    </div>
+                    </SectionCard>
 
                     {/* Remix Synthesis Button */}
                     <button 

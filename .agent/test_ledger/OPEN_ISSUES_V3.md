@@ -3126,7 +3126,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1440: Control-dense screens dump 16–30 simultaneous controls with no progressive disclosure
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-09-22 — OmniWorkflow controller + shared SectionCard primitive landed; ReleaseWizard, QCPanel, Finance, Marketing grouping in progress this pass; MerchDesigner / StudioControlsPanel reorder / DirectGenerationTab / MemoryDashboard remain OPEN)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative video / Publishing wizard / Finance / Distribution QC / Merch
 - **Evidence (all verified):**
@@ -3138,6 +3138,10 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Impact:** Highest-frequency creation surfaces (release, video, QC) have the steepest control walls; new users cannot find the spine of any of these screens.
 - **Fix:** Fold secondaries behind disclosures (existing pattern to promote: `StudioControlsPanel.tsx:27-57` `SectionCard` single-open accordion): OmniWorkflow → visible spine of mode/resolution/prompt/Generate; ReleaseWizard territories → multi-select popover with Worldwide default; Finance 16 → 5 grouped tabs (Overview / Spending / Royalties / Compliance & Tools / Merch); QCPanel optional fields collapsed; MerchDesigner align cluster gated on ≥2 objects selected. Healthy in-repo models to copy: `InfiniteCanvas.tsx` (gesture-gated popovers) and `VideoWorkflow.tsx` (tablist + collapsible Settings).
 - **Acceptance:** No audited screen shows >12 controls in its default state; every disclosure is content- or validation-triggered where possible; unit tests updated per screen.
+- **Fix (partial, 2026-09-22 — OmniWorkflow + primitive):** Promoted the single-open accordion from StudioControlsPanel to shared `components/ui/SectionCard.tsx` (with `aria-expanded`; StudioControlsPanel now imports it, behavior identical). Restructured the OmniWorkflow "Omni Controller" right panel: the always-visible spine is generation mode + resolution + prompt + Generate; the 3 directive inputs moved into a collapsed "Camera & lighting directives" section, the X-ray toggle + Pose/Beat sliders into collapsed "Advanced motion", and the two upload cards merged into one "References" section (auto-open while references exist, counts in the title). The soundtrack + SynthID info cards compressed to one muted line. Default visible control count drops from ~16 to ~7.
+- **Evidence:** `packages/renderer/src/components/ui/SectionCard.tsx` (new primitive), `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:290` (single-open state), `:1166-1196` (Camera & lighting section), `:1199-1256` (Advanced motion), `:1267-1315` (References merge), `:1317-1324` (compressed info line), `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:23` (shared import), `packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx` (updated to open the References section before uploading; 8/8 passing).
+- **Files:** `packages/renderer/src/components/ui/SectionCard.tsx` (new), `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx`, `packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx`, `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx`
+- **Verification:** typecheck 0 errors; eslint 0 errors on touched files; OmniWorkflow 8/8, StudioControlsPanel + RightPanel + QA_RuntimeVerification suites 34/34 passing.
 
 ### ISSUE-1441: Dead and duplicated UI inventory (dead buttons, twin components, orphaned layout code)
 

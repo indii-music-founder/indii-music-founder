@@ -257,7 +257,8 @@ describe('OmniWorkflow (legacy structural-only; real generation unverified)', ()
         }));
 
         await waitFor(() => expect(screen.getByText(/SynthID Applied|AI watermark applied/i)).toBeInTheDocument());
-        expect(screen.getByText(/Automatic SynthID|AI provenance watermark/i)).toBeInTheDocument();
+        // ISSUE-1440: the controller's info cards were compressed to one muted line.
+        expect(screen.getByText(/SynthID watermark is always applied/i)).toBeInTheDocument();
     });
 
     it('sends a timecoded storyboard through the validated Omni payload', async () => {
@@ -323,7 +324,9 @@ describe('OmniWorkflow (legacy structural-only; real generation unverified)', ()
 
     it('uploads short video references as guidance rather than an edit source', async () => {
         render(<OmniWorkflow />);
-        fireEvent.change(screen.getByLabelText('Upload Omni video reference clips'), {
+        // ISSUE-1440: references live inside a collapsed section — open it first.
+        fireEvent.click(screen.getByRole('button', { name: /References \(0\/8/ }));
+        fireEvent.change(await screen.findByLabelText('Upload Omni video reference clips'), {
             target: { files: [new File(['video'], 'dancer.mp4', { type: 'video/mp4' })] },
         });
         await waitFor(() => expect(screen.getByText('dancer.mp4 ×')).toBeInTheDocument());
@@ -384,7 +387,9 @@ describe('OmniWorkflow (legacy structural-only; real generation unverified)', ()
         fireEvent.change(screen.getByLabelText('Omni generation mode'), {
             target: { value: 'image_to_video' },
         });
-        fireEvent.change(screen.getByLabelText('Upload Omni reference images'), {
+        // ISSUE-1440: references live inside a collapsed section — open it first.
+        fireEvent.click(screen.getByRole('button', { name: /References \(0\/8/ }));
+        fireEvent.change(await screen.findByLabelText('Upload Omni reference images'), {
             target: {
                 files: [new File(['image-bytes'], 'first-frame.png', { type: 'image/png' })],
             },

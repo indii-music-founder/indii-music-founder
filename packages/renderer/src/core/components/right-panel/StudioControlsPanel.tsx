@@ -16,6 +16,9 @@ import { CostControlService } from '@/services/billing/CostControlService';
 import TypographyPanel from '@/services/typography/TypographyPanel';
 import LikenessFusionPanel from '@/modules/creative/components/LikenessFusionPanel';
 import BrandCompliancePanel from '@/modules/creative/components/BrandCompliancePanel';
+// ISSUE-1440: SectionCard promoted to components/ui so the disclosure pattern is
+// shared (OmniWorkflow controller, QCPanel, ReleaseWizard) instead of panel-local.
+import SectionCard from '@/components/ui/SectionCard';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -23,38 +26,6 @@ type VideoResolution = z.infer<typeof VideoResolutionSchema>;
 interface StudioControlsPanelProps {
     toggleRightPanel: () => void;
 }
-
-const SectionCard = ({ title, icon, children, isOpen, onToggle }: { title: React.ReactNode, icon: React.ReactNode, children: React.ReactNode, isOpen: boolean, onToggle: () => void }) => {
-    return (
-        <div className="mb-4">
-            <button 
-                onClick={onToggle}
-                className="w-full py-2 px-1 flex items-center justify-between group"
-            >
-                <div className="flex items-center gap-2 text-[11px] font-bold text-gray-300 tracking-wider uppercase transition-colors group-hover:text-white">
-                    {icon}
-                    {title}
-                </div>
-                <ChevronDown size={14} className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence initial={false}>
-                {isOpen && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                        className="overflow-hidden"
-                    >
-                        <div className="pt-2 pb-1 space-y-3">
-                            {children}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-};
 
 export default function StudioControlsPanel({ toggleRightPanel }: StudioControlsPanelProps) {
     const [activeTab, setActiveTab] = useState('create');
