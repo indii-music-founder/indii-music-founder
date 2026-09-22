@@ -24,8 +24,16 @@ describe('QCPanel', () => {
         vi.clearAllMocks();
     });
 
+    // ISSUE-1440: the metadata pane is conditionally mounted (default sub-tab is
+    // acoustic) and its secondaries are collapsed — tests must navigate + open.
+    function openMetadataPane() {
+        fireEvent.click(screen.getByTestId('qc-subtab-metadata'));
+    }
+
     it('should render input fields', () => {
         render(<QCPanel />);
+        openMetadataPane();
+        fireEvent.click(screen.getByRole('button', { name: /Optional & Content ID fields/i }));
         expect(screen.getByPlaceholderText(/Enter title/i)).toBeDefined();
         expect(screen.getByPlaceholderText(/Avoid generic names/i)).toBeDefined();
         expect(screen.getByPlaceholderText(/https/i)).toBeDefined();
@@ -41,6 +49,7 @@ describe('QCPanel', () => {
         (distributionService.validateReleaseMetadata as import("vitest").Mock).mockResolvedValue(mockReport);
 
         render(<QCPanel />);
+        openMetadataPane();
 
         // Fill inputs
         fireEvent.change(screen.getByPlaceholderText(/Enter title/i), { target: { value: 'Test Title' } });
@@ -71,6 +80,7 @@ describe('QCPanel', () => {
         (distributionService.validateReleaseMetadata as import("vitest").Mock).mockResolvedValue(mockReport);
 
         render(<QCPanel />);
+        openMetadataPane();
 
         fireEvent.change(screen.getByPlaceholderText(/Enter title/i), { target: { value: 'Bad' } });
         fireEvent.change(screen.getByPlaceholderText(/Avoid generic names/i), { target: { value: 'Test Artist' } });
@@ -86,6 +96,9 @@ describe('QCPanel', () => {
         (distributionService.generateContentIdAssets as import("vitest").Mock).mockResolvedValue('ISRC,Title\nUS123,Test');
 
         render(<QCPanel />);
+        openMetadataPane();
+        fireEvent.click(screen.getByRole('button', { name: /Optional & Content ID fields/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Content ID Rights Attestation/i }));
 
         fireEvent.change(screen.getByPlaceholderText(/Enter title/i), { target: { value: 'Test Title' } });
         fireEvent.change(screen.getByPlaceholderText(/Avoid generic names/i), { target: { value: 'Test Artist' } });
@@ -115,6 +128,8 @@ describe('QCPanel', () => {
 
     it('blocks Content ID generation without a rights attestation (ISSUE-786)', async () => {
         render(<QCPanel />);
+        openMetadataPane();
+        fireEvent.click(screen.getByRole('button', { name: /Optional & Content ID fields/i }));
 
         fireEvent.change(screen.getByPlaceholderText(/Enter title/i), { target: { value: 'Test Title' } });
         fireEvent.change(screen.getByPlaceholderText(/Avoid generic names/i), { target: { value: 'Test Artist' } });
@@ -125,6 +140,11 @@ describe('QCPanel', () => {
 
         await waitFor(() => {
             expect(distributionService.generateContentIdAssets).not.toHaveBeenCalled();
+        });
+        // ISSUE-1440: the failing attestation section auto-opens so the user is
+        // looking at the fields that blocked generation.
+        await waitFor(() => {
+            expect(screen.getByTestId('qc-input-exclusive-rights')).toBeInTheDocument();
         });
     });
 

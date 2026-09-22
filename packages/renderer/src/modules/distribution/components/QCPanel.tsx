@@ -12,6 +12,8 @@ import { distributionService } from '@/services/distribution/DistributionService
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
 import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
 import { TagMatrix } from '@/modules/tools/components/TagMatrix';
+// ISSUE-1440: shared disclosure primitive for metadata-tab secondaries.
+import SectionCard from '@/components/ui/SectionCard';
 import type { AudioIntelligenceProfile } from '@/services/audio/types';
 import type { ValidationReport } from '@/types/distribution';
 import { logger } from '@/utils/logger';
@@ -289,6 +291,11 @@ export const QCPanel: React.FC = () => {
     const [loading, setLoading] = useState<'qc' | 'cid' | null>(null);
     const [qcResult, setQcResult] = useState<ValidationReport | null>(null);
     const [csvOutput, setCsvOutput] = useState<string | null>(null);
+    // ISSUE-1440: only Title/Artist are required for Run QC — everything else is a
+    // secondary disclosure. The rights attestation auto-opens when CID generation
+    // fails validation so the failing fields are exactly where the user is looking.
+    const [optionalFieldsOpen, setOptionalFieldsOpen] = useState(false);
+    const [rightsOpen, setRightsOpen] = useState(false);
 
     const handleValidate = async () => {
         setLoading('qc');
@@ -366,6 +373,8 @@ export const QCPanel: React.FC = () => {
             setCsvOutput(csvData);
             toast.success('YouTube Content ID CSV generated');
         } catch (error: unknown) {
+            // ISSUE-1440: reveal the attestation section when its fields are why CID failed.
+            setRightsOpen(true);
             toast.error(error instanceof Error ? error.message : 'CID generation failed');
         } finally {
             setLoading(null);
@@ -415,8 +424,11 @@ export const QCPanel: React.FC = () => {
                 </div>
             </div>
 
-            {/* ── Sub-tab 1: Acoustic DSP & Platform Targets ────────── */}
-            <div className={activeSubTab === 'acoustic' ? 'space-y-6' : 'hidden'}>
+            {/* ── Sub-tab 1: Acoustic DSP & Platform Targets ──────────
+                ISSUE-1440: conditionally mounted (was CSS-hidden) so the heavy
+                acoustic analysis DOM is not kept alive while metadata is active. */}
+            {activeSubTab === 'acoustic' && (
+            <div className="space-y-6">
                 {/* Upload & Ingestion Gate with Drag-and-Drop */}
                 <div
                     onDragOver={handleDragOver}
@@ -702,9 +714,12 @@ export const QCPanel: React.FC = () => {
                     </div>
                 )}
             </div>
+            )}
 
-            {/* ── Sub-tab 2: Release Metadata & Content ID Compliance ── */}
-            <div className={activeSubTab === 'metadata' ? 'space-y-6' : 'hidden'}>
+            {/* ── Sub-tab 2: Release Metadata & Content ID Compliance ──
+                ISSUE-1440: conditionally mounted (was CSS-hidden). */}
+            {activeSubTab === 'metadata' && (
+            <div className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Input Panel */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6 backdrop-blur-sm">
@@ -714,18 +729,6 @@ export const QCPanel: React.FC = () => {
                         </div>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ISRC (Optional)</label>
-                                <input
-                                    data-testid="qc-input-isrc"
-                                    type="text"
-                                    value={metadata.isrc}
-                                    onChange={(e) => setMetadata(prev => ({ ...prev, isrc: e.target.value }))}
-                                    placeholder="US-XXX-25-XXXXX (Leave empty to auto-generate)"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600 font-mono text-sm"
-                                />
-                            </div>
-
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Track/Release Title</label>
                                 <input
@@ -750,69 +753,94 @@ export const QCPanel: React.FC = () => {
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Artwork URL</label>
-                                <input
-                                    data-testid="qc-input-artwork"
-                                    type="text"
-                                    value={metadata.artwork_url}
-                                    onChange={(e) => setMetadata(prev => ({ ...prev, artwork_url: e.target.value }))}
-                                    placeholder="https://..."
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600 text-sm"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">UPC (required for Content ID)</label>
-                                <input
-                                    data-testid="qc-input-upc"
-                                    type="text"
-                                    value={metadata.upc}
-                                    onChange={(e) => setMetadata(prev => ({ ...prev, upc: e.target.value }))}
-                                    placeholder="123456789012"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600 font-mono text-sm"
-                                />
-                            </div>
-
-                            <div className="border border-dept-marketing/20 bg-dept-marketing/5 rounded-lg p-4 space-y-3">
-                                <span className="text-xs font-bold text-dept-marketing uppercase tracking-widest">Content ID Rights Attestation</span>
-                                <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                            {/* ISSUE-1440: ISRC/Artwork/UPC are optional for Run QC (only
+                                Title + Artist are validated) — collapsed by default. */}
+                            <SectionCard
+                                title="Optional & Content ID fields"
+                                isOpen={optionalFieldsOpen}
+                                onToggle={() => setOptionalFieldsOpen(open => !open)}
+                            >
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ISRC (Optional)</label>
                                     <input
-                                        data-testid="qc-input-exclusive-rights"
-                                        type="checkbox"
-                                        checked={rights.exclusiveRights}
-                                        onChange={(e) => setRights(prev => ({ ...prev, exclusiveRights: e.target.checked }))}
+                                        data-testid="qc-input-isrc"
+                                        type="text"
+                                        value={metadata.isrc}
+                                        onChange={(e) => setMetadata(prev => ({ ...prev, isrc: e.target.value }))}
+                                        placeholder="US-XXX-25-XXXXX (Leave empty to auto-generate)"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600 font-mono text-sm"
                                     />
-                                    I confirm exclusive rights to this recording — no sample/loop or third-party admin conflicts.
-                                </label>
-                                <input
-                                    data-testid="qc-input-rights-label"
-                                    type="text"
-                                    value={rights.label}
-                                    onChange={(e) => setRights(prev => ({ ...prev, label: e.target.value }))}
-                                    placeholder="Real rights-holder label (no default)"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-dept-marketing/50 transition-colors placeholder:text-zinc-600"
-                                />
-                                <select
-                                    data-testid="qc-input-match-policy"
-                                    value={rights.matchPolicy}
-                                    onChange={(e) => setRights(prev => ({ ...prev, matchPolicy: e.target.value as typeof prev.matchPolicy }))}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-dept-marketing/50 transition-colors"
-                                >
-                                    <option value="">-- Select Match Policy --</option>
-                                    <option value="monetize">Monetize</option>
-                                    <option value="track">Track</option>
-                                    <option value="block">Block</option>
-                                </select>
-                                <input
-                                    data-testid="qc-input-territories"
-                                    type="text"
-                                    value={rights.territories}
-                                    onChange={(e) => setRights(prev => ({ ...prev, territories: e.target.value }))}
-                                    placeholder="Territories, comma-separated (e.g. US, CA) — no default Worldwide"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-dept-marketing/50 transition-colors placeholder:text-zinc-600"
-                                />
-                            </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Artwork URL</label>
+                                    <input
+                                        data-testid="qc-input-artwork"
+                                        type="text"
+                                        value={metadata.artwork_url}
+                                        onChange={(e) => setMetadata(prev => ({ ...prev, artwork_url: e.target.value }))}
+                                        placeholder="https://..."
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600 text-sm"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">UPC (required for Content ID)</label>
+                                    <input
+                                        data-testid="qc-input-upc"
+                                        type="text"
+                                        value={metadata.upc}
+                                        onChange={(e) => setMetadata(prev => ({ ...prev, upc: e.target.value }))}
+                                        placeholder="123456789012"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600 font-mono text-sm"
+                                    />
+                                </div>
+                            </SectionCard>
+
+                            <SectionCard
+                                title="Content ID Rights Attestation"
+                                isOpen={rightsOpen}
+                                onToggle={() => setRightsOpen(open => !open)}
+                            >
+                                <div className="border border-dept-marketing/20 bg-dept-marketing/5 rounded-lg p-4 space-y-3">
+                                    <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                                        <input
+                                            data-testid="qc-input-exclusive-rights"
+                                            type="checkbox"
+                                            checked={rights.exclusiveRights}
+                                            onChange={(e) => setRights(prev => ({ ...prev, exclusiveRights: e.target.checked }))}
+                                        />
+                                        I confirm exclusive rights to this recording — no sample/loop or third-party admin conflicts.
+                                    </label>
+                                    <input
+                                        data-testid="qc-input-rights-label"
+                                        type="text"
+                                        value={rights.label}
+                                        onChange={(e) => setRights(prev => ({ ...prev, label: e.target.value }))}
+                                        placeholder="Real rights-holder label (no default)"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-dept-marketing/50 transition-colors placeholder:text-zinc-600"
+                                    />
+                                    <select
+                                        data-testid="qc-input-match-policy"
+                                        value={rights.matchPolicy}
+                                        onChange={(e) => setRights(prev => ({ ...prev, matchPolicy: e.target.value as typeof prev.matchPolicy }))}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-dept-marketing/50 transition-colors"
+                                    >
+                                        <option value="">-- Select Match Policy --</option>
+                                        <option value="monetize">Monetize</option>
+                                        <option value="track">Track</option>
+                                        <option value="block">Block</option>
+                                    </select>
+                                    <input
+                                        data-testid="qc-input-territories"
+                                        type="text"
+                                        value={rights.territories}
+                                        onChange={(e) => setRights(prev => ({ ...prev, territories: e.target.value }))}
+                                        placeholder="Territories, comma-separated (e.g. US, CA) — no default Worldwide"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-dept-marketing/50 transition-colors placeholder:text-zinc-600"
+                                    />
+                                </div>
+                            </SectionCard>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <button
@@ -915,6 +943,7 @@ export const QCPanel: React.FC = () => {
                     </div>
                 </div>
             </div>
+            )}
         </div>
     );
 };
