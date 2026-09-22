@@ -20,14 +20,34 @@ vi.mock('@/hooks/useGodMode', () => ({
     useGodMode: () => mockUseGodMode(),
 }));
 
+const mockCanAccessModule = vi.fn(() => true);
+vi.mock('@/core/context/OrganizationAccessContext', () => ({
+    useOrganizationAccess: () => ({ canAccessModule: mockCanAccessModule }),
+}));
+
+// Nothing gated by default (dev-mode parity); the gating test overrides this.
+const mockGatedModules = vi.fn<() => Set<string>>(() => new Set());
+vi.mock('@/config/featureFlags', () => ({
+    useGatedModules: () => mockGatedModules(),
+}));
+
+function mockFlatStore(overrides: Record<string, unknown> = {}) {
+    (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+        isCommandMenuOpen: true,
+        setCommandMenuOpen: vi.fn(),
+        setModule: vi.fn(),
+        currentModule: 'dashboard',
+        ...overrides,
+    });
+}
+
 describe('UnifiedCommandMenu', () => {
     beforeEach(() => {
+        vi.clearAllMocks();
         mockUseGodMode.mockReturnValue({ isGodMode: false, loading: false });
-        (useStore as any).mockReturnValue({
-            isCommandMenuOpen: true,
-            setCommandMenuOpen: vi.fn(),
-            setModule: vi.fn(),
-        });
+        mockCanAccessModule.mockReturnValue(true);
+        mockGatedModules.mockReturnValue(new Set());
+        mockFlatStore();
     });
 
     // ISSUE-1269: the sidebar pill routing to `observability` under the name
@@ -51,7 +71,7 @@ describe('UnifiedCommandMenu', () => {
         mockUseGodMode.mockReturnValue({ isGodMode: true, loading: false });
         const setModule = vi.fn();
         const setCommandMenuOpen = vi.fn();
-        (useStore as any).mockReturnValue({
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             isCommandMenuOpen: true,
             setCommandMenuOpen,
             setModule,
@@ -63,5 +83,61 @@ describe('UnifiedCommandMenu', () => {
         );
 
         expect(setModule).toHaveBeenCalledWith('observability');
+    });
+
+    // ISSUE-1438: the palette must index the whole app, not a hardcoded ~22-item list.
+    it('lists modules that previously had no command-menu entry', () => {
+        render(<UnifiedCommandMenu />);
+
+        expect(screen.getByText('Publishing Department')).toBeInTheDocument();
+        expect(screen.getByText('Road/tour')).toBeInTheDocument();
+        expect(screen.getByText('Files')).toBeInTheDocument();
+        expect(screen.getByText('Security Agent')).toBeInTheDocument();
+        expect(screen.getByText('Screenwriter')).toBeInTheDocument();
+    });
+
+    it('never lists phantom or merged module ids as destinations (ISSUE-1436/1437/1438)', () => {
+        render(<UnifiedCommandMenu />);
+
+        // campaign renders the same screen as marketing (ISSUE-1436).
+        expect(screen.queryByText('Campaign Manager')).not.toBeInTheDocument();
+        // audio-analyzer / format-foundry silently rewrite to other modules (ISSUE-1437).
+        expect(screen.queryByText('Audio Analyzer')).not.toBeInTheDocument();
+        expect(screen.queryByText('Capability Foundry')).not.toBeInTheDocument();
+    });
+
+    it('hides gated modules from the generated lists', () => {
+        mockGatedModules.mockReturnValue(new Set(['merch']));
+        render(<UnifiedCommandMenu />);
+
+        expect(screen.queryByText('Art & Merch Dept')).not.toBeInTheDocument();
+        expect(screen.getByText('Publishing Department')).toBeInTheDocument();
+    });
+
+    it('shows a Recent section from navigation history', () => {
+        const state = {
+            isCommandMenuOpen: true,
+            setCommandMenuOpen: vi.fn(),
+            setModule: vi.fn(),
+            currentModule: 'dashboard',
+            _navigationHistory: ['dashboard', 'finance', 'social', 'finance'],
+        };
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector?: (s: typeof state) => unknown) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
+        });
+        (useStore as unknown as { getState: ReturnType<typeof vi.fn> }).getState = vi.fn(() => state);
+
+        render(<UnifiedCommandMenu />);
+
+        const recentGroup = screen.getByText('Recent').closest('[cmdk-group]');
+        expect(recentGroup).not.toBeNull();
+        // Most-recent unique first; duplicates and the current module collapse.
+        // (These labels also appear in their generated groups, so scope to Recent.)
+        const recentText = recentGroup!.textContent ?? '';
+        expect(recentText.indexOf('Social Media Department')).toBeGreaterThan(-1);
+        expect(recentText.indexOf('Finance Department')).toBeGreaterThan(-1);
+        // Most-recent unique first: history ends [..., 'social', 'finance'].
+        expect(recentText.indexOf('Finance Department')).toBeLessThan(recentText.indexOf('Social Media Department'));
     });
 });

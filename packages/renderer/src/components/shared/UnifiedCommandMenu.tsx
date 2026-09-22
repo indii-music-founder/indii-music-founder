@@ -1,31 +1,75 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Command } from 'cmdk';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    AudioWaveform, FolderOpen, Video, Map, Briefcase,
-    Settings, PenTool, LayoutDashboard, Radio, CreditCard,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Building, ShieldAlert, Cpu, Workflow, Gem, AlertCircle, Lightbulb, HelpCircle, Activity, LayoutGrid, PanelRight,
-    StickyNote, Book
+    AudioWaveform, Settings, StickyNote, PanelRight, Activity, AlertCircle, Lightbulb, HelpCircle,
 } from 'lucide-react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { useBugReport } from '@/modules/debug';
 import { useGodMode } from '@/hooks/useGodMode';
+import { getCommandMenuModules, HIDDEN_MODULE_REASONS, type ModuleRegistryEntry } from '@/core/moduleRegistry';
+import { type ModuleId } from '@/core/constants';
+import { useGatedModules } from '@/config/featureFlags';
+import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
 
+/**
+ * UnifiedCommandMenu — the global ⌘K palette.
+ *
+ * ISSUE-1438: the module destination groups ("Navigation", "Business Strategy",
+ * and the module items inside "Tools & Discovery") used to be a hardcoded ~22-item
+ * list while the app ships ~45 registered modules — most reachable nowhere else.
+ * Destination groups are now generated from `core/moduleRegistry.ts` (filtered by
+ * feature-flag gating and organization access), so every module the current user
+ * can access is listed. A Recent section resumes the user's last modules.
+ * Handwritten entries remain only for true *actions* (tab deep-links, drawers,
+ * toggles, feedback, settings) that are not module destinations.
+ */
 export function UnifiedCommandMenu() {
-    const { isCommandMenuOpen, setCommandMenuOpen, setModule } = useStore(
+    const { isCommandMenuOpen, setCommandMenuOpen, setModule, currentModule } = useStore(
         useShallow(state => ({
             isCommandMenuOpen: state.isCommandMenuOpen,
             setCommandMenuOpen: state.setCommandMenuOpen,
-            setModule: state.setModule
+            setModule: state.setModule,
+            currentModule: state.currentModule,
         }))
     );
+    // ISSUE-1438: recents come from the navigation history the app already tracks
+    // (appSlice `_navigationHistory`). Read defensively: some tests install a flat
+    // store mock, so never assume this selector returns an array.
+    const navigationHistory = useStore(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (state: any) => state._navigationHistory
+    );
+
+    const gatedModules = useGatedModules();
+    const { canAccessModule } = useOrganizationAccess();
 
     const { reportBug, requestFeature } = useBugReport();
     const { isGodMode } = useGodMode();
+
+    // Most recent unique, still-visible modules (oldest→newest history → newest first).
+    const recentModules: ModuleRegistryEntry[] = [];
+    if (Array.isArray(navigationHistory)) {
+        const seen = new Set<string>();
+        const all = getCommandMenuModules().flatMap(section => section.items);
+        for (let i = navigationHistory.length - 1; i >= 0 && recentModules.length < 3; i--) {
+            const id = navigationHistory[i] as ModuleId;
+            if (id === currentModule || seen.has(id) || HIDDEN_MODULE_REASONS[id]) continue;
+            const entry = all.find(item => item.id === id);
+            if (entry && !gatedModules.has(id) && canAccessModule(id)) {
+                seen.add(id);
+                recentModules.push(entry);
+            }
+        }
+    }
+
+    const generatedSections = getCommandMenuModules()
+        .map(section => ({
+            ...section,
+            items: section.items.filter(item => !gatedModules.has(item.id) && canAccessModule(item.id)),
+        }))
+        .filter(section => section.items.length > 0);
 
     // Toggle the menu when ⌘K is pressed
     useGlobalShortcut({
@@ -75,6 +119,8 @@ export function UnifiedCommandMenu() {
         command();
     };
 
+    const itemClass = "flex items-center gap-3 cursor-pointer";
+
     return (
         <Command.Dialog
             open={isCommandMenuOpen}
@@ -104,104 +150,76 @@ export function UnifiedCommandMenu() {
                         No results found.
                     </Command.Empty>
 
-                    <Command.Group heading="Navigation" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
-                        <Command.Item onSelect={() => runCommand(() => setModule('dashboard'))} className="flex items-center gap-3 cursor-pointer">
-                            <LayoutDashboard className="w-4 h-4 text-green-400" />
-                            <span>Dashboard</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('creative'))} className="flex items-center gap-3 cursor-pointer">
-                            <PenTool className="w-4 h-4 text-pink-400" />
-                            <span>Creative Studio</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('project-canvas'))} className="flex items-center gap-3 cursor-pointer">
-                            <LayoutGrid className="w-4 h-4 text-purple-400" />
-                            <span>Project Canvas (Infinite Workspace)</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('files'))} className="flex items-center gap-3 cursor-pointer">
-                            <FolderOpen className="w-4 h-4 text-emerald-400" />
-                            <span>Inbox & Project Files</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('agent'))} className="flex items-center gap-3 cursor-pointer">
-                            <Cpu className="w-4 h-4 text-indigo-400" />
-                            <span>Agents Control Center</span>
-                        </Command.Item>
-                    </Command.Group>
+                    {recentModules.length > 0 && (
+                        <Command.Group heading="Recent" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
+                            {recentModules.map(item => (
+                                <Command.Item
+                                    key={`recent-${item.id}`}
+                                    onSelect={() => runCommand(() => setModule(item.id))}
+                                    className={itemClass}
+                                >
+                                    <item.icon className="w-4 h-4 text-slate-400" />
+                                    <span>{item.label}</span>
+                                </Command.Item>
+                            ))}
+                        </Command.Group>
+                    )}
 
-                    <Command.Group heading="Business Strategy" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
-                        <Command.Item onSelect={() => runCommand(() => setModule('founders-checkout'))} className="flex items-center gap-3 cursor-pointer">
-                            <Gem className="w-4 h-4 text-amber-400" />
-                            <span>Back the Vision (Founders Program)</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('finance'))} className="flex items-center gap-3 cursor-pointer">
-                            <CreditCard className="w-4 h-4 text-emerald-500" />
-                            <span>Finance & Royalties</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('distribution'))} className="flex items-center gap-3 cursor-pointer">
-                            <Radio className="w-4 h-4 text-blue-500" />
-                            <span>Audio Distribution Hub</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('brand'))} className="flex items-center gap-3 cursor-pointer">
-                            <Briefcase className="w-4 h-4 text-rose-400" />
-                            <span>Brand Identity</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('licensing'))} className="flex items-center gap-3 cursor-pointer">
-                            <Briefcase className="w-4 h-4 text-amber-500" />
-                            <span>Licensing</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('legal'))} className="flex items-center gap-3 cursor-pointer">
-                            <ShieldAlert className="w-4 h-4 text-red-500" />
-                            <span>Legal Center</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('marketing'))} className="flex items-center gap-3 cursor-pointer">
-                            <Map className="w-4 h-4 text-orange-500" />
-                            <span>Marketing Strategy</span>
-                        </Command.Item>
-                    </Command.Group>
+                    {/*
+                        ISSUE-1438: destination groups are generated from the module
+                        registry so nothing reachable is missing from the palette.
+                    */}
+                    {generatedSections.map(section => (
+                        <Command.Group
+                            key={section.group}
+                            heading={section.group}
+                            className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white"
+                        >
+                            {section.items.map(item => (
+                                <Command.Item
+                                    key={item.id}
+                                    onSelect={() => runCommand(() => setModule(item.id))}
+                                    className={itemClass}
+                                >
+                                    <item.icon className="w-4 h-4 text-slate-400" />
+                                    <span>{item.label}</span>
+                                </Command.Item>
+                            ))}
+                        </Command.Group>
+                    ))}
 
-                    <Command.Group heading="Tools & Discovery" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
-                        <Command.Item onSelect={() => runCommand(() => setModule('distribution', { tab: 'qc' }))} className="flex items-center gap-3 cursor-pointer">
+                    <Command.Group heading="Actions" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
+                        <Command.Item onSelect={() => runCommand(() => setModule('distribution', { tab: 'qc' }))} className={itemClass}>
                             <AudioWaveform className="w-4 h-4 text-cyan-400" />
-                            <span>Audio Pre-Flight QC (Acoustics & Loudness)</span>
+                            <span>Audio Pre-Flight QC (Acoustics &amp; Loudness)</span>
                         </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => useStore.getState().setQuickNotesOpen(true))} className="flex items-center gap-3 cursor-pointer">
+                        <Command.Item onSelect={() => runCommand(() => useStore.getState().setQuickNotesOpen(true))} className={itemClass}>
                             <StickyNote className="w-4 h-4 text-amber-400" />
                             <span>Quick Notes Drawer (⌘J)</span>
                         </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('knowledge'))} className="flex items-center gap-3 cursor-pointer">
-                            <Book className="w-4 h-4 text-emerald-400" />
-                            <span>Knowledge Base (Intelligence)</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('history'))} className="flex items-center gap-3 cursor-pointer">
-                            <FolderOpen className="w-4 h-4 text-green-300" />
-                            <span>History & Vault</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('workflow'))} className="flex items-center gap-3 cursor-pointer">
-                            <Workflow className="w-4 h-4 text-slate-400" />
-                            <span>Workflow Blueprints</span>
-                        </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => useStore.getState().toggleCanvas())} className="flex items-center gap-3 cursor-pointer">
+                        <Command.Item onSelect={() => runCommand(() => useStore.getState().toggleCanvas())} className={itemClass}>
                             <PanelRight className="w-4 h-4 text-blue-400" />
-                            <span>Toggle Agent Canvas (Pushed Specs & Documents)</span>
+                            <span>Toggle Agent Canvas (Pushed Specs &amp; Documents)</span>
                         </Command.Item>
                     </Command.Group>
 
                     <Command.Group heading="Feedback & Help" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
-                        <Command.Item onSelect={() => runCommand(() => reportBug())} className="flex items-center gap-3 cursor-pointer">
+                        <Command.Item onSelect={() => runCommand(() => reportBug())} className={itemClass}>
                             <AlertCircle className="w-4 h-4 text-red-400" />
                             <span>Report a Bug</span>
                         </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => requestFeature())} className="flex items-center gap-3 cursor-pointer">
+                        <Command.Item onSelect={() => runCommand(() => requestFeature())} className={itemClass}>
                             <Lightbulb className="w-4 h-4 text-yellow-400" />
                             <span>Request a Feature</span>
                         </Command.Item>
-                        <Command.Item onSelect={() => runCommand(() => setModule('settings'))} className="flex items-center gap-3 cursor-pointer">
+                        <Command.Item onSelect={() => runCommand(() => setModule('settings'))} className={itemClass}>
                             <HelpCircle className="w-4 h-4 text-blue-400" />
                             <span>Help & Keyboard Shortcuts</span>
                         </Command.Item>
                     </Command.Group>
 
                     <Command.Group heading="System" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
-                        <Command.Item onSelect={() => runCommand(() => useStore.getState().setSettingsOpen(true))} className="flex items-center gap-3 cursor-pointer">
+                        <Command.Item onSelect={() => runCommand(() => useStore.getState().setSettingsOpen(true))} className={itemClass}>
                             <Settings className="w-4 h-4 text-cyan-400" />
                             <span>Settings & Preferences (⌘,)</span>
                         </Command.Item>
@@ -210,7 +228,7 @@ export function UnifiedCommandMenu() {
                             // ops dashboard under a name shared with the artist-facing Command Center tab.
                             // Same destination, god-mode gated, distinct name — restores the entry point
                             // without restoring the naming collision or the loud sidebar pill.
-                            <Command.Item onSelect={() => runCommand(() => setModule('observability'))} className="flex items-center gap-3 cursor-pointer">
+                            <Command.Item onSelect={() => runCommand(() => setModule('observability'))} className={itemClass}>
                                 <Activity className="w-4 h-4 text-slate-400" />
                                 <span>Ops Dashboard (Internal)</span>
                             </Command.Item>

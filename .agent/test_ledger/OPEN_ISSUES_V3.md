@@ -3097,13 +3097,17 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1438: UnifiedCommandMenu is a hardcoded ~22-item list, not an index of the app
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-09-22)
 - **Severity:** 🟡 MEDIUM
 - **Module:** `components/shared/UnifiedCommandMenu.tsx`
 - **Evidence:** `UnifiedCommandMenu.tsx:107-218` hardcodes ~22 static `Command.Item`s. Of ~50 registered `MODULE_IDS`, most (social, publishing, merch, road, publicist, notes, memory, marketplace, crm, screenwriter, analytics, security, registration, raw-converter, format-foundry…) have no command-menu entry. No recent items, no in-module actions (e.g. "Upload release", "New expense"), no content search. Placeholder promises "Search commands, navigate modules…".
 - **Impact:** The app's universal wayfinding surface covers <half the app and duplicates a slice of the sidebar; power users and keyboard users can't reach the rest.
 - **Fix:** Generate Navigation items from a single source of truth (module registry with display names/groups — `MODULE_DISPLAY_NAMES` already exists in `core/constants.ts:76`), add "recent modules" (data already in `appSlice._navigationHistory`), and seed per-module actions later.
 - **Acceptance:** ⌘K lists every module the current user can access, grouped; typing a module's display name finds it; recents section present.
+- **Fix (2026-09-22):** New single-source registry `core/moduleRegistry.ts` maps every ModuleId to a nav label, group (Manager's Office / Departments / Intelligence & Automations / Tools / Founders), and icon, with explicit `HIDDEN_MODULE_REASONS` for non-destinations (the duplicate `campaign`, the phantom `audio-analyzer`/`format-foundry` aliases, internal ops `observability`/`devops`, and app-driven shells like onboarding/mobile-remote/video-popout). `UnifiedCommandMenu` now generates its destination groups from that registry filtered by `useGatedModules()` + `canAccessModule()`, replacing the hardcoded "Navigation" and "Business Strategy" groups; the old "Tools & Discovery" group keeps only true actions (QC tab deep-link, Quick Notes drawer, Agent Canvas toggle). A "Recent" group lists the 3 most recent unique visible modules from `appSlice._navigationHistory`. Handwritten feedback/settings/god-mode entries preserved verbatim so ISSUE-1269 assertions stay intact.
+- **Evidence:** `packages/renderer/src/core/moduleRegistry.ts` (`getCommandMenuModules`, `HIDDEN_MODULE_REASONS`), `packages/renderer/src/components/shared/UnifiedCommandMenu.tsx:100-139` (recents + generated sections), `packages/renderer/src/components/shared/UnifiedCommandMenu.test.tsx:85-140` (7 tests: previously-missing modules listed, phantom/merged ids never listed, gating filter, recents order).
+- **Files:** `packages/renderer/src/core/moduleRegistry.ts` (new), `packages/renderer/src/components/shared/UnifiedCommandMenu.tsx`, `packages/renderer/src/components/shared/UnifiedCommandMenu.test.tsx`
+- **Verification:** typecheck 0 errors; eslint 0 errors on touched files; UnifiedCommandMenu 7/7 + SidebarNavigation (App-level) 14/14 passing.
 
 ### ISSUE-1439: Module navigation never syncs to the URL — no deep links, browser Back, or refresh-to-place
 
