@@ -3,6 +3,7 @@ import {
   projectLegacyReleaseToCanonical,
   projectLegacyTrackToCanonical,
 } from './musicEntityCompatibility';
+import { ReleaseEntitySchema } from './musicEntity';
 
 const now = '2026-09-19T20:00:00.000Z';
 
@@ -59,6 +60,15 @@ describe('projectLegacyTrackToCanonical', () => {
     }, now);
 
     expect(result.identifiers).toEqual([]);
+  });
+  it('normalizes valid timestamps and omits invalid legacy dates', () => {
+    const valid = projectLegacyReleaseToCanonical({ id: 'valid-date', releaseDate: '2026-09-19T20:00:00Z', originalReleaseDate: '2024-02-29T00:00:00-05:00' }, now);
+    expect(valid.release.releaseDate).toBe('2026-09-19');
+    expect(valid.release.originalReleaseDate).toBe('2024-02-29');
+    expect(ReleaseEntitySchema.safeParse(valid.release).success).toBe(true);
+    const invalid = projectLegacyReleaseToCanonical({ id: 'invalid-date', releaseDate: '2026-02-30', originalReleaseDate: 'not-a-date' }, now);
+    expect(invalid.release).not.toHaveProperty('releaseDate');
+    expect(invalid.release).not.toHaveProperty('originalReleaseDate');
   });
 });
 

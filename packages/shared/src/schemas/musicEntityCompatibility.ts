@@ -58,6 +58,18 @@ function normalizeOptional(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function normalizeLegacyDate(value: unknown): string | undefined {
+  const normalized = normalizeOptional(value);
+  if (!normalized) return undefined;
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[-+]\d{2}:\d{2}))?$/.exec(normalized);
+  if (!match) return undefined;
+  const [year, month, day] = match.slice(1).map(Number);
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+  return candidate.getUTCFullYear() === year && candidate.getUTCMonth() === month - 1 && candidate.getUTCDate() === day
+    ? `${match[1]}-${match[2]}-${match[3]}`
+    : undefined;
+}
+
 function mapLegacyReleaseType(value: string | undefined): CanonicalReleaseProjection['release']['releaseType'] {
   switch (value?.trim().toLowerCase()) {
     case 'single': return 'SINGLE';
@@ -175,6 +187,8 @@ export function projectLegacyReleaseToCanonical(
 
   const provenance = importedUnknown(`legacy-release:${legacyId}`, observedAt);
   const releaseId = `legacy-release:${legacyId}:release`;
+  const releaseDate = normalizeLegacyDate(legacy.releaseDate);
+  const originalReleaseDate = normalizeLegacyDate(legacy.originalReleaseDate);
 
   const release: CanonicalReleaseProjection['release'] = {
     schemaVersion: 'canonical-music-entity.v1',
@@ -182,9 +196,9 @@ export function projectLegacyReleaseToCanonical(
     entityType: 'release',
     title,
     releaseType: mapLegacyReleaseType(legacy.releaseType),
-    ...(normalizeOptional(legacy.releaseDate) ? { releaseDate: normalizeOptional(legacy.releaseDate)! } : {}),
-    ...(normalizeOptional(legacy.originalReleaseDate)
-      ? { originalReleaseDate: normalizeOptional(legacy.originalReleaseDate)! }
+    ...(releaseDate ? { releaseDate } : {}),
+    ...(originalReleaseDate
+      ? { originalReleaseDate }
       : {}),
     createdAt: observedAt,
     updatedAt: observedAt,
