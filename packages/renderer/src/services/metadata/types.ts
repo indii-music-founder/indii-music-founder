@@ -4,7 +4,7 @@
  */
 
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
-import type { CatalogImportSession, SongIntake } from '@indii/shared';
+import type { CatalogImportSession, RightsIntelligenceReport, SongIntake } from '@indii/shared';
 
 export interface MasterAudioReference {
     audioProperties?: {
@@ -92,6 +92,8 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     songIntake?: SongIntake;
     /** Phase 5 non-destructive existing-catalog reconciliation state. */
     catalogImport?: CatalogImportSession;
+    /** Phase 6 deterministic rights preflight; never substitutes for legal review. */
+    rightsIntelligence?: RightsIntelligenceReport;
     /** Measured properties of the immutable master used in DDEX technical details. */
     audioTechnical?: {
         bitDepth: number;

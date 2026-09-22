@@ -17,6 +17,7 @@ export * from './schemas/artistOperatingProfile.js';
 export * from './schemas/artistContext.js';
 export * from './schemas/songIntake.js';
 export * from './schemas/catalogImport.js';
+export * from './schemas/rightsIntelligence.js';
 export * from './schemas/musicEntity.js';
 export * from './schemas/musicEntityCompatibility.js';
 export * from './schemas/musicRelationship.js';
