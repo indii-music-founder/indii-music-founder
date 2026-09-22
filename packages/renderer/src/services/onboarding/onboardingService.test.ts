@@ -175,6 +175,8 @@ describe('onboardingService', () => {
             expect(updatedProfile.creativePreferences).toBe('New Prefs');
             expect(updatedProfile.careerStage).toBe('Emerging');
             expect(updatedProfile.goals).toEqual(['Touring']);
+            expect(updatedProfile.artistContext?.facts['experience.careerStage']?.value).toBe('Emerging');
+            expect(updatedProfile.artistContext?.facts['goals.current']?.provenance.state).toBe('USER_DECLARED');
             expect(updates).toContain('Bio');
             expect(updates).toContain('Goals');
         });

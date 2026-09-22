@@ -16,6 +16,7 @@ import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intellig
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 import { StorageService } from '@/services/StorageService';
+import { mergeArtistContext, projectLegacyArtistContext } from '@indii/shared';
 
 // Re-export everything from sub-modules for backward compatibility
 export type {
@@ -484,6 +485,17 @@ export function processFunctionCalls(
 
                     updatedProfile = { ...updatedProfile, brandKit: newBrandKit };
                 }
+
+                // Keep the established profile as the persistence boundary while
+                // progressively enriching its versioned, truth-aware context.
+                const observedAt = new Date().toISOString();
+                updatedProfile = {
+                    ...updatedProfile,
+                    artistContext: mergeArtistContext(
+                        currentProfile.artistContext,
+                        projectLegacyArtistContext(updatedProfile, observedAt),
+                    ),
+                };
                 break;
             }
             case OnboardingTools.AddImageAsset: {

@@ -1,6 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 import type { Node, Edge } from 'reactflow';
 import { SocialStats } from '@/services/social/types';
+import type { ArtistContext } from '@indii/shared';
 
 // --- Shared Core Types (Moved from workflow/types.ts to avoid circular deps) ---
 
@@ -177,6 +178,10 @@ export interface UserProfile {
     savedWorkflows?: SavedWorkflow[];
     careerStage?: string;
     careerProfile?: string;
+    /** Shared progressive context; legacy fields remain during the non-destructive rollout. */
+    artistContext?: ArtistContext;
+    /** Reference to the canonical Phase 1 artist entity, never an external identifier. */
+    artistEntityId?: string;
     artistType?: 'Solo' | 'Band' | 'Collective';
     goals?: string[];
     location?: string; // User's city/region (e.g., "Detroit, MI") — powers spatial awareness in agent prompts
