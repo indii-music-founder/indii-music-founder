@@ -33,6 +33,48 @@ function resolvePathModule(pathSegment: string): string {
     return ROUTE_ALIASES[pathSegment] ?? pathSegment;
 }
 
+/**
+ * ISSUE-1439: modules whose active tab lives in the Zustand store are
+ * URL-addressable via `?tab=`. The `tab` value only round-trips for these
+ * modules — every other module keeps its tab as local component state, which
+ * is out of scope for URL sync.
+ */
+interface TabStateConfig {
+    read: (s: { distributionTab?: string; financeTab?: string }) => string | undefined;
+    apply: (
+        s: { setDistributionTab: (tab: string) => void; setFinanceTab: (tab: string) => void },
+        tab: string
+    ) => void;
+    field: 'distributionTab' | 'financeTab';
+    defaultTab: string;
+}
+
+const TAB_STATE: Record<string, TabStateConfig> = {
+    'distribution': {
+        read: (s) => s.distributionTab,
+        apply: (s, tab) => s.setDistributionTab(tab),
+        field: 'distributionTab',
+        defaultTab: 'releases',
+    },
+    'finance': {
+        read: (s) => s.financeTab,
+        apply: (s, tab) => s.setFinanceTab(tab),
+        field: 'financeTab',
+        defaultTab: 'overview',
+    },
+};
+
+function buildUrl(pathname: string, search: string, tab: string | null): string {
+    const params = new URLSearchParams(search);
+    if (tab) {
+        params.set('tab', tab);
+    } else {
+        params.delete('tab');
+    }
+    const query = params.toString();
+    return `${pathname}${query ? `?${query}` : ''}`;
+}
+
 export function useURLSync(options: URLSyncOptions = {}) {
     const { currentModule, setModule, authLoading } = useStore(
         useShallow(state => ({
@@ -43,6 +85,13 @@ export function useURLSync(options: URLSyncOptions = {}) {
     );
     const navigate = useNavigate();
     const location = useLocation();
+
+    // The active tab for the current module, when it is store-backed. Re-runs the
+    // Store→URL effect whenever the user switches tabs inside the module.
+    const activeTab = useStore((state) => {
+        const config = TAB_STATE[currentModule as string];
+        return config ? config.read(state) : undefined;
+    });
 
     // Guard: prevent Store→URL from firing before URL→Store has initialized.
     // Without this, deep links like /mobile-remote get overridden by the
@@ -66,23 +115,30 @@ export function useURLSync(options: URLSyncOptions = {}) {
         }
         const rawSegment = pathSegments[0] || 'dashboard';
         const targetModule = resolvePathModule(rawSegment);
-        const targetTab = rawSegment === 'audio-analyzer' ? 'qc' : rawSegment === 'format-foundry' ? 'forensics' : undefined;
+        const aliasTab = rawSegment === 'audio-analyzer' ? 'qc' : rawSegment === 'format-foundry' ? 'forensics' : undefined;
+        // ISSUE-1439: an explicit `?tab=` always wins over the legacy alias tab.
+        const urlTab = new URLSearchParams(location.search).get('tab') || undefined;
+        const effectiveTab = urlTab ?? aliasTab;
 
         if (targetModule !== currentModule && isValidModule(targetModule)) {
             pendingPathModule.current = targetModule;
-            if (targetTab) {
-                setModule(targetModule, { tab: targetTab });
+            if (effectiveTab) {
+                setModule(targetModule, { tab: effectiveTab });
             } else {
                 setModule(targetModule);
             }
         } else {
             pendingPathModule.current = null;
-            if (targetTab) {
-                const store = useStore.getState();
-                if (targetModule === 'distribution') {
-                    store.setDistributionTab(targetTab);
-                } else if (targetModule === 'finance') {
-                    store.setFinanceTab(targetTab);
+            // Same-module navigation (Back/Forward or manual URL edit): apply the
+            // addressed tab, but only when it actually differs to avoid set loops.
+            const config = TAB_STATE[targetModule];
+            if (effectiveTab && config) {
+                const store = useStore.getState() as unknown as Record<string, unknown> & {
+                    setDistributionTab: (tab: string) => void;
+                    setFinanceTab: (tab: string) => void;
+                };
+                if (store[config.field] !== effectiveTab) {
+                    config.apply(store, effectiveTab);
                 }
             }
         }
@@ -90,7 +146,7 @@ export function useURLSync(options: URLSyncOptions = {}) {
         // Mark initialization complete after first run
         hasInitializedFromURL.current = true;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.pathname, setModule, authLoading, options.disabled]);
+    }, [location.pathname, location.search, setModule, authLoading, options.disabled]);
 
     // 2. Store -> URL (Navigation)
     // This direction is safe — it only fires when user intentionally changes module via UI.
@@ -123,9 +179,28 @@ export function useURLSync(options: URLSyncOptions = {}) {
         }
 
         if (currentModule !== currentPathModule) {
-            navigate(currentModule === 'dashboard' ? '/' : `/${currentModule}`);
+            // Module switch: carry the store-backed tab on the URL when it is
+            // non-default so a mid-flow refresh or share keeps the context.
+            const config = TAB_STATE[currentModule as string];
+            const tab = config ? (activeTab ?? config.defaultTab) : null;
+            const carried = config && tab && tab !== config.defaultTab ? tab : null;
+            navigate(buildUrl(currentModule === 'dashboard' ? '/' : `/${currentModule}`, location.search, carried));
+            return;
         }
-        // Remove location.pathname to prevent reverting URL during Back navigation
+
+        // Same module: mirror store-backed tab changes into `?tab=` (replace, so
+        // tab switches don't spam history entries).
+        const config = TAB_STATE[currentModule as string];
+        if (config) {
+            const currentTabParam = new URLSearchParams(location.search).get('tab');
+            const desired = activeTab && activeTab !== config.defaultTab ? activeTab : null;
+            if ((activeTab ?? config.defaultTab) !== (currentTabParam ?? config.defaultTab)) {
+                navigate(buildUrl(location.pathname, location.search, desired), { replace: true });
+            }
+        } else if (new URLSearchParams(location.search).get('tab')) {
+            // Switched to a module without URL-addressable tabs — drop a stale param.
+            navigate(buildUrl(location.pathname, location.search, null), { replace: true });
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentModule, navigate, options.disabled]);
+    }, [currentModule, activeTab, navigate, options.disabled]);
 }
