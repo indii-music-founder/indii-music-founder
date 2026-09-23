@@ -3196,3 +3196,20 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Deferred:** zombie `campaign` links in `CustomDashboardWidgets.tsx` (file under concurrent ISSUE-1440 WIP — do not clobber). Stage 2 surface consolidation pending founder sign-off. Stage 3 backend pruning incl. `setGodMode` removal pending.
 - **Validation:** renderer tsc 0 errors on all touched files; 129 tests green across 14 affected suites; eslint 0 errors on touched files; `build:studio` green (17.5s); check-test-quality 0 violations.
 - **Delivery:** `01a72211a` (Stage 1+1b) + `bf089401e` (follow-up test fix: MarketingSidebar stub assertion aligned with the ISSUE-1436 truthful-hide behavior — the sole CI failure in run 35804917546, root-caused to the concurrent rail-regroup, not to this workstream). Run 35806413597 on `bf089401e`: 26/26 completed jobs green (20/20 unit shards, build, deploy-staging, e2e-staging, deploy-production) before supersession-cancel by successor run 35807198436 per concurrency protocol; successor (chain includes both commits) 20/20 unit shards green, zero failures.
+
+### ISSUE-1443: Money, territory, severity, and mood heuristics silently corrupt data (found during TypeSafe opportunity audit)
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (revenue figures and legal severity are silently wrong)
+- **Module:** foundry adapters / creator-protection / licensing tagging
+- **Evidence (all verified 2026-09-22):**
+  1. EU money mis-parse: `TuneCoreStatementAdapter.ts:68` and `DistroKidStatementAdapter.ts:83-84` parse money via digit/dot/dash-preserving strip + parseFloat. `"1.234,56"` (EU thousands+decimal) → `"1.23456"` → books **1.23** instead of **1234.56**; `"(0.50)"` (parenthesis negative) → `+0.50` sign flip. Silently quarantined rows and wrong revenue both occur.
+  2. Silent territory default: `TuneCoreStatementAdapter.ts:64` `country = getCol(...) || 'US'` — a missed/broken country header silently attributes all royalties to the US market.
+  3. Vacuous reconciliation: both adapters hardcode `distributorFee: 0` and `currency: 'USD'`, so `LayeredValidator.ts:84` gross=net+fee within $0.02 validates nothing real.
+  4. Self-referential severity: `CreatorProtectionHarnessService.ts:304` runs `/training|forever|sublicensing|.../.test(flag)` against the **canned flag strings**, not the contract text — AI-clause severity is decoupled from contract content; negations ("no sublicensing permitted") still flag.
+  5. Mood corruption: `SyncMetadataTaggingService.ts:22,65` — substring synonym map maps `'unhappy'`→Upbeat (`'unhappy'.includes('happy')`), and the no-match fallback silently writes `'Chill'` to Firestore (:95), poisoning the licensing matcher's input.
+  6. Column ordering bug: `FormatForensicsEngine.ts:182` — headers containing "amount" (e.g. "Fee Amount") hit the currency_amount branch before the fee branch (:187), misclassifying fee columns as earnings.
+  7. Sensitivity misclassification: `EvidenceIntakeService.ts:59-63` `includes('Earnings'|'USD'|'Total Earned')` → non-USD/translated statements classify as non-financial and skip snippet masking (:112).
+- **Impact:** Silent revenue under-counts and wrong territory attribution in booked statements; legal severity noise; corrupted licensing matcher inputs; potential exposure of unmasked financial snippets.
+- **Fix:** Root-fix each (locale-aware money parser with per-file format detection, explicit missing-territory flag instead of default, real fee/currency values into validation, severity derived from contract text, exact-match synonym table with no-match → review, branch ordering, content-based sensitivity). Several of these semantic slots are also the TypeSafe judgment opportunities tracked in the TypeSafe opportunities report (2026-09-22).
+- **Acceptance:** Round-trip fixture tests for EU/US money formats and parenthesis negatives; no silent territory defaults; validation layer receives real fee/currency data; severity regression test with a negation contract; synonym-table unit tests incl. 'unhappy'; classification tests for 'Fee Amount' and non-USD statements.
