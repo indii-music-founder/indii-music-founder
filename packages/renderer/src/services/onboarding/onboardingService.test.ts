@@ -181,6 +181,19 @@ describe('onboardingService', () => {
             expect(updates).toContain('Goals');
         });
 
+        it('accumulates context across multiple profile calls without promoting legacy data', () => {
+            const calls = [
+                { name: OnboardingTools.UpdateProfile, args: { artist_type: 'Band', working_roles: ['Performer', 'Writer'] } },
+                { name: OnboardingTools.UpdateProfile, args: { guidance_depth: 'Detailed', workflow_preference: 'Review-first' } },
+            ];
+            const { updatedProfile } = processFunctionCalls(calls, baseProfile, []);
+            expect(updatedProfile.artistContext?.facts['identity.artistType']?.value).toBe('Band');
+            expect(updatedProfile.artistContext?.facts['roles.working']?.value).toEqual(['Performer', 'Writer']);
+            expect(updatedProfile.artistContext?.facts['preferences.guidanceDepth']?.value).toBe('Detailed');
+            expect(updatedProfile.artistContext?.facts['preferences.workflow']?.value).toBe('Review-first');
+            expect(updatedProfile.artistContext?.facts['identity.artistType']?.provenance.state).toBe('USER_DECLARED');
+        });
+
         it('should update release details', () => {
             const calls = [{
                 name: OnboardingTools.UpdateProfile,
