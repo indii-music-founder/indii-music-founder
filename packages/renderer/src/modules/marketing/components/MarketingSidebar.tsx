@@ -31,24 +31,48 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [collapsed] = useState(false);
 
-    const mainNav = [
-        { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-        { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
-        { id: 'asset-generator', label: 'Asset Generator', icon: Wand2 },
-        { id: 'auto-poster', label: 'Auto-Poster', icon: Share2 },
-        { id: 'momentum', label: 'Momentum', icon: TrendingUp },
-    ];
-
-    const growthNav = [
-        { id: 'swarm', label: 'Swarm Command', icon: Activity },
-        { id: 'ad-buying', label: 'Ad Buying', icon: DollarSign },
-        { id: 'email', label: 'Email Marketing', icon: Mail },
-        { id: 'pre-save', label: 'Pre-Save Builder', icon: Bookmark },
-        { id: 'sms', label: 'SMS Engine', icon: MessageSquare },
-        { id: 'fan-data', label: 'Fan Enrichment', icon: Users },
-        { id: 'epk', label: 'Press Kit (EPK)', icon: FileText },
-        { id: 'community', label: 'Community Webhook', icon: Hash },
-        { id: 'influencers', label: 'Influencer Board', icon: Star },
+    // ISSUE-1436: 14 flat tabs grouped into 5 scannable sections. Tab ids are
+    // unchanged — CampaignDashboard maps them exactly as before.
+    const navSections: { title: string; items: { id: string; label: string; icon: typeof LayoutDashboard }[] }[] = [
+        {
+            title: 'Overview',
+            items: [
+                { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+                { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
+                { id: 'momentum', label: 'Momentum', icon: TrendingUp },
+            ],
+        },
+        {
+            title: 'Release Assets',
+            items: [
+                { id: 'asset-generator', label: 'Asset Generator', icon: Wand2 },
+                { id: 'auto-poster', label: 'Auto-Poster', icon: Share2 },
+                { id: 'pre-save', label: 'Pre-Save Builder', icon: Bookmark },
+                { id: 'epk', label: 'Press Kit (EPK)', icon: FileText },
+            ],
+        },
+        {
+            title: 'Channels',
+            items: [
+                { id: 'email', label: 'Email Marketing', icon: Mail },
+                { id: 'sms', label: 'SMS Engine', icon: MessageSquare },
+                { id: 'community', label: 'Community Webhook', icon: Hash },
+            ],
+        },
+        {
+            title: 'Paid & Partners',
+            items: [
+                { id: 'ad-buying', label: 'Ad Buying', icon: DollarSign },
+                { id: 'influencers', label: 'Influencer Board', icon: Star },
+            ],
+        },
+        {
+            title: 'Intelligence',
+            items: [
+                { id: 'swarm', label: 'Swarm Command', icon: Activity },
+                { id: 'fan-data', label: 'Fan Enrichment', icon: Users },
+            ],
+        },
     ];
 
     const secondaryNav = [
@@ -71,64 +95,38 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
 
             {/* Navigation */}
             <div className="flex-1 overflow-y-auto py-6 px-3 space-y-8 custom-scrollbar">
-
-                {/* Main Section */}
-                <div>
-                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                        Management
-                    </h3>
-                    <div className="space-y-1">
-                        {mainNav.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => onTabChange(item.id)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${activeTab === item.id
-                                    ? 'bg-dept-marketing/10 text-dept-marketing font-medium'
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                                    }`}
-                            >
-                                <item.icon
-                                    size={18}
-                                    className={`transition-colors ${activeTab === item.id ? 'text-dept-marketing' : 'text-gray-500 group-hover:text-gray-400'
+                {navSections.map((section) => (
+                    <div key={section.title}>
+                        <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            {section.title}
+                        </h3>
+                        <div className="space-y-1">
+                            {section.items.map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => onTabChange(item.id)}
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${activeTab === item.id
+                                        ? 'bg-dept-marketing/10 text-dept-marketing font-medium'
+                                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
                                         }`}
-                                />
-                                <span>{item.label}</span>
-                                {activeTab === item.id && (
-                                    <motion.div
-                                        layoutId="sidebar-active"
-                                        className="ml-auto w-1.5 h-1.5 rounded-full bg-dept-marketing"
+                                >
+                                    <item.icon
+                                        size={18}
+                                        className={`transition-colors ${activeTab === item.id ? 'text-dept-marketing' : 'text-gray-500 group-hover:text-gray-400'
+                                            }`}
                                     />
-                                )}
-                            </button>
-                        ))}
+                                    <span>{item.label}</span>
+                                    {activeTab === item.id && (
+                                        <motion.div
+                                            layoutId="sidebar-active"
+                                            className="ml-auto w-1.5 h-1.5 rounded-full bg-dept-marketing"
+                                        />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
-
-                {/* Growth Tools Section */}
-                <div>
-                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                        Growth Tools
-                    </h3>
-                    <div className="space-y-1">
-                        {growthNav.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => onTabChange(item.id)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${activeTab === item.id
-                                    ? 'bg-dept-marketing/10 text-dept-marketing font-medium'
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                                    }`}
-                            >
-                                <item.icon
-                                    size={18}
-                                    className={`transition-colors ${activeTab === item.id ? 'text-dept-marketing' : 'text-gray-500 group-hover:text-gray-400'
-                                        }`}
-                                />
-                                <span>{item.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                ))}
 
                 {/* Secondary Section — ISSUE-1436: hidden entirely while every entry is a
                     "Not connected yet" stub; advertising unbuilt features read as broken UI. */}

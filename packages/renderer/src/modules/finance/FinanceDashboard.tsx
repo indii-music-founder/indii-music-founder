@@ -17,7 +17,7 @@ import { HiddenCostHarnessPanel } from './components/HiddenCostHarnessPanel';
 import { useFinance } from './hooks/useFinance';
 import { FormatFoundryModule } from '@/modules/format-foundry/FormatFoundryModule';
 import { useStore } from '@/core/store';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useTranslation } from 'react-i18next';
@@ -70,6 +70,49 @@ export default function FinanceDashboard() {
         setFinanceTab?.(val);
     };
 
+    // ISSUE-1440: 16 flat tabs → 5 groups with sub-tabs. The underlying tab values,
+    // panels, and `?tab=` deep-link ids are unchanged — only the trigger chrome is
+    // grouped (the old strip needed overflow-x scrolling to fit).
+    const TAB_GROUPS: { id: string; label: string; icon: React.ReactNode; tabs: { value: string; label: string; icon: React.ReactNode }[] }[] = [
+        {
+            id: 'overview', label: 'Overview', icon: <TrendingUp size={14} />, tabs: [
+                { value: 'overview', label: 'Revenue Overview', icon: <TrendingUp size={12} /> },
+                { value: 'earnings', label: t('finance.tabs.earnings'), icon: <Clock size={12} /> },
+            ],
+        },
+        {
+            id: 'spending', label: 'Spending', icon: <DollarSign size={14} />, tabs: [
+                { value: 'expenses', label: t('finance.tabs.expenses'), icon: <FileText size={12} /> },
+                { value: 'budget', label: t('finance.tabs.budget'), icon: <DollarSign size={12} /> },
+                { value: 'receipts', label: t('finance.tabs.receipts'), icon: <Camera size={12} /> },
+            ],
+        },
+        {
+            id: 'royalties', label: 'Royalties', icon: <Briefcase size={14} />, tabs: [
+                { value: 'royalties', label: t('finance.tabs.royalties'), icon: <Briefcase size={12} /> },
+                { value: 'forensics', label: 'Royalty Statement Forensics', icon: <Search size={12} /> },
+                { value: 'recoupment', label: t('finance.tabs.recoupment'), icon: <Landmark size={12} /> },
+                { value: 'splits', label: t('finance.tabs.splits'), icon: <GitMerge size={12} /> },
+            ],
+        },
+        {
+            id: 'compliance', label: 'Compliance & Tools', icon: <Shield size={14} />, tabs: [
+                { value: 'hidden-costs', label: 'Hidden Costs', icon: <Sparkles size={12} /> },
+                { value: 'currency', label: t('finance.tabs.currency'), icon: <Globe size={12} /> },
+                { value: 'onboarding', label: t('finance.tabs.onboarding'), icon: <Users size={12} /> },
+                { value: 'tax', label: t('finance.tabs.tax'), icon: <FileText size={12} /> },
+                { value: 'anomaly', label: t('finance.tabs.anomaly'), icon: <Activity size={12} /> },
+                { value: 'audit', label: t('finance.tabs.audit'), icon: <Shield size={12} /> },
+            ],
+        },
+        {
+            id: 'merch', label: 'Merch', icon: <Scale size={14} />, tabs: [
+                { value: 'merch', label: t('finance.tabs.merch'), icon: <Scale size={12} /> },
+            ],
+        },
+    ];
+    const activeGroup = TAB_GROUPS.find(group => group.tabs.some(tab => tab.value === currentTab)) ?? TAB_GROUPS[0];
+
     return (
         <ThreePanelDashboard
             moduleName="Finance"
@@ -116,57 +159,47 @@ export default function FinanceDashboard() {
             }
         >
             <Tabs value={currentTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
-                <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
-                    <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
-                        <TabsTrigger value="overview" data-testid="finance-tab-overview" className="text-muted-foreground data-[state=active]:text-green-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-green-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                            <TrendingUp size={14} /> Revenue Overview
-                        </TabsTrigger>
-                        <TabsTrigger value="earnings" data-testid="finance-tab-earnings" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                            <Clock size={14} /> {t('finance.tabs.earnings')}
-                        </TabsTrigger>
-                        <TabsTrigger value="expenses" data-testid="finance-tab-expenses" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                            <FileText size={14} /> {t('finance.tabs.expenses')}
-                        </TabsTrigger>
-                        <TabsTrigger value="hidden-costs" data-testid="finance-tab-hidden-costs" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                            <Sparkles size={14} /> Hidden Costs
-                        </TabsTrigger>
-                        <TabsTrigger value="merch" data-testid="finance-tab-merch" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                            <Scale size={14} /> {t('finance.tabs.merch')}
-                        </TabsTrigger>
-                        <TabsTrigger value="royalties" data-testid="finance-tab-royalties" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
-                            <Briefcase size={14} /> {t('finance.tabs.royalties')}
-                        </TabsTrigger>
-                        <TabsTrigger value="forensics" data-testid="finance-tab-forensics" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <Search size={14} /> Royalty Statement Forensics
-                        </TabsTrigger>
-                        <TabsTrigger value="currency" data-testid="finance-tab-currency" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <Globe size={14} /> {t('finance.tabs.currency')}
-                        </TabsTrigger>
-                        <TabsTrigger value="splits" data-testid="finance-tab-splits" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <GitMerge size={14} /> {t('finance.tabs.splits')}
-                        </TabsTrigger>
-                        <TabsTrigger value="onboarding" data-testid="finance-tab-onboarding" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <Users size={14} /> {t('finance.tabs.onboarding')}
-                        </TabsTrigger>
-                        <TabsTrigger value="tax" data-testid="finance-tab-tax" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <FileText size={14} /> {t('finance.tabs.tax')}
-                        </TabsTrigger>
-                        <TabsTrigger value="anomaly" data-testid="finance-tab-anomaly" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <Activity size={14} /> {t('finance.tabs.anomaly')}
-                        </TabsTrigger>
-                        <TabsTrigger value="audit" data-testid="finance-tab-audit" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <Shield size={14} /> {t('finance.tabs.audit')}
-                        </TabsTrigger>
-                        <TabsTrigger value="budget" data-testid="finance-tab-budget" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <DollarSign size={14} /> {t('finance.tabs.budget')}
-                        </TabsTrigger>
-                        <TabsTrigger value="receipts" data-testid="finance-tab-receipts" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <Camera size={14} /> {t('finance.tabs.receipts')}
-                        </TabsTrigger>
-                        <TabsTrigger value="recoupment" data-testid="finance-tab-recoupment" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                            <Landmark size={14} /> {t('finance.tabs.recoupment')}
-                        </TabsTrigger>
-                    </TabsList>
+                <div className="border-b border-white/5 flex-shrink-0">
+                    <div className="px-4 md:px-6 flex items-center gap-1 overflow-x-auto">
+                        {TAB_GROUPS.map(group => {
+                            const isGroupActive = activeGroup.id === group.id;
+                            return (
+                                <button
+                                    key={group.id}
+                                    data-testid={`finance-group-${group.id}`}
+                                    onClick={() => handleTabChange(group.tabs[0].value)}
+                                    className={`flex items-center gap-2 px-0 h-12 mr-4 border-b-2 rounded-none font-bold transition-all text-xs whitespace-nowrap ${
+                                        isGroupActive
+                                            ? 'border-green-400 text-green-400'
+                                            : 'border-transparent text-muted-foreground hover:text-white'
+                                    }`}
+                                >
+                                    {group.icon} {group.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {activeGroup.tabs.length > 1 && (
+                        <div className="px-4 md:px-6 py-2 flex flex-wrap gap-1.5 bg-white/[0.02]">
+                            {activeGroup.tabs.map(tab => {
+                                const isActive = tab.value === currentTab;
+                                return (
+                                    <button
+                                        key={tab.value}
+                                        data-testid={`finance-tab-${tab.value}`}
+                                        onClick={() => handleTabChange(tab.value)}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all whitespace-nowrap ${
+                                            isActive
+                                                ? 'bg-green-500/15 text-green-400 border-green-400/30'
+                                                : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'
+                                        }`}
+                                    >
+                                        {tab.icon} {tab.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex-1 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">

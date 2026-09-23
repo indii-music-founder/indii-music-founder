@@ -50,10 +50,17 @@ describe('FinanceDashboard', () => {
         );
     });
 
-    it('renders tabs including Royalty Statement Forensics', () => {
+    it('renders grouped tabs; Royalty Statement Forensics lives in the Royalties group (ISSUE-1440)', () => {
         render(<FinanceDashboard />);
 
+        // Top level shows 5 group triggers…
+        expect(screen.getByTestId('finance-group-overview')).toBeInTheDocument();
+        expect(screen.getByTestId('finance-group-royalties')).toBeInTheDocument();
+        // …default group sub-tabs render with their existing deep-link testids…
         expect(screen.getByTestId('finance-tab-overview')).toBeInTheDocument();
+        expect(screen.queryByTestId('finance-tab-forensics')).not.toBeInTheDocument();
+        // …and the forensics sub-tab appears once its group is active.
+        fireEvent.click(screen.getByTestId('finance-group-royalties'));
         expect(screen.getByTestId('finance-tab-forensics')).toBeInTheDocument();
         expect(screen.getByText('Royalty Statement Forensics')).toBeInTheDocument();
     });
@@ -77,6 +84,8 @@ describe('FinanceDashboard', () => {
 
         render(<FinanceDashboard />);
 
+        // ISSUE-1440: forensics is a sub-tab of the Royalties group now.
+        fireEvent.click(screen.getByTestId('finance-group-royalties'));
         fireEvent.click(screen.getByTestId('finance-tab-forensics'));
         expect(setFinanceTab).toHaveBeenCalledWith('forensics');
     });
