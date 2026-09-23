@@ -27,15 +27,15 @@ import type { Content } from '@/shared/types/ai.dto';
 import { CloudStorageService } from '@/services/CloudStorageService';
 import { logger } from '@/utils/logger';
 
-/** Must match the server guard in packages/firebase/src/index.ts exactly (10MB limit). */
-export const AGENT_STREAM_CHAR_BUDGET = 10_000_000;
+/** Must match the server guard in packages/firebase/src/index.ts exactly (800KB limit). */
+export const AGENT_STREAM_CHAR_BUDGET = 800_000;
 
 /**
  * Attachments at or under this many base64 chars pass through untouched.
- * ~1M base64 chars ≈ 750KB binary — high quality for Gemini 3 vision while
- * keeping multiple attachments well within the 10MB budget.
+ * ~400K base64 chars ≈ 300KB binary — solid quality for Gemini 3 vision while
+ * keeping multiple attachments comfortably within the 800KB budget.
  */
-export const IMAGE_ATTACHMENT_TARGET_BASE64_CHARS = 1_000_000;
+export const IMAGE_ATTACHMENT_TARGET_BASE64_CHARS = 400_000;
 
 /**
  * Escalating downscale/re-encode ladder. JPEG re-encode intentionally drops
@@ -67,7 +67,7 @@ export function estimateContentsCharLength(contents: Content[]): number {
 
 /**
  * Fail loudly BEFORE the network call when the serialized contents would be
- * rejected by the server's 10M-char guard. Callers get a specific,
+ * rejected by the server's 800KB-char guard. Callers get a specific,
  * actionable PAYLOAD_TOO_LARGE instead of an opaque backend INTERNAL_ERROR.
  */
 export function assertContentsWithinStreamBudget(contents: Content[], label: string): void {
@@ -76,7 +76,7 @@ export function assertContentsWithinStreamBudget(contents: Content[], label: str
 
     throw new AppException(
         AppErrorCode.PAYLOAD_TOO_LARGE,
-        `AI request payload is too large to send (${Math.round(lengthChars / 1000)}KB serialized against a ~10MB limit). ` +
+        `AI request payload is too large to send (${Math.round(lengthChars / 1000)}KB serialized against a ~800KB limit). ` +
         'Reduce image attachments or start a fresh conversation.',
         {
             retryable: false,

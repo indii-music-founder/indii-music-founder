@@ -120,7 +120,7 @@ describe('Agent Multimodal Support', () => {
             {},
             undefined,
             undefined,
-            [{ mimeType: 'image/png', base64: 'A'.repeat(10_000_001) }]
+            [{ mimeType: 'image/png', base64: 'A'.repeat(800_001) }]
         );
 
         expect(result.error).toBe('Payload Too Large');

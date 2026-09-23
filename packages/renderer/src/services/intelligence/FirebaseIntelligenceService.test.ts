@@ -371,7 +371,7 @@ describe('FirebaseIntelligenceService', () => {
             role: 'user' as const,
             parts: [
                 { text: 'Look at this' },
-                { inlineData: { mimeType: 'image/png', data: 'A'.repeat(10_000_001) } },
+                { inlineData: { mimeType: 'image/png', data: 'A'.repeat(800_001) } },
             ],
         }];
 
