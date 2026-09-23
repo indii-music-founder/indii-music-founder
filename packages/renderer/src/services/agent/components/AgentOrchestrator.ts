@@ -10,6 +10,7 @@ import { AgentGraph } from '../types';
 
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
+import { refineInjectionRisk } from '@/config/typesafeJudgments';
 
 export class AgentOrchestrator {
     async determineAgent(context: AgentContext, userQuery: string): Promise<string> {
@@ -34,9 +35,25 @@ export class AgentOrchestrator {
             return 'generalist';
         }
 
-        // 2. Security check — block injection attempts before any Autonomous processing
+        // 2. Security check — block injection attempts before any Autonomous processing.
+        //    Static-critical verdicts block unconditionally (explicit policy rule).
         const security = InputSanitizer.securityCheck(userQuery);
-        if (security.shouldBlock) {
+        let shouldBlock = security.shouldBlock;
+
+        // ISSUE-1442: regex-flagged inputs get a TypeSafe hazard-Noul refinement —
+        // confidently benign flags downgrade to allow (logged); confidently confirmed
+        // attacks escalate to block; ambiguous stays flagged. Zero calls on clean input.
+        if (!shouldBlock && security.shouldFlag) {
+            const refined = await refineInjectionRisk(userQuery);
+            if (refined === 'allow') {
+                logger.info('[indii:Orchestrator] Injection flag downgraded to allow by judgment:', security.analysis.detectedPatterns);
+            } else if (refined === 'block') {
+                logger.warn('[indii:Orchestrator] Injection flag escalated to block by judgment.');
+                shouldBlock = true;
+            }
+        }
+
+        if (shouldBlock) {
             logger.warn('[indii:Orchestrator] Input blocked:', security.analysis.detectedPatterns);
             await TraceService.failTrace(traceId, 'Blocked: injection pattern detected');
             throw new Error('Request blocked by security filter.');
