@@ -56,7 +56,9 @@ describe('searchProductSkillByIntentAsync', () => {
             return async () => ({ data: { answers: { skill: { choice: 'digital_distribution' } } } });
         });
 
-        const skill = await ProductSkillRegistry.searchProductSkillByIntentAsync('please ship my record to streaming services');
+        // 'xyzzy plugh' matches no bundled skill's name/id/description, so the
+        // deterministic stages must miss against the FULL catalog in CI too.
+        const skill = await ProductSkillRegistry.searchProductSkillByIntentAsync('xyzzy plugh');
 
         expect(skill?.id).toBe('digital_distribution');
     });
