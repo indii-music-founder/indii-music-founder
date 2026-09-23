@@ -1708,6 +1708,25 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         finalResponse = outputCheck.redactedResponse;
                     }
 
+                    // TypeSafe/Jev guardrail — screens for hallucinations before user sees response.
+                    // Fully soft-fail: times out after 2s, never throws, passes through on any error.
+                    try {
+                        const { jevGuardrailService } = await importWithRetry(() => import('./guardrails/JevGuardrailService'));
+                        const guardrailResult = await Promise.race([
+                            jevGuardrailService.screen({
+                                text: finalResponse,
+                                tool_calls: toolCalls,
+                            }),
+                            new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+                        ]);
+                        if (guardrailResult && guardrailResult.wasModified) {
+                            logger.warn(`[BaseAgent] 🛡️ Jev guardrail intercepted response for ${this.id}. Flags: ${guardrailResult.flags.join(', ')}`);
+                            finalResponse = guardrailResult.text;
+                        }
+                    } catch (guardrailErr) {
+                        logger.debug(`[BaseAgent] Jev guardrail skipped (non-fatal): ${guardrailErr}`);
+                    }
+
                     // Phase 3: Commit execution context changes on successful completion
                     if (executionContext.hasUncommittedChanges()) {
                         logger.debug(`[BaseAgent] Committing changes for ${this.id}: ${executionContext.getChangeSummary()}`);

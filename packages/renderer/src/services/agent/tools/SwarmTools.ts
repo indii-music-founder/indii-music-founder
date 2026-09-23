@@ -136,9 +136,26 @@ export const consult_specialist = wrapTool(
                 return toolError(error.message, 'A2A_HANDSHAKE_PENDING');
             }
 
-            // If A2A transport is unavailable, fall back to in-process runAgent
-            if (error instanceof A2ATransportUnavailableError && context.runAgent) {
-                logger.warn(`[A2A:Consult] A2A transport unavailable, falling back to in-process delegation to ${targetAgentId}`);
+            // Fall back to in-process runAgent for any A2A failure:
+            //   - A2ATransportUnavailableError  — sidecar/HTTP transport down
+            //   - "Missing or insufficient permissions" — Firestore security rule
+            //     rejection inside DigitalHandshake.require() or the loopback
+            //   - "RPC Error:" prefix — loopback returned a JSON-RPC error payload
+            // The in-process path bypasses the encrypted loopback entirely and
+            // directly delegates to the target agent's BaseAgent.run().
+            const isTransportDown = error instanceof A2ATransportUnavailableError;
+            const isPermissionError = typeof error.message === 'string' && (
+                error.message.includes('Missing or insufficient permissions') ||
+                error.message.includes('RPC Error:') ||
+                error.message.includes('permission-denied') ||
+                error.message.includes('PERMISSION_DENIED')
+            );
+
+            if ((isTransportDown || isPermissionError) && context.runAgent) {
+                logger.warn(
+                    `[A2A:Consult] A2A unavailable (${isPermissionError ? 'permission/rpc' : 'transport'}), ` +
+                    `falling back to in-process delegation to ${targetAgentId}`
+                );
                 try {
                     const result = await context.runAgent(
                         targetAgentId,
