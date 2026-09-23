@@ -24,6 +24,7 @@ const ThesisCrawl = lazy(() => import('./components/ThesisCrawl'));
 // Below-the-fold sections are code-split: their JS is fetched and parsed only
 // when the section approaches the viewport (see LazySection below).
 const AgentGrid = lazy(() => import('./components/AgentGrid'));
+const OverlookedWorkSection = lazy(() => import('./components/sections/OverlookedWorkSection'));
 const ConductorSection = lazy(() => import('./components/ConductorSection'));
 const AppStudioShowcase = lazy(() => import('./components/AppStudioShowcase'));
 const LegacyComparison = lazy(() => import('./components/LegacyComparison'));
@@ -414,6 +415,9 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       </LazySection>
       <LazySection id="capabilities">
         <AgentGrid />
+      </LazySection>
+      <LazySection>
+        <OverlookedWorkSection />
       </LazySection>
       <LazySection id="conductor">
         <ConductorSection />

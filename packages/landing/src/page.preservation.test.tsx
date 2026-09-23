@@ -283,6 +283,7 @@ describe('home page preservation (founder mode)', () => {
       'stats',
       'legacy',
       'capabilities',
+      'overlooked-work',
       'conductor',
       'studio',
       'principles',
@@ -315,6 +316,17 @@ describe('home page preservation (founder mode)', () => {
       registerStage.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     expect(registerStage.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('shows overlooked work without presenting the fan storefront as available', async () => {
+    await renderHome();
+    await revealSections();
+    const section = container.querySelector('[data-system-section="overlooked-work"]');
+    expect(section?.textContent).toContain('Log the drive to rehearsal');
+    expect(section?.textContent).toContain('prepare the day sheet and technical rider');
+    expect(section?.textContent).toContain('without changing the original');
+    expect(section?.textContent).toContain('Put your artwork on a shirt.');
+    expect(section?.textContent).toContain('Planned: a direct artist storefront');
   });
 
   it('shows public beta pricing without presenting checkout as active', async () => {
