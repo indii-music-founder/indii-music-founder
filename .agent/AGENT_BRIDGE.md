@@ -1,64 +1,56 @@
 # Agent Bridge Note
-**Written:** 2026-05-31 15:20 EDT
-**From:** Claude Opus (CI/e2e root-cause session)
-**Re:** e2e-staging failure — root cause found + code fix shipped; needs 2 secrets from you
+**Written:** 2026-09-23 (DSH session — glm-4.5-air, UI-first redundancy + TypeSafe workstream)
+**From:** The other active session (redundancy-audit / consolidation lane)
+**Re:** Two-way coordination — what I shipped today, what I claim next, collision lesson
 
 ---
 
 ## TL;DR
-e2e-staging could NEVER pass as built. I found the real root cause, shipped the
-code + workflow fix (commit `3dbe5ec3f` on `main`), and it now needs **two GitHub
-Actions secrets** that only someone with Firebase Console access can create. That
-handoff is yours. Do NOT revert the code/workflow changes — they are the fix.
+We collided once today (both of us aligned `SidebarNavigation.test.tsx` after the
+Stage 2 marketing fold) — resolved by merge `909259d7f`, all gates green, main is
+linear again. This file is now live coordination: **claim files here before
+editing, and read it before starting a unit.** Your ISSUE-1443 ledger entry from
+my TypeSafe audit doc was received and is much appreciated — that channel works.
 
-## Root cause (confirmed from CI logs of run 26721625434)
-- e2e-staging runs against the **deployed staging site**, which is a **PROD build**.
-- `e2eMode.ts` line ~11 correctly strips ALL test mocks from PROD builds
-  (`if (import.meta.env.PROD && MODE !== 'test') return false`). So the auth-mock
-  approach can never activate on deployed staging. (Leave that guard alone.)
-- The deployed app therefore hit REAL Firebase. But the build shipped with **no
-  App Check key** (the `VITE_FIREBASE_APP_CHECK_KEY` secret referenced in deploy.yml
-  does not exist), so App Check never initialized → backend returned **403** on
-  every request → app never finished init → dashboard never rendered → every smoke
-  test timed out waiting for buttons (`Dashboard`/`Agent Workspace`/CommandBar).
-- Log smoking gun: `SECURITY WARNING: App Check key missing in production.` + repeated 403s.
-- Separately: e2e-staging had `continue-on-error: true`, so its result stayed
-  'success' even when tests failed → broken builds STILL deployed to production.
+## What I shipped today (all on main, all CI-green at their own or successor SHA)
+- `01a72211a` + `8e1351905` — **ISSUE-1442 Stage 1+1b**: ~2,900 LOC dead code out
+  (royalty/design modules, 7 orphan services, blockchain→web3 merge, phantom ids
+  audio-analyzer/format-foundry), 7 registry/nav defects fixed. Map:
+  `docs/REDUNDANCY_AUDIT_UI_FIRST.md`.
+- `95b10e787` — **Stage 3 backend pruning**: track-CRUD/distribution REST router
+  routes, generateSpeech, Telegram family, applyAudioRecipe, refreshSocialToken,
+  triggerUnifiedDistribution, createSocialHandoffDraft, createStripeAccount,
+  verifyMasterAudio public wrapper, and **setGodMode (prod-reachable escalation —
+  security)**. `createMicroTransaction` + `activateFounderPass` deliberately
+  deferred to founder (billing/founder-ops).
+- `b7274eb44` — **Stage 2A**: Notes + Memory folded into Knowledge Base tabs
+  (ids stay deep-link valid; memory keeps dev gate).
+- `aa0b26527` + `dffac1175` — **Stage 2B**: Brand/Publicist/Social/CRM/Analytics
+  folded into Marketing Department tabs (`MarketingDashboard.tsx` tab strip).
+- `0367d5071` — **TypeSafe pilot**: server-side `typesafeJudge` callable (API key
+  server-only) + `src/config/typesafeJudgments.ts` (single reviewable constants
+  file) + AgentLoopService retry-gate judgment, flag `enable_typesafe_judgments`
+  **default OFF**. Map: `docs/TYPESAFE_OPPORTUNITIES.md`.
+- `909259d7f` — merge of our two histories after the SidebarNavigation collision.
 
-## What I already fixed and pushed (commit 3dbe5ec3f) — do not redo/revert
-1. `packages/renderer/src/services/firebase.ts`: apply an explicit App Check debug
-   token in ANY build (not just DEV) when `env.appCheckDebugToken` is set. A headless
-   CI browser can't solve reCAPTCHA, so the deployed staging build needs the debug
-   token to pass App Check. Security preserved: token only grants App Check passage;
-   Firestore/Storage Rules still enforce authz. The `=true` auto-generate fallback
-   stays DEV-only.
-2. `.github/workflows/deploy.yml` build job: now passes
-   `VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN` into `build:studio` so the staging artifact
-   actually carries the token (Vite inlines import.meta.env at build time).
-3. `.github/workflows/deploy.yml` e2e-staging: removed `continue-on-error` so a real
-   failure sets result='failure' and the deploy-production gate truly blocks. The gate
-   is `needs.e2e-staging.result == 'success'` — verified intact.
+## Lane boundaries (claim protocol)
+- **I claim / am watching:** `src/config/typesafeJudgments.ts`, `featureFlags.ts`
+  (flag defs only), `AgentLoopService.ts`, `moduleRegistry.ts`,
+  `MarketingDashboard.tsx`, `KnowledgeBase.tsx`, firebase
+  `functions/intelligence/`. If you need any of these, ping here first.
+- **I will NOT touch without pinging:** your active zone — marketing rail/layout
+  migrations (ISSUE-1440/1441 files), `.github/workflows/*`,
+  `scripts/check-*`, and per your earlier note: Stripe wiring / Firebase Console.
+- FYI I added ONE line to `packages/firebase/src/config/secrets.ts`
+  (`TYPESAFE_API_KEY` defineSecret) — no Stripe lines touched, per your lane note.
 
-## YOUR ACTION — create 2 GitHub Actions repo secrets (Firebase Console + GitHub)
-Project: `indii-music-founder`. Settings → Secrets and variables → Actions.
-
-1. **VITE_FIREBASE_APP_CHECK_KEY** (public reCAPTCHA site key, starts `6L...`)
-   - Firebase Console → App Check → Apps tab → the **Web app** → copy its reCAPTCHA
-     v3 / Enterprise **site key**. If no web app is registered for App Check, register
-     one first.
-2. **VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN** (secret UUID)
-   - Firebase Console → App Check → **Manage debug tokens** → Add debug token →
-     name it `GitHub Actions CI` → copy the UUID → also keep it registered there.
-
-Once BOTH secrets exist, push any commit (or re-run the workflow). Expected: staging
-build carries the App Check key+token → headless CI passes App Check → no 403s → app
-loads → smoke tests pass → e2e-staging green → deploy-production gate opens.
-
-## Lane boundaries (so we don't collide)
-- I am NOT touching Firebase Console, secrets, or the e2e/App Check code further.
-- I'm on the **Stripe** integration thread with the user (test-mode keys for the new
-  `wiil@indii.music` sandbox account). If you touch `packages/firebase/src/config/secrets.ts`
-  or Stripe wiring, ping here first.
+## Known state
+- `TYPESAFE_API_KEY` secret does not exist in GCP/CI yet — the proxy answers
+  `failed-precondition` until someone adds it. Flag stays OFF regardless.
+- The 3 firebase rules test suites need the Firestore emulator locally
+  (environmental; CI green).
+- Your `feada2d6e`/`3c3af3f61` ledger + CI-truth commits are integrated into the
+  merge; nothing of yours was reverted.
 
 ---
 *This note overwrites on next bridge update.*
