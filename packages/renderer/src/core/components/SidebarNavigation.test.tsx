@@ -172,9 +172,12 @@ describe('Sidebar Navigation Integration', () => {
         expect(screen.getByText('Marketing Department')).toBeInTheDocument();
         expect(screen.getByTestId('bottom-rail-notes-btn')).toBeInTheDocument();
 
-        // ISSUE-1436: "Campaign Manager" rendered the identical CampaignDashboard as
-        // "Marketing Department" — the duplicate nav entry must not come back.
+        // ISSUE-1442 Stage 2B: marketing owns Brand, Publicist, Social, CRM, and
+        // Analytics as tabs. They must not reappear as competing top-level entries.
+        expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
         expect(screen.queryByText('Campaign Manager')).not.toBeInTheDocument();
+        expect(screen.queryByText('Publicist')).not.toBeInTheDocument();
+        expect(screen.queryByText('Social Media Department')).not.toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
@@ -208,6 +211,10 @@ describe('Sidebar Navigation Integration', () => {
         // the surviving sidebar items assert department navigation.
         fireEvent.click(screen.getByText('Road/tour'));
         expect(mockSetModule).toHaveBeenCalledWith('road');
+
+        vi.advanceTimersByTime(200);
+        fireEvent.click(screen.getByText('Marketing Department'));
+        expect(mockSetModule).toHaveBeenCalledWith('marketing');
 
         vi.advanceTimersByTime(200);
         fireEvent.click(screen.getByText('Finance Department'));
@@ -423,7 +430,7 @@ describe('Sidebar Navigation Integration', () => {
     // Marketing Department tabs; the Departments entry now dispatches 'marketing'.
     // (ISSUE-443's module-routing regression stays covered by the direct-render
     // test above, since the 'social' id and SocialDashboard remain valid.)
-    it('Marketing Department sidebar click dispatches setModule("marketing")', () => {
+    it('Marketing Department sidebar click dispatches setModule("marketing") (ISSUE-1442)', () => {
         render(
             <MemoryRouter>
                 <Sidebar />
