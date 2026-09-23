@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "gcp-build": "npm run build",
-    "deploy": "firebase deploy --only functions",
+    "deploy": "npm --prefix ../.. run repo:assert-canonical && firebase deploy --only functions",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "logs": "firebase functions:log",

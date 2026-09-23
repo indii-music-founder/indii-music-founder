@@ -61,14 +61,27 @@ describe('projectLegacyTrackToCanonical', () => {
 
     expect(result.identifiers).toEqual([]);
   });
-  it('normalizes valid timestamps and omits invalid legacy dates', () => {
-    const valid = projectLegacyReleaseToCanonical({ id: 'valid-date', releaseDate: '2026-09-19T20:00:00Z', originalReleaseDate: '2024-02-29T00:00:00-05:00' }, now);
-    expect(valid.release.releaseDate).toBe('2026-09-19');
-    expect(valid.release.originalReleaseDate).toBe('2024-02-29');
-    expect(ReleaseEntitySchema.safeParse(valid.release).success).toBe(true);
-    const invalid = projectLegacyReleaseToCanonical({ id: 'invalid-date', releaseDate: '2026-02-30', originalReleaseDate: 'not-a-date' }, now);
-    expect(invalid.release).not.toHaveProperty('releaseDate');
-    expect(invalid.release).not.toHaveProperty('originalReleaseDate');
+  it('normalizes valid legacy dates without timezone shifting', () => {
+    for (const [value, expected] of [
+      ['2026-09-19', '2026-09-19'],
+      ['2026-09-19T20:00:00Z', '2026-09-19'],
+      ['2024-02-29T00:00:00-05:00', '2024-02-29'],
+      ['2026-09-19T23:59:59.123456789+14:00', '2026-09-19'],
+    ]) {
+      const result = projectLegacyReleaseToCanonical({ id: `valid-${value}`, releaseDate: value, originalReleaseDate: value }, now);
+      expect(result.release.releaseDate).toBe(expected);
+      expect(result.release.originalReleaseDate).toBe(expected);
+      expect(ReleaseEntitySchema.safeParse(result.release).success).toBe(true);
+    }
+  });
+
+  it('omits blank, malformed, impossible, and non-string legacy dates', () => {
+    for (const value of ['', '   ', '2026-02-30', '2026-09-19T24:00:00Z', '2026-09-19T12:60:00Z', '2026-09-19T12:00:60Z', '2026-09-19T12:00:00+14:01', 'not-a-date', 1_800_000_000_000, null]) {
+      const result = projectLegacyReleaseToCanonical({ id: `invalid-${String(value)}`, releaseDate: value as string, originalReleaseDate: value as string }, now);
+      expect(result.release).not.toHaveProperty('releaseDate');
+      expect(result.release).not.toHaveProperty('originalReleaseDate');
+      expect(ReleaseEntitySchema.safeParse(result.release).success).toBe(true);
+    }
   });
 });
 

@@ -61,13 +61,23 @@ function normalizeOptional(value: unknown): string | undefined {
 function normalizeLegacyDate(value: unknown): string | undefined {
   const normalized = normalizeOptional(value);
   if (!normalized) return undefined;
-  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[-+]\d{2}:\d{2}))?$/.exec(normalized);
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:Z|([+-])(\d{2}):(\d{2})))?$/.exec(normalized);
   if (!match) return undefined;
   const [year, month, day] = match.slice(1).map(Number);
   const candidate = new Date(Date.UTC(year, month - 1, day));
-  return candidate.getUTCFullYear() === year && candidate.getUTCMonth() === month - 1 && candidate.getUTCDate() === day
-    ? `${match[1]}-${match[2]}-${match[3]}`
-    : undefined;
+  if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day) {
+    return undefined;
+  }
+
+  if (match[4] === undefined) return `${match[1]}-${match[2]}-${match[3]}`;
+
+  const [hour, minute, second = '0', offsetHour = '0', offsetMinute = '0'] = [match[4], match[5], match[6], match[8], match[9]];
+  if (Number(hour) > 23 || Number(minute) > 59 || Number(second) > 59 || Number(offsetHour) > 14 || Number(offsetMinute) > 59) {
+    return undefined;
+  }
+  if (Number(offsetHour) === 14 && Number(offsetMinute) !== 0) return undefined;
+
+  return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
 function mapLegacyReleaseType(value: string | undefined): CanonicalReleaseProjection['release']['releaseType'] {
