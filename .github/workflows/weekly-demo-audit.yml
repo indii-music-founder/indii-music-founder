@@ -92,8 +92,8 @@ jobs:
         if: steps.h1_install.outputs.exit_code == '0'
         run: |
           mkdir -p "$RUNNER_TEMP/hyperframes-bin"
-          ln -sf "$(node -e "process.stdout.write(require('ffmpeg-static'))")" "$RUNNER_TEMP/hyperframes-bin/ffmpeg"
-          ln -sf "$(node -e "process.stdout.write(require('ffprobe-static').path)")" "$RUNNER_TEMP/hyperframes-bin/ffprobe"
+          ln -sf "$(node -p 'require("ffmpeg-static")')" "$RUNNER_TEMP/hyperframes-bin/ffmpeg"
+          ln -sf "$(node -p 'require("ffprobe-static").path')" "$RUNNER_TEMP/hyperframes-bin/ffprobe"
           echo "$RUNNER_TEMP/hyperframes-bin" >> "$GITHUB_PATH"
           "$RUNNER_TEMP/hyperframes-bin/ffmpeg" -version
           "$RUNNER_TEMP/hyperframes-bin/ffprobe" -version
@@ -227,7 +227,7 @@ jobs:
           set +e
           [ -n "$DEV_PID" ] && kill "$DEV_PID" 2>/dev/null
           h1_dev_outcome="${{ steps.h1_dev.outcome }}"
-          h1_outcome="${{ steps.h1_install.outputs.exit_code == 'success' && steps.h1_typecheck.outputs.exit_code == 'success' && steps.h1_lint.outputs.exit_code == 'success' && steps.h1_tests.outputs.exit_code == 'success' && steps.h1_build.outputs.exit_code == 'success' && steps.h1_dev.outcome == 'success' }}"
+          h1_outcome="${{ steps.h1_install.outputs.exit_code == '0' && steps.h1_typecheck.outputs.exit_code == '0' && steps.h1_lint.outputs.exit_code == '0' && steps.h1_tests.outputs.exit_code == '0' && steps.h1_build.outputs.exit_code == '0' && steps.h1_dev.outcome == 'success' }}"
           h2_outcome="${{ steps.h2_walk.outcome }}"
           h4_outcome="${{ steps.h4_plat.outcome }}"
           if [ "$h1_outcome" = "true" ] && [ "$h2_outcome" = "success" ] && [ "$h4_outcome" = "success" ]; then
