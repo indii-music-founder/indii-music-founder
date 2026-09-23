@@ -52,8 +52,6 @@ import type {
 export type WidgetType =
     | 'streams_today'
     | 'revenue_consolidated'
-    | 'revenue_mtd'
-    | 'revenue_aggregated'
     | 'project_timeline'
     | 'approval_gates'
     | 'next_release'
@@ -79,8 +77,6 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
     revenue_consolidated: { label: 'Revenue & Royalties', icon: DollarSign, description: 'Consolidated gross revenue, MTD earnings and income sources' },
     project_timeline: { label: 'Project Timeline', icon: Calendar, description: 'Active rollout timeline, current phase, and milestone countdown' },
     approval_gates: { label: 'Approval Gates', icon: ShieldCheck, description: 'Pending approval gates and one-click authorization' },
-    revenue_aggregated: { label: 'Revenue Aggregate', icon: TrendingUp, description: 'Total revenue from all sources', deprecated: true },
-    revenue_mtd: { label: 'Revenue MTD', icon: DollarSign, description: 'Month-to-date royalty revenue', deprecated: true },
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },
     top_track: { label: 'Top Track', icon: TrendingUp, description: 'Your best performing track right now' },
     agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent Autonomous agent tasks and completions' },
@@ -114,7 +110,7 @@ export function migrateWidgets(savedWidgets: Widget[]): Widget[] {
     // If has legacy revenue but not consolidated, replace the first legacy revenue with consolidated
     let replacedRevenue = false;
     for (const w of savedWidgets) {
-        if (w.type === 'revenue_aggregated' || w.type === 'revenue_mtd') {
+        if ((w.type as string) === 'revenue_aggregated' || (w.type as string) === 'revenue_mtd') {
             if (!hasConsolidatedRevenue && !replacedRevenue) {
                 migrated.push({ id: w.id, type: 'revenue_consolidated', order: w.order });
                 replacedRevenue = true;
@@ -326,74 +322,11 @@ function StreamsTodayWidget() {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-function RevenueMTDWidget() {
-    const userId = useAuthenticatedUserId();
-    const [revenueData, setRevenueData] = useState<DashboardRevenueStats | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (!userId) return;
-
-        const unsubscribe = AnalyticsService.subscribeToDashboardRevenue(
-            userId,
-            (data) => {
-                setRevenueData(data);
-                setIsLoading(false);
-            },
-            () => {
-                setRevenueData(AnalyticsService.getRevenueZeroState());
-                setIsLoading(false);
-            }
-        );
-
-        return () => unsubscribe();
-    }, [userId]);
-
-    const now = new Date();
-    const monthName = now.toLocaleString('default', { month: 'long' });
-
-    const displayValue = revenueData?.mtdRevenue.formatted || '--';
-    const growth = '--';
-
-    return (
-        <div className="flex flex-col h-full justify-between group/widget">
-            <div>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.2)] group-hover/widget:bg-green-500 group-hover/widget:text-black transition-all duration-500">
-                            <DollarSign size={20} className="group-hover/widget:rotate-12 transition-transform" />
-                        </div>
-                        <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Royalties</span>
-                    </div>
-                    <span className="text-[9px] font-black text-green-400 uppercase tracking-widest bg-green-400/10 px-2 py-1 rounded-lg border border-green-400/20">
-                        {growth}
-                    </span>
-                </div>
-                
-                <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
-                        {isLoading ? displayValue : <CountUp value={parseFloat(displayValue.replace(/[^0-9.]/g, '')) || 0} formatter={formatCurrency} />}
-                    </p>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{monthName} Earnings</p>
-                </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
-                <div className="flex flex-col">
-                    <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Next Payout</span>
-                    <span className="text-xs font-bold text-white/60">Not scheduled</span>
-                </div>
-                <div className="w-12 h-6 rounded-md bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-                    <div className="w-full h-full bg-linear-to-r from-green-500/20 to-emerald-500/40 animate-pulse" />
-                </div>
-            </div>
-        </div>
-    );
-}
 
 // eslint-disable-next-line react-refresh/only-export-components
 function NextReleaseWidget() {
     const userId = useAuthenticatedUserId();
+    const setModule = useStore(useShallow((s) => s.setModule));
     const [release, setRelease] = useState<DashboardNextRelease | null | undefined>(undefined);
     const [now, setNow] = useState<number>(() => Date.now());
 
@@ -446,7 +379,9 @@ function NextReleaseWidget() {
                 ) : release === null ? (
                     <div className="space-y-4">
                         <p className="text-4xl font-black text-white/10 tracking-tighter italic uppercase">Zero State</p>
-                        <button className="w-full py-2.5 rounded-xl border border-dashed border-white/10 text-[10px] font-black text-white/40 uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all">
+                        <button
+                            onClick={() => setModule('distribution')}
+                            className="w-full py-2.5 rounded-xl border border-dashed border-white/10 text-[10px] font-black text-white/40 uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all">
                             Initialize Release
                         </button>
                     </div>
@@ -946,6 +881,7 @@ function BrandIdentityWidget() {
 // eslint-disable-next-line react-refresh/only-export-components
 function MerchSalesWidget() {
     const userId = useAuthenticatedUserId();
+    const setModule = useStore(useShallow((s) => s.setModule));
     const [data, setData] = useState<DashboardMerchSales | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -989,7 +925,9 @@ function MerchSalesWidget() {
                         </div>
                     </div>
                 ) : (
-                    <button className="w-full py-2 rounded-xl border border-dashed border-white/10 text-[8px] font-black text-white/20 uppercase tracking-[0.2em] hover:bg-white/5 transition-colors">
+                    <button
+                        onClick={() => setModule('merch')}
+                        className="w-full py-2 rounded-xl border border-dashed border-white/10 text-[8px] font-black text-white/20 uppercase tracking-[0.2em] hover:bg-white/5 transition-colors">
                         Connect Storefront
                     </button>
                 )}
@@ -1572,7 +1510,6 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     revenue_consolidated: () => <ConsolidatedRevenueWidget initialMode="aggregate" />,
     project_timeline: () => <ProjectTimelineWidget />,
     approval_gates: () => <ApprovalGatesWidget />,
-    revenue_mtd: () => <RevenueMTDWidget />,
     next_release: () => <NextReleaseWidget />,
     top_track: () => <TopTrackWidget />,
     agent_activity: () => <AgentActivityWidget />,
@@ -1583,104 +1520,10 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     brand_identity: () => <BrandIdentityWidget />,
     merch_sales: () => <MerchSalesWidget />,
     tour_status: () => <TourStatusWidget />,
-    revenue_aggregated: () => <RevenueAggregatedWidget />,
     cost_estimator: () => <CostEstimatorWidget />,
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-function RevenueAggregatedWidget() {
-    // Revenue rules are scoped to Firebase Auth, not a mutable/stale profile
-    // document. A cached profile from another account must never choose the
-    // owner for this query during account-boundary hydration.
-    const userId = useAuthenticatedUserId();
-    const setModule = useStore(useShallow((s) => s.setModule));
-    const [stats, setStats] = useState<RevenueStats | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (!userId) return;
-        const fetchStats = async () => {
-            try {
-                const data = await revenueService.getUserRevenueStats(userId, '30d');
-                setStats(data);
-            } catch (error) {
-                Logger.error('CustomDashboardWidgets', 'Error fetching revenue stats', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchStats();
-    }, [userId]);
-
-    // ISSUE-1291: $0 gross reads as failure to a pre-release artist. Show the promise.
-    if (!isLoading && (stats?.totalRevenue ?? 0) === 0) {
-        return (
-            <WidgetEmptyState
-                icon={TrendingUp}
-                label="Aggregate Revenue"
-                promise="Streaming, merch, sync and licensing income roll up here as it arrives."
-                ctaLabel="Set up revenue tracking"
-                ctaModule="finance"
-                accentClass="text-dept-royalties"
-            />
-        );
-    }
-
-    return (
-        <div className="flex flex-col h-full justify-between group/widget cursor-pointer" onClick={() => setModule('finance')} data-testid="revenue-aggregated-widget">
-            <div>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-green-500 group-hover/widget:text-black transition-all duration-500">
-                        <TrendingUp size={18} className="group-hover/widget:scale-110 transition-transform" />
-                    </div>
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Aggregate Revenue</span>
-                </div>
-                
-                <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
-                        ${stats?.totalRevenue.toLocaleString('en-US') || '0'}
-                    </p>
-                    <div className="flex items-center gap-2">
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Gross Revenue</p>
-                        {stats && stats.revenueChange !== 0 && (
-                            <span className={`text-[10px] font-black ${stats.revenueChange >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                {stats.revenueChange >= 0 ? '+' : ''}{stats.revenueChange.toFixed(1)}%
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-6">
-                <div className="flex gap-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    {stats && Object.entries(stats.sources).map(([key, value], i) => {
-                        const percentage = stats.totalRevenue > 0 ? (value / stats.totalRevenue) * 100 : 0;
-                        const colors: Record<string, string> = {
-                            streaming: 'bg-blue-500',
-                            merch: 'bg-green-500',
-                            licensing: 'bg-emerald-500',
-                            social: 'bg-pink-500'
-                        };
-                        if (percentage === 0) return null;
-                        return (
-                            <motion.div
-                                key={key}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${percentage}%` }}
-                                className={`h-full ${colors[key] || 'bg-gray-500'}`}
-                                transition={{ delay: i * 0.1 }}
-                            />
-                        );
-                    })}
-                </div>
-                <div className="mt-2 flex justify-between items-center">
-                    <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Multi-Stream Distribution</span>
-                    <span className="text-[8px] font-black text-green-400 uppercase tracking-widest group-hover/widget:translate-x-1 transition-transform">View Details →</span>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 // eslint-disable-next-line react-refresh/only-export-components
 function CostEstimatorWidget() {

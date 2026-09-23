@@ -394,7 +394,7 @@ describe('PublishingDashboard', () => {
         });
     });
 
-    it('navigates to distribution module via Manage Distributors', () => {
+    it('renders the canonical distribution connections panel in the rail (ISSUE-1441)', () => {
         mockUseReleases.mockReturnValue({
             releases: [],
             loading: false,
@@ -406,9 +406,9 @@ describe('PublishingDashboard', () => {
 
         render(<PublishingDashboard />);
 
-        const manageBtn = screen.getByText('Manage Connections');
-        fireEvent.click(manageBtn);
-
-        expect(mockSetModule).toHaveBeenCalledWith('distribution');
+        // ISSUE-1441: publishing's drifted DistributorConnectionsPanel fork (with its
+        // 'Manage Connections' jump button) was deleted; the canonical distribution
+        // panel manages connections in place and is what actually mounts here.
+        expect(screen.getByTestId('distro-connections-list')).toBeInTheDocument();
     });
 });

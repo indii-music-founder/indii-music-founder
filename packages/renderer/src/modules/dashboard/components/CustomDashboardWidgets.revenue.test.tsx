@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -82,7 +82,9 @@ describe('Aggregate Revenue production owner boundary', () => {
     });
 
     it('queries revenue with Firebase Auth UID instead of a stale profile ID', async () => {
-        render(WIDGET_RENDERERS.revenue_aggregated());
+        // ISSUE-1441: revenue_aggregated was removed; the consolidated card carries
+        // the same auth-UID querying behavior.
+        render(WIDGET_RENDERERS.revenue_consolidated());
 
         await waitFor(() => {
             expect(mocks.getUserRevenueStats).toHaveBeenCalledWith(
@@ -97,9 +99,11 @@ describe('Aggregate Revenue production owner boundary', () => {
     });
 
     it('uses the auth-ready UID for every owner-scoped analytics subscription', async () => {
+        // ISSUE-1441: revenue_mtd was removed — the consolidated card carries the
+        // subscribeToDashboardRevenue behavior now.
         const subscriptions = [
             ['streams_today', mocks.subscribeToDashboardStreams],
-            ['revenue_mtd', mocks.subscribeToDashboardRevenue],
+            ['revenue_consolidated', mocks.subscribeToDashboardRevenue],
             ['next_release', mocks.subscribeToNextRelease],
             ['top_track', mocks.subscribeToTopTrack],
             ['agent_activity', mocks.subscribeToAgentActivity],
@@ -116,6 +120,10 @@ describe('Aggregate Revenue production owner boundary', () => {
             <div key={widgetType}>{WIDGET_RENDERERS[widgetType]()}</div>
         ))}</>);
 
+        // ISSUE-1441: the consolidated card subscribes to dashboard revenue only in
+        // MTD mode (its default is aggregate) — flip its toggle first.
+        fireEvent.click(screen.getByText('MTD'));
+
         await waitFor(() => {
             for (const [, subscribe] of subscriptions) {
                 const calls = subscribe.mock.calls as unknown[][];
@@ -129,7 +137,7 @@ describe('Aggregate Revenue production owner boundary', () => {
     it('does not query revenue before Firebase Auth restoration completes', async () => {
         mocks.state.authLoading = true;
 
-        render(WIDGET_RENDERERS.revenue_aggregated());
+        render(WIDGET_RENDERERS.revenue_consolidated());
 
         await Promise.resolve();
         expect(mocks.getUserRevenueStats).not.toHaveBeenCalled();

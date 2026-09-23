@@ -363,19 +363,24 @@ describe('Consolidated Dashboard Widgets & Operational Gates', () => {
     });
 
     describe('Widget Migration & Deprecation Filtering', () => {
-        it('marks revenue_aggregated and revenue_mtd as deprecated', () => {
-            expect(WIDGET_DEFINITIONS.revenue_aggregated.deprecated).toBe(true);
-            expect(WIDGET_DEFINITIONS.revenue_mtd.deprecated).toBe(true);
+        it('removes revenue_aggregated and revenue_mtd entirely (ISSUE-1441)', () => {
+            // ISSUE-1441: the deprecated duplicates are gone, not just flagged —
+            // one revenue card with the existing toggle suffices.
+            const definitions = WIDGET_DEFINITIONS as Record<string, unknown>;
+            expect(definitions.revenue_aggregated).toBeUndefined();
+            expect(definitions.revenue_mtd).toBeUndefined();
             expect(WIDGET_DEFINITIONS.revenue_consolidated.deprecated).toBeUndefined();
         });
 
         it('migrates legacy stored layout with redundant revenue widgets to consolidated layout', () => {
-            const legacyWidgets: Widget[] = [
+            // Legacy boards still carry the removed ids — migrateWidgets must
+            // accept them (the ids are no longer part of the WidgetType union).
+            const legacyWidgets = [
                 { id: 'w1', type: 'streams_today', order: 0 },
                 { id: 'w2', type: 'revenue_aggregated', order: 1 },
                 { id: 'w3', type: 'revenue_mtd', order: 2 },
                 { id: 'w4', type: 'next_release', order: 3 },
-            ];
+            ] as Widget[];
 
             const migrated = migrateWidgets(legacyWidgets);
 

@@ -3154,7 +3154,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1441: Dead and duplicated UI inventory (dead buttons, twin components, orphaned layout code)
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-09-22 — dead controls removed, deprecated revenue-widget duplicates unregistered, publishing's twin components deleted in favor of the canonical originals, FounderReadiness duplicate tab removed; ThreePanelDashboard actions-slot migration of social/publishing + MobileAdaptiveLayout deletion in progress this pass)
 - **Severity:** 🟡 MEDIUM
 - **Module:** StudioControlsPanel / publishing+distribution twins / MobileAdaptiveLayout / dashboard widgets
 - **Evidence:**
@@ -3166,6 +3166,12 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Impact:** Mock controls erode trust ("the app pretends to work"); forks accumulate divergent bugs; duplicate surfaces confuse ownership.
 - **Fix:** Delete or wire every dead control (prefer delete for mock AI features); collapse twins into the richer original and re-export; delete MobileAdaptiveLayout; extract one `StatCard` + one empty-state (promote licensing's CTA-bearing version); unregister deprecated revenue widgets; wire or remove dead-end CTAs.
 - **Acceptance:** Zero buttons without handlers in audited surfaces (grep-verifiable); each duplicated component exists once; deprecated widget registrations removed.
+- **Fix (2026-09-22):**
+  1. **StudioControlsPanel** — deleted the unwired CAMERA MOVEMENT buttons, decorative FPS bar, and mock Shot List section; the "Camera & Motion" card becomes "Motion" holding only the wired motion slider (`renamed title`, `data-testid="motion-slider"` retained).
+  2. **Dashboard widgets** — removed `revenue_mtd`/`revenue_aggregated` from the `WidgetType` union, `WIDGET_DEFINITIONS`, and `WIDGET_RENDERERS`; deleted the two widget function bodies. `migrateWidgets` still accepts persisted boards carrying the legacy ids (string-cast comparison) and migrates them onto `revenue_consolidated`. Dead-end CTAs wired for real: NextRelease "Initialize Release" → `setModule('distribution')`, MerchSales "Connect Storefront" → `setModule('merch')`.
+  3. **Twin dedupe** — deleted `publishing/components/DistributorConnectionsPanel.tsx` + `EarningsDashboard.tsx` (+ the fork's dedicated test); `PublishingDashboard` imports the canonical distribution/finance panels (identical zero-prop contracts). Removed Distribution's duplicate "Founder Readiness" tab + trigger — RegistrationCenter is its single home.
+- **Evidence:** `StudioControlsPanel.tsx` ("Motion" card comment block), `CustomDashboardWidgets.tsx` (WIDGET_RENDERERS without revenue_mtd/aggregated; wired CTA buttons), `PublishingDashboard.tsx:23-26` (canonical imports), `DistributionDashboard.tsx` (founder tab removal comment), `PublishingDashboard.test.tsx` (canonical-panel assertion). Affected suites: 12 files / 105 tests passing.
+- **Files:** `StudioControlsPanel.tsx`, `CustomDashboardWidgets.tsx`, `CustomDashboardWidgets.consolidation.test.tsx`, `CustomDashboardWidgets.revenue.test.tsx`, `PublishingDashboard.tsx`, `PublishingDashboard.test.tsx`, `DistributionDashboard.tsx` (deleted: publishing DistributorConnectionsPanel + EarningsDashboard forks, PublishingEarningsDashboard.test.tsx)
 
 ### ISSUE-1442: UI-first backwards redundancy audit — Stage 1+1b executed (dead code deleted, registry defects fixed)
 

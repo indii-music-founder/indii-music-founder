@@ -1114,27 +1114,14 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                     <SectionCard
                         isOpen={expandedSection === 'camera'}
                         onToggle={() => setExpandedSection(expandedSection === 'camera' ? '' : 'camera')}
-                        title="Camera & Motion"
+                        title="Motion"
                         icon={<Move className="text-blue-400" size={14} />}
                     >
                         <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
-                                    <Move size={12} /> CAMERA MOVEMENT
-                                </label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {['Zoom In', 'Pan Left', 'Tilt Up'].map((move) => (
-                                        <button
-                                            key={move}
-                                            data-testid={`camera-${move.toLowerCase().replace(' ', '-')}`}
-                                            className="px-2 py-2 bg-black/40 hover:bg-white/10 rounded-lg text-[10px] text-gray-300 border border-white/10 hover:border-white/20 transition-all"
-                                        >
-                                            {move}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            
+                            {/* ISSUE-1441: removed — the CAMERA MOVEMENT buttons (Zoom In/Pan
+                                Left/Tilt Up) had no onClick and the FPS bar was decorative.
+                                UI that pretends to work erodes trust; only the wired motion
+                                slider remains. */}
                             <div className="space-y-2">
                                 <div className="flex justify-between">
                                     <label className="text-[10px] font-bold text-gray-500 tracking-wider">MOTION STRENGTH</label>
@@ -1151,55 +1138,9 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
                                 />
                             </div>
-                            
-                            <div className="space-y-2">
-                                <div className="flex justify-between">
-                                    <label className="text-[10px] font-bold text-gray-500 tracking-wider">FPS</label>
-                                    <span className="text-[10px] text-gray-500 font-mono">24</span>
-                                </div>
-                                <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                                    <div className="h-full w-[40%] bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
-                                </div>
-                            </div>
                         </div>
                     </SectionCard>
 
-                    {whiskState.targetMedia !== 'image' && (
-                        <SectionCard
-                            isOpen={expandedSection === 'shotlist'}
-                            onToggle={() => setExpandedSection(expandedSection === 'shotlist' ? '' : 'shotlist')}
-                            title="Shot List"
-                            icon={<Video className="text-green-400" size={14} />}
-                        >
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-[10px] font-bold text-gray-500 tracking-wider">SEQUENCE</label>
-                                    <span className="text-[10px] text-gray-600 font-mono">00:00 / 00:15</span>
-                                </div>
-
-                                <div className="space-y-2">
-                                    {[1, 2].map((shot) => (
-                                        <motion.div
-                                            key={shot}
-                                            whileHover={{ scale: 1.01 }}
-                                            className="group relative bg-black/40 rounded-xl border border-white/10 p-2 flex gap-3 hover:border-blue-500/30 transition-all cursor-pointer shadow-sm"
-                                        >
-                                            <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center shrink-0 border border-white/5">
-                                                <Video size={14} className="text-gray-600" />
-                                            </div>
-                                            <div className="flex-1 min-w-0 py-1">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <span className="text-[11px] font-medium text-gray-300 group-hover:text-blue-400 transition-colors">Shot {shot}</span>
-                                                    <span className="text-[9px] font-mono text-gray-600 bg-white/5 px-1.5 py-0.5 rounded">4.0s</span>
-                                                </div>
-                                                <p className="text-[9px] text-gray-500 truncate">Cinematic drone shot over mountains...</p>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            </div>
-                        </SectionCard>
-                    )}
                     </>
                     )}
                 </div>

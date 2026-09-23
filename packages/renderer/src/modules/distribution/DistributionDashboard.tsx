@@ -11,7 +11,6 @@ import { QCPanel } from './components/QCPanel';
 import { KeysPanel } from './components/KeysPanel';
 import { TransferPanel } from './components/TransferPanel';
 import { QCVisualizer } from './components/QCVisualizer';
-import { FounderReadinessPanel } from '@/modules/registration/components/FounderReadinessPanel';
 
 /* ── Extracted Sub-components ── */
 import { ReleasesContent } from './components/ReleasesContent';
@@ -139,13 +138,7 @@ export default function DistributionDashboard() {
                                 >
                                     <Library size={14} /> {t('distribution.tabs.keys')}
                                 </TabsTrigger>
-                                <TabsTrigger
-                                    value="founder"
-                                    data-testid="distro-tab-founder"
-                                    className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
-                                >
-                                    <CheckSquare size={14} /> Founder Readiness
-                                </TabsTrigger>
+                                {/* ISSUE-1441: Founder Readiness tab removed — RegistrationCenter owns this panel. */}
                                 <TabsTrigger
                                     value="brain"
                                     data-testid="distro-tab-brain"
@@ -199,11 +192,9 @@ export default function DistributionDashboard() {
                                         <KeysPanel />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
-                                <TabsContent value="founder" data-testid="distro-content-founder" className="mt-0 border-none outline-none focus-visible:ring-0">
-                                    <ModuleErrorBoundary moduleName="Distribution / Founder Readiness">
-                                        <FounderReadinessPanel userId={user?.uid ?? ''} />
-                                    </ModuleErrorBoundary>
-                                </TabsContent>
+                                {/* ISSUE-1441: the "founder" tab (FounderReadinessPanel) was
+                                    removed — RegistrationCenter is its single home; this
+                                    module carried a stale duplicate. */}
                                 <TabsContent value="brain" data-testid="distro-content-brain" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / QC">
                                         <QCPanel />

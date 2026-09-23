@@ -20,8 +20,9 @@ import ReleaseWizard from './components/ReleaseWizard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useToast } from '@/core/context/ToastContext';
 import { PublishingSkeleton } from './components/PublishingSkeleton';
-import { DistributorConnectionsPanel } from './components/DistributorConnectionsPanel';
-import { EarningsDashboard } from './components/EarningsDashboard';
+// ISSUE-1441: use the canonical panels (publishing carried drifted forks).
+import { DistributorConnectionsPanel } from '@/modules/distribution/components/DistributorConnectionsPanel';
+import { EarningsDashboard } from '@/modules/finance/components/EarningsDashboard';
 import { ReleaseListView } from './components/ReleaseListView';
 import { ReleaseDetailPage } from './components/ReleaseDetailPage';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
