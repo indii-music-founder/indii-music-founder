@@ -18,6 +18,7 @@ import { useReleases } from './hooks/useReleases';
 import { useAnalytics, usePayouts } from './hooks/useAnalytics';
 import ReleaseWizard from './components/ReleaseWizard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 import { useToast } from '@/core/context/ToastContext';
 import { PublishingSkeleton } from './components/PublishingSkeleton';
 // ISSUE-1441: use the canonical panels (publishing carried drifted forks).
@@ -111,9 +112,15 @@ export default function PublishingDashboard() {
     return (
         <ModuleErrorBoundary moduleName="Publishing Dashboard">
             <OfflineBanner />
-            <div className="absolute inset-0 flex">
-                {/* ── LEFT PANEL — Stats & Quick Actions ────────────── */}
-                <aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-dept-publishing/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
+            <ThreePanelDashboard
+                moduleName="Publishing"
+                headerIcon={<Book size={18} className="text-white" />}
+                title="Publishing"
+                subtitle="RIGHTS · DISTRIBUTION · ROYALTIES"
+                bgBlobClass="bg-blue-500/8"
+                iconBgClass="bg-linear-to-br from-blue-500 to-blue-400"
+                iconShadowClass="shadow-blue-500/20"
+                leftPanel={<><aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-dept-publishing/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <ReleaseStatsPanel stats={stats} earnings={finance.earningsSummary?.totalNetRevenue} />
                     <ActiveReleasePanel releases={releases} onSelect={setSelectedReleaseId} />
                     <PendingActionsPanel
@@ -122,36 +129,25 @@ export default function PublishingDashboard() {
                         onNewRelease={() => setIsWizardOpen(true)}
                         onImportDSR={() => setIsDSRModalOpen(true)}
                     />
-                </aside>
-
-                {/* ── CENTER — Main Content ──────────────────────────── */}
-                <div className="flex-1 flex flex-col min-w-0">
-                    {/* Header */}
-                    <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
-                        <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-blue-500/8 blur-[100px] pointer-events-none rounded-full" />
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                                    <Book size={18} className="text-white" />
-                                </div>
-                                <div onClick={() => setModule('dashboard')} className="cursor-pointer">
-                                    <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Publishing</h1>
-                                    <p className="text-muted-foreground font-medium tracking-wide text-[10px]">RIGHTS · DISTRIBUTION · ROYALTIES</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setIsWizardOpen(true)}
-                                className="group flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-200 transition-all font-bold text-xs active:scale-[0.98]"
-                            >
-                                <Plus size={14} className="transition-transform group-hover:rotate-90" />
-                                New Release
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        <AnimatePresence mode="wait">
+                </aside></>}
+                rightPanel={<><aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-publishing/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <PerformancePanel releases={releases} />
+                    <PublishingErrorBoundary componentName="Distributor Connections">
+                        <DistributorConnectionsPanel />
+                    </PublishingErrorBoundary>
+                    <PublishingErrorBoundary componentName="Earnings Dashboard">
+                        <EarningsDashboard />
+                    </PublishingErrorBoundary>
+                </aside></>}
+                actions={<button
+                                    onClick={() => setIsWizardOpen(true)}
+                                    className="group flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-200 transition-all font-bold text-xs active:scale-[0.98]"
+                                >
+                                    <Plus size={14} className="transition-transform group-hover:rotate-90" />
+                                    New Release
+                                </button>}
+            >
+                <AnimatePresence mode="wait">
                             {selectedReleaseId && selectedRelease ? (
                                 <motion.div
                                     key="detail"
@@ -282,23 +278,9 @@ export default function PublishingDashboard() {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                    </div>
-                </div>
+            </ThreePanelDashboard>
 
-                {/* ── RIGHT PANEL — Distributors & Revenue ──────────── */}
-                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-publishing/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                    <PerformancePanel releases={releases} />
-                    <PublishingErrorBoundary componentName="Distributor Connections">
-                        <DistributorConnectionsPanel />
-                    </PublishingErrorBoundary>
-                    <PublishingErrorBoundary componentName="Earnings Dashboard">
-                        <EarningsDashboard />
-                    </PublishingErrorBoundary>
-                </aside>
-            </div>
-
-            {/* Modals */}
-            <AnimatePresence>
+<AnimatePresence>
                 {isDSRModalOpen && (
                     <DSRUploadModal
                         isOpen={isDSRModalOpen}
@@ -346,7 +328,7 @@ export default function PublishingDashboard() {
                     }}
                 />
             )}
-        </ModuleErrorBoundary>
+</ModuleErrorBoundary>
     );
 }
 

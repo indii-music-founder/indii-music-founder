@@ -30,6 +30,11 @@ export interface ThreePanelDashboardProps {
     /** Right sidebar content */
     rightPanel?: React.ReactNode;
 
+    /** Header-level actions (buttons/menus), right-aligned beside the title.
+     *  ISSUE-1441: modules forked the header markup to get action buttons —
+     *  this slot removes the reason to fork. */
+    actions?: React.ReactNode;
+
     /** Center content (placed directly under the header in the flex-1 container) */
     children: React.ReactNode;
 }
@@ -51,6 +56,7 @@ export function ThreePanelDashboard({
     iconShadowClass,
     leftPanel,
     rightPanel,
+    actions,
     children
 }: ThreePanelDashboardProps) {
     return (
@@ -74,6 +80,9 @@ export function ThreePanelDashboard({
                                 <h1 className="text-2xl font-black text-white tracking-tighter uppercase">{title}</h1>
                                 <p className="text-muted-foreground font-medium tracking-wide text-[10px]">{subtitle}</p>
                             </div>
+                            {actions && (
+                                <div className="ml-auto flex items-center gap-2">{actions}</div>
+                            )}
                         </div>
                     </div>
 

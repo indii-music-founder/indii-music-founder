@@ -10,7 +10,7 @@ import SocialFeed from './components/SocialFeed';
 import { InstagramHealthCard } from './components/InstagramHealthCard';
 import { InstagramInbox } from './components/InstagramInbox';
 import { logger } from '@/utils/logger';
-import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 
 /* ================================================================== */
 /*  Social Dashboard — Three-Panel Layout                               */
@@ -108,32 +108,25 @@ export default function SocialDashboard() {
     };
 
     return (
-        <ModuleErrorBoundary moduleName="Social">
-            <div className="absolute inset-0 flex">
-                {/* ── LEFT PANEL — Accounts & Filters ────────────────── */}
-                <aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
+        <ThreePanelDashboard
+                moduleName="Social"
+                headerIcon={<Megaphone size={18} className="text-black" />}
+                title="Social"
+                subtitle="CONTENT CALENDAR & SCHEDULING"
+                bgBlobClass="bg-dept-social/10"
+                iconBgClass="bg-dept-social"
+                iconShadowClass="shadow-dept-social/20"
+                leftPanel={<><aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <AccountStatsPanel stats={stats} />
                     <PlatformFiltersPanel />
                     <BestTimesPanel />
-                </aside>
-
-                {/* ── CENTER — Calendar & Feed ────────────────────────── */}
-                <div className="flex-1 flex flex-col min-w-0">
-                    {/* Header */}
-                    <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
-                        <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-dept-social/10 blur-[100px] pointer-events-none rounded-full" />
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-dept-social flex items-center justify-center shadow-lg shadow-dept-social/20">
-                                    <Megaphone size={18} className="text-black" />
-                                </div>
-                                <div>
-                                    <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Social</h1>
-                                    <p className="text-muted-foreground font-medium tracking-wide text-[10px]">CONTENT CALENDAR & SCHEDULING</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
+                </aside></>}
+                rightPanel={<><aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <DraftsQueuePanel scheduledPosts={scheduledPosts} />
+                    <PlatformStatusPanel />
+                    <TrendingTopicsPanel />
+                </aside></>}
+                actions={<><button
                                     onClick={() => setIsAccountWizardOpen(true)}
                                     className="flex items-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-xs font-bold border border-white/5"
                                 >
@@ -144,15 +137,11 @@ export default function SocialDashboard() {
                                     className="flex items-center gap-1.5 px-4 py-2 bg-dept-social hover:bg-dept-social/90 text-black font-bold rounded-lg transition-colors text-xs shadow-[0_0_15px_rgba(0,188,212,0.3)]"
                                 >
                                     <Plus size={14} /> Create Post
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        <div className="p-4 md:p-6 space-y-6">
-                            {/* Instagram Health Audit Card */}
+                                </button></>}
+            >
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <div className="p-4 md:p-6 space-y-6">
+                             {/* Instagram Health Audit Card */}
                             <InstagramHealthCard onConnectClick={() => setIsAccountWizardOpen(true)} />
 
                             {/* Calendar */}
@@ -191,14 +180,6 @@ export default function SocialDashboard() {
                             <InstagramInbox />
                         </div>
                     </div>
-                </div>
-
-                {/* ── RIGHT PANEL — Queue & Trends ───────────────────── */}
-                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                    <DraftsQueuePanel scheduledPosts={scheduledPosts} />
-                    <PlatformStatusPanel />
-                    <TrendingTopicsPanel />
-                </aside>
 
                 {/* Modals */}
                 {isCreateModalOpen && (
@@ -214,8 +195,7 @@ export default function SocialDashboard() {
                         onClose={() => setIsAccountWizardOpen(false)}
                     />
                 )}
-            </div>
-        </ModuleErrorBoundary>
+            </ThreePanelDashboard>
     );
 }
 
