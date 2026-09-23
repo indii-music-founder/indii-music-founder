@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "646923e2eada27536c695a20de290ac5becd7c980d4a83eb6bce8777ce5e4ad6",
+  "sourceDigest": "ac39d6d18fc0ac74039985d9392aee613af9454b1cec199ee12194045dc57e4b",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -5390,7 +5390,7 @@
       "available": true,
       "description": "Flagship closure workflow. Reconciles every promised acceptance criterion, runs proportional final proof and observational /ci-validate, delivers one coherent main commit when authorized, and verifies exact-SHA CI without post-gate edits.",
       "descriptionHash": "297ab210dd4cc34ff85d29a566892b3d322f7749d06524ea3827e46de93d3716",
-      "contentHash": "33f969256caab49b4662271b24bf0c24316b974fa52bdbe0a3d7c92d5a5b380d",
+      "contentHash": "e910ae35fd537592089367e4b3815d6b6835b91783b237c82f5ea3da2a1cd024",
       "state": "certified",
       "authority": "repository-delivery-when-authorized",
       "prerequisites": [
@@ -5769,7 +5769,7 @@
       "available": true,
       "description": "Flagship execution workflow for implementing an active objective in coherent verification units. Runs the certified toolchain selected by /skill-skill, preserves contract and authenticity boundaries, and uses /go as its recursive motor.",
       "descriptionHash": "64b173c82e83c2fb5b7f6bc5714239e6a3b357aa6a75baa768e7bda9bb220ae5",
-      "contentHash": "5596680fcd698bc76c5ca7777d02df5d7837b27a368646e73092fa9d55627f93",
+      "contentHash": "0cc61be79c5185ffa5bcf9f19fc606aaa9c6a9b9de82b63dd2840b57f096b309",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5946,7 +5946,7 @@
       "available": true,
       "description": "Flagship orientation workflow for a new objective. Establishes source of truth, request mode, task profile, authority, repository state, capability route, and definition of done before mutation.",
       "descriptionHash": "d3113fa8bc4e707037a51f84e8c5b3a921b5ef75ad00854975b36211d0b51ce2",
-      "contentHash": "1d95551d65b232508c777e2dd19f54f944cc46d91585e0641dc18faee0dcdae8",
+      "contentHash": "a9983b85db1c8e6a0369802c456251e8e4bb56a2abcc4e9ca40a27f809f9dcd3",
       "state": "certified",
       "authority": "profile-bounded",
       "prerequisites": [

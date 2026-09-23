@@ -20,6 +20,7 @@ No placeholders, debug residue, secrets, generated junk, or unintended files may
 - Update flowcharts only when the implementation changed relevant state, ownership, or sequence.
 - Update checkpoints only with current reusable handoff state.
 - Update issue/error ledgers only with verified unique facts; never self-verify external acceptance.
+- **TypeSafe closeout:** if judgments were used in this task, record in the handoff/ledger what was judged, the shadow/live mode, observed agreement, and token cost — and confirm no key material and no renderer-side judgment calls entered the diff.
 - Run dependency drift/integrity checks only when manifests, locks, runtime packages, or dependency behavior changed.
 
 ## 4. Run proportional final proof

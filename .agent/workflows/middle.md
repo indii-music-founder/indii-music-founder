@@ -12,7 +12,8 @@ Use `/middle` during active implementation. The current user objective and accep
 - read [`branch-safety.md`](branch-safety.md) before code, git, CI, or push actions;
 - load the `/skill-skill` route or produce one when specialized tools are needed;
 - verify that every selected capability is Certified, or Conditional with prerequisites satisfied;
-- preserve unrelated dirty files and do not run periodic git workflows that commit or push intermediate state.
+- preserve unrelated dirty files and do not run periodic git workflows that commit or push intermediate state;
+- **TypeSafe activation:** if the unit involves semantic classification, parsing, or judgment-shaped code and TypeSafe is not active this session, activate it per [`start.md`](start.md) §5.5 — key from `.env`/shell (never printed or committed), judgments through the `typesafeJudge` callable, questions/thresholds only in `packages/renderer/src/config/typesafeJudgments.ts`. Prefer a shadow-mode experiment (measure agreement on real fixtures) before putting any judgment on a live path.
 
 ## 2. Execute through `/go`
 

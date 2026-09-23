@@ -46,6 +46,16 @@ Invoke [`/skill-skill`](skill-skill.md) early when routing is ambiguous or speci
 - Read the Error Ledger only for a reproduced failure or known relevant pattern; validate remembered fixes before reuse.
 - Read `.agent/REAL_USER_AUTHENTICITY.md` before live-user, browser E2E, release-acceptance, demo-readiness, production, or free-tier claims.
 
+## 5.5 Activate TypeSafe
+
+If not already active this session: source `TYPESAFE_API_KEY` (`.env` in the repo root, or the `~/.zshrc` export) into the session environment — never print, commit, or transmit it anywhere except the TypeSafe API call. Load the house contract before using it:
+
+- judgments route **server-side** through the `typesafeJudge` callable (`packages/firebase/src/functions/intelligence/typesafeJudge.ts`);
+- questions and thresholds live in the single reviewable file `packages/renderer/src/config/typesafeJudgments.ts`;
+- primitives: `Choice` (one of a set), `Noul` (probability a condition holds), `Score` (degree); use them where semantic understanding beats parsing, and keep arithmetic, exact lookups, and security policy deterministic.
+
+Skip activation for read-only or purely mechanical tasks.
+
 ## Output
 
 ```text
