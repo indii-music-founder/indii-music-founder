@@ -166,7 +166,9 @@ describe('Sidebar Navigation Integration', () => {
 
         expect(screen.getByText('Workflow Builder')).toBeInTheDocument();
         expect(screen.getByText('Knowledge Base')).toBeInTheDocument();
-        expect(screen.getByText('Brand Manager')).toBeInTheDocument();
+        // ISSUE-1442 Stage 2: Brand Manager folded into Marketing Department tabs —
+        // Road/tour is the surviving Manager's Office assertion target.
+        expect(screen.getByText('Road/tour')).toBeInTheDocument();
         expect(screen.getByText('Marketing Department')).toBeInTheDocument();
         expect(screen.getByTestId('bottom-rail-notes-btn')).toBeInTheDocument();
 
@@ -178,8 +180,9 @@ describe('Sidebar Navigation Integration', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
 
         await waitFor(() => {
-            expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
+            expect(screen.queryByText('Road/tour')).not.toBeInTheDocument();
             expect(screen.queryByText('Marketing Department')).not.toBeInTheDocument();
+            expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
             expect(screen.queryByText('Campaign Manager')).not.toBeInTheDocument();
             expect(screen.queryByText('Publicist')).not.toBeInTheDocument();
             expect(screen.queryByText('Social Media Department')).not.toBeInTheDocument();
@@ -201,20 +204,14 @@ describe('Sidebar Navigation Integration', () => {
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
 
-        fireEvent.click(screen.getByText('Brand Manager'));
-        expect(mockSetModule).toHaveBeenCalledWith('brand');
-
-        vi.advanceTimersByTime(200);
-        fireEvent.click(screen.getByText('Publicist'));
-        expect(mockSetModule).toHaveBeenCalledWith('publicist');
+        // ISSUE-1442 Stage 2: brand/publicist/social are Marketing Department tabs —
+        // the surviving sidebar items assert department navigation.
+        fireEvent.click(screen.getByText('Road/tour'));
+        expect(mockSetModule).toHaveBeenCalledWith('road');
 
         vi.advanceTimersByTime(200);
         fireEvent.click(screen.getByText('Finance Department'));
         expect(mockSetModule).toHaveBeenCalledWith('finance');
-
-        vi.advanceTimersByTime(200);
-        fireEvent.click(screen.getByText('Social Media Department'));
-        expect(mockSetModule).toHaveBeenCalledWith('social');
 
         vi.advanceTimersByTime(200);
         fireEvent.click(screen.getByText('Workflow Builder'));
@@ -422,7 +419,11 @@ describe('Sidebar Navigation Integration', () => {
         }, { timeout: 20000 });
     }, 30000);
 
-    it('Social Media Department sidebar click dispatches setModule("social") (ISSUE-443)', () => {
+    // ISSUE-1442 Stage 2: the "Social Media Department" sidebar item folded into
+    // Marketing Department tabs; the Departments entry now dispatches 'marketing'.
+    // (ISSUE-443's module-routing regression stays covered by the direct-render
+    // test above, since the 'social' id and SocialDashboard remain valid.)
+    it('Marketing Department sidebar click dispatches setModule("marketing")', () => {
         render(
             <MemoryRouter>
                 <Sidebar />
@@ -430,8 +431,8 @@ describe('Sidebar Navigation Integration', () => {
         );
 
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
-        fireEvent.click(screen.getByText('Social Media Department'));
-        expect(mockSetModule).toHaveBeenCalledWith('social');
+        fireEvent.click(screen.getByText('Marketing Department'));
+        expect(mockSetModule).toHaveBeenCalledWith('marketing');
     });
 
     it('renders navigation items correctly', () => {
@@ -458,7 +459,7 @@ describe('Sidebar Navigation Integration', () => {
 
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         // Manager section items are rendered
-        expect(screen.getByTestId('nav-item-brand')).toBeInTheDocument();
+        expect(screen.getByTestId('nav-item-road')).toBeInTheDocument();
         // Sidebar toggle is accessible
         expect(screen.getByTestId('sidebar-toggle')).toBeInTheDocument();
     });
