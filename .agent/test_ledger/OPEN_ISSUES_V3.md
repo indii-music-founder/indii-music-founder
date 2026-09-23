@@ -3154,7 +3154,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1441: Dead and duplicated UI inventory (dead buttons, twin components, orphaned layout code)
 
-- **Status:** 🟡 PARTIAL (2026-09-22 — commits `7148402f0` + `0632d5cb3`: dead controls removed, deprecated revenue-widget duplicates unregistered, publishing's twin components deleted in favor of the canonical originals, FounderReadiness duplicate tab removed, social+publishing migrated onto ThreePanelDashboard via the new actions slot. Remaining OPEN: MobileAdaptiveLayout deletion, governance-card reorder in StudioControlsPanel)
+- **Status:** 🟡 PARTIAL (2026-09-22 — commits `7148402f0` + `0632d5cb3`: dead controls removed, deprecated revenue-widget duplicates unregistered, publishing's twin components deleted in favor of the canonical originals, FounderReadiness duplicate tab removed, social+publishing migrated onto ThreePanelDashboard via the new actions slot. `MobileAdaptiveLayout` dead code deleted (zero remaining references). Remaining OPEN: governance-card reorder in StudioControlsPanel, MerchDesigner/DirectGenerationTab/MemoryDashboard density passes — all Tier-2 residue outside the approved tier scope)
 - **Severity:** 🟡 MEDIUM
 - **Module:** StudioControlsPanel / publishing+distribution twins / MobileAdaptiveLayout / dashboard widgets
 - **Evidence:**
