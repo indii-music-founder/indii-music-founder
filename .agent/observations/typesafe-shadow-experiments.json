@@ -1,0 +1,352 @@
+{
+  "generatedAt": "2026-09-23T18:29:31.590Z",
+  "model": "jev-latest",
+  "evidenceClass": "local-real (live API, labeled synthetic fixtures) — not production proof",
+  "experiments": {
+    "columns": [
+      {
+        "header": "ISRC",
+        "truth": "isrc",
+        "baseline": "isrc",
+        "jev": "isrc",
+        "jev_confidence": 1,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 2155
+      },
+      {
+        "header": "UPC",
+        "truth": "upc",
+        "baseline": "upc",
+        "jev": "upc",
+        "jev_confidence": 1,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1484
+      },
+      {
+        "header": "Fee Amount",
+        "truth": "fee_amount",
+        "baseline": "fee_amount",
+        "jev": "fee_amount",
+        "jev_confidence": 0.95,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1103
+      },
+      {
+        "header": "Net Receipts",
+        "truth": "currency_amount",
+        "baseline": "generic_number",
+        "jev": "currency_amount",
+        "jev_confidence": 1,
+        "baseline_correct": false,
+        "jev_correct": true,
+        "ms": 1478
+      },
+      {
+        "header": "Units",
+        "truth": "quantity_count",
+        "baseline": "quantity_count",
+        "jev": "quantity_count",
+        "jev_confidence": 0.97,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 2162
+      },
+      {
+        "header": "Sales Month",
+        "truth": "us_date",
+        "baseline": "iso_date",
+        "jev": "generic_text",
+        "jev_confidence": 0.42,
+        "baseline_correct": false,
+        "jev_correct": false,
+        "ms": 1716
+      },
+      {
+        "header": "Reporting Date",
+        "truth": "iso_date",
+        "baseline": "iso_date",
+        "jev": "iso_date",
+        "jev_confidence": 1,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1530
+      },
+      {
+        "header": "Territory",
+        "truth": "territory_code",
+        "baseline": "territory_code",
+        "jev": "territory_code",
+        "jev_confidence": 1,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1674
+      },
+      {
+        "header": "Store",
+        "truth": "dsp_name",
+        "baseline": "dsp_name",
+        "jev": "dsp_name",
+        "jev_confidence": 1,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1442
+      },
+      {
+        "header": "Artist",
+        "truth": "artist_name",
+        "baseline": "artist_name",
+        "jev": "artist_name",
+        "jev_confidence": 1,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1764
+      },
+      {
+        "header": "Track Title",
+        "truth": "track_title",
+        "baseline": "track_title",
+        "jev": "track_title",
+        "jev_confidence": 1,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1588
+      },
+      {
+        "header": "Album Title",
+        "truth": "album_title",
+        "baseline": "generic_text",
+        "jev": "album_title",
+        "jev_confidence": 1,
+        "baseline_correct": false,
+        "jev_correct": true,
+        "ms": 1288
+      },
+      {
+        "header": "Transaction Type",
+        "truth": "transaction_type",
+        "baseline": "generic_text",
+        "jev": "transaction_type",
+        "jev_confidence": 1,
+        "baseline_correct": false,
+        "jev_correct": true,
+        "ms": 1096
+      },
+      {
+        "header": "ISWC",
+        "truth": "iswc",
+        "baseline": "generic_text",
+        "jev": "iswc",
+        "jev_confidence": 1,
+        "baseline_correct": false,
+        "jev_correct": true,
+        "ms": 5496
+      },
+      {
+        "header": "Streams",
+        "truth": "stream_count",
+        "baseline": "quantity_count",
+        "jev": "stream_count",
+        "jev_confidence": 1,
+        "baseline_correct": false,
+        "jev_correct": true,
+        "ms": 1224
+      },
+      {
+        "header": "Downloads",
+        "truth": "download_count",
+        "baseline": "generic_number",
+        "jev": "download_count",
+        "jev_confidence": 1,
+        "baseline_correct": false,
+        "jev_correct": true,
+        "ms": 1394
+      }
+    ],
+    "moods": [
+      {
+        "mood": "happy",
+        "truth": [
+          "Upbeat"
+        ],
+        "baseline": [
+          "Upbeat"
+        ],
+        "jev": [
+          "Upbeat"
+        ],
+        "jev_confidence": 0.99,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1395
+      },
+      {
+        "mood": "unhappy",
+        "truth": [],
+        "baseline": [],
+        "jev": [
+          "Melancholic"
+        ],
+        "jev_confidence": 0.97,
+        "baseline_correct": true,
+        "jev_correct": false,
+        "ms": 1156
+      },
+      {
+        "mood": "lovelorn",
+        "truth": [],
+        "baseline": [],
+        "jev": [
+          "Melancholic"
+        ],
+        "jev_confidence": 0.85,
+        "baseline_correct": true,
+        "jev_correct": false,
+        "ms": 1100
+      },
+      {
+        "mood": "dark-pop",
+        "truth": [
+          "Dark"
+        ],
+        "baseline": [
+          "Dark"
+        ],
+        "jev": [
+          "Dark"
+        ],
+        "jev_confidence": 0.97,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1492
+      },
+      {
+        "mood": "epic orchestral",
+        "truth": [
+          "Cinematic"
+        ],
+        "baseline": [
+          "Cinematic"
+        ],
+        "jev": [
+          "Cinematic"
+        ],
+        "jev_confidence": 0.92,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1465
+      },
+      {
+        "mood": "chill",
+        "truth": [
+          "Chill"
+        ],
+        "baseline": [
+          "Chill"
+        ],
+        "jev": [
+          "Chill"
+        ],
+        "jev_confidence": 0.99,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1663
+      },
+      {
+        "mood": "somber sad piano",
+        "truth": [
+          "Melancholic"
+        ],
+        "baseline": [
+          "Melancholic"
+        ],
+        "jev": [
+          "Melancholic"
+        ],
+        "jev_confidence": 1,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 5833
+      },
+      {
+        "mood": "hype",
+        "truth": [
+          "Energetic"
+        ],
+        "baseline": [
+          "Energetic"
+        ],
+        "jev": [
+          "Energetic"
+        ],
+        "jev_confidence": 0.76,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 3758
+      },
+      {
+        "mood": "experimental industrial glitched noise",
+        "truth": [],
+        "baseline": [],
+        "jev": [
+          "Dark"
+        ],
+        "jev_confidence": 0.78,
+        "baseline_correct": true,
+        "jev_correct": false,
+        "ms": 3983
+      },
+      {
+        "mood": "romantic dinner jazz",
+        "truth": [
+          "Romantic"
+        ],
+        "baseline": [
+          "Romantic"
+        ],
+        "jev": [
+          "Romantic"
+        ],
+        "jev_confidence": 0.99,
+        "baseline_correct": true,
+        "jev_correct": true,
+        "ms": 1617
+      }
+    ]
+  },
+  "summaries": {
+    "columns": {
+      "fixtures": 16,
+      "baseline_correct": 9,
+      "jev_correct": 15,
+      "jev_fixes_baseline": [
+        "Net Receipts",
+        "Album Title",
+        "Transaction Type",
+        "ISWC",
+        "Streams",
+        "Downloads"
+      ],
+      "jev_regressions_vs_baseline": []
+    },
+    "moods": {
+      "fixtures": 10,
+      "baseline_correct": 10,
+      "jev_correct": 7,
+      "jev_fixes_baseline": [],
+      "jev_regressions_vs_baseline": [
+        "unhappy",
+        "lovelorn",
+        "experimental industrial glitched noise"
+      ]
+    }
+  },
+  "cost": {
+    "input_tokens": 16061,
+    "output_tokens": 3609,
+    "total_requests": 26,
+    "total_ms": 52056
+  }
+}
