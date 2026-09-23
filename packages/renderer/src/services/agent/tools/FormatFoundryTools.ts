@@ -17,7 +17,7 @@ export const FormatFoundryTools = {
     content: string;
   }) => {
     try {
-      const report = FormatForensicsEngine.analyze(evidenceId, content);
+      const report = await FormatForensicsEngine.analyzeWithJudgment(evidenceId, content);
       return {
         success: true,
         report,
@@ -43,7 +43,7 @@ export const FormatFoundryTools = {
     formatName?: string;
   }) => {
     try {
-      const forensics = FormatForensicsEngine.analyze(evidenceId, content);
+      const forensics = await FormatForensicsEngine.analyzeWithJudgment(evidenceId, content);
       const ledger = HypothesisLedger.fromForensics(forensics, formatName || forensics.detectedFormatFamily);
       return {
         success: true,

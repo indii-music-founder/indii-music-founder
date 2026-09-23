@@ -5,11 +5,37 @@ import {
   DelimiterType,
   InferredFieldSemantic
 } from '@indii/shared';
+import { judgeColumnSemantics } from '@/config/typesafeJudgments';
 
 export class FormatForensicsEngine {
   /**
    * Run full deterministic forensics inspection across raw file content
    */
+  /**
+   * Judgment-augmented analysis (ISSUE-1443 / TypeSafe adoption): runs the
+   * deterministic baseline first (always available), then refines column
+   * semantics with jev where it is confident (>= FOUNDRY_COLUMN_MIN_CONFIDENCE).
+   * Every failure path degrades to the baseline report unchanged.
+   */
+  static async analyzeWithJudgment(evidenceItemId: string, rawContent: string): Promise<FormatForensicsReport> {
+    const report = this.analyze(evidenceItemId, rawContent);
+    const upgrades = await judgeColumnSemantics(
+      report.columns.map((c) => ({ index: c.index, header: c.rawHeader, samples: c.sampleValues.filter(Boolean) })),
+    );
+    if (!upgrades) return report;
+    for (const col of report.columns) {
+      const upgrade = upgrades.find((u) => u.index === col.index);
+      if (upgrade) {
+        col.inferredSemantic = upgrade.semantic;
+        col.confidence = upgrade.confidence;
+        col.semanticSource = 'jev';
+      } else {
+        col.semanticSource = 'baseline';
+      }
+    }
+    return report;
+  }
+
   static analyze(evidenceItemId: string, rawContent: string): FormatForensicsReport {
     const hasBom = rawContent.charCodeAt(0) === 0xfeff;
     const cleanContent = hasBom ? rawContent.slice(1) : rawContent;

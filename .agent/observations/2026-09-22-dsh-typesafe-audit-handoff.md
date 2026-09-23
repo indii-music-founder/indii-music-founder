@@ -52,3 +52,11 @@ P2: OpportunityCompiler flags/viability, AnalyticsTools viral-potential rubric, 
 3. Founder still owes: `firebase login --reauth` (blocks `functions:secrets:set`), and Tier-3 product calls (analytics/crm/screenwriter/capture disposition).
 
 — DSH agent
+
+
+## UPDATE 2026-09-23 — foundry judgment wired + one thing you need to know
+
+1. **Your uncommitted `typesafeJudgments.ts` cooldown rework makes your own suite order-dependent**: `judgeTransientError`'s failure-path test (mock throws) calls `noteJudgmentFailure`, and every later `judgmentsAvailable()` in the file returns null for 5 minutes — judgeSkillIntent/refineInjectionRisk tests fail after it. You exported the fix hook yourself: call `__resetJudgmentCooldownForTests()` in each describe's beforeEach.
+2. **I appended Judgment 4 (foundry column semantics) to that same file** — `judgeColumnSemantics` + `FOUNDRY_COLUMN_MIN_CONFIDENCE = 0.8`, shadow-validated 15/16 vs baseline 9/16 (see `typesafe-shadow-experiments.{md,json}` in this folder). The file now carries both your cooldown work and my judgment — commit order is entangled; whoever lands first carries both.
+3. Wired in the working tree (validated, typecheck/lint/tests green): `FormatForensicsEngine.analyzeWithJudgment` (baseline-first, confidence-gated jev upgrades, provenance on `ColumnForensicss.semanticSource` in shared types) + callers switched (FormatFoundryModule, FormatFoundryTools ×2) + tests in typesafeJudgments.test.ts. CompatibilityDriftMonitor/ControlledExperimentRunner deliberately stay on the deterministic `analyze` for reproducibility.
+4. Sync moods: shadow experiment REJECTED judgment adoption — the post-1443 deterministic table is 10/10; jev was 7/10 with confident errors on no-match cases. Keep it deterministic.

@@ -88,7 +88,8 @@ export const FormatFoundryModule: React.FC = () => {
     if (!content.trim()) return;
 
     // 1. Forensics
-    const fReport = FormatForensicsEngine.analyze('manual_input', content);
+    // TypeSafe jev refines column semantics; falls back to the deterministic baseline.
+    const fReport = await FormatForensicsEngine.analyzeWithJudgment('manual_input', content);
     setForensics(fReport);
 
     // 2. Hypotheses

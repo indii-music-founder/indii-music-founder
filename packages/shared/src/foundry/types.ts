@@ -97,6 +97,8 @@ export interface ColumnForensics {
   normalizedHeader: string;
   inferredSemantic: InferredFieldSemantic;
   confidence: number; // 0.0 to 1.0
+  /** Which mechanism decided the semantic: the deterministic baseline or a TypeSafe judgment. */
+  semanticSource?: 'baseline' | 'jev';
   sampleValues: string[];
   emptyCount: number;
   uniqueCount: number;
