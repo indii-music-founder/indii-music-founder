@@ -48,6 +48,14 @@ export interface ModuleRegistryEntry {
 export const HIDDEN_MODULE_REASONS: Partial<Record<ModuleId, string>> = {
     // ISSUE-1436: rendered the identical CampaignDashboard as Marketing — one entry only.
     'campaign': 'duplicate of Marketing Department',
+    // ISSUE-1442 Stage 2: the marketing domain folds into one destination —
+    // Marketing Department hosts Brand, Publicist, Social, CRM, and Analytics
+    // as specialist tabs. Ids stay valid for deep links.
+    'brand': 'folded into Marketing Department',
+    'publicist': 'folded into Marketing Department',
+    'social': 'folded into Marketing Department',
+    'crm': 'folded into Marketing Department',
+    'analytics': 'folded into Marketing Department',
     // ISSUE-1442 Stage 2: the "what the system remembers" surfaces fold into
     // the Knowledge Base destination (tabs: Documents / Notes / Memory).
     // Ids stay valid — deep links and the Quick Notes drawer still land on

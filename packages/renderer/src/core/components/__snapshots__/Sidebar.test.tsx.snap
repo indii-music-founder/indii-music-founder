@@ -174,23 +174,6 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         style="height: auto; opacity: 1;"
       >
         <button
-          aria-label="Brand Manager"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
-          data-state="closed"
-          data-testid="nav-item-brand"
-          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
-        >
-          <div
-            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
-          />
-          <svg
-            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Briefcase"
-            size="18"
-          />
-        </button>
-        <button
           aria-label="Road/tour"
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
@@ -221,23 +204,6 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-CalendarDays"
-            size="18"
-          />
-        </button>
-        <button
-          aria-label="Publicist"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
-          data-state="closed"
-          data-testid="nav-item-publicist"
-          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
-        >
-          <div
-            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
-          />
-          <svg
-            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Mic"
             size="18"
           />
         </button>
@@ -281,23 +247,6 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           <svg
             class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
             data-testid="icon-Target"
-            size="18"
-          />
-        </button>
-        <button
-          aria-label="Social Media Department"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
-          data-state="closed"
-          data-testid="nav-item-social"
-          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
-        >
-          <div
-            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
-          />
-          <svg
-            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Share2"
             size="18"
           />
         </button>
@@ -739,27 +688,6 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         <button
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
-          data-testid="nav-item-brand"
-          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
-        >
-          <div
-            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
-          />
-          <svg
-            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Briefcase"
-            size="18"
-          />
-          <span
-            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
-          >
-            Brand Manager
-          </span>
-        </button>
-        <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
-          data-state="closed"
           data-testid="nav-item-road"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
         >
@@ -797,27 +725,6 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
             class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Booking Agent
-          </span>
-        </button>
-        <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
-          data-state="closed"
-          data-testid="nav-item-publicist"
-          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
-        >
-          <div
-            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
-          />
-          <svg
-            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Mic"
-            size="18"
-          />
-          <span
-            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
-          >
-            Publicist
           </span>
         </button>
         <button
@@ -884,27 +791,6 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
             class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Marketing Department
-          </span>
-        </button>
-        <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
-          data-state="closed"
-          data-testid="nav-item-social"
-          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
-        >
-          <div
-            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
-          />
-          <svg
-            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-            data-testid="icon-Share2"
-            size="18"
-          />
-          <span
-            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
-          >
-            Social Media Department
           </span>
         </button>
         <button

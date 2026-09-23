@@ -50,18 +50,17 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
     {
         title: "Manager's Office",
         items: [
-            { id: 'brand', label: 'Brand Manager' },
+            // ISSUE-1442 Stage 2: brand/publicist fold into Marketing tabs.
             { id: 'road', label: 'Road/tour' },
             { id: 'agent', label: 'Booking Agent' },
-            { id: 'publicist', label: 'Publicist' },
             { id: 'creative', label: 'Creative Director' },
         ],
     },
     {
         title: 'Departments',
         items: [
+            // ISSUE-1442 Stage 2: social folds into Marketing tabs.
             { id: 'marketing', label: 'Marketing' },
-            { id: 'social', label: 'Social Media' },
             { id: 'legal', label: 'Legal' },
             { id: 'publishing', label: 'Publishing' },
             { id: 'finance', label: 'Finance' },

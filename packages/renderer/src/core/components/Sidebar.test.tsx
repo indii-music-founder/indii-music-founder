@@ -49,18 +49,20 @@ describe('Sidebar', () => {
         const managerToggle = screen.getByRole('button', { name: "Manager's Office" });
 
         expect(managerToggle).toHaveAttribute('aria-expanded', 'true');
-        const brandManagerBtn = screen.getByText('Brand Manager');
-        expect(managerSection.contains(brandManagerBtn)).toBe(true);
+        // ISSUE-1442 Stage 2: Brand Manager folded into Marketing tabs — Road/tour
+        // is the surviving Manager's Office assertion target.
+        const roadTourBtn = screen.getByText('Road/tour');
+        expect(managerSection.contains(roadTourBtn)).toBe(true);
 
         fireEvent.click(managerToggle);
 
         expect(managerToggle).toHaveAttribute('aria-expanded', 'false');
         await waitFor(() => {
-            expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
+            expect(screen.queryByText('Road/tour')).not.toBeInTheDocument();
         });
     });
 
-    it('Brand Manager button is clickable', () => {
+    it('Road/tour button is clickable', () => {
         const setModule = vi.fn();
         (useStore as any).mockReturnValue({
             currentModule: 'dashboard',
@@ -74,12 +76,12 @@ describe('Sidebar', () => {
 
         render(<Sidebar />);
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
-        const brandManagerBtn = screen.getByText('Brand Manager');
+        const roadTourBtn = screen.getByText('Road/tour');
 
         // Click the button (parent button element)
-        fireEvent.click(brandManagerBtn.closest('button')!);
+        fireEvent.click(roadTourBtn.closest('button')!);
 
-        expect(setModule).toHaveBeenCalledWith('brand');
+        expect(setModule).toHaveBeenCalledWith('road');
     });
 
     // ISSUE-1269: the god_mode Command Center pill was removed. It routed to the
@@ -118,8 +120,8 @@ describe('Sidebar', () => {
         render(<Sidebar />);
 
         // Check for navigation item aria-label
-        const brandManagerBtn = screen.getByTestId('nav-item-brand');
-        expect(brandManagerBtn).toHaveAttribute('aria-label', 'Brand Manager');
+        const roadTourBtn = screen.getByTestId('nav-item-road');
+        expect(roadTourBtn).toHaveAttribute('aria-label', 'Road/tour');
 
         // Check sidebar toggle is accessible in collapsed state
         expect(screen.getByTestId('sidebar-toggle')).toBeInTheDocument();

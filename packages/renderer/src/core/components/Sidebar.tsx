@@ -6,9 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// ISSUE-1436: Megaphone was only used by the removed duplicate "Campaign Manager" nav item.
-import { Scale, Music, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, StickyNote, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, Camera, LayoutGrid, type LucideIcon } from 'lucide-react';
+import { Scale, Music, Layout, Network, Book, Users, DollarSign, FileText, StickyNote, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, Search, Settings, Gem, CalendarDays, GitBranch, Target, Library, Shield, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'motion/react';
@@ -191,16 +189,15 @@ export default function Sidebar() {
     ];
 
     const managerItems: SidebarItem[] = [
-        { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
         { id: 'road', icon: Users, label: 'Road/tour' },
         { id: 'agent', icon: CalendarDays, label: 'Booking Agent' },
-        { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
     ];
 
     const departmentItems: SidebarItem[] = [
+        // ISSUE-1442 Stage 2: brand/publicist/social fold into Marketing
+        // Department tabs; one department destination.
         { id: 'marketing', icon: Target, label: 'Marketing Department' },
-        { id: 'social', icon: Share2, label: 'Social Media Department' },
         { id: 'legal', icon: Scale, label: 'Legal Department' },
         { id: 'publishing', icon: Library, label: 'Publishing Department' },
         { id: 'finance', icon: DollarSign, label: 'Finance Department' },

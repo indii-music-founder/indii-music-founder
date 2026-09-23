@@ -120,7 +120,9 @@ describe('UnifiedCommandMenu', () => {
             setCommandMenuOpen: vi.fn(),
             setModule: vi.fn(),
             currentModule: 'dashboard',
-            _navigationHistory: ['dashboard', 'finance', 'social', 'finance'],
+            // ISSUE-1442 Stage 2: 'social' folded into Marketing — 'publishing'
+            // stands in as the older-history destination.
+            _navigationHistory: ['dashboard', 'finance', 'publishing', 'finance'],
         };
         (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector?: (s: typeof state) => unknown) => {
             if (selector && typeof selector === 'function') return selector(state);
@@ -135,9 +137,9 @@ describe('UnifiedCommandMenu', () => {
         // Most-recent unique first; duplicates and the current module collapse.
         // (These labels also appear in their generated groups, so scope to Recent.)
         const recentText = recentGroup!.textContent ?? '';
-        expect(recentText.indexOf('Social Media Department')).toBeGreaterThan(-1);
+        expect(recentText.indexOf('Publishing Department')).toBeGreaterThan(-1);
         expect(recentText.indexOf('Finance Department')).toBeGreaterThan(-1);
-        // Most-recent unique first: history ends [..., 'social', 'finance'].
-        expect(recentText.indexOf('Finance Department')).toBeLessThan(recentText.indexOf('Social Media Department'));
+        // Most-recent unique first: history ends [..., 'publishing', 'finance'].
+        expect(recentText.indexOf('Finance Department')).toBeLessThan(recentText.indexOf('Publishing Department'));
     });
 });
