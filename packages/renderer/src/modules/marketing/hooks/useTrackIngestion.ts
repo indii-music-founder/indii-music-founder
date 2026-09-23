@@ -2,6 +2,8 @@ import { useState, useCallback, useMemo } from 'react';
 import { trackIngestion } from '@/services/ingestion/TrackIngestionService';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
+import { useStore } from '@/core/store';
+import { projectLegacyArtistContext } from '@indii/shared';
 
 interface UseTrackIngestionResult {
     ingest: (file: File, options?: { forceReanalyze?: boolean }) => Promise<ExtendedGoldenMetadata | null>;
@@ -11,6 +13,7 @@ interface UseTrackIngestionResult {
 }
 
 export function useTrackIngestion(): UseTrackIngestionResult {
+    const userProfile = useStore(state => state.userProfile);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [progress, setProgress] = useState<string>('');
@@ -22,7 +25,12 @@ export function useTrackIngestion(): UseTrackIngestionResult {
 
         try {
             setProgress('Analyzing Audio...');
-            const metadata = await trackIngestion.ingestTrack(file, options);
+            // Song intake consumes the same progressive profile context as
+            // registration. It may reduce guidance questions, but never turns
+            // imported or inferred facts into ownership/clearance authority.
+            const artistContext = userProfile.artistContext
+                ?? projectLegacyArtistContext(userProfile, new Date().toISOString());
+            const metadata = await trackIngestion.ingestTrack(file, { ...options, artistContext });
 
             setProgress('Complete');
             return metadata;
@@ -34,7 +42,7 @@ export function useTrackIngestion(): UseTrackIngestionResult {
             setIsAnalyzing(false);
             setProgress('');
         }
-    }, []);
+    }, [userProfile]);
 
     return useMemo(() => ({
         ingest,

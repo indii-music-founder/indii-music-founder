@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ArtistContextSchema,
+  applyDeclaredArtistContextPatch,
   contextForDistribution,
   contextForRegistration,
   declaredContextFact,
@@ -28,7 +29,8 @@ describe('ArtistContext', () => {
   it('safely maps legacy onboarding without inventing unknown values', () => {
     const context = projectLegacyArtistContext({ careerStage: 'Building momentum', goals: ['Touring'] }, now);
     expect(ArtistContextSchema.parse(context)).toEqual(context);
-    expect(context.facts['experience.careerStage']?.provenance.state).toBe('USER_DECLARED');
+    expect(context.facts['experience.careerStage']?.provenance.state).toBe('UNKNOWN');
+    expect(context.facts['experience.careerStage']?.provenance.sourceType).toBe('IMPORT');
     expect(context.facts['infrastructure.distributor']).toBeUndefined();
   });
 
@@ -85,10 +87,59 @@ describe('ArtistContext', () => {
     expect(merged.facts['experience.careerStage']?.provenance.state).toBe('USER_CONFIRMED');
   });
 
+  it('does not let an inference overwrite a user declaration', () => {
+    const declared = applyDeclaredArtistContextPatch(undefined, { artistType: 'Singer-songwriter' }, now);
+    const inferred = ArtistContextSchema.parse({
+      schemaVersion: 'artist-context.v1',
+      facts: {
+        'identity.artistType': {
+          key: 'identity.artistType', value: 'DJ', requiresHumanConfirmation: true,
+          provenance: { state: 'INFERRED', sourceType: 'AGENT', evidence: [], observedAt: '2026-09-21T21:00:00.000Z', confidence: 0.8 },
+        },
+      },
+      updatedAt: '2026-09-21T21:00:00.000Z',
+    });
+    expect(mergeArtistContext(declared, inferred).facts['identity.artistType']?.value).toBe('Singer-songwriter');
+  });
+
+  it('retains a disputed fact rather than silently replacing it', () => {
+    const disputed = ArtistContextSchema.parse({
+      schemaVersion: 'artist-context.v1',
+      facts: {
+        'registrations.pro': {
+          key: 'registrations.pro', value: 'ASCAP', requiresHumanConfirmation: true,
+          provenance: { state: 'DISPUTED', sourceType: 'USER', evidence: [], observedAt: now },
+        },
+      }, updatedAt: now,
+    });
+    const next = applyDeclaredArtistContextPatch(undefined, { pro: 'BMI' }, '2026-09-21T21:00:00.000Z');
+    expect(mergeArtistContext(disputed, next).facts['registrations.pro']?.provenance.state).toBe('DISPUTED');
+  });
+
   it('gives registration and distribution consistent shared guidance', () => {
     const context = projectLegacyArtistContext({ careerStage: 'Established', goals: ['Sync licensing'], brandKit: { socials: { distributor: 'TuneCore' } } }, now);
     expect(contextForRegistration(context).guidance).toEqual(contextForDistribution(context).guidance);
     expect(contextForDistribution(context).known['infrastructure.distributor']?.value).toBe('TuneCore');
+  });
+
+  it('supports the complete progressive artist-context vocabulary without granting authority', () => {
+    const context = applyDeclaredArtistContextPatch(undefined, {
+      artistType: 'DJ / Producer',
+      workingRoles: ['DJ', 'Producer'],
+      experienceSummary: 'Ten years of releases and live sets',
+      territories: ['US', 'UK'],
+      businessStructure: 'Independent LLC',
+      collaborators: ['person:writer-1'],
+      catalogMaturity: 'Established catalog',
+      guidanceDepth: 'Detailed',
+      workflowPreference: 'Review-first',
+      personEntityIds: ['person:artist-1'],
+      organizationEntityIds: ['organization:label-1'],
+    }, now);
+    expect(context.facts['roles.working']?.value).toEqual(['DJ', 'Producer']);
+    expect(context.facts['identity.personEntityIds']?.value).toEqual(['person:artist-1']);
+    expect(context.facts['infrastructure.businessStructure']?.provenance.state).toBe('USER_DECLARED');
+    expect(isAuthoritativeContextFact(context.facts['infrastructure.businessStructure'])).toBe(false);
   });
 
   it('rejects a fact whose embedded key differs from its map key', () => {

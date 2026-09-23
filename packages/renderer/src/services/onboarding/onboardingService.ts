@@ -16,7 +16,7 @@ import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intellig
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 import { StorageService } from '@/services/StorageService';
-import { mergeArtistContext, projectLegacyArtistContext } from '@indii/shared';
+import { applyDeclaredArtistContextPatch, projectLegacyArtistContext } from '@indii/shared';
 
 // Re-export everything from sub-modules for backward compatibility
 export type {
@@ -487,13 +487,33 @@ export function processFunctionCalls(
                 }
 
                 // Keep the established profile as the persistence boundary while
-                // progressively enriching its versioned, truth-aware context.
+                // progressively enriching its versioned, truth-aware context. Only
+                // fields supplied by this call are declarations; legacy projection
+                // is deliberately imported/unknown and cannot acquire authority here.
                 const observedAt = new Date().toISOString();
                 updatedProfile = {
                     ...updatedProfile,
-                    artistContext: mergeArtistContext(
-                        currentProfile.artistContext,
-                        projectLegacyArtistContext(updatedProfile, observedAt),
+                    artistContext: applyDeclaredArtistContextPatch(
+                        updatedProfile.artistContext ?? projectLegacyArtistContext(currentProfile, observedAt),
+                        {
+                            artistType: args.artist_type,
+                            workingRoles: args.working_roles,
+                            experienceSummary: args.career_experience,
+                            careerStage: args.career_stage,
+                            careerProfile: args.career_profile,
+                            goals: args.goals,
+                            territories: args.territories,
+                            businessStructure: args.business_structure,
+                            collaborators: args.collaborators,
+                            distributor: args.distributor,
+                            pro: args.pro_affiliation,
+                            catalogMaturity: args.catalog_maturity,
+                            guidanceDepth: args.guidance_depth,
+                            workflowPreference: args.workflow_preference,
+                            personEntityIds: args.person_entity_ids,
+                            organizationEntityIds: args.organization_entity_ids,
+                        },
+                        observedAt,
                     ),
                 };
                 break;

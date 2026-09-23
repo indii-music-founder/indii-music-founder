@@ -65,6 +65,17 @@ export interface UpdateProfileArgs {
     career_stage?: string;
     career_profile?: string;
     goals?: string[];
+    artist_type?: string;
+    working_roles?: string[];
+    career_experience?: string;
+    territories?: string[];
+    business_structure?: string;
+    collaborators?: string[];
+    catalog_maturity?: string;
+    guidance_depth?: string;
+    workflow_preference?: string;
+    person_entity_ids?: string[];
+    organization_entity_ids?: string[];
 }
 
 export interface AddImageAssetArgs {

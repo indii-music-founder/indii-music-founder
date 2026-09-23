@@ -10,6 +10,7 @@ import { ORG_ADAPTERS } from './adapters';
 import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord } from './types';
 import { logger } from '@/utils/logger';
 import { loadRegistrationCatalog } from './services/RegistrationCatalog';
+import { getRegistrationArtistContext } from './services/RegistrationArtistContext';
 
 // ============================================================================
 // Data loaders (module-level, not component-level)
@@ -71,6 +72,7 @@ async function loadRegistrationStates(
 export default function RegistrationCenter() {
   const {
     user,
+    userProfile,
     registrationFocus,
     setRegistrationFocus,
     registrationStates,
@@ -79,6 +81,7 @@ export default function RegistrationCenter() {
   } = useStore(
     useShallow(s => ({
       user: s.user,
+      userProfile: s.userProfile,
       registrationFocus: s.registrationFocus,
       setRegistrationFocus: s.setRegistrationFocus,
       registrationStates: s.registrationStates,
@@ -98,6 +101,11 @@ export default function RegistrationCenter() {
 
   const focusedOrgId = registrationFocus.orgId;
   const focusedAdapter = focusedOrgId ? ORG_ADAPTERS[focusedOrgId] : null;
+  const confirmedPro = getRegistrationArtistContext(userProfile).authoritative['registrations.pro']?.value;
+  const proOrgIds: Record<string, 'ascap' | 'bmi' | 'sesac'> = { ascap: 'ascap', bmi: 'bmi', sesac: 'sesac' };
+  const selectedProId = typeof confirmedPro === 'string'
+    ? (proOrgIds[confirmedPro.toLowerCase()] ?? null)
+    : null;
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -254,6 +262,7 @@ export default function RegistrationCenter() {
             userId={user?.uid ?? ''}
             onOrgSelect={handleSelectOrg}
             onSubmitComplete={handleSubmitComplete}
+            selectedProId={selectedProId}
           />
         )}
       </div>

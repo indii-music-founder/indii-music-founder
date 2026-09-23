@@ -26,6 +26,17 @@ export const updateProfileFunction: FunctionDeclaration = {
             career_stage: { type: 'STRING', description: 'Career stage: Emerging (just starting), Rising (building momentum), Professional (established), Legend (industry veteran).' },
             career_profile: { type: 'STRING', description: 'Career profile: dj, sync_producer, touring_band, label_manager.' },
             goals: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Career goals: Touring, Sync Licensing, Grow Fanbase, Label Deal, Brand Partnerships, etc.' },
+            artist_type: { type: 'STRING', description: 'Artist identity form, such as solo artist, band, collective, DJ/producer, or label manager.' },
+            working_roles: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Current working roles, such as writer, performer, producer, DJ, manager, or label owner.' },
+            career_experience: { type: 'STRING', description: 'A user-provided summary of prior music career experience.' },
+            territories: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Territories where the artist is actively operating or prioritizing.' },
+            business_structure: { type: 'STRING', description: 'User-provided business setup, such as independent, band partnership, LLC, or label. Never infer legal authority from this.' },
+            collaborators: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Names or canonical entity references for regular collaborators or team members. Never infer ownership or authority.' },
+            catalog_maturity: { type: 'STRING', description: 'Catalog/release maturity such as first release, active catalog, or legacy catalog import.' },
+            guidance_depth: { type: 'STRING', description: 'Preferred guidance depth, such as concise, guided, or detailed.' },
+            workflow_preference: { type: 'STRING', description: 'Preferred workflow style, such as checklist, conversational, or review-first.' },
+            person_entity_ids: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Canonical Person entity IDs supplied by an authorized workflow; never platform IDs.' },
+            organization_entity_ids: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Canonical Organization entity IDs supplied by an authorized workflow; never platform IDs.' },
 
             // Social & Business (Permanent)
             social_twitter: { type: 'STRING', description: 'Twitter/X handle (e.g., @artistname).' },
