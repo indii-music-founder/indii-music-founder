@@ -366,3 +366,82 @@ export async function judgeColumnSemantics(
         return null;
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment 4: memory importance composite (consumer: MemorySummarizer)
+// ---------------------------------------------------------------------------
+
+const IMPORTANCE_LEVELS = [
+    'Trivial — trivia, small talk, ephemeral context',
+    'Low — general knowledge with no action attached',
+    'Moderate — useful context about ongoing work',
+    'High — actionable detail: deadlines, dates, deliverables',
+    'Critical — business-critical: contracts, revenue, splits, explicit corrections, core creative vision',
+];
+
+/** Code-owned weights (composite_scoring pattern): tune without re-prompting. */
+export const MEMORY_IMPORTANCE_WEIGHTS = {
+    actionability: 0.4,
+    business_criticality: 0.4,
+    permanence: 0.2,
+} as const;
+
+const MEMORY_IMPORTANCE_QUESTIONS = {
+    actionability: {
+        type: 'score' as const,
+        instructions: 'How actionable is this information — does it demand or enable a concrete next step?',
+        levels: IMPORTANCE_LEVELS,
+    },
+    business_criticality: {
+        type: 'score' as const,
+        instructions: 'How business-critical is this information for an independent artist\'s career (money, rights, deadlines, relationships)?',
+        levels: IMPORTANCE_LEVELS,
+    },
+    permanence: {
+        type: 'score' as const,
+        instructions: 'How permanent is this information — will it still matter weeks from now, or is it ephemeral?',
+        levels: IMPORTANCE_LEVELS,
+    },
+};
+
+/**
+ * Composite memory-importance score (0.0–1.0): three atomic Scores in one
+ * proxy call, combined by code-owned weights. Replaces the always-fired
+ * TEXT_FAST LLM re-rate (token saving). Null when unavailable.
+ */
+export async function judgeMemoryImportance(text: string, category: string): Promise<number | null> {
+    if (!judgmentsAvailable()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { text: text.slice(0, 2000), category },
+            questions: MEMORY_IMPORTANCE_QUESTIONS,
+        });
+
+        const answers = result.data.answers;
+        const scoreOf = (q: string): number => {
+            const a = answers?.[q];
+            return typeof a === 'number' ? a : Number((a as { score?: unknown })?.score);
+        };
+        const actionability = scoreOf('actionability');
+        const business = scoreOf('business_criticality');
+        const permanence = scoreOf('permanence');
+        if (![actionability, business, permanence].every(Number.isFinite)) {
+            logger.warn('[typesafeJudgments] memory importance returned non-numeric scores — keeping heuristic.');
+            return null;
+        }
+
+        const w = MEMORY_IMPORTANCE_WEIGHTS;
+        const combined = (actionability * w.actionability + business * w.business_criticality + permanence * w.permanence) / 4;
+        return Math.max(0, Math.min(1, combined));
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'memory importance judgment');
+        return null;
+    }
+}

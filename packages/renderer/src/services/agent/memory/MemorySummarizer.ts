@@ -5,8 +5,8 @@ import { logger } from '@/utils/logger';
 import type { GenerationConfig } from '@/shared/types/ai.dto';
 import { AlwaysOnMemory, ConsolidationInsight, MemoryConnection, MemoryEntity } from '@/types/AlwaysOnMemory';
 import { cleanPrompt } from '@/utils/prompt';
+import { judgeMemoryImportance } from '@/config/typesafeJudgments';
 import { Timestamp } from 'firebase/firestore';
-import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 
 /**
  * Robust JSON parser for Intelligence responses.
@@ -273,46 +273,11 @@ export class MemorySummarizer {
             heuristicScore = Math.min(1.0, heuristicScore + 0.15);
         }
 
-        try {
-            const prompt = cleanPrompt(`
-                Rate the importance of the following information for a music/visual creative professional.
-                Score from 0.0 (trivial) to 1.0 (critical).
-                
-                Higher scores for:
-                - Actionable deadlines or dates
-                - Core preferences and creative vision
-                - Business-critical information (contracts, revenue, distribution)
-                - Explicit user corrections or feedback
-                - Key relationships or collaborations
-                
-                Lower scores for:
-                - General knowledge or trivia
-                - Redundant information
-                - Temporary or ephemeral context
-                
-                Category: ${category}
-                
-                TEXT:
-                ${text.slice(0, 2000)}
-                
-                Respond with ONLY a JSON object: {"importance": 0.X}
-            `);
-
-            const response = await AIService.getInstance().generateText(
-                prompt,
-                APPROVED_MODELS.TEXT_FAST,
-                {
-                    temperature: 0.1,
-                    responseMimeType: 'application/json',
-                } as Record<string, unknown>
-            );
-
-            const parsed = safeParseJson(response, { importance: heuristicScore });
-            const score = parseFloat(String(parsed.importance));
-            return isNaN(score) ? heuristicScore : Math.max(0, Math.min(1, score));
-        } catch (error: unknown) {
-            logger.warn('[MemorySummarizer] Importance scoring failed, using heuristic score:', { category, error });
-            return heuristicScore;
-        }
+        // ISSUE-1442: Jev composite judgment replaces the always-fired TEXT_FAST
+        // LLM re-rate (token saving); the keyword heuristic remains the
+        // deterministic fallback whenever judgments are unavailable.
+        const refined = await judgeMemoryImportance(text, category);
+        return refined ?? heuristicScore;
     }
 }
+

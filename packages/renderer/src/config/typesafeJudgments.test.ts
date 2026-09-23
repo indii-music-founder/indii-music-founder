@@ -26,6 +26,7 @@ import {
     heuristicTransientError,
     judgeTransientError,
     judgeSkillIntent,
+    judgeMemoryImportance,
     judgeColumnSemantics,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -289,3 +290,36 @@ describe('judgeColumnSemantics (ISSUE-1443 / foundry columns)', () => {
     });
 });
 
+
+describe('judgeMemoryImportance (composite scoring)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('combines weighted dimension scores into 0-1 importance', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { actionability: { score: 4 }, business_criticality: { score: 2 }, permanence: { score: 2 } } },
+        }));
+
+        // (4*0.4 + 2*0.4 + 2*0.2) / 4 = (1.6 + 0.8 + 0.4) / 4 = 0.7
+        expect(await judgeMemoryImportance('release due March 3', 'project')).toBeCloseTo(0.7, 5);
+    });
+
+    it('returns null when the flag is off', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        expect(await judgeMemoryImportance('anything', 'fact')).toBeNull();
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('returns null on non-numeric dimension scores', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { actionability: { score: 3 }, business_criticality: 'high', permanence: { score: 2 } } },
+        }));
+
+        expect(await judgeMemoryImportance('x', 'fact')).toBeNull();
+    });
+});
