@@ -10,11 +10,15 @@ vi.mock('motion/react', () => ({
 }));
 
 describe('MarketingSidebar', () => {
-    it('marks future resource tabs as unavailable', () => {
+    it('hides not-yet-connected resource stubs entirely (ISSUE-1436)', () => {
         render(<MarketingSidebar activeTab="campaigns" onTabChange={vi.fn()} />);
 
-        expect(screen.getByRole('button', { name: /calendar.*soon/i })).toBeDisabled();
-        expect(screen.getByRole('button', { name: /analytics.*soon/i })).toBeDisabled();
-        expect(screen.getAllByText('Soon')).toHaveLength(5);
+        // Truthful capability: while every secondary destination is a
+        // "Not connected yet" stub, the whole Resources section stays unmounted —
+        // unbuilt features are not advertised as disabled buttons.
+        expect(screen.queryByRole('button', { name: /calendar/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /analytics/i })).not.toBeInTheDocument();
+        expect(screen.queryByText('Soon')).not.toBeInTheDocument();
+        expect(screen.queryByText('Resources')).not.toBeInTheDocument();
     });
 });
