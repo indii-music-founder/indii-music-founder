@@ -238,6 +238,9 @@ export { auditReleaseArtworkForDelivery } from './assets/auditReleaseArtwork';
 export { processRelayCommand } from './relay/relayCommandProcessor';
 export { issueStudioExecutorLease, publishStudioPresence, releaseStudioPresence, claimStudioCommand, publishStudioResponse, completeStudioCommand } from './functions/remote/issueStudioExecutorLease';
 
+// TypeSafe System One judgments — server-side proxy (API key never leaves functions)
+export { typesafeJudge } from './functions/intelligence/typesafeJudge';
+
 // Billing / Cost Control
 export { enforceOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';
 

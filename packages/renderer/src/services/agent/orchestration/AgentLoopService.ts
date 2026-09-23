@@ -12,6 +12,7 @@ import { maestroBatchingService } from '../MaestroBatchingService';
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { FirestoreService } from '../../FirestoreService';
+import { heuristicTransientError, judgeTransientError } from '@/config/typesafeJudgments';
 import { TokenEstimator } from '../governance/TokenEstimator';
 
 /**
@@ -152,22 +153,15 @@ export class AgentLoopService {
 
     /**
      * Identifies transient infrastructure errors vs logical agent errors.
+     * Baseline: the deterministic keyword heuristic (constants module).
+     * ISSUE-1442 pilot: the retry gate refines it with a TypeSafe Noul
+     * judgment when the enable_typesafe_judgments flag is on; unavailable
+     * judgments always fall back to the heuristic.
      */
-    private isTransientError(error: unknown): boolean {
-        const msg = (error instanceof Error ? error.message : String(error)).toLowerCase();
-        return (
-            msg.includes('timeout') ||
-            msg.includes('etimedout') ||
-            msg.includes('429') ||
-            msg.includes('503') ||
-            msg.includes('504') ||
-            msg.includes('rate limit') ||
-            msg.includes('resource exhausted') ||
-            msg.includes('fetch failed') ||
-            msg.includes('network') ||
-            msg.includes('aborted') ||
-            msg.includes('econnreset')
-        );
+    private async resolveTransient(error: unknown): Promise<boolean> {
+        const heuristic = heuristicTransientError(error);
+        const refined = await judgeTransientError(error, heuristic);
+        return refined ?? heuristic;
     }
 
     /**
@@ -294,7 +288,7 @@ export class AgentLoopService {
                 }
 
                 const errorMsg = results?.[0]?.error || 'Action failed.';
-                if (this.isTransientError(errorMsg)) {
+                if (await this.resolveTransient(errorMsg)) {
                     lastError = new Error(errorMsg);
                     if (attempt < maxRetries) {
                         const jitter = Math.random() * 50;
@@ -309,7 +303,7 @@ export class AgentLoopService {
                 return { output: errorMsg, isTransientFailure: false };
             } catch (error) {
                 lastError = error;
-                if (this.isTransientError(error) && attempt < maxRetries) {
+                if (await this.resolveTransient(error) && attempt < maxRetries) {
                     const jitter = Math.random() * 50;
                     const backoffMs = Math.min(3000, Math.pow(2, attempt - 1) * backoffBaseMs) + jitter;
                     logger.warn(`[AgentLoop] Transient exception on attempt ${attempt}/${maxRetries}. Retrying in ${Math.round(backoffMs)}ms...`, error);
@@ -320,7 +314,7 @@ export class AgentLoopService {
             }
         }
 
-        if (this.isTransientError(lastError)) {
+        if (heuristicTransientError(lastError)) {
             const msg = lastError instanceof Error ? lastError.message : String(lastError);
             return { output: `Infrastructure timeout/error: ${msg}`, isTransientFailure: true };
         }
@@ -386,7 +380,7 @@ Respond in JSON format only:
         } catch (error) {
             logger.error('[AgentLoop] Evaluation error:', error);
             // If judge fails due to transient error, retry once
-            if (this.isTransientError(error)) {
+            if (heuristicTransientError(error)) {
                 try {
                     await new Promise(r => setTimeout(r, 500));
                     const aiService = FirebaseIntelligenceService.getInstance();

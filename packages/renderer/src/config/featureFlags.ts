@@ -54,6 +54,11 @@ export const FEATURE_FLAG_NAMES = {
 
     // ---- Project Canvas (Spatial Multi-Modal Workspace) ----
     PROJECT_CANVAS: 'enable_project_canvas',
+
+    // ---- TypeSafe System One judgments (ISSUE-1442 pilot) ----
+    // Server-side typesafeJudge callable refines the agent loop's
+    // transient-vs-logical failure classification. Off until evaluated.
+    TYPESAFE_JUDGMENTS: 'enable_typesafe_judgments',
 } as const;
 
 export type FeatureFlagName = typeof FEATURE_FLAG_NAMES[keyof typeof FEATURE_FLAG_NAMES];
@@ -91,6 +96,9 @@ const DEFAULTS: Record<string, boolean> = {
 
     // Project Canvas — enabled in dev or via VITE_ENABLE_PROJECT_CANVAS=true
     [FEATURE_FLAG_NAMES.PROJECT_CANVAS]: import.meta.env.DEV || import.meta.env.VITE_ENABLE_PROJECT_CANVAS === 'true',
+
+    // TypeSafe judgments — opt-in pilot, evaluated against loop outcomes first.
+    [FEATURE_FLAG_NAMES.TYPESAFE_JUDGMENTS]: import.meta.env.VITE_ENABLE_TYPESAFE_JUDGMENTS === 'true',
 };
 
 // ============================================================================
