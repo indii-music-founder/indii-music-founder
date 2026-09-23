@@ -3065,7 +3065,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1436: Sidebar lists "Marketing Department" and "Campaign Manager" as two nav items that render the same screen
 
-- **Status:** 🟡 PARTIAL (2026-09-22 — nav dedupe + stub hiding landed; 14→6 tab grouping tracked below, lands with the ISSUE-1440 density pass)
+- **Status:** 🟡 PARTIAL (2026-09-22 — nav dedupe + stub hiding landed in `3245d48f1`, tab grouping landed in `7773c343e`; 14→6 grouping complete, so the original Fix scope is fully delivered across the two commits)
 - **Severity:** 🟠 HIGH
 - **Module:** Core navigation (`Sidebar.tsx`) / Marketing (`MarketingDashboard`, `CampaignDashboard`)
 - **Evidence:** `packages/renderer/src/modules/marketing/MarketingDashboard.tsx:11-13` renders `CampaignDashboard` verbatim. Sidebar registers both `campaign` ("Campaign Manager", `Sidebar.tsx:204`) and `marketing` ("Marketing Department", `Sidebar.tsx:211`), so two nav entries land on one identical screen. Related: the marketing rail exposes 14 active tabs + 5 permanently disabled "Not connected yet" stubs (`marketing/components/MarketingSidebar.tsx:35-59`).
@@ -3079,7 +3079,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1437: Phantom module IDs and mobile/desktop gating drift route users to the wrong places
 
-- **Status:** 🟡 PARTIAL (2026-09-22 — nav surfaces fixed: gating filter, phantom entry removal, phone Workspace access. Orphan surfacing/cutting decisions remain Tier 3 product calls)
+- **Status:** 🟡 PARTIAL (2026-09-22 — nav surfaces fixed in `8e64e3ab9`: gating filter, phantom entry removal, phone Workspace access. Orphan surfacing/cutting decisions remain Tier 3 product calls)
 - **Severity:** 🟠 HIGH
 - **Module:** `appSlice.ts` / `MobileTabBar.tsx` / module reachability
 - **Evidence:**
@@ -3097,7 +3097,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1438: UnifiedCommandMenu is a hardcoded ~22-item list, not an index of the app
 
-- **Status:** ✅ FIXED (2026-09-22)
+- **Status:** ✅ FIXED (2026-09-22, `f440feb86`)
 - **Severity:** 🟡 MEDIUM
 - **Module:** `components/shared/UnifiedCommandMenu.tsx`
 - **Evidence:** `UnifiedCommandMenu.tsx:107-218` hardcodes ~22 static `Command.Item`s. Of ~50 registered `MODULE_IDS`, most (social, publishing, merch, road, publicist, notes, memory, marketplace, crm, screenwriter, analytics, security, registration, raw-converter, format-foundry…) have no command-menu entry. No recent items, no in-module actions (e.g. "Upload release", "New expense"), no content search. Placeholder promises "Search commands, navigate modules…".
@@ -3126,7 +3126,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1440: Control-dense screens dump 16–30 simultaneous controls with no progressive disclosure
 
-- **Status:** 🟡 PARTIAL (2026-09-22 — OmniWorkflow, ReleaseWizard, QCPanel, and the Finance/Marketing tab regrouping landed; MerchDesigner / StudioControlsPanel reorder / DirectGenerationTab / MemoryDashboard remain OPEN)
+- **Status:** 🟡 PARTIAL (2026-09-22 — commits `19a299396` (OmniWorkflow), `68e6722e8` (ReleaseWizard), `7a229800b` (QCPanel), `7773c343e` (Finance/Marketing grouping) landed; MerchDesigner / StudioControlsPanel reorder / DirectGenerationTab / MemoryDashboard remain OPEN)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative video / Publishing wizard / Finance / Distribution QC / Merch
 - **Evidence (all verified):**
@@ -3154,7 +3154,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1441: Dead and duplicated UI inventory (dead buttons, twin components, orphaned layout code)
 
-- **Status:** 🟡 PARTIAL (2026-09-22 — dead controls removed, deprecated revenue-widget duplicates unregistered, publishing's twin components deleted in favor of the canonical originals, FounderReadiness duplicate tab removed, social+publishing migrated onto ThreePanelDashboard via the new actions slot. Remaining OPEN: MobileAdaptiveLayout deletion, governance-card reorder in StudioControlsPanel)
+- **Status:** 🟡 PARTIAL (2026-09-22 — commits `7148402f0` + `0632d5cb3`: dead controls removed, deprecated revenue-widget duplicates unregistered, publishing's twin components deleted in favor of the canonical originals, FounderReadiness duplicate tab removed, social+publishing migrated onto ThreePanelDashboard via the new actions slot. Remaining OPEN: MobileAdaptiveLayout deletion, governance-card reorder in StudioControlsPanel)
 - **Severity:** 🟡 MEDIUM
 - **Module:** StudioControlsPanel / publishing+distribution twins / MobileAdaptiveLayout / dashboard widgets
 - **Evidence:**
