@@ -263,7 +263,7 @@ describe('Consolidated Dashboard Widgets & Operational Gates', () => {
 
             const widget = screen.getByTestId('project-timeline-widget');
             fireEvent.click(widget);
-            expect(mocks.setModule).toHaveBeenCalledWith('campaign');
+            expect(mocks.setModule).toHaveBeenCalledWith('marketing');
         });
 
         it('renders zero state with 1-click CTA to plan release timeline when none exists', async () => {
@@ -281,7 +281,7 @@ describe('Consolidated Dashboard Widgets & Operational Gates', () => {
             expect(planBtn).toBeInTheDocument();
 
             fireEvent.click(planBtn);
-            expect(mocks.setModule).toHaveBeenCalledWith('campaign');
+            expect(mocks.setModule).toHaveBeenCalledWith('marketing');
         });
     });
 

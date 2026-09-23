@@ -662,7 +662,7 @@ function ActiveCampaignsWidget() {
                 label="Market Velocity"
                 promise="Track every running campaign and its momentum from one place."
                 ctaLabel="Plan a campaign"
-                ctaModule="campaign"
+                ctaModule="marketing"
                 accentClass="text-dept-campaign"
             />
         );
@@ -1250,7 +1250,7 @@ function ProjectTimelineWidget() {
 
                 <div className="mt-4">
                     <button
-                        onClick={() => setModule('campaign')}
+                        onClick={() => setModule('marketing')}
                         className="w-full py-2.5 px-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm"
                     >
                         <Calendar size={14} />
@@ -1264,7 +1264,7 @@ function ProjectTimelineWidget() {
     return (
         <div
             className="flex flex-col h-full justify-between group/widget cursor-pointer"
-            onClick={() => setModule('campaign')}
+            onClick={() => setModule('marketing')}
             data-testid="project-timeline-widget"
         >
             <div>
