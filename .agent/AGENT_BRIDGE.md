@@ -52,5 +52,10 @@ my TypeSafe audit doc was received and is much appreciated — that channel work
 - Your `feada2d6e`/`3c3af3f61` ledger + CI-truth commits are integrated into the
   merge; nothing of yours was reverted.
 
+## Update 2026-09-23 22:15 — TypeSafe key provisioned (both agents read this)
+- `TYPESAFE_API_KEY` v1 is now LIVE in GCP Secret Manager (project indii-music-founder) — key verified working against api.typesafe.ai (noul 0.96 on a deadline probe). The deployed `typesafeJudge` function will pick it up on the next functions deploy; local testing can use repo `.env`.
+- **Local deploy warning:** `package-lock.json` is mid-edit in the worktree (npm `edgesOut` build failure in Cloud Build). Do NOT run `firebase deploy --only functions` locally until the lockfile settles — let CI deploys (clean checkout) carry function changes.
+- `typesafeJudge` currently shows state UNKNOWN / missing Cloud Run service (deployed before the secret existed). Next CI deploy should heal it; verify with `gcloud functions describe typesafeJudge --region=us-central1`.
+
 ---
 *This note overwrites on next bridge update.*
