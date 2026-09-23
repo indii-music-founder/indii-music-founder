@@ -81,13 +81,14 @@ describe('MobileTabBar', () => {
         mockStore();
     });
 
-    it('offers Files, Notes, and Project Canvas in the More drawer', () => {
+    it('offers Files and Project Canvas in the More drawer; Notes folded into Knowledge Base (ISSUE-1442)', () => {
         render(<MobileTabBar />);
         openMoreDrawer();
 
         expect(screen.getByRole('button', { name: 'Files' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Notes' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Project Canvas' })).toBeInTheDocument();
+        // Stage 2 fold: Notes is a Knowledge Base tab now, not a destination.
+        expect(screen.queryByRole('button', { name: 'Notes' })).not.toBeInTheDocument();
     });
 
     it('never offers the phantom Audio Analyzer destination (ISSUE-1437)', () => {

@@ -48,6 +48,12 @@ export interface ModuleRegistryEntry {
 export const HIDDEN_MODULE_REASONS: Partial<Record<ModuleId, string>> = {
     // ISSUE-1436: rendered the identical CampaignDashboard as Marketing — one entry only.
     'campaign': 'duplicate of Marketing Department',
+    // ISSUE-1442 Stage 2: the "what the system remembers" surfaces fold into
+    // the Knowledge Base destination (tabs: Documents / Notes / Memory).
+    // Ids stay valid — deep links and the Quick Notes drawer still land on
+    // working surfaces; they are just no longer separate destinations.
+    'notes': 'folded into Knowledge Base',
+    'memory': 'folded into Knowledge Base (dev)',
     // ISSUE-1441 (redundancy audit): the former phantom ids 'audio-analyzer' and
     // 'format-foundry' were fully removed. Legacy /audio-analyzer and
     // /format-foundry URLs still redirect via useURLSync ROUTE_ALIASES.

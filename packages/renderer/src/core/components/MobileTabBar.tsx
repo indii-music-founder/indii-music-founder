@@ -77,8 +77,8 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
         items: [
             // ISSUE-1437: files/notes/project-canvas had no phone entry point at all —
             // the command menu that reaches them on desktop is keyboard-only (⌘K).
+            // ISSUE-1442 Stage 2: notes folded into Knowledge Base tabs.
             { id: 'files', label: 'Files' },
-            { id: 'notes', label: 'Notes' },
             { id: 'project-canvas', label: 'Project Canvas' },
         ],
     },

@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Upload, Search, Loader2, Book, Sparkles, X } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback, Suspense, lazy } from 'react';
+import { Upload, Search, Loader2, Book, Sparkles, X, StickyNote, Brain } from 'lucide-react';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/core/context/ToastContext';
@@ -7,11 +7,32 @@ import { knowledgeBaseService, KnowledgeDoc } from './services/KnowledgeBaseServ
 import { DocumentCard } from './components/DocumentCard';
 import { KnowledgeChat } from './components/KnowledgeChat';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { LoadingFallback } from '@/core/components/LoadingFallbacks';
+import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+// ISSUE-1442 Stage 2: the "what the system remembers" surfaces fold into one
+// destination. Memory and Notes keep their module ids (deep links and the
+// Quick Notes drawer keep working) but are no longer separate nav destinations.
+const NotesModuleLazy = lazy(() => import('@/modules/notes/NotesModule'));
+const MemoryDashboardLazy = lazy(() => import('@/modules/memory/MemoryDashboard'));
+
+type KnowledgeTab = 'knowledge' | 'notes' | 'memory';
+
+function readInitialTab(): KnowledgeTab {
+    try {
+        const tab = new URLSearchParams(window.location.search).get('tab');
+        if (tab === 'notes' || tab === 'memory') return tab;
+    } catch {
+        // Non-browser environment — default below.
+    }
+    return 'knowledge';
+}
+
 export default function KnowledgeBase() {
     const toast = useToast();
+    const [activeTab, setActiveTab] = useState<KnowledgeTab>(readInitialTab);
     const [documents, setDocuments] = useState<KnowledgeDoc[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -129,9 +150,65 @@ export default function KnowledgeBase() {
         doc.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const selectTab = (tab: KnowledgeTab) => {
+        setActiveTab(tab);
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', tab);
+            window.history.replaceState(null, '', url.toString());
+        } catch {
+            // URL best-effort only — the tab still switches.
+        }
+    };
+
+    const memoryAvailable = featureFlags.isEnabled(FEATURE_FLAG_NAMES.DEV_MODULES);
+
+    const tabs: { id: KnowledgeTab; label: string; icon: typeof Book }[] = [
+        { id: 'knowledge', label: 'Documents', icon: Book },
+        { id: 'notes', label: 'Notes', icon: StickyNote },
+        ...(memoryAvailable ? [{ id: 'memory' as const, label: 'Memory', icon: Brain }] : []),
+    ];
+
     return (
         <ModuleErrorBoundary moduleName="Knowledge Base">
             <div className="h-full flex flex-col bg-bg-dark text-white overflow-hidden relative">
+                {/* Tab strip — one destination for the surfaces that remember for you */}
+                <div className="flex items-center gap-2 px-8 pt-6 flex-shrink-0" role="tablist" aria-label="Knowledge sections">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            role="tab"
+                            aria-selected={activeTab === tab.id}
+                            data-testid={`knowledge-tab-${tab.id}`}
+                            onClick={() => selectTab(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
+                                ? 'bg-[#FFE135]/10 border border-[#FFE135]/40 text-[#FFE135]'
+                                : 'bg-white/[0.02] border border-white/5 text-gray-400 hover:text-white hover:border-white/15'
+                                }`}
+                        >
+                            <tab.icon size={14} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {activeTab === 'notes' ? (
+                    <div className="flex-1 overflow-y-auto" data-testid="knowledge-notes-pane">
+                        <Suspense fallback={<LoadingFallback />}>
+                            <ModuleErrorBoundary moduleName="Knowledge / Notes">
+                                <NotesModuleLazy />
+                            </ModuleErrorBoundary>
+                        </Suspense>
+                    </div>
+                ) : activeTab === 'memory' && memoryAvailable ? (
+                    <div className="flex-1 overflow-y-auto" data-testid="knowledge-memory-pane">
+                        <Suspense fallback={<LoadingFallback />}>
+                            <ModuleErrorBoundary moduleName="Knowledge / Memory">
+                                <MemoryDashboardLazy />
+                            </ModuleErrorBoundary>
+                        </Suspense>
+                    </div>
+                ) : (
                 <div className="flex-1 overflow-y-auto p-8"
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -235,16 +312,19 @@ export default function KnowledgeBase() {
                         </div>
                     )}
                 </div>
+                )}
 
-                {/* Chat Sidebar Overlay */}
-                <KnowledgeChat
-                    isOpen={isChatOpen}
-                    onClose={() => setIsChatOpen(false)}
-                    activeDoc={activeChatDoc}
-                />
+                {/* Chat Sidebar Overlay — knowledge-documents only */}
+                {activeTab === 'knowledge' && (
+                    <KnowledgeChat
+                        isOpen={isChatOpen}
+                        onClose={() => setIsChatOpen(false)}
+                        activeDoc={activeChatDoc}
+                    />
+                )}
 
-                {/* Document Viewer Modal */}
-                {viewingDoc && (
+                {/* Document Viewer Modal — knowledge-documents only */}
+                {activeTab === 'knowledge' && viewingDoc && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-8 animate-in fade-in duration-300">
                         <div className="bg-[#161b22] border border-gray-800 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden transform scale-100 animate-in zoom-in-95 duration-300">
                             {/* Header */}
