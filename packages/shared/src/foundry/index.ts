@@ -1,5 +1,6 @@
 export * from './types.js';
 export { DecimalMoney } from './DecimalMoney.js';
+export { parseMoneyAmount } from './parseMoney.js';
 export { EvidenceIntakeService } from './EvidenceIntakeService.js';
 export { FormatForensicsEngine } from './FormatForensicsEngine.js';
 export { ControlledExperimentRunner } from './ControlledExperimentRunner.js';

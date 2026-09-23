@@ -4,6 +4,7 @@ import {
   QuarantinedRow,
   ParseOptions,
   DecimalMoney,
+  parseMoneyAmount,
 } from '@indii/shared';
 
 export class TuneCoreStatementAdapter {
@@ -61,24 +62,29 @@ export class TuneCoreStatementAdapter {
       const songTitle = getCol(parts, 'song title') || 'Untitled';
       const releaseTitle = getCol(parts, 'release title');
       const salesPeriod = getCol(parts, 'sales period');
-      const country = getCol(parts, 'country') || 'US';
+      // ISSUE-1443: no fabricated territory — empty when the column is missing.
+      const country = getCol(parts, 'country') || '';
       const rawEarnings = getCol(parts, 'total earned');
       const rawQuantity = getCol(parts, 'quantity');
 
-      const earnings = parseFloat(rawEarnings.replace(/[^0-9.-]/g, ''));
+      const earnings = parseMoneyAmount(rawEarnings);
       const quantity = parseInt(rawQuantity.replace(/[^0-9-]/g, ''), 10) || 0;
 
-      if (isNaN(earnings) || !isrc || isrc === 'MALFORMED_ISRC') {
+      if (earnings === null || !isrc || isrc === 'MALFORMED_ISRC') {
         quarantinedRows.push({
           lineIndex,
           rawContent: line,
-          reason: isNaN(earnings) ? 'Invalid total earned number' : 'Missing or malformed ISRC',
-          errorCode: isNaN(earnings) ? 'ERR_INVALID_NUMERIC' : 'ERR_INVALID_ISRC',
+          reason: earnings === null ? 'Invalid total earned number' : 'Missing or malformed ISRC',
+          errorCode: earnings === null ? 'ERR_INVALID_NUMERIC' : 'ERR_INVALID_ISRC',
           severity: 'warning',
         });
         continue;
       }
 
+      // ISSUE-1443: capture a real fee value when the statement carries one;
+      // LayeredValidator's reconciliation is vacuous while fees are hardcoded to 0.
+      const rawFee = getCol(parts, 'fee') ?? getCol(parts, 'distributor fee') ?? getCol(parts, 'commission');
+      const distributorFee = parseMoneyAmount(rawFee ?? '') ?? 0;
       const isDownload = store.toLowerCase().includes('itunes') || store.toLowerCase().includes('download');
       const txnType = isDownload ? 'download' : 'stream';
 
@@ -111,7 +117,7 @@ export class TuneCoreStatementAdapter {
         transactionType: txnType,
         quantity,
         grossRevenue: earnings,
-        distributorFee: 0,
+        distributorFee,
         netRevenue: earnings,
         currency: 'USD',
         territory: country,

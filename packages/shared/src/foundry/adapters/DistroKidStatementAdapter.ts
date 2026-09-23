@@ -5,6 +5,7 @@ import {
   ParseOptions,
 } from '../types.js';
 import { DecimalMoney } from '../DecimalMoney.js';
+import { parseMoneyAmount } from '../parseMoney.js';
 
 export class DistroKidStatementAdapter {
   readonly formatId = 'distrokid_statement';
@@ -81,19 +82,23 @@ export class DistroKidStatementAdapter {
       const country = getCol(parts, 'Country of Sale');
 
       const quantity = parseInt(quantityStr, 10) || 1;
-      const earnings = parseFloat(earningsStr);
+      const earnings = parseMoneyAmount(earningsStr);
 
-      if (isNaN(earnings) || !isrc || isrc === 'MALFORMED_ISRC') {
+      if (earnings === null || !isrc || isrc === 'MALFORMED_ISRC') {
         quarantinedRows.push({
           lineIndex: lineIndex + 1,
           rawContent: line,
-          reason: isNaN(earnings) ? `Invalid numeric value for Earnings (USD): "${earningsStr}"` : 'Missing or malformed ISRC',
-          errorCode: isNaN(earnings) ? 'ERR_INVALID_EARNINGS' : 'ERR_INVALID_ISRC',
+          reason: earnings === null ? `Invalid numeric value for Earnings (USD): "${earningsStr}"` : 'Missing or malformed ISRC',
+          errorCode: earnings === null ? 'ERR_INVALID_EARNINGS' : 'ERR_INVALID_ISRC',
           severity: 'warning',
         });
         continue;
       }
 
+      // ISSUE-1443: capture a real fee value when the statement carries one;
+      // LayeredValidator's reconciliation is vacuous while fees are hardcoded to 0.
+      const rawFee = getCol(parts, 'fee') ?? getCol(parts, 'distributor fee') ?? getCol(parts, 'commission');
+      const distributorFee = parseMoneyAmount(rawFee ?? '') ?? 0;
       const isDownload = store.toLowerCase().includes('itunes') || store.toLowerCase().includes('download');
       const txnType = isDownload ? 'download' : 'stream';
 
@@ -125,7 +130,7 @@ export class DistroKidStatementAdapter {
         transactionType: txnType,
         quantity,
         grossRevenue: earnings,
-        distributorFee: 0,
+        distributorFee,
         netRevenue: earnings,
         currency: 'USD',
         territory: country || 'US',

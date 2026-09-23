@@ -178,14 +178,15 @@ export class FormatForensicsEngine {
       return { semantic: 'upc', confidence: 0.95 };
     }
 
+    // Check Fees — must precede the earnings branch: "Fee Amount" contains
+    // "amount" and used to be misclassified as currency_amount (ISSUE-1443).
+    if (header.includes('fee') || header.includes('withholding') || header.includes('tax')) {
+      return { semantic: 'fee_amount', confidence: 0.88 };
+    }
+
     // Check Currency & Earnings
     if (header.includes('earning') || header.includes('revenue') || header.includes('total_earned') || header.includes('subtotal') || header.includes('usd') || header.includes('amount')) {
       return { semantic: 'currency_amount', confidence: 0.92 };
-    }
-
-    // Check Fees
-    if (header.includes('fee') || header.includes('withholding') || header.includes('tax')) {
-      return { semantic: 'fee_amount', confidence: 0.88 };
     }
 
     // Check Streams & Downloads
