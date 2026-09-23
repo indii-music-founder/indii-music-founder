@@ -166,13 +166,15 @@ describe('Sidebar Navigation Integration', () => {
 
         expect(screen.getByText('Workflow Builder')).toBeInTheDocument();
         expect(screen.getByText('Knowledge Base')).toBeInTheDocument();
-        expect(screen.getByText('Brand Manager')).toBeInTheDocument();
         expect(screen.getByText('Marketing Department')).toBeInTheDocument();
         expect(screen.getByTestId('bottom-rail-notes-btn')).toBeInTheDocument();
 
-        // ISSUE-1436: "Campaign Manager" rendered the identical CampaignDashboard as
-        // "Marketing Department" — the duplicate nav entry must not come back.
+        // ISSUE-1442 Stage 2B: marketing owns Brand, Publicist, Social, CRM, and
+        // Analytics as tabs. They must not reappear as competing top-level entries.
+        expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
         expect(screen.queryByText('Campaign Manager')).not.toBeInTheDocument();
+        expect(screen.queryByText('Publicist')).not.toBeInTheDocument();
+        expect(screen.queryByText('Social Media Department')).not.toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
@@ -201,20 +203,12 @@ describe('Sidebar Navigation Integration', () => {
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
 
-        fireEvent.click(screen.getByText('Brand Manager'));
-        expect(mockSetModule).toHaveBeenCalledWith('brand');
-
-        vi.advanceTimersByTime(200);
-        fireEvent.click(screen.getByText('Publicist'));
-        expect(mockSetModule).toHaveBeenCalledWith('publicist');
+        fireEvent.click(screen.getByText('Marketing Department'));
+        expect(mockSetModule).toHaveBeenCalledWith('marketing');
 
         vi.advanceTimersByTime(200);
         fireEvent.click(screen.getByText('Finance Department'));
         expect(mockSetModule).toHaveBeenCalledWith('finance');
-
-        vi.advanceTimersByTime(200);
-        fireEvent.click(screen.getByText('Social Media Department'));
-        expect(mockSetModule).toHaveBeenCalledWith('social');
 
         vi.advanceTimersByTime(200);
         fireEvent.click(screen.getByText('Workflow Builder'));
@@ -422,7 +416,7 @@ describe('Sidebar Navigation Integration', () => {
         }, { timeout: 20000 });
     }, 30000);
 
-    it('Social Media Department sidebar click dispatches setModule("social") (ISSUE-443)', () => {
+    it('Marketing Department sidebar click dispatches setModule("marketing") (ISSUE-1442)', () => {
         render(
             <MemoryRouter>
                 <Sidebar />
@@ -430,8 +424,8 @@ describe('Sidebar Navigation Integration', () => {
         );
 
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
-        fireEvent.click(screen.getByText('Social Media Department'));
-        expect(mockSetModule).toHaveBeenCalledWith('social');
+        fireEvent.click(screen.getByText('Marketing Department'));
+        expect(mockSetModule).toHaveBeenCalledWith('marketing');
     });
 
     it('renders navigation items correctly', () => {
@@ -458,7 +452,7 @@ describe('Sidebar Navigation Integration', () => {
 
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         // Manager section items are rendered
-        expect(screen.getByTestId('nav-item-brand')).toBeInTheDocument();
+        expect(screen.getByTestId('nav-item-road')).toBeInTheDocument();
         // Sidebar toggle is accessible
         expect(screen.getByTestId('sidebar-toggle')).toBeInTheDocument();
     });
