@@ -46,18 +46,9 @@ vi.mock('../../../config/secrets', () => ({ arcjetKey: { name: 'ARCJET_KEY' } })
 import { HttpsError } from 'firebase-functions/v2/https';
 
 type RouterModule = typeof import('../router');
-type EndpointName =
-  | 'getTrack'
-  | 'createTrack'
-  | 'queryAnalytics'
-  | 'updateTrack'
-  | 'deleteTrack'
-  | 'listTracks'
-  | 'createDistribution'
-  | 'getDistribution'
-  | 'submitDistribution'
-  | 'getProfile'
-  | 'health';
+// ISSUE-1442: the track-CRUD, distribution-REST, and queryAnalytics routes were
+// removed (zero client callers — the live pipeline writes Firestore directly).
+type EndpointName = 'getProfile' | 'health';
 
 let router: RouterModule;
 
@@ -95,34 +86,25 @@ describe('router Arcjet boundary', () => {
   });
 
   it('binds the managed Arcjet secret to every REST endpoint that invokes request protection', () => {
-    const endpointNames: EndpointName[] = [
-      'getTrack', 'createTrack', 'queryAnalytics', 'updateTrack', 'deleteTrack', 'listTracks',
-      'createDistribution', 'getDistribution', 'submitDistribution', 'getProfile', 'health',
-    ];
+    const endpointNames: EndpointName[] = ['getProfile', 'health'];
 
-    expect(endpointNames).toHaveLength(11);
-    expect(mocks.onRequest).toHaveBeenCalledTimes(11);
+    expect(endpointNames).toHaveLength(2);
+    expect(mocks.onRequest).toHaveBeenCalledTimes(2);
     for (const [options] of mocks.onRequest.mock.calls) {
       expect(options).toEqual({ secrets: [{ name: 'ARCJET_KEY' }] });
     }
   });
 
-  it.each([
-    ['createTrack', 'POST', '/api/tracks'],
-    ['updateTrack', 'PUT', '/api/tracks/track-1'],
-    ['deleteTrack', 'DELETE', '/api/tracks/track-1'],
-    ['createDistribution', 'POST', '/api/distributions'],
-    ['submitDistribution', 'POST', '/api/distributions/dist-1/submit'],
-  ] as const)('fails closed before %s can mutate data', async (name, method, path) => {
+  it('fails closed before getProfile can read data when Arcjet denies the request', async () => {
     const res = response();
-    const handler = router[name as Extract<EndpointName, 'createTrack' | 'updateTrack' | 'deleteTrack' | 'createDistribution' | 'submitDistribution'>] as unknown as (
+    const handler = router.getProfile as unknown as (
       req: ReturnType<typeof request>,
       res: ReturnType<typeof response>,
     ) => Promise<void>;
-    await handler(request(method, path), res);
+    await handler(request('GET', '/api/profile'), res);
 
     expect(mocks.protect).toHaveBeenCalledWith(
-      expect.objectContaining({ method, path }),
+      expect.objectContaining({ method: 'GET', path: '/api/profile' }),
       expect.objectContaining({ userId: 'owner-1', policy: 'verified-free', operationId: expect.any(String) }),
     );
     expect(mocks.set).toHaveBeenCalledWith('Retry-After', '22');
@@ -136,12 +118,12 @@ describe('router Arcjet boundary', () => {
   it('preserves a verified-email or entitlement denial instead of masking it as invalid authentication', async () => {
     mocks.requireEntitlement.mockRejectedValue(new HttpsError('failed-precondition', 'Verify your email before activating an indii entitlement.'));
     const res = response();
-    const handler = router.createTrack as unknown as (
+    const handler = router.getProfile as unknown as (
       req: ReturnType<typeof request>,
       res: ReturnType<typeof response>,
     ) => Promise<void>;
 
-    await handler(request('POST', '/api/tracks'), res);
+    await handler(request('GET', '/api/profile'), res);
 
     expect(mocks.protect).not.toHaveBeenCalled();
     expect(mocks.status).toHaveBeenCalledWith(412);
@@ -160,33 +142,6 @@ describe('router pagination normalization', () => {
     mocks.requireEntitlement.mockResolvedValue({ tier: 'free' });
     mocks.policyForEntitlement.mockReturnValue('verified-free');
     mocks.protect.mockResolvedValue({ allowed: true });
-    mocks.get.mockResolvedValue({ docs: [] });
-    mocks.limit.mockReturnValue({ get: mocks.get });
-    mocks.orderBy.mockReturnValue({ limit: mocks.limit });
-    mocks.nestedCollection.mockReturnValue({ orderBy: mocks.orderBy });
-    mocks.firestoreDoc.mockReturnValue({ collection: mocks.nestedCollection });
-    mocks.firestoreCollection.mockReturnValue({ doc: mocks.firestoreDoc });
-    router = await import('../router');
-  });
-
-  it('clamps oversized list track limits while preserving valid offsets', async () => {
-    const res = response();
-    const req = { ...request('GET', '/api/tracks'), query: { limit: '5000', offset: '25' } };
-
-    await (router.listTracks as unknown as (req: ReturnType<typeof request>, res: ReturnType<typeof response>) => Promise<void>)(req, res);
-
-    expect(mocks.limit).toHaveBeenCalledWith(1025);
-    expect(mocks.status).toHaveBeenCalledWith(200);
-  });
-
-  it('falls back for invalid list track pagination values before Firestore query construction', async () => {
-    const res = response();
-    const req = { ...request('GET', '/api/tracks'), query: { limit: '-5', offset: 'Infinity' } };
-
-    await (router.listTracks as unknown as (req: ReturnType<typeof request>, res: ReturnType<typeof response>) => Promise<void>)(req, res);
-
-    expect(mocks.limit).toHaveBeenCalledWith(50);
-    expect(mocks.status).toHaveBeenCalledWith(200);
     router = await import('../router');
   });
 
@@ -197,7 +152,7 @@ describe('router pagination normalization', () => {
     });
   });
 
-  it('falls back for negative, blank, and non-finite pagination values before Firestore query construction', () => {
+  it('falls back for negative, blank, and non-finite pagination values', () => {
     expect(router.normalizePagination({ limit: '-5', offset: '-1' }, { defaultLimit: 50, maxLimit: 1000 })).toEqual({
       limit: 50,
       offset: 0,

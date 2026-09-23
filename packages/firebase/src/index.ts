@@ -21,7 +21,6 @@ import { serve } from "inngest/express";
 import corsLib from "cors";
 import { normalizeVeoDuration, resolveVeoModel, VideoJobSchema } from "./lib/video";
 
-import { GenerateSpeechRequestSchema } from "./lib/audio";
 import { verifyMasterAudioObject } from './functions/storage/verifyMasterAudio';
 import {
     CanonicalRenderMasterError,
@@ -57,12 +56,9 @@ export { reclaimStuckVideoJobs } from "./functions/video/reclaimStuckVideoJobs";
 export { cleanupExpiredVideoSessions } from "./functions/video/cleanupVideoSessions";
 export { alignSessionMaster } from "./functions/video/alignSessionMaster";
 export { generateSessionEditPlan } from "./functions/video/generateSessionEditPlan";
-export { applyAudioRecipe } from "./functions/video/applyAudioRecipe";
 export { approveSessionEditPlan } from "./functions/video/approveSessionEditPlan";
-export { createSocialHandoffDraft } from "./functions/video/createSocialHandoffDraft";
 import { analyzeAudioFn } from "./lib/audio";
 import { assertVideoSessionProjectAccess } from "./functions/video/createVideoSession";
-import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 import { isApprovedFineTunedTextEndpoint, isApprovedTextStreamModel } from './config/textStreamModels';
 import { arcjetKey, clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from "./config/secrets";
 
@@ -94,7 +90,6 @@ import * as crypto from "crypto";
 
 
 // Admin Functions
-export { setGodMode } from './functions/admin/setGodMode';
 
 // Auth Handoff Functions (Item 518: Cross-device secure auth)
 export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
@@ -115,26 +110,19 @@ export { logAuditEvent } from './functions/security/logAuditEvent';
 export { getOrganizationAccessMatrix, updateOrganizationMemberAccess } from './functions/security/organizationAccess';
 export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
 
-// REST API Router
+// REST API Router — ISSUE-1442: track-CRUD, distribution-REST, and
+// queryAnalytics routes removed (zero client callers; the live pipeline
+// writes Firestore directly).
 export {
-    getTrack,
-    createTrack,
-    queryAnalytics,
-    updateTrack,
-    deleteTrack,
-    listTracks,
-    createDistribution,
-    getDistribution,
-    submitDistribution,
     getProfile,
     health,
 } from './functions/api/router';
 
 // Stripe Connect Functions
-export { createStripeAccount, createStripeConnectAccount, createTransfer } from './stripe/connect';
+export { createStripeConnectAccount, createTransfer } from './stripe/connect';
 
 // Stripe Split Escrow (Item 135)
-export { initiateSplitEscrow, signEscrow, releaseEscrow } from './stripe/splitEscrow';
+export { initiateSplitEscrow, releaseEscrow } from './stripe/splitEscrow';
 
 export { requestTaxForms } from './stripe/taxForms';
 
@@ -190,7 +178,6 @@ export { processISWCMapping as processISWCMappingV2 } from './publishing/iswcMap
 
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';
-export { refreshSocialToken } from './social/refreshTokenCallable';
 
 // Timeline Orchestrator (Progressive Campaign Engine — polls every 15 min for due milestones)
 export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
@@ -244,7 +231,6 @@ export {
     executeTelemetryPurge,
 } from './devops/databaseMaintenance';
 export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAssetForCanvas';
-export { verifyMasterAudio } from './functions/storage/verifyMasterAudio';
 export { processAudioIngestion } from './distribution/ingestion';
 export { auditReleaseArtworkForDelivery } from './assets/auditReleaseArtwork';
 
@@ -256,8 +242,6 @@ export { issueStudioExecutorLease, publishStudioPresence, releaseStudioPresence,
 export { enforceOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';
 
 // Telegram Bot Adapter — Phase 2 Multi-Channel (bridges Telegram → Firestore relay)
-export { telegramWebhook } from './relay/telegramWebhook';
-export { generateTelegramLinkCode, getTelegramLinkStatus } from './relay/telegramLink';
 
 // App Releases (Founder Delivery)
 export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
@@ -1112,64 +1096,6 @@ export const inngestApi = onRequest(
 export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
-export const generateSpeech = onCall(
-    {
-        secrets: [arcjetKey], enforceAppCheck: false, timeoutSeconds: 60, memory: "512MiB",
-        cpu: 'gcf_gen1',
-        concurrency: 1,
-    },
-    // Item 352: Explicit return type annotation
-    async (request): Promise<{ audioContent: string }> => {
-        const data = request.data as unknown;
-        await requireVerifiedCreativeAdmission(request, 'generate-speech');
-
-        const validation = GenerateSpeechRequestSchema.safeParse(data);
-        if (!validation.success) {
-            throw new HttpsError("invalid-argument", validation.error.message);
-        }
-        const { text, voice, model } = validation.data;
-
-        try {
-            logger.log(`[generateSpeech] Generating speech with model: ${model}`);
-            const modelId = model || FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION;
-
-            // Use Vertex AI SDK (ADC auth, no API key)
-            const { getVertexAIClient } = await import('./lib/vertexClient');
-            const genai = getVertexAIClient();
-
-            const result = await genai.models.generateContent({
-                model: modelId,
-                contents: [{ parts: [{ text }] }],
-                responseModalities: ["AUDIO"],
-                speechConfig: {
-                    voiceConfig: {
-                        prebuiltVoiceConfig: {
-                            voiceName: voice
-                        }
-                    }
-                }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any);
-
-            // Extract audio data from SDK response (direct candidates, no .response wrapper)
-            const part = (result?.candidates?.[0]?.content?.parts as unknown[])?.[0] as Record<string, unknown> | undefined;
-            const inlineData = part && typeof part === 'object' && 'inlineData' in part ? (part as { inlineData?: { data?: string } }).inlineData : null;
-            const b64Data = inlineData?.data || null;
-
-            if (!b64Data) {
-                logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
-                throw new Error("No audio content returned from API");
-            }
-
-            return { audioContent: b64Data };
-
-        } catch (err: unknown) {
-            const error = err instanceof Error ? err : new Error(String(err));
-            logger.error("[generateSpeech] Error:", error);
-            throw new HttpsError("internal", error.message || "Speech generation failed");
-        }
-    });
-
 export const generateContentStream = onRequest(
     {
         secrets: [arcjetKey],
@@ -1180,9 +1106,8 @@ export const generateContentStream = onRequest(
         // below the ~259MB shared cold-start bundle. Its outbound HTTPS call to
         // Arcjet then failed under memory pressure, Arcjet returned an errored
         // decision, and the fail-closed gate denied 100% of authenticated AI
-        // requests in production. Every sibling here already sets this: the two
-        // Inngest+Arcjet functions use "2GiB" and `generateSpeech` — same
-        // secrets, same shape — uses "512MiB". This was an omission, not a
+        // requests in production. Every sibling here already sets this: the
+        // Inngest+Arcjet functions use "2GiB". This was an omission, not a
         // deliberate tier. The tier stays declared explicitly rather than
         // relying on setGlobalOptions, so the value survives any future change
         // to the global default.

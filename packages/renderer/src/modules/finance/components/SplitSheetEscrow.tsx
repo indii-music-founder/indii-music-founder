@@ -33,6 +33,10 @@ export function SplitSheetEscrow() {
     const [released, setReleased] = useState(false);
     const [releasing, setReleasing] = useState(false);
     const [releaseError, setReleaseError] = useState<string | null>(null);
+    // ISSUE-1442: wire the collaborator sign-off to the signEscrow callable —
+    // previously nothing could record a signature, so an escrow could never
+    // reach FULLY_SIGNED and releaseEscrow was permanently dead-locked.
+    const [signingSelf, setSigningSelf] = useState(false);
     // Item 412: Split Sheet PDF Export state
     const [exporting, setExporting] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -93,6 +97,31 @@ export function SplitSheetEscrow() {
     // Release requires: amount > 0, at least one collaborator, all signed, valid splits, all have payout accounts
     const allSigned = escrowAmount > 0 && totalCount > 0 && signedCount === totalCount && splitsValid && allHavePayoutAccounts;
     const progressPct = totalCount > 0 ? Math.round((signedCount / totalCount) * 100) : 0;
+
+    /**
+     * ISSUE-1442: record the current user's own sign-off via the signEscrow
+     * callable. The backend verifies party membership and flips the escrow to
+     * FULLY_SIGNED once every party has signed; the onSnapshot listener picks
+     * up the new signoffs map.
+     */
+    const handleSignEscrow = async () => {
+        if (!escrowDocId || signingSelf) return;
+
+        setSigningSelf(true);
+        setReleaseError(null);
+
+        try {
+            const functions = getFunctions();
+            const signEscrowFn = httpsCallable<{ escrowDocId: string }, { success: boolean; message: string }>(functions, 'signEscrow');
+            const result = await signEscrowFn({ escrowDocId });
+            logger.info('[SplitSheetEscrow] Sign-off recorded:', result.data.message);
+        } catch (err: unknown) {
+            logger.error('[SplitSheetEscrow] Sign-off failed:', err);
+            setReleaseError(`Sign-off failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        } finally {
+            setSigningSelf(false);
+        }
+    };
 
     /**
      * Item 202: Wire release to the real createTransfer Cloud Function.
@@ -294,13 +323,23 @@ export function SplitSheetEscrow() {
                                             <CheckCircle2 size={10} />
                                             Signed
                                         </div>
+                                    ) : c.id === user?.uid ? (
+                                        <button
+                                            onClick={handleSignEscrow}
+                                            disabled={signingSelf || released}
+                                            data-testid="sign-escrow-button"
+                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold flex-shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {signingSelf ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
+                                            {signingSelf ? 'Signing…' : 'Sign Your Split'}
+                                        </button>
                                     ) : (
                                         <button
                                             disabled
                                             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/10 text-gray-500 text-[10px] font-bold flex-shrink-0 cursor-not-allowed"
                                         >
                                             <Clock size={10} />
-                                            Signature Required
+                                            Awaiting Signature
                                         </button>
                                     )}
                                 </div>

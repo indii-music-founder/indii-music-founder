@@ -1,9 +1,8 @@
 import { createHash } from 'node:crypto';
 
 import * as admin from 'firebase-admin';
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 
-import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const ORIGINAL_AUDIO_NAME_PATTERN = /^original\.[a-z0-9]{2,8}$/;
@@ -144,12 +143,3 @@ export async function verifyMasterAudioObject(
         storagePath,
     };
 }
-
-export const verifyMasterAudio = onCall(
-    { enforceAppCheck: false, timeoutSeconds: 540, memory: '512MiB' },
-    async request => {
-        validateAppCheckV2(request);
-        if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to verify a master audio object.');
-        return verifyMasterAudioObject(request.auth.uid, request.data as VerifyMasterAudioInput);
-    }
-);

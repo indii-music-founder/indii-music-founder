@@ -25,17 +25,13 @@ import * as router from '../router';
 /**
  * The canonical public REST surface. Keep this in lockstep with router.ts.
  * Update intentionally when an endpoint is genuinely added or removed.
+ *
+ * ISSUE-1442 (redundancy audit): the track-CRUD, distribution-REST, and
+ * queryAnalytics routes were removed — the live product writes Firestore
+ * directly (DistributionDashboard/DeliveryService) and none of these routes
+ * had a single client caller repo-wide.
  */
 const EXPECTED_ENDPOINTS = [
-  'getTrack',
-  'createTrack',
-  'queryAnalytics',
-  'updateTrack',
-  'deleteTrack',
-  'listTracks',
-  'createDistribution',
-  'getDistribution',
-  'submitDistribution',
   'getProfile',
   'health',
 ] as const;

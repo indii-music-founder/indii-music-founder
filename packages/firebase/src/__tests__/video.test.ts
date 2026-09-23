@@ -229,8 +229,6 @@ vi.mock('../streaming/agentStream', () => ({
 
 // Mock relay/email/analytics/devops modules that may have network-touching side effects.
 vi.mock('../relay/relayCommandProcessor', () => ({ processRelayCommand: vi.fn() }));
-vi.mock('../relay/telegramWebhook', () => ({ telegramWebhook: vi.fn() }));
-vi.mock('../relay/telegramLink', () => ({ generateTelegramLinkCode: vi.fn(), getTelegramLinkStatus: vi.fn() }));
 vi.mock('../email/sendEmail', () => ({ sendEmail: vi.fn() }));
 vi.mock('../email/tokenManager', () => ({ emailExchangeToken: vi.fn(), emailRefreshToken: vi.fn(), emailRevokeToken: vi.fn() }));
 vi.mock('../analytics/platformTokenExchange', () => ({ analyticsExchangeToken: vi.fn(), analyticsRefreshToken: vi.fn(), analyticsRevokeToken: vi.fn() }));

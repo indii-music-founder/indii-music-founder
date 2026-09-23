@@ -13,7 +13,6 @@ export const pandaDocApiKey = defineSecret("PANDADOC_API_KEY");
 // Cloud Functions that declare it in their runtime options.
 export const arcjetKey = defineSecret("ARCJET_KEY");
 export const telegramBotToken = defineSecret("TELEGRAM_BOT_TOKEN");
-export const telegramWebhookSecret = defineSecret("TELEGRAM_WEBHOOK_SECRET");
 export const pandadocWebhookSecret = defineSecret("PANDADOC_WEBHOOK_SECRET");
 export const shopifyWebhookSecret = defineSecret("SHOPIFY_WEBHOOK_SECRET");
 

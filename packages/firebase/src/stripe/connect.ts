@@ -2,55 +2,6 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { stripe } from './config';
 
 /**
- * Triggered by the client to create a Stripe Connect Express account for an artist.
- */
-export const createStripeAccount = onCall(
-    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1 },
-    async (request): Promise<{ accountId: string; onboardingUrl: string }> => {
-        // 1. Basic auth check
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User must be signed in.');
-        }
-
-        const { artistId } = (request.data ?? {}) as { artistId: string };
-        if (!artistId || typeof artistId !== 'string' || artistId.trim().length === 0) {
-            throw new HttpsError('invalid-argument', "Missing or invalid 'artistId'.");
-        }
-        if (request.auth.uid !== artistId) {
-            throw new HttpsError('permission-denied', 'Cannot create Stripe account for another artist.');
-        }
-
-        try {
-            // 2. Create the Express account
-            const account = await stripe.accounts.create({
-                type: 'express',
-                metadata: { artistId },
-                capabilities: {
-                    card_payments: { requested: true },
-                    transfers: { requested: true },
-                },
-            });
-
-            // 3. Generate the onboarding link (return in response)
-            const accountLink = await stripe.accountLinks.create({
-                account: account.id,
-                refresh_url: 'https://app.indii.music/finance/stripe/refresh',
-                return_url: 'https://app.indii.music/finance/stripe/success',
-                type: 'account_onboarding',
-            });
-
-            return {
-                accountId: account.id,
-                onboardingUrl: accountLink.url
-            };
-        } catch (error: unknown) {
-            console.error('[StripeConnect] Error creating account:', error);
-            throw new HttpsError('internal', `Stripe account creation failed: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    },
-);
-
-/**
  * Triggered by the client to onboard a collaborator to Stripe Connect.
  * Moved from createStripeConnectAccount.ts to connect.ts to consolidate duplicates.
  */

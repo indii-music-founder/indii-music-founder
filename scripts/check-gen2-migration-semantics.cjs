@@ -68,8 +68,11 @@ const ROOT = path.resolve(__dirname, '..', 'packages', 'firebase', 'src');
  *   - Invoker bindings differ by generation. Gen1 grants
  *     `roles/cloudfunctions.invoker` on the function; Gen2 grants
  *     `roles/run.invoker` on the backing Cloud Run service. Verified here:
- *     createStripeAccount holds cloudfunctions.invoker/allUsers,
  *     getCustomerPortal holds run.invoker/allUsers.
+ *   - ISSUE-1442: entries for functions deleted with the backend-pruning pass
+ *     (track/distribution REST family, telegram family, generateSpeech,
+ *     refreshSocialToken, createStripeAccount, setGodMode) were struck from
+ *     this list when their declarations were removed.
  */
 const MIGRATED = [
     // security + distribution callables
@@ -79,16 +82,15 @@ const MIGRATED = [
     'recordDistributionAuditEvent', 'requestDistributionTakedown',
     'createSftpIngestionRecord', 'updateSftpIngestionRecord',
     // timeline trigger + social + studio relay
-    'onMilestoneScheduled', 'refreshSocialToken',
+    'onMilestoneScheduled',
     'issueStudioExecutorLease', 'publishStudioPresence', 'releaseStudioPresence',
     'claimStudioCommand', 'publishStudioResponse', 'completeStudioCommand',
     // release / legal / finance
     'generateReleaseDownloadUrl', 'auditReleaseArtworkForDelivery',
     'verifyMechanicalLicense', 'sendForDigitalSignature', 'requestTaxForms',
-    // telegram
-    'generateTelegramLinkCode', 'getTelegramLinkStatus',
+    // telegram — link-code pair + webhook deleted in ISSUE-1442 (zero client callers)
     // stripe connect / touring / marketing
-    'createStripeAccount', 'createStripeConnectAccount', 'createTransfer',
+    'createStripeConnectAccount', 'createTransfer',
     'generateItinerary', 'checkLogistics', 'findPlaces',
     'executeCampaign', 'dispatchSocialPost', 'createInfluencerBounty',
     // bug reporting / analytics OAuth token exchange
@@ -104,7 +106,7 @@ const MIGRATED = [
     'cleanupExpiredVideoTemps', 'flagVideosForArchival',
     'processRelayCommand',
     // inbound webhooks / split escrow
-    'pandadocWebhook', 'telegramWebhook',
+    'pandadocWebhook',
     'initiateSplitEscrow', 'signEscrow', 'releaseEscrow',
 
     // ── Final coupled cluster ────────────────────────────────────────────
@@ -113,7 +115,7 @@ const MIGRATED = [
     // their parameter type from CallableContext to CallableRequest, so every
     // caller had to convert in the same commit.
     'triggerVideoJob', 'executeVideoJob', 'triggerLongFormVideoJob', 'renderVideo',
-    'inngestApi', 'generateSpeech', 'generateContentStream', 'ragProxy',
+    'inngestApi', 'generateContentStream', 'ragProxy',
     'listGKEClusters', 'getGKEClusterStatus', 'scaleGKENodePool',
     'listGCEInstances', 'restartGCEInstance',
     'executeBigQueryQuery', 'getBigQueryTableSchema', 'listBigQueryDatasets',

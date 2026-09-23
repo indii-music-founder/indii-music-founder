@@ -143,10 +143,11 @@ test.describe('@external-legacy @structural legacy GCP API exercise (token extra
         console.log('[E2E:Live] Verifying REST API endpoints via Node fetch...');
         
         // Define endpoints to test
+        // ISSUE-1442: the track-CRUD and distribution-REST endpoints were removed
+        // (zero client callers); only the surviving public surface is probed here.
         const endpointsToTest = [
             { name: 'health', method: 'GET', url: 'https://us-central1-indii-music-founder.cloudfunctions.net/health', authRequired: false },
             { name: 'getProfile', method: 'GET', url: 'https://us-central1-indii-music-founder.cloudfunctions.net/getProfile', authRequired: true },
-            { name: 'listTracks', method: 'GET', url: 'https://us-central1-indii-music-founder.cloudfunctions.net/listTracks', authRequired: true },
         ];
 
         for (const endpoint of endpointsToTest) {
@@ -170,85 +171,8 @@ test.describe('@external-legacy @structural legacy GCP API exercise (token extra
             }
             console.log(`[E2E:Live] ${endpoint.name} status: ${res.status}, ok: ${res.ok}`);
             console.log(`[E2E:Live] ${endpoint.name} response: ${JSON.stringify(data).slice(0, 300)}...`);
-            
+
             apiResponses.push({ url: endpoint.url, status: res.status, payload: data });
-        }
-
-        // CRUD Track verification in Node.js
-        let createdTrackId: string | null = null;
-        
-        // 1. Create Track
-        console.log(`[E2E:Live] Calling POST createTrack ...`);
-        const createTrackRes = await fetch('https://us-central1-indii-music-founder.cloudfunctions.net/createTrack', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}`
-            },
-            body: JSON.stringify({
-                title: `Test Track ${Date.now()}`,
-                genre: 'Electronic',
-                status: 'draft',
-                bpm: 120
-            })
-        });
-        
-        const createTrackData = await createTrackRes.json() as any;
-        console.log(`[E2E:Live] createTrack status: ${createTrackRes.status}`);
-        console.log(`[E2E:Live] createTrack data: ${JSON.stringify(createTrackData)}`);
-        apiResponses.push({ url: 'https://us-central1-indii-music-founder.cloudfunctions.net/createTrack', status: createTrackRes.status, payload: createTrackData });
-        
-        if (createTrackRes.status === 201 && createTrackData?.data?.id) {
-            createdTrackId = createTrackData.data.id;
-            console.log(`[E2E:Live] Track created with ID: ${createdTrackId}`);
-            
-            // 2. Get Track
-            console.log(`[E2E:Live] Calling GET getTrack/${createdTrackId} ...`);
-            const getTrackRes = await fetch(`https://us-central1-indii-music-founder.cloudfunctions.net/getTrack/${createdTrackId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`
-                }
-            });
-            const getTrackData = await getTrackRes.json();
-            console.log(`[E2E:Live] getTrack status: ${getTrackRes.status}`);
-            console.log(`[E2E:Live] getTrack data: ${JSON.stringify(getTrackData)}`);
-            apiResponses.push({ url: `https://us-central1-indii-music-founder.cloudfunctions.net/getTrack/${createdTrackId}`, status: getTrackRes.status, payload: getTrackData });
-
-            // 3. Update Track
-            console.log(`[E2E:Live] Calling PUT updateTrack/${createdTrackId} ...`);
-            const updateTrackRes = await fetch(`https://us-central1-indii-music-founder.cloudfunctions.net/updateTrack/${createdTrackId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify({
-                    title: `Test Track Updated ${Date.now()}`,
-                    bpm: 125
-                })
-            });
-            const updateTrackData = await updateTrackRes.json();
-            console.log(`[E2E:Live] updateTrack status: ${updateTrackRes.status}`);
-            console.log(`[E2E:Live] updateTrack data: ${JSON.stringify(updateTrackData)}`);
-            apiResponses.push({ url: `https://us-central1-indii-music-founder.cloudfunctions.net/updateTrack/${createdTrackId}`, status: updateTrackRes.status, payload: updateTrackData });
-
-            // 4. Delete Track
-            console.log(`[E2E:Live] Calling DELETE deleteTrack/${createdTrackId} ...`);
-            const deleteTrackRes = await fetch(`https://us-central1-indii-music-founder.cloudfunctions.net/deleteTrack/${createdTrackId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`
-                }
-            });
-            let deleteTrackText = null;
-            try {
-                deleteTrackText = await deleteTrackRes.text();
-            } catch {
-                // Status still provides useful cleanup evidence without a body.
-            }
-            console.log(`[E2E:Live] deleteTrack status: ${deleteTrackRes.status}`);
-            apiResponses.push({ url: `https://us-central1-indii-music-founder.cloudfunctions.net/deleteTrack/${createdTrackId}`, status: deleteTrackRes.status, payload: deleteTrackText });
         }
 
         // Wait a bit for initialization
