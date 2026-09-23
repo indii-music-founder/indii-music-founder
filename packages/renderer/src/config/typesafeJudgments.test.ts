@@ -26,9 +26,12 @@ import {
     heuristicTransientError,
     judgeTransientError,
     judgeSkillIntent,
+    judgeColumnSemantics,
     refineInjectionRisk,
+    __resetJudgmentCooldownForTests,
     TRANSIENT_ADOPT_MIN,
     TRANSIENT_REJECT_MAX,
+    FOUNDRY_COLUMN_MIN_CONFIDENCE,
 } from './typesafeJudgments';
 
 const SKILLS = [
@@ -54,6 +57,7 @@ describe('heuristicTransientError (deterministic baseline)', () => {
 describe('judgeTransientError decision bands', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        __resetJudgmentCooldownForTests();
     });
 
     it('returns null and never calls the callable when the flag is off', async () => {
@@ -121,6 +125,7 @@ describe('judgeTransientError decision bands', () => {
 describe('judgeSkillIntent (Choice routing)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        __resetJudgmentCooldownForTests();
     });
 
     it('returns null and never calls the callable when the flag is off', async () => {
@@ -165,6 +170,7 @@ describe('judgeSkillIntent (Choice routing)', () => {
 describe('refineInjectionRisk (hazard Nouls)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        __resetJudgmentCooldownForTests();
     });
 
     it('returns null when the flag is off', async () => {
@@ -210,3 +216,76 @@ describe('refineInjectionRisk (hazard Nouls)', () => {
         expect(await refineInjectionRisk('anything')).toBe('flag');
     });
 });
+
+describe('judgeColumnSemantics (ISSUE-1443 / foundry columns)', () => {
+    const COLUMNS = [
+        { index: 0, header: 'Fee Amount', samples: ['0.50'] },
+        { index: 1, header: 'Net Receipts', samples: ['1234.56'] },
+    ];
+
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    col_0: { type: 'choice', choice: 'fee_amount', confidence: 0.95 },
+                    col_1: { type: 'choice', choice: 'currency_amount', confidence: 0.99 },
+                },
+            },
+        }));
+    });
+
+    it('returns confident upgrades for labeled columns', async () => {
+        const upgrades = await judgeColumnSemantics(COLUMNS);
+        expect(upgrades).toEqual([
+            { index: 0, semantic: 'fee_amount', confidence: 0.95 },
+            { index: 1, semantic: 'currency_amount', confidence: 0.99 },
+        ]);
+    });
+
+    it('drops low-confidence answers so the baseline survives', async () => {
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { col_0: { type: 'choice', choice: 'fee_amount', confidence: FOUNDRY_COLUMN_MIN_CONFIDENCE - 0.01 } } },
+        }));
+        const upgrades = await judgeColumnSemantics([COLUMNS[0]]);
+        expect(upgrades).toEqual([]);
+    });
+
+    it('drops answers outside the semantic enum', async () => {
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { col_0: { type: 'choice', choice: 'brand_identity', confidence: 0.99 } } },
+        }));
+        const upgrades = await judgeColumnSemantics([COLUMNS[0]]);
+        expect(upgrades).toEqual([]);
+    });
+
+    it('returns null when the callable fails (baseline path)', async () => {
+        mocks.httpsCallable.mockReturnValue(async () => { throw new Error('unavailable'); });
+        const upgrades = await judgeColumnSemantics(COLUMNS);
+        expect(upgrades).toBeNull();
+    });
+
+    it('returns null when the flag is disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const upgrades = await judgeColumnSemantics(COLUMNS);
+        expect(upgrades).toBeNull();
+    });
+
+    it('chunks columns into batches of 20 (callable limit)', async () => {
+        const calls: unknown[] = [];
+        mocks.httpsCallable.mockImplementation((_fn: unknown, _name: string) => async (payload: { questions: Record<string, unknown> }) => {
+            calls.push(payload);
+            const answers: Record<string, unknown> = {};
+            for (const ref of Object.keys(payload.questions)) {
+                answers[ref] = { type: 'choice', choice: 'isrc', confidence: 0.9 };
+            }
+            return { data: { answers } };
+        });
+        const many = Array.from({ length: 45 }, (_, i) => ({ index: i, header: `H${i}`, samples: ['x'] }));
+        const upgrades = await judgeColumnSemantics(many);
+        expect(calls.length).toBe(3);
+        expect(upgrades?.length).toBe(45);
+    });
+});
+
