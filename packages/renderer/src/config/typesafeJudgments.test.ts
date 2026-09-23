@@ -25,9 +25,15 @@ vi.mock('@/config/featureFlags', () => ({
 import {
     heuristicTransientError,
     judgeTransientError,
+    judgeSkillIntent,
     TRANSIENT_ADOPT_MIN,
     TRANSIENT_REJECT_MAX,
 } from './typesafeJudgments';
+
+const SKILLS = [
+    { id: 'digital_distribution', name: 'Digital Distribution', description: 'DSP ingestion, DDEX, ISRC allocation.' },
+    { id: 'legal_affairs', name: 'Legal Affairs', description: 'Contracts, DMCA takedowns, rights.' },
+];
 
 describe('heuristicTransientError (deterministic baseline)', () => {
     it('classifies classic infrastructure failures as transient', () => {
@@ -108,5 +114,49 @@ describe('judgeTransientError decision bands', () => {
         expect(TRANSIENT_ADOPT_MIN).toBeGreaterThan(0.5);
         expect(TRANSIENT_REJECT_MAX).toBeLessThan(0.5);
         expect(TRANSIENT_REJECT_MAX).toBeLessThan(TRANSIENT_ADOPT_MIN);
+    });
+});
+
+describe('judgeSkillIntent (Choice routing)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('returns null and never calls the callable when the flag is off', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        expect(await judgeSkillIntent('get my music on spotify', SKILLS)).toBeNull();
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('returns the chosen candidate id', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockImplementation((name: unknown) => {
+            expect(name).toBe('typesafeJudge');
+            return async () => ({ data: { answers: { skill: { choice: 'digital_distribution' } } } });
+        });
+
+        expect(await judgeSkillIntent('get my music on spotify', SKILLS)).toBe('digital_distribution');
+    });
+
+    it('maps a none choice to null', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { choice: 'none' } } } }));
+
+        expect(await judgeSkillIntent('what is the weather', SKILLS)).toBeNull();
+    });
+
+    it('maps an unknown choice id to null', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { choice: 'not_a_skill' } } } }));
+
+        expect(await judgeSkillIntent('anything', SKILLS)).toBeNull();
+    });
+
+    it('returns null when the callable fails', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => { throw new Error('down'); });
+
+        expect(await judgeSkillIntent('anything', SKILLS)).toBeNull();
     });
 });

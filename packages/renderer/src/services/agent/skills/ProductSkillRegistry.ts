@@ -15,6 +15,8 @@
  * 4. Context injection into Conductor agents and slash command dispatch.
  */
 
+import { judgeSkillIntent } from '@/config/typesafeJudgments';
+
 export interface ProductSkill {
     /** Canonical skill identifier, typically matching the directory name (e.g. 'digital_distribution') */
     id: string;
@@ -366,6 +368,23 @@ class ProductSkillRegistryImpl {
         }
 
         return undefined;
+    }
+
+    /**
+     * Async variant: deterministic matchers first (identical to
+     * {@link searchProductSkillByIntent}); on a total miss, a TypeSafe Choice
+     * judgment picks the best-skilling candidate (or none) when the
+     * enable_typesafe_judgments flag is on (ISSUE-1442 pilot).
+     */
+    public async searchProductSkillByIntentAsync(query: string): Promise<ProductSkill | undefined> {
+        const deterministic = this.searchProductSkillByIntent(query);
+        if (deterministic) return deterministic;
+
+        const candidates = this.getAllProductSkills().map(s => ({
+            id: s.id, name: s.name, description: s.description,
+        }));
+        const judgedId = await judgeSkillIntent(query, candidates);
+        return judgedId ? this.getProductSkill(judgedId) : undefined;
     }
 
     /**

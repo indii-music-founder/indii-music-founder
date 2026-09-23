@@ -265,7 +265,7 @@ export const consult_product_skill = wrapTool(
 
         let skill = skillName ? ProductSkillRegistry.getProductSkill(skillName) : undefined;
         if (!skill && query) {
-            skill = ProductSkillRegistry.searchProductSkillByIntent(query);
+            skill = await ProductSkillRegistry.searchProductSkillByIntentAsync(query);
         }
 
         if (!skill) {

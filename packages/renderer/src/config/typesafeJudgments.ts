@@ -14,6 +14,70 @@ import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 import { logger } from '@/utils/logger';
 
 // ---------------------------------------------------------------------------
+// Judgment 2: skill intent routing (consumer: ProductSkillRegistry)
+// ---------------------------------------------------------------------------
+
+export interface SkillCandidate {
+    id: string;
+    name: string;
+    description: string;
+}
+
+export const SKILL_INTENT_NONE = 'none';
+
+function skillIntentQuestion(candidateCount: number) {
+    return {
+        type: 'choice' as const,
+        instructions:
+            'A music-business agent received the user query below. Pick the ONE bundled playbook that best ' +
+            `serves the query's actual intent from the ${candidateCount} candidate ids. If none plausibly serves it, pick 'none'.`,
+    };
+}
+
+/**
+ * Choice-judge the best skill for a free-text query. Called only after the
+ * deterministic matchers miss. Returns the chosen candidate id (or null when
+ * unavailable / 'none' picked / low confidence).
+ */
+export async function judgeSkillIntent(
+    query: string,
+    candidates: SkillCandidate[],
+): Promise<string | null> {
+    if (!typesafeJudgmentsEnabled() || candidates.length === 0) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                query,
+                candidates: candidates.map(c => ({ id: c.id, name: c.name, description: c.description.slice(0, 160) })),
+            },
+            questions: {
+                skill: {
+                    ...skillIntentQuestion(candidates.length),
+                    options: { ...Object.fromEntries(candidates.map(c => [c.id, c.name])), [SKILL_INTENT_NONE]: 'No skill applies' },
+                },
+            },
+        });
+
+        const answer = result.data.answers?.skill;
+        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown })?.choice;
+        if (typeof choice !== 'string' || choice === SKILL_INTENT_NONE || !candidates.some(c => c.id === choice)) {
+            return null;
+        }
+        return choice;
+    } catch (err: unknown) {
+        logger.warn('[typesafeJudgments] skill intent judgment unavailable:', err instanceof Error ? err.message : err);
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Feature gate — off until the judgment is evaluated against real outcomes.
 // ---------------------------------------------------------------------------
 export function typesafeJudgmentsEnabled(): boolean {
