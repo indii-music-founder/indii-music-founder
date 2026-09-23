@@ -154,17 +154,8 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     isQuickNotesOpen: false,
     setQuickNotesOpen: (open) => set({ isQuickNotesOpen: open }),
     setModule: async (rawModule, options) => {
-        let module = rawModule;
-        let tab = options?.tab;
-
-        // Route aliases for absorbed tools
-        if (module === 'audio-analyzer') {
-            module = 'distribution';
-            tab = tab || 'qc';
-        } else if (module === 'format-foundry') {
-            module = 'finance';
-            tab = tab || 'forensics';
-        }
+        const module = rawModule;
+        const tab = options?.tab;
 
         const state = get();
         const now = Date.now();

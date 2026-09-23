@@ -113,6 +113,10 @@ export const GATED_MODULES: Record<string, ModuleId[]> = {
 
     // Experimental capability — kept behind flag until product placement is decided
     [FEATURE_FLAG_NAMES.RAW_CONVERTER]: ['raw-converter'],
+
+    // ISSUE-1441 (redundancy audit): the flag existed with a dev-only default but
+    // was never wired here, so project-canvas shipped to production regardless.
+    [FEATURE_FLAG_NAMES.PROJECT_CANVAS]: ['project-canvas'],
 };
 
 /**

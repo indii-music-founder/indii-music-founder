@@ -6,8 +6,8 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, Copy, CheckCircle2, RefreshCw, UploadCloud, Search, Hash } from 'lucide-react';
-import { smartContractService, LedgerEntry } from '@/services/blockchain/SmartContractService';
-import { ipfsPinataService } from '@/services/blockchain/IPFSPinataService';
+import { smartContractService, LedgerEntry } from '@/services/web3/SmartContractService';
+import { ipfsPinataService } from '@/services/web3/IPFSPinataService';
 
 // No hardcoded ledger entries — data comes from SmartContractService.getChainOfCustody().
 

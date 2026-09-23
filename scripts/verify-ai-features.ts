@@ -22,8 +22,9 @@ describe('AI Feature Verification', () => {
     });
 
     it('AIService should be importable', async () => {
-        const { AI } = await import('../src/services/ai/AIService');
-        expect(AI).toBeDefined();
-        expect(typeof AI.generateContent).toBe('function');
+        // services/ai was a dead shim over the canonical facade — point at the source.
+        const { AutonomousIntelligence } = await import('../src/services/intelligence/AutonomousIntelligence');
+        expect(AutonomousIntelligence).toBeDefined();
+        expect(typeof AutonomousIntelligence.generateContent).toBe('function');
     });
 });

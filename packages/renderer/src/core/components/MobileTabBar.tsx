@@ -66,6 +66,10 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
             { id: 'publishing', label: 'Publishing' },
             { id: 'finance', label: 'Finance' },
             { id: 'licensing', label: 'Licensing' },
+            // ISSUE-1441: desktop sidebar Departments missing from phones — with no
+            // ⌘K on mobile these two were unreachable on phones entirely.
+            { id: 'registration', label: 'Registration' },
+            { id: 'security', label: 'Security' },
         ],
     },
     {

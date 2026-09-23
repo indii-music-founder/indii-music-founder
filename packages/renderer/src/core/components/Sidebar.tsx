@@ -47,16 +47,7 @@ const NavItem = React.memo(function NavItem({
             <Tooltip>
                 <TooltipTrigger asChild>
                     <button
-                        onClick={() => {
-                            if (item.id === 'history') {
-                                useStore.setState({
-                                    isAgentOpen: true,
-                                    rightPanelView: 'archives'
-                                });
-                                return;
-                            }
-                            onNavigate(item.id);
-                        }}
+                        onClick={() => onNavigate(item.id)}
                         className={cn(
                             "w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5",
                             isActive

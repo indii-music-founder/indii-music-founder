@@ -58,7 +58,6 @@ export const departmentCssVars = {
     publicist: '--color-dept-marketing',   // Publicist shares Marketing
     video: '--color-dept-creative',        // Video shares Creative
     agent: '--color-dept-creative',        // Agent shares Creative
-    'audio-analyzer': '--color-dept-distribution', // Audio Audit shares Distribution
     audio: '--color-dept-distribution',             // Audio Distribution Hub shares Distribution
     onboarding: '--color-dept-creative',   // Onboarding shares Creative
     workflow: '--color-dept-social',       // Workflow shares Social
@@ -86,7 +85,6 @@ export const departmentCssVars = {
     screenwriter: '--color-dept-creative',          // Screenwriter uses Creative purple
     crm: '--color-dept-marketing',                  // CRM uses Marketing magenta
     'raw-converter': '--color-dept-creative',       // RAW Converter uses Creative purple
-    'format-foundry': '--color-dept-distribution',  // Format Foundry uses Distribution blue
     'project-canvas': '--color-dept-creative'       // Project Canvas uses Creative purple
 } as const;
 
@@ -312,16 +310,6 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-dept-default/5',
         cssVar: '--color-dept-default',
     },
-    'audio-analyzer': {
-        // Audio Audit shares Distribution's electric blue aesthetic
-        text: 'text-dept-distribution',
-        bg: 'bg-dept-distribution/10',
-        border: 'border-dept-distribution',
-        ring: 'focus-within:ring-dept-distribution/50',
-        hoverText: 'hover:text-dept-distribution',
-        hoverBg: 'hover:bg-dept-distribution/5',
-        cssVar: '--color-dept-distribution',
-    },
     observability: {
         text: 'text-dept-distribution',
         bg: 'bg-dept-distribution/10',
@@ -503,7 +491,9 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         ring: 'ring-rose-500/30',
         hoverText: 'group-hover:text-rose-300',
         hoverBg: 'hover:bg-rose-500/20',
-        cssVar: '251 43% 53%' // #df697a
+        // ISSUE-1441: cssVar must be a CSS variable name — consumers wrap it in
+        // var(...), so a raw HSL string produced invalid CSS.
+        cssVar: '--color-dept-creative'
     },
     crm: {
         text: 'text-violet-400',
@@ -512,7 +502,7 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         ring: 'ring-violet-500/30',
         hoverText: 'group-hover:text-violet-300',
         hoverBg: 'hover:bg-violet-500/20',
-        cssVar: '262 83% 58%'
+        cssVar: '--color-dept-marketing'
     },
     'founders-recognition': {
         text: 'text-amber-400',
@@ -531,15 +521,6 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'group-hover:text-purple-300',
         hoverBg: 'hover:bg-purple-500/20',
         cssVar: '--color-dept-creative'
-    },
-    'format-foundry': {
-        text: 'text-indigo-400',
-        bg: 'bg-indigo-500/10',
-        border: 'border-indigo-500/20',
-        ring: 'ring-indigo-500/30',
-        hoverText: 'group-hover:text-indigo-300',
-        hoverBg: 'hover:bg-indigo-500/20',
-        cssVar: '--color-dept-distribution'
     },
     'project-canvas': {
         text: 'text-dept-creative',

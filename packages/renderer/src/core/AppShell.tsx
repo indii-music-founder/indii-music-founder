@@ -90,7 +90,6 @@ const DistributionDashboard = lazyWithRetry(() => import('../modules/distributio
 
 const FileDashboard = lazyWithRetry(() => import('../modules/files/FileDashboard'));
 const MerchStudio = lazyWithRetry(() => import('../modules/merchandise/MerchStudio'));
-const AudioAnalyzer = lazyWithRetry(() => import('../modules/tools/AudioAnalyzer'));
 const ObserverabilityDashboard = lazyWithRetry(() => import('../modules/observability/ObservabilityDashboard'));
 const HistoryDashboard = lazyWithRetry(() => import('../modules/history/HistoryDashboard'));
 const NotesModule = lazyWithRetry(() => import('../modules/notes/NotesModule'));
@@ -114,7 +113,6 @@ const DevopsDashboard = lazyWithRetry(() => import('../modules/devops/DevopsDash
 const ScreenwriterDashboard = lazyWithRetry(() => import('../modules/screenwriter/ScreenwriterDashboard'));
 const CRMDashboard = lazyWithRetry(() => import('../modules/crm/CRMDashboard'));
 const RawConverterModule = lazyWithRetry(() => import('../modules/raw-converter/RawConverterModule'));
-const FormatFoundryModule = lazyWithRetry(() => import('../modules/format-foundry/FormatFoundryModule'));
 const ProjectCanvas = lazyWithRetry(() => import('../modules/project-canvas/ProjectCanvas'));
 
 // Lazy-load AudioVisualizer to defer Three.js initialization until component is rendered
@@ -153,7 +151,6 @@ const MODULE_COMPONENTS: Record<ModuleId, React.LazyExoticComponent<React.Compon
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
     'marketplace': MarketplaceModule,
-    'audio-analyzer': AudioAnalyzer,
     'observability': ObserverabilityDashboard,
     'select-org': SelectOrg,
     'history': HistoryDashboard,
@@ -176,7 +173,6 @@ const MODULE_COMPONENTS: Record<ModuleId, React.LazyExoticComponent<React.Compon
     'screenwriter': ScreenwriterDashboard,
     'crm': CRMDashboard,
     'raw-converter': RawConverterModule,
-    'format-foundry': FormatFoundryModule,
     'project-canvas': ProjectCanvas,
 };
 

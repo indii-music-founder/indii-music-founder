@@ -48,9 +48,9 @@ export interface ModuleRegistryEntry {
 export const HIDDEN_MODULE_REASONS: Partial<Record<ModuleId, string>> = {
     // ISSUE-1436: rendered the identical CampaignDashboard as Marketing — one entry only.
     'campaign': 'duplicate of Marketing Department',
-    // Phantom ids: setModule silently rewrites them to another module + tab.
-    'audio-analyzer': 'phantom alias → Distribution QC',
-    'format-foundry': 'phantom alias → Finance forensics',
+    // ISSUE-1441 (redundancy audit): the former phantom ids 'audio-analyzer' and
+    // 'format-foundry' were fully removed. Legacy /audio-analyzer and
+    // /format-foundry URLs still redirect via useURLSync ROUTE_ALIASES.
     // Internal ops surfaces (god-mode command menu carries observability directly).
     'observability': 'internal ops dashboard',
     'devops': 'internal ops dashboard',
@@ -108,8 +108,6 @@ const REGISTRY: Record<ModuleId, ModuleRegistryEntry> = {
     'founders-portal': { id: 'founders-portal', label: 'Founder Portal', group: 'Founders', icon: Gem },
     // Hidden-only entries (kept so the Record covers every ModuleId at compile time).
     'campaign': { id: 'campaign', label: 'Campaign Manager', group: "Manager's Office", icon: Target },
-    'audio-analyzer': { id: 'audio-analyzer', label: 'Audio Analyzer', group: 'Tools', icon: Music },
-    'format-foundry': { id: 'format-foundry', label: 'Capability Foundry', group: 'Tools', icon: LayoutGrid },
     'observability': { id: 'observability', label: 'Observability', group: 'Tools', icon: Activity },
     'devops': { id: 'devops', label: 'DevOps', group: 'Tools', icon: Server },
     'select-org': { id: 'select-org', label: 'Select Organization', group: 'Tools', icon: Building },

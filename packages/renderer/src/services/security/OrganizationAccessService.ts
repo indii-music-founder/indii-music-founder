@@ -42,7 +42,7 @@ class OrganizationAccessServiceImpl {
                         email: 'test@indii.com',
                         role: 'owner',
                         allowedModules: [
-                            'agent', 'analytics', 'audio-analyzer', 'brand', 'campaign', 'creative', 'crm', 'debug', 'devops', 'distribution', 'files', 'finance', 'history', 'knowledge', 'legal', 'licensing', 'marketing', 'marketplace', 'memory', 'merch', 'notes', 'observability', 'publicist', 'publishing', 'registration', 'road', 'screenwriter', 'security', 'social', 'workflow'
+                            'agent', 'analytics', 'brand', 'campaign', 'creative', 'crm', 'debug', 'devops', 'distribution', 'files', 'finance', 'history', 'knowledge', 'legal', 'licensing', 'marketing', 'marketplace', 'memory', 'merch', 'notes', 'observability', 'publicist', 'publishing', 'registration', 'road', 'screenwriter', 'security', 'social', 'workflow'
                         ] as OrganizationAccessModule[],
                         source: 'owner',
                         updatedAt: new Date().toISOString(),

@@ -24,7 +24,6 @@ export const MODULE_IDS = [
     'files',
     'merch',
     'marketplace',
-    'audio-analyzer',
     'observability',
     'history',
     'notes',
@@ -46,7 +45,6 @@ export const MODULE_IDS = [
     'screenwriter',
     'crm',
     'raw-converter',
-    'format-foundry',
     'project-canvas'
 ] as const;
 
@@ -93,7 +91,6 @@ export const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
     'files': 'Files',
     'merch': 'Merchandise',
     'marketplace': 'Marketplace',
-    'audio-analyzer': 'Audio Analyzer',
     'observability': 'Observability',
     'history': 'History',
     'debug': 'Debug',
@@ -101,8 +98,22 @@ export const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
     'capture': 'Capture',
     'memory': 'Memory',
     'raw-converter': 'RAW Converter',
-    'format-foundry': 'Capability Foundry',
     'project-canvas': 'Project Canvas',
+    // ISSUE-1441 (redundancy audit): these ids had no display name, so the
+    // document-outline <h1> (AppShell) fell back to the raw module id.
+    'analytics': 'Analytics',
+    'crm': 'CRM',
+    'screenwriter': 'Screenwriter',
+    'devops': 'DevOps',
+    'mobile-remote': 'Mobile Remote',
+    'registration': 'Registration Center',
+    'security': 'Security Center',
+    'settings': 'Settings',
+    'onboarding': 'Onboarding',
+    'select-org': 'Select Organization',
+    'founders-checkout': 'Back the Vision',
+    'founders-portal': 'Founder Portal',
+    'founders-recognition': 'Founders',
 };
 
 // ============================================================================
@@ -113,7 +124,6 @@ export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
     'dashboard': 'generalist',
     'project-canvas': 'creative',
     'raw-converter': 'creative',
-    'format-foundry': 'distribution',
     'workflow': 'generalist',
     'history': 'generalist',
     'notes': 'memory',
@@ -139,7 +149,6 @@ export const MODULE_AGENT_MAP: Record<ModuleId, string> = {
     'licensing': 'licensing',
     'distribution': 'distribution',
     'merch': 'merchandise',
-    'audio-analyzer': 'music',
     'analytics': 'analytics',
     'onboarding': 'curriculum',
     'registration': 'curriculum',

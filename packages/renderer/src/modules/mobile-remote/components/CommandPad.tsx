@@ -172,7 +172,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       icon: Music,
       label: 'Streams Today',
       description: 'DSPs daily streams metrics',
-      moduleId: 'audio-analyzer',
+      moduleId: 'analytics',
       agentPrompt: 'Analyze my stream data for today. Provide an overview of organic spikes and highlight where listeners are driving the most velocity.',
       color: 'border-blue-500/25 bg-blue-500/[0.03] text-blue-400 hover:bg-blue-500/[0.08]',
       glow: 'shadow-blue-500/5 hover:shadow-blue-500/15',
@@ -272,7 +272,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
   const moduleButtons = [
     { id: 'creative', icon: Palette, label: 'Creative', accent: 'text-green-400 border-green-500/15 hover:bg-green-500/5' },
     { id: 'video', icon: Video, label: 'Video', accent: 'text-pink-400 border-pink-500/15 hover:bg-pink-500/5' },
-    { id: 'audio-analyzer', icon: Music, label: 'Audio', accent: 'text-amber-400 border-amber-500/15 hover:bg-amber-500/5' },
+    { id: 'analytics', icon: Music, label: 'Audio', accent: 'text-amber-400 border-amber-500/15 hover:bg-amber-500/5' },
     { id: 'distribution', icon: Globe, label: 'Distro', accent: 'text-blue-400 border-blue-500/15 hover:bg-blue-500/5' },
     { id: 'finance', icon: BarChart3, label: 'Finance', accent: 'text-green-400 border-green-500/15 hover:bg-green-500/5' },
     { id: 'legal', icon: Shield, label: 'Legal', accent: 'text-red-400 border-red-500/15 hover:bg-red-500/5' },

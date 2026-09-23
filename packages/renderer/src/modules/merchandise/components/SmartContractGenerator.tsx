@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Code2, Plus, Trash2, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
-import { smartContractService, SplitContractConfig } from '@/services/blockchain/SmartContractService';
+import { smartContractService, SplitContractConfig } from '@/services/web3/SmartContractService';
 
 type TokenType = 'ERC-721' | 'ERC-1155';
 

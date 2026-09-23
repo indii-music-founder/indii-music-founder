@@ -178,7 +178,7 @@ export function LoadingFallback() {
 
     let SkeletonComponent = GenericSkeleton;
 
-    if (['creative', 'video', 'merch', 'capture', 'workflow', 'files', 'audio-analyzer'].includes(currentModule)) {
+    if (['creative', 'video', 'merch', 'capture', 'workflow', 'files'].includes(currentModule)) {
         SkeletonComponent = StudioSkeleton;
     } else if (['dashboard', 'finance', 'marketing', 'distribution', 'publishing', 'legal', 'licensing', 'brand', 'campaign', 'road', 'knowledge', 'observability', 'history', 'debug', 'onboarding', 'select-org', 'investor'].includes(currentModule)) {
         SkeletonComponent = DashboardSkeleton;

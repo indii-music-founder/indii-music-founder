@@ -26,7 +26,7 @@ vi.mock('./hooks/useFinance', () => ({
     }),
 }));
 
-vi.mock('@/modules/format-foundry/FormatFoundryModule', () => ({
+vi.mock('@/modules/finance/components/FormatFoundryModule', () => ({
     FormatFoundryModule: () => <div data-testid="mock-format-foundry">Format Foundry Module Content</div>,
 }));
 

@@ -3166,3 +3166,23 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Impact:** Mock controls erode trust ("the app pretends to work"); forks accumulate divergent bugs; duplicate surfaces confuse ownership.
 - **Fix:** Delete or wire every dead control (prefer delete for mock AI features); collapse twins into the richer original and re-export; delete MobileAdaptiveLayout; extract one `StatCard` + one empty-state (promote licensing's CTA-bearing version); unregister deprecated revenue widgets; wire or remove dead-end CTAs.
 - **Acceptance:** Zero buttons without handlers in audited surfaces (grep-verifiable); each duplicated component exists once; deprecated widget registrations removed.
+
+### ISSUE-1442: UI-first backwards redundancy audit — Stage 1+1b executed (dead code deleted, registry defects fixed)
+
+- **Status:** ✅ FIXED (Stage 1 + 1b; Stages 2–3 remain open)
+- **Severity:** 🟡 MEDIUM
+- **Module:** renderer module registry / orphaned modules+services / cloud functions
+- **Audit doc:** `docs/REDUNDANCY_AUDIT_UI_FIRST.md` (full UI→services→cloud-functions map: 45 registered ids vs 17 sidebar/~21 mobile/31 ⌘K destinations; 6 chat surfaces; 3 capture UIs; 3 earnings dashboards; ~20 client-dead cloud functions incl. prod-reachable `setGodMode`)
+- **Fix (Stage 1 — deletions, ~2,900 LOC, zero behavior change):**
+  - Deleted unregistered orphan modules `modules/royalty/` (0 imports) and `modules/design/` (+ its exclusive consumer `services/design/`).
+  - Deleted zero-consumer services: `services/ai` (dead shim; fixed broken `scripts/verify-ai-features.ts` import → `intelligence/AutonomousIntelligence`), `services/daw` (also violates locked post-master scope), `services/education`, `services/monitoring`, `services/optimistic`, `services/config` (FeatureFlagService), `services/firebase-guards.ts`.
+  - `services/blockchain` merged into `services/web3`: live files (`SmartContractService`, `IPFSPinataService` + tests) moved; duplicate OpenSea + zero-consumer ENS deleted; merch imports rewired; barrel extended (IPFSPinataService `PinResult` type intentionally not re-exported — name collision).
+  - Phantom id `audio-analyzer` fully removed (component, tests, lazy chunk, registry, colors, theme, agent map, org-access list, skill registry, LoadingFallbacks, appSlice rewrite, CommandPad hub card → `analytics`). Legacy `/audio-analyzer` URL redirect preserved via `useURLSync` ROUTE_ALIASES.
+  - Phantom id `format-foundry`: registration removed BUT the component is ALIVE (rendered by Finance forensics tab) — relocated to `modules/finance/components/FormatFoundryModule.tsx`; `services/foundry` untouched (agent tools consume it). Also deleted zero-importer `modules/tools/MIDIController.tsx` + `SonicRadar.tsx` (TagMatrix stays — QCPanel consumes it).
+- **Fix (Stage 1b — usefulness defects):**
+  - `PROJECT_CANVAS` flag wired into `GATED_MODULES` (flag existed with dev-only default but gated nothing — module shipped to prod via ⌘K + mobile).
+  - 15 missing `MODULE_DISPLAY_NAMES` added (document-outline `<h1>` fell back to raw ids).
+  - `registration` + `security` added to mobile More drawer (were unreachable on phones — no ⌘K there).
+  - Dead sidebar `history` archives branch removed; `screenwriter`/`crm` `cssVar` raw-HSL bug fixed (consumers emit `var(...)` — invalid CSS before).
+- **Deferred:** zombie `campaign` links in `CustomDashboardWidgets.tsx` (file under concurrent ISSUE-1440 WIP — do not clobber). Stage 2 surface consolidation pending founder sign-off. Stage 3 backend pruning incl. `setGodMode` removal pending.
+- **Validation:** renderer tsc 0 errors on all touched files; 129 tests green across 14 affected suites; eslint 0 errors on touched files; `build:studio` green (17.5s); check-test-quality 0 violations.

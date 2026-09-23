@@ -15,7 +15,7 @@ import { LabelDealRecoupment } from './components/LabelDealRecoupment';
 import { RevenueView } from './components/RevenueView';
 import { HiddenCostHarnessPanel } from './components/HiddenCostHarnessPanel';
 import { useFinance } from './hooks/useFinance';
-import { FormatFoundryModule } from '@/modules/format-foundry/FormatFoundryModule';
+import { FormatFoundryModule } from './components/FormatFoundryModule';
 import { useStore } from '@/core/store';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { motion } from 'motion/react';

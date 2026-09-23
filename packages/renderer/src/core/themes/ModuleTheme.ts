@@ -145,12 +145,6 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         backgroundGradient: 'radial-gradient(circle at 50% 50%, rgba(255, 179, 0, 0.03), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'mesh', opacity: 0.1 }
     },
-    'audio-analyzer': {
-        officeName: 'Audio Genomics',
-        accent: '#2196F3', // Electric Blue
-        backgroundGradient: 'radial-gradient(circle at 50% 100%, rgba(33, 150, 243, 0.08), rgba(0, 0, 0, 0))',
-        ambientConfig: { type: 'waves', opacity: 0.4 }
-    },
     'observability': {
         officeName: 'Observability Matrix',
         accent: '#2196F3', // Electric Blue
@@ -265,12 +259,6 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         officeName: 'RAW Photo Converter',
         accent: '#a855f7', // purple-500
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(168, 85, 247, 0.08), rgba(0, 0, 0, 0))',
-        ambientConfig: { type: 'grid', opacity: 0.15 }
-    },
-    'format-foundry': {
-        officeName: 'Capability Foundry',
-        accent: '#6366f1', // indigo-500
-        backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.08), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.15 }
     },
     'project-canvas': {
