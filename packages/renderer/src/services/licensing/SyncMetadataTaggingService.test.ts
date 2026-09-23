@@ -12,11 +12,25 @@ describe('SyncMetadataTaggingService', () => {
             expect(mapped).toContain('Energetic');
         });
 
-        it('should return default fallback Chill if no matches are found', () => {
+        it('returns no fabricated mood when nothing matches (ISSUE-1443)', () => {
+            // The old behavior wrote a wrong 'Chill' to Firestore for unrecognized
+            // moods, poisoning the sync matcher's input.
             const aiMoods = ['experimental industrial glitched noise'];
             const mapped = syncMetadataTaggingService.mapToSyncMoods(aiMoods);
 
-            expect(mapped).toEqual(['Chill']);
+            expect(mapped).toEqual([]);
+        });
+
+        it('does not substring-map negation-like words (ISSUE-1443)', () => {
+            // 'unhappy' contains 'happy' but is not Upbeat.
+            const mapped = syncMetadataTaggingService.mapToSyncMoods(['unhappy', 'lovelorn']);
+            expect(mapped).toEqual([]);
+        });
+
+        it('still matches compound tags by whole word', () => {
+            const mapped = syncMetadataTaggingService.mapToSyncMoods(['dark-pop', 'epic orchestral']);
+            expect(mapped).toContain('Dark');
+            expect(mapped).toContain('Cinematic');
         });
 
         it('should handle case insensitivity and trim spacing', () => {

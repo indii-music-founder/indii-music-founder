@@ -299,9 +299,17 @@ export class CreatorProtectionHarnessService {
       ['perpetual', 'Contract may grant rights forever.'],
       ['sublicense', 'Contract may allow sublicensing.'],
       ['irrevocable', 'Contract may limit revocation.'],
+      ['voice clone', 'Contract references voice cloning rights.'],
+      ['soundalike', 'Contract references soundalike rights.'],
+      ['digital double', 'Contract references digital double rights.'],
     ];
     const flags = clauseChecks.filter(([needle]) => text.includes(needle)).map(([, flag]) => flag);
-    const highRisk = flags.some(flag => /training|forever|sublicensing|revocation|digital replica|synthetic/i.test(flag));
+    // ISSUE-1443: severity must be derived from the CONTRACT text, not from the
+    // canned flag strings (the old regex tested the flags themselves, so severity
+    // was decoupled from contract content). Negation semantics ("no sublicensing
+    // permitted") are a semantic judgment — a future TypeSafe Noul candidate —
+    // out of scope for this deterministic fix.
+    const highRisk = /training|perpetual|perpetuity|forever|sublicens|irrevocable|voice clone|soundalike|digital double|digital replica|synthetic performance/i.test(text);
     return {
       flags,
       severity: highRisk ? 'high' : flags.length ? 'medium' : 'low',

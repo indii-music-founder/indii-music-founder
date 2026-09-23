@@ -56,11 +56,19 @@ export class EvidenceIntakeService {
     else if (filename.endsWith('.json')) mimeType = 'application/json';
 
     // Privacy & Security classification
+    // ISSUE-1443: currency- and wording-agnostic financial indicators — the old
+    // USD/Earnings-only test misclassified non-USD statements as non-financial,
+    // which skips snippet masking and exposes the content.
+    const FINANCIAL_INDICATORS = [
+      'earnings', 'usd', 'total earned', 'revenue', 'royalt', 'payout',
+      'net receipts', 'gross', 'eur', 'gbp', 'stream', 'download',
+    ];
+    const lowered = content.toLowerCase();
+    const looksFinancial =
+      FINANCIAL_INDICATORS.some((k) => lowered.includes(k)) ||
+      /\b\d{1,3}(?:[.,]\d{3})*[.,]\d{2}\b/.test(content);
     const classification: SensitivityClassification =
-      options.classification ||
-      (content.includes('Earnings') || content.includes('USD') || content.includes('Total Earned')
-        ? 'sensitive_financial'
-        : 'confidential_artist');
+      options.classification || (looksFinancial ? 'sensitive_financial' : 'confidential_artist');
 
     const constraints: EvidenceConstraint = {
       classification,

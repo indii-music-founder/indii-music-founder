@@ -62,3 +62,36 @@ describe('CreatorProtectionHarnessService', () => {
   });
 });
 
+describe('reviewAIVoiceLikenessClause — ISSUE-1443 severity derivation', () => {
+    // Known deterministic limitation: negated grants ("no sublicensing permitted")
+    // still contain the keywords and rate HIGH. Resolving negation semantics is
+    // the TypeSafe Noul candidate noted in the service comment.
+    const svc = creatorProtectionHarnessService;
+
+    it('derives HIGH severity from the contract text itself (perpetual grant)', () => {
+        const r = svc.reviewAIVoiceLikenessClause(
+            'The Artist grants the Company a perpetual, irrevocable license to the Master. Compensation is a flat fee.'
+        );
+        expect(r.severity).toBe('high');
+    });
+
+    it('rates a flagged-but-low-risk contract MEDIUM when the text has no high-risk grant', () => {
+        // Old bug: severity regex ran against the canned flag strings, so the
+        // wording of the flag sentence — not the contract — decided severity.
+        // This contract mentions voice/likeness (flags fire) but grants nothing
+        // high-risk, so it must stay MEDIUM.
+        const r = svc.reviewAIVoiceLikenessClause(
+            'The Company may use Artist name, voice and likeness to promote the Release during the Term.'
+        );
+        expect(r.severity).toBe('medium');
+    });
+
+    it('catches previously-missed high-risk phrasing', () => {
+        const r = svc.reviewAIVoiceLikenessClause(
+            'Company may create a voice clone and soundalike recordings and train models on the Master.'
+        );
+        expect(r.flags.join(' ').toLowerCase()).toContain('voice cloning');
+        expect(r.severity).toBe('high');
+    });
+});
+

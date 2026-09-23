@@ -49,20 +49,23 @@ export class SyncMetadataTaggingService {
         const mappedMoods = new Set<SyncMood>();
         for (const mood of aiMoods) {
             const normalized = mood.toLowerCase().trim();
-            // Direct map lookup
+            // ISSUE-1443: exact map lookup, then WHOLE-WORD matching only.
+            // The old substring pass mapped 'unhappy' → Upbeat
+            // ('unhappy'.includes('happy')) and 'lovelorn' → Romantic.
             if (syncMoodMap[normalized]) {
                 mappedMoods.add(syncMoodMap[normalized]);
+                continue;
             }
-            // Substring mapping
             for (const [key, syncMood] of Object.entries(syncMoodMap)) {
-                if (normalized.includes(key)) {
+                if (new RegExp(`\\b${key}\\b`).test(normalized)) {
                     mappedMoods.add(syncMood);
                 }
             }
         }
 
-        // Return standard fallback if no match found
-        return mappedMoods.size > 0 ? Array.from(mappedMoods) : ['Chill'];
+        // ISSUE-1443: no fabricated fallback — an unrecognized mood writes
+        // nothing instead of a wrong 'Chill' that the sync matcher then trusts.
+        return mappedMoods.size > 0 ? Array.from(mappedMoods) : [];
     }
 
     /**
