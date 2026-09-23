@@ -43,7 +43,7 @@ export async function judgeSkillIntent(
     query: string,
     candidates: SkillCandidate[],
 ): Promise<string | null> {
-    if (!typesafeJudgmentsEnabled() || candidates.length === 0) return null;
+    if (!judgmentsAvailable() || candidates.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -72,7 +72,7 @@ export async function judgeSkillIntent(
         }
         return choice;
     } catch (err: unknown) {
-        logger.warn('[typesafeJudgments] skill intent judgment unavailable:', err instanceof Error ? err.message : err);
+        noteJudgmentFailure(err, 'skill intent judgment');
         return null;
     }
 }
@@ -119,7 +119,7 @@ export type InjectionVerdict = 'block' | 'flag' | 'allow' | null;
  * Static-critical/block verdicts never reach this — policy keeps them blocked.
  */
 export async function refineInjectionRisk(input: string): Promise<InjectionVerdict> {
-    if (!typesafeJudgmentsEnabled()) return null;
+    if (!judgmentsAvailable()) return null;
 
     try {
         const functions = getFunctions();
@@ -148,14 +148,41 @@ export async function refineInjectionRisk(input: string): Promise<InjectionVerdi
         if (override < INJECTION_HAZARD_CLEAR_MAX && exfil < INJECTION_HAZARD_CLEAR_MAX) return 'allow';
         return 'flag';
     } catch (err: unknown) {
-        logger.warn('[typesafeJudgments] injection refinement unavailable — keeping flag:', err instanceof Error ? err.message : err);
+        noteJudgmentFailure(err, 'injection refinement');
         return null;
     }
 }
 
 // ---------------------------------------------------------------------------
-// Feature gate — off until the judgment is evaluated against real outcomes.
+// Feature gate — ON by founder direction ("use jev moving forward"); every
+// judgment falls back to its deterministic baseline when unavailable.
 // ---------------------------------------------------------------------------
+
+/**
+ * Proxy-failure cooldown: after an upstream failure (missing key, outage),
+ * skip judgment calls for this long and use the deterministic baselines.
+ * Keeps a missing TYPESAFE_API_KEY from turning every error or skill miss
+ * into a doomed network round trip.
+ */
+export const JUDGMENT_FAILURE_COOLDOWN_MS = 5 * 60 * 1000;
+let lastJudgmentFailureAt = 0;
+
+function judgmentsAvailable(): boolean {
+    if (!typesafeJudgmentsEnabled()) return false;
+    if (Date.now() - lastJudgmentFailureAt < JUDGMENT_FAILURE_COOLDOWN_MS) return false;
+    return true;
+}
+
+function noteJudgmentFailure(err: unknown, context: string): void {
+    lastJudgmentFailureAt = Date.now();
+    logger.warn(`[typesafeJudgments] ${context} unavailable — determinstic baseline in use for ${JUDGMENT_FAILURE_COOLDOWN_MS / 1000}s:`,
+        err instanceof Error ? err.message : err);
+}
+
+/** Test hook: clears the failure cooldown so suites stay order-independent. */
+export function __resetJudgmentCooldownForTests(): void {
+    lastJudgmentFailureAt = 0;
+}
 export function typesafeJudgmentsEnabled(): boolean {
     return featureFlags.isEnabled(FEATURE_FLAG_NAMES.TYPESAFE_JUDGMENTS);
 }
@@ -215,7 +242,7 @@ export const TRANSIENT_AMBIGUOUS_KEEP_HEURISTIC = true;
  * fall back to the deterministic heuristic in that case.
  */
 export async function judgeTransientError(error: unknown, heuristicVerdict: boolean): Promise<boolean | null> {
-    if (!typesafeJudgmentsEnabled()) return null;
+    if (!judgmentsAvailable()) return null;
 
     try {
         const functions = getFunctions();
@@ -244,7 +271,98 @@ export async function judgeTransientError(error: unknown, heuristicVerdict: bool
         if (probability <= TRANSIENT_REJECT_MAX) return false;
         return TRANSIENT_AMBIGUOUS_KEEP_HEURISTIC ? heuristicVerdict : null;
     } catch (err: unknown) {
-        logger.warn('[typesafeJudgments] transient judgment unavailable — keeping heuristic:', err instanceof Error ? err.message : err);
+        noteJudgmentFailure(err, 'transient judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 4: foundry column semantics (consumer: FormatForensicsEngine)
+// Shadow-validated 2026-09-22: jev 15/16 vs shipped baseline 9/16 on labeled
+// fixtures, zero regressions; its single miss self-reported 0.42 confidence —
+// hence the confidence gate. See .agent/observations/typesafe-shadow-experiments.md.
+// ---------------------------------------------------------------------------
+
+import type { InferredFieldSemantic } from '@indii/shared';
+
+/** Jev confidence must be at/above this to override the deterministic inference. */
+export const FOUNDRY_COLUMN_MIN_CONFIDENCE = 0.8;
+
+/** Mirrors InferredFieldSemantic (packages/shared/src/foundry/types.ts). */
+const FOUNDRY_SEMANTIC_ENUM: readonly InferredFieldSemantic[] = [
+    'isrc', 'upc', 'iswc', 'currency_amount', 'quantity_count', 'stream_count',
+    'download_count', 'iso_date', 'us_date', 'territory_code', 'track_title',
+    'artist_name', 'album_title', 'dsp_name', 'transaction_type',
+    'fee_amount', 'generic_text', 'generic_number',
+];
+
+export interface FoundryColumnInput {
+    index: number;
+    header: string;
+    samples: string[];
+}
+
+export interface FoundryColumnUpgrade {
+    index: number;
+    semantic: InferredFieldSemantic;
+    confidence: number;
+}
+
+/**
+ * Choice-judge the semantic type of statement columns in one batched call
+ * (chunks of <=20 questions to respect the callable's limit). Returns
+ * upgrades ONLY for columns where jev is confident (>= FOUNDRY_COLUMN_MIN_CONFIDENCE)
+ * and the answer is a valid enum member — everything else keeps the
+ * deterministic baseline. Null when judgments are unavailable.
+ */
+export async function judgeColumnSemantics(
+    columns: FoundryColumnInput[],
+): Promise<FoundryColumnUpgrade[] | null> {
+    if (!judgmentsAvailable() || columns.length === 0) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const criteria: Record<string, string> = {};
+        for (const value of FOUNDRY_SEMANTIC_ENUM) {
+            criteria[value] = `The column is ${value.replace(/_/g, ' ')}.`;
+        }
+
+        const upgrades: FoundryColumnUpgrade[] = [];
+        for (let offset = 0; offset < columns.length; offset += 20) {
+            const batch = columns.slice(offset, offset + 20);
+            const state: Record<string, unknown> = {};
+            const questions: Record<string, unknown> = {};
+            for (const col of batch) {
+                const ref = `col_${col.index}`;
+                state[ref] = { header: col.header, sample_values: col.samples.slice(0, 5) };
+                questions[ref] = {
+                    type: 'choice',
+                    instructions:
+                        'A music distributor royalty statement has a column with this header and these sample ' +
+                        'values. Which semantic field does the column represent?',
+                    criteria,
+                };
+            }
+            const result = await judgeFn({ state, questions });
+            for (const [ref, answer] of Object.entries(result.data.answers ?? {})) {
+                if (typeof answer !== 'object' || answer === null) continue;
+                const a = answer as { choice?: unknown; confidence?: unknown };
+                if (typeof a.choice !== 'string' || typeof a.confidence !== 'number') continue;
+                if (a.confidence < FOUNDRY_COLUMN_MIN_CONFIDENCE) continue;
+                if (!FOUNDRY_SEMANTIC_ENUM.includes(a.choice as InferredFieldSemantic)) continue;
+                const index = Number(ref.replace('col_', ''));
+                if (!Number.isInteger(index)) continue;
+                upgrades.push({ index, semantic: a.choice as InferredFieldSemantic, confidence: a.confidence });
+            }
+        }
+        return upgrades;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'foundry column semantics judgment');
         return null;
     }
 }

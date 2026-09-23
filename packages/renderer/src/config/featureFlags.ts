@@ -97,8 +97,12 @@ const DEFAULTS: Record<string, boolean> = {
     // Project Canvas — enabled in dev or via VITE_ENABLE_PROJECT_CANVAS=true
     [FEATURE_FLAG_NAMES.PROJECT_CANVAS]: import.meta.env.DEV || import.meta.env.VITE_ENABLE_PROJECT_CANVAS === 'true',
 
-    // TypeSafe judgments — opt-in pilot, evaluated against loop outcomes first.
-    [FEATURE_FLAG_NAMES.TYPESAFE_JUDGMENTS]: import.meta.env.VITE_ENABLE_TYPESAFE_JUDGMENTS === 'true',
+    // TypeSafe judgments — ON by founder direction ("use jev moving forward").
+    // Every judgment falls back to its deterministic baseline when the proxy is
+    // unavailable (missing TYPESAFE_API_KEY, outage, ambiguous answer), so the
+    // default only changes WHERE verdicts come from, never whether code works.
+    // Disable explicitly with VITE_ENABLE_TYPESAFE_JUDGMENTS=false.
+    [FEATURE_FLAG_NAMES.TYPESAFE_JUDGMENTS]: import.meta.env.VITE_ENABLE_TYPESAFE_JUDGMENTS !== 'false',
 };
 
 // ============================================================================
