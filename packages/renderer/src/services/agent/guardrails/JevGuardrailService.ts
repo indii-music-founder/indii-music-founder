@@ -71,8 +71,12 @@ export class JevGuardrailService {
     const apiKey = (import.meta.env.VITE_TYPESAFE_API_KEY as string | undefined) ||
                    ((import.meta.env as unknown as Record<string, string>)?.TYPESAFE_API_KEY as string | undefined);
     if (apiKey && apiKey.trim() !== '') {
-      this.client = new TypeSafeClient({ apiKey });
-      return this.client;
+      try {
+        this.client = new TypeSafeClient({ apiKey, dangerouslyAllowBrowser: true });
+        return this.client;
+      } catch (e) {
+        logger.debug('[JevGuardrail] TypeSafeClient direct init bypassed:', e);
+      }
     }
 
     return null;
