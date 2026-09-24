@@ -28,8 +28,31 @@ describe('SongIntake', () => {
     }, updatedAt: now };
     const withContext = withPlannedSongIntakeQuestions({ ...base, artistContext });
     expect(withoutContext.questions.some(q => q.key === 'recording.artist')).toBe(true);
-    expect(withContext.questions.some(q => q.key === 'recording.artist')).toBe(false);
-    expect(withContext.questions.length).toBeLessThan(withoutContext.questions.length);
+    // An artist type is useful context, but is never a credited-artist
+    // confirmation. Rights-sensitive questions must remain unchanged.
+    expect(withContext.questions.some(q => q.key === 'recording.artist')).toBe(true);
+    expect(withContext.questions.filter(q => q.authoritative).length).toBe(withoutContext.questions.filter(q => q.authoritative).length);
+  });
+
+  it('asks every authority-required fact and removes only explicitly confirmed gaps', () => {
+    const unanswered = withPlannedSongIntakeQuestions(base);
+    expect(unanswered.questions.map(q => q.key)).toEqual(expect.arrayContaining([
+      'rights.masterOwnership', 'rights.compositionWriters', 'rights.samples',
+      'video.officialDesignation', 'migration.intent', 'dispute.intent',
+    ]));
+    const intake = withPlannedSongIntakeQuestions({ ...base, confirmations: {
+      'rights.masterOwnership': { value: 'Artist controls 100% of master.', provenance: { state: 'USER_CONFIRMED', sourceType: 'USER', evidence: [], observedAt: now, confirmedAt: now } },
+      'rights.samples': { value: false, provenance: { state: 'USER_CONFIRMED', sourceType: 'USER', evidence: [], observedAt: now, confirmedAt: now } },
+    }});
+    expect(intake.questions.some(q => q.key === 'rights.masterOwnership')).toBe(false);
+    expect(intake.questions.some(q => q.key === 'rights.samples')).toBe(false);
+    expect(intake.questions.some(q => q.key === 'rights.compositionWriters')).toBe(true);
+  });
+
+  it('rejects detected or inferred claims as human intake confirmations', () => {
+    expect(() => withPlannedSongIntakeQuestions({ ...base, confirmations: {
+      'rights.masterOwnership': { value: '100%', provenance: { state: 'DETECTED', sourceType: 'SYSTEM', evidence: [], observedAt: now } },
+    }})).toThrow();
   });
 
   it.each(['REMIX', 'REMASTER', 'LIVE', 'ALTERNATE', 'INSTRUMENTAL', 'ACAPELLA', 'EDIT', 'COVER'] as const)(
