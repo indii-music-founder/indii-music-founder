@@ -64,6 +64,16 @@ describe('music domain event contract', () => {
     }
   });
 
+  it.each([
+    'USABC2600001',
+    'T-123.456.789-0',
+    '012345678905',
+    'spotify:track:external-value',
+  ])('rejects external identifier %s as an event/entity identity', (externalId) => {
+    expect(() => MusicEventEntityReferenceSchema.parse({ entityId: externalId, entityType: 'sound_recording' })).toThrow(/External identifier values/);
+    expect(() => MusicDomainEventSchema.parse(event({ eventId: externalId }))).toThrow(/External identifier values/);
+  });
+
   it.each(eventTypes)('parses the %s event with a canonical subject', (eventType) => {
     expect(MusicDomainEventSchema.parse(event({ eventType })).eventType).toBe(eventType);
   });

@@ -3,6 +3,12 @@ import { ProvenanceSchema } from './musicEntity.js';
 
 const IdSchema = z.string().trim().min(1).max(160);
 const IsoDateTimeSchema = z.string().datetime();
+const externalIdentifierPrefixes = /^(?:isrc|iswc|upc|ean|isni|ipi|dpid|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i;
+const externalIdentifierValue = /^(?:[A-Z]{2}[A-Z0-9]{3}\d{7}|T-\d{3}\.\d{3}\.\d{3}-\d|\d{8,14})$/i;
+const InternalReferenceIdSchema = IdSchema.refine(
+  value => !externalIdentifierPrefixes.test(value) && !externalIdentifierValue.test(value),
+  'External identifier values must be stored as identifiers, not canonical entity IDs.',
+);
 
 /**
  * Canonical domain events connect changes and observations to indii's
@@ -68,7 +74,7 @@ export const MUSIC_DOMAIN_EVENT_SUBJECT_TYPES: Partial<Record<MusicDomainEventTy
 };
 
 export const MusicEventEntityReferenceSchema = z.object({
-  entityId: IdSchema,
+  entityId: InternalReferenceIdSchema,
   entityType: MusicEventEntityTypeSchema,
 }).strict();
 export type MusicEventEntityReference = z.infer<typeof MusicEventEntityReferenceSchema>;
@@ -84,7 +90,7 @@ const EventDetailValueSchema = z.union([
 export const MusicDomainEventSchema = z.object({
   schemaVersion: z.literal('music-domain-event.v1'),
   /** Stable internal event identity; do not derive it from an external music identifier. */
-  eventId: IdSchema,
+  eventId: InternalReferenceIdSchema,
   eventType: MusicDomainEventTypeSchema,
   subject: MusicEventEntityReferenceSchema,
   relatedEntities: z.array(MusicEventEntityReferenceSchema).max(100).default([]),

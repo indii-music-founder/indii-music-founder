@@ -7,8 +7,8 @@ canonical music entities.
 ## Boundaries
 
 - `eventId` is indii's event identity. ISRC, ISWC, UPC/EAN, platform IDs, and
-  other external identifiers remain values or evidence; they never replace a
-  canonical entity reference.
+  other external identifiers remain values or evidence; the schema rejects
+  known external identifier forms in event/entity identity fields.
 - `subject` and `relatedEntities` reference the complete canonical entity
   inventory, including claims, registrations, agreements, usage, identifiers,
   and evidence records. An identifier is a referenceable entity; its external
