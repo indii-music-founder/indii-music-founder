@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldAlert, ShieldCheck, ArrowRight, BookOpen, Users, Palette } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, ArrowRight, BookOpen, Users, Palette, Zap } from 'lucide-react';
 
 interface BreakthroughPillar {
   number: string;
@@ -60,6 +60,20 @@ const breakthroughPillars: BreakthroughPillar[] = [
       'Update your colors once in your Master Directive and your entire studio, social teasers, and merchandise concepts update automatically in seconds. Your design specialists get the new brief instantly.',
     proof: 'One change. Full studio. Instant cascade.',
   },
+  {
+    number: '04',
+    title: 'Intelligence in the Foundation',
+    tagline: 'Music business at the speed of you.',
+    hex: '#E040FB',
+    Icon: Zap,
+    genericLabel: 'A disconnected chat window',
+    generic:
+      'Traditional tools glue a chatbot to the corner of an old website. You wait for generic paragraphs while your actual splits, statements, and releases stay stuck in slow web forms.',
+    indiiLabel: 'Built-In Common Sense',
+    indii:
+      'Common sense is woven directly into your tools. Statement audits, split contracts, and release packaging happen in milliseconds without slowing down your session.',
+    proof: 'Everything in one room. Zero waiting.',
+  },
 ];
 
 export default function LegacyComparison() {
@@ -81,7 +95,7 @@ export default function LegacyComparison() {
           className="mx-auto max-w-4xl text-center"
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-white/[0.03] px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400 shadow-[0_0_15px_rgba(255,184,0,0.15)]">
-            Three core breakthroughs
+            Four core breakthroughs
           </div>
 
           <h2 className="mt-6 text-4xl font-black leading-tight tracking-[-0.05em] text-white sm:text-6xl md:text-7xl">
@@ -95,8 +109,8 @@ export default function LegacyComparison() {
           </p>
         </motion.div>
 
-        {/* Breakthrough Cards — 3-column grid */}
-        <div className="mt-16 grid gap-6 lg:grid-cols-3">
+        {/* Breakthrough Cards — 4-column grid */}
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {breakthroughPillars.map((pillar, index) => (
             <motion.div
               key={pillar.number}
@@ -186,7 +200,7 @@ export default function LegacyComparison() {
               Your 23-piece team executes everything around the clock—distribution, marketing, legal work, and visual campaigns—without you repeating yourself.
             </p>
             <span className="mt-5 block text-lg font-black text-[#FFB800] [text-shadow:0_0_25px_rgba(255,184,0,0.5)] sm:text-xl">
-              This is <span className="indii-name text-white">indii.music</span>.
+              Music business at the speed of you.
             </span>
           </div>
           <div className="mt-8 flex justify-center">
