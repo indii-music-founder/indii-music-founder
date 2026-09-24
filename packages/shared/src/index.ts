@@ -23,6 +23,7 @@ export * from './schemas/musicEntity.js';
 export * from './schemas/musicEntityCompatibility.js';
 export * from './schemas/musicRelationship.js';
 export * from './schemas/musicEvent.js';
+export * from './schemas/musicActionExecution.js';
 export * from './schemas/knowledge.js';
 export * from './schemas/conversionEvent.js';
 export * from './schemas/trash.js';
