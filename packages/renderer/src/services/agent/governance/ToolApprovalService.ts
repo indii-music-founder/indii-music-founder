@@ -27,6 +27,7 @@ import {
     orderBy,
     serverTimestamp,
     Timestamp,
+    runTransaction,
     type Unsubscribe,
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
@@ -63,6 +64,7 @@ function getApprovalsRef() {
 }
 
 class ToolApprovalService {
+    private readonly rendererSessionId = crypto.randomUUID();
     /**
      * Called by BaseAgent.ts BEFORE executing a requiresApproval:true tool.
      * Persists the pending record and returns its id. Does NOT execute the tool.
@@ -106,18 +108,20 @@ class ToolApprovalService {
             return { success: false, error: 'Not authenticated — cannot approve tool call' };
         }
 
-        const { getDoc } = await import('firebase/firestore');
         const approvalDocRef = doc(db, 'users', uid, 'tool_approvals', approvalId);
-        const snap = await getDoc(approvalDocRef);
-        if (!snap.exists()) {
-            return { success: false, error: `Approval ${approvalId} not found` };
+        let approval: PendingToolApproval;
+        try {
+            approval = await runTransaction(db, async transaction => {
+                const snap = await transaction.get(approvalDocRef);
+                if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
+                const current = snap.data() as PendingToolApproval;
+                if (current.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${current.status})`);
+                transaction.update(approvalDocRef, { status: 'approved', resolvedAt: serverTimestamp() });
+                return current;
+            });
+        } catch (error: unknown) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
-        const approval = snap.data() as PendingToolApproval;
-        if (approval.status !== 'pending') {
-            return { success: false, error: `Approval ${approvalId} is not pending (status: ${approval.status})` };
-        }
-
-        await updateDoc(approvalDocRef, { status: 'approved', resolvedAt: serverTimestamp() });
 
         const { TOOL_REGISTRY } = await import('../tools');
         const toolFn = TOOL_REGISTRY[approval.toolName];
@@ -129,7 +133,21 @@ class ToolApprovalService {
 
         let result: ToolFunctionResult;
         try {
-            result = await toolFn(approval.args);
+            let executionArgs = approval.args;
+            if (approval.toolName.startsWith('computer_')) {
+                const user = auth.currentUser;
+                if (!user || !window.electronAPI?.computer) throw new Error('Verified desktop sign-in is required for computer control.');
+                const idToken = await user.getIdToken();
+                const authorized = await window.electronAPI.computer.authorizeApproval({ idToken, approvalId, rendererSessionId: this.rendererSessionId });
+                if (!authorized.success || !authorized.data) throw new Error(authorized.error || 'Main-process computer authorization failed.');
+                executionArgs = {
+                    ...approval.args,
+                    __computerAuthorizationToken: authorized.data.token,
+                    __computerRendererSessionId: this.rendererSessionId,
+                    __computerAgentId: approval.agentId,
+                };
+            }
+            result = await toolFn(executionArgs);
         } catch (err: unknown) {
             result = { success: false, error: err instanceof Error ? err.message : String(err) };
         }

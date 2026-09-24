@@ -166,9 +166,24 @@ export class ComputerExecutionService {
         return this.provider;
     }
 
+    private requireScreenPermission(): void {
+        this.requireProvider();
+        this.checkNotAborted();
+        const status = this.getPermissionStatus();
+        if (status.screenRecording !== 'granted') throw new Error('Screen Recording permission is denied.');
+    }
+
+    private requireInputPermission(): void {
+        this.requireProvider();
+        this.checkNotAborted();
+        const status = this.getPermissionStatus();
+        if (status.accessibility !== 'granted') throw new Error('Accessibility permission is denied.');
+    }
+
     // --- Read path (CE-1) -----------------------------------------------------
 
     async screenshot(displayId?: number): Promise<ComputerScreenshot> {
+        this.requireScreenPermission();
         return this.requireProvider().screenshot(displayId);
     }
 
@@ -177,6 +192,7 @@ export class ComputerExecutionService {
     }
 
     async openApp(app: string): Promise<void> {
+        this.checkNotAborted();
         if (!computerAllowlistStore.isAllowed(app)) {
             throw new Error(
                 `App "${app}" is not on the computer-control allowlist. ` +
@@ -189,22 +205,23 @@ export class ComputerExecutionService {
     // --- Input control (CE-2, ISSUE-1111) --------------------------------------
 
     async click(x: number, y: number, button: ClickButton): Promise<void> {
-        this.checkNotAborted();
+        this.requireInputPermission();
         return this.requireProvider().click(x, y, button);
     }
 
     async type(text: string): Promise<void> {
+        void text;
         this.checkNotAborted();
-        return this.requireProvider().type(text);
+        throw new Error('Text injection is disabled because the OS provider cannot reliably identify password or payment fields.');
     }
 
     async key(combo: string): Promise<void> {
-        this.checkNotAborted();
+        this.requireInputPermission();
         return this.requireProvider().key(combo);
     }
 
     async scroll(dx: number, dy: number): Promise<void> {
-        this.checkNotAborted();
+        this.requireInputPermission();
         return this.requireProvider().scroll(dx, dy);
     }
 }

@@ -126,23 +126,22 @@ export interface ComputerScreenshotData {
 
 export interface ElectronComputerAPI {
     checkPermissions: () => Promise<{ success: boolean; data?: ComputerPermissionStatusData; error?: string }>;
-    screenshot: (options?: { displayId?: number }) => Promise<{ success: boolean; data?: ComputerScreenshotData; error?: string }>;
+    authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string }) => Promise<{ success: boolean; data?: { token: string; expiresAt: number }; error?: string }>;
+    beginDrive: (goal: string, maxSteps: number, authorization: ComputerActionAuthorization) => Promise<{ success: boolean; data?: { sessionToken: string; expiresAt: number }; error?: string }>;
+    endDrive: (sessionToken: string) => Promise<{ success: boolean; error?: string }>;
+    screenshot: (options: { displayId?: number; authorization?: ComputerActionAuthorization; driveSessionToken?: string }) => Promise<{ success: boolean; data?: ComputerScreenshotData; error?: string }>;
     listApps: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
-    openApp: (app: string) => Promise<{ success: boolean; data?: { app: string }; error?: string }>;
-    click: (x: number, y: number, button?: 'left' | 'right' | 'double', sessionId?: string) => Promise<{ success: boolean; data?: { x: number; y: number; button: string }; error?: string }>;
-    type: (text: string, sessionId?: string) => Promise<{ success: boolean; data?: { length: number }; error?: string }>;
-    key: (combo: string, sessionId?: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
-    scroll: (dx: number, dy: number, sessionId?: string) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
+    openApp: (app: string, authorization?: ComputerActionAuthorization) => Promise<{ success: boolean; data?: { app: string }; error?: string }>;
+    click: (x: number, y: number, button?: 'left' | 'right' | 'double', authorization?: ComputerActionAuthorization, driveSessionToken?: string) => Promise<{ success: boolean; data?: { x: number; y: number; button: string }; error?: string }>;
+    type: (text: string) => Promise<{ success: boolean; data?: { length: number }; error?: string }>;
+    key: (combo: string, authorization?: ComputerActionAuthorization, driveSessionToken?: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
+    scroll: (dx: number, dy: number, authorization?: ComputerActionAuthorization, driveSessionToken?: string) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
     abort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
-    resetAbort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
     getAbortState: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
     allowlistGet: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
-    allowlistAdd: (app: string) => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
-    allowlistRemove: (app: string) => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
-    grantSession: (sessionId: string, ttlMs?: number) => Promise<{ success: boolean; data?: { sessionId: string; grantedAt: number; expiresAt: number }; error?: string }>;
-    revokeGrant: (sessionId: string) => Promise<{ success: boolean; data?: { sessionId: string }; error?: string }>;
-    hasGrant: (sessionId: string) => Promise<{ success: boolean; data?: { hasGrant: boolean }; error?: string }>;
 }
+
+export interface ComputerActionAuthorization { token: string; rendererSessionId: string; agentId: string }
 
 export interface ElectronVideoAPI {
     saveAsset: (url: string, filename: string) => Promise<unknown>;

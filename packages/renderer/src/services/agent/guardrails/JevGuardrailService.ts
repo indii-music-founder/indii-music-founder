@@ -1,5 +1,7 @@
 import { TypeSafeClient, noul } from '@typesafe-ai/sdk';
 import { logger } from '@/utils/logger';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,28 +63,33 @@ const UNACTIONABLE_FALLBACK =
 
 export class JevGuardrailService {
   private client: TypeSafeClient | null = null;
+  private hasLoggedKeyStatus = false;
 
   private getClient(): TypeSafeClient | null {
     if (this.client) return this.client;
 
-    const apiKey = import.meta.env.VITE_TYPESAFE_API_KEY as string | undefined;
-    if (!apiKey || apiKey.trim() === '') {
-      logger.debug('[JevGuardrail] VITE_TYPESAFE_API_KEY not set — guardrail disabled');
-      return null;
+    const apiKey = (import.meta.env.VITE_TYPESAFE_API_KEY as string | undefined) ||
+                   ((import.meta.env as unknown as Record<string, string>)?.TYPESAFE_API_KEY as string | undefined);
+    if (apiKey && apiKey.trim() !== '') {
+      try {
+        this.client = new TypeSafeClient({ apiKey, dangerouslyAllowBrowser: true });
+        return this.client;
+      } catch (e) {
+        logger.debug('[JevGuardrail] TypeSafeClient direct init bypassed:', e);
+      }
     }
 
-    this.client = new TypeSafeClient({ apiKey });
-    return this.client;
+    return null;
   }
 
   /**
    * Screen an agent response through Jev before it reaches the UI.
    *
    * All questions are evaluated in a single parallel Jev call.
-   * Returns the original response unmodified if:
-   *  - VITE_TYPESAFE_API_KEY is absent/blank
-   *  - The Jev call fails for any reason
-   *  - The Jev call takes longer than GUARDRAIL_TIMEOUT_MS
+   * Supports:
+   *  1. Direct TypeSafeClient (if VITE_TYPESAFE_API_KEY is available)
+   *  2. Server-side `typesafeJudge` Cloud Function proxy (securely uses server TYPESAFE_API_KEY)
+   * Returns original response unmodified on timeout, failure, or unavailable service.
    */
   async screen(input: GuardrailInput): Promise<GuardrailResult> {
     const passthrough: GuardrailResult = {
@@ -92,93 +99,132 @@ export class JevGuardrailService {
       confidence: {},
     };
 
-    const client = this.getClient();
-    if (!client) return passthrough;
-
     const toolNames = (input.tool_calls ?? []).map((t) => t.name).join(', ') || 'none';
 
     try {
       const result = await Promise.race([
-        this.runJev(client, input.text, toolNames),
+        this.runEvaluation(input.text, toolNames),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), GUARDRAIL_TIMEOUT_MS)),
       ]);
 
       if (!result) {
-        logger.warn('[JevGuardrail] Jev timed out — passing through unmodified');
+        logger.debug('[JevGuardrail] Evaluation timed out or bypassed — passing through unmodified');
         return passthrough;
       }
 
       return result;
     } catch (err) {
-      logger.warn('[JevGuardrail] Jev call failed — passing through unmodified:', err);
+      logger.warn('[JevGuardrail] Evaluation failed — passing through unmodified:', err);
       return passthrough;
     }
   }
 
-  private async runJev(
-    client: TypeSafeClient,
+  private async runEvaluation(
     responseText: string,
     toolNames: string
-  ): Promise<GuardrailResult> {
-    const response = await client.systemOne({
-      state: {
-        response: {
-          text: responseText,
-          tool_calls: toolNames,
-        },
+  ): Promise<GuardrailResult | null> {
+    const client = this.getClient();
+    const state = {
+      response: {
+        text: responseText,
+        tool_calls: toolNames,
       },
-      questions: {
-        // Hallucination: claims connectivity status without tool evidence
-        claims_disconnected_without_evidence: noul(
+    };
+
+    const questionsDef = {
+      claims_disconnected_without_evidence: {
+        type: 'noul' as const,
+        instructions:
           'Does `response.text` assert that a platform (Instagram, Spotify, Apple Music, etc.) ' +
           'is disconnected or unavailable, when `response.tool_calls` is "none" or contains no ' +
-          'connectivity-checking tool?'
-        ),
-        // Hallucination: claims scheduling happened without a scheduling tool call
-        claims_scheduled_without_tool: noul(
-          'Does `response.text` state that a post was scheduled, queued, or will be posted, ' +
-          'while `response.tool_calls` contains no scheduling tool execution?'
-        ),
-        // Hallucination: confident action claim with no tool evidence at all
-        confident_action_no_evidence: noul(
-          'Does `response.text` claim a concrete action was completed (posted, uploaded, sent, ' +
-          'saved, published) when `response.tool_calls` is "none"?'
-        ),
-        // Quality: is the response actionable for the user?
-        is_actionable_response: noul(
-          'Does `response.text` give the user either a completed result, a clear next step, ' +
-          'or a request for missing information they can act on?'
-        ),
+          'connectivity-checking tool?',
       },
-      model: JEV_MODEL,
-    });
+      claims_scheduled_without_tool: {
+        type: 'noul' as const,
+        instructions:
+          'Does `response.text` state that a post was scheduled, queued, or will be posted, ' +
+          'while `response.tool_calls` contains no scheduling tool execution?',
+      },
+      confident_action_no_evidence: {
+        type: 'noul' as const,
+        instructions:
+          'Does `response.text` claim a concrete action was completed (posted, uploaded, sent, ' +
+          'saved, published) when `response.tool_calls` is "none"?',
+      },
+      is_actionable_response: {
+        type: 'noul' as const,
+        instructions:
+          'Does `response.text` give the user either a completed result, a clear next step, ' +
+          'or a request for missing information they can act on?',
+      },
+    };
 
-    const answers = response.answers;
+    let rawAnswers: Record<string, unknown> | undefined;
+
+    if (client) {
+      // Direct client execution
+      const res = await client.systemOne({
+        state,
+        questions: {
+          claims_disconnected_without_evidence: noul(questionsDef.claims_disconnected_without_evidence.instructions),
+          claims_scheduled_without_tool: noul(questionsDef.claims_scheduled_without_tool.instructions),
+          confident_action_no_evidence: noul(questionsDef.confident_action_no_evidence.instructions),
+          is_actionable_response: noul(questionsDef.is_actionable_response.instructions),
+        },
+        model: JEV_MODEL,
+      });
+      rawAnswers = res.answers as Record<string, unknown>;
+    } else {
+      // Fallback to server-side typesafeJudge proxy
+      try {
+        const judgeFn = httpsCallable<
+          { state: Record<string, unknown>; questions: Record<string, unknown>; model?: string },
+          { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+        const res = await judgeFn({
+          state,
+          questions: questionsDef,
+          model: JEV_MODEL,
+        });
+        rawAnswers = res.data?.answers;
+      } catch (proxyErr) {
+        if (!this.hasLoggedKeyStatus) {
+          logger.debug('[JevGuardrail] Neither direct client key nor typesafeJudge proxy available:', proxyErr);
+          this.hasLoggedKeyStatus = true;
+        }
+        return null;
+      }
+    }
+
+    if (!rawAnswers) return null;
+
+    const answers = rawAnswers;
     const confidence: Record<string, number> = {};
     const flags: string[] = [];
     let prefix = '';
 
-    // Extract noul probabilities
+    // Extract probabilities
     for (const key of Object.keys(answers)) {
-      const ans = answers[key as keyof typeof answers];
-      if (typeof ans === 'object' && ans !== null && 'noul' in ans) {
-        confidence[key] = (ans as { noul: number }).noul;
+      const ans = answers[key];
+      if (typeof ans === 'number') {
+        confidence[key] = ans;
+      } else if (typeof ans === 'object' && ans !== null && 'noul' in ans) {
+        confidence[key] = Number((ans as { noul: unknown }).noul);
       }
     }
 
-    // Check hallucination flags (highest-priority corrections)
+    // Check hallucination flags
     for (const [flag, correction] of Object.entries(CORRECTIONS)) {
       const prob = confidence[flag] ?? 0;
       if (prob > FIRE_THRESHOLD) {
         flags.push(flag);
-        // Only prepend the first matching correction to avoid stacking
         if (!prefix) {
           prefix = correction;
         }
       }
     }
 
-    // Check actionability (only if no hallucination flag fired)
+    // Check actionability
     const isActionable = confidence['is_actionable_response'] ?? 1;
     if (!prefix && isActionable < ACTIONABLE_THRESHOLD) {
       flags.push('unactionable_response');
@@ -190,10 +236,8 @@ export class JevGuardrailService {
     if (!wasModified) {
       finalText = responseText;
     } else if (flags.includes('unactionable_response')) {
-      // Replace entirely with the fallback — original was not useful
       finalText = UNACTIONABLE_FALLBACK;
     } else {
-      // Prepend the correction notice but keep the agent's original text visible
       finalText = prefix + responseText;
     }
 

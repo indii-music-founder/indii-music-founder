@@ -1,293 +1,120 @@
 import log from 'electron-log';
-import { ipcMain, IpcMainInvokeEvent } from 'electron';
+import { ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
-import {
-    ComputerScreenshotSchema,
-    ComputerOpenAppSchema,
-    ComputerClickSchema,
-    ComputerTypeSchema,
-    ComputerKeySchema,
-    ComputerScrollSchema,
-    ComputerSessionIdSchema,
-    ComputerGrantSessionSchema
-} from '../utils/validation';
+import { ComputerScreenshotSchema, ComputerOpenAppSchema, ComputerClickSchema, ComputerKeySchema, ComputerScrollSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { computerExecutionService } from '../services/ComputerExecutionService';
 import { computerAllowlistStore } from '../services/computer/ComputerAllowlistStore';
+import { ComputerAuthorizationService, type ComputerAction } from '../services/computer/ComputerAuthorizationService';
+import { FirebaseComputerAuthorizationBackend } from '../services/computer/FirebaseComputerAuthorizationBackend';
 
-/**
- * Computer capability IPC handlers.
- * CE-1 (ISSUE-1110): read path (permissions, screenshot, list/open app).
- * CE-2 (ISSUE-1111): input control (click/type/key/scroll), kill switch, allowlist mgmt.
- * Same security posture as handlers/agent.ts: validateSender + Zod on every channel,
- * uniform { success, data?, error? } envelopes.
- */
+const authorizationService = new ComputerAuthorizationService(new FirebaseComputerAuthorizationBackend());
+const SessionId = z.string().min(16).max(256);
+const Token = z.string().min(32).max(256);
+const Authorization = z.object({ token: Token, rendererSessionId: SessionId, agentId: z.string().min(1).max(128) }).strict();
+const AuthorizeRequest = z.object({ idToken: z.string().min(32).max(16_384), approvalId: z.string().min(1).max(256), rendererSessionId: SessionId }).strict();
+const DriveStart = z.object({ goal: z.string().trim().min(1).max(4000), maxSteps: z.number().int().min(1).max(30).default(15), authorization: Authorization }).strict();
+
+const rendererId = (event: IpcMainInvokeEvent) => event.sender.id;
+function failure(label: string, error: unknown) {
+    log.error(label, error instanceof Error ? error.message : String(error)); // metadata only; never arguments
+    return { success: false, error: error instanceof z.ZodError ? `Validation Error: ${error.errors[0].message}` : error instanceof Error ? error.message : String(error) };
+}
+function authorizeAction(event: IpcMainInvokeEvent, input: { authorization?: unknown; driveSessionToken?: unknown }, toolName: string, action: ComputerAction, args: Record<string, unknown>) {
+    const auth = Authorization.parse(input.authorization);
+    if (input.driveSessionToken !== undefined) {
+        const sessionToken = Token.parse(input.driveSessionToken);
+        if (auth.token !== sessionToken) throw new Error('Computer drive token mismatch.');
+        authorizationService.consumeDriveAction({ sessionToken, rendererId: rendererId(event), rendererSessionId: auth.rendererSessionId, agentId: auth.agentId, action });
+    } else {
+        authorizationService.consume({ token: auth.token, rendererId: rendererId(event), rendererSessionId: auth.rendererSessionId, agentId: auth.agentId, toolName, action, args });
+    }
+}
+
 export function registerComputerHandlers() {
-    ipcMain.handle('computer:check-permissions', async (event: IpcMainInvokeEvent) => {
-        try {
-            validateSender(event);
-            return { success: true, data: computerExecutionService.getPermissionStatus() };
-        } catch (error) {
-            log.error('Computer Check Permissions Failed:', error);
-            return { success: false, error: String(error) };
-        }
+    ipcMain.handle('computer:check-permissions', async event => {
+        try { validateSender(event); return { success: true, data: computerExecutionService.getPermissionStatus() }; }
+        catch (error) { return failure('Computer permission check failed', error); }
     });
-
-    ipcMain.handle('computer:screenshot', async (event: IpcMainInvokeEvent, options?: unknown) => {
+    ipcMain.handle('computer:authorize-approval', async (event, raw) => {
         try {
             validateSender(event);
-            const parsed = ComputerScreenshotSchema.parse(options ?? undefined);
-            const data = await computerExecutionService.screenshot(parsed?.displayId);
+            const input = AuthorizeRequest.parse(raw);
+            const data = await authorizationService.authorize({ ...input, rendererId: rendererId(event) });
+            log.info('Computer approval authorized', { approvalId: input.approvalId, rendererId: rendererId(event), expiresAt: data.expiresAt });
             return { success: true, data };
-        } catch (error) {
-            log.error('Computer Screenshot Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
+        } catch (error) { return failure('Computer authorization failed', error); }
     });
-
-    ipcMain.handle('computer:list-apps', async (event: IpcMainInvokeEvent) => {
+    ipcMain.handle('computer:begin-drive', async (event, raw) => {
         try {
             validateSender(event);
-            const apps = await computerExecutionService.listApps();
-            return { success: true, data: { apps } };
-        } catch (error) {
-            log.error('Computer List Apps Failed:', error);
-            return { success: false, error: String(error) };
-        }
+            if (computerExecutionService.isAborted()) throw new Error('Computer control was aborted (kill switch active).');
+            const input = DriveStart.parse(raw);
+            return { success: true, data: authorizationService.beginDrive({ token: input.authorization.token, rendererId: rendererId(event), rendererSessionId: input.authorization.rendererSessionId, agentId: input.authorization.agentId, args: { goal: input.goal, maxSteps: input.maxSteps } }) };
+        } catch (error) { return failure('Computer drive authorization failed', error); }
     });
-
-    ipcMain.handle('computer:open-app', async (event: IpcMainInvokeEvent, app: unknown) => {
+    ipcMain.handle('computer:end-drive', async (event, raw) => {
+        try { validateSender(event); const token = z.object({ sessionToken: Token }).strict().parse(raw).sessionToken; authorizationService.revoke(token); return { success: true }; }
+        catch (error) { return failure('Computer drive revoke failed', error); }
+    });
+    ipcMain.handle('computer:screenshot', async (event, raw) => {
         try {
             validateSender(event);
-            const validatedApp = ComputerOpenAppSchema.parse(app);
-            await computerExecutionService.openApp(validatedApp);
-            return { success: true, data: { app: validatedApp } };
-        } catch (error) {
-            log.error('Computer Open App Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
+            const input = z.object({ displayId: z.number().int().nonnegative().optional(), authorization: Authorization, driveSessionToken: Token.optional() }).strict().parse(raw);
+            const args = ComputerScreenshotSchema.parse({ displayId: input.displayId }) ?? {};
+            authorizeAction(event, input, 'computer_screenshot', 'screenshot', args);
+            return { success: true, data: await computerExecutionService.screenshot(args.displayId) };
+        } catch (error) { return failure('Computer screenshot failed', error); }
     });
-
-    // --- Input control (CE-2, ISSUE-1111, SEC-001) ---------------------------
-
-    const checkSessionGrant = (sessionId?: string): string | null => {
-        if (sessionId && !computerExecutionService.hasActiveGrant(sessionId)) {
-            return 'Permission denied: Computer control session grant is missing or expired.';
-        }
-        return null;
-    };
-
-    ipcMain.handle('computer:click', async (event: IpcMainInvokeEvent, args: unknown) => {
+    ipcMain.handle('computer:list-apps', async event => {
+        try { validateSender(event); return { success: true, data: { apps: await computerExecutionService.listApps() } }; }
+        catch (error) { return failure('Computer list apps failed', error); }
+    });
+    ipcMain.handle('computer:open-app', async (event, raw) => {
         try {
             validateSender(event);
-            if (computerExecutionService.isAborted()) {
-                return { success: false, error: 'Computer control was aborted (kill switch active). Call computer:reset-abort to resume.' };
-            }
-            const { x, y, button, sessionId } = ComputerClickSchema.parse(args);
-            const grantError = checkSessionGrant(sessionId);
-            if (grantError) return { success: false, error: grantError };
-            await computerExecutionService.click(x, y, button);
-            return { success: true, data: { x, y, button } };
-        } catch (error) {
-            log.error('Computer Click Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
+            const input = z.object({ app: z.unknown(), authorization: Authorization }).strict().parse(raw);
+            const app = ComputerOpenAppSchema.parse(input.app);
+            authorizeAction(event, input, 'computer_open_app', 'open_app', { app });
+            await computerExecutionService.openApp(app);
+            return { success: true, data: { app } };
+        } catch (error) { return failure('Computer open app failed', error); }
     });
-
-    ipcMain.handle('computer:type', async (event: IpcMainInvokeEvent, args: unknown) => {
+    const inputHandler = (channel: string, toolName: string, action: 'click' | 'key' | 'scroll') => ipcMain.handle(channel, async (event, raw) => {
         try {
             validateSender(event);
-            if (computerExecutionService.isAborted()) {
-                return { success: false, error: 'Computer control was aborted (kill switch active). Call computer:reset-abort to resume.' };
+            if (computerExecutionService.isAborted()) throw new Error('Computer control was aborted (kill switch active).');
+            const input = z.object({ authorization: Authorization, driveSessionToken: Token.optional() }).passthrough().parse(raw);
+            if (action === 'click') {
+                const a = ComputerClickSchema.parse(input); authorizeAction(event, input, toolName, action, { x: a.x, y: a.y, button: a.button });
+                await computerExecutionService.click(a.x, a.y, a.button); return { success: true, data: { x: a.x, y: a.y, button: a.button } };
             }
-            const { text, sessionId } = ComputerTypeSchema.parse(args);
-            const grantError = checkSessionGrant(sessionId);
-            if (grantError) return { success: false, error: grantError };
-            await computerExecutionService.type(text);
-            return { success: true, data: { length: text.length } };
-        } catch (error) {
-            log.error('Computer Type Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            if (action === 'key') {
+                const a = ComputerKeySchema.parse(input); authorizeAction(event, input, toolName, action, { combo: a.combo });
+                await computerExecutionService.key(a.combo); return { success: true, data: { combo: a.combo } };
             }
-            return { success: false, error: String(error) };
-        }
+            const a = ComputerScrollSchema.parse(input); authorizeAction(event, input, toolName, action, { dx: a.dx, dy: a.dy });
+            await computerExecutionService.scroll(a.dx, a.dy); return { success: true, data: { dx: a.dx, dy: a.dy } };
+        } catch (error) { return failure(`Computer ${action} failed`, error); }
     });
-
-    ipcMain.handle('computer:key', async (event: IpcMainInvokeEvent, args: unknown) => {
-        try {
-            validateSender(event);
-            if (computerExecutionService.isAborted()) {
-                return { success: false, error: 'Computer control was aborted (kill switch active). Call computer:reset-abort to resume.' };
-            }
-            const { combo, sessionId } = ComputerKeySchema.parse(args);
-            const grantError = checkSessionGrant(sessionId);
-            if (grantError) return { success: false, error: grantError };
-            await computerExecutionService.key(combo);
-            return { success: true, data: { combo } };
-        } catch (error) {
-            log.error('Computer Key Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
+    inputHandler('computer:click', 'computer_click', 'click');
+    inputHandler('computer:key', 'computer_key', 'key');
+    inputHandler('computer:scroll', 'computer_scroll', 'scroll');
+    ipcMain.handle('computer:type', async event => {
+        try { validateSender(event); throw new Error('Text injection is disabled because the OS provider cannot reliably identify password or payment fields.'); }
+        catch (error) { return failure('Computer type denied', error); }
     });
-
-    ipcMain.handle('computer:scroll', async (event: IpcMainInvokeEvent, args: unknown) => {
-        try {
-            validateSender(event);
-            if (computerExecutionService.isAborted()) {
-                return { success: false, error: 'Computer control was aborted (kill switch active). Call computer:reset-abort to resume.' };
-            }
-            const { dx, dy, sessionId } = ComputerScrollSchema.parse(args);
-            const grantError = checkSessionGrant(sessionId);
-            if (grantError) return { success: false, error: grantError };
-            await computerExecutionService.scroll(dx, dy);
-            return { success: true, data: { dx, dy } };
-        } catch (error) {
-            log.error('Computer Scroll Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
+    ipcMain.handle('computer:abort', async event => {
+        try { validateSender(event); computerExecutionService.abort(); authorizationService.revokeAllDriveSessions(); return { success: true, data: { aborted: true } }; }
+        catch (error) { return failure('Computer abort failed', error); }
     });
-
-
-    // --- Kill switch -----------------------------------------------------------
-
-    ipcMain.handle('computer:abort', async (event: IpcMainInvokeEvent) => {
-        try {
-            validateSender(event);
-            computerExecutionService.abort();
-            return { success: true, data: { aborted: true } };
-        } catch (error) {
-            log.error('Computer Abort Failed:', error);
-            return { success: false, error: String(error) };
-        }
+    ipcMain.handle('computer:get-abort-state', async event => {
+        try { validateSender(event); return { success: true, data: { aborted: computerExecutionService.isAborted() } }; }
+        catch (error) { return failure('Computer abort state failed', error); }
     });
-
-    ipcMain.handle('computer:reset-abort', async (event: IpcMainInvokeEvent) => {
-        try {
-            validateSender(event);
-            computerExecutionService.resetAbort();
-            return { success: true, data: { aborted: false } };
-        } catch (error) {
-            log.error('Computer Reset Abort Failed:', error);
-            return { success: false, error: String(error) };
-        }
+    ipcMain.handle('computer:allowlist-get', async event => {
+        try { validateSender(event); return { success: true, data: { apps: computerAllowlistStore.getAll() } }; }
+        catch (error) { return failure('Computer allowlist read failed', error); }
     });
-
-    ipcMain.handle('computer:get-abort-state', async (event: IpcMainInvokeEvent) => {
-        try {
-            validateSender(event);
-            return { success: true, data: { aborted: computerExecutionService.isAborted() } };
-        } catch (error) {
-            log.error('Computer Get Abort State Failed:', error);
-            return { success: false, error: String(error) };
-        }
-    });
-
-    // --- Allowlist management --------------------------------------------------
-    // No renderer UI yet (tracked in ISSUE-1111 as a residual item) — these channels let a
-    // trusted operator (e.g. a settings screen built later, or manual store editing) manage
-    // which apps computer_open_app may launch. Fail-closed by default: empty list = nothing allowed.
-
-    ipcMain.handle('computer:allowlist-get', async (event: IpcMainInvokeEvent) => {
-        try {
-            validateSender(event);
-            return { success: true, data: { apps: computerAllowlistStore.getAll() } };
-        } catch (error) {
-            log.error('Computer Allowlist Get Failed:', error);
-            return { success: false, error: String(error) };
-        }
-    });
-
-    ipcMain.handle('computer:allowlist-add', async (event: IpcMainInvokeEvent, app: unknown) => {
-        try {
-            validateSender(event);
-            const validatedApp = ComputerOpenAppSchema.parse(app);
-            computerAllowlistStore.add(validatedApp);
-            return { success: true, data: { apps: computerAllowlistStore.getAll() } };
-        } catch (error) {
-            log.error('Computer Allowlist Add Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
-    });
-
-    ipcMain.handle('computer:allowlist-remove', async (event: IpcMainInvokeEvent, app: unknown) => {
-        try {
-            validateSender(event);
-            const validatedApp = ComputerOpenAppSchema.parse(app);
-            computerAllowlistStore.remove(validatedApp);
-            return { success: true, data: { apps: computerAllowlistStore.getAll() } };
-        } catch (error) {
-            log.error('Computer Allowlist Remove Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
-    });
-
-    // --- Session-scoped approval grants (CE-5, ISSUE-1114) ----------------------
-    // Real, tested primitive. NOT wired into any enforcement point yet — see
-    // ComputerExecutionService's class doc and ISSUE-1116.
-
-    ipcMain.handle('computer:grant-session', async (event: IpcMainInvokeEvent, args: unknown) => {
-        try {
-            validateSender(event);
-            const { sessionId, ttlMs } = ComputerGrantSessionSchema.parse(args);
-            const grant = computerExecutionService.grantSession(sessionId, ttlMs);
-            return { success: true, data: grant };
-        } catch (error) {
-            log.error('Computer Grant Session Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
-    });
-
-    ipcMain.handle('computer:revoke-grant', async (event: IpcMainInvokeEvent, sessionId: unknown) => {
-        try {
-            validateSender(event);
-            const validatedId = ComputerSessionIdSchema.parse(sessionId);
-            computerExecutionService.revokeGrant(validatedId);
-            return { success: true, data: { sessionId: validatedId } };
-        } catch (error) {
-            log.error('Computer Revoke Grant Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
-    });
-
-    ipcMain.handle('computer:has-grant', async (event: IpcMainInvokeEvent, sessionId: unknown) => {
-        try {
-            validateSender(event);
-            const validatedId = ComputerSessionIdSchema.parse(sessionId);
-            return { success: true, data: { hasGrant: computerExecutionService.hasActiveGrant(validatedId) } };
-        } catch (error) {
-            log.error('Computer Has Grant Failed:', error);
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
-    });
+    // No renderer-accessible reset, allowlist mutation, or broad grant endpoints: fail closed.
 }
