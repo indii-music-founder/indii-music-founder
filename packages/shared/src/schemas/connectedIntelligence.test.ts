@@ -117,6 +117,30 @@ describe('Phase 9 connected intelligence preflight', () => {
     expect(result.actions.find(action => action.code === 'VERIFY_REGISTRATION')?.detail).toMatch(/does not establish rights ownership/);
   });
 
+  it('preserves separate PRO and MLC advisories for the same musical work', () => {
+    const input = completeFixture({
+      registrationRequirements: ['PRO', 'MLC'].map(registrationType => ({
+        requirementId: `requirement:${registrationType.toLowerCase()}`,
+        subject: { entityId: 'work:canonical-1', entityType: 'musical_work' as const },
+        registrationType: registrationType as 'PRO' | 'MLC',
+        required: true,
+        status: 'SUBMITTED' as const,
+        verification: 'PROVIDER_CONFIRMED' as const,
+        provenance: verified,
+        evidence,
+      })),
+    });
+    const actions = evaluateConnectedIntelligence(input).actions.filter(action => action.code === 'VERIFY_REGISTRATION');
+    expect(actions).toHaveLength(2);
+    expect(actions.map(action => action.title)).toEqual(expect.arrayContaining([
+      'Verify the PRO registration status',
+      'Verify the MLC registration status',
+    ]));
+    expect(new Set(actions.map(action => action.actionId)).size).toBe(2);
+    expect(actions.every(action => action.actionId.length <= 160)).toBe(true);
+    expect(actions.every(action => action.evidence.length === evidence.length)).toBe(true);
+  });
+
   it('rejects stale rights, registration, and platform readiness snapshots', () => {
     const old = '2026-09-22T16:00:00.000Z';
     const input = completeFixture({
@@ -158,14 +182,47 @@ describe('Phase 9 connected intelligence preflight', () => {
       entities: [
         ...completeFixture().entities,
         { schemaVersion: 'canonical-music-entity.v1', id: 'recording:canonical-2', entityType: 'sound_recording', title: 'Other Synthetic Track', recordingKind: 'ORIGINAL', createdAt: now, updatedAt: now },
+        { schemaVersion: 'canonical-music-entity.v1', id: 'recording:canonical-3', entityType: 'sound_recording', title: 'Third Synthetic Track', recordingKind: 'ORIGINAL', createdAt: now, updatedAt: now },
       ],
       relationships: [
         ...completeFixture().relationships,
         { schemaVersion: 'music-relationship.v1', id: 'relationship:disputed-track', fromEntityId: 'recording:canonical-2', toEntityId: 'release:canonical-1', type: 'INCLUDED_ON', status: 'DISPUTED', provenance: { state: 'DISPUTED', sourceType: 'USER', evidence, observedAt: now }, createdAt: now, updatedAt: now },
+        { schemaVersion: 'music-relationship.v1', id: 'relationship:disputed-track-3', fromEntityId: 'recording:canonical-3', toEntityId: 'release:canonical-1', type: 'INCLUDED_ON', status: 'DISPUTED', provenance: { state: 'DISPUTED', sourceType: 'USER', evidence: [{ id: 'evidence:source-3', type: 'EXTERNAL_RECORD', description: 'Second disputed relation evidence' }], observedAt: now }, createdAt: now, updatedAt: now },
       ],
     });
     const result = evaluateConnectedIntelligence(input);
-    expect(result.actions.some(action => action.code === 'VERIFY_MUSIC_RELATIONSHIP' && action.detail.includes('disputed'))).toBe(true);
+    const disputedActions = result.actions.filter(action => action.code === 'VERIFY_MUSIC_RELATIONSHIP' && action.detail.includes('disputed'));
+    expect(disputedActions).toHaveLength(2);
+    expect(new Set(disputedActions.map(action => action.actionId)).size).toBe(2);
+    expect(disputedActions.map(action => action.evidence[0]?.id)).toEqual(expect.arrayContaining([
+      'evidence:source-1', 'evidence:source-3',
+    ]));
+  });
+
+  it('preserves separate blocked readiness advisories for each normalized platform territory', () => {
+    const input = completeFixture({
+      platformTerritoryTargets: ['US', 'CA'].map(territoryCode => ({
+        platform: { entityId: 'platform:canonical-1', entityType: 'platform' as const }, territoryCode,
+      })),
+      platformTerritoryReadiness: ['US', 'CA'].map(territoryCode => ({
+        platform: { entityId: 'platform:canonical-1', entityType: 'platform' as const },
+        territoryCode,
+        status: 'BLOCKED' as const,
+        checkedAt: now,
+        provenance: verified,
+        evidence: [{ id: `evidence:blocked-${territoryCode}`, type: 'EXTERNAL_RECORD' as const }],
+      })),
+    });
+    const actions = evaluateConnectedIntelligence(input).actions.filter(action => action.code === 'RESOLVE_PLATFORM_TERRITORY');
+    expect(actions).toHaveLength(2);
+    expect(actions.map(action => action.detail)).toEqual(expect.arrayContaining([
+      'Verified platform readiness is blocked for US.',
+      'Verified platform readiness is blocked for CA.',
+    ]));
+    expect(new Set(actions.map(action => action.actionId)).size).toBe(2);
+    expect(actions.flatMap(action => action.evidence.map(item => item.id))).toEqual(expect.arrayContaining([
+      'evidence:blocked-US', 'evidence:blocked-CA',
+    ]));
   });
 
   it('fails closed when a rights report has a human-review finding but a false summary flag', () => {
