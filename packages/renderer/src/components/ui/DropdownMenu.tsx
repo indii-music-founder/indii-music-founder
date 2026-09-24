@@ -53,6 +53,21 @@ export function DropdownMenuContent({
     );
 }
 
+export function DropdownMenuItem({
+    children,
+    className = '',
+    ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.Item>) {
+    return (
+        <DropdownMenuPrimitive.Item
+            className={`relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none transition-colors data-highlighted:bg-white/5 ${className}`}
+            {...props}
+        >
+            {children}
+        </DropdownMenuPrimitive.Item>
+    );
+}
+
 export function DropdownMenuCheckboxItem({
     children,
     className = '',

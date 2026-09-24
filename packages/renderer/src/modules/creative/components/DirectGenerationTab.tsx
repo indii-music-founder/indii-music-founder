@@ -23,6 +23,7 @@ import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorksp
 // video mode but have zero effect once submitted.
 const VALID_VIDEO_ASPECT_RATIOS = new Set(['16:9', '9:16']);
 import { normalizeVideoDuration, normalizeVideoResolution } from '@indii/shared';
+import { DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/DropdownMenu';
 
 export default function DirectGenerationTab() {
     const toast = useToast();
@@ -337,29 +338,6 @@ export default function DirectGenerationTab() {
                                             </span>
                                         </div>
 
-                                        {/* Camera Motion Pills */}
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
-                                                <Compass size={10} /> Camera Movement
-                                            </label>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {cameraMovements.map((move) => {
-                                                    const isSelected = studioControls.cameraMovement === move;
-                                                    return (
-                                                        <button
-                                                            key={move}
-                                                            onClick={() => setStudioControls({ cameraMovement: move })}
-                                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
-                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300 shadow-[0_0_8px_rgba(168,85,247,0.1)]'
-                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
-                                                        >
-                                                            {move}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-
                                         {/* Duration Preset pills */}
                                         <div className="flex flex-col gap-2">
                                             <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
@@ -383,35 +361,6 @@ export default function DirectGenerationTab() {
                                             </div>
                                         </div>
 
-                                        {/* Motion Strength slider preset cards */}
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex justify-between items-center">
-                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                                                    Motion Strength
-                                                </label>
-                                                <span className="text-[10px] font-mono font-extrabold text-green-400">{Math.round(studioControls.motionStrength * 100)}%</span>
-                                            </div>
-                                            <div className="grid grid-cols-3 gap-1.5">
-                                                {[
-                                                    { label: 'Subtle', val: 0.3 },
-                                                    { label: 'Cinematic', val: 0.7 },
-                                                    { label: 'Dynamic', val: 0.95 }
-                                                ].map((preset) => {
-                                                    const isSelected = Math.abs(studioControls.motionStrength - preset.val) < 0.05;
-                                                    return (
-                                                        <button
-                                                            key={preset.label}
-                                                            onClick={() => setStudioControls({ motionStrength: preset.val })}
-                                                            className={`py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
-                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300'
-                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
-                                                        >
-                                                            {preset.label}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
                                     </motion.div>
                                 )}
                             </>
@@ -468,10 +417,69 @@ export default function DirectGenerationTab() {
                                             })}
                                         </div>
                                     </div>
-                                )}
+                )}
 
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">API Engine Grade</label>
+                {/* ISSUE-1440 residue: camera/motion are video-only secondaries — demoted
+                    from Basics to Advanced to keep the default creation flow lean. */}
+                {mode === 'video' && (
+                    <>
+                                        {/* Camera Motion Pills */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
+                                                <Compass size={10} /> Camera Movement
+                                            </label>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {cameraMovements.map((move) => {
+                                                    const isSelected = studioControls.cameraMovement === move;
+                                                    return (
+                                                        <button
+                                                            key={move}
+                                                            onClick={() => setStudioControls({ cameraMovement: move })}
+                                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
+                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300 shadow-[0_0_8px_rgba(168,85,247,0.1)]'
+                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
+                                                        >
+                                                            {move}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Motion Strength slider preset cards */}
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex justify-between items-center">
+                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                                    Motion Strength
+                                                </label>
+                                                <span className="text-[10px] font-mono font-extrabold text-green-400">{Math.round(studioControls.motionStrength * 100)}%</span>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-1.5">
+                                                {[
+                                                    { label: 'Subtle', val: 0.3 },
+                                                    { label: 'Cinematic', val: 0.7 },
+                                                    { label: 'Dynamic', val: 0.95 }
+                                                ].map((preset) => {
+                                                    const isSelected = Math.abs(studioControls.motionStrength - preset.val) < 0.05;
+                                                    return (
+                                                        <button
+                                                            key={preset.label}
+                                                            onClick={() => setStudioControls({ motionStrength: preset.val })}
+                                                            className={`py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
+                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300'
+                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                                                        >
+                                                            {preset.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                    </>
+                )}
+
+                <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">API Engine Grade</label>
                                     <div className="grid grid-cols-2 gap-1.5">
                                         {/* No supported Lite image model exists (ISSUE-871) — offering it
                                             silently downgraded to the legacy 2.5 model. Fast + Pro only. */}
@@ -643,18 +651,30 @@ export default function DirectGenerationTab() {
                 {/* Bottom docked capsule for input & prompt builder */}
                 <div className="flex flex-col gap-3 mt-6 z-10 pt-4 border-t border-white/5 bg-[#0a090c]/40">
                     
-                    {/* Inline Modifiers Quick-list */}
-                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                        {quickModifiers.map((tag) => (
-                            <button
-                                key={tag}
-                                onClick={() => setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag)}
-                                className="px-2 py-1 rounded-full bg-white/3 border border-white/5 text-[9px] text-gray-400 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
-                            >
-                                + {tag}
-                            </button>
-                        ))}
-                    </div>
+                    {/* ISSUE-1440 residue: 8 quick-modifier pills collapsed into one
+                        "+ Modifiers" popover — appending to the prompt is a ratchet
+                        action, not something that needs a permanent rail. */}
+                    <DropdownMenu>
+                        <DropdownMenuTriggerButton
+                            data-testid="modifiers-trigger"
+                            className="self-start text-[9px] font-bold uppercase tracking-widest"
+                        >
+                            + Modifiers
+                        </DropdownMenuTriggerButton>
+                        <DropdownMenuContent>
+                            {quickModifiers.map((tag) => (
+                                <DropdownMenuItem
+                                    key={tag}
+                                    onSelect={(event) => {
+                                        event.preventDefault();
+                                        setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag);
+                                    }}
+                                >
+                                    + {tag}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
                     {/* Integrated Reference Dropzone inline */}
                     {mode === 'video' && (

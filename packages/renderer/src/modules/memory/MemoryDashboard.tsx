@@ -461,27 +461,33 @@ function FeedPanel({
                         Consolidate
                     </button>
                 </div>
-                <div className="flex gap-2">
-                    <select
-                        value={filterCategory}
-                        onChange={(e) => onFilterCategory(e.target.value as AlwaysOnMemoryCategory | 'all')}
-                        className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-green-500/50"
-                    >
-                        {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                            <option key={k} value={k}>{v}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={filterTier}
-                        onChange={(e) => onFilterTier(e.target.value as MemoryTier | 'all')}
-                        className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-green-500/50"
-                    >
-                        <option value="all">All Tiers</option>
-                        {Object.entries(TIER_LABELS).map(([k, v]) => (
-                            <option key={k} value={k}>{v}</option>
-                        ))}
-                    </select>
-                </div>
+                {/* ISSUE-1440 residue: category/tier filters collapsed — search stays primary. */}
+                <details className="group">
+                    <summary className="px-2 py-1 text-[10px] uppercase tracking-widest text-gray-500 hover:text-gray-300 cursor-pointer select-none list-none">
+                        Filters
+                    </summary>
+                    <div className="flex gap-2 pt-2">
+                        <select
+                            value={filterCategory}
+                            onChange={(e) => onFilterCategory(e.target.value as AlwaysOnMemoryCategory | 'all')}
+                            className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-green-500/50"
+                        >
+                            {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                                <option key={k} value={k}>{v}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={filterTier}
+                            onChange={(e) => onFilterTier(e.target.value as MemoryTier | 'all')}
+                            className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-green-500/50"
+                        >
+                            <option value="all">All Tiers</option>
+                            {Object.entries(TIER_LABELS).map(([k, v]) => (
+                                <option key={k} value={k}>{v}</option>
+                            ))}
+                        </select>
+                    </div>
+                </details>
             </div>
 
             {/* Memory List */}

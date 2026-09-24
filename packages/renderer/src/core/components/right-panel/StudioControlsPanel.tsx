@@ -199,30 +199,9 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
-                    <SectionCard
-                        isOpen={expandedSection === 'typography'}
-                        onToggle={() => setExpandedSection(expandedSection === 'typography' ? '' : 'typography')}
-                        title="Typography"
-                        icon={<Type size={14} className="text-purple-400" />}
-                    >
-                        <TypographyPanel />
-                    </SectionCard>
-                    <SectionCard
-                        isOpen={expandedSection === 'likeness_fusion'}
-                        onToggle={() => setExpandedSection(expandedSection === 'likeness_fusion' ? '' : 'likeness_fusion')}
-                        title="Likeness Fusion"
-                        icon={<UserCheck size={14} className="text-green-400" />}
-                    >
-                        <LikenessFusionPanel />
-                    </SectionCard>
-                    <SectionCard
-                        isOpen={expandedSection === 'brand_compliance'}
-                        onToggle={() => setExpandedSection(expandedSection === 'brand_compliance' ? '' : 'brand_compliance')}
-                        title="Brand Compliance"
-                        icon={<ShieldCheck size={14} className="text-purple-400" />}
-                    >
-                        <BrandCompliancePanel />
-                    </SectionCard>
+                    {/* ISSUE-1441: Typography / Likeness / Brand Compliance governance cards
+                        demoted to the bottom of the panel — they occupied the top three slots
+                        above the core creation flow. */}
                     {viewMode === 'omni' && (
                         <SectionCard
                             isOpen={expandedSection === 'omni_lab'}
@@ -1141,6 +1120,30 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                         </div>
                     </SectionCard>
 
+                    <SectionCard
+                        isOpen={expandedSection === 'typography'}
+                        onToggle={() => setExpandedSection(expandedSection === 'typography' ? '' : 'typography')}
+                        title="Typography"
+                        icon={<Type size={14} className="text-purple-400" />}
+                    >
+                        <TypographyPanel />
+                    </SectionCard>
+                    <SectionCard
+                        isOpen={expandedSection === 'likeness_fusion'}
+                        onToggle={() => setExpandedSection(expandedSection === 'likeness_fusion' ? '' : 'likeness_fusion')}
+                        title="Likeness Fusion"
+                        icon={<UserCheck size={14} className="text-green-400" />}
+                    >
+                        <LikenessFusionPanel />
+                    </SectionCard>
+                    <SectionCard
+                        isOpen={expandedSection === 'brand_compliance'}
+                        onToggle={() => setExpandedSection(expandedSection === 'brand_compliance' ? '' : 'brand_compliance')}
+                        title="Brand Compliance"
+                        icon={<ShieldCheck size={14} className="text-purple-400" />}
+                    >
+                        <BrandCompliancePanel />
+                    </SectionCard>
                     </>
                     )}
                 </div>

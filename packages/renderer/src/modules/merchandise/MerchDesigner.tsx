@@ -69,6 +69,10 @@ export default function MerchDesigner() {
     // Canvas State
     const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
     const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
+    // ISSUE-1440 residue: reactive multi-selection gate for the align tools —
+    // they rendered as usable buttons while being runtime no-ops below 2 objects.
+    const [hasMultiSelection, setHasMultiSelection] = useState(false);
+    const [isBackgroundColorPickerOpen, setIsBackgroundColorPickerOpen] = useState(false);
     const [layers, setLayers] = useState<CanvasObject[]>([]);
     const [selectedLayer, setSelectedLayer] = useState<CanvasObject | null>(null);
     const [exportedDesign, setExportedDesign] = useState<string | null>(null);
@@ -149,6 +153,11 @@ export default function MerchDesigner() {
     const handleCanvasReady = useCallback((canvas: fabric.Canvas) => {
         fabricCanvasRef.current = canvas;
         setFabricCanvas(canvas);
+        // ISSUE-1440 residue: keep the align gate in sync with the canvas selection.
+        const syncSelection = () => setHasMultiSelection(canvas.getActiveObjects().length >= 2);
+        canvas.on('selection:created', syncSelection);
+        canvas.on('selection:updated', syncSelection);
+        canvas.on('selection:cleared', () => setHasMultiSelection(false));
     }, []);
 
     // Handle asset addition from library
@@ -549,32 +558,38 @@ export default function MerchDesigner() {
                             {/* Alignment Tools */}
                             <div className="flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-white/5">
                                 <IconButton
+                                        disabled={!hasMultiSelection}
                                     icon={<AlignLeft size={16} />}
                                     onClick={() => handleAlign('left')}
                                     title="Align Left"
                                 />
                                 <IconButton
+                                        disabled={!hasMultiSelection}
                                     icon={<AlignCenter size={16} />}
                                     onClick={() => handleAlign('center')}
                                     title="Align Center"
                                 />
                                 <IconButton
+                                        disabled={!hasMultiSelection}
                                     icon={<AlignRight size={16} />}
                                     onClick={() => handleAlign('right')}
                                     title="Align Right"
                                 />
                                 <div className="w-px h-4 bg-white/10" />
                                 <IconButton
+                                        disabled={!hasMultiSelection}
                                     icon={<AlignVerticalJustifyStart size={16} />}
                                     onClick={() => handleAlign('top')}
                                     title="Align Top"
                                 />
                                 <IconButton
+                                        disabled={!hasMultiSelection}
                                     icon={<AlignVerticalJustifyCenter size={16} />}
                                     onClick={() => handleAlign('middle')}
                                     title="Align Middle"
                                 />
                                 <IconButton
+                                        disabled={!hasMultiSelection}
                                     icon={<AlignVerticalJustifyEnd size={16} />}
                                     onClick={() => handleAlign('bottom')}
                                     title="Align Bottom"
@@ -720,18 +735,31 @@ export default function MerchDesigner() {
                                 onRequestDelete={handleDeleteLayers}
                             />
 
-                            {/* Background Color Picker */}
-                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 bg-black/70 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-20">
-                                {['#000000', '#FFFFFF', '#FFE135', '#3B82F6', '#10B981', '#EF4444'].map(color => (
-                                    <button
-                                        key={color}
-                                        onClick={() => handleBackgroundColorChange(color)}
-                                        className="w-7 h-7 rounded-full border-2 border-white/20 hover:border-white/60 transition-all hover:scale-110"
-                                        style={{ backgroundColor: color }}
-                                        title={`Set background to ${color}`}
-                                        aria-label={`Select color ${color}`}
-                                    />
-                                ))}
+                            {/* ISSUE-1440 residue: 6 fixed swatches collapsed into a
+                                state-toggled panel anchored on the current color. */}
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2">
+                                <div
+                                    data-testid="background-color-options"
+                                    className={`flex gap-2 bg-black/70 backdrop-blur-md px-3 py-2 rounded-full border border-white/10 transition-all ${isBackgroundColorPickerOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}`}
+                                >
+                                    {['#000000', '#FFFFFF', '#FFE135', '#3B82F6', '#10B981', '#EF4444'].map(color => (
+                                        <button
+                                            key={color}
+                                            onClick={() => handleBackgroundColorChange(color)}
+                                            aria-label={`Select color ${color}`}
+                                            className="w-6 h-6 rounded-full border-2 border-white/20 hover:border-white/60 transition-all hover:scale-110"
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    ))}
+                                </div>
+                                <button
+                                    data-testid="background-color-trigger"
+                                    aria-label="Select background color"
+                                    aria-expanded={isBackgroundColorPickerOpen}
+                                    onClick={() => setIsBackgroundColorPickerOpen(open => !open)}
+                                    className="w-8 h-8 rounded-full border-2 border-white/30 bg-[#FFE135] shadow-lg hover:scale-110 transition-transform"
+                                    title="Background color"
+                                />
                             </div>
                         </div>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import MerchDesigner from './MerchDesigner';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
@@ -11,11 +11,23 @@ vi.mock('fabric', () => {
     Canvas: class {
       add = vi.fn();
       sendObjectToBack = vi.fn();
-      renderAll = vi.fn();
       on = vi.fn();
       off = vi.fn();
       dispose = vi.fn();
       getObjects = vi.fn().mockReturnValue([]);
+      getActiveObjects = vi.fn().mockReturnValue([]);
+      setZoom = vi.fn();
+      getZoom = vi.fn().mockReturnValue(1);
+      setDimensions = vi.fn();
+      discardActiveObject = vi.fn();
+      toObject = vi.fn().mockReturnValue({});
+      calcOffset = vi.fn();
+      requestRenderAll = vi.fn();
+      renderAll = vi.fn();
+      setBackgroundColor = vi.fn().mockResolvedValue(undefined);
+      clear = vi.fn().mockResolvedValue(undefined);
+      getPointer = vi.fn().mockReturnValue({ x: 0, y: 0 });
+      containsPoint = vi.fn().mockReturnValue(false);
       toJSON = vi.fn();
       setActiveObject = vi.fn();
       loadFromJSON = vi.fn().mockResolvedValue(undefined);
@@ -45,7 +57,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 describe('MerchDesigner Accessibility', () => {
-  it('renders accessible color pickers', () => {
+  it('renders accessible color pickers', async () => {
     render(
       <MemoryRouter>
         <ToastProvider>
@@ -56,7 +68,11 @@ describe('MerchDesigner Accessibility', () => {
 
     // Before fix: These fail because they are divs without roles/labels
     // After fix: These should pass
-    const colorButtons = screen.queryAllByRole('button', { name: /select color/i });
+    // ISSUE-1440 residue: the swatches live inside a popover now — open it first.
+    const trigger = screen.getByRole('button', { name: /select background color/i });
+    // ISSUE-1440 residue: the swatch panel toggles from the color trigger.
+    fireEvent.click(trigger);
+    const colorButtons = await screen.findAllByRole('button', { name: /select color/i });
     expect(colorButtons.length).toBe(6);
   });
 
