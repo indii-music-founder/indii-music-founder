@@ -10,6 +10,9 @@ canonical music entities.
   other external identifiers remain values or evidence; they never replace a
   canonical entity reference.
 - `subject` and `relatedEntities` reference canonical entity IDs and kinds.
+- `claim.received` events use a `rights_claim` entity as their subject, while
+  `registration.confirmed` events use a `registration` entity as their
+  subject; the affected work, recording, or party is referenced separately.
 - `occurredAt` records when the source says the event happened;
   `recordedAt` records when indii observed it. Late-arriving events therefore
   do not rewrite their occurrence time.

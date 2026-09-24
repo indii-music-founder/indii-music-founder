@@ -64,6 +64,29 @@ describe('music domain event contract', () => {
     expect(parsed.details.registrationReference).toBe('external-123');
   });
 
+  it.each([
+    ['claim.received', 'rights_claim', 'claim:internal-1', 'sound_recording', 'recording:internal-2'],
+    ['registration.confirmed', 'registration', 'registration:internal-1', 'musical_work', 'work:internal-2'],
+  ] as const)('%s uses its canonical domain entity as the subject', (eventType, entityType, entityId, relatedType, relatedId) => {
+    const parsed = MusicDomainEventSchema.parse(event({
+      eventType,
+      subject: { entityId, entityType },
+      relatedEntities: [{ entityId: relatedId, entityType: relatedType }],
+    }));
+    expect(parsed.subject).toEqual({ entityId, entityType });
+    expect(parsed.relatedEntities).toEqual([{ entityId: relatedId, entityType: relatedType }]);
+  });
+
+  it.each([
+    ['claim.received', 'sound_recording'],
+    ['registration.confirmed', 'musical_work'],
+  ] as const)('%s rejects a subject with the wrong canonical entity type', (eventType, entityType) => {
+    expect(() => MusicDomainEventSchema.parse(event({
+      eventType,
+      subject: { entityId: 'entity:internal-1', entityType },
+    }))).toThrow(/must reference a .* canonical entity as their subject/i);
+  });
+
   it('requires provenance and rejects unknown event types or extra envelope fields', () => {
     expect(() => MusicDomainEventSchema.parse(event({ eventType: 'recording.deleted' }))).toThrow();
     const withoutProvenance: Record<string, unknown> = event();

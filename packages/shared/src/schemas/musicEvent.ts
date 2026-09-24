@@ -39,6 +39,8 @@ export const MusicEventEntityTypeSchema = z.enum([
   'video_resource',
   'release',
   'asset',
+  'rights_claim',
+  'registration',
 ]);
 export type MusicEventEntityType = z.infer<typeof MusicEventEntityTypeSchema>;
 
@@ -74,6 +76,19 @@ export const MusicDomainEventSchema = z.object({
   details: z.record(z.string().trim().min(1).max(100), EventDetailValueSchema).default({}),
   provenance: ProvenanceSchema,
 }).strict().superRefine((event, ctx) => {
+  const requiredSubjectType = event.eventType === 'claim.received'
+    ? 'rights_claim'
+    : event.eventType === 'registration.confirmed'
+      ? 'registration'
+      : undefined;
+  if (requiredSubjectType && event.subject.entityType !== requiredSubjectType) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['subject', 'entityType'],
+      message: `${event.eventType} events must reference a ${requiredSubjectType} canonical entity as their subject.`,
+    });
+  }
+
   if (Object.keys(event.details).length > 50) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
