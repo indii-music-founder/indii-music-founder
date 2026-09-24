@@ -20,9 +20,12 @@ import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { compileStoryboardRenderProject } from '../services/storyboardRenderProject';
+import { StoryboardVideoIdentityService } from '../services/StoryboardVideoIdentityService';
 import { trackIngestion } from '@/services/ingestion/TrackIngestionService';
+import { trackLibrary } from '@/services/metadata/TrackLibraryService';
 import { SongIntakeQuestionnaire } from './SongIntakeQuestionnaire';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { VideoKindSchema } from '@indii/shared';
 import { storage } from '@/services/firebase';
 import { ref as storageRef } from 'firebase/storage';
 
@@ -164,6 +167,8 @@ export function StoryboardTimeline() {
     const [isIsolatingStems, setIsIsolatingStems] = useState<boolean>(false);
     const [renderReceipt, setRenderReceipt] = useState<VideoRenderReceipt | null>(null);
     const [intakeReviewMetadata, setIntakeReviewMetadata] = useState<ExtendedGoldenMetadata | null>(null);
+    const [activeTrackMetadata, setActiveTrackMetadata] = useState<ExtendedGoldenMetadata | null>(null);
+    const videoIdentityServiceRef = useRef(new StoryboardVideoIdentityService());
 
     // ISSUE-1395 (audit): job subscriptions must not leak past unmount —
     // a slot still rendering while the timeline unmounts used to keep
@@ -190,6 +195,7 @@ export function StoryboardTimeline() {
             const metadata = await trackIngestion.ingestTrack(file, {
                 artistContext: userProfile?.artistContext,
             });
+            setActiveTrackMetadata(metadata);
             if (metadata.songIntake?.questions.length) setIntakeReviewMetadata(metadata);
             const master = metadata.masterAsset;
             const durationSeconds = metadata.durationSeconds;
@@ -461,6 +467,28 @@ export function StoryboardTimeline() {
             );
             setRenderReceipt(completed);
             toast.success('Private Showreel render completed.');
+            try {
+                const identity = activeTrackMetadata
+                    ? videoIdentityServiceRef.current.create(activeTrackMetadata, storyboardProject, completed)
+                    : null;
+                if (identity && activeTrackMetadata) {
+                    const updatedMetadata: ExtendedGoldenMetadata = {
+                        ...activeTrackMetadata,
+                        videoMusicIdentities: [
+                            ...(activeTrackMetadata.videoMusicIdentities ?? []).filter(item => item.video.id !== identity.video.id),
+                            identity,
+                        ],
+                    };
+                    await trackLibrary.saveTrack(updatedMetadata);
+                    setActiveTrackMetadata(updatedMetadata);
+                    toast.success('Canonical video, asset, and recording relationship saved.');
+                } else {
+                    toast.warning('Render completed, but canonical video identity was not saved. Link a canonical recording, choose its video designation, and require the stable asset receipt.');
+                }
+            } catch (identityError) {
+                logger.error('[StoryboardTimeline] Canonical video identity save failed:', identityError);
+                toast.warning('Render completed, but canonical video identity could not be saved. The private render is preserved; review the identity conflict before retrying.');
+            }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error('[StoryboardTimeline] Showreel render failed:', error);
@@ -516,6 +544,28 @@ export function StoryboardTimeline() {
                         </button>
                     )}
 
+                    {storyboardProject && (
+                        storyboardProject.canonicalRecordingEntityId && (
+                            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-neutral-300">
+                                Video designation
+                                <select
+                                    aria-label="Video designation"
+                                    value={storyboardProject.videoKind ?? ''}
+                                    onChange={event => {
+                                        const parsed = VideoKindSchema.safeParse(event.target.value);
+                                        if (!parsed.success) return;
+                                        setStoryboardProject({ ...storyboardProject, videoKind: parsed.data });
+                                    }}
+                                    className="rounded-lg border border-white/10 bg-black/30 px-2 py-2 text-[10px] text-white"
+                                >
+                                    <option value="">Choose designation</option>
+                                    {VideoKindSchema.options.map(kind => (
+                                        <option key={kind} value={kind}>{kind.replaceAll('_', ' ')}</option>
+                                    ))}
+                                </select>
+                            </label>
+                        )
+                    )}
                     {storyboardProject && (
                         <button
                             onClick={handleCompileVideo}
@@ -697,7 +747,10 @@ export function StoryboardTimeline() {
                 <SongIntakeQuestionnaire
                     metadata={intakeReviewMetadata}
                     artistContext={userProfile?.artistContext}
-                    onSaved={updated => setIntakeReviewMetadata(updated.songIntake?.questions.length ? updated : null)}
+                    onSaved={updated => {
+                        setActiveTrackMetadata(updated);
+                        setIntakeReviewMetadata(updated.songIntake?.questions.length ? updated : null);
+                    }}
                     onDismiss={() => setIntakeReviewMetadata(null)}
                 />
             )}
