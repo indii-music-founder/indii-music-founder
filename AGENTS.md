@@ -6,6 +6,17 @@ This repository works directly on `main`. Do not create, switch to, push, or con
 
 Deliver one coherent locally validated commit to `origin/main` with the explicit refspec `git push origin HEAD:main`, then inspect the CI run for that exact SHA. Fix only logged root causes on `main` until green. Never create checkpoint commits, force-push or rewrite `main`, guess at CI failures, or bundle unrelated work.
 
+## User GitHub Completion Preference
+
+For this user's repository work, a local change or commit is not a completed
+deliverable. When the user requests a branch/PR workflow, publish the requested
+branch and open the requested PR, then verify the remote branch SHA, PR head,
+and CI status before reporting completion. Do not merge or deploy unless the
+user explicitly asks. If the normal Git push path fails, check the already
+authorized GitHub connection before calling the work blocked; do not switch to
+an unauthorized credential or authentication path. Coordinate with other
+agents first and do not duplicate or overwrite their work.
+
 ## Real-User Authenticity Standard
 
 Before any agent performs live-user, browser, end-to-end, release-acceptance,
