@@ -129,13 +129,16 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
   const parsed = ConnectedIntelligenceInputSchema.parse(input);
   const actions: ConnectedIntelligenceAction[] = [];
   const actionKeys = new Set<string>();
-  const addAction = (action: Omit<ConnectedIntelligenceAction, 'actionId' | 'subjectEntityId' | 'requiresHumanReview' | 'executionAuthorized' | 'evidence'> & { evidence?: ConnectedIntelligenceAction['evidence'] }) => {
-    const key = `${action.code}:${action.subject.entityType}:${action.subject.entityId}`;
-    if (actionKeys.has(key)) return;
-    actionKeys.add(key);
+  const addAction = (
+    action: Omit<ConnectedIntelligenceAction, 'actionId' | 'subjectEntityId' | 'requiresHumanReview' | 'executionAuthorized' | 'evidence'> & { evidence?: ConnectedIntelligenceAction['evidence'] },
+    identityScope?: string,
+  ) => {
+    const identity = JSON.stringify([action.code, action.subject.entityType, action.subject.entityId, identityScope ?? null]);
+    if (actionKeys.has(identity)) return;
+    actionKeys.add(identity);
     actions.push(ConnectedIntelligenceActionSchema.parse({
       ...action,
-      actionId: `connected_intelligence:${parsed.event.eventId}:${key}`,
+      actionId: `connected_intelligence:${stableHash(JSON.stringify([parsed.event.eventId, identity]))}`,
       subjectEntityId: action.subject.entityId,
       evidence: action.evidence ?? [],
       requiresHumanReview: true,
@@ -194,7 +197,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
       title: 'Resolve a disputed release track relationship',
       detail: 'A disputed release membership remains visible even when another active link exists; human resolution is required.',
       evidence: relationship.provenance.evidence,
-    });
+    }, `relationship:${relationship.id}:disputed`);
   }
   for (const relationship of releaseMemberships) {
     const sourceEntity = entityById.get(relationship.fromEntityId);
@@ -204,7 +207,15 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
         title: 'Verify the release track relationship',
         detail: 'A release membership relationship points to a missing or non-recording canonical entity.',
         evidence: relationship.provenance.evidence,
-      });
+      }, `relationship:${relationship.id}:invalid-source`);
+    } else if ((relationship.status !== 'ACTIVE' && relationship.status !== 'DISPUTED')
+      || (!isAuthoritativeProvenance(relationship.provenance.state) && relationship.provenance.state !== 'DISPUTED')) {
+      addAction({
+        code: 'VERIFY_MUSIC_RELATIONSHIP', source: 'RELATIONSHIPS', subject: releaseRef,
+        title: 'Verify the release track relationship',
+        detail: 'This relationship is not both active and supported by authoritative provenance; verify it before treating the recording as part of the release.',
+        evidence: relationship.provenance.evidence,
+      }, `relationship:${relationship.id}:not-authoritative`);
     }
   }
   const activeAuthoritativeMemberships = releaseMemberships.filter(relationship =>
@@ -213,35 +224,45 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
       && entityById.get(relationship.fromEntityId)?.entityType === 'sound_recording',
   );
   if (activeAuthoritativeMemberships.length === 0) {
-    const unresolved = releaseMemberships.some(relationship => relationship.status === 'DISPUTED' || relationship.provenance.state === 'DISPUTED');
-    addAction({
-      code: unresolved ? 'VERIFY_MUSIC_RELATIONSHIP' : releaseMemberships.length ? 'VERIFY_MUSIC_RELATIONSHIP' : 'LINK_RELEASE_RECORDING',
-      source: 'RELATIONSHIPS', subject: releaseRef,
-      title: unresolved ? 'Resolve the disputed release track relationship' : releaseMemberships.length ? 'Verify the release track relationship' : 'Link a canonical recording to the release',
-      detail: unresolved
-        ? 'A disputed relationship remains visible and must be resolved by the appropriate human workflow.'
-        : releaseMemberships.length
-          ? 'Only active relationships with authoritative provenance count as established release membership.'
-          : 'No canonical sound recording is linked to this release yet.',
-      evidence: releaseMemberships.flatMap(relationship => relationship.provenance.evidence),
-    });
+    if (releaseMemberships.length === 0) {
+      addAction({
+        code: 'LINK_RELEASE_RECORDING', source: 'RELATIONSHIPS', subject: releaseRef,
+        title: 'Link a canonical recording to the release',
+        detail: 'No canonical sound recording is linked to this release yet.',
+      });
+    }
   }
 
   if (artist && artist.entityType === 'artist' && activeAuthoritativeMemberships.length > 0) {
+    const releaseRecordingIds = new Set(activeAuthoritativeMemberships.map(relationship => relationship.fromEntityId));
     const artistPerformances = parsed.relationships.filter(relationship =>
-      relationship.type === 'PERFORMED_ON' && relationship.fromEntityId === artist.id,
+      relationship.type === 'PERFORMED_ON'
+        && relationship.fromEntityId === artist.id
+        && releaseRecordingIds.has(relationship.toEntityId),
     );
     const verifiedRecordingIds = new Set(artistPerformances.filter(relationship =>
       relationship.status === 'ACTIVE' && isAuthoritativeProvenance(relationship.provenance.state),
     ).map(relationship => relationship.toEntityId));
     if (!activeAuthoritativeMemberships.some(relationship => verifiedRecordingIds.has(relationship.fromEntityId))) {
-      addAction({
-        code: artistPerformances.length ? 'VERIFY_MUSIC_RELATIONSHIP' : 'CONFIRM_ARTIST_IDENTITY',
-        source: 'RELATIONSHIPS', subject: { entityId: artist.id, entityType: 'artist' },
-        title: artistPerformances.length ? 'Verify the artist recording credit' : 'Confirm the artist recording credit',
-        detail: 'The artist must have an active, authoritatively sourced performance relationship to at least one recording on this release.',
-        evidence: artistPerformances.flatMap(relationship => relationship.provenance.evidence),
-      });
+      if (artistPerformances.length > 0) {
+        for (const relationship of artistPerformances.filter(candidate =>
+          candidate.status === 'DISPUTED' || candidate.provenance.state === 'DISPUTED'
+            || candidate.status !== 'ACTIVE' || !isAuthoritativeProvenance(candidate.provenance.state),
+        )) {
+          addAction({
+            code: 'VERIFY_MUSIC_RELATIONSHIP', source: 'RELATIONSHIPS', subject: { entityId: artist.id, entityType: 'artist' },
+            title: 'Verify the artist recording credit',
+            detail: 'This artist credit is not both active and supported by authoritative provenance for a recording on this release.',
+            evidence: relationship.provenance.evidence,
+          }, `relationship:${relationship.id}:artist-performance`);
+        }
+      } else {
+        addAction({
+          code: 'CONFIRM_ARTIST_IDENTITY', source: 'RELATIONSHIPS', subject: { entityId: artist.id, entityType: 'artist' },
+          title: 'Confirm the artist recording credit',
+          detail: 'The artist must have an active, authoritatively sourced performance relationship to at least one recording on this release.',
+        });
+      }
     }
   }
 
@@ -290,7 +311,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
         title: 'Resolve the registration subject',
         detail: 'The registration requirement does not resolve to the supplied canonical entity snapshot.',
         evidence: registration.evidence,
-      });
+      }, `requirement:${registration.requirementId}`);
       continue;
     }
     if (registration.verification === 'DISPUTED' || registration.provenance.state === 'DISPUTED') {
@@ -299,7 +320,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
         title: 'Resolve the disputed registration state',
         detail: 'Conflicting registration information is preserved for human resolution.',
         evidence: registration.evidence,
-      });
+      }, `requirement:${registration.requirementId}`);
       continue;
     }
     const fresh = isFresh(registration.provenance.observedAt, parsed.evaluatedAt, parsed.freshnessPolicy.registrationMaxAgeMs);
@@ -314,20 +335,21 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
       : registration.status === 'ERROR' || registration.status === 'UNKNOWN'
         ? 'REVIEW_REGISTRATION'
         : 'VERIFY_REGISTRATION';
+    const requirementDescription = `${registration.registrationType} registration requirement ${registration.requirementId}`;
     addAction({
       code, source: 'REGISTRATIONS', subject: registration.subject,
-      title: code === 'COMPLETE_REGISTRATION' ? 'Complete the required registration' : code === 'REVIEW_REGISTRATION' ? 'Review the registration status' : 'Verify the registration status',
-      detail: !fresh
+      title: code === 'COMPLETE_REGISTRATION' ? `Complete the ${registration.registrationType} registration` : code === 'REVIEW_REGISTRATION' ? `Review the ${registration.registrationType} registration status` : `Verify the ${registration.registrationType} registration status`,
+      detail: `${requirementDescription}: ${!fresh
         ? 'The registration observation is stale; refresh it and preserve the source evidence before treating it as complete.'
         : registration.status === 'CONFIRMED' && registration.verification === 'PROVIDER_CONFIRMED'
           ? 'Provider confirmation is recorded separately from human verification; the confirmation does not establish rights ownership.'
           : registration.status === 'SUBMITTED' || registration.status === 'IN_PROGRESS'
             ? 'A submission or in-progress status is not a verified registration; check the provider and retain its evidence.'
             : registration.status === 'NOT_STARTED'
-              ? 'The caller marked this required registration as not started; user authorization and any required legal checkpoint remain mandatory.'
-              : 'The supplied registration state is not sufficiently verified for readiness.',
+            ? 'The caller marked this required registration as not started; user authorization and any required legal checkpoint remain mandatory.'
+              : 'The supplied registration state is not sufficiently verified for readiness.'}`,
       evidence: registration.evidence,
-    });
+    }, `requirement:${registration.requirementId}`);
   }
 
   if (parsed.platformTerritoryTargets.length === 0) {
@@ -343,8 +365,9 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
         code: 'LINK_PLATFORM_TO_RELEASE', source: 'TERRITORY_PLATFORM', subject: target.platform,
         title: 'Confirm the platform target for this release',
         detail: 'The explicit platform target is not linked to the planned release event; confirm the scope before readiness evaluation.',
-      });
+      }, `platform:${target.platform.entityId}`);
     }
+    const territoryScope = `platform:${target.platform.entityId}:territory:${target.territoryCode.trim().toUpperCase()}`;
     const readiness = parsed.platformTerritoryReadiness.find(assessment =>
       assessment.platform.entityId === target.platform.entityId
         && assessment.territoryCode.toUpperCase() === target.territoryCode.toUpperCase(),
@@ -357,7 +380,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
           ? `No platform readiness evidence was supplied for ${target.territoryCode}.`
           : `Platform readiness evidence for ${target.territoryCode} is stale under the supplied freshness policy.`,
         evidence: readiness?.evidence,
-      });
+      }, territoryScope);
       continue;
     }
     const authoritative = isAuthoritativeProvenance(readiness.provenance.state) && readiness.evidence.length > 0;
@@ -367,14 +390,14 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
         title: 'Verify platform readiness for the target territory',
         detail: 'A ready status requires fresh evidence and authoritative provenance; detected or inferred availability is not enough.',
         evidence: readiness.evidence,
-      });
+      }, territoryScope);
     } else if (readiness.status === 'BLOCKED') {
       addAction({
         code: 'RESOLVE_PLATFORM_TERRITORY', source: 'TERRITORY_PLATFORM', subject: target.platform,
         title: 'Resolve the platform territory blocker',
         detail: `Verified platform readiness is blocked for ${target.territoryCode}.`,
         evidence: readiness.evidence,
-      });
+      }, territoryScope);
     }
   }
 
@@ -394,4 +417,17 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
 function isFresh(observedAt: string, evaluatedAt: string, maxAgeMs: number): boolean {
   const ageMs = Date.parse(evaluatedAt) - Date.parse(observedAt);
   return Number.isFinite(ageMs) && ageMs >= 0 && ageMs <= maxAgeMs;
+}
+
+/** Compact deterministic identity for action IDs; full scope stays in the dedupe key. */
+function stableHash(value: string): string {
+  let first = 0x811c9dc5;
+  let second = 0x9e3779b9;
+  for (let index = 0; index < value.length; index += 1) {
+    const codeUnit = value.charCodeAt(index);
+    first = Math.imul(first ^ codeUnit, 0x01000193);
+    second = Math.imul(second ^ codeUnit, 0x85ebca6b);
+    second ^= second >>> 13;
+  }
+  return `${(first >>> 0).toString(16).padStart(8, '0')}${(second >>> 0).toString(16).padStart(8, '0')}`;
 }
