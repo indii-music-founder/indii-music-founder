@@ -898,7 +898,12 @@ jobs:
           SHARED_TGZ_NAME="$(basename "$(ls packages/firebase/indii-shared-*.tgz | head -n 1)")"
           npm pkg set "dependencies.@indii/shared=file:./$SHARED_TGZ_NAME" -w packages/firebase
           # Generate hermetic package-lock.json directly inside packages/firebase to satisfy Cloud Build prerequisite.
-          npm install --package-lock-only --prefix packages/firebase --quiet || echo "::warning::Cloud Functions package-lock generation skipped: Arborist edgesOut on local tarball"
+          # ISSUE-1442 fix: run INSIDE packages/firebase with --no-workspaces — the previous
+          # `--prefix` form resolved against the workspace root, wrote the root lock instead of
+          # the member lock, and left Cloud Build to regenerate (npm Arborist edgesOut crash ->
+          # functions deployed FAILED). The committed packages/firebase/package-lock.json now
+          # satisfies the buildpack; this step keeps it in sync when dependencies change.
+          (cd packages/firebase && npm install --package-lock-only --no-workspaces --quiet) || echo "::warning::Cloud Functions package-lock regeneration skipped: Arborist edgesOut on local tarball"
           npm run build -w packages/firebase
           if [ ! -f packages/firebase/lib/index.js ]; then
             echo "::error::tsc reported success but packages/firebase/lib/index.js was not produced. Re-running with full diagnostics:"
