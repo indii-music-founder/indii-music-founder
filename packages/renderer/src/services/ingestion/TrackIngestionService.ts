@@ -70,6 +70,7 @@ export class TrackIngestionService {
                         }],
                         possibleExistingRelease: existing.releaseDate ? 'YES' : 'UNKNOWN',
                         artistContext: options?.artistContext,
+                        confirmations: existing.songIntake?.confirmations ?? {},
                         createdAt: existing.songIntake?.createdAt ?? observedAt,
                         updatedAt: observedAt,
                     }),
