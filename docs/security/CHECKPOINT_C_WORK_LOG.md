@@ -19,6 +19,7 @@ HyperFrames remains the video engine. No Remotion or Vino path was added.
 | Command | Exit | Result |
 | --- | ---: | --- |
 | `npx vitest run packages/main/src/handlers/computer.test.ts packages/main/src/services/computer/ComputerAuthorizationService.test.ts packages/main/src/services/ComputerExecutionService.test.ts packages/renderer/src/core/components/right-panel/ToolApprovalsPanel.test.tsx packages/renderer/src/services/agent/ComputerAgentDriver.test.ts packages/renderer/src/services/agent/governance/ToolApprovalService.test.ts` | 0 | 53 tests passed |
+| `NODE_OPTIONS='--max-old-space-size=5120' npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=16/20 --maxWorkers=1` | 0 | Exact previously failing CI shard passed: 63 files, 462 tests |
 | Focused ESLint on all changed TypeScript/TSX files | 0 | No errors or warnings |
 | `npm run typecheck` | 0 | All workspaces and Firebase tests passed |
 | `npm run lint` | 0 | Passed; 198 pre-existing repository warnings, zero errors |
@@ -32,6 +33,8 @@ HyperFrames remains the video engine. No Remotion or Vino path was added.
 | `npm run ci` | 1 | Checkpoint tests passed, but shard 1 was blocked by missing admin-dashboard Firebase env vars and missing `node_modules/ffmpeg-static/ffmpeg` (`ENOENT`) in two media tests; remaining reported tests passed |
 
 The CI command propagated its real non-zero status. No failure was hidden by a pipe, skip, mock, or warning suppression.
+
+The first exact-SHA push (`d7af001217e8e99d4e072a4ba62452b2f847e3a1`, run `36047171375`) exposed one CI-only test portability defect: the kill-switch reset assertion inherited the host platform, so Linux reported accessibility as unsupported. The follow-up pins that test's mocked platform to macOS with granted permissions; production permission enforcement is unchanged.
 
 ## Conditional or unverified claims
 

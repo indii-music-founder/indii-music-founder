@@ -40,6 +40,7 @@ describe('ComputerExecutionService', () => {
 
     describe('kill switch (ISSUE-1111)', () => {
         it('blocks click/type/key/scroll after abort() until resetAbort()', async () => {
+            const platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
             const provider = fakeProvider();
             const svc = new ComputerExecutionService(provider);
 
@@ -56,6 +57,7 @@ describe('ComputerExecutionService', () => {
             expect(svc.isAborted()).toBe(false);
             await svc.click(1, 1, 'left');
             expect(provider.click).toHaveBeenCalledWith(1, 1, 'left');
+            platformSpy.mockRestore();
         });
 
         it('abort wins for screenshots while non-sensitive app inventory remains available', async () => {
