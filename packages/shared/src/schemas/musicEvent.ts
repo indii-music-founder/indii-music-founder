@@ -96,4 +96,3 @@ export const MusicDomainEventSchema = z.object({
   }
 });
 export type MusicDomainEvent = z.infer<typeof MusicDomainEventSchema>;
-

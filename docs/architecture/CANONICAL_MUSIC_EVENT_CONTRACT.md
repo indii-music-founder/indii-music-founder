@@ -37,4 +37,3 @@ consumer, scheduler, or production feature flag. Those integrations must be
 introduced separately with idempotency, authorization, retention, replay,
 failure handling, and rollback designed for their actual storage and workflow
 boundaries. The existing analytics `EventBusService` is not replaced.
-
