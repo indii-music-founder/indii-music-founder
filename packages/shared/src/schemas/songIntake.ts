@@ -118,8 +118,25 @@ export function planSongIntakeQuestions(input: SongIntakePlanInput): SongIntakeQ
       authoritative: true,
     });
   }
-  if (!tags.title && !hasHumanCheckpoint('recording.title')) questions.push({ key: 'recording.title', prompt: 'What is the recording title?', reason: 'No embedded title was detected.', authoritative: true });
-  if (!tags.artist && !hasAuthoritativeArtistContext && !hasHumanCheckpoint('recording.artist')) questions.push({ key: 'recording.artist', prompt: 'Which artist should this recording be credited to?', reason: 'Artist type is not a credit. No confirmed credited artist is available.', authoritative: true });
+  if ((!tags.title || tags.title.requiresHumanConfirmation) && !hasHumanCheckpoint('recording.title')) {
+    questions.push({
+      key: 'recording.title',
+      prompt: tags.title ? `Confirm the detected title: “${tags.title.value}”.` : 'What is the recording title?',
+      reason: tags.title ? 'Embedded metadata is detected evidence, not a confirmed catalog fact.' : 'No embedded title was detected.',
+      authoritative: true,
+    });
+  }
+  const artistNeedsConfirmation = tags.artist
+    ? tags.artist.requiresHumanConfirmation
+    : !hasAuthoritativeArtistContext;
+  if (artistNeedsConfirmation && !hasHumanCheckpoint('recording.artist')) {
+    questions.push({
+      key: 'recording.artist',
+      prompt: tags.artist ? `Confirm the detected artist credit: “${tags.artist.value}”.` : 'Which artist should this recording be credited to?',
+      reason: tags.artist ? 'Embedded metadata is detected evidence, not a confirmed artist credit.' : 'Artist type is not a credit. No confirmed credited artist is available.',
+      authoritative: true,
+    });
+  }
   if (input.possibleExistingRelease === 'UNKNOWN' && !hasHumanCheckpoint('release.history')) {
     questions.push({ key: 'release.history', prompt: 'Has this recording been released before?', reason: 'Release history changes identifier-preservation and catalog-reconciliation steps.', authoritative: true });
   }
