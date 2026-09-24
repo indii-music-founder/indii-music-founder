@@ -16,7 +16,8 @@ describe('SongIntake', () => {
       title: { key: 'title', value: 'Signal', requiresHumanConfirmation: true, provenance: { state: 'DETECTED', sourceType: 'SYSTEM', evidence: [], observedAt: now } },
       isrc: { key: 'isrc', value: 'USABC2600001', requiresHumanConfirmation: true, provenance: { state: 'DETECTED', sourceType: 'SYSTEM', evidence: [], observedAt: now } },
     }});
-    expect(intake.questions.some(q => q.key === 'recording.title')).toBe(false);
+    expect(intake.questions.some(q => q.key === 'recording.title')).toBe(true);
+    expect(intake.questions.find(q => q.key === 'recording.title')?.prompt).toContain('Signal');
     expect(intake.questions.some(q => q.key === 'identifier.confirm.isrc')).toBe(true);
     expect(intake.recordingEntityId).not.toContain('USABC');
   });
@@ -32,6 +33,22 @@ describe('SongIntake', () => {
     // confirmation. Rights-sensitive questions must remain unchanged.
     expect(withContext.questions.some(q => q.key === 'recording.artist')).toBe(true);
     expect(withContext.questions.filter(q => q.authoritative).length).toBe(withoutContext.questions.filter(q => q.authoritative).length);
+  });
+
+  it('requires human confirmation for detected artist tags even when profile context exists', () => {
+    const artistContext: ArtistContext = { schemaVersion: 'artist-context.v1', facts: {
+      'identity.displayName': {
+        key: 'identity.displayName',
+        value: 'Confirmed Artist',
+        requiresHumanConfirmation: false,
+        provenance: { state: 'USER_CONFIRMED', sourceType: 'USER', evidence: [], observedAt: now, confirmedAt: now },
+      },
+    }, updatedAt: now };
+    const intake = withPlannedSongIntakeQuestions({ ...base, artistContext, embeddedTags: {
+      artist: { key: 'artist', value: 'Different Embedded Name', requiresHumanConfirmation: true, provenance: { state: 'DETECTED', sourceType: 'SYSTEM', evidence: [], observedAt: now } },
+    } });
+
+    expect(intake.questions.find(question => question.key === 'recording.artist')?.prompt).toContain('Different Embedded Name');
   });
 
   it('asks every authority-required fact and removes only explicitly confirmed gaps', () => {
@@ -91,6 +108,12 @@ describe('SongIntake', () => {
       expect(intake.questions.some(q => q.key === 'recording.sourceRelationship')).toBe(true);
     }
   );
+
+  it('stops asking for a source relationship only after a canonical source entity is recorded', () => {
+    const linked = withPlannedSongIntakeQuestions({ ...base, recordingKind: 'REMIX', sourceEntityId: 'work:source-1' });
+    expect(linked.questions.some(question => question.key === 'recording.sourceRelationship')).toBe(false);
+    expect(() => withPlannedSongIntakeQuestions({ ...base, recordingKind: 'REMIX', sourceEntityId: 'USABC2600001' })).toThrow(/canonical work or recording ID/i);
+  });
 
   it('records exact catalog matches as evidence without merging identity', () => {
     const intake = withPlannedSongIntakeQuestions({ ...base, catalogMatches: [{
