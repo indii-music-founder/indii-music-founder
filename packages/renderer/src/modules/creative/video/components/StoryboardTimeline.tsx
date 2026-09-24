@@ -21,6 +21,8 @@ import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { compileStoryboardRenderProject } from '../services/storyboardRenderProject';
 import { trackIngestion } from '@/services/ingestion/TrackIngestionService';
+import { SongIntakeQuestionnaire } from './SongIntakeQuestionnaire';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { storage } from '@/services/firebase';
 import { ref as storageRef } from 'firebase/storage';
 
@@ -161,6 +163,7 @@ export function StoryboardTimeline() {
 
     const [isIsolatingStems, setIsIsolatingStems] = useState<boolean>(false);
     const [renderReceipt, setRenderReceipt] = useState<VideoRenderReceipt | null>(null);
+    const [intakeReviewMetadata, setIntakeReviewMetadata] = useState<ExtendedGoldenMetadata | null>(null);
 
     // ISSUE-1395 (audit): job subscriptions must not leak past unmount —
     // a slot still rendering while the timeline unmounts used to keep
@@ -184,7 +187,10 @@ export function StoryboardTimeline() {
         toast.info("Importing audio metadata...");
 
         try {
-            const metadata = await trackIngestion.ingestTrack(file);
+            const metadata = await trackIngestion.ingestTrack(file, {
+                artistContext: userProfile?.artistContext,
+            });
+            if (metadata.songIntake?.questions.length) setIntakeReviewMetadata(metadata);
             const master = metadata.masterAsset;
             const durationSeconds = metadata.durationSeconds;
             const measuredBpm = metadata.bpm;
@@ -678,6 +684,14 @@ export function StoryboardTimeline() {
                     </AnimatePresence>
                 )}
             </div>
+            {intakeReviewMetadata && (
+                <SongIntakeQuestionnaire
+                    metadata={intakeReviewMetadata}
+                    artistContext={userProfile?.artistContext}
+                    onSaved={updated => setIntakeReviewMetadata(updated.songIntake?.questions.length ? updated : null)}
+                    onDismiss={() => setIntakeReviewMetadata(null)}
+                />
+            )}
         </div>
     );
 }

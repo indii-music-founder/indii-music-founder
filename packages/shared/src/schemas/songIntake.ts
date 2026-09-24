@@ -104,7 +104,7 @@ export function planSongIntakeQuestions(input: SongIntakePlanInput): SongIntakeQ
     creditedArtist && ['USER_CONFIRMED', 'DOCUMENTED', 'EXTERNAL_VERIFIED'].includes(creditedArtist.provenance.state)
   );
 
-  if (input.recordingKind === 'UNKNOWN') {
+  if (input.recordingKind === 'UNKNOWN' && !hasHumanCheckpoint('recording.kind')) {
     questions.push({
       key: 'recording.kind',
       prompt: 'What kind of recording is this: original, remix, remaster, live, alternate mix, instrumental, acapella, edit, or cover?',
@@ -112,9 +112,9 @@ export function planSongIntakeQuestions(input: SongIntakePlanInput): SongIntakeQ
       authoritative: true,
     });
   }
-  if (!tags.title) questions.push({ key: 'recording.title', prompt: 'What is the recording title?', reason: 'No embedded title was detected.', authoritative: true });
+  if (!tags.title && !hasHumanCheckpoint('recording.title')) questions.push({ key: 'recording.title', prompt: 'What is the recording title?', reason: 'No embedded title was detected.', authoritative: true });
   if (!tags.artist && !hasAuthoritativeArtistContext && !hasHumanCheckpoint('recording.artist')) questions.push({ key: 'recording.artist', prompt: 'Which artist should this recording be credited to?', reason: 'Artist type is not a credit. No confirmed credited artist is available.', authoritative: true });
-  if (input.possibleExistingRelease === 'UNKNOWN') {
+  if (input.possibleExistingRelease === 'UNKNOWN' && !hasHumanCheckpoint('release.history')) {
     questions.push({ key: 'release.history', prompt: 'Has this recording been released before?', reason: 'Release history changes identifier-preservation and catalog-reconciliation steps.', authoritative: true });
   }
   if (input.recordingKind !== 'ORIGINAL' && input.recordingKind !== 'UNKNOWN' && !tags.originaltitle) {
