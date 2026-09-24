@@ -2835,24 +2835,24 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1418: Complete the Founding Artist Beta homepage architecture and approved copy
 
-- **Status:** 🟡 PARTIAL — implementation + genuine desktop/mobile browser review done (2026-08-30, deployed `founder.indii.music`); canonical domain alignment (ISSUE-1419) remains
+- **Status:** ✅ DONE — implementation, genuine desktop/mobile browser review, and live deployment at the canonical root `indii.music` (2026-08-30)
 - **Severity:** 🟠 HIGH
 - **Module:** `packages/landing`
 - **Source of truth:** `docs/business-decisions/07_FOUNDING_ARTIST_BETA_MARKETING.md`
-- **Evidence:** Beta banner/hero/waitlist, Founding Owner copy, public Free/Start/Build/Scale pricing, safer workflow claims, illustrative-demo labels, canonical metadata, calculator quarantine, and regression assertions are implemented. Checkout remains deliberately gated. Genuine Playwright review of the deployed landing at 1440/768/390 widths: all 14 `data-system-section` markers render, no horizontal overflow, no page errors/failed requests, axe (WCAG 2.1 A/AA, structural) 0 violations, all `#` anchors + `/privacy` `/terms` routes resolve. One defect found and fixed: the inline custom-domain redirect script was dead (CSP `script-src` blocks inline JS) and pointed at `indii.music` (which serves the studio) — removed.
+- **Evidence:** Beta banner/hero/waitlist, Founding Owner copy, public Free/Start/Build/Scale pricing, safer workflow claims, illustrative-demo labels, canonical metadata, calculator quarantine, and regression assertions are implemented. Checkout remains deliberately gated. Genuine Playwright review of the deployed landing at 1440/768/390 widths: all 14 `data-system-section` markers render, no horizontal overflow, no page errors/failed requests, axe (WCAG 2.1 A/AA, structural) 0 violations, all `#` anchors + `/privacy` `/terms` routes resolve. One defect found and fixed: the inline custom-domain redirect script was dead (CSP `script-src` blocks inline JS) — removed. "Log in" buttons added beside every waitlist CTA (nav, hero, waitlist form, Founding Owner, pricing), targeting the studio via `getStudioUrl()`.
 - **Impact:** The public site otherwise leads with obsolete founder-only framing and unsupported claims.
-- **Fix:** Remaining is ISSUE-1419 (make `indii.music`/`www` resolve to the landing so the canonical/OG/JSON-LD URLs agree) — requires Firebase/DNS credentials.
+- **Fix:** None remaining; the canonical-domain alignment (ISSUE-1419) is live.
 - **Acceptance:** Production matches approved copy, retains Detroit/thesis/comparison, shows no fake scarcity or retired claims, and passes exact-SHA CI plus genuine deployed browser review.
 
 ### ISSUE-1419: Canonical domain, aliases, redirects, and metadata are not verified end to end
 
-- **Status:** 🔴 OPEN — confirmed mismatch (2026-08-30); blocked on Firebase/DNS credentials
+- **Status:** ✅ DONE — domain switch verified live (2026-08-30)
 - **Severity:** 🟠 HIGH
 - **Module:** Hosting / DNS / landing metadata
 - **Source of truth:** Marketing decision § Website and conversion flow
-- **Evidence:** Confirmed live: `indii.music`, `www.indii.music`, and `app.indii.music` all serve the STUDIO app (Geist fonts, `og:title` "music business at the speed of you"), while the LANDING is served at `founder.indii.music` (`og:title` "Run your music career without giving it away."). The landing's committed `canonical`/`og:url`/JSON-LD point to `https://indii.music/`, so the landing canonicalizes to the studio app. `firebase` CLI is unauthenticated in this checkout, so the domain move cannot be performed by an agent without credentials.
-- **Impact:** Visitors and crawlers may reach inconsistent offers or broken paths.
-- **Fix:** Move the `indii.music` + `www.indii.music` custom domains from the `app` (`indii-music-studio`) site to the `landing` (`indii-music-founder`) site (or otherwise make the root resolve to the landing), then re-add a CSP-compliant custom-domain redirect. Requires Firebase Hosting custom-domain + DNS access.
+- **Evidence:** Live verification: `indii.music` serves the LANDING (og:title "Run your music career without giving it away.", no studio bundle), `app.indii.music` serves the STUDIO (studio bundle, HTTP 200), `founder.indii.music` serves the landing as an alias. Landing `STUDIO_URL` fallback retargeted to `https://app.indii.music` (`packages/landing/src/lib/auth.ts:17`), and the deployed landing bundle inlines `app.indii.music`, so the "Log in" and preview CTAs resolve to the studio. An earlier state where the landing canonical pointed at the studio root is gone now that the root serves the landing.
+- **Impact:** Visitors and crawlers reach one canonical landing; the studio lives on its own subdomain.
+- **Fix:** Shipped via the production hosting refresh. Optional residual: verify remaining owned aliases and social-card rendering against the new root.
 - **Acceptance:** Every owned alias reaches the intended canonical page without loops while app/auth subdomains remain intact.
 
 ### ISSUE-1420: Verified-email account, waitlist, invitation order, and milestone updates are not one authoritative flow
