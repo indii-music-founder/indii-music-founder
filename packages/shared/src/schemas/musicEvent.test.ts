@@ -29,16 +29,24 @@ const provenance = {
   observedAt: now,
 };
 
-const event = (overrides: Record<string, unknown> = {}) => ({
-  schemaVersion: 'music-domain-event.v1',
-  eventId: 'event:internal-1',
-  eventType: 'recording.uploaded',
-  subject: { entityId: 'recording:internal-1', entityType: 'sound_recording' },
-  occurredAt: now,
-  recordedAt: now,
-  provenance,
-  ...overrides,
-});
+const event = (overrides: Record<string, unknown> = {}) => {
+  const eventType = overrides.eventType ?? 'recording.uploaded';
+  const subject = eventType === 'claim.received'
+    ? { entityId: 'claim:internal-1', entityType: 'rights_claim' }
+    : eventType === 'registration.confirmed'
+      ? { entityId: 'registration:internal-1', entityType: 'registration' }
+      : { entityId: 'recording:internal-1', entityType: 'sound_recording' };
+  return {
+    schemaVersion: 'music-domain-event.v1',
+    eventId: 'event:internal-1',
+    eventType,
+    subject,
+    occurredAt: now,
+    recordedAt: now,
+    provenance,
+    ...overrides,
+  };
+};
 
 describe('music domain event contract', () => {
   it('registers the Phase 8 roadmap event vocabulary', () => {
@@ -54,13 +62,16 @@ describe('music domain event contract', () => {
       eventType: 'registration.confirmed',
       occurredAt: '2026-09-20T10:00:00.000Z',
       recordedAt: now,
-      subject: { entityId: 'work:internal-4', entityType: 'musical_work' },
-      relatedEntities: [{ entityId: 'artist:internal-2', entityType: 'artist' }],
+      relatedEntities: [
+        { entityId: 'work:internal-4', entityType: 'musical_work' },
+        { entityId: 'artist:internal-2', entityType: 'artist' },
+      ],
       details: { registry: 'example', registrationReference: 'external-123' },
     }));
     expect(parsed.occurredAt).not.toBe(parsed.recordedAt);
-    expect(parsed.subject.entityId).toBe('work:internal-4');
-    expect(parsed.relatedEntities[0]?.entityId).toBe('artist:internal-2');
+    expect(parsed.subject.entityId).toBe('registration:internal-1');
+    expect(parsed.relatedEntities[0]?.entityId).toBe('work:internal-4');
+    expect(parsed.relatedEntities[1]?.entityId).toBe('artist:internal-2');
     expect(parsed.details.registrationReference).toBe('external-123');
   });
 
