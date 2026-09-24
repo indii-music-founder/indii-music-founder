@@ -4,18 +4,19 @@ import { ComputerAuthorizationService, type ComputerAuthorizationBackend, type S
 const NOW = 1_700_000_000_000;
 const approval = (overrides: Partial<StoredComputerApproval> = {}): StoredComputerApproval => ({
     id: 'approval-1', userId: 'user-1', agentId: 'agent-1', toolName: 'computer_click',
-    args: { x: 10, y: 20, button: 'left' }, status: 'approved', createdAtMs: NOW - 1000, ...overrides,
+    args: { x: 10, y: 20, button: 'left' }, status: 'pending', createdAtMs: NOW - 1000, ...overrides,
 });
 function setup(overrides: Partial<ComputerAuthorizationBackend> = {}) {
     const backend: ComputerAuthorizationBackend = {
         verifyIdentity: vi.fn().mockResolvedValue({ uid: 'user-1' }),
         hasComputerControlOptIn: vi.fn().mockResolvedValue(true),
         getApproval: vi.fn().mockResolvedValue(approval()),
+        claimApproval: vi.fn().mockImplementation(async (_uid, stored) => ({ ...stored, status: 'claimed' })),
         ...overrides,
     };
     return { service: new ComputerAuthorizationService(backend, () => NOW), backend };
 }
-const authInput = { idToken: 'token', approvalId: 'approval-1', rendererId: 7, rendererSessionId: 'renderer-session-1234' };
+const authInput = { idToken: 'token', approvalId: 'approval-1', rendererId: 7, rendererSessionId: 'renderer-session-1234', confirm: vi.fn().mockResolvedValue(true) };
 
 describe('ComputerAuthorizationService boundary', () => {
     it('requires verified identity and explicit AOP opt-in', async () => {
@@ -53,6 +54,28 @@ describe('ComputerAuthorizationService boundary', () => {
         const attempts = await Promise.allSettled([Promise.resolve().then(() => service.consume(input)), Promise.resolve().then(() => service.consume(input))]);
         expect(attempts.filter(result => result.status === 'fulfilled')).toHaveLength(1);
         expect(attempts.filter(result => result.status === 'rejected')).toHaveLength(1);
+    });
+
+    it('atomically claims an approval once across concurrent authorization and service restarts', async () => {
+        let claimed = false;
+        const backend = setup().backend;
+        vi.mocked(backend.claimApproval).mockImplementation(async (_uid, stored) => {
+            if (claimed) throw new Error('already claimed');
+            claimed = true;
+            return { ...stored, status: 'claimed' };
+        });
+        const first = new ComputerAuthorizationService(backend, () => NOW);
+        const second = new ComputerAuthorizationService(backend, () => NOW);
+        const attempts = await Promise.allSettled([first.authorize(authInput), second.authorize(authInput)]);
+        expect(attempts.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+        expect(attempts.filter(result => result.status === 'rejected')).toHaveLength(1);
+    });
+
+    it('does not mint a capability when native confirmation or the trusted claim fails', async () => {
+        const cancelled = setup().service;
+        await expect(cancelled.authorize({ ...authInput, confirm: vi.fn().mockResolvedValue(false) })).rejects.toThrow(/cancelled/);
+        const failedClaim = setup({ claimApproval: vi.fn().mockRejectedValue(new Error('claim failed')) }).service;
+        await expect(failedClaim.authorize(authInput)).rejects.toThrow(/claim failed/);
     });
 
     it('limits composite drive sessions to approved internal primitives', async () => {

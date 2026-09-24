@@ -1,11 +1,11 @@
 import log from 'electron-log';
-import { ipcMain, type IpcMainInvokeEvent } from 'electron';
+import { BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
 import { ComputerScreenshotSchema, ComputerOpenAppSchema, ComputerClickSchema, ComputerKeySchema, ComputerScrollSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { computerExecutionService } from '../services/ComputerExecutionService';
 import { computerAllowlistStore } from '../services/computer/ComputerAllowlistStore';
-import { ComputerAuthorizationService, type ComputerAction } from '../services/computer/ComputerAuthorizationService';
+import { ComputerAuthorizationService, type ComputerAction, type ComputerApprovalScope } from '../services/computer/ComputerAuthorizationService';
 import { FirebaseComputerAuthorizationBackend } from '../services/computer/FirebaseComputerAuthorizationBackend';
 
 const authorizationService = new ComputerAuthorizationService(new FirebaseComputerAuthorizationBackend());
@@ -19,6 +19,21 @@ const rendererId = (event: IpcMainInvokeEvent) => event.sender.id;
 function failure(label: string, error: unknown) {
     log.error(label, error instanceof Error ? error.message : String(error)); // metadata only; never arguments
     return { success: false, error: error instanceof z.ZodError ? `Validation Error: ${error.errors[0].message}` : error instanceof Error ? error.message : String(error) };
+}
+async function confirmNativeApproval(event: IpcMainInvokeEvent, scope: ComputerApprovalScope): Promise<boolean> {
+    const options = {
+        type: 'warning' as const,
+        title: 'Approve computer control',
+        message: `Allow ${scope.toolName} to control this computer?`,
+        detail: `Agent: ${scope.agentId}\nAction: ${scope.action}\nExact scope: ${JSON.stringify(scope.args).slice(0, 4000)}`,
+        buttons: ['Cancel', 'Approve once'],
+        defaultId: 0,
+        cancelId: 0,
+        noLink: true,
+    };
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const result = owner ? await dialog.showMessageBox(owner, options) : await dialog.showMessageBox(options);
+    return result.response === 1;
 }
 function authorizeAction(event: IpcMainInvokeEvent, input: { authorization?: unknown; driveSessionToken?: unknown }, toolName: string, action: ComputerAction, args: Record<string, unknown>) {
     const auth = Authorization.parse(input.authorization);
@@ -39,8 +54,9 @@ export function registerComputerHandlers() {
     ipcMain.handle('computer:authorize-approval', async (event, raw) => {
         try {
             validateSender(event);
+            if (computerExecutionService.isAborted()) throw new Error('Computer control was aborted (kill switch active).');
             const input = AuthorizeRequest.parse(raw);
-            const data = await authorizationService.authorize({ ...input, rendererId: rendererId(event) });
+            const data = await authorizationService.authorize({ ...input, rendererId: rendererId(event), confirm: scope => confirmNativeApproval(event, scope) });
             log.info('Computer approval authorized', { approvalId: input.approvalId, rendererId: rendererId(event), expiresAt: data.expiresAt });
             return { success: true, data };
         } catch (error) { return failure('Computer authorization failed', error); }

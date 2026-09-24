@@ -10,7 +10,7 @@ export interface StoredComputerApproval {
     agentId: string;
     toolName: string;
     args: Record<string, unknown>;
-    status: 'pending' | 'approved' | 'denied' | 'executed' | 'failed' | 'revoked';
+    status: 'pending' | 'approved' | 'claimed' | 'denied' | 'executed' | 'failed' | 'revoked';
     createdAtMs: number;
 }
 
@@ -18,7 +18,10 @@ export interface ComputerAuthorizationBackend {
     verifyIdentity(idToken: string): Promise<VerifiedComputerIdentity>;
     hasComputerControlOptIn(uid: string, idToken: string): Promise<boolean>;
     getApproval(uid: string, approvalId: string, idToken: string): Promise<StoredComputerApproval | null>;
+    claimApproval(uid: string, approval: StoredComputerApproval, idToken: string): Promise<StoredComputerApproval>;
 }
+
+export interface ComputerApprovalScope { userId: string; approvalId: string; agentId: string; toolName: string; action: ComputerAction; args: Record<string, unknown> }
 
 interface Capability {
     uid: string;
@@ -77,6 +80,7 @@ function digest(action: ComputerAction, args: Record<string, unknown>): string {
 export class ComputerAuthorizationService {
     private readonly capabilities = new Map<string, Capability>();
     private readonly driveCapabilities = new Map<string, DriveCapability>();
+    private readonly pendingClaims = new Set<string>();
 
     constructor(
         private readonly backend: ComputerAuthorizationBackend,
@@ -85,19 +89,34 @@ export class ComputerAuthorizationService {
         private readonly capabilityTtlMs = 60_000,
     ) {}
 
-    async authorize(input: { idToken: string; approvalId: string; rendererId: number; rendererSessionId: string }): Promise<{ token: string; expiresAt: number }> {
+    async authorize(input: { idToken: string; approvalId: string; rendererId: number; rendererSessionId: string; confirm: (scope: ComputerApprovalScope) => Promise<boolean> }): Promise<{ token: string; expiresAt: number }> {
         if (!input.idToken || !input.approvalId || !input.rendererSessionId) throw new Error('Computer authorization requires identity, approval, and renderer session.');
         const identity = await this.backend.verifyIdentity(input.idToken);
         if (!identity.uid) throw new Error('Computer authorization requires a verified signed-in user.');
         if (!await this.backend.hasComputerControlOptIn(identity.uid, input.idToken)) throw new Error('Computer control is disabled in the Artist Operating Profile.');
         const approval = await this.backend.getApproval(identity.uid, input.approvalId, input.idToken);
         if (!approval || approval.userId !== identity.uid) throw new Error('Approval does not belong to the verified user.');
-        if (approval.status !== 'approved') throw new Error(`Approval is not usable (status: ${approval.status}).`);
+        if (approval.status !== 'pending') throw new Error(`Approval is not usable (status: ${approval.status}).`);
         const action = TOOL_ACTION[approval.toolName];
         if (!action) throw new Error('Approval is not for a supported computer-control tool.');
         const age = this.now() - approval.createdAtMs;
         if (age < 0 || age > this.approvalMaxAgeMs) throw new Error('Approval is expired.');
 
+        const claimKey = `${identity.uid}:${approval.id}`;
+        if (this.pendingClaims.has(claimKey)) throw new Error('Approval is already being confirmed.');
+        this.pendingClaims.add(claimKey);
+        let claimed: StoredComputerApproval;
+        try {
+            const scope = { userId: identity.uid, approvalId: approval.id, agentId: approval.agentId, toolName: approval.toolName, action, args: normalizeComputerArgs(action, approval.args) };
+            if (!await input.confirm(scope)) throw new Error('Computer approval was cancelled by the user.');
+            claimed = await this.backend.claimApproval(identity.uid, approval, input.idToken);
+        } finally {
+            this.pendingClaims.delete(claimKey);
+        }
+        if (claimed.status !== 'claimed' || claimed.userId !== identity.uid || claimed.id !== approval.id || claimed.agentId !== approval.agentId || claimed.toolName !== approval.toolName || digest(action, claimed.args) !== digest(action, approval.args)) {
+            throw new Error('Trusted approval claim did not preserve the approved scope.');
+        }
+        this.prune();
         const token = randomBytes(32).toString('base64url');
         const expiresAt = this.now() + this.capabilityTtlMs;
         this.capabilities.set(token, {
@@ -156,5 +175,12 @@ export class ComputerAuthorizationService {
 
     revokeAllDriveSessions(): void {
         for (const session of this.driveCapabilities.values()) session.revoked = true;
+        this.prune();
+    }
+
+    private prune(): void {
+        const now = this.now();
+        for (const [token, capability] of this.capabilities) if (capability.state !== 'active' || capability.expiresAt <= now) this.capabilities.delete(token);
+        for (const [token, session] of this.driveCapabilities) if (session.revoked || session.expiresAt <= now) this.driveCapabilities.delete(token);
     }
 }

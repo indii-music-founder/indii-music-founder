@@ -62,8 +62,12 @@ const UNACTIONABLE_FALLBACK =
 // ---------------------------------------------------------------------------
 
 export class JevGuardrailService {
-  private client: TypeSafeClient | null = null;
+  private client: TypeSafeClient | null;
   private hasLoggedKeyStatus = false;
+
+  constructor(client: TypeSafeClient | null = null) {
+    this.client = client;
+  }
 
   private getClient(): TypeSafeClient | null {
     if (this.client) return this.client;
@@ -251,4 +255,3 @@ export class JevGuardrailService {
 
 /** Singleton — one client instance per app session. */
 export const jevGuardrailService = new JevGuardrailService();
-

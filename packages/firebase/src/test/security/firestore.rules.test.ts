@@ -947,6 +947,37 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{userId}/tool_approvals/{approvalId}', () => {
+        const pending = {
+            agentId: 'generalist',
+            toolName: 'computer_click',
+            args: { x: 10, y: 20, button: 'left' },
+            riskTier: 'destructive',
+            description: 'Click the approved control',
+            status: 'pending',
+            createdAt: serverTimestamp(),
+        };
+
+        it('allows only a pending owner-created request and denies client computer transitions or mutation', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(alice, 'users', ALICE_UID, 'tool_approvals', 'computer-1');
+            await assertSucceeds(setDoc(ref, pending));
+            await assertFails(updateDoc(ref, { status: 'approved' }));
+            await assertFails(updateDoc(ref, { status: 'claimed' }));
+            await assertFails(updateDoc(ref, { args: { x: 99, y: 20, button: 'left' } }));
+            await assertFails(deleteDoc(ref));
+        });
+
+        it('rejects forged initial execution state and cross-user creation', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            await assertFails(setDoc(doc(alice, 'users', ALICE_UID, 'tool_approvals', 'forged'), { ...pending, status: 'approved' }));
+            await assertFails(setDoc(doc(bob, 'users', ALICE_UID, 'tool_approvals', 'cross-user'), pending));
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // 5. DDEX RELEASES (/ddexReleases/{releaseId}) — verified + org-member
     // ──────────────────────────────────────────────────────────────────────

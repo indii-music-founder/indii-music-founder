@@ -28,9 +28,12 @@ import {
     serverTimestamp,
     Timestamp,
     runTransaction,
+    getDoc,
     type Unsubscribe,
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -110,8 +113,16 @@ class ToolApprovalService {
 
         const approvalDocRef = doc(db, 'users', uid, 'tool_approvals', approvalId);
         let approval: PendingToolApproval;
+        let isComputerApproval = false;
         try {
-            approval = await runTransaction(db, async transaction => {
+            const snapshot = await getDoc(approvalDocRef);
+            if (!snapshot.exists()) throw new Error(`Approval ${approvalId} not found`);
+            const candidate = snapshot.data() as PendingToolApproval;
+            isComputerApproval = candidate.toolName.startsWith('computer_');
+            if (isComputerApproval) {
+                if (candidate.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${candidate.status})`);
+                approval = candidate;
+            } else approval = await runTransaction(db, async transaction => {
                 const snap = await transaction.get(approvalDocRef);
                 if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
                 const current = snap.data() as PendingToolApproval;
@@ -127,7 +138,7 @@ class ToolApprovalService {
         const toolFn = TOOL_REGISTRY[approval.toolName];
         if (!toolFn) {
             const failResult = { success: false, error: `Tool '${approval.toolName}' not found in registry` };
-            await updateDoc(approvalDocRef, { status: 'failed', result: failResult });
+            if (!isComputerApproval) await updateDoc(approvalDocRef, { status: 'failed', result: failResult });
             return failResult;
         }
 
@@ -152,10 +163,12 @@ class ToolApprovalService {
             result = { success: false, error: err instanceof Error ? err.message : String(err) };
         }
 
-        await updateDoc(approvalDocRef, {
-            status: 'executed',
-            result: { success: result.success, error: result.error },
-        });
+        if (!isComputerApproval) {
+            await updateDoc(approvalDocRef, {
+                status: 'executed',
+                result: { success: result.success, error: result.error },
+            });
+        }
 
         logger.info(`[ToolApprovalService] Approval ${approvalId} executed (${approval.toolName}): success=${result.success}`);
         return result;
@@ -165,6 +178,11 @@ class ToolApprovalService {
         const uid = getUserId();
         if (!uid) return;
         const approvalDocRef = doc(db, 'users', uid, 'tool_approvals', approvalId);
+        const snapshot = await getDoc(approvalDocRef);
+        if (snapshot.exists() && String(snapshot.data().toolName).startsWith('computer_')) {
+            await httpsCallable(functions, 'denyComputerApproval')({ approvalId });
+            return;
+        }
         await updateDoc(approvalDocRef, {
             status: 'denied',
             resolvedAt: serverTimestamp(),

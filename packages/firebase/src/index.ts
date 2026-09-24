@@ -109,6 +109,7 @@ export { persistFraudAlert } from './functions/security/persistFraudAlert';
 export { logAuditEvent } from './functions/security/logAuditEvent';
 export { getOrganizationAccessMatrix, updateOrganizationMemberAccess } from './functions/security/organizationAccess';
 export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
+export { claimComputerApproval, denyComputerApproval } from './functions/security/claimComputerApproval';
 
 // REST API Router — ISSUE-1442: track-CRUD, distribution-REST, and
 // queryAnalytics routes removed (zero client callers; the live pipeline

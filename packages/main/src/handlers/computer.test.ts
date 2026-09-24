@@ -3,13 +3,14 @@ import { registerComputerHandlers } from './computer';
 
 const mocks = vi.hoisted(() => ({
     ipcMain: { handle: vi.fn() },
+    showMessageBox: vi.fn().mockResolvedValue({ response: 1 }),
     auth: { authorize: vi.fn(), consume: vi.fn(), beginDrive: vi.fn(), consumeDriveAction: vi.fn(), revoke: vi.fn(), revokeAllDriveSessions: vi.fn() },
     execution: {
         getPermissionStatus: vi.fn(() => ({ supported: true })), screenshot: vi.fn().mockResolvedValue({ base64: 'secret' }), listApps: vi.fn().mockResolvedValue([]),
         openApp: vi.fn(), click: vi.fn(), key: vi.fn(), scroll: vi.fn(), abort: vi.fn(), isAborted: vi.fn(() => false),
     },
 }));
-vi.mock('electron', () => ({ ipcMain: mocks.ipcMain, app: { isPackaged: false, getAppPath: () => '/app', getPath: () => '/tmp' } }));
+vi.mock('electron', () => ({ ipcMain: mocks.ipcMain, dialog: { showMessageBox: mocks.showMessageBox }, BrowserWindow: { fromWebContents: vi.fn(() => null) }, app: { isPackaged: false, getAppPath: () => '/app', getPath: () => '/tmp' } }));
 vi.mock('electron-log', () => ({ default: { info: vi.fn(), error: vi.fn() } }));
 vi.mock('../services/ComputerExecutionService', () => ({ computerExecutionService: mocks.execution }));
 vi.mock('../services/computer/ComputerAllowlistStore', () => ({ computerAllowlistStore: { getAll: vi.fn(() => ['Safari']) } }));
@@ -23,6 +24,12 @@ describe('Computer IPC main-process security boundary', () => {
     const authorization = { token: 'x'.repeat(32), rendererSessionId: 'renderer-session-1234', agentId: 'agent-1' };
     beforeEach(() => {
         vi.clearAllMocks(); handlers = {};
+        mocks.showMessageBox.mockResolvedValue({ response: 1 });
+        mocks.auth.authorize.mockImplementation(async ({ confirm }) => {
+            const approved = await confirm({ userId: 'user-1', approvalId: 'approval-1', agentId: 'agent-1', toolName: 'computer_click', action: 'click', args: { x: 1, y: 2, button: 'left' } });
+            if (!approved) throw new Error('cancelled');
+            return { token: 't'.repeat(43), expiresAt: Date.now() + 60_000 };
+        });
         mocks.ipcMain.handle.mockImplementation((name, handler) => { handlers[name] = handler; });
         registerComputerHandlers();
     });
@@ -40,6 +47,16 @@ describe('Computer IPC main-process security boundary', () => {
         const bypass = await handlers['computer:click'](bad, { x: 1, y: 2, button: 'left', authorization });
         expect(bypass.success).toBe(false);
         expect(mocks.execution.click).not.toHaveBeenCalled();
+    });
+
+    it('requires a main-owned native confirmation before issuing authorization', async () => {
+        const request = { idToken: 'i'.repeat(32), approvalId: 'approval-1', rendererSessionId: 'renderer-session-1234' };
+        const accepted = await handlers['computer:authorize-approval'](good, request);
+        expect(accepted.success).toBe(true);
+        expect(mocks.showMessageBox).toHaveBeenCalledWith(expect.objectContaining({ title: 'Approve computer control', defaultId: 0 }));
+        mocks.showMessageBox.mockResolvedValueOnce({ response: 0 });
+        const cancelled = await handlers['computer:authorize-approval'](good, request);
+        expect(cancelled.success).toBe(false);
     });
 
     it('executes only after the main authorization service consumes the exact action', async () => {
