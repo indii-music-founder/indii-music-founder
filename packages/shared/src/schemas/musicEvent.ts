@@ -29,7 +29,14 @@ export const MusicDomainEventTypeSchema = z.enum([
   'performance.planned',
   'satellite_play.detected',
   'claim.received',
+  'claim.status_changed',
   'registration.confirmed',
+  'registration.status_changed',
+  'delivery.status_changed',
+  'usage.reported',
+  'platform.connection_changed',
+  'catalog.state_changed',
+  'identity.conflict_detected',
   'catalog.migration.started',
   'catalog.migration.completed',
 ]);
@@ -70,7 +77,14 @@ export const MUSIC_DOMAIN_EVENT_SUBJECT_TYPES: Partial<Record<MusicDomainEventTy
   'performance.planned': ['usage'],
   'satellite_play.detected': ['usage'],
   'claim.received': ['rights_claim'],
+  'claim.status_changed': ['rights_claim'],
   'registration.confirmed': ['registration'],
+  'registration.status_changed': ['registration'],
+  'delivery.status_changed': ['delivery'],
+  'usage.reported': ['usage'],
+  'platform.connection_changed': ['platform'],
+  'catalog.state_changed': ['release', 'sound_recording', 'video_resource', 'asset'],
+  'identity.conflict_detected': ['person', 'artist', 'organization', 'musical_work', 'sound_recording', 'release', 'identifier', 'relationship'],
 };
 
 export const MusicEventEntityReferenceSchema = z.object({

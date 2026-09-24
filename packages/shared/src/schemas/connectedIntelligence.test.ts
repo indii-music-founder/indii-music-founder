@@ -4,6 +4,8 @@ import {
   evaluateConnectedIntelligence,
   ConnectedIntelligenceInputSchema,
 } from './connectedIntelligence.js';
+import { planConnectedIntelligenceAction } from './musicActionExecution.js';
+import { createMusicEventDelivery, transitionMusicEventDelivery } from './musicEventDelivery.js';
 
 const now = '2026-09-24T16:00:00.000Z';
 const evidence = [{ id: 'evidence:source-1', type: 'EXTERNAL_RECORD' as const, description: 'Synthetic fixture evidence' }];
@@ -260,14 +262,106 @@ describe('Phase 9 connected intelligence preflight', () => {
   it('does not report no-action-required for unsupported event types', () => {
     const input = completeFixture({
       event: {
-        schemaVersion: 'music-domain-event.v1', eventId: 'event:claim', eventType: 'claim.received',
-        subject: { entityId: 'claim:internal-1', entityType: 'rights_claim' }, occurredAt: now, recordedAt: now,
+        schemaVersion: 'music-domain-event.v1', eventId: 'event:performance', eventType: 'performance.planned',
+        subject: { entityId: 'usage:performance-1', entityType: 'usage' }, occurredAt: now, recordedAt: now,
         provenance: { ...verified, state: 'DETECTED' },
       },
     });
     const result = evaluateConnectedIntelligence(input);
     expect(result.status).toBe('NOT_EVALUATED');
     expect(result.actions).toEqual([]);
+  });
+
+  it('uses a monitored status change to re-evaluate the related release snapshot', () => {
+    const input = completeFixture({
+      event: {
+        schemaVersion: 'music-domain-event.v1',
+        eventId: 'event:registration-status-1',
+        eventType: 'registration.status_changed',
+        subject: { entityId: 'registration:internal-1', entityType: 'registration' },
+        relatedEntities: [
+          { entityId: 'release:canonical-1', entityType: 'release' },
+          { entityId: 'work:canonical-1', entityType: 'musical_work' },
+        ],
+        occurredAt: now,
+        recordedAt: now,
+        details: { status: 'SUBMITTED' },
+        provenance: { ...verified, state: 'DETECTED' },
+      },
+      registrationRequirements: [{
+        requirementId: 'requirement:pro-registration', subject: { entityId: 'work:canonical-1', entityType: 'musical_work' },
+        registrationType: 'PRO', required: true, status: 'SUBMITTED', verification: 'PROVIDER_CONFIRMED',
+        provenance: verified, evidence,
+      }],
+    });
+    const result = evaluateConnectedIntelligence(input);
+    expect(result.sourceEventId).toBe('event:registration-status-1');
+    expect(result.status).toBe('ACTIONS_REQUIRED');
+    expect(result.actions.map(action => action.code)).toContain('VERIFY_REGISTRATION');
+  });
+
+  it('carries a monitoring event through delivery, readiness re-evaluation, and a human-gated Phase 10 plan', () => {
+    const monitoredEvent = {
+      schemaVersion: 'music-domain-event.v1' as const,
+      eventId: 'event:registration-status-delivery-1',
+      eventType: 'registration.status_changed' as const,
+      subject: { entityId: 'registration:internal-1', entityType: 'registration' as const },
+      relatedEntities: [
+        { entityId: 'release:canonical-1', entityType: 'release' as const },
+        { entityId: 'work:canonical-1', entityType: 'musical_work' as const },
+      ],
+      occurredAt: now,
+      recordedAt: now,
+      details: { status: 'SUBMITTED' },
+      provenance: { ...verified, state: 'DETECTED' as const },
+    };
+    const pending = createMusicEventDelivery({ event: monitoredEvent, consumerId: 'connected-intelligence', createdAt: now });
+    const inFlight = transitionMusicEventDelivery(pending, {
+      type: 'CLAIM', leaseId: 'lease:connected-intelligence', now, leaseDurationMs: 60_000,
+    });
+    const delivered = transitionMusicEventDelivery(inFlight, {
+      type: 'ACKNOWLEDGE', leaseId: 'lease:connected-intelligence', now: '2026-09-24T16:00:01.000Z',
+    });
+    const evaluation = evaluateConnectedIntelligence(completeFixture({
+      event: delivered.event,
+      registrationRequirements: [{
+        requirementId: 'requirement:pro-registration', subject: { entityId: 'work:canonical-1', entityType: 'musical_work' },
+        registrationType: 'PRO', required: true, status: 'SUBMITTED', verification: 'PROVIDER_CONFIRMED',
+        provenance: verified, evidence,
+      }],
+    }));
+    const advisory = evaluation.actions.find(action => action.code === 'VERIFY_REGISTRATION');
+    expect(delivered.status).toBe('DELIVERED');
+    expect(evaluation.status).toBe('ACTIONS_REQUIRED');
+    expect(advisory).toBeDefined();
+    const plan = planConnectedIntelligenceAction(advisory!, {
+      officialApiAvailable: true,
+      oauthApiAvailable: true,
+      browserAutomationAvailable: true,
+      desktopControlAvailable: true,
+      autonomousComputerControlAuthorized: true,
+    });
+    expect(plan.route).toBe('GUIDED_MANUAL');
+    expect(plan.status).toBe('AWAITING_HUMAN');
+    expect(plan.executionAuthorized).toBe(false);
+  });
+
+  it('does not infer which release a monitoring event affected when no release reference is present', () => {
+    const input = completeFixture({
+      event: {
+        schemaVersion: 'music-domain-event.v1',
+        eventId: 'event:delivery-status-unlinked',
+        eventType: 'delivery.status_changed',
+        subject: { entityId: 'delivery:internal-1', entityType: 'delivery' },
+        occurredAt: now,
+        recordedAt: now,
+        provenance: { ...verified, state: 'DETECTED' },
+      },
+    });
+    const result = evaluateConnectedIntelligence(input);
+    expect(result.status).toBe('NOT_EVALUATED');
+    expect(result.actions).toEqual([]);
+    expect(result.explanation).toMatch(/does not identify an affected canonical release/);
   });
 
   it('emits only advisory actions that require human review and authorize no execution', () => {
