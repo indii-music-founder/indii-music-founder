@@ -115,6 +115,21 @@ describe('Phase 13 catalog intelligence', () => {
     });
   });
 
+  it('groups large repeated identifier sets without losing records or mutating the input', () => {
+    const identifiers = Array.from({ length: 2_000 }, (_, index) => identifier({
+      id: `identifier:bulk-${index}`,
+      entityId: index % 2 === 0 ? 'recording:a' : 'recording:b',
+      value: 'USAAA2600001',
+    }));
+    const result = analyzeCatalogIntelligence(input({ identifiers }));
+
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.code).toBe('DUPLICATE_ACTIVE_IDENTIFIER');
+    expect(result.findings[0]?.relatedRecordIds).toHaveLength(2_000);
+    expect(identifiers).toHaveLength(2_000);
+    expect(identifiers[0]?.id).toBe('identifier:bulk-0');
+  });
+
   it('does not turn disputed, unknown, or historical assignments into an active duplicate', () => {
     const result = analyzeCatalogIntelligence(input({
       identifiers: [

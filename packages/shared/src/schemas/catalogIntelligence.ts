@@ -143,7 +143,12 @@ export function analyzeCatalogIntelligence(input: CatalogIntelligenceInput): Cat
   const identifiersByIdentity = new Map<string, typeof parsed.identifiers>();
   for (const identifier of parsed.identifiers) {
     const key = identifierIdentityKey(identifier.type, identifier.namespace, identifier.value);
-    identifiersByIdentity.set(key, [...(identifiersByIdentity.get(key) ?? []), identifier]);
+    const group = identifiersByIdentity.get(key);
+    if (group) {
+      group.push(identifier);
+    } else {
+      identifiersByIdentity.set(key, [identifier]);
+    }
   }
 
   for (const [identityKey, group] of [...identifiersByIdentity.entries()].sort(([left], [right]) => left.localeCompare(right))) {
