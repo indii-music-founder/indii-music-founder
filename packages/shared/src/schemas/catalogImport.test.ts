@@ -60,6 +60,27 @@ describe('existing catalog intelligence', () => {
     expect(result.items[0].disposition).toBe('AGREEMENT');
   });
 
+  it('surfaces duplicate existing facts instead of selecting whichever appeared last', () => {
+    const result = reconcileCatalogFacts(
+      [fact({ factId: 'existing-z', value: 'Old A' }), fact({ factId: 'existing-a', value: 'Old B' })],
+      [fact({ factId: 'imported-a', value: 'Incoming' })], now,
+    );
+    expect(result.hasConflicts).toBe(true);
+    expect(result.items[0]).toMatchObject({
+      disposition: 'REVIEW_REQUIRED', requiresHumanReview: true,
+      relatedFactIds: ['existing-a', 'existing-z', 'imported-a'],
+    });
+  });
+
+  it('surfaces duplicate imported facts deterministically and lists the whole cluster', () => {
+    const result = reconcileCatalogFacts([], [
+      fact({ factId: 'imported-z', value: 'A' }), fact({ factId: 'imported-a', value: 'B' }),
+    ], now);
+    expect(result.items.map(item => item.importedFactId)).toEqual(['imported-a', 'imported-z']);
+    expect(result.items.every(item => item.disposition === 'REVIEW_REQUIRED')).toBe(true);
+    expect(result.items[0]?.relatedFactIds).toEqual(['imported-a', 'imported-z']);
+  });
+
   it('keeps external identifiers separate from canonical identity', () => {
     const imported = fact({ entityId: 'release:internal-9', fieldPath: 'identifiers.UPC', value: '012345678905', authority: 'AUTHORITATIVE' });
     const result = reconcileCatalogFacts([], [imported], now);
@@ -85,5 +106,13 @@ describe('existing catalog intelligence', () => {
       reconciliation: reconcileCatalogFacts([], [fact({ authority: 'LEGAL' })], now),
       createdAt: now, updatedAt: now,
     })).toThrow(/human review/i);
+  });
+
+  it('rejects duplicate imported fact IDs inside one session', () => {
+    expect(() => CatalogImportSessionSchema.parse({
+      schemaVersion: 'catalog-import.v1', importId: 'import-1', ownerUid: 'user-1',
+      intent: 'RE_RELEASE', artifacts: [], importedFacts: [fact(), fact()],
+      createdAt: now, updatedAt: now,
+    })).toThrow(/fact IDs must be unique/i);
   });
 });

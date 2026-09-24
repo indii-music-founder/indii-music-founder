@@ -61,6 +61,8 @@ export const CatalogReconciliationItemSchema = z.object({
   disposition: z.enum(['AGREEMENT', 'PROPOSED', 'REVIEW_REQUIRED']),
   existingValue: JsonValueSchema.optional(),
   importedValue: JsonValueSchema,
+  /** All facts participating in a duplicate cluster; present for ambiguity. */
+  relatedFactIds: z.array(Id).max(10_000).optional(),
   reason: z.string().trim().min(1).max(1000),
   requiresHumanReview: z.boolean(),
 }).strict();
@@ -87,6 +89,13 @@ export const CatalogImportSessionSchema = z.object({
   createdAt: IsoDateTime,
   updatedAt: IsoDateTime,
 }).strict().superRefine((session, ctx) => {
+  const factIds = new Set<string>();
+  for (const [index, fact] of session.importedFacts.entries()) {
+    if (factIds.has(fact.factId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['importedFacts', index, 'factId'], message: 'Imported fact IDs must be unique within a session.' });
+    }
+    factIds.add(fact.factId);
+  }
   if (session.status === 'APPLIED' && (!session.reconciliation || session.reconciliation.readyForHumanReview)) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['status'], message: 'An import cannot be applied before human review is resolved.' });
   }
@@ -109,10 +118,38 @@ export function reconcileCatalogFacts(
   importedFacts: readonly CatalogFact[],
   generatedAt: string,
 ): CatalogReconciliation {
-  const existingByField = new Map(existingFacts.map((fact) => [`${fact.entityId}\u0000${fact.fieldPath}`, fact]));
-  const items = importedFacts.map((imported): CatalogReconciliationItem => {
-    const existing = existingByField.get(`${imported.entityId}\u0000${imported.fieldPath}`);
+  const groupKey = (fact: CatalogFact) => `${fact.entityId}\u0000${fact.fieldPath}`;
+  const existingByField = new Map<string, CatalogFact[]>();
+  for (const fact of existingFacts) {
+    const key = groupKey(fact);
+    existingByField.set(key, [...(existingByField.get(key) ?? []), fact]);
+  }
+  const importedByField = new Map<string, CatalogFact[]>();
+  for (const fact of importedFacts) {
+    const key = groupKey(fact);
+    importedByField.set(key, [...(importedByField.get(key) ?? []), fact]);
+  }
+  const stableFacts = (facts: readonly CatalogFact[]) => [...facts].sort((left, right) => left.factId.localeCompare(right.factId));
+  const items = stableFacts(importedFacts).map((imported): CatalogReconciliationItem => {
+    const existingCluster = stableFacts(existingByField.get(groupKey(imported)) ?? []);
+    const importedCluster = stableFacts(importedByField.get(groupKey(imported)) ?? []);
+    const existing = existingCluster[0];
     const authoritative = imported.authority !== 'REFERENCE';
+    const hasDuplicateFacts = existingCluster.length > 1 || importedCluster.length > 1;
+    const relatedFactIds = hasDuplicateFacts
+      ? [...new Set([...existingCluster.map((fact) => fact.factId), ...importedCluster.map((fact) => fact.factId)])].sort()
+      : undefined;
+    if (hasDuplicateFacts) {
+      return {
+        entityId: imported.entityId, fieldPath: imported.fieldPath,
+        existingFactId: existing?.factId, importedFactId: imported.factId,
+        existingValue: existing?.value, importedValue: imported.value,
+        relatedFactIds,
+        disposition: 'REVIEW_REQUIRED',
+        reason: 'Multiple catalog facts target the same canonical entity and field; the duplicate cluster is preserved for human review.',
+        requiresHumanReview: true,
+      };
+    }
     if (!existing) {
       return {
         entityId: imported.entityId, fieldPath: imported.fieldPath,
@@ -144,7 +181,7 @@ export function reconcileCatalogFacts(
   });
   return CatalogReconciliationSchema.parse({
     schemaVersion: 'catalog-reconciliation.v1', items,
-    hasConflicts: items.some((item) => item.disposition === 'REVIEW_REQUIRED' && item.existingFactId !== undefined),
+    hasConflicts: items.some((item) => item.disposition === 'REVIEW_REQUIRED' && (item.existingFactId !== undefined || item.relatedFactIds !== undefined)),
     readyForHumanReview: items.some((item) => item.requiresHumanReview),
     generatedAt,
   });

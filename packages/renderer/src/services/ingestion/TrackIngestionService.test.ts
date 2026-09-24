@@ -138,6 +138,57 @@ describe('TrackIngestionService', () => {
         expect(trackLibrary.saveTrack).toHaveBeenCalledWith(result);
     });
 
+    it('preserves prior human intake confirmations when a known fingerprint is re-ingested', async () => {
+        vi.mocked(fingerprintService.generateFingerprint).mockResolvedValue(mockFingerprint);
+        vi.mocked(masterAudioService.persist).mockResolvedValue(mockMasterAsset);
+        const confirmedAt = '2026-09-23T12:00:00.000Z';
+        const confirmations = {
+            'rights.masterOwnership': {
+                value: 'Artist controls the master.',
+                provenance: {
+                    state: 'USER_CONFIRMED' as const,
+                    sourceType: 'USER' as const,
+                    evidence: [],
+                    observedAt: confirmedAt,
+                    confirmedAt,
+                },
+            },
+        };
+        const existingMetadata = {
+            id: 'track-1',
+            trackTitle: 'Existing Track',
+            masterFingerprint: mockFingerprint,
+            songIntake: {
+                schemaVersion: 'song-intake.v1' as const,
+                intakeId: `intake:${mockFingerprint}`,
+                ownerUid: 'owner-1',
+                recordingEntityId: `recording:${mockFingerprint}`,
+                sourceEntityId: 'work:source-1',
+                contentHash: mockMasterAsset.contentHash,
+                fingerprint: mockFingerprint,
+                originalFileName: 'test-song.mp3',
+                recordingKind: 'UNKNOWN' as const,
+                technicalAnalysisComplete: true,
+                embeddedTags: {},
+                catalogMatches: [],
+                possibleExistingRelease: 'UNKNOWN' as const,
+                confirmations,
+                questions: [],
+                createdAt: confirmedAt,
+                updatedAt: confirmedAt,
+            },
+        } as unknown as ExtendedGoldenMetadata;
+        vi.mocked(trackLibrary.getByFingerprint).mockResolvedValue(existingMetadata);
+
+        const result = await service.ingestTrack(mockFile);
+
+        expect(result.songIntake?.confirmations).toEqual(confirmations);
+        expect(result.songIntake?.sourceEntityId).toBe('work:source-1');
+        expect(result.songIntake?.questions.some(question => question.key === 'rights.masterOwnership')).toBe(false);
+        expect(result.songIntake?.questions.some(question => question.key === 'rights.compositionWriters')).toBe(true);
+        expect(trackLibrary.saveTrack).toHaveBeenCalledWith(result);
+    });
+
     it('should perform full analysis and save if track is new', async () => {
         // Setup Mocks
         vi.mocked(fingerprintService.generateFingerprint).mockResolvedValue(mockFingerprint);
