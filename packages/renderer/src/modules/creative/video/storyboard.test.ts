@@ -45,6 +45,17 @@ describe('Storyboard Schemas & Quantization Math', () => {
             };
             expect(StoryboardProjectSchema.parse(validProject).name).toBe('Neon Horizon');
         });
+
+        it('accepts canonical recording lineage and rejects external IDs as recording identity', () => {
+            const project = {
+                id: 'sb-1',
+                name: 'Storyboard',
+                canonicalRecordingEntityId: 'recording:internal-1',
+                slots: [],
+            };
+            expect(StoryboardProjectSchema.parse(project).canonicalRecordingEntityId).toBe('recording:internal-1');
+            expect(() => StoryboardProjectSchema.parse({ ...project, canonicalRecordingEntityId: 'USABC2600001' })).toThrow();
+        });
     });
 
     describe('Beat Quantization Calculations', () => {

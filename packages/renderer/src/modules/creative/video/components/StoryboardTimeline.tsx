@@ -220,6 +220,12 @@ export function StoryboardTimeline() {
                             masterFingerprint: master.masterFingerprint,
                             storagePath: master.storagePath,
                             volume: 1,
+                            ...(metadata.songIntake?.recordingEntityId
+                                ? {
+                                    canonicalRecordingEntityId: metadata.songIntake.recordingEntityId,
+                                    musicUse: 'USES_FULL_RECORDING' as const,
+                                }
+                                : {}),
                         },
                         startFrame: 0,
                         durationInFrames,
@@ -233,6 +239,9 @@ export function StoryboardTimeline() {
             setStoryboardProject({
                 id: 'sb-' + Date.now(),
                 name: file.name.replace(/\.[^/.]+$/, "") + " Storyboard",
+                ...(metadata.songIntake?.recordingEntityId
+                    ? { canonicalRecordingEntityId: metadata.songIntake.recordingEntityId }
+                    : {}),
                 audioUrl: canonicalUri,
                 bpm: measuredBpm,
                 key: metadata.key || undefined,

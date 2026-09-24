@@ -63,9 +63,17 @@ function storyboard(): StoryboardProject {
 
 describe('compileStoryboardRenderProject', () => {
     it('builds a project using canonical video and master identities', () => {
+        const sourceProject = activeProject();
+        const sourceStoryboard = storyboard();
+        sourceProject.clips[0]!.canonicalMaster = {
+            ...canonicalMaster,
+            canonicalRecordingEntityId: 'recording:confirmed-1',
+            musicUse: 'USES_FULL_RECORDING',
+        };
+        sourceStoryboard.canonicalRecordingEntityId = 'recording:confirmed-1';
         const result = compileStoryboardRenderProject({
-            storyboard: storyboard(),
-            activeProject: activeProject(),
+            storyboard: sourceStoryboard,
+            activeProject: sourceProject,
             expectedProjectId: 'project-1',
         });
 
@@ -75,8 +83,48 @@ describe('compileStoryboardRenderProject', () => {
                 canonicalSourceUri: 'gs://bucket/creative/owner-1/video/outputs/scene.mp4',
                 durationInFrames: 240,
             }),
-            expect.objectContaining({ canonicalMaster, durationInFrames: 240 }),
+            expect.objectContaining({
+                canonicalMaster: expect.objectContaining({
+                    ...canonicalMaster,
+                    canonicalRecordingEntityId: 'recording:confirmed-1',
+                    musicUse: 'USES_FULL_RECORDING',
+                }),
+                durationInFrames: 240,
+            }),
         ]);
+    });
+
+    it('fails closed when storyboard and canonical master recording identities disagree', () => {
+        const sourceProject = activeProject();
+        sourceProject.clips[0]!.canonicalMaster = {
+            ...canonicalMaster,
+            canonicalRecordingEntityId: 'recording:other',
+            musicUse: 'USES_FULL_RECORDING',
+        };
+        const sourceStoryboard = storyboard();
+        sourceStoryboard.canonicalRecordingEntityId = 'recording:confirmed-1';
+
+        expect(() => compileStoryboardRenderProject({
+            storyboard: sourceStoryboard,
+            activeProject: sourceProject,
+            expectedProjectId: 'project-1',
+        })).toThrow(/recording identity does not match/i);
+    });
+
+    it('requires explicit music-use semantics whenever canonical recording lineage is present', () => {
+        const sourceProject = activeProject();
+        sourceProject.clips[0]!.canonicalMaster = {
+            ...canonicalMaster,
+            canonicalRecordingEntityId: 'recording:confirmed-1',
+        };
+        const sourceStoryboard = storyboard();
+        sourceStoryboard.canonicalRecordingEntityId = 'recording:confirmed-1';
+
+        expect(() => compileStoryboardRenderProject({
+            storyboard: sourceStoryboard,
+            activeProject: sourceProject,
+            expectedProjectId: 'project-1',
+        })).toThrow(/explicit music-use semantics/i);
     });
 
     it.each([
