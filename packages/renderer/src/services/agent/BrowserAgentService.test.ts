@@ -1,4 +1,11 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_ARTIST_OPERATING_PROFILE } from '@indii/shared';
+
+const { getProfile } = vi.hoisted(() => ({ getProfile: vi.fn() }));
+vi.mock('./governance/ArtistOperatingProfileService', () => ({
+    artistOperatingProfileService: { getProfile },
+}));
+
 import { BrowserAgentService } from './BrowserAgentService';
 
 /**
@@ -9,6 +16,10 @@ import { BrowserAgentService } from './BrowserAgentService';
  * filing works today.
  */
 describe('BrowserAgentService (ISSUE-972)', () => {
+    beforeEach(() => {
+        getProfile.mockReset().mockResolvedValue(DEFAULT_ARTIST_OPERATING_PROFILE);
+    });
+
     afterEach(() => {
         delete (window as unknown as Record<string, unknown>).electronAPI;
     });
@@ -24,8 +35,21 @@ describe('BrowserAgentService (ISSUE-972)', () => {
         expect(service.isConfigured()).toBe(false);
     });
 
-    it('executeTask rejects immediately instead of attempting a phantom IPC call', async () => {
+    it('fails closed on missing AOP authorization before checking or attempting browser execution', async () => {
         (window as unknown as Record<string, unknown>).electronAPI = { agent: {} };
+        const service = new BrowserAgentService();
+
+        const isConfigured = vi.spyOn(service, 'isConfigured');
+        await expect(service.executeTask('MLC', 'register a work', 'https://portal.themlc.com'))
+            .rejects.toThrow(/Autonomous Computer Control.*enabled/i);
+        expect(isConfigured).not.toHaveBeenCalled();
+    });
+
+    it('still refuses execution when AOP allows it but the browser executor is unconfigured', async () => {
+        getProfile.mockResolvedValue({
+            ...DEFAULT_ARTIST_OPERATING_PROFILE,
+            permissions: { ...DEFAULT_ARTIST_OPERATING_PROFILE.permissions, autonomousComputerControl: true },
+        });
         const service = new BrowserAgentService();
         await expect(service.executeTask('MLC', 'register a work', 'https://portal.themlc.com'))
             .rejects.toThrow('Browser agent is not configured');

@@ -33,6 +33,10 @@ submit, sign, pay, attest, or confirm ownership.
   adapter exposes legacy track IDs rather than canonical music entity IDs; a
   later adapter must resolve canonical identity and consume Connected
   Intelligence actions before integration is safe.
+- The existing `BrowserAgentService.executeTask` boundary now checks the
+  authenticated user's AOP permission centrally, covering Registration Center
+  and music-portal callers. This guard does not enable the currently
+  unconfigured browser executor.
 - No browser, desktop, API, or OAuth automation is enabled by this change.
   Existing executors remain the only execution systems. Rollback is to remove
   this unused shared contract; no data migration or persisted state is added.
