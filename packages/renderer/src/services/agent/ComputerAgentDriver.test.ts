@@ -66,7 +66,7 @@ describe('ComputerAgentDriver (CE-3, ISSUE-1112)', () => {
             success: true,
             data: { platform: 'darwin', supported: true, screenRecording: 'denied', accessibility: 'granted', guidance: ['Grant Screen Recording...'] }
         });
-        const result = await driver.drive('do something');
+        const result = await driver.drive('do something', 15, 'drive-token', 'renderer-session', 'agent-1');
         expect(result.success).toBe(false);
         expect(result.steps).toBe(0);
         expect(mocks.generateContent).not.toHaveBeenCalled();
@@ -84,7 +84,7 @@ describe('ComputerAgentDriver (CE-3, ISSUE-1112)', () => {
 
     it('stops immediately when the kill switch is already active before the first step', async () => {
         computerApi.getAbortState.mockResolvedValue({ success: true, data: { aborted: true } });
-        const result = await driver.drive('do something');
+        const result = await driver.drive('do something', 15, 'drive-token', 'renderer-session', 'agent-1');
         expect(result.success).toBe(false);
         expect(result.steps).toBe(1);
         expect(mocks.generateContent).not.toHaveBeenCalled();
@@ -95,7 +95,7 @@ describe('ComputerAgentDriver (CE-3, ISSUE-1112)', () => {
         mocks.generateContent.mockResolvedValue({ text: '{}' });
         mocks.parseJSON.mockReturnValue({ thought: 'done', action: 'finish' });
 
-        const result = await driver.drive('take a screenshot and confirm it worked', 5);
+        const result = await driver.drive('take a screenshot and confirm it worked', 5, 'drive-token', 'renderer-session', 'agent-1');
 
         expect(result.success).toBe(true);
         expect(result.steps).toBe(1);
@@ -107,10 +107,10 @@ describe('ComputerAgentDriver (CE-3, ISSUE-1112)', () => {
         mocks.generateContent.mockResolvedValue({ text: '{}' });
         mocks.parseJSON.mockReturnValue({ thought: 'refusing', action: 'fail', params: { reason: 'credential field detected' } });
 
-        const result = await driver.drive('log into the bank site', 5);
+        const result = await driver.drive('log into the bank site', 5, 'drive-token', 'renderer-session', 'agent-1');
 
         expect(result.success).toBe(false);
-        expect(result.logs.some(l => /credential field detected/.test(l))).toBe(true);
+        expect(result.logs.some(l => /declined to proceed safely/.test(l))).toBe(true);
         expect(computerApi.click).not.toHaveBeenCalled();
         expect(computerApi.type).not.toHaveBeenCalled();
     });
@@ -123,10 +123,10 @@ describe('ComputerAgentDriver (CE-3, ISSUE-1112)', () => {
             .mockReturnValueOnce({ thought: 'click button', action: 'click', params: { x: 42, y: 84, button: 'left' } })
             .mockReturnValueOnce({ thought: 'done', action: 'finish' });
 
-        const result = await driver.drive('click the button then finish', 5);
+        const result = await driver.drive('click the button then finish', 5, 'drive-token', 'renderer-session', 'agent-1');
 
         expect(result.success).toBe(true);
-        expect(computerApi.click).toHaveBeenCalledWith(42, 84, 'left');
+        expect(computerApi.click).toHaveBeenCalledWith(42, 84, 'left', { token: 'drive-token', rendererSessionId: 'renderer-session', agentId: 'agent-1' }, 'drive-token');
         expect(computerApi.screenshot).toHaveBeenCalledTimes(2); // initial + post-click
         expect(result.steps).toBe(2);
     });
@@ -141,7 +141,7 @@ describe('ComputerAgentDriver (CE-3, ISSUE-1112)', () => {
         mocks.generateContent.mockResolvedValue({ text: '{}' });
         mocks.parseJSON.mockReturnValue({ thought: 'click button', action: 'click', params: { x: 1, y: 1 } });
 
-        const result = await driver.drive('click something', 5);
+        const result = await driver.drive('click something', 5, 'drive-token', 'renderer-session', 'agent-1');
 
         expect(result.success).toBe(false);
         expect(computerApi.click).not.toHaveBeenCalled();
@@ -151,7 +151,7 @@ describe('ComputerAgentDriver (CE-3, ISSUE-1112)', () => {
         mocks.generateContent.mockResolvedValue({ text: '{}' });
         mocks.parseJSON.mockReturnValue({ thought: 'scrolling forever', action: 'scroll', params: { dx: 0, dy: 10 } });
 
-        const result = await driver.drive('scroll to find something', 3);
+        const result = await driver.drive('scroll to find something', 3, 'drive-token', 'renderer-session', 'agent-1');
 
         expect(result.success).toBe(false);
         expect(result.steps).toBe(3);

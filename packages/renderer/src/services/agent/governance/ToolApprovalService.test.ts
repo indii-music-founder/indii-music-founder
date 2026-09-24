@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
     addDoc: vi.fn(),
     updateDoc: vi.fn(),
     getDoc: vi.fn(),
+    runTransaction: vi.fn(),
     onSnapshot: vi.fn(),
     toolRegistry: {} as Record<string, (args: unknown) => Promise<{ success: boolean; error?: string; data?: unknown }>>,
 }));
@@ -32,6 +33,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         addDoc: mocks.addDoc,
         updateDoc: mocks.updateDoc,
         getDoc: mocks.getDoc,
+        runTransaction: mocks.runTransaction,
         onSnapshot: mocks.onSnapshot,
         query: vi.fn((...args) => args),
         where: vi.fn(),
@@ -47,6 +49,10 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
         vi.clearAllMocks();
         mocks.currentUser = { uid: 'user-1' };
         mocks.toolRegistry = {};
+        mocks.runTransaction.mockImplementation(async (_db, callback) => callback({
+            get: mocks.getDoc,
+            update: (...args: unknown[]) => mocks.updateDoc(...args),
+        }));
     });
 
     describe('createPendingApproval', () => {

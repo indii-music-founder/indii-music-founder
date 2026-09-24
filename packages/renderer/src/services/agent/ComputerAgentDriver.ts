@@ -16,12 +16,11 @@ import { logger } from '@/utils/logger';
 
 export interface ComputerAgentAction {
     thought: string;
-    action: 'click' | 'type' | 'key' | 'scroll' | 'wait' | 'finish' | 'fail';
+    action: 'click' | 'key' | 'scroll' | 'wait' | 'finish' | 'fail';
     params?: {
         x?: number;
         y?: number;
         button?: 'left' | 'right' | 'double';
-        text?: string;
         combo?: string;
         dx?: number;
         dy?: number;
@@ -48,9 +47,9 @@ export class ComputerAgentDriver {
      * Drives the desktop to achieve a specific goal. Returns as soon as the model signals
      * 'finish'/'fail', the kill switch is triggered, or maxSteps is exceeded.
      */
-    async drive(goal: string, maxSteps = 15): Promise<ComputerAgentStepResult> {
+    async drive(goal: string, maxSteps = 15, driveSessionToken?: string, rendererSessionId?: string, agentId?: string): Promise<ComputerAgentStepResult> {
         const logs: string[] = [];
-        logs.push(`[ComputerDriver] Starting drive. Goal: "${goal}"`);
+        logs.push('[ComputerDriver] Starting approved drive.');
 
         const api = window.electronAPI;
         if (!api?.computer) {
@@ -71,7 +70,9 @@ export class ComputerAgentDriver {
 
         let step = 0;
         try {
-            let screenshot = await api.computer.screenshot();
+            if (!driveSessionToken || !rendererSessionId || !agentId) throw new Error('Main-process drive authorization is required.');
+            const driveAuthorization = { token: driveSessionToken, rendererSessionId, agentId };
+            let screenshot = await api.computer.screenshot({ authorization: driveAuthorization, driveSessionToken });
             if (!screenshot.success || !screenshot.data) {
                 throw new Error(screenshot.error || 'Initial screenshot failed');
             }
@@ -94,10 +95,9 @@ export class ComputerAgentDriver {
                     Return a JSON object with this structure:
                     {
                         "thought": "Reasoning for your action",
-                        "action": "click" | "type" | "key" | "scroll" | "wait" | "finish" | "fail",
+                        "action": "click" | "key" | "scroll" | "wait" | "finish" | "fail",
                         "params": {
                             "x": number, "y": number, "button": "left" | "right" | "double" (click only),
-                            "text": string (type only),
                             "combo": string like "cmd+c" (key only),
                             "dx": number, "dy": number (scroll only),
                             "durationMs": number (wait only),
@@ -106,8 +106,8 @@ export class ComputerAgentDriver {
                     }
 
                     Rules:
-                    - NEVER click into or type text intended for a password, credential, payment
-                      card, or 2FA field, even if asked. Choose 'fail' instead and explain why.
+                    - Text injection is unavailable. Never click into password, credential,
+                      payment-card, or 2FA fields. Choose 'fail' instead.
                     - If you see a popup/modal blocking progress, close it.
                     - If you have achieved the goal, choose 'finish'.
                     - If you cannot proceed safely or the goal is unreachable, choose 'fail'.
@@ -128,15 +128,14 @@ export class ComputerAgentDriver {
                 );
 
                 const plan = AI.parseJSON(getResponseText(response)) as ComputerAgentAction;
-                logs.push(`[ComputerDriver] Thought: ${plan.thought}`);
-                logs.push(`[ComputerDriver] Action: ${plan.action} ${JSON.stringify(plan.params ?? {})}`);
+                logs.push(`[ComputerDriver] Selected action: ${plan.action}`);
 
                 if (plan.action === 'finish') {
                     logs.push('[ComputerDriver] Goal achieved.');
                     return { success: true, logs, steps: step };
                 }
                 if (plan.action === 'fail') {
-                    logs.push(`[ComputerDriver] Agent declined to proceed: ${plan.params?.reason}`);
+                    logs.push('[ComputerDriver] Agent declined to proceed safely.');
                     return { success: false, logs, steps: step };
                 }
 
@@ -153,18 +152,14 @@ export class ComputerAgentDriver {
                 switch (plan.action) {
                     case 'click':
                         if (p.x === undefined || p.y === undefined) throw new Error('Missing x/y for click');
-                        actionResult = await api.computer.click(p.x, p.y, p.button ?? 'left');
-                        break;
-                    case 'type':
-                        if (!p.text) throw new Error('Missing text for type');
-                        actionResult = await api.computer.type(p.text);
+                        actionResult = await api.computer.click(p.x, p.y, p.button ?? 'left', driveAuthorization, driveSessionToken);
                         break;
                     case 'key':
                         if (!p.combo) throw new Error('Missing combo for key');
-                        actionResult = await api.computer.key(p.combo);
+                        actionResult = await api.computer.key(p.combo, driveAuthorization, driveSessionToken);
                         break;
                     case 'scroll':
-                        actionResult = await api.computer.scroll(p.dx ?? 0, p.dy ?? 0);
+                        actionResult = await api.computer.scroll(p.dx ?? 0, p.dy ?? 0, driveAuthorization, driveSessionToken);
                         break;
                     case 'wait':
                         await new Promise(resolve => setTimeout(resolve, Math.min(p.durationMs ?? 1000, 5000)));
@@ -180,7 +175,7 @@ export class ComputerAgentDriver {
                     }
                 }
 
-                const nextShot = await api.computer.screenshot();
+                const nextShot = await api.computer.screenshot({ authorization: driveAuthorization, driveSessionToken });
                 if (!nextShot.success || !nextShot.data) {
                     logs.push(`[ComputerDriver] Screenshot failed after action: ${nextShot.error}`);
                     return { success: false, logs, steps: step };

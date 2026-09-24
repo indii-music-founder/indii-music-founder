@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, ShieldAlert, Check, X, Monitor, Plus, Trash2 } from 'lucide-react';
+import { ChevronRight, ShieldAlert, Check, X, Monitor } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { Logger } from '@/core/logger/Logger';
@@ -16,76 +16,29 @@ const RISK_TIER_COLOR: Record<string, string> = {
 };
 
 /**
- * Allowlist management (ISSUE-1111 residual #4). The computer:allowlist-* IPC
- * channels have existed since CE-2/CE-5 with no UI consumer — this closes that
- * gap. Fail-closed semantics unchanged: an empty list still means nothing is
- * allowed to launch; this UI is how a user actually populates it.
+ * Read-only allowlist view. Mutation is intentionally unavailable to renderer
+ * code because a compromised renderer must not broaden computer-control scope.
  */
 function AllowlistSection() {
-    const toast = useToast();
     const [apps, setApps] = useState<string[]>([]);
-    const [newApp, setNewApp] = useState('');
-    const [loading, setLoading] = useState(false);
     const [available, setAvailable] = useState(true);
 
-    const refresh = React.useCallback(async () => {
-        if (typeof window === 'undefined' || !window.electronAPI?.computer) {
-            setAvailable(false);
-            return;
-        }
-        try {
-            const result = await window.electronAPI.computer.allowlistGet();
-            if (result.success && result.data) {
-                setApps(result.data.apps);
-            }
-        } catch (error) {
-            Logger.error('ToolApprovalsPanel', 'Failed to load allowlist', error);
-        }
-    }, []);
-
     useEffect(() => {
-        refresh();
-    }, [refresh]);
-
-    const handleAdd = async () => {
-        const trimmed = newApp.trim();
-        if (!trimmed || !window.electronAPI?.computer) return;
-        setLoading(true);
-        try {
-            const result = await window.electronAPI.computer.allowlistAdd(trimmed);
-            if (result.success) {
-                setApps(result.data?.apps ?? []);
-                setNewApp('');
-                toast.success(`${trimmed} added to allowlist`);
-            } else {
-                toast.error(result.error || 'Failed to add app');
+        let cancelled = false;
+        void Promise.resolve().then(async () => {
+            if (typeof window === 'undefined' || !window.electronAPI?.computer) {
+                if (!cancelled) setAvailable(false);
+                return;
             }
-        } catch (error) {
-            Logger.error('ToolApprovalsPanel', 'Failed to add to allowlist', error);
-            toast.error('Failed to add app');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleRemove = async (app: string) => {
-        if (!window.electronAPI?.computer) return;
-        setLoading(true);
-        try {
-            const result = await window.electronAPI.computer.allowlistRemove(app);
-            if (result.success) {
-                setApps(result.data?.apps ?? []);
-                toast.success(`${app} removed from allowlist`);
-            } else {
-                toast.error(result.error || 'Failed to remove app');
+            try {
+                const result = await window.electronAPI.computer.allowlistGet();
+                if (!cancelled && result.success && result.data) setApps(result.data.apps);
+            } catch (error) {
+                Logger.error('ToolApprovalsPanel', 'Failed to load allowlist', error);
             }
-        } catch (error) {
-            Logger.error('ToolApprovalsPanel', 'Failed to remove from allowlist', error);
-            toast.error('Failed to remove app');
-        } finally {
-            setLoading(false);
-        }
-    };
+        });
+        return () => { cancelled = true; };
+    }, []);
 
     if (!available) {
         return (
@@ -104,42 +57,15 @@ function AllowlistSection() {
                 <Monitor size={12} /> Computer App Allowlist
             </h4>
             <p className="text-[11px] text-gray-500">
-                Apps `computer_open_app` may launch. Empty list = nothing allowed (fail-closed).
+                Apps `computer_open_app` may launch. This security policy is read-only in the renderer.
             </p>
-            <div className="flex items-center gap-2">
-                <input
-                    type="text"
-                    value={newApp}
-                    onChange={(e) => setNewApp(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
-                    placeholder="Safari or com.apple.Safari"
-                    disabled={loading}
-                    className="flex-1 text-xs bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-white/30"
-                />
-                <button
-                    onClick={handleAdd}
-                    disabled={loading || !newApp.trim()}
-                    className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors disabled:opacity-50"
-                    aria-label="Add app to allowlist"
-                >
-                    <Plus size={14} />
-                </button>
-            </div>
             {apps.length === 0 ? (
                 <p className="text-xs text-gray-600 italic py-1">No apps allowlisted yet.</p>
             ) : (
                 <ul className="space-y-1">
                     {apps.map((app) => (
-                        <li key={app} className="flex items-center justify-between text-xs bg-black/30 rounded-lg px-2 py-1.5">
+                        <li key={app} className="text-xs bg-black/30 rounded-lg px-2 py-1.5">
                             <span className="text-gray-300 font-mono truncate">{app}</span>
-                            <button
-                                onClick={() => handleRemove(app)}
-                                disabled={loading}
-                                className="p-1 rounded text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
-                                aria-label={`Remove ${app} from allowlist`}
-                            >
-                                <Trash2 size={12} />
-                            </button>
                         </li>
                     ))}
                 </ul>
