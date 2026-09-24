@@ -15,4 +15,28 @@ describe('RightsIntelligenceService', () => {
         expect(result.trackTitle).toBe('Rights Song');
         expect(metadata).not.toHaveProperty('rightsIntelligence');
     });
+
+    it('keeps rights readiness blocked until a catalog import is explicitly applied', () => {
+        const now = '2026-09-22T13:00:00.000Z';
+        const metadata = {
+            ...INITIAL_METADATA,
+            catalogImport: {
+                schemaVersion: 'catalog-import.v1' as const,
+                importId: 'import-1', ownerUid: 'user-1', intent: 'IMPORT_OLD_RELEASE' as const,
+                artifacts: [], importedFacts: [], status: 'REVIEW_REQUIRED' as const,
+                createdAt: now, updatedAt: now,
+            },
+        };
+        const input: RightsIntelligenceInput = {
+            targetEntityId: 'recording:1', interests: [], thirdPartyUses: [], grants: [], evidenceVaults: [],
+        };
+
+        const result = new RightsIntelligenceService().evaluate(metadata, input, now);
+
+        expect(result.rightsIntelligence?.findings).toEqual(expect.arrayContaining([
+            expect.objectContaining({ code: 'CATALOG_IMPORT_UNRESOLVED', severity: 'BLOCKING', requiresHumanReview: true }),
+        ]));
+        expect(result.rightsIntelligence?.releaseReviewRequired).toBe(true);
+        expect(result.rightsIntelligence?.contentIdAutomaticSubmissionEligible).toBe(false);
+    });
 });

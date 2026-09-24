@@ -74,7 +74,7 @@ export const RightsFindingSchema = z.object({
   code: z.enum([
     'MASTER_OWNERSHIP_UNKNOWN', 'MASTER_SPLITS_INVALID', 'COMPOSITION_OWNERSHIP_UNKNOWN',
     'COMPOSITION_SPLITS_INVALID', 'PUBLISHER_SPLITS_INVALID', 'THIRD_PARTY_USE_UNRESOLVED', 'EXCLUSIVE_RIGHTS_UNCONFIRMED',
-    'GRANT_UNRESOLVED', 'EVIDENCE_MISSING',
+    'GRANT_UNRESOLVED', 'EVIDENCE_MISSING', 'RIGHTS_INTEREST_UNRESOLVED', 'CATALOG_IMPORT_UNRESOLVED',
   ]),
   severity: z.enum(['INFO', 'REVIEW', 'BLOCKING']),
   entityId: Id,
@@ -96,7 +96,15 @@ export const RightsIntelligenceReportSchema = z.object({
 }).strict();
 export type RightsIntelligenceReport = z.infer<typeof RightsIntelligenceReportSchema>;
 
-const authoritativeStates = new Set<RightsTruthState>(['DOCUMENTED', 'VERIFIED']);
+function isAuthoritativeAssertion(
+  state: RightsTruthState,
+  provenance: z.infer<typeof ProvenanceSchema>,
+  hasEvidence: boolean,
+): boolean {
+  if (!hasEvidence) return false;
+  return (state === 'DOCUMENTED' && provenance.state === 'DOCUMENTED' && provenance.sourceType === 'DOCUMENT')
+    || (state === 'VERIFIED' && provenance.state === 'EXTERNAL_VERIFIED' && provenance.sourceType === 'EXTERNAL_SERVICE');
+}
 
 /** Deterministic preflight. It reports gaps and never upgrades truth or executes a filing. */
 export function evaluateRightsIntelligence(input: RightsIntelligenceInput, evaluatedAt: string): RightsIntelligenceReport {
@@ -119,24 +127,43 @@ export function evaluateRightsIntelligence(input: RightsIntelligenceInput, evalu
 
   const vaultEntities = new Set(parsed.evidenceVaults.filter((vault) => vault.evidence.length > 0).map((vault) => vault.entityId));
   for (const rightsInterest of [...master, ...composition, ...publishers]) {
-    if (authoritativeStates.has(rightsInterest.state)
-      && rightsInterest.provenance.evidence.length === 0
-      && !vaultEntities.has(rightsInterest.targetEntityId)
-      && !vaultEntities.has(rightsInterest.partyEntityId)) {
+    const hasEvidence = rightsInterest.provenance.evidence.length > 0
+      || vaultEntities.has(rightsInterest.targetEntityId)
+      || vaultEntities.has(rightsInterest.partyEntityId);
+    const authoritative = isAuthoritativeAssertion(rightsInterest.state, rightsInterest.provenance, hasEvidence);
+    if (!authoritative) {
+      const disputed = rightsInterest.state === 'DISPUTED' || rightsInterest.state === 'UNRESOLVED'
+        || rightsInterest.provenance.state === 'DISPUTED';
+      findings.push({
+        code: 'RIGHTS_INTEREST_UNRESOLVED',
+        severity: disputed ? 'BLOCKING' : 'REVIEW',
+        entityId: rightsInterest.targetEntityId,
+        message: `${rightsInterest.interestType.toLowerCase().replace('_', ' ')} interest ${rightsInterest.interestId} is ${rightsInterest.state.toLowerCase()}; non-authoritative rights cannot be treated as cleared.`,
+        requiresHumanReview: true,
+      });
+    }
+    if ((rightsInterest.state === 'DOCUMENTED' || rightsInterest.state === 'VERIFIED') && !hasEvidence) {
       findings.push({ code: 'EVIDENCE_MISSING', severity: 'REVIEW', entityId: rightsInterest.targetEntityId, message: `No evidence supports documented interest ${rightsInterest.interestId}.`, requiresHumanReview: true });
     }
   }
 
   for (const use of parsed.thirdPartyUses) {
-    if (!authoritativeStates.has(use.state)) findings.push({ code: 'THIRD_PARTY_USE_UNRESOLVED', severity: 'BLOCKING', entityId: use.targetRecordingEntityId, message: `${use.useType.toLowerCase()} rights are ${use.state.toLowerCase()}.`, requiresHumanReview: true });
+    const authoritative = isAuthoritativeAssertion(use.state, use.provenance, use.evidence.length > 0 || use.provenance.evidence.length > 0);
+    if (!authoritative) findings.push({ code: 'THIRD_PARTY_USE_UNRESOLVED', severity: 'BLOCKING', entityId: use.targetRecordingEntityId, message: `${use.useType.toLowerCase()} rights are ${use.state.toLowerCase()} or lack matching documented provenance and evidence.`, requiresHumanReview: true });
     if (!use.exclusiveRightsConfirmed) findings.push({ code: 'EXCLUSIVE_RIGHTS_UNCONFIRMED', severity: 'BLOCKING', entityId: use.targetRecordingEntityId, message: `${use.useType.toLowerCase()} material prevents automatic Content ID submission until exclusive-rights eligibility is reviewed.`, requiresHumanReview: true });
     if (use.evidence.length === 0) findings.push({ code: 'EVIDENCE_MISSING', severity: 'REVIEW', entityId: use.targetRecordingEntityId, message: `No evidence is attached to the ${use.useType.toLowerCase()} record.`, requiresHumanReview: true });
   }
   for (const grant of parsed.grants) {
-    if (!authoritativeStates.has(grant.state)) findings.push({ code: 'GRANT_UNRESOLVED', severity: 'BLOCKING', entityId: grant.subjectEntityId, message: `Rights grant ${grant.grantId} is ${grant.state.toLowerCase()}.`, requiresHumanReview: true });
+    if (!isAuthoritativeAssertion(grant.state, grant.provenance, grant.evidence.length > 0 || grant.provenance.evidence.length > 0)) {
+      findings.push({ code: 'GRANT_UNRESOLVED', severity: 'BLOCKING', entityId: grant.subjectEntityId, message: `Rights grant ${grant.grantId} is ${grant.state.toLowerCase()} or lacks matching documented provenance and evidence.`, requiresHumanReview: true });
+    }
   }
 
-  const allCoreInterestsAuthoritative = [...master, ...composition, ...publishers].every((interest) => authoritativeStates.has(interest.state));
+  const allCoreInterestsAuthoritative = [...master, ...composition, ...publishers].every((interest) => isAuthoritativeAssertion(
+    interest.state,
+    interest.provenance,
+    interest.provenance.evidence.length > 0 || vaultEntities.has(interest.targetEntityId) || vaultEntities.has(interest.partyEntityId),
+  ));
   const releaseReviewRequired = findings.some((finding) => finding.requiresHumanReview);
   return RightsIntelligenceReportSchema.parse({
     schemaVersion: 'rights-intelligence.v1', targetEntityId: parsed.targetEntityId,
