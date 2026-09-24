@@ -49,10 +49,40 @@ describe('SongIntake', () => {
     expect(intake.questions.some(q => q.key === 'rights.compositionWriters')).toBe(true);
   });
 
-  it('rejects detected or inferred claims as human intake confirmations', () => {
-    expect(() => withPlannedSongIntakeQuestions({ ...base, confirmations: {
-      'rights.masterOwnership': { value: '100%', provenance: { state: 'DETECTED', sourceType: 'SYSTEM', evidence: [], observedAt: now } },
-    }})).toThrow();
+  it.each(['UNKNOWN', 'DETECTED', 'INFERRED', 'DISPUTED', 'USER_CONFIRMED', 'DOCUMENTED'] as const)(
+    'does not let imported %s evidence satisfy a human checkpoint', state => {
+      const intake = withPlannedSongIntakeQuestions({ ...base, embeddedTags: {
+        isrc: { key: 'isrc', value: 'USABC2600001', requiresHumanConfirmation: true, provenance: { state: 'DETECTED', sourceType: 'SYSTEM', evidence: [], observedAt: now } },
+      }, confirmations: {
+        'rights.masterOwnership': { value: '100%', provenance: { state, sourceType: 'IMPORT', evidence: [], observedAt: now } },
+        'rights.compositionWriters': { value: 'Imported writers', provenance: { state, sourceType: 'IMPORT', evidence: [], observedAt: now } },
+        'rights.samples': { value: false, provenance: { state, sourceType: 'IMPORT', evidence: [], observedAt: now } },
+        'identifier.confirm.isrc': { value: 'USABC2600001', provenance: { state, sourceType: 'IMPORT', evidence: [], observedAt: now } },
+      }});
+      expect(intake.questions.map(question => question.key)).toEqual(expect.arrayContaining([
+        'rights.masterOwnership', 'rights.compositionWriters', 'rights.samples', 'identifier.confirm.isrc',
+      ]));
+    }
+  );
+
+  it('accepts a documented human checkpoint only when its evidence is present', () => {
+    const noEvidence = withPlannedSongIntakeQuestions({ ...base, confirmations: {
+      'rights.masterOwnership': { value: 'Documented', provenance: { state: 'DOCUMENTED', sourceType: 'DOCUMENT', evidence: [], observedAt: now } },
+    }});
+    const withEvidence = withPlannedSongIntakeQuestions({ ...base, confirmations: {
+      'rights.masterOwnership': { value: 'Documented', provenance: {
+        state: 'DOCUMENTED', sourceType: 'DOCUMENT', evidence: [{ id: 'agreement-1', type: 'AGREEMENT' }], observedAt: now,
+      } },
+    }});
+    expect(noEvidence.questions.some(question => question.key === 'rights.masterOwnership')).toBe(true);
+    expect(withEvidence.questions.some(question => question.key === 'rights.masterOwnership')).toBe(false);
+  });
+
+  it('does not let a system-tagged user confirmation satisfy a human checkpoint', () => {
+    const intake = withPlannedSongIntakeQuestions({ ...base, confirmations: {
+      'rights.masterOwnership': { value: '100%', provenance: { state: 'USER_CONFIRMED', sourceType: 'SYSTEM', evidence: [], observedAt: now } },
+    }});
+    expect(intake.questions.some(question => question.key === 'rights.masterOwnership')).toBe(true);
   });
 
   it.each(['REMIX', 'REMASTER', 'LIVE', 'ALTERNATE', 'INSTRUMENTAL', 'ACAPELLA', 'EDIT', 'COVER'] as const)(
