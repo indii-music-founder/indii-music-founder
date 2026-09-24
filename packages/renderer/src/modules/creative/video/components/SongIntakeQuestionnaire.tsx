@@ -102,18 +102,26 @@ export function SongIntakeQuestionnaire({ metadata, artistContext, onSaved, onDi
                         </div>
                     ) : (
                         <div className="space-y-2">
+                            {sourceRelationshipNeedsLink && (metadata.songIntake?.catalogMatches.some(match => match.entityId && match.entityId !== metadata.songIntake?.recordingEntityId)) && (
+                                <select aria-label="Matched canonical source" value="" onChange={event => setDraft(event.target.value)} className="w-full rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-white">
+                                    <option value="">Choose a matched canonical entity</option>
+                                    {metadata.songIntake?.catalogMatches.flatMap(match => match.entityId && match.entityId !== metadata.songIntake?.recordingEntityId
+                                        ? [<option key={match.entityId} value={match.entityId}>{match.entityId}</option>]
+                                        : [])}
+                                </select>
+                            )}
                             <textarea
                                 aria-label="Your answer"
                                 value={draft}
                                 onChange={event => setDraft(event.target.value)}
                                 rows={question.key.startsWith('rights.') || sourceRelationshipNeedsLink ? 4 : 2}
                                 className="w-full resize-y rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-white placeholder:text-neutral-600"
-                                placeholder={question.key.startsWith('identifier.confirm.') ? 'Confirm or correct the detected identifier' : 'Type your answer'}
+                                placeholder={question.key.startsWith('identifier.confirm.') ? 'Confirm or correct the detected identifier' : sourceRelationshipNeedsLink ? 'Enter a canonical work:… or recording:… ID' : 'Type your answer'}
                             />
                             {isSampleQuestion && /^yes\b/i.test(draft.trim()) && (
                                 <textarea aria-label="Sample source or clearance details" value={sampleDetails} onChange={event => setSampleDetails(event.target.value)} rows={2} className="w-full resize-y rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-white placeholder:text-neutral-600" placeholder="Describe the source and its license or clearance status" />
                             )}
-                            {sourceRelationshipNeedsLink && <p className="text-xs text-amber-200">We’ll keep this question open until the source is linked to a canonical catalog entity.</p>}
+                            {sourceRelationshipNeedsLink && <p className="text-xs text-amber-200">Confirming creates a canonical DERIVED_FROM relationship with your USER_CONFIRMED provenance. ISRC and platform IDs are not canonical entity IDs.</p>}
                             <button
                                 type="button"
                                 disabled={busy || !draft.trim() || (isSampleQuestion && /^yes\b/i.test(draft.trim()) && !sampleDetails.trim())}

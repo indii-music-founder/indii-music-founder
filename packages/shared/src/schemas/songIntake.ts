@@ -4,6 +4,10 @@ import { ProvenanceSchema } from './musicEntity.js';
 
 const IsoDateTime = z.string().datetime();
 const Id = z.string().trim().min(1).max(200);
+const CanonicalSourceEntityId = Id.refine(
+  value => (value.startsWith('recording:') || value.startsWith('work:')) && value.length > value.indexOf(':') + 1,
+  'Source relationships must reference an indii canonical work or recording ID.',
+);
 
 export const RecordingKindSchema = z.enum([
   'ORIGINAL', 'REMIX', 'REMASTER', 'LIVE', 'ALTERNATE', 'INSTRUMENTAL',
@@ -58,6 +62,8 @@ export const SongIntakeSchema = z.object({
   recordingEntityId: Id,
   contentHash: z.string().regex(/^[a-f0-9]{64}$/i),
   fingerprint: Id,
+  /** Canonical work/recording this version derives from; never an ISRC or platform ID. */
+  sourceEntityId: CanonicalSourceEntityId.optional(),
   originalFileName: z.string().trim().min(1).max(512),
   recordingKind: RecordingKindSchema.default('UNKNOWN'),
   technicalAnalysisComplete: z.boolean(),
@@ -117,7 +123,7 @@ export function planSongIntakeQuestions(input: SongIntakePlanInput): SongIntakeQ
   if (input.possibleExistingRelease === 'UNKNOWN' && !hasHumanCheckpoint('release.history')) {
     questions.push({ key: 'release.history', prompt: 'Has this recording been released before?', reason: 'Release history changes identifier-preservation and catalog-reconciliation steps.', authoritative: true });
   }
-  if (input.recordingKind !== 'ORIGINAL' && input.recordingKind !== 'UNKNOWN' && !tags.originaltitle) {
+  if (input.recordingKind !== 'ORIGINAL' && input.recordingKind !== 'UNKNOWN' && !tags.originaltitle && !input.sourceEntityId) {
     questions.push({ key: 'recording.sourceRelationship', prompt: 'Which original work or recording is this version based on?', reason: 'A derivative/version relationship must reference the canonical source.', authoritative: true });
   }
   for (const key of ['isrc', 'iswc', 'upc']) {

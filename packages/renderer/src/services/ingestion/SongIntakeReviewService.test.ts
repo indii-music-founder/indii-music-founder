@@ -66,13 +66,28 @@ describe('SongIntakeReviewService', () => {
         expect(result.splits).toEqual([]);
     });
 
-    it('keeps source relationship pending until a canonical relationship can be made', async () => {
+    it('creates a provenance-bearing canonical relationship for an explicitly selected source entity', async () => {
         const original = metadata();
         const remix = { ...original, songIntake: { ...original.songIntake, recordingKind: 'REMIX' as const } };
-        const result = await new SongIntakeReviewService().answer(remix, 'recording.sourceRelationship', 'Older canonical recording', undefined, now);
+        const result = await new SongIntakeReviewService().answer(remix, 'recording.sourceRelationship', 'work:source-1', undefined, now);
 
-        expect(result.songIntake?.confirmations['recording.sourceRelationship']?.value).toBe('Older canonical recording');
-        expect(result.songIntake?.questions.some(question => question.key === 'recording.sourceRelationship')).toBe(true);
+        expect(result.songIntake?.sourceEntityId).toBe('work:source-1');
+        expect(result.songIntake?.questions.some(question => question.key === 'recording.sourceRelationship')).toBe(false);
+        expect(result.musicRelationships).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                fromEntityId: 'recording:1', toEntityId: 'work:source-1', type: 'DERIVED_FROM',
+                provenance: { state: 'USER_CONFIRMED', sourceType: 'USER', sourceId: 'user-1', evidence: [], observedAt: now, confirmedAt: now },
+            }),
+        ]));
+    });
+
+    it('rejects external identifiers and self-links as canonical source relationships', async () => {
+        const original = metadata();
+        const remix = { ...original, songIntake: { ...original.songIntake, recordingKind: 'REMIX' as const } };
+        const service = new SongIntakeReviewService();
+        await expect(service.answer(remix, 'recording.sourceRelationship', 'USABC2600001', undefined, now)).rejects.toThrow(/canonical ID/i);
+        await expect(service.answer(remix, 'recording.sourceRelationship', 'recording:1', undefined, now)).rejects.toThrow(/own source/i);
+        expect(trackLibrary.saveTrack).not.toHaveBeenCalled();
     });
 
     it('rejects stale questions and mismatched track/intake owners', async () => {

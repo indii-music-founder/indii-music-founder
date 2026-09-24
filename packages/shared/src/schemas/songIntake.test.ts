@@ -92,6 +92,12 @@ describe('SongIntake', () => {
     }
   );
 
+  it('stops asking for a source relationship only after a canonical source entity is recorded', () => {
+    const linked = withPlannedSongIntakeQuestions({ ...base, recordingKind: 'REMIX', sourceEntityId: 'work:source-1' });
+    expect(linked.questions.some(question => question.key === 'recording.sourceRelationship')).toBe(false);
+    expect(() => withPlannedSongIntakeQuestions({ ...base, recordingKind: 'REMIX', sourceEntityId: 'USABC2600001' })).toThrow(/canonical work or recording ID/i);
+  });
+
   it('records exact catalog matches as evidence without merging identity', () => {
     const intake = withPlannedSongIntakeQuestions({ ...base, catalogMatches: [{
       legacyTrackId: 'legacy-1', entityId: 'canonical-1', matchType: 'EXACT_FINGERPRINT', confidence: 1,

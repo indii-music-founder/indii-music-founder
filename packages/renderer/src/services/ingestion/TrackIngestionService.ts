@@ -56,6 +56,7 @@ export class TrackIngestionService {
                         intakeId: `intake:${fingerprint}`,
                         ownerUid: userId,
                         recordingEntityId: existing.songIntake?.recordingEntityId ?? `recording:${fingerprint}`,
+                        sourceEntityId: existing.songIntake?.sourceEntityId,
                         contentHash: masterAsset.contentHash,
                         fingerprint,
                         originalFileName: file.name,

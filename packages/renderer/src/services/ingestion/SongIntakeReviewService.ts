@@ -1,5 +1,6 @@
 import {
     RecordingKindSchema,
+    MusicRelationshipSchema,
     SongIntakeConfirmationSchema,
     withPlannedSongIntakeQuestions,
     type ArtistContext,
@@ -45,6 +46,9 @@ export class SongIntakeReviewService {
         if (questionKey === 'release.history' && typeof normalizedValue !== 'boolean') {
             throw new Error('Choose yes or no to answer release history.');
         }
+        const sourceEntityId = questionKey === 'recording.sourceRelationship'
+            ? this.requireCanonicalSourceEntityId(normalizedValue, intake.recordingEntityId)
+            : intake.sourceEntityId;
 
         const confirmation = SongIntakeConfirmationSchema.parse({
             value: normalizedValue,
@@ -67,6 +71,7 @@ export class SongIntakeReviewService {
         const updatedIntake = withPlannedSongIntakeQuestions({
             ...intake,
             recordingKind,
+            sourceEntityId,
             possibleExistingRelease,
             confirmations,
             artistContext,
@@ -80,11 +85,54 @@ export class SongIntakeReviewService {
             ...(questionKey === 'recording.artist' && typeof normalizedValue === 'string'
                 ? { artistName: normalizedValue }
                 : {}),
+            ...(questionKey === 'recording.sourceRelationship' && sourceEntityId
+                ? { musicRelationships: this.addSourceRelationship(metadata, intake, sourceEntityId, answeredAt) }
+                : {}),
             songIntake: updatedIntake,
         };
 
         await trackLibrary.saveTrack(updatedMetadata);
         return updatedMetadata;
+    }
+
+    private requireCanonicalSourceEntityId(value: string | boolean | string[], currentEntityId: string): string {
+        if (typeof value !== 'string') throw new Error('Enter a canonical work or recording ID.');
+        const sourceEntityId = value.trim();
+        if (!(sourceEntityId.startsWith('recording:') || sourceEntityId.startsWith('work:')) || sourceEntityId.length <= sourceEntityId.indexOf(':') + 1) {
+            throw new Error('Use an indii canonical ID beginning with “recording:” or “work:”; ISRC and platform IDs are not canonical identity.');
+        }
+        if (sourceEntityId === currentEntityId) throw new Error('A recording cannot be its own source.');
+        return sourceEntityId;
+    }
+
+    private addSourceRelationship(
+        metadata: ExtendedGoldenMetadata,
+        intake: NonNullable<ExtendedGoldenMetadata['songIntake']>,
+        sourceEntityId: string,
+        answeredAt: string,
+    ) {
+        const current = metadata.musicRelationships ?? [];
+        const existing = current.find(relationship => relationship.fromEntityId === intake.recordingEntityId
+            && relationship.toEntityId === sourceEntityId && relationship.type === 'DERIVED_FROM');
+        if (existing) return current;
+
+        const relationshipId = `rel:${intake.fingerprint.slice(0, 96)}:${Date.parse(answeredAt).toString(36)}`;
+        const relationship = MusicRelationshipSchema.parse({
+            schemaVersion: 'music-relationship.v1',
+            id: relationshipId,
+            fromEntityId: intake.recordingEntityId,
+            toEntityId: sourceEntityId,
+            type: 'DERIVED_FROM',
+            status: 'ACTIVE',
+            attributes: { confirmedDuring: 'song-intake' },
+            provenance: {
+                state: 'USER_CONFIRMED', sourceType: 'USER', sourceId: intake.ownerUid,
+                evidence: [], observedAt: answeredAt, confirmedAt: answeredAt,
+            },
+            createdAt: answeredAt,
+            updatedAt: answeredAt,
+        });
+        return [...current, relationship];
     }
 }
 

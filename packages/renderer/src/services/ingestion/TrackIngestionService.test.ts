@@ -163,6 +163,7 @@ describe('TrackIngestionService', () => {
                 intakeId: `intake:${mockFingerprint}`,
                 ownerUid: 'owner-1',
                 recordingEntityId: `recording:${mockFingerprint}`,
+                sourceEntityId: 'work:source-1',
                 contentHash: mockMasterAsset.contentHash,
                 fingerprint: mockFingerprint,
                 originalFileName: 'test-song.mp3',
@@ -182,6 +183,7 @@ describe('TrackIngestionService', () => {
         const result = await service.ingestTrack(mockFile);
 
         expect(result.songIntake?.confirmations).toEqual(confirmations);
+        expect(result.songIntake?.sourceEntityId).toBe('work:source-1');
         expect(result.songIntake?.questions.some(question => question.key === 'rights.masterOwnership')).toBe(false);
         expect(result.songIntake?.questions.some(question => question.key === 'rights.compositionWriters')).toBe(true);
         expect(trackLibrary.saveTrack).toHaveBeenCalledWith(result);

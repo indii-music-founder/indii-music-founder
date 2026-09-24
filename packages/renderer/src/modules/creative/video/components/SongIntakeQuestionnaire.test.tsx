@@ -43,10 +43,10 @@ describe('SongIntakeQuestionnaire', () => {
         await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
     });
 
-    it('explains that free-text source notes do not replace canonical source links', () => {
+    it('explains that source relationships require canonical IDs', () => {
         render(<SongIntakeQuestionnaire metadata={metadata('recording.sourceRelationship')} onSaved={vi.fn()} onDismiss={vi.fn()} />);
 
-        expect(screen.getByText(/keep this question open until the source is linked to a canonical catalog entity/i)).toBeInTheDocument();
+        expect(screen.getByText(/canonical DERIVED_FROM relationship/i)).toBeInTheDocument();
         expect(screen.getByRole('textbox', { name: 'Your answer' })).toBeInTheDocument();
     });
 });
