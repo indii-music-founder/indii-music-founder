@@ -1,3 +1,5 @@
+import type { MusicRelationshipType } from '../schemas/musicRelationship.js';
+
 /**
  * IndiiVideoProject — the framework-neutral video project model. (MIG-001, ADR-001)
  *
@@ -82,6 +84,18 @@ export interface IndiiCanonicalMasterRenderReference {
     masterFingerprint: string;
     storagePath: string;
     volume: number;
+    /** Internal indii recording identity; ISRC/platform IDs never belong here. */
+    canonicalRecordingEntityId?: string;
+    /** Explicit use semantics preserved into the rendered video lineage. */
+    musicUse?: Extract<MusicRelationshipType,
+        | 'USES_FULL_RECORDING'
+        | 'USES_RECORDING_EXCERPT'
+        | 'USES_ALTERNATE_MIX'
+        | 'USES_LIVE_RECORDING'
+        | 'USES_INSTRUMENTAL'
+        | 'USES_STEM'
+        | 'REFERENCES_RELEASE_ONLY'
+    >;
 }
 
 export interface IndiiVideoClip {

@@ -88,6 +88,7 @@ describe('RenderService', () => {
                     expiresAt,
                     generation: '123456789',
                     mimeType: 'video/mp4',
+                    storageRef: 'gs://indii-music-founder.firebasestorage.app/private-renders/user-1/project-1/render-1/master-pass/final_output.mp4',
                 },
             });
         const wait = vi.fn().mockResolvedValue(undefined);
@@ -106,10 +107,31 @@ describe('RenderService', () => {
         ]);
         expect(completed).toEqual(expect.objectContaining({
             status: 'completed',
-            asset: expect.objectContaining({ url: 'https://signed.example/private-output' }),
+            asset: expect.objectContaining({
+                url: 'https://signed.example/private-output',
+                storageRef: 'gs://indii-music-founder.firebasestorage.app/private-renders/user-1/project-1/render-1/master-pass/final_output.mp4',
+            }),
         }));
         expect(call).toHaveBeenCalledTimes(3);
         expect(call).toHaveBeenCalledWith('getVideoRenderReceipt', { jobId: 'render-1' });
+    });
+
+    it('rejects a completed render receipt with a caller-shaped or non-private storage reference', async () => {
+        const service = new RenderService(vi.fn().mockResolvedValue({
+            status: 'completed',
+            renderId: 'render-1',
+            projectId: 'project-1',
+            progress: 100,
+            asset: {
+                url: 'https://signed.example/private-output',
+                expiresAt: Date.now() + 60_000,
+                generation: '123456789',
+                mimeType: 'video/mp4',
+                storageRef: 'gs://bucket/public/attacker.mp4',
+            },
+        }));
+
+        await expect(service.getRenderReceipt('render-1')).rejects.toThrow(/canonical render asset reference/i);
     });
 
     it('does not fabricate an asset when the server reports failure', async () => {
