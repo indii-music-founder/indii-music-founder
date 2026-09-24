@@ -24,6 +24,7 @@ export * from './schemas/musicEntityCompatibility.js';
 export * from './schemas/musicRelationship.js';
 export * from './schemas/musicEvent.js';
 export * from './schemas/musicEventDelivery.js';
+export * from './schemas/catalogIntelligence.js';
 export * from './schemas/musicActionExecution.js';
 export * from './schemas/knowledge.js';
 export * from './schemas/conversionEvent.js';
