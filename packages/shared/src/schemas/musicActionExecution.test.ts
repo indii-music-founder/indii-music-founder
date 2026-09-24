@@ -13,6 +13,7 @@ describe('planMusicActionExecution', () => {
     [{ officialApiAvailable: true, oauthApiAvailable: true, browserAutomationAvailable: true, desktopControlAvailable: true, autonomousComputerControlAuthorized: true }, 'OFFICIAL_API'],
     [{ oauthApiAvailable: true, browserAutomationAvailable: true, desktopControlAvailable: true, autonomousComputerControlAuthorized: true }, 'OAUTH_API'],
     [{ browserAutomationAvailable: true, desktopControlAvailable: true, autonomousComputerControlAuthorized: true }, 'BROWSER_AUTOMATION'],
+    [{ browserAutomationAvailable: true, autonomousComputerControlAuthorized: false }, 'GUIDED_MANUAL'],
     [{ desktopControlAvailable: true, autonomousComputerControlAuthorized: true }, 'DESKTOP_CONTROL'],
     [{ desktopControlAvailable: true, autonomousComputerControlAuthorized: false }, 'GUIDED_MANUAL'],
     [{ desktopControlAvailable: true }, 'GUIDED_MANUAL'],
@@ -48,6 +49,15 @@ describe('planMusicActionExecution', () => {
     });
     expect(plan.route).toBe('OFFICIAL_API');
     expect(plan.status).toBe('AWAITING_HUMAN');
+  });
+
+  it('never selects browser automation without explicit AOP authorization', () => {
+    const plan = planMusicActionExecution({
+      ...base,
+      capabilities: { browserAutomationAvailable: true },
+    });
+    expect(plan.route).toBe('GUIDED_MANUAL');
+    expect(plan.reason).toMatch(/Artist Operating Profile authorization/);
   });
 
   it('deduplicates repeated checkpoints and never promotes external identifiers to canonical entity identity', () => {

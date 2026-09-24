@@ -38,7 +38,7 @@ export const MusicActionExecutionCapabilitiesSchema = z.object({
   oauthApiAvailable: z.boolean().default(false),
   browserAutomationAvailable: z.boolean().default(false),
   desktopControlAvailable: z.boolean().default(false),
-  /** Must reflect explicit, current AOP authorization; absence is false. */
+  /** Must reflect explicit, current AOP authorization for browser/desktop control; absence is false. */
   autonomousComputerControlAuthorized: z.boolean().default(false),
 }).strict();
 export type MusicActionExecutionCapabilities = z.infer<typeof MusicActionExecutionCapabilitiesSchema>;
@@ -83,7 +83,7 @@ export function planMusicActionExecution(input: MusicActionExecutionRequest): Mu
   } else if (checkpoints.length > 0) {
     route = 'GUIDED_MANUAL';
     reason = 'A human checkpoint is required before any automated submission or binding action.';
-  } else if (capabilities.browserAutomationAvailable) {
+  } else if (capabilities.browserAutomationAvailable && capabilities.autonomousComputerControlAuthorized) {
     route = 'BROWSER_AUTOMATION';
     reason = 'Use browser automation after higher-priority API routes were unavailable.';
   } else if (capabilities.desktopControlAvailable && capabilities.autonomousComputerControlAuthorized) {
@@ -91,8 +91,8 @@ export function planMusicActionExecution(input: MusicActionExecutionRequest): Mu
     reason = 'Use desktop control under explicit Artist Operating Profile authorization.';
   } else {
     route = 'GUIDED_MANUAL';
-    reason = capabilities.desktopControlAvailable
-      ? 'Desktop control is not authorized by the Artist Operating Profile.'
+    reason = capabilities.browserAutomationAvailable || capabilities.desktopControlAvailable
+      ? 'Browser and desktop control require explicit Artist Operating Profile authorization.'
       : 'No verified automated route is available; continue with guided manual steps.';
   }
 

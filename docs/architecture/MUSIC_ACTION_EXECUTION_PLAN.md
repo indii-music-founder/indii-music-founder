@@ -11,9 +11,9 @@ create a second executor or dispatch work itself.
 `planMusicActionExecution` selects the first verified available route in this
 order: official API, OAuth/API workflow, browser automation, desktop control,
 then guided manual. Browser and desktop routes are never selected while a human
-checkpoint is outstanding. Desktop control additionally requires explicit,
-current Artist Operating Profile authorization. Missing capability information
-fails closed to guided manual.
+checkpoint is outstanding. Both browser and desktop control additionally
+require explicit, current Artist Operating Profile authorization. Missing
+capability information fails closed to guided manual.
 
 API routes may prepare a request while a checkpoint is outstanding, but the
 plan remains `AWAITING_HUMAN`; a caller must not treat that plan as authority to
