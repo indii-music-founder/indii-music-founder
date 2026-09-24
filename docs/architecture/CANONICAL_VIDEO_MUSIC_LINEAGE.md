@@ -13,11 +13,17 @@ accepted as recording identity. The reference remains a lineage assertion for
 the existing render workflow; it does not assert ownership, clearance, an
 official-video designation, or platform publication.
 
-Downstream consumer enabled by this slice: the existing private storyboard
-render compiler can now carry the canonical recording and music-use semantics
-alongside the immutable source master. The completed private-render receipt
-also exposes the server-verified stable `gs://` output reference, separate
-from its expiring signed URL, so an Asset identity can preserve object
-generation and path without treating a temporary URL as canonical. Platform publication/UGC identity and
-canonical `VideoResource` creation remain later Phase 7 work; this slice does
-not claim those capabilities are complete.
+Downstream consumers enabled by this slice: the existing private storyboard
+render compiler carries canonical recording/music-use semantics alongside the
+source master, and the existing track library persists the resulting canonical
+`VideoResource`, immutable `Asset`, and confirmed music `Relationship`. The
+video designation is explicitly selected by the user; it is never inferred
+from generated content. The completed private-render receipt supplies the
+server-verified stable `gs://` object reference and generation separately from
+its expiring signed URL.
+
+The shared contract also reserves namespaced platform identifiers on a
+`VideoResource`, but this path creates none: provider ingestion/publication and
+UGC matching remain later Phase 7 work and require their own source evidence.
+This delivery does not assert ownership, clearance, official status beyond the
+user's designation, or a provider-side publication.

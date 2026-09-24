@@ -4,7 +4,7 @@
  */
 
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
-import type { CatalogImportSession, MusicRelationship, RightsIntelligenceReport, SongIntake } from '@indii/shared';
+import type { CatalogImportSession, MusicRelationship, RightsIntelligenceReport, SongIntake, VideoMusicIdentity } from '@indii/shared';
 
 export interface MasterAudioReference {
     audioProperties?: {
@@ -92,6 +92,8 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     songIntake?: SongIntake;
     /** Canonical music relationships confirmed during intake. */
     musicRelationships?: MusicRelationship[];
+    /** Canonical VideoResource/Asset lineage created by the existing private render flow. */
+    videoMusicIdentities?: VideoMusicIdentity[];
     /** Phase 5 non-destructive existing-catalog reconciliation state. */
     catalogImport?: CatalogImportSession;
     /** Phase 6 deterministic rights preflight; never substitutes for legal review. */

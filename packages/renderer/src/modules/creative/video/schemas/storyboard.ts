@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { VideoKindSchema } from '@indii/shared';
 
 export const StoryboardSlotSchema = z.object({
     id: z.string(),
@@ -29,6 +30,8 @@ export const StoryboardProjectSchema = z.object({
     name: z.string().min(1),
     /** Canonical recording identity for new intakes; optional for legacy saved projects. */
     canonicalRecordingEntityId: z.string().trim().min(1).max(200).regex(/^recording:.+$/).optional(),
+    /** Explicit user-selected designation; never inferred from generated frames. */
+    videoKind: VideoKindSchema.optional(),
     audioUrl: z.string().optional(),
     bpm: z.number().positive().default(120),
     key: z.string().optional(),

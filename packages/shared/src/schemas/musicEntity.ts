@@ -223,18 +223,21 @@ export const SoundRecordingEntitySchema = CanonicalEntityBaseSchema.extend({
 }).strict();
 export type SoundRecordingEntity = z.infer<typeof SoundRecordingEntitySchema>;
 
+export const VideoKindSchema = z.enum([
+  'OFFICIAL_MUSIC_VIDEO',
+  'LYRIC_VIDEO',
+  'PERFORMANCE_VIDEO',
+  'VISUALIZER',
+  'LIVE_VIDEO',
+  'PROMOTIONAL',
+  'OTHER',
+]);
+export type VideoKind = z.infer<typeof VideoKindSchema>;
+
 export const VideoResourceEntitySchema = CanonicalEntityBaseSchema.extend({
   entityType: z.literal('video_resource'),
   title: ShortTextSchema,
-  videoKind: z.enum([
-    'OFFICIAL_MUSIC_VIDEO',
-    'LYRIC_VIDEO',
-    'PERFORMANCE_VIDEO',
-    'VISUALIZER',
-    'LIVE_VIDEO',
-    'PROMOTIONAL',
-    'OTHER',
-  ]),
+  videoKind: VideoKindSchema,
   durationSeconds: z.number().nonnegative().optional(),
 }).strict();
 export type VideoResourceEntity = z.infer<typeof VideoResourceEntitySchema>;
@@ -270,6 +273,8 @@ export const AssetEntitySchema = CanonicalEntityBaseSchema.extend({
   mimeType: z.string().trim().min(1).max(256).optional(),
   contentSha256: z.string().regex(/^[a-f0-9]{64}$/i).optional(),
   storageRef: z.string().trim().min(1).max(2048).optional(),
+  /** Object generation pins an asset to immutable storage content. */
+  storageGeneration: z.string().regex(/^[1-9][0-9]{0,29}$/).optional(),
 }).strict();
 export type AssetEntity = z.infer<typeof AssetEntitySchema>;
 
