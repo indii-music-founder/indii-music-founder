@@ -27,6 +27,8 @@ export const StoryboardSlotSchema = z.object({
 export const StoryboardProjectSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
+    /** Canonical recording identity for new intakes; optional for legacy saved projects. */
+    canonicalRecordingEntityId: z.string().trim().min(1).max(200).regex(/^recording:.+$/).optional(),
     audioUrl: z.string().optional(),
     bpm: z.number().positive().default(120),
     key: z.string().optional(),

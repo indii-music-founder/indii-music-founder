@@ -53,6 +53,7 @@ const makeStubInvoker = (state: StubState) =>
                         expiresAt: Date.now() + 3_600_000,
                         generation: '1234567890',
                         mimeType: 'video/mp4',
+                        storageRef: `gs://indii-music-founder.firebasestorage.app/private-renders/user-1/proj-1/${jobId}/master-pass/final_output.mp4`,
                     },
                 };
             }

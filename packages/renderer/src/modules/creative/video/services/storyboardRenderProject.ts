@@ -39,6 +39,15 @@ function canonicalMasterFrom(project: VideoProject): {
     ) {
         throw new StoryboardRenderContractError('The canonical master identity is malformed.');
     }
+    if (master.canonicalRecordingEntityId) {
+        if (!master.canonicalRecordingEntityId.startsWith('recording:')
+            || master.canonicalRecordingEntityId.length <= 'recording:'.length
+            || !master.musicUse) {
+            throw new StoryboardRenderContractError('Canonical recording lineage requires an internal recording ID and explicit music-use semantics.');
+        }
+    } else if (master.musicUse) {
+        throw new StoryboardRenderContractError('Music-use semantics require a canonical recording identity.');
+    }
     return { master, ...(clip.src ? { previewSource: clip.src } : {}) };
 }
 
@@ -57,6 +66,9 @@ export function compileStoryboardRenderProject(input: {
         );
     }
     const { master, previewSource } = canonicalMasterFrom(activeProject);
+    if (storyboard.canonicalRecordingEntityId && master.canonicalRecordingEntityId !== storyboard.canonicalRecordingEntityId) {
+        throw new StoryboardRenderContractError('The storyboard recording identity does not match its canonical master lineage.');
+    }
     if (storyboard.slots.length === 0) {
         throw new StoryboardRenderContractError('The storyboard has no renderable slots.');
     }

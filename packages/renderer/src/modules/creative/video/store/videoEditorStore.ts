@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { MembershipService, MembershipTier } from '@/services/MembershipService';
 import type { ExtendedVideoProject, SceneSegment } from '@/services/video/SceneExtensionService';
-import type { MasterAudioReference } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
 import type { StoryboardProject, StoryboardSlot } from '../schemas/storyboard';
 import type { ScreenwriterStoryboardHandoff } from '@/types/handoff';
@@ -22,20 +21,8 @@ import type {
 export type ClipType = IndiiVideoClip['type'];
 
 /** Immutable audio identity sent to the render backend; preview URLs are not authority. */
-export type CanonicalMasterRenderReference = Pick<
-    MasterAudioReference,
-    'contentHash' | 'generation' | 'masterFingerprint' | 'storagePath'
-> & { volume: number };
-
-// Structural twin of CanonicalMasterRenderReference lives in @indii/shared
-// (`canonicalMaster` field). This compile-time check fails if the two drift apart.
-type _CanonicalMasterRefInSync = [IndiiVideoClip['canonicalMaster']] extends [
-    CanonicalMasterRenderReference | undefined,
-]
-    ? true
-    : never;
-const _CANONICAL_MASTER_REF_IN_SYNC: _CanonicalMasterRefInSync = true;
-void _CANONICAL_MASTER_REF_IN_SYNC;
+/** Canonical render-master reference is owned by @indii/shared. */
+export type CanonicalMasterRenderReference = NonNullable<IndiiVideoClip['canonicalMaster']>;
 
 export type VideoClip = IndiiVideoClip;
 

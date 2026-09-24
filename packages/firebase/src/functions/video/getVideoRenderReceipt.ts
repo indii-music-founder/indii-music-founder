@@ -48,6 +48,7 @@ export type VideoRenderReceipt =
             expiresAt: number;
             generation: string;
             mimeType: 'video/mp4';
+            storageRef: string;
         };
     }
     | {
@@ -202,6 +203,7 @@ export async function readVideoRenderReceipt(
             expiresAt,
             generation,
             mimeType: 'video/mp4',
+            storageRef: expected.finalVideoUri,
         },
     };
 }
