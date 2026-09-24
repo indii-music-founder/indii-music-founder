@@ -24,6 +24,8 @@ import { logger } from '@/utils/logger';
 import { secureRandomHex } from '@/utils/crypto-random';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
+import { hasAutonomousComputerControl } from '@indii/shared';
+import { artistOperatingProfileService } from './governance/ArtistOperatingProfileService';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -148,6 +150,11 @@ export class BrowserAgentService {
         startUrl: string,
         credentials?: PortalCredentials
     ): Promise<AgentTask> {
+        const operatingProfile = await artistOperatingProfileService.getProfile();
+        if (!hasAutonomousComputerControl(operatingProfile)) {
+            throw new Error('Browser automation requires Autonomous Computer Control to be enabled in Settings > Automation.');
+        }
+
         if (!this.isConfigured()) {
             throw new Error('Browser agent is not configured');
         }
