@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ConnectedIntelligenceActionSchema, type ConnectedIntelligenceAction } from './connectedIntelligence.js';
 
 const CanonicalEntityIdSchema = z.string().trim().min(1).max(160).refine(
   value => !/^(?:isrc|iswc|upc|ean|isni|ipi|dpid|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i.test(value)
@@ -14,6 +15,7 @@ const CanonicalEntityIdSchema = z.string().trim().min(1).max(160).refine(
  * capabilities that have already been verified for the current user/session.
  */
 export const MusicActionCheckpointSchema = z.enum([
+  'HUMAN_REVIEW',
   'MFA',
   'LEGAL_ATTESTATION',
   'SIGNATURE',
@@ -44,7 +46,7 @@ export const MusicActionExecutionCapabilitiesSchema = z.object({
 export type MusicActionExecutionCapabilities = z.infer<typeof MusicActionExecutionCapabilitiesSchema>;
 
 export const MusicActionExecutionRequestSchema = z.object({
-  actionId: z.string().trim().min(1).max(160),
+  actionId: z.string().trim().min(1).max(300),
   subjectEntityId: CanonicalEntityIdSchema,
   checkpoints: z.array(MusicActionCheckpointSchema).max(20).default([]),
   capabilities: MusicActionExecutionCapabilitiesSchema.default({}),
@@ -53,19 +55,23 @@ export type MusicActionExecutionRequest = z.input<typeof MusicActionExecutionReq
 
 export const MusicActionExecutionPlanSchema = z.object({
   schemaVersion: z.literal('music-action-execution-plan.v1'),
-  actionId: z.string().trim().min(1).max(160),
+  actionId: z.string().trim().min(1).max(300),
   subjectEntityId: z.string().trim().min(1).max(160),
+  /** Original advisory context is retained for a human-facing consumer. */
+  sourceAction: ConnectedIntelligenceActionSchema.optional(),
   route: MusicActionExecutionRouteSchema,
   status: z.enum(['READY', 'AWAITING_HUMAN']),
+  /** A plan is advisory only. Authorization must come from a separate, explicit gate. */
+  executionAuthorized: z.literal(false),
   checkpoints: z.array(MusicActionCheckpointSchema).max(20),
   reason: z.string().trim().min(1).max(500),
 }).strict();
 export type MusicActionExecutionPlan = z.infer<typeof MusicActionExecutionPlanSchema>;
 
 /**
- * Selects the highest-priority verified route. Browser/desktop routes are
- * skipped whenever a human checkpoint is required; those actions stop for a
- * guided human workflow. Desktop additionally requires explicit AOP consent.
+ * Selects the highest-priority verified route. Actions requiring a human
+ * checkpoint use a guided workflow; this function never dispatches or
+ * authorizes execution. Desktop additionally requires explicit AOP consent.
  */
 export function planMusicActionExecution(input: MusicActionExecutionRequest): MusicActionExecutionPlan {
   const request = MusicActionExecutionRequestSchema.parse(input);
@@ -74,7 +80,10 @@ export function planMusicActionExecution(input: MusicActionExecutionRequest): Mu
 
   let route: MusicActionExecutionRoute;
   let reason: string;
-  if (capabilities.officialApiAvailable) {
+  if (checkpoints.includes('HUMAN_REVIEW')) {
+    route = 'GUIDED_MANUAL';
+    reason = 'The source action requires human review and does not authorize execution.';
+  } else if (capabilities.officialApiAvailable) {
     route = 'OFFICIAL_API';
     reason = 'Use the verified official API route.';
   } else if (capabilities.oauthApiAvailable) {
@@ -102,7 +111,27 @@ export function planMusicActionExecution(input: MusicActionExecutionRequest): Mu
     subjectEntityId: request.subjectEntityId,
     route,
     status: checkpoints.length > 0 ? 'AWAITING_HUMAN' : 'READY',
+    executionAuthorized: false,
     checkpoints,
     reason,
   });
+}
+
+/**
+ * Converts a Phase 9 advisory action into a Phase 10 plan. Phase 9 actions
+ * are always human-review-only and explicitly non-authorizing, so no supplied
+ * capability can route them to an automated executor.
+ */
+export function planConnectedIntelligenceAction(
+  input: ConnectedIntelligenceAction,
+  capabilities: z.input<typeof MusicActionExecutionCapabilitiesSchema> = {},
+): MusicActionExecutionPlan {
+  const action = ConnectedIntelligenceActionSchema.parse(input);
+  const plan = planMusicActionExecution({
+    actionId: action.actionId,
+    subjectEntityId: action.subjectEntityId,
+    checkpoints: ['HUMAN_REVIEW'],
+    capabilities,
+  });
+  return MusicActionExecutionPlanSchema.parse({ ...plan, sourceAction: action });
 }

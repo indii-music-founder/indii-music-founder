@@ -15,9 +15,16 @@ checkpoint is outstanding. Both browser and desktop control additionally
 require explicit, current Artist Operating Profile authorization. Missing
 capability information fails closed to guided manual.
 
-API routes may prepare a request while a checkpoint is outstanding, but the
-plan remains `AWAITING_HUMAN`; a caller must not treat that plan as authority to
-submit, sign, pay, attest, or confirm ownership.
+API routes may prepare a request while a domain-specific checkpoint is
+outstanding, but the plan remains `AWAITING_HUMAN`; a caller must not treat
+that plan as authority to submit, sign, pay, attest, or confirm ownership.
+Every plan includes `executionAuthorized: false`. Phase 9 advisory actions are
+consumed through `planConnectedIntelligenceAction`, which validates the
+upstream schema and canonical subject, preserves the action ID, forces a
+`HUMAN_REVIEW` checkpoint, and selects `GUIDED_MANUAL` regardless of available
+API, OAuth, browser, or desktop capabilities. The complete source action is
+retained in the plan for human-facing consumers, and Phase 9's 300-character
+action-ID bound is preserved end-to-end.
 
 ## Boundaries and integration status
 
@@ -29,10 +36,11 @@ submit, sign, pay, attest, or confirm ownership.
 - AI judgments may help interpret ambiguous action intent upstream, but must
   not choose or override the route, AOP permissions, legal/rights truth, or
   human checkpoints.
-- This contract is not yet wired into Registration Center. Its current catalog
-  adapter exposes legacy track IDs rather than canonical music entity IDs; a
-  later adapter must resolve canonical identity and consume Connected
-  Intelligence actions before integration is safe.
+- The Phase 9 action contract is now consumed by the shared planner adapter.
+  It is not yet wired into Registration Center: its current catalog adapter
+  exposes legacy track IDs rather than canonical music entity IDs. Do not
+  infer canonical identity from those IDs; integration waits for an explicit,
+  validated mapping and an independently authorized human action.
 - The existing `BrowserAgentService.executeTask` boundary now checks the
   authenticated user's AOP permission centrally, covering Registration Center
   and music-portal callers. This guard does not enable the currently
