@@ -3,6 +3,8 @@ import { evaluateRightsIntelligence, type RightsIntelligenceInput, type RightsIn
 
 const now = '2026-09-22T13:00:00.000Z';
 const provenance = { state: 'USER_DECLARED' as const, sourceType: 'USER' as const, sourceId: 'user-1', evidence: [], observedAt: now };
+const documentedProvenance = { ...provenance, state: 'DOCUMENTED' as const, sourceType: 'DOCUMENT' as const };
+const verifiedProvenance = { ...provenance, state: 'EXTERNAL_VERIFIED' as const, sourceType: 'EXTERNAL_SERVICE' as const };
 const interest = (overrides: Partial<RightsInterest> = {}): RightsInterest => ({
   interestId: 'interest-1', targetEntityId: 'recording:1', partyEntityId: 'person:1',
   interestType: 'MASTER_OWNER', sharePercentage: 100, territoryCodes: ['Worldwide'],
@@ -21,8 +23,8 @@ describe('rights intelligence', () => {
   it('allows eligibility only for complete documented interests without third-party use', () => {
     const report = evaluateRightsIntelligence(input({
       interests: [
-        interest({ state: 'DOCUMENTED' }),
-        interest({ interestId: 'writer-1', interestType: 'WRITER', state: 'VERIFIED' }),
+        interest({ state: 'DOCUMENTED', provenance: documentedProvenance }),
+        interest({ interestId: 'writer-1', interestType: 'WRITER', state: 'VERIFIED', provenance: verifiedProvenance }),
       ],
       evidenceVaults: [{ entityId: 'recording:1', evidence: [{ id: 'split-sheet-1', type: 'AGREEMENT', contentSha256: 'a'.repeat(64) }] }],
     }), now);
@@ -32,10 +34,47 @@ describe('rights intelligence', () => {
 
   it('requires evidence for documented ownership', () => {
     const report = evaluateRightsIntelligence(input({ interests: [
-      interest({ state: 'DOCUMENTED' }),
-      interest({ interestId: 'writer-1', interestType: 'WRITER', state: 'VERIFIED' }),
+      interest({ state: 'DOCUMENTED', provenance: documentedProvenance }),
+      interest({ interestId: 'writer-1', interestType: 'WRITER', state: 'VERIFIED', provenance: verifiedProvenance }),
     ] }), now);
     expect(report.findings.some((finding) => finding.code === 'EVIDENCE_MISSING')).toBe(true);
+    expect(report.contentIdAutomaticSubmissionEligible).toBe(false);
+  });
+
+  it.each(['DECLARED', 'DETECTED', 'KNOWN', 'UNKNOWN', 'DISPUTED', 'UNRESOLVED'] as const)(
+    'requires review when a 100%% core rights interest is %s', state => {
+      const report = evaluateRightsIntelligence(input({
+        interests: [
+          interest({ state: 'DOCUMENTED' }),
+          interest({ interestId: 'writer-1', interestType: 'WRITER', state, provenance: {
+            ...provenance,
+            state: state === 'DECLARED' ? 'USER_DECLARED'
+              : state === 'DISPUTED' ? 'DISPUTED'
+                : state === 'DETECTED' ? 'DETECTED' : 'UNKNOWN',
+            sourceType: state === 'DETECTED' ? 'SYSTEM' : 'USER',
+          } }),
+        ],
+        evidenceVaults: [{ entityId: 'recording:1', evidence: [{ id: 'agreement-1', type: 'AGREEMENT', contentSha256: 'a'.repeat(64) }] }],
+      }), now);
+
+      expect(report.findings).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'RIGHTS_INTEREST_UNRESOLVED', severity: state === 'DISPUTED' || state === 'UNRESOLVED' ? 'BLOCKING' : 'REVIEW' }),
+      ]));
+      expect(report.releaseReviewRequired).toBe(true);
+      expect(report.contentIdAutomaticSubmissionEligible).toBe(false);
+    },
+  );
+
+  it('does not accept a documented label when provenance only records a user declaration', () => {
+    const report = evaluateRightsIntelligence(input({ interests: [
+      interest({ state: 'DOCUMENTED', provenance, }),
+      interest({ interestId: 'writer-1', interestType: 'WRITER', state: 'VERIFIED', provenance: verifiedProvenance }),
+    ], evidenceVaults: [{ entityId: 'recording:1', evidence: [{ id: 'agreement-1', type: 'AGREEMENT' }] }] }), now);
+
+    expect(report.findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'RIGHTS_INTEREST_UNRESOLVED', severity: 'REVIEW' }),
+    ]));
+    expect(report.releaseReviewRequired).toBe(true);
     expect(report.contentIdAutomaticSubmissionEligible).toBe(false);
   });
 
