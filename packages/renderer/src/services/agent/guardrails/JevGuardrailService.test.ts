@@ -5,7 +5,7 @@ describe('JevGuardrailService', () => {
     let service: JevGuardrailService;
 
     const createClient = (answers: Record<string, number>) => ({
-        systemOne: vi.fn().mockResolvedValue({ answers }),
+        systemOne: vi.fn().mockImplementation(() => Promise.resolve({ answers })),
     });
 
     beforeEach(() => {
@@ -18,9 +18,11 @@ describe('JevGuardrailService', () => {
             tool_calls: [{ name: 'get_revenue_analytics' }],
         };
 
+        vi.useFakeTimers();
         service = new JevGuardrailService(createClient({ is_actionable_response: 0.95 }) as never);
 
         const result = await service.screen(input);
+        vi.useRealTimers();
 
         expect(result.text).toBe(input.text);
         expect(result.wasModified).toBe(false);
@@ -31,9 +33,11 @@ describe('JevGuardrailService', () => {
             text: 'Here is your daily overview.',
         };
 
+        vi.useFakeTimers();
         service = new JevGuardrailService(createClient({ is_actionable_response: 0.1 }) as never);
 
         const result = await service.screen(input);
+        vi.useRealTimers();
 
         expect(result.wasModified).toBe(true);
         expect(result.flags).toContain('unactionable_response');
