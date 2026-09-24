@@ -33,6 +33,8 @@ export interface CompletedRenderAsset {
     /** Storage generation of the output object (stale-read protection). */
     generation: string;
     mimeType: 'video/mp4';
+    /** Stable server-verified object identity; the signed URL remains temporary access only. */
+    storageRef?: string;
 }
 
 export interface CompletedRenderReceipt {

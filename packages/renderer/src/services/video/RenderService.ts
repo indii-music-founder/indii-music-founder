@@ -70,6 +70,7 @@ function parseReceipt(raw: unknown, expectedRenderId: string): VideoRenderReceip
             throw new Error('The server returned an invalid completed render receipt.');
         }
         const record = asset as Record<string, unknown>;
+        const storageRef = record.storageRef;
         if (
             progress !== 100
             || typeof record.url !== 'string'
@@ -83,6 +84,12 @@ function parseReceipt(raw: unknown, expectedRenderId: string): VideoRenderReceip
         ) {
             throw new Error('The server returned an invalid completed render receipt.');
         }
+        if (storageRef !== undefined && (
+            typeof storageRef !== 'string'
+            || !new RegExp(`^gs://[A-Za-z0-9._-]{3,222}/private-renders/[A-Za-z0-9_-]{1,128}/[A-Za-z0-9_-]{1,128}/${expectedRenderId}/master-pass/final_output\\.mp4$`).test(storageRef)
+        )) {
+            throw new Error('The server returned an invalid canonical render asset reference.');
+        }
         return {
             status,
             renderId,
@@ -93,6 +100,7 @@ function parseReceipt(raw: unknown, expectedRenderId: string): VideoRenderReceip
                 expiresAt: record.expiresAt,
                 generation: record.generation,
                 mimeType: 'video/mp4',
+                ...(typeof storageRef === 'string' ? { storageRef } : {}),
             },
         };
     }

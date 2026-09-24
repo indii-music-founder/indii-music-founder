@@ -151,6 +151,7 @@ describe('readVideoRenderReceipt', () => {
                 expiresAt: 1_800_000_300_000,
                 generation: '123456789',
                 mimeType: 'video/mp4',
+                storageRef: RESULT_URI,
             },
         });
         expect(dependencies.inspectObject).toHaveBeenCalledWith(

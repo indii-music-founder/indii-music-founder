@@ -15,6 +15,9 @@ official-video designation, or platform publication.
 
 Downstream consumer enabled by this slice: the existing private storyboard
 render compiler can now carry the canonical recording and music-use semantics
-alongside the immutable source master. Platform publication/UGC identity and
+alongside the immutable source master. The completed private-render receipt
+also exposes the server-verified stable `gs://` output reference, separate
+from its expiring signed URL, so an Asset identity can preserve object
+generation and path without treating a temporary URL as canonical. Platform publication/UGC identity and
 canonical `VideoResource` creation remain later Phase 7 work; this slice does
 not claim those capabilities are complete.
