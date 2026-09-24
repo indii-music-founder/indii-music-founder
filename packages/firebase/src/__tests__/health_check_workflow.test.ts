@@ -49,8 +49,11 @@ describe('Health Check workflow clean-install contract', () => {
     expect(deployWorkflow).toMatch(
       /npm pkg set "dependencies\.@indii\/shared=file:\.\/\$SHARED_TGZ_NAME" -w packages\/firebase/,
     );
+    // ISSUE-1442 fix: the lock must be generated INSIDE packages/firebase with
+    // --no-workspaces — the old --prefix form wrote the workspace-root lock,
+    // leaving Cloud Build to crash-regenerate (Arborist edgesOut).
     expect(deployWorkflow).toMatch(
-      /npm install --package-lock-only --prefix packages\/firebase --quiet/,
+      /cd packages\/firebase && npm install --package-lock-only --no-workspaces --quiet/,
     );
   });
 });
