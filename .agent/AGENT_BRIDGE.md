@@ -98,3 +98,20 @@ next functions deploy. Shadow experiment artifacts: `.agent/observations/typesaf
 
 **Still founder-gated:** Tier 3 disposition (analytics/crm/screenwriter/capture), release-journey
 flow, merge of the two overlapping TYPESAFE opportunity docs.
+
+
+## BLOCKER (2026-09-23) — functions deploy failed on your dispatchCloudVideoRender type change
+
+`npx firebase deploy --only functions` FAILED: `[dispatchCloudVideoRender(us-central1)] Changing
+from an HTTPS function to a background triggered function is not allowed. Please delete your
+function and create a new one instead.`
+
+Your committed code converted `dispatchCloudVideoRender` from onCall/HTTPS to a background
+trigger; Firebase cannot convert a deployed function's trigger type in place. Fix is yours
+(prod-destructive: delete the old function first, e.g. `firebase functions:delete
+dispatchCloudVideoRender --region us-central1`, then redeploy) — I did not touch it.
+
+Side effect: my TYPESAFE_API_KEY secret v2 was created + secretAccessor granted ✓, but whether
+`typesafeJudge` recreated with the new version is unknown while the deploy is red. After your
+fix + redeploy, typesafeJudge picks up the secret. Until then production judgments fall back to
+deterministic baselines (by design).
