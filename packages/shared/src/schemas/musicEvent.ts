@@ -39,10 +39,33 @@ export const MusicEventEntityTypeSchema = z.enum([
   'video_resource',
   'release',
   'asset',
+  'identifier',
   'rights_claim',
+  'rights_grant',
   'registration',
+  'agreement',
+  'usage',
+  'platform',
+  'campaign',
+  'delivery',
+  'relationship',
+  'provenance',
+  'evidence',
 ]);
 export type MusicEventEntityType = z.infer<typeof MusicEventEntityTypeSchema>;
+
+/** Event kinds with a deterministic canonical subject type. */
+export const MUSIC_DOMAIN_EVENT_SUBJECT_TYPES: Partial<Record<MusicDomainEventType, readonly MusicEventEntityType[]>> = {
+  'recording.uploaded': ['sound_recording', 'asset'],
+  'release.planned': ['release'],
+  'release.live': ['release'],
+  'video.ready_for_tiktok': ['video_resource'],
+  'video.ready_for_youtube': ['video_resource'],
+  'performance.planned': ['usage'],
+  'satellite_play.detected': ['usage'],
+  'claim.received': ['rights_claim'],
+  'registration.confirmed': ['registration'],
+};
 
 export const MusicEventEntityReferenceSchema = z.object({
   entityId: IdSchema,
@@ -76,16 +99,12 @@ export const MusicDomainEventSchema = z.object({
   details: z.record(z.string().trim().min(1).max(100), EventDetailValueSchema).default({}),
   provenance: ProvenanceSchema,
 }).strict().superRefine((event, ctx) => {
-  const requiredSubjectType = event.eventType === 'claim.received'
-    ? 'rights_claim'
-    : event.eventType === 'registration.confirmed'
-      ? 'registration'
-      : undefined;
-  if (requiredSubjectType && event.subject.entityType !== requiredSubjectType) {
+  const allowedSubjectTypes = MUSIC_DOMAIN_EVENT_SUBJECT_TYPES[event.eventType];
+  if (allowedSubjectTypes && !allowedSubjectTypes.includes(event.subject.entityType)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['subject', 'entityType'],
-      message: `${event.eventType} events must reference a ${requiredSubjectType} canonical entity as their subject.`,
+      message: `${event.eventType} events must reference one of these canonical entity types as their subject: ${allowedSubjectTypes.join(', ')}.`,
     });
   }
 

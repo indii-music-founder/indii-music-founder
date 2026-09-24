@@ -9,7 +9,10 @@ canonical music entities.
 - `eventId` is indii's event identity. ISRC, ISWC, UPC/EAN, platform IDs, and
   other external identifiers remain values or evidence; they never replace a
   canonical entity reference.
-- `subject` and `relatedEntities` reference canonical entity IDs and kinds.
+- `subject` and `relatedEntities` reference the complete canonical entity
+  inventory, including claims, registrations, agreements, usage, identifiers,
+  and evidence records. An identifier is a referenceable entity; its external
+  value still does not become an entity ID.
 - `claim.received` events use a `rights_claim` entity as their subject, while
   `registration.confirmed` events use a `registration` entity as their
   subject; the affected work, recording, or party is referenced separately.

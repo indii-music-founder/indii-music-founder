@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MUSIC_DOMAIN_EVENT_SUBJECT_TYPES,
   MusicDomainEventSchema,
   MusicDomainEventTypeSchema,
+  MusicEventEntityReferenceSchema,
+  MusicEventEntityTypeSchema,
   type MusicDomainEventType,
 } from './musicEvent.js';
 
@@ -31,11 +34,8 @@ const provenance = {
 
 const event = (overrides: Record<string, unknown> = {}) => {
   const eventType = overrides.eventType ?? 'recording.uploaded';
-  const subject = eventType === 'claim.received'
-    ? { entityId: 'claim:internal-1', entityType: 'rights_claim' }
-    : eventType === 'registration.confirmed'
-      ? { entityId: 'registration:internal-1', entityType: 'registration' }
-      : { entityId: 'recording:internal-1', entityType: 'sound_recording' };
+  const subjectType = MUSIC_DOMAIN_EVENT_SUBJECT_TYPES[eventType as MusicDomainEventType]?.[0] ?? 'sound_recording';
+  const subject = { entityId: `${subjectType}:internal-1`, entityType: subjectType };
   return {
     schemaVersion: 'music-domain-event.v1',
     eventId: 'event:internal-1',
@@ -51,6 +51,17 @@ const event = (overrides: Record<string, unknown> = {}) => {
 describe('music domain event contract', () => {
   it('registers the Phase 8 roadmap event vocabulary', () => {
     expect(MusicDomainEventTypeSchema.options).toEqual(eventTypes);
+  });
+
+  it('supports references to every canonical entity kind', () => {
+    expect(MusicEventEntityTypeSchema.options).toEqual([
+      'person', 'artist', 'organization', 'musical_work', 'sound_recording', 'video_resource', 'release', 'asset',
+      'identifier', 'rights_claim', 'rights_grant', 'registration', 'agreement', 'usage', 'platform', 'campaign',
+      'delivery', 'relationship', 'provenance', 'evidence',
+    ]);
+    for (const entityType of MusicEventEntityTypeSchema.options) {
+      expect(MusicEventEntityReferenceSchema.parse({ entityId: `${entityType}:internal-1`, entityType }).entityType).toBe(entityType);
+    }
   });
 
   it.each(eventTypes)('parses the %s event with a canonical subject', (eventType) => {
@@ -89,13 +100,25 @@ describe('music domain event contract', () => {
   });
 
   it.each([
-    ['claim.received', 'sound_recording'],
-    ['registration.confirmed', 'musical_work'],
-  ] as const)('%s rejects a subject with the wrong canonical entity type', (eventType, entityType) => {
+    ...Object.entries(MUSIC_DOMAIN_EVENT_SUBJECT_TYPES).flatMap(([eventType, allowedTypes]) =>
+      allowedTypes!.map(entityType => [eventType, entityType] as const),
+    ),
+  ])('%s accepts its canonical subject type %s', (eventType, entityType) => {
+    expect(MusicDomainEventSchema.parse(event({
+      eventType,
+      subject: { entityId: `${entityType}:internal-1`, entityType },
+    })).subject.entityType).toBe(entityType);
+  });
+
+  it.each(Object.entries(MUSIC_DOMAIN_EVENT_SUBJECT_TYPES).map(([eventType, allowedTypes]) => [
+    eventType,
+    allowedTypes![0],
+    allowedTypes!.includes('asset') ? 'release' : 'asset',
+  ] as const))('%s rejects a subject with the wrong canonical entity type', (eventType, _allowedType, entityType) => {
     expect(() => MusicDomainEventSchema.parse(event({
       eventType,
       subject: { entityId: 'entity:internal-1', entityType },
-    }))).toThrow(/must reference a .* canonical entity as their subject/i);
+    }))).toThrow(/must reference one of these canonical entity types/i);
   });
 
   it('requires provenance and rejects unknown event types or extra envelope fields', () => {
@@ -107,8 +130,10 @@ describe('music domain event contract', () => {
   });
 
   it('rejects duplicate subject/related entity references', () => {
+    const baseEvent = event();
+    const subject = baseEvent.subject as { entityId: string; entityType: string };
     expect(() => MusicDomainEventSchema.parse(event({
-      relatedEntities: [{ entityId: 'recording:internal-1', entityType: 'sound_recording' }],
+      relatedEntities: [subject],
     }))).toThrow(/same entity more than once/i);
   });
 
