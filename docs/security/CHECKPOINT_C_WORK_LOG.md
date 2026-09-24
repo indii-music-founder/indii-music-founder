@@ -3,8 +3,10 @@
 - Canonical repository: `github.com/indii-music-founder/indii-music-founder`
 - Canonical checkout: `/Volumes/X SSD 2025/Users/narrowchannel/Documents/Codex/2026-09-20/referenced-chatgpt-conversation-this-is-an/work/canonical-main-2`
 - Branch: `main`
-- Starting SHA: `b20629161c78f8ba39aed0cc359154611bf07530`
-- Ending SHA: the Checkpoint C implementation commit and its work-log follow-up commit (recorded in the delivery report; a commit cannot contain its own SHA)
+- Original starting SHA: `b20629161c78f8ba39aed0cc359154611bf07530`
+- Reconciled `origin/main` baseline: `12177e3e2f09bd334e73d3a302b3c4269cb2adf8`
+- Ending implementation SHA: `518cec8cc4191cc0b9643ce4cd44755f2aaeabaa`
+- Commit identity: both unpublished checkpoint commits were rewritten to `285726670+wiil-tech@users.noreply.github.com` before push; no private address is published by this checkpoint
 
 ## Scope
 
@@ -16,11 +18,11 @@ HyperFrames remains the video engine. No Remotion or Vino path was added.
 
 | Command | Exit | Result |
 | --- | ---: | --- |
-| Focused Vitest security/integration suite (six files) | 0 | 53 tests passed |
+| `npx vitest run packages/main/src/handlers/computer.test.ts packages/main/src/services/computer/ComputerAuthorizationService.test.ts packages/main/src/services/ComputerExecutionService.test.ts packages/renderer/src/core/components/right-panel/ToolApprovalsPanel.test.tsx packages/renderer/src/services/agent/ComputerAgentDriver.test.ts packages/renderer/src/services/agent/governance/ToolApprovalService.test.ts` | 0 | 53 tests passed |
 | Focused ESLint on all changed TypeScript/TSX files | 0 | No errors or warnings |
 | `npm run typecheck` | 0 | All workspaces and Firebase tests passed |
 | `npm run lint` | 0 | Passed; 198 pre-existing repository warnings, zero errors |
-| `git diff --check` | 0 | Passed |
+| `git diff --check origin/main..HEAD` and `git diff --cached --check` | 0 | Passed |
 | `npm run validate:capabilities` | 0 | 199 entries valid |
 | `node scripts/validate-flowcharts.js` | 0 | Passed |
 | `node scripts/verify-api-system-integrity.js` | 0 | Passed |
