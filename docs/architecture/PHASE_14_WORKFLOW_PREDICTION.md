@@ -4,9 +4,6 @@
 
 The shared `predictNextWorkflows` evaluator produces advisory next-workflow
 suggestions from the signed-in user's own persisted `WorkflowExecution`
-records, scoped to a valid canonical artist ID. New executions carry that
-optional artist context from the existing profile/ArtistContext into the
-existing workflow record. `WorkflowStateService.getNextWorkflowPrediction` reads through the
 records, scoped to a valid canonical artist ID. The existing workflow schema
 can carry optional canonical artist context, but this PR does not make a new
 client write path available. Authenticated owners can read only their own
@@ -50,9 +47,6 @@ patterns, not verified facts or instructions.
 ## Rollback
 
 Remove the additive shared evaluator/export, the read-only method on the
-existing `WorkflowStateService`, the optional sidebar rendering, focused
-tests, and this document. Existing user-scoped workflow records and all
-execution behavior remain unchanged.
 existing `WorkflowStateService`, the owner-read rule, the optional sidebar
 rendering, focused tests, and this document. The rule change is additive; it
 does not grant client writes to workflow state.

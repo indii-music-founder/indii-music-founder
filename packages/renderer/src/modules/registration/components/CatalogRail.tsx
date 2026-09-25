@@ -30,7 +30,6 @@ function completenessLabel(score: number): string {
   return 'None';
 }
 
-export function CatalogRail({ tracks, selectedTrackId, registrationStates, intelligenceReport, onSelectTrack }: CatalogRailProps) {
 export function CatalogRail({
   tracks,
   selectedTrackId,
@@ -112,11 +111,6 @@ export function CatalogRail({
       </div>
       {intelligenceReport && (
         <section aria-label="Catalog intelligence" className="px-3 py-3 border-t border-white/[0.05] space-y-1">
-          <h2 className="text-[11px] font-semibold text-gray-400">Catalog intelligence</h2>
-          <p className="text-[11px] text-gray-500">
-            {intelligenceReport.metrics.findingCount > 0
-              ? `${intelligenceReport.metrics.findingCount} potential identifier conflict${intelligenceReport.metrics.findingCount === 1 ? ' needs' : 's need'} review.`
-              : 'No identifier collisions found in this read-only check.'}
           <h2 className="text-[11px] font-semibold text-gray-400">Legacy catalog intelligence</h2>
           <p className="text-[11px] text-gray-500">
             {intelligenceReport.metrics.findingCount > 0
