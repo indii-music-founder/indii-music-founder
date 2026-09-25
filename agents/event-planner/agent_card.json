@@ -40,8 +40,8 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Research venues, promoters, and production services online.",
+      "name": "web_extract",
+      "description": "Read public venue and service pages; does not confirm availability or make bookings.",
       "inputSchemaRef": "#/components/schemas/Empty",
       "outputSchemaRef": "#/components/schemas/Empty",
       "streaming": false

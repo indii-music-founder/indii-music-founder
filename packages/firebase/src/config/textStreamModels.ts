@@ -11,6 +11,7 @@
  */
 
 export const APPROVED_TEXT_STREAM_BASE_MODELS = new Set([
+    'gemini-3.8-flash',
     'gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
     'gemini-3.1-flash-lite',

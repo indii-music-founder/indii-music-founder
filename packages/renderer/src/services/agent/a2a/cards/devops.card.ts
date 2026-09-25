@@ -42,8 +42,8 @@ export const DevopsCard: AgentCard = {
         "streaming": false
     },
     {
-        "name": "browser_tool",
-        "description": "Access cloud consoles via browser if CLI fails.",
+        "name": "web_extract",
+        "description": "Read public status and documentation pages; cannot access signed-in cloud consoles.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false

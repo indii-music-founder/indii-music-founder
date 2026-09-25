@@ -34,7 +34,7 @@ export const VideoAgent: AgentConfig = {
             batch_edit_videos: VideoTools.batch_edit_videos,
             extend_video: VideoTools.extend_video,
             update_keyframe: VideoTools.update_keyframe,
-            browser_tool: UniversalTools.browser_tool,
+            web_extract: UniversalTools.web_extract,
             indii_image_gen: UniversalTools.indii_image_gen,
             orchestrate_timeline: VideoTools.orchestrate_timeline,
             create_performance_video: VideoTools.create_performance_video,
@@ -76,7 +76,7 @@ export const VideoAgent: AgentConfig = {
         'batch_edit_videos',
         'extend_video',
         'update_keyframe',
-        'browser_tool',
+        'web_extract',
         'indii_image_gen',
         'orchestrate_timeline',
         'create_performance_video',
@@ -176,16 +176,14 @@ export const VideoAgent: AgentConfig = {
                 }
             },
             {
-                name: "browser_tool",
-                description: "Search for stock footage or visual references.",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
-                        url: { type: "STRING" },
-                        selector: { type: "STRING" }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {

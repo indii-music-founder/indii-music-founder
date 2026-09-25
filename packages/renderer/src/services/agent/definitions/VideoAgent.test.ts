@@ -20,7 +20,7 @@ vi.mock('../tools/VideoTools', () => ({
 // Mock UniversalTools
 vi.mock('../tools/UniversalTools', () => ({
     UniversalTools: {
-        browser_tool: vi.fn(),
+        web_extract: vi.fn(),
         indii_image_gen: vi.fn(),
     }
 }));
@@ -72,7 +72,7 @@ describe('VideoAgent', () => {
         expect(VideoAgent.authorizedTools).toContain('batch_edit_videos');
         expect(VideoAgent.authorizedTools).toContain('extend_video');
         expect(VideoAgent.authorizedTools).toContain('update_keyframe');
-        expect(VideoAgent.authorizedTools).toContain('browser_tool');
+        expect(VideoAgent.authorizedTools).toContain('web_extract');
         expect(VideoAgent.authorizedTools).toContain('indii_image_gen');
         expect(VideoAgent.authorizedTools).toContain('orchestrate_timeline');
         expect(VideoAgent.authorizedTools).toContain('generate_storyboard');
@@ -96,7 +96,7 @@ describe('VideoAgent', () => {
         expect(VideoAgent.functions!.batch_edit_videos).toBeDefined();
         expect(VideoAgent.functions!.extend_video).toBeDefined();
         expect(VideoAgent.functions!.update_keyframe).toBeDefined();
-        expect(VideoAgent.functions!.browser_tool).toBeDefined();
+        expect(VideoAgent.functions!.web_extract).toBeDefined();
         expect(VideoAgent.functions!.indii_image_gen).toBeDefined();
         expect(VideoAgent.functions!.orchestrate_timeline).toBeDefined();
         expect(VideoAgent.functions!.generate_storyboard).toBeDefined();

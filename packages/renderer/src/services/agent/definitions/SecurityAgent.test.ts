@@ -29,7 +29,7 @@ describe('SecurityAgent', () => {
         expect(SecurityAgent.authorizedTools).toContain('check_api_status');
         expect(SecurityAgent.authorizedTools).toContain('scan_content');
         expect(SecurityAgent.authorizedTools).toContain('rotate_credentials');
-        expect(SecurityAgent.authorizedTools).toContain('browser_tool');
+        expect(SecurityAgent.authorizedTools).toContain('web_extract');
         expect(SecurityAgent.authorizedTools).toContain('credential_vault');
         expect(SecurityAgent.authorizedTools).toContain('scan_for_vulnerabilities');
     });

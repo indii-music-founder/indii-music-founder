@@ -18,7 +18,7 @@ describe('DevOpsAgent', () => {
         expect(DevOpsAgent.authorizedTools).toContain('scale_deployment');
         expect(DevOpsAgent.authorizedTools).toContain('list_instances');
         expect(DevOpsAgent.authorizedTools).toContain('restart_service');
-        expect(DevOpsAgent.authorizedTools).toContain('browser_tool');
+        expect(DevOpsAgent.authorizedTools).toContain('web_extract');
         expect(DevOpsAgent.authorizedTools).toContain('credential_vault');
     });
 
