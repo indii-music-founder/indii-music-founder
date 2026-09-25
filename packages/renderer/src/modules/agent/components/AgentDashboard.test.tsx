@@ -84,6 +84,7 @@ describe('AgentDashboard', () => {
         render(<AgentDashboard />);
 
         // Click Campaigns Tab
+        // Campaigns remains a supported dashboard destination.
         const campaignsButton = screen.getByTitle('Campaigns');
         fireEvent.click(campaignsButton);
 
