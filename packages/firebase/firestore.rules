@@ -2946,6 +2946,18 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Canonical music records are written only through server-side services.
+    // The Admin SDK repository validates domain schemas and the caller's
+    // catalog scope before appending entities, relationships, identifiers,
+    // claims, or events. A signed-in client must never bypass that boundary.
+    match /users/{userId}/musicCatalog/{document=**} {
+      allow read, write: if false;
+    }
+
+    match /organizations/{orgId}/musicCatalog/{document=**} {
+      allow read, write: if false;
+    }
+
     // =========================================================================
     // Deny all other access by default
     // =========================================================================
