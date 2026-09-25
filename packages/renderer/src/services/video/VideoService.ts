@@ -68,8 +68,8 @@ export class VideoService {
                         ]
                     }
                 ],
-                INTELLIGENCE_MODELS.TEXT.AGENT,
-                { responseMimeType: 'application/json', ...INTELLIGENCE_CONFIG.THINKING.HIGH }
+                INTELLIGENCE_MODELS.TEXT.FAST, // Gemini 3.8 Flash for sub-second vision motion planning
+                { responseMimeType: 'application/json', ...INTELLIGENCE_CONFIG.THINKING.LOW }
             );
             const plan = AI.parseJSON(analysisRes.response.text());
 
