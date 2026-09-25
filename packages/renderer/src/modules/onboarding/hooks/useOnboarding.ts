@@ -218,8 +218,8 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                 // PDFService (pdfjs-dist) instead.
                 try {
                     const { PDFService } = await import('@/services/utils/PDFService');
-                    const text = await PDFService.extractText(file);
-                    if (!text.trim()) {
+                    const extraction = await PDFService.extractTextWithProvenance(file);
+                    if (!extraction.text.trim()) {
                         return {
                             id: uuidv4(),
                             file,
@@ -228,7 +228,14 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                             content: `[PDF Document: ${file.name} — no extractable text found. It may be a scanned/image-only PDF.]`
                         };
                     }
-                    return { id: uuidv4(), file, preview: '', type: 'document', content: text };
+                    return {
+                        id: uuidv4(),
+                        file,
+                        preview: '',
+                        type: 'document',
+                        content: extraction.text,
+                        contentProvenance: extraction.provenance,
+                    };
                 } catch (error: unknown) {
                     logger.error('Failed to extract PDF text for onboarding attachment', error);
                     return {

@@ -10,6 +10,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { audioAnalysisService, type LocalOnlyAudioAnalysisReport } from '@/services/audio/AudioAnalysisService';
+import { localAudioMetadataService, type LocalAudioMetadataReport } from '@/services/audio/LocalAudioMetadataService';
 import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
 import { TagMatrix } from '@/modules/tools/components/TagMatrix';
 // ISSUE-1440: shared disclosure primitive for metadata-tab secondaries.
@@ -43,6 +44,7 @@ export const QCPanel: React.FC = () => {
     const [tags, setTags] = useState<string[]>([]);
     const [profile, setProfile] = useState<AudioIntelligenceProfile | null>(null);
     const [localReport, setLocalReport] = useState<LocalOnlyAudioAnalysisReport | null>(null);
+    const [localMetadataReport, setLocalMetadataReport] = useState<LocalAudioMetadataReport | null>(null);
     const [analysisMode, setAnalysisMode] = useState<'connected' | 'local-only'>('connected');
     const abortControllerRef = useRef<AbortController | null>(null);
     const technicalFeatures = profile?.technical ?? localReport?.features;
@@ -113,6 +115,7 @@ export const QCPanel: React.FC = () => {
                     setTags([]);
                     setProfile(null);
                     setLocalReport(null);
+                    setLocalMetadataReport(null);
 
                     await runAnalysis(mockFile);
                 }
@@ -144,6 +147,7 @@ export const QCPanel: React.FC = () => {
         setTags([]);
         setProfile(null);
         setLocalReport(null);
+        setLocalMetadataReport(null);
         await runAnalysis(uploadedFile);
     };
 
@@ -186,6 +190,7 @@ export const QCPanel: React.FC = () => {
         setTags([]);
         setProfile(null);
         setLocalReport(null);
+        setLocalMetadataReport(null);
         await runAnalysis(droppedFile);
     };
 
@@ -203,8 +208,10 @@ export const QCPanel: React.FC = () => {
                     throw new Error('Local-only analysis requires an in-memory audio file. Select the file with the file picker.');
                 }
                 const report = await audioAnalysisService.analyzeLocalOnly(audioFile);
+                const metadataReport = await localAudioMetadataService.inspect(audioFile);
                 if (signal.aborted) throw new DOMException('Analysis cancelled', 'AbortError');
                 setLocalReport(report);
+                setLocalMetadataReport(metadataReport);
                 setProfile(null);
                 setTags([]);
                 toast.dismiss(extractToastId);
@@ -250,6 +257,7 @@ export const QCPanel: React.FC = () => {
             setTags(Array.from(newTags));
             setProfile(resultProfile);
             setLocalReport(null);
+            setLocalMetadataReport(null);
 
             toast.dismiss(extractToastId);
             toast.success("Extraction Complete: Deep acoustic profile generated.");
@@ -516,6 +524,7 @@ export const QCPanel: React.FC = () => {
                             setAnalysisMode('connected');
                             setProfile(null);
                             setLocalReport(null);
+                            setLocalMetadataReport(null);
                             setTags([]);
                         }}
                     >
@@ -531,6 +540,7 @@ export const QCPanel: React.FC = () => {
                             setAnalysisMode('local-only');
                             setProfile(null);
                             setLocalReport(null);
+                            setLocalMetadataReport(null);
                             setTags([]);
                         }}
                     >
@@ -551,6 +561,25 @@ export const QCPanel: React.FC = () => {
                         </p>
                         <p className="mt-1 break-all font-mono text-emerald-100/60">File fingerprint: {localReport.id}</p>
                     </div>
+                )}
+
+                {localMetadataReport && (
+                    <section className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-xs text-amber-100" data-testid="local-embedded-metadata-report">
+                        <div className="font-bold">Embedded tags detected · {localMetadataReport.provenance.state}</div>
+                        <p className="mt-1 text-amber-100/80">These unconfirmed file tags are displayed for review only. They were not copied into release metadata or saved.</p>
+                        {localMetadataReport.fields.length > 0 ? (
+                            <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+                                {localMetadataReport.fields.map((item, index) => (
+                                    <div key={`${item.field}-${index}`} className="min-w-0">
+                                        <dt className="font-semibold uppercase tracking-wide text-amber-100/60">{item.field}</dt>
+                                        <dd className="break-all">{item.value}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        ) : (
+                            <p className="mt-2">No supported embedded title, artist, album, or ISRC tags were found.</p>
+                        )}
+                    </section>
                 )}
 
                 {/* Master Audio Waveform Preview */}
