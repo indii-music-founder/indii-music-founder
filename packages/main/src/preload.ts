@@ -108,9 +108,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     // Agent Capabilities
     agent: {
-        navigateAndExtract: (url: string) => ipcRenderer.invoke('agent:navigate-and-extract', url),
-        performAction: (action: string, selector: string, text?: string) => ipcRenderer.invoke('agent:perform-action', action, selector, text),
-        captureState: () => ipcRenderer.invoke('agent:capture-state'),
+        extractWebPage: (url: string) => ipcRenderer.invoke('agent:extract-web-page', url),
         saveHistory: (id: string, data: unknown) => ipcRenderer.invoke('agent:save-history', id, data),
         getHistory: (id: string) => ipcRenderer.invoke('agent:get-history', id),
         deleteHistory: (id: string) => ipcRenderer.invoke('agent:delete-history', id),
@@ -251,8 +249,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
             return () => ipcRenderer.removeListener('updater:error', handle);
         }
     },
-
-    testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),
 
     // Built-in Task Scheduler
     scheduler: {

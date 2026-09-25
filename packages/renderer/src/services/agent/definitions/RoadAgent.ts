@@ -38,7 +38,7 @@ export const RoadAgent: AgentConfig = {
             get_place_details: RoadTools.get_place_details,
             get_distance_matrix: RoadTools.get_distance_matrix,
             generate_social_post: SocialTools.generate_social_post,
-            browser_tool: UniversalTools.browser_tool,
+            web_extract: UniversalTools.web_extract,
             credential_vault: UniversalTools.credential_vault,
             generate_visa_checklist: RoadTools.generate_visa_checklist,
             generate_technical_rider: RoadTools.generate_technical_rider,
@@ -46,7 +46,7 @@ export const RoadAgent: AgentConfig = {
             log_live_setlist_for_pro: RoadTools.log_live_setlist_for_pro,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'plan_tour_route', 'estimate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'generate_technical_rider', 'draft_tour_itinerary', 'log_live_setlist_for_pro'],
+    authorizedTools: ['list_domain_records', 'plan_tour_route', 'estimate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'web_extract', 'credential_vault', 'generate_visa_checklist', 'generate_technical_rider', 'draft_tour_itinerary', 'log_live_setlist_for_pro'],
     tools: [{
         functionDeclarations: [
             ...roadRetrievalDeclarations,
@@ -146,17 +146,14 @@ export const RoadAgent: AgentConfig = {
                 }
             },
             {
-                name: "browser_tool",
-                description: "Use the Electron browser bridge for manual web research when the bridge is available. This does not verify routing, traffic, venue availability, contact, or booking.",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", enum: ["navigate", "extract", "capture", "click", "type", "scroll", "wait"], description: "Browser bridge operation." },
-                        url: { type: "STRING", description: "Required for navigate or extract." },
-                        selector: { type: "STRING", description: "Required for click, type, scroll, or wait." },
-                        text: { type: "STRING", description: "Optional text for a type operation." }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {

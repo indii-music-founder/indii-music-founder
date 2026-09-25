@@ -11,7 +11,9 @@ import { logger } from '@/utils/logger';
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
     TEXT_AGENT: 'gemini-3.1-pro-preview',        // Complex reasoning — per MODEL_POLICY.md
-    TEXT_FAST: 'gemini-3-flash-preview',          // Fast tasks — per MODEL_POLICY.md
+    TEXT_FAST: 'gemini-3.8-flash',               // Workhorse agentic & fast tasks (GA) — per MODEL_POLICY.md
+    TEXT_FLASH_3_8: 'gemini-3.8-flash',          // Gemini 3.8 Flash GA (September 2026)
+    TEXT_FLASH_PREVIEW: 'gemini-3-flash-preview', // Legacy fast preview reference
     TEXT_LITE: 'gemini-3.1-flash-lite',           // Budget tier — per MODEL_POLICY.md
     IMAGE_GEN: 'gemini-3-pro-image',              // Native image gen via responseModalities
     IMAGE_FAST: 'gemini-3.1-flash-image',         // Nano Banana 2 — fast image gen
@@ -23,7 +25,7 @@ export const APPROVED_MODELS = {
     IMAGEN_PRO: 'imagen-4.0-generate-001',
     IMAGEN_FAST: 'imagen-4.0-fast-generate-001',
     AUDIO_PRO: 'gemini-3.1-pro-preview',
-    AUDIO_FLASH: 'gemini-3-flash-preview',
+    AUDIO_FLASH: 'gemini-3.8-flash',
     AUDIO_TTS: 'gemini-3.1-flash-tts-preview',
     VIDEO_PRO: 'veo-3.1-generate-001',
     VIDEO_FAST: 'veo-3.1-fast-generate-001',  // Fast mode — lower latency, lower cost
@@ -39,6 +41,7 @@ export const INTELLIGENCE_MODELS = {
         AGENT: APPROVED_MODELS.TEXT_AGENT,
         FAST: APPROVED_MODELS.TEXT_FAST,
         LITE: APPROVED_MODELS.TEXT_LITE,
+        FLASH_3_8: APPROVED_MODELS.TEXT_FLASH_3_8,
     },
     IMAGE: {
         GENERATION: APPROVED_MODELS.IMAGE_GEN,
@@ -82,6 +85,9 @@ export const INTELLIGENCE_CONFIG = {
     THINKING: {
         HIGH: {
             thinkingConfig: { thinkingLevel: "HIGH" }
+        },
+        MEDIUM: {
+            thinkingConfig: { thinkingLevel: "MEDIUM" }
         },
         LOW: {
             thinkingConfig: { thinkingLevel: "LOW" }
@@ -134,6 +140,7 @@ export const MODEL_PRICING = {
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-3.1-pro-preview': { input: 1.25, output: 10.00 },
+    'gemini-3.8-flash': { input: 0.15, output: 0.60 },
     'gemini-3-flash-preview': { input: 0.15, output: 0.60 },
     'gemini-3.1-flash-lite': { input: 0.04, output: 0.20 },
     'veo-3.1-generate-001': {
@@ -213,6 +220,7 @@ function validateModels(): void {
 
 // Centralized mapping of Model IDs to display names in UI components to prevent hardcoding.
 export const MODEL_DISPLAY_NAMES: Record<string, string> = {
+    [APPROVED_MODELS.TEXT_FAST]: 'Gemini 3.8 Flash',
     [APPROVED_MODELS.DIRECT_PRO]: 'Nano Banana Pro',
     [APPROVED_MODELS.DIRECT_FAST]: 'Nano Banana 2',
     [APPROVED_MODELS.IMAGEN_ULTRA]: 'Imagen 4 Ultra',

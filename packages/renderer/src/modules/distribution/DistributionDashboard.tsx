@@ -13,6 +13,7 @@ import { TransferPanel } from './components/TransferPanel';
 import { QCVisualizer } from './components/QCVisualizer';
 
 /* ── Extracted Sub-components ── */
+import { FastPathSongIngestionCard } from './components/FastPathSongIngestionCard';
 import { ReleasesContent } from './components/ReleasesContent';
 import { DistributorQuickView } from './components/DistributorQuickView';
 import { DeliveryHealthPanel } from './components/DeliveryHealthPanel';
@@ -164,6 +165,9 @@ export default function DistributionDashboard() {
                             >
                                 <TabsContent value="releases" data-testid="distro-content-new" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Releases">
+                                        <div className="mb-8">
+                                            <FastPathSongIngestionCard />
+                                        </div>
                                         <ReleasesContent
                                             releases={releases}
                                             loading={loading}

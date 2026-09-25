@@ -67,10 +67,10 @@
             "search_knowledge"
           ]
         },
-        "browser_tool": {
-          "description": "Research venue websites, hotel options, and catering services online.",
+        "web_extract": {
+          "description": "Read public venue websites, hotel options, and catering pages without logging in or interacting with sites.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "credential_vault": {
@@ -207,10 +207,10 @@
             "search_knowledge"
           ]
         },
-        "browser_tool": {
-          "description": "Research venues, promoters, and production services online.",
+        "web_extract": {
+          "description": "Read public venue, promoter, and production-service pages without site interaction.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "credential_vault": {
@@ -261,10 +261,10 @@
             "update_keyframe"
           ]
         },
-        "browser_tool": {
-          "description": "Search for stock footage or visual references.",
+        "web_extract": {
+          "description": "Read public pages for stock footage or visual-reference research.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "indii_image_gen": {
@@ -365,10 +365,10 @@
             "indii_image_gen"
           ]
         },
-        "browser_tool": {
-          "description": "Browse the web to find press contacts or monitor coverage.",
+        "web_extract": {
+          "description": "Read public pages for press-contact research or coverage monitoring.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "credential_vault": {
@@ -490,10 +490,10 @@
             "generate_social_post"
           ]
         },
-        "browser_tool": {
-          "description": "Use a web browser for navigation, traffic checks, or venue research.",
+        "web_extract": {
+          "description": "Read public pages for traffic or venue research; cannot access signed-in pages.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "credential_vault": {
@@ -586,10 +586,10 @@
             "update_track_metadata"
           ]
         },
-        "browser_tool": {
-          "description": "Control the local browser to navigate websites (portals).",
+        "web_extract": {
+          "description": "Read public distribution help or status pages; cannot access accounts, fill forms, or submit releases.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "pro_scraper": {
@@ -663,10 +663,10 @@
             "analyze_trends"
           ]
         },
-        "browser_tool": {
-          "description": "Browse social platforms to spot trends or engagement.",
+        "web_extract": {
+          "description": "Read public trend pages; cannot access signed-in feeds or private engagement data.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "indii_image_gen": {
@@ -811,10 +811,10 @@
             "generate_campaign_from_audio"
           ]
         },
-        "browser_tool": {
-          "description": "Research market trends, competitor ads, or platform algorithms.",
+        "web_extract": {
+          "description": "Read public market or competitor pages; cannot access private analytics or platform dashboards.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "indii_image_gen": {
@@ -919,10 +919,10 @@
             "payment_gate"
           ]
         },
-        "browser_tool": {
-          "description": "Check exchange rates or tax information.",
+        "web_extract": {
+          "description": "Read public exchange-rate or tax-information pages; verify figures against authoritative sources.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "generate_tax_report": {
@@ -961,10 +961,10 @@
             "draft_license"
           ]
         },
-        "browser_tool": {
-          "description": "Research Music Supervisors or Sync Libraries.",
+        "web_extract": {
+          "description": "Read public music-supervisor or sync-library pages; cannot contact prospects or submit pitches.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "document_query": {
@@ -1051,10 +1051,10 @@
             "analyze_rights"
           ]
         },
-        "browser_tool": {
-          "description": "Research copyright databases or legal precedents.",
+        "web_extract": {
+          "description": "Read public copyright or legal-reference pages; does not provide legal advice.",
           "trigger_labels": [
-            "browser_tool"
+            "web_extract"
           ]
         },
         "document_query": {

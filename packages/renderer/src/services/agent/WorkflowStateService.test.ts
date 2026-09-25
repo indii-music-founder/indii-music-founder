@@ -15,6 +15,7 @@ const { mockTxGet, mockTxUpdate, mockRunTransaction } = vi.hoisted(() => {
 // Mock Firestore
 vi.mock('../../firebase', () => ({
     db: {},
+    auth: { currentUser: { uid: 'test-user' } },
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -72,13 +73,15 @@ describe('WorkflowStateService', () => {
                 'CAMPAIGN_LAUNCH',
                 mockSteps,
                 [{ from: 'step_0', to: 'step_1', condition: () => true }], // Conditions are runtime-only.
-                'session-123'
+                'session-123',
+                'canonical-artist-1'
             );
 
             const savedDoc = mockSet.mock.calls[0]![1] as WorkflowExecution;
             expect(execution.id).toBe('test-execution-id');
             expect(execution.workflowId).toBe('CAMPAIGN_LAUNCH');
             expect(execution.userId).toBe(userId);
+            expect(execution.artistEntityId).toBe('canonical-artist-1');
             expect(execution.status).toBe('PLANNED');
             expect(Object.keys(execution.steps)).toHaveLength(3);
             expect(execution.steps['step_0']!.status).toBe('PLANNED');
@@ -87,6 +90,18 @@ describe('WorkflowStateService', () => {
             expect(savedDoc.edges).toEqual([{ from: 'step_0', to: 'step_1' }]);
             expect(savedDoc.edges[0]!.condition).toBeUndefined();
             expect(mockSet).toHaveBeenCalledOnce();
+        });
+
+        it('does not persist an external identifier as artist context', async () => {
+            const execution = await workflowStateService.createExecution(
+                userId,
+                'CAMPAIGN_LAUNCH',
+                mockSteps,
+                [],
+                'session-123',
+                'isrc:USAAA1234567'
+            );
+            expect(execution.artistEntityId).toBeUndefined();
         });
     });
 
@@ -111,6 +126,20 @@ describe('WorkflowStateService', () => {
             expect(execution?.steps['step_0']!.status).toBe('STEP_COMPLETE');
             expect(execution?.steps['step_1']!.status).toBe('AWAITING_HUMAN');
             expect(execution?.edges).toEqual([]);
+        });
+    });
+
+    describe('getNextWorkflowPrediction', () => {
+        it('fails closed before reading history when the requested user is not the signed-in user', async () => {
+            const result = await workflowStateService.getNextWorkflowPrediction('another-user', 'canonical-artist-1');
+            expect(result).toBeNull();
+            expect(mockList).not.toHaveBeenCalled();
+        });
+
+        it('fails closed without a valid canonical artist context', async () => {
+            const result = await workflowStateService.getNextWorkflowPrediction(userId, 'isrc:USAAA1234567');
+            expect(result).toBeNull();
+            expect(mockList).not.toHaveBeenCalled();
         });
     });
 

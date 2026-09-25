@@ -78,7 +78,7 @@ describe('RoadAgent', () => {
 
     it('declares only browser operations implemented by the Electron bridge', () => {
         const declaration = RoadAgent.tools[0]?.functionDeclarations
-            .find(tool => tool.name === 'browser_tool');
+            .find(tool => tool.name === 'web_extract');
         expect(declaration?.parameters.properties.action.enum).toEqual([
             'navigate', 'extract', 'capture', 'click', 'type', 'scroll', 'wait',
         ]);

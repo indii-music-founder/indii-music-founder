@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { MarketingTools } from '@/services/agent/tools/MarketingTools';
 import { DirectorTools } from '@/services/agent/tools/DirectorTools';
 import { IndependentTools } from '@/services/agent/tools/IndependentTools';
-import { BrowserTools } from '@/services/agent/tools/BrowserTools';
+import { WebResearchTools } from '@/services/agent/tools/WebResearchTools';
 
 // --- Create Mastra-compatible tools that wrap the working Tools ---
 
@@ -219,21 +219,18 @@ const createArtifactDropTool = createTool({
     }
 });
 
-const browserActionTool = createTool({
-    id: 'browser_tool',
-    description: 'Research market trends or platform algorithms via browser.',
+const webExtractTool = createTool({
+    id: 'web_extract',
+    description: 'Read bounded text from a public web page. Cannot log in or interact with forms.',
     inputSchema: z.object({
-        action: z.string().describe('Action: open, click, type, get_dom'),
-        url: z.string().optional().describe('URL to navigate to.'),
-        selector: z.string().optional().describe('CSS selector for interaction.'),
-        text: z.string().optional().describe('Text to type')
+        url: z.string().url().describe('Public HTTP(S) URL to read.'),
     }),
     execute: async ({ context }: any) => {
         try {
-            const result = await BrowserTools.browser_action!(context as any);
+            const result = await WebResearchTools.web_extract(context as any);
             return { success: result.success, data: result.data, message: result.message };
         } catch (error: any) {
-            console.error('[Mastra Agent] browser_tool failed:', error);
+            console.error('[Mastra Agent] web_extract failed:', error);
             return { success: false, error: error.message };
         }
     }
@@ -265,7 +262,7 @@ export const marketingAgent = new Agent({
     - Use create_campaign_brief for overall strategy.
     - analyze_audience provides demographic insight.
     - For creatives, delegate by calling indii_image_gen.
-    - The browser_tool is useful to scope out competitors on Chartmetric.
+    - web_extract can read public competitor pages, but cannot access signed-in Chartmetric analytics.
     
     Tone: Industry-savvy, narrative-driven, sharp, concise.
   `,
@@ -282,7 +279,7 @@ export const marketingAgent = new Agent({
         trackPostReleaseMomentumTool,
         indiiImageGenTool,
         createArtifactDropTool,
-        browserActionTool
+        webExtractTool
     },
     // @ts-expect-error - mcpClient property typing is undefined in current mastra/core version
     mcpClient: mcpClient,

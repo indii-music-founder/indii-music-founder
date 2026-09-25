@@ -4,25 +4,48 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NextBestActionCard } from './NextBestActionCard';
 
 const mockJudgeNextBestAction = vi.fn();
+const mockGetNextWorkflowPrediction = vi.fn();
 
 vi.mock('@/config/typesafeJudgments', () => ({
     judgeNextBestAction: (...args: unknown[]) => mockJudgeNextBestAction(...args),
 }));
 
-vi.mock('@/core/store', () => ({
-    useStore: {
-        getState: () => ({
-            catalog: [{ id: '1', title: 'Unreleased track' }],
-            campaigns: [],
-            splits: [{ id: 's1', status: 'pending' }],
-            unreadStatements: false,
-        }),
+vi.mock('@/services/agent/WorkflowStateService', () => ({
+    workflowStateService: {
+        getNextWorkflowPrediction: (...args: unknown[]) => mockGetNextWorkflowPrediction(...args),
     },
+}));
+
+vi.mock('@/core/store', () => ({
+    useStore: Object.assign(
+        (selector: (state: { user?: { uid: string }; userProfile?: { artistEntityId?: string }; catalog: { id: string; title: string }[]; campaigns: unknown[]; splits: { id: string; status: string }[]; unreadStatements: boolean }) => unknown) => {
+            const state = {
+                catalog: [{ id: '1', title: 'Unreleased track' }],
+                campaigns: [],
+                splits: [{ id: 's1', status: 'pending' }],
+                unreadStatements: false,
+                user: { uid: 'artist-test' },
+                userProfile: { artistEntityId: 'canonical-artist-test' },
+            };
+            return selector(state);
+        },
+        {
+            getState: () => ({
+                catalog: [{ id: '1', title: 'Unreleased track' }],
+                campaigns: [],
+                splits: [{ id: 's1', status: 'pending' }],
+                unreadStatements: false,
+                user: { uid: 'artist-test' },
+                userProfile: { artistEntityId: 'canonical-artist-test' },
+            }),
+        },
+    ),
 }));
 
 describe('NextBestActionCard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetNextWorkflowPrediction.mockResolvedValue(null);
     });
 
     it('renders the suggested action when nextModule differs from currentModule', async () => {
@@ -96,5 +119,32 @@ describe('NextBestActionCard', () => {
         fireEvent.click(dismissBtn);
 
         expect(screen.queryByTestId('next-best-action-card')).not.toBeInTheDocument();
+    });
+
+    it('shows a separate advisory workflow suggestion from the current user’s completed history', async () => {
+        mockJudgeNextBestAction.mockResolvedValueOnce(null);
+        mockGetNextWorkflowPrediction.mockResolvedValueOnce({
+            predictions: [{
+                workflowId: 'rights-review',
+                followsWorkflowId: 'release-plan',
+                supportCount: 2,
+                observedTransitionCount: 2,
+                observedRate: 1,
+                supportingExecutionIds: ['a1', 'b1', 'a2', 'b2'],
+            }],
+        });
+        const onNavigate = vi.fn();
+        render(
+            <NextBestActionCard
+                onNavigate={onNavigate}
+                currentModule={'creative' as any}
+                isSidebarOpen={true}
+            />
+        );
+
+        expect(await screen.findByTestId('historical-workflow-suggestion')).toHaveTextContent(/release-plan.*rights-review/i);
+        fireEvent.click(screen.getByRole('button', { name: /review in workflows/i }));
+        expect(onNavigate).toHaveBeenCalledWith('workflow');
+        expect(mockGetNextWorkflowPrediction).toHaveBeenCalledWith('artist-test', 'canonical-artist-test');
     });
 });

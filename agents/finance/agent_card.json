@@ -54,8 +54,8 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Check exchange rates or tax information.",
+      "name": "web_extract",
+      "description": "Read public exchange-rate or tax information pages; not a financial portal reader.",
       "inputSchemaRef": "#/components/schemas/Empty",
       "outputSchemaRef": "#/components/schemas/Empty",
       "streaming": false
