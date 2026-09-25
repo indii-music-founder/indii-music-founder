@@ -66,7 +66,7 @@ export const SocialAgent: AgentConfig = {
                     return { success: false, error: (e as Error).message };
                 }
             },
-            browser_tool: UniversalTools.browser_tool,
+            web_extract: UniversalTools.web_extract,
             indii_image_gen: UniversalTools.indii_image_gen,
             credential_vault: UniversalTools.credential_vault,
             analyze_sentiment: SocialTools.analyze_sentiment,
@@ -83,7 +83,7 @@ export const SocialAgent: AgentConfig = {
             },
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'generate_content_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'browser_tool', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook', 'analyze_engagement_rate'],
+    authorizedTools: ['list_domain_records', 'generate_content_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'web_extract', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook', 'analyze_engagement_rate'],
     tools: [{
         functionDeclarations: [
             ...socialRetrievalDeclarations,
@@ -140,16 +140,14 @@ export const SocialAgent: AgentConfig = {
                 }
             },
             {
-                name: "browser_tool",
-                description: "Browse social platforms to spot trends or engagement.",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
-                        url: { type: "STRING" },
-                        selector: { type: "STRING" }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {

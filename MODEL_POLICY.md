@@ -36,8 +36,9 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 
 | Purpose                      | Model ID                        | Notes                                  |
 | ---------------------------- | ------------------------------- | -------------------------------------- |
+| **Text/Reasoning (Workhorse / Fast)** | `gemini-3.8-flash`     | Agents, reasoning, coding, high-throughput (GA Sept 2026) |
 | **Text/Reasoning (Complex)** | `gemini-3.1-pro-preview`          | Agents, analysis, complex tasks        |
-| **Text/Reasoning (Fast)**    | `gemini-3-flash-preview`        | Routing, simple tasks, high-throughput |
+| **Text/Reasoning (Legacy Fast)** | `gemini-3-flash-preview`    | Legacy preview tasks                   |
 | **Image Generation**         | `gemini-3-pro-image`    | All image synthesis (Nano Banana Pro)  |
 | **Audio Generation (TTS)**   | `gemini-3.1-flash-tts-preview`  | Controllable low-latency speech synthesis |
 | **Audio Generation (Fast)**  | `gemini-2.5-flash-tts`          | Low-latency speech synthesis           |
@@ -113,7 +114,7 @@ const response = await AI.generateContent({
 | Task Type                 | Use This                       | Model ID                       |
 | ------------------------- | ------------------------------ | ------------------------------ |
 | Agent reasoning           | `INTELLIGENCE_MODELS.TEXT.AGENT`| `gemini-3.1-pro-preview`         |
-| Fast routing/simple tasks | `INTELLIGENCE_MODELS.TEXT.FAST` | `gemini-3-flash-preview`       |
+| Fast routing/agent workhorse | `INTELLIGENCE_MODELS.TEXT.FAST` | `gemini-3.8-flash`           |
 | Image generation          | `INTELLIGENCE_MODELS.IMAGE.GENERATION`| `gemini-3-pro-image`   |
 | Audio/TTS generation      | `INTELLIGENCE_MODELS.AUDIO.TTS` | `gemini-3.1-flash-tts-preview` |
 | Video generation          | `INTELLIGENCE_MODELS.VIDEO.GENERATION`| `veo-3.1-generate-preview`     |

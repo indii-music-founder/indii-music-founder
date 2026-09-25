@@ -545,7 +545,7 @@ def build_pipeline_from_environment() -> AudioAnalysisPipeline:
     if not project:
         raise PipelineConfigurationError("GOOGLE_CLOUD_PROJECT is missing")
     allowed_bucket = os.environ.get("MASTER_AUDIO_BUCKET", "").strip()
-    model = os.environ.get("GEMINI_AUDIO_MODEL", "gemini-3-flash-preview").strip()
+    model = os.environ.get("GEMINI_AUDIO_MODEL", "gemini-3.8-flash").strip()
     location = os.environ.get("VERTEX_LOCATION", "global").strip()
     if not location:
         raise PipelineConfigurationError("VERTEX_LOCATION is missing")

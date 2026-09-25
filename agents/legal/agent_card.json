@@ -12,8 +12,8 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Research copyright databases or legal precedents.",
+      "name": "web_extract",
+      "description": "Read public copyright databases and legal precedent pages.",
       "inputSchemaRef": "#/components/schemas/Empty",
       "outputSchemaRef": "#/components/schemas/Empty",
       "streaming": false

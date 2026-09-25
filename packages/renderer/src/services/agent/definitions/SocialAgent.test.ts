@@ -21,7 +21,7 @@ vi.mock('../tools/SocialTools', () => ({
 // Mock UniversalTools
 vi.mock('../tools/UniversalTools', () => ({
     UniversalTools: {
-        browser_tool: vi.fn(),
+        web_extract: vi.fn(),
         indii_image_gen: vi.fn(),
         credential_vault: vi.fn(),
     }
@@ -44,7 +44,7 @@ describe('SocialAgent', () => {
         expect(SocialAgent.authorizedTools).toContain('schedule_post_execution');
         expect(SocialAgent.authorizedTools).toContain('generate_social_post');
         expect(SocialAgent.authorizedTools).toContain('analyze_trends');
-        expect(SocialAgent.authorizedTools).toContain('browser_tool');
+        expect(SocialAgent.authorizedTools).toContain('web_extract');
         expect(SocialAgent.authorizedTools).toContain('indii_image_gen');
         expect(SocialAgent.authorizedTools).toContain('credential_vault');
         expect(SocialAgent.authorizedTools).toContain('draft_advanced_thread');
@@ -60,7 +60,7 @@ describe('SocialAgent', () => {
         expect(SocialAgent.functions!.generate_content_calendar).toBeDefined();
         expect(SocialAgent.functions!.schedule_post_execution).toBeDefined();
         expect(SocialAgent.functions!.draft_advanced_thread).toBeDefined();
-        expect(SocialAgent.functions!.browser_tool).toBeDefined();
+        expect(SocialAgent.functions!.web_extract).toBeDefined();
         expect(SocialAgent.functions!.indii_image_gen).toBeDefined();
         expect(SocialAgent.functions!.credential_vault).toBeDefined();
         expect(SocialAgent.functions!.analyze_sentiment).toBeDefined();

@@ -1,15 +1,19 @@
 # Autonomous Browser Agent (Gemini Drive)
 
-**Status:** Bridge live / Gemini Drive retired (see Reality Check)
-**Body:** Hidden Electron `BrowserWindow` via `packages/main/src/services/BrowserAgentService.ts` (NOT Puppeteer — it was removed to cut ~150MB)
+**Status:** Historical design; browser interaction is retired. See [Web Extraction and Computer Execution](WEB_EXTRACTION_AND_COMPUTER_EXECUTION.md).
 
-## Reality Check (2026-08 audit)
+## Historical Reality Check (2026-08 audit)
+
+> This audit snapshot predates the 2026-09 retirement implemented with the current contract below.
+> Its "Live surface" bullet records what the audit found, not what ships now.
 
 - **Live surface:** `BrowserTools`/`UniversalTools.browser_tool` → `electronAPI.agent` IPC → hidden sandboxed `BrowserWindow`. Registered in dev AND packaged builds (production gating removed 2026-08; ERROR_LEDGER "env-gated IPC" pattern). Sessions persist across navigate→act→snapshot and are reaped after 10 minutes idle.
 - **Retired:** the renderer `BrowserAgentService` "Gemini Drive" loop (`isConfigured()` hard-false, ISSUE-972) and `MusicPortalAgents` built on it. The coordinate-based Computer Use paradigm never matched the selector-based bridge.
 - The "Puppeteer" references below are historical.
 
 ## Overview
+
+> The following architecture and development instructions are historical. They do not describe the current runtime and must not be used to infer that browser interaction, automatic filing, or portal submission is available.
 
 The Autonomous Browser Agent is a "self-driving" browser system integrated into indii. Unlike traditional scrapers that rely on fixed selectors, this agent uses visual reasoning to navigate, interact with, and extract data from any website.
 
