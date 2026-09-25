@@ -19,19 +19,19 @@ export class LicenseScannerService {
     async scanUrl(url: string): Promise<LicenseAnalysis> {
         try {
             // 1. Fetch Content via Browser Agent (Handles JS/SPA)
-            if (!window.electronAPI?.agent?.navigateAndExtract) {
+            if (!window.electronAPI?.agent?.extractWebPage) {
                 throw new Error('Agent API not available. Are you in the Electron app?');
             }
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const result = await window.electronAPI.agent.navigateAndExtract(url) as any;
+            const response = await window.electronAPI.agent.extractWebPage(url);
 
-            if (!result.success || !result.text) {
-                throw new Error(result.error || 'Failed to extract text from page');
+            if (!response.success || !response.data?.text) {
+                throw new Error(response.error || 'Failed to extract text from page');
             }
 
             // 2. Truncate content 
-            const truncatedContent = result.text.substring(0, 15000);
+            const truncatedContent = response.data.text.substring(0, 15000);
 
             // 3. Autonomous Analysis
             const prompt = `

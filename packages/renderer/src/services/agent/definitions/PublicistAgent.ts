@@ -243,20 +243,17 @@ export const PublicistAgent = createAgent('publicist')
     })
     .withTool({
         functionDeclarations: [{
-            name: "browser_tool",
-            description: "Browse the web to find press contacts or monitor coverage.",
+            name: "web_extract",
+            description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
             parameters: {
                 type: "OBJECT",
                 properties: {
-                    action: { type: "STRING", description: "open, click, type, get_dom, screenshot" },
-                    url: { type: "STRING", description: "URL to visit" },
-                    selector: { type: "STRING" },
-                    text: { type: "STRING" }
+                    url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                 },
-                required: ["action"]
+                required: ["url"]
             }
         }]
-    }, UniversalTools.browser_tool)
+    }, UniversalTools.web_extract)
     .withTool({
         functionDeclarations: [{
             name: "credential_vault",
@@ -628,7 +625,7 @@ Format as a standard, ready-to-publish press release with a catchy headline, dat
     }, McpTools.generate_playlist_pitch)
     .withAuthorizedTools([
         'create_campaign', 'write_press_release', 'generate_crisis_response',
-        'generate_social_post', 'indii_image_gen', 'browser_tool', 'credential_vault',
+        'generate_social_post', 'indii_image_gen', 'web_extract', 'credential_vault',
         'generate_pdf', 'generate_live_epk', 'pitch_media', 'draft_press_release',
         'find_media_contacts', 'schedule_campaign_waterfall', 'generate_playlist_pitch'
     ])

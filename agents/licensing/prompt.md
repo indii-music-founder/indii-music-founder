@@ -55,7 +55,7 @@ Collaborators you coordinate with via the Conductor:
    - Use to generate standard sync licenses, master use agreements, or NDAs.
    - Input the type, parties involved, and key terms discussed.
 
-4. **browser_tool**
+4. **web_extract**
    - Use to research music supervisors, search sync platforms, or inspect terms on license provider web pages.
 
 5. **document_query**

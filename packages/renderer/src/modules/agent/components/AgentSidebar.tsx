@@ -1,9 +1,9 @@
 import React from 'react';
-import { Map, List, Mail, Globe, MessageSquare, ListTodo, RotateCcw } from 'lucide-react';
+import { Map, List, Mail, MessageSquare, ListTodo, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getColorForModule } from '@/core/theme/moduleColors';
 
-export type AgentTab = 'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks' | 'loops';
+export type AgentTab = 'scout' | 'campaigns' | 'inbox' | 'chat' | 'tasks' | 'loops';
 
 interface AgentSidebarProps {
     activeTab: AgentTab;
@@ -12,7 +12,6 @@ interface AgentSidebarProps {
 
 const NAV_ITEMS: Array<{ id: AgentTab; icon: React.ComponentType<{ size?: string | number; className?: string }>; translationKey: string }> = [
     { id: 'scout', icon: Map, translationKey: 'agent.tabs.scout' },
-    { id: 'browser', icon: Globe, translationKey: 'agent.tabs.browser' },
     { id: 'chat', icon: MessageSquare, translationKey: 'agent.tabs.chat' },
     { id: 'tasks', icon: ListTodo, translationKey: 'agent.tabs.tasks' },
     { id: 'campaigns', icon: List, translationKey: 'agent.tabs.campaigns' },

@@ -11,15 +11,13 @@ const mocks = vi.hoisted(() => ({
         getPath: vi.fn(() => '/mock/user-data'),
         getAppPath: vi.fn(() => '/app')
     },
-    browserAgentService: {
-        startSession: vi.fn(),
-        navigateTo: vi.fn(),
-        typeInto: vi.fn(),
-        pressKey: vi.fn(),
-        waitForSelector: vi.fn(),
-        captureSnapshot: vi.fn().mockResolvedValue({ title: 'Mock Page', url: 'https://google.com' }),
-        closeSession: vi.fn(),
-        performAction: vi.fn()
+    webExtractionService: {
+        extract: vi.fn().mockResolvedValue({
+            finalUrl: 'https://google.com/',
+            title: 'Mock Page',
+            text: 'Mock text',
+            fetchedAt: '2026-01-01T00:00:00.000Z',
+        }),
     }
 }));
 
@@ -42,8 +40,8 @@ vi.mock('electron-store', () => ({
 }));
 
 // Mock 'BrowserAgentService'
-vi.mock('../services/BrowserAgentService', () => ({
-    browserAgentService: mocks.browserAgentService
+vi.mock('../services/WebExtractionService', () => ({
+    webExtractionService: mocks.webExtractionService
 }));
 
 // Mock 'node:dns' to simulate DNS resolution for security testing
@@ -110,55 +108,50 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
         return handler(event, ...args) as Promise<HandlerResult>;
     };
 
-    it('should BLOCK navigation to Localhost (SSRF)', async () => {
-        const result = await invokeHandler('agent:navigate-and-extract', 'http://localhost:3000');
+    it('should BLOCK extraction from Localhost (SSRF)', async () => {
+        const result = await invokeHandler('agent:extract-web-page', 'http://localhost:3000');
 
         expect(result.success).toBe(false);
         expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
-        expect(mocks.browserAgentService.navigateTo).not.toHaveBeenCalled();
+        expect(mocks.webExtractionService.extract).not.toHaveBeenCalled();
     });
 
-    it('should BLOCK navigation to Private IPs (127.0.0.1)', async () => {
-        const result = await invokeHandler('agent:navigate-and-extract', 'http://127.0.0.1/admin');
-
-        expect(result.success).toBe(false);
-        expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
-    });
-
-    it('should BLOCK navigation to Cloud Metadata (AWS)', async () => {
-        const result = await invokeHandler('agent:navigate-and-extract', 'http://169.254.169.254/latest/meta-data/');
+    it('should BLOCK extraction from Private IPs (127.0.0.1)', async () => {
+        const result = await invokeHandler('agent:extract-web-page', 'http://127.0.0.1/admin');
 
         expect(result.success).toBe(false);
         expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
     });
 
-    it('should BLOCK navigation to Domains resolving to Private IPs (DNS Rebinding)', async () => {
-        // internal.corp mocks to 10.0.0.5
-        const result = await invokeHandler('agent:navigate-and-extract', 'http://internal.corp/secret');
+    it('should BLOCK extraction from Cloud Metadata (AWS)', async () => {
+        const result = await invokeHandler('agent:extract-web-page', 'http://169.254.169.254/latest/meta-data/');
 
         expect(result.success).toBe(false);
-        expect(result.error).toMatch(/Security Violation: Domain 'internal.corp' resolves to private IP 10.0.0.5/);
+        expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
     });
 
-    it('should ALLOW navigation to Safe Public Domains', async () => {
-        const result = await invokeHandler('agent:navigate-and-extract', 'https://google.com');
+    it('should ALLOW extraction from Safe Public Domains', async () => {
+        const result = await invokeHandler('agent:extract-web-page', 'https://google.com');
 
         expect(result.success).toBe(true);
-        expect(mocks.browserAgentService.navigateTo).toHaveBeenCalledWith('https://google.com');
+        expect(result.data).toMatchObject({
+            finalUrl: 'https://google.com/',
+            title: 'Mock Page',
+            text: 'Mock text',
+        });
+        expect(mocks.webExtractionService.extract).toHaveBeenCalledWith('https://google.com');
     });
 
     it('should BLOCK malicious protocols (file://)', async () => {
         // FetchUrlSchema validates this before validateSafeUrlAsync, but let's check
-        const result = await invokeHandler('agent:navigate-and-extract', 'file:///etc/passwd');
+        const result = await invokeHandler('agent:extract-web-page', 'file:///etc/passwd');
 
         expect(result.success).toBe(false);
         // This comes from Zod validation (FetchUrlSchema)
         expect(result.error).toMatch(/Validation Error: Invalid URL: Must be a public HTTP\/HTTPS URL. Local\/Private IPs are blocked./);
     });
 
-    it('should register the browser bridge in packaged (production) builds', () => {
-        // ERROR_LEDGER pattern: environment-gated handler registration strands the
-        // other environment. The agent browser bridge must exist in shipped builds.
+    it('registers read-only web extraction in packaged builds and omits browser input handlers', () => {
         mocks.app.isPackaged = true;
         const packagedHandlers: Record<string, (...args: unknown[]) => unknown> = {};
         mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -167,10 +160,10 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
 
         registerAgentHandlers();
 
-        expect(packagedHandlers['agent:navigate-and-extract']).toBeDefined();
-        expect(packagedHandlers['agent:perform-action']).toBeDefined();
-        expect(packagedHandlers['agent:capture-state']).toBeDefined();
-        // The google.com test harness stays dev-only
+        expect(packagedHandlers['agent:extract-web-page']).toBeDefined();
+        expect(packagedHandlers['agent:navigate-and-extract']).toBeUndefined();
+        expect(packagedHandlers['agent:perform-action']).toBeUndefined();
+        expect(packagedHandlers['agent:capture-state']).toBeUndefined();
         expect(packagedHandlers['test:browser-agent']).toBeUndefined();
     });
 });

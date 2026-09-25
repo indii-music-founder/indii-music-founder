@@ -1,7 +1,6 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
 import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
-import { getConfirmedAutomationResult } from './automationResult';
 
 export const SesacAdapter: OrgAdapter = {
   id: 'sesac',
@@ -42,37 +41,15 @@ export const SesacAdapter: OrgAdapter = {
   async submit(data, track: CatalogTrack, userId: string): Promise<SubmissionResult> {
     logger.info('[SesacAdapter] Initiating SESAC work registration via browser automation', { trackId: track.id });
 
-    try {
-      const { BrowserAgentService } = await import('@/services/agent/BrowserAgentService');
-      const browserService = new BrowserAgentService();
-
-      const result = await browserService.executeTask(
-        'SESAC',
-        `Register the following work:
-          - Title: ${data.workTitle}
-          - Writers: ${JSON.stringify(track.writersAndContributors)}
-          - ISWC: ${data.iswc || 'N/A'}
-          If login is required, stop and report that SESAC credentials are needed.
-          Return the work registration confirmation number.`,
-        'https://www.sesac.com'
-      );
-      const confirmationNumber = getConfirmedAutomationResult(result, 'SESAC');
-      const persisted = await persistOrgRecord(userId, track.id, 'sesac', data, confirmationNumber);
-
-      return { success: true, confirmationNumber, submittedAt: new Date(), localRecordFailed: !persisted };
-    } catch (err: unknown) {
-      const isWebSession = typeof window !== 'undefined' && !window.electronAPI;
-      logger.warn('[SesacAdapter] Submission failed:', err);
-      await persistOrgRecord(userId, track.id, 'sesac', data, undefined);
-      return {
-        success: false,
-        submittedAt: new Date(),
-        requiresManualStep: true,
-        manualStepUrl: 'https://www.sesac.com',
-        manualStepInstructions: isWebSession
-          ? 'SESAC registration requires the indii desktop app or manual login at sesac.com.'
-          : 'SESAC browser automation failed. Please complete registration manually at sesac.com.',
-      };
-    }
+    const persisted = await persistOrgRecord(userId, track.id, 'sesac', data, undefined);
+    logger.info('[SesacAdapter] Prepared filing saved for manual completion', { trackId: track.id, saved: persisted });
+    return {
+      success: false,
+      errorMessage: persisted ? undefined : 'The prepared filing could not be saved locally.',
+      submittedAt: new Date(),
+      requiresManualStep: true,
+      manualStepUrl: 'https://www.sesac.com',
+      manualStepInstructions: 'Your filing details are prepared, but no information was entered or submitted on your behalf. Review them and complete registration through SESAC membership services.',
+    };
   },
 };
