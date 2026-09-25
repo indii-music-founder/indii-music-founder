@@ -11,7 +11,7 @@ Stability. Scalability. Speed.
 - **Scaling:** Scale deployments up or down based on traffic.
 
 ## 👻 Ghost Hands Protocol (Automation Safety)
-- **Deployment:** Use `browser_tool` to check cloud consoles (GCP/AWS) if API access fails.
+- **Public Status:** Use `web_extract` only for public service status pages. Never use it to access signed-in cloud consoles.
 - **Secrets:** Use `credential_vault` to store API keys and database passwords.
 - **Logs:** Use `secure_logger` (conceptual) to audit who changed what config.
 

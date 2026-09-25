@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const DDEXSerializationSchema = z.enum(['XML', 'JSON']);
+export const DDEXSerializationSchema = z.enum(['XML', 'JSON', 'TSV']);
 export type DDEXSerialization = z.infer<typeof DDEXSerializationSchema>;
 
 export const DDEXStandardFamilySchema = z.enum([
@@ -81,7 +81,7 @@ export const DDEX_STANDARD_REGISTRY: readonly DDEXStandardDefinition[] = [
   {
     family:'RDR_RCC',
     version:'1.0',
-    serialization:'XML',
+    serialization:'TSV',
     current:true,
     avsVersion:DDEX_ALLOWED_VALUE_SET_VERSION,
     description:'Recording Data and Rights rights-claim conflict.',

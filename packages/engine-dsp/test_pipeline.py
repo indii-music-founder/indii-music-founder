@@ -95,7 +95,7 @@ class FakeMasterStorage:
 
 
 class FakeGeminiAnalyzer:
-    model = "gemini-3-flash-preview"
+    model = "gemini-3.8-flash"
 
     def analyze(self, staged):
         return {"summary": "audible profile"}
@@ -217,12 +217,12 @@ class AnalyzerTests(unittest.TestCase):
         response = Mock(text=json.dumps(profile))
         client = Mock()
         client.models.generate_content.return_value = response
-        analyzer = GeminiAudioAnalyzer(client, "gemini-3-flash-preview")
+        analyzer = GeminiAudioAnalyzer(client, "gemini-3.8-flash")
         staged = staged_master(Path("unused.wav"))
 
         self.assertEqual(analyzer.analyze(staged), profile)
         call = client.models.generate_content.call_args.kwargs
-        self.assertEqual(call["model"], "gemini-3-flash-preview")
+        self.assertEqual(call["model"], "gemini-3.8-flash")
         self.assertEqual(call["contents"][0].file_data.file_uri, staged.gs_uri)
         self.assertIsNone(call["contents"][0].inline_data)
         self.assertEqual(call["config"].response_mime_type, "application/json")

@@ -1,5 +1,10 @@
 # Registration Center — Blueprint
 
+> **Historical vision/specification, not the current product contract.** This blueprint's promise to
+> eliminate external portal visits and its listed browser automation stack are not implemented.
+> Registration adapters prepare drafts for artists to complete through the official portals. See
+> [Web Extraction and Computer Execution](../WEB_EXTRACTION_AND_COMPUTER_EXECUTION.md).
+
 > **Status:** Built — Phase 1–6 complete as of 2026-04-05
 > **Branch to create when ready:** `feat/registration-center`
 > **Spec author:** Claude (session 2026-04-05)

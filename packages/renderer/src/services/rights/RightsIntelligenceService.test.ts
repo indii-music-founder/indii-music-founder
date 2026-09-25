@@ -35,6 +35,22 @@ describe('RightsIntelligenceService', () => {
         expect(metadata).not.toHaveProperty('rightsIntelligence');
     });
 
+    it('surfaces AI-use rights as unknown and non-authorizing through the existing rights service', () => {
+        const now = '2026-09-22T13:00:00.000Z';
+        const metadata = { ...INITIAL_METADATA, trackTitle: 'AI Rights Song' };
+        const input: RightsIntelligenceInput = {
+            targetEntityId: 'recording:1', interests: [], thirdPartyUses: [], grants: [], evidenceVaults: [],
+        };
+
+        const result = new RightsIntelligenceService().evaluate(metadata, input, now);
+
+        expect(result.rightsIntelligence).toMatchObject({
+            aiUseStatus: 'UNKNOWN',
+            aiUseReviews: [],
+            aiUseExecutionAuthorized: false,
+        });
+    });
+
     it('keeps rights readiness blocked until a catalog import is explicitly applied', () => {
         const now = '2026-09-22T13:00:00.000Z';
         const metadata = {

@@ -20,9 +20,10 @@
 
 import { getVertexAIClient } from './vertexClient';
 import { createHash } from 'node:crypto';
+import { FUNCTION_INTELLIGENCE_MODELS } from '../config/models';
 
 const DEFAULT_TTL = '3600s'; // 1 hour — matches Gemini's own default
-const DEFAULT_CACHE_MODEL = 'gemini-3.6-flash';
+const DEFAULT_CACHE_MODEL = FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST;
 
 interface PersonaCacheEntry {
     cacheName: string;

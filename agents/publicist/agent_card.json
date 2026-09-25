@@ -40,8 +40,8 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Browse the web to find press contacts or monitor coverage.",
+      "name": "web_extract",
+      "description": "Read public press, publication, or playlist pages; do not contact anyone.",
       "inputSchemaRef": "#/components/schemas/Empty",
       "outputSchemaRef": "#/components/schemas/Empty",
       "streaming": false

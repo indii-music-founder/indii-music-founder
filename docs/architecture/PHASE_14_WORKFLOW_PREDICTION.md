@@ -7,6 +7,11 @@ suggestions from the signed-in user's own persisted `WorkflowExecution`
 records, scoped to a valid canonical artist ID. New executions carry that
 optional artist context from the existing profile/ArtistContext into the
 existing workflow record. `WorkflowStateService.getNextWorkflowPrediction` reads through the
+records, scoped to a valid canonical artist ID. The existing workflow schema
+can carry optional canonical artist context, but this PR does not make a new
+client write path available. Authenticated owners can read only their own
+workflow history; client creation and mutation remain denied so a caller
+cannot manufacture completion evidence. `WorkflowStateService.getNextWorkflowPrediction` reads through the
 existing user-scoped workflow collection; the existing sidebar's
 `NextBestActionCard` displays the history-based suggestion separately from
 Jev's current-context recommendation and only navigates to the Workflow
@@ -18,6 +23,10 @@ module when the user chooses “Review in Workflows.”
   are both required. Legacy/unscoped workflow records remain readable but
   cannot ground artist predictions; there is no backfill or guessed mapping
   from account, project, or external ID to an artist.
+- This PR adds no server-side creation or human-action callable for workflow
+  records. Therefore it cannot make a blocked client write path appear
+  functional; predictions are available only when authorized backend history
+  already exists. Client write denial is covered by Firestore rule tests.
 - The latest record must be completed, and every step must be `STEP_COMPLETE`
   with a completion timestamp between execution creation and update. Failed,
   cancelled, skipped, awaiting-human, incomplete, and malformed histories do
@@ -44,3 +53,6 @@ Remove the additive shared evaluator/export, the read-only method on the
 existing `WorkflowStateService`, the optional sidebar rendering, focused
 tests, and this document. Existing user-scoped workflow records and all
 execution behavior remain unchanged.
+existing `WorkflowStateService`, the owner-read rule, the optional sidebar
+rendering, focused tests, and this document. The rule change is additive; it
+does not grant client writes to workflow state.

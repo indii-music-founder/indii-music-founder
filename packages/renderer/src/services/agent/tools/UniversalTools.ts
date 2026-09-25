@@ -1,6 +1,7 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { WebResearchTools } from './WebResearchTools';
 
 /**
  * Universal Tools
@@ -10,31 +11,7 @@ import { importWithRetry } from '@/utils/dynamicImport';
  * bridge or service. They fail closed when not configured.
  */
 export const UniversalTools = {
-    /**
-     * Browser Tool bridge for research/search capabilities.
-     */
-    browser_tool: wrapTool('browser_tool', async (args: { action: string; url?: string; selector?: string; text?: string }) => {
-        const bridge = window.electronAPI?.agent;
-        if (!bridge) {
-            return toolError('Browser bridge is unavailable. No browser action was performed.', 'BROWSER_BRIDGE_UNAVAILABLE');
-        }
-
-        let result: unknown;
-        if (args.action === 'navigate' || args.action === 'extract') {
-            if (!args.url) return toolError('Browser navigation requires a URL.', 'INVALID_INPUT');
-            result = await bridge.navigateAndExtract(args.url);
-        } else if (args.action === 'capture') {
-            result = await bridge.captureState();
-        } else if (['click', 'type', 'scroll', 'wait'].includes(args.action)) {
-            if (!args.selector) return toolError(`Browser action "${args.action}" requires a selector.`, 'INVALID_INPUT');
-            result = await bridge.performAction(args.action as 'click' | 'type' | 'scroll' | 'wait', args.selector, args.text);
-        } else {
-            return toolError(`Unsupported browser action: ${args.action}`, 'INVALID_INPUT');
-        }
-
-        return toolSuccess(result, `Browser action completed: ${args.action}.`);
-    }),
-
+    ...WebResearchTools,
     /**
      * Alias for generate_image.
      */
@@ -135,18 +112,20 @@ export const UniversalTools = {
             const society = args.society || 'All Societies';
             let searchContext = '';
 
-            // 1. Try to perform web search using browser bridge if available
+            // 1. Try to retrieve public search results through the read-only bridge.
             const bridge = window.electronAPI?.agent;
-            if (bridge) {
-                const queryStr = society !== 'All Societies' 
-                    ? `site:${society.toLowerCase()}.com repertoire ${args.query}`
-                    : `ASCAP BMI repertoire search ${args.query}`;
-                const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(queryStr)}`;
-                const result = await bridge.navigateAndExtract(searchUrl);
-                if (result && typeof result === 'object' && 'text' in result) {
-                    searchContext = (result as { text: string }).text;
-                }
+            if (!bridge) {
+                return toolError('Public web extraction is available in the indii desktop app only.', 'WEB_EXTRACT_DESKTOP_ONLY');
             }
+            const queryStr = society !== 'All Societies'
+                ? `site:${society.toLowerCase()}.com repertoire ${args.query}`
+                : `ASCAP BMI repertoire search ${args.query}`;
+            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(queryStr)}`;
+            const extraction = await bridge.extractWebPage(searchUrl);
+            if (!extraction.success || !extraction.data) {
+                return toolError(extraction.error || 'No public search results were retrieved.', 'PRO_WEB_EXTRACT_FAILED');
+            }
+            searchContext = extraction.data.text;
 
             // 2. Query AutonomousIntelligence
             const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));

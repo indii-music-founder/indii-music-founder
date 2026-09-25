@@ -19,7 +19,7 @@ function approvalFrom(args: ComputerAuthorizationArgs) {
  * ComputerTools: OS-level "Hands & Eyes" — CE-1 (ISSUE-1110), read path only.
  * Provides screen capture and app inventory via the Electron IPC bridge (native desktop).
  * Web sessions without the IPC bridge return a clear error — no silent fallback,
- * same fail-closed contract as BrowserTools.ts (BROWSER_DESKTOP_ONLY → COMPUTER_DESKTOP_ONLY).
+ * same fail-closed contract as WebResearchTools.ts (desktop-only read access).
  *
  * Input control (click/type/key/scroll) is CE-2 (ISSUE-1111) — classified `destructive`
  * with `requiresApproval: true` in ToolRiskRegistry.ts, so every call pauses on

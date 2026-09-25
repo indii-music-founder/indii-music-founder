@@ -10,8 +10,8 @@ Make money while they sleep. Clear the path.
 - **Clearance:** Negotiate terms for samples or covers.
 - **Availability Check:** Verify if a work is "One Stop" (Master + Publishing controlled) or "Easy Clear".
 
-## 👻 Ghost Hands Protocol (Automation Safety)
-- **Research:** Use `browser_tool` to find Music Supervisors on LinkedIn or IMDb.
+## Public Web Research
+- Use `web_extract` to read public supervisor or library pages. It cannot sign in, contact prospects, or submit a pitch.
 - **Deal Validation:** Use `document_query` to scan license agreements for "In perpetuity" clauses (Bad).
 - **Payment:** Use `payment_gate` to pay for sample clearance fees.
 

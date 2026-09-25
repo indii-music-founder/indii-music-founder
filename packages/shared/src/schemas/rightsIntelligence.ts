@@ -35,12 +35,37 @@ export const ThirdPartyUseSchema = z.object({
 }).strict();
 export type ThirdPartyUse = z.infer<typeof ThirdPartyUseSchema>;
 
+/**
+ * Explicit scope for an AI-use grant. `UNSPECIFIED` is a recorded gap, never
+ * shorthand for permission. Provider IDs refer to canonical Organization IDs;
+ * model identifiers remain namespaced external identifiers, not entity keys.
+ */
+export const AIUseScopeSchema = z.object({
+  modality: z.enum(['GENERATIVE', 'NON_GENERATIVE']),
+  purposes: z.array(z.enum(['TRAINING', 'FINE_TUNING', 'EVALUATION', 'INFERENCE'])).min(1).max(20),
+  materials: z.array(z.enum([
+    'SOUND_RECORDING', 'MUSICAL_WORK', 'LYRICS', 'METADATA', 'ARTIST_NAME', 'VOICE', 'LIKENESS', 'PERFORMANCE',
+  ])).min(1).max(20),
+  modelScope: z.discriminatedUnion('type', [
+    z.object({ type: z.literal('NAMED_MODELS'), modelIdentifiers: z.array(z.string().trim().min(1).max(512)).min(1).max(100) }).strict(),
+    z.object({ type: z.literal('PROVIDERS'), providerOrganizationEntityIds: z.array(Id).min(1).max(100) }).strict(),
+    z.object({ type: z.literal('UNSPECIFIED') }).strict(),
+  ]),
+  commercialUse: z.enum(['ALLOWED', 'PROHIBITED', 'UNSPECIFIED']),
+  sublicensing: z.enum(['ALLOWED', 'PROHIBITED', 'UNSPECIFIED']),
+}).strict();
+export type AIUseScope = z.infer<typeof AIUseScopeSchema>;
+
+export const RightsGrantRightSchema = z.union([RightsClaimTypeSchema, z.literal('AI_USE')]);
+export type RightsGrantRight = z.infer<typeof RightsGrantRightSchema>;
+
 export const RightsGrantSchema = z.object({
   grantId: Id,
   subjectEntityId: Id,
   grantorEntityId: Id,
   granteeEntityId: Id,
-  rights: z.array(RightsClaimTypeSchema).min(1).max(20),
+  rights: z.array(RightsGrantRightSchema).min(1).max(20),
+  aiUseScope: AIUseScopeSchema.optional(),
   territoryCodes: z.array(z.string().trim().min(1).max(32)).max(300).default([]),
   exclusive: z.boolean(),
   validFrom: z.string().date().optional(),
@@ -52,8 +77,39 @@ export const RightsGrantSchema = z.object({
   if (grant.validFrom && grant.validThrough && grant.validThrough < grant.validFrom) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['validThrough'], message: 'validThrough cannot precede validFrom.' });
   }
+  const includesAiUse = grant.rights.includes('AI_USE');
+  if (includesAiUse && !grant.aiUseScope) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['aiUseScope'], message: 'AI_USE grants require an explicit modality, purpose, material, model, and terms scope.' });
+  }
+  if (!includesAiUse && grant.aiUseScope) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['aiUseScope'], message: 'AI-use scope is only valid when the grant explicitly includes AI_USE.' });
+  }
 });
 export type RightsGrant = z.infer<typeof RightsGrantSchema>;
+
+export const AIUseReviewStatusSchema = z.enum([
+  'UNKNOWN',
+  'REVIEW_REQUIRED',
+  'DISPUTED',
+  'EXPIRED',
+  'NOT_YET_VALID',
+  'EVIDENCE_BACKED_REQUIRES_HUMAN_REVIEW',
+]);
+export type AIUseReviewStatus = z.infer<typeof AIUseReviewStatusSchema>;
+
+/** A review projection only: there is intentionally no permission/clearance status. */
+export const AIUseGrantReviewSchema = z.object({
+  grantId: Id,
+  subjectEntityId: Id,
+  state: RightsTruthStateSchema,
+  provenanceState: ProvenanceSchema.shape.state,
+  evidenceCount: z.number().int().nonnegative(),
+  scope: AIUseScopeSchema,
+  status: AIUseReviewStatusSchema,
+  requiresHumanReview: z.literal(true),
+  executionAuthorized: z.literal(false),
+}).strict();
+export type AIUseGrantReview = z.infer<typeof AIUseGrantReviewSchema>;
 
 export const RightsEvidenceVaultSchema = z.object({
   entityId: Id,
@@ -90,6 +146,10 @@ export const RightsIntelligenceReportSchema = z.object({
   compositionShareTotal: z.number().min(0),
   publisherShareTotal: z.number().min(0),
   findings: z.array(RightsFindingSchema).max(5000),
+  /** Missing AI-use data stays UNKNOWN; documented data still requires a human/legal review. */
+  aiUseStatus: AIUseReviewStatusSchema.default('UNKNOWN'),
+  aiUseReviews: z.array(AIUseGrantReviewSchema).max(1000).default([]),
+  aiUseExecutionAuthorized: z.literal(false).default(false),
   releaseReviewRequired: z.boolean(),
   contentIdAutomaticSubmissionEligible: z.boolean(),
   evaluatedAt: IsoDateTime,
@@ -153,7 +213,47 @@ export function evaluateRightsIntelligence(input: RightsIntelligenceInput, evalu
     if (!use.exclusiveRightsConfirmed) findings.push({ code: 'EXCLUSIVE_RIGHTS_UNCONFIRMED', severity: 'BLOCKING', entityId: use.targetRecordingEntityId, message: `${use.useType.toLowerCase()} material prevents automatic Content ID submission until exclusive-rights eligibility is reviewed.`, requiresHumanReview: true });
     if (use.evidence.length === 0) findings.push({ code: 'EVIDENCE_MISSING', severity: 'REVIEW', entityId: use.targetRecordingEntityId, message: `No evidence is attached to the ${use.useType.toLowerCase()} record.`, requiresHumanReview: true });
   }
+  const aiUseReviews = parsed.grants
+    .filter((grant) => grant.rights.includes('AI_USE'))
+    .map((grant) => {
+      // Schema refinement guarantees scope for every AI_USE grant.
+      const scope = grant.aiUseScope!;
+      const evaluatedDate = evaluatedAt.slice(0, 10);
+      const state: AIUseReviewStatus = grant.state === 'DISPUTED' || grant.state === 'UNRESOLVED'
+        || grant.provenance.state === 'DISPUTED'
+        ? 'DISPUTED'
+        : grant.validThrough && grant.validThrough < evaluatedDate
+          ? 'EXPIRED'
+          : grant.validFrom && grant.validFrom > evaluatedDate
+            ? 'NOT_YET_VALID'
+            : isAuthoritativeAssertion(grant.state, grant.provenance, grant.evidence.length > 0 || grant.provenance.evidence.length > 0)
+              ? 'EVIDENCE_BACKED_REQUIRES_HUMAN_REVIEW'
+              : 'REVIEW_REQUIRED';
+      return AIUseGrantReviewSchema.parse({
+        grantId: grant.grantId,
+        subjectEntityId: grant.subjectEntityId,
+        state: grant.state,
+        provenanceState: grant.provenance.state,
+        evidenceCount: new Set([...grant.evidence, ...grant.provenance.evidence].map((evidence) => evidence.id)).size,
+        scope,
+        status: state,
+        requiresHumanReview: true,
+        executionAuthorized: false,
+      });
+    });
+  const aiUseStatus: AIUseReviewStatus = aiUseReviews.length === 0
+    ? 'UNKNOWN'
+    : aiUseReviews.some((review) => review.status === 'DISPUTED')
+      ? 'DISPUTED'
+      : aiUseReviews.some((review) => review.status !== 'EVIDENCE_BACKED_REQUIRES_HUMAN_REVIEW')
+        ? 'REVIEW_REQUIRED'
+        : 'EVIDENCE_BACKED_REQUIRES_HUMAN_REVIEW';
+
   for (const grant of parsed.grants) {
+    // AI training/use permission is independently scoped. It must not block or
+    // authorize ordinary release readiness. Mixed grants still receive the
+    // existing review for their non-AI rights.
+    if (!grant.rights.some((right) => right !== 'AI_USE')) continue;
     if (!isAuthoritativeAssertion(grant.state, grant.provenance, grant.evidence.length > 0 || grant.provenance.evidence.length > 0)) {
       findings.push({ code: 'GRANT_UNRESOLVED', severity: 'BLOCKING', entityId: grant.subjectEntityId, message: `Rights grant ${grant.grantId} is ${grant.state.toLowerCase()} or lacks matching documented provenance and evidence.`, requiresHumanReview: true });
     }
@@ -167,7 +267,9 @@ export function evaluateRightsIntelligence(input: RightsIntelligenceInput, evalu
   const releaseReviewRequired = findings.some((finding) => finding.requiresHumanReview);
   return RightsIntelligenceReportSchema.parse({
     schemaVersion: 'rights-intelligence.v1', targetEntityId: parsed.targetEntityId,
-    masterShareTotal, compositionShareTotal, publisherShareTotal, findings, releaseReviewRequired,
+    masterShareTotal, compositionShareTotal, publisherShareTotal, findings,
+    aiUseStatus, aiUseReviews, aiUseExecutionAuthorized: false,
+    releaseReviewRequired,
     contentIdAutomaticSubmissionEligible: !releaseReviewRequired
       && parsed.thirdPartyUses.length === 0
       && allCoreInterestsAuthoritative,

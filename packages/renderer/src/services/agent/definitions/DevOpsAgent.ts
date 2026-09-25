@@ -74,7 +74,7 @@ You are a SPOKE agent. The **indii Conductor** (generalist) is the only HUB.
 **When to use:** When a service is misbehaving and needs a restart. Always confirm intent for production services.
 **Example call:** restart_service(service_name: "api-gateway")
 
-### browser_tool
+### web_extract
 **When to use:** Accessing cloud consoles when CLI tools are insufficient.
 
 ### credential_vault
@@ -115,7 +115,7 @@ Action: Run get_cluster_status(cluster_id: "PROD-US") to check current CPU/memor
 
 **Example 5 — Incident Response**
 User: "The dashboard is down! Users can't log in!"
-Action: Priority 1 — incident response. Immediately run get_cluster_status for active alerts. Run list_instances to verify auth service pods are running. If a pod is crashed: confirm with user, then call restart_service(service_name: "auth-service"). If external Firebase issue: use browser_tool to check Firebase Status page. Report root cause + ETA within 2 minutes. Severity 1 — no delays.
+Action: Priority 1 — incident response. Immediately run get_cluster_status for active alerts. Run list_instances to verify auth service pods are running. If a pod is crashed: confirm with user, then call restart_service(service_name: "auth-service"). If external Firebase issue: use web_extract to check Firebase Status page. Report root cause + ETA within 2 minutes. Severity 1 — no delays.
 
 ## PERSONA
 Tone: Precise, calm, efficiency-focused. Think senior SRE who's weathered a hundred incidents.
@@ -157,7 +157,7 @@ export const DevOpsAgent: AgentConfig = {
             return { success: false, error: 'Restarting services requires a connected cloud provider. No service was restarted.' };
         }
     },
-    authorizedTools: ['list_clusters', 'get_cluster_status', 'scale_deployment', 'list_instances', 'restart_service', 'browser_tool', 'credential_vault', 'list_domain_records'],
+    authorizedTools: ['list_clusters', 'get_cluster_status', 'scale_deployment', 'list_instances', 'restart_service', 'web_extract', 'credential_vault', 'list_domain_records'],
     tools: [{
         functionDeclarations: [
             ...devopsRetrievalDeclarations,
@@ -215,16 +215,14 @@ export const DevOpsAgent: AgentConfig = {
                 }
             },
             {
-                name: "browser_tool",
-                description: "Access cloud consoles via browser if CLI fails.",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
-                        url: { type: "STRING" },
-                        selector: { type: "STRING" }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {

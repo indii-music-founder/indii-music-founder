@@ -61,8 +61,8 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Use a web browser for navigation, traffic checks, or venue research.",
+      "name": "web_extract",
+      "description": "Read bounded text from public venue or service pages. Does not confirm availability or make contact.",
       "inputSchemaRef": "#/components/schemas/Empty",
       "outputSchemaRef": "#/components/schemas/Empty",
       "streaming": false

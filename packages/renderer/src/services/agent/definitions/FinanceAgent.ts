@@ -179,11 +179,11 @@ export const FinanceAgent: AgentConfig = {
         },
         credential_vault: UniversalTools.credential_vault,
         payment_gate: UniversalTools.payment_gate,
-        browser_tool: UniversalTools.browser_tool,
+        web_extract: UniversalTools.web_extract,
         calculate_recoupment: McpTools.calculate_recoupment,
         stage_stripe_payouts: McpTools.stage_stripe_payouts,
     },
-    authorizedTools: ['list_domain_records', 'royalty_distribution_calculator', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue', 'calculate_recoupment', 'stage_stripe_payouts'],
+    authorizedTools: ['list_domain_records', 'royalty_distribution_calculator', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'web_extract', 'generate_tax_report', 'forecast_revenue', 'calculate_recoupment', 'stage_stripe_payouts'],
     tools: [{
         functionDeclarations: [
             ...financeRetrievalDeclarations,
@@ -317,16 +317,14 @@ export const FinanceAgent: AgentConfig = {
                 }
             },
             {
-                name: "browser_tool",
-                description: "Check exchange rates or tax information.",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", enum: ["open", "click", "type", "get_dom"], description: "Action: open, click, type, get_dom" },
-                        url: { type: "STRING" },
-                        selector: { type: "STRING" }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {

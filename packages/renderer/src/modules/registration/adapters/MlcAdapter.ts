@@ -1,7 +1,6 @@
 import type { OrgAdapter, CatalogTrack, SubmissionResult } from '../types';
 import { persistOrgRecord } from '../services/RegistrationPersistence';
 import { logger } from '@/utils/logger';
-import { getConfirmedAutomationResult } from './automationResult';
 
 export const MlcAdapter: OrgAdapter = {
   id: 'mlc',
@@ -52,37 +51,15 @@ export const MlcAdapter: OrgAdapter = {
   async submit(data, track: CatalogTrack, userId: string): Promise<SubmissionResult> {
     logger.info('[MlcAdapter] Initiating MLC work registration via browser automation', { trackId: track.id });
 
-    try {
-      const { BrowserAgentService } = await import('@/services/agent/BrowserAgentService');
-      const browserService = new BrowserAgentService();
-
-      const result = await browserService.executeTask(
-        'MLC',
-        `Register the following musical work:
-          - Title: ${data.workTitle}
-          - ISWC: ${data.iswc || 'N/A'}
-          - IPI: ${data.ipiNumber}
-          - Writers: ${JSON.stringify(track.writersAndContributors)}
-          Complete the work registration form and return the MLC work registration ID.`,
-        'https://portal.themlc.com'
-      );
-      const confirmationNumber = getConfirmedAutomationResult(result, 'MLC');
-      const persisted = await persistOrgRecord(userId, track.id, 'mlc', data, confirmationNumber);
-
-      return { success: true, confirmationNumber, submittedAt: new Date(), localRecordFailed: !persisted };
-    } catch (err: unknown) {
-      const isWebSession = typeof window !== 'undefined' && !window.electronAPI;
-      logger.warn('[MlcAdapter] Submission failed:', err);
-      await persistOrgRecord(userId, track.id, 'mlc', data, undefined);
-      return {
-        success: false,
-        submittedAt: new Date(),
-        requiresManualStep: true,
-        manualStepUrl: 'https://portal.themlc.com',
-        manualStepInstructions: isWebSession
-          ? 'MLC registration requires the indii desktop app or manual login at themlc.com.'
-          : 'MLC browser automation failed. Please complete registration manually at themlc.com.',
-      };
-    }
+    const persisted = await persistOrgRecord(userId, track.id, 'mlc', data, undefined);
+    logger.info('[MlcAdapter] Prepared filing saved for manual completion', { trackId: track.id, saved: persisted });
+    return {
+      success: false,
+      errorMessage: persisted ? undefined : 'The prepared filing could not be saved locally.',
+      submittedAt: new Date(),
+      requiresManualStep: true,
+      manualStepUrl: 'https://portal.themlc.com',
+      manualStepInstructions: 'Your filing details are prepared, but no information was entered or submitted on your behalf. Review the details and complete registration at the MLC portal.',
+    };
   },
 };

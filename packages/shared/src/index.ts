@@ -58,6 +58,7 @@ export * from './services/business-harness/HarnessCompiler.js';
 export * from './distribution/types/index.js';
 export * from './distribution/ddexBuilder.js';
 export * from './distribution/ddexStandardsRegistry.js';
+export * from './distribution/rdrRccTsv.js';
 export * from './distribution/ecmContracts.js';
 export * from './security/organizationAccess.js';
 export * from './security/auditLog.js';

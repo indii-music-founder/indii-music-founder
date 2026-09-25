@@ -158,7 +158,7 @@ If a task is outside Security, say:
             }
         }
     },
-    authorizedTools: ['audit_permissions', 'check_api_status', 'scan_content', 'rotate_credentials', 'browser_tool', 'credential_vault', 'scan_for_vulnerabilities', 'list_domain_records'],
+    authorizedTools: ['audit_permissions', 'check_api_status', 'scan_content', 'rotate_credentials', 'web_extract', 'credential_vault', 'scan_for_vulnerabilities', 'list_domain_records'],
     tools: [{
         functionDeclarations: [
             ...securityRetrievalDeclarations,
@@ -215,16 +215,14 @@ If a task is outside Security, say:
                 }
             },
             {
-                name: "browser_tool",
-                description: "Scan URLs for threats or verify SSL certificates.",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
-                        url: { type: "STRING" },
-                        selector: { type: "STRING" }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {
