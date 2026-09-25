@@ -201,6 +201,10 @@ describe('QCPanel', () => {
             features: {
                 bpm: 120, key: 'C', scale: 'major', energy: 0.5, duration: 30,
                 danceability: 0.4, loudness: -12,
+                audit: {
+                    peakLevel: -0.2, truePeakDb: -0.2, integratedLoudness: -13,
+                    sampleRate: 44100, isStereo: true, rejectionRisks: [],
+                },
             },
             provenance: {
                 state: 'DETECTED' as const,
@@ -242,6 +246,12 @@ describe('QCPanel', () => {
         expect(await screen.findByTestId('local-only-analysis-report')).toHaveTextContent('DETECTED');
         expect(await screen.findByTestId('local-embedded-metadata-report')).toHaveTextContent('Detected, not authoritative');
         expect(screen.getByTestId('local-embedded-metadata-report')).toHaveTextContent(/not copied into release metadata or saved/i);
+        expect(screen.getByTestId('local-qc-advisory-only')).toHaveTextContent(/not platform compliance measurements/i);
+        expect(screen.getAllByTestId('local-loudness-estimate-only')).toHaveLength(2);
+        expect(screen.getByTestId('local-peak-estimate-only')).toHaveTextContent('Estimate only');
+        expect(screen.queryByText('Penalized')).not.toBeInTheDocument();
+        expect(screen.queryByText('Optimal')).not.toBeInTheDocument();
+        expect(screen.queryByText('Clipping Risk')).not.toBeInTheDocument();
         expect(screen.queryByText('Distribution Spec')).not.toBeInTheDocument();
         expect(screen.queryByTestId('save-analysis-button')).not.toBeInTheDocument();
         expect(saveAnalysis).not.toHaveBeenCalled();
