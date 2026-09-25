@@ -829,6 +829,42 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('canonical music catalog server-only boundary', () => {
+        const personalEntityPath = ['users', ALICE_UID, 'musicCatalogEntities', 'recording-1'] as const;
+        const organizationClaimPath = ['organizations', ORG_ID, 'musicCatalogClaims', 'claim-1'] as const;
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                const db = ctx.firestore();
+                await setDoc(doc(db, 'users', ALICE_UID), { id: ALICE_UID });
+                await setDoc(doc(db, 'organizations', ORG_ID), orgDoc(ALICE_UID, BOB_UID));
+                await setDoc(doc(db, ...personalEntityPath), { id: 'recording-1', entityType: 'sound_recording' });
+                await setDoc(doc(db, ...organizationClaimPath), { id: 'claim-1', status: 'ASSERTED' });
+            });
+        });
+
+        it('denies direct client reads and writes for owner, organization owner, member, and anonymous callers', async () => {
+            if (requireEmulator()) return;
+            const contexts = [
+                verifiedCtx(ALICE_UID).firestore(),
+                verifiedCtx(BOB_UID).firestore(),
+                anonCtx().firestore(),
+                unauthCtx().firestore(),
+            ];
+
+            for (const db of contexts) {
+                const personalEntity = doc(db, ...personalEntityPath);
+                const organizationClaim = doc(db, ...organizationClaimPath);
+                await assertFails(getDoc(personalEntity));
+                await assertFails(setDoc(personalEntity, { id: 'recording-2' }));
+                await assertFails(getDoc(organizationClaim));
+                await assertFails(setDoc(organizationClaim, { id: 'claim-2' }));
+                await assertFails(deleteDoc(organizationClaim));
+            }
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // 4. LICENSES (/licenses/{licenseId})
     // ──────────────────────────────────────────────────────────────────────
