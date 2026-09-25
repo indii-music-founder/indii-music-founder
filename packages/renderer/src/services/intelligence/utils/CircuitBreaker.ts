@@ -186,4 +186,23 @@ export class CircuitBreaker {
         this.failureCount = 0;
         this.lastFailureTime = 0;
     }
+
+    /**
+     * Fast-path Agent Action Risk Gatekeeper (Domain 4)
+     * Evaluates autonomous action risk (ad spend update, bulk outreach, rights registry writes)
+     * via Jev System One before committing external API mutations.
+     * Automatically trips the breaker if an existential financial or integrity hazard is detected.
+     */
+    public async evaluateActionRisk(
+        payload: import('@/config/typesafeJudgments').AgentActionPayload
+    ): Promise<import('@/config/typesafeJudgments').AgentActionRiskResult> {
+        const { judgeAgentActionRisk } = await import('@/config/typesafeJudgments');
+        const result = await judgeAgentActionRisk(payload);
+        if (result.verdict === 'CIRCUIT_BREAKER_TRIP') {
+            this.state = CircuitState.OPEN;
+            this.lastFailureTime = Date.now();
+            logger.error(`[CircuitBreaker] 🔴 CIRCUIT_BREAKER_TRIP triggered by Jev risk evaluator: ${result.tripReason}`);
+        }
+        return result;
+    }
 }

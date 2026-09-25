@@ -300,6 +300,90 @@ describe('Phase 9 connected intelligence preflight', () => {
     expect(result.actions.map(action => action.code)).toContain('VERIFY_REGISTRATION');
   });
 
+  it('routes a detected claim event through the claims inbox to a human-gated Phase 10 review plan', () => {
+    const claimEvent = {
+      schemaVersion: 'music-domain-event.v1' as const,
+      eventId: 'event:claim-received-1',
+      eventType: 'claim.received' as const,
+      subject: { entityId: 'claim:canonical-1', entityType: 'rights_claim' as const },
+      relatedEntities: [{ entityId: 'recording:canonical-1', entityType: 'sound_recording' as const }],
+      occurredAt: now,
+      recordedAt: now,
+      details: { providerClaimReference: 'platform:external-claim-1' },
+      provenance: { ...verified, state: 'DETECTED' as const, sourceType: 'EXTERNAL_SERVICE' as const },
+    };
+    const claimProvenance = { ...userVerified, state: 'USER_DECLARED' as const };
+    const claims = [
+      {
+        schemaVersion: 'rights-claim.v1' as const, id: 'claim:canonical-1', targetEntityId: 'recording:canonical-1',
+        claimantEntityId: 'organization:claimant-1', type: 'MASTER' as const, status: 'ASSERTED' as const,
+        territoryCodes: ['US'], provenance: claimProvenance, createdAt: now, updatedAt: now,
+      },
+      {
+        schemaVersion: 'rights-claim.v1' as const, id: 'claim:canonical-2', targetEntityId: 'recording:canonical-1',
+        claimantEntityId: 'organization:claimant-2', type: 'MASTER' as const, status: 'ASSERTED' as const,
+        territoryCodes: ['US'], provenance: claimProvenance, createdAt: now, updatedAt: now,
+      },
+    ];
+
+    const result = evaluateConnectedIntelligence(completeFixture({ event: claimEvent, claims }));
+    const action = result.actions.find(candidate => candidate.code === 'REVIEW_RIGHTS');
+
+    expect(result.status).toBe('ACTIONS_REQUIRED');
+    expect(action).toMatchObject({
+      source: 'RIGHTS', subject: { entityId: 'claim:canonical-1', entityType: 'rights_claim' },
+      requiresHumanReview: true, executionAuthorized: false,
+    });
+    expect(action?.detail).toMatch(/potentially overlapping assertion/);
+    expect(result.evaluatedDimensions).toEqual(['EVENT', 'RIGHTS']);
+
+    const plan = planConnectedIntelligenceAction(action!, {
+      officialApiAvailable: true,
+      oauthApiAvailable: true,
+      browserAutomationAvailable: true,
+      desktopControlAvailable: true,
+      autonomousComputerControlAuthorized: true,
+    });
+    expect(plan.route).toBe('GUIDED_MANUAL');
+    expect(plan.status).toBe('AWAITING_HUMAN');
+    expect(plan.executionAuthorized).toBe(false);
+  });
+
+  it('does not turn a missing canonical claim record into ownership or clearance', () => {
+    const result = evaluateConnectedIntelligence(completeFixture({
+      event: {
+        schemaVersion: 'music-domain-event.v1', eventId: 'event:claim-missing', eventType: 'claim.received',
+        subject: { entityId: 'claim:missing', entityType: 'rights_claim' },
+        occurredAt: now, recordedAt: now, provenance: { ...verified, state: 'DETECTED' },
+      },
+    }));
+
+    expect(result.status).toBe('ACTIONS_REQUIRED');
+    expect(result.actions[0]).toMatchObject({ code: 'RESOLVE_EVENT_SUBJECT', requiresHumanReview: true, executionAuthorized: false });
+    expect(result.explanation).toMatch(/canonical claim record is missing/);
+  });
+
+  it('requires human review before closing a withdrawn claim and does not infer clearance', () => {
+    const nowClaim = {
+      schemaVersion: 'rights-claim.v1' as const, id: 'claim:withdrawn', targetEntityId: 'recording:canonical-1',
+      claimantEntityId: 'organization:claimant-1', type: 'MASTER' as const, status: 'WITHDRAWN' as const,
+      territoryCodes: [], provenance: userVerified, createdAt: now, updatedAt: now,
+    };
+    const result = evaluateConnectedIntelligence(completeFixture({
+      event: {
+        schemaVersion: 'music-domain-event.v1', eventId: 'event:claim-withdrawn', eventType: 'claim.status_changed',
+        subject: { entityId: 'claim:withdrawn', entityType: 'rights_claim' },
+        occurredAt: now, recordedAt: now, provenance: { ...verified, state: 'DETECTED' },
+      },
+      claims: [nowClaim],
+    }));
+
+    expect(result.status).toBe('ACTIONS_REQUIRED');
+    expect(result.actions[0]).toMatchObject({ code: 'REVIEW_RIGHTS', title: 'Review the reported claim withdrawal', requiresHumanReview: true, executionAuthorized: false });
+    expect(result.actions[0]?.detail).toMatch(/human must verify and close the response workflow/);
+    expect(result.explanation).toMatch(/human-review-required until closure is verified/);
+  });
+
   it('carries a monitoring event through delivery, readiness re-evaluation, and a human-gated Phase 10 plan', () => {
     const monitoredEvent = {
       schemaVersion: 'music-domain-event.v1' as const,
@@ -361,7 +445,31 @@ describe('Phase 9 connected intelligence preflight', () => {
     const result = evaluateConnectedIntelligence(input);
     expect(result.status).toBe('NOT_EVALUATED');
     expect(result.actions).toEqual([]);
-    expect(result.explanation).toMatch(/does not identify an affected canonical release/);
+    expect(result.explanation).toMatch(/identifies 0 canonical releases/);
+  });
+
+  it('does not choose arbitrarily when a monitoring event references multiple releases', () => {
+    const input = completeFixture({
+      event: {
+        schemaVersion: 'music-domain-event.v1',
+        eventId: 'event:catalog-change-ambiguous',
+        eventType: 'catalog.state_changed',
+        subject: { entityId: 'asset:internal-1', entityType: 'asset' },
+        relatedEntities: [
+          { entityId: 'release:canonical-1', entityType: 'release' },
+          { entityId: 'release:canonical-2', entityType: 'release' },
+        ],
+        occurredAt: now,
+        recordedAt: now,
+        provenance: { ...verified, state: 'DETECTED' },
+      },
+    });
+
+    const result = evaluateConnectedIntelligence(input);
+
+    expect(result.status).toBe('NOT_EVALUATED');
+    expect(result.actions).toEqual([]);
+    expect(result.explanation).toMatch(/identifies 2 canonical releases/);
   });
 
   it('emits only advisory actions that require human review and authorize no execution', () => {

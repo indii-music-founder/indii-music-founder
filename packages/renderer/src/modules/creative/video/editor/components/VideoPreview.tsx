@@ -144,7 +144,8 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ artifactUrl, project
                     onClick={() => {
                         import('@/services/screen/ScreenControlService').then(({ ScreenControl }) => {
                             ScreenControl.requestPermission().then(() => {
-                                ScreenControl.openProjectorWindow('/video-popout', 1);
+                                const mode = ScreenControl.openProjectorWindow('/video-popout', 1);
+                                logger.info('[preview] pop-out opened via ' + mode);
                                 import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
                                     useVideoEditorStore.getState().setIsPopoutActive(true);
                                 }).catch((err) => logger.error('Failed to load video editor store for pop-out:', err));

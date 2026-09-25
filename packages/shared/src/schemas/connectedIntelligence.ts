@@ -7,8 +7,10 @@ import {
   ProvenanceSchema,
 } from './musicEntity.js';
 import { MusicDomainEventSchema, MusicEventEntityReferenceSchema } from './musicEvent.js';
+import { RightsClaimSchema } from './musicEntity.js';
 import { MusicRelationshipSchema } from './musicRelationship.js';
 import { RightsIntelligenceReportSchema } from './rightsIntelligence.js';
+import { projectClaimsInbox } from './claimsInbox.js';
 
 const IdSchema = z.string().trim().min(1).max(160);
 const IsoDateTimeSchema = z.string().datetime();
@@ -57,6 +59,7 @@ export const ConnectedIntelligenceInputSchema = z.object({
   artistContext: ArtistContextSchema.optional(),
   entities: z.array(CanonicalMusicEntitySchema).max(10_000).default([]),
   relationships: z.array(MusicRelationshipSchema).max(50_000).default([]),
+  claims: z.array(RightsClaimSchema).max(2_000).default([]),
   rightsReports: z.array(RightsIntelligenceReportSchema).max(5_000).default([]),
   registrationRequirements: z.array(ConnectedRegistrationRequirementSchema).max(2_000).default([]),
   platformTerritoryTargets: z.array(PlatformTerritoryTargetSchema).max(2_000).default([]),
@@ -132,10 +135,11 @@ const EVALUATED_DIMENSIONS: ConnectedIntelligenceResult['evaluatedDimensions'] =
 ];
 
 /**
- * Deterministic Phase 9 preflight for a planned release. This consumes
- * canonical facts and subsystem snapshots; it does not create/persist facts,
- * dispatch actions, emit DDEX messages, or grant delivery/rights authority.
- * Unsupported event types are explicitly NOT_EVALUATED, never a green result.
+ * Deterministic Phase 9 event re-evaluation for release readiness and the
+ * Phase 12 claims inbox. This consumes canonical facts and subsystem
+ * snapshots; it does not create/persist facts, dispatch actions, emit DDEX
+ * messages, or grant delivery/rights authority. Unsupported event types are
+ * explicitly NOT_EVALUATED, never a green result.
  */
 export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput): ConnectedIntelligenceResult {
   const parsed = ConnectedIntelligenceInputSchema.parse(input);
@@ -170,20 +174,65 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
     });
   }
 
-  const releaseRef = parsed.event.subject.entityType === 'release'
-    ? parsed.event.subject
-    : parsed.event.relatedEntities.find(reference => reference.entityType === 'release');
-  if (!releaseRef) {
+  if (parsed.event.eventType === 'claim.received' || parsed.event.eventType === 'claim.status_changed') {
+    const claim = parsed.claims.find(candidate => candidate.id === parsed.event.subject.entityId);
+    if (!claim) {
+      addAction({
+        code: 'RESOLVE_EVENT_SUBJECT', source: 'EVENT', subject: parsed.event.subject,
+        title: 'Resolve the canonical rights claim',
+        detail: 'The claim event has no matching canonical RightsClaim in the supplied snapshot; resolve the claim record before reviewing its rights or ownership implications.',
+      });
+      return ConnectedIntelligenceResultSchema.parse({
+        schemaVersion: 'connected-intelligence.v1', sourceEventId: parsed.event.eventId,
+        status: 'ACTIONS_REQUIRED', evaluatedDimensions: ['EVENT', 'MUSIC_IDENTITY'], actions,
+        explanation: 'The claim event is not treated as a rights fact because its canonical claim record is missing.',
+        evaluatedAt: parsed.evaluatedAt,
+      });
+    }
+
+    const inbox = projectClaimsInbox({ claims: parsed.claims, events: [parsed.event], evaluatedAt: parsed.evaluatedAt });
+    const inboxItem = inbox.items.find(item => item.claim.id === claim.id);
+    addAction({
+      code: 'REVIEW_RIGHTS', source: 'RIGHTS',
+      subject: { entityId: claim.id, entityType: 'rights_claim' },
+      title: claim.status === 'WITHDRAWN' ? 'Review the reported claim withdrawal' : 'Review the received rights claim',
+      detail: [
+        `Canonical claim ${claim.id} is recorded as ${claim.status.toLowerCase()} for target ${claim.targetEntityId}; its status remains unchanged.`,
+        `${inboxItem?.evidenceCount ?? 0} evidence reference(s) are attached; their presence does not establish ownership.`,
+        claim.status === 'WITHDRAWN'
+          ? 'A human must verify and close the response workflow; the withdrawal does not establish ownership or clear other rights.'
+          : inboxItem?.hasPotentialConflict
+            ? 'The supplied claim snapshot contains a potentially overlapping assertion; a human must review both claims.'
+            : 'No overlapping assertion was identified in the supplied snapshot; human review is still required.',
+      ].join(' '),
+      evidence: claim.provenance.evidence,
+    });
+
+    return ConnectedIntelligenceResultSchema.parse({
+      schemaVersion: 'connected-intelligence.v1', sourceEventId: parsed.event.eventId,
+      status: 'ACTIONS_REQUIRED',
+      evaluatedDimensions: ['EVENT', 'RIGHTS'], actions,
+      explanation: claim.status === 'WITHDRAWN'
+        ? 'The claim is marked withdrawn, but the response workflow remains human-review-required until closure is verified; no ownership or clearance conclusion was made.'
+        : 'The canonical claim is routed to the rights review workflow without changing its truth state or authorizing an external response.',
+      evaluatedAt: parsed.evaluatedAt,
+    });
+  }
+
+  const releaseRefs = [parsed.event.subject, ...parsed.event.relatedEntities]
+    .filter(reference => reference.entityType === 'release');
+  if (releaseRefs.length !== 1) {
     return ConnectedIntelligenceResultSchema.parse({
       schemaVersion: 'connected-intelligence.v1',
       sourceEventId: parsed.event.eventId,
       status: 'NOT_EVALUATED',
       evaluatedDimensions: ['EVENT'],
       actions: [],
-      explanation: `Event ${parsed.event.eventType} does not identify an affected canonical release; no readiness conclusion was made.`,
+      explanation: `Event ${parsed.event.eventType} identifies ${releaseRefs.length} canonical releases; exactly one affected release is required, so no readiness conclusion was made.`,
       evaluatedAt: parsed.evaluatedAt,
     });
   }
+  const releaseRef = releaseRefs[0]!;
 
   const entityById = new Map(parsed.entities.map(entity => [entity.id, entity]));
   const release = entityById.get(releaseRef.entityId);

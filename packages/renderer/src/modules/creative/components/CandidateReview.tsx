@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Check, X, RefreshCw, ChevronUp, ChevronDown, ZoomIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { judgeCandidatePreselect } from '@/config/typesafeJudgments';
 
 export interface Candidate {
     id: string;
@@ -26,8 +27,28 @@ interface CandidateReviewProps {
  */
 export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: CandidateReviewProps) {
     const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [recommendedId, setRecommendedId] = useState<string | null>(null);
     const [previewId, setPreviewId] = useState<string | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
+
+    // Fast-path Jev System One candidate recommendation
+    useEffect(() => {
+        if (!candidates || candidates.length <= 1) return;
+        let active = true;
+        const prompt = candidates[0]?.prompt || '';
+        judgeCandidatePreselect(prompt, candidates).then((res) => {
+            if (!active || !res) return;
+            setRecommendedId(res.recommendedId);
+            setSelected((prev) => {
+                // If user has not manually selected any candidate yet, pre-select the recommended top pick
+                if (prev.size === 0) {
+                    return new Set([res.recommendedId]);
+                }
+                return prev;
+            });
+        }).catch(() => {});
+        return () => { active = false; };
+    }, [candidates]);
 
     const toggleSelection = useCallback((id: string) => {
         setSelected(prev => {
@@ -155,11 +176,18 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
                                                     {isSelected && <Check size={12} className="text-white" strokeWidth={3} />}
                                                 </div>
 
-                                                {/* Option Label — Top Right */}
-                                                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
-                                                    <span className="text-[10px] font-bold text-white/80">
-                                                        {idx + 1}/{candidates.length}
-                                                    </span>
+                                                {/* Option Label & Top Pick — Top Right */}
+                                                <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                                                    {cand.id === recommendedId && (
+                                                        <span className="bg-emerald-500 text-black text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-sm">
+                                                            Top Pick
+                                                        </span>
+                                                    )}
+                                                    <div className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
+                                                        <span className="text-[10px] font-bold text-white/80">
+                                                            {idx + 1}/{candidates.length}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
                                                 {/* Zoom Button — Bottom Right */}

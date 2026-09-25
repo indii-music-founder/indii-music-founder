@@ -1,3 +1,5 @@
+import { judgeVideoAspectRatioIntent } from '@/config/typesafeJudgments';
+
 export type SupportedVideoAspectRatio = '16:9' | '9:16';
 
 function parseAspectRatio(input: string): number | null {
@@ -27,6 +29,13 @@ export function normalizeVideoAspectRatio(
 
     const ratio = parseAspectRatio(input);
     if (ratio === null) {
+        const lower = input.toLowerCase();
+        if (/\b(vertical|portrait|tiktok|reel|reels|short|shorts|story|stories|canvas|phone)\b/i.test(lower)) {
+            return { aspectRatio: '9:16', coercedFrom: input };
+        }
+        if (/\b(horizontal|landscape|widescreen|wide|cinema|desktop|youtube|tv)\b/i.test(lower)) {
+            return { aspectRatio: '16:9', coercedFrom: input };
+        }
         return { aspectRatio: '16:9', coercedFrom: input };
     }
 
@@ -45,4 +54,23 @@ export function normalizeVideoAspectRatio(
         aspectRatio: nearest.value,
         ...(nearest.value === input ? {} : { coercedFrom: input }),
     };
+}
+
+/**
+ * Semantically normalize aspect ratio from natural language instructions using Jev.
+ * Falls back to deterministic heuristic and ratio math.
+ */
+export async function normalizeVideoAspectRatioAsync(
+    input: string | null | undefined
+): Promise<{ aspectRatio: SupportedVideoAspectRatio; coercedFrom?: string }> {
+    if (!input) return { aspectRatio: '16:9' };
+    const syncResult = normalizeVideoAspectRatio(input);
+    if (syncResult.coercedFrom !== input) {
+        return syncResult;
+    }
+    const judged = await judgeVideoAspectRatioIntent(input);
+    if (judged) {
+        return { aspectRatio: judged, coercedFrom: input };
+    }
+    return syncResult;
 }

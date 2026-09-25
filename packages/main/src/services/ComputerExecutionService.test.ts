@@ -40,6 +40,7 @@ describe('ComputerExecutionService', () => {
 
     describe('kill switch (ISSUE-1111)', () => {
         it('blocks click/type/key/scroll after abort() until resetAbort()', async () => {
+            const platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
             const provider = fakeProvider();
             const svc = new ComputerExecutionService(provider);
 
@@ -56,14 +57,22 @@ describe('ComputerExecutionService', () => {
             expect(svc.isAborted()).toBe(false);
             await svc.click(1, 1, 'left');
             expect(provider.click).toHaveBeenCalledWith(1, 1, 'left');
+            platformSpy.mockRestore();
         });
 
-        it('does not block the read path (screenshot/listApps) when aborted', async () => {
+        it('abort wins for screenshots while non-sensitive app inventory remains available', async () => {
             const provider = fakeProvider();
             const svc = new ComputerExecutionService(provider);
             svc.abort();
-            await expect(svc.screenshot()).resolves.toBeDefined();
+            await expect(svc.screenshot()).rejects.toThrow(/kill switch/i);
             await expect(svc.listApps()).resolves.toEqual([]);
+        });
+
+        it('keeps text injection disabled even after abort is reset', async () => {
+            const provider = fakeProvider();
+            const svc = new ComputerExecutionService(provider);
+            await expect(svc.type('safe-looking text')).rejects.toThrow(/Text injection is disabled/);
+            expect(provider.type).not.toHaveBeenCalled();
         });
     });
 
@@ -129,6 +138,14 @@ describe('ComputerExecutionService', () => {
             const status = svc.getPermissionStatus();
             expect(status.accessibility).toBe('denied');
             expect(status.guidance.some(g => /Accessibility/.test(g))).toBe(true);
+        });
+
+        it('denies provider input when the OS accessibility permission is missing', async () => {
+            mocks.isTrustedAccessibilityClient.mockReturnValue(false);
+            const provider = fakeProvider();
+            const svc = new ComputerExecutionService(provider);
+            await expect(svc.click(1, 1, 'left')).rejects.toThrow(/Accessibility permission is denied/);
+            expect(provider.click).not.toHaveBeenCalled();
         });
     });
 

@@ -445,3 +445,2927 @@ export async function judgeMemoryImportance(text: string, category: string): Pro
         return null;
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment 6: preview/pop-out error guidance (consumer: VideoPopout)
+// ---------------------------------------------------------------------------
+
+export const PREVIEW_GUIDANCE_NONE = 'none';
+
+export type PreviewErrorAction =
+    | 'trim_timeline'
+    | 'fix_media'
+    | 'retry'
+    | typeof PREVIEW_GUIDANCE_NONE;
+
+const previewErrorQuestion = {
+    type: 'choice' as const,
+    instructions:
+        'A video editor preview failed to compile. The raw technical error is given below. Pick the ONE next ' +
+        'action that most likely unblocks the artist. Choose \'trim_timeline\' for clip timing/duration/ordering ' +
+        'problems, \'fix_media\' for missing or unreadable media sources, \'retry\' for transient infrastructure ' +
+        'failures, or \'none\' when the message does not clearly point to any of those.',
+    criteria: {
+        trim_timeline: 'The error describes clip timing, duration, frame ranges, or timeline ordering problems.',
+        fix_media: 'The error describes a missing, unreadable, or invalid media/audio source file.',
+        retry: 'The error looks transient — network, service availability, or timeout phrasing.',
+        [PREVIEW_GUIDANCE_NONE]: 'The error does not clearly match any of the three actions.',
+    },
+};
+
+/**
+ * Choice-judge which artist action best unblocks a failed preview compilation.
+ * Returns the chosen action, or null when judgments are unavailable / the
+ * answer is 'none' / the choice is not a known action. The consumer falls back
+ * to showing the raw error text — the judgment only ever ADDS guidance.
+ */
+export async function judgePreviewErrorGuidance(error: string): Promise<PreviewErrorAction | null> {
+    if (!judgmentsAvailable() || !error) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { error: error.slice(0, 500) },
+            questions: { guidance: previewErrorQuestion },
+        });
+
+        const answer = result.data.answers?.guidance;
+        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown })?.choice;
+        const known: PreviewErrorAction[] = ['trim_timeline', 'fix_media', 'retry'];
+        if (typeof choice !== 'string' || !known.includes(choice as PreviewErrorAction)) {
+            return null;
+        }
+        return choice as PreviewErrorAction;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'preview error guidance judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 7: orchestration complexity & path determination (consumer: AgentOrchestrator)
+// ---------------------------------------------------------------------------
+
+export type OrchestrationPathType = 'simple' | 'parallel' | 'complex';
+
+export const ORCHESTRATION_COMPLEXITY_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'A user request arrived for an Autonomous music-business agent system. Determine whether this request is: ' +
+        '1) "simple": one single coherent goal suitable for one agent to execute directly, ' +
+        '2) "parallel": multiple completely independent tasks that can be performed simultaneously (e.g. "make a post AND an image"), ' +
+        '3) "complex": multi-step sequential tasks with strict dependencies across domains (e.g. "analyze my track THEN write lyrics THEN build a storyboard").',
+    criteria: {
+        simple: 'Single goal or action suitable for one specialist agent.',
+        parallel: 'Multiple independent subtasks that can run at the same time without dependencies.',
+        complex: 'Multi-step workflow requiring a sequenced dependency graph.',
+    },
+};
+
+export const ORCHESTRATION_PATH_MIN_CONFIDENCE = 0.70;
+
+/**
+ * Choice-judge whether a user request requires simple routing, parallel fan-out,
+ * or complex graph decomposition.
+ * Returns the path and confidence, or null when unavailable or low confidence.
+ */
+export async function judgeOrchestrationComplexity(
+    query: string
+): Promise<{ path: OrchestrationPathType; confidence: number } | null> {
+    if (!judgmentsAvailable() || !query.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { query: query.slice(0, 1000) },
+            questions: { complexity: ORCHESTRATION_COMPLEXITY_QUESTION },
+        });
+
+        const answer = result.data.answers?.complexity as { choice?: unknown; confidence?: unknown } | undefined;
+        if (!answer || typeof answer !== 'object') return null;
+
+        const choice = typeof answer.choice === 'string' ? answer.choice.toLowerCase() : null;
+        const confidence = typeof answer.confidence === 'number' ? answer.confidence : 1.0;
+
+        const validPaths: OrchestrationPathType[] = ['simple', 'parallel', 'complex'];
+        if (!choice || !validPaths.includes(choice as OrchestrationPathType)) {
+            return null;
+        }
+
+        if (confidence < ORCHESTRATION_PATH_MIN_CONFIDENCE) {
+            return null;
+        }
+
+        return { path: choice as OrchestrationPathType, confidence };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'orchestration complexity judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 8: collaborator role semantics & agreements (consumer: CollaborationSplitsCompiler)
+// ---------------------------------------------------------------------------
+
+export type CollaboratorRoleCategory = 'producer' | 'writer' | 'featured_artist' | 'engineer' | 'other';
+
+export const COLLABORATOR_ROLE_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'A music collaboration split specifies contributor roles. Classify the primary category of this collaborator role.',
+    criteria: {
+        producer: 'Music producer, beatmaker, co-producer, track producer creating the backing track.',
+        writer: 'Songwriter, lyricist, composer, melody writer.',
+        featured_artist: 'Featured vocalist, guest performer, featured musician.',
+        engineer: 'Mixing engineer, mastering engineer, recording engineer.',
+        other: 'Executive producer, manager, assistant, label, or miscellaneous non-creative credit.',
+    },
+};
+
+export const PRODUCER_AGREEMENT_QUESTION = {
+    type: 'noul' as const,
+    instructions:
+        'Does this collaborator role represent a music production role that standardly requires a Producer Agreement and points/advances clearance?',
+    criteria: {
+        true: 'The collaborator is an audio producer who creates or shapes the track recording.',
+        false: 'The collaborator is a writer, engineer, featured artist, or purely business executive without track-level production agreements needed.',
+    },
+};
+
+export interface RoleSemanticJudgment {
+    roleCategory: CollaboratorRoleCategory;
+    isProducerRequiringAgreement: boolean;
+    confidence: number;
+}
+
+/**
+ * Semantically judge collaborator role strings to determine their primary category
+ * and whether a standard producer agreement is legally required.
+ */
+export async function judgeCollaboratorRoleSemantics(
+    role: string,
+    contributionNotes?: string
+): Promise<RoleSemanticJudgment | null> {
+    if (!judgmentsAvailable() || !role.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                role: role.slice(0, 100),
+                notes: contributionNotes ? contributionNotes.slice(0, 300) : '',
+            },
+            questions: {
+                category: COLLABORATOR_ROLE_QUESTION,
+                requires_agreement: PRODUCER_AGREEMENT_QUESTION,
+            },
+        });
+
+        const catAns = result.data.answers?.category as { choice?: unknown; confidence?: unknown } | undefined;
+        const agreeAns = result.data.answers?.requires_agreement;
+
+        if (!catAns || typeof catAns.choice !== 'string') return null;
+
+        const choice = catAns.choice.toLowerCase();
+        const confidence = typeof catAns.confidence === 'number' ? catAns.confidence : 1.0;
+        const validCategories: CollaboratorRoleCategory[] = ['producer', 'writer', 'featured_artist', 'engineer', 'other'];
+        if (!validCategories.includes(choice as CollaboratorRoleCategory)) return null;
+
+        const agreeProb = typeof agreeAns === 'number'
+            ? agreeAns
+            : Number((agreeAns as { noul?: unknown })?.noul);
+
+        const isProducerRequiringAgreement = Number.isFinite(agreeProb)
+            ? agreeProb >= 0.70
+            : choice === 'producer';
+
+        return {
+            roleCategory: choice as CollaboratorRoleCategory,
+            isProducerRequiringAgreement,
+            confidence,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'collaborator role semantics judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 9: expense auto-categorization & tax deductibility (consumer: ExpenseTracker)
+// ---------------------------------------------------------------------------
+
+export type ExpenseCategoryType =
+    | 'Equipment'
+    | 'Software / Plugins'
+    | 'Marketing'
+    | 'Travel'
+    | 'Services'
+    | 'Other';
+
+export const EXPENSE_CATEGORY_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'An independent music artist entered an expense receipt or line item. Categorize this expense into the primary business expense category.',
+    criteria: {
+        Equipment: 'Hardware instruments, guitars, audio interfaces, microphones, cables, monitors, physical gear.',
+        'Software / Plugins': 'DAWs, VST plugins, subscriptions, cloud sample packs, digital audio tools, software licenses.',
+        Marketing: 'Social media ads, PR campaigns, billboard promos, playlist pitch fees, album artwork design.',
+        Travel: 'Tour travel, flights, hotels, tour van rentals, mileage, gas for performances.',
+        Services: 'Mixing/mastering engineers, session musicians, studio hourly rental, vocal coaching, legal/accounting fees.',
+        Other: 'General office supplies, shipping, meals, merchandise production, or unclassified costs.',
+    },
+};
+
+export const EXPENSE_TAX_DEDUCTIBLE_QUESTION = {
+    type: 'noul' as const,
+    instructions:
+        'Is this expense typically recognized as an ordinary and necessary tax-deductible business expense for an independent musician or recording artist?',
+    criteria: {
+        true: 'Legitimate business expense directly tied to music production, performance, marketing, or operations.',
+        false: 'Personal expense, non-deductible fine, or non-business expenditure.',
+    },
+};
+
+export interface ExpenseCategorizationJudgment {
+    category: ExpenseCategoryType;
+    isTaxDeductible: boolean;
+    confidence: number;
+}
+
+/**
+ * Semantically categorize an expense by vendor and description and evaluate
+ * tax deductibility using Jev.
+ */
+export async function judgeExpenseCategorization(
+    vendor: string,
+    description?: string,
+    amount?: number
+): Promise<ExpenseCategorizationJudgment | null> {
+    if (!judgmentsAvailable() || !vendor.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                vendor: vendor.slice(0, 100),
+                description: (description || '').slice(0, 300),
+                amount: typeof amount === 'number' ? amount : null,
+            },
+            questions: {
+                category: EXPENSE_CATEGORY_QUESTION,
+                is_tax_deductible: EXPENSE_TAX_DEDUCTIBLE_QUESTION,
+            },
+        });
+
+        const catAns = result.data.answers?.category as { choice?: unknown; confidence?: unknown } | undefined;
+        const taxAns = result.data.answers?.is_tax_deductible;
+
+        if (!catAns || typeof catAns.choice !== 'string') return null;
+
+        const choice = catAns.choice;
+        const confidence = typeof catAns.confidence === 'number' ? catAns.confidence : 1.0;
+        const validCategories: ExpenseCategoryType[] = [
+            'Equipment',
+            'Software / Plugins',
+            'Marketing',
+            'Travel',
+            'Services',
+            'Other',
+        ];
+        if (!validCategories.includes(choice as ExpenseCategoryType)) return null;
+
+        const taxProb = typeof taxAns === 'number'
+            ? taxAns
+            : Number((taxAns as { noul?: unknown })?.noul);
+
+        const isTaxDeductible = Number.isFinite(taxProb) ? taxProb >= 0.65 : true;
+
+        return {
+            category: choice as ExpenseCategoryType,
+            isTaxDeductible,
+            confidence,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'expense categorization judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 10: brand mark disambiguation (consumer: BrandComplianceService)
+// ---------------------------------------------------------------------------
+
+export interface DetectedVisualCandidate {
+    id: string;
+    label: string;
+    boxDescription: string;
+}
+
+export const BRAND_MARK_NONE = 'none';
+
+/**
+ * Choice-judge which detected visual candidate represents the artist's brand logo mark.
+ * Returns the candidate ID or null when unavailable or no candidate is a logo.
+ */
+export async function judgeBrandMarkCandidate(
+    candidates: DetectedVisualCandidate[],
+    brandContext?: string
+): Promise<string | null> {
+    if (!judgmentsAvailable() || candidates.length === 0) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const criteria: Record<string, string> = {
+            [BRAND_MARK_NONE]: 'None of the detected objects is the artist logo mark.',
+        };
+        for (const c of candidates) {
+            criteria[c.id] = `Object labeled "${c.label}" located at ${c.boxDescription}.`;
+        }
+
+        const result = await judgeFn({
+            state: {
+                brand: (brandContext || 'Artist brand logo mark').slice(0, 300),
+                candidates: candidates.map((c) => ({ id: c.id, label: c.label, position: c.boxDescription })),
+            },
+            questions: {
+                logo_mark: {
+                    type: 'choice',
+                    instructions:
+                        'Several visual objects were detected in artwork. Select the ONE candidate that represents ' +
+                        'the official artist or brand logo mark (e.g. monogram, wordmark, symbol, emblem). If none represent the logo, select "none".',
+                    criteria,
+                },
+            },
+        });
+
+        const answer = result.data.answers?.logo_mark as { choice?: unknown; confidence?: unknown } | undefined;
+        if (!answer || typeof answer.choice !== 'string') return null;
+
+        const choice = answer.choice;
+        if (choice === BRAND_MARK_NONE || !candidates.some((c) => c.id === choice)) {
+            return null;
+        }
+
+        return choice;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'brand mark disambiguation judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 11: command intent & module navigation (consumer: UnifiedCommandMenu)
+// ---------------------------------------------------------------------------
+
+export type CommandDestinationModule =
+    | 'finance'
+    | 'creative'
+    | 'distribution'
+    | 'publishing'
+    | 'rights'
+    | 'analytics'
+    | 'settings'
+    | 'profile'
+    | 'observability'
+    | 'none';
+
+export const COMMAND_INTENT_MIN_CONFIDENCE = 0.65;
+
+export const COMMAND_TARGET_MODULE_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'An independent music artist entered a search query in the app global command palette (⌘K). ' +
+        'Select the ONE app module destination that directly handles this request. If none fits, select "none".',
+    criteria: {
+        finance: 'Royalties, earnings, payout splits, invoices, business expenses, accounting, recoupment, tax forms.',
+        creative: 'Album artwork, canvas, video editor, generative visuals, visual branding, photo shoot, Veo video generation.',
+        distribution: 'Distributor delivery (Spotify, Apple Music), DDEX, metadata pre-flight QC, release packaging, audio loudness inspection.',
+        publishing: 'Songwriting splits, mechanical royalties, PRO registration (ASCAP, BMI), copyright filing, composition catalogs.',
+        rights: 'Master recording rights, split sheet agreements, work-for-hire contracts, legal contracts, licenses.',
+        analytics: 'Streaming audience metrics, playlist charting, radio plays, demographic listener insights, performance stats.',
+        settings: 'App preferences, API keys, audio hardware configuration, keyboard shortcuts, account profile settings.',
+        profile: 'Artist bio, social links, press kit, EPK, artist brand identity.',
+        observability: 'Ops dashboard, internal system health, background jobs, logs.',
+        none: 'The query is nonsensical or unrelated to any of these application modules.',
+    },
+};
+
+export const COMMAND_INTENT_ACTION_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'Does the user query ask for a specific deep action rather than general module navigation?',
+    criteria: {
+        audio_qc: 'Audio pre-flight quality check, loudness test, or acoustic validation.',
+        quick_notes: 'Jotting a quick note, memo, or idea.',
+        report_bug: 'Reporting an error, issue, bug, or crash in the app.',
+        request_feature: 'Requesting a new feature or improvement.',
+        navigate: 'General navigation to an app module or workspace.',
+        none: 'Unclear or unrecognized action.',
+    },
+};
+
+export interface CommandIntentJudgment {
+    targetModule: CommandDestinationModule | null;
+    action: string | null;
+    suggestedLabel: string;
+    confidence: number;
+}
+
+export async function judgeCommandIntent(
+    query: string
+): Promise<CommandIntentJudgment | null> {
+    if (!judgmentsAvailable() || !query.trim() || query.trim().length < 3) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { query: query.slice(0, 300) },
+            questions: {
+                target_module: COMMAND_TARGET_MODULE_QUESTION,
+                intent_action: COMMAND_INTENT_ACTION_QUESTION,
+            },
+        });
+
+        const modAns = result.data.answers?.target_module as { choice?: unknown; confidence?: unknown } | undefined;
+        const actAns = result.data.answers?.intent_action as { choice?: unknown } | undefined;
+
+        if (!modAns || typeof modAns.choice !== 'string') return null;
+
+        const modChoice = modAns.choice.toLowerCase() as CommandDestinationModule;
+        const confidence = typeof modAns.confidence === 'number' ? modAns.confidence : 1.0;
+
+        if (confidence < COMMAND_INTENT_MIN_CONFIDENCE || modChoice === 'none') {
+            return null;
+        }
+
+        const action = typeof actAns?.choice === 'string' && actAns.choice !== 'none'
+            ? actAns.choice
+            : null;
+
+        const MODULE_LABELS: Record<string, string> = {
+            finance: 'Finance & Royalties',
+            creative: 'Creative Studio (Art & Video)',
+            distribution: 'Distribution & Pre-Flight QC',
+            publishing: 'Publishing & Songwriting',
+            rights: 'Rights & Split Sheets',
+            analytics: 'Streaming Analytics',
+            settings: 'Settings & Preferences',
+            profile: 'Artist Profile & EPK',
+            observability: 'Ops Dashboard',
+        };
+
+        const suggestedLabel = MODULE_LABELS[modChoice] || modChoice;
+
+        return {
+            targetModule: modChoice,
+            action,
+            suggestedLabel,
+            confidence,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'command intent judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 12: video treatment preset selection (consumer: treatmentPresets)
+// ---------------------------------------------------------------------------
+
+export const VIDEO_TREATMENT_CHOICE_MIN_CONFIDENCE = 0.65;
+export const VIDEO_TREATMENT_NONE = 'none';
+
+export const VIDEO_TREATMENT_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'A music artist or video director described the visual aesthetic or treatment for a video project. ' +
+        'Select the ONE preset that best captures the mood, lighting, and cinematic style. ' +
+        'If none clearly fits, select "none".',
+    criteria: {
+        'amber-night-cinematic': 'Night, warm amber streetlights, moody, cinematic Detroit glow, dark shadows.',
+        'clean-grid': 'Minimalist, tech, clean studio lines, modern neutral aesthetic, structured grid.',
+        'bold-arrival': 'High impact, big statement, dramatic entrance, punchy contrast, bold reveal.',
+        'neon-night': 'Electric cyan/magenta, synthwave, vaporwave, club rave, cyber glow.',
+        'vinyl-warm': 'Nostalgic analog, soul, jazz, retro vinyl groove, warm sepia/brown tones.',
+        'cold-blue': 'Clinical precision, icy blue, crisp winter, detached atmospheric calm.',
+        'sunset-punch': 'Warm golden hour, summer sunset, vibrant orange/red, high energy.',
+        'raw-documentary': 'Behind-the-scenes, honest gritty realism, unpolished raw footage, neutral tones.',
+        'candy-pop': 'Playful bubblegum, bright pastel pink, fun, energetic pop aesthetic.',
+        [VIDEO_TREATMENT_NONE]: 'The artistic direction does not plausibly match any of these presets.',
+    },
+};
+
+export async function judgeVideoTreatmentPreset(
+    direction: string,
+    artistBrandVibe?: string
+): Promise<string | null> {
+    if (!judgmentsAvailable() || !direction.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                direction: direction.slice(0, 500),
+                brandVibe: (artistBrandVibe || '').slice(0, 200),
+            },
+            questions: { preset: VIDEO_TREATMENT_QUESTION },
+        });
+
+        const answer = result.data.answers?.preset as { choice?: unknown; confidence?: unknown } | undefined;
+        if (!answer || typeof answer.choice !== 'string') return null;
+
+        const choice = answer.choice;
+        const confidence = typeof answer.confidence === 'number' ? answer.confidence : 1.0;
+
+        if (choice === VIDEO_TREATMENT_NONE || confidence < VIDEO_TREATMENT_CHOICE_MIN_CONFIDENCE) {
+            return null;
+        }
+
+        return choice;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'video treatment preset judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 13: video aspect ratio intent (consumer: videoAspectRatio)
+// ---------------------------------------------------------------------------
+
+export type TargetVideoRatio = '16:9' | '9:16';
+
+export const VIDEO_ASPECT_RATIO_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'An artist requested video generation with target format instructions. ' +
+        'Determine whether the intended output is horizontal widescreen ("16:9") or vertical portrait ("9:16"). ' +
+        'If neither is indicated, select "unknown".',
+    criteria: {
+        '16:9': 'Horizontal widescreen: YouTube, desktop, cinema, landscape TV, traditional music video.',
+        '9:16': 'Vertical portrait: TikTok, Instagram Reels, YouTube Shorts, Spotify Canvas, mobile story.',
+        unknown: 'Format is unspecified or ambiguous.',
+    },
+};
+
+export async function judgeVideoAspectRatioIntent(
+    input: string
+): Promise<TargetVideoRatio | null> {
+    if (!judgmentsAvailable() || !input.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { input: input.slice(0, 300) },
+            questions: { aspectRatio: VIDEO_ASPECT_RATIO_QUESTION },
+        });
+
+        const answer = result.data.answers?.aspectRatio as { choice?: unknown; confidence?: unknown } | undefined;
+        if (!answer || typeof answer.choice !== 'string') return null;
+
+        const choice = answer.choice;
+        if (choice === '16:9' || choice === '9:16') {
+            return choice;
+        }
+        return null;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'video aspect ratio intent judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 14: stream velocity anomaly & fraud diagnostics (consumer: AnomalyDetector)
+// ---------------------------------------------------------------------------
+
+export type AnomalyRootCauseType =
+    | 'organic_viral_surge'
+    | 'editorial_playlist_placement'
+    | 'algorithmic_radio_surge'
+    | 'botting_stream_farm_hazard'
+    | 'distributor_reporting_anomaly'
+    | 'expected_release_spike';
+
+export const STREAM_ANOMALY_ROOT_CAUSE_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'A sudden spike or drop in streaming velocity occurred for a music track. Based on the velocity spike percentage, ' +
+        'track history, and contextual behavior, classify the most probable root cause.',
+    criteria: {
+        organic_viral_surge: 'Spike driven by social media discovery (TikTok/Reels/Shorts), high save rate, genuine listener engagement.',
+        editorial_playlist_placement: 'Sharp jump coinciding with Friday release or verified DSP editorial playlist addition (e.g. New Music Friday).',
+        algorithmic_radio_surge: 'Gradual acceleration driven by Spotify Discover Weekly, Release Radar, or Autoplay with healthy completion rate.',
+        botting_stream_farm_hazard: 'Abnormal looped plays, repetitive short durations, near-zero saves, high risk of DSP artificial stream penalties.',
+        distributor_reporting_anomaly: 'Multi-month batch reporting backlog posted on a single day, or duplicate reporting period batch.',
+        expected_release_spike: 'Normal day 1–3 peak following a planned and announced release campaign.',
+    },
+};
+
+export const STREAM_DSP_PENALTY_HAZARD_QUESTION = {
+    type: 'noul' as const,
+    instructions:
+        'Does this streaming spike present an actionable risk of triggering DSP artificial streaming penalties, ' +
+        'withholding of royalties, or track takedown (e.g. Spotify artificial stream fee or Apple takedown)?',
+    criteria: {
+        true: 'High risk of artificial streaming detection — requires immediate distributor notification.',
+        false: 'Benign variance or organic promotional spike.',
+    },
+};
+
+export const STREAM_ANOMALY_SEVERITY_QUESTION = {
+    type: 'score' as const,
+    instructions: 'Score the financial and business severity of this anomaly for the artist career.',
+    levels: [
+        'Informational — benign organic growth or minor reporting delay',
+        'Low — noteworthy promotional surge; monitor playlist retention',
+        'Medium — significant variance or potential distributor fee deduction requiring audit',
+        'Critical — high probability of fraud flag, royalty freeze, or catalog delisting',
+    ],
+};
+
+export interface StreamAnomalyVerdict {
+    rootCause: AnomalyRootCauseType;
+    dspPenaltyHazard: boolean;
+    hazardProbability: number;
+    severityScore: number;
+    recommendation: string;
+}
+
+export async function judgeStreamVelocityAnomaly(
+    trackName: string,
+    pctIncrease: number,
+    context?: string
+): Promise<StreamAnomalyVerdict | null> {
+    if (!judgmentsAvailable()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                trackName: trackName.slice(0, 100),
+                pctIncrease,
+                context: (context || '').slice(0, 300),
+            },
+            questions: {
+                root_cause: STREAM_ANOMALY_ROOT_CAUSE_QUESTION,
+                dsp_penalty_hazard: STREAM_DSP_PENALTY_HAZARD_QUESTION,
+                severity: STREAM_ANOMALY_SEVERITY_QUESTION,
+            },
+        });
+
+        const rootAns = result.data.answers?.root_cause as { choice?: unknown } | undefined;
+        const hazardAns = result.data.answers?.dsp_penalty_hazard;
+        const sevAns = result.data.answers?.severity;
+
+        if (!rootAns || typeof rootAns.choice !== 'string') return null;
+
+        const rootCause = rootAns.choice as AnomalyRootCauseType;
+        const hazardProb = typeof hazardAns === 'number'
+            ? hazardAns
+            : Number((hazardAns as { noul?: unknown })?.noul);
+
+        const severityScore = typeof sevAns === 'number'
+            ? sevAns
+            : Number((sevAns as { score?: unknown })?.score);
+
+        const dspPenaltyHazard = Number.isFinite(hazardProb) ? hazardProb >= 0.50 : false;
+
+        let recommendation = 'Track streaming shows healthy organic growth.';
+        if (dspPenaltyHazard) {
+            recommendation = 'Warning: Pattern flagged for artificial streaming risk. Contact distributor to verify traffic source.';
+        } else if (rootCause === 'organic_viral_surge') {
+            recommendation = 'Viral traction detected! Consider boosting with social clips and playlist pitching.';
+        } else if (rootCause === 'editorial_playlist_placement') {
+            recommendation = 'Editorial playlist spike confirmed. Monitor listener saves and followers.';
+        }
+
+        return {
+            rootCause,
+            dspPenaltyHazard,
+            hazardProbability: Number.isFinite(hazardProb) ? hazardProb : 0,
+            severityScore: Number.isFinite(severityScore) ? severityScore : 0,
+            recommendation,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'stream velocity anomaly judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 15: fan-to-merch SKU routing (consumer: Merchandise / Listener Feed)
+// ---------------------------------------------------------------------------
+
+export interface MerchProductCandidate {
+    id: string;
+    name: string;
+    category?: string;
+    color?: string;
+    description?: string;
+}
+
+export const MERCH_SKU_NONE = 'none';
+export const MERCH_SKU_MIN_CONFIDENCE = 0.70;
+
+export async function judgeFanToMerchSku(
+    fanQuery: string,
+    products: MerchProductCandidate[]
+): Promise<string | null> {
+    if (!judgmentsAvailable() || !fanQuery.trim() || products.length === 0) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const criteria: Record<string, string> = {
+            [MERCH_SKU_NONE]: 'None of the active merchandise products match the fan request.',
+        };
+        for (const p of products) {
+            criteria[p.id] = `${p.name} (${p.category || 'apparel'}, ${p.color || 'standard'}) - ${p.description || ''}`;
+        }
+
+        const result = await judgeFn({
+            state: {
+                fanQuery: fanQuery.slice(0, 300),
+                products: products.map((p) => ({ id: p.id, name: p.name, category: p.category, color: p.color })),
+            },
+            questions: {
+                matched_sku: {
+                    type: 'choice',
+                    instructions:
+                        'A listener in the social music feed wants to buy artist merch. Match the fan query to the exact ' +
+                        'Print-on-Demand product SKU in the artist catalog. If none matches, pick "none".',
+                    criteria,
+                },
+            },
+        });
+
+        const answer = result.data.answers?.matched_sku as { choice?: unknown; confidence?: unknown } | undefined;
+        if (!answer || typeof answer.choice !== 'string') return null;
+
+        const choice = answer.choice;
+        const confidence = typeof answer.confidence === 'number' ? answer.confidence : 1.0;
+
+        if (choice === MERCH_SKU_NONE || confidence < MERCH_SKU_MIN_CONFIDENCE) {
+            return null;
+        }
+
+        return products.some((p) => p.id === choice) ? choice : null;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'fan-to-merch SKU routing judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 16: aesthetic cultural & mood tagging (consumer: Ingestion / Social Feed)
+// ---------------------------------------------------------------------------
+
+export type AestheticCultureTag =
+    | '90s-grunge-revival'
+    | 'midnight-lo-fi'
+    | 'detroit-electro-soul'
+    | 'analog-bedroom-pop'
+    | 'synthwave-cyberpunk'
+    | 'dark-ambient-trap'
+    | 'golden-era-boom-bap'
+    | 'indie-folk-acoustic'
+    | 'hyperpop-glitch'
+    | 'other';
+
+export const AESTHETIC_TAG_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'An independent music artist uploaded a track with raw title, lyrics, or notes. ' +
+        'Classify this track into the most accurate social music discovery aesthetic / subculture.',
+    criteria: {
+        '90s-grunge-revival': 'Distorted guitars, raw garage vocals, nostalgic 90s alternative rock energy.',
+        'midnight-lo-fi': 'Chilled beats, vinyl crackle, mellow piano, late night study or relax aesthetic.',
+        'detroit-electro-soul': 'Detroit techno/electro grooves, Motown soul harmony, punchy 808s, futuristic funk.',
+        'analog-bedroom-pop': 'Warm tape saturation, dreamy guitar hooks, introspective DIY indie songwriting.',
+        'synthwave-cyberpunk': 'Retro 80s analog synthesizers, neon night drives, driving basslines, arpeggios.',
+        'dark-ambient-trap': 'Sub-bass 808s, atmospheric dark pads, moody modern trap cadences.',
+        'golden-era-boom-bap': 'Dusty vinyl drum breaks, sample chops, classic East/Midwest hip-hop lyricism.',
+        'indie-folk-acoustic': 'Fingerpicked acoustic guitars, intimate vocal harmonies, organic warmth.',
+        'hyperpop-glitch': 'Pitch-shifted vocals, explosive metallic synths, frantic BPM, futuristic pop.',
+        other: 'Does not cleanly fit any of the primary subcultures.',
+    },
+};
+
+export async function judgeAestheticMoodTagging(
+    trackTitle: string,
+    lyricsOrNotes?: string
+): Promise<AestheticCultureTag | null> {
+    if (!judgmentsAvailable() || !trackTitle.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                title: trackTitle.slice(0, 150),
+                notes: (lyricsOrNotes || '').slice(0, 500),
+            },
+            questions: { aesthetic_tag: AESTHETIC_TAG_QUESTION },
+        });
+
+        const answer = result.data.answers?.aesthetic_tag as { choice?: unknown; confidence?: unknown } | undefined;
+        if (!answer || typeof answer.choice !== 'string') return null;
+
+        const choice = answer.choice as AestheticCultureTag;
+        return choice;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'aesthetic mood tagging judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 17: copyright & upload spam triage (consumer: Ingestion / Direct Uploads)
+// ---------------------------------------------------------------------------
+
+export const COPYRIGHT_RISK_QUESTIONS = {
+    unauthorized_or_spam_hazard: {
+        type: 'noul' as const,
+        instructions:
+            'Inspect this upload metadata, artist documentation, and track description. Does it exhibit ' +
+            'hallmarks of automated bot spam, mass AI-generated slurry, or unauthorized copyrighted sample usage?',
+        criteria: {
+            true: 'High probability of stolen audio, unlicensed third-party loops, or automated spam-bot upload.',
+            false: 'Legitimate independent artist original upload with clean documentation.',
+        },
+    },
+    documentation_provenance: {
+        type: 'score' as const,
+        instructions: 'Score the completeness and authenticity of the track credits and rights ownership documentation.',
+        levels: [
+            'Suspicious / Zero documentation — blank credits, disposable anonymous account',
+            'Incomplete — basic track title but missing songwriter or contributor declarations',
+            'Sufficient — verified artist profile with clear songwriting / production credits',
+            'Exemplary — comprehensive split agreements, ISRC registration, and verified identity',
+        ],
+    },
+};
+
+export interface CopyrightTriageVerdict {
+    isHighRisk: boolean;
+    hazardProbability: number;
+    provenanceScore: number;
+    status: 'auto_approved' | 'flagged_for_review';
+    reason: string;
+}
+
+export async function judgeUploadCopyrightRisk(
+    artistName: string,
+    trackTitle: string,
+    metadataSummary: string
+): Promise<CopyrightTriageVerdict | null> {
+    if (!judgmentsAvailable()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                artist: artistName.slice(0, 100),
+                title: trackTitle.slice(0, 150),
+                metadata: metadataSummary.slice(0, 600),
+            },
+            questions: COPYRIGHT_RISK_QUESTIONS,
+        });
+
+        const answers = result.data.answers;
+        const hazardAns = answers?.unauthorized_or_spam_hazard;
+        const provAns = answers?.documentation_provenance;
+
+        const hazardProb = typeof hazardAns === 'number'
+            ? hazardAns
+            : Number((hazardAns as { noul?: unknown })?.noul);
+
+        const provScore = typeof provAns === 'number'
+            ? provAns
+            : Number((provAns as { score?: unknown })?.score);
+
+        if (!Number.isFinite(hazardProb) || !Number.isFinite(provScore)) {
+            return null;
+        }
+
+        const isHighRisk = hazardProb >= 0.45 || provScore <= 1.0;
+        const status = isHighRisk ? 'flagged_for_review' : 'auto_approved';
+
+        const reason = isHighRisk
+            ? `Upload held for review: risk probability ${Math.round(hazardProb * 100)}%, provenance score ${provScore.toFixed(1)}/3.`
+            : 'Clean upload: verified artist documentation and low spam hazard.';
+
+        return {
+            isHighRisk,
+            hazardProbability: hazardProb,
+            provenanceScore: provScore,
+            status,
+            reason,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'copyright upload risk judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 18: dynamic layout & component assembler (consumer: DynamicModuleContainer)
+// ---------------------------------------------------------------------------
+
+export type DynamicComponentKey =
+    | 'StemInspector'
+    | 'RoyaltySplitTable'
+    | 'CampaignMonitor'
+    | 'ReleaseTimeline';
+
+export interface LayoutContextData {
+    activeReleaseType?: 'single' | 'ep' | 'album';
+    hasPendingSplits: boolean;
+    unmatchedRoyaltiesCount: number;
+    activeAdCampaigns: number;
+}
+
+export interface DynamicLayoutResult {
+    orderedModules: DynamicComponentKey[];
+    layoutVariant: 'compact' | 'expanded';
+}
+
+export const DYNAMIC_LAYOUT_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'Based on the artist project context (pending splits, unmatched royalties, active ad campaigns, and release type), ' +
+        'choose the primary focus module that must be pinned to the top of the dashboard.',
+    criteria: {
+        RoyaltySplitTable: 'Unresolved splits or unmatched royalties need immediate legal and financial reconciliation.',
+        CampaignMonitor: 'Active ad campaigns are running and require real-time spend / conversion monitoring.',
+        ReleaseTimeline: 'Multi-track EP or Album production requires release milestone tracking.',
+        StemInspector: 'Audio stems and mix assets are being prepared for pre-flight quality check.',
+    },
+};
+
+export const DYNAMIC_LAYOUT_VARIANT_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'Determine whether this artist dashboard state should render in "compact" or "expanded" layout mode.',
+    criteria: {
+        compact: 'Single release, low complexity, or minimal open administrative tasks.',
+        expanded: 'Complex album release, active advertising campaigns, or high volume of pending splits.',
+    },
+};
+
+export async function judgeDynamicDashboardLayout(
+    context: LayoutContextData,
+    availableModules: DynamicComponentKey[]
+): Promise<DynamicLayoutResult | null> {
+    if (!judgmentsAvailable() || availableModules.length === 0) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { context, availableModules },
+            questions: {
+                primary_module: DYNAMIC_LAYOUT_QUESTION,
+                layout_variant: DYNAMIC_LAYOUT_VARIANT_QUESTION,
+            },
+        });
+
+        const primAns = result.data.answers?.primary_module as { choice?: unknown } | undefined;
+        const varAns = result.data.answers?.layout_variant as { choice?: unknown } | undefined;
+
+        if (!primAns || typeof primAns.choice !== 'string') return null;
+
+        const primary = primAns.choice as DynamicComponentKey;
+        const variant = varAns?.choice === 'expanded' ? 'expanded' : 'compact';
+
+        // Order modules placing primary first, then preserving remaining available modules
+        const ordered = [primary, ...availableModules.filter((m) => m !== primary)];
+
+        return {
+            orderedModules: ordered,
+            layoutVariant: variant,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'dynamic dashboard layout judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 19: semantic catalog & metadata filtering (consumer: SemanticCatalogFilterService)
+// ---------------------------------------------------------------------------
+
+export interface TrackSearchItem {
+    id: string;
+    title: string;
+    genre: string;
+    moodTags: string[];
+    bpm?: number;
+}
+
+export async function judgeSemanticCatalogFilter(
+    query: string,
+    items: TrackSearchItem[]
+): Promise<string[] | null> {
+    if (!judgmentsAvailable() || !query.trim() || items.length === 0) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        // Evaluate up to 20 candidate items per batch
+        const batch = items.slice(0, 20);
+        const questions: Record<string, unknown> = {};
+
+        for (const item of batch) {
+            questions[`match_${item.id}`] = {
+                type: 'noul',
+                instructions:
+                    `Does the music track "${item.title}" (genre: ${item.genre}, mood: ${item.moodTags.join(', ')}) ` +
+                    `semantically match the user conceptual search query: "${query}"?`,
+                criteria: {
+                    true: 'The track conceptually matches the requested mood, style, or musical query.',
+                    false: 'Unrelated track.',
+                },
+            };
+        }
+
+        const result = await judgeFn({
+            state: { query: query.slice(0, 300) },
+            questions,
+        });
+
+        const answers = result.data.answers;
+        if (!answers) return null;
+
+        const matchedIds: string[] = [];
+        for (const item of batch) {
+            const val = answers[`match_${item.id}`];
+            const prob = typeof val === 'number'
+                ? val
+                : Number((val as { noul?: unknown })?.noul);
+
+            if (Number.isFinite(prob) && prob >= 0.50) {
+                matchedIds.push(item.id);
+            }
+        }
+
+        return matchedIds;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'semantic catalog filter judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 20: instant palette & visual token extraction (consumer: DynamicThemeService)
+// ---------------------------------------------------------------------------
+
+export interface ThemeTokens {
+    surfaceHex: string;
+    accentHex: string;
+    textHex: string;
+    waveformGradient: [string, string];
+}
+
+export interface ThemeDerivationMetadata {
+    title: string;
+    genre: string;
+    subgenre?: string;
+    moodDescriptors: string[];
+}
+
+export const THEME_PALETTES: Record<string, ThemeTokens> = {
+    'amber-vinyl': {
+        surfaceHex: '#1c1611',
+        accentHex: '#d97706',
+        textHex: '#fef3c7',
+        waveformGradient: ['#b45309', '#f59e0b'],
+    },
+    'cyber-neon': {
+        surfaceHex: '#090d16',
+        accentHex: '#06b6d4',
+        textHex: '#cffafe',
+        waveformGradient: ['#0891b2', '#a855f7'],
+    },
+    'midnight-lofi': {
+        surfaceHex: '#121118',
+        accentHex: '#8b5cf6',
+        textHex: '#ede9fe',
+        waveformGradient: ['#6d28d9', '#c084fc'],
+    },
+    'acid-house': {
+        surfaceHex: '#0f140d',
+        accentHex: '#84cc16',
+        textHex: '#ecfccb',
+        waveformGradient: ['#65a30d', '#eab308'],
+    },
+    'grunge-charcoal': {
+        surfaceHex: '#171717',
+        accentHex: '#ef4444',
+        textHex: '#fee2e2',
+        waveformGradient: ['#b91c1c', '#737373'],
+    },
+    'dream-pastel': {
+        surfaceHex: '#1a1016',
+        accentHex: '#ec4899',
+        textHex: '#fce7f3',
+        waveformGradient: ['#db2777', '#38bdf8'],
+    },
+    'detroit-industrial': {
+        surfaceHex: '#18181b',
+        accentHex: '#f97316',
+        textHex: '#ffedd5',
+        waveformGradient: ['#ea580c', '#52525b'],
+    },
+};
+
+export const THEME_PALETTE_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'Select the ONE aesthetic color palette that best embodies the musical mood and genre of this track.',
+    criteria: {
+        'amber-vinyl': 'Warm analog vinyl, acoustic soul, organic instruments, retro warmth.',
+        'cyber-neon': 'Futuristic synthwave, electro, driving digital rhythms, electric night.',
+        'midnight-lofi': 'Chill lo-fi study beats, jazzy piano, mellow late night vibes.',
+        'acid-house': 'High-energy electronic, acid basslines, 90s warehouse rave.',
+        'grunge-charcoal': 'Raw garage rock, punk, industrial metal, moody dark grit.',
+        'dream-pastel': 'Ethereal dream pop, shoegaze, bright hyperpop, playful melody.',
+        'detroit-industrial': 'Raw Detroit techno, energetic urban grit, punchy contrast.',
+    },
+};
+
+export async function judgeAestheticThemeDerivation(
+    metadata: ThemeDerivationMetadata
+): Promise<ThemeTokens | null> {
+    if (!judgmentsAvailable()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { metadata },
+            questions: { palette: THEME_PALETTE_QUESTION },
+        });
+
+        const ans = result.data.answers?.palette as { choice?: unknown } | undefined;
+        if (!ans || typeof ans.choice !== 'string') return null;
+
+        const choice = ans.choice;
+        return THEME_PALETTES[choice] || null;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'theme derivation judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 21: async pipeline decision router & triage (consumer: SubmissionTriageService)
+// ---------------------------------------------------------------------------
+
+export type TriageDecision = 'AUTO_APPROVE' | 'FLAG_FOR_AUDIT' | 'REJECT_SILENT';
+
+export interface SubmissionPayload {
+    submissionId: string;
+    metadataCompleteness: number; // 0.0 - 1.0
+    audioFormat: string;
+    sampleRate: number;
+    contactProvided: boolean;
+    notes: string;
+}
+
+export const TRIAGE_DECISION_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'Evaluate this release submission payload for automated distribution ingest. ' +
+        'Choose whether to AUTO_APPROVE, FLAG_FOR_AUDIT, or REJECT_SILENT.',
+    criteria: {
+        AUTO_APPROVE: 'Audio spec meets broadcast requirements (>=44.1kHz WAV/FLAC), metadata is comprehensive, contact is verified.',
+        FLAG_FOR_AUDIT: 'Promising submission but requires human check on split documentation or audio master quality.',
+        REJECT_SILENT: 'Low-quality spam, missing audio format, corrupt metadata, or disposable uncontactable source.',
+    },
+};
+
+export async function judgeSubmissionTriage(
+    payload: SubmissionPayload
+): Promise<TriageDecision | null> {
+    if (!judgmentsAvailable()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { payload },
+            questions: { triage: TRIAGE_DECISION_QUESTION },
+        });
+
+        const ans = result.data.answers?.triage as { choice?: unknown } | undefined;
+        if (!ans || typeof ans.choice !== 'string') return null;
+
+        const valid: TriageDecision[] = ['AUTO_APPROVE', 'FLAG_FOR_AUDIT', 'REJECT_SILENT'];
+        const choice = ans.choice as TriageDecision;
+        return valid.includes(choice) ? choice : null;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'submission triage judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 22: creative candidate preselect / top pick (consumer: CandidateReview)
+// ---------------------------------------------------------------------------
+
+export interface CandidateItem {
+    id: string;
+    prompt: string;
+    url?: string;
+}
+
+export interface CandidatePreselectResult {
+    selectedIndex: number;
+    confidence: number;
+    recommendedId: string;
+}
+
+export const CANDIDATE_PRESELECT_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'A creator generated multiple visual image variations for a music brief. ' +
+        'Select the ONE candidate (candidate_0, candidate_1, candidate_2, or candidate_3) that ' +
+        'best achieves the artist intent, prompt alignment, and composition quality.',
+    criteria: {
+        candidate_0: 'Candidate 0 is the strongest aesthetic and prompt match.',
+        candidate_1: 'Candidate 1 is the strongest aesthetic and prompt match.',
+        candidate_2: 'Candidate 2 is the strongest aesthetic and prompt match.',
+        candidate_3: 'Candidate 3 is the strongest aesthetic and prompt match.',
+    },
+};
+
+export async function judgeCandidatePreselect(
+    prompt: string,
+    candidates: CandidateItem[]
+): Promise<CandidatePreselectResult | null> {
+    if (!judgmentsAvailable() || !candidates || candidates.length === 0) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const candidateSummaries = candidates.slice(0, 4).map((c, i) => ({
+            index: i,
+            id: c.id,
+            prompt: c.prompt,
+        }));
+
+        const result = await judgeFn({
+            state: { prompt, candidates: candidateSummaries },
+            questions: { bestCandidate: CANDIDATE_PRESELECT_QUESTION },
+        });
+
+        const ans = result.data.answers?.bestCandidate as { choice?: unknown; confidence?: unknown } | undefined;
+        if (!ans || typeof ans.choice !== 'string') return null;
+
+        const match = ans.choice.match(/candidate_(\d+)/);
+        const idx = match ? parseInt(match[1], 10) : 0;
+        const validIdx = idx >= 0 && idx < candidates.length ? idx : 0;
+        const confidence = typeof ans.confidence === 'number' ? ans.confidence : 0.75;
+
+        return {
+            selectedIndex: validIdx,
+            confidence,
+            recommendedId: candidates[validIdx].id,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'candidate preselect judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 23: video director reshoot requirement (consumer: VideoDirector)
+// ---------------------------------------------------------------------------
+
+export interface VideoReshootInput {
+    prompt: string;
+    critique: string;
+    score1to10?: number;
+}
+
+export interface VideoReshootDecision {
+    shouldReshoot: boolean;
+    aestheticScore: number; // 0..3
+    primaryDefect: 'NONE' | 'BLURRY_OR_LOW_RES' | 'SUBJECT_MISMATCH' | 'LIGHTING_DEFECT' | 'GLITCH_ARTIFACT';
+}
+
+export const VIDEO_RESHOOT_NOUL_QUESTION = {
+    type: 'noul' as const,
+    instructions:
+        'Does this video critique describe a critical rendering failure or total thematic mismatch that strictly requires an expensive Veo 3.1 video reshoot? ' +
+        'Answer 1.0 (True) ONLY if the video is unusable/broken; answer 0.0 (False) if it is acceptable or needs minor prompt tuning.',
+};
+
+export const VIDEO_AESTHETIC_SCORE_QUESTION = {
+    type: 'score' as const,
+    instructions:
+        'Score the visual and cinematic quality of this clip based on the director critique. ' +
+        '0 = unusable/glitched, 1 = low quality/flawed, 2 = solid/acceptable, 3 = broadcast/cinematic masterpiece.',
+};
+
+export const VIDEO_DEFECT_CHOICE_QUESTION = {
+    type: 'choice' as const,
+    instructions: 'Identify the primary visual defect reported in this critique.',
+    criteria: {
+        NONE: 'No major defect; clip is usable.',
+        BLURRY_OR_LOW_RES: 'Severe blurriness, lack of focus, low resolution.',
+        SUBJECT_MISMATCH: 'Subject does not match the prompt description at all.',
+        LIGHTING_DEFECT: 'Completely blown out or pitch black unintelligible lighting.',
+        GLITCH_ARTIFACT: 'Severe AI morphing, warped anatomy, unnatural tearing artifacts.',
+    },
+};
+
+export async function judgeVideoReshootRequirement(
+    input: VideoReshootInput
+): Promise<VideoReshootDecision | null> {
+    if (!judgmentsAvailable()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { input },
+            questions: {
+                reshootNeeded: VIDEO_RESHOOT_NOUL_QUESTION,
+                aestheticQuality: VIDEO_AESTHETIC_SCORE_QUESTION,
+                defect: VIDEO_DEFECT_CHOICE_QUESTION,
+            },
+        });
+
+        const ans = result.data.answers;
+        const noul = ans?.reshootNeeded as { probability?: unknown } | undefined;
+        const score = ans?.aestheticQuality as { score?: unknown } | undefined;
+        const choice = ans?.defect as { choice?: unknown } | undefined;
+
+        const reshootProb = typeof noul?.probability === 'number' ? noul.probability : 0;
+        const aestheticScore = typeof score?.score === 'number' ? score.score : 2.0;
+        const defect = (typeof choice?.choice === 'string' ? choice.choice : 'NONE') as VideoReshootDecision['primaryDefect'];
+
+        // Reshoot strictly if reshoot probability >= 0.75 AND aesthetic quality < 1.5
+        const shouldReshoot = reshootProb >= 0.75 && aestheticScore < 1.5;
+
+        return {
+            shouldReshoot,
+            aestheticScore,
+            primaryDefect: defect,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'video reshoot judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 24: module crash triage & self-healing (consumer: ModuleErrorBoundary)
+// ---------------------------------------------------------------------------
+
+export interface CrashTriageInput {
+    moduleName: string;
+    errorMessage: string;
+    componentStack?: string;
+}
+
+export type CrashRootCause =
+    | 'NETWORK_OFFLINE'
+    | 'CHUNK_STALE'
+    | 'STATE_CORRUPTION'
+    | 'AUTH_EXPIRED'
+    | 'UNKNOWN';
+
+export type CrashRecommendedAction =
+    | 'RELOAD_MODULE'
+    | 'REFRESH_PAGE'
+    | 'REAUTHENTICATE'
+    | 'RESET_LOCAL_CACHE'
+    | 'CONTACT_SUPPORT';
+
+export interface CrashTriageResult {
+    rootCause: CrashRootCause;
+    isRetryable: boolean;
+    recommendedAction: CrashRecommendedAction;
+    userGuidance: string;
+}
+
+export const CRASH_ROOT_CAUSE_QUESTION = {
+    type: 'choice' as const,
+    instructions: 'Classify the technical root cause of this application crash into one category.',
+    criteria: {
+        NETWORK_OFFLINE: 'Failed network requests, fetch failures, DNS or offline connectivity dropouts.',
+        CHUNK_STALE: 'Vite dynamic import failures, missing JS chunks after a deployment, module script load failures.',
+        STATE_CORRUPTION: 'Undefined property access on null state, schema mismatch, corrupt localStorage/Zustand slice.',
+        AUTH_EXPIRED: 'Token expired, 401 unauthorized, permission denied, session invalidation.',
+        UNKNOWN: 'Unclassified JavaScript error or unexpected condition.',
+    },
+};
+
+export const CRASH_RETRYABLE_QUESTION = {
+    type: 'noul' as const,
+    instructions:
+        'Is this error transient and likely to resolve upon immediate retry without data loss? ' +
+        'Answer 1.0 (True) for network blips and chunk reloads; answer 0.0 (False) for fatal code syntax errors.',
+};
+
+export const CRASH_ACTION_QUESTION = {
+    type: 'choice' as const,
+    instructions: 'Choose the best, least disruptive recovery action for the user.',
+    criteria: {
+        RELOAD_MODULE: 'Reset the module boundary state and re-render.',
+        REFRESH_PAGE: 'Full browser reload to fetch fresh bundles and assets.',
+        REAUTHENTICATE: 'Prompt the artist to sign in again.',
+        RESET_LOCAL_CACHE: 'Clear ephemeral session storage or cache.',
+        CONTACT_SUPPORT: 'Unhandled bug requiring engineering review.',
+    },
+};
+
+export async function judgeCrashTriage(
+    input: CrashTriageInput
+): Promise<CrashTriageResult | null> {
+    if (!judgmentsAvailable()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { input },
+            questions: {
+                cause: CRASH_ROOT_CAUSE_QUESTION,
+                retryable: CRASH_RETRYABLE_QUESTION,
+                action: CRASH_ACTION_QUESTION,
+            },
+        });
+
+        const ans = result.data.answers;
+        const causeAns = ans?.cause as { choice?: unknown } | undefined;
+        const retryAns = ans?.retryable as { probability?: unknown } | undefined;
+        const actionAns = ans?.action as { choice?: unknown } | undefined;
+
+        const rootCause = (typeof causeAns?.choice === 'string' ? causeAns.choice : 'UNKNOWN') as CrashRootCause;
+        const isRetryable = typeof retryAns?.probability === 'number' ? retryAns.probability >= 0.5 : true;
+        const recommendedAction = (typeof actionAns?.choice === 'string' ? actionAns.choice : 'RELOAD_MODULE') as CrashRecommendedAction;
+
+        const GUIDANCE_MAP: Record<CrashRootCause, string> = {
+            NETWORK_OFFLINE: 'A network connection drop interrupted this action. Check your internet connection and try again.',
+            CHUNK_STALE: 'indii was updated with new features in the background. A quick page refresh will reload the newest code.',
+            STATE_CORRUPTION: 'Temporary workspace data caused an unexpected state. Reopening this section should restore default settings.',
+            AUTH_EXPIRED: 'Your session has expired. Please sign in again to continue working safely.',
+            UNKNOWN: 'An unexpected issue occurred. You can retry safely without losing your project files.',
+        };
+
+        return {
+            rootCause,
+            isRetryable,
+            recommendedAction,
+            userGuidance: GUIDANCE_MAP[rootCause] || GUIDANCE_MAP.UNKNOWN,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'crash triage judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 25: collaborative split sheet verification (consumer: SplitSheetEscrow)
+// ---------------------------------------------------------------------------
+
+export interface SplitSheetCollaboratorInput {
+    name: string;
+    role: string;
+    splitPct: number;
+}
+
+export interface SplitSheetVerificationResult {
+    rightsScope: 'MASTER_AND_PUBLISHING' | 'MASTER_ONLY' | 'PUBLISHING_ONLY' | 'AMBIGUOUS';
+    needsProducerAgreement: boolean;
+    splitRiskLevel: number; // 0..3 (0=safe, 3=critical)
+    advisories: string[];
+}
+
+export const SPLIT_RIGHTS_SCOPE_QUESTION = {
+    type: 'choice' as const,
+    instructions: 'Determine the intellectual property rights scope represented by these collaborators and roles.',
+    criteria: {
+        MASTER_AND_PUBLISHING: 'Both master recording artists/engineers and songwriting/composition credits are present.',
+        MASTER_ONLY: 'Strictly sound recording artists, featured vocalists, or mixing engineers.',
+        PUBLISHING_ONLY: 'Strictly lyricists, composers, and topliners.',
+        AMBIGUOUS: 'Roles are generic (e.g. "Collaborator") and rights ownership is unclear.',
+    },
+};
+
+export const SPLIT_PRODUCER_AGREEMENT_QUESTION = {
+    type: 'noul' as const,
+    instructions:
+        'Does this split distribution contain a Producer with >= 15% split that legally warrants a formal Producer Agreement/Declaration? ' +
+        'Answer 1.0 (True) if a producer or beatmaker has substantial revenue share; answer 0.0 (False) otherwise.',
+};
+
+export const SPLIT_RISK_SCORE_QUESTION = {
+    type: 'score' as const,
+    instructions:
+        'Score the legal and financial dispute risk of this split sheet. ' +
+        '0 = crystal clear industry-standard splits, 1 = minor ambiguity, 2 = missing roles or unverified shares, 3 = severe dispute hazard.',
+};
+
+export async function judgeSplitSheetVerification(
+    collaborators: SplitSheetCollaboratorInput[],
+    trackTitle?: string
+): Promise<SplitSheetVerificationResult | null> {
+    if (!judgmentsAvailable() || !collaborators || collaborators.length === 0) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { collaborators, trackTitle: trackTitle || 'Untitled' },
+            questions: {
+                scope: SPLIT_RIGHTS_SCOPE_QUESTION,
+                producerReq: SPLIT_PRODUCER_AGREEMENT_QUESTION,
+                risk: SPLIT_RISK_SCORE_QUESTION,
+            },
+        });
+
+        const ans = result.data.answers;
+        const scopeAns = ans?.scope as { choice?: unknown } | undefined;
+        const prodAns = ans?.producerReq as { probability?: unknown } | undefined;
+        const riskAns = ans?.risk as { score?: unknown } | undefined;
+
+        const rightsScope = (typeof scopeAns?.choice === 'string' ? scopeAns.choice : 'AMBIGUOUS') as SplitSheetVerificationResult['rightsScope'];
+        const needsProducerAgreement = typeof prodAns?.probability === 'number' ? prodAns.probability >= 0.5 : false;
+        const splitRiskLevel = typeof riskAns?.score === 'number' ? Math.round(riskAns.score) : 1;
+
+        const advisories: string[] = [];
+        if (needsProducerAgreement) {
+            advisories.push('Producer agreement recommended: major producer split requires signed transfer of master rights.');
+        }
+        if (rightsScope === 'AMBIGUOUS') {
+            advisories.push('Collaborator roles are unassigned. Clarify Master vs Publishing splits before releasing funds.');
+        }
+
+        return {
+            rightsScope,
+            needsProducerAgreement,
+            splitRiskLevel,
+            advisories,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'split sheet verification judgment');
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 26: real-time ad campaign bid/budget adjustment (Domain 1)
+// ---------------------------------------------------------------------------
+
+export interface CampaignMetricSnapshot {
+    campaignId: string;
+    spendToDateCents: number;
+    roas: number;
+    ctr: number;
+    frequency: number;
+    targetGenreAudience: string;
+}
+
+export type ExecutionAction = 'SCALE_UP' | 'SCALE_DOWN' | 'PAUSE' | 'HOLD';
+
+export interface CampaignDecisionContract {
+    action: ExecutionAction;
+    confidenceScore: number;
+    auditReason: string;
+}
+
+export const CAMPAIGN_BID_ACTION_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'Evaluate real-time ad performance metrics (spend, ROAS, CTR, frequency) for a music marketing campaign. ' +
+        'Select the immediate execution action: SCALE_UP (scale budget by 15%), SCALE_DOWN (reduce budget), PAUSE (kill ad set immediately due to fatigue or loss), or HOLD (maintain current pacing).',
+    criteria: {
+        SCALE_UP: 'ROAS >= 2.5, healthy CTR (>= 1.5%), and frequency < 2.5. Profitable momentum.',
+        SCALE_DOWN: 'ROAS between 1.0 and 1.5 or CTR dipping below 0.8%. Underperforming but not critical.',
+        PAUSE: 'ROAS < 0.8, high frequency (> 3.5 ad fatigue), or spend exhausting with zero conversion.',
+        HOLD: 'Stable metrics within expected learning bounds, insufficient sample size, or steady performance.',
+    },
+};
+
+export const CAMPAIGN_CONFIDENCE_SCORE_QUESTION = {
+    type: 'score' as const,
+    instructions:
+        'Score the statistical confidence of this campaign adjustment decision (0 = low data/uncertain, 3 = statistically decisive).',
+};
+
+export async function judgeCampaignBidAction(
+    snapshot: CampaignMetricSnapshot
+): Promise<CampaignDecisionContract> {
+    // Deterministic fallback baseline
+    const fallbackDecision = (): CampaignDecisionContract => {
+        if (snapshot.roas >= 2.5 && snapshot.ctr >= 0.015 && snapshot.frequency < 2.5) {
+            return {
+                action: 'SCALE_UP',
+                confidenceScore: 0.85,
+                auditReason: 'Fallback heuristic: High ROAS and strong CTR with low frequency.',
+            };
+        }
+        if (snapshot.roas < 0.8 || snapshot.frequency > 3.8) {
+            return {
+                action: 'PAUSE',
+                confidenceScore: 0.9,
+                auditReason: 'Fallback heuristic: Unprofitable ROAS or severe audience ad fatigue.',
+            };
+        }
+        if (snapshot.roas < 1.3 || snapshot.ctr < 0.008) {
+            return {
+                action: 'SCALE_DOWN',
+                confidenceScore: 0.75,
+                auditReason: 'Fallback heuristic: Soft performance below target return.',
+            };
+        }
+        return {
+            action: 'HOLD',
+            confidenceScore: 0.7,
+            auditReason: 'Fallback heuristic: Balanced metrics within target bounds.',
+        };
+    };
+
+    if (!judgmentsAvailable()) {
+        return fallbackDecision();
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { metrics: snapshot },
+            questions: {
+                action: CAMPAIGN_BID_ACTION_QUESTION,
+                confidence: CAMPAIGN_CONFIDENCE_SCORE_QUESTION,
+            },
+        });
+
+        const ans = result.data.answers;
+        const actAns = ans?.action as { choice?: unknown } | undefined;
+        const confAns = ans?.confidence as { score?: unknown } | undefined;
+
+        const action = (typeof actAns?.choice === 'string' ? actAns.choice : 'HOLD') as ExecutionAction;
+        const scoreNorm = typeof confAns?.score === 'number' ? Math.min(1.0, confAns.score / 3.0) : 0.8;
+
+        const validActions: ExecutionAction[] = ['SCALE_UP', 'SCALE_DOWN', 'PAUSE', 'HOLD'];
+        if (!validActions.includes(action)) {
+            return fallbackDecision();
+        }
+
+        return {
+            action,
+            confidenceScore: scoreNorm,
+            auditReason: `Jev System One classification (${action}) verified with confidence ${(scoreNorm * 100).toFixed(0)}%.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'campaign bid action judgment');
+        return fallbackDecision();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 27: batch ad creative & copy compliance triage (Domain 1)
+// ---------------------------------------------------------------------------
+
+export interface AdCreativeVariant {
+    id: string;
+    copy: string;
+    headline: string;
+}
+
+export async function judgeAdCreativeBatchCompliance(
+    creatives: AdCreativeVariant[],
+    artistBrandVibe = 'Authentic Independent Music'
+): Promise<string[]> {
+    if (!creatives || creatives.length === 0) return [];
+    if (!judgmentsAvailable()) {
+        // Deterministic fallback: reject if empty or contains obvious spam/prohibited terms
+        return creatives
+            .filter((c) => {
+                const text = `${c.headline} ${c.copy}`.toLowerCase();
+                const forbidden = ['free money', 'guaranteed streams', 'bot streams', 'buy followers'];
+                return !forbidden.some((term) => text.includes(term));
+            })
+            .map((c) => c.id);
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        // Batch up to 20 creatives per request
+        const batch = creatives.slice(0, 20);
+        const questions: Record<string, unknown> = {};
+
+        batch.forEach((c) => {
+            questions[`approved_${c.id}`] = {
+                type: 'noul' as const,
+                instructions:
+                    `Does this ad creative variant adhere to Meta advertising policies, brand safety, and artist authenticity guidelines?\n` +
+                    `Headline: "${c.headline}"\nCopy: "${c.copy}"\nArtist Brand: "${artistBrandVibe}"\n` +
+                    `Answer 1.0 (True) if clean, compliant, and safe to run; answer 0.0 (False) if spammy, misleading, or violating ad policies.`,
+            };
+        });
+
+        const result = await judgeFn({
+            state: { artistBrandVibe },
+            questions,
+        });
+
+        const approved: string[] = [];
+        const answers = result.data.answers || {};
+
+        batch.forEach((c) => {
+            const ans = answers[`approved_${c.id}`] as { probability?: unknown } | undefined;
+            const prob = typeof ans?.probability === 'number' ? ans.probability : 0.8;
+            if (prob >= 0.7) {
+                approved.push(c.id);
+            }
+        });
+
+        return approved;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'ad creative batch compliance judgment');
+        return creatives.map((c) => c.id);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 28: pre-flight DDEX validation & DSP anomaly detection (Domain 2)
+// ---------------------------------------------------------------------------
+
+export type DSPDeliveryTarget = 'SPOTIFY' | 'APPLE_MUSIC' | 'TIDAL';
+
+export interface DDEXPreFlightPayload {
+    releaseId: string;
+    dspTarget: DSPDeliveryTarget;
+    cLinePresent: boolean;
+    pLinePresent: boolean;
+    territoriesDeclared: string[];
+    isrcsMapped: boolean;
+    iswcMapped: boolean;
+    parentalAdvisoryDeclared: boolean;
+}
+
+export interface DDEXPreFlightResult {
+    passed: boolean;
+    dspTarget: DSPDeliveryTarget;
+    blockingOmissions: string[];
+    advisoryWarnings: string[];
+}
+
+export async function judgeDDEXPreFlight(
+    payload: DDEXPreFlightPayload
+): Promise<DDEXPreFlightResult> {
+    const blockingOmissions: string[] = [];
+    const advisoryWarnings: string[] = [];
+
+    // Base deterministic pre-flight checks
+    if (!payload.cLinePresent) blockingOmissions.push('Missing copyright notice (C-Line).');
+    if (!payload.pLinePresent) blockingOmissions.push('Missing sound recording performance notice (P-Line).');
+    if (!payload.territoriesDeclared || payload.territoriesDeclared.length === 0) {
+        blockingOmissions.push('No release territories declared.');
+    }
+    if (!payload.isrcsMapped) blockingOmissions.push('One or more sound recordings lack valid ISRC identifiers.');
+    if (!payload.iswcMapped) advisoryWarnings.push('Missing ISWC publishing identifier. May delay mechanical royalty distribution.');
+
+    if (!judgmentsAvailable()) {
+        return {
+            passed: blockingOmissions.length === 0,
+            dspTarget: payload.dspTarget,
+            blockingOmissions,
+            advisoryWarnings,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { payload, currentBlockers: blockingOmissions },
+            questions: {
+                dspSuitability: {
+                    type: 'choice' as const,
+                    instructions:
+                        `Validate this DDEX metadata payload against specific delivery requirements for ${payload.dspTarget}. ` +
+                        `Select COMPLIANT, CRITICAL_BLOCKER, or MINOR_WARNING.`,
+                    criteria: {
+                        COMPLIANT: `Meets all ${payload.dspTarget} delivery spec requirements without rejection risk.`,
+                        CRITICAL_BLOCKER: `Missing vital rights, metadata, or identifier requirements that will trigger immediate ingestion rejection.`,
+                        MINOR_WARNING: `Payload can ingest but contains non-fatal catalog gaps.`,
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers?.dspSuitability as { choice?: unknown } | undefined;
+        const choice = typeof ans?.choice === 'string' ? ans.choice : 'COMPLIANT';
+
+        if (choice === 'CRITICAL_BLOCKER' && blockingOmissions.length === 0) {
+            blockingOmissions.push(`${payload.dspTarget} specific ingest policy requirements not satisfied.`);
+        }
+
+        return {
+            passed: blockingOmissions.length === 0 && choice !== 'CRITICAL_BLOCKER',
+            dspTarget: payload.dspTarget,
+            blockingOmissions,
+            advisoryWarnings,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'ddex pre-flight judgment');
+        return {
+            passed: blockingOmissions.length === 0,
+            dspTarget: payload.dspTarget,
+            blockingOmissions,
+            advisoryWarnings,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 29: audio acoustic profile to visual direction mapping (Domain 2)
+// ---------------------------------------------------------------------------
+
+export interface AcousticFeatureProfile {
+    bpm: number;
+    keySignature: string;
+    dynamicRangeDb: number;
+    spectralCentroidHz: number;
+    integratedLufs: number;
+}
+
+export interface AudioToVisualTokensResult {
+    paletteTheme: string;
+    typographyScale: 'tight-minimal' | 'bold-condensed' | 'expressive-display';
+    motionSpeed: 'slow-ambient' | 'moderate-groove' | 'kinetic-hyper';
+    recommendedAspectRatio: '16:9' | '9:16';
+}
+
+export async function judgeAudioToVisualTokens(
+    profile: AcousticFeatureProfile
+): Promise<AudioToVisualTokensResult> {
+    // Deterministic mathematical baseline
+    const fallbackTokens = (): AudioToVisualTokensResult => {
+        const isFast = profile.bpm >= 126;
+        const isLoud = profile.integratedLufs >= -10;
+        const isBright = profile.spectralCentroidHz > 3000;
+
+        return {
+            paletteTheme: isLoud && isBright ? 'cyber-neon' : isFast ? 'acid-house' : 'midnight-lofi',
+            typographyScale: isLoud ? 'bold-condensed' : 'tight-minimal',
+            motionSpeed: profile.bpm > 135 ? 'kinetic-hyper' : profile.bpm > 95 ? 'moderate-groove' : 'slow-ambient',
+            recommendedAspectRatio: isFast ? '9:16' : '16:9',
+        };
+    };
+
+    if (!judgmentsAvailable()) {
+        return fallbackTokens();
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { acousticProfile: profile },
+            questions: {
+                motion: {
+                    type: 'choice' as const,
+                    instructions: 'Select the optimal canvas motion velocity matching this track acoustic energy.',
+                    criteria: {
+                        'slow-ambient': 'BPM < 90, high dynamic range, acoustic or chill atmosphere.',
+                        'moderate-groove': 'BPM 90-125, rhythmic bounce, moderate dance/hip-hop pace.',
+                        'kinetic-hyper': 'BPM > 125, high loudness/LUFS, intense club/rock/electronic energy.',
+                    },
+                },
+                typography: {
+                    type: 'choice' as const,
+                    instructions: 'Select the typography scale and layout style.',
+                    criteria: {
+                        'tight-minimal': 'Refined, spacious, understated modern lines.',
+                        'bold-condensed': 'Punchy, high-contrast, impactful commercial poster aesthetic.',
+                        'expressive-display': 'Artistic, fluid, energetic display font direction.',
+                    },
+                },
+                palette: {
+                    type: 'choice' as const,
+                    instructions: 'Select the primary visual color theme matching the track mood.',
+                    criteria: {
+                        'cyber-neon': 'Bright electric synth, high frequencies, modern electronic.',
+                        'amber-vinyl': 'Warm analog soul, acoustic warmth, low-to-mid tempo.',
+                        'midnight-lofi': 'Mellow night vibes, intimate piano or lo-fi hip-hop.',
+                        'acid-house': 'Energetic warehouse rave, driving rhythm.',
+                        'detroit-industrial': 'Raw techno grit, heavy bass, punchy contrast.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const motAns = ans?.motion as { choice?: unknown } | undefined;
+        const typoAns = ans?.typography as { choice?: unknown } | undefined;
+        const palAns = ans?.palette as { choice?: unknown } | undefined;
+
+        const motionSpeed = (typeof motAns?.choice === 'string' ? motAns.choice : 'moderate-groove') as AudioToVisualTokensResult['motionSpeed'];
+        const typographyScale = (typeof typoAns?.choice === 'string' ? typoAns.choice : 'bold-condensed') as AudioToVisualTokensResult['typographyScale'];
+        const paletteTheme = typeof palAns?.choice === 'string' ? palAns.choice : 'cyber-neon';
+
+        return {
+            paletteTheme,
+            typographyScale,
+            motionSpeed,
+            recommendedAspectRatio: profile.bpm >= 120 ? '9:16' : '16:9',
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'audio to visual tokens judgment');
+        return fallbackTokens();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 30: native DSP playlist & curator alignment matching (Domain 3)
+// ---------------------------------------------------------------------------
+
+export const CURATOR_DISPATCH_THRESHOLD = 0.82;
+
+export interface CuratorMatchPayload {
+    trackProfile: {
+        genre: string;
+        subgenres: string[];
+        tempoBpm: number;
+        moodTags: string[];
+        instrumentation: string[];
+        vocalPresence: 'instrumental' | 'prominent' | 'sampled';
+    };
+    curatorPreferences: {
+        curatorId: string;
+        recentAdditionsGenres: string[];
+        targetMoods: string[];
+        maxBpmSkew: number;
+    };
+}
+
+export interface CuratorMatchResult {
+    curatorId: string;
+    matchScore: number; // 0.00 - 1.00
+    dispatchPitch: boolean;
+    rationale: string;
+}
+
+export async function judgeCuratorPlaylistAlignment(
+    payload: CuratorMatchPayload
+): Promise<CuratorMatchResult> {
+    const curatorId = payload.curatorPreferences.curatorId;
+
+    // Deterministic fallback: genre and mood overlap scoring
+    const fallbackMatch = (): CuratorMatchResult => {
+        const trackGenres = [payload.trackProfile.genre, ...payload.trackProfile.subgenres].map((g) => g.toLowerCase());
+        const curatorGenres = payload.curatorPreferences.recentAdditionsGenres.map((g) => g.toLowerCase());
+        const genreMatches = trackGenres.filter((g) => curatorGenres.some((cg) => cg.includes(g) || g.includes(cg))).length;
+
+        const trackMoods = payload.trackProfile.moodTags.map((m) => m.toLowerCase());
+        const curatorMoods = payload.curatorPreferences.targetMoods.map((m) => m.toLowerCase());
+        const moodMatches = trackMoods.filter((m) => curatorMoods.some((cm) => cm.includes(m) || m.includes(cm))).length;
+
+        const score = Math.min(1.0, (genreMatches * 0.4) + (moodMatches * 0.4) + 0.1);
+        const dispatchPitch = score >= CURATOR_DISPATCH_THRESHOLD;
+
+        return {
+            curatorId,
+            matchScore: parseFloat(score.toFixed(2)),
+            dispatchPitch,
+            rationale: dispatchPitch
+                ? `Strong genre & mood alignment detected for curator ${curatorId}.`
+                : `Insufficient playlist alignment (${score.toFixed(2)} < ${CURATOR_DISPATCH_THRESHOLD}); skipped outbound pitch to protect sender reputation.`,
+        };
+    };
+
+    if (!judgmentsAvailable()) {
+        return fallbackMatch();
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { payload },
+            questions: {
+                fitProbability: {
+                    type: 'noul' as const,
+                    instructions:
+                        `Does this track profile genuinely fit this playlist curator criteria and editorial standards? ` +
+                        `Answer 1.0 (True) if strong organic fit; answer 0.0 (False) if misaligned genre, tempo, or mood.`,
+                },
+            },
+        });
+
+        const ans = result.data.answers?.fitProbability as { probability?: unknown } | undefined;
+        const prob = typeof ans?.probability === 'number' ? ans.probability : 0.5;
+        const matchScore = parseFloat(prob.toFixed(2));
+        const dispatchPitch = matchScore >= CURATOR_DISPATCH_THRESHOLD;
+
+        return {
+            curatorId,
+            matchScore,
+            dispatchPitch,
+            rationale: dispatchPitch
+                ? `High-confidence curator playlist alignment (${(matchScore * 100).toFixed(0)}%). Pitch dispatch approved.`
+                : `Low curator alignment (${(matchScore * 100).toFixed(0)}% < ${(CURATOR_DISPATCH_THRESHOLD * 100).toFixed(0)}%). Suppressing pitch to avoid curator spam.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'curator playlist alignment judgment');
+        return fallbackMatch();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 31: agent action risk evaluator & runaway cost circuit breaker (Domain 4)
+// ---------------------------------------------------------------------------
+
+export type ActionRiskVerdict = 'ALLOW' | 'REQUIRE_CONFIRMATION' | 'CIRCUIT_BREAKER_TRIP';
+
+export interface AgentActionPayload {
+    agentId: string;
+    actionType: 'AD_SPEND_UPDATE' | 'BULK_EMAIL_DISPATCH' | 'RIGHTS_REGISTRY_WRITE' | 'EXTERNAL_API_MUTATION';
+    proposedSpendDeltaCents?: number;
+    currentDailySpendCents?: number;
+    recipientCount?: number;
+    rationale: string;
+}
+
+export interface AgentActionRiskResult {
+    verdict: ActionRiskVerdict;
+    riskScore: number; // 0..3 (0=benign, 3=critical)
+    hazardDetected: boolean;
+    tripReason?: string;
+}
+
+export async function judgeAgentActionRisk(
+    payload: AgentActionPayload
+): Promise<AgentActionRiskResult> {
+    // Deterministic fallback boundaries (Hard caps)
+    const fallbackRisk = (): AgentActionRiskResult => {
+        const spendDelta = payload.proposedSpendDeltaCents || 0;
+        const currentDaily = payload.currentDailySpendCents || 0;
+        const recipients = payload.recipientCount || 0;
+
+        if (spendDelta > 100_000 || currentDaily + spendDelta > 250_000) {
+            return {
+                verdict: 'CIRCUIT_BREAKER_TRIP',
+                riskScore: 3,
+                hazardDetected: true,
+                tripReason: 'Hard cost limit exceeded ($1,000+ per delta or $2,500+ daily). Emergency circuit tripped.',
+            };
+        }
+        if (recipients > 5_000) {
+            return {
+                verdict: 'REQUIRE_CONFIRMATION',
+                riskScore: 2,
+                hazardDetected: false,
+                tripReason: 'Bulk outreach recipient threshold exceeded (5,000+). Manual confirmation required.',
+            };
+        }
+        return {
+            verdict: 'ALLOW',
+            riskScore: 0,
+            hazardDetected: false,
+        };
+    };
+
+    if (!judgmentsAvailable()) {
+        return fallbackRisk();
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { actionPayload: payload },
+            questions: {
+                verdict: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Evaluate the operational, financial, and compliance risk of this autonomous agent action. ' +
+                        'Choose ALLOW (safe to execute autonomously), REQUIRE_CONFIRMATION (elevated risk needing human review), or CIRCUIT_BREAKER_TRIP (runaway loop, dangerous spend spike, or registry corruption hazard).',
+                    criteria: {
+                        ALLOW: 'Routine operation within normal budget pacing and recipient caps.',
+                        REQUIRE_CONFIRMATION: 'Significant action or unusual parameter shift that merits human sign-off.',
+                        CIRCUIT_BREAKER_TRIP: 'Severe hazard, runaway spending loop, anomalous spikes, or unauthorized high-volume dispatches.',
+                    },
+                },
+                hazard: {
+                    type: 'noul' as const,
+                    instructions:
+                        'Does this action represent an existential financial or platform integrity hazard? ' +
+                        'Answer 1.0 (True) if dangerous; answer 0.0 (False) if safe.',
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const verdAns = ans?.verdict as { choice?: unknown } | undefined;
+        const hazAns = ans?.hazard as { probability?: unknown } | undefined;
+
+        const choice = (typeof verdAns?.choice === 'string' ? verdAns.choice : 'ALLOW') as ActionRiskVerdict;
+        const hazardProb = typeof hazAns?.probability === 'number' ? hazAns.probability : 0;
+        const hazardDetected = hazardProb >= 0.7 || choice === 'CIRCUIT_BREAKER_TRIP';
+
+        const finalVerdict: ActionRiskVerdict = hazardDetected
+            ? 'CIRCUIT_BREAKER_TRIP'
+            : choice === 'REQUIRE_CONFIRMATION'
+            ? 'REQUIRE_CONFIRMATION'
+            : 'ALLOW';
+
+        return {
+            verdict: finalVerdict,
+            riskScore: finalVerdict === 'CIRCUIT_BREAKER_TRIP' ? 3 : finalVerdict === 'REQUIRE_CONFIRMATION' ? 2 : 0,
+            hazardDetected,
+            tripReason: hazardDetected
+                ? `Autonomous action halted: Jev risk evaluator flagged hazard (${(hazardProb * 100).toFixed(0)}% severity).`
+                : undefined,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'agent action risk judgment');
+        return fallbackRisk();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 32: visual quality & artifact defect inspection (Domain: Art Dept)
+// ---------------------------------------------------------------------------
+
+export interface VisualQualityInput {
+    imageId: string;
+    prompt: string;
+    detectedLabels?: string[];
+    technicalDetails?: { width: number; height: number; mimeType: string };
+}
+
+export interface VisualQualityVerdict {
+    passed: boolean;
+    qualityScore: number; // 0 to 3
+    defectDetected: boolean;
+    recommendation: 'APPROVE' | 'REGENERATE' | 'MANUAL_REVIEW';
+    reason: string;
+}
+
+export async function judgeVisualQualityInspection(
+    input: VisualQualityInput
+): Promise<VisualQualityVerdict> {
+    const fallbackVerdict = (): VisualQualityVerdict => ({
+        passed: true,
+        qualityScore: 2,
+        defectDetected: false,
+        recommendation: 'APPROVE',
+        reason: 'Deterministic baseline approval (inspection offline).',
+    });
+
+    if (!judgmentsAvailable()) {
+        return fallbackVerdict();
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { visualInput: input },
+            questions: {
+                defect_detected: {
+                    type: 'noul' as const,
+                    instructions:
+                        'Are there obvious visual defects, glitches, garbled anatomy, corrupted typography, or unnatural visual distortions in this image representation? ' +
+                        'Answer 1.0 (True) if defective; 0.0 (False) if clean.',
+                },
+                aesthetic_quality: {
+                    type: 'score' as const,
+                    instructions:
+                        'Rate the overall artistic and production quality of this visual on a 4-level scale. ' +
+                        '0 = broken/unusable, 1 = rough amateurish, 2 = standard commercial release quality, 3 = exceptional major-label editorial polish.',
+                },
+                recommendation: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Choose the operational recommendation for this visual asset: ' +
+                        'APPROVE (ready for album cover or ad), REGENERATE (fixable defects warrant re-roll), or MANUAL_REVIEW (borderline quality needing artist eyes).',
+                    criteria: {
+                        APPROVE: 'Image is visually clean and aligns with creative standards.',
+                        REGENERATE: 'Severe glitch or poor aesthetic execution requires automatic re-roll.',
+                        MANUAL_REVIEW: 'Complex or borderline case where human judgment should decide.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const defectAns = ans?.defect_detected as { probability?: unknown } | undefined;
+        const qualityAns = ans?.aesthetic_quality as { score?: unknown } | undefined;
+        const recAns = ans?.recommendation as { choice?: unknown } | undefined;
+
+        const defectProb = typeof defectAns?.probability === 'number' ? defectAns.probability : 0;
+        const qualityScore = typeof qualityAns?.score === 'number' ? qualityAns.score : 2;
+        const choice = (typeof recAns?.choice === 'string' ? recAns.choice : 'APPROVE') as 'APPROVE' | 'REGENERATE' | 'MANUAL_REVIEW';
+
+        const defectDetected = defectProb >= 0.65;
+        const passed = !defectDetected && qualityScore >= 1 && choice !== 'REGENERATE';
+
+        return {
+            passed,
+            qualityScore,
+            defectDetected,
+            recommendation: defectDetected ? 'REGENERATE' : choice,
+            reason: defectDetected
+                ? `Defect detected with ${(defectProb * 100).toFixed(0)}% probability.`
+                : `Aesthetic quality score: ${qualityScore}/3 (${choice}).`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'visual quality inspection judgment');
+        return fallbackVerdict();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 33: soft brand aesthetic & vibe alignment (Domain: Art Dept / Brand)
+// ---------------------------------------------------------------------------
+
+export interface SoftBrandEvaluationInput {
+    assetTitle: string;
+    descriptionOrLabels: string;
+    brandVibe: string;
+    primaryColors: string[];
+    forbiddenElements: string[];
+}
+
+export interface SoftBrandEvaluationVerdict {
+    approved: boolean;
+    vibeScore: number; // 0 to 3
+    violationDetected: boolean;
+    reason: string;
+}
+
+export async function judgeSoftBrandAestheticAlignment(
+    input: SoftBrandEvaluationInput
+): Promise<SoftBrandEvaluationVerdict> {
+    const fallbackVerdict = (): SoftBrandEvaluationVerdict => {
+        const text = `${input.assetTitle} ${input.descriptionOrLabels}`.toLowerCase();
+        const forbiddenHit = input.forbiddenElements.some((elem) => elem && text.includes(elem.toLowerCase()));
+        return {
+            approved: !forbiddenHit,
+            vibeScore: forbiddenHit ? 0 : 2,
+            violationDetected: forbiddenHit,
+            reason: forbiddenHit
+                ? 'Forbidden element keyword detected in asset text.'
+                : 'Deterministic baseline brand approval.',
+        };
+    };
+
+    if (!judgmentsAvailable()) {
+        return fallbackVerdict();
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { brandEvaluationInput: input },
+            questions: {
+                violation_detected: {
+                    type: 'noul' as const,
+                    instructions:
+                        `Does this asset description or label set violate any of the artist's forbidden brand elements (${input.forbiddenElements.join(', ') || 'none specified'})? ` +
+                        'Answer 1.0 (True) if a forbidden element is present; 0.0 (False) if compliant.',
+                },
+                vibe_score: {
+                    type: 'score' as const,
+                    instructions:
+                        `Rate how authentically this creative matches the artist's brand aesthetic and vibe ("${input.brandVibe || 'Authentic Indie'}"). ` +
+                        '0 = jarring mismatch/off-brand, 1 = neutral/generic, 2 = well-aligned with artist identity, 3 = signature brand aesthetic embodiment.',
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const violAns = ans?.violation_detected as { probability?: unknown } | undefined;
+        const vibeAns = ans?.vibe_score as { score?: unknown } | undefined;
+
+        const violProb = typeof violAns?.probability === 'number' ? violAns.probability : 0;
+        const vibeScore = typeof vibeAns?.score === 'number' ? vibeAns.score : 2;
+
+        const violationDetected = violProb >= 0.70;
+        const approved = !violationDetected && vibeScore >= 1;
+
+        return {
+            approved,
+            vibeScore,
+            violationDetected,
+            reason: violationDetected
+                ? `Violates artist forbidden brand elements (${(violProb * 100).toFixed(0)}% confidence).`
+                : vibeScore < 1
+                ? 'Creative mood deviates significantly from artist brand identity.'
+                : `Creative aligns with artist vibe (score ${vibeScore}/3).`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'soft brand aesthetic alignment judgment');
+        return fallbackVerdict();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 34: expense receipt & asset capitalization (Domain: Finance)
+// ---------------------------------------------------------------------------
+
+export type MusicExpenseCategory =
+    | 'STUDIO_RENTAL'
+    | 'TOURING_TRAVEL'
+    | 'EQUIPMENT_GEAR'
+    | 'MARKETING_PROMO'
+    | 'LEGAL_PROFESSIONAL'
+    | 'MERCHANDISE_INVENTORY'
+    | 'OTHER';
+
+export interface ReceiptDataInput {
+    vendor: string;
+    amountCents: number;
+    description: string;
+}
+
+export interface ReceiptDataVerdict {
+    category: MusicExpenseCategory;
+    isCapitalAsset: boolean;
+    confidence: number;
+    taxNotes: string;
+}
+
+export async function judgeReceiptDataVerification(
+    input: ReceiptDataInput
+): Promise<ReceiptDataVerdict> {
+    const fallbackVerdict = (): ReceiptDataVerdict => {
+        const text = `${input.vendor} ${input.description}`.toLowerCase();
+        let cat: MusicExpenseCategory = 'OTHER';
+        if (text.includes('guitar') || text.includes('mic') || text.includes('synth') || text.includes('gear') || text.includes('interface') || text.includes('speaker') || text.includes('pedal')) cat = 'EQUIPMENT_GEAR';
+        else if (text.includes('studio') || text.includes('recording') || text.includes('session') || text.includes('mix') || text.includes('master')) cat = 'STUDIO_RENTAL';
+        else if (text.includes('flight') || text.includes('hotel') || text.includes('uber') || text.includes('gas') || text.includes('tour')) cat = 'TOURING_TRAVEL';
+        else if (text.includes('ad') || text.includes('facebook') || text.includes('meta') || text.includes('promo') || text.includes('pr')) cat = 'MARKETING_PROMO';
+        else if (text.includes('law') || text.includes('legal') || text.includes('attorney') || text.includes('cpa')) cat = 'LEGAL_PROFESSIONAL';
+        else if (text.includes('shirt') || text.includes('vinyl') || text.includes('merch') || text.includes('hoodie')) cat = 'MERCHANDISE_INVENTORY';
+
+        const isCapital = input.amountCents >= 250_000 && cat === 'EQUIPMENT_GEAR';
+        return {
+            category: cat,
+            isCapitalAsset: isCapital,
+            confidence: 0.7,
+            taxNotes: isCapital ? 'Section 179 capital property (> $2,500).' : 'Deductible business expense (Schedule C).',
+        };
+    };
+
+    if (!judgmentsAvailable()) {
+        return fallbackVerdict();
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { receiptInput: input },
+            questions: {
+                category: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Categorize this music business expense into the most appropriate tax accounting category: ' +
+                        'STUDIO_RENTAL, TOURING_TRAVEL, EQUIPMENT_GEAR, MARKETING_PROMO, LEGAL_PROFESSIONAL, MERCHANDISE_INVENTORY, or OTHER.',
+                    criteria: {
+                        STUDIO_RENTAL: 'Recording studio time, rehearsal room rental, tracking and mastering sessions.',
+                        TOURING_TRAVEL: 'Hotels, airlines, rental vans, fuel, and travel per-diem while on tour.',
+                        EQUIPMENT_GEAR: 'Instruments, studio monitors, audio interfaces, microphones, and production hardware.',
+                        MARKETING_PROMO: 'Social media ads, publicist retainers, playlist pitching campaigns, and promotional assets.',
+                        LEGAL_PROFESSIONAL: 'Music attorney fees, trademark registration, accountant fees, and copyright filings.',
+                        MERCHANDISE_INVENTORY: 'Apparel manufacturing, vinyl pressing runs, CD fabrication, and tour merch inventory.',
+                        OTHER: 'Miscellaneous general operating expenditures.',
+                    },
+                },
+                is_capital: {
+                    type: 'noul' as const,
+                    instructions:
+                        'Under IRS regulations, is this purchase durable equipment or hardware costing over $2,500 that must be capitalized or depreciated (Section 179)? ' +
+                        'Answer 1.0 (True) if capital asset; 0.0 (False) if routine deductible operating expense.',
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const catAns = ans?.category as { choice?: unknown } | undefined;
+        const capAns = ans?.is_capital as { probability?: unknown } | undefined;
+
+        const choice = (typeof catAns?.choice === 'string' ? catAns.choice : 'OTHER') as MusicExpenseCategory;
+        const capProb = typeof capAns?.probability === 'number' ? capAns.probability : 0;
+        const isCapital = capProb >= 0.60;
+
+        return {
+            category: choice,
+            isCapitalAsset: isCapital,
+            confidence: 0.9,
+            taxNotes: isCapital
+                ? 'Section 179 capital property: qualified durable equipment eligible for accelerated depreciation.'
+                : 'Standard ordinary & necessary business expense under IRS Schedule C.',
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'receipt data verification judgment');
+        return fallbackVerdict();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 35: royalty statement anomaly & clawback triage (Domain: Finance)
+// ---------------------------------------------------------------------------
+
+export type StatementAnomalyType =
+    | 'BOT_STREAM_SPIKE'
+    | 'DSP_CLAWBACK'
+    | 'RATE_COMPRESSION'
+    | 'CATALOG_METADATA_MISMATCH'
+    | 'ORGANIC_VIRAL_SURGE';
+
+export interface StatementAnomalyInput {
+    trackTitle: string;
+    isrc?: string;
+    platform: string;
+    territory: string;
+    streams: number;
+    revenueUsd: number;
+    historicalAverageRevenueUsd?: number;
+    flagReason: string;
+}
+
+export interface StatementAnomalyVerdict {
+    classification: StatementAnomalyType;
+    fraudRiskScore: number; // 0 to 3
+    actionRecommended: 'INVESTIGATE' | 'DISPUTE' | 'ACCEPT_SURGE' | 'RECONCILE_METADATA';
+    summary: string;
+}
+
+export async function judgeStatementAnomalyTriage(
+    input: StatementAnomalyInput
+): Promise<StatementAnomalyVerdict> {
+    const fallbackVerdict = (): StatementAnomalyVerdict => {
+        if (input.revenueUsd < 0) {
+            return {
+                classification: 'DSP_CLAWBACK',
+                fraudRiskScore: 1,
+                actionRecommended: 'DISPUTE',
+                summary: 'Negative earnings row detected — distributor audit clawback or refund.',
+            };
+        }
+        if (input.streams > 10_000 && input.revenueUsd < 5) {
+            return {
+                classification: 'BOT_STREAM_SPIKE',
+                fraudRiskScore: 3,
+                actionRecommended: 'INVESTIGATE',
+                summary: 'High stream volume with near-zero payout — potential botting hazard.',
+            };
+        }
+        return {
+            classification: 'ORGANIC_VIRAL_SURGE',
+            fraudRiskScore: 0,
+            actionRecommended: 'ACCEPT_SURGE',
+            summary: 'High streaming activity consistent with organic momentum.',
+        };
+    };
+
+    if (!judgmentsAvailable()) {
+        return fallbackVerdict();
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { anomalyInput: input },
+            questions: {
+                classification: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Diagnose the root cause of this financial royalty statement anomaly: ' +
+                        'BOT_STREAM_SPIKE (artificial stream inflation), DSP_CLAWBACK (negative earnings reversal), ' +
+                        'RATE_COMPRESSION (sudden per-stream payout drop), CATALOG_METADATA_MISMATCH (unrecognized ISRC or title), ' +
+                        'or ORGANIC_VIRAL_SURGE (genuine listener influx).',
+                    criteria: {
+                        BOT_STREAM_SPIKE: 'Spike in stream volume without corresponding engagement, originating from known bot territories.',
+                        DSP_CLAWBACK: 'Negative royalty settlement indicating refund or DSP audit deduction.',
+                        RATE_COMPRESSION: 'Effective payout per stream fell far below platform standard rate.',
+                        CATALOG_METADATA_MISMATCH: 'Line item cannot be resolved against artist catalog metadata.',
+                        ORGANIC_VIRAL_SURGE: 'Natural viral growth from playlist placements or social media momentum.',
+                    },
+                },
+                fraud_risk: {
+                    type: 'score' as const,
+                    instructions:
+                        'Score the platform/distributor takedown or strike risk on a 0 to 3 scale: ' +
+                        '0 = safe/organic, 1 = minor clawback, 2 = elevated warning, 3 = severe takedown hazard.',
+                },
+                action: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Select the recommended operational action for the artist: ' +
+                        'INVESTIGATE, DISPUTE, ACCEPT_SURGE, or RECONCILE_METADATA.',
+                    criteria: {
+                        INVESTIGATE: 'Halt payout allocations pending manual review of DSP traffic sources.',
+                        DISPUTE: 'File formal statement inquiry with distributor regarding unexpected deduction.',
+                        ACCEPT_SURGE: 'Recognize revenue and credit marketing team for viral momentum.',
+                        RECONCILE_METADATA: 'Map unlinked ISRC to canonical track in catalog.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const classAns = ans?.classification as { choice?: unknown } | undefined;
+        const riskAns = ans?.fraud_risk as { score?: unknown } | undefined;
+        const actAns = ans?.action as { choice?: unknown } | undefined;
+
+        const classification = (typeof classAns?.choice === 'string' ? classAns.choice : 'ORGANIC_VIRAL_SURGE') as StatementAnomalyType;
+        const fraudRiskScore = typeof riskAns?.score === 'number' ? riskAns.score : 0;
+        const actionRecommended = (typeof actAns?.choice === 'string' ? actAns.choice : 'INVESTIGATE') as 'INVESTIGATE' | 'DISPUTE' | 'ACCEPT_SURGE' | 'RECONCILE_METADATA';
+
+        return {
+            classification,
+            fraudRiskScore,
+            actionRecommended,
+            summary: `Jev triage: ${classification} (Risk ${fraudRiskScore}/3, Action: ${actionRecommended}).`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'statement anomaly triage judgment');
+        return fallbackVerdict();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 36: next best module / action prediction (Domain: Core UX / Shell)
+// ---------------------------------------------------------------------------
+
+export type IndiiModuleTarget =
+    | 'creative'
+    | 'distribution'
+    | 'marketing'
+    | 'finance'
+    | 'publicist'
+    | 'dashboard'
+    | 'social';
+
+export interface ArtistWorkflowContext {
+    currentModule: string;
+    recentAction?: string;
+    unreleasedTrackCount: number;
+    hasActiveCampaign: boolean;
+    pendingSplitCount: number;
+    hasUnreadStatements: boolean;
+}
+
+export interface NextBestActionVerdict {
+    nextModule: IndiiModuleTarget;
+    callToAction: string;
+    confidence: number;
+    rationale: string;
+}
+
+export async function judgeNextBestAction(
+    context: ArtistWorkflowContext
+): Promise<NextBestActionVerdict> {
+    const fallbackVerdict = (): NextBestActionVerdict => {
+        if (context.pendingSplitCount > 0) {
+            return {
+                nextModule: 'finance',
+                callToAction: 'Finalize pending collaborator split sheets',
+                confidence: 0.85,
+                rationale: 'Unfinalized splits block release distribution.',
+            };
+        }
+        if (context.unreleasedTrackCount > 0) {
+            return {
+                nextModule: 'distribution',
+                callToAction: 'Complete metadata and submit release to DSPs',
+                confidence: 0.80,
+                rationale: 'Unreleased mastered track ready for delivery.',
+            };
+        }
+        return {
+            nextModule: 'creative',
+            callToAction: 'Generate promotional assets in Creative Studio',
+            confidence: 0.70,
+            rationale: 'Keep visual momentum active between release cycles.',
+        };
+    };
+
+    if (!judgmentsAvailable()) {
+        return fallbackVerdict();
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { artistContext: context },
+            questions: {
+                next_module: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Given the artist workflow context, choose the single highest-priority next module for the artist to work in: ' +
+                        'creative, distribution, marketing, finance, publicist, dashboard, or social.',
+                    criteria: {
+                        creative: 'Design artwork, video visualizers, and merchandise mockups.',
+                        distribution: 'Validate metadata and distribute unreleased tracks to Spotify and Apple Music.',
+                        marketing: 'Build ad campaigns, drive pre-saves, and grow streaming audience.',
+                        finance: 'Clear legal split sheets, review royalties, and manage revenue ledger.',
+                        publicist: 'Pitch unreleased songs to verified playlist curators and music journalists.',
+                        dashboard: 'Review overall health and metrics.',
+                        social: 'Create social post schedules and engage fan community.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const modAns = ans?.next_module as { choice?: unknown; confidence?: unknown } | undefined;
+
+        const choice = (typeof modAns?.choice === 'string' ? modAns.choice : 'creative') as IndiiModuleTarget;
+        const conf = typeof modAns?.confidence === 'number' ? modAns.confidence : 0.85;
+
+        const ctaMap: Record<IndiiModuleTarget, string> = {
+            creative: 'Create visuals for your next release in Creative Studio',
+            distribution: 'Distribute your finished music to DSPs',
+            marketing: 'Launch audience growth campaigns in Marketing',
+            finance: 'Review collaborator split contracts and revenue',
+            publicist: 'Pitch your upcoming music to playlist curators',
+            dashboard: 'View your release metrics and health dashboard',
+            social: 'Manage social engagement and fan drops',
+        };
+
+        return {
+            nextModule: choice,
+            callToAction: ctaMap[choice] || 'Proceed to next milestone',
+            confidence: conf,
+            rationale: `System One predicted optimal workflow progression to ${choice}.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'next best action judgment');
+        return fallbackVerdict();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 37: artist career DNA profile synthesis (Domain: Core UX / Onboarding)
+// ---------------------------------------------------------------------------
+
+export type CareerArchetype =
+    | 'SOLO_RELEASE_ARTIST'
+    | 'BEATMAKER_PRODUCER'
+    | 'TOURING_BAND'
+    | 'BOUTIQUE_LABEL';
+
+export type MonetizationFocus =
+    | 'STREAMING_SOCIAL'
+    | 'DIRECT_TO_FAN'
+    | 'SYNC_LICENSING'
+    | 'LIVE_TOURING';
+
+export interface ArtistProfileInput {
+    bioOrDescription: string;
+    genres: string[];
+    artistName?: string;
+    externalLinks?: string[];
+}
+
+export interface ArtistCareerDNAVerdict {
+    careerArchetype: CareerArchetype;
+    monetizationFocus: MonetizationFocus;
+    suggestedModules: IndiiModuleTarget[];
+    identitySummary: string;
+}
+
+export async function judgeArtistCareerDNA(
+    input: ArtistProfileInput
+): Promise<ArtistCareerDNAVerdict> {
+    const text = `${input.bioOrDescription} ${input.genres.join(' ')}`.toLowerCase();
+
+    let archetype: CareerArchetype = 'SOLO_RELEASE_ARTIST';
+    if (text.includes('producer') || text.includes('beats') || text.includes('beatmaker')) archetype = 'BEATMAKER_PRODUCER';
+    else if (text.includes('band') || text.includes('tour') || text.includes('live shows')) archetype = 'TOURING_BAND';
+    else if (text.includes('label') || text.includes('records') || text.includes('roster')) archetype = 'BOUTIQUE_LABEL';
+
+    let focus: MonetizationFocus = 'STREAMING_SOCIAL';
+    if (text.includes('merch') || text.includes('vinyl') || text.includes('patron')) focus = 'DIRECT_TO_FAN';
+    else if (text.includes('sync') || text.includes('film') || text.includes('tv') || text.includes('licensing')) focus = 'SYNC_LICENSING';
+    else if (text.includes('tour') || text.includes('concert') || text.includes('ticket')) focus = 'LIVE_TOURING';
+
+    const defaultModules: Record<CareerArchetype, IndiiModuleTarget[]> = {
+        SOLO_RELEASE_ARTIST: ['creative', 'distribution', 'marketing', 'publicist'],
+        BEATMAKER_PRODUCER: ['finance', 'distribution', 'creative'],
+        TOURING_BAND: ['marketing', 'finance', 'creative', 'social'],
+        BOUTIQUE_LABEL: ['distribution', 'finance', 'marketing'],
+    };
+
+    if (!judgmentsAvailable()) {
+        return {
+            careerArchetype: archetype,
+            monetizationFocus: focus,
+            suggestedModules: defaultModules[archetype],
+            identitySummary: `Deterministic profile: ${archetype} focusing on ${focus}.`,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { profileInput: input },
+            questions: {
+                archetype: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Determine the artist primary career archetype based on their bio, genres, and background: ' +
+                        'SOLO_RELEASE_ARTIST (solo vocalist/rapper/songwriter), BEATMAKER_PRODUCER (track producer and beat leasing), ' +
+                        'TOURING_BAND (multi-member live performing group), or BOUTIQUE_LABEL (independent imprint or collective).',
+                    criteria: {
+                        SOLO_RELEASE_ARTIST: 'Solo performer releasing songs under their own name.',
+                        BEATMAKER_PRODUCER: 'Producer creating instrumentals, beats, or producing for others.',
+                        TOURING_BAND: 'Ensemble or band prioritizing live concerts, tours, and merch.',
+                        BOUTIQUE_LABEL: 'Entity managing multiple artists or catalog rights.',
+                    },
+                },
+                monetization: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Identify the primary monetization focus that will yield the fastest growth for this artist: ' +
+                        'STREAMING_SOCIAL, DIRECT_TO_FAN, SYNC_LICENSING, or LIVE_TOURING.',
+                    criteria: {
+                        STREAMING_SOCIAL: 'Maximizing DSP plays, algorithm triggers, and short-form video sounds.',
+                        DIRECT_TO_FAN: 'Selling physical vinyl, high-margin apparel, and VIP memberships.',
+                        SYNC_LICENSING: 'Placing music in television, films, video games, and commercials.',
+                        LIVE_TOURING: 'Selling concert tickets, festival appearances, and live performance fees.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const archAns = ans?.archetype as { choice?: unknown } | undefined;
+        const monAns = ans?.monetization as { choice?: unknown } | undefined;
+
+        const resolvedArch = (typeof archAns?.choice === 'string' ? archAns.choice : archetype) as CareerArchetype;
+        const resolvedMon = (typeof monAns?.choice === 'string' ? monAns.choice : focus) as MonetizationFocus;
+
+        return {
+            careerArchetype: resolvedArch,
+            monetizationFocus: resolvedMon,
+            suggestedModules: defaultModules[resolvedArch] || defaultModules.SOLO_RELEASE_ARTIST,
+            identitySummary: `System One synthesized ${resolvedArch} oriented toward ${resolvedMon}.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'artist career DNA judgment');
+        return {
+            careerArchetype: archetype,
+            monetizationFocus: focus,
+            suggestedModules: defaultModules[archetype],
+            identitySummary: `Fallback profile: ${archetype} focusing on ${focus}.`,
+        };
+    }
+}

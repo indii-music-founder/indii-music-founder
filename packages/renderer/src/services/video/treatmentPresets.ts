@@ -1,4 +1,5 @@
 import type { IndiiAudioFade, IndiiBackground, IndiiSeam } from '@indii/shared';
+import { judgeVideoTreatmentPreset } from '@/config/typesafeJudgments';
 
 /**
  * Named treatment presets (MIG-010). A user's plain-language direction
@@ -171,6 +172,22 @@ export function resolveTreatmentPreset(direction: string): VideoTreatmentPreset 
         }
     }
     return bestScore > 0 ? best : undefined;
+}
+
+/**
+ * Semantically resolve a video treatment preset using TypeSafe System One (Jev).
+ * Falls back immediately to the deterministic keyword matcher if Jev is offline,
+ * unconfident, or returns none.
+ */
+export async function resolveTreatmentPresetAsync(
+    direction: string,
+    artistBrandVibe?: string
+): Promise<VideoTreatmentPreset | undefined> {
+    const semanticChoice = await judgeVideoTreatmentPreset(direction, artistBrandVibe);
+    if (semanticChoice && semanticChoice in VIDEO_TREATMENT_PRESETS) {
+        return VIDEO_TREATMENT_PRESETS[semanticChoice as VideoTreatmentPresetId];
+    }
+    return resolveTreatmentPreset(direction);
 }
 
 /** The concrete treatment values a preset + inline overrides resolve to. */

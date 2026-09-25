@@ -10,7 +10,8 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertTriangle, TrendingUp, Eye, EyeOff, X, Search } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Eye, EyeOff, X, Search, ShieldCheck, ShieldAlert, Sparkles } from 'lucide-react';
+import { judgeStreamVelocityAnomaly, type StreamAnomalyVerdict } from '@/config/typesafeJudgments';
 
 /* ================================================================== */
 /*  Item 157 — Anomaly Detection                                       */
@@ -125,6 +126,7 @@ export function AnomalyDetector() {
     const [alerts, setAlerts] = useState<Anomaly[]>(baseAnomalies);
     const [showAnomaliesOnly, setShowAnomaliesOnly] = useState(false);
     const [investigating, setInvestigating] = useState<Set<string>>(new Set());
+    const [investigationReports, setInvestigationReports] = useState<Record<string, StreamAnomalyVerdict>>({});
 
     const activeAlerts = alerts.filter((a) => !a.dismissed);
 
@@ -132,8 +134,16 @@ export function AnomalyDetector() {
         setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, dismissed: true } : a)));
     }
 
-    function handleInvestigate(id: string) {
-        setInvestigating((prev) => new Set([...prev, id]));
+    async function handleInvestigate(alert: Anomaly) {
+        setInvestigating((prev) => new Set([...prev, alert.id]));
+        const verdict = await judgeStreamVelocityAnomaly(
+            alert.trackName,
+            alert.pctIncrease,
+            `Date: ${alert.date}. Confidence: ${alert.confidence}.`
+        );
+        if (verdict) {
+            setInvestigationReports((prev) => ({ ...prev, [alert.id]: verdict }));
+        }
     }
 
     // Build chart data — optionally filter to anomalous days only
@@ -265,6 +275,7 @@ export function AnomalyDetector() {
                     )}
                     {activeAlerts.map((alert) => {
                         const isInvestigating = investigating.has(alert.id);
+                        const report = investigationReports[alert.id];
                         return (
                             <motion.div
                                 key={alert.id}
@@ -284,24 +295,57 @@ export function AnomalyDetector() {
                                             </span>
                                             <span className="text-[10px] text-gray-500">+{alert.pctIncrease}% spike</span>
                                         </div>
-                                        {isInvestigating && (
+
+                                        {isInvestigating && !report && (
                                             <motion.p
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
-                                                className="text-[10px] text-yellow-400 mt-1"
+                                                className="text-[10px] text-yellow-400 mt-1 flex items-center gap-1.5"
                                             >
-                                                Investigation queued — checking DSP fraud reports…
+                                                <Sparkles size={10} className="animate-spin text-yellow-400" />
+                                                Analyzing velocity patterns with Jev System One…
                                             </motion.p>
+                                        )}
+
+                                        {report && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 4 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className={`mt-2.5 p-2 rounded-lg border text-xs ${
+                                                    report.dspPenaltyHazard
+                                                        ? 'bg-red-500/10 border-red-500/30 text-red-200'
+                                                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-1.5 font-bold mb-1">
+                                                    {report.dspPenaltyHazard ? (
+                                                        <ShieldAlert size={13} className="text-red-400" />
+                                                    ) : (
+                                                        <ShieldCheck size={13} className="text-emerald-400" />
+                                                    )}
+                                                    <span>
+                                                        {report.dspPenaltyHazard
+                                                            ? `DSP Penalty Risk (${Math.round(report.hazardProbability * 100)}%)`
+                                                            : `Verified Source: ${report.rootCause.replace(/_/g, ' ')}`}
+                                                    </span>
+                                                    <span className="ml-auto text-[9px] px-1 py-0.2 rounded bg-white/10 font-mono">Jev</span>
+                                                </div>
+                                                <p className="text-[11px] text-gray-300 leading-relaxed">{report.recommendation}</p>
+                                            </motion.div>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
                                         <button
-                                            onClick={() => handleInvestigate(alert.id)}
+                                            onClick={() => handleInvestigate(alert)}
                                             disabled={isInvestigating}
-                                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 text-[10px] font-bold transition-colors disabled:opacity-50"
+                                            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-colors disabled:opacity-50 ${
+                                                report
+                                                    ? 'bg-emerald-500/10 text-emerald-400'
+                                                    : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400'
+                                            }`}
                                         >
                                             <Search size={9} />
-                                            {isInvestigating ? 'On it' : 'Investigate'}
+                                            {report ? 'Diagnosed' : isInvestigating ? 'Analyzing…' : 'Investigate'}
                                         </button>
                                         <button
                                             onClick={() => handleDismiss(alert.id)}

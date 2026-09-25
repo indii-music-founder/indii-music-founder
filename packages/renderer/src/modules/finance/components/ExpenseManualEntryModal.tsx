@@ -23,7 +23,40 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAutoCategorizing, setIsAutoCategorizing] = useState(false);
+    const [taxDeductibleHint, setTaxDeductibleHint] = useState<boolean | null>(null);
     const toast = useToast();
+
+    // Fast Jev auto-categorization whenever vendor changes
+    React.useEffect(() => {
+        const vendor = manualForm.vendor?.trim();
+        if (!vendor || vendor.length < 3) {
+            setTaxDeductibleHint(null);
+            return;
+        }
+
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            try {
+                setIsAutoCategorizing(true);
+                const { judgeExpenseCategorization } = await import('@/config/typesafeJudgments');
+                const result = await judgeExpenseCategorization(vendor, manualForm.description, manualForm.amount);
+                if (!cancelled && result) {
+                    setManualForm(prev => ({ ...prev, category: result.category }));
+                    setTaxDeductibleHint(result.isTaxDeductible);
+                }
+            } catch (e) {
+                logger.debug('[ExpenseManualEntryModal] Jev auto-categorization bypassed:', e);
+            } finally {
+                if (!cancelled) setIsAutoCategorizing(false);
+            }
+        }, 400);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [manualForm.vendor, manualForm.description, manualForm.amount]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -132,7 +165,19 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Category</label>
+                                <div className="flex justify-between items-center ml-1">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Category</label>
+                                    {isAutoCategorizing && (
+                                        <span className="text-[10px] text-teal-400 font-mono flex items-center gap-1 animate-pulse">
+                                            Categorizing…
+                                        </span>
+                                    )}
+                                    {!isAutoCategorizing && taxDeductibleHint !== null && (
+                                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${taxDeductibleHint ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-gray-800 text-gray-400'}`}>
+                                            {taxDeductibleHint ? '✓ Likely Tax-Deductible' : 'Non-Deductible'}
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="relative">
                                     <select
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-teal-500 outline-none transition-all appearance-none cursor-pointer"
