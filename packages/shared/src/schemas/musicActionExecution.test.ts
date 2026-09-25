@@ -122,6 +122,7 @@ describe('planMusicActionExecution', () => {
     const plan = planMusicActionExecution({ ...base, checkpoints: ['MFA', 'MFA'] });
     expect(plan.checkpoints).toEqual(['MFA']);
     expect(() => planMusicActionExecution({ ...base, subjectEntityId: 'ISRC:USAAA2600001' })).toThrow();
+    expect(() => planMusicActionExecution({ ...base, subjectEntityId: 'catalog_number:legacy-7' })).toThrow();
   });
 
   it('rejects unknown fields instead of accepting caller-asserted authority', () => {

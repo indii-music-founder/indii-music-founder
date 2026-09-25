@@ -6,7 +6,7 @@ const IsoDateTimeSchema = z.string().datetime();
 const ClaimEventTypes = new Set(['claim.received', 'claim.status_changed']);
 const MaximumClaims = 2_000;
 const MaximumConflicts = 5_000;
-const externalIdentifierPrefixes = /^(?:isrc|iswc|upc|ean|isni|ipi|dpid|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i;
+const externalIdentifierPrefixes = /^(?:isrc|iswc|upc|ean|icpn|isni|ipi|dpid|grid|catalog(?:_number)?|platform_id|proprietary|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i;
 const externalIdentifierValue = /^(?:[A-Z]{2}[A-Z0-9]{3}\d{7}|T-\d{3}\.\d{3}\.\d{3}-\d|\d{8,14})$/i;
 
 function isCanonicalEntityId(value: string): boolean {

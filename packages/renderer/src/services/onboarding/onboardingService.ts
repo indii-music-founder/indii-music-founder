@@ -665,10 +665,10 @@ export async function generateSection(section: 'bio' | 'brand_description' | 'cr
 
     const response = await AI.generateContent(
         [{ role: 'user', parts: [{ text: `User Input: "${userInput}"\n\nWrite the ${section}.` }] }],
-        INTELLIGENCE_MODELS.TEXT.AGENT,
+        INTELLIGENCE_MODELS.TEXT.FAST, // Gemini 3.8 Flash for sub-second copy generation
         {
             systemInstruction: systemPrompt,
-            ...INTELLIGENCE_CONFIG.THINKING.HIGH,
+            ...INTELLIGENCE_CONFIG.THINKING.MEDIUM,
         }
     );
     return response.response.text().trim() || "";

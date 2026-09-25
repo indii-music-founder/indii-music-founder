@@ -88,6 +88,12 @@ import {
     judgeContractRecoupmentPace,
     judgeDirectToFanEmailSubjectLine,
     judgeStreamingFraudRisk,
+    judgeVideoChunkQuality,
+    judgeTopImageVariationCandidate,
+    judgeNextBestModule,
+    judgeVideoTreatmentIntent,
+    judgeExpenseDeductibility,
+    judgeTourStopFeasibility,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -3647,6 +3653,322 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
 
         expect(result.rootCause).toBe('EDITORIAL_PLAYLIST');
         expect(result.dspPenaltyHazard).toBe(false);
+    });
+});
+
+describe('Judgment 66: Video Chunk Quality & Usability Gate (judgeVideoChunkQuality)', () => {
+    it('discards underexposed and violently shaky video chunks offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const darkChunk = await judgeVideoChunkQuality({
+            chunkId: 'chunk_dark',
+            startSeconds: 0,
+            endSeconds: 5,
+            brightnessScore: 10,
+            averageMotionScore: 30,
+        });
+
+        expect(darkChunk.classification).toBe('DISCARD_POOR_LIGHTING');
+        expect(darkChunk.isKeep).toBe(false);
+        expect(darkChunk.usableScore).toBe(1);
+
+        const shakyChunk = await judgeVideoChunkQuality({
+            chunkId: 'chunk_shaky',
+            startSeconds: 5,
+            endSeconds: 10,
+            brightnessScore: 50,
+            averageMotionScore: 85,
+        });
+
+        expect(shakyChunk.classification).toBe('DISCARD_SHAKY');
+        expect(shakyChunk.isKeep).toBe(false);
+    });
+
+    it('identifies prime performance lead takes offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const primeTake = await judgeVideoChunkQuality({
+            chunkId: 'chunk_lead',
+            startSeconds: 10,
+            endSeconds: 16,
+            hasSubjectInFrame: true,
+            averageMotionScore: 20,
+            brightnessScore: 55,
+            audioEnergyRms: 0.35,
+        });
+
+        expect(primeTake.classification).toBe('KEEP_LEAD_TAKE');
+        expect(primeTake.isKeep).toBe(true);
+        expect(primeTake.usableScore).toBe(5);
+    });
+
+    it('evaluates video chunks via online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    class: { choice: 'KEEP_LEAD_TAKE' },
+                    score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeVideoChunkQuality({
+            chunkId: 'chunk_online',
+            startSeconds: 20,
+            endSeconds: 25,
+            hasSubjectInFrame: true,
+            averageMotionScore: 15,
+            brightnessScore: 60,
+        });
+
+        expect(result.classification).toBe('KEEP_LEAD_TAKE');
+        expect(result.isKeep).toBe(true);
+        expect(result.usableScore).toBe(5);
+    });
+});
+
+describe('Judgment 67: Image Variation Batch Pre-Selector (judgeTopImageVariationCandidate)', () => {
+    it('returns first candidate fallback when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeTopImageVariationCandidate('Cyberpunk portrait with purple rim light', [
+            { id: 'var_1', promptAlignmentSummary: 'Frontal face with neon purple backlight' },
+            { id: 'var_2', promptAlignmentSummary: 'Side profile with soft blue shadow' },
+        ]);
+
+        expect(result.topCandidateId).toBe('var_1');
+        expect(result.alignmentScore).toBe(4);
+    });
+
+    it('pre-selects top candidate via online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    best_pick: { choice: 'var_2' },
+                    score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeTopImageVariationCandidate('Cyberpunk portrait with purple rim light', [
+            { id: 'var_1', promptAlignmentSummary: 'Frontal face with neon purple backlight' },
+            { id: 'var_2', promptAlignmentSummary: 'Sharp cinematic eye focus with purple anamorphic streak' },
+        ]);
+
+        expect(result.topCandidateId).toBe('var_2');
+        expect(result.alignmentScore).toBe(5);
+        expect(result.selectionRationale).toContain('Jev Vision intelligence');
+    });
+});
+
+describe('Judgment 68: Contextual Next-Best Module Navigation (judgeNextBestModule)', () => {
+    it('prioritizes distribution when artist has unreleased master offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeNextBestModule({
+            currentModule: 'creative',
+            hasUnreleasedMaster: true,
+            recentMasterTitle: 'Electric Dawn',
+            hasPendingDistribution: false,
+            hasUnallocatedSplits: false,
+            hasActiveTourCampaign: false,
+        });
+
+        expect(result.targetModule).toBe('distribution');
+        expect(result.relevanceScore).toBe(5);
+        expect(result.actionTitle).toContain('Electric Dawn');
+    });
+
+    it('prioritizes rights when artist has unallocated splits offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeNextBestModule({
+            currentModule: 'finance',
+            hasUnreleasedMaster: false,
+            hasPendingDistribution: false,
+            hasUnallocatedSplits: true,
+            hasActiveTourCampaign: false,
+        });
+
+        expect(result.targetModule).toBe('rights');
+        expect(result.actionTitle).toContain('Split Sheet');
+    });
+
+    it('processes next module prediction via online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    next_module: { choice: 'finance' },
+                    priority: { score: 4 },
+                },
+            },
+        }));
+
+        const result = await judgeNextBestModule({
+            currentModule: 'analytics',
+            hasUnreleasedMaster: false,
+            hasPendingDistribution: false,
+            hasUnallocatedSplits: false,
+            totalMonthlyStreams: 45000,
+            hasActiveTourCampaign: false,
+        });
+
+        expect(result.targetModule).toBe('finance');
+        expect(result.relevanceScore).toBe(4);
+    });
+});
+
+describe('Judgment 69: Video Treatment Intent & Aspect Ratio Matcher (judgeVideoTreatmentIntent)', () => {
+    it('derives 9:16 vertical and viral performance treatment offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeVideoTreatmentIntent({
+            prompt: 'High energy dance performance lip sync with stage lighting for TikTok shorts',
+            targetPlatform: 'tiktok',
+        });
+
+        expect(result.aspectRatio).toBe('9:16');
+        expect(result.treatment).toBe('VIRAL_PERFORMANCE');
+        expect(result.fps).toBe(30);
+    });
+
+    it('derives 16:9 widescreen and cinematic narrative offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeVideoTreatmentIntent({
+            prompt: 'Moody cinema film story shot on 35mm anamorphic camera in widescreen',
+            targetPlatform: 'youtube',
+        });
+
+        expect(result.aspectRatio).toBe('16:9');
+        expect(result.treatment).toBe('CINEMATIC_NARRATIVE');
+        expect(result.fps).toBe(24);
+    });
+
+    it('parses video intent via online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    ratio: { choice: '9:16' },
+                    style: { choice: 'GLITCH_CYBERPUNK' },
+                },
+            },
+        }));
+
+        const result = await judgeVideoTreatmentIntent({
+            prompt: 'Cyberpunk dystopian alleyway with fluorescent glitch rain',
+            targetPlatform: 'reels',
+        });
+
+        expect(result.aspectRatio).toBe('9:16');
+        expect(result.treatment).toBe('GLITCH_CYBERPUNK');
+    });
+});
+
+describe('Judgment 70: Expense Deductibility & Schedule C Tax Classification (judgeExpenseDeductibility)', () => {
+    it('classifies musical instruments and studio gear as capital assets offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeExpenseDeductibility({
+            vendor: 'Sweetwater Sound',
+            description: 'Prophet-6 Polyphonic Analog Synthesizer',
+            amountUsd: 2899,
+        });
+
+        expect(result.category).toBe('EQUIPMENT_CAPITAL');
+        expect(result.auditDefenseScore).toBe(5);
+        expect(result.is100PercentDeductible).toBe(true);
+    });
+
+    it('flags personal groceries as non-deductible offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeExpenseDeductibility({
+            vendor: 'Whole Foods Market',
+            description: 'Weekly home groceries and toiletries',
+            amountUsd: 145,
+        });
+
+        expect(result.category).toBe('NON_DEDUCTIBLE');
+        expect(result.is100PercentDeductible).toBe(false);
+    });
+
+    it('evaluates deductions via online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    tax_cat: { choice: 'MARKETING_PROMO' },
+                    audit_strength: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeExpenseDeductibility({
+            vendor: 'Meta Ads',
+            description: 'Instagram sponsored story campaigns for album release',
+            amountUsd: 500,
+        });
+
+        expect(result.category).toBe('MARKETING_PROMO');
+        expect(result.auditDefenseScore).toBe(5);
+        expect(result.is100PercentDeductible).toBe(true);
+    });
+});
+
+describe('Judgment 71: Tour Stop Feasibility & Turnaround Gate (judgeTourStopFeasibility)', () => {
+    it('identifies tight turnarounds and logistic risk offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const tight = await judgeTourStopFeasibility({
+            originCity: 'Chicago, IL',
+            destinationCity: 'Minneapolis, MN',
+            distanceMiles: 410,
+            hoursBetweenShows: 10,
+            isOvernightDrive: true,
+        });
+
+        expect(tight.status).toBe('LOGISTIC_RISK');
+        expect(tight.feasibilityRating).toBe(1);
+        expect(tight.warningNotes).toContain('CRITICAL DELAY HAZARD');
+
+        const optimal = await judgeTourStopFeasibility({
+            originCity: 'Philadelphia, PA',
+            destinationCity: 'New York, NY',
+            distanceMiles: 95,
+            hoursBetweenShows: 22,
+            isOvernightDrive: false,
+        });
+
+        expect(optimal.status).toBe('OPTIMAL');
+        expect(optimal.feasibilityRating).toBe(5);
+    });
+
+    it('evaluates tour stop hops via online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    hop_status: { choice: 'TIGHT_TURNAROUND' },
+                    feasibility: { score: 2 },
+                },
+            },
+        }));
+
+        const result = await judgeTourStopFeasibility({
+            originCity: 'Austin, TX',
+            destinationCity: 'Dallas, TX',
+            distanceMiles: 195,
+            hoursBetweenShows: 11,
+            isOvernightDrive: false,
+        });
+
+        expect(result.status).toBe('TIGHT_TURNAROUND');
+        expect(result.feasibilityRating).toBe(2);
     });
 });
 

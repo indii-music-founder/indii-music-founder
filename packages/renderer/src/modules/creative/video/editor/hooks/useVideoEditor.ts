@@ -42,7 +42,7 @@ export function useVideoEditor(initialVideo?: HistoryItem, beforeExport?: () => 
     const toast = useToast();
 
     // Local State
-    const [activeTab, setActiveTab] = useState<'project' | 'tracks' | 'assets'>('assets');
+    const [activeTab, setActiveTab] = useState<'project' | 'tracks' | 'assets' | 'chunks'>('assets');
     const [isExporting, setIsExporting] = useState(false);
 
     // Memoize selected clip lookup

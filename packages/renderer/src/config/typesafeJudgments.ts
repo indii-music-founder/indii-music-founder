@@ -7458,3 +7458,675 @@ export async function judgeStreamingFraudRisk(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Judgment 66: Video Chunk Quality & Usability Gate (iPhone / B-Roll Slicer)
+// Consumer: VideoEditor / VideoChunkSlicerCard / NLE Timeline
+// ---------------------------------------------------------------------------
+
+export interface VideoChunkInput {
+    chunkId: string;
+    startSeconds: number;
+    endSeconds: number;
+    averageMotionScore?: number; // 0 (tripod stable) to 100 (violent shake)
+    brightnessScore?: number; // 0 (pitch dark) to 100 (overexposed), optimal ~45-65
+    hasSubjectInFrame?: boolean;
+    audioEnergyRms?: number; // 0.0 to 1.0 audio level
+    description?: string;
+}
+
+export interface VideoChunkVerdict {
+    classification: 'KEEP_LEAD_TAKE' | 'KEEP_BROLL' | 'DISCARD_SHAKY' | 'DISCARD_POOR_LIGHTING' | 'DISCARD_DEAD_AIR';
+    usableScore: number; // 1 to 5
+    isKeep: boolean;
+    reason: string;
+}
+
+export async function judgeVideoChunkQuality(
+    input: VideoChunkInput
+): Promise<VideoChunkVerdict> {
+    const motion = input.averageMotionScore ?? 30;
+    const brightness = input.brightnessScore ?? 50;
+    const hasSubject = input.hasSubjectInFrame ?? true;
+    const audioRms = input.audioEnergyRms ?? 0.15;
+
+    let classification: VideoChunkVerdict['classification'] = 'KEEP_BROLL';
+    let usableScore = 3;
+    let isKeep = true;
+    let reason = 'Acceptable ambient B-roll footage.';
+
+    if (brightness < 18) {
+        classification = 'DISCARD_POOR_LIGHTING';
+        usableScore = 1;
+        isKeep = false;
+        reason = 'Severe underexposure: visual details lost in shadow.';
+    } else if (motion > 70) {
+        classification = 'DISCARD_SHAKY';
+        usableScore = 1;
+        isKeep = false;
+        reason = 'Excessive camera jitter: fails broadcast stabilization threshold.';
+    } else if (audioRms < 0.02 && !hasSubject) {
+        classification = 'DISCARD_DEAD_AIR';
+        usableScore = 1;
+        isKeep = false;
+        reason = 'Static dead air: no subject or significant audio energy detected.';
+    } else if (hasSubject && motion <= 45 && brightness >= 28 && brightness <= 85) {
+        classification = 'KEEP_LEAD_TAKE';
+        usableScore = 5;
+        isKeep = true;
+        reason = 'Prime performance take: stable camera, optimal lighting, and clear subject presence.';
+    }
+
+    if (!judgmentsAvailable()) {
+        return { classification, usableScore, isKeep, reason };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                id: input.chunkId,
+                start: input.startSeconds,
+                end: input.endSeconds,
+                motion,
+                brightness,
+                hasSubject,
+                audioRms,
+                description: input.description?.slice(0, 200) || 'Raw iPhone video slice',
+            },
+            questions: {
+                class: {
+                    type: 'choice' as const,
+                    instructions: 'Evaluate this video clip chunk from raw footage. Choose whether to keep as lead take, keep as B-roll, or discard.',
+                    criteria: {
+                        KEEP_LEAD_TAKE: 'Stable camera, good lighting, clear artist performance or subject in focus.',
+                        KEEP_BROLL: 'Usable cutaway, atmospheric backdrop, or ambient secondary b-roll take.',
+                        DISCARD_SHAKY: 'Unusable due to violent shaking, dropped frames, or jarring hand motion.',
+                        DISCARD_POOR_LIGHTING: 'Unusable due to extreme underexposure or washed out glare.',
+                        DISCARD_DEAD_AIR: 'Empty camera facing floor, ceiling, or static uninteresting frame.',
+                    },
+                },
+                score: {
+                    type: 'score' as const,
+                    instructions: 'Rate visual usability for a finished music video from 1 (unusable discard) to 5 (flawless master take).',
+                    range: [1, 5] as [number, number],
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const classAns = ans?.class as { choice?: unknown } | undefined;
+        const scoreAns = ans?.score as { score?: unknown } | undefined;
+
+        const resolvedClass = (typeof classAns?.choice === 'string' ? classAns.choice : classification) as VideoChunkVerdict['classification'];
+        const resolvedScore = typeof scoreAns?.score === 'number' ? Math.round(scoreAns.score) : usableScore;
+        const resolvedKeep = resolvedClass === 'KEEP_LEAD_TAKE' || resolvedClass === 'KEEP_BROLL';
+
+        return {
+            classification: resolvedClass,
+            usableScore: resolvedScore,
+            isKeep: resolvedKeep,
+            reason: resolvedKeep ? 'Validated by Jev Vision filter for music video timeline.' : 'Flagged for timeline pruning.',
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'video chunk quality judgment');
+        return { classification, usableScore, isKeep, reason };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 67: Image Variation Batch Pre-Selector
+// Consumer: Creative Studio / CandidateReview (4-batch generation)
+// ---------------------------------------------------------------------------
+
+export interface ImageVariationCandidateItem {
+    id: string;
+    label?: string;
+    promptAlignmentSummary: string;
+    compositionNotes?: string;
+}
+
+export interface TopImageVariationVerdict {
+    topCandidateId: string;
+    alignmentScore: number; // 1 to 5
+    selectionRationale: string;
+}
+
+export async function judgeTopImageVariationCandidate(
+    prompt: string,
+    candidates: ImageVariationCandidateItem[]
+): Promise<TopImageVariationVerdict> {
+    if (candidates.length === 0) {
+        return {
+            topCandidateId: '',
+            alignmentScore: 1,
+            selectionRationale: 'No candidates provided.',
+        };
+    }
+
+    const fallbackCandidate = candidates[0].id;
+    const fallbackScore = 4;
+    const fallbackRationale = 'Selected based on baseline prompt fidelity and focal composition.';
+
+    if (!judgmentsAvailable() || candidates.length === 1) {
+        return {
+            topCandidateId: fallbackCandidate,
+            alignmentScore: fallbackScore,
+            selectionRationale: fallbackRationale,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const criteria: Record<string, string> = {};
+        for (const c of candidates) {
+            criteria[c.id] = (c.promptAlignmentSummary + ' ' + (c.compositionNotes || '')).slice(0, 200);
+        }
+
+        const result = await judgeFn({
+            state: {
+                targetPrompt: prompt.slice(0, 300),
+                candidateCount: candidates.length,
+            },
+            questions: {
+                best_pick: {
+                    type: 'choice' as const,
+                    instructions: 'Select the single variation ID that best realizes the target visual prompt with highest artistic coherence.',
+                    criteria,
+                },
+                score: {
+                    type: 'score' as const,
+                    instructions: 'Rate overall aesthetic alignment and composition quality on a scale of 1 to 5.',
+                    range: [1, 5] as [number, number],
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const bestAns = ans?.best_pick as { choice?: unknown } | undefined;
+        const scoreAns = ans?.score as { score?: unknown } | undefined;
+
+        const resolvedId = typeof bestAns?.choice === 'string' && criteria[bestAns.choice] ? bestAns.choice : fallbackCandidate;
+        const resolvedScore = typeof scoreAns?.score === 'number' ? Math.round(scoreAns.score) : fallbackScore;
+
+        return {
+            topCandidateId: resolvedId,
+            alignmentScore: resolvedScore,
+            selectionRationale: 'Pre-selected by Jev Vision intelligence for superior focal balance and prompt match.',
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'top image variation candidate judgment');
+        return {
+            topCandidateId: fallbackCandidate,
+            alignmentScore: fallbackScore,
+            selectionRationale: fallbackRationale,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 68: Contextual Next-Best Module Navigation
+// Consumer: SmartNextActionBanner / Global App Shell Navigation
+// ---------------------------------------------------------------------------
+
+export interface ArtistContextState {
+    currentModule: string;
+    hasUnreleasedMaster: boolean;
+    recentMasterTitle?: string;
+    hasPendingDistribution: boolean;
+    hasUnallocatedSplits: boolean;
+    totalMonthlyStreams?: number;
+    hasActiveTourCampaign: boolean;
+}
+
+export interface NextBestModuleVerdict {
+    targetModule: 'creative' | 'distribution' | 'finance' | 'social' | 'rights' | 'road' | 'analytics';
+    relevanceScore: number; // 1 to 5
+    actionTitle: string;
+    actionDescription: string;
+}
+
+export async function judgeNextBestModule(
+    context: ArtistContextState
+): Promise<NextBestModuleVerdict> {
+    let targetModule: NextBestModuleVerdict['targetModule'] = 'social';
+    let relevanceScore = 4;
+    let actionTitle = 'Engage Fanbase';
+    let actionDescription = 'Share behind-the-scenes clips and teaser audio to drive algorithm momentum.';
+
+    if (context.hasUnreleasedMaster) {
+        targetModule = 'distribution';
+        relevanceScore = 5;
+        actionTitle = `Distribute '${context.recentMasterTitle || 'New Track'}'`;
+        actionDescription = 'Master track acoustic QC complete. Upload metadata to deliver to 150+ DSPs.';
+    } else if (context.hasUnallocatedSplits) {
+        targetModule = 'rights';
+        relevanceScore = 5;
+        actionTitle = 'Finalize Split Sheet';
+        actionDescription = 'Unclaimed publishing or master points detected. Lock splits to protect royalties.';
+    } else if (context.hasPendingDistribution) {
+        targetModule = 'creative';
+        relevanceScore = 4;
+        actionTitle = 'Generate Video Assets';
+        actionDescription = 'Release queued for DSPs. Create matching Spotify Canvas and vertical Reels promos.';
+    } else if ((context.totalMonthlyStreams || 0) > 10000) {
+        targetModule = 'finance';
+        relevanceScore = 4;
+        actionTitle = 'Review DSP Settlements';
+        actionDescription = 'Surging listener volume detected. Audit mechanical and master payouts.';
+    }
+
+    if (!judgmentsAvailable()) {
+        return { targetModule, relevanceScore, actionTitle, actionDescription };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                current: context.currentModule,
+                unreleased: context.hasUnreleasedMaster,
+                pendingDistro: context.hasPendingDistribution,
+                unallocatedSplits: context.hasUnallocatedSplits,
+                streams: context.totalMonthlyStreams || 0,
+                tourActive: context.hasActiveTourCampaign,
+            },
+            questions: {
+                next_module: {
+                    type: 'choice' as const,
+                    instructions: 'Anticipate the single best next module for the artist to eliminate blank-slate hesitation.',
+                    criteria: {
+                        distribution: 'Submit finalized music to streaming services and stores.',
+                        creative: 'Produce artwork, video visualizers, or marketing collateral.',
+                        rights: 'Protect co-writing splits, register works, and avoid royalty disputes.',
+                        finance: 'Inspect streaming revenue, recoupment pace, or expense deductions.',
+                        social: 'Engage audience, run direct-to-fan campaigns, or post teasers.',
+                        road: 'Plan tour dates, coordinate venue routing, or budget travel.',
+                        analytics: 'Review audience demographics, playlist adds, and streaming retention.',
+                    },
+                },
+                priority: {
+                    type: 'score' as const,
+                    instructions: 'Rate the urgency of this next step from 1 (optional background task) to 5 (critical blocker).',
+                    range: [1, 5] as [number, number],
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const modAns = ans?.next_module as { choice?: unknown } | undefined;
+        const prioAns = ans?.priority as { score?: unknown } | undefined;
+
+        const resolvedMod = (typeof modAns?.choice === 'string' ? modAns.choice : targetModule) as NextBestModuleVerdict['targetModule'];
+        const resolvedPrio = typeof prioAns?.score === 'number' ? Math.round(prioAns.score) : relevanceScore;
+
+        return {
+            targetModule: resolvedMod,
+            relevanceScore: resolvedPrio,
+            actionTitle,
+            actionDescription,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'next best module judgment');
+        return { targetModule, relevanceScore, actionTitle, actionDescription };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 69: Video Treatment Intent & Aspect Ratio Matcher
+// Consumer: VideoDirector / TreatmentPicker / VideoEditor
+// ---------------------------------------------------------------------------
+
+export interface VideoPromptIntentInput {
+    prompt: string;
+    targetPlatform?: string; // 'tiktok' | 'reels' | 'youtube' | 'spotify_canvas'
+}
+
+export interface VideoPromptIntentVerdict {
+    aspectRatio: '9:16' | '16:9' | '1:1';
+    treatment: 'CINEMATIC_NARRATIVE' | 'VIRAL_PERFORMANCE' | 'LOFI_AESTHETIC' | 'GLITCH_CYBERPUNK' | 'CLEAN_MINIMAL';
+    fps: 24 | 30 | 60;
+    rationale: string;
+}
+
+export async function judgeVideoTreatmentIntent(
+    input: VideoPromptIntentInput
+): Promise<VideoPromptIntentVerdict> {
+    const text = (input.prompt + ' ' + (input.targetPlatform || '')).toLowerCase();
+
+    let aspectRatio: VideoPromptIntentVerdict['aspectRatio'] = '16:9';
+    let treatment: VideoPromptIntentVerdict['treatment'] = 'CLEAN_MINIMAL';
+    let fps: VideoPromptIntentVerdict['fps'] = 30;
+
+    if (text.includes('tiktok') || text.includes('reel') || text.includes('short') || text.includes('vertical') || text.includes('phone') || text.includes('canvas')) {
+        aspectRatio = '9:16';
+    } else if (text.includes('square') || text.includes('feed') || text.includes('cover')) {
+        aspectRatio = '1:1';
+    }
+
+    if (text.includes('cyberpunk') || text.includes('glitch') || text.includes('neon') || text.includes('synthwave')) {
+        treatment = 'GLITCH_CYBERPUNK';
+        fps = 24;
+    } else if (text.includes('lofi') || text.includes('vhs') || text.includes('analog') || text.includes('vintage') || text.includes('grain')) {
+        treatment = 'LOFI_AESTHETIC';
+        fps = 24;
+    } else if (text.includes('dance') || text.includes('performance') || text.includes('energy') || text.includes('stage') || text.includes('club')) {
+        treatment = 'VIRAL_PERFORMANCE';
+        fps = 30;
+    } else if (text.includes('cinema') || text.includes('film') || text.includes('story') || text.includes('actor') || text.includes('narrative')) {
+        treatment = 'CINEMATIC_NARRATIVE';
+        fps = 24;
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            aspectRatio,
+            treatment,
+            fps,
+            rationale: `Classified based on visual keywords: ${treatment} in ${aspectRatio} format at ${fps}fps.`,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                prompt: input.prompt.slice(0, 300),
+                platform: input.targetPlatform || 'general',
+            },
+            questions: {
+                ratio: {
+                    type: 'choice' as const,
+                    instructions: 'Determine the optimal video aspect ratio based on destination platform and prompt context.',
+                    criteria: {
+                        '9:16': 'Vertical format optimized for TikTok, Instagram Reels, YouTube Shorts, or Spotify Canvas.',
+                        '16:9': 'Horizontal widescreen cinematic format for YouTube, Vimeo, or web video.',
+                        '1:1': 'Square format for Instagram Feed or social square embeds.',
+                    },
+                },
+                style: {
+                    type: 'choice' as const,
+                    instructions: 'Select the visual color and editing treatment that matches the music video artistic brief.',
+                    criteria: {
+                        CINEMATIC_NARRATIVE: 'Film grain, anamorphic lens curves, 24fps movie camera framing.',
+                        VIRAL_PERFORMANCE: 'Punchy high-contrast lighting, rapid jump cuts, high energy.',
+                        LOFI_AESTHETIC: 'VHS tape tracking lines, warm color temperature, nostalgic blur.',
+                        GLITCH_CYBERPUNK: 'Chromatic aberration, fluorescent neon glow, digital artifacts.',
+                        CLEAN_MINIMAL: 'Neutral balanced lighting, pristine typography, smooth modern transitions.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const ratioAns = ans?.ratio as { choice?: unknown } | undefined;
+        const styleAns = ans?.style as { choice?: unknown } | undefined;
+
+        const resolvedRatio = (ratioAns?.choice === '9:16' || ratioAns?.choice === '16:9' || ratioAns?.choice === '1:1' ? ratioAns.choice : aspectRatio) as VideoPromptIntentVerdict['aspectRatio'];
+        const resolvedStyle = (typeof styleAns?.choice === 'string' ? styleAns.choice : treatment) as VideoPromptIntentVerdict['treatment'];
+
+        return {
+            aspectRatio: resolvedRatio,
+            treatment: resolvedStyle,
+            fps: resolvedStyle === 'CINEMATIC_NARRATIVE' || resolvedStyle === 'LOFI_AESTHETIC' ? 24 : 30,
+            rationale: `Jev Video Intent: configured for ${resolvedStyle} style in ${resolvedRatio} aspect ratio.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'video treatment intent judgment');
+        return {
+            aspectRatio,
+            treatment,
+            fps,
+            rationale: `Fallback intent: ${treatment} in ${aspectRatio}.`,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 70: Expense Deductibility & Schedule C Tax Classification
+// Consumer: Finance module / FormatFoundry / Expense logger
+// ---------------------------------------------------------------------------
+
+export interface ExpenseItemInput {
+    vendor: string;
+    description: string;
+    amountUsd: number;
+    artistRole?: string;
+}
+
+export interface ExpenseDeductibilityVerdict {
+    category: 'EQUIPMENT_CAPITAL' | 'PRODUCTION_EXPENSE' | 'TRAVEL_MEALS' | 'MARKETING_PROMO' | 'LEGAL_ADMIN' | 'NON_DEDUCTIBLE';
+    auditDefenseScore: number; // 1 to 5
+    is100PercentDeductible: boolean;
+    taxScheduleNotes: string;
+}
+
+export async function judgeExpenseDeductibility(
+    input: ExpenseItemInput
+): Promise<ExpenseDeductibilityVerdict> {
+    const text = (input.vendor + ' ' + input.description).toLowerCase();
+
+    let category: ExpenseDeductibilityVerdict['category'] = 'PRODUCTION_EXPENSE';
+    let auditScore = 4;
+    let is100Percent = true;
+    let notes = 'Ordinary & necessary music business expense (IRC § 162).';
+
+    if (text.includes('grocery') || text.includes('personal') || text.includes('clothing') || text.includes('shoes') || text.includes('toiletries')) {
+        category = 'NON_DEDUCTIBLE';
+        auditScore = 2;
+        is100Percent = false;
+        notes = 'IRS disallows personal living expenses unless specifically required stage costume not adaptable to street wear.';
+    } else if (text.includes('guitar') || text.includes('synth') || text.includes('microphone') || text.includes('laptop') || text.includes('hardware') || input.amountUsd >= 2500) {
+        category = 'EQUIPMENT_CAPITAL';
+        auditScore = 5;
+        is100Percent = true;
+        notes = 'Capital asset: eligible for immediate 100% deduction under Section 179 or MACRS 5-year recovery.';
+    } else if (text.includes('flight') || text.includes('hotel') || text.includes('uber') || text.includes('airbnb') || text.includes('meal') || text.includes('food')) {
+        category = 'TRAVEL_MEALS';
+        auditScore = 4;
+        is100Percent = !text.includes('meal') && !text.includes('food');
+        notes = is100Percent ? '100% deductible business travel while on tour/remote session.' : 'Business meals capped at 50% deduction limit.';
+    } else if (text.includes('ad') || text.includes('meta') || text.includes('instagram') || text.includes('marketing') || text.includes('billboard') || text.includes('pr')) {
+        category = 'MARKETING_PROMO';
+        auditScore = 5;
+        is100Percent = true;
+        notes = '100% deductible advertising & promotional costs under Schedule C Line 8.';
+    } else if (text.includes('lawyer') || text.includes('legal') || text.includes('cpa') || text.includes('accounting') || text.includes('trademark') || text.includes('contract')) {
+        category = 'LEGAL_ADMIN';
+        auditScore = 5;
+        is100Percent = true;
+        notes = '100% deductible legal and professional services under Schedule C Line 17.';
+    }
+
+    if (!judgmentsAvailable()) {
+        return { category, auditDefenseScore: auditScore, is100PercentDeductible: is100Percent, taxScheduleNotes: notes };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                vendor: input.vendor.slice(0, 100),
+                desc: input.description.slice(0, 200),
+                amount: input.amountUsd,
+                role: input.artistRole || 'Independent Recording Artist',
+            },
+            questions: {
+                tax_cat: {
+                    type: 'choice' as const,
+                    instructions: 'Categorize this artist expense under IRS Schedule C / 1099 independent contractor rules.',
+                    criteria: {
+                        EQUIPMENT_CAPITAL: 'Instruments, recording gear, audio computers subject to depreciation or Sec 179.',
+                        PRODUCTION_EXPENSE: 'Studio time, mixing/mastering engineers, session musicians, VST licenses.',
+                        TRAVEL_MEALS: 'Tour travel, transportation, lodging, and band tour meals.',
+                        MARKETING_PROMO: 'Social ads, influencer seeding, release PR, album artwork photography.',
+                        LEGAL_ADMIN: 'Entertainment attorney, contract review, copyright registration, accounting.',
+                        NON_DEDUCTIBLE: 'Personal living expenses, non-stage clothing, or non-business entertainment.',
+                    },
+                },
+                audit_strength: {
+                    type: 'score' as const,
+                    instructions: 'Rate the audit defense strength of this deduction from 1 (high audit risk) to 5 (bulletproof IRS precedent).',
+                    range: [1, 5] as [number, number],
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const catAns = ans?.tax_cat as { choice?: unknown } | undefined;
+        const scoreAns = ans?.audit_strength as { score?: unknown } | undefined;
+
+        const resolvedCat = (typeof catAns?.choice === 'string' ? catAns.choice : category) as ExpenseDeductibilityVerdict['category'];
+        const resolvedScore = typeof scoreAns?.score === 'number' ? Math.round(scoreAns.score) : auditScore;
+
+        return {
+            category: resolvedCat,
+            auditDefenseScore: resolvedScore,
+            is100PercentDeductible: resolvedCat !== 'NON_DEDUCTIBLE' && resolvedCat !== 'TRAVEL_MEALS' ? true : is100Percent,
+            taxScheduleNotes: notes,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'expense deductibility judgment');
+        return { category, auditDefenseScore: auditScore, is100PercentDeductible: is100Percent, taxScheduleNotes: notes };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 71: Tour Stop Feasibility & Turnaround Gate
+// Consumer: Road Manager / Tour Routing Agent
+// ---------------------------------------------------------------------------
+
+export interface TourStopHopInput {
+    originCity: string;
+    destinationCity: string;
+    distanceMiles: number;
+    hoursBetweenShows: number;
+    isOvernightDrive: boolean;
+}
+
+export interface TourStopFeasibilityVerdict {
+    status: 'OPTIMAL' | 'TIGHT_TURNAROUND' | 'LOGISTIC_RISK' | 'INEFFICIENT_BACKTRACK';
+    feasibilityRating: number; // 1 to 5
+    warningNotes: string;
+    recommendedRestHours: number;
+}
+
+export async function judgeTourStopFeasibility(
+    input: TourStopHopInput
+): Promise<TourStopFeasibilityVerdict> {
+    const driveHoursEst = input.distanceMiles / 50; // Conservative 50mph tour bus / van average with trailer
+    const availableRest = Math.max(0, input.hoursBetweenShows - driveHoursEst - 3); // 3 hrs for loadout/load-in
+
+    let status: TourStopFeasibilityVerdict['status'] = 'OPTIMAL';
+    let rating = 5;
+    let warnings = 'Smooth routing: ample sleep and soundcheck margin.';
+    let restHours = 8;
+
+    if (driveHoursEst + 4 > input.hoursBetweenShows) {
+        status = 'LOGISTIC_RISK';
+        rating = 1;
+        warnings = `CRITICAL DELAY HAZARD: ${input.distanceMiles}mi requires ~${driveHoursEst.toFixed(1)}h drive, exceeding available window (${input.hoursBetweenShows}h). High risk of missed soundcheck.`;
+        restHours = 2;
+    } else if (availableRest < 6) {
+        status = 'TIGHT_TURNAROUND';
+        rating = 2;
+        warnings = `Tight turnaround: driver fatigue risk on ${input.originCity} → ${input.destinationCity} run. Consider alternate driver or midday lobby rest.`;
+        restHours = 5;
+    } else if (input.distanceMiles < 250 && input.hoursBetweenShows >= 20) {
+        status = 'OPTIMAL';
+        rating = 5;
+        warnings = 'Ideal tour hop: short distance allows leisurely transit and full artist vocal recovery.';
+        restHours = 9;
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            status,
+            feasibilityRating: rating,
+            warningNotes: warnings,
+            recommendedRestHours: restHours,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                origin: input.originCity,
+                dest: input.destinationCity,
+                miles: input.distanceMiles,
+                windowHours: input.hoursBetweenShows,
+                overnight: input.isOvernightDrive,
+            },
+            questions: {
+                hop_status: {
+                    type: 'choice' as const,
+                    instructions: 'Evaluate the physical transit feasibility of this tour stop transition for touring artists and crew.',
+                    criteria: {
+                        OPTIMAL: 'Safe, sustainable driving distance with sufficient sleep and soundcheck buffer.',
+                        TIGHT_TURNAROUND: 'Challenging schedule requiring disciplined loadout; elevated fatigue risk.',
+                        LOGISTIC_RISK: 'Dangerously tight transit window prone to vehicle delays and canceled performances.',
+                        INEFFICIENT_BACKTRACK: 'Geographic backtracking that burns excessive fuel and crew energy.',
+                    },
+                },
+                feasibility: {
+                    type: 'score' as const,
+                    instructions: 'Rate tour hop safety and scheduling sustainability from 1 (unacceptable hazard) to 5 (perfect routing).',
+                    range: [1, 5] as [number, number],
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const statusAns = ans?.hop_status as { choice?: unknown } | undefined;
+        const feasiAns = ans?.feasibility as { score?: unknown } | undefined;
+
+        const resolvedStatus = (typeof statusAns?.choice === 'string' ? statusAns.choice : status) as TourStopFeasibilityVerdict['status'];
+        const resolvedRating = typeof feasiAns?.score === 'number' ? Math.round(feasiAns.score) : rating;
+
+        return {
+            status: resolvedStatus,
+            feasibilityRating: resolvedRating,
+            warningNotes: resolvedRating <= 2 ? warnings : 'Routing certified by Road Manager Jev intelligence.',
+            recommendedRestHours: restHours,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'tour stop feasibility judgment');
+        return {
+            status,
+            feasibilityRating: rating,
+            warningNotes: warnings,
+            recommendedRestHours: restHours,
+        };
+    }
+}
+

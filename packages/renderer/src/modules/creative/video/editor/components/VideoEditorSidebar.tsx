@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Settings, Layers, Image as ImageIcon, Trash2, Plus } from 'lucide-react';
+import { Settings, Layers, Image as ImageIcon, Trash2, Plus, Scissors } from 'lucide-react';
 import { EditorAssetLibrary } from './EditorAssetLibrary'; // Adjust import path as needed
+import { VideoChunkSlicerCard } from './VideoChunkSlicerCard';
 import { VideoProject } from '../../store/videoEditorStore';
 import { HistoryItem } from '@/core/store/slices/creative';
 
 interface VideoEditorSidebarProps {
-    activeTab: 'project' | 'tracks' | 'assets';
-    setActiveTab: (tab: 'project' | 'tracks' | 'assets') => void;
+    activeTab: 'project' | 'tracks' | 'assets' | 'chunks';
+    setActiveTab: (tab: 'project' | 'tracks' | 'assets' | 'chunks') => void;
     project: VideoProject;
     updateProject: (updates: Partial<VideoProject>) => void;
     removeTrack: (id: string) => void;
@@ -72,10 +73,24 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
                 >
                     <ImageIcon size={16} />
                 </button>
+                <button
+                    onClick={() => setActiveTab('chunks')}
+                    className={`p-1 rounded-lg transition-colors ${activeTab === 'chunks' ? 'bg-purple-600/20 text-purple-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
+                    title="Smart Slicer (iPhone / B-Roll)"
+                    data-testid="sidebar-tab-chunks"
+                >
+                    <Scissors size={16} />
+                </button>
             </div>
 
             {/* Sidebar Content */}
-            <div className="w-56 shrink-0 bg-[--card] overflow-y-auto custom-scrollbar">
+            <div className={`shrink-0 bg-[--card] overflow-y-auto custom-scrollbar transition-all duration-200 ${activeTab === 'chunks' ? 'w-80' : 'w-56'}`}>
+                {activeTab === 'chunks' && (
+                    <div className="h-full p-2">
+                        <VideoChunkSlicerCard />
+                    </div>
+                )}
+
                 {activeTab === 'assets' && (
                     <EditorAssetLibrary onDragStart={onLibraryDragStart} />
                 )}

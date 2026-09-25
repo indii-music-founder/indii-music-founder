@@ -86,6 +86,13 @@ describe('RoadAgent', () => {
             required: ['url'],
         }));
         expect(declaration?.parameters.properties).not.toHaveProperty('action');
+    it('declares bounded read-only public-page extraction', () => {
+        const declaration = RoadAgent.tools[0]?.functionDeclarations
+            .find(tool => tool.name === 'web_extract');
+        expect(declaration?.parameters).toMatchObject({
+            required: ['url'],
+            properties: { url: { type: 'STRING' } },
+        });
         expect(declaration?.description).toContain('cannot log in, click, type, or submit forms');
     });
 
