@@ -1,5 +1,4 @@
 import React, { useRef, useCallback, useState } from 'react';
-import { useGodMode } from '@/hooks/useGodMode';
 import { useTranslation } from 'react-i18next';
 import { usePowerState } from '@/core/hooks/usePowerState';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,6 +12,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { useGatedModules } from '@/config/featureFlags';
 import { ProjectList } from './sidebar/ProjectList';
+import { NextBestActionCard } from './sidebar/NextBestActionCard';
 import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
 import { AgentCanvasToggle } from './AgentCanvasToggle';
 
@@ -123,7 +123,6 @@ export default function Sidebar() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { t } = useTranslation();
     const { isThrottled } = usePowerState();
-    const { isGodMode } = useGodMode();
     const { canAccessModule } = useOrganizationAccess();
 
     // UI state for collapsible sections
@@ -297,6 +296,13 @@ export default function Sidebar() {
                     </button>
                 </div>
             )}
+
+            {/* Next Best Action Suggestion (TypeSafe System One / Jev) */}
+            <NextBestActionCard
+                onNavigate={throttledSetModule}
+                currentModule={currentModule}
+                isSidebarOpen={isSidebarOpen}
+            />
 
             {/*
               ISSUE-1269: the god_mode "Command Center" pill lived here and routed to

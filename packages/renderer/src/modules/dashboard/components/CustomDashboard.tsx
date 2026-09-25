@@ -16,9 +16,12 @@ import {
 
 import { WidgetType, Widget, WIDGET_DEFINITIONS, STORAGE_KEY, loadWidgets, WIDGET_RENDERERS } from "./CustomDashboardWidgets";
 import { useTranslation } from 'react-i18next';
+import { DynamicModuleContainer } from '@/components/layout/DynamicModuleContainer';
+import { useStore } from '@/core/store';
 
 export function CustomDashboard() {
     const { t } = useTranslation();
+    const user = useStore(state => state.user);
     const [widgets, setWidgets] = useState<Widget[]>(() => loadWidgets());
     const [isEditMode, setIsEditMode] = useState(false);
     const [showPicker, setShowPicker] = useState(false);
@@ -208,6 +211,11 @@ export function CustomDashboard() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Dynamic Jev Fast-Path Dashboard Assembler */}
+            <div className="mb-6">
+                <DynamicModuleContainer artistId={user?.uid || 'artist_default'} />
+            </div>
 
             {/* Widget Grid */}
             <div className="grid grid-cols-1 gap-4 @xl:grid-cols-2 @3xl:gap-6 @5xl:grid-cols-3" data-testid="custom-dashboard-grid">

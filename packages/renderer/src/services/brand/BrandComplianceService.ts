@@ -106,16 +106,41 @@ export function createDefaultVisionProbe(): ComplianceVisionProbe {
                 }
                 const objects = await imageAnalysisService.detectObjects(
                     base64,
-                    'Detect the brand logo mark in this image if one is present. Return the object with label "logo" and its bounding box.'
+                    'Detect prominent objects, symbols, emblems, and potential brand marks in this image. Return their labels and bounding boxes.'
                 );
-                const logo = objects.find((o) => o.label.toLowerCase().includes('logo'));
-                if (!logo) return null;
+                if (!objects || objects.length === 0) return null;
+
+                let selected = objects.find((o) => o.label.toLowerCase().includes('logo'));
+
+                // When multiple candidates exist or no explicit "logo" label exists,
+                // let Jev choice-judge the true brand mark candidate.
+                if (objects.length > 1) {
+                    try {
+                        const { judgeBrandMarkCandidate } = await import('@/config/typesafeJudgments');
+                        const candidates = objects.slice(0, 10).map((o, idx) => ({
+                            id: `obj_${idx}`,
+                            label: o.label,
+                            boxDescription: `[ymin: ${Math.round(o.box.ymin)}, xmin: ${Math.round(o.box.xmin)}, ymax: ${Math.round(o.box.ymax)}, xmax: ${Math.round(o.box.xmax)}]`,
+                        }));
+                        const chosenId = await judgeBrandMarkCandidate(candidates);
+                        if (chosenId && chosenId.startsWith('obj_')) {
+                            const idx = Number(chosenId.replace('obj_', ''));
+                            if (!Number.isNaN(idx) && objects[idx]) {
+                                selected = objects[idx];
+                            }
+                        }
+                    } catch (e) {
+                        logger.debug('[BrandCompliance] Jev logo disambiguation skipped, keeping default match:', e);
+                    }
+                }
+
+                if (!selected) return null;
                 // Detection boxes are normalized 0-1000; the probe contract is 0..1.
                 return {
-                    ymin: logo.box.ymin / 1000,
-                    xmin: logo.box.xmin / 1000,
-                    ymax: logo.box.ymax / 1000,
-                    xmax: logo.box.xmax / 1000,
+                    ymin: selected.box.ymin / 1000,
+                    xmin: selected.box.xmin / 1000,
+                    ymax: selected.box.ymax / 1000,
+                    xmax: selected.box.xmax / 1000,
                 };
             } catch (err) {
                 logger.warn('[BrandCompliance] Logo detection failed; treating as not detected.', err);

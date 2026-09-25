@@ -104,6 +104,20 @@ Remaining gaps from `docs/GEMINI_ENTERPRISE_AGENT_PLATFORM.md:56-60`:
 
 ---
 
+## Phase 5 — Two-Sided Platform Ecosystem (Listener Social Discovery & Direct POD Merch)
+
+> **Specification:** `docs/TWO_SIDED_PLATFORM_VISION.md`
+
+- [ ] **The Listener Social Feed** — Cultural discovery hangout (MySpace Music / early SoundCloud era nostalgia), artist voice notes, and spontaneous audio memos.
+- [ ] **Zero-Friction In-Player Merch Drawer** — Real-time slide-up print-on-demand merch purchasing (tees, hats, vinyl) without interrupting audio playback.
+- [ ] **Jev AI Behind-the-Scenes Engines**:
+  - `judgeFanToMerchSku`: Instant natural-language routing from listener chat/comments to active POD inventory SKUs.
+  - `judgeAestheticMoodTagging`: Autonomous classification of indie tracks into cultural micro-genres and aesthetic discovery categories.
+  - `judgeUploadCopyrightRisk`: Real-time screening of uploads against bot risk, synthetic spam, and unauthorized audio samples.
+- [ ] **Direct-to-Fan Financials** — 85–90% revenue retention for independent creators with zero upfront inventory costs.
+
+---
+
 ## Release discipline
 
 - Conventional commits → `release-please` automation on `main`

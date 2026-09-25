@@ -75,7 +75,15 @@ export class CollaborationSplitsCompiler implements HarnessCompiler<Collaboratio
       if (!collab.hasAgreement) {
         missingAgreements.push(collab.id);
         
-        const isProducer = collab.roles.some(r => r.toLowerCase().includes('producer'));
+        // Fast deterministic baseline: includes producer in role title
+        // Also checks explicit requiresProducerAgreement flag if pre-judged by Jev
+        const hasProducerTitle = collab.roles.some(r => {
+          const lower = r.toLowerCase();
+          // Exclude executive producer from requiring track-level audio producer agreement
+          if (lower.includes('executive')) return false;
+          return lower.includes('producer') || lower.includes('beatmaker') || lower.includes('track producer');
+        });
+        const isProducer = hasProducerTitle || (collab as unknown as { requiresProducerAgreement?: boolean }).requiresProducerAgreement === true;
         
         if (isProducer) {
           findings.push({

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Clock, Lock, Unlock, DollarSign, Users, AlertTriangle, CreditCard, Loader2, Download } from 'lucide-react';
+import { CheckCircle2, Clock, Lock, Unlock, DollarSign, Users, AlertTriangle, CreditCard, Loader2, Download, ShieldCheck } from 'lucide-react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { onSnapshot, collection, query, where, getFirestore } from 'firebase/firestore';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
 import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
+import { judgeSplitSheetVerification, SplitSheetVerificationResult } from '@/config/typesafeJudgments';
 
 /* ================================================================== */
 /*  Split Sheet Escrow — Collaborative Funds Release Tool              */
@@ -33,6 +34,7 @@ export function SplitSheetEscrow() {
     const [released, setReleased] = useState(false);
     const [releasing, setReleasing] = useState(false);
     const [releaseError, setReleaseError] = useState<string | null>(null);
+    const [splitAudit, setSplitAudit] = useState<SplitSheetVerificationResult | null>(null);
     // ISSUE-1442: wire the collaborator sign-off to the signEscrow callable —
     // previously nothing could record a signature, so an escrow could never
     // reach FULLY_SIGNED and releaseEscrow was permanently dead-locked.
@@ -41,6 +43,30 @@ export function SplitSheetEscrow() {
     const [exporting, setExporting] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [exportUrl, setExportUrl] = useState<string | null>(null);
+
+    // Fast-path Jev legal rights & split verification
+    useEffect(() => {
+        if (collaborators.length === 0) {
+            setSplitAudit(null);
+            return;
+        }
+        let active = true;
+        judgeSplitSheetVerification(
+            collaborators.map((c) => ({
+                name: c.name,
+                role: c.role,
+                splitPct: c.splitPct,
+            })),
+            releaseTitle
+        ).then((res) => {
+            if (active && res) {
+                setSplitAudit(res);
+            }
+        }).catch(() => {});
+        return () => {
+            active = false;
+        };
+    }, [collaborators, releaseTitle]);
 
     useEffect(() => {
         if (!user) return;
@@ -281,6 +307,32 @@ export function SplitSheetEscrow() {
                             />
                         </div>
                     </div>
+
+                    {/* Jev Split & Rights Intelligence Callout */}
+                    {splitAudit && (
+                        <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20 flex flex-col gap-1.5 text-xs text-purple-200">
+                            <div className="flex items-center justify-between">
+                                <span className="font-bold uppercase tracking-wider text-[10px] text-purple-300 flex items-center gap-1.5">
+                                    <ShieldCheck size={12} className="text-purple-400" />
+                                    Jev Rights Scope: {splitAudit.rightsScope.replace(/_/g, ' ')}
+                                </span>
+                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${splitAudit.splitRiskLevel > 1 ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                                    Risk Score: {splitAudit.splitRiskLevel}/3
+                                </span>
+                            </div>
+                            {splitAudit.advisories.length > 0 ? (
+                                splitAudit.advisories.map((adv, i) => (
+                                    <p key={i} className="text-purple-200/80 text-[11px] leading-tight">
+                                        • {adv}
+                                    </p>
+                                ))
+                            ) : (
+                                <p className="text-purple-200/80 text-[11px]">
+                                    ✓ Splits aligned with industry publishing & sound recording standards.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {/* Collaborator List */}
                     <div className="space-y-2">

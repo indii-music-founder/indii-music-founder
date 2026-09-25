@@ -3,7 +3,7 @@ import { Command } from 'cmdk';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
-    AudioWaveform, Settings, StickyNote, PanelRight, Activity, AlertCircle, Lightbulb, HelpCircle,
+    AudioWaveform, Settings, StickyNote, PanelRight, Activity, AlertCircle, Lightbulb, HelpCircle, Sparkles,
 } from 'lucide-react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { useBugReport } from '@/modules/debug';
@@ -12,6 +12,7 @@ import { getCommandMenuModules, HIDDEN_MODULE_REASONS, type ModuleRegistryEntry 
 import { type ModuleId } from '@/core/constants';
 import { useGatedModules } from '@/config/featureFlags';
 import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
+import { judgeCommandIntent, type CommandIntentJudgment } from '@/config/typesafeJudgments';
 
 /**
  * UnifiedCommandMenu — the global ⌘K palette.
@@ -70,6 +71,34 @@ export function UnifiedCommandMenu() {
             items: section.items.filter(item => !gatedModules.has(item.id) && canAccessModule(item.id)),
         }))
         .filter(section => section.items.length > 0);
+
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [suggestedIntent, setSuggestedIntent] = React.useState<CommandIntentJudgment | null>(null);
+
+    React.useEffect(() => {
+        if (!isCommandMenuOpen) {
+            setSearchQuery('');
+            setSuggestedIntent(null);
+            return;
+        }
+
+        const trimmed = searchQuery.trim();
+        if (trimmed.length < 3) {
+            setSuggestedIntent(null);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            const verdict = await judgeCommandIntent(trimmed);
+            if (verdict && verdict.targetModule && verdict.targetModule !== 'none') {
+                setSuggestedIntent(verdict);
+            } else {
+                setSuggestedIntent(null);
+            }
+        }, 200);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery, isCommandMenuOpen]);
 
     // Toggle the menu when ⌘K is pressed
     useGlobalShortcut({
@@ -140,6 +169,8 @@ export function UnifiedCommandMenu() {
                 <div className="flex items-center border-b border-white/5 px-4 h-14">
                     <Command.Input
                         autoFocus
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
                         className="flex-1 w-full bg-transparent border-0 outline-none text-white placeholder-slate-400 text-lg h-full"
                         placeholder="Search commands, navigate modules, open settings..."
                     />
@@ -147,8 +178,46 @@ export function UnifiedCommandMenu() {
 
                 <Command.List className="max-h-[50vh] overflow-y-auto px-2 py-4 custom-scrollbar text-sm font-medium">
                     <Command.Empty className="py-6 text-center text-slate-400">
-                        No results found.
+                        {suggestedIntent && suggestedIntent.targetModule && suggestedIntent.targetModule !== 'none' ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <span className="text-slate-400">No exact command matches for &quot;{searchQuery}&quot;.</span>
+                                <button
+                                    type="button"
+                                    onClick={() => runCommand(() => {
+                                        if (suggestedIntent.targetModule && suggestedIntent.targetModule !== 'none') {
+                                            setModule(suggestedIntent.targetModule as ModuleId);
+                                        }
+                                    })}
+                                    className="mt-2 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-sm font-medium transition-colors border border-amber-500/30"
+                                >
+                                    <Sparkles className="w-4 h-4 text-amber-400" />
+                                    <span>Open {suggestedIntent.suggestedLabel}</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 uppercase font-mono tracking-wider ml-1">AI Match</span>
+                                </button>
+                            </div>
+                        ) : (
+                            'No results found.'
+                        )}
                     </Command.Empty>
+
+                    {suggestedIntent && suggestedIntent.targetModule && suggestedIntent.targetModule !== 'none' && (
+                        <Command.Group heading="Suggested by indii AI" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-amber-500/10 [&_[cmdk-item][data-selected]]:text-white">
+                            <Command.Item
+                                value={`${searchQuery} ${suggestedIntent.suggestedLabel} ${suggestedIntent.targetModule}`}
+                                onSelect={() => runCommand(() => {
+                                    if (suggestedIntent.targetModule && suggestedIntent.targetModule !== 'none') {
+                                        setModule(suggestedIntent.targetModule as ModuleId);
+                                    }
+                                })}
+                                className={itemClass}
+                            >
+                                <Sparkles className="w-4 h-4 text-amber-400" />
+                                <span className="text-amber-200 font-semibold">{suggestedIntent.suggestedLabel}</span>
+                                <span className="text-xs text-slate-400 ml-2">Matched intent: &quot;{searchQuery}&quot;</span>
+                                <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">AI match</span>
+                            </Command.Item>
+                        </Command.Group>
+                    )}
 
                     {recentModules.length > 0 && (
                         <Command.Group heading="Recent" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
