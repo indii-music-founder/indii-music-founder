@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { CatalogRail } from './components/CatalogRail';
@@ -11,6 +11,7 @@ import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, Org
 import { logger } from '@/utils/logger';
 import { loadRegistrationCatalog } from './services/RegistrationCatalog';
 import { getRegistrationArtistContext } from './services/RegistrationArtistContext';
+import { existingCatalogIntelligenceService } from '@/services/ingestion/ExistingCatalogIntelligenceService';
 
 // ============================================================================
 // Data loaders (module-level, not component-level)
@@ -106,6 +107,11 @@ export default function RegistrationCenter() {
   const selectedProId = typeof confirmedPro === 'string'
     ? (proOrgIds[confirmedPro.toLowerCase()] ?? null)
     : null;
+  const catalogIntelligenceReport = useMemo(() => (
+    user?.uid
+      ? existingCatalogIntelligenceService.analyzeRegistrationCatalog(`legacy-catalog:${user.uid}`, tracks)
+      : null
+  ), [tracks, user?.uid]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -238,6 +244,7 @@ export default function RegistrationCenter() {
             tracks={tracks}
             selectedTrackId={selectedTrack?.id ?? null}
             registrationStates={registrationStates}
+            intelligenceReport={catalogIntelligenceReport}
             onSelectTrack={handleSelectTrack}
           />
         ) : (
