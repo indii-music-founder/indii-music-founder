@@ -56,6 +56,14 @@ describe('Health Check workflow clean-install contract', () => {
       /cd packages\/firebase && npm install --package-lock-only --no-workspaces --quiet/,
     );
   });
+
+  it('pins the Cloud Build npm runtime past the Node 22 Arborist install crash', () => {
+    const firebasePackage = JSON.parse(
+      readFileSync(join(repoRoot, 'packages/firebase/package.json'), 'utf8'),
+    ) as { engines: { node: string; npm: string } };
+
+    expect(firebasePackage.engines).toEqual({ node: '22', npm: '11.20.0' });
+  });
 });
 
 describe('Deploy workflow staging gate contract', () => {
