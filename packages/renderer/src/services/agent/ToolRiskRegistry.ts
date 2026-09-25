@@ -76,9 +76,8 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     list_datasets: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     run_cohort_analysis: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
 
-    // Browser (read)
-    browser_navigate: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
-    browser_snapshot: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
+    // Browser (read-only public page extraction)
+    web_extract: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read bounded text from a public page in an isolated session; no page actions or login' },
 
     // Computer (read) — CE-1, ISSUE-1110
     computer_check_permissions: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Preflight macOS Screen Recording / Accessibility permission status' },
@@ -236,9 +235,6 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     log_audit_event: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     apply_watermark: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     require_biometric_auth: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
-
-    // Browser (write — actions: interacting with external web forms/portals requires approval)
-    browser_action: { riskTier: 'write', permissionTier: 'plugin', requiresApproval: true, description: 'External browser DOM interaction (click, type, submit) — requires user approval' },
 
     // Computer (write — CE-1, ISSUE-1110). Screen contents and app launches are sensitive
     // even though they aren't "destructive" in the delete/rotate sense; require approval

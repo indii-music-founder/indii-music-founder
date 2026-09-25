@@ -1,11 +1,10 @@
 import log from 'electron-log';
-import { ipcMain, app, IpcMainInvokeEvent } from 'electron';
+import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
 import fs from 'fs/promises';
 import path from 'path';
-import { AgentActionSchema, AgentNavigateSchema, AgentHistorySaveSchema, AgentHistoryIdSchema } from '../utils/validation';
+import { AgentNavigateSchema, AgentHistorySaveSchema, AgentHistoryIdSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
-import { validateSafeUrlAsync } from '../utils/network-security';
 import { historyStore } from '../services/HistoryStore';
 
 export function registerAgentHandlers() {
@@ -122,18 +121,6 @@ export function registerAgentHandlers() {
         }
     });
 
-    ipcMain.handle('agent:capture-state', async (event: IpcMainInvokeEvent) => {
-        try {
-            validateSender(event);
-            const { browserAgentService } = await import('../services/BrowserAgentService');
-            const snapshot = await browserAgentService.captureSnapshot();
-            return { success: true, ...snapshot };
-        } catch (error) {
-            log.error('Agent Capture State Failed:', error);
-            return { success: false, error: String(error) };
-        }
-    });
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcMain.handle('agent:multi-replace-file-content', async (event: IpcMainInvokeEvent, args: any) => {
         try {
@@ -194,79 +181,18 @@ export function registerAgentHandlers() {
         }
     });
 
-    // Test Browser Agent (Development ONLY — hardcodes google.com, not an agent surface)
-    if (!app.isPackaged) {
-        ipcMain.handle('test:browser-agent', async (event: IpcMainInvokeEvent, query?: string) => {
-            const { browserAgentService } = await import('../services/BrowserAgentService');
-            try {
-                validateSender(event);
-                // Input validation (query is optional but if present should be safe)
-                if (query && typeof query !== 'string') {
-                    throw new Error('Invalid query format');
-                }
-
-                await browserAgentService.startSession();
-                if (query) {
-                    await browserAgentService.navigateTo('https://www.google.com');
-                    await browserAgentService.typeInto('[name="q"]', query);
-                    await browserAgentService.pressKey('Enter');
-                    await browserAgentService.waitForSelector('#search');
-                } else {
-                    await browserAgentService.navigateTo('https://www.google.com');
-                }
-                const snapshot = await browserAgentService.captureSnapshot();
-                await browserAgentService.closeSession();
-                return { success: true, ...snapshot };
-            } catch (error) {
-                log.error('Agent Test Failed:', error);
-                return { success: false, error: String(error) };
-            }
-        });
-    }
-
-    // Agent Browser Bridge — registered in BOTH dev and packaged builds.
-    // ERROR_LEDGER pattern ("IPC handlers not registered → renderer hangs"): environment-
-    // gated handler registration strands the other environment. Gating these behind
-    // !app.isPackaged left every packaged desktop build with no working browser_tool
-    // (ISSUE-972 cause #2). The SSRF check and Zod validation below are unconditional.
-    ipcMain.handle('agent:navigate-and-extract', async (event: IpcMainInvokeEvent, url: string) => {
+    // Read-only web extraction is available in packaged and development builds.
+    // A request owns its ephemeral session from start through cleanup; there is
+    // no shared browser state or input/action IPC.
+    ipcMain.handle('agent:extract-web-page', async (event: IpcMainInvokeEvent, url: string) => {
         try {
             validateSender(event);
             const validated = AgentNavigateSchema.parse({ url });
-
-            // SECURITY: Prevent SSRF / Internal Network Scanning
-            await validateSafeUrlAsync(validated.url);
-
-            const { browserAgentService } = await import('../services/BrowserAgentService');
-
-            await browserAgentService.startSession();
-            await browserAgentService.navigateTo(validated.url);
-            const snapshot = await browserAgentService.captureSnapshot();
-            // Session stays open so follow-up browser_action calls hit the same page;
-            // the service's idle reaper closes it after inactivity.
-            return { success: true, ...snapshot };
+            const { webExtractionService } = await import('../services/WebExtractionService');
+            const data = await webExtractionService.extract(validated.url);
+            return { success: true, data };
         } catch (error) {
-            log.error('Agent Navigate Failed:', error);
-            const { browserAgentService } = await import('../services/BrowserAgentService');
-            await browserAgentService.closeSession();
-
-            if (error instanceof z.ZodError) {
-                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
-            }
-            return { success: false, error: String(error) };
-        }
-    });
-
-    ipcMain.handle('agent:perform-action', async (event: IpcMainInvokeEvent, action: string, selector: string, text?: string) => {
-        try {
-            validateSender(event);
-            // Validate inputs against schema (allows text to be optional)
-            const validated = AgentActionSchema.parse({ action, selector, text });
-
-            const { browserAgentService } = await import('../services/BrowserAgentService');
-            return await browserAgentService.performAction(validated.action as "click" | "type" | "hover", validated.selector, validated.text);
-        } catch (error) {
-            log.error('Agent Action Failed:', error);
+            log.error('Agent Web Extraction Failed:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }

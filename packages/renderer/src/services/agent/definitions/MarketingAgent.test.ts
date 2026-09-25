@@ -29,7 +29,7 @@ vi.mock('../tools/MarketingTools', () => ({
 // Mock UniversalTools
 vi.mock('../tools/UniversalTools', () => ({
     UniversalTools: {
-        browser_tool: vi.fn(),
+        web_extract: vi.fn(),
         indii_image_gen: vi.fn(),
     }
 }));
@@ -59,7 +59,7 @@ describe('MarketingAgent', () => {
         expect(MarketingAgent.authorizedTools).toContain('schedule_content');
         expect(MarketingAgent.authorizedTools).toContain('track_performance');
         expect(MarketingAgent.authorizedTools).toContain('generate_campaign_from_audio');
-        expect(MarketingAgent.authorizedTools).toContain('browser_tool');
+        expect(MarketingAgent.authorizedTools).toContain('web_extract');
         expect(MarketingAgent.authorizedTools).toContain('indii_image_gen');
         expect(MarketingAgent.authorizedTools).toContain('create_artifact_drop');
         expect(MarketingAgent.authorizedTools).toContain('generate_ab_campaign');
@@ -79,7 +79,7 @@ describe('MarketingAgent', () => {
         expect(MarketingAgent.functions!.schedule_content).toBeDefined();
         expect(MarketingAgent.functions!.track_performance).toBeDefined();
         expect(MarketingAgent.functions!.generate_campaign_from_audio).toBeDefined();
-        expect(MarketingAgent.functions!.browser_tool).toBeDefined();
+        expect(MarketingAgent.functions!.web_extract).toBeDefined();
         expect(MarketingAgent.functions!.indii_image_gen).toBeDefined();
         expect(MarketingAgent.functions!.create_artifact_drop).toBeDefined();
         expect(MarketingAgent.functions!.generate_ab_campaign).toBeDefined();

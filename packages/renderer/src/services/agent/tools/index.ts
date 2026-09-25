@@ -34,7 +34,6 @@ import { ScreenwriterTools } from './ScreenwriterTools';
 import { AutonomousTools } from './AutonomousTools';
 import { CommerceTools } from './CommerceTools';
 import { BigQueryTools } from './BigQueryTools';
-import { BrowserTools } from './BrowserTools';
 import { ComputerTools } from './ComputerTools';
 import { Web3Tools } from './Web3Tools';
 import { CoreVaultTools } from './CoreVaultTools';
@@ -109,7 +108,6 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...AutonomousTools,
     ...CommerceTools,
     ...BigQueryTools,
-    ...BrowserTools,
     ...ComputerTools,
     ...Web3Tools,
     // Memory Architecture Layer 3 & 4
@@ -264,14 +262,12 @@ AVAILABLE TOOLS:
 92. generate_smart_contract(type, parties, terms) - Generate a Web3 smart contract (ERC-721 / ERC-1155).
 93. trace_blockchain_royalty(tokenId, chain) - Trace on-chain royalty history for a token.
 94. generate_token_gated_preview(assetId, tokenContract) - Check token-gated preview availability (currently unavailable until verification and protected delivery are deployed).
---- ANALYTICS & BROWSER ---
+--- ANALYTICS & WEB RESEARCH ---
 95. execute_bigquery_query(sql, projectId) - Execute a BigQuery SQL query for revenue analytics.
 96. get_table_schema(dataset, table) - Get BigQuery table schema.
 97. list_datasets(projectId) - List available BigQuery datasets.
 98. run_cohort_analysis(metric, cohortType, dateRange) - Run a user/fan cohort analysis.
-99. browser_navigate(url) - Navigate to a URL in the background browser.
-100. browser_action(action, selector, value) - Perform a browser action (click, type, select).
-101. browser_snapshot(format) - Take a snapshot of the current browser page.
+99. web_extract(url) - Read bounded text from a public web page in an isolated desktop session. Read-only; no login or page actions.
 --- CANVAS (A2UI - DETERMINISTIC UI VECTOR DRAWING) ---
 102. canvas_push(type, title, data, agentId?) - Push structured visual content (chart/table/card/markdown) to the user's workspace canvas.
 103. canvas_clear() - Clear all agent-pushed canvas panels.

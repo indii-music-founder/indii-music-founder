@@ -4,38 +4,32 @@ import { VenueScoutService } from './VenueScoutService';
 // Mock dependencies
 const {
     mockGetDocs,
-    mockAddDoc,
     mockCollection,
     mockQuery,
     mockWhere,
     mockUpdateDoc,
     mockDoc,
-    mockWriteBatch,
-    mockServerTimestamp
+    mockWriteBatch
 } = vi.hoisted(() => {
     return {
         mockGetDocs: vi.fn(),
-        mockAddDoc: vi.fn().mockResolvedValue({ id: 'mock-doc-id' }),
         mockCollection: vi.fn(),
         mockQuery: vi.fn(),
         mockWhere: vi.fn(),
         mockUpdateDoc: vi.fn(),
         mockDoc: vi.fn(() => 'MOCK_DOC_REF'),
-        mockWriteBatch: vi.fn(),
-        mockServerTimestamp: vi.fn()
+        mockWriteBatch: vi.fn()
     };
 });
 
 vi.mock('firebase/firestore', () => ({
     collection: mockCollection,
     getDocs: mockGetDocs,
-    addDoc: mockAddDoc,
     query: mockQuery,
     where: mockWhere,
     updateDoc: mockUpdateDoc,
     doc: mockDoc,
     writeBatch: mockWriteBatch,
-    serverTimestamp: mockServerTimestamp,
     getFirestore: vi.fn()
 }));
 
@@ -50,12 +44,6 @@ vi.mock('@/services/firebase', () => ({
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
     messaging: { getToken: vi.fn() }
-}));
-
-vi.mock('../../../services/agent/BrowserAgentDriver', () => ({
-    browserAgentDriver: {
-        drive: vi.fn()
-    }
 }));
 
 // Valid Mock Data
@@ -167,6 +155,12 @@ describe('VenueScoutService', () => {
 
             await expect(VenueScoutService.searchVenues('Nashville', 'Indie'))
                 .rejects.toThrow('Firestore offline');
+        });
+
+        it('does not claim automated web discovery is available', async () => {
+            await expect(VenueScoutService.searchVenues('Nashville', 'Rock', true))
+                .rejects.toThrow(/Automated public-web venue discovery is unavailable/);
+            expect(mockGetDocs).not.toHaveBeenCalled();
         });
 
         it('should cache results', async () => {

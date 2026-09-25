@@ -34,11 +34,11 @@ export const EventPlannerAgent: AgentConfig = {
             create_project: ProjectTools.create_project,
             search_knowledge: KnowledgeTools.search_knowledge,
             generate_social_post: SocialTools.generate_social_post,
-            browser_tool: UniversalTools.browser_tool,
+            web_extract: UniversalTools.web_extract,
             credential_vault: UniversalTools.credential_vault,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'search_places', 'get_place_details', 'get_distance_matrix', 'create_project', 'search_knowledge', 'generate_social_post', 'browser_tool', 'credential_vault'],
+    authorizedTools: ['list_domain_records', 'search_places', 'get_place_details', 'get_distance_matrix', 'create_project', 'search_knowledge', 'generate_social_post', 'web_extract', 'credential_vault'],
     tools: [{
         functionDeclarations: [
             ...eventPlannerRetrievalDeclarations,
@@ -113,16 +113,14 @@ export const EventPlannerAgent: AgentConfig = {
                 }
             },
             {
-                name: "browser_tool",
-                description: "Research venues, promoters, and production services online.",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
-                        url: { type: "STRING", description: "URL to open" },
-                        selector: { type: "STRING" }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {

@@ -91,10 +91,7 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
         </div>
       )}
 
-      {/* Manual step indicator — ISSUE-972: shown regardless of platform.
-          Desktop browser automation doesn't actually work in any current
-          build (see BrowserAgentService.isConfigured()'s doc comment), so
-          this can no longer imply the desktop app makes filing automatic. */}
+      {/* Filing is always completed by the user in the organization's portal. */}
       {adapter.requiresDesktop && status === 'not_started' && (
         <div className="mt-2 flex items-center gap-1 text-[11px] text-amber-500/80">
           <ExternalLink size={10} />

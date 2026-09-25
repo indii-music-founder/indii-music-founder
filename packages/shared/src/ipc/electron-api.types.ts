@@ -93,9 +93,11 @@ export interface ElectronSecurityAPI {
 }
 
 export interface ElectronAgentAPI {
-    navigateAndExtract: (url: string) => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
-    performAction: (action: string, selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
-    captureState: () => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
+    extractWebPage: (url: string) => Promise<{
+        success: boolean;
+        data?: { finalUrl: string; title: string; text: string; fetchedAt: string };
+        error?: string;
+    }>;
     saveHistory: (id: string, data: unknown) => Promise<{ success: boolean; error?: string }>;
     getHistory: (id: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
     deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
@@ -361,7 +363,6 @@ export interface ElectronAPI {
     window: ElectronWindowAPI;
 
     // Top-level test
-    testAgent: (query?: string) => Promise<unknown>;
 
     // Menu
     menu?: {

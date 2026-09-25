@@ -32,7 +32,7 @@ describe.skip('DistributionAgent Integration', () => {
         expect(toolNames).toContain('generate_bwarm');
         expect(toolNames).toContain('check_merlin_status');
 
-        expect(toolNames).toContain('browser_tool');
+        expect(toolNames).toContain('web_extract');
         expect(toolNames).toContain('pro_scraper');
         expect(toolNames).toContain('payment_gate');
         expect(toolNames).toContain('credential_vault');
