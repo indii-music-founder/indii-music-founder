@@ -69,4 +69,16 @@ export class FirebaseComputerAuthorizationBackend implements ComputerAuthorizati
             createdAtMs: data.createdAt,
         };
     }
+
+    async claimApproval(uid: string, approval: StoredComputerApproval, idToken: string): Promise<StoredComputerApproval> {
+        const url = `https://us-central1-${encodeURIComponent(this.projectId)}.cloudfunctions.net/claimComputerApproval`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: { approvalId: approval.id, expected: { agentId: approval.agentId, toolName: approval.toolName, args: approval.args, createdAtMs: approval.createdAtMs } } }),
+        });
+        const body = await response.json().catch(() => ({})) as { result?: StoredComputerApproval; error?: { message?: string } };
+        if (!response.ok || !body.result) throw new Error(body.error?.message || `Trusted approval claim failed (${response.status}).`);
+        return body.result;
+    }
 }
