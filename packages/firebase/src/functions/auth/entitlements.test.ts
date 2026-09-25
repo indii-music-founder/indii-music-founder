@@ -168,7 +168,7 @@ describe('server-proven tier resolution', () => {
     })).toBe(SubscriptionTier.FOUNDER);
   });
 
-  it('materializes paid tiers from a non-canceled subscription doc', () => {
+  it('materializes paid tiers only from recognized entitled subscription statuses', () => {
     expect(resolveServerProvenTier({
       isFounder: false,
       subscription: { tier: 'studio', status: 'active' },
@@ -181,6 +181,12 @@ describe('server-proven tier resolution', () => {
       isFounder: false,
       subscription: { tier: 'pro_yearly', status: 'past_due' },
     })).toBe(SubscriptionTier.PRO_YEARLY);
+    for (const status of ['incomplete', 'canceled', 'unknown', undefined]) {
+      expect(resolveServerProvenTier({
+        isFounder: false,
+        subscription: { tier: 'studio', ...(status ? { status } : {}) },
+      })).toBe(SubscriptionTier.FREE);
+    }
   });
 
   it('ignores canceled or free subscriptions and falls back to FREE', () => {

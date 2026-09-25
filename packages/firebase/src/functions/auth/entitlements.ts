@@ -37,8 +37,8 @@ export function tierRank(tier: SubscriptionTier): number {
 
 /**
  * The paid tier the server can prove RIGHT NOW from its own registries.
- * `founders/{uid}` wins; a non-canceled paid `subscriptions/{uid}` is the
- * second source (Stripe/webhook materialized). FREE is the fail-safe floor.
+ * `founders/{uid}` wins; an explicitly entitled paid `subscriptions/{uid}` is
+ * the second source (Stripe/webhook materialized). FREE is the fail-safe floor.
  * Never derives a tier from client-writable profile fields.
  */
 export function resolveServerProvenTier(options: {
@@ -49,7 +49,10 @@ export function resolveServerProvenTier(options: {
     const data = options.subscription;
     if (data) {
         const status = typeof data.status === 'string' ? data.status : undefined;
-        if (status !== 'canceled') {
+        // Subscription records are external-input materializations and may be
+        // stale or malformed. Grant only for statuses with an explicit access
+        // policy; incomplete/unknown states must never imply payment.
+        if (status === 'active' || status === 'trialing' || status === 'past_due') {
             const tier = normalizeSubscriptionTier(data.tier);
             if (tier !== SubscriptionTier.FREE) return tier;
         }
