@@ -276,8 +276,11 @@ ALWAYS preserve what they're NOT changing.`;
                         }
                     });
                 } else if (file.type === 'document' && file.content) {
+                    const provenanceNote = file.contentProvenance
+                        ? `\n[Extraction provenance: ${file.contentProvenance.state}; ${file.contentProvenance.note || 'not independently verified'}]`
+                        : '';
                     lastMsg.parts.push({
-                        text: `[Attached Document: ${file.file.name}]\n${file.content}`
+                        text: `[Attached Document: ${file.file.name}]${provenanceNote}\n${file.content}`
                     });
                 } else if (file.type === 'audio' && file.base64) {
                     // ISSUE-955: previously had no audio branch at all — an

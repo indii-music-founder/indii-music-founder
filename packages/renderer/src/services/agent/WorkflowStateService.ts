@@ -2,7 +2,7 @@ import { FirestoreService } from '../FirestoreService';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { doc, runTransaction } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
 import type {
     WorkflowExecution,
     WorkflowStepExecution,
@@ -12,7 +12,10 @@ import type {
 import {
     WorkflowExecutionSchema,
     WorkflowExecutionStatusEnum,
-    WorkflowStepStatusEnum
+    WorkflowStepStatusEnum,
+    CanonicalArtistEntityIdSchema,
+    predictNextWorkflows,
+    type WorkflowPredictionReport,
 } from '@indii/shared';
 
 /**
@@ -39,6 +42,11 @@ class WorkflowStateServiceImpl {
         }) as WorkflowExecution;
     }
 
+    private getCanonicalArtistId(value: string | undefined): string | undefined {
+        const parsed = CanonicalArtistEntityIdSchema.safeParse(value);
+        return parsed.success ? parsed.data : undefined;
+    }
+
     private serializeEdges(edges: WorkflowEdge[]): WorkflowEdge[] {
         return edges.map(({ from, to, label, metadata }) => ({
             from,
@@ -57,7 +65,8 @@ class WorkflowStateServiceImpl {
         workflowId: string,
         steps: WorkflowStep[],
         edges: WorkflowEdge[],
-        sessionId?: string
+        sessionId?: string,
+        artistEntityId?: string,
     ): Promise<WorkflowExecution> {
         const service = this.getService(userId);
         const id = uuidv4();
@@ -74,9 +83,12 @@ class WorkflowStateServiceImpl {
             };
         }
 
+        const canonicalArtistEntityId = this.getCanonicalArtistId(artistEntityId);
+
         const execution: WorkflowExecution = {
             id,
             workflowId,
+            ...(canonicalArtistEntityId ? { artistEntityId: canonicalArtistEntityId } : {}),
             sessionId,
             userId,
             status: WorkflowExecutionStatusEnum.enum.PLANNED,
@@ -98,6 +110,24 @@ class WorkflowStateServiceImpl {
         const service = this.getService(userId);
         const executions = await service.list();
         return executions.map(execution => this.normalizeExecution(execution));
+    }
+
+    /**
+     * Return an advisory next-workflow suggestion from this authenticated
+     * user's persisted completion history. This is read-only and never starts
+     * or authorizes a workflow.
+     */
+    async getNextWorkflowPrediction(userId: string, artistEntityId: string): Promise<WorkflowPredictionReport | null> {
+        const scopedUserId = userId.trim();
+        const canonicalArtistId = CanonicalArtistEntityIdSchema.safeParse(artistEntityId);
+        if (!scopedUserId || !canonicalArtistId.success || auth.currentUser?.uid !== scopedUserId) return null;
+        const executions = await this.getExecutionsByUser(scopedUserId);
+        return predictNextWorkflows({
+            userId: scopedUserId,
+            artistEntityId: canonicalArtistId.data,
+            executions,
+            evaluatedAt: new Date().toISOString(),
+        });
     }
 
     /**

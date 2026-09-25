@@ -292,6 +292,11 @@ export default function OnboardingPage() {
                                         exit={{ height: 0, opacity: 0 }}
                                         className="flex flex-wrap gap-2 mb-4"
                                     >
+                                        {files.some(file => file.contentProvenance) && (
+                                            <p role="note" className="basis-full rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-100/80">
+                                                PDF text is extracted on this device. If you send this conversation, the extracted text is shared with the connected AI; its source remains detected and unverified.
+                                            </p>
+                                        )}
                                         {files.map(file => (
                                             <div key={file.id} className="relative group animate-in zoom-in-75 duration-300">
                                                 {file.type === 'image' ? (
@@ -301,6 +306,15 @@ export default function OnboardingPage() {
                                                         <FileText size={20} className="text-dept-creative mb-1" />
                                                         <span className="text-[8px] text-gray-500 truncate w-full text-center">{file.file.name}</span>
                                                     </div>
+                                                )}
+                                                {file.contentProvenance && (
+                                                    <span
+                                                        className="absolute bottom-1 left-1 rounded bg-amber-500/90 px-1 text-[7px] font-bold text-black"
+                                                        title="Locally extracted PDF text; source not independently verified"
+                                                        aria-label="PDF text detected locally; not verified"
+                                                    >
+                                                        DETECTED
+                                                    </span>
                                                 )}
                                                 <button
                                                     onClick={() => removeFile(file.id)}

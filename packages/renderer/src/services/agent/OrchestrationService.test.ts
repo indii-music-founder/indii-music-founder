@@ -28,7 +28,8 @@ vi.mock('./WorkflowStateService', () => ({
 describe('OrchestrationService', () => {
     const mockContext = {
         projectId: 'test-project',
-        userId: 'test-user'
+        userId: 'test-user',
+        userProfile: { artistEntityId: 'canonical-artist-1' },
     };
 
     beforeEach(() => {
@@ -189,7 +190,8 @@ describe('OrchestrationService', () => {
             'INDII_GROWTH_PROTOCOL',
             expect.any(Array),
             expect.any(Array),
-            'test-project'
+            'test-project',
+            'canonical-artist-1'
         );
     });
 

@@ -41,7 +41,10 @@ vi.mock('@/services/founders/founderFunnel', () => ({
 }));
 
 vi.mock('@/services/utils/PDFService', () => ({
-    PDFService: { extractText: mockExtractText },
+    PDFService: {
+        extractText: mockExtractText,
+        extractTextWithProvenance: mockExtractText,
+    },
 }));
 
 /**
@@ -55,7 +58,21 @@ describe('useOnboarding processFiles (ISSUE-955)', () => {
     });
 
     it('extracts real PDF text via PDFService instead of a size-only placeholder', async () => {
-        mockExtractText.mockResolvedValue('--- Page 1 ---\nOur new single drops Friday.');
+        mockExtractText.mockResolvedValue({
+            text: '--- Page 1 ---\nOur new single drops Friday.',
+            pageCount: 1,
+            provenance: {
+                state: 'DETECTED',
+                sourceType: 'SYSTEM',
+                sourceId: 'local-pdf-text-extraction',
+                evidence: [],
+                observedAt: '2026-09-25T00:00:00.000Z',
+                note: 'Locally extracted; not independently verified.',
+            },
+            filename: 'press-kit.pdf',
+            mode: 'LOCAL_EXTRACTION',
+            persisted: false,
+        });
         const { result } = renderHook(() => useOnboarding());
 
         const pdfFile = new File(['pdf-bytes'], 'press-kit.pdf', { type: 'application/pdf' });
@@ -65,6 +82,7 @@ describe('useOnboarding processFiles (ISSUE-955)', () => {
 
         await waitFor(() => expect(result.current.files).toHaveLength(1));
         expect(result.current.files[0]!.content).toContain('Our new single drops Friday.');
+        expect(result.current.files[0]!.contentProvenance?.state).toBe('DETECTED');
         expect(result.current.files[0]!.content).not.toMatch(/^\[PDF Document:.*Size:/);
     });
 
