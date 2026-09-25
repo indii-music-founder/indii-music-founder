@@ -1,7 +1,6 @@
 import { Venue } from '../schemas';
-import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
 import { db, auth } from '@/services/firebase';
-import { collection, getDocs, addDoc, query, where, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { VenueSchema, SearchOptionsSchema } from '../schemas';
 import { logger } from '@/utils/logger';
 
@@ -58,7 +57,7 @@ export class VenueScoutService {
 
         try {
             if (isAutonomous) {
-                return this._runAutonomousSearch(city, genre, emit);
+                throw new Error('Automated public-web venue discovery is unavailable. Review venues manually and verify details on each venue’s website.');
             }
 
             // Query Firestore
@@ -111,112 +110,6 @@ export class VenueScoutService {
             ...v,
             fitScore: this.calculateFitScore(v, genre, 300)
         }));
-    }
-
-    /**
-     * Autonomous Agent Search
-     */
-    private static async _runAutonomousSearch(city: string, genre: string, emit: (step: ScoutEvent['step'], message: string, progress: number) => void): Promise<Venue[]> {
-        emit('SCANNING_MAP', `Launching headless browser agent...`, 20);
-
-        const goal = [
-            `Find real music venues in ${city} that host ${genre} music.`,
-            'Return only verifiable structured data as JSON:',
-            '{"venues":[{"name":"...","city":"...","state":"...","capacity":0,"genres":["..."],"website":"https://...","contactEmail":"","status":"active","notes":"source URL or evidence"}]}',
-            'Do not infer missing capacity, contact, website, or status.'
-        ].join(' ');
-
-        try {
-            const result = await browserAgentDriver.drive('https://www.google.com', goal);
-            if (!result.success || !result.finalData) {
-                throw new Error(`Autonomous venue scan failed: ${result.logs.join('\n')}`);
-            }
-
-            const discovered = this._parseAutonomousVenueData(result.finalData, genre);
-            if (discovered.length === 0) {
-                throw new Error('Autonomous venue scan returned no valid venue records.');
-            }
-
-            if (!auth.currentUser) {
-                throw new Error('Authenticated user is required to save autonomous venue scan results.');
-            }
-
-            const venues: Venue[] = [];
-            for (const venue of discovered) {
-                const docRef = await addDoc(collection(db, this.COLLECTION_NAME), {
-                    ...venue,
-                    createdAt: serverTimestamp()
-                });
-                venues.push({ id: docRef.id, ...venue });
-            }
-
-            emit('COMPLETE', `Live agent scan complete.`, 100);
-            return venues;
-        } catch (_e: unknown) {
-            const message = _e instanceof Error ? _e.message : String(_e);
-            logger.error('[VenueScoutService] Autonomous search failed:', _e);
-            throw new Error(message);
-        }
-    }
-
-    private static _parseAutonomousVenueData(finalData: unknown, genre: string): Omit<Venue, 'id'>[] {
-        let payload = finalData;
-        if (typeof payload === 'string') {
-            const trimmed = payload.trim();
-            if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
-                throw new Error('Autonomous venue scan returned unstructured text. Refusing to fabricate venue records.');
-            }
-            try {
-                payload = JSON.parse(trimmed) as unknown;
-            } catch (error: unknown) {
-                throw new Error(`Autonomous venue scan returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
-            }
-        }
-
-        const rawVenues = Array.isArray(payload)
-            ? payload
-            : typeof payload === 'object' && payload !== null && Array.isArray((payload as { venues?: unknown }).venues)
-                ? (payload as { venues: unknown[] }).venues
-                : [];
-
-        if (rawVenues.length === 0) {
-            throw new Error('Autonomous venue scan did not include a venues array.');
-        }
-
-        const parsedVenues: Omit<Venue, 'id'>[] = [];
-        const errors: string[] = [];
-
-        rawVenues.forEach((raw, index) => {
-            if (typeof raw !== 'object' || raw === null) {
-                errors.push(`Venue ${index + 1}: expected object.`);
-                return;
-            }
-
-            const candidate = raw as Record<string, unknown>;
-            const parsed = VenueSchema.safeParse({
-                ...candidate,
-                id: `autonomous-${index}`,
-                status: candidate.status || 'unknown',
-                fitScore: 0,
-            });
-
-            if (!parsed.success) {
-                errors.push(`Venue ${index + 1}: ${parsed.error.message}`);
-                return;
-            }
-
-            const { id: _id, fitScore: _fitScore, ...venue } = parsed.data;
-            parsedVenues.push({
-                ...venue,
-                fitScore: this.calculateFitScore(parsed.data, genre, 300),
-            });
-        });
-
-        if (parsedVenues.length === 0) {
-            throw new Error(`Autonomous venue scan returned no valid records. ${errors.join(' ')}`);
-        }
-
-        return parsedVenues;
     }
 
     /**

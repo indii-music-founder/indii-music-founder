@@ -259,6 +259,26 @@ A phase is not complete unless:
 
 ## Current checkpoint
 
-Active branch: `feat/canonical-music-foundation`
+Repository: `github.com/indii-music-founder/indii-music-founder` only.
 
-Current work is limited to Phase 0 and Phase 1 identity contracts. Phase 2 must not begin until the Phase 1 checkpoint is validated.
+- Phases 0–11 are merged to `main`; Phase 10 is PR #299 and Phase 11 is PR #302.
+- Phases 12–17 are implemented on the following cumulative open PR stack. Their
+  exact heads have green test/build checks; keep their dependency order when
+  reviewing and merging:
+
+| Phase | Branch | PR | Exact head |
+| --- | --- | ---: | --- |
+| 12 | `feat/phase12-claims-conflict-intelligence` | #305 | `22eb88d8d77a300347606cc16d6129cba2354eb6` |
+| 13 | `feat/phase13-advanced-catalog-intelligence` | #304 | `88f1f74fd491326deab0e94fcc1a4eb56e116bfb` |
+| 14 | `feat/phase14-workflow-prediction` | #307 | `83d127001e72590b5c7b51e194cc6b1e60198f8e` |
+| 15 | `feat/phase15-cross-department-intelligence` | #308 | `9c1c8a1d74f7d81835138e1a7517012b7c46c39d` |
+| 16 | `feat/phase16-rdr-rcc-interoperability` | #310 | `cee98e8f9a0508d7e6aacde55e65dcb6fb70556c` |
+| 17 | `feat/phase17-ai-usage-rights` | #311 | `d1353f9fed91b493c7e4c89187a60c2df7765d64` |
+
+- Phase 18 is implemented on `feat/phase18-local-offgrid-intelligence`, PR
+  #312, exact head `60d4870072c73aa4ade27fbb3efb12a2aa93d600`; its test, lint,
+  typecheck, build, and package checks are green.
+- Phase 19 is in progress on `feat/phase19-full-founding-owner-system`, based
+  on the verified green Phase 18 head above.
+- Branch/PR delivery does not authorize merging, production enablement, or
+  deployment; those remain separately gated.

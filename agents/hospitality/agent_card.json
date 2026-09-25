@@ -40,8 +40,8 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Research venue websites, hotel options, and catering services online.",
+      "name": "web_extract",
+      "description": "Read public venue, hotel, or catering pages; does not confirm availability or make bookings.",
       "inputSchemaRef": "#/components/schemas/Empty",
       "outputSchemaRef": "#/components/schemas/Empty",
       "streaming": false

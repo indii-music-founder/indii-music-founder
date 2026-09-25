@@ -1,12 +1,14 @@
 # Computer Execution — Extension Architecture
 
-**Status:** Proposal (audit complete, no code written)
+**Status:** Historical proposal. Current contract: [Web Extraction and Computer Execution](WEB_EXTRACTION_AND_COMPUTER_EXECUTION.md).
 **Date:** 2026-07-20
 **Mandate:** *Analyze the existing Execution Layer and produce an extension architecture for Computer Execution. Do not redesign the Execution Layer. Extend it.*
 
 ---
 
 ## 1. Phase 1 Audit — How the Execution Layer Works Today
+
+> Historical snapshot. Sections below are not authoritative for current browser or computer-execution implementation.
 
 The seven questions, answered from source.
 

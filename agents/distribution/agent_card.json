@@ -82,8 +82,8 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Control the local browser to navigate websites (portals).",
+      "name": "web_extract",
+      "description": "Read public distributor help or status pages. Cannot access accounts or operate portals.",
       "inputSchemaRef": "#/components/schemas/Empty",
       "outputSchemaRef": "#/components/schemas/Empty",
       "streaming": false

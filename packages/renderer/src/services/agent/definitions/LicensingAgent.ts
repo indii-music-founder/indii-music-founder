@@ -29,7 +29,7 @@ export const LicensingAgent: AgentConfig = {
     systemPrompt,
     functions: {
         ...licensingRetrievalTools,
-        browser_tool: UniversalTools.browser_tool,
+        web_extract: UniversalTools.web_extract,
         document_query: UniversalTools.document_query,
         payment_gate: UniversalTools.payment_gate,
 
@@ -248,7 +248,7 @@ export const LicensingAgent: AgentConfig = {
             };
         }
     },
-    authorizedTools: ['list_domain_records', 'check_availability', 'analyze_contract', 'draft_license', 'search_sync_opportunities', 'calculate_sync_fee_estimate', 'browser_tool', 'document_query', 'payment_gate'],
+    authorizedTools: ['list_domain_records', 'check_availability', 'analyze_contract', 'draft_license', 'search_sync_opportunities', 'calculate_sync_fee_estimate', 'web_extract', 'document_query', 'payment_gate'],
     tools: [{
         functionDeclarations: [
             ...licensingRetrievalDeclarations,
@@ -317,16 +317,14 @@ export const LicensingAgent: AgentConfig = {
                 }
             },
             {
-                name: "browser_tool",
-                description: "Research Music Supervisors or Sync Libraries.",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
-                        url: { type: "STRING" },
-                        selector: { type: "STRING" }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {

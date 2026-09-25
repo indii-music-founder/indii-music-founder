@@ -1,14 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-    executeTask: vi.fn(),
     persistOrgRecord: vi.fn(),
-}));
-
-vi.mock('@/services/agent/BrowserAgentService', () => ({
-    BrowserAgentService: class {
-        executeTask = mocks.executeTask;
-    },
 }));
 
 vi.mock('../services/RegistrationPersistence', () => ({
@@ -43,9 +36,7 @@ describe('LocAdapter', () => {
         mocks.persistOrgRecord.mockResolvedValue(true);
     });
 
-    it('durably saves a prepared manual filing when browser submission cannot complete', async () => {
-        mocks.executeTask.mockRejectedValue(new Error('Login required'));
-
+    it('saves a prepared manual filing without attempting browser interaction', async () => {
         const result = await LocAdapter.submit(form, track, 'owner-1');
 
         expect(result.success).toBe(false);
@@ -58,5 +49,6 @@ describe('LocAdapter', () => {
         );
         expect(result.requiresManualStep).toBe(true);
         expect(result.manualStepUrl).toContain('copyright.gov');
+        expect(result.manualStepInstructions).toContain('no information was entered or submitted');
     });
 });

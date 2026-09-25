@@ -61,7 +61,7 @@ export const LegalAgent: AgentConfig = {
                 };
             },
             contract_generator_and_review_tool: LegalTools.contract_generator_and_review_tool,
-            browser_tool: UniversalTools.browser_tool,
+            web_extract: UniversalTools.web_extract,
             document_query: UniversalTools.document_query,
             draft_split_sheet: LegalTools.generate_split_sheet,
             summarize_contract_terms: LegalTools.summarize_contract_terms,
@@ -73,7 +73,7 @@ export const LegalAgent: AgentConfig = {
     authorizedTools: ['list_domain_records', 
         'contract_generator_and_review_tool',
         'analyze_rights',
-        'browser_tool',
+        'web_extract',
         'document_query',
         'draft_split_sheet',
         'summarize_contract_terms',
@@ -153,16 +153,14 @@ export const LegalAgent: AgentConfig = {
                 }
             },
             {
-                name: "browser_tool",
-                description: "Research copyright databases or legal precedents.",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING" },
-                        url: { type: "STRING" },
-                        selector: { type: "STRING" }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {

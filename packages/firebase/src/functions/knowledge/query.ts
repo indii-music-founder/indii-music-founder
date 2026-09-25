@@ -11,6 +11,7 @@ import {
   type KnowledgeQueryRequest,
 } from '@indii/shared';
 import { cosineSimilarityRelevance } from './evidenceJudgment';
+import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -142,7 +143,7 @@ Instructions:
 4. Keep the answer clear and concise.`;
 
     const response = await vertex.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST,
       contents: [prompt],
       config: {
         temperature: 0.0,

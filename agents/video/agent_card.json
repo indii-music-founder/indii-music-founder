@@ -40,9 +40,9 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Search for stock footage or visual references.",
-      "inputSchemaRef": "#/components/schemas/BrowserToolInput",
+      "name": "web_extract",
+      "description": "Read public visual reference pages; does not download media or access stock accounts.",
+      "inputSchemaRef": "#/components/schemas/WebExtractInput",
       "outputSchemaRef": "#/components/schemas/BrowserToolOutput",
       "streaming": false
     },

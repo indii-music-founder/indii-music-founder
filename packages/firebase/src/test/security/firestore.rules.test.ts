@@ -45,7 +45,7 @@ import {
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { createConnection } from 'net';
-import { describe, it, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -826,6 +826,42 @@ describe('Firestore Security Rules', () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
             await assertFails(deleteDoc(doc(db, 'organizations', ORG_ID)));
+        });
+    });
+
+    describe('canonical music catalog server-only boundary', () => {
+        const personalEntityPath = ['users', ALICE_UID, 'musicCatalogEntities', 'recording-1'] as const;
+        const organizationClaimPath = ['organizations', ORG_ID, 'musicCatalogClaims', 'claim-1'] as const;
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                const db = ctx.firestore();
+                await setDoc(doc(db, 'users', ALICE_UID), { id: ALICE_UID });
+                await setDoc(doc(db, 'organizations', ORG_ID), orgDoc(ALICE_UID, BOB_UID));
+                await setDoc(doc(db, ...personalEntityPath), { id: 'recording-1', entityType: 'sound_recording' });
+                await setDoc(doc(db, ...organizationClaimPath), { id: 'claim-1', status: 'ASSERTED' });
+            });
+        });
+
+        it('denies direct client reads and writes for owner, organization owner, member, and anonymous callers', async () => {
+            if (requireEmulator()) return;
+            const contexts = [
+                verifiedCtx(ALICE_UID).firestore(),
+                verifiedCtx(BOB_UID).firestore(),
+                anonCtx().firestore(),
+                unauthCtx().firestore(),
+            ];
+
+            for (const db of contexts) {
+                const personalEntity = doc(db, ...personalEntityPath);
+                const organizationClaim = doc(db, ...organizationClaimPath);
+                await assertFails(getDoc(personalEntity));
+                await assertFails(setDoc(personalEntity, { id: 'recording-2' }));
+                await assertFails(getDoc(organizationClaim));
+                await assertFails(setDoc(organizationClaim, { id: 'claim-2' }));
+                await assertFails(deleteDoc(organizationClaim));
+            }
         });
     });
 
@@ -3261,6 +3297,46 @@ describe('Firestore Security Rules', () => {
             const db = verifiedCtx(ALICE_UID).firestore();
             await assertFails(getDoc(doc(db, 'some_unlisted_collection', 'doc-1')));
             await assertFails(setDoc(doc(db, 'some_unlisted_collection', 'doc-1'), { data: true }));
+        });
+    });
+
+    describe('users/{userId}/workflowExecutions/{executionId}', () => {
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'workflowExecutions', 'history-1'), {
+                    id: 'history-1',
+                    userId: ALICE_UID,
+                    status: 'COMPLETED',
+                    steps: { step1: { status: 'STEP_COMPLETE' } },
+                });
+            });
+        });
+
+        it('allows an authenticated owner to read history but denies cross-user and anonymous reads', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(aliceDb, 'users', ALICE_UID, 'workflowExecutions', 'history-1')));
+            const ownerHistory = await assertSucceeds(getDocs(collection(aliceDb, 'users', ALICE_UID, 'workflowExecutions')));
+            expect(ownerHistory.size).toBe(1);
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'workflowExecutions', 'history-1')));
+            await assertFails(getDocs(collection(bobDb, 'users', ALICE_UID, 'workflowExecutions')));
+            await assertFails(getDoc(doc(anonCtx().firestore(), 'users', ALICE_UID, 'workflowExecutions', 'history-1')));
+        });
+
+        it('denies client-created or modified workflow evidence, even to the owner', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'workflowExecutions', 'forged'), {
+                id: 'forged',
+                userId: ALICE_UID,
+                status: 'COMPLETED',
+                steps: { step1: { status: 'STEP_COMPLETE', completedAt: Date.now() } },
+            }));
+            await assertFails(updateDoc(doc(aliceDb, 'users', ALICE_UID, 'workflowExecutions', 'history-1'), {
+                status: 'COMPLETED',
+            }));
         });
     });
 

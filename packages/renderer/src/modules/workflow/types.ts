@@ -1,4 +1,5 @@
 import type { Node, Edge } from 'reactflow';
+import type { Provenance } from '@shared/schemas/musicEntity';
 
 export enum Status {
     PENDING = 'PENDING',
@@ -104,4 +105,5 @@ export interface ConversationFile {
     type: 'image' | 'document' | 'audio';
     base64?: string; // base64 string for images
     content?: string; // text content for documents
+    contentProvenance?: Provenance;
 }

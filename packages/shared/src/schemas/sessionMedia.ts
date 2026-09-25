@@ -231,6 +231,10 @@ export const VideoSessionSchema = z.object({
     expectedByteSize: z.number().int().positive(),
     stagingBucket: BucketSchema,
     stagingPath: ObjectPathSchema,
+    // The upload finalizer records the generation of the immutable staging
+    // object at the session root. Keep this in the strict shared contract so
+    // clients continue accepting live snapshots after finalization.
+    stagingGeneration: StorageGenerationSchema.optional(),
     status: z.enum(['uploading', 'uploaded', 'processing', 'completed', 'failed', 'cancelled']),
     original: CanonicalMediaRefSchema.optional(),
     proxyJob: ProxyJobClaimSchema.optional(),

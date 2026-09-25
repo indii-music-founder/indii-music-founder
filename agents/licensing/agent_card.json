@@ -26,8 +26,8 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Research Music Supervisors or Sync Libraries.",
+      "name": "web_extract",
+      "description": "Read public music supervisor and sync library pages; do not contact or submit material.",
       "inputSchemaRef": "#/components/schemas/Empty",
       "outputSchemaRef": "#/components/schemas/Empty",
       "streaming": false

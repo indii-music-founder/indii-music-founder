@@ -45,14 +45,14 @@ export const DistributionAgent: AgentConfig = {
             create_music_metadata: MusicTools.create_music_metadata,
             verify_metadata_golden: MusicTools.verify_metadata_golden,
             update_track_metadata: MusicTools.update_track_metadata,
-            browser_tool: UniversalTools.browser_tool,
+            web_extract: UniversalTools.web_extract,
             pro_scraper: UniversalTools.pro_scraper,
             payment_gate: UniversalTools.payment_gate,
             credential_vault: UniversalTools.credential_vault,
             draft_dsp_metadata: McpTools.draft_dsp_metadata
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault', 'draft_dsp_metadata'],
+    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'web_extract', 'pro_scraper', 'payment_gate', 'credential_vault', 'draft_dsp_metadata'],
     tools: [{
         functionDeclarations: [
             ...distributionRetrievalDeclarations,
@@ -269,17 +269,14 @@ export const DistributionAgent: AgentConfig = {
                 }
             },
             {
-                name: "browser_tool",
-                description: "Control the local browser to navigate websites (portals).",
+                name: "web_extract",
+                description: "Read bounded text from a public web page. This tool cannot log in, click, type, or submit forms.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", enum: ["open", "click", "type", "get_dom", "screenshot", "close"], description: "Action to perform: open, click, type, get_dom, screenshot, close" },
-                        url: { type: "STRING", description: "URL to open (required for 'open')" },
-                        selector: { type: "STRING", description: "CSS selector for click/type" },
-                        text: { type: "STRING", description: "Text to type" }
+                        url: { type: "STRING", description: "Public HTTP(S) URL to read." }
                     },
-                    required: ["action"]
+                    required: ["url"]
                 }
             },
             {
