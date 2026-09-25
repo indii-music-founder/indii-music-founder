@@ -59,7 +59,8 @@ not claim Phase 18 is fully complete. Scanned-document OCR currently downloads
 its language data from a CDN. The local-first model preference is stored
 remotely, and no end-to-end local reasoning provider is currently wired through
 all consumers. Local video rendering and deterministic FFprobe measurements
-exist, but this slice adds no semantic video-analysis provider. Workflow and computer-control actions remain subject
-to their existing remote-service and explicit AOP authorization requirements.
-Those areas need independent, tested provider wiring and explicit
-offline/privacy behavior before they can be represented as delivered.
+exist, but this slice adds no semantic video-analysis provider. Workflow and
+computer-control actions remain subject to their existing remote-service and
+explicit AOP authorization requirements. Those areas need independent, tested
+provider wiring and explicit offline/privacy behavior before they can be
+represented as delivered.
