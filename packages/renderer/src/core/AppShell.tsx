@@ -60,6 +60,7 @@ import { setSentryUser, clearSentryUser } from '@/services/observability/SentryS
 import { OrganizationAccessProvider, useOrganizationAccess } from './context/OrganizationAccessContext';
 import { SettingsModal } from '@/modules/settings/components/SettingsModal';
 import { QuickNotesDrawer } from '@/modules/notes/components/QuickNotesDrawer';
+import { SmartNextActionBanner } from '@/components/layout/SmartNextActionBanner';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -565,6 +566,10 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
 
                             {showChrome && (
                                 <MobileHeader />
+                            )}
+
+                            {showChrome && (
+                                <SmartNextActionBanner />
                             )}
 
                             {/*

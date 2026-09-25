@@ -77,8 +77,8 @@ describe('ReceiptOCRService', () => {
 
             const [contentsArgs, modelArgs, configArgs] = aiServiceMock.rawGenerateContent.mock.calls[0];
             expect(contentsArgs[0].parts[1].inlineData.data).toBe('mockbase64data');
-            // Check for the actual model used in the service (gemini-3.1-pro-preview or similar image model)
-            expect(modelArgs).toBe('gemini-3.1-pro-preview');
+            // Check for the actual model used in the service (gemini-3.8-flash fast multimodal model)
+            expect(modelArgs).toBe('gemini-3.8-flash');
             expect(configArgs.responseMimeType).toBe('application/json');
 
             expect(result).toMatchObject(mockAiResponse);

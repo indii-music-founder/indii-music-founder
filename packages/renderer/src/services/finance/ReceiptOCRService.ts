@@ -1,5 +1,6 @@
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { judgeExpenseCategorization } from '@/config/typesafeJudgments';
 import { logger } from '@/utils/logger';
 import type { Content } from '@/shared/types/ai.dto';
 
@@ -11,6 +12,7 @@ export interface ReceiptData {
     category: 'transport' | 'lodging' | 'meals' | 'equipment' | 'other';
     confidence: number;
     extractedText?: string;
+    isTaxDeductible?: boolean;
 }
 
 export class ReceiptOCRService {
@@ -61,7 +63,7 @@ export class ReceiptOCRService {
 
             const result = await this.aiService.rawGenerateContent(
                 contents,
-                INTELLIGENCE_MODELS.TEXT.AGENT, // Corrected from .PRO
+                INTELLIGENCE_MODELS.TEXT.FAST, // Gemini 3.8 Flash multimodal OCR
                 {
                     responseMimeType: 'application/json'
                 }
@@ -70,9 +72,23 @@ export class ReceiptOCRService {
             const text = result.response.text();
             const data = JSON.parse(text) as ReceiptData;
 
+            // Refine expense deductibility via TypeSafe Jev AI (System One)
+            let isTaxDeductible: boolean | undefined = undefined;
+            if (data.vendor) {
+                try {
+                    const jevVerdict = await judgeExpenseCategorization(data.vendor, text, data.amount);
+                    if (jevVerdict) {
+                        isTaxDeductible = jevVerdict.isTaxDeductible;
+                    }
+                } catch (jevErr) {
+                    logger.debug('[ReceiptOCR] Jev expense judgment skipped:', jevErr);
+                }
+            }
+
             logger.info('[ReceiptOCR] Successfully extracted data:', data);
             return {
                 ...data,
+                isTaxDeductible,
                 extractedText: text
             };
 
