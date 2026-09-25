@@ -627,6 +627,11 @@ export const QCPanel: React.FC = () => {
                 {/* Platform Target Audit (LUFS & True Peak) */}
                 {technicalFeatures?.audit && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {analysisMode === 'local-only' && (
+                            <p className="md:col-span-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-100" role="note" data-testid="local-qc-advisory-only">
+                                Local loudness and peak values are rough estimates, not platform compliance measurements. Reference targets below do not indicate approval, rejection, or expected DSP treatment.
+                            </p>
+                        )}
                         {/* Integrated Loudness */}
                         <div className="bg-white/5 glass-panel rounded-2xl p-6 border border-white/10 flex flex-col relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-6 opacity-5">
@@ -645,7 +650,9 @@ export const QCPanel: React.FC = () => {
                             <div className="space-y-2 mt-auto text-xs">
                                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5">
                                     <span className="text-white font-medium">Spotify Target (-14 LUFS)</span>
-                                    {technicalFeatures.audit.integratedLoudness > -12 ? (
+                                    {analysisMode === 'local-only' ? (
+                                        <Badge variant="outline" data-testid="local-loudness-estimate-only">Estimate only</Badge>
+                                    ) : technicalFeatures.audit.integratedLoudness > -12 ? (
                                         <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalized</Badge>
                                     ) : technicalFeatures.audit.integratedLoudness < -16 ? (
                                         <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
@@ -655,7 +662,9 @@ export const QCPanel: React.FC = () => {
                                 </div>
                                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5">
                                     <span className="text-white font-medium">Apple Music Target (-16 LUFS)</span>
-                                    {technicalFeatures.audit.integratedLoudness > -14 ? (
+                                    {analysisMode === 'local-only' ? (
+                                        <Badge variant="outline" data-testid="local-loudness-estimate-only">Estimate only</Badge>
+                                    ) : technicalFeatures.audit.integratedLoudness > -14 ? (
                                         <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalized</Badge>
                                     ) : technicalFeatures.audit.integratedLoudness < -18 ? (
                                         <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
@@ -684,7 +693,9 @@ export const QCPanel: React.FC = () => {
                             <div className="space-y-2 mt-auto text-xs">
                                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5">
                                     <span className="text-white font-medium">DSP Target (-1.0 dBTP max)</span>
-                                    {technicalFeatures.audit.peakLevel > -0.5 ? (
+                                    {analysisMode === 'local-only' ? (
+                                        <Badge variant="outline" data-testid="local-peak-estimate-only">Estimate only</Badge>
+                                    ) : technicalFeatures.audit.peakLevel > -0.5 ? (
                                         <Badge variant="destructive" className="flex items-center gap-1"><AlertTriangle size={12} /> Clipping Risk</Badge>
                                     ) : (
                                         <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-1"><CheckCircle2 size={12} /> Optimal</Badge>

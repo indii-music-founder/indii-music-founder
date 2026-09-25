@@ -506,6 +506,14 @@ service cloud.firestore {
       // Users cannot delete their profile (admin action only)
       allow delete: if false;
 
+      // Workflow state is authored by trusted backend execution paths. Owners
+      // may read their own history for Phase 14 advisory predictions, but
+      // clients cannot create or rewrite completion evidence.
+      match /workflowExecutions/{executionId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        allow write: if false;
+      }
+
       // ── Trash Manifests & Purge Intents ─────────────────────────
       match /trashItems/{trashId} {
         function validTrashManifest(data) {
@@ -2944,6 +2952,40 @@ service cloud.firestore {
     match /users/{userId}/crmLeads/{leadId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create, update, delete: if false;
+    }
+
+    // Canonical music records are written only through server-side services.
+    // These are separate subcollections (rather than an invalid nested path);
+    // the Admin SDK still enforces domain schemas and catalog scope.
+    match /users/{userId}/musicCatalogEntities/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogRelationships/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogIdentifiers/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogClaims/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogEvents/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogEntities/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogRelationships/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogIdentifiers/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogClaims/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogEvents/{recordId} {
+      allow read, write: if false;
     }
 
     // =========================================================================

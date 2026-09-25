@@ -37,6 +37,38 @@ const aiUseGrant = (overrides: Partial<RightsGrant> = {}): RightsGrant => ({
 });
 
 describe('rights intelligence', () => {
+  it.each([
+    'ISRC:USABC2600001',
+    'USABC2600001',
+    'T-123.456.789-0',
+    'UPC:012345678905',
+    '012345678905',
+    'spotify:track:external-id',
+    'grid:GRID-123',
+    'catalog_number:legacy-7',
+    'platform_id:spotify-123',
+    'proprietary:label-123',
+  ])('rejects external identifiers in canonical AI-use entity references: %s', externalId => {
+    expect(() => RightsGrantSchema.parse(aiUseGrant({ subjectEntityId: externalId }))).toThrow(/internal IDs/);
+    expect(() => RightsGrantSchema.parse(aiUseGrant({ grantorEntityId: externalId }))).toThrow(/internal IDs/);
+    expect(() => RightsGrantSchema.parse(aiUseGrant({ granteeEntityId: externalId }))).toThrow(/internal IDs/);
+    expect(() => RightsGrantSchema.parse(aiUseGrant({
+      aiUseScope: { ...aiUseScope, modelScope: { type: 'PROVIDERS', providerOrganizationEntityIds: [externalId] } },
+    }))).toThrow(/internal IDs/);
+  });
+
+  it('continues to accept internal canonical IDs that use entity-type namespaces', () => {
+    expect(RightsGrantSchema.parse(aiUseGrant({
+      subjectEntityId: 'recording:internal-1',
+      grantorEntityId: 'person:internal-1',
+      granteeEntityId: 'organization:internal-1',
+      aiUseScope: {
+        ...aiUseScope,
+        modelScope: { type: 'PROVIDERS', providerOrganizationEntityIds: ['organization:provider-1'] },
+      },
+    })).granteeEntityId).toBe('organization:internal-1');
+  });
+
   it('does not treat declared ownership as automatic Content ID authority', () => {
     expect(evaluateRightsIntelligence(input(), now).contentIdAutomaticSubmissionEligible).toBe(false);
   });
