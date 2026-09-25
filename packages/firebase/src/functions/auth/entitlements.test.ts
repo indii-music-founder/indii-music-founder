@@ -213,6 +213,7 @@ describe('firestore entitlement provisioning (founder self-heal)', () => {
         documents.set(reference.path, { ...(documents.get(reference.path) || {}), ...values });
       }),
       create: vi.fn((reference: { path: string }, values: Record<string, unknown>) => {
+        if (documents.has(reference.path)) throw new Error(`Document already exists: ${reference.path}`);
         documents.set(reference.path, { ...values });
       }),
     };
@@ -280,6 +281,97 @@ describe('firestore entitlement provisioning (founder self-heal)', () => {
     });
   });
 
+  it('downgrades a subscription-backed grant when the server subscription is canceled', async () => {
+    const documents = new Map<string, Record<string, unknown>>([
+      ['subscriptions/artist-1', { tier: 'pro_monthly', status: 'canceled' }],
+      ['users/artist-1/entitlements/current', {
+        schemaVersion: 'account-entitlement.v1',
+        uid: 'artist-1',
+        tier: SubscriptionTier.PRO_MONTHLY,
+        status: 'active',
+        source: 'subscription_migration',
+        grantId: 'grant-subscription-before-cancel',
+        revision: 4,
+      }],
+    ]);
+    const { db, transaction } = firestoreHarness(documents);
+    mocks.firestore.mockReturnValue(db);
+
+    const entitlement = await requireVerifiedAccountEntitlement({ uid: 'artist-1', emailVerified: true });
+
+    expect(entitlement).toMatchObject({
+      tier: SubscriptionTier.FREE,
+      source: 'verified_email',
+      revision: 5,
+    });
+    expect(entitlement.grantId).not.toBe('grant-subscription-before-cancel');
+    expect(transaction.set).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/artist-1/entitlements/current' }),
+      expect.objectContaining({ tier: SubscriptionTier.FREE, revision: 5 }),
+    );
+    expect([...documents.entries()].find(([path]) => path.includes('/entitlementAudit/'))?.[1]).toMatchObject({
+      evidence: [{
+        supersedesGrantId: 'grant-subscription-before-cancel',
+        subscriptionStatus: 'canceled',
+      }],
+    });
+  });
+
+  it('reconciles a lower paid subscription tier instead of retaining stale higher access', async () => {
+    const documents = new Map<string, Record<string, unknown>>([
+      ['subscriptions/artist-1', { tier: 'pro_monthly', status: 'active' }],
+      ['users/artist-1/entitlements/current', {
+        schemaVersion: 'account-entitlement.v1',
+        uid: 'artist-1',
+        tier: SubscriptionTier.STUDIO,
+        status: 'active',
+        source: 'subscription_migration',
+        grantId: 'grant-studio-before-downgrade',
+      }],
+    ]);
+    const { db } = firestoreHarness(documents);
+    mocks.firestore.mockReturnValue(db);
+
+    const entitlement = await requireVerifiedAccountEntitlement({ uid: 'artist-1', emailVerified: true });
+
+    expect(entitlement).toMatchObject({
+      tier: SubscriptionTier.PRO_MONTHLY,
+      source: 'subscription_migration',
+      revision: 1,
+    });
+    expect(entitlement.grantId).not.toBe('grant-studio-before-downgrade');
+  });
+
+  it('uses a new audit identity after cancellation and later subscription reactivation', async () => {
+    const documents = new Map<string, Record<string, unknown>>([
+      ['subscriptions/artist-1', { tier: 'pro_monthly', status: 'canceled' }],
+      ['users/artist-1/entitlements/current', {
+        schemaVersion: 'account-entitlement.v1',
+        uid: 'artist-1',
+        tier: SubscriptionTier.PRO_MONTHLY,
+        status: 'active',
+        source: 'subscription_migration',
+        grantId: 'grant-subscription-before-cancel',
+        revision: 1,
+      }],
+      ['users/artist-1/entitlementAudit/grant-subscription-before-cancel', {
+        tier: SubscriptionTier.PRO_MONTHLY,
+      }],
+    ]);
+    const { db } = firestoreHarness(documents);
+    mocks.firestore.mockReturnValue(db);
+
+    const revoked = await requireVerifiedAccountEntitlement({ uid: 'artist-1', emailVerified: true });
+    expect(revoked.tier).toBe(SubscriptionTier.FREE);
+
+    documents.set('subscriptions/artist-1', { tier: 'pro_monthly', status: 'active' });
+    const reactivated = await requireVerifiedAccountEntitlement({ uid: 'artist-1', emailVerified: true });
+
+    expect(reactivated.tier).toBe(SubscriptionTier.PRO_MONTHLY);
+    expect(reactivated.grantId).not.toBe('grant-subscription-before-cancel');
+    expect(documents.has(`users/artist-1/entitlementAudit/${reactivated.grantId}`)).toBe(true);
+  });
+
   it('keeps an existing FOUNDER entitlement without rewriting it', async () => {
     const documents = new Map<string, Record<string, unknown>>([
       ['founders/artist-1', { uid: 'artist-1', seat: 1 }],
@@ -300,5 +392,26 @@ describe('firestore entitlement provisioning (founder self-heal)', () => {
     expect(entitlement.grantId).toBe('grant-founder');
     expect(transaction.set).not.toHaveBeenCalled();
     expect(transaction.create).not.toHaveBeenCalled();
+  });
+
+  it('does not downgrade a perpetual founder activation because a subscription was canceled', async () => {
+    const documents = new Map<string, Record<string, unknown>>([
+      ['subscriptions/artist-1', { tier: 'pro_monthly', status: 'canceled' }],
+      ['users/artist-1/entitlements/current', {
+        schemaVersion: 'account-entitlement.v1',
+        uid: 'artist-1',
+        tier: SubscriptionTier.FOUNDER,
+        status: 'active',
+        source: 'founder_activation',
+        grantId: 'grant-founder-perpetual',
+      }],
+    ]);
+    const { db, transaction } = firestoreHarness(documents);
+    mocks.firestore.mockReturnValue(db);
+
+    const entitlement = await requireVerifiedAccountEntitlement({ uid: 'artist-1', emailVerified: true });
+
+    expect(entitlement).toMatchObject({ tier: SubscriptionTier.FOUNDER, source: 'founder_activation' });
+    expect(transaction.set).not.toHaveBeenCalled();
   });
 });

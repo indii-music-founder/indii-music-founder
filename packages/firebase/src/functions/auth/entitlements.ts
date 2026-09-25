@@ -19,7 +19,7 @@ export type EntitlementSource =
     | 'founder_activation'
     | 'subscription_migration';
 
-/** Total order of spend-bearing tiers; used to decide safe in-place upgrades. */
+/** Total order of spend-bearing tiers; used to compare currently proven access. */
 export function tierRank(tier: SubscriptionTier): number {
     switch (tier) {
         case SubscriptionTier.FOUNDER:
@@ -64,6 +64,8 @@ export interface AccountEntitlement {
     status: 'active';
     source: EntitlementSource;
     grantId: string;
+    /** Monotonic per-account grant revision, used to preserve distinct audit identities across revocation/reactivation. */
+    revision?: number;
 }
 
 export interface VerifiedAccountIdentity {
@@ -100,7 +102,8 @@ function entitlementFromUnknown(value: unknown): AccountEntitlement | undefined 
         !isSubscriptionTier(data.tier) ||
         data.status !== 'active' ||
         typeof data.source !== 'string' ||
-        typeof data.grantId !== 'string'
+        typeof data.grantId !== 'string' ||
+        (data.revision !== undefined && (!Number.isSafeInteger(data.revision) || (data.revision as number) < 1))
     ) {
         return undefined;
     }
@@ -114,12 +117,13 @@ function entitlementFromUnknown(value: unknown): AccountEntitlement | undefined 
         status: 'active',
         source: data.source as EntitlementSource,
         grantId: data.grantId,
+        ...(typeof data.revision === 'number' ? { revision: data.revision } : {}),
     };
 }
 
-function grantId(uid: string, tier: SubscriptionTier, source: EntitlementSource, reference: string): string {
+function grantId(uid: string, tier: SubscriptionTier, source: EntitlementSource, reference: string, revision = 0): string {
     return `ent_${createHash('sha256')
-        .update(`${ACCOUNT_ENTITLEMENT_SCHEMA_VERSION}\0${uid}\0${tier}\0${source}\0${reference}`, 'utf8')
+        .update(`${ACCOUNT_ENTITLEMENT_SCHEMA_VERSION}\0${uid}\0${tier}\0${source}\0${reference}\0${revision}`, 'utf8')
         .digest('hex')
         .slice(0, 48)}`;
 }
@@ -164,12 +168,16 @@ function firestoreEntitlementRepository(firestore: Firestore): EntitlementReposi
                     isFounder: founderSnapshot.exists,
                     subscription: subscriptionSnapshot.exists ? subscriptionSnapshot.data() : undefined,
                 });
+                const subscriptionGrantChanged = existing?.source === 'subscription_migration'
+                    && existing.tier !== provenTier;
 
                 // Idempotency: an entitlement at least as spend-bearing as the
                 // proven tier is kept as-is. A stale FREE (or lower) record is
                 // upgraded in place — e.g. a founder whose founders/{uid} or
-                // subscriptions/{uid} doc landed after the FREE grant.
-                if (existing && tierRank(existing.tier) >= tierRank(provenTier)) return existing;
+                // subscriptions/{uid} doc landed after the FREE grant. Subscription
+                // grants are reconciled in both directions so canceled/downgraded
+                // subscription records cannot retain stale spend-bearing access.
+                if (existing && tierRank(existing.tier) >= tierRank(provenTier) && !subscriptionGrantChanged) return existing;
 
                 const isFounder = provenTier === SubscriptionTier.FOUNDER && founderSnapshot.exists;
                 const fromSubscription = !isFounder && provenTier !== SubscriptionTier.FREE;
@@ -183,13 +191,15 @@ function firestoreEntitlementRepository(firestore: Firestore): EntitlementReposi
                     : fromSubscription
                         ? refs.subscription.path
                         : uid;
+                const revision = (existing?.revision ?? 0) + 1;
                 const record: AccountEntitlement = {
                     schemaVersion: ACCOUNT_ENTITLEMENT_SCHEMA_VERSION,
                     uid,
                     tier: provenTier,
                     status: 'active',
                     source,
-                    grantId: grantId(uid, provenTier, source, reference),
+                    grantId: grantId(uid, provenTier, source, reference, revision),
+                    revision,
                 };
 
                 transaction.set(refs.current, {
@@ -202,6 +212,12 @@ function firestoreEntitlementRepository(firestore: Firestore): EntitlementReposi
                     evidence: [{
                         type: isFounder ? 'founder_registry' : fromSubscription ? 'subscription_registry' : 'firebase_auth_email_verification',
                         reference,
+                        ...(subscriptionGrantChanged ? {
+                            supersedesGrantId: existing.grantId,
+                            subscriptionStatus: typeof subscriptionSnapshot.data()?.status === 'string'
+                                ? subscriptionSnapshot.data()?.status
+                                : 'missing',
+                        } : {}),
                     }],
                     issuedAt: FieldValue.serverTimestamp(),
                 });
