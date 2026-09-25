@@ -60,6 +60,10 @@ import {
     judgeStatementAnomalyTriage,
     judgeNextBestAction,
     judgeArtistCareerDNA,
+    judgeSessionChunkTriage,
+    judgeVideoBeatCutPacing,
+    judgeLyricVisualPromptSynthesis,
+    judgeAudioStemSeparationPriority,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
     TRANSIENT_ADOPT_MIN,
@@ -1916,5 +1920,242 @@ describe('judgeArtistCareerDNA (Judgment 37)', () => {
         expect(result.careerArchetype).toBe('SOLO_RELEASE_ARTIST');
         expect(result.monetizationFocus).toBe('DIRECT_TO_FAN');
         expect(result.suggestedModules).toContain('creative');
+    });
+});
+
+describe('judgeSessionChunkTriage (Judgment 38)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('falls back to deterministic DSP classification when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const performanceTake = await judgeSessionChunkTriage({
+            chunkId: 'chk-1',
+            startTimeSeconds: 12.0,
+            endTimeSeconds: 16.5,
+            transcriptSnippet: 'Dancing in the Detroit rain under neon streetlights',
+            cameraMotionEnergy: 'moderate',
+            audioClarityScore: 0.85,
+            matchingSongSection: 'CHORUS',
+        });
+        expect(performanceTake.action).toBe('KEEP_PERFORMANCE');
+        expect(performanceTake.isUsable).toBe(true);
+        expect(performanceTake.visualHookEnergy).toBe(5);
+
+        const cameraDrop = await judgeSessionChunkTriage({
+            chunkId: 'chk-2',
+            startTimeSeconds: 30.0,
+            endTimeSeconds: 34.0,
+            transcriptSnippet: '',
+            cameraMotionEnergy: 'erratic',
+            audioClarityScore: 0.1,
+            matchingSongSection: 'NONE',
+        });
+        expect(cameraDrop.action).toBe('DISCARD_CAMERA_DROP');
+        expect(cameraDrop.isUsable).toBe(false);
+
+        const bRoll = await judgeSessionChunkTriage({
+            chunkId: 'chk-3',
+            startTimeSeconds: 40.0,
+            endTimeSeconds: 44.0,
+            transcriptSnippet: '',
+            cameraMotionEnergy: 'low',
+            audioClarityScore: 0.5,
+            matchingSongSection: 'NONE',
+        });
+        expect(bRoll.action).toBe('KEEP_B_ROLL');
+        expect(bRoll.isUsable).toBe(true);
+    });
+
+    it('triages candidate clip using System One decisions', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    action: { choice: 'KEEP_PERFORMANCE' },
+                    is_usable: { noul: 0.95 },
+                    hook_energy: { score: 4 },
+                },
+            },
+        }));
+
+        const result = await judgeSessionChunkTriage({
+            chunkId: 'chk-live-1',
+            startTimeSeconds: 60.0,
+            endTimeSeconds: 65.0,
+            transcriptSnippet: 'Guitar solo climax',
+            cameraMotionEnergy: 'high',
+            audioClarityScore: 0.9,
+            matchingSongSection: 'BRIDGE',
+        });
+
+        expect(result.action).toBe('KEEP_PERFORMANCE');
+        expect(result.isUsable).toBe(true);
+        expect(result.visualHookEnergy).toBe(4);
+    });
+});
+
+describe('judgeVideoBeatCutPacing (Judgment 39)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('falls back to rule-based cut pacing when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const highEnergyDrop = await judgeVideoBeatCutPacing({
+            tempoBpm: 140,
+            genre: 'Trap',
+            songSection: 'DROP',
+            energyLevel: 'frenetic',
+        });
+        expect(highEnergyDrop.cutFrequency).toBe('CUT_ON_HALF_BAR');
+        expect(highEnergyDrop.transitionStyle).toBe('FLASH_CUT');
+        expect(highEnergyDrop.recommendedBeatsPerCut).toBe(2);
+
+        const ambientIntro = await judgeVideoBeatCutPacing({
+            tempoBpm: 75,
+            genre: 'Lo-Fi',
+            songSection: 'INTRO',
+            energyLevel: 'ambient',
+        });
+        expect(ambientIntro.cutFrequency).toBe('HOLD_MULTI_BAR');
+        expect(ambientIntro.transitionStyle).toBe('SMOOTH_CROSSFADE');
+        expect(ambientIntro.recommendedBeatsPerCut).toBe(8);
+    });
+
+    it('resolves dynamic cut cadence from Jev answers', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    cut_frequency: { choice: 'CUT_ON_FULL_BAR' },
+                    transition_style: { choice: 'HARD_CUT' },
+                    snap_transients: { noul: 0.88 },
+                },
+            },
+        }));
+
+        const result = await judgeVideoBeatCutPacing({
+            tempoBpm: 110,
+            genre: 'Indie Pop',
+            songSection: 'VERSE',
+            energyLevel: 'moderate',
+        });
+
+        expect(result.cutFrequency).toBe('CUT_ON_FULL_BAR');
+        expect(result.transitionStyle).toBe('HARD_CUT');
+        expect(result.snapToTransients).toBe(true);
+        expect(result.recommendedBeatsPerCut).toBe(4);
+    });
+});
+
+describe('judgeLyricVisualPromptSynthesis (Judgment 40)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('falls back to keyword-based metaphor mapping when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const landscape = await judgeLyricVisualPromptSynthesis({
+            lyricLine: 'Empty street under the midnight sky',
+            artistAestheticVibe: 'Gritty 35mm film',
+            genre: 'Post-Punk',
+        });
+        expect(landscape.category).toBe('ENVIRONMENT_LANDSCAPE');
+        expect(landscape.avoidLiteralCliche).toBe(false);
+
+        const portrait = await judgeLyricVisualPromptSynthesis({
+            lyricLine: 'Looking at your face through tears',
+            artistAestheticVibe: 'Analog VHS tape',
+            genre: 'R&B',
+        });
+        expect(portrait.category).toBe('EMOTIONAL_PORTRAIT');
+        expect(portrait.avoidLiteralCliche).toBe(true);
+    });
+
+    it('synthesizes non-cliché visual metaphor from Jev', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    category: { choice: 'POETIC_METAPHOR' },
+                    avoid_cliche: { noul: 0.91 },
+                    density: { score: 3 },
+                },
+            },
+        }));
+
+        const result = await judgeLyricVisualPromptSynthesis({
+            lyricLine: 'My heart shattered like cheap stained glass',
+            artistAestheticVibe: 'Detroit Industrial Baroque',
+            genre: 'Alternative',
+        });
+
+        expect(result.category).toBe('POETIC_METAPHOR');
+        expect(result.avoidLiteralCliche).toBe(true);
+        expect(result.cinematicDensityScore).toBe(3);
+    });
+});
+
+describe('judgeAudioStemSeparationPriority (Judgment 41)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('falls back to intended-use baseline when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const lipSync = await judgeAudioStemSeparationPriority({
+            sampleRate: 48000,
+            backgroundNoiseDescription: 'Studio speakers playing master track + vocal bleed',
+            vocalClarityRatio: 0.7,
+            intendedUse: 'MASTER_LIP_SYNC_REPLACEMENT',
+        });
+        expect(lipSync.recipe).toBe('PASS_THROUGH_MUTE_RAW');
+        expect(lipSync.phaseRiskScore).toBe(1);
+
+        const acapella = await judgeAudioStemSeparationPriority({
+            sampleRate: 48000,
+            backgroundNoiseDescription: 'Heavy rehearsal room amp hum',
+            vocalClarityRatio: 0.35,
+            intendedUse: 'STANDALONE_ACAPELLA',
+        });
+        expect(acapella.recipe).toBe('AGGRESSIVE_SPECTRAL_GATING');
+    });
+
+    it('resolves audio stem separation recipe from Jev', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    recipe: { choice: 'FULL_VOCAL_EXTRACTION' },
+                    is_salvageable: { noul: 0.88 },
+                    phase_risk: { score: 2 },
+                },
+            },
+        }));
+
+        const result = await judgeAudioStemSeparationPriority({
+            sampleRate: 48000,
+            backgroundNoiseDescription: 'Acoustic guitar and vocal recorded on iPhone in tiled bathroom',
+            vocalClarityRatio: 0.65,
+            intendedUse: 'STANDALONE_ACAPELLA',
+        });
+
+        expect(result.recipe).toBe('FULL_VOCAL_EXTRACTION');
+        expect(result.isSalvageable).toBe(true);
+        expect(result.phaseRiskScore).toBe(2);
     });
 });
