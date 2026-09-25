@@ -275,8 +275,10 @@ Repository: `github.com/indii-music-founder/indii-music-founder` only.
 | 16 | `feat/phase16-rdr-rcc-interoperability` | #310 | `cee98e8f9a0508d7e6aacde55e65dcb6fb70556c` |
 | 17 | `feat/phase17-ai-usage-rights` | #311 | `d1353f9fed91b493c7e4c89187a60c2df7765d64` |
 
-- Phase 18 is in progress on `feat/phase18-local-offgrid-intelligence`, based
-  on the verified green Phase 17 head above. Phase 19 follows its acceptance
-  gate.
+- Phase 18 is implemented on `feat/phase18-local-offgrid-intelligence`, PR
+  #312, exact head `60d4870072c73aa4ade27fbb3efb12a2aa93d600`; its test, lint,
+  typecheck, build, and package checks are green.
+- Phase 19 is in progress on `feat/phase19-full-founding-owner-system`, based
+  on the verified green Phase 18 head above.
 - Branch/PR delivery does not authorize merging, production enablement, or
   deployment; those remain separately gated.

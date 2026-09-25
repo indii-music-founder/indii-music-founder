@@ -19,6 +19,7 @@ import {
     resolveCapabilitySnapshotRequest,
     type CapabilityEvidenceReader,
 } from './getCapabilitySnapshot';
+import { policyClassForServerEntitlement } from '../security/arcjet';
 
 const NOW = Date.parse('2026-07-30T12:00:00.000Z');
 
@@ -32,11 +33,11 @@ function reader(overrides: Partial<CapabilityEvidenceReader> = {}): CapabilityEv
     };
 }
 
-function entitlement(uid = 'artist-1') {
+function entitlement(uid = 'artist-1', tier = SubscriptionTier.FREE) {
     return {
         schemaVersion: 'account-entitlement.v1' as const,
         uid,
-        tier: SubscriptionTier.FREE,
+        tier,
         status: 'active' as const,
         source: 'verified_email' as const,
         grantId: 'grant-1',
@@ -149,6 +150,46 @@ describe('server-attested Boardroom capability snapshot', () => {
         expect(evidenceReader.verifyMemoryAccess).toHaveBeenCalledWith('artist-1');
         expect(evidenceReader.listRecentMediaJobs).toHaveBeenCalledWith('artist-1');
         expect(evidenceReader.listSocialConnections).toHaveBeenCalledWith('artist-1');
+    });
+
+    it('changes capacity policy by server tier without fabricating external capability truth', async () => {
+        const evidenceReader = reader();
+        const resolveForTier = async (tier: SubscriptionTier) => {
+            const protect = vi.fn().mockResolvedValue({ allowed: true });
+            const policyForEntitlement = vi.fn(policyClassForServerEntitlement);
+            const snapshot = await resolveCapabilitySnapshotRequest(admittedRequest(), {
+                validateAppCheck: vi.fn(),
+                resolveEntitlement: vi.fn().mockResolvedValue(entitlement('artist-1', tier)),
+                protect,
+                policyForEntitlement,
+                reader: evidenceReader,
+                now: NOW,
+            });
+            return { snapshot, protect, policyForEntitlement };
+        };
+
+        const free = await resolveForTier(SubscriptionTier.FREE);
+        const founder = await resolveForTier(SubscriptionTier.FOUNDER);
+
+        expect(free.policyForEntitlement).toHaveBeenCalledWith({ tier: SubscriptionTier.FREE, isAdmin: false });
+        expect(founder.policyForEntitlement).toHaveBeenCalledWith({ tier: SubscriptionTier.FOUNDER, isAdmin: false });
+        expect(free.protect).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ policy: 'verified-free' }),
+        );
+        expect(founder.protect).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ policy: 'founder' }),
+        );
+
+        // Tier changes the server-selected spend/capacity policy, not measured
+        // connections, recent work, or access to canonical truth.
+        expect(founder.snapshot.capabilities).toEqual(free.snapshot.capabilities);
+        expect(founder.snapshot.capabilities.durable_workspace.status).toBe('available');
+        expect(founder.snapshot.capabilities.durable_memory.status).toBe('available');
+        expect(founder.snapshot.capabilities.social_connection.status).toBe('blocked');
+        expect(founder.snapshot.capabilities.calendar_connection.status).toBe('blocked');
+        expect(founder.snapshot.capabilities.calendar_actions.status).toBe('blocked');
     });
 
     it('fails closed when Arcjet denies the authenticated request', async () => {
