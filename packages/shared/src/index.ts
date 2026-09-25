@@ -66,3 +66,4 @@ export * from './types/contacts.js';
 export * from './types/encounter.js';
 // Phase 9 evaluator is advisory-only; it does not dispatch or authorize actions.
 export * from './schemas/connectedIntelligence.js';
+export * from './schemas/crossDepartmentIntelligence.js';

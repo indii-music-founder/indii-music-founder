@@ -9,6 +9,10 @@ import {
 import { MusicDomainEventSchema, MusicEventEntityReferenceSchema } from './musicEvent.js';
 import { MusicRelationshipSchema } from './musicRelationship.js';
 import { RightsIntelligenceReportSchema } from './rightsIntelligence.js';
+import {
+  CrossDepartmentReviewPlanSchema,
+  createCrossDepartmentReviewPlan,
+} from './crossDepartmentIntelligence.js';
 
 const IdSchema = z.string().trim().min(1).max(160);
 const IsoDateTimeSchema = z.string().datetime();
@@ -109,6 +113,8 @@ export const ConnectedIntelligenceResultSchema = z.object({
   status: z.enum(['ACTIONS_REQUIRED', 'NO_ACTION_REQUIRED', 'NOT_EVALUATED']),
   evaluatedDimensions: z.array(z.enum(['EVENT', 'ARTIST_CONTEXT', 'MUSIC_IDENTITY', 'RELATIONSHIPS', 'RIGHTS', 'REGISTRATIONS', 'TERRITORY_PLATFORM'])),
   actions: z.array(ConnectedIntelligenceActionSchema).max(20_000),
+  /** Phase 15 review pointers only; this does not dispatch to departments. */
+  departmentReviewPlan: CrossDepartmentReviewPlanSchema,
   explanation: z.string().trim().min(1).max(1000),
   evaluatedAt: IsoDateTimeSchema,
 }).strict();
@@ -165,6 +171,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
       status: 'NOT_EVALUATED',
       evaluatedDimensions: ['EVENT'],
       actions: [],
+      departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
       explanation: `No Phase 9 rule is defined for ${parsed.event.eventType}; no readiness conclusion was made.`,
       evaluatedAt: parsed.evaluatedAt,
     });
@@ -179,6 +186,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
       status: 'NOT_EVALUATED',
       evaluatedDimensions: ['EVENT'],
       actions: [],
+      departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
       explanation: `Event ${parsed.event.eventType} identifies ${releaseRefs.length} canonical releases; exactly one affected release is required, so no readiness conclusion was made.`,
       evaluatedAt: parsed.evaluatedAt,
     });
@@ -196,6 +204,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
     return ConnectedIntelligenceResultSchema.parse({
       schemaVersion: 'connected-intelligence.v1', sourceEventId: parsed.event.eventId,
       status: 'ACTIONS_REQUIRED', evaluatedDimensions: ['EVENT', 'MUSIC_IDENTITY'], actions,
+      departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
       explanation: 'The release subject is unresolved, so downstream readiness checks were not treated as complete.',
       evaluatedAt: parsed.evaluatedAt,
     });
@@ -433,6 +442,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
     status: actions.length ? 'ACTIONS_REQUIRED' : 'NO_ACTION_REQUIRED',
     evaluatedDimensions: EVALUATED_DIMENSIONS,
     actions,
+    departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
     explanation: actions.length
       ? `${actions.length} advisory action${actions.length === 1 ? '' : 's'} require review; no external or authoritative action was taken.`
       : 'All supplied Phase 9 readiness dimensions passed their deterministic checks; no action is required for this evaluation.',
