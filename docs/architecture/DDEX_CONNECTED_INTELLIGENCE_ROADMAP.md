@@ -210,6 +210,12 @@ Use the artist's own verified historical behavior to suggest likely next workflo
 
 Prediction may suggest; it may not convert guesses into authoritative business facts.
 
+The first delivery is an advisory-only, deterministic projection of a user's
+own persisted completed workflow sequences, surfaced in the existing sidebar
+and Workflow module. It requires repeated completed transitions and never
+starts or authorizes a workflow; see
+[`PHASE_14_WORKFLOW_PREDICTION.md`](PHASE_14_WORKFLOW_PREDICTION.md).
+
 ## Phase 15 — Cross-department intelligence
 
 One business event may update/re-evaluate Distribution, Publishing, Rights, Finance, Marketing, Analytics, Creative, and Video.

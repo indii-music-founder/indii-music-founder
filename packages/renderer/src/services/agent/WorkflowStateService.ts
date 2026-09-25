@@ -2,7 +2,7 @@ import { FirestoreService } from '../FirestoreService';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { doc, runTransaction } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
 import type {
     WorkflowExecution,
     WorkflowStepExecution,
@@ -12,7 +12,9 @@ import type {
 import {
     WorkflowExecutionSchema,
     WorkflowExecutionStatusEnum,
-    WorkflowStepStatusEnum
+    WorkflowStepStatusEnum,
+    predictNextWorkflows,
+    type WorkflowPredictionReport,
 } from '@indii/shared';
 
 /**
@@ -98,6 +100,22 @@ class WorkflowStateServiceImpl {
         const service = this.getService(userId);
         const executions = await service.list();
         return executions.map(execution => this.normalizeExecution(execution));
+    }
+
+    /**
+     * Return an advisory next-workflow suggestion from this authenticated
+     * user's persisted completion history. This is read-only and never starts
+     * or authorizes a workflow.
+     */
+    async getNextWorkflowPrediction(userId: string): Promise<WorkflowPredictionReport | null> {
+        const scopedUserId = userId.trim();
+        if (!scopedUserId || auth.currentUser?.uid !== scopedUserId) return null;
+        const executions = await this.getExecutionsByUser(scopedUserId);
+        return predictNextWorkflows({
+            userId: scopedUserId,
+            executions,
+            evaluatedAt: new Date().toISOString(),
+        });
     }
 
     /**
