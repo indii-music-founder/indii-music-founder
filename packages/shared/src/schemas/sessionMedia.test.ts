@@ -165,6 +165,32 @@ describe('VideoSessionSchema', () => {
         }).success).toBe(false);
     });
 
+    it('accepts the finalized production shape with its immutable staging generation', () => {
+        const original = {
+            ...validManifest.original,
+            mimeType: uploadingSession.expectedMimeType,
+        };
+        const completedSession = {
+            ...uploadingSession,
+            stagingGeneration: '1712345678901234',
+            status: 'completed' as const,
+            original,
+            proxyJob: {
+                schemaVersion: 'session-proxy-job.v1' as const,
+                jobId: 'proxy-abc123',
+                status: 'queued' as const,
+                originalGeneration: original.generation,
+                originalSha256: original.sha256,
+                claimedAt: '2026-07-21T18:00:00.000Z',
+            },
+            proxyManifest: validManifest,
+            completedAt: '2026-07-21T18:05:00.000Z',
+            terminalReceiptId: 'terminal-receipt-1',
+        };
+
+        expect(VideoSessionSchema.safeParse(completedSession).success).toBe(true);
+    });
+
     // Regression: `dispatchSessionProxyJob.ts` writes `proxyJob` onto the real
     // `videoSessions/{sessionId}` document, but this schema is `.strict()` and
     // is used to parse that same document client-side
