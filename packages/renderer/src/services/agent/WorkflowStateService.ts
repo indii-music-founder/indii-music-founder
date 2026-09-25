@@ -13,6 +13,7 @@ import {
     WorkflowExecutionSchema,
     WorkflowExecutionStatusEnum,
     WorkflowStepStatusEnum,
+    CanonicalArtistEntityIdSchema,
     predictNextWorkflows,
     type WorkflowPredictionReport,
 } from '@indii/shared';
@@ -41,6 +42,11 @@ class WorkflowStateServiceImpl {
         }) as WorkflowExecution;
     }
 
+    private getCanonicalArtistId(value: string | undefined): string | undefined {
+        const parsed = CanonicalArtistEntityIdSchema.safeParse(value);
+        return parsed.success ? parsed.data : undefined;
+    }
+
     private serializeEdges(edges: WorkflowEdge[]): WorkflowEdge[] {
         return edges.map(({ from, to, label, metadata }) => ({
             from,
@@ -59,7 +65,8 @@ class WorkflowStateServiceImpl {
         workflowId: string,
         steps: WorkflowStep[],
         edges: WorkflowEdge[],
-        sessionId?: string
+        sessionId?: string,
+        artistEntityId?: string,
     ): Promise<WorkflowExecution> {
         const service = this.getService(userId);
         const id = uuidv4();
@@ -76,9 +83,12 @@ class WorkflowStateServiceImpl {
             };
         }
 
+        const canonicalArtistEntityId = this.getCanonicalArtistId(artistEntityId);
+
         const execution: WorkflowExecution = {
             id,
             workflowId,
+            ...(canonicalArtistEntityId ? { artistEntityId: canonicalArtistEntityId } : {}),
             sessionId,
             userId,
             status: WorkflowExecutionStatusEnum.enum.PLANNED,
@@ -107,12 +117,14 @@ class WorkflowStateServiceImpl {
      * user's persisted completion history. This is read-only and never starts
      * or authorizes a workflow.
      */
-    async getNextWorkflowPrediction(userId: string): Promise<WorkflowPredictionReport | null> {
+    async getNextWorkflowPrediction(userId: string, artistEntityId: string): Promise<WorkflowPredictionReport | null> {
         const scopedUserId = userId.trim();
-        if (!scopedUserId || auth.currentUser?.uid !== scopedUserId) return null;
+        const canonicalArtistId = CanonicalArtistEntityIdSchema.safeParse(artistEntityId);
+        if (!scopedUserId || !canonicalArtistId.success || auth.currentUser?.uid !== scopedUserId) return null;
         const executions = await this.getExecutionsByUser(scopedUserId);
         return predictNextWorkflows({
             userId: scopedUserId,
+            artistEntityId: canonicalArtistId.data,
             executions,
             evaluatedAt: new Date().toISOString(),
         });

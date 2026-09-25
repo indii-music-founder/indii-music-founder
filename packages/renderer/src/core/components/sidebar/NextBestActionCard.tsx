@@ -22,6 +22,7 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
     const [historyPrediction, setHistoryPrediction] = useState<WorkflowPredictionReport | null>(null);
     const [dismissedForModule, setDismissedForModule] = useState<string | null>(null);
     const userId = useStore(state => state.user?.uid);
+    const artistEntityId = useStore(state => state.userProfile?.artistContext?.artistEntityId ?? state.userProfile?.artistEntityId);
 
     useEffect(() => {
         if (!isSidebarOpen) return;
@@ -30,9 +31,9 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
             setHistoryPrediction(null);
             try {
                 const state = useStore.getState();
-                if (userId) {
+                if (userId && artistEntityId) {
                     try {
-                        const prediction = await workflowStateService.getNextWorkflowPrediction(userId);
+                        const prediction = await workflowStateService.getNextWorkflowPrediction(userId, artistEntityId);
                         if (isMounted) setHistoryPrediction(prediction);
                     } catch {
                         // Historical suggestions are optional and fail closed.
@@ -63,7 +64,7 @@ export const NextBestActionCard: React.FC<NextBestActionCardProps> = ({
         return () => {
             isMounted = false;
         };
-    }, [currentModule, isSidebarOpen, userId]);
+    }, [currentModule, isSidebarOpen, userId, artistEntityId]);
 
     if (!isSidebarOpen || (!verdict && !historyPrediction) || (verdict?.nextModule === currentModule && !historyPrediction) || dismissedForModule === currentModule) {
         return null;

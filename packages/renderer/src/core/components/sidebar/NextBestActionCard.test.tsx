@@ -18,13 +18,14 @@ vi.mock('@/services/agent/WorkflowStateService', () => ({
 
 vi.mock('@/core/store', () => ({
     useStore: Object.assign(
-        (selector: (state: { user?: { uid: string }; catalog: { id: string; title: string }[]; campaigns: unknown[]; splits: { id: string; status: string }[]; unreadStatements: boolean }) => unknown) => {
+        (selector: (state: { user?: { uid: string }; userProfile?: { artistEntityId?: string }; catalog: { id: string; title: string }[]; campaigns: unknown[]; splits: { id: string; status: string }[]; unreadStatements: boolean }) => unknown) => {
             const state = {
-            catalog: [{ id: '1', title: 'Unreleased track' }],
-            campaigns: [],
-            splits: [{ id: 's1', status: 'pending' }],
-            unreadStatements: false,
-            user: { uid: 'artist-test' },
+                catalog: [{ id: '1', title: 'Unreleased track' }],
+                campaigns: [],
+                splits: [{ id: 's1', status: 'pending' }],
+                unreadStatements: false,
+                user: { uid: 'artist-test' },
+                userProfile: { artistEntityId: 'canonical-artist-test' },
             };
             return selector(state);
         },
@@ -35,6 +36,7 @@ vi.mock('@/core/store', () => ({
                 splits: [{ id: 's1', status: 'pending' }],
                 unreadStatements: false,
                 user: { uid: 'artist-test' },
+                userProfile: { artistEntityId: 'canonical-artist-test' },
             }),
         },
     ),
@@ -143,6 +145,6 @@ describe('NextBestActionCard', () => {
         expect(await screen.findByTestId('historical-workflow-suggestion')).toHaveTextContent(/release-plan.*rights-review/i);
         fireEvent.click(screen.getByRole('button', { name: /review in workflows/i }));
         expect(onNavigate).toHaveBeenCalledWith('workflow');
-        expect(mockGetNextWorkflowPrediction).toHaveBeenCalledWith('artist-test');
+        expect(mockGetNextWorkflowPrediction).toHaveBeenCalledWith('artist-test', 'canonical-artist-test');
     });
 });

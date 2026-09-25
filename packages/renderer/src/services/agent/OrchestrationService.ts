@@ -51,7 +51,8 @@ export class OrchestrationService {
             workflowId,
             workflow.steps,
             workflow.edges,
-            context.projectId
+            context.projectId,
+            context.userProfile?.artistContext?.artistEntityId ?? context.userProfile?.artistEntityId
         );
 
         return this.runSteps(execution.id, workflow, context, userId, traceId);

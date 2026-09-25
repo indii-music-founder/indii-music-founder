@@ -1,11 +1,12 @@
 import { z } from 'zod';
-import { WorkflowExecutionSchema } from './workflowState.js';
+import { CanonicalArtistEntityIdSchema, WorkflowExecutionSchema } from './workflowState.js';
 
 const IdSchema = z.string().trim().min(1).max(256);
 const IsoDateTimeSchema = z.string().datetime();
 
 export const WorkflowPredictionInputSchema = z.object({
   userId: IdSchema,
+  artistEntityId: CanonicalArtistEntityIdSchema,
   executions: z.array(WorkflowExecutionSchema).max(5_000),
   evaluatedAt: IsoDateTimeSchema,
 }).strict().superRefine((input, ctx) => {
@@ -31,7 +32,7 @@ export type WorkflowPrediction = z.infer<typeof WorkflowPredictionSchema>;
 
 export const WorkflowPredictionReportSchema = z.object({
   schemaVersion: z.literal('workflow-prediction.v1'),
-  scope: z.literal('CURRENT_USER_ONLY'),
+  scope: z.literal('CURRENT_ARTIST_CONTEXT_ONLY'),
   historyEvidence: z.literal('PERSISTED_COMPLETED_WORKFLOWS'),
   latestCompletedExecutionId: IdSchema,
   predictions: z.array(WorkflowPredictionSchema).max(5),
@@ -62,7 +63,7 @@ function isVerifiedCompletion(execution: WorkflowExecution): boolean {
 export function predictNextWorkflows(input: WorkflowPredictionInput): WorkflowPredictionReport | null {
   const parsed = WorkflowPredictionInputSchema.parse(input);
   const chronological = [...parsed.executions]
-    .filter(execution => execution.userId === parsed.userId)
+    .filter(execution => execution.userId === parsed.userId && execution.artistEntityId === parsed.artistEntityId)
     .sort((left, right) => left.createdAt - right.createdAt || left.updatedAt - right.updatedAt || left.id.localeCompare(right.id));
   const latest = chronological.at(-1);
   if (!latest || !isVerifiedCompletion(latest)) return null;
@@ -99,7 +100,7 @@ export function predictNextWorkflows(input: WorkflowPredictionInput): WorkflowPr
 
   return WorkflowPredictionReportSchema.parse({
     schemaVersion: 'workflow-prediction.v1',
-    scope: 'CURRENT_USER_ONLY',
+    scope: 'CURRENT_ARTIST_CONTEXT_ONLY',
     historyEvidence: 'PERSISTED_COMPLETED_WORKFLOWS',
     latestCompletedExecutionId: latest.id,
     predictions,

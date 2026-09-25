@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+const externalEntityIdPrefixes = /^(?:isrc|iswc|upc|ean|isni|ipi|dpid|grid|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i;
+const externalEntityIdValue = /^(?:[A-Z]{2}[A-Z0-9]{3}\d{7}|T-\d{3}\.\d{3}\.\d{3}-\d|\d{8,14})$/i;
+
+/** Canonical entity scope only; external identifiers must remain identifiers. */
+export const CanonicalArtistEntityIdSchema = z.string().trim().min(1).max(160).refine(
+    value => !externalEntityIdPrefixes.test(value) && !externalEntityIdValue.test(value),
+    'External identifier values cannot be used as canonical artist entity IDs.',
+);
+
 /**
  * Enum for Workflow Execution State
  * Drives the overarching state of a long-running workflow.
@@ -130,6 +139,8 @@ export interface WorkflowStep {
 export const WorkflowExecutionSchema = z.object({
     id: z.string(),
     workflowId: z.string(),
+    /** Optional canonical artist context; legacy executions remain readable but cannot ground artist-scoped predictions. */
+    artistEntityId: CanonicalArtistEntityIdSchema.optional(),
     sessionId: z.string().optional(),
     userId: z.string(),
     status: z.preprocess(
@@ -146,4 +157,3 @@ export const WorkflowExecutionSchema = z.object({
 export interface WorkflowExecution extends z.infer<typeof WorkflowExecutionSchema> {
     edges: WorkflowEdge[];
 }
-
