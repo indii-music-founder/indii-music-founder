@@ -1,12 +1,14 @@
 import React from 'react';
 import { Music2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { CatalogIntelligenceReport } from '@indii/shared';
 import type { CatalogTrack, TrackRegistrationState } from '../types';
 
 interface CatalogRailProps {
   tracks: CatalogTrack[];
   selectedTrackId: string | null;
   registrationStates: Record<string, TrackRegistrationState>;
+  intelligenceReport: CatalogIntelligenceReport | null;
   onSelectTrack: (trackId: string) => void;
 }
 
@@ -22,7 +24,7 @@ function completenessLabel(score: number): string {
   return 'None';
 }
 
-export function CatalogRail({ tracks, selectedTrackId, registrationStates, onSelectTrack }: CatalogRailProps) {
+export function CatalogRail({ tracks, selectedTrackId, registrationStates, intelligenceReport, onSelectTrack }: CatalogRailProps) {
   const [query, setQuery] = React.useState('');
   const filtered = tracks.filter(t => t.title.toLowerCase().includes(query.toLowerCase()));
 
@@ -93,6 +95,20 @@ export function CatalogRail({ tracks, selectedTrackId, registrationStates, onSel
           {tracks.filter(t => (registrationStates[t.id]?.completenessScore ?? 0) === 100).length} fully registered
         </p>
       </div>
+      {intelligenceReport && (
+        <section aria-label="Catalog intelligence" className="px-3 py-3 border-t border-white/[0.05] space-y-1">
+          <h2 className="text-[11px] font-semibold text-gray-400">Catalog intelligence</h2>
+          <p className="text-[11px] text-gray-500">
+            {intelligenceReport.metrics.findingCount > 0
+              ? `${intelligenceReport.metrics.findingCount} potential identifier conflict${intelligenceReport.metrics.findingCount === 1 ? ' needs' : 's need'} review.`
+              : 'No identifier collisions found in this read-only check.'}
+          </p>
+          <p className="text-[10px] leading-relaxed text-gray-600">
+            Legacy details are unconfirmed. Rights, registration requirements, contributor identity, media links, and collection paths are not assessed.
+            {intelligenceReport.snapshot.completeness === 'PARTIAL' && ' Only the bounded first 5,000 catalog entries were checked.'}
+          </p>
+        </section>
+      )}
     </div>
   );
 }
