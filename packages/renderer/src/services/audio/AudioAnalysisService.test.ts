@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AudioAnalysisService } from './AudioAnalysisService';
+import { ProvenanceSchema } from '@shared/schemas/musicEntity';
 
 // Polyfill Blob.arrayBuffer if missing (Node environment)
 if (typeof Blob !== 'undefined' && !Blob.prototype.arrayBuffer) {
@@ -205,6 +206,32 @@ describe('AudioAnalysisService', () => {
         const result = await service.analyze(mockFile);
         expect(result.fromCache).toBe(false);
         expect(result.features.bpm).toBe(120);
+    });
+
+    it('runs an explicitly local-only technical scan without cache, network, or persistence', async () => {
+        const mockFile = new File(['local audio bytes'], 'local.wav', { type: 'audio/wav' });
+        const report = await service.analyzeLocalOnly(mockFile);
+
+        expect(report).toMatchObject({
+            filename: 'local.wav',
+            mode: 'LOCAL_ONLY',
+            networkCalls: 0,
+            persisted: false,
+            features: { bpm: 120, key: 'C', scale: 'major' },
+            provenance: { state: 'DETECTED', sourceType: 'SYSTEM', sourceId: 'local-audio-analysis' },
+        });
+        expect(ProvenanceSchema.safeParse(report.provenance).success).toBe(true);
+        expect(musicLibraryService.getAnalysis).not.toHaveBeenCalled();
+        expect(musicLibraryService.saveAnalysis).not.toHaveBeenCalled();
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('rejects paths instead of silently routing them through Electron or a remote provider', async () => {
+        await expect(service.analyzeLocalOnly('/private/audio.wav' as unknown as Blob))
+            .rejects.toThrow('Local-only analysis requires an in-memory File or Blob.');
+        expect(musicLibraryService.getAnalysis).not.toHaveBeenCalled();
+        expect(musicLibraryService.saveAnalysis).not.toHaveBeenCalled();
+        expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it('should handle analysis errors gracefully', async () => {

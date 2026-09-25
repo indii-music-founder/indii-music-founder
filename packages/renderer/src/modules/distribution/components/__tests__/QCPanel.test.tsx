@@ -3,12 +3,18 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QCPanel } from '../QCPanel';
 import { distributionService } from '@/services/distribution/DistributionService';
+import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
+
+const { mockConnectedAnalyze } = vi.hoisted(() => ({ mockConnectedAnalyze: vi.fn() }));
 
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
         success: vi.fn(),
         error: vi.fn(),
+        loading: vi.fn(() => 'toast-id'),
+        dismiss: vi.fn(),
+        updateProgress: vi.fn(),
     }),
 }));
 
@@ -17,6 +23,14 @@ vi.mock('@/services/distribution/DistributionService', () => ({
         validateReleaseMetadata: vi.fn(),
         generateContentIdAssets: vi.fn(),
     },
+}));
+
+vi.mock('@/components/shared/AudioWaveformViewer', () => ({
+    AudioWaveformViewer: () => null,
+}));
+
+vi.mock('@/services/audio/AudioIntelligenceService', () => ({
+    audioIntelligence: { analyze: mockConnectedAnalyze },
 }));
 
 describe('QCPanel', () => {
@@ -177,5 +191,41 @@ describe('QCPanel', () => {
         });
 
         expect(screen.getByTestId('qc-audio-dropzone')).toBeInTheDocument();
+    });
+
+    it('lets QC consume a local-only report without creating semantic or saved-agent output', async () => {
+        const report = {
+            id: 'a'.repeat(64),
+            filename: 'local.wav',
+            features: {
+                bpm: 120, key: 'C', scale: 'major', energy: 0.5, duration: 30,
+                danceability: 0.4, loudness: -12,
+            },
+            provenance: {
+                state: 'DETECTED' as const,
+                sourceType: 'SYSTEM' as const,
+                sourceId: 'local-audio-analysis',
+                evidence: [],
+                observedAt: '2026-09-25T00:00:00.000Z',
+            },
+            mode: 'LOCAL_ONLY' as const,
+            networkCalls: 0 as const,
+            persisted: false as const,
+        };
+        const localAnalyze = vi.spyOn(audioAnalysisService, 'analyzeLocalOnly').mockResolvedValue(report);
+        const saveAnalysis = vi.spyOn(audioAnalysisService, 'saveAnalysisToFirestore');
+        vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local-test');
+        const localFile = new File(['local bytes'], 'local.wav', { type: 'audio/wav' });
+
+        render(<QCPanel />);
+        fireEvent.click(screen.getByTestId('local-only-audio-analysis-mode'));
+        fireEvent.change(screen.getByTestId('import-track-input'), { target: { files: [localFile] } });
+
+        await waitFor(() => expect(localAnalyze).toHaveBeenCalledWith(localFile));
+        expect(await screen.findByTestId('local-only-analysis-report')).toHaveTextContent('DETECTED');
+        expect(screen.queryByText('Distribution Spec')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('save-analysis-button')).not.toBeInTheDocument();
+        expect(saveAnalysis).not.toHaveBeenCalled();
+        expect(mockConnectedAnalyze).not.toHaveBeenCalled();
     });
 });

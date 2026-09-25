@@ -6,6 +6,17 @@ import { logger } from '@/utils/logger';
 import { DSPComplianceValidator } from './DSPComplianceValidator';
 import type { DeepAudioFeatures, TechnicalAudit } from './types';
 import type { AudioAnalysisResult } from '@/types/electron';
+import type { Provenance } from '@shared/schemas/musicEntity';
+
+export interface LocalOnlyAudioAnalysisReport {
+    id: string;
+    filename: string;
+    features: DeepAudioFeatures;
+    provenance: Provenance;
+    mode: 'LOCAL_ONLY';
+    networkCalls: 0;
+    persisted: false;
+}
 
 
 export class AudioAnalysisService {
@@ -136,6 +147,57 @@ export class AudioAnalysisService {
         }
 
         return { features, proxyBase64: undefined, fromCache: false };
+    }
+
+    /**
+     * Analyze bytes supplied by the user without cache reads/writes, Electron
+     * IPC, API calls, or semantic inference. Suitable for explicit off-grid
+     * QC; its measurements are not identity, rights, or clearance assertions.
+     */
+    async analyzeLocalOnly(file: File | Blob): Promise<LocalOnlyAudioAnalysisReport> {
+        if (!file || typeof file.arrayBuffer !== 'function') {
+            throw new Error('Local-only analysis requires an in-memory File or Blob.');
+        }
+
+        const fileHash = await this.generateFileHash(file);
+        const AudioContextConstructor = window.AudioContext ||
+            (window as unknown as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!AudioContextConstructor) {
+            throw new Error('Local-only audio analysis is unavailable because Web Audio is not supported.');
+        }
+
+        const audioContext = new AudioContextConstructor();
+        let features: DeepAudioFeatures;
+        try {
+            const audioBuffer = await audioContext.decodeAudioData(await file.arrayBuffer());
+            features = await this.analyzeBuffer(audioBuffer);
+        } finally {
+            await audioContext.close();
+        }
+
+        const observedAt = new Date().toISOString();
+        const provenance: Provenance = {
+            state: 'DETECTED',
+            sourceType: 'SYSTEM',
+            sourceId: 'local-audio-analysis',
+            evidence: [{
+                id: `local-file-${fileHash}`,
+                type: 'OTHER',
+                description: 'User-selected audio bytes used for this local technical analysis.',
+            }],
+            observedAt,
+            note: 'Technical analysis was computed from user-selected local bytes; this is not an identity, rights, registration, or clearance assertion.',
+        };
+
+        return {
+            id: fileHash,
+            filename: typeof File !== 'undefined' && file instanceof File ? file.name : 'audio',
+            features,
+            provenance,
+            mode: 'LOCAL_ONLY',
+            networkCalls: 0,
+            persisted: false,
+        };
     }
 
     public async generateFileHash(file: Blob): Promise<string> {

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { distributionService } from '@/services/distribution/DistributionService';
-import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
+import { audioAnalysisService, type LocalOnlyAudioAnalysisReport } from '@/services/audio/AudioAnalysisService';
 import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
 import { TagMatrix } from '@/modules/tools/components/TagMatrix';
 // ISSUE-1440: shared disclosure primitive for metadata-tab secondaries.
@@ -42,7 +42,10 @@ export const QCPanel: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
     const [profile, setProfile] = useState<AudioIntelligenceProfile | null>(null);
+    const [localReport, setLocalReport] = useState<LocalOnlyAudioAnalysisReport | null>(null);
+    const [analysisMode, setAnalysisMode] = useState<'connected' | 'local-only'>('connected');
     const abortControllerRef = useRef<AbortController | null>(null);
+    const technicalFeatures = profile?.technical ?? localReport?.features;
 
     // Lossless Master Formats
     const LOSSLESS_MIME_TYPES = new Set([
@@ -64,7 +67,7 @@ export const QCPanel: React.FC = () => {
     };
 
     const handleLoadClick = async (e: React.MouseEvent<HTMLLabelElement>) => {
-        if (window.electronAPI) {
+        if (window.electronAPI && analysisMode === 'connected') {
             e.preventDefault();
             if (isAnalyzing) return;
 
@@ -109,6 +112,7 @@ export const QCPanel: React.FC = () => {
                     setAudioUrl(`safe-file://${filePath}`);
                     setTags([]);
                     setProfile(null);
+                    setLocalReport(null);
 
                     await runAnalysis(mockFile);
                 }
@@ -139,6 +143,7 @@ export const QCPanel: React.FC = () => {
         setAudioUrl(URL.createObjectURL(uploadedFile));
         setTags([]);
         setProfile(null);
+        setLocalReport(null);
         await runAnalysis(uploadedFile);
     };
 
@@ -180,6 +185,7 @@ export const QCPanel: React.FC = () => {
         setAudioUrl(URL.createObjectURL(droppedFile));
         setTags([]);
         setProfile(null);
+        setLocalReport(null);
         await runAnalysis(droppedFile);
     };
 
@@ -187,9 +193,25 @@ export const QCPanel: React.FC = () => {
         setIsAnalyzing(true);
         abortControllerRef.current = new AbortController();
         const signal = abortControllerRef.current.signal;
-        const extractToastId = toast.loading("Estimating technical & semantic audio profile...");
+        const extractToastId = toast.loading(analysisMode === 'local-only'
+            ? 'Running local-only technical scan…'
+            : 'Estimating technical & semantic audio profile…');
 
         try {
+            if (analysisMode === 'local-only') {
+                if (typeof audioFile === 'string') {
+                    throw new Error('Local-only analysis requires an in-memory audio file. Select the file with the file picker.');
+                }
+                const report = await audioAnalysisService.analyzeLocalOnly(audioFile);
+                if (signal.aborted) throw new DOMException('Analysis cancelled', 'AbortError');
+                setLocalReport(report);
+                setProfile(null);
+                setTags([]);
+                toast.dismiss(extractToastId);
+                toast.success('Local-only technical scan complete. No upload, AI, or saved profile was used.');
+                return;
+            }
+
             const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
 
             let resultProfile: AudioIntelligenceProfile;
@@ -227,6 +249,7 @@ export const QCPanel: React.FC = () => {
 
             setTags(Array.from(newTags));
             setProfile(resultProfile);
+            setLocalReport(null);
 
             toast.dismiss(extractToastId);
             toast.success("Extraction Complete: Deep acoustic profile generated.");
@@ -481,6 +504,55 @@ export const QCPanel: React.FC = () => {
                     </div>
                 </div>
 
+                <div className="flex flex-wrap items-center gap-3" role="group" aria-label="Audio analysis mode">
+                    <span className="text-xs font-semibold text-muted-foreground">Analysis mode</span>
+                    <Button
+                        type="button"
+                        variant={analysisMode === 'connected' ? 'default' : 'outline'}
+                        aria-pressed={analysisMode === 'connected'}
+                        data-testid="connected-audio-analysis-mode"
+                        disabled={isAnalyzing}
+                        onClick={() => {
+                            setAnalysisMode('connected');
+                            setProfile(null);
+                            setLocalReport(null);
+                            setTags([]);
+                        }}
+                    >
+                        Full connected analysis
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={analysisMode === 'local-only' ? 'default' : 'outline'}
+                        aria-pressed={analysisMode === 'local-only'}
+                        data-testid="local-only-audio-analysis-mode"
+                        disabled={isAnalyzing}
+                        onClick={() => {
+                            setAnalysisMode('local-only');
+                            setProfile(null);
+                            setLocalReport(null);
+                            setTags([]);
+                        }}
+                    >
+                        Local-only technical scan
+                    </Button>
+                    {analysisMode === 'local-only' && (
+                        <span className="text-xs text-muted-foreground">
+                            Runs on this device; does not upload, call AI, cache, or save results.
+                        </span>
+                    )}
+                </div>
+
+                {localReport && (
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-xs text-emerald-100" data-testid="local-only-analysis-report">
+                        <div className="font-bold">Local-only technical report · {localReport.provenance.state}</div>
+                        <p className="mt-1 text-emerald-100/80">
+                            Measurements and estimates only. No semantic profile, identity match, rights, registration, or clearance decision was produced.
+                        </p>
+                        <p className="mt-1 break-all font-mono text-emerald-100/60">File fingerprint: {localReport.id}</p>
+                    </div>
+                )}
+
                 {/* Master Audio Waveform Preview */}
                 {audioUrl && (
                     <div className="bg-white/5 glass-panel rounded-2xl p-6 border border-white/10 animate-in fade-in slide-in-from-bottom-3 duration-400">
@@ -490,41 +562,41 @@ export const QCPanel: React.FC = () => {
                 )}
 
                 {/* Acoustic Readout Matrix */}
-                {profile && (
+                {technicalFeatures && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="bg-white/5 glass-panel rounded-2xl p-4 border border-white/10 flex flex-col justify-between">
                             <div className="flex items-center gap-1.5 text-muted-foreground mb-3">
                                 <Clock size={14} />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">Duration</span>
                             </div>
-                            <span className="text-2xl font-mono text-white">{formatTime(profile.technical.duration)}</span>
+                            <span className="text-2xl font-mono text-white">{formatTime(technicalFeatures.duration)}</span>
                         </div>
                         <div className="bg-white/5 glass-panel rounded-2xl p-4 border border-white/10 flex flex-col justify-between">
                             <div className="flex items-center gap-1.5 text-muted-foreground mb-3">
                                 <Activity size={14} />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">BPM (Tempo)</span>
                             </div>
-                            <span className="text-2xl font-mono text-white">{Math.round(profile.technical.bpm)}</span>
+                            <span className="text-2xl font-mono text-white">{Math.round(technicalFeatures.bpm)}</span>
                         </div>
                         <div className="bg-white/5 glass-panel rounded-2xl p-4 border border-white/10 flex flex-col justify-between">
                             <div className="flex items-center gap-1.5 text-muted-foreground mb-3">
                                 <Music size={14} />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">Key & Scale</span>
                             </div>
-                            <span className="text-2xl font-mono text-white">{profile.technical.key} {profile.technical.scale}</span>
+                            <span className="text-2xl font-mono text-white">{technicalFeatures.key} {technicalFeatures.scale}</span>
                         </div>
                         <div className="bg-white/5 glass-panel rounded-2xl p-4 border border-white/10 flex flex-col justify-between">
                             <div className="flex items-center gap-1.5 text-muted-foreground mb-3">
                                 <BarChart2 size={14} />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">Energy Index</span>
                             </div>
-                            <span className="text-2xl font-mono text-white">{(profile.technical.energy * 100).toFixed(0)}%</span>
+                            <span className="text-2xl font-mono text-white">{(technicalFeatures.energy * 100).toFixed(0)}%</span>
                         </div>
                     </div>
                 )}
 
                 {/* Platform Target Audit (LUFS & True Peak) */}
-                {profile?.technical?.audit && (
+                {technicalFeatures?.audit && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* Integrated Loudness */}
                         <div className="bg-white/5 glass-panel rounded-2xl p-6 border border-white/10 flex flex-col relative overflow-hidden">
@@ -537,16 +609,16 @@ export const QCPanel: React.FC = () => {
                             </div>
                             <div className="flex items-end gap-3 mb-4">
                                 <span className="text-4xl font-mono text-white tracking-tighter">
-                                    {profile.technical.audit.integratedLoudness.toFixed(1)}
+                                    {technicalFeatures.audit.integratedLoudness.toFixed(1)}
                                 </span>
                                 <span className="text-lg text-white/50 pb-0.5">LUFS</span>
                             </div>
                             <div className="space-y-2 mt-auto text-xs">
                                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5">
                                     <span className="text-white font-medium">Spotify Target (-14 LUFS)</span>
-                                    {profile.technical.audit.integratedLoudness > -12 ? (
+                                    {technicalFeatures.audit.integratedLoudness > -12 ? (
                                         <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalized</Badge>
-                                    ) : profile.technical.audit.integratedLoudness < -16 ? (
+                                    ) : technicalFeatures.audit.integratedLoudness < -16 ? (
                                         <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
                                     ) : (
                                         <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-1"><CheckCircle2 size={12} /> Optimal</Badge>
@@ -554,9 +626,9 @@ export const QCPanel: React.FC = () => {
                                 </div>
                                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5">
                                     <span className="text-white font-medium">Apple Music Target (-16 LUFS)</span>
-                                    {profile.technical.audit.integratedLoudness > -14 ? (
+                                    {technicalFeatures.audit.integratedLoudness > -14 ? (
                                         <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalized</Badge>
-                                    ) : profile.technical.audit.integratedLoudness < -18 ? (
+                                    ) : technicalFeatures.audit.integratedLoudness < -18 ? (
                                         <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
                                     ) : (
                                         <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-1"><CheckCircle2 size={12} /> Optimal</Badge>
@@ -576,14 +648,14 @@ export const QCPanel: React.FC = () => {
                             </div>
                             <div className="flex items-end gap-3 mb-4">
                                 <span className="text-4xl font-mono text-white tracking-tighter">
-                                    {profile.technical.audit.peakLevel.toFixed(2)}
+                                    {technicalFeatures.audit.peakLevel.toFixed(2)}
                                 </span>
                                 <span className="text-lg text-white/50 pb-0.5">dBTP</span>
                             </div>
                             <div className="space-y-2 mt-auto text-xs">
                                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5">
                                     <span className="text-white font-medium">DSP Target (-1.0 dBTP max)</span>
-                                    {profile.technical.audit.peakLevel > -0.5 ? (
+                                    {technicalFeatures.audit.peakLevel > -0.5 ? (
                                         <Badge variant="destructive" className="flex items-center gap-1"><AlertTriangle size={12} /> Clipping Risk</Badge>
                                     ) : (
                                         <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-1"><CheckCircle2 size={12} /> Optimal</Badge>
