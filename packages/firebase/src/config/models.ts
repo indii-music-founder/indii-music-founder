@@ -20,9 +20,9 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
         LEGACY: 'gemini-2.5-flash-image',
     },
     TEXT: {
-        FAST: 'gemini-3-flash-preview',
-        LITE: 'gemini-3-flash-preview',
-        PRO: 'gemini-3-pro-preview',
+        FAST: 'gemini-3.8-flash',
+        LITE: 'gemini-3.1-flash-lite',
+        PRO: 'gemini-3.1-pro-preview',
     },
     VIDEO: {
         GENERATION: 'veo-3.1-generate-001',
@@ -36,7 +36,7 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
         GENERATION: 'gemini-3.1-flash-tts-preview',
     },
     AUDIO: {
-        ANALYSIS: 'gemini-3-flash-preview', // Multimodal audio support
+        ANALYSIS: 'gemini-3.8-flash', // Multimodal audio support via Gemini 3.8 Flash
     }
 } as const;
 

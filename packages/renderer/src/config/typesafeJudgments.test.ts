@@ -74,6 +74,13 @@ import {
     judgeStatementCatalogDisambiguation,
     judgeSplitSheetRightsClearance,
     judgeUniversalErrorRemediation,
+    judgeLikenessEnrolmentSuitability,
+    judgePersonaPosturePreset,
+    judgeTaxFormCompliance,
+    judgeDistributionBlocker,
+    judgeDdexGenreAndSubculture,
+    judgeAudioDrivenMerchSku,
+    judgeAudioMasterNormalization,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
     TRANSIENT_ADOPT_MIN,
@@ -2809,5 +2816,429 @@ describe('judgeUniversalErrorRemediation (Judgment 51)', () => {
         expect(verdict.isTransient).toBe(true);
         expect(verdict.severityScore).toBe(3);
         expect(verdict.actionButtonText).toBe('Clear Cache & Reload');
+    });
+});
+
+describe('judgeLikenessEnrolmentSuitability (Judgment 52)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('flags low resolution and missing face offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const noFace = await judgeLikenessEnrolmentSuitability({
+            fileName: 'blurry_crowd.jpg',
+            width: 1024,
+            height: 1024,
+            hasFaceDetected: false,
+            lightingConfidence: 0.8,
+            hasAccessories: false,
+        });
+
+        expect(noFace.status).toBe('OBSTRUCTED_FACE');
+        expect(noFace.faceClarityScore).toBe(1);
+        expect(noFace.isObstructed).toBe(true);
+
+        const lowRes = await judgeLikenessEnrolmentSuitability({
+            fileName: 'tiny_avatar.png',
+            width: 256,
+            height: 256,
+            hasFaceDetected: true,
+            lightingConfidence: 0.9,
+            hasAccessories: false,
+        });
+
+        expect(lowRes.status).toBe('RESOLUTION_TOO_LOW');
+        expect(lowRes.faceClarityScore).toBe(2);
+    });
+
+    it('evaluates studio portrait through Jev online callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    status: { choice: 'READY_FOR_TRAINING' },
+                    obstructed: { noul: 0.02 },
+                    clarity_score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeLikenessEnrolmentSuitability({
+            fileName: 'studio_headshot_4k.jpg',
+            width: 3840,
+            height: 2160,
+            hasFaceDetected: true,
+            lightingConfidence: 0.98,
+            hasAccessories: false,
+        });
+
+        expect(result.status).toBe('READY_FOR_TRAINING');
+        expect(result.faceClarityScore).toBe(5);
+        expect(result.isObstructed).toBe(false);
+        expect(result.advisoryNotes).toContain('READY_FOR_TRAINING');
+    });
+});
+
+describe('judgePersonaPosturePreset (Judgment 53)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('resolves philosophy description to calibrated fader presets offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const shark = await judgePersonaPosturePreset({
+            philosophyDescription: 'Aggressive major label dealmaking, maximum leverage and high risk',
+            riskTolerance: 'AGGRESSIVE',
+            communicationStyle: 'FORMAL',
+        });
+
+        expect(shark.recommendedPreset).toBe('MAJOR_LABEL_SHARK');
+        expect(shark.calibratedFaders.riskTolerance).toBe(90);
+        expect(shark.calibratedFaders.formality).toBe(80);
+        expect(shark.calibratedFaders.directness).toBe(85);
+
+        const mentor = await judgePersonaPosturePreset({
+            philosophyDescription: 'Patient educational mentor who explains every copyright detail',
+            riskTolerance: 'CONSERVATIVE',
+            communicationStyle: 'CASUAL',
+        });
+
+        expect(mentor.recommendedPreset).toBe('NURTURING_MENTOR');
+        expect(mentor.calibratedFaders.riskTolerance).toBe(30);
+        expect(mentor.calibratedFaders.reasoningTransparency).toBe(90);
+    });
+
+    it('scores persona alignment via Jev online callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    preset: { choice: 'SCRAPPY_INDIE_DIY' },
+                    alignment: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgePersonaPosturePreset({
+            philosophyDescription: 'Protect indie artist ownership, zero corporate BS, community direct-to-fan',
+            riskTolerance: 'MODERATE',
+            communicationStyle: 'BLUNT',
+        });
+
+        expect(result.recommendedPreset).toBe('SCRAPPY_INDIE_DIY');
+        expect(result.alignmentScore).toBe(5);
+        expect(result.calibratedFaders.formality).toBe(20);
+        expect(result.calibratedFaders.directness).toBe(75);
+    });
+});
+
+describe('judgeTaxFormCompliance (Judgment 54)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('detects missing TIN/SSN and validates complete W-9 offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const missingTin = await judgeTaxFormCompliance({
+            documentTitle: 'W9_Draft.pdf',
+            declaredFormType: 'W9',
+            hasExtractedTinOrSsn: false,
+            hasSignaturePresent: true,
+            extractedLegalName: 'John Doe Music LLC',
+        });
+
+        expect(missingTin.status).toBe('MISSING_REQUIRED_TIN');
+        expect(missingTin.isWithholdingExempt).toBe(false);
+        expect(missingTin.missingRequiredTin).toBe(true);
+
+        const validW9 = await judgeTaxFormCompliance({
+            documentTitle: 'W9_Signed_2026.pdf',
+            declaredFormType: 'W9',
+            hasExtractedTinOrSsn: true,
+            hasSignaturePresent: true,
+            extractedLegalName: 'John Doe Music LLC',
+        });
+
+        expect(validW9.status).toBe('VALID_W9_COMPLETE');
+        expect(validW9.isWithholdingExempt).toBe(true);
+        expect(validW9.missingRequiredTin).toBe(false);
+    });
+
+    it('validates foreign W-8BEN form through Jev online callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    status: { choice: 'VALID_W8BEN_COMPLETE' },
+                    missing_tin: { noul: 0.01 },
+                    compliance_score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeTaxFormCompliance({
+            documentTitle: 'W8BEN_Foreign_Signed.pdf',
+            declaredFormType: 'W8BEN',
+            hasExtractedTinOrSsn: true,
+            hasSignaturePresent: true,
+            extractedLegalName: 'Tokyo Electronic Collective',
+            countryOfCitizenship: 'Japan',
+        });
+
+        expect(result.status).toBe('VALID_W8BEN_COMPLETE');
+        expect(result.isWithholdingExempt).toBe(true);
+        expect(result.missingRequiredTin).toBe(false);
+        expect(result.complianceScore).toBe(5);
+    });
+});
+
+describe('judgeDistributionBlocker (Judgment 55)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('flags un-fingerprinted audio master and low-res artwork offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const missingQc = await judgeDistributionBlocker({
+            releaseTitle: 'Detroit Neon',
+            hasFingerprint: false,
+            coverArtWidth: 3000,
+            coverArtHeight: 3000,
+            hasIsrc: true,
+            hasSplitsDocumented: true,
+            territoriesDeclaredCount: 1,
+        });
+
+        expect(missingQc.blocker).toBe('MISSING_QC_FINGERPRINT');
+        expect(missingQc.isReady).toBe(false);
+        expect(missingQc.unblockActionUrl).toBe('#audio-qc');
+
+        const badArt = await judgeDistributionBlocker({
+            releaseTitle: 'Detroit Neon',
+            hasFingerprint: true,
+            coverArtWidth: 1500,
+            coverArtHeight: 1500,
+            hasIsrc: true,
+            hasSplitsDocumented: true,
+            territoriesDeclaredCount: 1,
+        });
+
+        expect(badArt.blocker).toBe('NON_COMPLIANT_COVER_ART');
+        expect(badArt.isReady).toBe(false);
+        expect(badArt.unblockActionUrl).toBe('#cover-art');
+    });
+
+    it('approves compliant release ready for automated delivery', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    blocker: { choice: 'READY_FOR_DELIVERY' },
+                    readiness_score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeDistributionBlocker({
+            releaseTitle: 'Golden Age Master',
+            hasFingerprint: true,
+            coverArtWidth: 3000,
+            coverArtHeight: 3000,
+            hasIsrc: true,
+            hasSplitsDocumented: true,
+            territoriesDeclaredCount: 195,
+        });
+
+        expect(result.blocker).toBe('READY_FOR_DELIVERY');
+        expect(result.isReady).toBe(true);
+        expect(result.readinessScore).toBe(5);
+        expect(result.unblockActionUrl).toBe('#submit');
+    });
+});
+
+describe('judgeDdexGenreAndSubculture (Judgment 56)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('classifies Detroit electronic tracks and lofi beats offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const techno = await judgeDdexGenreAndSubculture({
+            trackTitle: 'Detroit Midnight',
+            sonicDescriptors: ['analog synth', 'driving bass'],
+            tempoBpm: 126,
+        });
+
+        expect(techno.ddexPrimaryGenre).toBe('Electronic');
+        expect(techno.subGenreCultural).toBe('Detroit Electro-Soul');
+        expect(techno.moodTags).toContain('nocturnal');
+        expect(techno.editorialPlaylistTarget).toBe('Fresh Finds: Electronic');
+
+        const lofi = await judgeDdexGenreAndSubculture({
+            trackTitle: 'Late Night Coffee Study',
+            lyricsOrNotes: 'lo-fi vinyl crackle chill beats',
+        });
+
+        expect(lofi.ddexPrimaryGenre).toBe('Electronic');
+        expect(lofi.subGenreCultural).toBe('Midnight Lo-Fi Chill');
+        expect(lofi.moodTags).toContain('calm');
+    });
+
+    it('processes online LLM judgment with playlist tier score', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    primary_genre: { choice: 'Hip-Hop/Rap' },
+                    fit_score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeDdexGenreAndSubculture({
+            trackTitle: 'Midwest Cypher',
+            lyricsOrNotes: '808 trap bounce freestyle',
+        });
+
+        expect(result.ddexPrimaryGenre).toBe('Hip-Hop/Rap');
+        expect(result.editorialPlaylistTarget).toContain('Tier 5/5');
+    });
+});
+
+describe('judgeAudioDrivenMerchSku (Judgment 57)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('recommends heavyweight boxy tee for peak electronic tracks offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeAudioDrivenMerchSku({
+            trackTitle: 'Cyber Surge',
+            genre: 'Electronic',
+            energyLevel: 'peak',
+            dominantAesthetic: 'cyberpunk neon',
+        });
+
+        expect(result.recommendedSku).toBe('HEAVYWEIGHT_BOXY_TEE');
+        expect(result.recommendedColorway).toContain('Pitch Black');
+        expect(result.retailPriceUsd).toBe(42);
+        expect(result.estimatedMarginPercent).toBe(65);
+    });
+
+    it('recommends vintage wash fleece hoodie for chill lofi tracks offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeAudioDrivenMerchSku({
+            trackTitle: 'Rainy Cafe',
+            genre: 'Lo-Fi',
+            energyLevel: 'low',
+            dominantAesthetic: 'vintage pastel',
+        });
+
+        expect(result.recommendedSku).toBe('VINTAGE_WASH_HOODIE');
+        expect(result.retailPriceUsd).toBe(68);
+    });
+
+    it('uses online callable when available with impulse score', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    recommended_sku: { choice: 'LIMITED_VINYL_RECORD' },
+                    conversion_score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeAudioDrivenMerchSku({
+            trackTitle: 'Vinyl Memories',
+            genre: 'Jazz',
+            energyLevel: 'medium',
+            dominantAesthetic: 'vinyl collectors edition',
+        });
+
+        expect(result.recommendedSku).toBe('LIMITED_VINYL_RECORD');
+        expect(result.conversionPitch).toContain('Impulse intent: 5/5');
+    });
+});
+
+describe('judgeAudioMasterNormalization (Judgment 58)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('detects clipping hazard when true peak exceeds -0.5 dBTP offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const clipping = await judgeAudioMasterNormalization({
+            trackTitle: 'Loud Master Test',
+            integratedLufs: -8.0,
+            truePeakDb: 0.8,
+            targetPlatform: 'SPOTIFY',
+        });
+
+        expect(clipping.status).toBe('CLIPPING_HAZARD');
+        expect(clipping.isClippingHazard).toBe(true);
+        expect(clipping.advisoryBlurb).toContain('Intersample clipping');
+    });
+
+    it('approves broadcast compliant master recording offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const compliant = await judgeAudioMasterNormalization({
+            trackTitle: 'Balanced Mix',
+            integratedLufs: -14.0,
+            truePeakDb: -1.0,
+            targetPlatform: 'SPOTIFY',
+        });
+
+        expect(compliant.status).toBe('PASSED_COMPLIANT');
+        expect(compliant.targetLufs).toBe(-14.0);
+        expect(compliant.gainOffsetDb).toBe(0);
+        expect(compliant.isClippingHazard).toBe(false);
+    });
+
+    it('processes online compliance evaluation', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    compliance_status: { choice: 'PASSED_COMPLIANT' },
+                    is_safe_for_transcoding: { probability: 0.99 },
+                },
+            },
+        }));
+
+        const result = await judgeAudioMasterNormalization({
+            trackTitle: 'Apple Master',
+            integratedLufs: -16.0,
+            truePeakDb: -1.2,
+            targetPlatform: 'APPLE_MUSIC',
+        });
+
+        expect(result.status).toBe('PASSED_COMPLIANT');
+        expect(result.isClippingHazard).toBe(false);
+        expect(result.targetLufs).toBe(-16.0);
     });
 });

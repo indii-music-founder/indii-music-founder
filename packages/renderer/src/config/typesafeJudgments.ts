@@ -5466,3 +5466,1064 @@ export async function judgeUniversalErrorRemediation(
         };
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment 52: Likeness Selfie Enrolment Quality (consumer: Creative / LikenessService)
+// ---------------------------------------------------------------------------
+
+export type LikenessEnrolmentStatus =
+    | 'READY_FOR_TRAINING'
+    | 'NEEDS_BETTER_LIGHTING'
+    | 'OBSTRUCTED_FACE'
+    | 'RESOLUTION_TOO_LOW';
+
+export interface LikenessPhotoInput {
+    fileName: string;
+    width: number;
+    height: number;
+    hasFaceDetected: boolean;
+    lightingConfidence: number; // 0 to 1
+    hasAccessories: boolean; // glasses, hats, masks
+}
+
+export interface LikenessEnrolmentVerdict {
+    status: LikenessEnrolmentStatus;
+    faceClarityScore: number; // 1 to 5
+    isObstructed: boolean;
+    advisoryNotes: string;
+}
+
+/**
+ * TypeSafe System One (Jev) portrait likeness enrollment auditor:
+ * Evaluates selfie and headshot uploads for resolution, obstruction, and clarity
+ * before running generative likeness training.
+ */
+export async function judgeLikenessEnrolmentSuitability(
+    input: LikenessPhotoInput
+): Promise<LikenessEnrolmentVerdict> {
+    let fallbackStatus: LikenessEnrolmentStatus = 'READY_FOR_TRAINING';
+    let fallbackClarity = 4;
+    let fallbackObstructed = input.hasAccessories;
+
+    if (!input.hasFaceDetected) {
+        fallbackStatus = 'OBSTRUCTED_FACE';
+        fallbackClarity = 1;
+        fallbackObstructed = true;
+    } else if (input.width < 512 || input.height < 512) {
+        fallbackStatus = 'RESOLUTION_TOO_LOW';
+        fallbackClarity = 2;
+    } else if (input.lightingConfidence < 0.4) {
+        fallbackStatus = 'NEEDS_BETTER_LIGHTING';
+        fallbackClarity = 2;
+    } else if (input.hasAccessories) {
+        fallbackStatus = 'OBSTRUCTED_FACE';
+        fallbackClarity = 3;
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            status: fallbackStatus,
+            faceClarityScore: fallbackClarity,
+            isObstructed: fallbackObstructed,
+            advisoryNotes: fallbackStatus === 'READY_FOR_TRAINING'
+                ? 'Portrait meets resolution, clarity, and framing requirements for AI likeness training.'
+                : `Likeness enrollment caution: ${fallbackStatus}.`,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                fileName: input.fileName,
+                dimensions: `${input.width}x${input.height}`,
+                hasFace: input.hasFaceDetected,
+                lightingConfidence: input.lightingConfidence,
+                accessories: input.hasAccessories,
+            },
+            questions: {
+                status: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Evaluate this portrait photograph for AI face-consistency training suitability: ' +
+                        'READY_FOR_TRAINING, NEEDS_BETTER_LIGHTING, OBSTRUCTED_FACE, or RESOLUTION_TOO_LOW.',
+                    criteria: {
+                        READY_FOR_TRAINING: 'Sharp focus, visible facial landmarks, even lighting, no heavy obstructions.',
+                        NEEDS_BETTER_LIGHTING: 'Severe underexposure, harsh glare, deep shadows obscuring eyes or facial contours.',
+                        OBSTRUCTED_FACE: 'Sunglasses, face mask, heavy hands/props, or extreme profile angle blocking key features.',
+                        RESOLUTION_TOO_LOW: 'Pixelated, blurry, or low-resolution image under training threshold.',
+                    },
+                },
+                obstructed: {
+                    type: 'noul' as const,
+                    instructions: 'Is the subject face significantly obscured or obstructed by accessories, shadows, or angle?',
+                },
+                clarity_score: {
+                    type: 'score' as const,
+                    instructions: 'Rate the facial fidelity and training suitability from 1 (unusable) to 5 (flawless reference portrait).',
+                    levels: {
+                        1: 'Unusable image without recognizable clear facial geometry.',
+                        2: 'Low quality with significant artifacts or blur.',
+                        3: 'Acceptable reference with minor lighting/angle imperfections.',
+                        4: 'High-quality clear portrait with good contrast.',
+                        5: 'Studio-grade reference with perfect clarity and neutral lighting.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const staAns = ans?.status as { choice?: unknown } | undefined;
+        const obsAns = ans?.obstructed as { noul?: unknown } | number | undefined;
+        const claAns = ans?.clarity_score as { score?: unknown } | number | undefined;
+
+        const resolvedStatus = (typeof staAns?.choice === 'string' ? staAns.choice : fallbackStatus) as LikenessEnrolmentStatus;
+        const obsProb = typeof obsAns === 'number'
+            ? obsAns
+            : Number((obsAns as { noul?: unknown })?.noul ?? (fallbackObstructed ? 0.85 : 0.15));
+        const resolvedClarity = typeof claAns === 'number'
+            ? claAns
+            : Number((claAns as { score?: unknown })?.score ?? fallbackClarity);
+
+        return {
+            status: resolvedStatus,
+            faceClarityScore: Math.max(1, Math.min(5, Math.round(resolvedClarity) || fallbackClarity)),
+            isObstructed: obsProb >= 0.5,
+            advisoryNotes: `System One likeness audit: ${resolvedStatus} (clarity score: ${resolvedClarity}/5).`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'likeness enrolment suitability judgment');
+        return {
+            status: fallbackStatus,
+            faceClarityScore: fallbackClarity,
+            isObstructed: fallbackObstructed,
+            advisoryNotes: `Fallback likeness audit: ${fallbackStatus}.`,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 53: Persona Posture Presets (consumer: Settings / Boardroom)
+// ---------------------------------------------------------------------------
+
+export type PersonaPosturePreset =
+    | 'MAJOR_LABEL_SHARK'
+    | 'SCRAPPY_INDIE_DIY'
+    | 'NURTURING_MENTOR'
+    | 'ACADEMIC_PURIST'
+    | 'STREET_HUSTLER';
+
+export interface PersonaPostureInput {
+    philosophyDescription: string;
+    riskTolerance: 'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE';
+    communicationStyle: 'FORMAL' | 'CASUAL' | 'BLUNT';
+}
+
+export interface PersonaPostureVerdict {
+    recommendedPreset: PersonaPosturePreset;
+    alignmentScore: number; // 1 to 5
+    postureSummary: string;
+    calibratedFaders: {
+        riskTolerance: number; // 0 to 100
+        brevity: number; // 0 to 100
+        directness: number; // 0 to 100
+        formality: number; // 0 to 100
+        reasoningTransparency: number; // 0 to 100
+    };
+}
+
+/**
+ * TypeSafe System One (Jev) board persona posture calibrator:
+ * Replaces 40 complex fader dials with 5 calibrated artist management archetypes.
+ */
+export async function judgePersonaPosturePreset(
+    input: PersonaPostureInput
+): Promise<PersonaPostureVerdict> {
+    const desc = input.philosophyDescription.toLowerCase();
+
+    let fallbackPreset: PersonaPosturePreset = 'SCRAPPY_INDIE_DIY';
+    if (desc.includes('shark') || desc.includes('major') || desc.includes('aggressive') || (input.riskTolerance === 'AGGRESSIVE' && input.communicationStyle === 'FORMAL')) {
+        fallbackPreset = 'MAJOR_LABEL_SHARK';
+    } else if (desc.includes('mentor') || desc.includes('teach') || desc.includes('learn') || desc.includes('gentle') || input.riskTolerance === 'CONSERVATIVE') {
+        fallbackPreset = 'NURTURING_MENTOR';
+    } else if (desc.includes('academic') || desc.includes('theory') || desc.includes('technical') || desc.includes('precise')) {
+        fallbackPreset = 'ACADEMIC_PURIST';
+    } else if (desc.includes('street') || desc.includes('hustle') || desc.includes('direct') || input.communicationStyle === 'BLUNT') {
+        fallbackPreset = 'STREET_HUSTLER';
+    }
+
+    const faderMap: Record<PersonaPosturePreset, { riskTolerance: number; brevity: number; directness: number; formality: number; reasoningTransparency: number }> = {
+        MAJOR_LABEL_SHARK: { riskTolerance: 90, brevity: 70, directness: 85, formality: 80, reasoningTransparency: 40 },
+        SCRAPPY_INDIE_DIY: { riskTolerance: 80, brevity: 50, directness: 75, formality: 20, reasoningTransparency: 70 },
+        NURTURING_MENTOR: { riskTolerance: 30, brevity: 35, directness: 25, formality: 40, reasoningTransparency: 90 },
+        ACADEMIC_PURIST: { riskTolerance: 20, brevity: 20, directness: 50, formality: 90, reasoningTransparency: 95 },
+        STREET_HUSTLER: { riskTolerance: 95, brevity: 85, directness: 90, formality: 10, reasoningTransparency: 30 },
+    };
+
+    const fallbackFaders = faderMap[fallbackPreset];
+
+    if (!judgmentsAvailable()) {
+        return {
+            recommendedPreset: fallbackPreset,
+            alignmentScore: 4,
+            postureSummary: `Deterministic persona posture: ${fallbackPreset} configured for ${input.communicationStyle} communication.`,
+            calibratedFaders: fallbackFaders,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                philosophy: input.philosophyDescription.slice(0, 300),
+                risk: input.riskTolerance,
+                style: input.communicationStyle,
+            },
+            questions: {
+                preset: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Select the optimal management boardroom persona posture for this musician: ' +
+                        'MAJOR_LABEL_SHARK, SCRAPPY_INDIE_DIY, NURTURING_MENTOR, ACADEMIC_PURIST, or STREET_HUSTLER.',
+                    criteria: {
+                        MAJOR_LABEL_SHARK: 'Aggressive commercial dealmaker focusing on scale, leverage, and maximum monetization.',
+                        SCRAPPY_INDIE_DIY: 'Authentic independent artist ally emphasizing ownership, community direct-to-fan, and thrift.',
+                        NURTURING_MENTOR: 'Encouraging educational guide explaining business mechanics patiently step-by-step.',
+                        ACADEMIC_PURIST: 'Deep technical rigor in acoustics, copyright law, and formal industry documentation.',
+                        STREET_HUSTLER: 'Fast, terse, street-level guerrilla marketing and viral momentum.',
+                    },
+                },
+                alignment: {
+                    type: 'score' as const,
+                    instructions: 'Score how accurately this posture preset matches the artist description from 1 (poor fit) to 5 (flawless alignment).',
+                    levels: {
+                        1: 'Conflicting philosophy and mismatched tone.',
+                        2: 'Plausible generic fit with slight friction.',
+                        3: 'Solid alignment covering the primary communication goals.',
+                        4: 'Strong resonance with the artist career ethos.',
+                        5: 'Spot-on philosophical mirror that completely aligns team guidance.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const preAns = ans?.preset as { choice?: unknown } | undefined;
+        const aliAns = ans?.alignment as { score?: unknown } | number | undefined;
+
+        const resolvedPreset = (typeof preAns?.choice === 'string' ? preAns.choice : fallbackPreset) as PersonaPosturePreset;
+        const resolvedAlign = typeof aliAns === 'number'
+            ? aliAns
+            : Number((aliAns as { score?: unknown })?.score ?? 4);
+
+        return {
+            recommendedPreset: resolvedPreset,
+            alignmentScore: Math.max(1, Math.min(5, Math.round(resolvedAlign) || 4)),
+            postureSummary: `System One calibrated boardroom team to ${resolvedPreset} (alignment score: ${resolvedAlign}/5).`,
+            calibratedFaders: faderMap[resolvedPreset] || fallbackFaders,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'persona posture preset judgment');
+        return {
+            recommendedPreset: fallbackPreset,
+            alignmentScore: 4,
+            postureSummary: `Fallback posture: ${fallbackPreset}.`,
+            calibratedFaders: fallbackFaders,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 54: Tax Document Compliance (consumer: Finance / TaxFormUploadPage)
+// ---------------------------------------------------------------------------
+
+export type TaxComplianceStatus =
+    | 'VALID_W9_COMPLETE'
+    | 'VALID_W8BEN_COMPLETE'
+    | 'MISSING_REQUIRED_TIN'
+    | 'MISSING_SIGNATURE'
+    | 'INVALID_DOCUMENT';
+
+export interface TaxDocumentInput {
+    documentTitle: string;
+    declaredFormType: 'W9' | 'W8BEN' | 'UNKNOWN';
+    hasExtractedTinOrSsn: boolean;
+    hasSignaturePresent: boolean;
+    extractedLegalName: string;
+    countryOfCitizenship?: string;
+}
+
+export interface TaxComplianceVerdict {
+    status: TaxComplianceStatus;
+    isWithholdingExempt: boolean;
+    missingRequiredTin: boolean;
+    complianceScore: number; // 1 to 5
+    validationBlurb: string;
+}
+
+/**
+ * TypeSafe System One (Jev) tax compliance verifier:
+ * Audits uploaded W-9 and W-8BEN forms before royalty payouts to ensure IRS compliance.
+ */
+export async function judgeTaxFormCompliance(
+    input: TaxDocumentInput
+): Promise<TaxComplianceVerdict> {
+    let fallbackStatus: TaxComplianceStatus = 'VALID_W9_COMPLETE';
+    let fallbackScore = 5;
+
+    if (!input.hasExtractedTinOrSsn) {
+        fallbackStatus = 'MISSING_REQUIRED_TIN';
+        fallbackScore = 2;
+    } else if (!input.hasSignaturePresent) {
+        fallbackStatus = 'MISSING_SIGNATURE';
+        fallbackScore = 2;
+    } else if (input.declaredFormType === 'W8BEN') {
+        fallbackStatus = 'VALID_W8BEN_COMPLETE';
+        fallbackScore = 5;
+    } else if (input.declaredFormType === 'UNKNOWN') {
+        fallbackStatus = 'INVALID_DOCUMENT';
+        fallbackScore = 1;
+    }
+
+    const missingTin = fallbackStatus === 'MISSING_REQUIRED_TIN';
+    const isExempt = fallbackStatus === 'VALID_W9_COMPLETE' || fallbackStatus === 'VALID_W8BEN_COMPLETE';
+
+    if (!judgmentsAvailable()) {
+        return {
+            status: fallbackStatus,
+            isWithholdingExempt: isExempt,
+            missingRequiredTin: missingTin,
+            complianceScore: fallbackScore,
+            validationBlurb: isExempt
+                ? `Deterministic tax clearance: ${input.extractedLegalName} verified (${input.declaredFormType}).`
+                : `Tax compliance hold: ${fallbackStatus}.`,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                doc: input.documentTitle,
+                form: input.declaredFormType,
+                hasTin: input.hasExtractedTinOrSsn,
+                hasSig: input.hasSignaturePresent,
+                name: input.extractedLegalName,
+                country: input.countryOfCitizenship || 'US',
+            },
+            questions: {
+                status: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Validate the compliance status of this uploaded tax document: ' +
+                        'VALID_W9_COMPLETE, VALID_W8BEN_COMPLETE, MISSING_REQUIRED_TIN, MISSING_SIGNATURE, or INVALID_DOCUMENT.',
+                    criteria: {
+                        VALID_W9_COMPLETE: 'Official Form W-9 with valid legal name, business classification, 9-digit TIN/SSN, and digital signature.',
+                        VALID_W8BEN_COMPLETE: 'Official Form W-8BEN with foreign residency, foreign tax identifier, and certification signature.',
+                        MISSING_REQUIRED_TIN: 'Form is recognized but the SSN/EIN/TIN box is blank or invalid.',
+                        MISSING_SIGNATURE: 'Form is filled but lacks a valid certification signature or date.',
+                        INVALID_DOCUMENT: 'The uploaded file is not an official tax document (e.g. invoice, receipt, photo ID).',
+                    },
+                },
+                missing_tin: {
+                    type: 'noul' as const,
+                    instructions: 'Is the required Taxpayer Identification Number (SSN, EIN, or FTIN) missing from this document?',
+                },
+                compliance_score: {
+                    type: 'score' as const,
+                    instructions: 'Score the legal compliance and audit-readiness from 1 (unusable/reject) to 5 (ironclad IRS compliant).',
+                    levels: {
+                        1: 'Unusable or unrelated file.',
+                        2: 'Defective form requiring mandatory correction.',
+                        3: 'Partially filled document requiring manual review.',
+                        4: 'Substantially compliant with minor formatting note.',
+                        5: 'Ironclad compliance ready for immediate disbursement.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const staAns = ans?.status as { choice?: unknown } | undefined;
+        const tinAns = ans?.missing_tin as { noul?: unknown } | number | undefined;
+        const comAns = ans?.compliance_score as { score?: unknown } | number | undefined;
+
+        const resolvedStatus = (typeof staAns?.choice === 'string' ? staAns.choice : fallbackStatus) as TaxComplianceStatus;
+        const tinProb = typeof tinAns === 'number'
+            ? tinAns
+            : Number((tinAns as { noul?: unknown })?.noul ?? (missingTin ? 0.9 : 0.1));
+        const resolvedComp = typeof comAns === 'number'
+            ? comAns
+            : Number((comAns as { score?: unknown })?.score ?? fallbackScore);
+
+        const approved = resolvedStatus === 'VALID_W9_COMPLETE' || resolvedStatus === 'VALID_W8BEN_COMPLETE';
+
+        return {
+            status: resolvedStatus,
+            isWithholdingExempt: approved,
+            missingRequiredTin: tinProb >= 0.5,
+            complianceScore: Math.max(1, Math.min(5, Math.round(resolvedComp) || fallbackScore)),
+            validationBlurb: approved
+                ? `System One validated tax compliance for ${input.extractedLegalName} (${resolvedStatus}).`
+                : `Tax compliance alert: ${resolvedStatus} (disbursement on hold).`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'tax form compliance judgment');
+        return {
+            status: fallbackStatus,
+            isWithholdingExempt: isExempt,
+            missingRequiredTin: missingTin,
+            complianceScore: fallbackScore,
+            validationBlurb: `Fallback tax audit: ${fallbackStatus}.`,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 55: Distribution Blocker Guidance (consumer: Distribution / SubmitReleaseModal)
+// ---------------------------------------------------------------------------
+
+export type DistributionBlockerType =
+    | 'MISSING_QC_FINGERPRINT'
+    | 'NON_COMPLIANT_COVER_ART'
+    | 'UNREGISTERED_ISRC'
+    | 'MISSING_COLLABORATOR_SPLITS'
+    | 'TERRITORY_CONFLICT'
+    | 'READY_FOR_DELIVERY';
+
+export interface DistributionPreFlightInput {
+    releaseTitle: string;
+    hasFingerprint: boolean;
+    coverArtWidth: number;
+    coverArtHeight: number;
+    hasIsrc: boolean;
+    hasSplitsDocumented: boolean;
+    territoriesDeclaredCount: number;
+}
+
+export interface DistributionBlockerVerdict {
+    blocker: DistributionBlockerType;
+    isReady: boolean;
+    readinessScore: number; // 1 to 5
+    unblockActionUrl: string;
+    guidanceBlurb: string;
+}
+
+/**
+ * TypeSafe System One (Jev) distribution pre-flight gatekeeper:
+ * Evaluates draft releases against DSP ingestion specs and provides 1-click unblocker routing.
+ */
+export async function judgeDistributionBlocker(
+    input: DistributionPreFlightInput
+): Promise<DistributionBlockerVerdict> {
+    let fallbackBlocker: DistributionBlockerType = 'READY_FOR_DELIVERY';
+    let fallbackScore = 5;
+    let fallbackUrl = '#submit';
+    let fallbackBlurb = 'All requirements satisfied. Release is ready for automated DSP delivery.';
+
+    if (!input.hasFingerprint) {
+        fallbackBlocker = 'MISSING_QC_FINGERPRINT';
+        fallbackScore = 2;
+        fallbackUrl = '#audio-qc';
+        fallbackBlurb = 'Canonical audio fingerprint and LUFS QC validation required before submission.';
+    } else if (input.coverArtWidth < 3000 || input.coverArtHeight < 3000) {
+        fallbackBlocker = 'NON_COMPLIANT_COVER_ART';
+        fallbackScore = 2;
+        fallbackUrl = '#cover-art';
+        fallbackBlurb = 'Cover artwork must be at least 3000x3000px square format for DSP delivery.';
+    } else if (!input.hasIsrc) {
+        fallbackBlocker = 'UNREGISTERED_ISRC';
+        fallbackScore = 3;
+        fallbackUrl = '#isrc-assign';
+        fallbackBlurb = 'Track lacks an allocated ISRC code for digital revenue tracking.';
+    } else if (!input.hasSplitsDocumented) {
+        fallbackBlocker = 'MISSING_COLLABORATOR_SPLITS';
+        fallbackScore = 3;
+        fallbackUrl = '#splits';
+        fallbackBlurb = 'Collaborator splits must be confirmed to avoid downstream royalty dispute holds.';
+    } else if (input.territoriesDeclaredCount === 0) {
+        fallbackBlocker = 'TERRITORY_CONFLICT';
+        fallbackScore = 3;
+        fallbackUrl = '#territories';
+        fallbackBlurb = 'At least one distribution territory must be declared.';
+    }
+
+    const isReady = fallbackBlocker === 'READY_FOR_DELIVERY';
+
+    if (!judgmentsAvailable()) {
+        return {
+            blocker: fallbackBlocker,
+            isReady,
+            readinessScore: fallbackScore,
+            unblockActionUrl: fallbackUrl,
+            guidanceBlurb: fallbackBlurb,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                title: input.releaseTitle,
+                fingerprinted: input.hasFingerprint,
+                artResolution: `${input.coverArtWidth}x${input.coverArtHeight}`,
+                isrc: input.hasIsrc,
+                splits: input.hasSplitsDocumented,
+                territories: input.territoriesDeclaredCount,
+            },
+            questions: {
+                blocker: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Identify the primary blocking requirement preventing automated DSP distribution: ' +
+                        'MISSING_QC_FINGERPRINT, NON_COMPLIANT_COVER_ART, UNREGISTERED_ISRC, ' +
+                        'MISSING_COLLABORATOR_SPLITS, TERRITORY_CONFLICT, or READY_FOR_DELIVERY.',
+                    criteria: {
+                        MISSING_QC_FINGERPRINT: 'Master audio recording is missing acoustic fingerprint or broadcast QC.',
+                        NON_COMPLIANT_COVER_ART: 'Artwork is under 3000x3000px or non-square format.',
+                        UNREGISTERED_ISRC: 'Missing official ISRC sound recording identifier.',
+                        MISSING_COLLABORATOR_SPLITS: 'Collaborator ownership percentages are undocumented.',
+                        TERRITORY_CONFLICT: 'No distribution territories have been declared.',
+                        READY_FOR_DELIVERY: 'All distribution requirements met; release is ready for ingestion.',
+                    },
+                },
+                readiness_score: {
+                    type: 'score' as const,
+                    instructions: 'Rate the release packaging readiness from 1 (unready) to 5 (production ready).',
+                    levels: {
+                        1: 'Missing multiple critical broadcast prerequisites.',
+                        2: 'Major blocker present requiring immediate asset correction.',
+                        3: 'Minor metadata gaps resolvable in 1 click.',
+                        4: 'Substantially complete; awaiting final sign-off.',
+                        5: 'Fully compliant and ready for automated delivery.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const bloAns = ans?.blocker as { choice?: unknown } | undefined;
+        const reaAns = ans?.readiness_score as { score?: unknown } | number | undefined;
+
+        const resolvedBlocker = (typeof bloAns?.choice === 'string' ? bloAns.choice : fallbackBlocker) as DistributionBlockerType;
+        const resolvedScore = typeof reaAns === 'number'
+            ? reaAns
+            : Number((reaAns as { score?: unknown })?.score ?? fallbackScore);
+
+        const urlMap: Record<DistributionBlockerType, string> = {
+            MISSING_QC_FINGERPRINT: '#audio-qc',
+            NON_COMPLIANT_COVER_ART: '#cover-art',
+            UNREGISTERED_ISRC: '#isrc-assign',
+            MISSING_COLLABORATOR_SPLITS: '#splits',
+            TERRITORY_CONFLICT: '#territories',
+            READY_FOR_DELIVERY: '#submit',
+        };
+
+        const resolvedReady = resolvedBlocker === 'READY_FOR_DELIVERY';
+
+        return {
+            blocker: resolvedBlocker,
+            isReady: resolvedReady,
+            readinessScore: Math.max(1, Math.min(5, Math.round(resolvedScore) || fallbackScore)),
+            unblockActionUrl: urlMap[resolvedBlocker] || fallbackUrl,
+            guidanceBlurb: resolvedReady
+                ? `System One cleared "${input.releaseTitle}" for instant delivery (readiness: ${resolvedScore}/5).`
+                : `Distribution hold: ${resolvedBlocker}. Resolve via 1-click action.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'distribution blocker guidance judgment');
+        return {
+            blocker: fallbackBlocker,
+            isReady,
+            readinessScore: fallbackScore,
+            unblockActionUrl: fallbackUrl,
+            guidanceBlurb: fallbackBlurb,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 56: DDEX genre & cultural subculture classification (Domain: Distribution & Ingestion)
+// ---------------------------------------------------------------------------
+
+export type DdexPrimaryGenre =
+    | 'Electronic'
+    | 'Hip-Hop/Rap'
+    | 'Alternative Rock'
+    | 'R&B/Soul'
+    | 'Pop'
+    | 'Rock'
+    | 'Country'
+    | 'Jazz'
+    | 'Folk/Singer-Songwriter'
+    | 'Dance'
+    | 'Metal'
+    | 'Ambient/Experimental';
+
+export interface DdexClassificationInput {
+    trackTitle: string;
+    artistName?: string;
+    sonicDescriptors?: string[];
+    lyricsOrNotes?: string;
+    tempoBpm?: number;
+}
+
+export interface DdexClassificationVerdict {
+    ddexPrimaryGenre: DdexPrimaryGenre;
+    subGenreCultural: string;
+    moodTags: string[];
+    editorialPlaylistTarget: string;
+    confidence: number;
+}
+
+/**
+ * TypeSafe System One (Jev) DDEX genre and cultural subculture classifier:
+ * Ingests audio acoustic hints, BPM, and track title to output standardized DDEX
+ * genres and cultural micro-genre tags for DSP curation (<100ms).
+ */
+export async function judgeDdexGenreAndSubculture(
+    input: DdexClassificationInput
+): Promise<DdexClassificationVerdict> {
+    const text = `${input.trackTitle} ${input.artistName || ''} ${(input.sonicDescriptors || []).join(' ')} ${input.lyricsOrNotes || ''}`.toLowerCase();
+
+    let fallbackPrimary: DdexPrimaryGenre = 'Alternative Rock';
+    let fallbackCultural = 'Indie Bedroom Pop';
+    let fallbackMoods = ['melodic', 'warm', 'introspective'];
+    let fallbackPlaylist = 'Fresh Finds: Indie';
+
+    if (text.includes('detroit') || text.includes('techno') || text.includes('electro') || text.includes('synth') || text.includes('808') || text.includes('club')) {
+        fallbackPrimary = 'Electronic';
+        fallbackCultural = 'Detroit Electro-Soul';
+        fallbackMoods = ['nocturnal', 'driving', 'analog'];
+        fallbackPlaylist = 'Fresh Finds: Electronic';
+    } else if (text.includes('trap') || text.includes('drill') || text.includes('hip hop') || text.includes('rap') || text.includes('bars') || text.includes('freestyle')) {
+        fallbackPrimary = 'Hip-Hop/Rap';
+        fallbackCultural = 'Dark Ambient Trap';
+        fallbackMoods = ['heavy', 'energetic', 'gritty'];
+        fallbackPlaylist = 'State of Mind';
+    } else if (text.includes('lofi') || text.includes('lo-fi') || text.includes('chill') || text.includes('study') || text.includes('relax')) {
+        fallbackPrimary = 'Electronic';
+        fallbackCultural = 'Midnight Lo-Fi Chill';
+        fallbackMoods = ['calm', 'nostalgic', 'mellow'];
+        fallbackPlaylist = 'Lofi Beats';
+    } else if (text.includes('acoustic') || text.includes('folk') || text.includes('fingerpick') || text.includes('unplugged')) {
+        fallbackPrimary = 'Folk/Singer-Songwriter';
+        fallbackCultural = 'Modern Indie Folk';
+        fallbackMoods = ['organic', 'intimate', 'raw'];
+        fallbackPlaylist = 'Roots & Acoustic';
+    } else if (text.includes('soul') || text.includes('r&b') || text.includes('rnb') || text.includes('vocal')) {
+        fallbackPrimary = 'R&B/Soul';
+        fallbackCultural = 'Neo-Soul Groove';
+        fallbackMoods = ['sensual', 'smooth', 'heartfelt'];
+        fallbackPlaylist = 'Are & Be';
+    } else if (text.includes('summer') || text.includes('reverie') || text.includes('dream') || text.includes('shoegaze')) {
+        fallbackPrimary = 'Alternative Rock';
+        fallbackCultural = 'Dream Pop / Shoegaze';
+        fallbackMoods = ['dreamy', 'lush', 'warm'];
+        fallbackPlaylist = 'Undercurrents';
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            ddexPrimaryGenre: fallbackPrimary,
+            subGenreCultural: fallbackCultural,
+            moodTags: fallbackMoods,
+            editorialPlaylistTarget: fallbackPlaylist,
+            confidence: 0.95,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                title: input.trackTitle.slice(0, 150),
+                artist: (input.artistName || '').slice(0, 100),
+                descriptors: (input.sonicDescriptors || []).slice(0, 5),
+                notes: (input.lyricsOrNotes || '').slice(0, 500),
+                bpm: input.tempoBpm || 120,
+            },
+            questions: {
+                primary_genre: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Select the primary DDEX standard distribution genre for this track.',
+                    criteria: {
+                        Electronic: 'Electronic music, techno, electro, synthwave, house, EDM.',
+                        'Hip-Hop/Rap': 'Hip-hop, rap, trap, drill, boom-bap.',
+                        'Alternative Rock': 'Alternative, indie rock, shoegaze, dream pop.',
+                        'R&B/Soul': 'Contemporary R&B, neo-soul, classic soul.',
+                        Pop: 'Contemporary pop, electro-pop, bedroom pop.',
+                        Rock: 'Rock, hard rock, garage rock, punk.',
+                        Country: 'Country, americana, bluegrass.',
+                        Jazz: 'Jazz, fusion, instrumental jazz.',
+                        'Folk/Singer-Songwriter': 'Acoustic folk, singer-songwriter, organic.',
+                        Dance: 'Club dance, progressive house, festival dance.',
+                        Metal: 'Heavy metal, deathcore, post-hardcore.',
+                        'Ambient/Experimental': 'Ambient soundscapes, drone, modern classical experimental.',
+                    },
+                },
+                fit_score: {
+                    type: 'score' as const,
+                    instructions: 'Rate the editorial playlist curation alignment from 1 (poor) to 5 (prime spotlight).',
+                    levels: {
+                        1: 'Niche, misaligned with major editorial curation.',
+                        2: 'Marginal playlist compatibility.',
+                        3: 'Solid placement matching tempo and genre expectations.',
+                        4: 'Strong playlist candidate with high listener retention.',
+                        5: 'Prime flagship editorial feature candidate.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const genAns = ans?.primary_genre as { choice?: unknown } | undefined;
+        const fitAns = ans?.fit_score as { score?: unknown } | number | undefined;
+
+        const resolvedGenre = (typeof genAns?.choice === 'string' ? genAns.choice : fallbackPrimary) as DdexPrimaryGenre;
+        const resolvedFit = typeof fitAns === 'number'
+            ? fitAns
+            : Number((fitAns as { score?: unknown })?.score ?? 4);
+
+        return {
+            ddexPrimaryGenre: resolvedGenre,
+            subGenreCultural: fallbackCultural,
+            moodTags: fallbackMoods,
+            editorialPlaylistTarget: `${fallbackPlaylist} (Tier ${resolvedFit}/5)`,
+            confidence: 0.96,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'ddex genre classification judgment');
+        return {
+            ddexPrimaryGenre: fallbackPrimary,
+            subGenreCultural: fallbackCultural,
+            moodTags: fallbackMoods,
+            editorialPlaylistTarget: fallbackPlaylist,
+            confidence: 0.95,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 57: Audio-Driven Fan Merch SKU Recommendation (Domain: E-Commerce)
+// ---------------------------------------------------------------------------
+
+export type MerchSkuRecommendation =
+    | 'HEAVYWEIGHT_BOXY_TEE'
+    | 'VINTAGE_WASH_HOODIE'
+    | 'EMBROIDERED_DAD_CAP'
+    | 'LIMITED_VINYL_RECORD'
+    | 'CANVAS_TOTE_BAG'
+    | 'TOUR_POSTER_PRINT';
+
+export interface AudioMerchSkuInput {
+    trackTitle: string;
+    genre: string;
+    culturalSubgenre?: string;
+    energyLevel: 'low' | 'medium' | 'high' | 'peak';
+    dominantAesthetic: string;
+}
+
+export interface AudioMerchSkuVerdict {
+    recommendedSku: MerchSkuRecommendation;
+    recommendedColorway: string;
+    retailPriceUsd: number;
+    estimatedMarginPercent: number;
+    conversionPitch: string;
+}
+
+/**
+ * TypeSafe System One (Jev) audio sentiment to POD merch SKU converter:
+ * Dynamically predicts the highest-converting print-on-demand product SKU directly
+ * matching the listener's audio immersion state (<100ms).
+ */
+export async function judgeAudioDrivenMerchSku(
+    input: AudioMerchSkuInput
+): Promise<AudioMerchSkuVerdict> {
+    const genre = input.genre.toLowerCase();
+    const aesthetic = input.dominantAesthetic.toLowerCase();
+
+    let fallbackSku: MerchSkuRecommendation = 'HEAVYWEIGHT_BOXY_TEE';
+    let fallbackColorway = 'Vintage Washed Black';
+    let fallbackPrice = 38;
+    let fallbackMargin = 62;
+    let fallbackPitch = `Official heavyweight boxy tee inspired by the sonic world of "${input.trackTitle}".`;
+
+    if (input.energyLevel === 'peak' || genre.includes('techno') || genre.includes('electronic') || aesthetic.includes('cyber')) {
+        fallbackSku = 'HEAVYWEIGHT_BOXY_TEE';
+        fallbackColorway = 'Pitch Black / Neon Cyan screen';
+        fallbackPrice = 42;
+        fallbackMargin = 65;
+        fallbackPitch = `Club-ready heavyweight boxy tee engineered for nocturnal listening.`;
+    } else if (input.energyLevel === 'low' || genre.includes('lofi') || genre.includes('ambient') || genre.includes('folk')) {
+        fallbackSku = 'VINTAGE_WASH_HOODIE';
+        fallbackColorway = 'Muted Charcoal / Faded Slate';
+        fallbackPrice = 68;
+        fallbackMargin = 58;
+        fallbackPitch = `Ultra-soft fleece oversized hoodie curated for chilled late-night sessions.`;
+    } else if (genre.includes('hip-hop') || genre.includes('trap')) {
+        fallbackSku = 'EMBROIDERED_DAD_CAP';
+        fallbackColorway = 'Stonewashed Black / Raised Embroidery';
+        fallbackPrice = 32;
+        fallbackMargin = 64;
+        fallbackPitch = `Low-profile heavyweight dad cap featuring minimal embroidered iconography.`;
+    } else if (aesthetic.includes('vinyl') || genre.includes('jazz') || genre.includes('soul')) {
+        fallbackSku = 'LIMITED_VINYL_RECORD';
+        fallbackColorway = 'Translucent Amber 180g Wax';
+        fallbackPrice = 34;
+        fallbackMargin = 60;
+        fallbackPitch = `Limited-edition 180g heavyweight collector wax with archival jacket.`;
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            recommendedSku: fallbackSku,
+            recommendedColorway: fallbackColorway,
+            retailPriceUsd: fallbackPrice,
+            estimatedMarginPercent: fallbackMargin,
+            conversionPitch: fallbackPitch,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                title: input.trackTitle.slice(0, 150),
+                genre: input.genre,
+                energy: input.energyLevel,
+                aesthetic: input.dominantAesthetic,
+            },
+            questions: {
+                recommended_sku: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Select the optimal fan merch product SKU that matches the song genre, aesthetic, and energy.',
+                    criteria: {
+                        HEAVYWEIGHT_BOXY_TEE: 'Streetwear heavyweight boxy t-shirt with screen print.',
+                        VINTAGE_WASH_HOODIE: 'Oversized garment-dyed fleece hoodie.',
+                        EMBROIDERED_DAD_CAP: 'Unstructured cotton twill strapback cap with raised embroidery.',
+                        LIMITED_VINYL_RECORD: 'Physical 12-inch 180g lathe-cut or vinyl press record.',
+                        CANVAS_TOTE_BAG: 'Heavyweight organic cotton tote bag for lifestyle/indie fans.',
+                        TOUR_POSTER_PRINT: 'Archival museum-grade silkscreen concert tour poster.',
+                    },
+                },
+                conversion_score: {
+                    type: 'score' as const,
+                    instructions: 'Score the purchase intent likelihood from 1 (unlikely impulse buy) to 5 (immediate must-have merch).',
+                    levels: {
+                        1: 'Low emotional connection between audio and product.',
+                        2: 'Generic apparel; low conversion velocity.',
+                        3: 'Standard viable band merch offering.',
+                        4: 'Strong aesthetic alignment driving fan impulse buy.',
+                        5: 'Cult grail status; immediate sellout potential.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const skuAns = ans?.recommended_sku as { choice?: unknown } | undefined;
+        const scAns = ans?.conversion_score as { score?: unknown } | number | undefined;
+
+        const resolvedSku = (typeof skuAns?.choice === 'string' ? skuAns.choice : fallbackSku) as MerchSkuRecommendation;
+        const resolvedScore = typeof scAns === 'number'
+            ? scAns
+            : Number((scAns as { score?: unknown })?.score ?? 4);
+
+        return {
+            recommendedSku: resolvedSku,
+            recommendedColorway: fallbackColorway,
+            retailPriceUsd: fallbackPrice,
+            estimatedMarginPercent: fallbackMargin,
+            conversionPitch: `${fallbackPitch} (Impulse intent: ${resolvedScore}/5)`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'fan to merch sku judgment');
+        return {
+            recommendedSku: fallbackSku,
+            recommendedColorway: fallbackColorway,
+            retailPriceUsd: fallbackPrice,
+            estimatedMarginPercent: fallbackMargin,
+            conversionPitch: fallbackPitch,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 58: Ingestion Master Audio Loudness & Peak Normalization Compliance (Domain: Audio Engineering)
+// ---------------------------------------------------------------------------
+
+export type NormalizationTargetPlatform =
+    | 'SPOTIFY'
+    | 'APPLE_MUSIC'
+    | 'YOUTUBE'
+    | 'TIDAL'
+    | 'CLUB_DJ';
+
+export type NormalizationStatus =
+    | 'PASSED_COMPLIANT'
+    | 'NEEDS_ATTENUATION'
+    | 'NEEDS_LIMITER_BOOST'
+    | 'CLIPPING_HAZARD';
+
+export interface MasterAudioNormalizationInput {
+    trackTitle: string;
+    integratedLufs: number; // e.g. -14.2
+    truePeakDb: number; // e.g. -1.0
+    dynamicRangeLu?: number; // e.g. 8.5
+    targetPlatform?: NormalizationTargetPlatform;
+}
+
+export interface MasterAudioNormalizationVerdict {
+    status: NormalizationStatus;
+    targetPlatform: NormalizationTargetPlatform;
+    targetLufs: number;
+    gainOffsetDb: number;
+    isClippingHazard: boolean;
+    advisoryBlurb: string;
+}
+
+/**
+ * TypeSafe System One (Jev) audio master normalization compliance gatekeeper:
+ * Evaluates uploaded master recording against DSP broadcast loudness standards
+ * (-14 LUFS Spotify, -16 LUFS Apple Music, -14 LUFS YouTube) in <100ms.
+ */
+export async function judgeAudioMasterNormalization(
+    input: MasterAudioNormalizationInput
+): Promise<MasterAudioNormalizationVerdict> {
+    const platform = input.targetPlatform || 'SPOTIFY';
+    const targetLufsMap: Record<NormalizationTargetPlatform, number> = {
+        SPOTIFY: -14.0,
+        APPLE_MUSIC: -16.0,
+        YOUTUBE: -14.0,
+        TIDAL: -14.0,
+        CLUB_DJ: -9.0,
+    };
+
+    const targetLufs = targetLufsMap[platform];
+    const gainOffsetDb = Math.round((targetLufs - input.integratedLufs) * 10) / 10;
+    const isClipping = input.truePeakDb > -0.5;
+
+    let fallbackStatus: NormalizationStatus = 'PASSED_COMPLIANT';
+    let fallbackBlurb = `Master audio meets broadcast target of ${targetLufs} LUFS for ${platform}.`;
+
+    if (isClipping) {
+        fallbackStatus = 'CLIPPING_HAZARD';
+        fallbackBlurb = `True peak reaches ${input.truePeakDb} dBTP (exceeds -0.5 dBTP safety ceiling). Intersample clipping will occur on lossy AAC/MP3 transcoding.`;
+    } else if (input.integratedLufs > targetLufs + 2.0) {
+        fallbackStatus = 'NEEDS_ATTENUATION';
+        fallbackBlurb = `Master is ${Math.abs(gainOffsetDb)} dB louder than target (${input.integratedLufs} LUFS vs ${targetLufs} LUFS). DSP will apply downward gain reduction.`;
+    } else if (input.integratedLufs < targetLufs - 3.0) {
+        fallbackStatus = 'NEEDS_LIMITER_BOOST';
+        fallbackBlurb = `Master is quiet (${input.integratedLufs} LUFS). Consider mastering limiter boost of ~${gainOffsetDb} dB to reach broadcast competitive volume.`;
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            status: fallbackStatus,
+            targetPlatform: platform,
+            targetLufs,
+            gainOffsetDb,
+            isClippingHazard: isClipping,
+            advisoryBlurb: fallbackBlurb,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                title: input.trackTitle.slice(0, 150),
+                platform,
+                lufs: input.integratedLufs,
+                true_peak: input.truePeakDb,
+                dynamic_range: input.dynamicRangeLu || 8.0,
+            },
+            questions: {
+                compliance_status: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Assess DSP broadcast normalization compliance for this master recording.',
+                    criteria: {
+                        PASSED_COMPLIANT: 'Master loudness and true peak comply with streaming platform specs.',
+                        NEEDS_ATTENUATION: 'Track is mastered significantly hot; DSP normalization will turn it down.',
+                        NEEDS_LIMITER_BOOST: 'Track is mastered below streaming targets; will sound quiet compared to reference tracks.',
+                        CLIPPING_HAZARD: 'True peak exceeds intersample ceiling (-0.5 dBTP), risking distortion on lossy encoding.',
+                    },
+                },
+                is_safe_for_transcoding: {
+                    type: 'noul' as const,
+                    instructions: 'Is this audio master free of intersample clipping hazards during lossy codec transcoding?',
+                    criteria: {
+                        true: 'True peak <= -0.5 dBTP; safe from codec distortion.',
+                        false: 'True peak > -0.5 dBTP; high distortion risk on lossy compression.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const stAns = ans?.compliance_status as { choice?: unknown } | undefined;
+        const noAns = ans?.is_safe_for_transcoding as { probability?: unknown } | undefined;
+
+        const resolvedStatus = (typeof stAns?.choice === 'string' ? stAns.choice : fallbackStatus) as NormalizationStatus;
+        const safeProb = typeof noAns?.probability === 'number' ? noAns.probability : 1.0;
+        const clippingHazard = safeProb < 0.5 || isClipping;
+
+        return {
+            status: resolvedStatus,
+            targetPlatform: platform,
+            targetLufs,
+            gainOffsetDb,
+            isClippingHazard: clippingHazard,
+            advisoryBlurb: fallbackBlurb,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'master audio normalization judgment');
+        return {
+            status: fallbackStatus,
+            targetPlatform: platform,
+            targetLufs,
+            gainOffsetDb,
+            isClippingHazard: isClipping,
+            advisoryBlurb: fallbackBlurb,
+        };
+    }
+}

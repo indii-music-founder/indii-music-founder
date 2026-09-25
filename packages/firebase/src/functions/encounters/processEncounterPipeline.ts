@@ -224,7 +224,7 @@ Context: ${params.locationContext || "Field capture"} ${params.clientContext ? `
 
     try {
         const client = getVertexAIClient();
-        const model = FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST || "gemini-3-flash-preview";
+        const model = FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST || "gemini-3.8-flash";
 
         const contents: any[] = [];
 
