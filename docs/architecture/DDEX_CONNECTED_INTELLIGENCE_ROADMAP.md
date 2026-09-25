@@ -193,6 +193,13 @@ Claims are assertions/events, not automatic proof of ownership.
 
 Use existing evidence, hashes, registrations, licenses, splits, and delivery history to prepare response workflows.
 
+The first repo delivery is an advisory-only projection over canonical
+`RightsClaim` records and Phase 11 claim events, consumed through the existing
+rights intelligence service. It flags possible overlapping assertions for
+human review without changing claim truth, persisting a second store, or
+authorizing response workflows; see
+[`PHASE_12_CLAIMS_CONFLICT_INTELLIGENCE.md`](PHASE_12_CLAIMS_CONFLICT_INTELLIGENCE.md).
+
 ## Phase 13 — Advanced catalog intelligence
 
 Analyze whole catalogs for:
