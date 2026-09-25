@@ -50,7 +50,7 @@ export type CanonicalMusicCatalogScope = z.infer<typeof CanonicalMusicCatalogSco
 type CatalogCollection = 'entities' | 'relationships' | 'identifiers' | 'claims' | 'events';
 type CatalogRecord = CanonicalMusicEntity | MusicRelationship | MusicIdentifier | RightsClaim | MusicDomainEvent;
 
-const EXTERNAL_IDENTIFIER_PREFIX = /^(?:isrc|iswc|upc|ean|isni|ipi|dpid|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i;
+const EXTERNAL_IDENTIFIER_PREFIX = /^(?:isrc|iswc|upc|ean|icpn|isni|ipi|dpid|grid|catalog(?:_number)?|platform_id|proprietary|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i;
 const EXTERNAL_IDENTIFIER_VALUE = /^(?:[A-Z]{2}[A-Z0-9]{3}\d{7}|T-\d{3}\.\d{3}\.\d{3}-\d|\d{8,14})$/i;
 const MAX_SERIALIZED_RECORD_BYTES = 900_000;
 const MAX_CATALOG_ANALYSIS_RECORDS_PER_COLLECTION = 5_000;
@@ -69,7 +69,7 @@ function parse<S extends z.ZodTypeAny>(schema: S, value: unknown, description: s
 
 function assertInternalEntityReference(id: string): void {
     if (
-        !/^[A-Za-z0-9_-]{1,160}$/.test(id)
+        !isSafeFirestorePathSegment(id)
         || EXTERNAL_IDENTIFIER_PREFIX.test(id)
         || EXTERNAL_IDENTIFIER_VALUE.test(id)
     ) {
@@ -91,7 +91,14 @@ function assertBoundedJson(record: CatalogRecord): void {
 
 function scopeCollectionPath(scope: CanonicalMusicCatalogScope, collection: CatalogCollection): string {
     const root = scope.kind === 'user' ? 'users' : 'organizations';
-    return `${root}/${scope.id}/musicCatalog/${collection}`;
+    const collectionName: Record<CatalogCollection, string> = {
+        entities: 'musicCatalogEntities',
+        relationships: 'musicCatalogRelationships',
+        identifiers: 'musicCatalogIdentifiers',
+        claims: 'musicCatalogClaims',
+        events: 'musicCatalogEvents',
+    };
+    return `${root}/${scope.id}/${collectionName[collection]}`;
 }
 
 export type CanonicalMusicCatalogRecordKind = CatalogCollection;

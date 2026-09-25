@@ -40,6 +40,12 @@ const input = (overrides: Partial<ClaimsInboxInput> = {}): ClaimsInboxInput => (
 });
 
 describe('claims inbox projection', () => {
+  it('rejects external identifier namespaces as canonical claim targets', () => {
+    for (const targetEntityId of ['grid:GRID-123', 'catalog_number:legacy-7', 'platform_id:spotify-123', 'proprietary:label-123']) {
+      expect(() => projectClaimsInbox(input({ claims: [claim('claim:1', { targetEntityId })] }))).toThrow(/canonical claim or entity IDs/i);
+    }
+  });
+
   it('joins canonical claims to Phase 11 events while preserving their provenance and evidence boundary', () => {
     const evidence = { id: 'evidence:1', type: 'DOCUMENT' as const, contentSha256: 'a'.repeat(64) };
     const asserted = claim('claim:1', { provenance: { ...provenance, evidence: [evidence] } });

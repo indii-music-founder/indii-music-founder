@@ -830,8 +830,8 @@ describe('Firestore Security Rules', () => {
     });
 
     describe('canonical music catalog server-only boundary', () => {
-        const personalEntityPath = ['users', ALICE_UID, 'musicCatalog', 'entities', 'recording-1'] as const;
-        const organizationClaimPath = ['organizations', ORG_ID, 'musicCatalog', 'claims', 'claim-1'] as const;
+        const personalEntityPath = ['users', ALICE_UID, 'musicCatalogEntities', 'recording-1'] as const;
+        const organizationClaimPath = ['organizations', ORG_ID, 'musicCatalogClaims', 'claim-1'] as const;
 
         beforeEach(async () => {
             if (requireEmulator()) return;

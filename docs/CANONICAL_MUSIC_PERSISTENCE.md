@@ -3,15 +3,26 @@
 This is the first server-side persistence adapter for the portable music
 contracts in `packages/shared/src/schemas/musicEntity.ts`,
 `musicRelationship.ts`, and `musicEvent.ts`. The domain schemas remain the
-source of truth; Firestore is only a scoped storage adapter.
+source of truth; Firestore is only a scoped storage adapter. A bounded,
+read-only catalog intelligence callable is connected to the Registration
+Center; append operations remain server-internal and are not exposed as
+client-callable writes.
 
 ## Storage layout
 
 Each catalog is scoped beneath an existing account or organization:
 
 ```text
-users/{uid}/musicCatalog/{entities|relationships|identifiers|claims|events}/{internalId}
-organizations/{orgId}/musicCatalog/{entities|relationships|identifiers|claims|events}/{internalId}
+users/{uid}/musicCatalogEntities/{internalId}
+users/{uid}/musicCatalogRelationships/{internalId}
+users/{uid}/musicCatalogIdentifiers/{internalId}
+users/{uid}/musicCatalogClaims/{internalId}
+users/{uid}/musicCatalogEvents/{internalId}
+organizations/{orgId}/musicCatalogEntities/{internalId}
+organizations/{orgId}/musicCatalogRelationships/{internalId}
+organizations/{orgId}/musicCatalogIdentifiers/{internalId}
+organizations/{orgId}/musicCatalogClaims/{internalId}
+organizations/{orgId}/musicCatalogEvents/{internalId}
 ```
 
 ISRC, ISWC, UPC/EAN, IPI, ISNI, DPID, GRID, and platform identifiers belong in
@@ -22,14 +33,16 @@ existing assertion or silently changes provenance.
 
 ## Authority and access
 
-The repository is server-only and is not exported as a callable. Each write
-requires the caller UID and is checked against the destination scope: a user
-may write only to their own catalog; an organization write is owner-only.
-Organization membership alone is deliberately insufficient to append
-canonical assertions. A future callable must perform the normal App Check,
-request protection, and admission checks before passing its authenticated UID
-to the repository. It must also define any more granular role policy before
-granting additional writers.
+The repository is server-only. Each append method requires the caller UID and
+checks the destination scope: a user may write only to their own catalog; an
+organization write is owner-only. Organization membership alone is
+deliberately insufficient to append canonical assertions. These append
+methods are not currently exposed through a callable. The Registration Center
+uses a separate read-only callable that performs App Check, request
+protection, entitlement admission, and owner-scope checks before returning a
+bounded canonical snapshot. Any future write callable must retain the same
+admission controls and define its role policy before additional writers are
+allowed.
 
 Firestore client reads and writes to both catalog paths are explicitly denied.
 The Admin SDK bypasses rules, so backend call sites must retain the repository
@@ -49,19 +62,20 @@ instead of replacing the prior record.
 
 This change adds a new opt-in subcollection layout and does not read, migrate,
 rewrite, or delete legacy catalog/profile/release records. There is no
-automatic backfill. Rollback is to stop calling this unexposed server adapter;
-the new records remain untouched and existing feature paths continue using
-their current stores. Firestore rules already deny clients access to these
-paths, including during rollback. A future migration must be separately
-versioned, tested against real schemas, and preserve evidence/provenance.
+automatic backfill. Rollback is to stop calling the read-only projection; the
+new records remain untouched and existing feature paths continue using their
+current stores. Firestore rules already deny clients access to these paths,
+including during rollback. A future migration must be separately versioned,
+tested against real schemas, and preserve evidence/provenance.
 
 ## Readiness limit
 
-This adapter is storage plumbing, not a complete production rollout. Before a
-consumer is connected, the project must specify and review the callable
-contracts, organization role policy, read projections, event transaction and
-delivery semantics, indexes, data-retention policy, and live-user migration
-gate. No production writes are enabled by this change.
+This adapter and read projection are not a complete production rollout. No
+client-facing write flow or automatic event transaction/delivery path exists.
+The project must still specify and review write-callable contracts,
+organization role policy, event transaction and delivery semantics, indexes,
+data-retention policy, and any live-user migration gate. No production writes
+are enabled by this change.
 
 Jev is intentionally not part of this persistence path: schema validation,
 scope authorization, identity assignment, and rights decisions are deterministic

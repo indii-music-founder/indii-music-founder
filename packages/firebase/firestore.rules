@@ -2947,14 +2947,36 @@ service cloud.firestore {
     }
 
     // Canonical music records are written only through server-side services.
-    // The Admin SDK repository validates domain schemas and the caller's
-    // catalog scope before appending entities, relationships, identifiers,
-    // claims, or events. A signed-in client must never bypass that boundary.
-    match /users/{userId}/musicCatalog/{document=**} {
+    // These are separate subcollections (rather than an invalid nested path);
+    // the Admin SDK still enforces domain schemas and catalog scope.
+    match /users/{userId}/musicCatalogEntities/{recordId} {
       allow read, write: if false;
     }
-
-    match /organizations/{orgId}/musicCatalog/{document=**} {
+    match /users/{userId}/musicCatalogRelationships/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogIdentifiers/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogClaims/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogEvents/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogEntities/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogRelationships/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogIdentifiers/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogClaims/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogEvents/{recordId} {
       allow read, write: if false;
     }
 

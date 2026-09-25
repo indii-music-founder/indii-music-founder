@@ -76,6 +76,10 @@ describe('music domain event contract', () => {
     'T-123.456.789-0',
     '012345678905',
     'spotify:track:external-value',
+    'grid:GRID-123',
+    'catalog_number:legacy-7',
+    'platform_id:spotify-123',
+    'proprietary:label-123',
   ])('rejects external identifier %s as an event/entity identity', (externalId) => {
     expect(() => MusicEventEntityReferenceSchema.parse({ entityId: externalId, entityType: 'sound_recording' })).toThrow(/External identifier values/);
     expect(() => MusicDomainEventSchema.parse(event({ eventId: externalId }))).toThrow(/External identifier values/);

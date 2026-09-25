@@ -83,7 +83,7 @@ describe('CanonicalMusicCatalogStore', () => {
             const id = `entity-${String(index).padStart(2, '0')}`;
             return { id, value: entity({ id }) };
         });
-        const entitiesPath = 'users/alice-1/musicCatalog/entities';
+        const entitiesPath = 'users/alice-1/musicCatalogEntities';
         const { firestore, reads } = fakeFirestore({ records: { [entitiesPath]: entityRecords } });
         const store = createCanonicalMusicCatalogStore(firestore);
 
@@ -109,7 +109,7 @@ describe('CanonicalMusicCatalogStore', () => {
     });
 
     it('rejects corrupt canonical records instead of normalizing them during a read', async () => {
-        const path = 'users/alice-1/musicCatalog/entities';
+        const path = 'users/alice-1/musicCatalogEntities';
         const { firestore } = fakeFirestore({
             records: { [path]: [{ id: 'recording-1', value: entity({ id: 'different-id' }) }] },
         });
@@ -120,7 +120,7 @@ describe('CanonicalMusicCatalogStore', () => {
     });
 
     it('marks a record-capped canonical snapshot partial rather than complete', async () => {
-        const path = 'users/alice-1/musicCatalog/entities';
+        const path = 'users/alice-1/musicCatalogEntities';
         const records = Array.from({ length: 5_001 }, (_, index) => {
             const id = `entity-${String(index).padStart(5, '0')}`;
             return { id, value: entity({ id }) };
@@ -141,11 +141,28 @@ describe('CanonicalMusicCatalogStore', () => {
         const stored = await store.appendEntity('alice-1', { kind: 'user', id: 'alice-1' }, entity());
 
         expect(writes).toEqual([{
-            path: 'users/alice-1/musicCatalog/entities',
+            path: 'users/alice-1/musicCatalogEntities',
             id: 'recording-1',
             value: stored,
         }]);
         expect(stored.provenance?.state).toBe('DETECTED');
+    });
+
+    it('accepts namespaced canonical IDs while keeping external identifiers out of entity identity', async () => {
+        const { firestore, writes } = fakeFirestore();
+        const store = createCanonicalMusicCatalogStore(firestore);
+
+        const stored = await store.appendEntity(
+            'alice-1',
+            { kind: 'user', id: 'alice-1' },
+            entity({ id: 'recording:internal-1' }),
+        );
+
+        expect(stored.id).toBe('recording:internal-1');
+        expect(writes[0]).toMatchObject({
+            path: 'users/alice-1/musicCatalogEntities',
+            id: 'recording:internal-1',
+        });
     });
 
     it('prevents a user from writing into another personal catalog before any Firestore write', async () => {
@@ -184,7 +201,7 @@ describe('CanonicalMusicCatalogStore', () => {
         const stored = await store.appendClaim('owner-1', { kind: 'organization', id: 'org-1' }, claim);
 
         expect(writes[0]).toMatchObject({
-            path: 'organizations/org-1/musicCatalog/claims',
+            path: 'organizations/org-1/musicCatalogClaims',
             id: 'claim-1',
             value: stored,
         });
@@ -206,7 +223,7 @@ describe('CanonicalMusicCatalogStore', () => {
         const stored = await store.appendIdentifier('alice-1', { kind: 'user', id: 'alice-1' }, identifier);
 
         expect(writes[0]).toMatchObject({
-            path: 'users/alice-1/musicCatalog/identifiers',
+            path: 'users/alice-1/musicCatalogIdentifiers',
             id: 'identifier-1',
             value: stored,
         });
@@ -214,11 +231,17 @@ describe('CanonicalMusicCatalogStore', () => {
         expect(writes[0]?.id).not.toBe(stored.value);
     });
 
-    it('rejects external identifiers as canonical document IDs', async () => {
+    it.each([
+        'USABC2600001',
+        'grid:GRID-123',
+        'catalog_number:legacy-7',
+        'platform_id:spotify-123',
+        'proprietary:label-123',
+    ])('rejects external identifiers as canonical document IDs: %s', async externalId => {
         const { firestore, create } = fakeFirestore();
         const store = createCanonicalMusicCatalogStore(firestore);
 
-        await expect(store.appendEntity('alice-1', { kind: 'user', id: 'alice-1' }, entity({ id: 'USABC2600001' })))
+        await expect(store.appendEntity('alice-1', { kind: 'user', id: 'alice-1' }, entity({ id: externalId })))
             .rejects.toMatchObject({ code: 'invalid-argument' });
         expect(create).not.toHaveBeenCalled();
     });
