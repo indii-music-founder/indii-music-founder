@@ -1,8 +1,10 @@
 # Case Study — Agent Sandbox & Browser Tools
 
 **Scope:** The sandbox / browser-execution tools the indii agents use *inside the product* (the "upper building" — renderer + Electron main + cloud). Not the DSH harness tools used to build it.
-**Method:** Read-only source audit of `packages/renderer/src/services/agent/*`, `packages/main/src/*`, `execution/`, `agents/capability_registry.json`, and the related design docs. Git history consulted for the sidecar lifecycle. No code changed.
+**Method:** Read-only source audit of `packages/renderer/src/services/agent/*`, `packages/main/src/*`, `execution/`, `agents/capability_registry.json`, and the related design docs. Git history consulted for the sidecar lifecycle.
 **Date:** 2026-08-23 (audit)
+
+> Historical snapshot, not current-state guidance. The 2026-09 implementation replaces the interactive hidden-browser bridge with stateless public-page extraction and removes the Gemini browser-control path. See [WEB_EXTRACTION_AND_COMPUTER_EXECUTION.md](WEB_EXTRACTION_AND_COMPUTER_EXECUTION.md). Findings and recommendations below describe the audited state as of 2026-08-23.
 
 ---
 
@@ -12,7 +14,7 @@
 
 | Stack | Brain | Body | Transport | Real state |
 |---|---|---|---|---|
-| **A — "Ghost Hands" bridge** | Any specialist agent calling `browser_navigate` / `browser_action` / `browser_snapshot` (`BrowserTools.ts`) or `browser_tool` (`UniversalTools.ts`) | Hidden Electron `BrowserWindow` in main (`packages/main/src/services/BrowserAgentService.ts`), `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`, deny-all permission handler, per-session `persist:` partition + storage wipe on close | `electronAPI.agent.navigateAndExtract / performAction / captureState` → `ipcMain.handle` in `handlers/agent.ts` | **Half-alive.** See finding F1. |
+| **A — "Ghost Hands" bridge** | Any specialist agent calling `browser_navigate` / `browser_action` / `browser_snapshot` (`BrowserTools.ts`) or `browser_tool` (`UniversalTools.ts`) | Hidden Electron `BrowserWindow` in main (`packages/main/src/services/BrowserAgentService.ts`), `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`, deny-all permission handler, per-session `persist:` partition + storage wipe on close | `electronAPI.agent.navigateAndExtract / performAction / captureState` → `ipcMain.handle` in `handlers/agent.ts` | **Half-alive as of audit date.** See finding F1. |
 | **B — "Gemini Drive" autonomous browser** | `BrowserAgentDriver.ts` + `BrowserAgentService.ts` (renderer) — capture→reason (UI model)→act loop, high-risk-keyword guard | Intended: Playwright in Electron main via phantom `electronAPI.browserAgent` | `electronAPI.browserAgent(...)` — **does not exist** | **Dead.** `isConfigured()` hardcoded `false` (ISSUE-972). All `MusicPortalAgents.ts` portal automations throw `Browser agent is not configured`. |
 | **C — Computer Execution (CE) extension** | `ComputerTools.ts` + `ComputerAgentDriver.ts` | `ComputerExecutionService.ts` (main, provider-backed), macOS TCC preflight | `electronAPI.computer.*` → `handlers/computer.ts` | **Mostly real.** CE-1 read path shipped; CE-2 input tools ship but grant enforcement not wired (F5). |
 

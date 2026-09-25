@@ -5,7 +5,6 @@ import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignAsset } from '@/modules/marketing/types';
 import { VenueScoutService, ScoutEvent } from '../services/VenueScoutService';
 import { useAgentStore } from '../store/AgentStore';
-import BrowserAgentTester from './BrowserAgentTester';
 import { VenueCard } from './VenueCard';
 import { ScoutMapVisualization } from './ScoutMapVisualization';
 import { useMobile } from '@/hooks/useMobile';
@@ -138,7 +137,7 @@ const AgentDashboard: React.FC = () => {
     const { t } = useTranslation();
     const moduleColor = getColorForModule('agent');
     // Hooks must be called unconditionally before early returns
-    const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks' | 'loops'>('scout');
+    const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'chat' | 'tasks' | 'loops'>('scout');
     const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
     const chatBottomRef = useRef<HTMLDivElement>(null);
     const { agentMessages } = useStore(useShallow(s => ({ agentMessages: s.agentHistory })));
@@ -153,7 +152,6 @@ const AgentDashboard: React.FC = () => {
     const { showToast } = useToast();
     const [city, setCity] = useState('Nashville');
     const [genre, setGenre] = useState('Rock');
-    const [isAutonomous, setIsAutonomous] = useState(false);
     const [scanStatus, setScanStatus] = useState<string>(t('agent.scout.ready'));
 
     // Reactive mobile detection via centralized hook
@@ -163,7 +161,7 @@ const AgentDashboard: React.FC = () => {
     const _defaultTab = isAnyPhone ? 'chat' : 'scout';
     // Set initial tab to appropriate default based on device
     useEffect(() => {
-        if (isAnyPhone && (activeTab === 'scout' || activeTab === 'browser')) {
+        if (isAnyPhone && activeTab === 'scout') {
             setActiveTab('chat');
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -188,7 +186,7 @@ const AgentDashboard: React.FC = () => {
             const results = await VenueScoutService.searchVenues(
                 city,
                 genre,
-                isAutonomous,
+                false,
                 (event: ScoutEvent) => {
                     setScanStatus(event.message);
                 }
@@ -287,8 +285,6 @@ const AgentDashboard: React.FC = () => {
                                                 setCity={setCity}
                                                 genre={genre}
                                                 setGenre={setGenre}
-                                                isAutonomous={isAutonomous}
-                                                setIsAutonomous={setIsAutonomous}
                                                 handleScan={handleScan}
                                                 isScanning={isScanning}
                                             />
@@ -332,12 +328,6 @@ const AgentDashboard: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'browser' && (
-                            <div data-testid="agent-content-browser" className="h-full bg-[--background]">
-                                <BrowserAgentTester />
                             </div>
                         )}
 
@@ -409,7 +399,7 @@ const AgentDashboard: React.FC = () => {
                             </div>
                         )}
 
-                        {activeTab !== 'scout' && activeTab !== 'browser' && activeTab !== 'chat' && activeTab !== 'tasks' && activeTab !== 'campaigns' && activeTab !== 'inbox' && activeTab !== 'loops' && (
+                        {activeTab !== 'scout' && activeTab !== 'chat' && activeTab !== 'tasks' && activeTab !== 'campaigns' && activeTab !== 'inbox' && activeTab !== 'loops' && (
                             <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
                                 <div className="p-4 bg-slate-900 rounded-full border border-slate-800">
                                     <Filter size={32} className="opacity-50" />

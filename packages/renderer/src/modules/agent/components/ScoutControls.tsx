@@ -1,13 +1,11 @@
 import React from 'react';
-import { Search, Sparkles, Check, Wand2 } from 'lucide-react';
+import { Search, Sparkles, Wand2 } from 'lucide-react';
 
 interface ScoutControlsProps {
     city: string;
     setCity: (city: string) => void;
     genre: string;
     setGenre: (genre: string) => void;
-    isAutonomous: boolean;
-    setIsAutonomous: (val: boolean) => void;
     handleScan: () => void;
     isScanning: boolean;
 }
@@ -17,8 +15,6 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
     setCity,
     genre,
     setGenre,
-    isAutonomous,
-    setIsAutonomous,
     handleScan,
     isScanning
 }) => {
@@ -59,25 +55,6 @@ export const ScoutControls: React.FC<ScoutControlsProps> = ({
                         aria-label="Focus Genre"
                     />
                 </div>
-
-                {/* Autonomous Toggle */}
-                <button
-                    onClick={() => setIsAutonomous(!isAutonomous)}
-                    role="switch"
-                    aria-checked={isAutonomous}
-                    aria-label="Toggle autonomous mode"
-                    className={`
-                        relative flex items-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all border outline-none focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900
-                        ${isAutonomous
-                            ? 'bg-dept-creative/10 border-dept-creative/30 text-dept-creative'
-                            : 'bg-slate-950/50 border-transparent text-slate-400 hover:text-slate-300 hover:bg-slate-800/50'}
-                    `}
-                >
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isAutonomous ? 'bg-dept-creative border-dept-creative' : 'border-slate-600'}`}>
-                        {isAutonomous && <Check size={10} className="text-slate-950 stroke-[3]" />}
-                    </div>
-                    <span className="whitespace-nowrap">Auto Mode</span>
-                </button>
 
                 {/* Deploy Button */}
                 <button

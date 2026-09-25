@@ -120,7 +120,7 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
         {messages.length === 0 && (
           <div className="text-center text-xs text-gray-600 mt-8 px-4">
             <Bot size={20} className="mx-auto mb-2 opacity-30" />
-            <p>Select a track and an organization to get started. I'll pre-fill what I know and only ask for what I don't.</p>
+            <p>Select a track and an organization to prepare a filing. You review every detail and complete submission in the organization’s portal.</p>
           </div>
         )}
         {messages.map(msg => (
@@ -166,7 +166,7 @@ function buildGreeting(adapter: OrgAdapter, track: CatalogTrack): string {
   const gapCount = adapter.fields.filter(f => f.required && !f.autoFillFrom).length;
   const autoCount = adapter.fields.filter(f => f.autoFillFrom).length;
   if (gapCount === 0) {
-    return `I can complete your ${adapter.name} registration for "${track.title}" entirely from your catalog data. Review and hit Submit when ready.`;
+    return `I can help prepare your ${adapter.name} filing for "${track.title}" from your catalog data. Review each detail; you must complete and submit it in the organization’s portal.`;
   }
-  return `For ${adapter.name} registration of "${track.title}", I've pre-filled ${autoCount} field${autoCount !== 1 ? 's' : ''} from your catalog. I just need ${gapCount} thing${gapCount !== 1 ? 's' : ''} from you — highlighted above.`;
+  return `For ${adapter.name} registration of "${track.title}", ${autoCount} field${autoCount !== 1 ? 's are' : ' is'} prefilled from your catalog. Complete the remaining ${gapCount} required field${gapCount !== 1 ? 's' : ''}, review everything, then submit yourself through the organization’s portal.`;
 }

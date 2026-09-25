@@ -40,8 +40,8 @@
       "streaming": false
     },
     {
-      "name": "browser_tool",
-      "description": "Research market trends, competitor ads, or platform algorithms.",
+      "name": "web_extract",
+      "description": "Read bounded text from public pages for market research; cannot access signed-in analytics.",
       "inputSchemaRef": "#/components/schemas/Empty",
       "outputSchemaRef": "#/components/schemas/Empty",
       "streaming": false
