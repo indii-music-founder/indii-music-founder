@@ -3,12 +3,18 @@ import { Music2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CatalogIntelligenceReport } from '@indii/shared';
 import type { CatalogTrack, TrackRegistrationState } from '../types';
+import {
+  CanonicalCatalogIntelligenceSummary,
+  type CanonicalCatalogIntelligenceStatus,
+} from './CanonicalCatalogIntelligenceSummary';
 
 interface CatalogRailProps {
   tracks: CatalogTrack[];
   selectedTrackId: string | null;
   registrationStates: Record<string, TrackRegistrationState>;
   intelligenceReport: CatalogIntelligenceReport | null;
+  canonicalIntelligenceReport: CatalogIntelligenceReport | null;
+  canonicalIntelligenceStatus: CanonicalCatalogIntelligenceStatus;
   onSelectTrack: (trackId: string) => void;
 }
 
@@ -24,7 +30,15 @@ function completenessLabel(score: number): string {
   return 'None';
 }
 
-export function CatalogRail({ tracks, selectedTrackId, registrationStates, intelligenceReport, onSelectTrack }: CatalogRailProps) {
+export function CatalogRail({
+  tracks,
+  selectedTrackId,
+  registrationStates,
+  intelligenceReport,
+  canonicalIntelligenceReport,
+  canonicalIntelligenceStatus,
+  onSelectTrack,
+}: CatalogRailProps) {
   const [query, setQuery] = React.useState('');
   const filtered = tracks.filter(t => t.title.toLowerCase().includes(query.toLowerCase()));
 
@@ -97,11 +111,11 @@ export function CatalogRail({ tracks, selectedTrackId, registrationStates, intel
       </div>
       {intelligenceReport && (
         <section aria-label="Catalog intelligence" className="px-3 py-3 border-t border-white/[0.05] space-y-1">
-          <h2 className="text-[11px] font-semibold text-gray-400">Catalog intelligence</h2>
+          <h2 className="text-[11px] font-semibold text-gray-400">Legacy catalog intelligence</h2>
           <p className="text-[11px] text-gray-500">
             {intelligenceReport.metrics.findingCount > 0
               ? `${intelligenceReport.metrics.findingCount} potential identifier conflict${intelligenceReport.metrics.findingCount === 1 ? ' needs' : 's need'} review.`
-              : 'No identifier collisions found in this read-only check.'}
+              : 'No identifier collisions were observed in the available legacy projection; coverage is not verified.'}
           </p>
           <p className="text-[10px] leading-relaxed text-gray-600">
             Legacy details are unconfirmed. Rights, registration requirements, contributor identity, media links, and collection paths are not assessed.
@@ -109,6 +123,13 @@ export function CatalogRail({ tracks, selectedTrackId, registrationStates, intel
           </p>
         </section>
       )}
+      <section aria-label="Canonical catalog intelligence" className="px-3 py-3 border-t border-white/[0.05] space-y-1">
+        <h2 className="text-[11px] font-semibold text-gray-400">Canonical catalog intelligence</h2>
+        <CanonicalCatalogIntelligenceSummary
+          status={canonicalIntelligenceStatus}
+          report={canonicalIntelligenceReport}
+        />
+      </section>
     </div>
   );
 }

@@ -108,6 +108,7 @@ export { recordPersonaResponseMeasurement } from './functions/persona/recordPers
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
 export { logAuditEvent } from './functions/security/logAuditEvent';
 export { getOrganizationAccessMatrix, updateOrganizationMemberAccess } from './functions/security/organizationAccess';
+export { getCanonicalMusicCatalogIntelligence } from './functions/music/getCanonicalMusicCatalogIntelligence';
 export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
 export { claimComputerApproval, denyComputerApproval } from './functions/security/claimComputerApproval';
 
