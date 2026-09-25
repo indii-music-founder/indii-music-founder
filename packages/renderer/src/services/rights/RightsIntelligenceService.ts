@@ -1,12 +1,24 @@
 import {
+    projectClaimsInbox,
     evaluateRightsIntelligence,
     RightsIntelligenceReportSchema,
+    type ClaimsInboxProjection,
+    type ClaimsInboxInput,
     type RightsIntelligenceInput,
 } from '@indii/shared';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 /** Adds a deterministic preflight to the existing release metadata object. */
 export class RightsIntelligenceService {
+    /**
+     * Build the existing rights workflow's platform-neutral claims inbox view.
+     * This read model preserves assertions and evidence; it does not determine
+     * ownership, contact a platform, or persist a claim response.
+     */
+    projectClaims(input: ClaimsInboxInput): ClaimsInboxProjection {
+        return projectClaimsInbox(input);
+    }
+
     evaluate(
         metadata: ExtendedGoldenMetadata,
         input: RightsIntelligenceInput,
