@@ -29,6 +29,7 @@ import { formatDate } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import ProductPickerModal from './ProductPickerModal';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
+import { ListenerSocialTrackCard } from './ListenerSocialTrackCard';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface SocialFeedProps {
@@ -362,6 +363,18 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
                     </div>
 
                     <p className="text-gray-200 mt-1 whitespace-pre-wrap">{post.content}</p>
+
+                    {/* Interactive Music Track Release Card */}
+                    {((post as any).trackTitle || post.content.includes('#Release') || post.content.includes('🎵')) && (
+                        <div className="mt-3">
+                            <ListenerSocialTrackCard
+                                trackTitle={(post as any).trackTitle || 'Featured Release'}
+                                artistName={post.authorName}
+                                coverArtUrl={post.mediaUrls?.[0]}
+                                lyricsSnippet={post.content.slice(0, 120)}
+                            />
+                        </div>
+                    )}
 
                     {/* Social Drop / Embedded Product */}
                     {embeddedProduct && (

@@ -5637,6 +5637,14 @@ export interface PersonaPostureVerdict {
     };
 }
 
+export const PERSONA_POSTURE_FADER_MAP: Record<PersonaPosturePreset, { riskTolerance: number; brevity: number; directness: number; formality: number; reasoningTransparency: number }> = {
+    MAJOR_LABEL_SHARK: { riskTolerance: 90, brevity: 70, directness: 85, formality: 80, reasoningTransparency: 40 },
+    SCRAPPY_INDIE_DIY: { riskTolerance: 80, brevity: 50, directness: 75, formality: 20, reasoningTransparency: 70 },
+    NURTURING_MENTOR: { riskTolerance: 30, brevity: 35, directness: 25, formality: 40, reasoningTransparency: 90 },
+    ACADEMIC_PURIST: { riskTolerance: 20, brevity: 20, directness: 50, formality: 90, reasoningTransparency: 95 },
+    STREET_HUSTLER: { riskTolerance: 95, brevity: 85, directness: 90, formality: 10, reasoningTransparency: 30 },
+};
+
 /**
  * TypeSafe System One (Jev) board persona posture calibrator:
  * Replaces 40 complex fader dials with 5 calibrated artist management archetypes.
@@ -5657,15 +5665,7 @@ export async function judgePersonaPosturePreset(
         fallbackPreset = 'STREET_HUSTLER';
     }
 
-    const faderMap: Record<PersonaPosturePreset, { riskTolerance: number; brevity: number; directness: number; formality: number; reasoningTransparency: number }> = {
-        MAJOR_LABEL_SHARK: { riskTolerance: 90, brevity: 70, directness: 85, formality: 80, reasoningTransparency: 40 },
-        SCRAPPY_INDIE_DIY: { riskTolerance: 80, brevity: 50, directness: 75, formality: 20, reasoningTransparency: 70 },
-        NURTURING_MENTOR: { riskTolerance: 30, brevity: 35, directness: 25, formality: 40, reasoningTransparency: 90 },
-        ACADEMIC_PURIST: { riskTolerance: 20, brevity: 20, directness: 50, formality: 90, reasoningTransparency: 95 },
-        STREET_HUSTLER: { riskTolerance: 95, brevity: 85, directness: 90, formality: 10, reasoningTransparency: 30 },
-    };
-
-    const fallbackFaders = faderMap[fallbackPreset];
+    const fallbackFaders = PERSONA_POSTURE_FADER_MAP[fallbackPreset];
 
     if (!judgmentsAvailable()) {
         return {
@@ -5730,7 +5730,7 @@ export async function judgePersonaPosturePreset(
             recommendedPreset: resolvedPreset,
             alignmentScore: Math.max(1, Math.min(5, Math.round(resolvedAlign) || 4)),
             postureSummary: `System One calibrated boardroom team to ${resolvedPreset} (alignment score: ${resolvedAlign}/5).`,
-            calibratedFaders: faderMap[resolvedPreset] || fallbackFaders,
+            calibratedFaders: PERSONA_POSTURE_FADER_MAP[resolvedPreset] || fallbackFaders,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'persona posture preset judgment');
@@ -6527,3 +6527,934 @@ export async function judgeAudioMasterNormalization(
         };
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment 59: Specialist Agent Target Router (Domain: Core UX / Shell)
+// ---------------------------------------------------------------------------
+
+export type SpecialistAgentTarget =
+    | 'generalist'
+    | 'creative'
+    | 'legal'
+    | 'marketing'
+    | 'finance'
+    | 'distribution'
+    | 'publishing'
+    | 'road'
+    | 'producer';
+
+export interface SpecialistAgentRoutingInput {
+    userPrompt: string;
+    activeModule?: string;
+}
+
+export interface SpecialistAgentRoutingVerdict {
+    targetAgentId: SpecialistAgentTarget;
+    confidence: number;
+    reasoning: string;
+    isModuleMisaligned: boolean;
+}
+
+export async function judgeTargetSpecialistAgent(
+    input: SpecialistAgentRoutingInput
+): Promise<SpecialistAgentRoutingVerdict> {
+    const prompt = input.userPrompt.toLowerCase();
+    const active = (input.activeModule || 'generalist').toLowerCase();
+
+    let fallbackTarget: SpecialistAgentTarget = 'generalist';
+    let fallbackReason = 'Generalist management routing for multi-domain prompt.';
+
+    if (prompt.includes('split') || prompt.includes('contract') || prompt.includes('clause') || prompt.includes('attorney') || prompt.includes('recoup') || prompt.includes('agreement') || prompt.includes('trademark') || prompt.includes('nda')) {
+        fallbackTarget = 'legal';
+        fallbackReason = 'Legal specialist identified via contract/rights/split keywords.';
+    } else if (prompt.includes('cover') || prompt.includes('video') || prompt.includes('artwork') || prompt.includes('visual') || prompt.includes('font') || prompt.includes('poster') || prompt.includes('palette') || prompt.includes('merch design')) {
+        fallbackTarget = 'creative';
+        fallbackReason = 'Creative director identified via visual asset keywords.';
+    } else if (prompt.includes('royalty') || prompt.includes('tax') || prompt.includes('expense') || prompt.includes('w-9') || prompt.includes('payout') || prompt.includes('revenue') || prompt.includes('deduct')) {
+        fallbackTarget = 'finance';
+        fallbackReason = 'Finance manager identified via accounting/tax/royalty keywords.';
+    } else if (prompt.includes('dsp') || prompt.includes('spotify') || prompt.includes('apple music') || prompt.includes('isrc') || prompt.includes('upc') || prompt.includes('distro') || prompt.includes('metadata') || prompt.includes('takedown')) {
+        fallbackTarget = 'distribution';
+        fallbackReason = 'Distribution specialist identified via DSP/ISRC/catalog delivery keywords.';
+    } else if (prompt.includes('campaign') || prompt.includes('tiktok') || prompt.includes('instagram') || prompt.includes('ad spend') || prompt.includes('pitch') || prompt.includes('press release') || prompt.includes('pr')) {
+        fallbackTarget = 'marketing';
+        fallbackReason = 'Marketing specialist identified via campaign/press/social keywords.';
+    } else if (prompt.includes('mix') || prompt.includes('master') || prompt.includes('lufs') || prompt.includes('stem') || prompt.includes('eq') || prompt.includes('frequency') || prompt.includes('audio compression')) {
+        fallbackTarget = 'producer';
+        fallbackReason = 'Audio producer identified via mixing/mastering keywords.';
+    } else if (prompt.includes('pro') || prompt.includes('ascap') || prompt.includes('bmi') || prompt.includes('sync') || prompt.includes('publishing') || prompt.includes('mechanical')) {
+        fallbackTarget = 'publishing';
+        fallbackReason = 'Publishing agent identified via PRO/sync/mechanical rights keywords.';
+    } else if (prompt.includes('tour') || prompt.includes('venue') || prompt.includes('gig') || prompt.includes('hotel') || prompt.includes('booking') || prompt.includes('rider')) {
+        fallbackTarget = 'road';
+        fallbackReason = 'Road manager identified via touring/venue/booking keywords.';
+    }
+
+    const isMisaligned = active !== 'generalist' && active !== fallbackTarget && fallbackTarget !== 'generalist';
+
+    if (!judgmentsAvailable()) {
+        return {
+            targetAgentId: fallbackTarget,
+            confidence: 0.85,
+            reasoning: fallbackReason,
+            isModuleMisaligned: isMisaligned,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                prompt: input.userPrompt.slice(0, 400),
+                activeModule: active,
+            },
+            questions: {
+                target_agent: {
+                    type: 'choice' as const,
+                    instructions:
+                        'A music artist entered a prompt while working inside an active indii module. ' +
+                        'Select the single specialist agent best qualified to execute this instruction: ' +
+                        'creative, legal, marketing, finance, distribution, publishing, road, producer, or generalist.',
+                    criteria: {
+                        creative: 'Visual identity, album covers, video direction, typography, brand assets, photo shoots.',
+                        legal: 'Contracts, split sheets, rights ownership, trademark, legal risk, sync deal terms.',
+                        marketing: 'Fan campaigns, ad spend, social strategy, press releases, playlist pitching.',
+                        finance: 'Royalties, expense classification, tax forms (W-9), statement parsing, budgets.',
+                        distribution: 'DSP delivery, DDEX metadata, ISRC/UPC validation, takedown troubleshooting.',
+                        publishing: 'PRO registration (ASCAP/BMI), mechanical royalties, composition catalog.',
+                        road: 'Tour booking, venues, hospitality riders, travel logistics, live performance prep.',
+                        producer: 'Audio engineering, stem separation, LUFS mastering, frequency masking, mixing.',
+                        generalist: 'Holistic career strategy, cross-functional coordination, or ambiguous questions.',
+                    },
+                },
+                confidence_score: {
+                    type: 'score' as const,
+                    instructions: 'Rate routing confidence from 1 (ambiguous/uncertain) to 5 (undoubted domain match).',
+                    levels: {
+                        1: 'Ambiguous or multi-disciplinary inquiry.',
+                        2: 'Plausible fit with minor cross-domain overlap.',
+                        3: 'Solid domain match with clear standard intent.',
+                        4: 'Strong specialist match with domain terminology.',
+                        5: 'Definitive specialist domain match.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const targetAns = ans?.target_agent as { choice?: unknown } | undefined;
+        const confAns = ans?.confidence_score as { score?: unknown } | number | undefined;
+
+        const resolvedTarget = (typeof targetAns?.choice === 'string' ? targetAns.choice : fallbackTarget) as SpecialistAgentTarget;
+        const rawScore = typeof confAns === 'number' ? confAns : Number((confAns as { score?: unknown })?.score ?? 4);
+        const resolvedConf = Math.min(1.0, Math.max(0.2, (rawScore / 5)));
+        const finalMisaligned = active !== 'generalist' && active !== resolvedTarget && resolvedTarget !== 'generalist';
+
+        return {
+            targetAgentId: resolvedTarget,
+            confidence: resolvedConf,
+            reasoning: `System One routed to ${resolvedTarget} (confidence ${(resolvedConf * 100).toFixed(0)}%).`,
+            isModuleMisaligned: finalMisaligned,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'specialist agent target router judgment');
+        return {
+            targetAgentId: fallbackTarget,
+            confidence: 0.85,
+            reasoning: fallbackReason,
+            isModuleMisaligned: isMisaligned,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 60: Prompt Actionability & Deliverable Scorer (Domain: Core UX / Shell)
+// ---------------------------------------------------------------------------
+
+export interface PromptActionabilityInput {
+    promptText: string;
+    domainContext?: string;
+}
+
+export interface PromptActionabilityVerdict {
+    specificityScore: number; // 1 to 5
+    hasDeliverable: boolean;
+    missingParameters: string[];
+    suggestedAugmentation: string;
+    isReadyForExecution: boolean;
+}
+
+export async function judgePromptActionability(
+    input: PromptActionabilityInput
+): Promise<PromptActionabilityVerdict> {
+    const text = input.promptText.trim();
+    const words = text.split(/\s+/).filter(Boolean);
+
+    const hasActionVerb = /\b(make|generate|create|build|render|design|calculate|draft|split|mix|master|pitch)\b/i.test(text);
+    const hasDetail = words.length >= 8 || /\b(for|in|style|palette|bpm|resolution|format|ratio)\b/i.test(text);
+
+    let fallbackScore = 2;
+    if (words.length < 3) fallbackScore = 1;
+    else if (words.length >= 12 && hasActionVerb) fallbackScore = 4;
+    else if (words.length >= 20) fallbackScore = 5;
+    else if (hasActionVerb && hasDetail) fallbackScore = 3;
+
+    const missing: string[] = [];
+    if (!text.toLowerCase().includes('dimension') && !text.toLowerCase().includes('ratio') && /video|cover|artwork/i.test(text)) {
+        missing.push('aspect ratio or resolution');
+    }
+    if (!/mood|vibe|style|genre/i.test(text)) {
+        missing.push('aesthetic style or musical vibe');
+    }
+    if (!/title|name|track/i.test(text) && /cover|pitch|release/i.test(text)) {
+        missing.push('track or project title');
+    }
+
+    const isReady = fallbackScore >= 3 && hasActionVerb;
+    const suggestedAug = missing.length > 0
+        ? `Try adding ${missing.join(', ')} to get production-grade output immediately.`
+        : 'Prompt has strong specificity and clear execution parameters.';
+
+    if (!judgmentsAvailable()) {
+        return {
+            specificityScore: fallbackScore,
+            hasDeliverable: hasActionVerb,
+            missingParameters: missing,
+            suggestedAugmentation: suggestedAug,
+            isReadyForExecution: isReady,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                prompt: text.slice(0, 500),
+                domain: input.domainContext || 'general',
+            },
+            questions: {
+                specificity: {
+                    type: 'score' as const,
+                    instructions: 'Rate the specificity and operational readiness of this prompt from 1 (vague) to 5 (exhaustive production brief).',
+                    levels: {
+                        1: 'Single words or ambiguous concept with no constraints.',
+                        2: 'Mentions intent but misses format, aesthetic, and context.',
+                        3: 'Acceptable instruction with basic genre/deliverable.',
+                        4: 'Detailed instruction with clear stylistic boundaries.',
+                        5: 'Flawless comprehensive brief ready for zero-shot execution.',
+                    },
+                },
+                has_deliverable: {
+                    type: 'noul' as const,
+                    instructions: 'Does this message ask to produce a concrete tangible deliverable or file asset?',
+                    criteria: {
+                        true: 'Explicit request to generate, draft, or output an asset.',
+                        false: 'Conversational question, feedback inquiry, or chat greeting.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const specAns = ans?.specificity as { score?: unknown } | number | undefined;
+        const delAns = ans?.has_deliverable as { probability?: unknown } | undefined;
+
+        const specScore = typeof specAns === 'number' ? specAns : Number((specAns as { score?: unknown })?.score ?? fallbackScore);
+        const delProb = typeof delAns?.probability === 'number' ? delAns.probability : (hasActionVerb ? 0.9 : 0.2);
+        const resolvedHasDeliverable = delProb >= 0.5;
+
+        return {
+            specificityScore: Math.min(5, Math.max(1, Math.round(specScore))),
+            hasDeliverable: resolvedHasDeliverable,
+            missingParameters: missing,
+            suggestedAugmentation: suggestedAug,
+            isReadyForExecution: specScore >= 3 && resolvedHasDeliverable,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'prompt actionability judgment');
+        return {
+            specificityScore: fallbackScore,
+            hasDeliverable: hasActionVerb,
+            missingParameters: missing,
+            suggestedAugmentation: suggestedAug,
+            isReadyForExecution: isReady,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 61: 1-Click Artist DNA & Brand Identity Synthesizer (Domain: Core UX / Onboarding)
+// ---------------------------------------------------------------------------
+
+export type ArtistCareerArchetype =
+    | 'solo_vocalist'
+    | 'producer_beatmaker'
+    | 'indie_band'
+    | 'electronic_dj'
+    | 'hiphop_mc'
+    | 'sync_composer'
+    | 'diy_label_operator'
+    | 'session_instrumentalist';
+
+export type AestheticStyleTag =
+    | 'retro_synthwave'
+    | 'minimalist_modernist'
+    | 'cyberpunk_futuristic'
+    | 'grungy_analog_lofi'
+    | 'warm_organic_earthy'
+    | 'high_gloss_glamour'
+    | 'dark_moody_cinematic'
+    | 'playful_y2k_pastel';
+
+export interface ArtistDnaInput {
+    bioSnippet: string;
+    lyricsOrTrackTheme?: string;
+    socialHandle?: string;
+}
+
+export interface ArtistDnaVerdict {
+    archetype: ArtistCareerArchetype;
+    aestheticStyle: AestheticStyleTag;
+    careerMaturityScore: number; // 1 to 5
+    monetizationFocus: 'direct_to_fan' | 'streaming_scale' | 'sync_licensing' | 'live_touring' | 'merch_apparel';
+    recommendedHexPalette: string[];
+    executiveSummary: string;
+}
+
+export async function judgeArtistDnaOnboarding(
+    input: ArtistDnaInput
+): Promise<ArtistDnaVerdict> {
+    const raw = `${input.bioSnippet} ${input.lyricsOrTrackTheme || ''}`.toLowerCase();
+
+    let archetype: ArtistCareerArchetype = 'solo_vocalist';
+    if (raw.includes('dj') || raw.includes('club') || raw.includes('techno') || raw.includes('rave') || raw.includes('house')) {
+        archetype = 'electronic_dj';
+    } else if (raw.includes('beat') || raw.includes('producer') || raw.includes('fl studio') || raw.includes('ableton')) {
+        archetype = 'producer_beatmaker';
+    } else if (raw.includes('band') || raw.includes('guitar') || raw.includes('drummer') || raw.includes('bass player')) {
+        archetype = 'indie_band';
+    } else if (raw.includes('rap') || raw.includes('bars') || raw.includes('mc') || raw.includes('hip-hop') || raw.includes('trap')) {
+        archetype = 'hiphop_mc';
+    } else if (raw.includes('film') || raw.includes('cue') || raw.includes('tv') || raw.includes('game') || raw.includes('score')) {
+        archetype = 'sync_composer';
+    } else if (raw.includes('label') || raw.includes('imprint') || raw.includes('roster')) {
+        archetype = 'diy_label_operator';
+    }
+
+    let aesthetic: AestheticStyleTag = 'dark_moody_cinematic';
+    let palette = ['#0f172a', '#334155', '#64748b', '#38bdf8', '#f8fafc'];
+    if (raw.includes('synth') || raw.includes('neon') || raw.includes('80s') || raw.includes('retro')) {
+        aesthetic = 'retro_synthwave';
+        palette = ['#1e1b4b', '#4338ca', '#ec4899', '#06b6d4', '#f43f5e'];
+    } else if (raw.includes('minimal') || raw.includes('clean') || raw.includes('modern')) {
+        aesthetic = 'minimalist_modernist';
+        palette = ['#09090b', '#27272a', '#71717a', '#d4d4d8', '#ffffff'];
+    } else if (raw.includes('cyber') || raw.includes('future') || raw.includes('matrix')) {
+        aesthetic = 'cyberpunk_futuristic';
+        palette = ['#020617', '#10b981', '#06b6d4', '#d946ef', '#f0abfc'];
+    } else if (raw.includes('lofi') || raw.includes('lo-fi') || raw.includes('analog') || raw.includes('tape')) {
+        aesthetic = 'grungy_analog_lofi';
+        palette = ['#292524', '#78716c', '#b45309', '#d97706', '#fef3c7'];
+    } else if (raw.includes('organic') || raw.includes('folk') || raw.includes('acoustic') || raw.includes('earth')) {
+        aesthetic = 'warm_organic_earthy';
+        palette = ['#1c1917', '#44403c', '#15803d', '#a16207', '#fafaf9'];
+    }
+
+    let maturity = 2;
+    if (raw.includes('grammy') || raw.includes('millions') || raw.includes('world tour') || raw.includes('gold')) {
+        maturity = 5;
+    } else if (raw.includes('tour') || raw.includes('signed') || raw.includes('album') || raw.includes('listeners')) {
+        maturity = 3;
+    }
+
+    let focus: ArtistDnaVerdict['monetizationFocus'] = 'direct_to_fan';
+    if (archetype === 'sync_composer') focus = 'sync_licensing';
+    else if (archetype === 'electronic_dj' || archetype === 'indie_band') focus = 'live_touring';
+    else if (maturity >= 4) focus = 'streaming_scale';
+
+    const fallbackSummary = `Calibrated DNA for ${archetype.replace('_', ' ')} with ${aesthetic.replace(/_/g, ' ')} visual identity.`;
+
+    if (!judgmentsAvailable()) {
+        return {
+            archetype,
+            aestheticStyle: aesthetic,
+            careerMaturityScore: maturity,
+            monetizationFocus: focus,
+            recommendedHexPalette: palette,
+            executiveSummary: fallbackSummary,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                bio: input.bioSnippet.slice(0, 500),
+                lyrics: (input.lyricsOrTrackTheme || '').slice(0, 300),
+                social: input.socialHandle || '',
+            },
+            questions: {
+                archetype_choice: {
+                    type: 'choice' as const,
+                    instructions: 'Select the primary artist identity archetype from this bio and musical context.',
+                    criteria: {
+                        solo_vocalist: 'Solo singer, songwriter, or vocal-driven front person.',
+                        producer_beatmaker: 'Instrumental creator, sound designer, beat producer.',
+                        indie_band: 'Collaborative ensemble with live instruments and group dynamic.',
+                        electronic_dj: 'Electronic dance producer, DJ, club performer.',
+                        hiphop_mc: 'Rapper, lyricist, trap/hip-hop artist.',
+                        sync_composer: 'Composer scoring for television, film, ads, video games.',
+                        diy_label_operator: 'Artist running independent imprint with multiple roster releases.',
+                        session_instrumentalist: 'Musician playing instruments for hire on records.',
+                    },
+                },
+                aesthetic_choice: {
+                    type: 'choice' as const,
+                    instructions: 'Select the optimal visual aesthetic style for this artist brand identity.',
+                    criteria: {
+                        retro_synthwave: '80s retro, neon grid, sunset magenta/cyan, analog synths.',
+                        minimalist_modernist: 'Clean lines, monochromatic palette, high whitespace, typography focus.',
+                        cyberpunk_futuristic: 'Cyber tech, dystopian glow, chrome textures, futuristic digital.',
+                        grungy_analog_lofi: 'Tape hiss texture, vintage sepia, thrift aesthetic, warm grit.',
+                        warm_organic_earthy: 'Natural woods, forest greens, folk warmth, acoustic authenticity.',
+                        high_gloss_glamour: 'Editorial luxury, crisp flash studio lighting, pop polish.',
+                        dark_moody_cinematic: 'Detroit streetlights, deep shadows, cinematic noir, atmospheric tension.',
+                        playful_y2k_pastel: 'Bubblegum pop, colorful playful pastel, nostalgic millennium aesthetic.',
+                    },
+                },
+                maturity_score: {
+                    type: 'score' as const,
+                    instructions: 'Score artist career maturity from 1 (bedroom beginner) to 5 (established headliner).',
+                    levels: {
+                        1: 'Day 1 creator with unreleased demos.',
+                        2: 'Emerging DIY artist with 1-2 singles released.',
+                        3: 'Active independent with regional buzz and regular releases.',
+                        4: 'Established artist with thousands of monthly listeners and tour dates.',
+                        5: 'National/international touring artist with substantial catalog revenue.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const arcAns = ans?.archetype_choice as { choice?: unknown } | undefined;
+        const aesAns = ans?.aesthetic_choice as { choice?: unknown } | undefined;
+        const matAns = ans?.maturity_score as { score?: unknown } | number | undefined;
+
+        const resolvedArchetype = (typeof arcAns?.choice === 'string' ? arcAns.choice : archetype) as ArtistCareerArchetype;
+        const resolvedAesthetic = (typeof aesAns?.choice === 'string' ? aesAns.choice : aesthetic) as AestheticStyleTag;
+        const rawMat = typeof matAns === 'number' ? matAns : Number((matAns as { score?: unknown })?.score ?? maturity);
+
+        return {
+            archetype: resolvedArchetype,
+            aestheticStyle: resolvedAesthetic,
+            careerMaturityScore: Math.min(5, Math.max(1, Math.round(rawMat))),
+            monetizationFocus: focus,
+            recommendedHexPalette: palette,
+            executiveSummary: `System One synthesized artist profile: ${resolvedArchetype} with ${resolvedAesthetic} styling.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'artist DNA onboarding judgment');
+        return {
+            archetype,
+            aestheticStyle: aesthetic,
+            careerMaturityScore: maturity,
+            monetizationFocus: focus,
+            recommendedHexPalette: palette,
+            executiveSummary: fallbackSummary,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 62: Stem Separation Acoustic Purity Inspector (Domain: Audio Engineering)
+// ---------------------------------------------------------------------------
+
+export interface StemPurityInput {
+    stemType: 'vocals' | 'drums' | 'bass' | 'other';
+    bleedDb: number; // dB of adjacent stem bleed (e.g. -28 dB is clean, -10 dB is heavy bleed)
+    signalToDistortionDb: number; // SDR in dB (e.g. 14 dB is high fidelity, 4 dB has heavy artifacts)
+    hasVocalArtifacts?: boolean;
+}
+
+export interface StemPurityVerdict {
+    purityScore: number; // 1 to 5
+    isRemixReady: boolean;
+    hasSeverePhaseCancellation: boolean;
+    recommendedRemedy: string;
+}
+
+export async function judgeStemSeparationAcousticPurity(
+    input: StemPurityInput
+): Promise<StemPurityVerdict> {
+    const isCleanBleed = input.bleedDb <= -22;
+    const isHighSdr = input.signalToDistortionDb >= 11;
+    const isSeverePhase = input.signalToDistortionDb < 6 || input.bleedDb > -14;
+
+    let fallbackScore = 3;
+    if (isCleanBleed && isHighSdr && !input.hasVocalArtifacts) fallbackScore = 5;
+    else if (isCleanBleed || isHighSdr) fallbackScore = 4;
+    else if (isSeverePhase) fallbackScore = 1;
+    else fallbackScore = 2;
+
+    let remedy = 'Stem separation is studio pristine and ready for spatial remixing.';
+    if (fallbackScore <= 2) {
+        remedy = `High bleed detected (${input.bleedDb} dB). Apply high-pass filter or run secondary phase-aligned AI de-bleed pass.`;
+    } else if (fallbackScore <= 3) {
+        remedy = 'Acceptable for background backing tracks; minor chirping artifacts in high frequencies.';
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            purityScore: fallbackScore,
+            isRemixReady: fallbackScore >= 3,
+            hasSeverePhaseCancellation: isSeverePhase,
+            recommendedRemedy: remedy,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                stemType: input.stemType,
+                bleedDb: input.bleedDb,
+                sdrDb: input.signalToDistortionDb,
+                artifacts: input.hasVocalArtifacts || false,
+            },
+            questions: {
+                purity_rating: {
+                    type: 'score' as const,
+                    instructions: 'Rate stem acoustic purity and phase integrity from 1 (garbled) to 5 (isolated studio master).',
+                    levels: {
+                        1: 'Heavy phase cancellation, watery artifacts, severe crosstalk bleed.',
+                        2: 'Audible digital chirping and noticeable spill from other instruments.',
+                        3: 'Functional stem suitable for casual remixing with minor EQ required.',
+                        4: 'High fidelity isolation with minimal imperceptible bleed.',
+                        5: 'Commercial studio grade isolation ready for Dolby Atmos stems.',
+                    },
+                },
+                severe_phase_hazard: {
+                    type: 'noul' as const,
+                    instructions: 'Does this stem exhibit severe phase cancellation that causes frequency comb filtering when summed?',
+                    criteria: {
+                        true: 'Severe destructive phase interference detected.',
+                        false: 'Stem sums coherently with master mix without severe phase cancellation.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const purAns = ans?.purity_rating as { score?: unknown } | number | undefined;
+        const phsAns = ans?.severe_phase_hazard as { probability?: unknown } | undefined;
+
+        const resolvedScore = typeof purAns === 'number' ? purAns : Number((purAns as { score?: unknown })?.score ?? fallbackScore);
+        const phaseProb = typeof phsAns?.probability === 'number' ? phsAns.probability : (isSeverePhase ? 0.85 : 0.15);
+        const finalSeverePhase = phaseProb >= 0.5;
+
+        return {
+            purityScore: Math.min(5, Math.max(1, Math.round(resolvedScore))),
+            isRemixReady: resolvedScore >= 3 && !finalSeverePhase,
+            hasSeverePhaseCancellation: finalSeverePhase,
+            recommendedRemedy: remedy,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'stem separation acoustic purity judgment');
+        return {
+            purityScore: fallbackScore,
+            isRemixReady: fallbackScore >= 3,
+            hasSeverePhaseCancellation: isSeverePhase,
+            recommendedRemedy: remedy,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 63: Advance Recoupment Pace & Risk Forecaster (Domain: Finance & Legal)
+// ---------------------------------------------------------------------------
+
+export interface ContractRecoupmentInput {
+    advanceAmount: number;
+    recoupedAmount: number;
+    monthlyStreamingNetRevenue: number;
+    monthsSinceRelease: number;
+    contractTermMonths?: number;
+}
+
+export interface ContractRecoupmentVerdict {
+    recoupmentPace: 'FAST_TRACK' | 'HEALTHY_ON_SCHEDULE' | 'UNDERWATER_HAZARD';
+    estimatedMonthsToFullRecoup: number;
+    riskScore: number; // 1 to 5 (5 = severe underwater deal debt)
+    strategicRecommendation: string;
+}
+
+export async function judgeContractRecoupmentPace(
+    input: ContractRecoupmentInput
+): Promise<ContractRecoupmentVerdict> {
+    const unrecouped = Math.max(0, input.advanceAmount - input.recoupedAmount);
+    const monthlyNet = Math.max(1, input.monthlyStreamingNetRevenue);
+    const termMonths = input.contractTermMonths || 36;
+
+    const runRateMonths = Math.ceil(unrecouped / monthlyNet);
+
+    let pace: ContractRecoupmentVerdict['recoupmentPace'] = 'HEALTHY_ON_SCHEDULE';
+    let risk = 2;
+    let recommendation = 'Streaming cash flow is pacing within healthy amortization parameters.';
+
+    if (unrecouped === 0) {
+        pace = 'FAST_TRACK';
+        risk = 1;
+        recommendation = 'Fully recouped! All future net royalties flow directly to artist payout.';
+    } else if (runRateMonths <= termMonths * 0.5) {
+        pace = 'FAST_TRACK';
+        risk = 1;
+        recommendation = `Rapid velocity: estimated full recoupment in ${runRateMonths} months, well ahead of contract term.`;
+    } else if (runRateMonths > termMonths) {
+        pace = 'UNDERWATER_HAZARD';
+        risk = 5;
+        recommendation = `Deal is underwater. At current pace ($${monthlyNet.toFixed(0)}/mo), recoupment will require ${runRateMonths} months, exceeding contract term (${termMonths} mos). Consider releasing a remix pack or renegotiating distribution fees.`;
+    } else if (runRateMonths > termMonths * 0.8) {
+        pace = 'HEALTHY_ON_SCHEDULE';
+        risk = 3;
+        recommendation = `Tight margin: estimated recoupment in ${runRateMonths} months near the end of the ${termMonths}-month term.`;
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            recoupmentPace: pace,
+            estimatedMonthsToFullRecoup: runRateMonths,
+            riskScore: risk,
+            strategicRecommendation: recommendation,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                advance: input.advanceAmount,
+                recouped: input.recoupedAmount,
+                unrecouped,
+                monthlyNet,
+                monthsActive: input.monthsSinceRelease,
+                termMonths,
+                runRateMonths,
+            },
+            questions: {
+                pace_status: {
+                    type: 'choice' as const,
+                    instructions: 'Classify financial recoupment velocity against industry norms.',
+                    criteria: {
+                        FAST_TRACK: 'Recouping significantly faster than expected, releasing artist royalty payments early.',
+                        HEALTHY_ON_SCHEDULE: 'Pacing within expected amortization window.',
+                        UNDERWATER_HAZARD: 'Severe shortfall where advance will not recoup before contract renewal/term end.',
+                    },
+                },
+                underwater_risk_score: {
+                    type: 'score' as const,
+                    instructions: 'Rate financial underwater deal risk from 1 (safe/profitable) to 5 (extreme unrecouped debt trap).',
+                    levels: {
+                        1: 'Zero financial risk — deal already recouped or nearly clear.',
+                        2: 'Low risk — strong streaming velocity ensures comfortable clearance.',
+                        3: 'Moderate risk — reliant on sustained streaming catalog stability.',
+                        4: 'Elevated risk — streaming decay threatens timely debt clearance.',
+                        5: 'Critical risk — artist trapped in perpetual unrecouped ledger balance.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const paceAns = ans?.pace_status as { choice?: unknown } | undefined;
+        const riskAns = ans?.underwater_risk_score as { score?: unknown } | number | undefined;
+
+        const resolvedPace = (typeof paceAns?.choice === 'string' ? paceAns.choice : pace) as ContractRecoupmentVerdict['recoupmentPace'];
+        const resolvedRisk = typeof riskAns === 'number' ? riskAns : Number((riskAns as { score?: unknown })?.score ?? risk);
+
+        return {
+            recoupmentPace: resolvedPace,
+            estimatedMonthsToFullRecoup: runRateMonths,
+            riskScore: Math.min(5, Math.max(1, Math.round(resolvedRisk))),
+            strategicRecommendation: recommendation,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'contract recoupment pace judgment');
+        return {
+            recoupmentPace: pace,
+            estimatedMonthsToFullRecoup: runRateMonths,
+            riskScore: risk,
+            strategicRecommendation: recommendation,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 64: Direct-to-Fan Email Subject Line Optimizer (Domain: Marketing)
+// ---------------------------------------------------------------------------
+
+export interface EmailSubjectInput {
+    subjectLine: string;
+    campaignType: 'MERCH_DROP' | 'TOUR_ANNOUNCEMENT' | 'SINGLE_RELEASE' | 'EXCLUSIVE_CONTENT';
+    recipientCount?: number;
+}
+
+export interface EmailSubjectVerdict {
+    openRateScore: number; // 1 to 5
+    isSpamTriggerRisk: boolean;
+    urgencyLevel: 'HEALTHY_ANTICIPATION' | 'OVERHYPED_SPAMMY' | 'PASSIVE_BLAND';
+    suggestedSubjectLine: string;
+    predictedOpenRatePercent: number;
+}
+
+export async function judgeDirectToFanEmailSubjectLine(
+    input: EmailSubjectInput
+): Promise<EmailSubjectVerdict> {
+    const text = input.subjectLine.trim();
+
+    const isAllCaps = text.length > 5 && text === text.toUpperCase();
+    const spamWordMatch = /\b(free|\$\$\$|act now|limited time|guaranteed|winner|urgent|100%|buy now)\b/i.test(text);
+    const hasSpamRisk = isAllCaps || spamWordMatch;
+
+    let urgency: EmailSubjectVerdict['urgencyLevel'] = 'HEALTHY_ANTICIPATION';
+    if (hasSpamRisk) urgency = 'OVERHYPED_SPAMMY';
+    else if (text.length < 15 || !/new|drop|tonight|live|presave|ticket|vinyl/i.test(text)) urgency = 'PASSIVE_BLAND';
+
+    let fallbackScore = 3;
+    let predictedRate = 34.0;
+    if (hasSpamRisk) {
+        fallbackScore = 1;
+        predictedRate = 14.5;
+    } else if (urgency === 'HEALTHY_ANTICIPATION' && text.length >= 25 && text.length <= 60) {
+        fallbackScore = 5;
+        predictedRate = 48.5;
+    } else if (urgency === 'PASSIVE_BLAND') {
+        fallbackScore = 2;
+        predictedRate = 22.0;
+    }
+
+    let suggestion = text;
+    if (input.campaignType === 'MERCH_DROP' && hasSpamRisk) {
+        suggestion = 'Limited Edition Vinyl & Hoodies — Official Release Now Live';
+    } else if (input.campaignType === 'TOUR_ANNOUNCEMENT') {
+        suggestion = 'Detroit to NYC: Fall Tour Dates & Artist Presale Access';
+    } else if (input.campaignType === 'SINGLE_RELEASE') {
+        suggestion = 'My new single is out everywhere at midnight (listen first)';
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            openRateScore: fallbackScore,
+            isSpamTriggerRisk: hasSpamRisk,
+            urgencyLevel: urgency,
+            suggestedSubjectLine: suggestion,
+            predictedOpenRatePercent: predictedRate,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                subject: text.slice(0, 150),
+                type: input.campaignType,
+                recipients: input.recipientCount || 1000,
+            },
+            questions: {
+                open_rate_potential: {
+                    type: 'score' as const,
+                    instructions: 'Score the open-rate conversion strength of this email subject line from 1 to 5.',
+                    levels: {
+                        1: 'High probability of spam filter quarantine or aggressive subscriber unsubscriptions.',
+                        2: 'Bland or passive copy with below-average expected open rates.',
+                        3: 'Standard competent notification subject line.',
+                        4: 'Compelling artist-to-fan direct voice with high open anticipation.',
+                        5: 'Exceptional subject line with curiosity gap and authentic high engagement.',
+                    },
+                },
+                spam_filter_risk: {
+                    type: 'noul' as const,
+                    instructions: 'Does this subject line trigger ISP email spam filters (excessive punctuation, ALL CAPS, spam keywords)?',
+                    criteria: {
+                        true: 'High risk of inbox spam tab placement.',
+                        false: 'Clean subject line that passes standard DMARC/spam filter evaluation.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const scAns = ans?.open_rate_potential as { score?: unknown } | number | undefined;
+        const spAns = ans?.spam_filter_risk as { probability?: unknown } | undefined;
+
+        const resolvedScore = typeof scAns === 'number' ? scAns : Number((scAns as { score?: unknown })?.score ?? fallbackScore);
+        const spamProb = typeof spAns?.probability === 'number' ? spAns.probability : (hasSpamRisk ? 0.8 : 0.1);
+        const finalSpam = spamProb >= 0.5;
+
+        return {
+            openRateScore: Math.min(5, Math.max(1, Math.round(resolvedScore))),
+            isSpamTriggerRisk: finalSpam,
+            urgencyLevel: finalSpam ? 'OVERHYPED_SPAMMY' : (resolvedScore >= 4 ? 'HEALTHY_ANTICIPATION' : 'PASSIVE_BLAND'),
+            suggestedSubjectLine: suggestion,
+            predictedOpenRatePercent: Math.round(15 + resolvedScore * 7.5),
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'direct-to-fan email subject line judgment');
+        return {
+            openRateScore: fallbackScore,
+            isSpamTriggerRisk: hasSpamRisk,
+            urgencyLevel: urgency,
+            suggestedSubjectLine: suggestion,
+            predictedOpenRatePercent: predictedRate,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 65: Streaming Spike Root Cause & Fraud Triage (Domain: Analytics)
+// ---------------------------------------------------------------------------
+
+export interface StreamingFraudInput {
+    trackTitle: string;
+    velocityRatio: number; // e.g. 5.5 = 5.5x normal daily streams
+    skipRatePercent: number; // e.g. 82% skip before 30s
+    primaryCountryCode: string;
+    savesPerStreamRatio: number; // e.g. 0.002 saves per stream
+}
+
+export interface StreamingFraudVerdict {
+    rootCause: 'ORGANIC_VIRAL' | 'EDITORIAL_PLAYLIST' | 'ALGORITHMIC_RADIO' | 'BOTTING_FARM_HAZARD' | 'DISTRIBUTOR_REPORTING_BATCH';
+    dspPenaltyHazard: boolean;
+    fraudProbability: number;
+    actionGuidance: string;
+}
+
+export async function judgeStreamingFraudRisk(
+    input: StreamingFraudInput
+): Promise<StreamingFraudVerdict> {
+    const isBottingIndicators = input.skipRatePercent > 75 && input.savesPerStreamRatio < 0.005 && input.velocityRatio > 4.0;
+    const isOrganicSaves = input.savesPerStreamRatio >= 0.04;
+
+    let rootCause: StreamingFraudVerdict['rootCause'] = 'ORGANIC_VIRAL';
+    let fraudProb = 0.08;
+    let penaltyHazard = false;
+    let guidance = 'Organic listener growth detected. Maintain campaign velocity.';
+
+    if (isBottingIndicators) {
+        rootCause = 'BOTTING_FARM_HAZARD';
+        fraudProb = 0.92;
+        penaltyHazard = true;
+        guidance = 'CRITICAL: High probability of bot stream farm attack. High skip rate and near-zero save ratio risk DSP strikes ($10/track Spotify penalty) or catalog takedown. Immediately notify your distributor.';
+    } else if (input.velocityRatio > 8.0 && isOrganicSaves) {
+        rootCause = 'ORGANIC_VIRAL';
+        fraudProb = 0.05;
+        penaltyHazard = false;
+        guidance = 'Healthy viral surge: strong listener saves (>4%) validate legitimate fan discovery.';
+    } else if (input.skipRatePercent < 35 && input.velocityRatio > 2.0) {
+        rootCause = 'EDITORIAL_PLAYLIST';
+        fraudProb = 0.02;
+        penaltyHazard = false;
+        guidance = 'Streaming profile matches verified DSP editorial or algorithmic radio playlist addition.';
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            rootCause,
+            dspPenaltyHazard: penaltyHazard,
+            fraudProbability: fraudProb,
+            actionGuidance: guidance,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                title: input.trackTitle.slice(0, 150),
+                velocity: input.velocityRatio,
+                skipRate: input.skipRatePercent,
+                country: input.primaryCountryCode,
+                savesRatio: input.savesPerStreamRatio,
+            },
+            questions: {
+                cause: {
+                    type: 'choice' as const,
+                    instructions: 'Diagnose the root cause of this sudden streaming velocity spike.',
+                    criteria: {
+                        ORGANIC_VIRAL: 'Legitimate social discovery with high listener engagement and saves.',
+                        EDITORIAL_PLAYLIST: 'Official DSP editorial or radio playlist placement with sustained completion rate.',
+                        ALGORITHMIC_RADIO: 'Release Radar or Discover Weekly algorithmic recommendation.',
+                        BOTTING_FARM_HAZARD: 'Server-center bot farm traffic with extreme skip rates and abnormal repeat loops.',
+                        DISTRIBUTOR_REPORTING_BATCH: 'Multi-month backlogged distributor settlement posted as a single batch.',
+                    },
+                },
+                penalty_risk: {
+                    type: 'noul' as const,
+                    instructions: 'Does this streaming surge represent actionable risk of DSP artificial stream penalties or takedowns?',
+                    criteria: {
+                        true: 'High risk of artificial streaming fee or catalog takedown.',
+                        false: 'Legitimate listener traffic safe from DSP penalties.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const causeAns = ans?.cause as { choice?: unknown } | undefined;
+        const riskAns = ans?.penalty_risk as { probability?: unknown } | undefined;
+
+        const resolvedCause = (typeof causeAns?.choice === 'string' ? causeAns.choice : rootCause) as StreamingFraudVerdict['rootCause'];
+        const prob = typeof riskAns?.probability === 'number' ? riskAns.probability : fraudProb;
+
+        return {
+            rootCause: resolvedCause,
+            dspPenaltyHazard: prob >= 0.5,
+            fraudProbability: prob,
+            actionGuidance: prob >= 0.5 ? 'CRITICAL: Bot stream farm attack detected. Contact distributor to avoid DSP penalties.' : guidance,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'streaming fraud risk judgment');
+        return {
+            rootCause,
+            dspPenaltyHazard: penaltyHazard,
+            fraudProbability: fraudProb,
+            actionGuidance: guidance,
+        };
+    }
+}
+

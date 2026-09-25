@@ -81,6 +81,14 @@ import {
     judgeDdexGenreAndSubculture,
     judgeAudioDrivenMerchSku,
     judgeAudioMasterNormalization,
+    judgeTargetSpecialistAgent,
+    judgePromptActionability,
+    judgeArtistDnaOnboarding,
+    judgeStemSeparationAcousticPurity,
+    judgeContractRecoupmentPace,
+    judgeDirectToFanEmailSubjectLine,
+    judgeStreamingFraudRisk,
+    PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
     TRANSIENT_ADOPT_MIN,
@@ -3242,3 +3250,403 @@ describe('judgeAudioMasterNormalization (Judgment 58)', () => {
         expect(result.targetLufs).toBe(-16.0);
     });
 });
+
+describe('PERSONA_POSTURE_FADER_MAP (Judgment 53 Fader Configurations)', () => {
+    it('defines calibrated 5-axis fader positions for all 5 archetypes', () => {
+        expect(PERSONA_POSTURE_FADER_MAP.MAJOR_LABEL_SHARK).toEqual({
+            riskTolerance: 90,
+            brevity: 70,
+            directness: 85,
+            formality: 80,
+            reasoningTransparency: 40,
+        });
+        expect(PERSONA_POSTURE_FADER_MAP.SCRAPPY_INDIE_DIY.riskTolerance).toBe(80);
+        expect(PERSONA_POSTURE_FADER_MAP.NURTURING_MENTOR.reasoningTransparency).toBe(90);
+        expect(PERSONA_POSTURE_FADER_MAP.ACADEMIC_PURIST.formality).toBe(90);
+        expect(PERSONA_POSTURE_FADER_MAP.STREET_HUSTLER.directness).toBe(90);
+    });
+});
+
+describe('judgeTargetSpecialistAgent (Judgment 59)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('routes legal contract query to legal agent offline and flags module misalignment', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeTargetSpecialistAgent({
+            userPrompt: 'Draft an agreement for 20 points on sound recording splits',
+            activeModule: 'creative',
+        });
+
+        expect(result.targetAgentId).toBe('legal');
+        expect(result.isModuleMisaligned).toBe(true);
+        expect(result.confidence).toBe(0.85);
+    });
+
+    it('routes visual artwork prompt to creative agent offline with no misalignment', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeTargetSpecialistAgent({
+            userPrompt: 'Create a cinematic vinyl cover artwork with neon palette',
+            activeModule: 'creative',
+        });
+
+        expect(result.targetAgentId).toBe('creative');
+        expect(result.isModuleMisaligned).toBe(false);
+    });
+
+    it('routes through Jev online callable with confidence scoring', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    target_agent: { choice: 'producer' },
+                    confidence_score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeTargetSpecialistAgent({
+            userPrompt: 'How should I master this track for Spotify -14 LUFS?',
+            activeModule: 'generalist',
+        });
+
+        expect(result.targetAgentId).toBe('producer');
+        expect(result.confidence).toBe(1.0);
+        expect(result.isModuleMisaligned).toBe(false);
+    });
+});
+
+describe('judgePromptActionability (Judgment 60)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('detects missing parameters and scores vague prompt offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgePromptActionability({
+            promptText: 'make cover',
+        });
+
+        expect(result.specificityScore).toBe(1);
+        expect(result.hasDeliverable).toBe(true);
+        expect(result.isReadyForExecution).toBe(false);
+        expect(result.missingParameters.length).toBeGreaterThan(0);
+    });
+
+    it('approves complete detailed prompt through Jev online callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    specificity: { score: 5 },
+                    has_deliverable: { probability: 0.98 },
+                },
+            },
+        }));
+
+        const result = await judgePromptActionability({
+            promptText: 'Render a 3000x3000px high-contrast vinyl album cover for our dark techno single titled Midnight Detroit in 1:1 square ratio',
+            domainContext: 'creative',
+        });
+
+        expect(result.specificityScore).toBe(5);
+        expect(result.hasDeliverable).toBe(true);
+        expect(result.isReadyForExecution).toBe(true);
+    });
+});
+
+describe('judgeArtistDnaOnboarding (Judgment 61)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('synthesizes electronic DJ DNA and dark neon palette offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeArtistDnaOnboarding({
+            bioSnippet: 'Detroit techno DJ and rave producer playing underground warehouse sets',
+        });
+
+        expect(result.archetype).toBe('electronic_dj');
+        expect(result.monetizationFocus).toBe('live_touring');
+        expect(result.recommendedHexPalette.length).toBe(5);
+    });
+
+    it('uses online Jev callable to synthesize complete artist profile', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    archetype_choice: { choice: 'sync_composer' },
+                    aesthetic_choice: { choice: 'dark_moody_cinematic' },
+                    maturity_score: { score: 4 },
+                },
+            },
+        }));
+
+        const result = await judgeArtistDnaOnboarding({
+            bioSnippet: 'Scoring music for dramatic television and psychological thriller video games',
+        });
+
+        expect(result.archetype).toBe('sync_composer');
+        expect(result.aestheticStyle).toBe('dark_moody_cinematic');
+        expect(result.careerMaturityScore).toBe(4);
+        expect(result.monetizationFocus).toBe('sync_licensing');
+    });
+});
+
+describe('judgeStemSeparationAcousticPurity (Judgment 62)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('approves clean stem separation offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const clean = await judgeStemSeparationAcousticPurity({
+            stemType: 'vocals',
+            bleedDb: -26,
+            signalToDistortionDb: 14,
+        });
+
+        expect(clean.purityScore).toBe(5);
+        expect(clean.isRemixReady).toBe(true);
+        expect(clean.hasSeverePhaseCancellation).toBe(false);
+    });
+
+    it('flags severe phase cancellation and bleed offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const garbled = await judgeStemSeparationAcousticPurity({
+            stemType: 'drums',
+            bleedDb: -10,
+            signalToDistortionDb: 4,
+            hasVocalArtifacts: true,
+        });
+
+        expect(garbled.purityScore).toBe(1);
+        expect(garbled.isRemixReady).toBe(false);
+        expect(garbled.hasSeverePhaseCancellation).toBe(true);
+    });
+
+    it('processes online evaluation via Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    purity_rating: { score: 4 },
+                    severe_phase_hazard: { probability: 0.1 },
+                },
+            },
+        }));
+
+        const result = await judgeStemSeparationAcousticPurity({
+            stemType: 'bass',
+            bleedDb: -20,
+            signalToDistortionDb: 10,
+        });
+
+        expect(result.purityScore).toBe(4);
+        expect(result.isRemixReady).toBe(true);
+        expect(result.hasSeverePhaseCancellation).toBe(false);
+    });
+});
+
+describe('judgeContractRecoupmentPace (Judgment 63)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('detects underwater contract hazard offline when recoupment exceeds term', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const underwater = await judgeContractRecoupmentPace({
+            advanceAmount: 50_000,
+            recoupedAmount: 5_000,
+            monthlyStreamingNetRevenue: 500, // 90 months needed!
+            monthsSinceRelease: 12,
+            contractTermMonths: 36,
+        });
+
+        expect(underwater.recoupmentPace).toBe('UNDERWATER_HAZARD');
+        expect(underwater.riskScore).toBe(5);
+        expect(underwater.estimatedMonthsToFullRecoup).toBe(90);
+        expect(underwater.strategicRecommendation).toContain('underwater');
+    });
+
+    it('recognizes fully recouped deal offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const clear = await judgeContractRecoupmentPace({
+            advanceAmount: 20_000,
+            recoupedAmount: 20_000,
+            monthlyStreamingNetRevenue: 1_200,
+            monthsSinceRelease: 18,
+        });
+
+        expect(clear.recoupmentPace).toBe('FAST_TRACK');
+        expect(clear.riskScore).toBe(1);
+        expect(clear.estimatedMonthsToFullRecoup).toBe(0);
+    });
+
+    it('evaluates recoupment pace through Jev online callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    pace_status: { choice: 'FAST_TRACK' },
+                    underwater_risk_score: { score: 1 },
+                },
+            },
+        }));
+
+        const result = await judgeContractRecoupmentPace({
+            advanceAmount: 10_000,
+            recoupedAmount: 6_000,
+            monthlyStreamingNetRevenue: 2_000,
+            monthsSinceRelease: 3,
+            contractTermMonths: 24,
+        });
+
+        expect(result.recoupmentPace).toBe('FAST_TRACK');
+        expect(result.riskScore).toBe(1);
+        expect(result.estimatedMonthsToFullRecoup).toBe(2);
+    });
+});
+
+describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('flags ALL CAPS and spam triggers offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const spam = await judgeDirectToFanEmailSubjectLine({
+            subjectLine: 'FREE TICKETS BUY NOW $$$',
+            campaignType: 'TOUR_ANNOUNCEMENT',
+        });
+
+        expect(spam.isSpamTriggerRisk).toBe(true);
+        expect(spam.openRateScore).toBe(1);
+        expect(spam.urgencyLevel).toBe('OVERHYPED_SPAMMY');
+        expect(spam.suggestedSubjectLine).toContain('Tour Dates');
+    });
+
+    it('rates authentic compelling subject line highly offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const clean = await judgeDirectToFanEmailSubjectLine({
+            subjectLine: 'Limited Edition Vinyl & Hoodies — Official Release Now Live',
+            campaignType: 'MERCH_DROP',
+        });
+
+        expect(clean.isSpamTriggerRisk).toBe(false);
+        expect(clean.openRateScore).toBe(5);
+        expect(clean.urgencyLevel).toBe('HEALTHY_ANTICIPATION');
+        expect(clean.predictedOpenRatePercent).toBeGreaterThan(40);
+    });
+
+    it('scores subject line through Jev online callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    open_rate_potential: { score: 4 },
+                    spam_filter_risk: { probability: 0.05 },
+                },
+            },
+        }));
+
+        const result = await judgeDirectToFanEmailSubjectLine({
+            subjectLine: 'Secret listening room link for our upcoming single',
+            campaignType: 'SINGLE_RELEASE',
+        });
+
+        expect(result.openRateScore).toBe(4);
+        expect(result.isSpamTriggerRisk).toBe(false);
+        expect(result.urgencyLevel).toBe('HEALTHY_ANTICIPATION');
+    });
+});
+
+describe('judgeStreamingFraudRisk (Judgment 65)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('flags bot stream farm attack offline based on high skip and low saves', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const botFarm = await judgeStreamingFraudRisk({
+            trackTitle: 'Midnight Drive',
+            velocityRatio: 8.5,
+            skipRatePercent: 88,
+            primaryCountryCode: 'SG',
+            savesPerStreamRatio: 0.001,
+        });
+
+        expect(botFarm.rootCause).toBe('BOTTING_FARM_HAZARD');
+        expect(botFarm.dspPenaltyHazard).toBe(true);
+        expect(botFarm.fraudProbability).toBeGreaterThan(0.9);
+        expect(botFarm.actionGuidance).toContain('CRITICAL');
+    });
+
+    it('validates organic viral surge offline with high listener saves', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const organic = await judgeStreamingFraudRisk({
+            trackTitle: 'Detroit Rain',
+            velocityRatio: 9.0,
+            skipRatePercent: 25,
+            primaryCountryCode: 'US',
+            savesPerStreamRatio: 0.08,
+        });
+
+        expect(organic.rootCause).toBe('ORGANIC_VIRAL');
+        expect(organic.dspPenaltyHazard).toBe(false);
+        expect(organic.fraudProbability).toBeLessThan(0.1);
+        expect(organic.actionGuidance).toContain('viral surge');
+    });
+
+    it('processes streaming spike diagnosis via Jev online callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    cause: { choice: 'EDITORIAL_PLAYLIST' },
+                    penalty_risk: { probability: 0.01 },
+                },
+            },
+        }));
+
+        const result = await judgeStreamingFraudRisk({
+            trackTitle: 'Velvet Voltage',
+            velocityRatio: 3.2,
+            skipRatePercent: 28,
+            primaryCountryCode: 'GB',
+            savesPerStreamRatio: 0.05,
+        });
+
+        expect(result.rootCause).toBe('EDITORIAL_PLAYLIST');
+        expect(result.dspPenaltyHazard).toBe(false);
+    });
+});
+

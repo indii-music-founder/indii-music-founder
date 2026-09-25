@@ -23,6 +23,9 @@ import {
     BookOpen,
     Check,
     LucideIcon,
+    Bot,
+    Zap,
+    Users,
 } from 'lucide-react';
 import {
     PERSONA_FADER_DEFAULT,
@@ -36,6 +39,11 @@ import {
     resetPersonaFaderValues,
 } from '@/services/persona/PersonaFaderRepository';
 import { compilePersonaPrompt } from '@/services/persona/PersonaPromptCompiler';
+import {
+    judgePersonaPosturePreset,
+    type PersonaPosturePreset,
+    PERSONA_POSTURE_FADER_MAP,
+} from '@/config/typesafeJudgments';
 import { useToast } from '@/core/context/ToastContext';
 import { SectionHeader } from './SettingsShared';
 import { getColorForModule } from '@/core/theme/moduleColors';
@@ -163,6 +171,46 @@ const AXIS_CONFIGS: FaderAxisConfig[] = [
     },
 ];
 
+interface PostureArchetypeMetadata {
+    id: PersonaPosturePreset;
+    label: string;
+    icon: string;
+    description: string;
+}
+
+const POSTURE_ARCHETYPES: PostureArchetypeMetadata[] = [
+    {
+        id: 'MAJOR_LABEL_SHARK',
+        label: 'Major Label Shark',
+        icon: '🦈',
+        description: 'Aggressive commercial dealmaker focusing on maximum leverage and scale.',
+    },
+    {
+        id: 'SCRAPPY_INDIE_DIY',
+        label: 'Scrappy Indie DIY',
+        icon: '🎸',
+        description: 'Ownership-first ally emphasizing fan community, rights retention, and independence.',
+    },
+    {
+        id: 'NURTURING_MENTOR',
+        label: 'Nurturing Mentor',
+        icon: '🧑‍🏫',
+        description: 'Encouraging educational guide explaining industry mechanics patiently step-by-step.',
+    },
+    {
+        id: 'ACADEMIC_PURIST',
+        label: 'Academic Purist',
+        icon: '📐',
+        description: 'Deep technical rigor in acoustics, copyright statutory law, and precision.',
+    },
+    {
+        id: 'STREET_HUSTLER',
+        label: 'Street Hustler',
+        icon: '⚡',
+        description: 'Fast, terse, viral street marketing with unfiltered blunt truth.',
+    },
+];
+
 export const PersonaFadersSection: React.FC = () => {
     const toast = useToast();
     const moduleColor = getColorForModule('settings');
@@ -173,6 +221,38 @@ export const PersonaFadersSection: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [showPromptPreview, setShowPromptPreview] = useState(false);
+
+    // Jev Auto-Calibrator State
+    const [showJevCalibrator, setShowJevCalibrator] = useState(false);
+    const [jevPhilosophy, setJevPhilosophy] = useState('');
+    const [jevRisk, setJevRisk] = useState<'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE'>('MODERATE');
+    const [jevStyle, setJevStyle] = useState<'FORMAL' | 'CASUAL' | 'BLUNT'>('CASUAL');
+    const [isJevCalibrating, setIsJevCalibrating] = useState(false);
+
+    // Autonomous Evolution State
+    const [isAutonomousEvolution, setIsAutonomousEvolution] = useState(() => {
+        try {
+            return localStorage.getItem('indii_persona_autonomous_evolution') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const handleToggleAutonomousEvolution = () => {
+        setIsAutonomousEvolution((prev) => {
+            const next = !prev;
+            try {
+                localStorage.setItem('indii_persona_autonomous_evolution', String(next));
+            } catch (err) {
+                logger.warn('Failed to persist autonomous evolution preference:', err);
+            }
+            toast.showToast(
+                next ? 'Autonomous personality evolution enabled.' : 'Autonomous personality evolution disabled.',
+                'info'
+            );
+            return next;
+        });
+    };
 
     // Load persisted faders when selecting a persona
     useEffect(() => {
@@ -206,6 +286,59 @@ export const PersonaFadersSection: React.FC = () => {
             [axis]: boundedValue,
         }));
         setHasUnsavedChanges(true);
+    };
+
+    const handleApplyArchetype = (preset: PersonaPosturePreset) => {
+        const archetypeFaders = PERSONA_POSTURE_FADER_MAP[preset];
+        if (archetypeFaders) {
+            setFaderValues({ ...archetypeFaders });
+            setHasUnsavedChanges(true);
+            toast.showToast(`Applied ${preset.replace(/_/g, ' ')} posture to ${selectedPersona.title}.`, 'info');
+        }
+    };
+
+    const handleApplyToAllPersonas = async () => {
+        setIsSaving(true);
+        try {
+            await Promise.all(
+                PERSONA_LIST.map((p) => savePersonaFaderValues(p.id, faderValues))
+            );
+            setHasUnsavedChanges(false);
+            toast.showToast('Synchronized all 40 sliders across all 8 boardroom personas.', 'success');
+        } catch (err) {
+            logger.error('[PersonaFadersSection] Failed to sync all personas:', err);
+            toast.showToast('Failed to apply posture across all personas.', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleRunJevCalibration = async () => {
+        if (!jevPhilosophy.trim()) {
+            toast.showToast('Please describe your management philosophy or goals.', 'warning');
+            return;
+        }
+
+        setIsJevCalibrating(true);
+        try {
+            const verdict = await judgePersonaPosturePreset({
+                philosophyDescription: jevPhilosophy,
+                riskTolerance: jevRisk,
+                communicationStyle: jevStyle,
+            });
+
+            setFaderValues({ ...verdict.calibratedFaders });
+            setHasUnsavedChanges(true);
+            toast.showToast(
+                `Jev AI Calibrated: ${verdict.recommendedPreset.replace(/_/g, ' ')} (Score: ${verdict.alignmentScore}/5)`,
+                'success'
+            );
+        } catch (err) {
+            logger.error('[PersonaFadersSection] Jev posture calibration error:', err);
+            toast.showToast('Jev calibration encountered an error.', 'error');
+        } finally {
+            setIsJevCalibrating(false);
+        }
     };
 
     const handleSave = async () => {
@@ -255,6 +388,109 @@ export const PersonaFadersSection: React.FC = () => {
                 description="Customize how each specialist agent thinks, communicates, and delivers advice. Calibrated along 5 professional posture axes."
             />
 
+            {/* Posture Archetypes Quick-Apply Strip (Judgment 53) */}
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                        <Zap size={14} className="text-amber-400" />
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">
+                            Management Posture Archetypes (Judgment 53)
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => setShowJevCalibrator(!showJevCalibrator)}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors"
+                    >
+                        <Sparkles size={12} />
+                        {showJevCalibrator ? 'Close Jev Calibrator' : 'Auto-Tune with Jev AI'}
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {POSTURE_ARCHETYPES.map((arch) => (
+                        <button
+                            key={arch.id}
+                            onClick={() => handleApplyArchetype(arch.id)}
+                            className="flex flex-col items-center justify-center p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-500 transition-all text-center group"
+                            title={arch.description}
+                        >
+                            <span className="text-lg mb-1">{arch.icon}</span>
+                            <span className="text-[11px] font-bold text-slate-200 group-hover:text-white">
+                                {arch.label}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Inline Jev AI Posture Calibrator */}
+                {showJevCalibrator && (
+                    <div className="mt-3 p-3.5 rounded-lg bg-slate-950/80 border border-emerald-500/30 space-y-3 animate-in fade-in">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                                <Sparkles size={13} />
+                                TypeSafe System One (Jev) Posture Auto-Calibrator
+                            </span>
+                            <span className="text-[10px] text-slate-400">Sub-100ms decision engine</span>
+                        </div>
+
+                        <textarea
+                            value={jevPhilosophy}
+                            onChange={(e) => setJevPhilosophy(e.target.value)}
+                            placeholder="Describe your management philosophy or goal (e.g. 'I want an educational team that explains the mechanics of music publishing without rushing me', or 'I want aggressive commercial negotiators who get high sync payouts')..."
+                            className="w-full h-20 p-2.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-4 text-xs text-slate-300">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-slate-400 font-mono">RISK:</span>
+                                    {(['CONSERVATIVE', 'MODERATE', 'AGGRESSIVE'] as const).map((r) => (
+                                        <button
+                                            key={r}
+                                            type="button"
+                                            onClick={() => setJevRisk(r)}
+                                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                jevRisk === r ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                                            }`}
+                                        >
+                                            {r}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-slate-400 font-mono">STYLE:</span>
+                                    {(['FORMAL', 'CASUAL', 'BLUNT'] as const).map((s) => (
+                                        <button
+                                            key={s}
+                                            type="button"
+                                            onClick={() => setJevStyle(s)}
+                                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                jevStyle === s ? 'bg-cyan-500 text-black' : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                                            }`}
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleRunJevCalibration}
+                                disabled={isJevCalibrating || !jevPhilosophy.trim()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-colors disabled:opacity-50"
+                            >
+                                {isJevCalibrating ? (
+                                    <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                ) : (
+                                    <Sparkles size={13} />
+                                )}
+                                {isJevCalibrating ? 'Calibrating...' : 'Run Jev Auto-Tune'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Persona Selector Strip */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700">
                 {PERSONA_LIST.map((persona) => {
@@ -294,7 +530,16 @@ export const PersonaFadersSection: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                    <button
+                        onClick={handleApplyToAllPersonas}
+                        disabled={isLoading || isSaving}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-indigo-300 hover:text-white bg-indigo-950/60 hover:bg-indigo-900/80 rounded-lg transition-colors border border-indigo-700/60 disabled:opacity-50"
+                        title="Synchronize these 5 posture sliders to all 8 personas in the boardroom (calibrating all 40 faders at once)"
+                    >
+                        <Users size={13} />
+                        Sync to All 8 Personas (All 40 Sliders)
+                    </button>
                     <button
                         onClick={handleReset}
                         disabled={isLoading || isSaving}
@@ -380,6 +625,37 @@ export const PersonaFadersSection: React.FC = () => {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Autonomous Personality Evolution Toggle */}
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                        <Bot size={18} />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-white">Autonomous Agent Personality Evolution</span>
+                            <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800/40">
+                                Adaptive AI
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                            Allows boardroom agents to fine-tune their candor, brevity, and risk tolerance autonomously based on artist velocity and interaction feedback.
+                        </p>
+                    </div>
+                </div>
+
+                <button
+                    onClick={handleToggleAutonomousEvolution}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                        isAutonomousEvolution
+                            ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-900/30'
+                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+                    }`}
+                >
+                    {isAutonomousEvolution ? 'Enabled' : 'Disabled'}
+                </button>
             </div>
 
             {/* Live Prompt Compiler Preview Drawer */}
