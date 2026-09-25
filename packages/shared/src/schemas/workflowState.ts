@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const externalEntityIdPrefixes = /^(?:isrc|iswc|upc|ean|isni|ipi|dpid|grid|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i;
+const externalEntityIdPrefixes = /^(?:isrc|iswc|upc|ean|icpn|isni|ipi|dpid|grid|catalog(?:_number)?|platform_id|proprietary|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i;
 const externalEntityIdValue = /^(?:[A-Z]{2}[A-Z0-9]{3}\d{7}|T-\d{3}\.\d{3}\.\d{3}-\d|\d{8,14})$/i;
 
 /** Canonical entity scope only; external identifiers must remain identifiers. */

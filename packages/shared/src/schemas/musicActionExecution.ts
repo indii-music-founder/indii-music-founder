@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ConnectedIntelligenceActionSchema, type ConnectedIntelligenceAction } from './connectedIntelligence.js';
 
 const CanonicalEntityIdSchema = z.string().trim().min(1).max(160).refine(
-  value => !/^(?:isrc|iswc|upc|ean|isni|ipi|dpid|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i.test(value)
+  value => !/^(?:isrc|iswc|upc|ean|icpn|isni|ipi|dpid|grid|catalog(?:_number)?|platform_id|proprietary|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i.test(value)
     && !/^(?:[A-Z]{2}[A-Z0-9]{3}\d{7}|T-\d{3}\.\d{3}\.\d{3}-\d|\d{8,14})$/i.test(value),
   'External identifier values must be stored as identifiers, not canonical entity IDs.',
 );
