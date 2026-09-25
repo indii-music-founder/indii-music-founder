@@ -10,7 +10,7 @@ import { AgentGraph } from '../types';
 
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
-import { refineInjectionRisk } from '@/config/typesafeJudgments';
+import { refineInjectionRisk, judgeOrchestrationComplexity } from '@/config/typesafeJudgments';
 
 export class AgentOrchestrator {
     async determineAgent(context: AgentContext, userQuery: string): Promise<string> {
@@ -314,41 +314,54 @@ export class AgentOrchestrator {
         }
         const sanitizedQuery = InputSanitizer.sanitize(userQuery);
 
-        // 1. Check for complexity using a fast thinking model
-        const complexityPrompt = `
-        Analyze this request for complexity: "${sanitizedQuery}"
-        
-        Is this a:
-        - "SIMPLE" request (one clear goal, one agent)?
-        - "PARALLEL" request (multiple independent tasks, e.g. "make a post AND an image")?
-        - "COMPLEX" request (multi-step, sequential dependencies, e.g. "analyze my track THEN write lyrics based on the mood THEN generate a storyboard")?
-        
-        Return ONLY a JSON object: { "type": "SIMPLE" | "PARALLEL" | "COMPLEX", "reasoning": "..." }
-        `;
+        // 1. Check for complexity: fast TypeSafe System One Choice judgment first,
+        // falling back to generative thinking model if unavailable or low confidence.
+        let pathType: 'SIMPLE' | 'PARALLEL' | 'COMPLEX' = 'SIMPLE';
+        let pathReasoning = 'Default single agent execution';
 
         try {
-            const res = await AI.generateContent(
-                [{ role: 'user', parts: [{ text: complexityPrompt }] }],
-                INTELLIGENCE_MODELS.TEXT.FAST,
-                { responseMimeType: 'application/json' }
-            );
-            const decision = JSON.parse(res.response.text() || '{"type":"SIMPLE"}');
+            const judgment = await judgeOrchestrationComplexity(sanitizedQuery);
+            if (judgment) {
+                pathType = judgment.path.toUpperCase() as 'SIMPLE' | 'PARALLEL' | 'COMPLEX';
+                pathReasoning = `TypeSafe Jev System One judgment (${Math.round(judgment.confidence * 100)}% conf)`;
+                logger.info(`[AgentOrchestrator] Orchestration complexity decided by TypeSafe: ${pathType}`);
+            } else {
+                // Fallback: fast thinking model
+                const complexityPrompt = `
+Analyze this request for complexity: "${sanitizedQuery}"
 
-            if (decision.type === 'COMPLEX') {
-                logger.info('[AgentOrchestrator] Complex request detected, decomposing into dynamic graph.');
-                const graph = await graphDecompositionService.decompose(sanitizedQuery, context);
-                return { type: 'graph', graph, reasoning: decision.reasoning };
+Is this a:
+- "SIMPLE" request (one clear goal, one agent)?
+- "PARALLEL" request (multiple independent tasks, e.g. "make a post AND an image")?
+- "COMPLEX" request (multi-step, sequential dependencies, e.g. "analyze my track THEN write lyrics based on the mood THEN generate a storyboard")?
+
+Return ONLY a JSON object: { "type": "SIMPLE" | "PARALLEL" | "COMPLEX", "reasoning": "..." }
+`;
+                const res = await AI.generateContent(
+                    [{ role: 'user', parts: [{ text: complexityPrompt }] }],
+                    INTELLIGENCE_MODELS.TEXT.FAST,
+                    { responseMimeType: 'application/json' }
+                );
+                const decision = JSON.parse(res.response.text() || '{"type":"SIMPLE"}');
+                pathType = decision.type || 'SIMPLE';
+                pathReasoning = decision.reasoning || 'Evaluated by generative fast model';
             }
 
-            if (decision.type === 'PARALLEL') {
+            if (pathType === 'COMPLEX') {
+                logger.info('[AgentOrchestrator] Complex request detected, decomposing into dynamic graph.');
+                const graph = await graphDecompositionService.decompose(sanitizedQuery, context);
+                return { type: 'graph', graph, reasoning: pathReasoning };
+            }
+
+            if (pathType === 'PARALLEL') {
                 logger.info('[AgentOrchestrator] Parallel request detected, fanning out.');
                 const subtasks = await this.determineFanOut(context, sanitizedQuery);
-                return { type: 'parallel', subtasks, reasoning: decision.reasoning };
+                return { type: 'parallel', subtasks, reasoning: pathReasoning };
             }
 
             // Default to single agent
             const agentId = await this.determineAgent(context, sanitizedQuery);
-            return { type: 'single', agentId, reasoning: decision.reasoning };
+            return { type: 'single', agentId, reasoning: pathReasoning };
 
         } catch (error) {
             logger.warn('[AgentOrchestrator] Path determination failed, falling back to single agent.', error);

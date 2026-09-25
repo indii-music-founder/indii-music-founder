@@ -595,6 +595,33 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
             .map(([platform, count]) => `${platform}: ${count}`)
             .join(', ') || 'None';
     }
+
+    // =========================================================================
+    // JEV SYSTEM ONE FAST-PATH EVALUATION (GROWTH INTELLIGENCE)
+    // =========================================================================
+
+    /**
+     * Real-time bid & budget adjustment via Jev System One
+     * Sub-100ms classifier replacing heavy LLM loops with deterministic action contracts.
+     */
+    async evaluateRealTimeBidAdjustment(
+        snapshot: import('@/config/typesafeJudgments').CampaignMetricSnapshot
+    ): Promise<import('@/config/typesafeJudgments').CampaignDecisionContract> {
+        const { judgeCampaignBidAction } = await import('@/config/typesafeJudgments');
+        return judgeCampaignBidAction(snapshot);
+    }
+
+    /**
+     * Parallel ad creative compliance triage
+     * Evaluates 20+ ad copy variations in parallel under 200ms.
+     */
+    async triageAdCreatives(
+        creatives: import('@/config/typesafeJudgments').AdCreativeVariant[],
+        artistBrandVibe?: string
+    ): Promise<string[]> {
+        const { judgeAdCreativeBatchCompliance } = await import('@/config/typesafeJudgments');
+        return judgeAdCreativeBatchCompliance(creatives, artistBrandVibe);
+    }
 }
 
 // Singleton export (following EditingService pattern)

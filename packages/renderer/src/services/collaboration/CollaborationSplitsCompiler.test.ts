@@ -183,4 +183,63 @@ describe('CollaborationSplitsCompiler', () => {
       })
     );
   });
+
+  it('should not require a producer agreement for an executive producer (non-track producer)', () => {
+    const input: CollaborationSplitsInput = {
+      trackId: 'track-1',
+      trackTitle: 'Hit Song',
+      collaborators: [
+        {
+          id: 'collab-1',
+          name: 'Alice',
+          roles: ['executive producer'],
+          contributionNotes: 'Funded studio sessions',
+          proposedSplit: 100,
+          approvalStatus: 'approved',
+          hasAgreement: false
+        }
+      ]
+    };
+
+    const run = compiler.compile(input, ctx);
+
+    // Missing regular collaborator agreement, but NOT the specific Producer Agreement
+    expect(run.findings).toContainEqual(
+      expect.objectContaining({
+        title: 'Missing Collaborator Agreement'
+      })
+    );
+    expect(run.findings).not.toContainEqual(
+      expect.objectContaining({
+        title: 'Missing Producer Agreement'
+      })
+    );
+  });
+
+  it('should respect semantic requiresProducerAgreement flag from Jev judgment', () => {
+    const input: CollaborationSplitsInput = {
+      trackId: 'track-1',
+      trackTitle: 'Hit Song',
+      collaborators: [
+        {
+          id: 'collab-1',
+          name: 'Dave',
+          roles: ['sound architect'], // Non-standard title
+          contributionNotes: 'Handled drum sound design & tracking',
+          proposedSplit: 100,
+          approvalStatus: 'approved',
+          hasAgreement: false,
+          ...({ requiresProducerAgreement: true } as object)
+        }
+      ]
+    };
+
+    const run = compiler.compile(input, ctx);
+
+    expect(run.findings).toContainEqual(
+      expect.objectContaining({
+        title: 'Missing Producer Agreement'
+      })
+    );
+  });
 });

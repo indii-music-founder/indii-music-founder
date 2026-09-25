@@ -9,6 +9,13 @@ import { resolveStorageUri } from '@/services/storage/storageUri';
 import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 
+import {
+    judgeVideoReshootRequirement,
+    judgeSessionChunkTriage,
+    type SessionChunkEvidence,
+    type ChunkTriageVerdict,
+} from '@/config/typesafeJudgments';
+
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
         // Note: In a real scenario, we'd fetch the video blob. 
@@ -25,7 +32,6 @@ export class VideoDirector {
 
                 // 3. Critique
                 const critiquePrompt = `You are a film director. Rate this video frame 1-10 based on the prompt: "${prompt}". If score < 8, provide a technically improved prompt to fix it.`;
-
 
                 const schema = {
                     type: SchemaType.OBJECT,
@@ -54,15 +60,20 @@ export class VideoDirector {
                     `You are a master cinematographer. Analyze the provided image.`
                 );
 
+                // Calibrate the critique with Jev System One to prevent runaway Veo 3.1 reshoot costs
+                const jevDecision = await judgeVideoReshootRequirement({
+                    prompt,
+                    critique: feedback.refined_prompt || critiquePrompt,
+                    score1to10: feedback.score,
+                });
 
-                if (typeof feedback.score === 'number' && feedback.score < 8) {
+                const shouldTriggerReshoot = jevDecision
+                    ? jevDecision.shouldReshoot
+                    : (typeof feedback.score === 'number' && feedback.score < 6);
+
+                if (shouldTriggerReshoot) {
+                    logger.info(`[VideoDirector] Jev verified video reshoot required (defect: ${jevDecision?.primaryDefect || 'defect'}, aesthetic: ${jevDecision?.aestheticScore})`);
                     // 4. Reshoot
-                    // Note: We need to call the generation service again. 
-                    // Since this is a service, we might need to pass the generator function or import it.
-                    // For now, we'll return a special signal or handle it if we move generation here.
-
-                    // Ideally, this method should be part of the generation flow.
-                    // Let's return the refined prompt so the caller can retry.
                     throw { retry: true, refinedPrompt: feedback.refined_prompt };
                 }
             }
@@ -148,5 +159,19 @@ export class VideoDirector {
             logger.error('[VideoDirector] Cloud Function Error:', err);
             return { success: false, error: err instanceof Error ? err.message : 'Video generation failed' };
         }
+    }
+
+    /**
+     * Triage candidate chunks from long session recording into kept takes vs discards (ISSUE-1177 / Session Breakdown).
+     */
+    static async triageSessionChunks(chunks: SessionChunkEvidence[]): Promise<Map<string, ChunkTriageVerdict>> {
+        const verdicts = new Map<string, ChunkTriageVerdict>();
+        await Promise.all(
+            chunks.map(async (chunk) => {
+                const verdict = await judgeSessionChunkTriage(chunk);
+                verdicts.set(chunk.chunkId, verdict);
+            })
+        );
+        return verdicts;
     }
 }

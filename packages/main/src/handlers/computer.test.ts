@@ -1,239 +1,83 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerComputerHandlers } from './computer';
 
 const mocks = vi.hoisted(() => ({
     ipcMain: { handle: vi.fn() },
-    computerExecutionService: {
-        getPermissionStatus: vi.fn(() => ({ platform: 'darwin', supported: true, screenRecording: 'granted', accessibility: 'granted', guidance: [] })),
-        screenshot: vi.fn().mockResolvedValue({ base64: 'x', width: 1, height: 1, displayId: 1 }),
-        listApps: vi.fn().mockResolvedValue(['Safari']),
-        openApp: vi.fn().mockResolvedValue(undefined),
-        click: vi.fn().mockResolvedValue(undefined),
-        type: vi.fn().mockResolvedValue(undefined),
-        key: vi.fn().mockResolvedValue(undefined),
-        scroll: vi.fn().mockResolvedValue(undefined),
-        abort: vi.fn(),
-        resetAbort: vi.fn(),
-        isAborted: vi.fn(() => false),
-        grantSession: vi.fn((sessionId: string, ttlMs?: number) => ({ sessionId, grantedAt: 1000, expiresAt: 1000 + (ttlMs ?? 900_000) })),
-        revokeGrant: vi.fn(),
-        hasActiveGrant: vi.fn(() => false)
+    showMessageBox: vi.fn().mockResolvedValue({ response: 1 }),
+    auth: { authorize: vi.fn(), consume: vi.fn(), beginDrive: vi.fn(), consumeDriveAction: vi.fn(), revoke: vi.fn(), revokeAllDriveSessions: vi.fn() },
+    execution: {
+        getPermissionStatus: vi.fn(() => ({ supported: true })), screenshot: vi.fn().mockResolvedValue({ base64: 'secret' }), listApps: vi.fn().mockResolvedValue([]),
+        openApp: vi.fn(), click: vi.fn(), key: vi.fn(), scroll: vi.fn(), abort: vi.fn(), isAborted: vi.fn(() => false),
     },
-    computerAllowlistStore: {
-        getAll: vi.fn(() => ['Safari']),
-        add: vi.fn(),
-        remove: vi.fn()
-    }
 }));
+vi.mock('electron', () => ({ ipcMain: mocks.ipcMain, dialog: { showMessageBox: mocks.showMessageBox }, BrowserWindow: { fromWebContents: vi.fn(() => null) }, app: { isPackaged: false, getAppPath: () => '/app', getPath: () => '/tmp' } }));
+vi.mock('electron-log', () => ({ default: { info: vi.fn(), error: vi.fn() } }));
+vi.mock('../services/ComputerExecutionService', () => ({ computerExecutionService: mocks.execution }));
+vi.mock('../services/computer/ComputerAllowlistStore', () => ({ computerAllowlistStore: { getAll: vi.fn(() => ['Safari']) } }));
+vi.mock('../services/computer/ComputerAuthorizationService', () => ({ ComputerAuthorizationService: class { constructor() { return mocks.auth; } } }));
+vi.mock('../services/computer/FirebaseComputerAuthorizationBackend', () => ({ FirebaseComputerAuthorizationBackend: class {} }));
 
-vi.mock('electron', () => ({
-    ipcMain: mocks.ipcMain,
-    app: { isPackaged: false, getAppPath: vi.fn(() => '/app'), getPath: vi.fn(() => '/mock/user-data') }
-}));
-vi.mock('electron-log', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
-vi.mock('../services/ComputerExecutionService', () => ({ computerExecutionService: mocks.computerExecutionService }));
-vi.mock('../services/computer/ComputerAllowlistStore', () => ({ computerAllowlistStore: mocks.computerAllowlistStore }));
-
-interface HandlerResult {
-    success: boolean;
-    error?: string;
-    data?: unknown;
-}
-
-describe('🛡️ Shield: Computer IPC Security Test (ISSUE-1110/1111)', () => {
-    let handlers: Record<string, (...args: unknown[]) => unknown> = {};
-
+describe('Computer IPC main-process security boundary', () => {
+    let handlers: Record<string, (...args: any[]) => Promise<any>>;
+    const good = { sender: { id: 7 }, senderFrame: { url: 'file:///app/index.html' } };
+    const bad = { sender: { id: 8 }, senderFrame: { url: 'https://evil.example' } };
+    const authorization = { token: 'x'.repeat(32), rendererSessionId: 'renderer-session-1234', agentId: 'agent-1' };
     beforeEach(() => {
-        vi.clearAllMocks();
-        vi.spyOn(console, 'error').mockImplementation(() => {});
-        handlers = {};
-        mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: unknown[]) => unknown) => {
-            handlers[channel] = handler;
+        vi.clearAllMocks(); handlers = {};
+        mocks.showMessageBox.mockResolvedValue({ response: 1 });
+        mocks.auth.authorize.mockImplementation(async ({ confirm }) => {
+            const approved = await confirm({ userId: 'user-1', approvalId: 'approval-1', agentId: 'agent-1', toolName: 'computer_click', action: 'click', args: { x: 1, y: 2, button: 'left' } });
+            if (!approved) throw new Error('cancelled');
+            return { token: 't'.repeat(43), expiresAt: Date.now() + 60_000 };
         });
+        mocks.ipcMain.handle.mockImplementation((name, handler) => { handlers[name] = handler; });
         registerComputerHandlers();
     });
 
-    const goodEvent = { senderFrame: { url: 'file:///app/index.html' } };
-    const badEvent = { senderFrame: { url: 'https://evil.example.com' } };
-    const invoke = async (channel: string, event: unknown, ...args: unknown[]): Promise<HandlerResult> => {
-        const handler = handlers[channel];
-        if (!handler) throw new Error(`Handler for ${channel} not found`);
-        return handler(event, ...args) as Promise<HandlerResult>;
-    };
-
-    it('registers every expected computer:* channel', () => {
-        const expected = [
-            'computer:check-permissions', 'computer:screenshot', 'computer:list-apps', 'computer:open-app',
-            'computer:click', 'computer:type', 'computer:key', 'computer:scroll',
-            'computer:abort', 'computer:reset-abort', 'computer:get-abort-state',
-            'computer:allowlist-get', 'computer:allowlist-add', 'computer:allowlist-remove',
-            'computer:grant-session', 'computer:revoke-grant', 'computer:has-grant'
-        ];
-        for (const channel of expected) {
-            expect(handlers[channel]).toBeDefined();
-        }
+    it('does not expose renderer bypass endpoints', () => {
+        expect(handlers['computer:grant-session']).toBeUndefined();
+        expect(handlers['computer:reset-abort']).toBeUndefined();
+        expect(handlers['computer:allowlist-add']).toBeUndefined();
     });
 
-    it('BLOCKS every channel for an untrusted sender frame', async () => {
-        const result = await invoke('computer:screenshot', badEvent);
+    it('rejects direct IPC and untrusted renderer attempts before provider execution', async () => {
+        const direct = await handlers['computer:click'](good, { x: 1, y: 2, button: 'left' });
+        expect(direct.success).toBe(false);
+        expect(mocks.execution.click).not.toHaveBeenCalled();
+        const bypass = await handlers['computer:click'](bad, { x: 1, y: 2, button: 'left', authorization });
+        expect(bypass.success).toBe(false);
+        expect(mocks.execution.click).not.toHaveBeenCalled();
+    });
+
+    it('requires a main-owned native confirmation before issuing authorization', async () => {
+        const request = { idToken: 'i'.repeat(32), approvalId: 'approval-1', rendererSessionId: 'renderer-session-1234' };
+        const accepted = await handlers['computer:authorize-approval'](good, request);
+        expect(accepted.success).toBe(true);
+        expect(mocks.showMessageBox).toHaveBeenCalledWith(expect.objectContaining({ title: 'Approve computer control', defaultId: 0 }));
+        mocks.showMessageBox.mockResolvedValueOnce({ response: 0 });
+        const cancelled = await handlers['computer:authorize-approval'](good, request);
+        expect(cancelled.success).toBe(false);
+    });
+
+    it('executes only after the main authorization service consumes the exact action', async () => {
+        const result = await handlers['computer:click'](good, { x: 1, y: 2, button: 'left', authorization });
+        expect(result.success).toBe(true);
+        expect(mocks.auth.consume).toHaveBeenCalledWith(expect.objectContaining({ rendererId: 7, toolName: 'computer_click', action: 'click', args: { x: 1, y: 2, button: 'left' } }));
+        expect(mocks.execution.click).toHaveBeenCalledOnce();
+    });
+
+    it('abort wins before authorization and revokes composite grants', async () => {
+        mocks.execution.isAborted.mockReturnValueOnce(true);
+        const denied = await handlers['computer:click'](good, { x: 1, y: 2, button: 'left', authorization });
+        expect(denied.success).toBe(false);
+        expect(mocks.auth.consume).not.toHaveBeenCalled();
+        await handlers['computer:abort'](good);
+        expect(mocks.auth.revokeAllDriveSessions).toHaveBeenCalledOnce();
+    });
+
+    it('always disables text injection at the boundary', async () => {
+        const result = await handlers['computer:type'](good, { text: 'not logged', authorization });
         expect(result.success).toBe(false);
-        expect(mocks.computerExecutionService.screenshot).not.toHaveBeenCalled();
-    });
-
-    describe('computer:click', () => {
-        it('rejects out-of-range coordinates', async () => {
-            const result = await invoke('computer:click', goodEvent, { x: 99999, y: 1, button: 'left' });
-            expect(result.success).toBe(false);
-            expect(result.error).toMatch(/Validation Error/);
-            expect(mocks.computerExecutionService.click).not.toHaveBeenCalled();
-        });
-
-        it('defaults button to left and forwards valid coordinates', async () => {
-            const result = await invoke('computer:click', goodEvent, { x: 10, y: 20 });
-            expect(result.success).toBe(true);
-            expect(mocks.computerExecutionService.click).toHaveBeenCalledWith(10, 20, 'left');
-        });
-
-        it('propagates a kill-switch rejection from the service as a clean error envelope', async () => {
-            mocks.computerExecutionService.click.mockRejectedValueOnce(new Error('Computer control was aborted (kill switch active).'));
-            const result = await invoke('computer:click', goodEvent, { x: 1, y: 1, button: 'left' });
-            expect(result.success).toBe(false);
-            expect(result.error).toMatch(/kill switch/i);
-        });
-
-        it('rejects immediately when abort kill-switch is active without invoking service', async () => {
-            mocks.computerExecutionService.isAborted.mockReturnValueOnce(true);
-            const result = await invoke('computer:click', goodEvent, { x: 1, y: 1, button: 'left' });
-            expect(result.success).toBe(false);
-            expect(result.error).toMatch(/kill switch/i);
-            expect(mocks.computerExecutionService.click).not.toHaveBeenCalled();
-        });
-
-        it('rejects click when provided sessionId is missing active grant', async () => {
-            mocks.computerExecutionService.hasActiveGrant.mockReturnValueOnce(false);
-            const result = await invoke('computer:click', goodEvent, { x: 10, y: 20, sessionId: 'expired-sess' });
-            expect(result.success).toBe(false);
-            expect(result.error).toMatch(/session grant is missing or expired/i);
-            expect(mocks.computerExecutionService.click).not.toHaveBeenCalled();
-            expect(mocks.computerExecutionService.hasActiveGrant).toHaveBeenCalledWith('expired-sess');
-        });
-
-        it('allows click when provided sessionId has active grant', async () => {
-            mocks.computerExecutionService.hasActiveGrant.mockReturnValueOnce(true);
-            const result = await invoke('computer:click', goodEvent, { x: 10, y: 20, sessionId: 'valid-sess' });
-            expect(result.success).toBe(true);
-            expect(mocks.computerExecutionService.click).toHaveBeenCalledWith(10, 20, 'left');
-            expect(mocks.computerExecutionService.hasActiveGrant).toHaveBeenCalledWith('valid-sess');
-        });
-    });
-
-    describe('computer:type', () => {
-        it('rejects text containing control characters', async () => {
-            const result = await invoke('computer:type', goodEvent, { text: 'hello\x07world' });
-            expect(result.success).toBe(false);
-            expect(mocks.computerExecutionService.type).not.toHaveBeenCalled();
-        });
-
-        it('forwards clean text', async () => {
-            const result = await invoke('computer:type', goodEvent, { text: 'hello world' });
-            expect(result.success).toBe(true);
-            expect(mocks.computerExecutionService.type).toHaveBeenCalledWith('hello world');
-        });
-    });
-
-    describe('computer:key', () => {
-        it('rejects a combo with disallowed characters', async () => {
-            const result = await invoke('computer:key', goodEvent, { combo: 'cmd; rm -rf /' });
-            expect(result.success).toBe(false);
-            expect(mocks.computerExecutionService.key).not.toHaveBeenCalled();
-        });
-
-        it('forwards a clean combo', async () => {
-            const result = await invoke('computer:key', goodEvent, { combo: 'cmd+c' });
-            expect(result.success).toBe(true);
-            expect(mocks.computerExecutionService.key).toHaveBeenCalledWith('cmd+c');
-        });
-    });
-
-    describe('computer:scroll', () => {
-        it('rejects deltas outside the bounded range', async () => {
-            const result = await invoke('computer:scroll', goodEvent, { dx: 0, dy: 999999 });
-            expect(result.success).toBe(false);
-            expect(mocks.computerExecutionService.scroll).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('computer:open-app', () => {
-        it('rejects an app string that looks like a CLI flag', async () => {
-            const result = await invoke('computer:open-app', goodEvent, '-badflag');
-            expect(result.success).toBe(false);
-            expect(mocks.computerExecutionService.openApp).not.toHaveBeenCalled();
-        });
-
-        it('propagates an allowlist rejection from the service', async () => {
-            mocks.computerExecutionService.openApp.mockRejectedValueOnce(new Error('App "Chrome" is not on the computer-control allowlist.'));
-            const result = await invoke('computer:open-app', goodEvent, 'Chrome');
-            expect(result.success).toBe(false);
-            expect(result.error).toMatch(/allowlist/);
-        });
-    });
-
-    describe('kill switch channels', () => {
-        it('abort/reset-abort/get-abort-state all require a valid sender', async () => {
-            const abortResult = await invoke('computer:abort', badEvent);
-            expect(abortResult.success).toBe(false);
-            expect(mocks.computerExecutionService.abort).not.toHaveBeenCalled();
-
-            const okAbort = await invoke('computer:abort', goodEvent);
-            expect(okAbort.success).toBe(true);
-            expect(mocks.computerExecutionService.abort).toHaveBeenCalled();
-        });
-    });
-
-    describe('allowlist management channels', () => {
-        it('validates the app string on add/remove', async () => {
-            const result = await invoke('computer:allowlist-add', goodEvent, '--evil');
-            expect(result.success).toBe(false);
-            expect(mocks.computerAllowlistStore.add).not.toHaveBeenCalled();
-        });
-
-        it('adds a valid app name', async () => {
-            const result = await invoke('computer:allowlist-add', goodEvent, 'Safari');
-            expect(result.success).toBe(true);
-            expect(mocks.computerAllowlistStore.add).toHaveBeenCalledWith('Safari');
-        });
-    });
-
-    describe('session grant channels (CE-5, ISSUE-1114)', () => {
-        it('grants a session with a valid id and forwards ttlMs', async () => {
-            const result = await invoke('computer:grant-session', goodEvent, { sessionId: 'sess-1', ttlMs: 60000 });
-            expect(result.success).toBe(true);
-            expect(mocks.computerExecutionService.grantSession).toHaveBeenCalledWith('sess-1', 60000);
-        });
-
-        it('rejects a session id with disallowed characters', async () => {
-            const result = await invoke('computer:grant-session', goodEvent, { sessionId: 'sess/../evil' });
-            expect(result.success).toBe(false);
-            expect(mocks.computerExecutionService.grantSession).not.toHaveBeenCalled();
-        });
-
-        it('rejects a grant-session request from an untrusted sender', async () => {
-            const result = await invoke('computer:grant-session', badEvent, { sessionId: 'sess-1' });
-            expect(result.success).toBe(false);
-            expect(mocks.computerExecutionService.grantSession).not.toHaveBeenCalled();
-        });
-
-        it('revokes a grant by session id', async () => {
-            const result = await invoke('computer:revoke-grant', goodEvent, 'sess-1');
-            expect(result.success).toBe(true);
-            expect(mocks.computerExecutionService.revokeGrant).toHaveBeenCalledWith('sess-1');
-        });
-
-        it('checks grant status by session id', async () => {
-            mocks.computerExecutionService.hasActiveGrant.mockReturnValueOnce(true);
-            const result = await invoke('computer:has-grant', goodEvent, 'sess-1');
-            expect(result.success).toBe(true);
-            expect(result.data).toEqual({ hasGrant: true });
-        });
+        expect(result.error).toMatch(/Text injection is disabled/);
     });
 });

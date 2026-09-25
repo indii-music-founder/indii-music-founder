@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
     isFirebaseE2EMockEnabled: vi.fn(() => false),
-    currentUser: null as { uid: string } | null,
+    currentUser: null as { uid: string; getIdToken: () => Promise<string> } | null,
     addDoc: vi.fn(),
     updateDoc: vi.fn(),
     getDoc: vi.fn(),
+    runTransaction: vi.fn(),
+    httpsCallable: vi.fn(),
     onSnapshot: vi.fn(),
     toolRegistry: {} as Record<string, (args: unknown) => Promise<{ success: boolean; error?: string; data?: unknown }>>,
 }));
@@ -16,10 +18,12 @@ vi.mock('@/utils/authGuards', () => ({
 }));
 vi.mock('@/services/firebase', () => ({
     db: {},
+    functions: {},
     get auth() {
         return { get currentUser() { return mocks.currentUser; } };
     },
 }));
+vi.mock('firebase/functions', () => ({ httpsCallable: mocks.httpsCallable }));
 vi.mock('../tools', () => ({
     get TOOL_REGISTRY() { return mocks.toolRegistry; }
 }));
@@ -32,6 +36,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         addDoc: mocks.addDoc,
         updateDoc: mocks.updateDoc,
         getDoc: mocks.getDoc,
+        runTransaction: mocks.runTransaction,
         onSnapshot: mocks.onSnapshot,
         query: vi.fn((...args) => args),
         where: vi.fn(),
@@ -45,8 +50,14 @@ import { toolApprovalService } from './ToolApprovalService';
 describe('ToolApprovalService (ISSUE-1116)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mocks.currentUser = { uid: 'user-1' };
+        mocks.currentUser = { uid: 'user-1', getIdToken: vi.fn().mockResolvedValue('identity-token') };
         mocks.toolRegistry = {};
+        mocks.getDoc.mockResolvedValue({ exists: () => false });
+        mocks.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({ data: { denied: true } }));
+        mocks.runTransaction.mockImplementation(async (_db, callback) => callback({
+            get: mocks.getDoc,
+            update: (...args: unknown[]) => mocks.updateDoc(...args),
+        }));
     });
 
     describe('createPendingApproval', () => {
@@ -135,6 +146,23 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             const result = await toolApprovalService.approve('approval-1');
             expect(result.success).toBe(false);
             expect(result.error).toMatch(/sandbox crashed/);
+        });
+
+        it('leaves computer approval transitions to main and the trusted backend', async () => {
+            const computerClick = vi.fn().mockResolvedValue({ success: true });
+            mocks.toolRegistry = { computer_click: computerClick };
+            mocks.getDoc.mockResolvedValue({
+                exists: () => true,
+                data: () => ({ status: 'pending', agentId: 'agent-1', toolName: 'computer_click', args: { x: 1, y: 2 } })
+            });
+            Object.defineProperty(window, 'electronAPI', { configurable: true, value: { computer: { authorizeApproval: vi.fn().mockResolvedValue({ success: true, data: { token: 't'.repeat(43), expiresAt: Date.now() + 60_000 } }) } } });
+
+            const result = await toolApprovalService.approve('approval-1');
+
+            expect(result.success).toBe(true);
+            expect(computerClick).toHaveBeenCalledWith(expect.objectContaining({ __computerAuthorizationToken: 't'.repeat(43), __computerAgentId: 'agent-1' }));
+            expect(mocks.runTransaction).not.toHaveBeenCalled();
+            expect(mocks.updateDoc).not.toHaveBeenCalled();
         });
     });
 

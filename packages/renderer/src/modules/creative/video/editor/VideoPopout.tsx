@@ -4,6 +4,14 @@ import type { HyperframesPlayer } from '@hyperframes/player';
 import { useVideoEditorStore } from '../store/videoEditorStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useCompiledVideoPreview } from './hooks/useCompiledVideoPreview';
+import { judgePreviewErrorGuidance, type PreviewErrorAction } from '@/config/typesafeJudgments';
+
+/** Artist-facing copy per judgment action; the raw error always stays visible too. */
+const GUIDANCE_COPY: Record<Exclude<PreviewErrorAction, 'none'>, string> = {
+    trim_timeline: 'A clip likely runs past the timeline bounds — trim or retime it in the editor and this preview rebuilds.',
+    fix_media: 'A clip\'s media can\'t be read — re-link or replace it in the editor.',
+    retry: 'Transient hiccup — make any small edit to rebuild the preview.',
+};
 
 /**
  * Standalone viewer for a second window (ScreenControlService).
@@ -20,6 +28,19 @@ export default function VideoPopout() {
     );
     const { html, error, isCompiling } = useCompiledVideoPreview(project);
     const videoRef = React.useRef<HTMLVideoElement | null>(null);
+    const [guidance, setGuidance] = React.useState<string | null>(null);
+    const activeGuidance = error ? guidance : null;
+
+    useEffect(() => {
+        if (!error) return;
+        let cancelled = false;
+        // TypeSafe (Jev) adds artist-facing guidance on top of the raw error.
+        // Unavailable flag/key/service → judgment returns null → raw error only.
+        void judgePreviewErrorGuidance(error).then((action) => {
+            if (!cancelled) setGuidance(action ? GUIDANCE_COPY[action] : null);
+        }).catch(() => undefined);
+        return () => { cancelled = true; };
+    }, [error]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -77,6 +98,11 @@ export default function VideoPopout() {
             ) : (
                 <div className="text-gray-600 font-mono text-xs uppercase tracking-widest">
                     {isCompiling ? 'Building live preview…' : error ?? 'Add a clip in the editor to preview'}
+                    {activeGuidance && (
+                        <div className="mt-3 max-w-md text-gray-400 normal-case tracking-normal font-sans text-sm">
+                            {activeGuidance}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

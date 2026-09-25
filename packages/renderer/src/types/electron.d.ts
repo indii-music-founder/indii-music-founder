@@ -197,22 +197,19 @@ export interface ElectronAPI {
     // Computer Capability (CE-1: read path, ISSUE-1110. CE-2: input control + kill switch, ISSUE-1111)
     computer?: {
         checkPermissions: () => Promise<{ success: boolean; data?: { platform: string; supported: boolean; screenRecording: string; accessibility: string; guidance: string[] }; error?: string }>;
-        screenshot: (options?: { displayId?: number }) => Promise<{ success: boolean; data?: { base64: string; width: number; height: number; displayId: number }; error?: string }>;
+        authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string }) => Promise<{ success: boolean; data?: { token: string; expiresAt: number }; error?: string }>;
+        beginDrive: (goal: string, maxSteps: number, authorization: { token: string; rendererSessionId: string; agentId: string }) => Promise<{ success: boolean; data?: { sessionToken: string; expiresAt: number }; error?: string }>;
+        endDrive: (sessionToken: string) => Promise<{ success: boolean; error?: string }>;
+        screenshot: (options: { displayId?: number; authorization?: { token: string; rendererSessionId: string; agentId: string }; driveSessionToken?: string }) => Promise<{ success: boolean; data?: { base64: string; width: number; height: number; displayId: number }; error?: string }>;
         listApps: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
-        openApp: (app: string) => Promise<{ success: boolean; data?: { app: string }; error?: string }>;
-        click: (x: number, y: number, button?: 'left' | 'right' | 'double', sessionId?: string) => Promise<{ success: boolean; data?: { x: number; y: number; button: string }; error?: string }>;
-        type: (text: string, sessionId?: string) => Promise<{ success: boolean; data?: { length: number }; error?: string }>;
-        key: (combo: string, sessionId?: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
-        scroll: (dx: number, dy: number, sessionId?: string) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
+        openApp: (app: string, authorization?: { token: string; rendererSessionId: string; agentId: string }) => Promise<{ success: boolean; data?: { app: string }; error?: string }>;
+        click: (x: number, y: number, button?: 'left' | 'right' | 'double', authorization?: { token: string; rendererSessionId: string; agentId: string }, driveSessionToken?: string) => Promise<{ success: boolean; data?: { x: number; y: number; button: string }; error?: string }>;
+        type: (text: string) => Promise<{ success: boolean; data?: { length: number }; error?: string }>;
+        key: (combo: string, authorization?: { token: string; rendererSessionId: string; agentId: string }, driveSessionToken?: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
+        scroll: (dx: number, dy: number, authorization?: { token: string; rendererSessionId: string; agentId: string }, driveSessionToken?: string) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
         abort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
-        resetAbort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
         getAbortState: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
         allowlistGet: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
-        allowlistAdd: (app: string) => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
-        allowlistRemove: (app: string) => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
-        grantSession: (sessionId: string, ttlMs?: number) => Promise<{ success: boolean; data?: { sessionId: string; grantedAt: number; expiresAt: number }; error?: string }>;
-        revokeGrant: (sessionId: string) => Promise<{ success: boolean; data?: { sessionId: string }; error?: string }>;
-        hasGrant: (sessionId: string) => Promise<{ success: boolean; data?: { hasGrant: boolean }; error?: string }>;
     };
 
 

@@ -1032,7 +1032,25 @@ service cloud.firestore {
         allow update, delete: if false;
       }
       match /tasks/{taskId} { allow read, write: if isOwner(userId); }
-      match /tool_approvals/{approvalId} { allow read, write: if isOwner(userId); }
+      match /tool_approvals/{approvalId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+          request.resource.data.status == 'pending' &&
+          request.resource.data.agentId is string &&
+          request.resource.data.toolName is string &&
+          request.resource.data.args is map &&
+          request.resource.data.createdAt == request.time;
+        // Computer approvals are resolved only by trusted Admin SDK callables.
+        // Other approval families retain their existing owner-controlled state machine,
+        // but their authority-bearing identity and arguments are immutable.
+        allow update: if isOwner(userId) &&
+          !(resource.data.toolName.matches('^computer_.*')) &&
+          request.resource.data.agentId == resource.data.agentId &&
+          request.resource.data.toolName == resource.data.toolName &&
+          request.resource.data.args == resource.data.args &&
+          request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if false;
+      }
       match /aop/{docId} { allow read, write: if isOwner(userId); }
       match /web3Contracts/{contractId} { allow read, write: if isOwner(userId); }
 

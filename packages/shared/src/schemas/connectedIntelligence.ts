@@ -170,20 +170,20 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
     });
   }
 
-  const releaseRef = parsed.event.subject.entityType === 'release'
-    ? parsed.event.subject
-    : parsed.event.relatedEntities.find(reference => reference.entityType === 'release');
-  if (!releaseRef) {
+  const releaseRefs = [parsed.event.subject, ...parsed.event.relatedEntities]
+    .filter(reference => reference.entityType === 'release');
+  if (releaseRefs.length !== 1) {
     return ConnectedIntelligenceResultSchema.parse({
       schemaVersion: 'connected-intelligence.v1',
       sourceEventId: parsed.event.eventId,
       status: 'NOT_EVALUATED',
       evaluatedDimensions: ['EVENT'],
       actions: [],
-      explanation: `Event ${parsed.event.eventType} does not identify an affected canonical release; no readiness conclusion was made.`,
+      explanation: `Event ${parsed.event.eventType} identifies ${releaseRefs.length} canonical releases; exactly one affected release is required, so no readiness conclusion was made.`,
       evaluatedAt: parsed.evaluatedAt,
     });
   }
+  const releaseRef = releaseRefs[0]!;
 
   const entityById = new Map(parsed.entities.map(entity => [entity.id, entity]));
   const release = entityById.get(releaseRef.entityId);

@@ -173,7 +173,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         let activeProductSkillBlock = '';
         try {
             const recentContext = this.extractRecentContext(chatHistoryString);
-            let skill = recentContext ? ProductSkillRegistry.searchProductSkillByIntent(recentContext) : undefined;
+            let skill = recentContext ? await ProductSkillRegistry.searchProductSkillByIntentAsync(recentContext) : undefined;
 
             if (!skill && stateContext.activeModule) {
                 skill = ProductSkillRegistry.getSkillForModule(stateContext.activeModule);

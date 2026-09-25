@@ -47,11 +47,11 @@ The event delivery contract does not replace the existing analytics
 must reuse the appropriate server-side authentication, authorization, secret
 handling, retry, retention, replay, and audit controls for its integration.
 
-Phase 9 re-evaluation accepts the monitored event types only when the event
-subject or its related-entity list explicitly identifies an affected canonical
-release. Events without that reference remain `NOT_EVALUATED`; consumers do
-not guess which release changed. Resulting Phase 9 advisories remain
-human-review-only when converted to Phase 10 plans.
+Phase 9 re-evaluation accepts the monitored event types only when exactly one
+canonical release is identified across the event subject and related-entity
+list. Events with no release reference or multiple release references remain
+`NOT_EVALUATED`; consumers do not guess which release changed. Resulting Phase
+9 advisories remain human-review-only when converted to Phase 10 plans.
 
 ## Deliberate non-scope
 

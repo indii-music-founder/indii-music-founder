@@ -4,6 +4,17 @@ import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
 import type { DocumentReference } from 'firebase/firestore';
 
+type ComputerAuthorizationArgs = {
+    __computerAuthorizationToken?: string;
+    __computerRendererSessionId?: string;
+    __computerAgentId?: string;
+};
+
+function approvalFrom(args: ComputerAuthorizationArgs) {
+    if (!args.__computerAuthorizationToken || !args.__computerRendererSessionId || !args.__computerAgentId) return undefined;
+    return { token: args.__computerAuthorizationToken, rendererSessionId: args.__computerRendererSessionId, agentId: args.__computerAgentId };
+}
+
 /**
  * ComputerTools: OS-level "Hands & Eyes" — CE-1 (ISSUE-1110), read path only.
  * Provides screen capture and app inventory via the Electron IPC bridge (native desktop).
@@ -43,10 +54,10 @@ export const ComputerTools = {
     /**
      * Captures a screenshot of the desktop (or a specific display).
      */
-    computer_screenshot: wrapTool('computer_screenshot', async (args: { displayId?: number }) => {
+    computer_screenshot: wrapTool('computer_screenshot', async (args: { displayId?: number } & ComputerAuthorizationArgs) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.screenshot(args);
+                const result = await window.electronAPI.computer.screenshot({ displayId: args.displayId, authorization: approvalFrom(args) });
                 if (result.success) {
                     return toolSuccess(result.data, 'Screenshot captured successfully.');
                 }
@@ -90,10 +101,10 @@ export const ComputerTools = {
      * Launches an application by bundle id or display name. Allowlist/policy enforcement
      * lives in the main process (packages/main/src/services/ComputerExecutionService.ts).
      */
-    computer_open_app: wrapTool('computer_open_app', async (args: { app: string }) => {
+    computer_open_app: wrapTool('computer_open_app', async (args: { app: string } & ComputerAuthorizationArgs) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.openApp(args.app);
+                const result = await window.electronAPI.computer.openApp(args.app, approvalFrom(args));
                 if (result.success) {
                     return toolSuccess(result.data, `Successfully opened ${args.app}`);
                 }
@@ -115,10 +126,10 @@ export const ComputerTools = {
      * NEVER click into password/payment fields — the model must refuse if the screenshot
      * context suggests a credential entry field is targeted (see docs §5.5).
      */
-    computer_click: wrapTool('computer_click', async (args: { x: number; y: number; button?: 'left' | 'right' | 'double'; sessionId?: string }) => {
+    computer_click: wrapTool('computer_click', async (args: { x: number; y: number; button?: 'left' | 'right' | 'double' } & ComputerAuthorizationArgs) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.click(args.x, args.y, args.button ?? 'left', args.sessionId);
+                const result = await window.electronAPI.computer.click(args.x, args.y, args.button ?? 'left', approvalFrom(args));
                 if (result.success) {
                     return toolSuccess(result.data, `Clicked at (${args.x}, ${args.y})`);
                 }
@@ -137,10 +148,10 @@ export const ComputerTools = {
      * NEVER type credentials, passwords, or payment details — this tool must refuse such
      * requests regardless of who issued them (see docs §5.5, no-credential-entry rule).
      */
-    computer_type: wrapTool('computer_type', async (args: { text: string; sessionId?: string }) => {
+    computer_type: wrapTool('computer_type', async (args: { text: string } & ComputerAuthorizationArgs) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.type(args.text, args.sessionId);
+                const result = await window.electronAPI.computer.type(args.text);
                 if (result.success) {
                     return toolSuccess(result.data, `Typed ${args.text.length} characters`);
                 }
@@ -157,10 +168,10 @@ export const ComputerTools = {
     /**
      * Presses a key combo, e.g. "return", "escape", "cmd+c". Destructive tier — requires approval.
      */
-    computer_key: wrapTool('computer_key', async (args: { combo: string; sessionId?: string }) => {
+    computer_key: wrapTool('computer_key', async (args: { combo: string } & ComputerAuthorizationArgs) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.key(args.combo, args.sessionId);
+                const result = await window.electronAPI.computer.key(args.combo, approvalFrom(args));
                 if (result.success) {
                     return toolSuccess(result.data, `Pressed ${args.combo}`);
                 }
@@ -177,10 +188,10 @@ export const ComputerTools = {
     /**
      * Scrolls the wheel by (dx, dy) at the current pointer position. Destructive tier — requires approval.
      */
-    computer_scroll: wrapTool('computer_scroll', async (args: { dx: number; dy: number; sessionId?: string }) => {
+    computer_scroll: wrapTool('computer_scroll', async (args: { dx: number; dy: number } & ComputerAuthorizationArgs) => {
         try {
             if (typeof window !== 'undefined' && window.electronAPI?.computer) {
-                const result = await window.electronAPI.computer.scroll(args.dx, args.dy, args.sessionId);
+                const result = await window.electronAPI.computer.scroll(args.dx, args.dy, approvalFrom(args));
                 if (result.success) {
                     return toolSuccess(result.data, `Scrolled (${args.dx}, ${args.dy})`);
                 }
@@ -201,7 +212,7 @@ export const ComputerTools = {
      * step log (action + SHA-256 screenshot hash, never raw frames) and status, matching
      * the existing videoJobs status-doc pattern.
      */
-    computer_drive: wrapTool('computer_drive', async (args: { goal: string; maxSteps?: number }) => {
+    computer_drive: wrapTool('computer_drive', async (args: { goal: string; maxSteps?: number } & ComputerAuthorizationArgs) => {
         try {
             if (typeof window === 'undefined' || !window.electronAPI?.computer) {
                 return toolError('Computer control requires the indii desktop app.', 'COMPUTER_DESKTOP_ONLY');
@@ -219,7 +230,6 @@ export const ComputerTools = {
             if (uid) {
                 try {
                     sessionRef = await addDoc(collection(db, 'users', uid, 'computerSessions'), {
-                        goal: args.goal,
                         status: 'running',
                         startedAt: serverTimestamp(),
                         maxSteps: args.maxSteps ?? 15,
@@ -229,7 +239,12 @@ export const ComputerTools = {
                 }
             }
 
-            const result = await computerAgentDriver.drive(args.goal, args.maxSteps ?? 15);
+            const authorization = approvalFrom(args);
+            if (!authorization) return toolError('Main-process approval is required.', 'COMPUTER_APPROVAL_REQUIRED');
+            const grant = await window.electronAPI.computer.beginDrive(args.goal, args.maxSteps ?? 15, authorization);
+            if (!grant.success || !grant.data) return toolError(grant.error || 'Drive authorization failed.', 'COMPUTER_APPROVAL_REQUIRED');
+            const result = await computerAgentDriver.drive(args.goal, args.maxSteps ?? 15, grant.data.sessionToken, authorization.rendererSessionId, authorization.agentId);
+            await window.electronAPI.computer.endDrive(grant.data.sessionToken);
 
             if (sessionRef) {
                 try {

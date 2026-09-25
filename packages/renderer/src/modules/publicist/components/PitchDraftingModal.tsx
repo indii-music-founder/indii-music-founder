@@ -4,12 +4,13 @@
  * Uses AutonomousIntelligence.generateText() to stream a personalized pitch
  * based on the selected contact + optional campaign context.
  */
-import React, { useState } from 'react';
-import { X, Sparkles, Copy, Send, RefreshCw, CheckCircle2, Loader2, Mail } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Sparkles, Copy, Send, RefreshCw, CheckCircle2, Loader2, Mail, ShieldAlert, CheckCircle } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Contact, Campaign } from '../types';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { useToast } from '@/core/context/ToastContext';
+import { judgeCuratorPlaylistAlignment, type CuratorMatchPayload, type CuratorMatchResult } from '@/config/typesafeJudgments';
 
 interface PitchDraftingModalProps {
     isOpen: boolean;
@@ -23,6 +24,44 @@ export function PitchDraftingModal({ isOpen, onClose, contact, campaign }: Pitch
     const [draft, setDraft] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [matchResult, setMatchResult] = useState<CuratorMatchResult | null>(null);
+
+    // Fast-path Jev curator playlist alignment pre-check
+    useEffect(() => {
+        if (!contact) {
+            setMatchResult(null);
+            return;
+        }
+        let active = true;
+        const payload: CuratorMatchPayload = {
+            trackProfile: {
+                genre: campaign?.type || 'Music',
+                subgenres: [],
+                tempoBpm: 120,
+                moodTags: [contact.outlet || 'Playlist'],
+                instrumentation: ['Vocal', 'Production'],
+                vocalPresence: 'prominent',
+            },
+            curatorPreferences: {
+                curatorId: contact.id || contact.name,
+                recentAdditionsGenres: [contact.role || 'Curator', contact.outlet || 'Editorial'],
+                targetMoods: [contact.relationshipStrength || 'Warm'],
+                maxBpmSkew: 25,
+            },
+        };
+
+        judgeCuratorPlaylistAlignment(payload)
+            .then((res) => {
+                if (active && res) {
+                    setMatchResult(res);
+                }
+            })
+            .catch(() => {});
+
+        return () => {
+            active = false;
+        };
+    }, [contact, campaign]);
 
     // Early return if no contact — Modal guard below also checks this,
     // but this satisfies TypeScript's null narrowing for the rest of the component.
@@ -105,6 +144,36 @@ Do not include a subject line — just the email body.
                                     Campaign: <span className="text-white font-medium">{campaign.title}</span>
                                     <span className="mx-2 text-slate-600">·</span>
                                     <span className="text-slate-500">{campaign.type} · {campaign.releaseDate}</span>
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Jev Curator Fit & Playlist Alignment Badge */}
+                        {matchResult && (
+                            <div className={`px-6 py-2.5 border-b border-white/5 flex items-center justify-between text-xs ${
+                                matchResult.dispatchPitch
+                                    ? 'bg-emerald-500/10 text-emerald-300'
+                                    : 'bg-amber-500/10 text-amber-300'
+                            }`}>
+                                <div className="flex items-center gap-2 min-w-0">
+                                    {matchResult.dispatchPitch ? (
+                                        <CheckCircle size={14} className="text-emerald-400 shrink-0" />
+                                    ) : (
+                                        <ShieldAlert size={14} className="text-amber-400 shrink-0" />
+                                    )}
+                                    <span className="font-bold uppercase tracking-wider text-[10px] shrink-0">
+                                        Curator Fit: {(matchResult.matchScore * 100).toFixed(0)}%
+                                    </span>
+                                    <span className="text-[11px] opacity-80 truncate">
+                                        {matchResult.rationale}
+                                    </span>
+                                </div>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded shrink-0 ${
+                                    matchResult.dispatchPitch
+                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                }`}>
+                                    {matchResult.dispatchPitch ? 'Pitch Recommended' : 'Low Alignment (< 82%)'}
                                 </span>
                             </div>
                         )}

@@ -361,7 +361,31 @@ describe('Phase 9 connected intelligence preflight', () => {
     const result = evaluateConnectedIntelligence(input);
     expect(result.status).toBe('NOT_EVALUATED');
     expect(result.actions).toEqual([]);
-    expect(result.explanation).toMatch(/does not identify an affected canonical release/);
+    expect(result.explanation).toMatch(/identifies 0 canonical releases/);
+  });
+
+  it('does not choose arbitrarily when a monitoring event references multiple releases', () => {
+    const input = completeFixture({
+      event: {
+        schemaVersion: 'music-domain-event.v1',
+        eventId: 'event:catalog-change-ambiguous',
+        eventType: 'catalog.state_changed',
+        subject: { entityId: 'asset:internal-1', entityType: 'asset' },
+        relatedEntities: [
+          { entityId: 'release:canonical-1', entityType: 'release' },
+          { entityId: 'release:canonical-2', entityType: 'release' },
+        ],
+        occurredAt: now,
+        recordedAt: now,
+        provenance: { ...verified, state: 'DETECTED' },
+      },
+    });
+
+    const result = evaluateConnectedIntelligence(input);
+
+    expect(result.status).toBe('NOT_EVALUATED');
+    expect(result.actions).toEqual([]);
+    expect(result.explanation).toMatch(/identifies 2 canonical releases/);
   });
 
   it('emits only advisory actions that require human review and authorize no execution', () => {
