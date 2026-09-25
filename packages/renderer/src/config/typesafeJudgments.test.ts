@@ -64,6 +64,11 @@ import {
     judgeVideoBeatCutPacing,
     judgeLyricVisualPromptSynthesis,
     judgeAudioStemSeparationPriority,
+    judgeMusicVideoContinuity,
+    judgeSocialAudioSnippetSelection,
+    judgeMerchPrintViability,
+    judgeFanCommentModeration,
+    judgeSyncLicensingMoodFit,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
     TRANSIENT_ADOPT_MIN,
@@ -2157,5 +2162,307 @@ describe('judgeAudioStemSeparationPriority (Judgment 41)', () => {
         expect(result.recipe).toBe('FULL_VOCAL_EXTRACTION');
         expect(result.isSalvageable).toBe(true);
         expect(result.phaseRiskScore).toBe(2);
+    });
+});
+
+describe('judgeMusicVideoContinuity (Judgment 42)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('falls back to deterministic continuity checks when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        // Consecutive jump cut warning (two MEDIUMs back-to-back)
+        const jumpCut = await judgeMusicVideoContinuity([
+            { order: 0, chunkId: 'c1', startTimeSeconds: 0, shotScale: 'MEDIUM', durationSeconds: 2.0, isPerformance: true },
+            { order: 1, chunkId: 'c2', startTimeSeconds: 2.0, shotScale: 'MEDIUM', durationSeconds: 2.0, isPerformance: true },
+            { order: 2, chunkId: 'c3', startTimeSeconds: 4.0, shotScale: 'CLOSEUP', durationSeconds: 3.0, isPerformance: true },
+        ]);
+        expect(jumpCut.status).toBe('CONSECUTIVE_JUMP_CUT_WARNING');
+        expect(jumpCut.flowScore).toBe(2);
+        expect(jumpCut.hasAdequateCoverage).toBe(true);
+
+        // Low performance coverage (only 1s out of 8s is performance)
+        const lowPerf = await judgeMusicVideoContinuity([
+            { order: 0, chunkId: 'c1', startTimeSeconds: 0, shotScale: 'EXTREME_WIDE', durationSeconds: 4.0, isPerformance: false },
+            { order: 1, chunkId: 'c2', startTimeSeconds: 4.0, shotScale: 'WIDE', durationSeconds: 3.0, isPerformance: false },
+            { order: 2, chunkId: 'c3', startTimeSeconds: 7.0, shotScale: 'CLOSEUP', durationSeconds: 1.0, isPerformance: true },
+        ]);
+        expect(lowPerf.status).toBe('LOW_PERFORMANCE_COVERAGE');
+        expect(lowPerf.hasAdequateCoverage).toBe(false);
+
+        // Smooth diverse sequence
+        const smooth = await judgeMusicVideoContinuity([
+            { order: 0, chunkId: 'c1', startTimeSeconds: 0, shotScale: 'WIDE', durationSeconds: 3.0, isPerformance: false },
+            { order: 1, chunkId: 'c2', startTimeSeconds: 3.0, shotScale: 'MEDIUM', durationSeconds: 2.5, isPerformance: true },
+            { order: 2, chunkId: 'c3', startTimeSeconds: 5.5, shotScale: 'CLOSEUP', durationSeconds: 2.0, isPerformance: true },
+        ]);
+        expect(smooth.status).toBe('READY_TO_RENDER');
+        expect(smooth.flowScore).toBe(4);
+    });
+
+    it('evaluates timeline flow and coverage using Jev decisions', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    status: { choice: 'READY_TO_RENDER' },
+                    coverage: { noul: 0.95 },
+                    flow_score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeMusicVideoContinuity([
+            { order: 0, chunkId: 'c1', startTimeSeconds: 0, shotScale: 'EXTREME_WIDE', durationSeconds: 4.0, isPerformance: false },
+            { order: 1, chunkId: 'c2', startTimeSeconds: 4.0, shotScale: 'MEDIUM', durationSeconds: 3.0, isPerformance: true },
+            { order: 2, chunkId: 'c3', startTimeSeconds: 7.0, shotScale: 'EXTREME_CLOSEUP', durationSeconds: 2.0, isPerformance: true },
+        ]);
+
+        expect(result.status).toBe('READY_TO_RENDER');
+        expect(result.hasAdequateCoverage).toBe(true);
+        expect(result.flowScore).toBe(5);
+        expect(result.directorNote).toContain('READY_TO_RENDER');
+    });
+});
+
+describe('judgeSocialAudioSnippetSelection (Judgment 43)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('falls back to peak section selection when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeSocialAudioSnippetSelection([
+            { section: 'INTRO', startTimeSeconds: 0, endTimeSeconds: 15, energyLevel: 'low', lyricSnippet: 'Acoustic intro' },
+            { section: 'VERSE', startTimeSeconds: 15, endTimeSeconds: 45, energyLevel: 'moderate', lyricSnippet: 'Telling the story' },
+            { section: 'CHORUS', startTimeSeconds: 45, endTimeSeconds: 75, energyLevel: 'high', lyricSnippet: 'The big earworm chorus' },
+        ], 15);
+
+        expect(result.recommendedSection).toBe('CHORUS');
+        expect(result.suggestedStartTimeSeconds).toBe(45);
+        expect(result.suggestedEndTimeSeconds).toBe(60);
+        expect(result.viralHookPotential).toBe(5);
+        expect(result.isImmediateVocalOnset).toBe(true);
+    });
+
+    it('selects optimal short-form viral hook using Jev answers', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    section: { choice: 'DROP' },
+                    immediate_vocal: { noul: 0.94 },
+                    viral_potential: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeSocialAudioSnippetSelection([
+            { section: 'VERSE', startTimeSeconds: 0, endTimeSeconds: 30, energyLevel: 'moderate', lyricSnippet: 'Verse vibes' },
+            { section: 'DROP', startTimeSeconds: 30, endTimeSeconds: 60, energyLevel: 'peak', lyricSnippet: 'Unstoppable bass drop' },
+        ], 15);
+
+        expect(result.recommendedSection).toBe('DROP');
+        expect(result.suggestedStartTimeSeconds).toBe(30);
+        expect(result.suggestedEndTimeSeconds).toBe(45);
+        expect(result.viralHookPotential).toBe(5);
+        expect(result.isImmediateVocalOnset).toBe(true);
+    });
+});
+
+describe('judgeMerchPrintViability (Judgment 44)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('falls back to physical print heuristics when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        // Dark on dark warning
+        const darkOnDark = await judgeMerchPrintViability({
+            productType: 'Heavyweight T-Shirt',
+            garmentColorName: 'Black',
+            garmentHex: '#000000',
+            artworkDominantHex: '#121212',
+            isVectorArtwork: false,
+            designResolutionDpi: 300,
+        });
+        expect(darkOnDark.isPrintSafe).toBe(false);
+        expect(darkOnDark.contrastScore).toBe(1);
+        expect(darkOnDark.warningOrGuidance).toContain('Dark artwork on dark fabric');
+
+        // Low resolution warning
+        const lowDpi = await judgeMerchPrintViability({
+            productType: 'Hoodie',
+            garmentColorName: 'White',
+            garmentHex: '#ffffff',
+            artworkDominantHex: '#ff0055',
+            isVectorArtwork: false,
+            designResolutionDpi: 72,
+        });
+        expect(lowDpi.isPrintSafe).toBe(false);
+        expect(lowDpi.contrastScore).toBe(2);
+        expect(lowDpi.warningOrGuidance).toContain('minimum manufacturing threshold');
+
+        // Beanie / Cap defaults to embroidery
+        const cap = await judgeMerchPrintViability({
+            productType: 'Snapback Cap',
+            garmentColorName: 'Khaki',
+            garmentHex: '#c3b091',
+            artworkDominantHex: '#000000',
+            isVectorArtwork: true,
+            designResolutionDpi: 300,
+        });
+        expect(cap.recommendedTechnique).toBe('EMBROIDERY');
+        expect(cap.isPrintSafe).toBe(true);
+    });
+
+    it('resolves print manufacturing viability and technique via Jev', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    technique: { choice: 'DTG_DIRECT_TO_GARMENT' },
+                    is_safe: { noul: 0.96 },
+                    contrast: { score: 4 },
+                },
+            },
+        }));
+
+        const result = await judgeMerchPrintViability({
+            productType: 'Organic Cotton Crewneck',
+            garmentColorName: 'Vintage Sand',
+            garmentHex: '#e8d8c8',
+            artworkDominantHex: '#1e3a8a',
+            isVectorArtwork: true,
+            designResolutionDpi: 300,
+        });
+
+        expect(result.recommendedTechnique).toBe('DTG_DIRECT_TO_GARMENT');
+        expect(result.isPrintSafe).toBe(true);
+        expect(result.contrastScore).toBe(4);
+        expect(result.warningOrGuidance).toBeUndefined();
+    });
+});
+
+describe('judgeFanCommentModeration (Judgment 45)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('falls back to deterministic safety filter when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        // Toxic language
+        const toxic = await judgeFanCommentModeration('This song is trash go die');
+        expect(toxic.isApproved).toBe(false);
+        expect(toxic.intent).toBe('HARASSMENT_TOXIC');
+        expect(toxic.vibeAlignmentScore).toBe(1);
+        expect(toxic.moderationFlag).toContain('toxic or abusive');
+
+        // Spam
+        const spam = await judgeFanCommentModeration('check out my crypto profile for free followers t.me/bot');
+        expect(spam.isApproved).toBe(false);
+        expect(spam.intent).toBe('SPAM_PROMOTION');
+        expect(spam.moderationFlag).toContain('spam');
+
+        // Lyric discussion
+        const lyric = await judgeFanCommentModeration('The lyric in verse 2 reminds me of Detroit in the winter');
+        expect(lyric.isApproved).toBe(true);
+        expect(lyric.intent).toBe('LYRIC_INTERPRETATION');
+        expect(lyric.vibeAlignmentScore).toBe(5);
+    });
+
+    it('classifies fan comments and vibe alignment via Jev', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    intent: { choice: 'GENUINE_FAN_PRAISE' },
+                    approved: { noul: 0.99 },
+                    vibe: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeFanCommentModeration('This guitar solo literally saved my year! On repeat all week 🔥🔥🔥');
+
+        expect(result.intent).toBe('GENUINE_FAN_PRAISE');
+        expect(result.isApproved).toBe(true);
+        expect(result.vibeAlignmentScore).toBe(5);
+        expect(result.moderationFlag).toBeUndefined();
+    });
+});
+
+describe('judgeSyncLicensingMoodFit (Judgment 46)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('falls back to keyword-driven sync brief matching when offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const actionSync = await judgeSyncLicensingMoodFit({
+            trackTitle: 'Midnight Nitro',
+            genre: 'Electro Rock',
+            bpm: 142,
+            moodTags: ['Driving', 'Electric'],
+            sceneBrief: 'High speed car chase through wet city streets at night',
+            hasExplicitLyrics: false,
+        });
+        expect(actionSync.recommendedScene).toBe('HIGH_OCTANE_ACTION');
+        expect(actionSync.syncFitScore).toBe(4);
+        expect(actionSync.hasExplicitLyricHazard).toBe(false);
+
+        const explicitDrama = await judgeSyncLicensingMoodFit({
+            trackTitle: 'Broken Promises',
+            genre: 'Alternative Folk',
+            bpm: 76,
+            moodTags: ['Sad', 'Acoustic'],
+            sceneBrief: 'Tearful goodbye scene at rain-slicked train station',
+            hasExplicitLyrics: true,
+        });
+        expect(explicitDrama.recommendedScene).toBe('INTIMATE_EMOTIONAL_DRAMA');
+        expect(explicitDrama.hasExplicitLyricHazard).toBe(true);
+    });
+
+    it('scores supervisor brief alignment and explicit hazard from Jev', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    scene: { choice: 'DARK_THRILLER_SUSPENSE' },
+                    hazard: { noul: 0.02 },
+                    fit_score: { score: 5 },
+                },
+            },
+        }));
+
+        const result = await judgeSyncLicensingMoodFit({
+            trackTitle: 'Shadow Syndicate',
+            genre: 'Dark Ambient Trap',
+            bpm: 118,
+            moodTags: ['Ominous', 'Cinematic'],
+            sceneBrief: 'Nocturnal detective stakeout uncovering an underground syndicate',
+            hasExplicitLyrics: false,
+        });
+
+        expect(result.recommendedScene).toBe('DARK_THRILLER_SUSPENSE');
+        expect(result.syncFitScore).toBe(5);
+        expect(result.hasExplicitLyricHazard).toBe(false);
+        expect(result.syncPitchDeckBlurb).toContain('DARK_THRILLER_SUSPENSE');
     });
 });

@@ -309,7 +309,6 @@ export function createGcsVideoSessionResumableUpload(
             .file(input.path)
             .createResumableUpload({
                 origin: input.origin,
-                private: true,
                 preconditionOpts: { ifGenerationMatch: 0 },
                 metadata: {
                     contentType: input.contentType,

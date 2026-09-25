@@ -64,3 +64,19 @@ describe('VideoDirector.triageSessionChunks', () => {
         expect(brollVerdict?.isUsable).toBe(true);
     });
 });
+
+describe('VideoDirector.auditVideoContinuity', () => {
+    it('audits music video continuity across timeline cuts', async () => {
+        const cuts = [
+            { order: 0, chunkId: 'cut-1', startTimeSeconds: 0, shotScale: 'WIDE' as const, durationSeconds: 3.5, isPerformance: false },
+            { order: 1, chunkId: 'cut-2', startTimeSeconds: 3.5, shotScale: 'MEDIUM' as const, durationSeconds: 2.5, isPerformance: true },
+            { order: 2, chunkId: 'cut-3', startTimeSeconds: 6.0, shotScale: 'CLOSEUP' as const, durationSeconds: 2.0, isPerformance: true },
+        ];
+
+        const verdict = await VideoDirector.auditVideoContinuity(cuts);
+
+        expect(verdict.status).toBe('READY_TO_RENDER');
+        expect(verdict.flowScore).toBe(4);
+        expect(verdict.hasAdequateCoverage).toBe(true);
+    });
+});

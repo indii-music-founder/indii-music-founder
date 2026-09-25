@@ -12,8 +12,11 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 import {
     judgeVideoReshootRequirement,
     judgeSessionChunkTriage,
+    judgeMusicVideoContinuity,
     type SessionChunkEvidence,
     type ChunkTriageVerdict,
+    type VideoCutCandidate,
+    type ContinuityVerdict,
 } from '@/config/typesafeJudgments';
 
 export class VideoDirector {
@@ -173,5 +176,12 @@ export class VideoDirector {
             })
         );
         return verdicts;
+    }
+
+    /**
+     * Audit editing continuity across assembled video cuts before final render (ISSUE-1178 / Music Video Assembly).
+     */
+    static async auditVideoContinuity(cuts: VideoCutCandidate[]): Promise<ContinuityVerdict> {
+        return judgeMusicVideoContinuity(cuts);
     }
 }
