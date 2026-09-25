@@ -2,6 +2,12 @@ import { z } from 'zod';
 import { EvidenceReferenceSchema, ProvenanceSchema, RightsClaimTypeSchema } from './musicEntity.js';
 
 const Id = z.string().trim().min(1).max(200);
+const EXTERNAL_ENTITY_REFERENCE_PREFIX = /^(?:isrc|iswc|upc|ean|icpn|ipi|isni|dpid|grid|catalog(?:_number)?|platform_id|proprietary|spotify|apple(?:_music)?|youtube|tiktok|instagram):/i;
+const EXTERNAL_ENTITY_REFERENCE_VALUE = /^(?:[A-Z]{2}[A-Z0-9]{3}\d{7}|T-\d{3}\.\d{3}\.\d{3}-\d|\d{8,14})$/i;
+const CanonicalEntityReference = z.string().trim().min(1).max(160).refine(
+  value => !EXTERNAL_ENTITY_REFERENCE_PREFIX.test(value) && !EXTERNAL_ENTITY_REFERENCE_VALUE.test(value),
+  'Canonical entity references must use indii internal IDs, not external identifiers.',
+);
 const IsoDateTime = z.string().datetime();
 
 export const RightsTruthStateSchema = z.enum([
@@ -12,8 +18,8 @@ export type RightsTruthState = z.infer<typeof RightsTruthStateSchema>;
 
 export const RightsInterestSchema = z.object({
   interestId: Id,
-  targetEntityId: Id,
-  partyEntityId: Id,
+  targetEntityId: CanonicalEntityReference,
+  partyEntityId: CanonicalEntityReference,
   interestType: z.enum(['MASTER_OWNER', 'WRITER', 'COMPOSER', 'PUBLISHER', 'ADMINISTRATOR']),
   sharePercentage: z.number().min(0).max(100).optional(),
   territoryCodes: z.array(z.string().trim().min(1).max(32)).max(300).default([]),
@@ -24,9 +30,9 @@ export type RightsInterest = z.infer<typeof RightsInterestSchema>;
 
 export const ThirdPartyUseSchema = z.object({
   useId: Id,
-  targetRecordingEntityId: Id,
+  targetRecordingEntityId: CanonicalEntityReference,
   useType: z.enum(['SAMPLE', 'COVER', 'INTERPOLATION']),
-  sourceEntityId: Id.optional(),
+  sourceEntityId: CanonicalEntityReference.optional(),
   description: z.string().trim().min(1).max(2000),
   state: RightsTruthStateSchema,
   exclusiveRightsConfirmed: z.boolean().default(false),
@@ -48,7 +54,7 @@ export const AIUseScopeSchema = z.object({
   ])).min(1).max(20),
   modelScope: z.discriminatedUnion('type', [
     z.object({ type: z.literal('NAMED_MODELS'), modelIdentifiers: z.array(z.string().trim().min(1).max(512)).min(1).max(100) }).strict(),
-    z.object({ type: z.literal('PROVIDERS'), providerOrganizationEntityIds: z.array(Id).min(1).max(100) }).strict(),
+    z.object({ type: z.literal('PROVIDERS'), providerOrganizationEntityIds: z.array(CanonicalEntityReference).min(1).max(100) }).strict(),
     z.object({ type: z.literal('UNSPECIFIED') }).strict(),
   ]),
   commercialUse: z.enum(['ALLOWED', 'PROHIBITED', 'UNSPECIFIED']),
@@ -61,9 +67,9 @@ export type RightsGrantRight = z.infer<typeof RightsGrantRightSchema>;
 
 export const RightsGrantSchema = z.object({
   grantId: Id,
-  subjectEntityId: Id,
-  grantorEntityId: Id,
-  granteeEntityId: Id,
+  subjectEntityId: CanonicalEntityReference,
+  grantorEntityId: CanonicalEntityReference,
+  granteeEntityId: CanonicalEntityReference,
   rights: z.array(RightsGrantRightSchema).min(1).max(20),
   aiUseScope: AIUseScopeSchema.optional(),
   territoryCodes: z.array(z.string().trim().min(1).max(32)).max(300).default([]),
@@ -112,13 +118,13 @@ export const AIUseGrantReviewSchema = z.object({
 export type AIUseGrantReview = z.infer<typeof AIUseGrantReviewSchema>;
 
 export const RightsEvidenceVaultSchema = z.object({
-  entityId: Id,
+  entityId: CanonicalEntityReference,
   evidence: z.array(EvidenceReferenceSchema).max(1000).default([]),
 }).strict();
 export type RightsEvidenceVault = z.infer<typeof RightsEvidenceVaultSchema>;
 
 export const RightsIntelligenceInputSchema = z.object({
-  targetEntityId: Id,
+  targetEntityId: CanonicalEntityReference,
   interests: z.array(RightsInterestSchema).max(1000).default([]),
   thirdPartyUses: z.array(ThirdPartyUseSchema).max(1000).default([]),
   grants: z.array(RightsGrantSchema).max(1000).default([]),
