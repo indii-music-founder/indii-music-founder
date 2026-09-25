@@ -38,6 +38,21 @@ asserted safely. This module deliberately reuses the existing canonical entity,
 identifier, relationship, and provenance contracts rather than creating a
 parallel catalog model.
 
-The contract is pure and suitable for future read-only surfaces. It adds no
-Firestore persistence, background scan, user-facing alert, rights action, or
-production feature enablement.
+## Existing-system consumer
+
+The existing Registration Center now runs the evaluator over its already
+loaded legacy track catalog using the shared compatibility projection. The
+projection is in-memory only, and the snapshot remains `UNKNOWN` because the
+legacy rows do not supply the complete canonical graph or the missing scopes
+above. More than 5,000 rows are deterministically bounded and marked `PARTIAL`.
+Potential identifier collisions are shown as review-only notices; no canonical
+record is persisted, no registration is submitted, and no right or ownership
+fact is inferred. The UI explicitly names the dimensions that remain
+unassessed.
+
+This creates a safe existing-surface consumer without introducing a second
+catalog architecture. The evaluator still adds no Firestore persistence,
+background scan, rights action, or production feature enablement. Full Phase 13
+coverage remains gated on an authorized canonical graph/source that provides
+the registration, rights, identity, media-link, collection, and claim scopes
+needed to assess those absences without guessing.
