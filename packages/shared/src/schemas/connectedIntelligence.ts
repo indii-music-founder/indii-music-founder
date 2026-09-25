@@ -10,6 +10,10 @@ import { MusicDomainEventSchema, MusicEventEntityReferenceSchema } from './music
 import { RightsClaimSchema } from './musicEntity.js';
 import { MusicRelationshipSchema } from './musicRelationship.js';
 import { RightsIntelligenceReportSchema } from './rightsIntelligence.js';
+import {
+  CrossDepartmentReviewPlanSchema,
+  createCrossDepartmentReviewPlan,
+} from './crossDepartmentIntelligence.js';
 import { projectClaimsInbox } from './claimsInbox.js';
 
 const IdSchema = z.string().trim().min(1).max(160);
@@ -112,6 +116,8 @@ export const ConnectedIntelligenceResultSchema = z.object({
   status: z.enum(['ACTIONS_REQUIRED', 'NO_ACTION_REQUIRED', 'NOT_EVALUATED']),
   evaluatedDimensions: z.array(z.enum(['EVENT', 'ARTIST_CONTEXT', 'MUSIC_IDENTITY', 'RELATIONSHIPS', 'RIGHTS', 'REGISTRATIONS', 'TERRITORY_PLATFORM'])),
   actions: z.array(ConnectedIntelligenceActionSchema).max(20_000),
+  /** Phase 15 review pointers only; this does not dispatch to departments. */
+  departmentReviewPlan: CrossDepartmentReviewPlanSchema,
   explanation: z.string().trim().min(1).max(1000),
   evaluatedAt: IsoDateTimeSchema,
 }).strict();
@@ -169,6 +175,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
       status: 'NOT_EVALUATED',
       evaluatedDimensions: ['EVENT'],
       actions: [],
+      departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
       explanation: `No Phase 9 rule is defined for ${parsed.event.eventType}; no readiness conclusion was made.`,
       evaluatedAt: parsed.evaluatedAt,
     });
@@ -185,6 +192,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
       return ConnectedIntelligenceResultSchema.parse({
         schemaVersion: 'connected-intelligence.v1', sourceEventId: parsed.event.eventId,
         status: 'ACTIONS_REQUIRED', evaluatedDimensions: ['EVENT', 'MUSIC_IDENTITY'], actions,
+        departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
         explanation: 'The claim event is not treated as a rights fact because its canonical claim record is missing.',
         evaluatedAt: parsed.evaluatedAt,
       });
@@ -212,6 +220,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
       schemaVersion: 'connected-intelligence.v1', sourceEventId: parsed.event.eventId,
       status: 'ACTIONS_REQUIRED',
       evaluatedDimensions: ['EVENT', 'RIGHTS'], actions,
+      departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
       explanation: claim.status === 'WITHDRAWN'
         ? 'The claim is marked withdrawn, but the response workflow remains human-review-required until closure is verified; no ownership or clearance conclusion was made.'
         : 'The canonical claim is routed to the rights review workflow without changing its truth state or authorizing an external response.',
@@ -228,6 +237,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
       status: 'NOT_EVALUATED',
       evaluatedDimensions: ['EVENT'],
       actions: [],
+      departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
       explanation: `Event ${parsed.event.eventType} identifies ${releaseRefs.length} canonical releases; exactly one affected release is required, so no readiness conclusion was made.`,
       evaluatedAt: parsed.evaluatedAt,
     });
@@ -245,6 +255,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
     return ConnectedIntelligenceResultSchema.parse({
       schemaVersion: 'connected-intelligence.v1', sourceEventId: parsed.event.eventId,
       status: 'ACTIONS_REQUIRED', evaluatedDimensions: ['EVENT', 'MUSIC_IDENTITY'], actions,
+      departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
       explanation: 'The release subject is unresolved, so downstream readiness checks were not treated as complete.',
       evaluatedAt: parsed.evaluatedAt,
     });
@@ -482,6 +493,7 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
     status: actions.length ? 'ACTIONS_REQUIRED' : 'NO_ACTION_REQUIRED',
     evaluatedDimensions: EVALUATED_DIMENSIONS,
     actions,
+    departmentReviewPlan: createCrossDepartmentReviewPlan(parsed.event),
     explanation: actions.length
       ? `${actions.length} advisory action${actions.length === 1 ? '' : 's'} require review; no external or authoritative action was taken.`
       : 'All supplied Phase 9 readiness dimensions passed their deterministic checks; no action is required for this evaluation.',

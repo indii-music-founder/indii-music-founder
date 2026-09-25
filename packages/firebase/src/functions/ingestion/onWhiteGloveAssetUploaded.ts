@@ -45,6 +45,7 @@ export const onWhiteGloveAssetUploaded = defineStorageTrigger(
         if (assetType === 'music' || assetType === 'audio') {
             try {
                 const { getVertexAIClient } = await import('../../lib/vertexClient');
+                const { FUNCTION_INTELLIGENCE_MODELS } = await import('../../config/models');
                 const genai = getVertexAIClient();
                 const SONIC_PROFILE_PROMPT = `Analyze this audio track and extract its sonic profile. 
 Return ONLY a JSON object that adheres to the following schema:
@@ -60,7 +61,7 @@ Return ONLY a JSON object that adheres to the following schema:
   "timestamp_markers": [{"time": string, "event": string}]
 }`;
                 const result = await genai.models.generateContent({
-                    model: 'gemini-3-pro-preview',
+                    model: FUNCTION_INTELLIGENCE_MODELS.AUDIO.ANALYSIS,
                     contents: [{
                         role: "user",
                         parts: [

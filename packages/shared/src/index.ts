@@ -58,6 +58,7 @@ export * from './services/business-harness/HarnessCompiler.js';
 export * from './distribution/types/index.js';
 export * from './distribution/ddexBuilder.js';
 export * from './distribution/ddexStandardsRegistry.js';
+export * from './distribution/rdrRccTsv.js';
 export * from './distribution/ecmContracts.js';
 export * from './security/organizationAccess.js';
 export * from './security/auditLog.js';
@@ -67,3 +68,4 @@ export * from './types/contacts.js';
 export * from './types/encounter.js';
 // Phase 9 evaluator is advisory-only; it does not dispatch or authorize actions.
 export * from './schemas/connectedIntelligence.js';
+export * from './schemas/crossDepartmentIntelligence.js';

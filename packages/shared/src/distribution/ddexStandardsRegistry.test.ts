@@ -18,6 +18,13 @@ describe('DDEX standards registry',()=>{
     expect(getCurrentDDEXStandard('ERN')?.serialization).toBe('XML');
   });
 
+  it('registers the published RDR-RCC 1.0 interchange format as TSV',()=>{
+    expect(getCurrentDDEXStandard('RDR_RCC')).toMatchObject({
+      version: '1.0',
+      serialization: 'TSV',
+    });
+  });
+
   it('registers the ECM-specific AVS introduced in AVS 012',()=>{
     expect(DDEX_ECM_AVS_NAMES).toEqual([
       'ClusterMembershipType',

@@ -35,8 +35,8 @@ export const SecurityCard: AgentCard = {
         "streaming": false
     },
     {
-        "name": "browser_tool",
-        "description": "Scan URLs for threats or verify SSL certificates.",
+        "name": "web_extract",
+        "description": "Read public web pages; does not perform security scans or interact with sites.",
         "inputSchemaRef": "#/components/schemas/Empty",
         "outputSchemaRef": "#/components/schemas/Empty",
         "streaming": false
