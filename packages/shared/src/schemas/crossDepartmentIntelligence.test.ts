@@ -70,7 +70,10 @@ describe('Phase 15 cross-department review routing', () => {
     expect(serialized).not.toContain('privatePayload');
     expect(serialized).not.toContain('related:secret-context');
     expect(serialized).not.toContain('evidence:secret');
-    expect(first.requests.every(request => request.eventId === event.eventId)).toBe(true);
+    expect(first.sourceEventId).toBe(event.eventId);
+    expect(first.eventType).toBe(event.eventType);
+    expect(first.subject).toEqual(event.subject);
+    expect(first.sourceProvenanceState).toBe('DETECTED');
     expect(first.requests.map(request => request.requestId)).toEqual([
       ...new Set(first.requests.map(request => request.requestId)),
     ]);

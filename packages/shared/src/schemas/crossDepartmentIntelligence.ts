@@ -31,12 +31,6 @@ export type CrossDepartment = z.infer<typeof CrossDepartmentSchema>;
 export const DepartmentReviewRequestSchema = z.object({
   requestId: IdSchema,
   department: CrossDepartmentSchema,
-  eventId: IdSchema,
-  eventType: MusicDomainEventTypeSchema,
-  subject: MusicEventEntityReferenceSchema,
-  occurredAt: IsoDateTimeSchema,
-  recordedAt: IsoDateTimeSchema,
-  sourceProvenanceState: ProvenanceSchema.shape.state,
   requiresHumanReview: z.literal(true),
   executionAuthorized: z.literal(false),
 }).strict();
@@ -45,6 +39,11 @@ export type DepartmentReviewRequest = z.infer<typeof DepartmentReviewRequestSche
 export const CrossDepartmentReviewPlanSchema = z.object({
   schemaVersion: z.literal('cross-department-review-plan.v1'),
   sourceEventId: IdSchema,
+  eventType: MusicDomainEventTypeSchema,
+  subject: MusicEventEntityReferenceSchema,
+  occurredAt: IsoDateTimeSchema,
+  recordedAt: IsoDateTimeSchema,
+  sourceProvenanceState: ProvenanceSchema.shape.state,
   routingBasis: z.literal('STATIC_EVENT_TYPE_MAP'),
   requests: z.array(DepartmentReviewRequestSchema).max(8),
   requiresHumanReview: z.literal(true),
@@ -58,8 +57,8 @@ export const CrossDepartmentReviewPlanSchema = z.object({
   if (new Set(departments).size !== departments.length) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['requests'], message: 'An event can route to each department at most once.' });
   }
-  if (plan.requests.some(request => request.eventId !== plan.sourceEventId)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['requests'], message: 'Every request must point to the plan source event.' });
+  if (plan.requests.some(request => request.requestId !== `department-review:${plan.sourceEventId}:${request.department}`)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['requests'], message: 'Request IDs must be deterministically tied to their source event and department.' });
   }
 });
 export type CrossDepartmentReviewPlan = z.infer<typeof CrossDepartmentReviewPlanSchema>;
@@ -96,16 +95,15 @@ export function createCrossDepartmentReviewPlan(event: MusicDomainEvent): CrossD
   return CrossDepartmentReviewPlanSchema.parse({
     schemaVersion: 'cross-department-review-plan.v1',
     sourceEventId: parsedEvent.eventId,
+    eventType: parsedEvent.eventType,
+    subject: parsedEvent.subject,
+    occurredAt: parsedEvent.occurredAt,
+    recordedAt: parsedEvent.recordedAt,
+    sourceProvenanceState: parsedEvent.provenance.state,
     routingBasis: 'STATIC_EVENT_TYPE_MAP',
     requests: departments.map(department => ({
       requestId: `department-review:${parsedEvent.eventId}:${department}`,
       department,
-      eventId: parsedEvent.eventId,
-      eventType: parsedEvent.eventType,
-      subject: parsedEvent.subject,
-      occurredAt: parsedEvent.occurredAt,
-      recordedAt: parsedEvent.recordedAt,
-      sourceProvenanceState: parsedEvent.provenance.state,
       requiresHumanReview: true,
       executionAuthorized: false,
     })),
