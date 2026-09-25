@@ -123,9 +123,14 @@ describe('WebExtractionService', () => {
         const socketResponse = await new Promise<{ cancel?: boolean }>(resolve => {
             listener({ url: 'wss://public.example/socket' }, resolve);
         });
+        const fileResponse = await new Promise<{ cancel?: boolean }>(resolve => {
+            listener({ url: 'file:///private/account.txt' }, resolve);
+        });
 
         expect(credentialResponse).toEqual({ cancel: true });
         expect(socketResponse).toEqual({ cancel: true });
+        expect(fileResponse).toEqual({ cancel: true });
+        expect(mocks.onBeforeRequest).toHaveBeenCalledWith({ urls: ['<all_urls>'] }, expect.any(Function));
     });
 
     it('reuses one serialized session partition and clears it between requests', async () => {

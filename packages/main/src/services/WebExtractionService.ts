@@ -67,7 +67,7 @@ export class WebExtractionService {
             );
         };
         pageSession.webRequest.onBeforeRequest(
-            { urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] },
+            { urls: ['<all_urls>'] },
             requestListener,
         );
 
