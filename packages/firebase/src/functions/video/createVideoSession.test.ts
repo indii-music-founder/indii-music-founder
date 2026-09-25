@@ -152,7 +152,9 @@ describe('createOwnedVideoSession', () => {
 
 describe('createGcsVideoSessionResumableUpload', () => {
     it('does not request legacy object ACLs for the uniform-access private bucket', async () => {
-        const createResumableUpload = vi.fn(async () => ['https://storage.googleapis.test/upload/resumable-1'] as [string]);
+        const createResumableUpload = vi.fn(async (_options: Record<string, unknown>) => [
+            'https://storage.googleapis.test/upload/resumable-1',
+        ] as [string]);
         const file = { createResumableUpload };
         const storage = {
             bucket: vi.fn(() => ({ file: vi.fn(() => file) })),
