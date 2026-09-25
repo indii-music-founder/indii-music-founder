@@ -506,6 +506,14 @@ service cloud.firestore {
       // Users cannot delete their profile (admin action only)
       allow delete: if false;
 
+      // Workflow state is authored by trusted backend execution paths. Owners
+      // may read their own history for Phase 14 advisory predictions, but
+      // clients cannot create or rewrite completion evidence.
+      match /workflowExecutions/{executionId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        allow write: if false;
+      }
+
       // ── Trash Manifests & Purge Intents ─────────────────────────
       match /trashItems/{trashId} {
         function validTrashManifest(data) {
