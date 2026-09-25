@@ -80,3 +80,62 @@ describe('VideoDirector.auditVideoContinuity', () => {
         expect(verdict.hasAdequateCoverage).toBe(true);
     });
 });
+
+describe('VideoDirector.auditCameraAngleContinuity', () => {
+    it('audits camera angle transitions and flags jump-angle violation', async () => {
+        const repetitiveCuts = [
+            { shotIndex: 0, angle: 'EYE_LEVEL' as const, durationSeconds: 3.0, focalDescription: 'Singer at mic' },
+            { shotIndex: 1, angle: 'EYE_LEVEL' as const, durationSeconds: 3.0, focalDescription: 'Singer looking at camera' },
+        ];
+
+        const verdict = await VideoDirector.auditCameraAngleContinuity(repetitiveCuts);
+
+        expect(verdict.hasJumpAngleViolation).toBe(true);
+        expect(verdict.recommendedNextAngle).toBe('LOW_ANGLE_HEROIC');
+        expect(verdict.compositionDiversityScore).toBeLessThanOrEqual(4);
+    });
+
+    it('returns high diversity score for varied camera angles', async () => {
+        const dynamicCuts = [
+            { shotIndex: 0, angle: 'EYE_LEVEL' as const, durationSeconds: 2.5, focalDescription: 'Establishing band' },
+            { shotIndex: 1, angle: 'LOW_ANGLE_HEROIC' as const, durationSeconds: 2.0, focalDescription: 'Lead guitarist solo' },
+            { shotIndex: 2, angle: 'POINT_OF_VIEW' as const, durationSeconds: 1.8, focalDescription: 'Drummer perspective' },
+            { shotIndex: 3, angle: 'DUTCH_TILT_TENSION' as const, durationSeconds: 2.2, focalDescription: 'Bass drop intensity' },
+        ];
+
+        const verdict = await VideoDirector.auditCameraAngleContinuity(dynamicCuts);
+
+        expect(verdict.hasJumpAngleViolation).toBe(false);
+        expect(verdict.compositionDiversityScore).toBe(5);
+        expect(verdict.recommendedNextAngle).toBe('HIGH_ANGLE_VULNERABLE');
+    });
+});
+
+describe('VideoDirector.recommendColorGrade', () => {
+    it('recommends neon cyber nocturne for electronic synthwave', async () => {
+        const verdict = await VideoDirector.recommendColorGrade({
+            trackTitle: 'Midnight Grid Runner',
+            genre: 'Synthwave',
+            energyLevel: 'HIGH',
+            moodTags: ['futuristic', 'neon', 'cyberpunk'],
+            intendedVibe: 'Night driving through Tokyo neon reflections',
+        });
+
+        expect(verdict.recommendedPreset).toBe('NEON_CYBER_NOCTURNE');
+        expect(verdict.clashingGradeHazard).toBe(false);
+        expect(verdict.aestheticSynergyScore).toBeGreaterThanOrEqual(4);
+    });
+
+    it('recommends warm golden hour for acoustic indie track', async () => {
+        const verdict = await VideoDirector.recommendColorGrade({
+            trackTitle: 'Porch Swing Memories',
+            genre: 'Acoustic Folk',
+            energyLevel: 'LOW',
+            moodTags: ['nostalgic', 'organic', 'peaceful'],
+            intendedVibe: 'Sunset porch guitar strumming',
+        });
+
+        expect(verdict.recommendedPreset).toBe('WARM_GOLDEN_HOUR');
+        expect(verdict.clashingGradeHazard).toBe(false);
+    });
+});

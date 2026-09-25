@@ -69,6 +69,11 @@ import {
     judgeMerchPrintViability,
     judgeFanCommentModeration,
     judgeSyncLicensingMoodFit,
+    judgeCameraAngleContinuity,
+    judgeVideoColorGradeMood,
+    judgeStatementCatalogDisambiguation,
+    judgeSplitSheetRightsClearance,
+    judgeUniversalErrorRemediation,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
     TRANSIENT_ADOPT_MIN,
@@ -2464,5 +2469,345 @@ describe('judgeSyncLicensingMoodFit (Judgment 46)', () => {
         expect(result.syncFitScore).toBe(5);
         expect(result.hasExplicitLyricHazard).toBe(false);
         expect(result.syncPitchDeckBlurb).toContain('DARK_THRILLER_SUSPENSE');
+    });
+});
+
+describe('judgeCameraAngleContinuity (Judgment 47)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('returns default eye-level establishing shot when sequence is empty', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const verdict = await judgeCameraAngleContinuity([]);
+        expect(verdict.recommendedNextAngle).toBe('EYE_LEVEL');
+        expect(verdict.hasJumpAngleViolation).toBe(false);
+        expect(verdict.compositionDiversityScore).toBe(5);
+    });
+
+    it('detects jump-angle violation on consecutive identical angles offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const repetitiveCuts = [
+            { shotIndex: 0, angle: 'LOW_ANGLE_HEROIC' as const, durationSeconds: 3.0, focalDescription: 'Singer' },
+            { shotIndex: 1, angle: 'LOW_ANGLE_HEROIC' as const, durationSeconds: 2.5, focalDescription: 'Singer looking left' },
+        ];
+
+        const verdict = await judgeCameraAngleContinuity(repetitiveCuts);
+        expect(verdict.hasJumpAngleViolation).toBe(true);
+        expect(verdict.recommendedNextAngle).toBe('POINT_OF_VIEW');
+        expect(verdict.compositionDiversityScore).toBeLessThanOrEqual(4);
+    });
+
+    it('uses Jev callable to evaluate dynamic camera progression', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    next_angle: { choice: 'DUTCH_TILT_TENSION' },
+                    jump_violation: { noul: 0.05 },
+                    diversity_score: { score: 5 },
+                },
+            },
+        }));
+
+        const cuts = [
+            { shotIndex: 0, angle: 'EYE_LEVEL' as const, durationSeconds: 3.0, focalDescription: 'Full band intro' },
+            { shotIndex: 1, angle: 'LOW_ANGLE_HEROIC' as const, durationSeconds: 2.5, focalDescription: 'Lead vocal rise' },
+        ];
+
+        const verdict = await judgeCameraAngleContinuity(cuts);
+        expect(verdict.recommendedNextAngle).toBe('DUTCH_TILT_TENSION');
+        expect(verdict.hasJumpAngleViolation).toBe(false);
+        expect(verdict.compositionDiversityScore).toBe(5);
+        expect(verdict.cinematicNotes).toContain('DUTCH_TILT_TENSION');
+    });
+});
+
+describe('judgeVideoColorGradeMood (Judgment 48)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('determines color grade preset offline based on genre and energy', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const synthVerdict = await judgeVideoColorGradeMood({
+            trackTitle: 'Cyber Neon Horizon',
+            genre: 'Synthwave',
+            energyLevel: 'HIGH',
+            moodTags: ['Electric', 'Night'],
+            intendedVibe: 'Cyberpunk club night',
+        });
+        expect(synthVerdict.recommendedPreset).toBe('NEON_CYBER_NOCTURNE');
+        expect(synthVerdict.clashingGradeHazard).toBe(false);
+
+        const jazzVerdict = await judgeVideoColorGradeMood({
+            trackTitle: 'Late Night Cellar',
+            genre: 'Vintage Soul Jazz',
+            energyLevel: 'LOW',
+            moodTags: ['Warm', 'Vinyl'],
+            intendedVibe: 'Smoky basement vinyl groove',
+        });
+        expect(jazzVerdict.recommendedPreset).toBe('VINTAGE_SEPIA_VINYL');
+        expect(jazzVerdict.clashingGradeHazard).toBe(false);
+    });
+
+    it('evaluates color aesthetic synergy and clash hazard online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    preset: { choice: 'TEAL_AND_ORANGE_BLOCKBUSTER' },
+                    clash_hazard: { noul: 0.08 },
+                    synergy_score: { score: 5 },
+                },
+            },
+        }));
+
+        const verdict = await judgeVideoColorGradeMood({
+            trackTitle: 'Apex Velocity',
+            genre: 'Action Rock',
+            energyLevel: 'EXPLOSIVE',
+            moodTags: ['Intense', 'Adrenaline'],
+            intendedVibe: 'High speed desert motorcycle run',
+        });
+
+        expect(verdict.recommendedPreset).toBe('TEAL_AND_ORANGE_BLOCKBUSTER');
+        expect(verdict.clashingGradeHazard).toBe(false);
+        expect(verdict.aestheticSynergyScore).toBe(5);
+    });
+});
+
+describe('judgeStatementCatalogDisambiguation (Judgment 49)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    const candidates = [
+        { trackId: 'trk-101', isrc: 'US-NDM-26-00101', title: 'Velvet Voltage', artist: 'indii', versionType: 'Original' },
+        { trackId: 'trk-102', isrc: 'US-NDM-26-00102', title: 'Motor City Midnight', artist: 'indii', versionType: 'Club Mix' },
+    ];
+
+    it('matches catalog track by ISRC and title offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const isrcMatch = await judgeStatementCatalogDisambiguation(
+            {
+                statementLineId: 'line-1',
+                rawTitle: 'Velvet Voltage',
+                rawArtist: 'indii',
+                rawIsrc: 'USNDM2600101',
+                distributor: 'Spotify',
+                revenue: 142.50,
+            },
+            candidates
+        );
+
+        expect(isrcMatch.matchedTrackId).toBe('trk-101');
+        expect(isrcMatch.isUnmatched).toBe(false);
+        expect(isrcMatch.isMasterRecordingCertain).toBe(true);
+
+        const titleSubstringMatch = await judgeStatementCatalogDisambiguation(
+            {
+                statementLineId: 'line-2',
+                rawTitle: 'Motor City Midnight (Club Mix) [Extended]',
+                rawArtist: 'indii',
+                distributor: 'Apple Music',
+                revenue: 88.20,
+            },
+            candidates
+        );
+
+        expect(titleSubstringMatch.matchedTrackId).toBe('trk-102');
+        expect(titleSubstringMatch.isUnmatched).toBe(false);
+
+        const unmatched = await judgeStatementCatalogDisambiguation(
+            {
+                statementLineId: 'line-3',
+                rawTitle: 'Completely Unknown Bootleg Track',
+                rawArtist: 'Random Artist',
+                distributor: 'Tidal',
+                revenue: 5.10,
+            },
+            candidates
+        );
+
+        expect(unmatched.matchedTrackId).toBeNull();
+        expect(unmatched.isUnmatched).toBe(true);
+    });
+
+    it('resolves track candidate through Jev online callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    match: { choice: 'trk-102' },
+                    master_certainty: { noul: 0.98 },
+                    confidence_score: { score: 5 },
+                },
+            },
+        }));
+
+        const verdict = await judgeStatementCatalogDisambiguation(
+            {
+                statementLineId: 'line-online',
+                rawTitle: 'Motor City Midnight - Radio Edit',
+                rawArtist: 'indii feat. Detroit Soul',
+                distributor: 'Amazon Music',
+                revenue: 210.00,
+            },
+            candidates
+        );
+
+        expect(verdict.matchedTrackId).toBe('trk-102');
+        expect(verdict.isUnmatched).toBe(false);
+        expect(verdict.isMasterRecordingCertain).toBe(true);
+        expect(verdict.matchConfidenceScore).toBe(5);
+    });
+});
+
+describe('judgeSplitSheetRightsClearance (Judgment 50)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('enforces producer agreement clearance requirement offline', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const unsignedProducer = await judgeSplitSheetRightsClearance({
+            trackTitle: 'Neon Reverie',
+            collaboratorName: 'Beat Maker Mike',
+            role: 'PRODUCER',
+            claimedPercentage: 25,
+            hasWrittenProducerAgreement: false,
+        });
+
+        expect(unsignedProducer.requiresProducerAgreementBeforeRelease).toBe(true);
+        expect(unsignedProducer.rightsStream).toBe('AMBIGUOUS_HIGH_DISPUTE_RISK');
+        expect(unsignedProducer.disputeResistanceScore).toBeLessThanOrEqual(3);
+        expect(unsignedProducer.legalAdvisoryBlurb).toContain('CRITICAL LEGAL RISK');
+
+        const signedProducer = await judgeSplitSheetRightsClearance({
+            trackTitle: 'Neon Reverie',
+            collaboratorName: 'Producer Jane',
+            role: 'PRODUCER',
+            claimedPercentage: 50,
+            hasWrittenProducerAgreement: true,
+        });
+
+        expect(signedProducer.requiresProducerAgreementBeforeRelease).toBe(false);
+        expect(signedProducer.rightsStream).toBe('BOTH_EQUAL_SYNCED');
+        expect(signedProducer.disputeResistanceScore).toBe(5);
+    });
+
+    it('classifies songwriter share as composition publishing only', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const songwriter = await judgeSplitSheetRightsClearance({
+            trackTitle: 'Midnight Soul',
+            collaboratorName: 'Lyricist Bob',
+            role: 'SONGWRITER',
+            claimedPercentage: 50,
+            hasWrittenProducerAgreement: false,
+        });
+
+        expect(songwriter.rightsStream).toBe('COMPOSITION_PUBLISHING_ONLY');
+        expect(songwriter.requiresProducerAgreementBeforeRelease).toBe(false);
+    });
+
+    it('scores split sheet legal clarity through Jev online callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    rights_stream: { choice: 'BOTH_EQUAL_SYNCED' },
+                    needs_contract: { noul: 0.05 },
+                    dispute_score: { score: 5 },
+                },
+            },
+        }));
+
+        const verdict = await judgeSplitSheetRightsClearance({
+            trackTitle: 'Summer Anthem',
+            collaboratorName: 'Co-Producer Alex',
+            role: 'PRODUCER',
+            claimedPercentage: 33.33,
+            hasWrittenProducerAgreement: true,
+        });
+
+        expect(verdict.rightsStream).toBe('BOTH_EQUAL_SYNCED');
+        expect(verdict.requiresProducerAgreementBeforeRelease).toBe(false);
+        expect(verdict.disputeResistanceScore).toBe(5);
+    });
+});
+
+describe('judgeUniversalErrorRemediation (Judgment 51)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('diagnoses network timeouts and offline errors with retry connection remedy', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const netVerdict = await judgeUniversalErrorRemediation({
+            moduleName: 'Distribution',
+            errorMessage: 'TypeError: Failed to fetch: Network timeout after 15000ms',
+            isOffline: false,
+        });
+
+        expect(netVerdict.remedyAction).toBe('RETRY_NETWORK');
+        expect(netVerdict.isTransient).toBe(true);
+        expect(netVerdict.actionButtonText).toBe('Retry Connection');
+    });
+
+    it('diagnoses WebAudio engine crashes with audio output switch remedy', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const audioVerdict = await judgeUniversalErrorRemediation({
+            moduleName: 'CreativeStudio',
+            errorMessage: 'AudioContext error: AudioBuffer sampleRate mismatch (44100 vs 48000)',
+            errorStackSnippet: 'at AudioPipeline.connectNode (AudioBufferSourceNode:12)',
+            isOffline: false,
+        });
+
+        expect(audioVerdict.remedyAction).toBe('SWITCH_AUDIO_OUTPUT');
+        expect(audioVerdict.isTransient).toBe(true);
+        expect(audioVerdict.actionButtonText).toBe('Restart Audio Engine');
+    });
+
+    it('routes through Jev online callable for complex error diagnosis', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    remedy: { choice: 'RELOAD_MODULE_CACHE' },
+                    transient: { noul: 0.95 },
+                    severity_score: { score: 3 },
+                },
+            },
+        }));
+
+        const verdict = await judgeUniversalErrorRemediation({
+            moduleName: 'Finance',
+            errorMessage: 'QuotaExceededError: Local browser storage limit reached for ledger slice',
+            isOffline: false,
+        });
+
+        expect(verdict.remedyAction).toBe('RELOAD_MODULE_CACHE');
+        expect(verdict.isTransient).toBe(true);
+        expect(verdict.severityScore).toBe(3);
+        expect(verdict.actionButtonText).toBe('Clear Cache & Reload');
     });
 });

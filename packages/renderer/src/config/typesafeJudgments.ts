@@ -4683,3 +4683,786 @@ export async function judgeSyncLicensingMoodFit(
         };
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment 47: Camera Angle Continuity & Cinematic Progression (consumer: Video Director)
+// ---------------------------------------------------------------------------
+
+export type ShotAngle =
+    | 'EYE_LEVEL'
+    | 'LOW_ANGLE_HEROIC'
+    | 'HIGH_ANGLE_VULNERABLE'
+    | 'DUTCH_TILT_TENSION'
+    | 'OVERHEAD_GOD_VIEW'
+    | 'POINT_OF_VIEW';
+
+export interface CameraAngleCut {
+    shotIndex: number;
+    angle: ShotAngle;
+    durationSeconds: number;
+    focalDescription: string;
+}
+
+export interface CameraAngleVerdict {
+    recommendedNextAngle: ShotAngle;
+    hasJumpAngleViolation: boolean;
+    compositionDiversityScore: number; // 1 to 5
+    cinematicNotes: string;
+}
+
+/**
+ * TypeSafe System One (Jev) camera angle analyzer:
+ * Audits camera angle sequences for jump cuts (<30° axis clashes), repetitive stagnation,
+ * and recommends dynamic cinematic angle progression.
+ */
+export async function judgeCameraAngleContinuity(
+    cuts: CameraAngleCut[]
+): Promise<CameraAngleVerdict> {
+    if (!cuts || cuts.length === 0) {
+        return {
+            recommendedNextAngle: 'EYE_LEVEL',
+            hasJumpAngleViolation: false,
+            compositionDiversityScore: 5,
+            cinematicNotes: 'Empty sequence; default eye-level establishing shot recommended.',
+        };
+    }
+
+    const lastCut = cuts[cuts.length - 1];
+    const prevCut = cuts.length > 1 ? cuts[cuts.length - 2] : null;
+
+    // Check for repetitive angle violations (e.g. consecutive identical angles)
+    const hasJumpAngleViolation = prevCut ? prevCut.angle === lastCut.angle : false;
+
+    // Count unique angles to compute diversity score
+    const uniqueAngles = new Set(cuts.map(c => c.angle)).size;
+    let fallbackDiversityScore = Math.min(5, Math.max(1, Math.round((uniqueAngles / Math.min(cuts.length, 4)) * 5)));
+    if (hasJumpAngleViolation) {
+        fallbackDiversityScore = Math.max(1, fallbackDiversityScore - 1);
+    }
+
+    // Determine complementary angle cycle
+    const angleCycle: Record<ShotAngle, ShotAngle> = {
+        EYE_LEVEL: 'LOW_ANGLE_HEROIC',
+        LOW_ANGLE_HEROIC: 'POINT_OF_VIEW',
+        POINT_OF_VIEW: 'DUTCH_TILT_TENSION',
+        DUTCH_TILT_TENSION: 'HIGH_ANGLE_VULNERABLE',
+        HIGH_ANGLE_VULNERABLE: 'OVERHEAD_GOD_VIEW',
+        OVERHEAD_GOD_VIEW: 'EYE_LEVEL',
+    };
+    const fallbackNextAngle = angleCycle[lastCut.angle] || 'EYE_LEVEL';
+
+    if (!judgmentsAvailable()) {
+        return {
+            recommendedNextAngle: fallbackNextAngle,
+            hasJumpAngleViolation,
+            compositionDiversityScore: fallbackDiversityScore,
+            cinematicNotes: hasJumpAngleViolation
+                ? `Repetitive ${lastCut.angle} angle detected. Recommend cutting to ${fallbackNextAngle} to preserve visual momentum.`
+                : `Balanced camera coverage across ${cuts.length} cuts. Next angle: ${fallbackNextAngle}.`,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                totalCuts: cuts.length,
+                sequence: cuts.map(c => `${c.shotIndex}: ${c.angle} (${c.durationSeconds}s) - ${c.focalDescription}`).join(' | '),
+                lastAngle: lastCut.angle,
+            },
+            questions: {
+                next_angle: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Recommend the next cinematic camera angle to maintain dynamic progression without visual monotony: ' +
+                        'EYE_LEVEL, LOW_ANGLE_HEROIC, HIGH_ANGLE_VULNERABLE, DUTCH_TILT_TENSION, OVERHEAD_GOD_VIEW, or POINT_OF_VIEW.',
+                    criteria: {
+                        EYE_LEVEL: 'Neutral, conversational, intimate eye-contact framing.',
+                        LOW_ANGLE_HEROIC: 'Empowering, dominant, larger-than-life performer presence.',
+                        HIGH_ANGLE_VULNERABLE: 'Introspective, delicate, diminishing, or contemplative mood.',
+                        DUTCH_TILT_TENSION: 'Stylized canted frame introducing psychological tension or disorientation.',
+                        OVERHEAD_GOD_VIEW: 'Birdseye perspective revealing stage geometry or spatial detachment.',
+                        POINT_OF_VIEW: 'Immersive subjective perspective placing the audience directly in the performer space.',
+                    },
+                },
+                jump_violation: {
+                    type: 'noul' as const,
+                    instructions: 'Do the recent cuts suffer from an unmotivated jump-cut angle clash (e.g. repeated same angle or <30 degree shift)?',
+                },
+                diversity_score: {
+                    type: 'score' as const,
+                    instructions: 'Rate the cinematic composition diversity and angle progression from 1 (flat/monotonous) to 5 (masterful dynamic variety).',
+                    levels: {
+                        1: 'Monotonous single-angle stagnation.',
+                        2: 'Predictable cuts with repetitive angle usage.',
+                        3: 'Standard competent multi-camera coverage.',
+                        4: 'Dynamic, engaging variation that elevates pacing.',
+                        5: 'Masterful cinematic rhythm with purposeful psychological angle shifts.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const angAns = ans?.next_angle as { choice?: unknown } | undefined;
+        const jumpAns = ans?.jump_violation as { noul?: unknown } | number | undefined;
+        const divAns = ans?.diversity_score as { score?: unknown } | number | undefined;
+
+        const resolvedAngle = (typeof angAns?.choice === 'string' ? angAns.choice : fallbackNextAngle) as ShotAngle;
+        const jumpProb = typeof jumpAns === 'number'
+            ? jumpAns
+            : Number((jumpAns as { noul?: unknown })?.noul ?? (hasJumpAngleViolation ? 0.85 : 0.15));
+        const resolvedDiversity = typeof divAns === 'number'
+            ? divAns
+            : Number((divAns as { score?: unknown })?.score ?? fallbackDiversityScore);
+
+        return {
+            recommendedNextAngle: resolvedAngle,
+            hasJumpAngleViolation: jumpProb >= 0.5,
+            compositionDiversityScore: Math.max(1, Math.min(5, Math.round(resolvedDiversity) || fallbackDiversityScore)),
+            cinematicNotes: `System One camera direction: next shot ${resolvedAngle} (diversity: ${resolvedDiversity}/5).`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'camera angle continuity judgment');
+        return {
+            recommendedNextAngle: fallbackNextAngle,
+            hasJumpAngleViolation,
+            compositionDiversityScore: fallbackDiversityScore,
+            cinematicNotes: `Fallback camera direction: next shot ${fallbackNextAngle}.`,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 48: Video Color Grade & Lighting Mood Alignment (consumer: Creative Studio / Video)
+// ---------------------------------------------------------------------------
+
+export type ColorGradePreset =
+    | 'TEAL_AND_ORANGE_BLOCKBUSTER'
+    | 'NEON_CYBER_NOCTURNE'
+    | 'WARM_GOLDEN_HOUR'
+    | 'DESATURATED_GRITTY_NOIR'
+    | 'PASTEL_DREAM_POP'
+    | 'VINTAGE_SEPIA_VINYL';
+
+export interface VideoColorGradeInput {
+    trackTitle: string;
+    genre: string;
+    energyLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'EXPLOSIVE';
+    moodTags: string[];
+    intendedVibe: string;
+}
+
+export interface VideoColorGradeVerdict {
+    recommendedPreset: ColorGradePreset;
+    clashingGradeHazard: boolean;
+    aestheticSynergyScore: number; // 1 to 5
+    lutDescription: string;
+}
+
+/**
+ * TypeSafe System One (Jev) video color grading matcher:
+ * Maps music acoustic profile, genre, and emotional vibe to professional color grades and 3D LUT aesthetics.
+ */
+export async function judgeVideoColorGradeMood(
+    input: VideoColorGradeInput
+): Promise<VideoColorGradeVerdict> {
+    const genre = input.genre.toLowerCase();
+    const vibe = input.intendedVibe.toLowerCase();
+    const moods = input.moodTags.map(m => m.toLowerCase());
+
+    let fallbackPreset: ColorGradePreset = 'WARM_GOLDEN_HOUR';
+    if (genre.includes('synth') || genre.includes('electronic') || vibe.includes('cyber') || vibe.includes('club')) {
+        fallbackPreset = 'NEON_CYBER_NOCTURNE';
+    } else if (genre.includes('hip-hop') || genre.includes('trap') || genre.includes('rock') || vibe.includes('gritty') || vibe.includes('dark')) {
+        fallbackPreset = 'DESATURATED_GRITTY_NOIR';
+    } else if (genre.includes('pop') || genre.includes('indie') || vibe.includes('dream') || vibe.includes('pastel')) {
+        fallbackPreset = 'PASTEL_DREAM_POP';
+    } else if (genre.includes('jazz') || genre.includes('soul') || genre.includes('vintage') || vibe.includes('vinyl') || vibe.includes('retro')) {
+        fallbackPreset = 'VINTAGE_SEPIA_VINYL';
+    } else if (input.energyLevel === 'HIGH' || input.energyLevel === 'EXPLOSIVE') {
+        fallbackPreset = 'TEAL_AND_ORANGE_BLOCKBUSTER';
+    }
+
+    const fallbackScore = 4;
+    const clashingHazard = (input.energyLevel === 'EXPLOSIVE' && fallbackPreset === 'VINTAGE_SEPIA_VINYL') ||
+        (moods.includes('somber') && fallbackPreset === 'PASTEL_DREAM_POP');
+
+    if (!judgmentsAvailable()) {
+        return {
+            recommendedPreset: fallbackPreset,
+            clashingGradeHazard: clashingHazard,
+            aestheticSynergyScore: fallbackScore,
+            lutDescription: `Deterministic color grade: ${fallbackPreset} aligned with ${input.genre} (${input.energyLevel} energy).`,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                title: input.trackTitle,
+                genre: input.genre,
+                energy: input.energyLevel,
+                moods: input.moodTags.join(', '),
+                vibe: input.intendedVibe.slice(0, 200),
+            },
+            questions: {
+                preset: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Select the optimal cinematic color grade preset to visually express this music track: ' +
+                        'TEAL_AND_ORANGE_BLOCKBUSTER, NEON_CYBER_NOCTURNE, WARM_GOLDEN_HOUR, ' +
+                        'DESATURATED_GRITTY_NOIR, PASTEL_DREAM_POP, or VINTAGE_SEPIA_VINYL.',
+                    criteria: {
+                        TEAL_AND_ORANGE_BLOCKBUSTER: 'High contrast, rich skin tones against deep teal shadows; commercial, punchy, cinematic.',
+                        NEON_CYBER_NOCTURNE: 'Electric cyan, magenta, and deep indigo night palette; synthwave, club, techno aesthetic.',
+                        WARM_GOLDEN_HOUR: 'Soft amber highlights, glowing golden warmth, organic naturalistic film stock for indie/acoustic.',
+                        DESATURATED_GRITTY_NOIR: 'High-contrast monochrome or near-monochrome with deep blacks; aggressive hip-hop, metal, or crime noir.',
+                        PASTEL_DREAM_POP: 'Ethereal washed pastel highlights, soft contrast, dreamlike nostalgic haze.',
+                        VINTAGE_SEPIA_VINYL: 'Analog 16mm warm sepia, rolled-off shadows, retro soul and jazz vinyl warmth.',
+                    },
+                },
+                clash_hazard: {
+                    type: 'noul' as const,
+                    instructions: 'Does this proposed color aesthetic create a jarring emotional clash with the track BPM, genre, and lyric mood?',
+                },
+                synergy_score: {
+                    type: 'score' as const,
+                    instructions: 'Score the aesthetic synergy between the music track and the chosen color palette from 1 (severe mismatch) to 5 (audiovisual perfection).',
+                    levels: {
+                        1: 'Jarring emotional dissonance.',
+                        2: 'Generic or slightly mismatched tone.',
+                        3: 'Standard fitting genre palette.',
+                        4: 'Compelling evocative mood alignment.',
+                        5: 'Profound audiovisual lock that elevates listener emotional immersion.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const preAns = ans?.preset as { choice?: unknown } | undefined;
+        const claAns = ans?.clash_hazard as { noul?: unknown } | number | undefined;
+        const synAns = ans?.synergy_score as { score?: unknown } | number | undefined;
+
+        const resolvedPreset = (typeof preAns?.choice === 'string' ? preAns.choice : fallbackPreset) as ColorGradePreset;
+        const clashProb = typeof claAns === 'number'
+            ? claAns
+            : Number((claAns as { noul?: unknown })?.noul ?? (clashingHazard ? 0.75 : 0.1));
+        const resolvedSynergy = typeof synAns === 'number'
+            ? synAns
+            : Number((synAns as { score?: unknown })?.score ?? fallbackScore);
+
+        return {
+            recommendedPreset: resolvedPreset,
+            clashingGradeHazard: clashProb >= 0.5,
+            aestheticSynergyScore: Math.max(1, Math.min(5, Math.round(resolvedSynergy) || fallbackScore)),
+            lutDescription: `System One color grade: ${resolvedPreset} (synergy score: ${resolvedSynergy}/5).`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'video color grade mood judgment');
+        return {
+            recommendedPreset: fallbackPreset,
+            clashingGradeHazard: clashingHazard,
+            aestheticSynergyScore: fallbackScore,
+            lutDescription: `Fallback color grade: ${fallbackPreset} for ${input.trackTitle}.`,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 49: Statement Catalog Disambiguation (consumer: Finance / Foundry)
+// ---------------------------------------------------------------------------
+
+export interface CatalogTrackCandidate {
+    trackId: string;
+    isrc: string;
+    title: string;
+    artist: string;
+    versionType?: string;
+}
+
+export interface StatementTrackLine {
+    statementLineId: string;
+    rawTitle: string;
+    rawArtist: string;
+    rawIsrc?: string;
+    distributor: string;
+    revenue: number;
+}
+
+export interface StatementDisambiguationVerdict {
+    matchedTrackId: string | null;
+    isUnmatched: boolean;
+    isMasterRecordingCertain: boolean;
+    matchConfidenceScore: number; // 1 to 5
+    resolutionNotes: string;
+}
+
+/**
+ * TypeSafe System One (Jev) royalty statement track disambiguator:
+ * Resolves malformed ISRCs, missing UPCs, and title variants in distributor CSV statements to catalog tracks.
+ */
+export async function judgeStatementCatalogDisambiguation(
+    line: StatementTrackLine,
+    candidates: CatalogTrackCandidate[]
+): Promise<StatementDisambiguationVerdict> {
+    if (!candidates || candidates.length === 0) {
+        return {
+            matchedTrackId: null,
+            isUnmatched: true,
+            isMasterRecordingCertain: false,
+            matchConfidenceScore: 1,
+            resolutionNotes: 'No catalog candidates provided for matching.',
+        };
+    }
+
+    const cleanRaw = line.rawTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let fallbackMatch: CatalogTrackCandidate | null = null;
+
+    // Direct ISRC match first
+    if (line.rawIsrc) {
+        const isrcMatch = candidates.find(c => c.isrc.replace(/[^a-z0-9]/gi, '').toLowerCase() === line.rawIsrc?.replace(/[^a-z0-9]/gi, '').toLowerCase());
+        if (isrcMatch) fallbackMatch = isrcMatch;
+    }
+
+    // Substring / Normalized title match second
+    if (!fallbackMatch) {
+        for (const candidate of candidates) {
+            const cleanCand = candidate.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (cleanRaw === cleanCand || cleanRaw.includes(cleanCand) || cleanCand.includes(cleanRaw)) {
+                fallbackMatch = candidate;
+                break;
+            }
+        }
+    }
+
+    const fallbackUnmatched = fallbackMatch === null;
+    const fallbackScore = fallbackMatch ? 4 : 1;
+    const fallbackCertainty = fallbackMatch !== null;
+
+    if (!judgmentsAvailable()) {
+        return {
+            matchedTrackId: fallbackMatch ? fallbackMatch.trackId : null,
+            isUnmatched: fallbackUnmatched,
+            isMasterRecordingCertain: fallbackCertainty,
+            matchConfidenceScore: fallbackScore,
+            resolutionNotes: fallbackMatch
+                ? `Deterministic match to ${fallbackMatch.title} (${fallbackMatch.isrc}).`
+                : `Unmatched statement line "${line.rawTitle}" by "${line.rawArtist}".`,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const candidateOptions: Record<string, string> = {
+            UNMATCHED: 'None of the catalog tracks match this statement line.',
+        };
+        candidates.slice(0, 10).forEach(c => {
+            candidateOptions[c.trackId] = `Track: "${c.title}" by "${c.artist}" | ISRC: ${c.isrc} | Version: ${c.versionType || 'Original'}`;
+        });
+
+        const result = await judgeFn({
+            state: {
+                rawTitle: line.rawTitle,
+                rawArtist: line.rawArtist,
+                rawIsrc: line.rawIsrc || 'MISSING',
+                distributor: line.distributor,
+                revenue: line.revenue,
+            },
+            questions: {
+                match: {
+                    type: 'choice' as const,
+                    instructions:
+                        'A distributor royalty statement line contains transaction metadata. ' +
+                        'Select the ONE catalog track candidate that corresponds to this royalty line, or select UNMATCHED.',
+                    criteria: candidateOptions,
+                },
+                master_certainty: {
+                    type: 'noul' as const,
+                    instructions: 'Is it highly certain this transaction represents the authorized primary master recording rather than an unauthorized remix or bootleg?',
+                },
+                confidence_score: {
+                    type: 'score' as const,
+                    instructions: 'Rate the confidence of this catalog match from 1 (unmatched/guess) to 5 (ironclad metadata lock).',
+                    levels: {
+                        1: 'No match or wild guess.',
+                        2: 'Plausible title similarity with conflicting artist/version.',
+                        3: 'Good match with minor title suffix differences (e.g. Club Mix / Radio Edit).',
+                        4: 'Strong title and artist match with corroborating distributor reporting.',
+                        5: 'Perfect match with identical ISRC, title, and artist.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const matAns = ans?.match as { choice?: unknown } | undefined;
+        const cerAns = ans?.master_certainty as { noul?: unknown } | number | undefined;
+        const conAns = ans?.confidence_score as { score?: unknown } | number | undefined;
+
+        const resolvedChoice = typeof matAns?.choice === 'string' ? matAns.choice : (fallbackMatch ? fallbackMatch.trackId : 'UNMATCHED');
+        const isMatched = resolvedChoice !== 'UNMATCHED' && candidates.some(c => c.trackId === resolvedChoice);
+        const cerProb = typeof cerAns === 'number'
+            ? cerAns
+            : Number((cerAns as { noul?: unknown })?.noul ?? (fallbackCertainty ? 0.9 : 0.1));
+        const resolvedConf = typeof conAns === 'number'
+            ? conAns
+            : Number((conAns as { score?: unknown })?.score ?? fallbackScore);
+
+        return {
+            matchedTrackId: isMatched ? resolvedChoice : null,
+            isUnmatched: !isMatched,
+            isMasterRecordingCertain: cerProb >= 0.5,
+            matchConfidenceScore: Math.max(1, Math.min(5, Math.round(resolvedConf) || fallbackScore)),
+            resolutionNotes: isMatched
+                ? `System One resolved "${line.rawTitle}" to track ID ${resolvedChoice} (confidence: ${resolvedConf}/5).`
+                : `System One classified "${line.rawTitle}" as UNMATCHED to catalog.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'statement catalog disambiguation judgment');
+        return {
+            matchedTrackId: fallbackMatch ? fallbackMatch.trackId : null,
+            isUnmatched: fallbackUnmatched,
+            isMasterRecordingCertain: fallbackCertainty,
+            matchConfidenceScore: fallbackScore,
+            resolutionNotes: fallbackMatch
+                ? `Fallback match to ${fallbackMatch.title} (${fallbackMatch.isrc}).`
+                : `Fallback: unable to resolve "${line.rawTitle}".`,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 50: Split Sheet Rights Clearance (consumer: Legal / SplitSheetEscrow)
+// ---------------------------------------------------------------------------
+
+export type RightsStreamType =
+    | 'MASTER_SOUND_RECORDING_ONLY'
+    | 'COMPOSITION_PUBLISHING_ONLY'
+    | 'BOTH_EQUAL_SYNCED'
+    | 'AMBIGUOUS_HIGH_DISPUTE_RISK';
+
+export interface SplitAgreementInput {
+    trackTitle: string;
+    collaboratorName: string;
+    role: 'PRODUCER' | 'FEATURED_ARTIST' | 'SONGWRITER' | 'MIX_ENGINEER' | 'TOPLINER';
+    claimedPercentage: number;
+    hasWrittenProducerAgreement: boolean;
+    notes?: string;
+}
+
+export interface SplitClearanceVerdict {
+    rightsStream: RightsStreamType;
+    requiresProducerAgreementBeforeRelease: boolean;
+    disputeResistanceScore: number; // 1 to 5
+    legalAdvisoryBlurb: string;
+}
+
+/**
+ * TypeSafe System One (Jev) split sheet rights auditor:
+ * Validates collaboration agreements, enforces master vs publishing separation,
+ * and ensures producer work-for-hire contracts are in place before release.
+ */
+export async function judgeSplitSheetRightsClearance(
+    input: SplitAgreementInput
+): Promise<SplitClearanceVerdict> {
+    let fallbackStream: RightsStreamType = 'BOTH_EQUAL_SYNCED';
+    let fallbackRequiresProducerAgreement = false;
+    let fallbackScore = 4;
+
+    if (input.role === 'SONGWRITER' || input.role === 'TOPLINER') {
+        fallbackStream = 'COMPOSITION_PUBLISHING_ONLY';
+        fallbackScore = 4;
+    } else if (input.role === 'MIX_ENGINEER') {
+        fallbackStream = 'MASTER_SOUND_RECORDING_ONLY';
+        fallbackScore = 4;
+    } else if (input.role === 'PRODUCER') {
+        if (!input.hasWrittenProducerAgreement) {
+            fallbackStream = 'AMBIGUOUS_HIGH_DISPUTE_RISK';
+            fallbackRequiresProducerAgreement = true;
+            fallbackScore = 2;
+        } else {
+            fallbackStream = 'BOTH_EQUAL_SYNCED';
+            fallbackRequiresProducerAgreement = false;
+            fallbackScore = 5;
+        }
+    } else if (input.role === 'FEATURED_ARTIST') {
+        fallbackStream = 'MASTER_SOUND_RECORDING_ONLY';
+        fallbackScore = 4;
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            rightsStream: fallbackStream,
+            requiresProducerAgreementBeforeRelease: fallbackRequiresProducerAgreement,
+            disputeResistanceScore: fallbackScore,
+            legalAdvisoryBlurb: fallbackRequiresProducerAgreement
+                ? `CRITICAL LEGAL RISK: ${input.collaboratorName} is listed as PRODUCER without a signed Producer Agreement or Work-for-Hire release.`
+                : `Deterministic rights clearance: ${input.collaboratorName} assigned to ${fallbackStream} (${input.claimedPercentage}%).`,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                title: input.trackTitle,
+                collaborator: input.collaboratorName,
+                role: input.role,
+                share: input.claimedPercentage,
+                hasWrittenAgreement: input.hasWrittenProducerAgreement,
+                notes: input.notes || 'None provided',
+            },
+            questions: {
+                rights_stream: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Classify the legal intellectual property rights stream applicable to this collaborator share: ' +
+                        'MASTER_SOUND_RECORDING_ONLY, COMPOSITION_PUBLISHING_ONLY, BOTH_EQUAL_SYNCED, or AMBIGUOUS_HIGH_DISPUTE_RISK.',
+                    criteria: {
+                        MASTER_SOUND_RECORDING_ONLY: 'Applies exclusively to digital master streaming payouts, sound recording sync, and distributor revenue.',
+                        COMPOSITION_PUBLISHING_ONLY: 'Applies exclusively to underlying songwriting, PRO performance royalties (ASCAP/BMI), and mechanicals (MLC).',
+                        BOTH_EQUAL_SYNCED: 'Explicit equal share across both sound recording master and composition publishing.',
+                        AMBIGUOUS_HIGH_DISPUTE_RISK: 'Vague or conflicting terms that risk legal disputes over ownership or publishing claims.',
+                    },
+                },
+                needs_contract: {
+                    type: 'noul' as const,
+                    instructions: 'Is a formal signed Producer Agreement or Work-for-Hire copyright assignment contract required before this song can be safely released?',
+                },
+                dispute_score: {
+                    type: 'score' as const,
+                    instructions: 'Rate the dispute resistance and legal clarity of this split arrangement from 1 (severe dispute trap) to 5 (airtight legal clarity).',
+                    levels: {
+                        1: 'Severe dispute trap; missing critical release agreements or ambiguous ownership.',
+                        2: 'High risk of publishing claim conflicts or royalty clawbacks.',
+                        3: 'Standard informal split sheet with baseline risk.',
+                        4: 'Clear role delineation with documented agreed shares.',
+                        5: 'Airtight documentation with signed work-for-hire releases and verified PRO credentials.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const rigAns = ans?.rights_stream as { choice?: unknown } | undefined;
+        const conAns = ans?.needs_contract as { noul?: unknown } | number | undefined;
+        const disAns = ans?.dispute_score as { score?: unknown } | number | undefined;
+
+        const resolvedStream = (typeof rigAns?.choice === 'string' ? rigAns.choice : fallbackStream) as RightsStreamType;
+        const needsContractProb = typeof conAns === 'number'
+            ? conAns
+            : Number((conAns as { noul?: unknown })?.noul ?? (fallbackRequiresProducerAgreement ? 0.9 : 0.1));
+        const resolvedDispute = typeof disAns === 'number'
+            ? disAns
+            : Number((disAns as { score?: unknown })?.score ?? fallbackScore);
+
+        return {
+            rightsStream: resolvedStream,
+            requiresProducerAgreementBeforeRelease: needsContractProb >= 0.5,
+            disputeResistanceScore: Math.max(1, Math.min(5, Math.round(resolvedDispute) || fallbackScore)),
+            legalAdvisoryBlurb: needsContractProb >= 0.5
+                ? `Legal advisory: Producer agreement required for ${input.collaboratorName} prior to DSP delivery (dispute score: ${resolvedDispute}/5).`
+                : `System One cleared ${input.collaboratorName} for ${resolvedStream} at ${input.claimedPercentage}%.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'split sheet rights clearance judgment');
+        return {
+            rightsStream: fallbackStream,
+            requiresProducerAgreementBeforeRelease: fallbackRequiresProducerAgreement,
+            disputeResistanceScore: fallbackScore,
+            legalAdvisoryBlurb: `Fallback legal guidance for ${input.collaboratorName}: ${fallbackStream}.`,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 51: Universal Module Error Diagnosis & Self-Healing (consumer: ModuleErrorBoundary)
+// ---------------------------------------------------------------------------
+
+export type SelfHealingAction =
+    | 'RETRY_NETWORK'
+    | 'RELOAD_MODULE_CACHE'
+    | 'REGENERATE_ASSET'
+    | 'SWITCH_AUDIO_OUTPUT'
+    | 'SAFE_FALLBACK_RENDER'
+    | 'CONTACT_SUPPORT';
+
+export interface AppErrorDiagnosticInput {
+    moduleName: string;
+    errorMessage: string;
+    errorStackSnippet?: string;
+    isOffline: boolean;
+}
+
+export interface ErrorRemediationVerdict {
+    remedyAction: SelfHealingAction;
+    isTransient: boolean;
+    severityScore: number; // 1 to 5
+    artistFriendlyExplanation: string;
+    actionButtonText: string;
+}
+
+/**
+ * TypeSafe System One (Jev) universal error diagnosis and self-healing action router:
+ * Translates raw JavaScript exceptions and audio pipeline crashes into plain-English artist explanations
+ * and actionable 1-click self-healing remediation buttons.
+ */
+export async function judgeUniversalErrorRemediation(
+    input: AppErrorDiagnosticInput
+): Promise<ErrorRemediationVerdict> {
+    const err = input.errorMessage.toLowerCase();
+    const stack = (input.errorStackSnippet || '').toLowerCase();
+
+    let fallbackAction: SelfHealingAction = 'SAFE_FALLBACK_RENDER';
+    let fallbackTransient = true;
+    let fallbackSeverity = 3;
+    let fallbackExpl = 'An unexpected studio glitch occurred. We can reset the workspace safely without losing your work.';
+    let fallbackBtn = 'Reset Workspace';
+
+    if (input.isOffline || err.includes('network') || err.includes('fetch') || err.includes('timeout') || err.includes('503') || err.includes('500')) {
+        fallbackAction = 'RETRY_NETWORK';
+        fallbackTransient = true;
+        fallbackSeverity = 2;
+        fallbackExpl = 'A momentary network connection interruption stopped this action from reaching the cloud.';
+        fallbackBtn = 'Retry Connection';
+    } else if (err.includes('audio') || err.includes('webaudio') || err.includes('buffer') || err.includes('samplerate') || stack.includes('audio')) {
+        fallbackAction = 'SWITCH_AUDIO_OUTPUT';
+        fallbackTransient = true;
+        fallbackSeverity = 3;
+        fallbackExpl = 'The browser audio engine encountered a sample-rate or device conflict.';
+        fallbackBtn = 'Restart Audio Engine';
+    } else if (err.includes('webgl') || err.includes('canvas') || err.includes('image') || err.includes('texture') || err.includes('corrupt')) {
+        fallbackAction = 'REGENERATE_ASSET';
+        fallbackTransient = true;
+        fallbackSeverity = 3;
+        fallbackExpl = 'The visual render engine stumbled on an incomplete or corrupt graphic asset.';
+        fallbackBtn = 'Regenerate Asset';
+    } else if (err.includes('quota') || err.includes('storage') || err.includes('cache') || err.includes('memory') || err.includes('out of')) {
+        fallbackAction = 'RELOAD_MODULE_CACHE';
+        fallbackTransient = true;
+        fallbackSeverity = 3;
+        fallbackExpl = 'Local browser memory or cache reached capacity for this module.';
+        fallbackBtn = 'Clear Module Cache';
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            remedyAction: fallbackAction,
+            isTransient: fallbackTransient,
+            severityScore: fallbackSeverity,
+            artistFriendlyExplanation: fallbackExpl,
+            actionButtonText: fallbackBtn,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                module: input.moduleName,
+                error: input.errorMessage.slice(0, 300),
+                stack: (input.errorStackSnippet || '').slice(0, 300),
+                offline: input.isOffline,
+            },
+            questions: {
+                remedy: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Select the ONE most effective 1-click self-healing remedy action for the artist: ' +
+                        'RETRY_NETWORK, RELOAD_MODULE_CACHE, REGENERATE_ASSET, SWITCH_AUDIO_OUTPUT, ' +
+                        'SAFE_FALLBACK_RENDER, or CONTACT_SUPPORT.',
+                    criteria: {
+                        RETRY_NETWORK: 'Temporary connectivity drop, cloud API timeout, or offline state.',
+                        RELOAD_MODULE_CACHE: 'Corrupt local browser cache, stale Zustand slice, or memory accumulation.',
+                        REGENERATE_ASSET: 'Visual canvas crash, unreadable texture, or corrupt media buffer.',
+                        SWITCH_AUDIO_OUTPUT: 'WebAudio hardware mismatch, sample-rate buffer lock, or muted DAC.',
+                        SAFE_FALLBACK_RENDER: 'Complex UI state deadlock recoverable by safe default container render.',
+                        CONTACT_SUPPORT: 'Unrecoverable security rule or database schema permission denial.',
+                    },
+                },
+                transient: {
+                    type: 'noul' as const,
+                    instructions: 'Is this error transient and safely recoverable without permanent loss of artist project data?',
+                },
+                severity_score: {
+                    type: 'score' as const,
+                    instructions: 'Rate the severity and workflow disruption of this crash from 1 (minor cosmetic hiccup) to 5 (catastrophic blocking crash).',
+                    levels: {
+                        1: 'Minor cosmetic glitch with zero data risk.',
+                        2: 'Transient network blip that resolves automatically.',
+                        3: 'Module halted but unblockable with single action button.',
+                        4: 'Significant workflow blockage requiring workspace reload.',
+                        5: 'Catastrophic project failure requiring support intervention.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const remAns = ans?.remedy as { choice?: unknown } | undefined;
+        const traAns = ans?.transient as { noul?: unknown } | number | undefined;
+        const sevAns = ans?.severity_score as { score?: unknown } | number | undefined;
+
+        const resolvedAction = (typeof remAns?.choice === 'string' ? remAns.choice : fallbackAction) as SelfHealingAction;
+        const traProb = typeof traAns === 'number'
+            ? traAns
+            : Number((traAns as { noul?: unknown })?.noul ?? (fallbackTransient ? 0.9 : 0.2));
+        const resolvedSev = typeof sevAns === 'number'
+            ? sevAns
+            : Number((sevAns as { score?: unknown })?.score ?? fallbackSeverity);
+
+        const actionButtons: Record<SelfHealingAction, string> = {
+            RETRY_NETWORK: 'Retry Connection',
+            RELOAD_MODULE_CACHE: 'Clear Cache & Reload',
+            REGENERATE_ASSET: 'Regenerate Asset',
+            SWITCH_AUDIO_OUTPUT: 'Restart Audio Engine',
+            SAFE_FALLBACK_RENDER: 'Reset to Safe View',
+            CONTACT_SUPPORT: 'Contact Support',
+        };
+
+        return {
+            remedyAction: resolvedAction,
+            isTransient: traProb >= 0.5,
+            severityScore: Math.max(1, Math.min(5, Math.round(resolvedSev) || fallbackSeverity)),
+            artistFriendlyExplanation: `System One diagnosed ${input.moduleName}: ${resolvedAction} recommended (severity: ${resolvedSev}/5).`,
+            actionButtonText: actionButtons[resolvedAction] || fallbackBtn,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'universal error remediation judgment');
+        return {
+            remedyAction: fallbackAction,
+            isTransient: fallbackTransient,
+            severityScore: fallbackSeverity,
+            artistFriendlyExplanation: fallbackExpl,
+            actionButtonText: fallbackBtn,
+        };
+    }
+}
