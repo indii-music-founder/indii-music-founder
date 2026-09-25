@@ -13,10 +13,16 @@ import {
     judgeVideoReshootRequirement,
     judgeSessionChunkTriage,
     judgeMusicVideoContinuity,
+    judgeCameraAngleContinuity,
+    judgeVideoColorGradeMood,
     type SessionChunkEvidence,
     type ChunkTriageVerdict,
     type VideoCutCandidate,
     type ContinuityVerdict,
+    type CameraAngleCut,
+    type CameraAngleVerdict,
+    type VideoColorGradeInput,
+    type VideoColorGradeVerdict,
 } from '@/config/typesafeJudgments';
 
 export class VideoDirector {
@@ -183,5 +189,19 @@ export class VideoDirector {
      */
     static async auditVideoContinuity(cuts: VideoCutCandidate[]): Promise<ContinuityVerdict> {
         return judgeMusicVideoContinuity(cuts);
+    }
+
+    /**
+     * Audit camera angle transitions across cut sequence to prevent jump-cut clashes and ensure dynamic coverage (Judgment 47).
+     */
+    static async auditCameraAngleContinuity(cuts: CameraAngleCut[]): Promise<CameraAngleVerdict> {
+        return judgeCameraAngleContinuity(cuts);
+    }
+
+    /**
+     * Recommend optimal cinematic color grade / 3D LUT aesthetic for song mood and genre (Judgment 48).
+     */
+    static async recommendColorGrade(input: VideoColorGradeInput): Promise<VideoColorGradeVerdict> {
+        return judgeVideoColorGradeMood(input);
     }
 }
