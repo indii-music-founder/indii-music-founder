@@ -114,7 +114,19 @@ export const ConnectedIntelligenceResultSchema = z.object({
 }).strict();
 export type ConnectedIntelligenceResult = z.infer<typeof ConnectedIntelligenceResultSchema>;
 
-const SUPPORTED_EVENT_TYPES = new Set(['release.planned']);
+const SUPPORTED_EVENT_TYPES = new Set([
+  'release.planned',
+  'release.live',
+  'delivery.status_changed',
+  'registration.confirmed',
+  'registration.status_changed',
+  'claim.received',
+  'claim.status_changed',
+  'usage.reported',
+  'platform.connection_changed',
+  'catalog.state_changed',
+  'identity.conflict_detected',
+]);
 const EVALUATED_DIMENSIONS: ConnectedIntelligenceResult['evaluatedDimensions'] = [
   'EVENT', 'ARTIST_CONTEXT', 'MUSIC_IDENTITY', 'RELATIONSHIPS', 'RIGHTS', 'REGISTRATIONS', 'TERRITORY_PLATFORM',
 ];
@@ -158,7 +170,21 @@ export function evaluateConnectedIntelligence(input: ConnectedIntelligenceInput)
     });
   }
 
-  const releaseRef = parsed.event.subject;
+  const releaseRefs = [parsed.event.subject, ...parsed.event.relatedEntities]
+    .filter(reference => reference.entityType === 'release');
+  if (releaseRefs.length !== 1) {
+    return ConnectedIntelligenceResultSchema.parse({
+      schemaVersion: 'connected-intelligence.v1',
+      sourceEventId: parsed.event.eventId,
+      status: 'NOT_EVALUATED',
+      evaluatedDimensions: ['EVENT'],
+      actions: [],
+      explanation: `Event ${parsed.event.eventType} identifies ${releaseRefs.length} canonical releases; exactly one affected release is required, so no readiness conclusion was made.`,
+      evaluatedAt: parsed.evaluatedAt,
+    });
+  }
+  const releaseRef = releaseRefs[0]!;
+
   const entityById = new Map(parsed.entities.map(entity => [entity.id, entity]));
   const release = entityById.get(releaseRef.entityId);
   if (!release || release.entityType !== 'release') {

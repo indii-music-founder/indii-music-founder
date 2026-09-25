@@ -17,7 +17,14 @@ const eventTypes: MusicDomainEventType[] = [
   'performance.planned',
   'satellite_play.detected',
   'claim.received',
+  'claim.status_changed',
   'registration.confirmed',
+  'registration.status_changed',
+  'delivery.status_changed',
+  'usage.reported',
+  'platform.connection_changed',
+  'catalog.state_changed',
+  'identity.conflict_detected',
   'catalog.migration.started',
   'catalog.migration.completed',
 ];
@@ -123,7 +130,7 @@ describe('music domain event contract', () => {
   it.each(Object.entries(MUSIC_DOMAIN_EVENT_SUBJECT_TYPES).map(([eventType, allowedTypes]) => [
     eventType,
     allowedTypes![0],
-    allowedTypes!.includes('asset') ? 'release' : 'asset',
+    MusicEventEntityTypeSchema.options.find(entityType => !allowedTypes!.includes(entityType))!,
   ] as const))('%s rejects a subject with the wrong canonical entity type', (eventType, _allowedType, entityType) => {
     expect(() => MusicDomainEventSchema.parse(event({
       eventType,
@@ -157,5 +164,17 @@ describe('music domain event contract', () => {
     const parsed = MusicDomainEventSchema.parse(event({ eventType: 'claim.received' }));
     expect(parsed.provenance.state).toBe('DETECTED');
     expect(parsed.provenance.state).not.toBe('EXTERNAL_VERIFIED');
+  });
+
+  it('treats monitoring vocabulary as observations tied to canonical subjects, not authoritative updates', () => {
+    const monitoredEvents: MusicDomainEventType[] = [
+      'delivery.status_changed', 'registration.status_changed', 'claim.status_changed',
+      'usage.reported', 'platform.connection_changed', 'catalog.state_changed', 'identity.conflict_detected',
+    ];
+    for (const eventType of monitoredEvents) {
+      const parsed = MusicDomainEventSchema.parse(event({ eventType }));
+      expect(parsed.provenance.state).toBe('DETECTED');
+      expect(parsed.subject.entityId).toMatch(/internal/);
+    }
   });
 });
