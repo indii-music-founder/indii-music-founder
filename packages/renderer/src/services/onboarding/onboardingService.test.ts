@@ -428,5 +428,44 @@ describe('onboardingService', () => {
             expect(inlineAudioPart.inlineData.mimeType).toBe('audio/mpeg');
             expect(inlineAudioPart.inlineData.data).toBe('ZmFrZS1hdWRpby1ieXRlcw==');
         });
+
+        it('passes local PDF extraction provenance to the connected model without upgrading it to verified', async () => {
+            vi.mocked(AI.generateContent).mockResolvedValue({
+                response: {
+                    text: () => 'I read the document.',
+                    functionCalls: () => [],
+                    candidates: [{ content: { parts: [{ text: 'I read the document.' }] } }],
+                },
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
+
+            const document: ConversationFile = {
+                id: 'pdf-1',
+                type: 'document',
+                file: { name: 'press-kit.pdf', type: 'application/pdf' } as File,
+                preview: '',
+                content: 'The artist has a release next month.',
+                contentProvenance: {
+                    state: 'DETECTED',
+                    sourceType: 'SYSTEM',
+                    sourceId: 'local-pdf-text-extraction',
+                    evidence: [],
+                    observedAt: '2026-09-25T00:00:00.000Z',
+                    note: 'Extracted locally; not independently verified.',
+                },
+            };
+
+            await runOnboardingConversation(
+                [{ role: 'user', parts: [{ text: 'Please read my press kit.' }] }],
+                {} as unknown as UserProfile,
+                'onboarding',
+                [document]
+            );
+
+            const [sentContents] = vi.mocked(AI.generateContent).mock.calls[0]!;
+            const lastMessageParts = (sentContents as Array<{ parts: Array<{ text?: string }> }>).at(-1)!.parts;
+            expect(lastMessageParts.map(part => part.text).join('\n')).toContain('provenance: DETECTED');
+            expect(lastMessageParts.map(part => part.text).join('\n')).toContain('not independently verified');
+            expect(lastMessageParts.map(part => part.text).join('\n')).toContain('The artist has a release next month.');
+        });
     });
 });
