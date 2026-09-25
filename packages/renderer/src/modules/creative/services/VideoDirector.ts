@@ -9,7 +9,21 @@ import { resolveStorageUri } from '@/services/storage/storageUri';
 import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 
-import { judgeVideoReshootRequirement } from '@/config/typesafeJudgments';
+import {
+    judgeVideoReshootRequirement,
+    judgeSessionChunkTriage,
+    judgeMusicVideoContinuity,
+    judgeCameraAngleContinuity,
+    judgeVideoColorGradeMood,
+    type SessionChunkEvidence,
+    type ChunkTriageVerdict,
+    type VideoCutCandidate,
+    type ContinuityVerdict,
+    type CameraAngleCut,
+    type CameraAngleVerdict,
+    type VideoColorGradeInput,
+    type VideoColorGradeVerdict,
+} from '@/config/typesafeJudgments';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -154,5 +168,40 @@ export class VideoDirector {
             logger.error('[VideoDirector] Cloud Function Error:', err);
             return { success: false, error: err instanceof Error ? err.message : 'Video generation failed' };
         }
+    }
+
+    /**
+     * Triage candidate chunks from long session recording into kept takes vs discards (ISSUE-1177 / Session Breakdown).
+     */
+    static async triageSessionChunks(chunks: SessionChunkEvidence[]): Promise<Map<string, ChunkTriageVerdict>> {
+        const verdicts = new Map<string, ChunkTriageVerdict>();
+        await Promise.all(
+            chunks.map(async (chunk) => {
+                const verdict = await judgeSessionChunkTriage(chunk);
+                verdicts.set(chunk.chunkId, verdict);
+            })
+        );
+        return verdicts;
+    }
+
+    /**
+     * Audit editing continuity across assembled video cuts before final render (ISSUE-1178 / Music Video Assembly).
+     */
+    static async auditVideoContinuity(cuts: VideoCutCandidate[]): Promise<ContinuityVerdict> {
+        return judgeMusicVideoContinuity(cuts);
+    }
+
+    /**
+     * Audit camera angle transitions across cut sequence to prevent jump-cut clashes and ensure dynamic coverage (Judgment 47).
+     */
+    static async auditCameraAngleContinuity(cuts: CameraAngleCut[]): Promise<CameraAngleVerdict> {
+        return judgeCameraAngleContinuity(cuts);
+    }
+
+    /**
+     * Recommend optimal cinematic color grade / 3D LUT aesthetic for song mood and genre (Judgment 48).
+     */
+    static async recommendColorGrade(input: VideoColorGradeInput): Promise<VideoColorGradeVerdict> {
+        return judgeVideoColorGradeMood(input);
     }
 }

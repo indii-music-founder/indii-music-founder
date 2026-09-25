@@ -229,4 +229,20 @@ describe('ManufacturingPanel POD checkout flow (ISSUE-1407)', () => {
         expect(mockPODGetOrder).not.toHaveBeenCalled();
         expect(sessionStorage.getItem('podCheckoutOrderId')).toBe('12345');
     });
+
+    it('renders POD print pre-flight viability with contrast rating', async () => {
+        mockGetCatalog.mockResolvedValue([]);
+        render(
+            <ManufacturingPanel
+                theme={THEMES.pro}
+                productType="T-Shirt"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText(/Print Pre-Flight Advisory/i)).toBeInTheDocument();
+            expect(screen.getByText(/Contrast 1\/5/i)).toBeInTheDocument();
+            expect(screen.getByText(/DTG DIRECT TO GARMENT/i)).toBeInTheDocument();
+        });
+    });
 });
