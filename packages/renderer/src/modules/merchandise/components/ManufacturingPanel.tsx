@@ -9,6 +9,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ProductType, CatalogProductSchema } from '../types';
 import { logger } from '@/utils/logger';
+import { judgeMerchPrintViability, type MerchPrintVerdict } from '@/config/typesafeJudgments';
 
 interface ManufacturingPanelProps {
     theme: MerchTheme;
@@ -79,6 +80,33 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
         setPodConfigured(isConfigured);
     }, []);
 
+    // Print-On-Demand Pre-flight Viability (Jev Judgment 44)
+    const [printViability, setPrintViability] = useState<MerchPrintVerdict | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                const verdict = await judgeMerchPrintViability({
+                    productType,
+                    garmentColorName: selectedColor.name,
+                    garmentHex: selectedColor.hex,
+                    artworkDominantHex: '#000000',
+                    isVectorArtwork: true,
+                    designResolutionDpi: 300,
+                });
+                if (mounted) {
+                    setPrintViability(verdict);
+                }
+            } catch (err: unknown) {
+                logger.warn('[ManufacturingPanel] Print viability evaluation failed:', err);
+            }
+        })();
+        return () => {
+            mounted = false;
+        };
+    }, [productType, selectedColor]);
+
     // ISSUE-1407: return trip from Stripe Checkout. The URL param tells us the
     // user's checkout outcome, but CONFIRMATION authority is the Printful
     // order state (the backend flips it only after verified payment). Never
@@ -140,7 +168,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                 if (!mounted) return;
 
                 // Validate catalog items safely
-                const validItems = catalog.filter(item => {
+                const validItems = (catalog || []).filter(item => {
                     const result = CatalogProductSchema.safeParse(item);
                     return result.success;
                 });
@@ -410,6 +438,41 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                         ))}
                     </div>
                 </section>
+
+                {/* Print-On-Demand Pre-flight Viability (Jev Judgment 44) */}
+                {printViability && (
+                    <section>
+                        <div className={`p-3 rounded-xl border transition-colors ${
+                            printViability.isPrintSafe
+                                ? 'bg-green-500/10 border-green-500/30'
+                                : 'bg-amber-500/10 border-amber-500/30'
+                        }`}>
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                    <Zap className={`w-3.5 h-3.5 ${printViability.isPrintSafe ? 'text-green-400' : 'text-amber-400'}`} />
+                                    <span className={printViability.isPrintSafe ? 'text-green-300' : 'text-amber-300'}>
+                                        {printViability.isPrintSafe ? 'Print Pre-Flight: Ready' : 'Print Pre-Flight Advisory'}
+                                    </span>
+                                </span>
+                                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                                    printViability.isPrintSafe
+                                        ? 'bg-green-500/20 text-green-300'
+                                        : 'bg-amber-500/20 text-amber-300'
+                                }`}>
+                                    Contrast {printViability.contrastScore}/5
+                                </span>
+                            </div>
+                            <div className="text-[11px] text-neutral-300 space-y-0.5">
+                                <div>Technique: <span className="font-semibold text-white">{printViability.recommendedTechnique.replace(/_/g, ' ')}</span></div>
+                                {printViability.warningOrGuidance && (
+                                    <p className="text-[10px] text-amber-300 mt-1">
+                                        {printViability.warningOrGuidance}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                )}
 
                 {/* Size Selection */}
                 <section>
