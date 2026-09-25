@@ -226,11 +226,7 @@ Context: ${params.locationContext || "Field capture"} ${params.clientContext ? `
         const client = getVertexAIClient();
         const model = FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST || "gemini-3.8-flash";
 
-        const contents: any[] = [];
-
-        // In a real cloud run, audio/image can be loaded as InlineData or FileData.
-        // For prompt composition:
-        contents.push({ text: prompt });
+        const contents = [{ text: prompt }];
 
         const response = await client.models.generateContent({
             model,
