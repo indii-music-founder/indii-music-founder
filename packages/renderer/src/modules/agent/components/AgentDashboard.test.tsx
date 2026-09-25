@@ -29,10 +29,6 @@ vi.mock('@/core/components/MobileOnlyWarning', () => ({
     MobileOnlyWarning: () => <div>Mobile Warning</div>
 }));
 
-vi.mock('./BrowserAgentTester', () => ({
-    default: () => <div>Browser Agent Tester</div>
-}));
-
 vi.mock('./ScoutMapVisualization', () => ({
     ScoutMapVisualization: () => <div>Map Visualization</div>
 }));
@@ -46,7 +42,6 @@ vi.mock('./AgentSidebar', () => ({
     AgentSidebar: ({ setActiveTab }: { setActiveTab: (t: string) => void }) => (
         <div data-testid="agent-sidebar">
             <button onClick={() => setActiveTab('scout')} title="The Scout">The Scout Tab</button>
-            <button onClick={() => setActiveTab('browser')} title="Browser Agent">Browser Tab</button>
             <button onClick={() => setActiveTab('campaigns')} title="Campaigns">Campaigns Tab</button>
             <button onClick={() => setActiveTab('inbox')} title="Inbox">Inbox Tab</button>
         </div>
@@ -88,13 +83,7 @@ describe('AgentDashboard', () => {
     it('switches tabs correctly', async () => {
         render(<AgentDashboard />);
 
-        // Click Browser Tab (mocked sidebar)
-        const browserButton = screen.getByTitle('Browser Agent');
-        fireEvent.click(browserButton);
-
-        expect(screen.getByText('Browser Agent Tester')).toBeDefined();
-
-        // Click Campaigns Tab
+        // Browser testing was removed from this dashboard; campaigns remain a supported tab.
         const campaignsButton = screen.getByTitle('Campaigns');
         fireEvent.click(campaignsButton);
 

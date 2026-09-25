@@ -76,13 +76,17 @@ describe('RoadAgent', () => {
         );
     });
 
-    it('declares only browser operations implemented by the Electron bridge', () => {
+    it('declares web extraction as a read-only public URL operation', () => {
         const declaration = RoadAgent.tools[0]?.functionDeclarations
             .find(tool => tool.name === 'web_extract');
-        expect(declaration?.parameters.properties.action.enum).toEqual([
-            'navigate', 'extract', 'capture', 'click', 'type', 'scroll', 'wait',
-        ]);
-        expect(declaration?.description).toContain('does not verify routing');
+        expect(declaration?.parameters).toEqual(expect.objectContaining({
+            properties: expect.objectContaining({
+                url: expect.objectContaining({ type: 'STRING' }),
+            }),
+            required: ['url'],
+        }));
+        expect(declaration?.parameters.properties).not.toHaveProperty('action');
+        expect(declaration?.description).toContain('cannot log in, click, type, or submit forms');
     });
 
     it('labels disabled Maps operations as unavailable at the declared Road chat boundary', () => {
