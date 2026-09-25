@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { VideoSessionSchema } from '../../../../shared/src/schemas/sessionMedia';
 import {
     createOwnedVideoSession,
+    createGcsVideoSessionResumableUpload,
     estimateSessionProxyCost,
     projectAllowsVideoSession,
     type PersistedVideoSessionUploadGrant,
@@ -146,6 +147,53 @@ describe('createOwnedVideoSession', () => {
                 throw new HttpsError('permission-denied', 'Project is not available to this owner.');
             },
         })).rejects.toMatchObject({ code: 'permission-denied' });
+    });
+});
+
+describe('createGcsVideoSessionResumableUpload', () => {
+    it('does not request legacy object ACLs for the uniform-access private bucket', async () => {
+        const createResumableUpload = vi.fn(async () => ['https://storage.googleapis.test/upload/resumable-1'] as [string]);
+        const file = { createResumableUpload };
+        const storage = {
+            bucket: vi.fn(() => ({ file: vi.fn(() => file) })),
+        } as unknown as NonNullable<Parameters<typeof createGcsVideoSessionResumableUpload>[0]>;
+        const createUpload = createGcsVideoSessionResumableUpload(storage);
+
+        const uri = await createUpload({
+            bucket: 'private-media-bucket',
+            path: 'session-media/artist-1/session-1/staging/original.mov',
+            contentType: 'video/quicktime',
+            contentLength: 15_074_673,
+            origin: 'https://app.indii.music',
+            metadata: {
+                ownerUid: 'artist-1',
+                organizationId: 'personal',
+                projectId: 'project-1',
+                sessionId: 'session-1',
+                uploadSessionId: 'upload-session-1',
+            },
+        });
+
+        expect(uri).toBe('https://storage.googleapis.test/upload/resumable-1');
+        const options = createResumableUpload.mock.calls[0]?.[0];
+        expect(options).toMatchObject({
+            origin: 'https://app.indii.music',
+            preconditionOpts: { ifGenerationMatch: 0 },
+            metadata: {
+                contentType: 'video/quicktime',
+                contentLength: 15_074_673,
+                cacheControl: 'private, no-store',
+                metadata: {
+                    ownerUid: 'artist-1',
+                    organizationId: 'personal',
+                    projectId: 'project-1',
+                    sessionId: 'session-1',
+                    uploadSessionId: 'upload-session-1',
+                },
+            },
+        });
+        expect(options).not.toHaveProperty('private');
+        expect(options).not.toHaveProperty('predefinedAcl');
     });
 });
 
