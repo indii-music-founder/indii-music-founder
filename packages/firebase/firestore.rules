@@ -2946,6 +2946,40 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Canonical music records are written only through server-side services.
+    // These are separate subcollections (rather than an invalid nested path);
+    // the Admin SDK still enforces domain schemas and catalog scope.
+    match /users/{userId}/musicCatalogEntities/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogRelationships/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogIdentifiers/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogClaims/{recordId} {
+      allow read, write: if false;
+    }
+    match /users/{userId}/musicCatalogEvents/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogEntities/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogRelationships/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogIdentifiers/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogClaims/{recordId} {
+      allow read, write: if false;
+    }
+    match /organizations/{orgId}/musicCatalogEvents/{recordId} {
+      allow read, write: if false;
+    }
+
     // =========================================================================
     // Deny all other access by default
     // =========================================================================

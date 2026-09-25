@@ -1,7 +1,12 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
+import type { CatalogIntelligenceReport } from '@indii/shared';
 import { CatalogRail } from './components/CatalogRail';
+import {
+  CanonicalCatalogIntelligenceSummary,
+  type CanonicalCatalogIntelligenceStatus,
+} from './components/CanonicalCatalogIntelligenceSummary';
 import { RegistrationSheet } from './components/RegistrationSheet';
 import { RegistrationAutonomousRail } from './components/RegistrationAutonomousRail';
 import { FounderReadinessPanel } from './components/FounderReadinessPanel';
@@ -10,6 +15,7 @@ import { ORG_ADAPTERS } from './adapters';
 import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord } from './types';
 import { logger } from '@/utils/logger';
 import { loadRegistrationCatalog } from './services/RegistrationCatalog';
+import { loadCanonicalCatalogIntelligence } from './services/CanonicalCatalogIntelligence';
 import { getRegistrationArtistContext } from './services/RegistrationArtistContext';
 import { existingCatalogIntelligenceService } from '@/services/ingestion/ExistingCatalogIntelligenceService';
 
@@ -94,6 +100,8 @@ export default function RegistrationCenter() {
   const [tracks, setTracks] = useState<CatalogTrack[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [canonicalIntelligenceReport, setCanonicalIntelligenceReport] = useState<CatalogIntelligenceReport | null>(null);
+  const [canonicalIntelligenceStatus, setCanonicalIntelligenceStatus] = useState<CanonicalCatalogIntelligenceStatus>('loading');
   const [activeTab, setActiveTab] = useState<'tracks' | 'founder'>('tracks');
 
   const selectedTrack = registrationFocus.trackId
@@ -114,9 +122,28 @@ export default function RegistrationCenter() {
   ), [tracks, user?.uid]);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      setCanonicalIntelligenceReport(null);
+      setCanonicalIntelligenceStatus('unavailable');
+      return;
+    }
     const uid = user.uid;
     let cancelled = false;
+
+    setCanonicalIntelligenceReport(null);
+    setCanonicalIntelligenceStatus('loading');
+    void loadCanonicalCatalogIntelligence(uid)
+      .then(report => {
+        if (cancelled) return;
+        setCanonicalIntelligenceReport(report);
+        setCanonicalIntelligenceStatus('ready');
+      })
+      .catch(error => {
+        if (cancelled) return;
+        logger.warn('[RegistrationCenter] Canonical catalog review unavailable:', error);
+        setCanonicalIntelligenceReport(null);
+        setCanonicalIntelligenceStatus('unavailable');
+      });
 
     // Load catalog and registration states in parallel
     (async () => {
@@ -208,6 +235,13 @@ export default function RegistrationCenter() {
           </button>
         </div>
         <p className="text-xs text-gray-600">You can establish your organization legal prerequisites above, or add tracks via Distribution.</p>
+        <section aria-label="Canonical catalog intelligence" className="max-w-md border-t border-white/[0.08] pt-3 text-left">
+          <h2 className="text-xs font-semibold text-gray-400 mb-1">Canonical catalog intelligence</h2>
+          <CanonicalCatalogIntelligenceSummary
+            status={canonicalIntelligenceStatus}
+            report={canonicalIntelligenceReport}
+          />
+        </section>
       </div>
     );
   }
@@ -245,6 +279,8 @@ export default function RegistrationCenter() {
             selectedTrackId={selectedTrack?.id ?? null}
             registrationStates={registrationStates}
             intelligenceReport={catalogIntelligenceReport}
+            canonicalIntelligenceReport={canonicalIntelligenceReport}
+            canonicalIntelligenceStatus={canonicalIntelligenceStatus}
             onSelectTrack={handleSelectTrack}
           />
         ) : (
