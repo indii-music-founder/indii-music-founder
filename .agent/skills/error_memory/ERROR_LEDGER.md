@@ -1,3 +1,15 @@
+## 2026-09-26 Merge Artifact Leaves Unclosed Test Block → ESLint Parse Error at EOF (MERGE_ARTIFACT_UNCLOSED_IT_BLOCK)
+
+- **SEVERITY:** High (failed CI `Lint` step in deploy.yml, blocking PR #316; run 36234673561)
+- **FILES:** `packages/renderer/src/services/agent/definitions/RoadAgent.test.ts`
+- **ERROR:** `201:0  error  Parsing error: '}' expected` — reported one line past EOF (file had 200 lines), so no obvious in-file syntax culprit at the reported position.
+- **CAUSE:** Merging `main` into a feature branch resolved a delete/modify collision by keeping a STALE `it('declares only the public URL input for bounded web extraction')` block while dropping only its closing `});`. The next `it(` opened inside the unclosed callback, so the parser hit EOF still expecting `}`. `tsc`-style tools flag the real line ambiguously; ESLint reports the EOF offset, which never matches the defective lines.
+- **FIX:** Deleted the stale block (lines 79–90 of the branch version) in commit `1f7fc6509` pushed to the branch; file became byte-identical to `main`, which already carried the superseding test `declares web extraction as a read-only public URL operation`. Validated with `npx eslint <file>` (exit 0) before push.
+- **PREVENTION:** After ANY merge into a branch, run the exact CI lint command locally on merge-affected files before pushing (`npx eslint <files>`), and treat any ESLint "Parsing error" whose reported line equals `fileLength + 1` as an unbalanced-brace merge artifact — locate it by diffing the merged file against BOTH parents (`git diff <parent> -- <file>`), not by the reported line number. This is the lint-level variant of CLAUDE.md §7 Merge Conflict Hygiene (duplicate-JSX variant documented there).
+
+
+
+
 ## 2026-09-20 Admin Dashboard Server Telemetry Import & Unused React Import (ADMIN_DASHBOARD_TELEMETRY_IMPORT_AND_UNUSED_REACT)
 
 - **SEVERITY:** High (broke CI `unit-tests (13)` in deploy.yml and `typecheck` in build.yml)
