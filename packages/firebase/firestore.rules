@@ -1797,6 +1797,17 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Asset version graph (AssetVersionService — record_asset_version /
+    // promote_asset_version). Shipped with no rules entry and fell through
+    // to the final catch-all deny, so every artifact finalization by the
+    // Creative Director failed with permission-denied while the UI showed
+    // an empty Artifacts page. Persistence mirrors LikenessService exactly
+    // (docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md §13), so it gets the same
+    // owner-scoped rule.
+    match /users/{userId}/assetVersions/{assetId}/versions/{versionId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Tier 0 Artist Master Directive & living user skills
     match /users/{userId}/skills/{docId} {
       allow read, write: if isOwner(userId);

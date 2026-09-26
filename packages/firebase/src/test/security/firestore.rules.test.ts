@@ -21,6 +21,7 @@
  *  - Finance collections (revenue, expenses) owner-only
  *  - License reads: verified users only, anonymous denied
  *  - ddexReleases: verified + org-member only, anonymous denied
+ *  - Asset version graph (assetVersions): owner-only write/read
  */
 
 import {
@@ -586,6 +587,73 @@ describe('Firestore Security Rules', () => {
             if (requireEmulator()) return;
             const db = unauthCtx().firestore();
             await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'analyzed_tracks', 'track-1')));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 2b-prime. ASSET VERSION GRAPH — owner-scoped (record_asset_version)
+    //
+    // Regression: users/{uid}/assetVersions/{assetId}/versions/{versionId}
+    // shipped with NO rules entry and fell through to the final catch-all
+    // deny, so every record_asset_version / promote_asset_version call —
+    // and with it every artifact the Creative Director tried to finalize —
+    // failed with Firestore permission-denied while the Artifacts UI stayed
+    // empty. Persistence mirrors LikenessService exactly
+    // (docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md §13).
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('users/{userId}/assetVersions/{assetId}/versions/{versionId}', () => {
+        const versionData = {
+            versionId: 'v_test_1',
+            assetId: 'cover_123',
+            parentVersionId: null,
+            url: 'https://storage.googleapis.com/bucket/cover.png',
+            createdAt: Date.now(),
+            source: 'generation',
+            tags: ['unit-test'],
+        };
+
+        it('owner: record version allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(setDoc(
+                doc(db, 'users', ALICE_UID, 'assetVersions', 'cover_123', 'versions', 'v_test_1'),
+                versionData
+            ));
+        });
+
+        it('owner: read own version tree allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDocs(
+                collection(db, 'users', ALICE_UID, 'assetVersions', 'cover_123', 'versions')
+            ));
+        });
+
+        it('other user: write denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'assetVersions', 'cover_123', 'versions', 'v_bob_1'),
+                { ...versionData, versionId: 'v_bob_1' }
+            ));
+        });
+
+        it('other user: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(
+                doc(db, 'users', ALICE_UID, 'assetVersions', 'cover_123', 'versions', 'v_test_1')
+            ));
+        });
+
+        it('unauthenticated: write denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'assetVersions', 'cover_123', 'versions', 'v_anon_1'),
+                { ...versionData, versionId: 'v_anon_1' }
+            ));
         });
     });
 
