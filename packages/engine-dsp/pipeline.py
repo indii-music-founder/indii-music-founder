@@ -12,6 +12,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Any, Protocol
 
+import bwf
 import librosa
 import numpy as np
 import soundfile as sf
@@ -386,6 +387,80 @@ class CanonicalMasterStorage:
             raise CanonicalMasterRejected("Canonical master generation changed during analysis")
 
 
+# ── P4 additive measurements: loudness (ITU-R BS.1770) + musical key ─────────
+# Both are best-effort, additive receipt fields: a measurement failure can
+# never fail analysis (the deterministic baseline profile still ships).
+
+_PITCH_CLASSES = ("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
+_KRUMHANSL_MAJOR = (6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88)
+_KRUMHANSL_MINOR = (6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17)
+
+
+def measure_loudness(audio: np.ndarray, rate: int) -> dict[str, Any]:
+    """ITU-R BS.1770 integrated loudness + 4x-oversampled true peak.
+
+    Uses pyloudnorm (K-weighting coefficients valid for arbitrary rates).
+    Returns {"measured": False} when the audio is too short (< 0.5 s, below
+    the 400 ms gating minimum) or measurement fails.
+    """
+    result: dict[str, Any] = {"measured": False}
+    if audio.size < int(rate * 0.5):
+        return result
+    try:
+        import pyloudnorm as pyln  # optional dependency; additive feature only
+
+        meter = pyln.Meter(int(rate))
+        integrated = float(meter.integrated_loudness(audio))
+        if not math.isfinite(integrated):
+            return result
+        oversampled = librosa.resample(audio, orig_sr=rate, target_sr=rate * 4, res_type="soxr_hq")
+        true_peak_db = 20.0 * math.log10(max(float(np.max(np.abs(oversampled))), 1e-12))
+        return {
+            "measured": True,
+            "integratedLufs": round(integrated, 2),
+            "truePeakDbTp": round(true_peak_db, 2),
+            "standard": "ITU-R BS.1770-4",
+        }
+    except Exception:  # noqa: BLE001 - additive measurement must never fail analysis
+        return result
+
+
+def estimate_key_from_chroma(chroma_mean: np.ndarray) -> dict[str, Any]:
+    """Krumhansl-Schmuckler decision over a mean chroma vector (pure; unit-tested)."""
+    best_tonic = 0
+    best_scale = "major"
+    best_correlation = -2.0
+    for tonic in range(12):
+        rotated = np.roll(chroma_mean, -tonic)
+        for scale_name, profile in (("major", _KRUMHANSL_MAJOR), ("minor", _KRUMHANSL_MINOR)):
+            correlation = float(np.corrcoef(rotated, np.asarray(profile))[0, 1])
+            if correlation > best_correlation:
+                best_correlation = correlation
+                best_tonic = tonic
+                best_scale = scale_name
+    if not math.isfinite(best_correlation):
+        return {"estimated": False}
+    return {
+        "estimated": True,
+        "key": _PITCH_CLASSES[best_tonic],
+        "scale": best_scale,
+        "confidence": round(max(best_correlation, 0.0), 4),
+    }
+
+
+def estimate_musical_key(audio: np.ndarray, rate: int) -> dict[str, Any]:
+    """Krumhansl-Schmuckler key estimate over mean chroma (24 major/minor
+    rotations). Explicitly labelled estimated — never authoritative."""
+    result: dict[str, Any] = {"estimated": False}
+    if audio.size < int(rate * 2):
+        return result
+    try:
+        chroma = np.mean(librosa.feature.chroma_stft(y=audio, sr=rate), axis=1)
+        return estimate_key_from_chroma(chroma)
+    except Exception:  # noqa: BLE001 - additive measurement must never fail analysis
+        return result
+
+
 def build_open_source_profile(staged: StagedMaster) -> dict[str, Any]:
     sample_count = 0
     square_sum = 0.0
@@ -448,7 +523,7 @@ def build_open_source_profile(staged: StagedMaster) -> dict[str, Any]:
         beat_count = 0
         beat_timestamps = []
 
-    return {
+    result = {
         "analyzer": "librosa+soundfile",
         "analyzerVersion": ENGINE_VERSION,
         "tempoBpm": round(tempo_bpm, 4),
@@ -460,7 +535,14 @@ def build_open_source_profile(staged: StagedMaster) -> dict[str, Any]:
         "zeroCrossingRate": round(zero_crossings / max(staged.frames, 1), 10),
         "blockTransientEnergy": round(transient_energy, 8),
         "tempoAnalysisSeconds": min(staged.duration_seconds, 600.0),
+        "loudness": measure_loudness(analysis_audio, analysis_rate),
+        "musicalKey": estimate_musical_key(analysis_audio, analysis_rate),
     }
+    if staged.container.lower() == "wav":
+        bwf_metadata = bwf.parse_bwf_metadata(staged.local_path)
+        if bwf_metadata:
+            result["bwf"] = bwf_metadata
+    return result
 
 
 class GeminiAudioAnalyzer:
