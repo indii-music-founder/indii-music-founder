@@ -80,6 +80,13 @@ export const useTouring = () => {
         await TouringService.updateItinerary(currentItinerary.id, { stops: updatedStops });
     };
 
+    const deleteItinerary = async (id: string) => {
+        await TouringService.deleteItinerary(id);
+        // The live subscription only auto-selects when nothing is selected, so
+        // explicitly drop the deleted draft instead of leaving it stale.
+        setCurrentItinerary(prev => (prev?.id === id ? null : prev));
+    };
+
     const saveItinerary = async (itinerary: Omit<Itinerary, 'id' | 'userId'>) => {
         if (!userProfile?.id || userProfile.id === 'pending') {
             throw new Error('An authenticated user profile is required to save an itinerary.');
@@ -126,6 +133,7 @@ export const useTouring = () => {
         loading,
         updateItineraryStop,
         saveItinerary,
+        deleteItinerary,
         saveEmergencyContact,
         deleteEmergencyContact
     };

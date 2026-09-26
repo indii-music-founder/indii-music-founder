@@ -169,6 +169,19 @@ export const TouringService = {
         });
     },
 
+    /**
+     * Delete an itinerary by id (owner-scoped by Firestore rules).
+     */
+    deleteItinerary: async (id: string) => {
+        if (isFirebaseE2EMockEnabled()) {
+            mockItineraries = mockItineraries.filter(it => it.id !== id);
+            notifyItineraryListeners();
+            return;
+        }
+
+        await deleteDoc(doc(db, ITINERARIES_COLLECTION, id));
+    },
+
 
 
     /**

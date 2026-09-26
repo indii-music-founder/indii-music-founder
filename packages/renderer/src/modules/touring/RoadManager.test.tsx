@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
     compileRouteDraft: vi.fn(),
     checkSchedule: vi.fn(),
     findPlaces: vi.fn(),
+    confirmDialogCall: vi.fn(),
+    tourMapProps: [] as Array<Record<string, unknown>>,
     logger: {
         error: vi.fn(),
         warn: vi.fn(),
@@ -18,6 +20,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({ useToast: () => mocks.toast }));
+vi.mock('@/components/ui/ConfirmDialog', () => ({
+    ConfirmDialog: {
+        call: (...args: unknown[]) => mocks.confirmDialogCall(...args),
+    },
+}));
 vi.mock('@/services/firebase', () => ({
     functions: {},
     auth: { currentUser: { uid: 'test-user' } },
@@ -31,7 +38,12 @@ vi.mock('@/services/firebase', () => ({
     getFirebaseAI: vi.fn(() => ({})),
 }));
 vi.mock('./hooks/useTouring', () => ({ useTouring: vi.fn() }));
-vi.mock('./components/TourMap', () => ({ TourMap: () => <div data-testid="tour-map" /> }));
+vi.mock('./components/TourMap', () => ({
+    TourMap: (props: Record<string, unknown>) => {
+        mocks.tourMapProps.push(props);
+        return <div data-testid="tour-map" />;
+    },
+}));
 vi.mock('./components/TourRouteOptimizer', () => ({
     TourRouteOptimizer: () => <div data-testid="tour-route-optimizer" />,
 }));
@@ -66,6 +78,7 @@ function setupTouringMock(overrides: Partial<TouringHookResult> = {}) {
         setCurrentItinerary: vi.fn(),
         saveItinerary: vi.fn().mockResolvedValue(undefined),
         updateItineraryStop: vi.fn().mockResolvedValue(undefined),
+        deleteItinerary: vi.fn().mockResolvedValue(undefined),
         emergencyContacts: [],
         saveEmergencyContact: vi.fn().mockResolvedValue(undefined),
         deleteEmergencyContact: vi.fn().mockResolvedValue(undefined),
@@ -91,6 +104,7 @@ function getEnabledSaveDraftButton(): HTMLButtonElement {
 describe('RoadManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.tourMapProps.length = 0;
         mocks.compileRouteDraft.mockResolvedValue({
             data: {
                 status: 'route_draft',
@@ -320,5 +334,62 @@ describe('RoadManager', () => {
 
         await waitFor(() => expect(saveEmergencyContact).toHaveBeenCalled());
         expect(screen.getByText('New Emergency Contact')).toBeInTheDocument();
+    });
+
+    const savedDraftItinerary = {
+        id: 'itinerary-draft',
+        userId: 'test-user',
+        tourName: 'Route draft 2026-11-21 - Detroit, MI',
+        stops: [
+            { id: 'stop-1', date: '2026-11-21', city: 'Detroit, MI', venue: '', activity: 'Planning', type: 'Planning', notes: '' },
+            { id: 'stop-2', date: '2026-11-24', city: 'Cleveland, OH', venue: '', activity: 'Planning', type: 'Planning', notes: '' },
+        ],
+        totalDistance: 'Not calculated',
+    };
+
+    it('seeds the waypoint editor from the saved route draft', () => {
+        setupTouringMock({ currentItinerary: savedDraftItinerary });
+        render(<RoadManager />);
+
+        expect(screen.getByLabelText('Remove Detroit, MI')).toBeInTheDocument();
+        expect(screen.getByLabelText('Remove Cleveland, OH')).toBeInTheDocument();
+    });
+
+    it('renders newly added waypoints on the map immediately instead of the stale saved stops', () => {
+        setupTouringMock({ currentItinerary: savedDraftItinerary });
+        render(<RoadManager />);
+
+        fireEvent.change(screen.getByLabelText('Route Waypoints'), { target: { value: 'Toledo, OH' } });
+        fireEvent.click(screen.getByLabelText('Add location'));
+
+        expect(screen.getByLabelText('Remove Toledo, OH')).toBeInTheDocument();
+        const lastMapProps = mocks.tourMapProps[mocks.tourMapProps.length - 1]!;
+        expect(lastMapProps.locations).toEqual(['Detroit, MI', 'Cleveland, OH', 'Toledo, OH']);
+    });
+
+    it('deletes the saved route draft after explicit confirmation', async () => {
+        const deleteItinerary = vi.fn().mockResolvedValue(undefined);
+        mocks.confirmDialogCall.mockResolvedValue(true);
+        setupTouringMock({ currentItinerary: savedDraftItinerary, deleteItinerary });
+        render(<RoadManager />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Delete Draft' }));
+
+        await waitFor(() => expect(mocks.confirmDialogCall).toHaveBeenCalled());
+        await waitFor(() => expect(deleteItinerary).toHaveBeenCalledWith('itinerary-draft'));
+        await waitFor(() => expect(mocks.toast.success).toHaveBeenCalledWith('Route draft deleted'));
+    });
+
+    it('keeps the route draft when confirmation is dismissed', async () => {
+        const deleteItinerary = vi.fn().mockResolvedValue(undefined);
+        mocks.confirmDialogCall.mockResolvedValue(false);
+        setupTouringMock({ currentItinerary: savedDraftItinerary, deleteItinerary });
+        render(<RoadManager />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Delete Draft' }));
+
+        await waitFor(() => expect(mocks.confirmDialogCall).toHaveBeenCalled());
+        await waitFor(() => expect(mocks.toast.success).not.toHaveBeenCalled());
+        expect(deleteItinerary).not.toHaveBeenCalled();
     });
 });

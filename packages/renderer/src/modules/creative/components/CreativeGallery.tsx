@@ -66,6 +66,71 @@ const runLocalUpscale = async (
     }
 };
 
+/**
+ * Batch print pack (ISSUE-327): plan the pack against the master, upscale
+ * once (only if the PrintSpec verdict requires it), then export every pack
+ * preset as a DPI-tagged print file. One engine run, N print-ready files.
+ */
+const PACK_PRESET_IDS = ['cover_art_distributor', 'vinyl_sleeve', 'poster_11x17', 'dtf_12x16'] as const;
+
+const runPrintPack = async (
+    item: HistoryItem,
+    toast: ReturnType<typeof useToast>,
+): Promise<void> => {
+    try {
+        const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+        const resolved = await resolveStorageUrl(item.url);
+        const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+            img.onerror = () => reject(new Error('image load failed'));
+            img.src = resolved;
+        });
+
+        const { planPrintOutput } = await import('@/services/print/PrintSpec');
+        const plans = PACK_PRESET_IDS.map((id) => planPrintOutput({ srcWidth: dims.w, srcHeight: dims.h, presetId: id }));
+        const maxFactor = Math.max(...plans.map((p) => p.requiredUpscaleFactor));
+
+        let masterUrl = resolved;
+        if (maxFactor > 1.01) {
+            const scale = maxFactor <= 2 ? 2 : 4;
+            toast.info(`Upscaling master ${scale}× for the print pack…`);
+            const { upscalerService } = await import('@/services/upscale/UpscalerService');
+            const blob = await fetch(resolved).then((r) => {
+                if (!r.ok) throw new Error(`fetch ${r.status}`);
+                return r.blob();
+            });
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(new Error('could not read image bytes'));
+                reader.readAsDataURL(blob);
+            });
+            const outcome = await upscalerService.upscale({ dataUrl, scale, prompt: item.prompt });
+            masterUrl = outcome.outputDataUrl;
+        } else {
+            toast.info('Master already covers the pack — exporting print files…');
+        }
+
+        const { exportMasterAsset, downloadAsZip } = await import('@/services/export/AssetExporter');
+        const bundle = await exportMasterAsset({
+            masterUrl,
+            presets: PACK_PRESET_IDS.map((id) => ({ dimensionId: 'print', printPresetId: id })),
+        });
+        await downloadAsZip(bundle, `print-pack-${Date.now()}`);
+        toast.success(`Print pack ready: ${bundle.results.length} DPI-tagged files downloaded.`);
+    } catch (err) {
+        const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
+        if (err instanceof UpscaleUnavailableError) {
+            if (err.reason === 'gpu-not-ready') toast.error('Local engine cannot run on this machine (no usable GPU/Vulkan).');
+            else if (err.reason === 'no-electron') toast.info('Local upscaling runs in the indii desktop app.');
+            else toast.error(`Engine setup failed: ${err.message}`);
+            return;
+        }
+        toast.error('Print pack failed.');
+    }
+};
+
 interface CreativeGalleryProps {
     compact?: boolean;
     onSelect?: (item: HistoryItem) => void;
@@ -542,6 +607,17 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
                                                     >
                                                         <span>→ AI Upscale 4×</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            setShowSendMenu(false);
+                                                            await runPrintPack(item, toast);
+                                                        }}
+                                                        data-testid="send-to-print-pack"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-lime-600/20 hover:text-lime-300 transition-colors"
+                                                    >
+                                                        <span>→ Upscale + Print Pack</span>
                                                     </button>
                                                     <button
                                                         onClick={async (e) => {

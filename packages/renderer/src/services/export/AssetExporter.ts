@@ -249,6 +249,11 @@ export async function exportMasterAsset(
     return results;
 }
 
+/** Filesystem-safe identifier for asset filenames (print ids contain ':'). */
+export function sanitizeFilenameId(id: string): string {
+    return id.replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+
 /**
  * Bundle export results into a downloadable zip. Uses jszip (existing renderer dep).
  */
@@ -260,9 +265,11 @@ export async function downloadAsZip(results: ExportResult[], name: string): Prom
     const used = new Set<string>();
 
     for (const r of results) {
-        let filename = `${r.platformId}_${r.width}x${r.height}.png`;
+        // Print presets produce ids like "print:vinyl_sleeve" — sanitize for filesystems.
+        const safeId = sanitizeFilenameId(r.platformId);
+        let filename = `${safeId}_${r.width}x${r.height}.png`;
         let n = 2;
-        while (used.has(filename)) filename = `${r.platformId}_${r.width}x${r.height}_${n++}.png`;
+        while (used.has(filename)) filename = `${safeId}_${r.width}x${r.height}_${n++}.png`;
         used.add(filename);
 
         const commaIdx = r.url.indexOf(',');

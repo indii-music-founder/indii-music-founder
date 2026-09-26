@@ -100,7 +100,7 @@ export const RoadAgent: AgentConfig = {
             },
             {
                 name: "search_places",
-                description: "Unavailable until the secured Maps backend is connected. Calling this tool returns an explicit unavailable error and performs no search.",
+                description: "Search real places (venues, hotels, services) near a location through the secured Maps backend proxy. Requires sign-in. Returns live Google Places results; performs no booking.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -112,7 +112,7 @@ export const RoadAgent: AgentConfig = {
             },
             {
                 name: "get_place_details",
-                description: "Unavailable until the secured Maps backend is connected. Calling this tool returns an explicit unavailable error and no place details.",
+                description: "Unavailable until a place-details backend proxy is deployed. Calling this tool returns an explicit unavailable error and no place details.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -123,7 +123,7 @@ export const RoadAgent: AgentConfig = {
             },
             {
                 name: "get_distance_matrix",
-                description: "Unavailable until the secured Maps backend is connected. Calling this tool returns an explicit unavailable error and no distance or drive time.",
+                description: "Calculate real driving distance and duration between up to 10 origins and 10 destinations through the secured Maps backend proxy. Requires sign-in. Estimates exclude live traffic.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

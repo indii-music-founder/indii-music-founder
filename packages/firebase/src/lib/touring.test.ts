@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { compileRouteDraft, reviewSchedule } from './touring';
+import { compileRouteDraft, reviewSchedule, normalizeDistanceMatrix } from './touring';
 
 describe('touring route draft contract', () => {
     it('preserves waypoint order and assigns only deterministic draft dates', () => {
@@ -59,5 +59,50 @@ describe('touring schedule-only review contract', () => {
         expect(review.hasConflicts).toBe(false);
         expect(review.summary).toContain('within the limited check scope');
         expect(review.limitations[1]).toMatch(/operational feasibility are not verified/);
+    });
+});
+
+describe('distance matrix normalization contract', () => {
+    it('maps Google-reported distances and durations without inventing values', () => {
+        const result = normalizeDistanceMatrix({
+            status: 'OK',
+            rows: [
+                {
+                    elements: [
+                        {
+                            status: 'OK',
+                            distance: { text: '283.7 mi', value: 456604 },
+                            duration: { text: '4 hours 22 mins', value: 15720 },
+                        },
+                    ],
+                },
+            ],
+        });
+
+        expect(result.scope).toBe('distance_matrix');
+        expect(result.rows).toEqual([[
+            {
+                status: 'OK',
+                distanceMiles: 283.7,
+                distanceText: '283.7 mi',
+                durationMinutes: 262,
+                durationText: '4 hours 22 mins',
+            },
+        ]]);
+        expect(result.limitations.length).toBeGreaterThan(0);
+    });
+
+    it('passes unresolvable element statuses through instead of faking a distance', () => {
+        const result = normalizeDistanceMatrix({
+            rows: [{ elements: [{ status: 'NOT_FOUND' }, { status: 'ZERO_RESULTS' }] }],
+        });
+
+        expect(result.rows[0]).toEqual([{ status: 'NOT_FOUND' }, { status: 'ZERO_RESULTS' }]);
+    });
+
+    it('tolerates a missing or malformed payload without throwing', () => {
+        expect(normalizeDistanceMatrix(undefined).rows).toEqual([]);
+        expect(normalizeDistanceMatrix({}).rows).toEqual([]);
+        expect(normalizeDistanceMatrix({ rows: [{}] }).rows).toEqual([[]]);
     });
 });

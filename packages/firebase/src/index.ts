@@ -1651,6 +1651,7 @@ export const listGKEClusters = onCall(
 export const generateItinerary = touringService.generateItinerary;
 export const checkLogistics = touringService.checkLogistics;
 export const findPlaces = touringService.findPlaces;
+export const computeDistanceMatrix = touringService.computeDistanceMatrix;
 
 // Marketing
 export const executeCampaign = marketingService.executeCampaign;

@@ -44,7 +44,7 @@ export const HospitalityAgent: AgentConfig = {
             ...hospitalityRetrievalDeclarations,
             {
                 name: "search_places",
-                description: "Find hotels, catering services, and vendors near venues.",
+                description: "Find hotels, catering services, and vendors near venues through the secured Maps backend proxy. Requires sign-in; returns live Google Places results.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -56,7 +56,7 @@ export const HospitalityAgent: AgentConfig = {
             },
             {
                 name: "get_place_details",
-                description: "Get details on accommodations and vendors.",
+                description: "Unavailable until a place-details backend proxy is deployed. Calling this tool returns an explicit unavailable error and no place details.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -67,7 +67,7 @@ export const HospitalityAgent: AgentConfig = {
             },
             {
                 name: "get_distance_matrix",
-                description: "Calculate travel times between venues and accommodations.",
+                description: "Calculate real driving times between venues and accommodations through the secured Maps backend proxy. Requires sign-in; estimates exclude live traffic.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

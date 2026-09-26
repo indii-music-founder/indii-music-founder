@@ -222,8 +222,9 @@ export const RoadTools = {
     optimize_tour_route: wrapTool('optimize_tour_route', async (args: { venues: string[] }) => {
         void args;
         return toolError(
-            'Verified route optimization is unavailable because the Maps distance provider is disabled. No route order or audience reach was generated.',
-            'ROUTE_PROVIDER_UNAVAILABLE',
+            'Verified route optimization (reordering stops for shortest road distance) is not implemented. '
+            + 'Use get_distance_matrix for real leg distances between stops in a fixed order; no route order or audience reach was generated.',
+            'ROUTE_OPTIMIZATION_UNAVAILABLE',
         );
     }),
 

@@ -85,7 +85,8 @@ describe('RoadTools', () => {
         const result = await RoadTools.optimize_tour_route({ venues: ['A', 'B'] });
 
         expect(result.success).toBe(false);
-        expect(result.metadata?.errorCode).toBe('ROUTE_PROVIDER_UNAVAILABLE');
+        expect(result.metadata?.errorCode).toBe('ROUTE_OPTIMIZATION_UNAVAILABLE');
+        expect(result.error).toContain('not implemented');
         expect(AutonomousIntelligence.generateStructuredData).not.toHaveBeenCalled();
     });
 

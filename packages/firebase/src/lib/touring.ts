@@ -57,6 +57,13 @@ const FindPlacesSchema = z.object({
     radius: z.number().optional().default(5000) // meters
 });
 
+// Google's Distance Matrix API caps a single request at 25 origins / 25
+// destinations / 100 elements. 10x10 keeps every request inside that cap.
+const DistanceMatrixRequestSchema = z.object({
+    origins: z.array(z.string().trim().min(1).max(120)).min(1).max(10),
+    destinations: z.array(z.string().trim().min(1).max(120)).min(1).max(10),
+}).strict();
+
 export interface RouteDraft {
     status: 'route_draft';
     authority: 'user_inputs_only';
@@ -77,6 +84,22 @@ export interface ScheduleReview {
     issues: string[];
     suggestions: string[];
     summary: string;
+    limitations: string[];
+}
+
+export interface DistanceMatrixElement {
+    status: string;
+    distanceMiles?: number;
+    distanceText?: string;
+    durationMinutes?: number;
+    durationText?: string;
+}
+
+export interface DistanceMatrixResult {
+    scope: 'distance_matrix';
+    origins: string[];
+    destinations: string[];
+    rows: DistanceMatrixElement[][];
     limitations: string[];
 }
 
@@ -177,6 +200,117 @@ export function reviewSchedule(input: unknown): ScheduleReview {
 // ----------------------------------------------------------------------------
 // Cloud Functions
 // ----------------------------------------------------------------------------
+
+const METERS_PER_MILE = 1609.344;
+
+interface RawDistanceMatrixPayload {
+    status?: string;
+    rows?: Array<{
+        elements?: Array<{
+            status?: string;
+            distance?: { text?: string; value?: number };
+            duration?: { text?: string; value?: number };
+        }>;
+    }>;
+}
+
+/**
+ * Maps a Google Distance Matrix response onto the minimal owned result shape.
+ * Pure: no client, no network — unit-testable in isolation. Element statuses
+ * (NOT_FOUND, ZERO_RESULTS, ...) pass through verbatim; distances and
+ * durations are Google-reported values, never invented here.
+ */
+export function normalizeDistanceMatrix(payload: unknown): DistanceMatrixResult {
+    const data = (payload ?? {}) as RawDistanceMatrixPayload;
+    const rows: DistanceMatrixElement[][] = (data.rows ?? []).map((row) =>
+        (row.elements ?? []).map((element) => {
+            const status = element.status ?? 'UNKNOWN_ERROR';
+            if (status !== 'OK') {
+                return { status } satisfies DistanceMatrixElement;
+            }
+            const distanceMiles = typeof element.distance?.value === 'number'
+                ? Math.round((element.distance.value / METERS_PER_MILE) * 10) / 10
+                : undefined;
+            const durationMinutes = typeof element.duration?.value === 'number'
+                ? Math.max(1, Math.round(element.duration.value / 60))
+                : undefined;
+            return {
+                status,
+                distanceMiles,
+                distanceText: element.distance?.text,
+                durationMinutes,
+                durationText: element.duration?.text,
+            } satisfies DistanceMatrixElement;
+        }),
+    );
+
+    return {
+        scope: 'distance_matrix',
+        origins: [],
+        destinations: [],
+        rows,
+        limitations: [
+            'Distances and durations are Google driving estimates without live traffic.',
+            'They are planning inputs, not schedules, bookings, or guarantees.',
+        ],
+    };
+}
+
+/** Top-level provider status that must fail the call instead of returning empty rows. */
+export function distanceMatrixProviderStatusError(status: string | undefined): HttpsError | null {
+    switch (status) {
+        case 'OVER_QUERY_LIMIT':
+            return new HttpsError('resource-exhausted', 'Distance Matrix quota exceeded; retry later.');
+        case 'REQUEST_DENIED':
+            return new HttpsError('permission-denied', 'Distance Matrix requests are denied for the configured Maps key.');
+        case 'INVALID_REQUEST':
+            return new HttpsError('invalid-argument', 'Distance Matrix rejected the request as invalid.');
+        case 'MAX_ELEMENTS_EXCEEDED':
+        case 'MAX_DIMENSIONS_EXCEEDED':
+            return new HttpsError('invalid-argument', 'Distance Matrix element cap exceeded; send fewer stops.');
+        default:
+            return null;
+    }
+}
+
+export const computeDistanceMatrix = onCall(
+    { enforceAppCheck: true, secrets: [googleMapsApiKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
+
+        const validation = DistanceMatrixRequestSchema.safeParse(request.data);
+        if (!validation.success) {
+            throw new HttpsError("invalid-argument", validation.error.message);
+        }
+
+        const { origins, destinations } = validation.data;
+        const { Client, UnitSystem } = await import("@googlemaps/google-maps-services-js");
+        const client = new Client({});
+
+        try {
+            const response = await client.distancematrix({
+                params: {
+                    origins,
+                    destinations,
+                    units: UnitSystem.imperial,
+                    key: googleMapsApiKey.value(),
+                },
+            });
+
+            const statusError = distanceMatrixProviderStatusError(response.data.status);
+            if (statusError) throw statusError;
+
+            const result = normalizeDistanceMatrix(response.data);
+            return { ...result, origins, destinations };
+        } catch (error: unknown) {
+            console.error("Distance Matrix API Error:", error);
+            if (error instanceof HttpsError) {
+                throw error;
+            }
+            throw new HttpsError("internal", "Failed to compute distance matrix");
+        }
+    },
+);
 
 export const generateItinerary = onCall(
     { enforceAppCheck: true, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },

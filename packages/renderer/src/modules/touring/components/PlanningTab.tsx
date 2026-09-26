@@ -24,6 +24,8 @@ interface PlanningTabProps {
     handleCheckSchedule: () => void;
     isCheckingSchedule: boolean;
     scheduleReview: ScheduleReview | null;
+    handleDeleteRouteDraft?: () => void;
+    isDeletingRouteDraft?: boolean;
     onUpdateStop: (stop: ItineraryStop) => void;
 }
 
@@ -44,6 +46,8 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
     handleCheckSchedule,
     isCheckingSchedule,
     scheduleReview,
+    handleDeleteRouteDraft,
+    isDeletingRouteDraft,
     onUpdateStop
 }) => {
     const { t } = useTranslation();
@@ -172,7 +176,10 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                 {/* Right: Interactive Map */}
                 <div className="@3xl:col-span-2 min-h-[320px] bg-[#161b22] border border-gray-800 rounded-xl p-1 shadow-2xl relative group overflow-hidden">
                     <TourMap
-                        // If stops have non-zero coordinates, pass them as markers, otherwise they are geocoded via locations list
+                        // Saved stops with coordinates render as markers; the map
+                        // always mirrors the LIVE waypoint list so newly added
+                        // waypoints appear immediately (the editor is seeded from
+                        // the saved draft, so the two stay consistent).
                         markers={itinerary ? itinerary.stops.filter(s => s.coordinates && s.coordinates.lat !== 0).map((stop, idx) => ({
                             position: stop.coordinates!,
                             title: stop.venue || stop.city,
@@ -180,7 +187,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                             label: (idx + 1).toString(),
                             meta: stop as unknown as Record<string, unknown>
                         })) : []}
-                        locations={selectedStop ? [selectedStop.city] : (itinerary ? itinerary.stops.map(s => s.city) : locations)}
+                        locations={selectedStop ? [selectedStop.city] : locations}
                         center={selectedStop ? (selectedStop.coordinates || selectedStop.city) : undefined}
                     />
 
@@ -208,23 +215,37 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                             </p>
                         </div>
                         <div className="flex max-w-md flex-col items-start gap-2 text-left @2xl:items-end @2xl:text-right">
-                            <Button
-                                onClick={handleCheckSchedule}
-                                disabled={isCheckingSchedule}
-                                variant={hasScheduleConflict ? "destructive" : "default"}
-                                className={`text-xs font-bold uppercase tracking-widest gap-2 ${scheduleReview && !hasScheduleConflict ? 'bg-green-500/20 text-green-500 border border-green-500/50 hover:bg-green-500/30' : ''
-                                    }`}
-                                isLoading={isCheckingSchedule}
-                            >
-                                {!isCheckingSchedule && (hasScheduleConflict ? <AlertTriangle size={14} /> : scheduleReview ? <CheckCircle2 size={14} /> : <Calendar size={14} />)}
-                                {isCheckingSchedule
-                                    ? "Checking Schedule..."
-                                    : hasScheduleConflict
-                                        ? "Schedule Conflicts Found"
-                                        : scheduleReview
-                                            ? "Schedule Checked"
-                                            : "Check Schedule"}
-                            </Button>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button
+                                    onClick={handleCheckSchedule}
+                                    disabled={isCheckingSchedule}
+                                    variant={hasScheduleConflict ? "destructive" : "default"}
+                                    className={`text-xs font-bold uppercase tracking-widest gap-2 ${scheduleReview && !hasScheduleConflict ? 'bg-green-500/20 text-green-500 border border-green-500/50 hover:bg-green-500/30' : ''
+                                        }`}
+                                    isLoading={isCheckingSchedule}
+                                >
+                                    {!isCheckingSchedule && (hasScheduleConflict ? <AlertTriangle size={14} /> : scheduleReview ? <CheckCircle2 size={14} /> : <Calendar size={14} />)}
+                                    {isCheckingSchedule
+                                        ? "Checking Schedule..."
+                                        : hasScheduleConflict
+                                            ? "Schedule Conflicts Found"
+                                            : scheduleReview
+                                                ? "Schedule Checked"
+                                                : "Check Schedule"}
+                                </Button>
+                                {handleDeleteRouteDraft && (
+                                    <Button
+                                        onClick={handleDeleteRouteDraft}
+                                        disabled={isDeletingRouteDraft}
+                                        variant="ghost"
+                                        className="text-xs font-bold uppercase tracking-widest gap-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10"
+                                        title="Delete this saved route draft"
+                                    >
+                                        {!isDeletingRouteDraft && <Trash2 size={14} />}
+                                        {isDeletingRouteDraft ? 'Deleting Draft...' : 'Delete Draft'}
+                                    </Button>
+                                )}
+                            </div>
                             <p className="text-[10px] leading-relaxed text-gray-500">
                                 Checks date order and same-day multi-city conflicts only. It does not verify road distance, drive time, traffic, or venue availability.
                             </p>

@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { TourBookTab } from './components/TourBookTab';
@@ -276,6 +277,7 @@ const RoadManager: React.FC = () => {
         setCurrentItinerary,
         saveItinerary,
         updateItineraryStop,
+        deleteItinerary,
         emergencyContacts,
         saveEmergencyContact,
         deleteEmergencyContact,
@@ -288,6 +290,17 @@ const RoadManager: React.FC = () => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [isSavingRouteDraft, setIsSavingRouteDraft] = useState(false);
+    const [isDeletingRouteDraft, setIsDeletingRouteDraft] = useState(false);
+
+    // The waypoint editor starts empty; once a saved route draft loads, seed
+    // the editor from it — until the user edits the waypoints, after which the
+    // unsaved list is authoritative and must never be clobbered.
+    const waypointsTouchedRef = useRef(false);
+    useEffect(() => {
+        if (waypointsTouchedRef.current) return;
+        if (!itinerary || itinerary.stops.length === 0) return;
+        setLocations(prev => (prev.length > 0 ? prev : itinerary.stops.map(stop => stop.city)));
+    }, [itinerary]);
 
     // Feature Tabs
     const [activeTab, setActiveTab] = useState<TouringTab>('plan');
@@ -321,6 +334,7 @@ const RoadManager: React.FC = () => {
 
     const handleAddLocation = () => {
         if (newLocation.trim()) {
+            waypointsTouchedRef.current = true;
             const rawParts = newLocation.split(',').map(p => p.trim()).filter(Boolean);
             const parsed: string[] = [];
             for (let i = 0; i < rawParts.length; i++) {
@@ -341,7 +355,32 @@ const RoadManager: React.FC = () => {
     };
 
     const handleRemoveLocation = (index: number) => {
+        waypointsTouchedRef.current = true;
         setLocations(locations.filter((_, i) => i !== index));
+    };
+
+    const handleDeleteRouteDraft = async () => {
+        if (!itinerary?.id || isDeletingRouteDraft) return;
+
+        const confirmed = await ConfirmDialog.call({
+            title: 'Delete Route Draft',
+            message: `Delete route draft "${itinerary.tourName}"? This cannot be undone.`,
+            confirmText: 'Delete Draft',
+            variant: 'destructive',
+        });
+        if (!confirmed) return;
+
+        setIsDeletingRouteDraft(true);
+        try {
+            await deleteItinerary(itinerary.id);
+            setScheduleReview(null);
+            toast.success('Route draft deleted');
+        } catch (error: unknown) {
+            logger.error('Failed to delete route draft', error);
+            toast.error('Failed to delete route draft');
+        } finally {
+            setIsDeletingRouteDraft(false);
+        }
     };
 
     const handleSaveRouteDraft = async () => {
@@ -518,6 +557,8 @@ const RoadManager: React.FC = () => {
                                                 handleCheckSchedule={handleCheckSchedule}
                                                 isCheckingSchedule={isCheckingSchedule}
                                                 scheduleReview={scheduleReview}
+                                                handleDeleteRouteDraft={handleDeleteRouteDraft}
+                                                isDeletingRouteDraft={isDeletingRouteDraft}
                                                 onUpdateStop={handleUpdateStop}
                                             />
                                         </div>

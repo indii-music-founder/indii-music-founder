@@ -392,3 +392,12 @@ describe('exportMasterAsset — print targets (ISSUE-322)', () => {
         )).rejects.toThrow(/requires PNG or JPEG/);
     });
 });
+
+describe('sanitizeFilenameId (ISSUE-327)', () => {
+    it('maps print preset ids to filesystem-safe names', async () => {
+        const { sanitizeFilenameId } = await import('../AssetExporter');
+        expect(sanitizeFilenameId('print:vinyl_sleeve')).toBe('print-vinyl_sleeve');
+        expect(sanitizeFilenameId('spotify_cover')).toBe('spotify_cover');
+        expect(sanitizeFilenameId('print:poster_18x24')).not.toMatch(/:/);
+    });
+});
