@@ -3013,6 +3013,79 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Post-Mastering Administrative Engine (P1)
+    // docs/plans/post-mastering-admin-engine-plan-2026-09-26.md §1.1–§1.3
+    // =========================================================================
+
+    // Server-computed lifecycle state per mastered asset. Cloud Functions write
+    // through the Admin SDK; clients read for UI surfacing but never write.
+    match /users/{userId}/master_admin/{docId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
+
+    // Immutable, content-addressed admin ledger receipts. Create-only by the
+    // server; clients read but can never rewrite locked history.
+    match /users/{userId}/admin_ledger/{receiptId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
+
+    // Background-audit task queue carrying pre-filled reconciliation drafts.
+    // Owner-scoped and schema-validated; every staged action MUST keep
+    // requiresApproval == true — the engine drafts, the human executes.
+    match /users/{userId}/administrative_tasks/{taskId} {
+      function isValidAdministrativeTask() {
+        let data = request.resource.data;
+        return data.keys().hasOnly([
+            'id', 'userId', 'schemaVersion', 'type', 'severity', 'status',
+            'entityType', 'entityRefs', 'findings', 'proposedAction', 'jevRef',
+            'dedupeKey', 'createdAt', 'updatedAt', 'resolvedAt'
+          ])
+          && data.keys().hasAll([
+            'id', 'userId', 'schemaVersion', 'type', 'severity', 'status',
+            'entityType', 'entityRefs', 'findings', 'proposedAction', 'jevRef',
+            'dedupeKey', 'createdAt', 'updatedAt', 'resolvedAt'
+          ])
+          && data.userId == userId
+          && isValidString(data.id, 8, 160)
+          && data.schemaVersion == 'administrative-task.v1'
+          && isValidString(data.type, 4, 64)
+          && data.severity in ['info', 'warning', 'critical', 'blocking']
+          && data.status in ['open', 'action_ready', 'awaiting_confirmation', 'executed', 'dismissed', 'failed']
+          && data.entityType in ['master', 'track', 'release', 'composition', 'collaborator']
+          && data.entityRefs is map
+          && data.findings is list
+          && data.findings.size() <= 50
+          // Optional action: when present it must be a STAGED, approval-gated draft.
+          && (data.proposedAction == null || (
+              data.proposedAction is map
+              && data.proposedAction.keys().hasAll(['kind', 'payload', 'requiresApproval', 'builderRef'])
+              && isValidString(data.proposedAction.kind, 3, 64)
+              && data.proposedAction.payload is map
+              && data.proposedAction.requiresApproval == true
+              && isValidString(data.proposedAction.builderRef, 1, 128)
+            ))
+          && (data.jevRef == null || (
+              data.jevRef is map
+              && data.jevRef.keys().hasAll(['judgment', 'confidence', 'model'])
+              && isValidString(data.jevRef.judgment, 1, 120)
+              && data.jevRef.confidence is number
+              && data.jevRef.confidence >= 0
+              && data.jevRef.confidence <= 1
+              && isValidString(data.jevRef.model, 1, 64)
+            ))
+          && isValidString(data.dedupeKey, 8, 160)
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp
+          && (data.resolvedAt == null || data.resolvedAt is timestamp);
+      }
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidAdministrativeTask();
+      allow delete: if isOwner(userId);
+    }
+
+    // =========================================================================
     // Deny all other access by default
     // =========================================================================
     match /{document=**} {

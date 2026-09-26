@@ -3518,4 +3518,159 @@ describe('Firestore Security Rules', () => {
             }));
         });
     });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Post-Mastering Administrative Engine (P1)
+    // docs/plans/post-mastering-admin-engine-plan-2026-09-26.md §1.1–§1.3
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('users/{userId}/master_admin/{docId} (P1 server-owned lifecycle)', () => {
+        const masterAdminPath = ['users', ALICE_UID, 'master_admin', 'a'.repeat(40)] as const;
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), ...masterAdminPath), {
+                    id: 'a'.repeat(40),
+                    userId: ALICE_UID,
+                    schemaVersion: 'master-admin-state.v1',
+                    lifecycle: 'INGESTED',
+                });
+            });
+        });
+
+        it('owner can read but never write — lifecycle is server-owned', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const reference = doc(aliceDb, ...masterAdminPath);
+            await assertSucceeds(getDoc(reference));
+            await assertFails(setDoc(reference, { lifecycle: 'DISTRIBUTION_READY' }));
+            await assertFails(updateDoc(reference, { lifecycle: 'DISTRIBUTION_READY' }));
+            await assertFails(deleteDoc(reference));
+        });
+
+        it('other users, anonymous, and unauthenticated callers are denied reads and writes', async () => {
+            if (requireEmulator()) return;
+            const contexts = [verifiedCtx(BOB_UID).firestore(), anonCtx().firestore(), unauthCtx().firestore()];
+            for (const db of contexts) {
+                const reference = doc(db, ...masterAdminPath);
+                await assertFails(getDoc(reference));
+                await assertFails(setDoc(reference, { lifecycle: 'INGESTED' }));
+            }
+        });
+    });
+
+    describe('users/{userId}/admin_ledger/{receiptId} (P1 immutable receipts)', () => {
+        const ledgerPath = ['users', ALICE_UID, 'admin_ledger', `led_v1_${'c'.repeat(40)}`] as const;
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), ...ledgerPath), {
+                    id: `led_v1_${'c'.repeat(40)}`,
+                    userId: ALICE_UID,
+                    schemaVersion: 'admin-ledger-receipt.v1',
+                    masterHash: 'a'.repeat(40),
+                });
+            });
+        });
+
+        it('owner can read but can never create, update, or delete — receipts are immutable', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const reference = doc(aliceDb, ...ledgerPath);
+            await assertSucceeds(getDoc(reference));
+            await assertFails(setDoc(reference, { forged: true }));
+            await assertFails(updateDoc(reference, { forged: true }));
+            await assertFails(deleteDoc(reference));
+        });
+
+        it('other users and unauthenticated callers are denied', async () => {
+            if (requireEmulator()) return;
+            for (const db of [verifiedCtx(BOB_UID).firestore(), unauthCtx().firestore()]) {
+                await assertFails(getDoc(doc(db, ...ledgerPath)));
+                await assertFails(setDoc(doc(db, ...ledgerPath), { forged: true }));
+            }
+        });
+    });
+
+    describe('users/{userId}/administrative_tasks/{taskId} (P1 task queue)', () => {
+        const TASK_ID = `IDENTIFIER_ISRC_WITHOUT_ISWC_${'a'.repeat(24)}`;
+        const taskPath = ['users', ALICE_UID, 'administrative_tasks', TASK_ID] as const;
+
+        const validTask = () => ({
+            id: TASK_ID,
+            userId: ALICE_UID,
+            schemaVersion: 'administrative-task.v1',
+            type: 'IDENTIFIER_ISRC_WITHOUT_ISWC',
+            severity: 'warning',
+            status: 'open',
+            entityType: 'master',
+            entityRefs: { masterHash: 'b'.repeat(40) },
+            findings: [{ field: 'iswc', expected: 'present when ISRC present', observed: 'missing', source: 'identifier-cross-validation.v1' }],
+            proposedAction: null,
+            jevRef: null,
+            dedupeKey: TASK_ID,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+            resolvedAt: null,
+        });
+
+        const stagedAction = () => ({
+            kind: 'staged_registration_payload',
+            payload: { registry: 'CWR', workTitle: 'Song' },
+            requiresApproval: true,
+            builderRef: 'draftCwrRegistration@v1',
+        });
+
+        it('owner can create a schema-valid task', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(setDoc(doc(aliceDb, ...taskPath), validTask()));
+        });
+
+        it('owner can stage a proposed action only while it keeps requiresApproval == true', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const withAction = { ...validTask(), status: 'action_ready', proposedAction: stagedAction() };
+            await assertSucceeds(setDoc(doc(aliceDb, ...taskPath), withAction));
+
+            const autoExecutable = {
+                ...withAction,
+                proposedAction: { ...stagedAction(), requiresApproval: false },
+            };
+            await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'administrative_tasks', 'autoexec' + 'a'.repeat(24)), autoExecutable));
+        });
+
+        it('rejects schema-invalid tasks from the owner: unknown status, extra fields, wrong version', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(aliceDb, ...taskPath), { ...validTask(), status: 'auto_executed' }));
+            await assertFails(setDoc(doc(aliceDb, ...taskPath), { ...validTask(), autoExecute: true }));
+            await assertFails(setDoc(doc(aliceDb, ...taskPath), { ...validTask(), schemaVersion: 'administrative-task.v2' }));
+            await assertFails(setDoc(doc(aliceDb, ...taskPath), { ...validTask(), severity: 'meh' }));
+        });
+
+        it('owner can update a task and delete it (dismiss/archive lifecycle)', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), ...taskPath), validTask());
+            });
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(updateDoc(doc(aliceDb, ...taskPath), {
+                status: 'executed',
+                resolvedAt: Timestamp.now(),
+                updatedAt: Timestamp.now(),
+            }));
+            await assertSucceeds(deleteDoc(doc(aliceDb, ...taskPath)));
+        });
+
+        it('cross-user and unauthenticated access is denied', async () => {
+            if (requireEmulator()) return;
+            for (const db of [verifiedCtx(BOB_UID).firestore(), anonCtx().firestore(), unauthCtx().firestore()]) {
+                await assertFails(getDoc(doc(db, ...taskPath)));
+                await assertFails(setDoc(doc(db, ...taskPath), validTask()));
+            }
+        });
+    });
 });

@@ -1,5 +1,10 @@
 import { HarnessCompiler, HarnessContext } from '../business-harness/HarnessCompiler';
 import {
+    SHARE_UNITS_PER_PERCENT,
+    TOTAL_SHARE_UNITS,
+    sumShareUnits,
+} from '@indii/shared';
+import {
   HarnessRun,
   HarnessScore,
   HarnessFinding,
@@ -55,14 +60,16 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
     const pendingApprovals: string[] = [];
     let iswcStatus: 'missing' | 'assigned' = 'missing';
 
-    let totalWriterShare = 0;
-    let totalPublisherShare = 0;
+    // Fixed-point share arithmetic (shareUnits): percentages are summed in
+    // basis-point units so float drift can never pass or fail a gate.
+    const totalWriterShareUnits = sumShareUnits(input.writers.map((writer) => writer.sharePercentage));
+    const totalPublisherShareUnits = sumShareUnits(input.writers.map((writer) => writer.publisherSharePercentage));
+    // Human-facing totals (single deterministic divide; interface unchanged).
+    const totalWriterShare = totalWriterShareUnits / SHARE_UNITS_PER_PERCENT;
+    const totalPublisherShare = totalPublisherShareUnits / SHARE_UNITS_PER_PERCENT;
 
-    // Track shares & approvals
+    // Track approvals & IPI completeness
     input.writers.forEach((writer) => {
-      totalWriterShare += writer.sharePercentage;
-      totalPublisherShare += writer.publisherSharePercentage;
-
       if (!writer.ipiNumber) {
         missingIpis.push(writer.name);
       }
@@ -111,9 +118,10 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
       });
     }
 
-    // Mathematical validation
+    // Mathematical validation — exact basis-point share units (shareUnits).
+    // Non-finite shares (corrupt data) sum to NaN and fail closed here.
     // Using 100% standard for both writer and publisher shares (total 200% combined, or 100% writer/100% pub).
-    if (Math.abs(totalWriterShare - 100) > 0.01) {
+    if (totalWriterShareUnits !== TOTAL_SHARE_UNITS) {
       blockers.push(`Total writer share is ${totalWriterShare}%, must be exactly 100%.`);
       findings.push({
         id: 'invalid_writer_share',
@@ -125,7 +133,7 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
       });
     }
     
-    if (Math.abs(totalPublisherShare - 100) > 0.01) {
+    if (totalPublisherShareUnits !== TOTAL_SHARE_UNITS) {
       blockers.push(`Total publisher share is ${totalPublisherShare}%, must be exactly 100%.`);
       findings.push({
         id: 'invalid_publisher_share',

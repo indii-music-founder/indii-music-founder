@@ -6,6 +6,7 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { UserProfile } from '@/types/User';
 import type { ArtistOperatingModel, DdexDeliveryAuthorityEvidence, DistributionReadiness, ReleaseDna } from './types';
 import { IdentifierService } from '@/services/identity/IdentifierService';
+import { splitsResolveExactly } from '@indii/shared';
 
 export async function analyzeMasterForHarness(file?: File, profile?: AudioIntelligenceProfile): Promise<AudioIntelligenceProfile | undefined> {
   if (profile) return profile;
@@ -142,7 +143,7 @@ export function buildDistributionReadiness(params: {
     metadata.isrc && !IdentifierService.validateISRC(metadata.isrc) ? 'ISRC format is invalid' : undefined,
     metadata.upc && !IdentifierService.validateUPC(metadata.upc) ? 'UPC format is invalid' : undefined,
     metadata.iswc && !IdentifierService.validateISWC(metadata.iswc) ? 'ISWC format is invalid' : undefined,
-    metadata.splits && metadata.splits.reduce((sum, split) => sum + split.percentage, 0) !== 100 ? 'Royalty splits do not total 100%' : undefined,
+    metadata.splits && !splitsResolveExactly(metadata.splits.map(split => split.percentage)) ? 'Royalty splits do not total 100%' : undefined,
     metadata.containsSamples && !metadata.samples?.every(sample => sample.cleared) ? 'Samples need clearance before delivery' : undefined,
     metadata.isCoverSong ? 'Cover song needs mechanical license verification' : undefined,
   ]);

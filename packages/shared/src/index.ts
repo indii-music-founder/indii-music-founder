@@ -69,3 +69,10 @@ export * from './types/encounter.js';
 // Phase 9 evaluator is advisory-only; it does not dispatch or authorize actions.
 export * from './schemas/connectedIntelligence.js';
 export * from './schemas/crossDepartmentIntelligence.js';
+
+// Post-Mastering Administrative Engine (docs/plans/post-mastering-admin-engine-plan-2026-09-26.md)
+export * from './schemas/masterLifecycle.js';
+export * from './schemas/administrativeTask.js';
+export * from './schemas/adminLedger.js';
+export * from './finance/shareUnits.js';
+export * from './distribution/mandatoryMetadata.js';

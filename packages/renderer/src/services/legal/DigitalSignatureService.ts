@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { splitsResolveExactly, sumShareUnits, SHARE_UNITS_PER_PERCENT } from '@indii/shared';
 import { PandaDocService } from './PandaDocService';
 
 /**
@@ -45,10 +46,10 @@ export class DigitalSignatureService {
     }
 
     async sendSplitSheetForSignature(trackName: string, collaborators: Collaborator[]): Promise<SignatureEnvelope> {
-        // Validate math
-        const totalSplit = collaborators.reduce((sum, c) => sum + c.splitPercentage, 0);
-        if (Math.abs(totalSplit - 100) > 0.1) {
-            throw new Error(`Splits must equal 100%. Current total: ${totalSplit}%`);
+        // Validate math — exact basis-point gate (shareUnits), no tolerance band.
+        if (!splitsResolveExactly(collaborators.map((c) => c.splitPercentage))) {
+            const totalSplit = sumShareUnits(collaborators.map((c) => c.splitPercentage)) / SHARE_UNITS_PER_PERCENT;
+            throw new Error(`Splits must resolve to exactly 100.00%. Current total: ${totalSplit}%`);
         }
 
         // Item 242: Route to preferred provider

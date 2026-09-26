@@ -3,12 +3,13 @@ import { createHash } from 'node:crypto';
 import * as admin from 'firebase-admin';
 import { PDFDocument, rgb } from 'pdf-lib';
 
+import { splitsResolveExactly } from '@indii/shared';
+
 import { failedOperationResult, operationResult, optionalIdempotencyKey, requireString, toolResponse, verifyReleaseOwnership, OwnershipFirestore } from '../helpers.js';
 import { IndiiMcpTool } from '../types.js';
 
 const MAX_COLLABORATORS = 20;
 const MAX_NAME_LENGTH = 200;
-const SUM_TOLERANCE = 0.01;
 
 async function generateSplitSheetPDF(
     trackId: string,
@@ -104,9 +105,11 @@ function parseCollaborators(raw: unknown): SplitCollaborator[] {
         }
         return { name: name.trim(), percentage };
     });
-    const sum = collaborators.reduce((total, c) => total + c.percentage, 0);
-    if (Math.abs(sum - 100) > SUM_TOLERANCE) {
-        throw new TypeError(`collaborator percentages must sum to 100 (got ${sum}).`);
+    // Exact basis-point gate (shareUnits) — no tolerance band: splits must
+    // resolve to exactly 100.00% or the sheet is not registrable.
+    if (!splitsResolveExactly(collaborators.map((c) => c.percentage))) {
+        const sum = collaborators.reduce((total, c) => total + c.percentage, 0);
+        throw new TypeError(`collaborator percentages must resolve to exactly 100.00% in basis-point share units (got ${sum}).`);
     }
     return collaborators;
 }
