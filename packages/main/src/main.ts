@@ -111,6 +111,7 @@ import { setupAutoUpdater, registerUpdaterHandlers } from './updater';
 import { registerWeb3Handlers } from './handlers/web3';
 import { registerPinataHandlers } from './handlers/pinata';
 import { registerRawHandlers } from './handlers/raw';
+import { registerUpscaleHandlers } from './handlers/upscale';
 import { registerFoundryHandlers } from './handlers/foundry';
 import Store from 'electron-store';
 
@@ -519,6 +520,7 @@ if (!gotTheLock) {
         registerWeb3Handlers();
         registerPinataHandlers();
         registerRawHandlers();
+        registerUpscaleHandlers();
         registerFoundryHandlers();
 
         // Register Sidecar Handlers (Removed)

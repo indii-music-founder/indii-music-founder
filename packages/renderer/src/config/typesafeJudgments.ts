@@ -8130,3 +8130,58 @@ export async function judgeTourStopFeasibility(
     }
 }
 
+
+// ---------------------------------------------------------------------------
+// Judgment: upscale model selection (consumer: UpscalerService, ISSUE-323)
+// ---------------------------------------------------------------------------
+
+export type UpscaleModelChoice = 'realesrgan-x4plus' | 'realesrgan-x4plus-anime';
+
+function upscaleModelQuestion() {
+    return {
+        type: 'choice' as const,
+        instructions:
+            'An AI-generated music artwork is about to be upscaled for print. From the generation prompt below, ' +
+            'classify the visual style and pick the super-resolution model that preserves it best: ' +
+            "'realesrgan-x4plus' for photographic / realistic / cinematic imagery with real-world texture, " +
+            "'realesrgan-x4plus-anime' for illustration, line art, flat color, anime, graphic or typographic design.",
+    };
+}
+
+/**
+ * Choice-judge the best Real-ESRGAN model for an artwork from its generation
+ * prompt. Returns null when unavailable or undecided — the consumer falls
+ * back deterministically to the illustration-safe model.
+ */
+export async function judgeUpscaleModel(prompt: string): Promise<UpscaleModelChoice | null> {
+    if (!judgmentsAvailable() || !prompt.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { prompt: prompt.slice(0, 600) },
+            questions: {
+                model: {
+                    ...upscaleModelQuestion(),
+                    options: {
+                        'realesrgan-x4plus': 'Photographic / realistic / cinematic',
+                        'realesrgan-x4plus-anime': 'Illustration / anime / flat / graphic',
+                    },
+                },
+            },
+        });
+
+        const answer = result.data.answers?.model;
+        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown })?.choice;
+        if (choice === 'realesrgan-x4plus' || choice === 'realesrgan-x4plus-anime') return choice;
+        return null;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'upscale model judgment');
+        return null;
+    }
+}

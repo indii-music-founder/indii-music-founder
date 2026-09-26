@@ -345,6 +345,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
         },
     },
 
+    // indii Local Upscale Engine (ISSUE-323)
+    upscale: {
+        ensureEngine: () => ipcRenderer.invoke('upscale:ensure-engine'),
+        probe: () => ipcRenderer.invoke('upscale:probe'),
+        run: (req: { requestId: string; dataUrl: string; scale: 2 | 4; model?: string; tilePx?: number }) =>
+            ipcRenderer.invoke('upscale:run', req),
+        onProgress: (callback: (progress: { requestId: string; fraction: number }) => void) => {
+            const handler = (_event: unknown, progress: { requestId: string; fraction: number }) => callback(progress);
+            ipcRenderer.on('upscale:progress', handler);
+            return () => ipcRenderer.removeListener('upscale:progress', handler);
+        },
+    },
+
     // indii Format Intelligence & Capability Foundry
     foundry: {
         readFile: (filePath: string) => ipcRenderer.invoke('foundry:read-file', filePath),

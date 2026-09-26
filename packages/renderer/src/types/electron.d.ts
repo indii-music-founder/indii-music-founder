@@ -363,6 +363,14 @@ export interface ElectronAPI {
         getState: () => Promise<DAWState | null>;
         onStateChanged: (callback: (state: DAWState) => void) => () => void;
     };
+    // Local Upscale Engine (ISSUE-323) — real-esrgan-ncnn-vulkan in main process
+    upscale?: {
+        ensureEngine: () => Promise<{ enginePath: string; version: string; fromCache: boolean }>;
+        probe: () => Promise<{ enginePresent: boolean; gpuReady: boolean; detail: string }>;
+        run: (req: { requestId: string; dataUrl: string; scale: 2 | 4; model?: string; tilePx?: number }) =>
+            Promise<{ outputDataUrl: string; durationMs: number }>;
+        onProgress: (callback: (progress: { requestId: string; fraction: number }) => void) => () => void;
+    };
 }
 
 declare global {

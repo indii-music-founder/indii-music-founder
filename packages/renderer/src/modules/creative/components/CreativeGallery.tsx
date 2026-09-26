@@ -13,6 +13,59 @@ import { projectBucketMatches } from '@/core/constants';
 
 import { HistoryItem } from '@/core/store';
 
+/**
+ * Run the local upscale engine on an artwork and add the result as a new
+ * history asset (ISSUE-323). Never mutates the source asset.
+ */
+const runLocalUpscale = async (
+    item: HistoryItem,
+    scale: 2 | 4,
+    toast: ReturnType<typeof useToast>,
+): Promise<void> => {
+    try {
+        const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+        const resolved = await resolveStorageUrl(item.url);
+        const blob = await fetch(resolved).then((r) => {
+            if (!r.ok) throw new Error(`fetch ${r.status}`);
+            return r.blob();
+        });
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => reject(new Error('could not read image bytes'));
+            reader.readAsDataURL(blob);
+        });
+
+        const { upscalerService, UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
+        const outcome = await upscalerService.upscale({ dataUrl, scale, prompt: item.prompt });
+
+        const projId = useStore.getState().currentProjectId || 'default';
+        useStore.getState().addToHistory?.({
+            id: `upscale_${Date.now()}`,
+            projectId: projId,
+            type: 'image',
+            url: outcome.outputDataUrl,
+            prompt: `${item.prompt || 'Artwork'} (AI Upscale ${outcome.scale}× · ${outcome.model})`,
+            timestamp: Date.now(),
+            meta: 'upscale',
+        });
+        toast.success(`Upscaled ${outcome.scale}× in ${(outcome.durationMs / 1000).toFixed(1)}s — saved to history.`);
+    } catch (err) {
+        const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
+        if (err instanceof UpscaleUnavailableError) {
+            if (err.reason === 'gpu-not-ready') {
+                toast.error('This machine cannot run the local engine (no usable GPU/Vulkan).');
+            } else if (err.reason === 'no-electron') {
+                toast.info('Local upscaling runs in the indii desktop app.');
+            } else {
+                toast.error(`Engine setup failed: ${err.message}`);
+            }
+            return;
+        }
+        toast.error('Upscale failed.');
+    }
+};
+
 interface CreativeGalleryProps {
     compact?: boolean;
     onSelect?: (item: HistoryItem) => void;
@@ -467,6 +520,28 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-amber-600/20 hover:text-amber-300 transition-colors"
                                                     >
                                                         <span>→ Merch Mockup</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            setShowSendMenu(false);
+                                                            await runLocalUpscale(item, 2, toast);
+                                                        }}
+                                                        data-testid="send-to-upscale-2x"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
+                                                    >
+                                                        <span>→ AI Upscale 2×</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            setShowSendMenu(false);
+                                                            await runLocalUpscale(item, 4, toast);
+                                                        }}
+                                                        data-testid="send-to-upscale-4x"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
+                                                    >
+                                                        <span>→ AI Upscale 4×</span>
                                                     </button>
                                                     <button
                                                         onClick={async (e) => {
