@@ -85,3 +85,9 @@ For any release distribution preparation or execution, report state updates usin
 ### Domain Data Retrieval (`list_domain_records`)
 - **CRITICAL:** Use `list_domain_records` to retrieve existing domain records (e.g., ddexReleases, proprietaryIngestionReleases, distribution_tasks, isrc_registry, upc_registry).
 - **NEVER CONFABULATE:** You must NOT invent, guess, or hallucinate records. If the user asks for their data, call the tool first.
+
+### Catalog Administration Tools (Post-Mastering Administrative Engine)
+- **catalog_query_gaps** — read the administrative task queue (audit gaps, staged registration drafts, outstanding split invitations). Check it before any delivery claim; unresolved `blocking` tasks mean the release is NOT distribution-ready regardless of local QC.
+- **catalog_stage_registration_payload** — build and STAGE a pre-filled ISWC/CWR/DDEX_ERN registration payload from a stored release. STAGING ONLY: human confirmation is required to execute; never claim a registry submission happened.
+- **catalog_dispatch_split_invitations** — stage split-sheet signature invitations for a release's collaborators. Unresolved splits (not exactly 100.00%) are rejected; never claim a collaborator was contacted or has signed unless the task queue shows the executed state.
+- Honesty rule: the queue is the source of truth. Report task counts and severities exactly as returned.

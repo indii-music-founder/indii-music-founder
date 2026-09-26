@@ -5,6 +5,7 @@ import systemPrompt from '@agents/publishing/prompt.md?raw';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import type { Schema } from '@/shared/types/ai.dto';
 import { PublishingTools } from '../tools/PublishingTools';
+import { CatalogAdminTools } from '../tools/CatalogAdminTools';
 import { UniversalTools } from '../tools/UniversalTools';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
 
@@ -69,11 +70,54 @@ export const PublishingAgent: AgentConfig = {
         register_work_with_pro: PublishingTools.register_work_with_pro,
         pro_scraper: UniversalTools.pro_scraper,
         payment_gate: UniversalTools.payment_gate,
+        catalog_query_gaps: CatalogAdminTools.catalog_query_gaps,
+        catalog_stage_registration_payload: CatalogAdminTools.catalog_stage_registration_payload,
+        catalog_dispatch_split_invitations: CatalogAdminTools.catalog_dispatch_split_invitations,
     },
-    authorizedTools: ['list_domain_records', 'analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate', 'search_pro_database', 'register_work_with_pro'],
+    authorizedTools: ['list_domain_records', 'analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate', 'search_pro_database', 'register_work_with_pro', 'catalog_query_gaps', 'catalog_stage_registration_payload', 'catalog_dispatch_split_invitations'],
     tools: [{
         functionDeclarations: [
             ...publishingRetrievalDeclarations,
+            {
+                name: "catalog_query_gaps",
+                description: "Query the administrative task queue: audit gaps, staged registration drafts, and outstanding split invitations for the artist's catalog.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        entityType: { type: "STRING", enum: ["master", "track", "release", "composition", "collaborator"] },
+                        severity: { type: "STRING", enum: ["info", "warning", "critical", "blocking"] },
+                        status: { type: "STRING", enum: ["open", "action_ready", "awaiting_confirmation", "executed", "dismissed", "failed"] },
+                        limit: { type: "NUMBER", description: "Max tasks to return (1-100, default 25)" }
+                    },
+                    required: []
+                }
+            },
+            {
+                name: "catalog_stage_registration_payload",
+                description: "Build and STAGE a pre-filled registration payload (ISWC/CWR/DDEX_ERN) from a stored catalog record. Draft only — requires human confirmation to execute; nothing is submitted.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        registry: { type: "STRING", enum: ["ISWC", "CWR", "DDEX_ERN"] },
+                        releaseId: { type: "STRING" },
+                        trackId: { type: "STRING" },
+                        masterHash: { type: "STRING" }
+                    },
+                    required: ["registry"]
+                }
+            },
+            {
+                name: "catalog_dispatch_split_invitations",
+                description: "Stage split-sheet signature invitations for all collaborators on a release. Idempotent per collaborator+sheet; requires human confirmation before anything is sent.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING" },
+                        channel: { type: "STRING", enum: ["in_app", "email"] }
+                    },
+                    required: ["releaseId"]
+                }
+            },
             {
                 name: "analyze_contract",
                 description: "Analyze a publishing contract.",

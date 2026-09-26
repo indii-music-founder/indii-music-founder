@@ -57,6 +57,11 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     canvas_inspect: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Inspect active agent canvas panels and content' },
     canvas_get_project_canvas: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read and inspect blocks and edges on the Project Canvas' },
 
+    // Post-Mastering Administrative Engine (P3) — stage/query only, never execute
+    catalog_query_gaps: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read the administrative task queue (audit gaps and staged drafts)' },
+    catalog_stage_registration_payload: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Stage a pre-filled registration payload draft — human confirmation required to execute' },
+    catalog_dispatch_split_invitations: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Stage split-sheet signature invitations for human-confirmed dispatch' },
+
     // Security (read)
     check_api_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     scan_content: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },

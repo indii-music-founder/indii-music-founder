@@ -10,3 +10,5 @@ export { draftCwrRegistration } from './draftCwrRegistration.js';
 export { auditSampleClearance } from './auditSampleClearance.js';
 export { calculateRecoupment } from './calculateRecoupment.js';
 export { stageStripePayouts } from './stageStripePayouts.js';
+export { auditCatalogGaps } from './auditCatalogGaps.js';
+export { stageRegistrationPayload } from './stageRegistrationPayload.js';
