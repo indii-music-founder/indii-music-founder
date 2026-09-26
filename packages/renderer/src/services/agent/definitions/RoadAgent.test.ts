@@ -88,6 +88,8 @@ describe('RoadAgent', () => {
                 required: ['url'],
             }),
         }));
+    });
+
     it('declares bounded read-only public-page extraction', () => {
         const declaration = RoadAgent.tools[0]?.functionDeclarations
             .find(tool => tool.name === 'web_extract');
