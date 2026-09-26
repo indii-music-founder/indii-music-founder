@@ -39,24 +39,19 @@ describe('DepartmentRoutingSynchronization & Capability Truth Architectural Guar
         ).toEqual([]);
     });
 
-    it('ensures all 23 departments are represented in buildDepartmentAuditReport', () => {
+    it('ensures buildDepartmentAuditReport keeps the honest non-certification contract (ISSUE-1447)', () => {
+        // ISSUE-1447: 129ee4611 deliberately replaced the blanket "all 23
+        // departments operational" enumeration with a truthful non-certification
+        // answer. Department coverage is guarded by the Conductor routing-table
+        // test above; this guard now locks the HONESTY contract instead.
         const report = buildDepartmentAuditReport();
-        const departmentKeys = Object.keys(DEPARTMENTS);
 
-        const missingInAuditReport: string[] = [];
-        for (const deptKey of departmentKeys) {
-            const dept = DEPARTMENTS[deptKey];
-            const nameMatch = report.toLowerCase().includes(dept.displayName.toLowerCase());
-            const idMatch = report.toLowerCase().includes(dept.id.toLowerCase());
-            if (!nameMatch && !idMatch) {
-                missingInAuditReport.push(deptKey);
-            }
-        }
-
-        expect(
-            missingInAuditReport,
-            `Departments missing from buildDepartmentAuditReport: ${missingInAuditReport.join(', ')}`
-        ).toEqual([]);
+        expect(report).toContain('cannot truthfully certify every department');
+        expect(report).toContain('will not claim that all 23 departments are fully verified');
+        expect(report).toContain('will not claim there are no pending engineering items');
+        expect(report).toContain('available, degraded, blocked, or unverified');
+        // The abandoned blanket claim must never return:
+        expect(report).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
     });
 
     it('intercepts abstract variations of audit and readiness questions', () => {
