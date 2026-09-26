@@ -29,6 +29,12 @@ I have spent roughly four decades across music and hospitality/operations. I hav
 
 I also completed a two-year Music Business program at SAE Institute Nashville. Since committing to indii.music in November 2025, my role has been product, domain architecture, technical direction, AI-agent coordination, review, testing standards, and delivery proof.
 
+## How long have you been working on this, and is it full-time?
+
+I committed to building indii.music in November 2025 and it has been my full-time daily focus since then. I use AI-assisted development heavily, but I direct the product, architecture, scope, review, testing, and acceptance process. The repository history is consistent with that intensity: the current default branch starts on Nov. 28, 2025 and shows sustained high-frequency activity through today.
+
+I would not present raw commit count as a quality metric, but it is useful corroborating evidence of development cadence when an accelerator or investor asks how much work has actually happened.
+
 ## What is your stage?
 
 Working software entering founder-led beta validation. The core platform exists. Current work is production hardening, live external-integration verification, real-user onboarding, first commercial adoption, and turning intensive founder-led development into a repeatable operating company.

@@ -63,6 +63,15 @@
 | Field Encounter pipeline | Audio/photo evidence can extract contact details and create FieldContact + note | Current video path stores/attaches video but does not yet feed extracted frames into contact analysis |
 | GitHub issue #318 | The video-contact extraction gap is now explicitly tracked | Open issue; do not claim complete video contact extraction yet |
 
+## Development-cadence evidence
+
+| Evidence | What it supports | Important limit |
+|---|---|---|
+| Default branch begins with `Initial commit` on 2025-11-28 | Founder-reported November 2025 build start is consistent with repository history | Repository date is not the same as first day of ideation |
+| 10,538 commits reachable from `main` as of ~12:14 PM EDT 2026-09-26 | Very high sustained project execution across the 303-day build span | Includes AI/agent, merge, docs, tests, and other project commits; not all hand-coded by founder |
+| 20 commits landed between 6:00 AM and 12:14 PM EDT on 2026-09-26; first ~6:04 AM | Corroborates the founder's statement that work began around 6 AM that Saturday and continued while away from the desk | Commit timestamps prove repository activity, not uninterrupted personal labor |
+| `wiil-tech` and `the-walking-agency-det` both appear in the current history | The project uses more than one founder-controlled GitHub identity/workflow | Do not interpret identities as separate employees without evidence |
+
 ## Engineering-process evidence
 
 - .agent/workflows/start.md

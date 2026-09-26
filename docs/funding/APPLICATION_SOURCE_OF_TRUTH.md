@@ -132,6 +132,19 @@ Current evidence includes:
 
 This is useful founder evidence because the system is being used to expose, record, and route its own defects while the founder continues operating remotely. Do not describe #317 as proof that the exact in-product `reportBugFn` path fired; #317 was created through the connected founder/agent GitHub workflow.
 
+### Development cadence / founder commitment evidence — 2026-09-26 snapshot
+
+The default-branch history provides objective evidence of sustained execution since the product build began.
+
+- The oldest commit currently reachable from `main` is the repository's **Initial commit** on **2025-11-28**.
+- As of approximately **12:14 PM EDT on 2026-09-26**, the default-branch history contained **10,538 commits** across the 303-calendar-day span from Nov. 28 through Sep. 26.
+- On 2026-09-26, between **6:00 AM and 12:14 PM EDT**, **20 commits** landed; the first was at approximately **6:04 AM EDT** and the latest observed at approximately **11:50 AM EDT**.
+- Those 20 commits were attributed across the two GitHub identities currently used in the project history: `wiil-tech` (11) and `the-walking-agency-det` (9).
+
+This corroborates the founder's statement that indii.music has been an intensive, daily build effort since late 2025. It is **project-execution evidence**, not a claim that William personally typed every commit. The history includes AI-assisted/agent work, merge commits, tests, documentation, fixes, and other repository activity performed under the founder's direction and acceptance process.
+
+For external applications, the safer summary is: **William has worked full-time on indii.music since November 2025, directing a high-frequency AI-assisted development process with continuous testing, review, and CI evidence.** Use raw commit counts only when they materially help answer a diligence question.
+
 ### Human-plus-agent operating model
 
 The intended company operating model is a small human staff supervising bounded agent teams and durable scheduled/background workers. Humans own judgment, escalation, relationships, approvals, and exceptions; agents handle repeatable specialist work inside their scopes.
