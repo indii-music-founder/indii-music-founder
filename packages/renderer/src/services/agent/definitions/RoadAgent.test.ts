@@ -76,18 +76,6 @@ describe('RoadAgent', () => {
         );
     });
 
-    it('declares only the public URL input for bounded web extraction', () => {
-        const declaration = RoadAgent.tools[0]?.functionDeclarations
-            .find(tool => tool.name === 'web_extract');
-        expect(declaration).toEqual(expect.objectContaining({
-            description: expect.stringContaining('cannot log in, click, type, or submit forms'),
-            parameters: expect.objectContaining({
-                properties: {
-                    url: expect.objectContaining({ type: 'STRING' }),
-                },
-                required: ['url'],
-            }),
-        }));
     it('declares web extraction as a read-only public URL operation', () => {
         const declaration = RoadAgent.tools[0]?.functionDeclarations
             .find(tool => tool.name === 'web_extract');
