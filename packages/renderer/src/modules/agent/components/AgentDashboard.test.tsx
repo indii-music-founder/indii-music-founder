@@ -83,6 +83,7 @@ describe('AgentDashboard', () => {
     it('switches tabs correctly', async () => {
         render(<AgentDashboard />);
 
+        // Browser testing was removed from this dashboard; campaigns remain a supported tab.
         // Campaigns remains a supported dashboard destination.
         const campaignsButton = screen.getByTitle('Campaigns');
         fireEvent.click(campaignsButton);

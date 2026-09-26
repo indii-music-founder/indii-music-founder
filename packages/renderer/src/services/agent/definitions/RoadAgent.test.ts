@@ -76,6 +76,18 @@ describe('RoadAgent', () => {
         );
     });
 
+    it('declares web extraction as a read-only public URL operation', () => {
+        const declaration = RoadAgent.tools[0]?.functionDeclarations
+            .find(tool => tool.name === 'web_extract');
+        expect(declaration?.parameters).toEqual(expect.objectContaining({
+            properties: expect.objectContaining({
+                url: expect.objectContaining({ type: 'STRING' }),
+            }),
+            required: ['url'],
+        }));
+        expect(declaration?.parameters.properties).not.toHaveProperty('action');
+    });
+
     it('declares bounded read-only public-page extraction', () => {
         const declaration = RoadAgent.tools[0]?.functionDeclarations
             .find(tool => tool.name === 'web_extract');
