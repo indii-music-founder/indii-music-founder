@@ -273,3 +273,122 @@ describe('G1.4 fabric import guard', () => {
         expect(src).not.toMatch(/require\(\s*['"][^'"]*fabric/i);
     });
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-322 — print-target presets: exact px + DPI triple, byte-level proof.
+// ---------------------------------------------------------------------------
+
+const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+function makeTinyPngDataUrl(): string {
+    // Minimal PNG-shaped stream: signature + IHDR + IEND with valid CRCs.
+    const table = new Array<number>(256);
+    for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+        table[n] = c >>> 0;
+    }
+    const crc = (bytes: Uint8Array): number => {
+        let c = 0xffffffff;
+        for (const b of bytes) c = table[(c ^ b) & 0xff] ^ (c >>> 8);
+        return (c ^ 0xffffffff) >>> 0;
+    };
+    const chunk = (type: string, payload: Uint8Array): Uint8Array => {
+        const out = new Uint8Array(12 + payload.length);
+        const v = new DataView(out.buffer);
+        v.setUint32(0, payload.length);
+        for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+        out.set(payload, 8);
+        const input = new Uint8Array(4 + payload.length);
+        for (let i = 0; i < 4; i++) input[i] = out[4 + i];
+        input.set(payload, 4);
+        v.setUint32(8 + payload.length, crc(input));
+        return out;
+    };
+    const ihdr = new Uint8Array(13);
+    const sig = Uint8Array.from(PNG_SIG);
+    const parts = [sig, chunk('IHDR', ihdr), chunk('IEND', new Uint8Array(0))];
+    const png = new Uint8Array(parts.reduce((s, p) => s + p.length, 0));
+    let off = 0;
+    for (const p of parts) { png.set(p, off); off += p.length; }
+    return `data:image/png;base64,${Buffer.from(png).toString('base64')}`;
+}
+
+function makePrintHost(image: MasterImage) {
+    const created: { width: number; height: number }[] = [];
+    const pngUrl = makeTinyPngDataUrl();
+    const host: ExportHost = {
+        createCanvas(width, height) {
+            created.push({ width, height });
+            return {
+                width,
+                height,
+                getContext: () => makeMockCtx() as unknown as CanvasRenderingContext2D,
+                toDataURL: () => pngUrl
+            };
+        },
+        loadImage: () => Promise.resolve(image),
+        byteLength: (dataUrl) => Math.floor(((dataUrl.split(',')[1] ?? '').length * 3) / 4)
+    };
+    return { host, created, pngUrl };
+}
+
+function walkTypes(bytes: Uint8Array): string[] {
+    const types: string[] = [];
+    let off = 8;
+    while (off + 12 <= bytes.length) {
+        const len = (bytes[off] << 24 | bytes[off + 1] << 16 | bytes[off + 2] << 8 | bytes[off + 3]) >>> 0;
+        types.push(String.fromCharCode(bytes[off + 4], bytes[off + 5], bytes[off + 6], bytes[off + 7]));
+        off += 12 + len;
+    }
+    return types;
+}
+
+describe('exportMasterAsset — print targets (ISSUE-322)', () => {
+    it('renders at the exact print-plan pixels and tags the file bytes with DPI', async () => {
+        const image = makeMockImage(2048, 2048);
+        const { host, created, pngUrl } = makePrintHost(image);
+
+        const results = await exportMasterAsset(
+            { masterUrl: 'data:image/png;base64,QUJD', presets: [{ dimensionId: 'any', printPresetId: 'cover_art_distributor' }] },
+            host
+        );
+
+        expect(results).toHaveLength(1);
+        expect(created[0]).toEqual({ width: 3000, height: 3000 }); // PrintSpec plan, not platform registry
+        expect(results[0]!.width).toBe(3000);
+        expect(results[0]!.height).toBe(3000);
+        expect(results[0]!.dpi).toBe(300);
+        expect(results[0]!.platformId).toBe('print:cover_art_distributor');
+
+        // Decode the RESULT's bytes — pHYs must exist in the file itself.
+        const outBytes = Buffer.from(results[0]!.url.split(',')[1], 'base64');
+        expect(outBytes[0]).toBe(PNG_SIG[0]);
+        expect(walkTypes(new Uint8Array(outBytes))).toContain('pHYs');
+        expect(results[0]!.url).not.toBe(pngUrl); // rewritten, not passthrough
+    });
+
+    it('leaves non-print exports byte-identical to the canvas output', async () => {
+        const image = makeMockImage(3000, 3000);
+        const { host, created, pngUrl } = makePrintHost(image);
+        created.length = 0;
+
+        const results = await exportMasterAsset(
+            { masterUrl: 'data:image/png;base64,QUJD', presets: [{ dimensionId: 'square', fit: 'cover' }] },
+            host
+        );
+
+        expect(results[0]!.dpi).toBeUndefined();
+        expect(results[0]!.url).toBe(pngUrl); // untouched
+        expect(created[0]!.width).toBe(1080); // platform registry dimension ('square'), unchanged flow
+    });
+
+    it('rejects a print target on a format without a density container', async () => {
+        const image = makeMockImage(2048, 2048);
+        const { host } = makePrintHost(image);
+        await expect(exportMasterAsset(
+            { masterUrl: 'x', format: 'image/webp', presets: [{ dimensionId: 'any', printPresetId: 'vinyl_sleeve' }] },
+            host
+        )).rejects.toThrow(/requires PNG or JPEG/);
+    });
+});

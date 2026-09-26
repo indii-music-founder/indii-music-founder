@@ -19,6 +19,8 @@ import {
     isExtremeAspectChange,
     type CropAnchor
 } from '@/services/export/SmartCrop';
+import { planPrintOutput } from '@/services/print/PrintSpec';
+import { dataUrlWithDpi } from '@/services/print/dpiMetadata';
 import { logger } from '@/utils/logger';
 
 export type FitMode = 'cover' | 'contain-blur-pad';
@@ -29,6 +31,12 @@ export interface ExportPreset {
     fit?: FitMode;
     /** Optional crop anchors (face/logo/manual) used for 'cover' fit. */
     anchors?: CropAnchor[];
+    /**
+     * Print target (PrintSpec preset id, e.g. 'vinyl_sleeve'). When set, the
+     * output canvas uses the print plan's exact pixel dimensions and the
+     * encoded file is tagged with the plan's DPI. Requires PNG or JPEG.
+     */
+    printPresetId?: string;
 }
 
 export interface ExportBundleRequest {
@@ -46,6 +54,8 @@ export interface ExportResult {
     height: number;
     bytes: number;
     fit: FitMode;
+    /** Physical DPI tagged into the encoded file, when a print target drove the export. */
+    dpi?: number;
 }
 
 /** A loaded master image, abstracted so tests can inject a mock drawable. */
@@ -183,27 +193,51 @@ export async function exportMasterAsset(
     const results: ExportResult[] = [];
 
     for (const preset of req.presets) {
-        const dim = PLATFORM_DIMENSIONS.find(d => d.id === preset.dimensionId);
-        if (!dim) {
-            logger.warn(`[AssetExporter] Unknown dimensionId "${preset.dimensionId}" — skipped. Known: ${PLATFORM_DIMENSIONS.map(d => d.id).join(', ')}`);
-            continue;
+        // Print-target presets resolve exact pixel dimensions + DPI from the
+        // PrintSpec planner instead of the platform registry.
+        let dimW: number;
+        let dimH: number;
+        let dpi: number | undefined;
+        let dimensionLabel: string;
+        if (preset.printPresetId) {
+            if (format !== 'image/png' && format !== 'image/jpeg') {
+                throw new Error(`AssetExporter: print target "${preset.printPresetId}" requires PNG or JPEG (got ${format})`);
+            }
+            const plan = planPrintOutput({ srcWidth: image.width, srcHeight: image.height, presetId: preset.printPresetId });
+            dimW = plan.exportMeta.pixelWidth;
+            dimH = plan.exportMeta.pixelHeight;
+            dpi = plan.dpi;
+            dimensionLabel = `print:${preset.printPresetId}`;
+        } else {
+            const dim = PLATFORM_DIMENSIONS.find(d => d.id === preset.dimensionId);
+            if (!dim) {
+                logger.warn(`[AssetExporter] Unknown dimensionId "${preset.dimensionId}" — skipped. Known: ${PLATFORM_DIMENSIONS.map(d => d.id).join(', ')}`);
+                continue;
+            }
+            dimW = dim.width;
+            dimH = dim.height;
+            dimensionLabel = dim.id;
         }
 
-        const canvas = host.createCanvas(dim.width, dim.height);
+        const canvas = host.createCanvas(dimW, dimH);
         const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error(`AssetExporter: could not acquire 2D context for ${dim.id}`);
+        if (!ctx) throw new Error(`AssetExporter: could not acquire 2D context for ${dimensionLabel}`);
 
-        const fit = resolveFit(preset, image.width, image.height, dim.width, dim.height);
+        const fit = resolveFit(preset, image.width, image.height, dimW, dimH);
         renderPreset(ctx, canvas, image, fit, preset.anchors);
 
-        const url = canvas.toDataURL(format, req.quality);
+        let url = canvas.toDataURL(format, req.quality);
+        if (dpi !== undefined) {
+            url = dataUrlWithDpi(url, format, dpi);
+        }
         results.push({
-            platformId: dim.id,
+            platformId: dimensionLabel,
             url,
-            width: dim.width,
-            height: dim.height,
+            width: dimW,
+            height: dimH,
             bytes: host.byteLength(url),
-            fit
+            fit,
+            ...(dpi !== undefined ? { dpi } : {})
         });
     }
 
