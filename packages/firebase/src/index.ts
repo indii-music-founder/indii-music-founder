@@ -37,6 +37,7 @@ import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "
 import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { catalogAdminAuditFn } from "./functions/audit/catalogAdminAudit";
+import { masterIngestionRunbookFn } from "./functions/audit/masterIngestionRunbook";
 import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
 import { recordUsage } from "./functions/creative/gateway";
@@ -247,6 +248,9 @@ export { typesafeJudge } from './functions/intelligence/typesafeJudge';
 
 // Post-Mastering Administrative Engine (P2) — receipt-complete audit trigger
 export { onAnalysisReceiptComplete } from './functions/audit/triggers';
+
+// Post-Mastering Administrative Engine (P4) — autonomous master upload trigger
+export { onMasterUploaded } from './functions/audit/onMasterUploaded';
 
 // Billing / Cost Control
 export { enforceOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';
@@ -1091,9 +1095,12 @@ export const inngestApi = onRequest(
         // Post-Mastering Administrative Engine: deterministic catalog audit (P2)
         const catalogAdminAudit = catalogAdminAuditFn(inngestClient);
 
+        // Post-Mastering Administrative Engine: master ingestion runbook (P4)
+        const masterIngestionRunbook = masterIngestionRunbookFn(inngestClient);
+
         const handler = serve({
             client: inngestClient,
-            functions: [generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall, canvasRender, catalogAdminAudit],
+            functions: [generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall, canvasRender, catalogAdminAudit, masterIngestionRunbook],
             signingKey: inngestSigningKey.value(),
         });
 

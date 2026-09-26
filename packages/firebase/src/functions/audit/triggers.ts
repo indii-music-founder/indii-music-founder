@@ -1,7 +1,6 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { inngestEventKey } from '../../config/secrets';
 import { getInngestClient } from '../../lib/inngestClient.js';
-import type { CatalogAuditEventPayload } from './catalogAdminAudit';
 
 /**
  * Post-Mastering Administrative Engine triggers (P2; plan §2.2.1 / §3 T2).
@@ -15,22 +14,39 @@ import type { CatalogAuditEventPayload } from './catalogAdminAudit';
  * in the worker so retries are durable and concurrency-bounded.
  */
 
-export function buildAnalysisReceiptAuditPayload(
+export function buildAnalysisReceiptEvents(
     receiptId: string,
     data: Record<string, unknown>,
-): CatalogAuditEventPayload | undefined {
-    if (data['status'] !== 'complete') return undefined;
+): Array<{ name: string; data: Record<string, unknown>; user: { id: string } }> {
+    if (data['status'] !== 'complete') return [];
     const userId = data['userId'];
     const contentHash = data['contentHash'];
     if (typeof userId !== 'string' || !userId || typeof contentHash !== 'string' || !contentHash) {
-        return undefined;
+        return [];
     }
-    return {
-        userId,
-        entityType: 'master',
-        entityRefs: { masterHash: contentHash },
-        receiptId,
-    };
+    const events: Array<{ name: string; data: Record<string, unknown>; user: { id: string } }> = [
+        {
+            name: 'admin/audit.requested',
+            data: { userId, entityType: 'master', entityRefs: { masterHash: contentHash }, receiptId },
+            user: { id: userId },
+        },
+    ];
+    // P4: the ingestion runbook drives the master lifecycle from this moment.
+    if (typeof data['storagePath'] === 'string' && data['storagePath']) {
+        events.push({
+            name: 'admin/master.analyzed',
+            data: {
+                userId,
+                masterHash: contentHash,
+                receiptId,
+                storagePath: data['storagePath'],
+                generation: String(data['generation'] ?? '0'),
+                masterFingerprint: typeof data['masterFingerprint'] === 'string' ? data['masterFingerprint'] : undefined,
+            },
+            user: { id: userId },
+        });
+    }
+    return events;
 }
 
 export const onAnalysisReceiptComplete = onDocumentCreated(
@@ -43,13 +59,10 @@ export const onAnalysisReceiptComplete = onDocumentCreated(
         const snapshot = event.data;
         if (!snapshot) return;
         const data = (snapshot.data() ?? {}) as Record<string, unknown>;
-        const payload = buildAnalysisReceiptAuditPayload(event.params.receiptId, data);
-        if (!payload) return;
+        const events = buildAnalysisReceiptEvents(event.params.receiptId, data);
+        if (events.length === 0) return;
 
-        await getInngestClient().send({
-            name: 'admin/audit.requested',
-            data: payload,
-            user: { id: payload.userId },
-        });
+        const client = getInngestClient();
+        await client.send(events as never);
     },
 );
