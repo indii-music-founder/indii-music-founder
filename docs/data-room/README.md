@@ -1,306 +1,56 @@
-# indii Acquisition Data Room
+# indii.music Funding & Diligence Data Room
 
-**Purpose:** Single, locked, version-controlled repository for acquisition diligence.
+**Purpose:** Public, version-controlled diligence and fundraising reference for indii.music.  
+**Canonical date:** 2026-09-26  
+**Repository visibility:** Public.
 
-**Access:** By invitation only. Confidentiality agreement required. Expires [DATE] unless extended.
+## Truth hierarchy
 
----
+When documents conflict, use this order:
 
-## Directory Structure
+1. Current founder decisions recorded in CURRENT_FUNDRAISING_FACTS.md.
+2. Current production code, tests, CI, and repository state.
+3. Current architecture/status documents that explicitly distinguish implemented from planned.
+4. Later-dated business-decision documents.
+5. Historical acquisition drafts, forecasts, mocks, fixtures, and archived plans.
 
-All files are markdown or PDF. Total read time for a diligence team: ~4–6 hours.
+A projection, test fixture, simulated metric, roadmap item, or aspirational architecture statement is not traction, revenue, production proof, or a live commercial relationship.
 
-```
-docs/data-room/
-├── 00_VALUATION_THESIS.md              # Independent valuation (this session's output)
-├── 01_ARCHITECTURE.md                  # System overview, 3-layer, agent fleet
-├── 02_ENTITY_STRUCTURE.md              # Entity ownership (New Detroit Music LLC)
-├── ../ip/IP_ASSIGNMENT.md              # Clean chain of title to New Detroit Music LLC
-├── 04_AI_AUTHORSHIP_DISCLOSURE.md      # AI code licensing (Anthropic, Google)
-├── 05_KNOWN_GAPS.md                    # Honest stub inventory (tax forms, blockchain)
-├── 06_INDEPENDENT_REVIEW.pdf           # [FUTURE] Third-party engineering report
-├── 07_INGESTION_PROOF/                      # Sample IngestionNotifications, delivery receipts, Proprietary Ingestion ID cert
-├── 08_DSP_RELATIONSHIPS.md             # State of each DSP onboarding
-├── 09_FINANCIALS/                      # Revenue, runway, GMV, artist count
-├── 10_LEGAL/                           # Stripe TOS, GCP TOS, Anthropic/Google terms
-├── 11_RETENTION_TERM_SHEET.md          # William's draft package
-├── 12_SUCCESSION_PLAN.md               # Successor candidate(s) & transition
-├── ../ip/13_IP_ASSET_REGISTER.md        # Living IP, provenance, restrictions, and value-evidence register
-├── INDEPENDENT_REVIEW_SCOPE.md         # Scope for external reviewer
-├── REVIEWER_CANDIDATES.md              # Reviewer selection options
-├── REVIEWER_BRIEFING.md                # Day-1 briefing for reviewer
-└── README.md                           # This file
-```
+## Current high-level status
 
----
+- Product: indii.music
+- Stage: Founding Artist Beta; working software still being refined
+- Founder: William Roberts
+- Current entity: New Detroit Music LLC, Michigan; founder reports 100% ownership
+- Software build start: November 2025
+- Revenue to date: $0
+- Paying customers: 0
+- Outside funding received: $0 reported
+- Startup/cloud credits received: $0 reported
+- Active external beta users: 0 confirmed
+- Waitlist: small / early
+- Direct-to-DSP production delivery: not yet proven
+- SOC 2: readiness/control framework with automated evidence collection; not an independent SOC 2 attestation
 
-## Entry Details
+## Current files
 
-### 00_VALUATION_THESIS.md
+- CURRENT_FUNDRAISING_FACTS.md — canonical fundraising facts and founder/product status
+- 00_VALUATION_THESIS.md — retired historical valuation draft
+- 01_ARCHITECTURE.md — architecture reference; validate against current code/status docs
+- 02_ENTITY_STRUCTURE.md — current entity/ownership posture
+- 08_DSP_RELATIONSHIPS.md — truthful distribution/DSP readiness status
+- 09_FINANCIALS_REVENUE_SUMMARY.md — current pre-revenue financial facts
+- 10_LEGAL_COMPLIANCE.md — current legal/compliance posture and SOC 2 readiness
+- INDEPENDENT_REVIEW_SCOPE.md — review scope template
+- REVIEWER_BRIEFING.md — reviewer briefing
+- HANDOFF_DILIGENCE_RUNBOOK.md — diligence workflow; historical assumptions yield to current facts
 
-**Status:** Not yet in repo (exists in conversation summary only)  
-**Content:** Independent valuation output from session 2026-04-26  
-**What It Contains:**
-- Market analysis: music distribution, DSP landscape, competitive positioning
-- Asset valuation: proprietary ingestion rail, agent fleet, test quality
-- Risk assessment: single-author concentration, subscription model, regulatory
-- Comparable company analysis (music platforms, music tech, AI agents)
-- Valuation range and methodology
+## Claims discipline
 
-**Why It Matters:** Answers "Why is this worth $X?" before an acquirer even looks at code
+Classify material statements as verified repository evidence, verified public evidence, founder-reported, estimate/projection, planned, or retired/stale.
 
-**Action Item:** William to export session valuation as markdown and commit
+Never convert founder recollection, mock data, test fixtures, simulated metrics, or roadmap language into verified business metrics.
 
----
+Sensitive diligence records should be supplied through the secure channel of the program, investor, auditor, bank, or buyer that actually requires them, rather than this public repository.
 
-### 01_ARCHITECTURE.md
-
-**Status:** To be written (William to create)  
-**Due:** Week 1 of post-acquisition  
-**Content:** Complete system architecture covering:
-- 3-layer design (Directive → Orchestration → Execution)
-- Hub-and-spoke agent topology (indii Conductor + 17 specialists)
-- Proprietary ingestion distribution pipeline (Proprietary Ingestion ID through DSP submission)
-- Vertex AI fine-tuning pipeline (dataset → job → endpoint)
-- Payment flow (Stripe Connect, escrow, royalty waterfall)
-- Critical path diagrams for incident response
-
-**Who Reads It:** Acquirer's technical team, second-round diligence
-
----
-
-### 02_ENTITY_STRUCTURE.md ✅
-
-**Status:** Committed 2026-04-26 (commit `d1023b0b`)  
-**Content:** Clarification that New Detroit Music LLC is the legal owner, indii is the product name
-
----
-
-### ../ip/IP_ASSIGNMENT.md ✅
-
-**Status:** Committed 2026-04-26 (commit `8d3543ed`)  
-**Content:** Chain of title from all contributors (William, Claude, Google Jules) to New Detroit Music LLC
-
----
-
-### 04_AI_AUTHORSHIP_DISCLOSURE.md ✅
-
-**Status:** Committed 2026-04-26 (commit `8d3543ed`)  
-**Content:** Transparent disclosure of AI-generated code and proper licensing per Anthropic and Google terms
-
----
-
-### 05_KNOWN_GAPS.md ✅
-
-**Status:** Committed 2026-04-26 (commit `da469e23`)  
-**Content:** Documented stubs (tax forms, blockchain) with remediation triggers and effort estimates
-
----
-
-### 06_INDEPENDENT_REVIEW.pdf
-
-**Status:** [FUTURE] Generated after reviewer engagement  
-**Timeline:** Weeks 4–6 of independent review (B.4–B.5)  
-**Content:** Signed PDF report with:
-- Executive summary (pass/fail on valuation thesis)
-- Findings by severity (Critical/Major/Minor/Informational)
-- Per-gate verdicts (all 12 verification gates from INDEPENDENT_REVIEW_SCOPE.md)
-- Recommended remediation with effort estimates
-
-**What Acquisition Teams Look For:**
-- ✅ Is the proprietary ingestion rail real and spec-compliant?
-- ✅ Are the agent endpoints live and fast?
-- ✅ Is the payment system idempotent?
-- ✅ Any Critical security issues?
-
----
-
-### 07_INGESTION_PROOF/
-
-**Status:** [FUTURE] Created by reviewer during engagement  
-**Content:**
-- Sample IngestionNotification XML (generated by William's code, validated against XSD)
-- SFTP delivery receipt (proof file arrived at test target)
-- Party ID certificate or Proprietary Ingestion IP Inc. verification letter
-- DSP API endpoint credentials (sanitized, API keys removed)
-
-**What Acquisition Teams Look For:** Proof that "we really integrate with Spotify, Apple, etc."
-
----
-
-### 08_DSP_RELATIONSHIPS.md
-
-**Status:** [FUTURE] To be written by William  
-**Content:**
-- Onboarding status for each of 8 DSPs (Spotify, Apple, Amazon, Tidal, Deezer, CDBaby, DistroKid, Symphonic)
-- Active API credentials (sanitized)
-- Verification of commercial agreement (if any)
-- Volume shipped to each DSP (releases, artist count, GMV)
-
-**Why It Matters:** Shows the distribution rail is real, not vaporware
-
----
-
-### 09_FINANCIALS/
-
-**Status:** [FUTURE] Subfolder structure TBD by William  
-**Subfolders:**
-
-```
-09_FINANCIALS/
-├── acquisition/                    # For acquisition buyers
-│   ├── REVENUE_SUMMARY.md         # Historical revenue (if any)
-│   ├── RUNAWAY_FORECAST.md        # Projections if William stays
-│   └── BURN_RATE.md               # Operating expenses, runway
-└── series_a/                       # For VC investors (alternate path)
-    ├── UNIT_ECONOMICS.md          # CAC, LTV, payback period
-    ├── GROWTH_ROADMAP.md          # User acquisition plan
-    └── PROFITABILITY_PATH.md      # Path to cash flow positive
-```
-
-**Content (Acquisition Narrative):**
-- GMV shipped YTD (if any)
-- Revenue per artist
-- Operating costs (GCP, Stripe, hosting)
-- Runway (months of cash remaining)
-- Break-even analysis
-
----
-
-### 10_LEGAL/
-
-**Status:** [FUTURE] Subfolder with external agreements  
-**Content:**
-- **Stripe Connect Agreement** (sanitized excerpt showing William/New Detroit Music LLC is the merchant)
-- **GCP Terms of Service** (confirmation of project ownership)
-- **Anthropic API Terms** (confirmation of AI code ownership)
-- **Google AI Tools Terms** (confirmation of Google Jules code ownership)
-- **Firebase Terms** (confirmation of Firestore/Functions ownership)
-- **DSP Agreements** (if any formal contracts exist)
-
-**Why It Matters:** Shows no conflicting claims or licensing issues
-
----
-
-### 11_RETENTION_TERM_SHEET.md ✅
-
-**Status:** Committed 2026-04-26 (commit `0305f3a5`)  
-**Content:** William's draft retention package with:
-- Cash component ($[X] signing bonus, $[X] base salary)
-- Earnout component (30–40% of purchase price tied to metrics)
-- Role / scope clause (decision authority, veto rights)
-- Knowledge transfer milestones (with deliverables and timelines)
-- Non-compete & IP carve-outs (scope and duration)
-
----
-
-### 12_SUCCESSION_PLAN.md ✅
-
-**Status:** Committed 2026-04-26 (commit `0305f3a5`)  
-**Content:** 18-month transition timeline with:
-- Named successor candidate (to be filled in by William)
-- Monthly milestones (shadowing → pairing → independence)
-- Success criteria (technical mastery, operational ownership, documentation)
-- Contingency if search fails
-
----
-
-### ../ip/13_IP_ASSET_REGISTER.md ✅
-
-**Status:** Created 2026-07-20
-**Content:** Living, evidence-backed inventory of platform IP, brand assets,
-model/configuration assets, datasets, customer-controlled music rights, and
-third-party licences. It separates creation, ownership, restrictions, and
-value evidence so diligence and product claims do not overstate title.
-
----
-
-### INDEPENDENT_REVIEW_SCOPE.md ✅
-
-**Status:** Committed 2026-04-26 (commit `b7b27523`)  
-**Content:** Exact scope for third-party reviewer (3 subsystems, 12 verification gates)
-
----
-
-### REVIEWER_CANDIDATES.md ✅
-
-**Status:** Committed 2026-04-26 (commit `b7b27523`)  
-**Content:** 3 reviewer options (boutique firm, independent contractor, acquirer-aligned) with recommendation: Embedded
-
----
-
-### REVIEWER_BRIEFING.md ✅
-
-**Status:** Committed 2026-04-26 (commit `c178ce64`)  
-**Content:** Day-1 briefing for reviewer (15 min read, covers context + 12 gates + access/logistics)
-
----
-
-## Access & Logistics
-
-### How to Access
-
-1. **GitHub Invite:** William sends GitHub invite to `github.com/the-walking-agency-det/indii-Alpha-Electron` as read-only collaborator
-2. **Data Room Path:** All diligence docs are in `docs/data-room/` (this directory)
-3. **NDA:** Sign standard tech-industry NDA before access
-4. **Timeline:** Access expires [DATE] (standard 30 days per diligence phase)
-
-### Confidentiality
-
-- ✅ Permitted: Review by acquirer's finance/tech/legal teams
-- ✅ Permitted: Share findings internally within acquirer's organization
-- ❌ Not Permitted: Share externally without William's written approval
-- ❌ Not Permitted: Use code or methodologies for competitive purposes
-
----
-
-## Update Cadence
-
-**Pre-LOI** (every 2 weeks):
-- Refresh financial projections (if new data available)
-- Update known gaps (if any remediated)
-- Stamp last-updated date on each document
-
-**LOI Signed** (as questions come back):
-- Live updates to address specific buyer questions
-- Escalation calls as needed
-- Final sign-off on all exhibits before closing
-
----
-
-## Verification Checklist for Diligence Teams
-
-Use this as your entry point:
-
-- [ ] Read REVIEWER_BRIEFING.md (15 min) — understand the thesis
-- [ ] Read 02_ENTITY_STRUCTURE.md — confirm ownership
-- [ ] Read ../ip/IP_ASSIGNMENT.md — confirm clean title
-- [ ] Read 04_AI_AUTHORSHIP_DISCLOSURE.md — confirm no licensing conflicts
-- [ ] Read ../ip/13_IP_ASSET_REGISTER.md — distinguish owned, licensed, customer-controlled, and unverified assets
-- [ ] Read 05_KNOWN_GAPS.md — understand deferred work
-- [ ] Read 01_ARCHITECTURE.md — understand system design
-- [ ] Read INDEPENDENT_REVIEW_SCOPE.md — see what external reviewer checked
-- [ ] [FUTURE] Read 06_INDEPENDENT_REVIEW.pdf — review third-party findings
-- [ ] Read 11_RETENTION_TERM_SHEET.md — understand founder incentives
-- [ ] Read 12_SUCCESSION_PLAN.md — understand transition risk mitigation
-- [ ] [FUTURE] Review 07_INGESTION_PROOF/ — verify distribution is real
-- [ ] [FUTURE] Review 09_FINANCIALS/ — understand unit economics
-- [ ] [FUTURE] Review 10_LEGAL/ — confirm no licensing issues
-
-**Total Time:** 4–6 hours (assuming you skip deep code reading; reviewer does that for you)
-
----
-
-## Contact for Questions
-
-**Data Room Owner:** William Roberts  
-**Email:** williamexpressway@gmail.com  
-**Timezone:** ET (US East Coast)  
-**Response Time:** 24 hours for clarifications, 48 hours for deep technical questions
-
----
-
-**Last Updated:** 2026-04-26  
-**Version:** 1.0 (Pre-LOI, for acquirer familiarization)  
-**Audience:** Prospective acquirers, their finance/tech/legal teams  
-**Confidentiality:** NDA required
+**Last updated:** 2026-09-26

@@ -1,28 +1,31 @@
 # Entity Structure & Ownership
 
-**Legal Entity:** New Detroit Music LLC  
-**Product Name:** indii (Doing Business As)  
-**Jurisdiction:** Michigan, USA  
-**Owner:** William Roberts  
+**Canonical date:** 2026-09-26  
+**Status:** Current founder-reported posture; legal-record verification still required before external submission
 
----
+## Current entity
 
-## 1. Overview
+- Legal entity in use: New Detroit Music LLC
+- Jurisdiction: Michigan, USA
+- Founder / reported owner: William Roberts — 100%
+- Original purpose: record-label activity, including Expressway Records
+- Founder-reported formation year: 2018
+- Current product: indii.music
 
-New Detroit Music LLC is the parent company and legal owner of all assets, IP, and contracts related to the **indii** platform. indii is the consumer-facing brand and product name.
+New Detroit Music LLC predates indii.music. The founder reports that the LLC was originally created for record-label activity and is being used for indii.music because it already exists.
 
-## 2. Ownership Chain
+## Structure decision still open
 
-- **Entity Owner:** William Roberts (100% ownership)
-- **Asset Ownership:** All source code, AI model weights, training data, and trademarks are owned directly by New Detroit Music LLC.
-- **Contract Ownership:** All third-party agreements (Stripe, Google Cloud, Anthropic) are held in the name of New Detroit Music LLC or its authorized representative.
+No fundraising document should state that a new entity or DBA has already been created unless legal records prove it. Options include continuing through New Detroit Music LLC, registering an appropriate assumed name/DBA, or forming a new entity for indii.music and assigning relevant IP/contracts into it.
 
-## 3. Registered DBA
+## Ownership
 
-indii is registered as a "Doing Business As" (DBA) name for New Detroit Music LLC in the state of Michigan. This allows the company to operate commercially under the product name while maintaining legal liability and financial records under the LLC.
+- William Roberts owns 100% according to the founder.
+- No outside equity, SAFE, convertible note, or other investor ownership has been reported.
+- No co-founder equity has been reported.
 
----
+## Verification still required
 
-**Last Updated:** 2026-04-27  
-**Status:** Verified  
-**Audience:** Acquirers, Legal Diligence  
+Before a form requires exact legal facts, verify the exact formation date, Michigan good standing/status, registered office, resident agent, assumed-name status, and whether a new financing entity is preferable.
+
+**Last updated:** 2026-09-26

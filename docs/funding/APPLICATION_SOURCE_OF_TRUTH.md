@@ -73,6 +73,8 @@ The repository is a substantial web / desktop / cloud system with:
 
 Founder-created engineering procedures under `.agent/workflows/` define orientation, bounded execution, validation, closeout, exact-SHA CI, and authenticity requirements.
 
+Repository scale snapshot on 2026-09-26: approximately 3,605 TypeScript/TSX files, 1,479 test/spec files, 79 Playwright E2E specs, 621 docs files, 38 custom agent workflows, and 22 specialist agent-card definitions. These are engineering-evidence counts, not customer traction.
+
 This is an important technical-founder fact: the founder did not merely prompt AI to write code; he designed the operating process that governs how AI development work is accepted.
 
 ## TypeSafe / JEV
@@ -80,6 +82,8 @@ This is an important technical-founder fact: the founder did not merely prompt A
 JEV System One is integrated as a typed semantic judgment layer.
 
 Production design keeps credentials server-side through `typesafeJudge`, uses centrally reviewable questions/thresholds, preserves deterministic fallbacks, and prevents semantic judgments from becoming legal/financial/security truth.
+
+The central registry currently contains 70 exported typed `judge*` functions, plus a separate Jev guardrail service.
 
 ## SOC 2 readiness
 
@@ -100,6 +104,14 @@ External wording:
 Do **not** claim SOC 2 certification.
 
 The current 90-day GitHub artifact archive must be supplemented by durable long-term evidence storage before a longer Type II observation period.
+
+## Engineering review / CI leverage
+
+- CodeRabbit configuration is present in the repository.
+- The founder reports free/access-tier availability for Greptile and Blacksmith and plans to use paid capacity as funding permits.
+- Current GitHub workflows still show standard GitHub-hosted runners, so do not claim active paid Blacksmith execution until verified.
+
+These tools fit the use-of-funds story as independent review capacity, checks-and-balances, and faster CI — not as current paid infrastructure unless live usage is proven.
 
 ## Distribution truth
 
