@@ -118,7 +118,7 @@ const runPrintPack = async (
             presets: PACK_PRESET_IDS.map((id) => ({ dimensionId: 'print', printPresetId: id })),
         });
         await downloadAsZip(bundle, `print-pack-${Date.now()}`);
-        toast.success(`Print pack ready: ${bundle.results.length} DPI-tagged files downloaded.`);
+        toast.success(`Print pack ready: ${bundle.length} DPI-tagged files downloaded.`);
     } catch (err) {
         const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
         if (err instanceof UpscaleUnavailableError) {
