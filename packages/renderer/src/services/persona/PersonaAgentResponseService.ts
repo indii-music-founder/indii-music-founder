@@ -95,6 +95,25 @@ export async function finalizePersonaAgentResponse(
         return { text: input.response.text };
     }
 
+    // ERROR_LEDGER 2026-09-26: a tool-less response that CLAIMS a completed
+    // filing ("documented and prepared for engineering pipeline triage",
+    // "routed to the internal project tracking system") must not be dressed
+    // in authoritative verdict formatting either — that amplified an
+    // unbacked claim into founder-visible "proof". Detection is a
+    // best-effort heuristic; the hard enforcement is the EXECUTION CONTRACT
+    // (report_bug must execute) and the tool's durability gate. Passthrough
+    // byte-identical, like failure text.
+    const { detectUnbackedFilingClaim } = await import('@/services/agent/capabilityTruth');
+    const filingClaim = detectUnbackedFilingClaim(input.response.text);
+    if (filingClaim.hasUnbackedClaim) {
+        logger.warn('[PersonaAgentResponseService] Tool-less response claims a completed filing — skipping verdict formatting so the claim is not amplified.', {
+            agentId: input.agentId,
+            personaId: AGENT_PERSONA_MAP[input.agentId] ?? 'unmapped',
+            snippet: filingClaim.snippet,
+        });
+        return { text: input.response.text };
+    }
+
     try {
         const faderResolution = dependencies.resolveFaders
             ? await dependencies.resolveFaders(personaId)

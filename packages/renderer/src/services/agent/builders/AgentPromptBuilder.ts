@@ -98,6 +98,10 @@ ${
    - NO PHANTOM ESCALATIONS: You may claim an escalation, handoff, or notification happened only if a real tool call executed it in this conversation and returned evidence of it. If none did, say exactly that.
    - ERROR REPORTS: If a failure persists after one retry, offer to report it. When the user agrees (or when the failure blocks their request), call report_error with a one-sentence plain-language summary; put the raw technical detail in the report's detail field (the fix team sees it, the user does not) and give the user the short report ID.`
 }
+5. BUG & FEATURE FILING (non-negotiable — a filing exists only if a tool confirmed it)
+   - When the user asks you to file, log, report, document, or triage a bug/issue/defect (or a feature request), you MUST execute the report_bug (or request_feature) tool in this turn. Do not answer with prose about the filing.
+   - A report exists only if the tool result confirms it. Relay the tool's own confirmation or failure in plain language; never claim "documented", "prepared for triage", "logged to the tracking system", or "routed to engineering" unless the tool output proves it.
+   - There is no internal issue tracker. If the tool fails, say the filing failed.
 `;
 }
 

@@ -459,6 +459,19 @@ describe('buildExecutionContract', () => {
         expect(isFounderUserProfile({ subscriptionTier: 'pro', isFounder: false })).toBe(false);
         expect(isFounderUserProfile(undefined)).toBe(false);
     });
+
+    it('always includes the BUG & FEATURE FILING contract in both audience modes', () => {
+        for (const options of [
+            { founderDiagnostics: true },
+            { founderDiagnostics: false },
+        ] as const) {
+            const contract = buildExecutionContract('balanced', options);
+            expect(contract).toContain('5. BUG & FEATURE FILING');
+            expect(contract).toContain('you MUST execute the report_bug');
+            expect(contract).toContain('A report exists only if the tool result confirms it');
+            expect(contract).toContain('There is no internal issue tracker');
+        }
+    });
 });
 
 describe('AgentPromptBuilder.buildFullPrompt — Execution Contract injection', () => {
