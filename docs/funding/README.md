@@ -121,6 +121,8 @@ The canonical repository is:
 
 Use current `main` plus exact-SHA evidence where a technical claim matters.
 
+**Branch audit (2026-09-26):** GitHub currently exposes only the `main` branch in the canonical repository. There is no separate funding/application branch to reconcile. Funding preparation, founder-history consolidation, product-differentiator evidence, cadence audits, and build-history work are all committed into `main`.
+
 Do not fall back to older repository copies or historical data-room assumptions.
 
 ## Work-mode rule

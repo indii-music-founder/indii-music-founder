@@ -17,6 +17,8 @@
 
 If any older document conflicts, the current source-of-truth and current code/CI win.
 
+**Repository/branch check:** the canonical repository is `indii-music-founder/indii-music-founder`, and the 2026-09-26 branch audit found only `main`. The founder-history and product evidence gathered during the funding-preparation conversation has already been consolidated into the files above and committed to `main`; do not restart that interview in Work.
+
 ## Current application order
 
 ### 1. PearX W27
