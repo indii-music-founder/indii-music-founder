@@ -118,6 +118,26 @@ Every valid agent ID must resolve to a required fine-tuned Vertex endpoint or an
 
 This architecture changes the economics of adding capability. New product functions can often be introduced as bounded tools/capabilities inside the existing harness, assigned to the appropriate specialist, and passed through the same approval, test, security, and CI machinery instead of requiring a new standalone application or parallel orchestration stack. That does **not** mean feature work is effortless: implementation, integration tests, security review, UI work, and live verification still apply. The advantage is reuse of the existing operating framework and reduced architectural blast radius.
 
+## Live dogfooding and remote operating evidence — 2026-09-26
+
+The founder uses indii.music and its connected agent/development system to operate the company while away from the desktop, not only to demonstrate the product.
+
+Current evidence includes:
+
+- Post-Mastering Administrative Engine P1 deployed after a sanctioned retry of a transient Google 503; workflow-dispatch run 36247269910 completed successfully against commit `ed84984a9`.
+- P2 commit `304e1c4b3` added the deterministic catalog audit worker, Jev severity triage, durable administrative task emission, and a receipt-completion trigger that starts the administrative chain autonomously.
+- GitHub issue #317 was opened through the founder/agent GitHub connector flow after the Boardroom overclaimed production readiness. The issue explicitly requires status responses to distinguish implemented, tested, live-verified, and still-gated capabilities.
+- The in-product bug-report architecture is separate and also implemented: authenticated user reports can persist to Firestore and forward to GitHub Issues with server-side credentials and search-before-create deduplication.
+- A review of the Field Encounter video use case found a real implementation gap: video is captured/stored/attached, but the current contact-analysis function accepts audio and image evidence, not extracted video frames. Issue #318 now tracks that gap.
+
+This is useful founder evidence because the system is being used to expose, record, and route its own defects while the founder continues operating remotely. Do not describe #317 as proof that the exact in-product `reportBugFn` path fired; #317 was created through the connected founder/agent GitHub workflow.
+
+### Human-plus-agent operating model
+
+The intended company operating model is a small human staff supervising bounded agent teams and durable scheduled/background workers. Humans own judgment, escalation, relationships, approvals, and exceptions; agents handle repeatable specialist work inside their scopes.
+
+Parts of that model already exist technically — scheduled GitHub workflows, durable Inngest workers, department/Boardroom routing, approval gates, and background administrative processing — but the future human staffing structure is a plan, not current headcount.
+
 ## TypeSafe / JEV
 
 JEV System One is integrated as a typed semantic judgment layer.

@@ -67,6 +67,22 @@ The internal/founder side is deliberately different: founder-authorized users ca
 
 The current department runtime has 23 registered department heads. Direct mode prevents delegation, Department mode prevents cross-department delegation, and Boardroom mode restricts collaboration to seated department heads. Valid agent IDs must resolve to a required fine-tuned Vertex endpoint or an explicit tuned-domain alias; missing routing fails rather than silently falling back to a generic model.
 
+## How do you operate indii.music itself?
+
+The founder/internal version is used to operate indii.music, not only to build it. Authorized internal users can use the same Boardroom, specialist agents, remote control, content/campaign workflows, status surfaces, and diagnostic systems while running the company.
+
+The internal error experience is deliberately richer than the customer experience. Customers can report a problem conversationally and create a durable report without being exposed to raw engineering details. Founder/internal users can inspect deeper diagnostics and route the issue into engineering work.
+
+That creates a short feedback loop: use the product → encounter a defect or missing capability → preserve evidence → create/route engineering work → verify the fix.
+
+A current example is GitHub issue #317, opened after the Boardroom overstated production readiness. Another review found that Field Encounter video capture is stored but not yet analyzed frame-by-frame for contact extraction; that gap is now tracked as issue #318.
+
+## What is the operating model as the company grows?
+
+The planned operating model is a small human team supervising bounded specialist agents and durable scheduled/background workers. Humans handle relationships, judgment, approvals, exceptions, and management; agents handle repeatable specialist work within defined scopes.
+
+This is not a claim that indii.music already has that staff. The technical foundation exists today in department routing, Boardroom collaboration rules, approval gates, scheduled workflows, Inngest background workers, CI, and continuous evidence collection.
+
 ## What is your business model?
 
 Current Founding Artist Beta packaging:
