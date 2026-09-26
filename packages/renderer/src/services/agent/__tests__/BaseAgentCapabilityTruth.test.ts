@@ -88,12 +88,10 @@ describe('BaseAgent Capability Truth & Zero-Hallucination Guardrails', () => {
         const response = await agent.execute('Did the other agents the other 23 get their requested tools?');
 
         expect(AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
-        expect(response.text).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
-        expect(response.text).toContain('None are in a "holding pattern"');
-        expect(response.text).toContain('no pending "engineering sprint"');
-        expect(response.text).toContain('- **Finance**: Royalty accounting');
-        expect(response.text).toContain('- **Legal**: Contract review');
-        expect(response.text).toContain('- **Distribution**: DSP delivery readiness');
+        expect(response.text).toContain('cannot truthfully certify every department');
+        expect(response.text).toContain('will not claim that all 23 departments are fully verified');
+        expect(response.text).toContain('will not claim there are no pending engineering items');
+        expect(response.text).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
     });
 
     it('intercepts fleet holding pattern queries pre-execution without calling LLM', async () => {
@@ -102,8 +100,9 @@ describe('BaseAgent Capability Truth & Zero-Hallucination Guardrails', () => {
         const response = await agent.execute('Are the 23 agents in a holding pattern?');
 
         expect(AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
-        expect(response.text).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
-        expect(response.text).toContain('None are in a "holding pattern"');
+        expect(response.text).toContain('cannot truthfully certify every department');
+        expect(response.text).toContain('will not claim that all 23 departments are fully verified');
+        expect(response.text).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
     });
 
     it('sanitizes ungrounded engineering hallucination from LLM output post-execution', async () => {
@@ -133,8 +132,9 @@ describe('BaseAgent Capability Truth & Zero-Hallucination Guardrails', () => {
         expect(response.text).not.toContain('master technical specification document');
         expect(response.text).not.toContain('build phase has not yet yielded');
         expect(response.text).not.toContain('operating with their original, baseline capabilities');
-        expect(response.text).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
-        expect(response.text).toContain('None are in a "holding pattern"');
+        expect(response.text).toContain('cannot truthfully certify every department');
+        expect(response.text).toContain('will not claim that all 23 departments are fully verified');
+        expect(response.text).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
     });
 
     it('intercepts department readiness streaming pre-execution', async () => {
@@ -154,7 +154,8 @@ describe('BaseAgent Capability Truth & Zero-Hallucination Guardrails', () => {
             },
         );
 
-        expect(streamedText).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
-        expect(completedText).toContain('None are in a "holding pattern"');
+        expect(streamedText).toContain('cannot truthfully certify every department');
+        expect(completedText).toContain('will not claim that all 23 departments are fully verified');
+        expect(completedText).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
     });
 });

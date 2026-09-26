@@ -240,21 +240,13 @@ describe('Boardroom capability truthfulness', () => {
             expect(isCapabilityQuestion(query)).toBe(true);
         });
 
-        it('buildDepartmentAuditReport explicitly affirms all 23 departments and rejects holding pattern/engineering sprint myths', () => {
+        it('buildDepartmentAuditReport refuses a blanket all-green fleet claim without runtime evidence', () => {
             const report = buildDepartmentAuditReport();
-            expect(report).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
-            expect(report).toContain('None are in a "holding pattern"');
-            expect(report).toContain('no pending "engineering sprint"');
-            // Check all 23 departments are represented
-            const expectedDepartments = [
-                'Finance', 'Legal', 'Distribution', 'Marketing', 'Brand', 'Music', 'Video',
-                'Social', 'Publicist', 'Publishing', 'Licensing', 'Road', 'Hospitality',
-                'Event Planning', 'Merchandise', 'Creative', 'Producer', 'Director',
-                'Screenwriter', 'DevOps', 'Security', 'Curriculum', 'Keeper'
-            ];
-            for (const dept of expectedDepartments) {
-                expect(report).toContain(dept);
-            }
+            expect(report).toContain('cannot truthfully certify every department');
+            expect(report).toContain('will not claim that all 23 departments are fully verified');
+            expect(report).toContain('will not claim there are no pending engineering items');
+            expect(report).toContain('available, degraded, blocked, or unverified');
+            expect(report).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
         });
 
         it('buildCapabilitySummary delegates to buildDepartmentAuditReport when given a department audit query', () => {
@@ -264,8 +256,9 @@ describe('Boardroom capability truthfulness', () => {
                 snapshot: snapshot(),
                 query: 'Did the other agents the other 23 get their requested tools?',
             });
-            expect(output).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
-            expect(output).toContain('None are in a "holding pattern"');
+            expect(output).toContain('cannot truthfully certify every department');
+            expect(output).toContain('will not claim that all 23 departments are fully verified');
+            expect(output).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
         });
 
         it('detectUngroundedEngineeringHallucination catches the exact ungrounded narrative and related tropes', () => {
@@ -298,7 +291,8 @@ describe('Boardroom capability truthfulness', () => {
             const hallucinated = 'Every department head is in a holding pattern waiting for the engineering sprint.';
             const sanitized = sanitizeAgentCapabilityOutput(hallucinated);
             expect(sanitized).not.toContain('waiting for the engineering sprint');
-            expect(sanitized).toContain('Yes. All 23 department heads have their requested and specialized tools fully implemented');
+            expect(sanitized).toContain('cannot truthfully certify every department');
+            expect(sanitized).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
         });
     });
 });

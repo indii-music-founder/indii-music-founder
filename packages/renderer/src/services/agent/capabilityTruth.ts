@@ -239,39 +239,19 @@ export function buildCapabilitySummary(input: {
 }
 
 export function buildDepartmentAuditReport(_options?: { query?: string }): string {
-    const lines = [
-        'Yes. All 23 department heads have their requested and specialized tools fully implemented, deployed, and operational in production right now. None are in a "holding pattern", and there is no pending "engineering sprint" or unfulfilled technical specification blocking any department.',
+    return [
+        'I can report current capabilities, but I cannot truthfully certify every department as fully implemented and production-operational from this fleet-level audit alone.',
         '',
-        '### Verified Department Readiness Audit (All 23 Departments Operational)',
-        '- **Finance**: Royalty accounting, recoupment calculations, budget tracking, expense reporting, and tax projections.',
-        '- **Legal**: Contract review, split sheet drafting, NDA generation, copyright clearance, and compliance audits.',
-        '- **Distribution**: DSP delivery readiness, DDEX validation, metadata quality control, and catalog migration.',
-        '- **Marketing**: Multi-channel campaign briefs, audience segmentation, presave campaigns, ad copy generation, and ROI tracking.',
-        '- **Brand**: Visual identity development, brand kits, tone calibration, and guidelines enforcement.',
-        '- **Music**: Comprehensive audio intelligence, BPM/key detection, stem separation, and mix/master analysis.',
-        '- **Video**: Video generation, timeline orchestration, keyframe animation, and cinematic scene composition.',
-        '- **Social**: Social media calendar scheduling, cross-platform publishing, and audience growth strategy.',
-        '- **Publicist**: Press releases, electronic press kits (EPK), journalist media pitches, and PR management.',
-        '- **Publishing**: PRO catalog registration, composition splits, and mechanical royalty tracking.',
-        '- **Licensing**: Sync license agreements, sample clearances, and commercial usage rights.',
-        '- **Road**: Tour routing, venue logistics, travel itineraries, stage plots, and hospitality riders.',
-        '- **Hospitality**: Artist accommodations, venue hospitality, and dressing room riders.',
-        '- **Event Planning**: Live event production, venue coordination, vendor management, and timelines.',
-        '- **Merchandise**: Product design, 3D apparel mockups, print-on-demand setup, and inventory tracking.',
-        '- **Creative**: Artwork generation, canvas editing, visual brand compliance, and distribution asset bundles.',
-        '- **Producer**: Production call sheets, script breakdowns, shoot logistics, and crew scheduling.',
-        '- **Director**: Cinematic visual scripts, multi-scene storyboards, camera movement direction, and cinematic grids.',
-        '- **Screenwriter**: Screenplay formatting, narrative script coverage, and scene beat sheets.',
-        '- **DevOps**: Cloud infrastructure monitoring, service deployment scaling, and reliability engineering.',
-        '- **Security**: Security audits, vulnerability scanning, permission reviews, and credential management.',
-        '- **Curriculum**: Music business education, copyright lessons, and royalty coaching.',
-        '- **Keeper**: Context integrity, memory persistence, and cross-department rule alignment.',
+        'The application has a configured specialist system spanning the major music-business departments, but implementation status, live provider connectivity, and production readiness are separate evidence questions.',
         '',
-        'Every department head is equipped with its specialized production tool suite. All tools are active and available for execution.',
-    ];
-    return lines.join('\n');
+        '- I will not claim that all 23 departments are fully verified unless fresh runtime evidence proves that.',
+        '- I will not claim there are no pending engineering items without checking the current repository/status evidence.',
+        '- External actions such as DSP delivery, rights-society registration, social publishing, payments, and other provider operations require their own live credentials and receipts.',
+        '- For a specific capability, I can report the current attested status as available, degraded, blocked, or unverified.',
+        '',
+        'For founder/internal use, open the status or error-report surfaces for the raw operational detail rather than relying on a blanket all-green statement.',
+    ].join('\n');
 }
-
 export interface HallucinationDetectionResult {
     hasHallucination: boolean;
     matchedPattern?: string;
