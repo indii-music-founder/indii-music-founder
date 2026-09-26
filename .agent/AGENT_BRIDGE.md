@@ -115,3 +115,8 @@ Side effect: my TYPESAFE_API_KEY secret v2 was created + secretAccessor granted 
 `typesafeJudge` recreated with the new version is unknown while the deploy is red. After your
 fix + redeploy, typesafeJudge picks up the secret. Until then production judgments fall back to
 deterministic baselines (by design).
+
+
+## Tier 3 dispositions resolved (2026-09-23, founder-delegated via jev)
+
+All four kept: analytics standalone (jev 0.87 distinct), crm standalone (0.33 unclear — conservative keep), screenwriter kept + jump link added from StoryboardTimeline (0.76), capture kept as gated deep-link (0.36 unclear). Ledger updated. No module deletions — unclear signals resolve conservative.
