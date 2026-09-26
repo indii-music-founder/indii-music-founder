@@ -3012,6 +3012,17 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Post-Mastering Administrative Engine (P5) — semantic catalog projections.
+    // Both collections are server-written via the Admin SDK; the public JSON-LD
+    // endpoint serves public_catalog exclusively, so clients never need (and
+    // never get) direct Firestore access.
+    match /users/{userId}/catalog_graph/{recordId} {
+      allow read, write: if false;
+    }
+    match /public_catalog/{recordId} {
+      allow read, write: if false;
+    }
+
     // =========================================================================
     // Post-Mastering Administrative Engine (P1)
     // docs/plans/post-mastering-admin-engine-plan-2026-09-26.md §1.1–§1.3

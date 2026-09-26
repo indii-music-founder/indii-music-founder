@@ -252,6 +252,9 @@ export { onAnalysisReceiptComplete } from './functions/audit/triggers';
 // Post-Mastering Administrative Engine (P4) — autonomous master upload trigger
 export { onMasterUploaded } from './functions/audit/onMasterUploaded';
 
+// Post-Mastering Administrative Engine (P5) — public semantic catalog JSON-LD API
+export { catalogSemanticApi } from './functions/catalog/semanticProjection';
+
 // Billing / Cost Control
 export { enforceOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';
 

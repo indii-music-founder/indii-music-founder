@@ -3519,6 +3519,28 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('semantic catalog projections (P5 server-only)', () => {
+        it('denies direct client reads and writes — the public JSON-LD API is the only reader', async () => {
+            if (requireEmulator()) return;
+            const contexts = [
+                verifiedCtx(ALICE_UID).firestore(),
+                verifiedCtx(BOB_UID).firestore(),
+                anonCtx().firestore(),
+                unauthCtx().firestore(),
+            ];
+            const graphPath = ['users', ALICE_UID, 'catalog_graph', 'track-1'] as const;
+            const publicPath = ['public_catalog', 'track-1'] as const;
+            const references = [
+                ...contexts.map((db) => doc(db, ...graphPath)),
+                ...contexts.map((db) => doc(db, ...publicPath)),
+            ];
+            for (const reference of references) {
+                await assertFails(getDoc(reference));
+                await assertFails(setDoc(reference, { entityId: 'track-1' }));
+            }
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // Post-Mastering Administrative Engine (P1)
     // docs/plans/post-mastering-admin-engine-plan-2026-09-26.md §1.1–§1.3

@@ -75,5 +75,6 @@ export * from './schemas/crossDepartmentIntelligence.js';
 export * from './schemas/masterLifecycle.js';
 export * from './schemas/administrativeTask.js';
 export * from './schemas/adminLedger.js';
+export * from './schemas/semanticCatalog.js';
 export * from './finance/shareUnits.js';
 export * from './distribution/mandatoryMetadata.js';
