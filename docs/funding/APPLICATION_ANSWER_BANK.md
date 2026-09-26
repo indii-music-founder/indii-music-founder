@@ -139,3 +139,14 @@ No external application should claim that yet. indii.music has DDEX generation, 
 - exact legal facts not checked in current records;
 - planned features presented as shipped;
 - paid tooling presented as active when only free/access-tier setup exists.
+
+
+## What is indiiREMOTE for?
+
+indiiREMOTE is a mobile operating surface for indii.music, not merely a desktop remote. It lets the user carry business context into the field and send work back to the Studio through an authenticated cloud relay.
+
+Current mobile capture surfaces include voice, photo, document, receipt, video, location, and text. One implemented Field Encounter use case is contact capture: captured media can be transcribed, contact details such as name, phone, email, organization, and role can be extracted, headshot/business-card imagery can be classified, and the result can create or link a structured contact and synced note.
+
+The larger product idea is that music-business work should not stop when the artist, founder, or staff member leaves the desk.
+
+Some of these mobile paths are still being hardened, so the safe claim is implemented workflow architecture with active debugging/live verification—not production-perfect execution.

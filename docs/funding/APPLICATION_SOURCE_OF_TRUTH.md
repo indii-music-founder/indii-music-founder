@@ -94,6 +94,22 @@ The repository implements two deliberately different failure-reporting paths:
 
 That creates a closed product-feedback loop inside the product itself: use indii → encounter a problem → report it conversationally → preserve technical evidence → triage/fix it internally.
 
+### Mobile Remote as a field-business operating surface
+
+indiiREMOTE is not only a desktop remote. It extends indii.music into real-world music-business activity away from the desk.
+
+Current repository evidence includes:
+
+- authenticated phone-to-Studio command/response relay;
+- mobile Boardroom, Department, and Direct conversation targeting;
+- quick capture for voice, photo, document, receipt, video, location, and text;
+- a Field Encounter pipeline designed to transcribe captured media, extract contact details such as name, phone, email, organization, and role, classify headshot/business-card imagery, create or link a FieldContact record, and generate a synced note;
+- mobile mileage, venue/location, encounter, and status surfaces.
+
+A concrete use case is meeting somebody while doing music-business work: capture the interaction on the phone, let the system extract the useful identity/contact context, and turn it into a structured contact/note record without waiting to reconstruct the encounter at a desk.
+
+Some remote/capture paths are still being debugged and live-verified. The externally safe claim is that the architecture and workflows are implemented and actively being hardened—not that every mobile path is production-perfect today.
+
 ### Modular 23-department harness
 
 The current runtime department registry contains **23 department heads**. Department, direct-chat, and Boardroom modes are not only prompt conventions: communication scope is enforced in code. Direct mode blocks delegation; Department mode blocks cross-department delegation; Boardroom mode allows department heads to collaborate only when seated.
