@@ -29,7 +29,10 @@
 8. **ISSUE_317_ORIGIN_AUDIT.md**  
    Provenance audit separating the connected founder/agent GitHub workflow from the in-product reportBugFn path.
 
-9. **WORK_HANDOFF_2026-09-26.md**  
+9. **BUILD_HISTORY_2025-11_TO_2026-09.md**  
+   Evidence-backed chronology connecting the November 2025 product start to the current music-business operating platform.
+
+10. **WORK_HANDOFF_2026-09-26.md**  
    Current browser-execution order, deadlines, program-specific positioning, and unresolved facts.
 
 ## Related current diligence files
