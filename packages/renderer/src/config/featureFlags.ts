@@ -94,8 +94,11 @@ const DEFAULTS: Record<string, boolean> = {
     // Experimental modules — disabled by default pending product placement
     [FEATURE_FLAG_NAMES.RAW_CONVERTER]: false,
 
-    // Project Canvas — enabled in dev or via VITE_ENABLE_PROJECT_CANVAS=true
-    [FEATURE_FLAG_NAMES.PROJECT_CANVAS]: import.meta.env.DEV || import.meta.env.VITE_ENABLE_PROJECT_CANVAS === 'true',
+    // Project Canvas — shipped feature, ON by default (ISSUE-1445: the dev-only
+    // default combined with the ISSUE-1442 gate wiring silently removed the
+    // production Project Canvas founders were actively using). Opt out
+    // explicitly with VITE_ENABLE_PROJECT_CANVAS=false.
+    [FEATURE_FLAG_NAMES.PROJECT_CANVAS]: import.meta.env.VITE_ENABLE_PROJECT_CANVAS !== 'false',
 
     // TypeSafe judgments — ON by founder direction ("use jev moving forward").
     // Every judgment falls back to its deterministic baseline when the proxy is
@@ -126,8 +129,9 @@ export const GATED_MODULES: Record<string, ModuleId[]> = {
     // Experimental capability — kept behind flag until product placement is decided
     [FEATURE_FLAG_NAMES.RAW_CONVERTER]: ['raw-converter'],
 
-    // ISSUE-1441 (redundancy audit): the flag existed with a dev-only default but
-    // was never wired here, so project-canvas shipped to production regardless.
+    // ISSUE-1441 (redundancy audit) wired this previously-unmapped gate and
+    // took production Project Canvas down (ISSUE-1445). The flag now defaults
+    // ON — this mapping remains purely as a Remote Config kill switch.
     [FEATURE_FLAG_NAMES.PROJECT_CANVAS]: ['project-canvas'],
 };
 

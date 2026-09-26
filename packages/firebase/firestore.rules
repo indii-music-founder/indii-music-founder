@@ -1797,6 +1797,17 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Asset version graph (AssetVersionService — record_asset_version /
+    // promote_asset_version). Shipped with no rules entry and fell through
+    // to the final catch-all deny, so every artifact finalization by the
+    // Creative Director failed with permission-denied while the UI showed
+    // an empty Artifacts page. Persistence mirrors LikenessService exactly
+    // (docs/CREATIVE_FINALIZATION_TOOLS_PLAN.md §13), so it gets the same
+    // owner-scoped rule.
+    match /users/{userId}/assetVersions/{assetId}/versions/{versionId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Tier 0 Artist Master Directive & living user skills
     match /users/{userId}/skills/{docId} {
       allow read, write: if isOwner(userId);
@@ -2472,6 +2483,19 @@ service cloud.firestore {
       allow read: if (isAuthenticated() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == 'founder-demo-uid');
       allow create: if (isVerifiedUser() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == 'founder-demo-uid');
       allow update, delete: if (isVerifiedUser() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == request.auth.uid) || (isGuest() && get(/databases/$(database)/documents/agent_traces/$(traceId)).data.userId == 'founder-demo-uid');
+    }
+
+    // =========================================================================
+    // Agent Error Reports (ISSUE-1446) — the subscriber-facing error path.
+    // Any signed-in user may file a report about their OWN failures (their
+    // uid is pinned as userId); they can read their own reports; admins can
+    // read all for triage. Reports are immutable once filed — no client can
+    // rewrite status/evidence after the fact (triage happens server-side).
+    // =========================================================================
+    match /errorReports/{reportId} {
+      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
+      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || isAdmin();
+      allow update, delete: if false;
     }
 
     // =========================================================================

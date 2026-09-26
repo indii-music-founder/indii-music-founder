@@ -84,6 +84,7 @@ describe('AgentDashboard', () => {
         render(<AgentDashboard />);
 
         // Click Campaigns Tab
+        // Browser testing was removed from this dashboard; campaigns remain a supported tab.
         // Campaigns remains a supported dashboard destination.
         const campaignsButton = screen.getByTitle('Campaigns');
         fireEvent.click(campaignsButton);

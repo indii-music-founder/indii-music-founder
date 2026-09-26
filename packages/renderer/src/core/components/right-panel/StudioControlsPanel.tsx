@@ -19,6 +19,7 @@ import BrandCompliancePanel from '@/modules/creative/components/BrandComplianceP
 // ISSUE-1440: SectionCard promoted to components/ui so the disclosure pattern is
 // shared (OmniWorkflow controller, QCPanel, ReleaseWizard) instead of panel-local.
 import SectionCard from '@/components/ui/SectionCard';
+import { DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContent } from '@/components/ui/DropdownMenu';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -194,7 +195,60 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
             </div>
 
             {activeTab === 'history' ? (
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
+                    {/* ISSUE-1440 residue: the metered-operations ledger lives in the
+                        History tab — full Refresh/Load-more usability without a popover. */}
+                    <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px]" data-testid="cost-operation-history">
+                        <div className="flex items-center justify-between">
+                            <span className="font-semibold uppercase tracking-wider text-gray-400">Recent creative operations</span>
+                            <button
+                                type="button"
+                                onClick={refreshCostHistory}
+                                disabled={costHistoryLoading}
+                                className="text-blue-300 disabled:text-gray-600"
+                            >
+                                {costHistoryLoading ? 'Loading…' : 'Refresh'}
+                            </button>
+                        </div>
+                        {costHistory.length === 0 && !costHistoryLoading && (
+                            <p className="mt-1 text-gray-600">No metered creative operations yet.</p>
+                        )}
+                        <div className="mt-1 space-y-1.5">
+                            {costHistory.map(operation => (
+                                <div key={operation.operationId} className="rounded border border-white/5 bg-black/20 px-2 py-1.5">
+                                    <div className="flex justify-between gap-2 text-gray-300">
+                                        <span className="uppercase">{operation.operationType.replace('_', ' ')}</span>
+                                        <span className="font-mono">${operation.estimatedCost.toFixed(2)}</span>
+                                    </div>
+                                    <p className={operation.resolution === 'pending_auto_release'
+                                        ? 'text-amber-300'
+                                        : operation.resolution === 'refunded'
+                                            ? 'text-cyan-300'
+                                            : operation.resolution === 'settled'
+                                                ? 'text-green-300'
+                                                : 'text-gray-500'}>
+                                        {operation.resolution === 'pending_auto_release' && (
+                                            <>Pending hold — auto-releases {operation.autoReleaseAt ? new Date(operation.autoReleaseAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'soon'}.</>
+                                        )}
+                                        {operation.resolution === 'refunded' && <>Refunded — safe to retry.</>}
+                                        {operation.resolution === 'settled' && <>Settled — provider output billed.</>}
+                                        {operation.resolution === 'unknown' && <>Unknown receipt state — refresh or contact support.</>}
+                                    </p>
+                                    <p className="truncate font-mono text-[9px] text-gray-600" title={operation.operationId}>{operation.operationId}</p>
+                                </div>
+                            ))}
+                        </div>
+                        {costHistoryHasMore && (
+                            <button
+                                type="button"
+                                onClick={loadMoreCostHistory}
+                                disabled={costHistoryLoading || !costHistoryCursor}
+                                className="mt-2 w-full rounded border border-white/10 py-1 text-gray-300 disabled:text-gray-600"
+                            >
+                                Load more
+                            </button>
+                        )}
+                    </div>
                     <CreativeGallery compact={true} />
                 </div>
             ) : (
@@ -665,72 +719,33 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                         icon={<Zap className="text-yellow-400" size={14} />}
                     >
                         <div className="space-y-4">
+                            {/* ISSUE-1440 residue: the budget ledger collapsed behind a
+                                compact chip — the full operations ledger lives in the
+                                History tab. */}
                             {budgetStatus && (
-                                <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px]" data-testid="creative-budget-status">
-                                    <div className="flex justify-between text-gray-300">
-                                        <span>Daily creative budget</span>
+                                <DropdownMenu>
+                                    <DropdownMenuTriggerButton
+                                        data-testid="creative-budget-trigger"
+                                        className="w-full justify-between bg-white/[0.03] text-[10px] px-3 py-2"
+                                    >
+                                        <span className="text-gray-300">Daily creative budget</span>
                                         <span className="font-mono text-white">${budgetStatus.dailyRemaining.toFixed(2)} remaining</span>
-                                    </div>
-                                    <p className="mt-1 text-gray-500">
-                                        ${budgetStatus.settledCost.toFixed(2)} settled · ${budgetStatus.voidedCost.toFixed(2)} refunded
-                                    </p>
-                                    {budgetStatus.pendingHoldCount > 0 && (
-                                        <p className="mt-1 text-amber-300">
-                                            ${budgetStatus.pendingHoldCost.toFixed(2)} in {budgetStatus.pendingHoldCount} pending hold{budgetStatus.pendingHoldCount === 1 ? '' : 's'} — released automatically if generation fails.
-                                        </p>
-                                    )}
-                                    <div className="mt-2 border-t border-white/10 pt-2" data-testid="cost-operation-history">
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-semibold uppercase tracking-wider text-gray-400">Recent operations</span>
-                                            <button
-                                                type="button"
-                                                onClick={refreshCostHistory}
-                                                disabled={costHistoryLoading}
-                                                className="text-blue-300 disabled:text-gray-600"
-                                            >
-                                                {costHistoryLoading ? 'Loading…' : 'Refresh'}
-                                            </button>
+                                    </DropdownMenuTriggerButton>
+                                    <DropdownMenuContent className="w-80">
+                                        <div className="rounded-lg bg-white/[0.03] px-3 py-2 text-[10px] space-y-1" data-testid="creative-budget-status">
+                                            <p className="text-gray-600">Full operations ledger: History tab.</p>
+                                            <div className="flex justify-between text-gray-300">
+                                                <span>Settled · refunded</span>
+                                                <span className="font-mono text-white">${budgetStatus.settledCost.toFixed(2)} · ${budgetStatus.voidedCost.toFixed(2)}</span>
+                                            </div>
+                                            {budgetStatus.pendingHoldCount > 0 && (
+                                                <p className="text-amber-300">
+                                                    ${budgetStatus.pendingHoldCost.toFixed(2)} in {budgetStatus.pendingHoldCount} pending hold{budgetStatus.pendingHoldCount === 1 ? '' : 's'} — released automatically if generation fails.
+                                                </p>
+                                            )}
                                         </div>
-                                        {costHistory.length === 0 && !costHistoryLoading && (
-                                            <p className="mt-1 text-gray-600">No metered creative operations yet.</p>
-                                        )}
-                                        <div className="mt-1 space-y-1.5">
-                                            {costHistory.map(operation => (
-                                                <div key={operation.operationId} className="rounded border border-white/5 bg-black/20 px-2 py-1.5">
-                                                    <div className="flex justify-between gap-2 text-gray-300">
-                                                        <span className="uppercase">{operation.operationType.replace('_', ' ')}</span>
-                                                        <span className="font-mono">${operation.estimatedCost.toFixed(2)}</span>
-                                                    </div>
-                                                    <p className={operation.resolution === 'pending_auto_release'
-                                                        ? 'text-amber-300'
-                                                        : operation.resolution === 'refunded'
-                                                            ? 'text-cyan-300'
-                                                            : operation.resolution === 'settled'
-                                                                ? 'text-green-300'
-                                                                : 'text-gray-500'}>
-                                                        {operation.resolution === 'pending_auto_release' && (
-                                                            <>Pending hold — auto-releases {operation.autoReleaseAt ? new Date(operation.autoReleaseAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'soon'}.</>
-                                                        )}
-                                                        {operation.resolution === 'refunded' && <>Refunded — safe to retry.</>}
-                                                        {operation.resolution === 'settled' && <>Settled — provider output billed.</>}
-                                                        {operation.resolution === 'unknown' && <>Unknown receipt state — refresh or contact support.</>}
-                                                    </p>
-                                                    <p className="truncate font-mono text-[9px] text-gray-600" title={operation.operationId}>{operation.operationId}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        {costHistoryHasMore && (
-                                            <button
-                                                type="button"
-                                                onClick={loadMoreCostHistory}
-                                                disabled={costHistoryLoading || !costHistoryCursor}
-                                                className="mt-2 w-full rounded border border-white/10 py-1 text-gray-300 disabled:text-gray-600"
-                                            >
-                                                Load more
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             )}
                             {/* ── Model Tier ─────────────────────────────── */}
                             <div className="grid grid-cols-2 gap-3">
@@ -1120,6 +1135,9 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                         </div>
                     </SectionCard>
 
+                    {/* ISSUE-1441: Typography / Likeness / Brand Compliance governance cards
+                        demoted to the bottom of the create view — they occupied the top three
+                        slots above the core creation flow. */}
                     <SectionCard
                         isOpen={expandedSection === 'typography'}
                         onToggle={() => setExpandedSection(expandedSection === 'typography' ? '' : 'typography')}

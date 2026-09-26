@@ -141,6 +141,7 @@ export function StoryboardTimeline() {
     })));
 
     // Video Editor Store
+    const setModule = useStore(useShallow(state => state.setModule));
     const {
         storyboardProject,
         activeVideoProject,
@@ -517,6 +518,14 @@ export function StoryboardTimeline() {
                                 : "Load audio to create an editable 120 BPM timing scaffold"
                             }
                         </p>
+                        {storyboardProject?.source === 'screenwriter' && (
+                            <button
+                                onClick={() => setModule('screenwriter')}
+                                className="mt-1 text-[9px] font-bold uppercase tracking-widest text-cyan-400 hover:text-cyan-300 transition-colors"
+                            >
+                                Open in Screenwriter →
+                            </button>
+                        )}
                     </div>
                 </div>
 

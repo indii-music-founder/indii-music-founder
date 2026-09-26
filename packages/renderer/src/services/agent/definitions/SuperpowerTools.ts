@@ -118,6 +118,19 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         }
     },
     {
+        name: 'report_error',
+        description: 'File an error report when a tool fails and one retry will not fix it. Send a one-sentence plain-language summary the creator can read, plus the technical detail for the fix team (never shown to the creator). Returns a short report ID to give the creator.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                summary: { type: 'STRING', description: 'One-sentence plain-language summary of what failed. Creator-readable; no raw error text or codes.' },
+                detail: { type: 'STRING', description: 'Technical detail for the fix team (raw error message, tool name). Never relayed into the conversation.' },
+                surface: { type: 'STRING', description: 'Where it happened, e.g. "creative director chat" or "distribution flow".' },
+            },
+            required: ['summary']
+        }
+    },
+    {
         name: 'browse_local_files',
         description: 'Search metadata from folders the creator previously approved in the open Studio app. Returns names and relative paths only; never file contents or absolute paths.',
         parameters: {

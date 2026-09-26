@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 import StudioControlsPanel from './StudioControlsPanel';
 import { useStore } from '../../store';
@@ -373,6 +374,15 @@ describe('StudioControlsPanel', () => {
         await waitFor(() => expect(billingMocks.getHistory).toHaveBeenCalledWith('user-1'));
 
         fireEvent.click(screen.getByText('Model & Constraints').closest('button')!);
+
+        // ISSUE-1440 residue: the budget SUMMARY collapsed behind a chip; open it
+        // (Radix needs real pointer semantics) and assert the pending-hold summary.
+        await userEvent.click(await screen.findByTestId('creative-budget-trigger'));
+        expect(await screen.findByText(/pending hold/)).toBeInTheDocument();
+        expect(screen.getByText(/released automatically if generation fails/)).toBeInTheDocument();
+
+        // The full operations ledger lives in the History tab.
+        fireEvent.click(screen.getByTitle('History'));
         expect(await screen.findByText(/Pending hold — auto-releases/)).toBeInTheDocument();
         expect(screen.getByText('Refunded — safe to retry.')).toBeInTheDocument();
 
@@ -390,7 +400,7 @@ describe('StudioControlsPanel', () => {
             nextCursor: null,
             hasMore: false,
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Load more' }));
 
         expect(await screen.findByText('Settled — provider output billed.')).toBeInTheDocument();
         expect(billingMocks.getHistory).toHaveBeenLastCalledWith(

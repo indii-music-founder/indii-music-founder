@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AgentPromptBuilder, buildExecutionContract } from '../AgentPromptBuilder';
+import { AgentPromptBuilder, buildExecutionContract, isFounderUserProfile } from '../AgentPromptBuilder';
 import type { AgentContext } from '../../types';
 import { Timestamp } from 'firebase/firestore';
 
@@ -428,6 +428,33 @@ describe('buildExecutionContract', () => {
             expect(contract).toContain('All 23 departments');
             expect(contract).toContain('never invent narrative drama, fictional deficits, or bureaucratic roadmaps');
         }
+    });
+
+    it('founder diagnostics mode: raw tool errors are quotable, subscriber etiquette absent', () => {
+        const contract = buildExecutionContract('balanced', { founderDiagnostics: true });
+        expect(contract).toContain('FOUNDER DIAGNOSTICS MODE');
+        expect(contract).toContain('quote the raw error message verbatim');
+        expect(contract).toContain('NO PHANTOM ESCALATIONS');
+        expect(contract).not.toContain('SUBSCRIBER ERROR ETIQUETTE');
+    });
+
+    it('default (subscriber): raw errors are never pasted into chat, report_error is the path', () => {
+        for (const level of ['focused', 'balanced', 'ideas'] as const) {
+            const contract = buildExecutionContract(level);
+            expect(contract).toContain('SUBSCRIBER ERROR ETIQUETTE');
+            expect(contract).toContain('NEVER paste raw error text, error codes, stack traces, database paths, or internal service names');
+            expect(contract).toContain('report_error');
+            expect(contract).toContain('NO PHANTOM ESCALATIONS');
+            expect(contract).not.toContain('FOUNDER DIAGNOSTICS MODE');
+            expect(contract).not.toContain('quote the raw error message verbatim');
+        }
+    });
+
+    it('isFounderUserProfile mirrors useIsFounderTier semantics', () => {
+        expect(isFounderUserProfile({ isFounder: true })).toBe(true);
+        expect(isFounderUserProfile({ subscriptionTier: 'founder' })).toBe(true);
+        expect(isFounderUserProfile({ subscriptionTier: 'pro', isFounder: false })).toBe(false);
+        expect(isFounderUserProfile(undefined)).toBe(false);
     });
 });
 

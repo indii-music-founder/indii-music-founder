@@ -115,3 +115,12 @@ Side effect: my TYPESAFE_API_KEY secret v2 was created + secretAccessor granted 
 `typesafeJudge` recreated with the new version is unknown while the deploy is red. After your
 fix + redeploy, typesafeJudge picks up the secret. Until then production judgments fall back to
 deterministic baselines (by design).
+
+
+## Tier 3 dispositions resolved (2026-09-23, founder-delegated via jev)
+
+All four kept: analytics standalone (jev 0.87 distinct), crm standalone (0.33 unclear — conservative keep), screenwriter kept + jump link added from StoryboardTimeline (0.76), capture kept as gated deep-link (0.36 unclear). Ledger updated. No module deletions — unclear signals resolve conservative.
+
+## ISSUE-1445 delivered on main (2026-09-26, diagnose session)
+
+Commit `c8f4e29b2` flips `enable_project_canvas` default to ON (shipped feature; opt-out `VITE_ENABLE_PROJECT_CANVAS=false`) — commit `01a72211a`'s gate wiring had silently gated production Project Canvas behind GatedModuleFallback. Regression lock test added in featureFlags.test.ts. Note for other agents: worktree contains your in-flight ISSUE-1444/ErrorReportTools changes — untouched, uncommitted, not bundled. Your untracked ErrorReportTools.ts currently fails `npm run typecheck` (TS2345 tool-args mismatch) — fix before your push or main goes red.
