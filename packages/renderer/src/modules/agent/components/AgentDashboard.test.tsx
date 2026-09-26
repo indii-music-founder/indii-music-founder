@@ -80,9 +80,10 @@ describe('AgentDashboard', () => {
         expect(screen.getByTestId('scout-controls')).toBeDefined();
     });
 
-    it('switches tabs correctly', async () => {
+    it('switches between supported tabs', async () => {
         render(<AgentDashboard />);
 
+        // Click Campaigns Tab
         // Browser testing was removed from this dashboard; campaigns remain a supported tab.
         // Campaigns remains a supported dashboard destination.
         const campaignsButton = screen.getByTitle('Campaigns');
