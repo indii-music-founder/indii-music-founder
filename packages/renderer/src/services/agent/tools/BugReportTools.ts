@@ -80,20 +80,17 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
 ---
 *This bug was automatically reported by the indii agent.*`;
 
-        // 1. Save to Firestore
-        try {
-            const { FirestoreService } = await importWithRetry(() => import('@/services/FirestoreService'));
-            const bugService = new FirestoreService<typeof bugReport>('bug_reports');
-            await bugService.add(bugReport);
-            logger.info(`[BugReportTools] Bug report saved: ${bugReport.id} — "${bugReport.title}"`);
-        } catch (e: unknown) {
-            logger.warn('[BugReportTools] Failed to persist bug report to Firestore:', e);
-            // Non-blocking — still return success to the agent
-        }
-
-        // 2. Call Cloud Function for GitHub integration (ISSUE-031 Gap 1: token security)
+        // 1. Persist + GitHub sync via the reportBugFn callable (ISSUE-031:
+        // the server-side Admin SDK write is the ONLY durable path — the old
+        // client-side write to `bug_reports` was denied by Firestore rules
+        // (deny-all catch-all; that collection has no rule), silently created
+        // nothing in production, and this tool still reported success.
+        // Regression chain 2026-09-26: "documented" claims with zero durable
+        // records behind them.
+        let firestoreOk = false;
         let githubStatus: 'ok' | 'failed' | 'skipped' | 'merged_as_comment' = 'skipped';
         let issueUrl: string | undefined;
+        let callableError: string | undefined;
 
         try {
             const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
@@ -125,20 +122,30 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
                 errorMessage: bugReport.errorMessage,
             });
 
+            firestoreOk = result.data.firestore === 'ok';
             githubStatus = result.data.github;
             issueUrl = result.data.issueUrl;
-            logger.info(`[BugReportTools] Cloud Function response: ${githubStatus}`, result.data);
-
-            // Make GitHub sync failure LOUD (regression 2026-09-26: silent
-            // sync failure stranded every report in Firestore for days —
-            // a log line nobody read is not observability).
-            if (githubStatus === 'failed' || githubStatus === 'skipped') {
-                toast.warning('Bug report saved locally, but GitHub issue sync failed. DevOps: check GITHUB_TOKEN / GITHUB_REPO configuration.');
-            }
+            logger.info(`[BugReportTools] Cloud Function response: github=${githubStatus} firestore=${firestoreOk}`, result.data);
         } catch (cfErr: unknown) {
-            githubStatus = 'failed';
+            callableError = cfErr instanceof Error ? cfErr.message : String(cfErr);
             logger.warn('[BugReportTools] Cloud Function call failed:', cfErr);
-            toast.warning('Bug report saved locally, but the report pipeline is unreachable. DevOps: check reportBugFn deployment.');
+        }
+
+        // 2. Honesty gate — the agent must NEVER tell the user a report was
+        // filed when nothing durable happened. Durable = the callable's
+        // Admin-SDK Firestore write succeeded.
+        if (!firestoreOk) {
+            toast.error('Bug report could NOT be filed — nothing was saved. The report pipeline is unreachable. DevOps: check reportBugFn deployment.');
+            return toolError(
+                `Bug report was NOT filed. Pipeline error: ${callableError || 'reportBugFn could not persist the report'}. Tell the user their bug report failed to save; do not claim it was documented.`,
+                'PIPELINE_UNAVAILABLE',
+            );
+        }
+
+        // 3. GitHub sync failure stays loud (silent-strand regression 2026-09-26:
+        // a log line nobody read is not observability).
+        if (githubStatus === 'failed' || githubStatus === 'skipped') {
+            toast.warning('Bug report saved, but GitHub issue sync failed. DevOps: check GITHUB_TOKEN / GITHUB_REPO configuration.');
         }
 
         // 3. Save to Agent Memory for context continuity
