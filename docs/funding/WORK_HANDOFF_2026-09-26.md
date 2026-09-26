@@ -17,31 +17,16 @@ If any older document conflicts, the current source-of-truth and current code/CI
 
 ## Current application order
 
-### 1. Detroit Startup Fund — Round 3
-
-**Current public window:** Aug. 31–Oct. 5, 2026.  
-**Awards:** $15,000 Seed and $50,000 Scale grants.
-
-Current fit: pursue **Seed** unless eligibility rules change.
-
-The published Scale criteria require an active raise of at least $250,000 plus at least $100,000 of external investment secured in the prior 18 months. Current founder facts report $0 outside capital, so do not distort the cap table/funding history to fit Scale.
-
-Primary Detroit story:
-
-- Detroit-built music-business technology;
-- founder with deep Detroit/music operating history;
-- working product, pre-revenue;
-- grant converts product execution into real artist validation and first commercial evidence;
-- local contractors/jobs become possible as funding expands.
-
-Use the $15K milestone budget from the current financial summary, adjusted to the application’s eligible-use rules.
-
-### 2. PearX W27
+### 1. PearX W27
 
 **Regular deadline:** Oct. 4, 2026 at 11:59 PM Pacific.  
 **Program:** 12-week pre-seed accelerator.  
 **Advertised check size:** $500K–$2M.  
 **Advertised cloud credits:** $1M+.
+
+Official current pages:
+- https://pear.vc/pearx/
+- https://pear.vc/pearx-application/
 
 Primary Pear story:
 
@@ -53,11 +38,37 @@ Primary Pear story:
 
 Do not claim housing support unless Pear confirms it.
 
+### 2. Detroit Startup Fund — Round 3
+
+**Current public window:** Aug. 31–Oct. 5, 2026.  
+**Awards:** $15,000 Seed and $50,000 Scale grants.
+
+Current fit: pursue **Seed** unless the live application shows different current eligibility.
+
+DEGC has publicly stated for prior/current fund criteria that Scale recipients must raise at least $250,000 and have already secured at least $100,000 in external investment over the prior 18 months. Current founder facts report $0 outside capital, so do not distort the cap table/funding history to fit Scale. Confirm the live Round 3 form before submission.
+
+Official current Round 3 announcement:
+- https://www.degc.org/post/detroit-to-award-more-than-1-million-in-grants-to-local-entrepreneurs
+
+Primary Detroit story:
+
+- Detroit-built music-business technology;
+- founder with deep Detroit/music operating history;
+- working product, pre-revenue;
+- grant converts product execution into real artist validation and first commercial evidence;
+- local contractors/jobs become possible as funding expands.
+
+Use the $15K milestone budget from the current financial summary, adjusted to the application’s eligible-use rules.
+
 ### 3. Y Combinator W27
 
 **On-time deadline:** Nov. 2, 2026 at 8 PM Pacific.  
 **Batch:** Jan.–Mar. 2027, San Francisco.  
-**Standard investment:** $500,000.
+**Standard investment:** $500,000 — $125K for 7% plus $375K on an uncapped MFN SAFE.
+
+Official current pages:
+- https://www.ycombinator.com/apply
+- https://www.ycombinator.com/deal
 
 YC answer style:
 
@@ -76,10 +87,15 @@ The strongest YC material is founder-market fit + product execution + process di
 
 Best current program candidates to examine first:
 
-- Techstars Chicago — Midwest, industry-agnostic
-- Techstars Anywhere — broader geographic flexibility
+- Techstars Chicago — Midwest, industry-agnostic; starts Mar. 8, 2027.
+- Techstars Anywhere — remote-first for companies in American time zones; no relocation required, with three in-person offsites; starts Mar. 8, 2027.
 
-Current investment structure publicly described by Techstars: $200K uncapped MFN SAFE plus $20K Post-Money CEA, with 5% common plus the future conversion of the SAFE.
+Current investment structure: $200K uncapped MFN SAFE plus $20K Post-Money CEA, with 5% common plus future SAFE conversion.
+
+Official current pages:
+- https://www.techstars.com/accelerators/chicago
+- https://www.techstars.com/accelerators/anywhere
+- https://www.techstars.com/investment-terms
 
 ## Secondary / rolling opportunities
 
