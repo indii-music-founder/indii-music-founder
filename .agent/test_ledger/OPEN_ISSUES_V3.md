@@ -3242,7 +3242,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1445: Project Canvas gated off in production by ISSUE-1442 flag wiring — module renders "In Development / Back to Dashboard" fallback
 
-- **Status:** 🔴 OPEN (root-caused 2026-09-26 by founder-requested investigation)
+- **Status:** ✅ FIXED (2026-09-26 — commit `c8f4e29b2` on main; CI run 36210621617 green incl. deploy-production; deployed-bundle recipe verified)
 - **Severity:** 🔴 HIGH (fully shipped, in-daily-use module unreachable in production; entry points from ProjectList, FileDashboard, and MobileTabBar all dead-end at the gate)
 - **Module:** project-canvas / featureFlags
 - **Evidence (repro):** Production build → navigate to project-canvas (sidebar Project List item, Files "Open in Project Canvas", or mobile More menu) → `GatedModuleFallback` renders "This module is currently in development…" with "Back to Dashboard".
@@ -3251,6 +3251,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Fix options:** (A) Set `enable_project_canvas = true` in Firebase Remote Config (instant, no redeploy; skipped on localhost by design). (B) Flip the default to enabled-with-opt-out (`!== 'false'`) since the module is a shipped feature, and redeploy. (C) Set `VITE_ENABLE_PROJECT_CANVAS=true` at build time in CI. A+B recommended: instant restore + permanent default fix.
 - **Acceptance:** Production user opens Project List → project → Project Canvas renders with their existing canvas data; sidebar item visible; no fallback screen.
 - **Files:** `packages/renderer/src/config/featureFlags.ts`, `packages/renderer/src/core/AppShell.tsx` (gate consumer, lines 398-401)
+- **Delivery evidence (2026-09-26):** Fix commit `c8f4e29b2` delivered `HEAD:main` per mainline refspec. Its solo CI run was cancelled by the concurrent `6bc7cd848` push; successor run **36210621617** (tree contains the fix) completed **success** through deploy-production. Bundle verification: production build compiles the default to `PROJECT_CANVAS]:!0` in `dist/renderer/assets/index-*.js` — flag statically true with `VITE_ENABLE_PROJECT_CANVAS` unset; gate mapping retained purely as a Remote Config kill switch. Regression lock: `featureFlags.test.ts` asserts the flag defaults enabled. Remaining final check per `.agent/REAL_USER_AUTHENTICITY.md`: founder hard-refreshes production, opens a project from the Project List → Project Canvas renders with existing data.
 
 ### ISSUE-1446: Raw technical tool errors were founder-wide; subscribers had no error-report channel
 
