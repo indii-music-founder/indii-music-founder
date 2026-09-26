@@ -23,7 +23,13 @@
 6. **APPLICATION_ASSET_CHECKLIST.md**  
    What is ready, what must be verified, and what should be created once and reused.
 
-7. **WORK_HANDOFF_2026-09-26.md**  
+7. **DEVELOPMENT_CADENCE_AUDIT_2026-09-26.md**  
+   Quantitative audit of main-branch activity since the initial Nov. 28, 2025 commit, with explicit authorship/quality limitations.
+
+8. **ISSUE_317_ORIGIN_AUDIT.md**  
+   Provenance audit separating the connected founder/agent GitHub workflow from the in-product reportBugFn path.
+
+9. **WORK_HANDOFF_2026-09-26.md**  
    Current browser-execution order, deadlines, program-specific positioning, and unresolved facts.
 
 ## Related current diligence files
