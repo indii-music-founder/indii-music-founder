@@ -111,6 +111,7 @@ export { getOrganizationAccessMatrix, updateOrganizationMemberAccess } from './f
 export { getCanonicalMusicCatalogIntelligence } from './functions/music/getCanonicalMusicCatalogIntelligence';
 export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
 export { claimComputerApproval, denyComputerApproval } from './functions/security/claimComputerApproval';
+export { listErrorReports, updateErrorReportStatus } from './functions/security/errorReportCallables';
 
 // REST API Router — ISSUE-1442: track-CRUD, distribution-REST, and
 // queryAnalytics routes removed (zero client callers; the live pipeline

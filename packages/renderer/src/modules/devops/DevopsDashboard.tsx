@@ -15,8 +15,10 @@ import {
     Terminal,
 } from 'lucide-react';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import { useIsFounderTier } from '@/hooks/useIsFounderTier';
+import { ErrorReportsPanel } from './components/ErrorReportsPanel';
 
-type Tab = 'cicd' | 'observability' | 'credentials' | 'testing';
+type Tab = 'cicd' | 'observability' | 'credentials' | 'testing' | 'reports';
 
 const LIVE_STATUS_MESSAGE = 'Live DevOps integrations are not configured in this build. This dashboard is read-only until real CI, telemetry, and test runners are wired up.';
 
@@ -71,6 +73,10 @@ function StatusBadge({ label, tone }: { label: string; tone: 'neutral' | 'warn' 
 export default function DevopsDashboard() {
     const [activeTab, setActiveTab] = useState<Tab>('cicd');
     const moduleColor = getColorForModule('devops');
+    // Founder-only triage surface (ISSUE-1446): the Error Reports tab exists
+    // solely for the operator account; subscribers never see the entry point,
+    // and the backing callable re-verifies founder status server-side.
+    const isFounderTier = useIsFounderTier();
 
     return (
         <ThreePanelDashboard
@@ -175,6 +181,7 @@ export default function DevopsDashboard() {
                         { id: 'observability', label: 'Observability & Metrics', icon: Activity },
                         { id: 'credentials', label: 'Access Tokens & Keys', icon: Shield },
                         { id: 'testing', label: 'E2E Testing', icon: Code },
+                        ...(isFounderTier ? [{ id: 'reports' as const, label: 'Error Reports', icon: ShieldAlert }] : []),
                     ] as const).map(({ id, label, icon: Icon }) => (
                         <button
                             key={id}
@@ -309,6 +316,16 @@ export default function DevopsDashboard() {
                                     Run these from CI or the terminal. This screen does not fabricate execution.
                                 </div>
                             </div>
+                        </motion.div>
+                    )}
+                    {activeTab === 'reports' && isFounderTier && (
+                        <motion.div
+                            key="reports"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                        >
+                            <ErrorReportsPanel />
                         </motion.div>
                     )}
                 </AnimatePresence>
