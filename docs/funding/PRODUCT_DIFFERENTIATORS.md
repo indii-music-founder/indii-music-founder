@@ -63,6 +63,12 @@ This does not mean adding a feature is free or instantaneous. UI, backend implem
 
 A useful analogy is a workshop: the operating framework already exists, so adding a new capability is often more like building and adding a new specialized tool to the workshop than constructing a separate shop from scratch.
 
+### Current repair-loop case study — image resolution
+
+A genuine user-facing image-resolution failure was preserved in the product's bug-report store and backfilled as GitHub issue #319 after the forwarding configuration was repaired. During the same afternoon, the engineering workflow decomposed that incident into issues #320–#329 covering model-capability truth, print-spec math, local/hosted upscaling, DPI-tagged export, merchandise integration, batch derivatives, E2E verification, and an optional indii-trained super-resolution model.
+
+The evidence supports a precise differentiator: **indii can turn a real product failure into durable evidence and rapidly convert that evidence into bounded engineering workstreams inside the same founder/agent operating system.** Human review, implementation, spend approval, tests, and CI remain explicit gates.
+
 ## 4. Remote control as field-business infrastructure
 
 indiiREMOTE is not merely a remote mouse/desktop controller.
@@ -89,6 +95,8 @@ Current repository evidence proves the durable capture/encounter/contact/note in
 GitHub issue #318 now carries that broader correction. Until the media bytes/parts are actually supplied and proven end to end, do not claim audio transcription, business-card/photo OCR, or video-frame contact extraction from captured media as live behavior.
 
 Therefore the safe claim is **implemented field-capture/contact architecture with media analysis still being wired and verified**.
+
+A separate Sep. 26 parity audit found that the cloud relay's static specialist registry currently lags the canonical Studio department registry: `producer`, `director`, `screenwriter`, `curriculum`, and `keeper` are absent, so those cloud targets can fall back to Generalist. The cloud relay also uses a shared text model rather than the renderer's strict fine-tuned endpoint registry. Issue #330 tracks the decision/fix. Until resolved, do not describe the cloud conversational fallback as identical to the full Studio specialist runtime.
 
 ## 5. Continuous founder operation away from the desk
 

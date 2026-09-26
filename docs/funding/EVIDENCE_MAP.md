@@ -63,6 +63,8 @@
 | Field Encounter pipeline | Durable encounter/media/contact/note structures and intended contact-extraction schema exist | Current `analyzeEncounterWithGemini()` call is text-only; captured audio/photo/video media are not yet attached to the model request, so media-derived transcription/OCR/contact extraction is not live-proven |
 | GitHub issue #318 | The Field Encounter media-analysis gap is explicitly tracked, with a 2026-09-26 audit comment broadening it beyond video | Open issue; do not claim media-derived contact extraction until audio/photo/video cases are proven |
 | GitHub issue #319 | Real in-product image-generation bug reports survived in Firestore and were recoverable/backfilled after the GitHub-forwarding failure was repaired | #319 is a backfill, not proof of a fresh automatic post-repair roundtrip |
+| Issues #320–#329 | #319 was rapidly decomposed into bounded remediation workstreams for resolution truth, print math, upscaling, export, merchandise and E2E proof | Strong issue-to-work decomposition evidence; implementation/approval/tests/CI still remain gates |
+| GitHub issue #330 | Cloud-relay parity audit found five current department heads absent from its relay-local prompt registry; unknown targets can fall back to Generalist | Do not claim every phone/cloud specialist request uses the same strict fine-tuned Studio runtime until parity is resolved |
 
 ## Development-cadence evidence
 

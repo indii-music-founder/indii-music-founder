@@ -96,6 +96,8 @@ That creates a closed product-feedback loop inside the product itself: use indii
 
 **2026-09-26 production finding:** seven genuine in-product bug reports had persisted successfully to Firestore but the deployed GitHub-forwarding leg was missing runtime configuration, so they did not reach GitHub automatically. Commit `5504361c9` adds a canonical repository fallback; the commit record states the live secret/environment binding was repaired out-of-band. Issue #319 backfills one group of those preserved reports. A fresh post-repair report should still be used to prove the complete automatic Firestore-to-GitHub roundtrip before claiming it as live-verified end to end.
 
+Issue #319 was then decomposed into issues #320–#329 during the same afternoon, covering model-resolution truth, print-spec math, local/hosted upscaling, export/DPI verification, merchandise integration, E2E proof, and an optional domain-trained upscaler. This is evidence of fast issue-to-work decomposition inside the founder/agent engineering process. It is not evidence that implementation completes without human review, approvals, tests, or CI.
+
 ### Mobile Remote as a field-business operating surface
 
 indiiREMOTE is not only a desktop remote. It extends indii.music into real-world music-business activity away from the desk.
@@ -111,6 +113,8 @@ Current repository evidence includes:
 A concrete target use case is meeting somebody while doing music-business work: capture the interaction on the phone, extract supported identity/contact context, and return to a structured contact/note record without reconstructing the encounter later. **Current implementation boundary:** the server function currently discovers the captured audio/photo/video assets but its Gemini call sends only the text prompt/client context; it does not yet attach the media evidence to the model request. Therefore media-derived transcription/OCR/contact extraction is not live-proven by this path yet.
 
 Some remote/capture paths are still being debugged and live-verified. The externally safe claim is that the architecture and workflows are implemented and actively being hardened—not that every mobile path is production-perfect today.
+
+A Sep. 26 cloud-relay parity audit found five current Studio department heads (`producer`, `director`, `screenwriter`, `curriculum`, `keeper`) absent from the relay-local prompt registry. Unknown cloud targets can therefore fall back to Generalist, and the cloud relay uses a shared text model rather than the renderer's strict fine-tuned endpoint registry. Issue #330 tracks this boundary. Do not claim that every phone/cloud specialist conversation is the identical trained specialist runtime used by Studio until parity is proven.
 
 ### Modular 23-department harness
 

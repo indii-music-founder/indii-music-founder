@@ -71,6 +71,8 @@ The internal/founder side is deliberately different: founder-authorized users ca
 
 The current architecture is real, but its production GitHub-forwarding leg was repaired on 2026-09-26 after seven reports were found preserved in Firestore but not forwarded. The preserved reports were recoverable; a fresh post-repair automatic roundtrip remains the final live-verification step.
 
+One preserved incident became issue #319. During the same afternoon, the engineering workflow broke it into ten bounded remediation workstreams (#320–#329). That is useful evidence of fast issue-to-work conversion, while implementation, approvals where required, tests, and CI remain explicit gates.
+
 ## How is the agent system bounded?
 
 The current department runtime has 23 registered department heads. Direct mode prevents delegation, Department mode prevents cross-department delegation, and Boardroom mode restricts collaboration to seated department heads. Valid agent IDs must resolve to a required fine-tuned Vertex endpoint or an explicit tuned-domain alias; missing routing fails rather than silently falling back to a generic model.
@@ -173,4 +175,4 @@ Current mobile capture surfaces include voice, photo, document, receipt, video, 
 
 The larger product idea is that music-business work should not stop when the artist, founder, or staff member leaves the desk.
 
-Some of these mobile paths are still being hardened, so the safe claim is implemented workflow architecture with active debugging/live verification—not production-perfect execution.
+Some of these mobile paths are still being hardened, so the safe claim is implemented workflow architecture with active debugging/live verification—not production-perfect execution. The cloud conversational relay also does not yet have full specialist parity with Studio: five current department heads are absent from its static prompt registry and the cloud path uses a shared text model. Issue #330 tracks that gap, so do not claim every cloud specialist conversation is identical to the strict fine-tuned Studio runtime.
