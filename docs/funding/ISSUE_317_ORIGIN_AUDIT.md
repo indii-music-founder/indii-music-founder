@@ -65,15 +65,28 @@ Commit `5504361c9` documents the repair:
 
 Therefore #319 is evidence that genuine in-product reports existed and were durable/recoverable, but it is not itself proof of a fresh automatic post-repair roundtrip.
 
+## Current implementation after the #317 audit
+
+Two follow-up commits materially strengthen the path:
+
+- `ebd06ad8e` — adds deterministic readiness-overclaim detection plus a JEV/TypeSafe `claims_verified_readiness_without_evidence` judgment. Detected overclaims are routed through `reportBugFn`, with a six-hour per-signature cooldown and server-side deduplication. GitHub-sync failures are surfaced visibly rather than hidden in logs.
+- `c075761bf` — removes the previously denied client-side `bug_reports` Firestore write and makes the server callable the single durable write path. The tool now returns success only when the callable confirms `firestore: 'ok'`. If persistence fails, it returns a tool error and instructs the agent not to claim the bug was documented.
+
+The important engineering rule is now explicit in code: **an agent may not claim that it performed a durable action unless the action path confirms durable evidence.**
+
 ## Current truthful product claim
 
 Safe:
 
-> indii.music implements conversational/product-native bug reporting with durable Firestore persistence, server-side GitHub credentials, deduplication, and founder/internal triage. A production configuration failure temporarily prevented GitHub forwarding while preserving seven reports; the forwarding path was repaired on Sep. 26, 2026.
+> indii.music implements conversational/product-native bug reporting with server-side durable persistence, GitHub forwarding, deduplication, visible failure signaling, and founder/internal triage. The reporting tool is explicitly prevented from claiming success when persistence did not occur.
+
+Also safe:
+
+> Boardroom readiness overclaims now have deterministic and JEV guardrails that can route the defect into the same reporting pipeline automatically.
 
 Still gated:
 
-> A new genuine report must complete the repaired Firestore-to-GitHub path automatically before calling that production forwarding leg live-verified end to end.
+> A new genuine post-repair report must complete the repaired Firestore-to-GitHub path automatically before calling that production forwarding leg live-verified end to end.
 
 ## Why this still matters
 

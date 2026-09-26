@@ -94,7 +94,13 @@ The repository implements two deliberately different failure-reporting paths:
 
 That creates a closed product-feedback loop inside the product itself: use indii → encounter a problem → report it conversationally → preserve technical evidence → triage/fix it internally.
 
-**2026-09-26 production finding:** seven genuine in-product bug reports had persisted successfully to Firestore but the deployed GitHub-forwarding leg was missing runtime configuration, so they did not reach GitHub automatically. Commit `5504361c9` adds a canonical repository fallback; the commit record states the live secret/environment binding was repaired out-of-band. Issue #319 backfills one group of those preserved reports. A fresh post-repair report should still be used to prove the complete automatic Firestore-to-GitHub roundtrip before claiming it as live-verified end to end.
+**2026-09-26 production finding:** seven genuine in-product bug reports had persisted successfully to Firestore but the deployed GitHub-forwarding leg was missing runtime configuration, so they did not reach GitHub automatically. Commit `5504361c9` adds a canonical repository fallback; the commit record states the live secret/environment binding was repaired out-of-band. Issue #319 backfills one group of those preserved reports.
+
+Two additional safeguards landed later the same day:
+- commit `ebd06ad8e` adds deterministic + JEV readiness-overclaim detection and routes detected Boardroom overclaims through `reportBugFn`, with cooldown/deduplication and visible GitHub-sync failure warnings;
+- commit `c075761bf` removes the dead client-side `bug_reports` write and adds an honesty gate: `report_bug` returns success only when the server confirms durable Firestore persistence. If persistence fails, the agent must explicitly say the report was **not** filed.
+
+This means the implemented repair loop is now stronger than the original #317 state. A fresh genuine post-repair report must still complete the entire automatic Firestore-to-GitHub path before calling that production forwarding leg live-verified end to end.
 
 Issue #319 was then decomposed into issues #320–#329 during the same afternoon, covering model-resolution truth, print-spec math, local/hosted upscaling, export/DPI verification, merchandise integration, E2E proof, and an optional domain-trained upscaler. This is evidence of fast issue-to-work decomposition inside the founder/agent engineering process. It is not evidence that implementation completes without human review, approvals, tests, or CI.
 
@@ -143,9 +149,10 @@ This is useful founder evidence because the system is being used to expose, reco
 The default-branch history provides objective evidence of sustained execution since the product build began.
 
 - The oldest commit currently reachable from `main` is the repository's **Initial commit** on **2025-11-28**.
-- As of approximately **12:14 PM EDT on 2026-09-26**, the default-branch history contained **10,538 commits** across the 303-calendar-day span from Nov. 28 through Sep. 26.
-- On 2026-09-26, between **6:00 AM and 12:14 PM EDT**, **20 commits** landed; the first was at approximately **6:04 AM EDT** and the latest observed at approximately **11:50 AM EDT**.
-- Those 20 commits were attributed across the two GitHub identities currently used in the project history: `wiil-tech` (11) and `the-walking-agency-det` (9).
+- The formal cadence audit snapshot at **1:23 PM EDT on 2026-09-26** counted **10,543 commits** across the 303-calendar-day span from Nov. 28 through Sep. 26.
+- Commits occurred on **295 of 303 UTC calendar dates (97.4%)** in that span.
+- On 2026-09-26, between **6:00 AM and 1:23 PM EDT**, **25 commits** landed on `main`; the first observed after 6:00 AM was at approximately **6:04 AM EDT**.
+- Author-name distribution in that same-day snapshot was 12 `William Roberts`, 12 `the-walking-agency-det`, and 1 `wiil-tech`. These are Git author strings, not employee counts or proof that one human personally typed each commit.
 
 This corroborates the founder's statement that indii.music has been an intensive, daily build effort since late 2025. It is **project-execution evidence**, not a claim that William personally typed every commit. The history includes AI-assisted/agent work, merge commits, tests, documentation, fixes, and other repository activity performed under the founder's direction and acceptance process.
 
