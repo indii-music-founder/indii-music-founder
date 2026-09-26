@@ -84,11 +84,11 @@ The intended workflow is:
 7. create a durable encounter note;
 8. return to Studio with the context already organized.
 
-Current repository evidence proves the audio/photo contact-analysis path and the durable encounter/contact/note infrastructure.
+Current repository evidence proves the durable capture/encounter/contact/note infrastructure and the intended structured extraction contract. A deeper code audit found that the present `analyzeEncounterWithGemini()` call is still text-only: it receives `audioUrl` / `imageUrl` parameters from the pipeline but does not attach those media assets to the Gemini request, and video frames are not extracted either.
 
-Current limitation: video can be captured/stored/attached, but the server analysis path does not yet extract frames from video for contact analysis. GitHub issue #318 tracks that gap.
+GitHub issue #318 now carries that broader correction. Until the media bytes/parts are actually supplied and proven end to end, do not claim audio transcription, business-card/photo OCR, or video-frame contact extraction from captured media as live behavior.
 
-Therefore the safe claim is **implemented field-capture/contact architecture being actively hardened**, not complete production-perfect video contact extraction.
+Therefore the safe claim is **implemented field-capture/contact architecture with media analysis still being wired and verified**.
 
 ## 5. Continuous founder operation away from the desk
 

@@ -60,8 +60,8 @@
 | P2 commit `304e1c4b3` | Deterministic catalog audit + Jev triage + durable admin task worker exist in code/tests | P2 CI/live status should be checked if cited as current |
 | GitHub issue #317 | Boardroom truthfulness defect became tracked engineering work through connected founder/agent workflow | It was not created by the exact in-product `reportBugFn` format/path |
 | `reportBugFn.ts` + BugReportTools + bug-report docs | Authenticated conversational bug reports can persist and are designed to forward to GitHub with server-side credentials/dedup | Seven real reports persisted to Firestore while GitHub forwarding was misconfigured; repair commit `5504361c9`; fresh post-repair end-to-end proof still needed |
-| Field Encounter pipeline | Audio/photo evidence can extract contact details and create FieldContact + note | Current video path stores/attaches video but does not yet feed extracted frames into contact analysis |
-| GitHub issue #318 | The video-contact extraction gap is now explicitly tracked | Open issue; do not claim complete video contact extraction yet |
+| Field Encounter pipeline | Durable encounter/media/contact/note structures and intended contact-extraction schema exist | Current `analyzeEncounterWithGemini()` call is text-only; captured audio/photo/video media are not yet attached to the model request, so media-derived transcription/OCR/contact extraction is not live-proven |
+| GitHub issue #318 | The Field Encounter media-analysis gap is explicitly tracked, with a 2026-09-26 audit comment broadening it beyond video | Open issue; do not claim media-derived contact extraction until audio/photo/video cases are proven |
 | GitHub issue #319 | Real in-product image-generation bug reports survived in Firestore and were recoverable/backfilled after the GitHub-forwarding failure was repaired | #319 is a backfill, not proof of a fresh automatic post-repair roundtrip |
 
 ## Development-cadence evidence

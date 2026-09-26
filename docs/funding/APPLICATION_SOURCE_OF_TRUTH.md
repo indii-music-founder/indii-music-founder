@@ -105,10 +105,10 @@ Current repository evidence includes:
 - authenticated phone-to-Studio command/response relay;
 - mobile Boardroom, Department, and Direct conversation targeting;
 - quick capture for voice, photo, document, receipt, video, location, and text;
-- a Field Encounter pipeline designed to transcribe captured media, extract contact details such as name, phone, email, organization, and role, classify headshot/business-card imagery, create or link a FieldContact record, and generate a synced note;
+- a Field Encounter pipeline with durable media/encounter/contact/note structures and an intended multimodal contact-extraction contract;
 - mobile mileage, venue/location, encounter, and status surfaces.
 
-A concrete use case is meeting somebody while doing music-business work: capture the interaction on the phone, let the system extract the useful identity/contact context, and turn it into a structured contact/note record without waiting to reconstruct the encounter at a desk.
+A concrete target use case is meeting somebody while doing music-business work: capture the interaction on the phone, extract supported identity/contact context, and return to a structured contact/note record without reconstructing the encounter later. **Current implementation boundary:** the server function currently discovers the captured audio/photo/video assets but its Gemini call sends only the text prompt/client context; it does not yet attach the media evidence to the model request. Therefore media-derived transcription/OCR/contact extraction is not live-proven by this path yet.
 
 Some remote/capture paths are still being debugged and live-verified. The externally safe claim is that the architecture and workflows are implemented and actively being hardened—not that every mobile path is production-perfect today.
 
@@ -130,7 +130,7 @@ Current evidence includes:
 - P2 commit `304e1c4b3` added the deterministic catalog audit worker, Jev severity triage, durable administrative task emission, and a receipt-completion trigger that starts the administrative chain autonomously.
 - GitHub issue #317 was opened through the founder/agent GitHub connector flow after the Boardroom overclaimed production readiness. The issue explicitly requires status responses to distinguish implemented, tested, live-verified, and still-gated capabilities.
 - The in-product bug-report architecture is separate and also implemented: authenticated user reports can persist to Firestore and forward to GitHub Issues with server-side credentials and search-before-create deduplication.
-- A review of the Field Encounter video use case found a real implementation gap: video is captured/stored/attached, but the current contact-analysis function accepts audio and image evidence, not extracted video frames. Issue #318 now tracks that gap.
+- A deeper review of the Field Encounter path found a broader implementation gap: audio/photo/video assets are captured and stored, but the current `analyzeEncounterWithGemini()` request is text-only and does not attach those media assets. Issue #318 now tracks the corrected media-analysis scope.
 
 This is useful founder evidence because the system is being used to expose, record, and route its own defects while the founder continues operating remotely. Do not describe #317 as proof that the exact in-product `reportBugFn` path fired; #317 was created through the connected founder/agent GitHub workflow.
 

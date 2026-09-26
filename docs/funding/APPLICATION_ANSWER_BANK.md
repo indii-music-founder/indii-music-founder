@@ -83,7 +83,7 @@ The internal error experience is deliberately richer than the customer experienc
 
 That creates a short feedback loop: use the product → encounter a defect or missing capability → preserve evidence → create/route engineering work → verify the fix.
 
-A current example is GitHub issue #317, opened after the Boardroom overstated production readiness. Another review found that Field Encounter video capture is stored but not yet analyzed frame-by-frame for contact extraction; that gap is now tracked as issue #318.
+A current example is GitHub issue #317, opened after the Boardroom overstated production readiness. A deeper Field Encounter review found that captured audio/photo/video assets are stored, but the current server-side Gemini request is still text-only and does not attach the media evidence; that broader gap is tracked in issue #318.
 
 ## What is the operating model as the company grows?
 
@@ -169,7 +169,7 @@ No external application should claim that yet. indii.music has DDEX generation, 
 
 indiiREMOTE is a mobile operating surface for indii.music, not merely a desktop remote. It lets the user carry business context into the field and send work back to the Studio through an authenticated cloud relay.
 
-Current mobile capture surfaces include voice, photo, document, receipt, video, location, and text. One implemented Field Encounter use case is contact capture: captured media can be transcribed, contact details such as name, phone, email, organization, and role can be extracted, headshot/business-card imagery can be classified, and the result can create or link a structured contact and synced note.
+Current mobile capture surfaces include voice, photo, document, receipt, video, location, and text. The Field Encounter architecture is intended to turn those captures into structured contacts and notes. The durable capture/encounter/contact/note pieces exist, but the current server-side Gemini call does not yet attach the captured audio/photo/video evidence, so media-derived transcription, OCR, and contact extraction should be described as an active implementation/verification gap rather than a completed capability.
 
 The larger product idea is that music-business work should not stop when the artist, founder, or staff member leaves the desk.
 

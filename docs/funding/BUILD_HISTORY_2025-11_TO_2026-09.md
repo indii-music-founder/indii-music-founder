@@ -54,7 +54,7 @@ PR #281 aligns Instagram publishing validation, Views/engagement ingestion, inbo
 PR #285 establishes canonical music relationships and a DDEX standards registry. Later phases add Connected Intelligence preflight, catalog-integrity analysis, RDR-RCC interoperability, scoped AI-use rights, local/off-grid inspection, and Founding Owner capability boundaries.
 
 ### Remote / field operations
-indiiREMOTE now includes authenticated remote commands, approvals/status, voice/photo/document/receipt/video/location/text capture, Field Encounters, contacts/notes, and mileage/business context. Audio/photo contact extraction is implemented; video-frame contact analysis remains open as issue #318.
+indiiREMOTE now includes authenticated remote commands, approvals/status, voice/photo/document/receipt/video/location/text capture, Field Encounters, contacts/notes, and mileage/business context. A Sep. 26 audit found the durable media/contact structures are ahead of the analysis wiring: the current Gemini encounter request is text-only and does not yet attach captured audio/photo/video evidence. Issue #318 tracks that corrected media-analysis gap.
 
 ### Product-native repair loop
 Conversational bug/error reporting, Firestore persistence, server-side GitHub credentials, deduplication, and founder-only triage exist. A Sep. 26 configuration fault left seven reports safely stored in Firestore but not forwarded to GitHub. Commit 5504361c9 repairs the route; issue #319 backfills preserved reports. A fresh post-repair automatic roundtrip is still the final live-verification step.
