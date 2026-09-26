@@ -94,6 +94,8 @@ The repository implements two deliberately different failure-reporting paths:
 
 That creates a closed product-feedback loop inside the product itself: use indii → encounter a problem → report it conversationally → preserve technical evidence → triage/fix it internally.
 
+**2026-09-26 production finding:** seven genuine in-product bug reports had persisted successfully to Firestore but the deployed GitHub-forwarding leg was missing runtime configuration, so they did not reach GitHub automatically. Commit `5504361c9` adds a canonical repository fallback; the commit record states the live secret/environment binding was repaired out-of-band. Issue #319 backfills one group of those preserved reports. A fresh post-repair report should still be used to prove the complete automatic Firestore-to-GitHub roundtrip before claiming it as live-verified end to end.
+
 ### Mobile Remote as a field-business operating surface
 
 indiiREMOTE is not only a desktop remote. It extends indii.music into real-world music-business activity away from the desk.

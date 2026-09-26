@@ -22,6 +22,8 @@
 - Current application source of truth
 - Master application answer bank
 - Application evidence map
+- Founder background dossier
+- Product differentiators dossier
 
 ## Verify before external submission
 

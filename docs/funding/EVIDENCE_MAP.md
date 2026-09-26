@@ -59,9 +59,10 @@
 | Deploy run 36247269910 succeeded on P1 commit `ed84984a9` after transient Google 503 retry | Founder/agent workflow can diagnose infrastructure vs code failure and use sanctioned retry path | Does not prove every later phase is live |
 | P2 commit `304e1c4b3` | Deterministic catalog audit + Jev triage + durable admin task worker exist in code/tests | P2 CI/live status should be checked if cited as current |
 | GitHub issue #317 | Boardroom truthfulness defect became tracked engineering work through connected founder/agent workflow | It was not created by the exact in-product `reportBugFn` format/path |
-| `reportBugFn.ts` + BugReportTools + bug-report docs | Authenticated conversational bug reports can persist and forward to GitHub with server-side credentials/dedup | Genuine production invocation should be checked when claimed |
+| `reportBugFn.ts` + BugReportTools + bug-report docs | Authenticated conversational bug reports can persist and are designed to forward to GitHub with server-side credentials/dedup | Seven real reports persisted to Firestore while GitHub forwarding was misconfigured; repair commit `5504361c9`; fresh post-repair end-to-end proof still needed |
 | Field Encounter pipeline | Audio/photo evidence can extract contact details and create FieldContact + note | Current video path stores/attaches video but does not yet feed extracted frames into contact analysis |
 | GitHub issue #318 | The video-contact extraction gap is now explicitly tracked | Open issue; do not claim complete video contact extraction yet |
+| GitHub issue #319 | Real in-product image-generation bug reports survived in Firestore and were recoverable/backfilled after the GitHub-forwarding failure was repaired | #319 is a backfill, not proof of a fresh automatic post-repair roundtrip |
 
 ## Development-cadence evidence
 

@@ -69,6 +69,8 @@ Users can report a failure conversationally. The agent can create a durable erro
 
 The internal/founder side is deliberately different: founder-authorized users can inspect the underlying technical details, triage reports, acknowledge them, and mark them resolved. This creates a product-native feedback loop from user experience to engineering triage.
 
+The current architecture is real, but its production GitHub-forwarding leg was repaired on 2026-09-26 after seven reports were found preserved in Firestore but not forwarded. The preserved reports were recoverable; a fresh post-repair automatic roundtrip remains the final live-verification step.
+
 ## How is the agent system bounded?
 
 The current department runtime has 23 registered department heads. Direct mode prevents delegation, Department mode prevents cross-department delegation, and Boardroom mode restricts collaboration to seated department heads. Valid agent IDs must resolve to a required fine-tuned Vertex endpoint or an explicit tuned-domain alias; missing routing fails rather than silently falling back to a generic model.
