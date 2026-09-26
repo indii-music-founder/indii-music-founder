@@ -1,5 +1,12 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { typesafeApiKey } from '../../config/secrets';
+import {
+    createTypesafeClient,
+    TypesafeClientError,
+    TYPESAFE_MODEL_PATTERN,
+    TYPESAFE_MAX_QUESTIONS,
+    TYPESAFE_MAX_STATE_CHARS,
+} from './typesafeClient';
 
 /**
  * typesafeJudge — server-side proxy for the TypeSafe System One API (ISSUE-1442 pilot).
@@ -11,13 +18,10 @@ import { typesafeApiKey } from '../../config/secrets';
  *
  * Judgments defined in the renderer's single reviewable constants file:
  * packages/renderer/src/config/typesafeJudgments.ts
+ *
+ * Transport lives in ./typesafeClient (shared with server-side audit workers).
+ * This callable keeps the validation and HttpsError policy mapping.
  */
-
-const TYPESAFE_ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
-const DEFAULT_MODEL = 'jev-latest';
-const MODEL_PATTERN = /^jev-[a-z0-9.-]+$/;
-const MAX_STATE_CHARS = 64_000;
-const MAX_QUESTIONS = 20;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -50,20 +54,20 @@ export const typesafeJudge = onCall(
             throw new HttpsError('invalid-argument', 'state and questions must be objects.');
         }
         const questionCount = Object.keys(input.questions).length;
-        if (questionCount === 0 || questionCount > MAX_QUESTIONS) {
-            throw new HttpsError('invalid-argument', `questions must contain 1–${MAX_QUESTIONS} entries.`);
+        if (questionCount === 0 || questionCount > TYPESAFE_MAX_QUESTIONS) {
+            throw new HttpsError('invalid-argument', `questions must contain 1–${TYPESAFE_MAX_QUESTIONS} entries.`);
         }
 
         const stateJson = JSON.stringify(input.state);
-        if (stateJson.length > MAX_STATE_CHARS) {
-            throw new HttpsError('invalid-argument', `state exceeds the ${MAX_STATE_CHARS} character budget.`);
+        if (stateJson.length > TYPESAFE_MAX_STATE_CHARS) {
+            throw new HttpsError('invalid-argument', `state exceeds the ${TYPESAFE_MAX_STATE_CHARS} character budget.`);
         }
 
-        let model = DEFAULT_MODEL;
+        let model: string | undefined;
         if (typeof input.model === 'string') {
             // Truthful capability: an unknown model name is rejected, never
             // silently substituted with the default.
-            if (!MODEL_PATTERN.test(input.model)) {
+            if (!TYPESAFE_MODEL_PATTERN.test(input.model)) {
                 throw new HttpsError('invalid-argument', `Unknown model: ${input.model}.`);
             }
             model = input.model;
@@ -73,38 +77,28 @@ export const typesafeJudge = onCall(
             throw new HttpsError('failed-precondition', 'TypeSafe judgments are not configured.');
         }
 
-        let upstream: Response;
+        const client = createTypesafeClient({ apiKey, ...(model ? { model } : {}) });
+
         try {
-            upstream = await fetch(TYPESAFE_ENDPOINT, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${apiKey}`,
-                },
-                body: JSON.stringify({ model, state: input.state, questions: input.questions }),
-            });
+            const result = await client.judge({ state: input.state, questions: input.questions });
+            return { answers: result.answers };
         } catch (err: unknown) {
-            console.error('[typesafeJudge] upstream fetch failed:', err instanceof Error ? err.message : err);
-            throw new HttpsError('unavailable', 'TypeSafe judgment upstream is unreachable.');
-        }
-
-        if (!upstream.ok) {
-            const detail = await upstream.text().catch(() => '');
-            console.error(`[typesafeJudge] upstream ${upstream.status}: ${detail.slice(0, 300)}`);
-            if (upstream.status === 429) {
-                throw new HttpsError('resource-exhausted', 'TypeSafe judgment rate limited.');
+            if (err instanceof TypesafeClientError) {
+                console.error(`[typesafeJudge] upstream ${err.kind}${err.status ? ` ${err.status}` : ''}: ${err.message}`);
+                switch (err.kind) {
+                    case 'unreachable':
+                    case 'timeout':
+                        throw new HttpsError('unavailable', 'TypeSafe judgment upstream is unreachable.');
+                    case 'rate_limited':
+                        throw new HttpsError('resource-exhausted', 'TypeSafe judgment rate limited.');
+                    case 'credentials':
+                        throw new HttpsError('failed-precondition', 'TypeSafe judgment credentials rejected.');
+                    case 'upstream':
+                    case 'shape':
+                        throw new HttpsError('internal', 'TypeSafe judgment upstream error.');
+                }
             }
-            if (upstream.status === 401 || upstream.status === 403) {
-                throw new HttpsError('failed-precondition', 'TypeSafe judgment credentials rejected.');
-            }
-            throw new HttpsError('internal', 'TypeSafe judgment upstream error.');
+            throw err;
         }
-
-        const body = (await upstream.json().catch(() => null)) as unknown;
-        if (!isPlainObject(body) || !isPlainObject(body.answers)) {
-            throw new HttpsError('internal', 'TypeSafe judgment returned an unexpected shape.');
-        }
-
-        return { answers: body.answers };
     },
 );

@@ -59,6 +59,8 @@ export const ADMINISTRATIVE_ACTION_KINDS = [
 
 export const AdministrativeTaskTypeSchema = z.enum(ADMINISTRATIVE_TASK_TYPES);
 export type AdministrativeTaskType = (typeof ADMINISTRATIVE_TASK_TYPES)[number];
+export type AdministrativeTaskSeverity = (typeof ADMINISTRATIVE_TASK_SEVERITIES)[number];
+export type AdministrativeTaskStatus = (typeof ADMINISTRATIVE_TASK_STATUSES)[number];
 
 export const TaskEntityRefsSchema = z
     .object({

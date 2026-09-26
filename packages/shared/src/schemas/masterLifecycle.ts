@@ -74,6 +74,7 @@ export function assertMasterLifecycleTransition(
 
 export const LIFECYCLE_ACTORS = ['runbook', 'audit', 'user'] as const;
 export const LifecycleActorSchema = z.enum(LIFECYCLE_ACTORS);
+export type LifecycleActor = (typeof LIFECYCLE_ACTORS)[number];
 
 export const LifecycleTransitionSchema = z
     .object({

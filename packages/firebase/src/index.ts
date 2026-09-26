@@ -36,6 +36,7 @@ import { canvasRenderFn } from "./lib/canvas_render";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
+import { catalogAdminAuditFn } from "./functions/audit/catalogAdminAudit";
 import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
 import { recordUsage } from "./functions/creative/gateway";
@@ -60,7 +61,7 @@ export { approveSessionEditPlan } from "./functions/video/approveSessionEditPlan
 import { analyzeAudioFn } from "./lib/audio";
 import { assertVideoSessionProjectAccess } from "./functions/video/createVideoSession";
 import { isApprovedFineTunedTextEndpoint, isApprovedTextStreamModel } from './config/textStreamModels';
-import { arcjetKey, clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from "./config/secrets";
+import { arcjetKey, clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey, typesafeApiKey } from "./config/secrets";
 
 import { estimateTranscoderRenderCost, estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
@@ -243,6 +244,9 @@ export { issueStudioExecutorLease, publishStudioPresence, releaseStudioPresence,
 
 // TypeSafe System One judgments — server-side proxy (API key never leaves functions)
 export { typesafeJudge } from './functions/intelligence/typesafeJudge';
+
+// Post-Mastering Administrative Engine (P2) — receipt-complete audit trigger
+export { onAnalysisReceiptComplete } from './functions/audit/triggers';
 
 // Billing / Cost Control
 export { enforceOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';
@@ -1055,7 +1059,7 @@ export const renderVideo = onCall(
  */
 export const inngestApi = onRequest(
     {
-        secrets: [inngestSigningKey, inngestEventKey],
+        secrets: [inngestSigningKey, inngestEventKey, typesafeApiKey],
         timeoutSeconds: 540, // 9 minutes
         // ffmpeg canvas rendering (canvasRenderFn) needs headroom well beyond
         // the 256MB Gen1 default this function used to inherit.
@@ -1084,9 +1088,12 @@ export const inngestApi = onRequest(
         // MCP canvas render compose (P6, ISSUE-1100)
         const canvasRender = canvasRenderFn(inngestClient);
 
+        // Post-Mastering Administrative Engine: deterministic catalog audit (P2)
+        const catalogAdminAudit = catalogAdminAuditFn(inngestClient);
+
         const handler = serve({
             client: inngestClient,
-            functions: [generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall, canvasRender],
+            functions: [generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall, canvasRender, catalogAdminAudit],
             signingKey: inngestSigningKey.value(),
         });
 
