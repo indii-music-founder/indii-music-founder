@@ -55,6 +55,18 @@ The process includes exact-SHA CI validation, security guards, no-post-gate-edit
 
 The differentiation is continuity, not feature count. Distribution preparation can understand rights and metadata. Creative workflows can understand the release and campaign. Finance can understand projects and expenses. Registration can use the same canonical artist/song context. The product is designed as an operating system for the business around music rather than disconnected point tools.
 
+A second differentiator is the product's harness architecture. The current runtime registry contains 23 department heads with code-enforced communication boundaries. New capabilities can often be added as bounded tools within an existing specialist/department and inherit the same routing, permissions, approval, testing, security, and CI framework. That reduces the architectural cost and blast radius of extending the product, while still requiring normal implementation and verification work.
+
+## How does bug reporting work?
+
+Users can report a failure conversationally. The agent can create a durable error or bug report; the bug pipeline persists reports and can forward authenticated bug reports to GitHub Issues without exposing GitHub credentials to the client.
+
+The internal/founder side is deliberately different: founder-authorized users can inspect the underlying technical details, triage reports, acknowledge them, and mark them resolved. This creates a product-native feedback loop from user experience to engineering triage.
+
+## How is the agent system bounded?
+
+The current department runtime has 23 registered department heads. Direct mode prevents delegation, Department mode prevents cross-department delegation, and Boardroom mode restricts collaboration to seated department heads. Valid agent IDs must resolve to a required fine-tuned Vertex endpoint or an explicit tuned-domain alias; missing routing fails rather than silently falling back to a generic model.
+
 ## What is your business model?
 
 Current Founding Artist Beta packaging:

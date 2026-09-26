@@ -85,6 +85,23 @@ The error model intentionally differs by audience: founder/internal users may se
 
 This is useful evidence of dogfooding and product depth, but status answers must remain evidence-bound. A chat response may not claim a report was pushed, a system is production-ready, or a capability is live unless an actual tool/action or current runtime evidence proves it.
 
+### Conversational bug reporting and founder diagnostics
+
+The repository implements two deliberately different failure-reporting paths:
+
+- **Subscriber/user path:** a user can tell the agent that something broke and ask it to report the problem. The `report_error` / `report_bug` tooling creates a durable report; the bug-report pipeline can persist to Firestore and forward authenticated reports to GitHub Issues. Subscriber-facing chat returns a short reference/result rather than exposing raw internal diagnostics.
+- **Founder/internal path:** founder-authorized users can list and triage the underlying error reports, inspect technical detail, acknowledge them, and mark them resolved through founder-gated server callables.
+
+That creates a closed product-feedback loop inside the product itself: use indii → encounter a problem → report it conversationally → preserve technical evidence → triage/fix it internally.
+
+### Modular 23-department harness
+
+The current runtime department registry contains **23 department heads**. Department, direct-chat, and Boardroom modes are not only prompt conventions: communication scope is enforced in code. Direct mode blocks delegation; Department mode blocks cross-department delegation; Boardroom mode allows department heads to collaborate only when seated.
+
+Every valid agent ID must resolve to a required fine-tuned Vertex endpoint or an explicit tuned-domain alias; missing tuned routing fails loudly rather than silently downgrading to a generic model.
+
+This architecture changes the economics of adding capability. New product functions can often be introduced as bounded tools/capabilities inside the existing harness, assigned to the appropriate specialist, and passed through the same approval, test, security, and CI machinery instead of requiring a new standalone application or parallel orchestration stack. That does **not** mean feature work is effortless: implementation, integration tests, security review, UI work, and live verification still apply. The advantage is reuse of the existing operating framework and reduced architectural blast radius.
+
 ## TypeSafe / JEV
 
 JEV System One is integrated as a typed semantic judgment layer.

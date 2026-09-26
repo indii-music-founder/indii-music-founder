@@ -34,6 +34,12 @@
 | Working web/desktop/cloud product | Repository-proven | packages/, current architecture, CI |
 | Firebase/GCP backend | Repository-proven | packages/firebase, deploy workflows |
 | Remote phone-to-Studio execution | Repository-proven architecture | RemoteRelayService, StudioExecutorCore, current-state docs; separate genuine two-device proof when needed |
+| Conversational user error reporting | Repository-proven | ErrorReportTools, BugReportTools, USER_MANUAL_BUG_REPORTING.md |
+| Founder-only technical error triage | Repository-proven | errorReportCallables.ts, ErrorReportsPanel.tsx |
+| 23 registered department heads | Repository-proven snapshot | departments.ts on 2026-09-26 |
+| Code-enforced agent scope boundaries | Repository-proven | BaseAgent.ts + AgentCommunicationPolicy; direct/department/boardroom restrictions |
+| Required tuned routing for valid agents | Repository-proven | fine-tuned-models.ts; direct endpoint or explicit tuned-domain alias, no silent generic fallback |
+| Modular tool/harness extensibility | Repository-proven architecture | BaseAgent tool allowlists, ToolPoolAssembler, department routing, common CI/security workflow; describe as reduced integration/blast radius, not zero-cost feature development |
 | DDEX/readiness infrastructure | Repository-proven | shared DDEX builders, preflight, admin engine |
 | Direct commercial DSP delivery | **Do not claim yet** | Requires real partner credentials, transmission and acknowledgement |
 | Registration workflows | Repository-proven | Registration Center and adapters; distinguish manual-required external steps |
