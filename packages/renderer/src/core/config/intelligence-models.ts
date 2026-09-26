@@ -109,7 +109,11 @@ export const INTELLIGENCE_CONFIG = {
             maxReferenceImages: 14
         },
         FAST: {
-            imageConfig: { imageSize: '1K' }, // Nano Banana 2 (Flash) supports up to 1K
+            // ISSUE-320: Nano Banana 2 (Flash) supports up to 4K. This value MUST
+            // mirror maxResolution for 'gemini-3.1-flash-image' in the canonical
+            // registry (@indii/shared modelCapabilities) — drift fails CI via
+            // capabilitySync.test.ts.
+            imageConfig: { imageSize: '4K' },
             mediaResolution: 'MEDIA_RESOLUTION_LOW',
             maxReferenceImages: 8
         }

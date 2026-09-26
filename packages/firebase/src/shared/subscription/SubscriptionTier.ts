@@ -25,7 +25,6 @@ export enum SubscriptionTier {
  */
 export interface ImageGenerationLimits {
     monthly: number;
-    maxResolution: string;
     generationsPerMonth: number;
     allowedFormats: string[];
 }
@@ -97,7 +96,6 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
         billingPeriod: 'once',
         imageGenerations: {
             monthly: 50,
-            maxResolution: '1024x1024',
             generationsPerMonth: 50,
             allowedFormats: ['png', 'jpg', 'webp']
         },
@@ -135,7 +133,6 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
         billingPeriod: 'month',
         imageGenerations: {
             monthly: 500,
-            maxResolution: '2048x2048',
             generationsPerMonth: 500,
             allowedFormats: ['png', 'jpg', 'webp', 'svg']
         },
@@ -173,7 +170,6 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
         billingPeriod: 'year',
         imageGenerations: {
             monthly: 500,
-            maxResolution: '2048x2048',
             generationsPerMonth: 500,
             allowedFormats: ['png', 'jpg', 'webp', 'svg']
         },
@@ -211,7 +207,6 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
         billingPeriod: 'once',
         imageGenerations: {
             monthly: 999999,
-            maxResolution: '4096x4096',
             generationsPerMonth: 999999,
             allowedFormats: ['png', 'jpg', 'webp', 'svg', 'tiff', 'psd']
         },
@@ -249,7 +244,6 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
         billingPeriod: 'month',
         imageGenerations: {
             monthly: 2000,
-            maxResolution: '4096x4096',
             generationsPerMonth: 2000,
             allowedFormats: ['png', 'jpg', 'webp', 'svg', 'tiff', 'psd']
         },

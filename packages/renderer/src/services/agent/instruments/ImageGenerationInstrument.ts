@@ -39,7 +39,7 @@ export class ImageGenerationInstrument implements Instrument {
     requiresApproval: false,
     requiredTier: 'free',
     constraints: {
-      maxResolution: '2048x2048',
+      maxResolution: '4096x4096', // ISSUE-320: full Nano Banana capability, was 2048
       allowedFormats: ['png', 'jpg', 'webp'],
       maxBatchSize: 4,
       rateLimitPerMinute: 10
