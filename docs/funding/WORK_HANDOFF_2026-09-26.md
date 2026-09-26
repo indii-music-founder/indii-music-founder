@@ -6,14 +6,15 @@
 ## Canonical sources to load first
 
 1. docs/funding/APPLICATION_SOURCE_OF_TRUTH.md
-2. docs/funding/APPLICATION_ANSWER_BANK.md
-3. docs/funding/EVIDENCE_MAP.md
-4. docs/funding/APPLICATION_ASSET_CHECKLIST.md
-5. docs/funding/FOUNDER_BACKGROUND_DOSSIER.md
-6. docs/funding/PRODUCT_DIFFERENTIATORS.md
-7. docs/data-room/09_FINANCIALS_REVENUE_SUMMARY.md
-8. docs/data-room/10_LEGAL_COMPLIANCE.md
-9. docs/data-room/08_DSP_RELATIONSHIPS.md
+2. docs/funding/MASTER_FOUNDER_PRODUCT_DOSSIER.md
+3. docs/funding/APPLICATION_ANSWER_BANK.md
+4. docs/funding/EVIDENCE_MAP.md
+5. docs/funding/APPLICATION_ASSET_CHECKLIST.md
+6. docs/funding/FOUNDER_BACKGROUND_DOSSIER.md
+7. docs/funding/PRODUCT_DIFFERENTIATORS.md
+8. docs/data-room/09_FINANCIALS_REVENUE_SUMMARY.md
+9. docs/data-room/10_LEGAL_COMPLIANCE.md
+10. docs/data-room/08_DSP_RELATIONSHIPS.md
 
 If any older document conflicts, the current source-of-truth and current code/CI win.
 

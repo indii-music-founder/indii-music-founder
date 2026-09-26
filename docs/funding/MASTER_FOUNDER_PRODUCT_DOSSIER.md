@@ -1,845 +1,919 @@
 # indii.music — Master Founder & Product Dossier
 
 **Owner:** William Roberts  
-**Canonical date:** 2026-09-26  
-**Purpose:** Durable internal record for fundraising, accelerators, grants, diligence, hiring, product strategy, and future company operations.
+**As of:** 2026-09-26  
+**Purpose:** Durable internal source for funding, accelerators, diligence, product strategy, founder interviews, pitch development, and future Work-mode application execution.
 
-> This document is the narrative layer above the application source of truth. It explains what indii.music is, why it exists, how it was built, how the system is governed, what is actually working, what is still being hardened, and what the company is intended to become.
+This document synthesizes founder-reported history, current repository evidence, live product testing, screenshots, CI/workflow evidence, and the current application source of truth.
 
----
-
-## Status vocabulary
-
-Every major claim in this document should be read through one of three labels:
-
-- **VERIFIED** — supported by current repository evidence, current live product evidence, or direct founder verification.
-- **IN DEVELOPMENT** — implemented in meaningful form but still being tuned, debugged, externally verified, or completed.
-- **INTENDED OPERATING MODEL** — a designed company/product behavior that is not yet fully operational at scale.
-
-This vocabulary is mandatory because indii.music is sophisticated enough that “implemented,” “tested,” “live-verified,” and “commercially proven” are not interchangeable.
+It is intentionally broader than a pitch deck. It preserves the reasoning behind the company while separating what is implemented, what is being hardened, and what remains an intended operating model.
 
 ---
 
-# 1. Executive Summary
+## 1. Truth labels used throughout
+
+Use these labels consistently in external work.
+
+### VERIFIED
+Supported by current repository code/tests/CI, current product behavior, current legal/account records, or other direct evidence.
+
+### FOUNDER-CONFIRMED
+Current statement from William Roberts. Appropriate for narrative use, but exact documentary support may still be required for a formal application.
+
+### LIVE-TESTED
+Observed in current founder use of the product. A live test can demonstrate behavior without proving every edge case or every deployment path.
+
+### IN DEVELOPMENT
+The architecture or feature exists in meaningful form, but an integration, production path, consistency threshold, or end-to-end verification remains incomplete.
+
+### INTENDED OPERATING MODEL
+A deliberate design direction for how indii.music and its future human staff are supposed to work. Do not present it as current headcount or fully deployed automation.
+
+### DO NOT CLAIM
+Historical mock/test data, stale acquisition assumptions, simulated metrics, unverified commercial relationships, or capabilities that have not crossed their required external proof gate.
+
+---
+
+# 2. Executive summary
 
 **indii.music is business operating software for independent music artists.**
 
-It is designed around a simple problem: independent artists increasingly operate like small music companies, but the work around their music is fragmented across distributors, rights organizations, spreadsheets, accounting systems, creative tools, social platforms, calendars, inboxes, notes, and manual processes.
+The product is designed around the business that begins once music exists: planning, rights and registrations, metadata, delivery preparation, campaigns, release operations, finance, audience/CRM, merchandise, touring/road operations, remote field work, and the repeatable administrative work of running an independent music career.
 
-indii.music connects that work around shared artist, song, rights, release, campaign, financial, and audience context.
-
-The canonical lifecycle is:
+The core lifecycle is:
 
 **Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat**
 
-The product is not positioned as music-production AI. It is the operating layer around the music.
+The product thesis is not that artists need one more isolated tool. It is that the same artist, song, rights, collaborators, release, assets, audience, and financial context should remain connected across the entire operating lifecycle.
 
-**Current stage:** Founding Artist Beta. A substantial working platform exists. The principal business gap is real-user validation and commercialization, not product ideation.
+indii.music is also being built as an **AI-native operating environment**, not as legacy software with a chatbot attached. Its architecture includes bounded specialist agents, persistent directives, code-enforced communication boundaries, deterministic business rules, semantic review, human approval gates, quality autoraters, remote execution, and product-native feedback/repair loops.
+
+The company is currently **pre-revenue** and in **Founding Artist Beta**. The product is substantial working software, but the central company proof still ahead is real-user validation, commercial adoption, and live verification of certain external integrations.
 
 ---
 
-# 2. Founder
+# 3. Founder-market fit
 
-## 2.1 Founder-market fit
+## 3.1 Operating history
 
-William Roberts is a nontraditional technical founder whose product thesis comes from decades of operating experience rather than from searching for a software category.
+William Roberts is a nontraditional technical founder whose experience developed across two parallel operating worlds: music and hospitality.
 
-He reports roughly four decades of experience across music and, in parallel, hospitality / food-and-beverage / nightlife operations.
+**FOUNDER-CONFIRMED:** roughly four decades of music/nightlife experience and a parallel four decades of hospitality/food-and-beverage/operations experience.
 
-His career pattern repeatedly moved from frontline participation into responsibility for the broader system:
+The repeated founder pattern is:
 
-- hospitality: busser → service → bartender → management → openings / operations;
-- music: front door → staff management → DJ → promoter → event producer → producer / engineer → label owner → release administration;
-- technology: AI experimentation → modular tools → product architecture → agent orchestration → indii.music.
+**enter at the working level → learn the operation → assume responsibility for the system → identify what is broken or inefficient → improve the process**
 
-The consistent founder pattern is:
+That pattern appears repeatedly across:
 
-**encounter an operational problem → learn the domain → build or improve the process → test it in practice → iterate after failure.**
-
-## 2.2 Music background
-
-Professional music/nightlife work began seriously around 1992.
-
-Founder history includes:
-
-- The Edge in Orlando;
-- Jacksonville club operations and event promotion;
-- Las Vegas nightlife / Utopia-era DJ and event work;
-- Detroit DJ / event / electronic-music work;
-- early Ableton Live adoption;
+- nightclub operations;
+- DJing and event production;
 - music production and mastering;
-- Expressway Records through New Detroit Music LLC.
+- label administration;
+- restaurant operations and openings;
+- acoustics/problem-solving;
+- AI tooling;
+- software/product architecture.
 
-William reports that Expressway Records released just under 100 tracks across roughly two active pre-COVID years, including multi-artist compilations. He was the owner and only employee and personally handled the operating chain around releases: artist coordination, metadata, identifiers, registrations, artwork, distribution preparation, promotion, accounting / royalty matters, compilation assembly, and final mastering.
+This is directly relevant to indii.music because the product is built around operational continuity rather than a single creative feature.
 
-That label experience is one of the clearest direct origins of indii.music.
+## 3.2 Music-business history
 
-## 2.3 Education
+Professional music/nightlife work began seriously in the early 1990s in Florida and later included Jacksonville, Las Vegas, and Detroit.
 
-Founder reports completion of a two-year Music Business program at **SAE Institute Nashville**.
+William later created **Expressway Records** through New Detroit Music LLC and reports operating it as owner and sole worker.
 
-Use the exact diploma/transcript title if an external form requires the formal credential wording.
+Across roughly two active pre-COVID years, the label released just under 100 tracks, including multi-artist compilations.
 
-## 2.4 Hospitality / operations background
+William personally handled work that now maps directly to indii.music product requirements:
 
-Founder reports roughly four decades in hospitality beginning as a busser in his teens and progressing through service, bartending, kitchen management, openings, staff management, cash responsibility, P&L / purchasing, training, safety, and high-volume operations.
+- artist coordination;
+- release planning;
+- metadata;
+- identifiers;
+- registrations;
+- artwork requirements;
+- business administration;
+- distribution preparation;
+- promotion;
+- accounting/royalty work;
+- compilation assembly;
+- final mastering/cohesion.
 
-Reported examples include Darden, the original Ima location on Michigan Avenue in Detroit, Mister Dips Detroit / NoHo Hospitality Group, and Roosevelt's Billiards.
+The strongest founder-market-fit statement is:
 
-Exact dates and titles should be verified only when a form requires them.
+> Expressway Records forced William to operate the entire business chain behind independent releases himself. indii.music is the operating system he repeatedly wished existed while doing that work.
 
-## 2.5 Founder operating style
+## 3.3 Formal music-business education
 
-William describes his career as a “degree from the University of Failure.”
+**FOUNDER-CONFIRMED:** William completed a two-year Music Business program at **SAE Institute Nashville**.
 
-The useful meaning is not that failure is celebrated. It is that his operating style is iterative:
+Verify the exact formal credential title from the diploma/transcript before a form requires the exact degree/program wording.
 
-**attempt → observe → understand what failed → correct → repeat.**
+## 3.4 Hospitality and operations
 
-That pattern is now visible in how indii.music is being built.
+William reports beginning hospitality work around age 15–16 and progressing through:
 
----
+- busser/service;
+- bartending;
+- kitchen work;
+- restaurant/nightlife management;
+- openings;
+- staff operations;
+- high-volume guest operations;
+- cash/P&L/vendor responsibility;
+- training and safety.
 
-# 3. Origin of indii.music
+The significance to indii.music is operational discipline: live environments taught him that failures, no-shows, customer issues, last-minute changes, money, safety, and incomplete information are normal operating conditions rather than exceptional events.
 
-## 3.1 Company history
+## 3.5 Failure philosophy
 
-New Detroit Music LLC was formed before indii.music for record-label activity. Founder reports 2018 as the formation year.
+William's shorthand is that he has a **“degree from the University of Failure.”**
 
-indii.music itself should not be described as an eight-year-old software company.
+The intended meaning is practical, not motivational:
 
-The serious indii.music build began in **November 2025**.
+- successful events came after unsuccessful events;
+- strong management came after management mistakes;
+- label competence came from learning every function by doing it;
+- software is being built through the same loop.
 
-## 3.2 Pre-build period
+Safe founder wording:
 
-Before November 2025, William had already spent several years experimenting with modern generative AI and software-building tools, beginning in the early ChatGPT / image-generation period and progressing through modular applications and increasingly sophisticated development workflows.
+> I do not treat failure as a separate chapter from success. My operating pattern is attempt, observe what failed, understand why, correct it, and keep moving.
 
-November 2025 is the point at which he deliberately committed to building indii.music as the primary product.
+## 3.6 Self-directed technical transition
 
-## 3.3 Why it exists
+William began serious experimentation with modern generative AI during the early ChatGPT/image-generation era, progressing through:
 
-indii.music is the operating system William wished had existed while he was:
+- image-generation tools;
+- no-code/low-code experiments;
+- small modular applications;
+- increasingly coordinated AI-assisted software development.
 
-- performing;
-- promoting events;
-- producing music;
-- operating a label;
-- handling registrations and metadata;
-- dealing with distributors;
-- assembling campaigns;
-- tracking money and rights;
-- managing real-world operations.
+In **November 2025**, he made the explicit decision that indii.music was the primary product being built.
 
-The product thesis is therefore not “AI for musicians.”
-
-It is:
-
-> Independent artists need connected operating infrastructure for the business around their music.
-
----
-
-# 4. Product Thesis
-
-## 4.1 Core problem
-
-Independent artists have many specialized tools but little continuity between them.
-
-A song may exist in:
-
-- a DAW;
-- a distributor;
-- a PRO portal;
-- a spreadsheet;
-- a contract;
-- an accounting system;
-- an email campaign;
-- a social scheduler;
-- a merch platform;
-- a calendar;
-- a CRM;
-- a note on a phone.
-
-The repeated loss of context creates unnecessary work and missed business steps.
-
-## 4.2 Core solution
-
-indii.music keeps the business context around an artist and release connected.
-
-A rights workflow should know the release.
-
-A distribution workflow should know the rights and metadata.
-
-A creative workflow should know the release and campaign.
-
-A finance workflow should know the project.
-
-A CRM should know the people and interactions surrounding the artist’s business.
-
-The differentiator is therefore **continuity**, not feature count.
+The current repository's default-branch history begins with an initial commit dated **2025-11-28**, consistent with that founder-reported start period.
 
 ---
 
-# 5. Current Product State
+# 4. The technical-founder role
 
-## VERIFIED
+William should not be described merely as a founder who “used AI to write an app.”
 
-Repository and live-product evidence support substantial implementation across:
+His actual technical role is closer to:
 
-- React web application;
-- Electron desktop application;
-- Firebase / Google Cloud backend;
-- local audio processing;
-- project / file / memory context;
-- registration and rights workflows;
-- DDEX generation and delivery-readiness infrastructure;
-- finance / splits / expenses / business tooling;
-- CRM / social / campaign tooling;
-- merchandise workflows;
-- creative image and video tooling;
-- mobile remote;
-- Boardroom multi-agent orchestration;
-- specialist-agent routing;
-- Founding Artist waitlist / admin infrastructure;
-- subscription / commerce code;
-- security gates and CI;
-- SOC 2 readiness / evidence collection;
-- TypeSafe / Jev semantic judgment infrastructure.
+- product/domain architect;
+- system designer;
+- technical decision-maker;
+- AI-agent coordinator;
+- acceptance-criteria author;
+- review/test/CI process designer;
+- primary product operator;
+- final human authority on what the system should do.
 
-A repository snapshot on 2026-09-26 showed approximately:
-
-- 3,605 TypeScript / TSX files;
-- 1,479 test/spec files;
-- 79 Playwright E2E specs;
-- 621 files under docs/;
-- 38 custom agent workflows;
-- roughly two dozen specialist-agent definitions / departments depending on which current registry surface is counted.
-
-**External documents should not hard-code a fleet count. Runtime / registry evidence should be checked dynamically.**
-
-## IN DEVELOPMENT
-
-Important areas still being hardened or externally verified include:
-
-- repeatable beta onboarding;
-- active-user retention;
-- first paid conversion;
-- Meta / Instagram genuine-account verification;
-- direct DSP / distributor production relationships;
-- external registration submission where third-party credentials are required;
-- complete bug-report / repair-loop delivery proof after recent fixes;
-- richer field-encounter extraction;
-- print / upscale workflows;
-- some desktop packaging / signing / commercial-operating details.
-
-## INTENDED OPERATING MODEL
-
-The long-term system is meant to support the artist’s business from finished music through repeated release cycles, with humans remaining responsible for consequential decisions while agents perform bounded operational work.
-
----
-
-# 6. AI-Native Architecture
-
-The strongest technical-founder claim is not “AI wrote the code.”
-
-William built a **governed development and operating system around AI**.
-
-The product and development environment use layers rather than one unbounded chatbot.
-
----
-
-# 7. Five-Layer Control & Governance Model
-
-Repository evidence supports a practical five-layer model.
-
-## Layer 1 — Tier 0 Master Directive
-
-**VERIFIED**
-
-The Artist Master Directive is explicitly defined in code as a **Tier 0 Living User Skill Protocol** with the highest runtime precedence.
-
-It contains structured sections for:
-
-- sonic / mastering standards;
-- business / legal rules;
-- branding / aesthetics;
-- release / distribution;
-- custom freeform directives.
-
-The schema explicitly supports a custom playbook and supplemental custom directives.
-
-This is the persistent policy surface above one-off prompts.
-
-### Live founder test — AI-human visual treatment
-
-On 2026-09-26, William added a custom directive requiring AI-generated human faces to avoid fully clean presentation and instead use motion / shutter-like blur, while clean faces remain associated with real referenced people.
-
-Founder live testing showed:
-
-- early partial compliance;
-- later images following the directive substantially better;
-- dense scenes with many people still producing variable quality.
-
-**Founder verdict:** the directive system is working; the exact aesthetic rule can continue to be refined.
-
-This is important evidence that the directive system changes output behavior rather than merely storing text.
-
-## Layer 2 — Bounded specialist-agent orchestration
-
-**VERIFIED**
-
-The Boardroom is not a generic chat surface.
-
-Repository architecture shows:
-
-- selectable / seated agents;
-- a strict seated-agent manifest injected into context;
-- shared recent assets / release context;
-- a Conductor / generalist routing layer;
-- delegation to specialists;
-- concurrent multi-agent execution;
-- Boardroom message persistence and context handshakes.
-
-The founder can manually bring specialists into or out of a working conversation.
-
-The system can also route work to specialists based on need.
-
-The intended principle is that a specialist works inside its domain rather than wandering into another department’s authority.
-
-## Layer 3 — Tool permissions, risk tiers, and approval gates
-
-**VERIFIED**
-
-The central Tool Risk Registry classifies tools by consequence.
+The repository demonstrates that the founder designed a development operating system around AI-assisted engineering rather than accepting model output at face value.
 
 Examples include:
 
-- read-only operations that can proceed without approval;
-- write operations;
-- higher-impact actions requiring approval;
-- staged administrative actions that may prepare work but not execute consequential external actions automatically.
-
-The design explicitly separates “prepare / stage” from “execute.”
-
-Human approval remains part of the operating model for consequential actions.
-
-## Layer 4 — Semantic review, truth enforcement, and output guardrails
-
-**VERIFIED**
-
-The system contains multiple review mechanisms rather than treating agent output as automatically authoritative.
-
-Current examples include:
-
-- deterministic capability-truth checks;
-- Jev / TypeSafe semantic judgments;
-- confidence thresholds and deterministic fallbacks;
-- ModelArmor prompt-injection and DLP protections;
-- capability overclaim detection;
-- underclaim / hallucinated-engineering-state detection;
-- correction / replacement of ungrounded status responses.
-
-A recent review-agent incident showed this layer in practice: a specialist misread conversational troubleshooting as an administrative command, fabricated a cache-clearing action, and inferred visual intent that had not actually been provided. The review layer identified the interpretation and capability errors, classified the situation as high risk, and escalated it for human attention.
-
-The importance is not the individual cache mistake. It is the existence of a second-order system that evaluates whether another agent understood the instruction, stayed inside its authority, and made claims it could prove.
-
-## Layer 5 — Human oversight, evidence, and engineering closeout
-
-**VERIFIED**
-
-The final authority is not the model.
-
-The development process contains founder-defined workflows such as:
-
-**/start → /middle → /end**
-
-with supporting review / CI procedures.
-
-The system emphasizes:
-
-- bounded objectives;
-- acceptance criteria;
-- tests;
+- `/start`;
+- `/middle`;
+- `/end`;
+- `/ci-validate`;
+- exact-SHA CI validation;
+- no-post-gate-edit rules;
+- bounded scopes;
+- targeted tests;
 - error ledgers;
-- handoffs;
-- no-post-gate-edit discipline;
-- exact-SHA CI verification;
-- production evidence separate from simulation;
-- human approval for consequential actions.
+- handoffs/checkpoints;
+- deploy/security safeguards;
+- continuous compliance evidence;
+- authenticity/truth rules.
 
-The rule is simple:
+The externally useful statement is:
 
-> An agent saying “done” is not proof that the work is done.
-
----
-
-# 8. Jev / TypeSafe System One
-
-**VERIFIED**
-
-Jev / TypeSafe is used as a typed semantic judgment layer where exact deterministic parsing is a poor fit.
-
-The architecture keeps:
-
-- exact arithmetic;
-- permissions;
-- identifiers;
-- security policy;
-- legal truth;
-- ownership truth;
-
-out of probabilistic decision-making.
-
-Current repository documentation describes more than 70 typed judgments and a server-side judgment gateway with deterministic fallbacks.
-
-This gives indii.music a useful split:
-
-**semantic ambiguity → bounded judgment**  
-**exact business truth → deterministic code / human authority**
+> William learned enough software architecture and development practice to direct, constrain, test, and verify a large AI-assisted engineering system rather than outsourcing product judgment to the models.
 
 ---
 
-# 9. Boardroom
+# 5. Current engineering scale
 
-## VERIFIED
+A repository snapshot on 2026-09-26 showed approximately:
 
-The Boardroom is a founder / team operating environment where:
+- **3,605 TypeScript/TSX files**
+- **1,479 test/spec files**
+- **79 Playwright E2E specs**
+- **621 documentation files**
+- **38 custom agent workflows**
+- **23 registered department heads** in the current runtime registry snapshot
 
-- the founder converses with indii;
-- specialist agents can be seated or removed;
-- relevant recent assets and releases are injected into working context;
-- tools execute inside the conversation;
-- outputs, successes, and failures can be surfaced;
-- specialist collaboration can be orchestrated.
+These are engineering-evidence counts, not customer traction.
 
-A 2026-09-26 live photograph from the founder showed the Boardroom with a ring of available specialist agents, one active/seated agent, recent generated assets, tool execution, and visible image-generation successes/failures.
+A formal cadence snapshot taken at approximately **1:23 PM EDT on 2026-09-26** counted:
 
-The Boardroom should be described as an **orchestration workspace**, not merely chat.
+- **10,543 commits** across the then-303-calendar-day main-branch history;
+- commits on **295 of 303 UTC calendar dates (97.4%)**;
+- **25 commits** on 2026-09-26 between approximately 6:00 AM and 1:23 PM EDT.
 
----
+Important limitation: these commits include AI/agent work, merge commits, tests, documentation, fixes, and multiple founder-controlled Git identities. They are evidence of sustained project execution under William's direction, not a claim that he personally typed every commit.
 
-# 10. Founder/Internal Mode as Company Operating Surface
+Safe external wording:
 
-## INTENDED OPERATING MODEL, WITH VERIFIED COMPONENTS
-
-indii.music is intended to be used by indii.music itself.
-
-Founder and future employees should be able to use the platform for:
-
-- creative work;
-- campaigns;
-- contacts;
-- internal business operations;
-- reporting;
-- agent-team supervision;
-- field activity;
-- issue discovery;
-- product improvement.
-
-This creates a strong dogfooding loop: the company operates through the product it sells.
-
-Founder/internal mode should expose richer operational truth than customer mode, including failures, gated capabilities, evidence state, and items requiring human attention.
+> William has worked full-time on indii.music since November 2025, directing a high-frequency AI-assisted development process with continuous testing, review, and CI evidence.
 
 ---
 
-# 11. Self-Debugging / Repair Loop
+# 6. AI-native product architecture
 
-## VERIFIED COMPONENTS
+## 6.1 Bounded specialist departments
 
-The repository contains:
+**VERIFIED:** the runtime uses a department/specialist model with code-enforced communication boundaries.
 
-- in-app bug-report tools;
-- a server-side reportBugFn;
-- Firestore persistence;
-- GitHub issue sync;
-- truth-overclaim detection;
-- review / guardrail logic;
-- error ledgers;
-- automated test and CI infrastructure.
+Current communication modes include:
 
-Issue #319 is a concrete example of an app-formatted bug report under the wiil-tech pipeline identity. It documents the 3000×3000 image-generation failure and notes that earlier reports had been stranded before the pipeline repair.
+- **Direct** — private user-to-agent conversation; delegation blocked.
+- **Department** — work remains inside the department boundary.
+- **Boardroom** — seated department heads may share facts/context with one another, but cannot assign work peer-to-peer as if they were employees.
 
-Recent engineering work then hardened the reporting contract so the tool cannot claim a bug was filed unless durable persistence actually succeeded.
+The relevant enforcement lives in `AgentCommunicationPolicy.ts`.
 
-## IMPORTANT DISTINCTION
+This matters because the agents are not intended to behave as one unrestricted general model. The architecture constrains authority and routing.
 
-Issue #317 itself was hand-filed and should not be used as proof that the app auto-created that specific issue.
+## 6.2 Boardroom orchestration
 
-However, #317 directly drove engineering that now routes future capability-overclaim detections through the app-originated reporting pipeline.
+**VERIFIED / LIVE-TESTED:** Boardroom is a real operating surface, not a visual metaphor.
 
-## INTENDED OPERATING MODEL
+Current founder screenshots and repository code show:
 
-The long-term repair loop is:
+- selectable/seated agents;
+- Boardroom conversation;
+- recent assets;
+- tool execution;
+- status/caveat surfaces;
+- collaboration feeds;
+- department participation;
+- human-visible operational state.
 
-**user/internal observation → structured report → automated triage / agent analysis → GitHub engineering work → tests / CI → human escalation when required → repair → verification**
+The founder can work with the whole Boardroom, a department, or a direct specialist depending on the task.
 
-This is better described today as an **AI-assisted closed-loop repair model**, not as fully autonomous self-healing software.
+Some UI counts may lag the canonical registry and should be derived dynamically rather than hard-coded. Issue #317 exists partly because status surfaces must not collapse nuanced capability state into blanket “everything is done” claims.
+
+## 6.3 Message persistence versus context persistence
+
+This distinction must remain precise.
+
+**VERIFIED:** Boardroom/conversation messages persist through the unified `ConversationSession` spine and Firestore synchronization. Messages can survive reloads and support cross-device retrieval.
+
+**LIMITATION:** persisted messages are not the same as an infinitely large model context window. A new model turn/session may still require retrieval, configuration, directives, summaries, or explicit context injection to keep all prior operating rules active.
+
+Correct wording:
+
+> indii supports durable conversation/session records and cross-device continuity, while model-context continuity still depends on explicit retrieval and persistence mechanisms rather than assuming every past token remains automatically in-context forever.
 
 ---
 
-# 12. Remote / Field Operating Layer
+# 7. Directive architecture
 
-## VERIFIED
+This is one of the strongest technical differentiators discovered during founder testing.
 
-The remote architecture includes:
+## 7.1 Artist Master Directive
 
-- authenticated cloud relay;
-- phone-to-Studio execution;
-- executor leases;
-- explicit cloud-vs-local boundaries;
+**VERIFIED:** the repository contains a Tier-0 **Artist Master Directive** schema.
+
+The source describes it as a living operational playbook that can contain:
+
+- sonic/mastering standards;
+- business/legal red lines;
+- branding/aesthetic rules;
+- release/distribution protocol;
+- custom freeform directives.
+
+The schema explicitly describes the Master Directive as having **highest runtime prompt precedence** over base domain playbooks.
+
+This is materially different from a one-off prompt.
+
+## 7.2 Custom directives
+
+**VERIFIED / LIVE-TESTED:** the Master Directive contains a custom-playbook/freeform directive surface, and founder testing on 2026-09-26 showed that a new visual rule materially influenced subsequent image behavior.
+
+The founder added a custom rule requiring synthetic human faces to avoid a perfectly crisp presentation, instead using intentional motion/shutter-like blur so clean identifiable faces are reserved for real/reference people.
+
+Initial results ranged from partial compliance to strong compliance, with more inconsistency in crowded scenes containing roughly 20 people.
+
+Safe wording:
+
+> Live founder testing shows that custom directives can materially influence repeated output behavior. Consistency still varies with scene complexity, so the mechanism is functioning but remains subject to tuning and quality enforcement.
+
+Do not present one visual policy as the IP by itself. The stronger IP/architecture story is the directive-control system that allows persistent user/founder rules to sit above one-off task prompts.
+
+## 7.3 Directive execution tracking
+
+**VERIFIED:** `DirectiveService` persists directives per user, tracks status, goal ancestry, assigned agent, compute allocation, context files, and conversation thread.
+
+The directive system therefore has both:
+
+- **policy/directive semantics**, and
+- **execution/goal tracking**.
+
+---
+
+# 8. Governance and control layers
+
+The system contains more than four or five independent controls depending on how the architecture is grouped.
+
+A useful high-level model is:
+
+## Layer 1 — Persistent directive authority
+Artist Master Directive and custom playbooks define durable user/founder rules.
+
+## Layer 2 — Task/directive execution tracking
+DirectiveService tracks goals, assignments, context, status, and compute bounds.
+
+## Layer 3 — Agent scope and communication policy
+AgentCommunicationPolicy limits who can delegate, communicate, and cross department boundaries.
+
+## Layer 4 — Tool-risk and human approval gates
+ToolApprovalService can persist a pending high-risk tool call and requires a human to approve the **exact original action** before it executes.
+
+## Layer 5 — Model Armor
+Input scanning blocks prompt-injection patterns; output scanning performs data-leakage redaction for secrets, credentials, PII patterns, private keys, and other sensitive data.
+
+## Layer 6 — JEV / TypeSafe semantic guardrails
+JEV evaluates ambiguous semantic conditions such as:
+
+- unsupported action-completion claims;
+- capability/readiness overclaims;
+- unactionable responses;
+- other confidence-based behavioral risks.
+
+The current centralized judgment registry contains **70 exported typed `judge*` functions**, plus the separate guardrail service.
+
+## Layer 7 — Autoraters
+The repository includes multi-turn and visual output autoraters.
+
+The **VisualOutputAutorater**:
+
+- evaluates subject match;
+- scene match;
+- mood match;
+- technical adherence;
+- applies thresholds;
+- can generate a corrective prompt;
+- caps automatic correction attempts;
+- records audit evidence;
+- escalates to manual review when correction limits are reached.
+
+This directly explains the “Visual Autorater Correction” output observed during founder testing.
+
+## Layer 8 — Human escalation and operational review
+When automated confidence, retry caps, risk level, or approval boundaries are exceeded, the architecture surfaces the issue to a human rather than pretending the system can proceed safely.
+
+The important investor/diligence statement is:
+
+> indii does not rely on one guardrail. It uses layered controls around directives, agent scope, tool authority, semantic claims, content/security boundaries, output quality, and human escalation.
+
+---
+
+# 9. Product-native debugging and repair loop
+
+One of the most important product/company discoveries is that indii can increasingly help diagnose the software that is building and operating indii.
+
+The intended loop is:
+
+**use product → observe failure/gap → report conversationally → persist evidence → create/merge engineering issue → route work → implement → test → CI → verify**
+
+## 9.1 Bug reporting
+
+**VERIFIED:** repository tooling exists for conversational bug/error reporting, durable persistence, founder diagnostics, and GitHub issue forwarding.
+
+## 9.2 Important 2026-09-26 finding
+
+Issue #317 — Boardroom overclaiming readiness — was **hand-filed through the connected founder/agent GitHub workflow**, not proof that the exact in-app `reportBugFn` path fired.
+
+That issue triggered a stronger implementation:
+
+- deterministic capability-overclaim detection;
+- JEV readiness-overclaim detection;
+- app-originated forwarding through `reportBugFn`;
+- cooldown/deduplication;
+- visible sync-failure warnings.
+
+## 9.3 Repair of the reporting pipeline
+
+A same-day audit found a real problem:
+
+- several in-product reports persisted in Firestore;
+- the GitHub-forwarding leg had broken runtime configuration;
+- later, the client-side path was found capable of falsely claiming success even when persistence had failed.
+
+The current repair adds an **honesty gate**:
+
+> the agent may not tell the user a bug was filed unless the server confirms durable persistence.
+
+This episode is highly useful diligence evidence because it demonstrates the company's core philosophy in practice: failure is not hidden; it becomes evidence, repair work, tests, and stronger system rules.
+
+## 9.4 Closed-loop repair-shop vision
+
+**INTENDED OPERATING MODEL:** future engineering operations can use coding/browser/computer-control agents to monitor issues, attempt bounded fixes, run tests/CI, and escalate to human staff when judgment or authorization is required.
+
+Do not claim fully autonomous software repair today.
+
+Safe wording:
+
+> indii is moving toward a closed-loop repair operation in which the product can capture its own defects, convert them into structured engineering work, and route them through the same bounded agent/human development system used to build the product.
+
+---
+
+# 10. Internal founder mode and dogfooding
+
+indii.music is being built so the company can operate itself using the same product.
+
+The founder/internal surface is not simply an unrelated admin console.
+
+Authorized internal users can use the product for:
+
+- Boardroom conversations;
+- department/specialist work;
+- campaign/content activity;
+- business administration;
+- operational status;
 - approvals;
-- mobile capture surfaces;
-- encounter pipeline code;
-- remote status / commands.
+- diagnostics;
+- remote work;
+- background/scheduled activity.
 
-The remote is not merely a duplicate desktop UI.
+Founder mode intentionally exposes richer operational truth than a normal subscriber should see.
 
-Its role is to let business activity occurring away from the studio become structured input to indii.music.
-
-## IN DEVELOPMENT — Field Encounter example
-
-The intended field workflow includes scenarios such as:
-
-1. founder meets a new person while doing music-business activity;
-2. captures a short video / note;
-3. system analyzes transcript / frames / context;
-4. contact information and useful context are extracted;
-5. a structured contact / Rolodex record is created;
-6. follow-up can be routed into the business system.
-
-The encounter pipeline and mobile encounter surfaces exist in code. Full live media-to-contact extraction should continue to be described as in development until repeatedly verified end-to-end.
+This is a meaningful product differentiator because the company is continuously dogfooding the operating architecture.
 
 ---
 
-# 13. Continuous Product Evolution Through Internal Use
+# 11. Case study: Road Manager — implemented surface, incomplete integration
 
-This is one of the strongest current founder/product patterns.
+The founder's 2026-09-26 Road Manager testing is an important example of the current product stage.
 
-William uses indii.music while building indii.music.
+## What visibly exists
 
-The loop is:
+Current screenshots show:
 
-**use product → discover friction → articulate desired behavior → encode directive or engineering task → test → review → refine**
+- a Road Manager workspace;
+- tour parameters;
+- start/end dates;
+- route waypoints;
+- route drafts;
+- schedule checks;
+- a live map surface;
+- Road Director agent conversation;
+- domain-record lookup;
+- tool execution;
+- structured Road Logistics Report output.
 
-Examples from 2026-09-26:
+## What is still incomplete
 
-- Boardroom status overclaim discovered through use;
-- bug-report honesty gap discovered through use;
-- 3000×3000 print requirement discovered through real creative use;
-- image-resolution ceiling corrected;
-- print-size planning and DPI metadata added;
-- persistent AI-human face-treatment directive added and live-tested;
-- review agents caught unsupported administrative claims.
+The agent correctly reports that certain mapping/routing capabilities are not currently authorized or connected to a live external map API/service.
 
-This is not abstract roadmap work.
+Observed examples include:
 
-It is product development driven by daily operational use.
+- route draft created while routing/drive times remain unverified;
+- map display existing while precise requested locator behavior is not connected;
+- Road Director explicitly reporting that live map/geographical operations are unavailable without the required integration;
+- existing tour records being discoverable while service-level mapping remains incomplete.
 
----
+This should not be described simply as “a bug.”
 
-# 14. Modular Feature Expansion
+It is an **integration-completion gap**:
 
-## VERIFIED ARCHITECTURAL PRINCIPLE
+> the domain surface, data model, agent, records, and user workflow exist; the remaining task is wiring and live-verifying the external/service layer.
 
-Because capabilities are organized into bounded agents, tools, directives, registries, and deterministic services, new capability work can often be added as a new tool or bounded workflow rather than rewriting the entire application.
-
-William’s shorthand analogy is useful:
-
-> The carpenter keeps working. If the job needs a new tool, we make the tool and put it in the toolbox.
-
-This should not be interpreted to mean every feature is trivial to add.
-
-The stronger and defensible claim is:
-
-> indii.music was architected so many new capabilities can be introduced through modular agent tools, directives, and services without redesigning the whole product.
+That distinction is representative of much of the current beta work.
 
 ---
 
-# 15. Creative Infrastructure and Print Output
+# 12. Case study: creative directives and synthetic-face treatment
 
-## IN DEVELOPMENT / RECENTLY VERIFIED IN CODE
+The founder used the app itself to identify a visual-policy requirement:
 
-Current engineering work includes:
+> synthetic human faces should not appear as perfectly crisp real-looking faces; they should use intentional shutter/motion treatment, while clean faces are reserved for real/reference people.
 
-- higher image-resolution ceilings aligned with model capability;
-- print-size planning;
-- album / sleeve-oriented dimensions;
-- DPI metadata handling;
-- print-ready export behavior;
-- preflight checks for achievable output.
+The founder then added the rule to the custom directive surface and retested image generation.
 
-The founder’s current use case is 3000×3000 artwork suitable for record-release / sleeve workflows.
+**LIVE-TESTED result:**
 
-The product goal is to reduce the number of times an artist must leave indii.music for separate utility tools.
+- the directive changed generated image behavior;
+- some outputs showed desired face/head motion treatment;
+- hand/body movement blur also appeared;
+- output quality varied with scene complexity;
+- crowded scenes were less consistent;
+- repeated testing improved the prompt/rule.
+
+This is valuable because it shows the product being used as a **behavioral control surface**, not merely a prompt box.
+
+It also interacts naturally with the VisualOutputAutorater and manual escalation architecture.
 
 ---
 
-# 16. SOC 2 Readiness as Operating Philosophy
+# 13. Case study: print-ready creative output
 
-## VERIFIED
+Current 2026-09-26 repository activity includes active work on high-resolution/print output.
 
-indii.music does not claim an external SOC 2 attestation.
+Evidence includes:
 
-It does have a proactive readiness / evidence system integrated into normal engineering.
+- model-resolution ceilings aligned with actual model capability;
+- print-spec planning;
+- print-size verdict UI;
+- DPI-tagged export;
+- byte-level PNG/JPEG density metadata;
+- tests that inspect encoded result bytes;
+- album/record-sleeve-oriented requirements.
+
+The founder's practical target includes **3000 × 3000** artwork suitable for common music-release cover requirements and print-oriented use.
+
+The larger product point is:
+
+> artists should not have to leave indii for routine production steps that fit naturally inside the existing creative workflow.
+
+Do not claim every upscale/print path is universally production-proven until current E2E/live verification confirms it.
+
+---
+
+# 14. Case study: Post-Mastering Administrative Engine
+
+The Post-Mastering Administrative Engine is a concrete example of indii moving beyond a chatbot into deterministic music-business infrastructure.
+
+The founder shared current phase evidence showing:
+
+- P1 foundations verified;
+- hundreds of rules;
+- thousands of unit tests;
+- production deploy recovered correctly from a transient Google infrastructure 503;
+- P2 catalog audit work added;
+- later phases moving toward catalog-gap queries, registration payload staging, split invitations, risk registry, agent wiring, and MCP parity.
+
+The key product concept:
+
+> finishing the audio should trigger the administrative work required to turn a recording into a commercially operable release.
+
+This is one of the clearest manifestations of the product lifecycle thesis.
+
+---
+
+# 15. Case study: mobile remote and field business
+
+indiiREMOTE is not intended to be a generic remote desktop.
+
+Its purpose is to keep the music business operating away from the desk.
+
+Current repository evidence includes:
+
+- authenticated phone-to-Studio relay;
+- Boardroom/Department/Direct targeting;
+- quick capture;
+- voice/photo/document/receipt/video/location/text capture;
+- encounter/contact/note structures;
+- mileage/business-field surfaces.
+
+Target field use case:
+
+1. meet somebody while doing music-business work;
+2. capture the interaction once;
+3. extract supported identity/contact context;
+4. create/link the person in the contact system;
+5. preserve the encounter context;
+6. return to Studio without manually reconstructing the meeting.
+
+Current boundary:
+
+The durable field/capture structures exist, but some multimodal extraction paths remain incomplete/live-unverified. Media-derived transcription/OCR/contact extraction should not be claimed until the actual media is attached to the model request and proven end-to-end.
+
+---
+
+# 16. SOC 2 readiness as operating philosophy
+
+indii.music does **not** claim SOC 2 certification.
+
+It does have a proactive SOC 2 readiness/control framework.
 
 Current evidence includes:
 
-- documented policies;
+- security/availability/confidentiality policies;
 - machine-readable controls;
-- risk / vendor / incident / continuity material;
-- daily scheduled evidence collection;
-- change-triggered checks;
-- dependency scanning;
+- risk/vendor/incident/continuity material;
+- automated control verification;
+- scheduled evidence collection;
 - security-boundary checks;
-- git-SHA-bound evidence artifacts.
+- dependency scanning;
+- evidence artifacts tied to repository state.
 
-The strategic point is important:
+The GitHub Actions evidence workflow is scheduled daily and also runs on relevant changes.
 
-> The company is collecting audit evidence before an auditor requires it.
+The significance is not a badge.
 
-For a solo, nontraditional founder, this is strong evidence of systems thinking and future-enterprise readiness.
+The significance is the founder's decision to collect evidence continuously so a future auditor does not begin with an empty folder and months of missing history.
 
----
+Safe wording:
 
-# 17. Development Process & Founder Work Ethic
-
-## FOUNDER-REPORTED
-
-William reports that his normal work pattern is to begin as soon as he wakes up, often working 10–12 hours per day and continuing to monitor / direct work while away from the desk through the mobile / remote system.
-
-On 2026-09-26, a Saturday, he reported beginning around 6:00 AM and continued working through the day.
-
-This should not be used externally as “hours worked = company value.”
-
-The useful founder claim is sustained execution intensity.
-
-## REPOSITORY-EVIDENCED
-
-GitHub activity demonstrates frequent, multi-surface development across:
-
-- product features;
-- bug fixes;
-- tests;
-- CI;
-- security;
-- compliance;
-- documentation;
-- infrastructure;
-- creative tooling;
-- administrative engine work.
-
-A deeper commit-history quantitative analysis can be maintained as supporting evidence rather than as the core narrative.
+> indii.music is building SOC 2 readiness and continuous evidence collection into normal engineering operations.
 
 ---
 
-# 18. Post-Mastering Administrative Engine
+# 17. Human-plus-agent operating model
 
-## VERIFIED / ACTIVE DEVELOPMENT
+The company is not intended to be “no humans.”
 
-This engine is a strong example of indii.music becoming domain-specific business infrastructure rather than generic AI chat.
+The intended structure is:
 
-Recent evidence includes:
+**small human staff + bounded specialist agents + durable scheduled/background workers**
 
-- administrative rules;
-- large automated test suites;
-- audit / gap detection;
-- registration-payload staging;
-- split-invitation staging;
-- risk registry integration;
-- agent wiring;
-- continuous catalog audit scheduling;
-- semantic catalog projection work.
+Humans retain responsibility for:
 
-The design goal is to answer:
+- judgment;
+- relationships;
+- approvals;
+- hiring/management;
+- legal/financial responsibility;
+- exceptions;
+- strategy.
 
-> Once the music is finished, what business work still has to happen — and what can be prepared automatically without falsely claiming an external action occurred?
+Agents/workers handle repeatable specialist work inside defined scope.
 
-That question is central to the indii.music thesis.
+Technical pieces already exist:
+
+- Boardroom/department routing;
+- scheduled workflows;
+- background workers;
+- approval gates;
+- remote execution;
+- continuous evidence;
+- issue/report systems.
+
+Future staffing remains a plan, not current headcount.
 
 ---
 
-# 19. Business Model
+# 18. Why the architecture changes feature-development economics
 
-Current Founding Artist Beta packaging:
+The founder's workshop/Home Depot analogy is useful if stated carefully.
+
+Traditional feature work often requires creating new workflows, state handling, permissions, orchestration, review, and operational tooling from scratch.
+
+indii's architecture already supplies many of those primitives.
+
+A new capability can often be added as:
+
+1. a bounded tool/service;
+2. assigned to the correct specialist/department;
+3. connected to existing directive/context structures;
+4. placed behind existing approval/security policies;
+5. covered by existing CI/test/review systems;
+6. exposed through existing Boardroom/department/direct surfaces.
+
+This does **not** make feature development effortless.
+
+It reduces architectural blast radius and allows the existing operating framework to be reused.
+
+Safe analogy:
+
+> The workshop already exists. Adding a capability is often closer to building a new specialized tool for the workshop than constructing a second workshop from scratch.
+
+---
+
+# 19. Potential intellectual-property thesis
+
+Do not claim patent protection or patentability without counsel.
+
+However, the current system contains several areas that may warrant formal IP review:
+
+- layered directive precedence and living user playbooks;
+- bounded department/agent communication architecture;
+- Boardroom orchestration with role/scope enforcement;
+- semantic + deterministic + human approval layering;
+- product-native bug/repair feedback loops;
+- remote field-business capture tied back into persistent operating context;
+- the use of the same agent/harness architecture to operate and evolve the company itself;
+- music-specific post-mastering administrative orchestration;
+- cross-module continuity around canonical song/artist/release/business context.
+
+Recommended action once capital allows:
+
+> engage qualified IP counsel to perform a patentability/trade-secret/copyright strategy review based on the actual architecture and prior art.
+
+---
+
+# 20. Business model
+
+Current approved Founding Artist Beta packaging:
 
 | Plan | Price |
-|---|---:|
+| --- | ---: |
 | Free | $0 |
 | Start | $22/month |
 | Build | $55/month |
 | Scale | $110/month |
 | Founding Owner License | $2,500 one time |
 
-Current planned commitment savings:
+Current commitment-savings direction:
 
 - 5% quarterly;
 - 10% six-month;
 - 20% annual.
 
-Pricing is beta packaging and remains subject to operating-cost validation.
+Pricing is beta packaging and remains subject to operating-cost/customer validation.
 
 ---
 
-# 20. Current Business Truth
+# 21. Current traction truth
 
-As of 2026-09-26:
+Current traction is primarily **product and engineering traction**, not customer/revenue traction.
 
-- Revenue: **$0**
-- MRR: **$0**
-- Paying customers: **0**
-- Confirmed active external beta users: **0**
-- Outside capital received: **$0 reported**
-- Startup/cloud credits received: **$0 reported**
-- Ownership: **William Roberts — 100% reported**
-- Stage: **Founding Artist Beta**
+Current facts:
 
-The strongest current traction is **product and engineering traction**, not customer traction.
+- revenue: **$0**;
+- MRR: **$0**;
+- paying customers: **0**;
+- confirmed active external beta users: **0**;
+- outside capital received: **$0 reported**;
+- startup/cloud credits received: **$0 reported**;
+- small early waitlist/invitations exist.
 
-The next major proof is real artists using important workflows, returning, identifying measurable value, and paying.
+Strong truthful traction claims:
+
+- substantial working platform;
+- sustained development since November 2025;
+- large test/CI footprint;
+- multiple domain-specific business workflows;
+- real founder dogfooding;
+- continuous issue discovery and repair;
+- serious compliance/security/process infrastructure.
+
+Do not substitute engineering activity for customer validation.
 
 ---
 
-# 21. Funding Thesis
+# 22. Current company stage
 
-Funding is not primarily needed to discover what product to build.
+The correct description is:
+
+> **A substantial working music-business operating platform entering real-user beta validation and commercialization.**
+
+It is **not**:
+
+- idea stage;
+- mockup-only;
+- production-perfect;
+- product-market-fit proven;
+- revenue-generating;
+- live direct-DSP distribution at commercial scale.
+
+The central company risk is now **market acceptance**, not product ideation.
+
+---
+
+# 23. Funding thesis
+
+Capital is not needed to discover what product to build.
 
 A substantial product already exists.
 
-Capital should fund:
+Funding is intended to convert product execution into company evidence:
 
 - real artist onboarding;
-- beta support and customer discovery;
-- first paid adoption;
+- first paying customers;
+- measured activation/retention;
+- live external integration verification;
 - production hardening;
-- external integration verification;
-- infrastructure / AI / CI;
-- independent engineering review;
-- security / legal / compliance;
-- targeted contractor / employee capacity;
-- a repeatable acquisition process.
+- security/compliance maturity;
+- targeted engineering capacity;
+- bookkeeping/operations;
+- founder operating runway;
+- repeatable customer acquisition.
 
 Current capital ladder:
 
-- **$10K–$15K** — immediate continuity / seed milestone;
-- **~$50K** — local bridge to validation and commercialization;
-- **~$350K** — constrained 12-month institutional case;
-- **~$500K** — preferred 18-month institutional case.
-
-Use the current financial source-of-truth document for allocation details.
+- **$10K–$15K** — immediate continuity/seed milestone;
+- **~$50K** — local bridge to structured beta commercialization;
+- **institutional pre-seed** — derive from actual 12–18 month operating model and financing terms.
 
 ---
 
-# 22. What Should Be Protected as Potential IP / Know-How
+# 24. Near-term proof milestones
 
-Do not casually reduce the IP story to individual features such as face blur or image upscaling.
+The highest-value next evidence is not “more features.”
 
-The more important system-level assets include:
+It is:
 
-- layered directive architecture;
-- living Artist Master Directive;
-- specialist-agent orchestration;
-- Boardroom participation / context injection model;
-- bounded tools and agent domains;
-- risk-tiered tool execution;
-- human approval boundaries;
-- semantic judgment + deterministic fallback architecture;
-- truth-enforcement and review mechanisms;
-- internal-use / dogfooding operating model;
-- app-to-engineering repair loop;
-- remote / field business capture;
-- domain-specific post-mastering administrative engine;
-- continuous evidence / compliance-as-code processes.
-
-Whether any individual component is patentable or protectable requires professional IP analysis.
-
-The internal rule should be: **document invention chronology and implementation evidence before making broad public claims about novel architecture.**
+1. real artists onboarded;
+2. meaningful workflows completed;
+3. return/repeat use measured;
+4. first paying customers;
+5. onboarding/support process validated;
+6. external integrations proven with genuine accounts/credentials;
+7. billing/entitlements aligned;
+8. product usage data used to remove or strengthen features;
+9. founder-led acquisition converted into a repeatable motion.
 
 ---
 
-# 23. What We Must Not Overclaim
+# 25. What external applications should emphasize
 
-Do not externally claim:
+## Accelerators / pre-seed investors
 
-- product-market fit;
-- active paying customers;
-- revenue;
+Lead with:
+
+- founder-market fit;
+- substantial working product;
+- unusual AI-assisted engineering governance;
+- speed of execution;
+- connected operating-system thesis;
+- current gap: customer validation/commercialization.
+
+## Detroit/local grants
+
+Lead with:
+
+- Detroit-built technology;
+- founder's Detroit/music history;
+- working product;
+- local artist validation;
+- local contractor/job capacity;
+- non-dilutive capital converting engineering into market evidence.
+
+## Cloud/startup-credit programs
+
+Lead with:
+
+- real Firebase/GCP/Vertex workload;
+- no prior credits reported;
+- server-side AI/security architecture;
+- beta/production workload;
+- credits directly reducing commercialization cost.
+
+---
+
+# 26. Claims that require caution
+
+Do not claim without fresh proof:
+
+- direct commercial delivery to Spotify/Apple/TIDAL/etc.;
 - thousands of artists;
 - millions of streams;
-- live direct-DSP delivery;
-- all agents/departments fully production-ready;
-- no remaining engineering work;
-- fully autonomous self-healing software;
+- revenue or MRR;
+- active beta users;
+- product-market fit;
+- universal cross-session model memory;
+- every department fully production-ready;
+- every remote specialist identical to the Studio runtime;
+- complete autonomous self-repair;
 - SOC 2 certification;
-- a fixed specialist count without checking the current registry;
-- first-of-its-kind status without independent evidence;
-- planned capability as live capability.
-
-The product is impressive enough without fictionalizing it.
+- patent protection;
+- all external integrations live;
+- old acquisition valuation;
+- “first of its kind” unless independently supportable.
 
 ---
 
-# 24. Current Company Narrative
+# 27. Canonical narrative
 
-A concise durable version:
+The strongest concise company/founder story is:
 
-> indii.music is a Detroit-built business operating system for independent artists. Founder William Roberts spent decades working across music, nightlife, hospitality, music production, and record-label operations before committing to the software in November 2025. Instead of building another isolated artist tool, he built around the operational continuity he repeatedly found missing: rights, registrations, release preparation, creative campaigns, finance, audience activity, merchandise, and ongoing business work sharing the same context.
+> William Roberts spent decades doing the operational work behind music and hospitality before building software. As a DJ, promoter, event operator, label owner, mastering engineer, restaurant operator, and manager, he repeatedly encountered the same pattern: the difficult part was rarely one isolated task; it was keeping the entire operation connected while things changed in real time.
 >
-> The platform is AI-native but deliberately governed. It uses persistent directives, bounded specialist agents, risk-tiered tools, semantic review, deterministic business logic, human approval boundaries, and founder-designed development/CI procedures. The same platform is increasingly used to operate and improve indii.music itself.
+> Expressway Records made that problem explicit. Running a label alone required William to coordinate artists, metadata, rights, registrations, artwork, delivery, promotion, accounting, and mastering across disconnected systems.
 >
-> A substantial working product exists. The company is pre-revenue and entering real-user beta validation. The next proof is not another feature list; it is artists using the system repeatedly and paying for measurable business value.
+> In November 2025 he committed to building indii.music — business operating software for independent artists. Using AI-assisted development, he did not simply generate code; he designed a harness around the agents that builds and runs the system: bounded departments, persistent directives, deterministic business rules, human approval gates, semantic guardrails, autoraters, CI, continuous compliance evidence, and product-native feedback loops.
+>
+> Today the result is a substantial working platform rather than an idea-stage prototype. William uses indii itself to operate the company, test workflows, discover gaps, set persistent directives, surface defects, and turn those findings into engineering work. The remaining challenge is not deciding what to build. It is proving that independent artists adopt it, return to it, and pay for it.
 
 ---
 
-# 25. Evidence Sources
+# 28. Evidence hierarchy for future Work sessions
 
-Primary repository evidence:
+When future application or diligence work begins, use this order:
 
-- docs/funding/APPLICATION_SOURCE_OF_TRUTH.md
-- docs/funding/EVIDENCE_MAP.md
-- docs/funding/APPLICATION_ANSWER_BANK.md
-- docs/data-room/09_FINANCIALS_REVENUE_SUMMARY.md
-- docs/data-room/10_LEGAL_COMPLIANCE.md
-- packages/shared/src/schemas/artistMasterDirective.ts
-- packages/renderer/src/services/directive/
-- packages/renderer/src/modules/boardroom/
-- docs/flowcharts/04-boardroom-context-orchestration.md
-- packages/renderer/src/services/agent/ToolRiskRegistry.ts
-- packages/renderer/src/services/agent/guardrails/JevGuardrailService.ts
-- packages/renderer/src/services/agent/governance/ModelArmor.ts
-- packages/renderer/src/services/agent/capabilityTruth.ts
-- packages/renderer/src/services/agent/truthOverclaimReporter.ts
-- packages/renderer/src/services/agent/tools/BugReportTools.ts
-- packages/firebase/src/functions/agent/reportBugFn.ts
-- packages/firebase/src/functions/encounters/processEncounterPipeline.ts
-- .github/workflows/soc2-evidence-collector.yml
-- .agent/workflows/
-- issue #319 and related 2026-09-26 commits.
+1. `docs/funding/APPLICATION_SOURCE_OF_TRUTH.md`
+2. this master dossier
+3. `docs/funding/EVIDENCE_MAP.md`
+4. current production code/tests/CI
+5. `docs/funding/FOUNDER_BACKGROUND_DOSSIER.md`
+6. `docs/funding/PRODUCT_DIFFERENTIATORS.md`
+7. current financial/data-room truth files
+8. historical docs only when explicitly labeled as historical
 
-Founder-live evidence on 2026-09-26:
+When a live application reveals a missing fact:
 
-- Boardroom photograph;
-- live Master / Custom Directive testing;
-- AI-human face-treatment directive behavior;
-- internal image-generation / print workflow testing;
-- founder description of remote and field-use workflows.
+- do not guess;
+- verify it once;
+- add it to the canonical source;
+- reuse it thereafter.
 
 ---
 
-# 26. Maintenance Rule
+# 29. Final internal framing
 
-This dossier is durable, but it is not static.
+The most accurate high-level description of the company today is:
 
-Update it when a material state changes:
+> **indii.music is a founder-built, AI-native operating system for the business behind independent music. Its technical differentiation is not one model or one feature, but a layered operating architecture that connects persistent directives, bounded specialist agents, deterministic workflows, human approvals, remote execution, quality review, and continuous repair around shared music-business context.**
 
-- first active beta user;
-- first paying customer;
-- first revenue;
-- external integration becomes genuinely live;
-- financing is received;
-- company/entity structure changes;
-- major directive / agent-control architecture changes;
-- current registry count changes materially;
-- independent security/compliance attestation is obtained.
+The most accurate statement of what remains is:
 
-The source-of-truth hierarchy remains:
+> **The platform is substantially built. The company now has to finish key integrations, harden consistency, validate real artist usage, and convert technical execution into repeatable commercial evidence.**
 
-**current founder-confirmed fact → current code/test/CI evidence → current provider/live evidence → dated historical documentation.**
+**Last updated:** 2026-09-26
