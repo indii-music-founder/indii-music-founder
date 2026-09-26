@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
     buildCapabilitySummary,
     buildDepartmentAuditReport,
+    detectCapabilityOverclaim,
     detectUngroundedEngineeringHallucination,
     getCapabilityHealth,
     isCapabilityQuestion,
@@ -293,6 +294,40 @@ describe('Boardroom capability truthfulness', () => {
             expect(sanitized).not.toContain('waiting for the engineering sprint');
             expect(sanitized).toContain('cannot truthfully certify every department');
             expect(sanitized).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
+        });
+
+        it('detectCapabilityOverclaim catches the issue-#317 all-departments-verified style claims', () => {
+            const overclaims = [
+                'All 23 departments are fully implemented, verified, and operational in production.',
+                'Every specialist is completely operational and production-ready.',
+                'All systems are verified and there is no engineering work remaining.',
+                'Everything is implemented and 100% operational across the board.',
+                'No further engineering items are pending — the platform is complete.',
+            ];
+            for (const text of overclaims) {
+                const result = detectCapabilityOverclaim(text);
+                expect(result.hasOverclaim, text).toBe(true);
+                expect(result.snippet, text).toBeTruthy();
+            }
+        });
+
+        it('detectCapabilityOverclaim ignores grounded, hedged status answers', () => {
+            const grounded = [
+                'Here is what I can do in this Boardroom right now: image generation is available.',
+                'Not active in this session: direct banking transactions and DSP delivery.',
+                'Some capabilities are still unverified; I can report per-capability status.',
+                'The audit cannot certify every department as production-operational without fresh evidence.',
+            ];
+            for (const text of grounded) {
+                expect(detectCapabilityOverclaim(text).hasOverclaim, text).toBe(false);
+            }
+        });
+
+        it('sanitizeAgentCapabilityOutput replaces overclaiming output with the grounded audit report', () => {
+            const overclaiming = 'All 23 departments are fully implemented, verified, and operational in production.';
+            const sanitized = sanitizeAgentCapabilityOutput(overclaiming);
+            expect(sanitized).toContain('cannot truthfully certify every department');
+            expect(sanitized).not.toContain('fully implemented, verified, and operational');
         });
     });
 });

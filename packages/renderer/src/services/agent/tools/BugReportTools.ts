@@ -2,6 +2,7 @@ import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext, ToolFunctionArgs } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
+import { toast } from '@/core/context/ToastContext';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
@@ -127,9 +128,17 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             githubStatus = result.data.github;
             issueUrl = result.data.issueUrl;
             logger.info(`[BugReportTools] Cloud Function response: ${githubStatus}`, result.data);
+
+            // Make GitHub sync failure LOUD (regression 2026-09-26: silent
+            // sync failure stranded every report in Firestore for days —
+            // a log line nobody read is not observability).
+            if (githubStatus === 'failed' || githubStatus === 'skipped') {
+                toast.warning('Bug report saved locally, but GitHub issue sync failed. DevOps: check GITHUB_TOKEN / GITHUB_REPO configuration.');
+            }
         } catch (cfErr: unknown) {
             githubStatus = 'failed';
             logger.warn('[BugReportTools] Cloud Function call failed:', cfErr);
+            toast.warning('Bug report saved locally, but the report pipeline is unreachable. DevOps: check reportBugFn deployment.');
         }
 
         // 3. Save to Agent Memory for context continuity

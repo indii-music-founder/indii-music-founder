@@ -302,9 +302,54 @@ export function detectUngroundedEngineeringHallucination(text: string): Hallucin
     return { hasHallucination: false };
 }
 
+// ---------------------------------------------------------------------------
+// Overclaim detection (issue #317): the mirror image of the underclaim
+// hallucinations above. A status answer that certifies every department as
+// implemented/verified/production-operational — or claims no engineering work
+// remains — collapses uncertainty into a completion claim the runtime cannot
+// back. Deterministic patterns catch the clear cases with zero API cost; the
+// fuzzy middle is screened by the Jev guardrail's
+// claims_verified_readiness_without_evidence noul question.
+// ---------------------------------------------------------------------------
+
+export interface CapabilityOverclaimResult {
+    hasOverclaim: boolean;
+    matchedPattern?: string;
+    snippet?: string;
+}
+
+const CAPABILITY_OVERCLAIM_PATTERNS: RegExp[] = [
+    /\ball\s+(?:23\s+)?(?:departments?|department heads?|specialists?|agents?|systems?)\b[^.?!]{0,80}\b(?:fully\s+)?(?:implemented|verified|operational|production[- ]ready|deployed|complete[d]?)\b/i,
+    /\b(?:fully|completely|entirely)\s+(?:implemented|verified|operational|production[- ]ready)\b/i,
+    /\ball\s+(?:systems?|departments?)\s+(?:are\s+)?(?:verified|operational|go)\b/i,
+    /\bno\s+engineering\s+(?:work|items?|tasks?)\s+(?:remain(?:s|ing)?|left|required|needed)\b/i,
+    /\beverything\s+is\s+(?:implemented|verified|operational|complete[d]?|production[- ]ready)\b/i,
+    /\b100%\s+(?:operational|implemented|verified|complete[d]?)\b/i,
+    /\b(?:all|every)\s+capabilities?\s+(?:are\s+)?(?:verified|production[- ]ready)\b/i,
+    /\bno\s+(?:further|pending|remaining)\s+engineering\s+(?:work|items?)\b/i,
+];
+
+export function detectCapabilityOverclaim(text: string): CapabilityOverclaimResult {
+    if (!text || typeof text !== 'string') {
+        return { hasOverclaim: false };
+    }
+    for (const pattern of CAPABILITY_OVERCLAIM_PATTERNS) {
+        pattern.lastIndex = 0;
+        const match = pattern.exec(text);
+        if (match) {
+            return {
+                hasOverclaim: true,
+                matchedPattern: pattern.source,
+                snippet: match[0],
+            };
+        }
+    }
+    return { hasOverclaim: false };
+}
+
 export function sanitizeAgentCapabilityOutput(output: string): string {
     const detection = detectUngroundedEngineeringHallucination(output);
-    if (!detection.hasHallucination) {
+    if (!detection.hasHallucination && !detectCapabilityOverclaim(output).hasOverclaim) {
         return output;
     }
     return buildDepartmentAuditReport();

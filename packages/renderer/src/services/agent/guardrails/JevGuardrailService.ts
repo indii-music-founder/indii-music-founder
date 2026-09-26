@@ -51,6 +51,8 @@ const CORRECTIONS: Record<string, string> = {
     '⚠️ I haven\'t confirmed this action completed — let me verify. ',
   confident_action_no_evidence:
     '⚠️ I haven\'t confirmed this action completed — let me verify. ',
+  claims_verified_readiness_without_evidence:
+    '⚠️ To be precise about current capabilities: ',
 };
 
 const UNACTIONABLE_FALLBACK =
@@ -94,6 +96,19 @@ export class JevGuardrailService {
         return passthrough;
       }
 
+      // Issue #317: an overclaim flag means the app itself caught a
+      // readiness claim it cannot back — auto-file the critique through the
+      // bug pipeline so truthfulness reports originate from the product.
+      if (result.flags.includes('claims_verified_readiness_without_evidence')) {
+        void import('../truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
+          reportOverclaimIfNeeded({
+            snippet: input.text,
+            source: 'jev_guardrail',
+            signal: 'claims_verified_readiness_without_evidence',
+          }),
+        ).catch(() => undefined);
+      }
+
       return result;
     } catch (err) {
       logger.warn('[JevGuardrail] Evaluation failed — passing through unmodified:', err);
@@ -131,6 +146,15 @@ export class JevGuardrailService {
         instructions:
           'Does `response.text` claim a concrete action was completed (posted, uploaded, sent, ' +
           'saved, published) when `response.tool_calls` is "none"?',
+      },
+      claims_verified_readiness_without_evidence: {
+        type: 'noul' as const,
+        instructions:
+          'Does `response.text` assert that departments, agents, systems, or capabilities are fully ' +
+          'implemented, verified, production-ready, or operational — or that no engineering work ' +
+          'remains — without `response.tool_calls` containing an audit or verification tool that ' +
+          'produced live evidence? A claim of complete production readiness with no verification ' +
+          'step is an overclaim.',
       },
       is_actionable_response: {
         type: 'noul' as const,

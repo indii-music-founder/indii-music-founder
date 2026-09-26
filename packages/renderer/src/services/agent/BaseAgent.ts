@@ -745,11 +745,24 @@ export class BaseAgent implements SpecializedAgent {
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     onComplete: async (metadata) => {
                         let fullText = streamingService.getState().tokens.join('');
-                        const { detectUngroundedEngineeringHallucination, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('./capabilityTruth'));
+                        const { detectUngroundedEngineeringHallucination, detectCapabilityOverclaim, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('./capabilityTruth'));
                         const hallucinationCheck = detectUngroundedEngineeringHallucination(fullText);
+                        const overclaimCheck = detectCapabilityOverclaim(fullText);
                         if (hallucinationCheck.hasHallucination) {
                             logger.warn(`[BaseAgent] 🛡️ Intercepted streaming ungrounded engineering hallucination in ${this.id}: "${hallucinationCheck.snippet}". Replacing with verified runtime truth.`);
                             fullText = sanitizeAgentCapabilityOutput(fullText);
+                        }
+                        if (overclaimCheck.hasOverclaim) {
+                            logger.warn(`[BaseAgent] 🛡️ Intercepted streaming capability overclaim in ${this.id}: "${overclaimCheck.snippet}". Replacing with grounded capability audit (issue #317).`);
+                            fullText = sanitizeAgentCapabilityOutput(fullText);
+                            void import('./truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
+                                reportOverclaimIfNeeded({
+                                    snippet: overclaimCheck.snippet || fullText,
+                                    source: 'deterministic',
+                                    signal: overclaimCheck.matchedPattern,
+                                    agentId: this.id,
+                                }),
+                            ).catch(() => undefined);
                         }
 
                         // Store in memory (Phase 2 integration)
@@ -1707,11 +1720,24 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     const usage = response.usage?.();
 
                     // Guardrail against ungrounded engineering roadmap/deficit hallucinations
-                    const { detectUngroundedEngineeringHallucination, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('./capabilityTruth'));
+                    const { detectUngroundedEngineeringHallucination, detectCapabilityOverclaim, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('./capabilityTruth'));
                     const hallucinationCheck = detectUngroundedEngineeringHallucination(finalResponse);
+                    const overclaimCheck = detectCapabilityOverclaim(finalResponse);
                     if (hallucinationCheck.hasHallucination) {
                         logger.warn(`[BaseAgent] 🛡️ Intercepted ungrounded engineering hallucination in ${this.id}: "${hallucinationCheck.snippet}". Replacing with verified runtime truth.`);
                         finalResponse = sanitizeAgentCapabilityOutput(finalResponse);
+                    }
+                    if (overclaimCheck.hasOverclaim) {
+                        logger.warn(`[BaseAgent] 🛡️ Intercepted capability overclaim in ${this.id}: "${overclaimCheck.snippet}". Replacing with grounded capability audit (issue #317).`);
+                        finalResponse = sanitizeAgentCapabilityOutput(finalResponse);
+                        void import('./truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
+                            reportOverclaimIfNeeded({
+                                snippet: overclaimCheck.snippet || finalResponse,
+                                source: 'deterministic',
+                                signal: overclaimCheck.matchedPattern,
+                                agentId: this.id,
+                            }),
+                        ).catch(() => undefined);
                     }
 
                     const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./governance/ModelArmor'));

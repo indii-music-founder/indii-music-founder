@@ -13,6 +13,10 @@ vi.mock('@/services/firebase', () => ({
   functions: {},
 }));
 
+vi.mock('../truthOverclaimReporter', () => ({
+  reportOverclaimIfNeeded: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { JevGuardrailService } from './JevGuardrailService';
 
 describe('JevGuardrailService', () => {
@@ -84,5 +88,37 @@ describe('JevGuardrailService', () => {
       flags: [],
       confidence: {},
     });
+  });
+
+  it('fires the readiness-overclaim flag and auto-files the truthfulness critique (issue #317)', async () => {
+    const { reportOverclaimIfNeeded } = await import('../truthOverclaimReporter');
+    const input = {
+      text: 'All 23 departments are fully implemented, verified, and operational in production.',
+    };
+
+    judgeInvoke.mockResolvedValue({
+      data: {
+        answers: {
+          claims_disconnected_without_evidence: 0,
+          claims_scheduled_without_tool: 0,
+          confident_action_no_evidence: 0,
+          claims_verified_readiness_without_evidence: 0.92,
+          is_actionable_response: 0.9,
+        },
+      },
+    });
+
+    const result = await service.screen(input);
+
+    expect(result.wasModified).toBe(true);
+    expect(result.flags).toContain('claims_verified_readiness_without_evidence');
+    expect(result.confidence['claims_verified_readiness_without_evidence']).toBeCloseTo(0.92);
+    expect(result.text).toContain('To be precise about current capabilities');
+    // Auto-file happens fire-and-forget; give the microtask queue a tick.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(reportOverclaimIfNeeded).toHaveBeenCalledWith(expect.objectContaining({
+      source: 'jev_guardrail',
+      signal: 'claims_verified_readiness_without_evidence',
+    }));
   });
 });
