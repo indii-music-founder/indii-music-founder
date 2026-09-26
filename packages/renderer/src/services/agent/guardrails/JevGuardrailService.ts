@@ -1,4 +1,3 @@
-import { TypeSafeClient, noul } from '@typesafe-ai/sdk';
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
@@ -62,38 +61,17 @@ const UNACTIONABLE_FALLBACK =
 // ---------------------------------------------------------------------------
 
 export class JevGuardrailService {
-  private client: TypeSafeClient | null;
-  private hasLoggedKeyStatus = false;
-
-  constructor(client: TypeSafeClient | null = null) {
-    this.client = client;
-  }
-
-  private getClient(): TypeSafeClient | null {
-    if (this.client) return this.client;
-
-    const apiKey = (import.meta.env.VITE_TYPESAFE_API_KEY as string | undefined) ||
-                   ((import.meta.env as unknown as Record<string, string>)?.TYPESAFE_API_KEY as string | undefined);
-    if (apiKey && apiKey.trim() !== '') {
-      try {
-        this.client = new TypeSafeClient({ apiKey, dangerouslyAllowBrowser: true });
-        return this.client;
-      } catch (e) {
-        logger.debug('[JevGuardrail] TypeSafeClient direct init bypassed:', e);
-      }
-    }
-
-    return null;
-  }
+  private hasLoggedProxyStatus = false;
 
   /**
    * Screen an agent response through Jev before it reaches the UI.
    *
-   * All questions are evaluated in a single parallel Jev call.
-   * Supports:
-   *  1. Direct TypeSafeClient (if VITE_TYPESAFE_API_KEY is available)
-   *  2. Server-side `typesafeJudge` Cloud Function proxy (securely uses server TYPESAFE_API_KEY)
-   * Returns original response unmodified on timeout, failure, or unavailable service.
+   * Every renderer judgment goes through the server-side `typesafeJudge`
+   * callable. The TypeSafe credential must never be present in a VITE_* value,
+   * renderer bundle, or browser-side SDK client.
+   *
+   * Returns the original response unmodified on timeout, upstream failure, or
+   * unavailable service.
    */
   async screen(input: GuardrailInput): Promise<GuardrailResult> {
     const passthrough: GuardrailResult = {
@@ -127,7 +105,6 @@ export class JevGuardrailService {
     responseText: string,
     toolNames: string
   ): Promise<GuardrailResult | null> {
-    const client = this.getClient();
     const state = {
       response: {
         text: responseText,
@@ -165,51 +142,33 @@ export class JevGuardrailService {
 
     let rawAnswers: Record<string, unknown> | undefined;
 
-    if (client) {
-      // Direct client execution
-      const res = await client.systemOne({
+    try {
+      const judgeFn = httpsCallable<
+        { state: Record<string, unknown>; questions: Record<string, unknown>; model?: string },
+        { answers: Record<string, unknown> }
+      >(functions, 'typesafeJudge');
+      const res = await judgeFn({
         state,
-        questions: {
-          claims_disconnected_without_evidence: noul(questionsDef.claims_disconnected_without_evidence.instructions),
-          claims_scheduled_without_tool: noul(questionsDef.claims_scheduled_without_tool.instructions),
-          confident_action_no_evidence: noul(questionsDef.confident_action_no_evidence.instructions),
-          is_actionable_response: noul(questionsDef.is_actionable_response.instructions),
-        },
+        questions: questionsDef,
         model: JEV_MODEL,
       });
-      rawAnswers = res.answers as Record<string, unknown>;
-    } else {
-      // Fallback to server-side typesafeJudge proxy
-      try {
-        const judgeFn = httpsCallable<
-          { state: Record<string, unknown>; questions: Record<string, unknown>; model?: string },
-          { answers: Record<string, unknown> }
-        >(functions, 'typesafeJudge');
-        const res = await judgeFn({
-          state,
-          questions: questionsDef,
-          model: JEV_MODEL,
-        });
-        rawAnswers = res.data?.answers;
-      } catch (proxyErr) {
-        if (!this.hasLoggedKeyStatus) {
-          logger.debug('[JevGuardrail] Neither direct client key nor typesafeJudge proxy available:', proxyErr);
-          this.hasLoggedKeyStatus = true;
-        }
-        return null;
+      rawAnswers = res.data?.answers;
+    } catch (proxyErr) {
+      if (!this.hasLoggedProxyStatus) {
+        logger.debug('[JevGuardrail] typesafeJudge proxy unavailable:', proxyErr);
+        this.hasLoggedProxyStatus = true;
       }
+      return null;
     }
 
     if (!rawAnswers) return null;
 
-    const answers = rawAnswers;
     const confidence: Record<string, number> = {};
     const flags: string[] = [];
     let prefix = '';
 
-    // Extract probabilities
-    for (const key of Object.keys(answers)) {
-      const ans = answers[key];
+    for (const key of Object.keys(rawAnswers)) {
+      const ans = rawAnswers[key];
       if (typeof ans === 'number') {
         confidence[key] = ans;
       } else if (typeof ans === 'object' && ans !== null && 'noul' in ans) {
@@ -217,18 +176,14 @@ export class JevGuardrailService {
       }
     }
 
-    // Check hallucination flags
     for (const [flag, correction] of Object.entries(CORRECTIONS)) {
       const prob = confidence[flag] ?? 0;
       if (prob > FIRE_THRESHOLD) {
         flags.push(flag);
-        if (!prefix) {
-          prefix = correction;
-        }
+        if (!prefix) prefix = correction;
       }
     }
 
-    // Check actionability
     const isActionable = confidence['is_actionable_response'] ?? 1;
     if (!prefix && isActionable < ACTIONABLE_THRESHOLD) {
       flags.push('unactionable_response');
@@ -253,5 +208,5 @@ export class JevGuardrailService {
   }
 }
 
-/** Singleton — one client instance per app session. */
+/** Singleton — one service instance per app session. */
 export const jevGuardrailService = new JevGuardrailService();

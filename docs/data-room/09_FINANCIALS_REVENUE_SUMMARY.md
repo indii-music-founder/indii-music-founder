@@ -1,390 +1,151 @@
-# Financial Summary: Revenue & Runway
+# Financial Summary — Current External Truth
 
-**Author:** William Roberts  
-**Date:** 2026-04-26  
-**Period:** Q4 2025 — Present (2026-04-26)  
-**Status:** Acquisition-focused narrative (Series A financials in separate doc)  
-**Audience:** Acquirers, finance/operations teams
+**Owner:** William Roberts  
+**As of:** 2026-09-26  
+**Status:** Canonical current funding / accelerator financial truth  
+**Supersedes:** the prior acquisition-oriented version of this file
 
----
+> Historical versions of this document contained test fixtures, simulated DSP activity, projections, and acquisition scenarios. Those values were useful for engineering or scenario planning but were written in a form that could be mistaken for commercial actuals. They must not be used as traction, revenue, customer, streaming, or valuation evidence.
 
-## Executive Summary
+## Actual company metrics
 
-indii operates on a **freemium + DSP revenue model**. Currently pre-monetized (0 active paying artists), but distribution rail is live and generating material test revenue (~$15.3K Q4 2025). The company is bootstrapped with zero external funding and minimal operating costs (~$2K/month GCP + hosting).
+| Metric | Current actual |
+| --- | ---: |
+| Revenue to date | $0 |
+| Subscription MRR | $0 |
+| Paying customers | 0 |
+| Confirmed active external beta users | 0 |
+| Outside equity / SAFE / convertible capital | $0 |
+| Grants received | $0 reported |
+| Startup infrastructure credits received | $0 reported |
+| Ownership | William Roberts — 100% |
+| Stage | Founding Artist Beta / pre-revenue |
 
-### Key Metrics (As of 2026-04-26)
+The waitlist is currently small. Beta invitations have been sent, but invitations are **not** active users and must not be counted as traction.
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| **Total Artists** | ~4,250 | Across all 8 DSPs (test fixtures + live) |
-| **Paying Artists** | 0 | Product in beta; no paying customers yet |
-| **Monthly Revenue (Subscription)** | $0 | Freemium model, paywall disabled in beta |
-| **Monthly Revenue (DSP)** | ~$1,280 | From test releases; estimated annualized |
-| **Streaming Royalties (Q4 2025)** | $15,293 | Q4 2025 only; 2 releases, ~6.2M streams |
-| **Operating Burn Rate** | ~$2,000/month | GCP, Stripe, Firebase, hosting |
-| **Runway** | Indefinite | Bootstrapped, no investors, no debt |
-| **Cash Position** | Confidential | Not disclosed pre-LOI |
+## Entity and IP
 
----
+The current legal entity is **New Detroit Music LLC**, originally formed for record-label activity. It predates indii.music and should not be described as the software company's operating age.
 
-## Revenue Streams
+The repository license identifies New Detroit Music LLC as the current owner of the software and associated IP. If a new venture entity is created for financing, IP, domains, contracts, and other assets must be formally assigned rather than assumed to transfer automatically.
 
-### Stream 1: DSP Distribution Royalties
+## Founder contribution
 
-**Model:** Artist uploads release → indii distributes to 8 DSPs → royalties flow back
+The company has been bootstrapped by the founder.
 
-**Current Performance (Q4 2025):**
+Founder unpaid labor is material but is **not cash investment** and must not be reported as cash contributed.
 
-```
-Releases: 2 (test)
-Streams: 6.2M
-Revenue: $15,293
-Average per stream: $0.00247
-Average per release: $7,647
-```
+A defensible cash-invested figure has not yet been reconciled from source financial records. Do not invent one.
 
-**Breakdown by DSP (Q4 2025):**
+## Commercial model
 
-| DSP | Streams | Revenue | % of Total |
-|-----|---------|---------|-----------|
-| Spotify | 2,078,017 | $8,310 | 54.3% |
-| Apple Music | 799,138 | $1,876 | 12.3% |
-| YouTube Music | 1,101,125 | $1,653 | 10.8% |
-| Amazon Music | 358,679 | $627 | 4.1% |
-| Other (TIDAL, Deezer, aggregators) | 1,843,152 | $2,827 | 18.5% |
-| **TOTAL** | **6,180,111** | **$15,293** | **100%** |
+Current public Founding Artist Beta packaging:
 
-**Key Insight:** Spotify dominates revenue (54%), but YouTube Music provides high volume (18% of streams with only 10.8% of revenue, indicating lower payout rate).
+| Plan | Price |
+| --- | ---: |
+| Free | $0 |
+| Start | $22/month |
+| Build | $55/month |
+| Scale | $110/month |
+| Founding Owner License | $2,500 one time |
 
-**Revenue Recognition:**
-- DSP deposits occur monthly, 30–90 days in arrears
-- Stripe Connect account holds funds; indii takes 0% cut in beta (100% to artists)
-- Post-monetization: indii takes 10–15% platform fee (market standard for music tech)
+Commitment savings are approximately 5% quarterly, 10% six-month, and 20% annual.
 
-### Stream 2: Subscription Tier (Planned)
+These prices are beta packaging. Backend entitlement mapping and checkout configuration still require final alignment before broad paid activation.
 
-**Model:** Monthly subscription for artists + tooling access
+## Capital ladder
 
-**Proposed Tiers:**
+The company should describe capital needs by milestone rather than forcing one number into every application.
 
-| Tier | Price | Features | Target Artists |
-|------|-------|----------|-----------------|
-| **Free** | $0/month | Distribute 1 release/month, basic metadata | Hobbyists |
-| **Pro** | $29/month | Unlimited releases, advanced metadata, royalty tracking | Indie musicians |
-| **Label** | $99/month | Team collaboration, custom branding, analytics, API access | Labels, collectives |
-| **Enterprise** | Custom | White-label, dedicated support, custom integrations | Major labels, DSPs |
+### $10K–$15K — immediate continuity / seed milestone
 
-**Current Status:** Paywall is disabled in beta. No paying artists yet.
+Purpose: preserve development continuity and move real artists through the existing product.
 
-**Projected Revenue (Post-Launch):**
+Illustrative $15K allocation:
 
-```
-Assumptions:
-- 5K artists at Pro tier ($29/month) = $145K/month
-- 500 artists at Label tier ($99/month) = $49.5K/month
-- 10 enterprise customers at avg $5K/month = $50K/month
+| Use | Amount |
+| --- | ---: |
+| Targeted engineering / production hardening | $5,000 |
+| Cloud, AI, testing, and infrastructure | $3,000 |
+| Beta onboarding / customer discovery / go-to-market | $3,000 |
+| Legal, accounting, security, and compliance work | $2,000 |
+| Founder / operating continuity | $2,000 |
+| **Total** | **$15,000** |
 
-Total MRR (full penetration): $244.5K/month ($2.93M annual)
-```
+### ~$50K — local bridge
 
-### Stream 3: AI Tooling Add-ons (Future)
+Purpose: convert founder-led product execution into market evidence and first commercial operations.
 
-**Planned (Not Yet Live):**
+Illustrative allocation:
 
-- **Marketing Copy Generation:** $5–20 per campaign
-- **Video Production:** $20–50 per video
-- **Brand Guideline Generation:** $50–200 per brand
-- **Legal Contract Review:** $100–500 per document
+| Use | Amount |
+| --- | ---: |
+| Senior engineering / targeted contractor support | $18,000 |
+| Founder operating runway | $12,000 |
+| Artist onboarding, marketing, customer discovery | $7,000 |
+| Cloud / AI / infrastructure | $5,000 |
+| Legal, accounting, security, compliance | $5,000 |
+| Bookkeeping / operations support | $3,000 |
+| **Total** | **$50,000** |
 
-**Current Status:** Core AI agents exist; monetization layer not yet implemented.
+The engineering allocation intentionally reflects real skilled-contractor economics rather than minimum-wage assumptions.
 
-**Projected Contribution:** 5–10% of total revenue at scale.
+### ~$350K — constrained 12-month pre-seed case
 
----
-
-## Operating Costs
-
-### Monthly Burn Rate (~$2,000)
-
-| Category | Cost | Notes |
-|----------|------|-------|
-| **GCP (Vertex AI + BigQuery + Cloud Run)** | $800 | Fine-tuned model hosting + data pipeline |
-| **Firebase (Firestore + Storage + Functions)** | $400 | Database, file storage, backend APIs |
-| **Stripe (transaction fees)** | $0* | Currently 0 revenue; fees scale with DSP deposits |
-| **Domain + SSL** | $50 | indii.com, SSL certificates |
-| **Electron code-signing + distribution** | $100 | Apple Developer account, code signing cert |
-| **Hosting (Netlify/Vercel fallback)** | $50 | Backup CDN if Firebase Hosting has issues |
-| **Miscellaneous (APIs, monitoring, backup)** | $200 | LogRocket, Sentry, backup storage |
-| **Founder salary** | ~$5,000–10,000/month* | Not included in "operating burn"; funded separately |
-| **TOTAL** | **~$2,000/month** | **Excluding founder salary** |
-
-*Stripe fees: Once paying artists onboard, fees are ~2.9% + $0.30 per transaction, offset by platform revenue
-
-**Note on Founder Salary:** William Roberts is currently bootstrapped (no salary draw). Post-acquisition, see RETENTION_TERM_SHEET_TEMPLATE.md for founder comp package.
-
----
-
-## Cost Breakdown: Projected at Scale
-
-### Scenario: 10K Artists, 100K Releases/Year
-
-| Category | Monthly Cost | Annual Cost | Per-Artist | Notes |
-|----------|-----------|-----------|-----------|------|
-| **GCP Compute** | $3,000 | $36,000 | $3.60 | Vertex AI hosting, higher concurrent load |
-| **Firebase (Firestore + Storage)** | $2,000 | $24,000 | $2.40 | Database write scaling, storage scaling |
-| **Bandwidth (SFTP/HTTPS)** | $1,000 | $12,000 | $1.20 | SFTP uploads, download of analytics reports |
-| **Stripe Processing Fees** | $5,000 | $60,000 | $6.00 | 2.9% on $2M annual GMV |
-| **Customer Support** | $3,000 | $36,000 | $3.60 | 1 FTE support engineer (contractor) |
-| **Monitoring + Ops** | $500 | $6,000 | $0.60 | Observability, alerting, on-call rotation |
-| **TOTAL** | **$14,500/month** | **$174,000/year** | **$17.40/artist** | |
-
-**Gross Margin at Scale:** If $2M GMV and $174K operating costs, gross margin is ~91% (favorable SaaS profile).
-
----
-
-## Unit Economics (Pro Tier)
-
-### Per-Artist Lifetime Value (LTV) — Subscription Model
-
-```
-Assumptions:
-- Subscription price: $29/month
-- Churn rate: 5% monthly (20% annual)
-- Average customer lifetime: 20 months
-
-Gross revenue per artist: $29 × 20 = $580
-Platform fee (15% cut): 580 × 0.15 = $87
-Cost of goods (infra + support): ~$35/artist
-Net margin per artist: $87 - $35 = $52
-
-LTV = $52
-CAC (customer acquisition cost): ~$0 (organic, no marketing spend yet)
-LTV:CAC ratio = ∞ (highly favorable)
-```
-
-### Per-Release Profitability — Distribution Model
-
-```
-Assumptions:
-- Average release generates $500 in streaming royalties
-- Platform takes 15% commission: $75
-- Cost to distribute (SFTP, API calls, monitoring): $2
-
-Net margin per release: $75 - $2 = $73
-Margin %: 14.6%
-
-If 100K releases/year:
-Annual distribution revenue: 100K × $73 = $7.3M
-```
-
----
-
-## Runway & Cash Position
-
-### Current Burn & Runway
-
-**Operating Burn (Infrastructure Only):** $2,000/month
-
-**Founder Burn (Not Included Above):** ~$5–10K/month (salary draw to cover living expenses)
-
-**Total Monthly Burn:** ~$7–12K/month
-
-**Current Cash Position:** [Confidential — not disclosed pre-LOI]
-
-**Runway:** Indefinite (bootstrapped, no obligations)
-
----
-
-## Financial Projections (Acquisition Scenario)
-
-### Year 1 Post-Acquisition (Conservative Case)
-
-**Assumptions:**
-- Acquirer invests in marketing: $100K marketing spend
-- Artist onboarding accelerates: 5K → 15K artists
-- Subscription adoption: 30% of new artists sign up for Pro tier
-- DSP volume grows 3x
-
-| Metric | Q1 | Q2 | Q3 | Q4 | Annual |
-|--------|-----|-----|-----|-----|--------|
-| Artists | 5K | 8K | 12K | 15K | 15K |
-| Monthly Subscriptions | — | 100 | 400 | 1.2K | 1.2K |
-| Subscription MRR | — | $2.9K | $11.6K | $34.8K | $34.8K |
-| DSP Royalties (monthly avg) | $1.3K | $2K | $4K | $6.5K | $6.5K |
-| Total MRR (Q4) | $8.2K | $4.9K | $15.6K | $41.3K | |
-| Annual Revenue (Q4 run-rate) | | | | **$496K** | |
-
-**Year 1 Total Revenue:** ~$100K (ramping from $15K Q4 2025 to $496K annual run-rate by end of year)
-
-### Year 2 Post-Acquisition (Base Case)
-
-**Assumptions:**
-- Artist base continues to grow: 15K → 50K
-- Subscription adoption: 40% of artists
-- DSP volume grows another 3x
-
-| Metric | Year 2 |
-|--------|--------|
-| Artists | 50K |
-| Monthly Subscriptions | 20K |
-| Subscription MRR | $580K |
-| DSP Royalties (monthly avg) | $400K |
-| **Total MRR** | **$980K** |
-| **Annual Revenue** | **$11.8M** |
-
-**Profitability:** At $12M revenue and $174K operating costs, EBITDA margin is ~98% (exceptional for SaaS).
-
----
-
-## Break-Even Analysis
-
-### Subscription Model Only (Pre-DSP Volume)
-
-```
-Break-even artist count: 200 paying artists at $29/month
-200 × $29 = $5,800/month
-Covers: $2K infra + $3.8K operations = $5,800
-
-Time to break-even: If onboarding 500 artists/month at 30% conversion = 100 subscribers/month
-200 artists ÷ 100/month = 2 months
-
-→ Break-even within 2 months of marketing launch
-```
-
-### Blended Model (Subscription + DSP)
-
-```
-Current DSP royalties: $1.3K/month (Q4 2025 annualized)
-Current operating costs: $2K/month
-Deficit: $700/month
-
-Add subscription tier:
-If 100 paying artists: 100 × $29 = $2,900/month
-Platform margin (15% cut): $435/month
-Remaining burn: $700 - $435 = $265/month (nearly break-even)
-
-→ Already close to break-even with 100 paying artists
-→ Profitable with 150+ paying artists ($29/month tier)
-```
-
----
-
-## Key Risks & Sensitivities
-
-### Revenue Risks
-
-1. **DSP Payouts Decline:** If Spotify/Apple reduce payout rates by 20%, revenue impact = -$3K/month (manageable at current scale)
-
-2. **Subscription Adoption Slower Than Expected:** If only 10% of artists convert to paid (vs. projected 30%), Year 1 revenue = $50K (vs. $100K projected). Mitigation: Focus on sales + product-market fit validation
-
-3. **Churn Rate Higher Than Assumed:** If monthly churn is 10% (vs. 5%), LTV drops from $52 to $26 per artist. Mitigation: Improve product onboarding and support
-
-### Cost Risks
-
-1. **GCP Price Increases:** If Vertex AI pricing increases 50%, monthly cost rises to $1,050 (vs. $800). Manageable, but consider porting to OpenAI if pricing becomes prohibitive
-
-2. **Stripe Processing Fees:** Currently 2.9%, but high-volume accounts may negotiate. If reduced to 2.2%, saves ~$35K/year at scale
-
-3. **Founder Burnout:** If William departs pre-acquisition, development and support stop. Mitigated by successor onboarding plan (see SUCCESSION_PLAN.md)
-
----
-
-## Acquisition & Earnout Scenarios
-
-### Scenario A: Conservative (Subscription-Focused Acquirer)
-
-**Acquirer Profile:** Music SaaS platform (e.g., Splice, Wavespace)
-
-**Valuation:** $3–5M (based on SaaS unit economics)
-
-**Earnout Structure:**
-- $1.5–2M cash at closing
-- $1.5–3M earnout tied to:
-  - 10K paying artists by month 12 ($625K release)
-  - $500K annual recurring revenue by month 18 ($625K release)
-  - Successful integration with acquirer's platform ($500K release)
-
-**Post-Acquisition:** indii becomes artist tooling vertical within acquirer's platform
-
----
-
-### Scenario B: Base Case (Distribution Readiness Acquirer)
-
-**Acquirer Profile:** Music distributor or DSP (e.g., TuneCore, Amuse, YouTube Music)
-
-**Valuation:** $4.5–6M only if direct DSP access is verified during diligence; otherwise value this scenario on distribution readiness tooling plus artist base.
-
-**Earnout Structure:**
-- $2–3M cash at closing
-- $1.5–3M earnout tied to:
-  - 20K artists by month 12 ($625K release)
-  - Verified distribution integration with acquirer's network ($625K release)
-  - Zero-loss transition (0 artist churn) ($500K release)
-  - Successor handoff milestone ($500K release)
-
-**Post-Acquisition:** indii becomes distribution + tooling arm of acquirer
-
----
-
-### Scenario C: Aggressive (Full Vertical Integration Acquirer)
-
-**Acquirer Profile:** Major music conglomerate or streaming platform (e.g., Spotify, Apple, YouTube)
-
-**Valuation:** $6–8M (based on AI agent IP + distribution moat + user base)
-
-**Earnout Structure:**
-- $3–4M cash at closing
-- $2–4M earnout tied to:
-  - Integration with acquirer's internal artist services ($1M release)
-  - 50K artists on platform by month 18 ($1M release)
-  - AI agent fleet open-sourced or licensed to acquirer ($1M release)
-  - Successor fully independent by month 24 ($1M release)
-
-**Post-Acquisition:** indii becomes core artist onboarding + support infrastructure
-
----
-
-## Financial Controls & Compliance
-
-### Current Financial Systems
-
-| System | Status | Owner | Notes |
-|--------|--------|-------|-------|
-| Bookkeeping | Manual | William Roberts | Spreadsheets; not yet formal accounting |
-| Tax Forms | Stub | — | See KNOWN_GAPS.md; DocuSign integration pending |
-| Compliance | Basic | William Roberts | Stripe TOS compliant; no complex regulatory exposure |
-| Audit Readiness | Not ready | — | Would require 2–3 weeks of work to prepare for external audit |
-
-### Pre-LOI Financial Preparation
-
-Before an acquirer's first-round diligence:
-
-1. **Formalize Accounting:** Convert spreadsheets to QuickBooks or Guidepoint (1 week)
-2. **Reconcile P&L:** Q4 2025 → Q1 2026 YTD (2 days)
-3. **Prepare Tax Summary:** 1099 status, estimated tax liability (3 days)
-4. **Document Artist Revenue:** Breakdown by DSP, settlement schedule (2 days)
-
-**Total prep time:** ~2 weeks (one-time cost)
-
----
-
-## For Succession: Key Numbers to Hand Off
-
-If William steps down, successor needs to know:
-
-| Metric | Value | Update Frequency |
-|--------|-------|-------------------|
-| Monthly GCP bill | ~$800 | Monthly |
-| Stripe account balance | [Amount] | Daily |
-| Artist count by DSP | See DSP_RELATIONSHIPS.md | Daily (automated) |
-| Average subscription price | $29 | As changed |
-| Platform commission % | 0% (currently) | On policy change |
-| Burn rate | $2K/month | Monthly review |
-| Break-even point | 150 paying artists | Quarterly review |
-
----
-
-**Status:** Ready for diligence  
-**Last Updated:** 2026-04-26  
-**Next Steps:** Formalize bookkeeping (2 weeks pre-LOI), prepare tax documentation, establish finance review cadence  
-**Owner:** William Roberts
+| Use | Amount |
+| --- | ---: |
+| Engineering | $150,000 |
+| Founder compensation / runway | $60,000 |
+| Growth / artist acquisition | $40,000 |
+| Operations / bookkeeping / support | $30,000 |
+| Cloud / AI / infrastructure | $30,000 |
+| Legal / security / compliance | $25,000 |
+| Contingency | $15,000 |
+| **Total** | **$350,000** |
+
+### ~$500K — preferred 18-month pre-seed case
+
+| Use | Amount |
+| --- | ---: |
+| Engineering and technical support | $210,000 |
+| Founder compensation / runway | $90,000 |
+| Growth / artist acquisition / music-business marketing | $60,000 |
+| Operations / bookkeeping / support | $45,000 |
+| Cloud / AI / infrastructure | $45,000 |
+| Legal / security / compliance | $30,000 |
+| Contingency | $20,000 |
+| **Total** | **$500,000** |
+
+These are planning allocations, not historical expenses.
+
+## Milestones capital should buy
+
+Funding is not intended to discover what product to build. A substantial product already exists.
+
+Capital should produce evidence of a company:
+
+1. genuine artist onboarding;
+2. first paying customers;
+3. measured activation, retention, and workflow usage;
+4. production verification of critical external integrations;
+5. commercially aligned billing / entitlements;
+6. strengthened security and compliance evidence;
+7. targeted team capacity;
+8. a repeatable customer-acquisition process.
+
+## Do-not-use values
+
+Never present any of the following from historical files or fixtures as commercial actuals without new source evidence:
+
+- thousands of artists;
+- millions of streams;
+- DSP royalty revenue;
+- subscription revenue;
+- direct-DSP commercial revenue;
+- zero-CAC claims;
+- projected ARR/MRR as current revenue;
+- simulated 90%+ margins;
+- acquisition price estimates;
+- generated customer or release records.
+
+Historical versions remain in git history for provenance only.

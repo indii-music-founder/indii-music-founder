@@ -1,963 +1,192 @@
 <div align="center">
-  <img width="1280" height="560" alt="indii Banner" src="docs/assets/indii-banner.png" />
+  <img width="1280" height="560" alt="indii.music banner" src="docs/assets/indii-banner.png" />
 </div>
 
-# indii: The Independent Creative Engine
+# indii.music
 
-**The First Intelligence-Native Operating System for Independent Artists & Producers.**
+**music business at the speed of you**
 
-indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, independent creative workspace designed to empower independent music producers, visual artists, and labels. By unifying Intelligent asset generation, automated distribution, and Autonomous business operations, indii enables creators to own their infrastructure, their data, and their future.
+indii.music is working business operating software for independent music artists. It connects the work around finished music — planning, rights and registrations, delivery preparation, creative campaigns, release operations, money, audience activity, and repeatable workflows — around shared project context.
 
-👉 **New to the platform?** Read the [App Access Points Guide](docs/APP_ACCESS_POINTS_GUIDE.md) to understand how the Web App, Desktop App, and Mobile Remote work together.
+> **Current stage:** Founding Artist Beta. Working software is still being refined. Beta access is invitation-based. External integrations are described as live only when genuine account/provider verification proves them.
 
-[![Version](https://img.shields.io/badge/Version-1.64.2-blue)](https://github.com/indii-music-founder/indii-music-founder)
-[![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indii-studio.web.app)
-[![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
-[![Electron](https://img.shields.io/badge/Desktop-Electron_33-47848F?logo=electron)](https://www.electronjs.org)
-[![Intelligence](https://img.shields.io/badge/Intelligence-Gemini_3-4285F4?logo=google)](https://ai.google.dev)
-[![Node](https://img.shields.io/badge/Node-%3E%3D24.0.0-339933?logo=node.js)](https://nodejs.org)
+## Product truth
 
----
+The product lifecycle is:
 
-## ⚡ Quick Start (15 minutes)
-
-> **New contributor?** You should be running the app in under 15 minutes.
-> If it takes longer, run `make doctor` and share the output — something is misconfigured.
-> **Not sure where to log in?** Read the [indii Access Points Guide](docs/indii_access_points.md).
-
-```bash
-# 1. Clone (1 min)
-git clone https://github.com/indii-music-founder/indii-music-founder.git
-cd indii-music-founder
-
-# 2. Bootstrap environment (5 min)
-make prime                  # installs deps, runs health check
-
-# 3. Configure secrets (3 min)
-cp .env.example .env        # then fill in your Firebase keys
-
-# 4. Launch (30 sec)
-make dev-web                # Vite-only on :4243 — fastest iteration loop
-# — OR —
-make dev                    # Full Electron + Vite on :4242
+```text
+Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat
 ```
 
-| Step | Command | Expected Time |
-|------|---------|---------------|
-| Bootstrap | `make prime` | ~5 min (first run downloads deps) |
-| Configure | Edit `.env` | ~3 min |
-| Health check | `make doctor` | ~10 sec |
-| Start dev | `make dev-web` | ~5 sec (hot reload) |
-| Run tests | `make test` | ~15 sec (Vitest watch) |
-| Ship to prod | `make ship` | ~4 min (lint → typecheck → test → build → deploy) |
+The internal engineering lifecycle is broader:
 
-> **Pro tip:** Use `make help` to see every available target.
-
----
-
-## 💠 The Vision
-
-indii solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools — and 20–30% of their revenue to aggregators who change their TOS whenever they feel like it. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
-
-**indii is the platform of record. We hold sophisticated, proprietary system IP that interfaces directly with global distribution infrastructure. By bypassing traditional third-party aggregator layers, indii enables creators to maintain absolute control over their masters, royalties, and creative data through a direct-to-DSP transmission rail.**
-
----
-
-## 🏗️ 3-Layer Architecture
-
-To ensure 99.9% reliability in probabilistic AI workflows, indii operates on a rigorous 3-layer system:
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  Layer 1: DIRECTIVE (Managerial)                             │
-│  Natural language SOPs that define goals and safety bounds   │
-│  → directives/                                               │
-├──────────────────────────────────────────────────────────────┤
-│  Layer 2: ORCHESTRATION (Intelligence)                       │
-│  A2A swarm protocol — reasons, routes, manages               │
-│  → agents/ + packages/renderer/src/services/agent/           │
-├──────────────────────────────────────────────────────────────┤
-│  Layer 3: EXECUTION (Deterministic)                          │
-│  Hard-coded scripts for API calls, file ops, Proprietary Ingestion IP generation  │
-│  → execution/ + python/                                      │
-└──────────────────────────────────────────────────────────────┘
-
-**The Multiplier Effect:** By pushing complexity into deterministic execution layers, we avoid the "compound error" trap (where 90% accuracy over 5 biological steps leads to 59% overall success). Determinism at the base allows for reliability at the peak.
-
-**Omni-Aware Routing:** The orchestration layer is built with "Context-First" routing. Agents intelligently prioritize current conversation intent and user specific requests over the active document, preventing target collisions and ensuring a focused execution loop even in complex, multi-file workspaces.
-
----
-
-## 🤖 indii: The A2A Swarm Protocol
-
-The core of indii is the **Agent Swarm**, a decentralized orchestration protocol with **20 specialist agents** seeded with verifiable technical tools.
-
-```
-              ┌─────────────────────┐
-              │indii Conductor (Swarm)│
-              │    Orchestrator     │
-              └──────────┬──────────┘
-                         │
-    ┌────────────────────┼────────────────────┐
-    │        │        │        │        │      │
-  Creative  Brand   Music   Legal   Finance  Video
-  Director  Agent   Agent   Agent   Agent   Agent
-    │
-  ┌─┴──────────────────────────────────────────┐
-  Marketing  Social  Publishing  Licensing     │
-  Agent      Agent   Agent       Agent         │
-  │                                             │
-  Publicist  Road    Generalist  Executor      │
-  Agent      Agent   Agent       Agent         │
-  │                                             │
-  Merch      Analytics  IndiiOD  Strategy      │
-  Agent      Agent      Agent    Agent         │
-  └────────────────────────────────────────────┘
+```text
+create → prepare → register → deliver → release → track → operate → repeat
 ```
 
-| Agent | Domain | Technical Core (Seeded Tools) |
-|-------|--------|-------------------------------|
-| **indii Conductor** | Swarm Orchestrator | Foundational Audit & Memory Skills |
-| **Music Agent** | Audio Intelligence | `calculate_splits.py`, BPM/Key analysis |
-| **Merchandise** | E-commerce Ops | `margin_calculator.py`, SKU generation |
-| **Legal Agent** | Rights & Contracts | `nda_generator.py`, Contract Risk Audit |
-| **Social Agent** | Social Media | `post_formatter.py`, Engagement optimization |
-| **Finance Agent** | Revenue | `royalty_estimator.py`, Waterfall splits |
-| **Creative Dir** | Visual Identity | Brand kit enforcement, Image synthesis |
-| **Video Agent** | Video Production | Veo 3.1 synthesis, Director's Cut QA |
-| **Analytics Agent**| Growth | Viral scoring, Breakout prediction |
-| **All Others (11)** | Various | `domain_readiness.py` (Seeding ongoing) |
+indii.music is not positioned as a music-generation product. AI assists interpretation, planning, creative workflows, and domain reasoning. Deterministic code owns exact business rules such as identity, authorization, arithmetic, identifiers, workflow transitions, and security boundaries.
 
-**Foundational Skills:**
-- **Audit Skill**: Decentralized capability discovery via `scan_directory.py`.
-- **Memory Skill**: Persistent procedural "Brain Surgery" via `update_knowledge.py`.
-- **Capability Registry**: Centralized `agents/capability_registry.json` for tool discovery.
-- **Swarm Dashboard**: Real-time visualization of agent capabilities in the Creative Studio UI.
+### What is implemented
 
-For more details on the autonomous evolution, see [CAPABILITY_DEPLOYMENT.md](docs/CAPABILITY_DEPLOYMENT.md).
+The repository contains working implementations across:
 
----
+- React web and Electron desktop applications;
+- Firebase / Google Cloud backend services;
+- canonical master-audio ingestion and technical analysis;
+- registration, rights, metadata, and catalog review surfaces;
+- DDEX ERN 4.3 generation and delivery-readiness tooling;
+- finance, split, royalty, and accounting workflows;
+- creative image/video workflows and local FFmpeg processing;
+- CRM, marketing, social, and campaign systems;
+- merchandise and business-operations tooling;
+- phone-to-cloud-to-Studio remote execution;
+- specialist-agent orchestration and deterministic execution tooling.
 
-## 📱 indiiREMOTE Hybrid Infrastructure
+### Important external-verification boundaries
 
-**indiiREMOTE** is a production-ready mobile companion feature that allows users to control their indii desktop mainframe from any mobile device, instantly and securely.
+Implementation is not the same as external production proof.
 
-It utilizes a **Hybrid Architecture**:
-1. **Firestore Cloud Relay**: The primary transport layer ensuring robust, atomic command delivery and state persistence across devices, allowing commands (like text generation) to execute seamlessly even if the desktop briefly drops connection.
-2. **Global Edge Connection**: For high-bandwidth tasks, indiiREMOTE can provision a secure, encrypted **Ngrok tunnel** directly to a local Express server running inside the Electron main process, bypassing the cloud for unreleased sensitive audio/video assets.
+- **Distribution:** DDEX generation, preflight, packaging, and transport tooling exist. Do not claim direct delivery to Spotify, Apple Music, TIDAL, or other DSPs until partner credentials, conformance, and genuine transmissions are documented.
+- **Meta / Instagram:** publishing validation, webhook, OAuth, analytics, and CRM infrastructure exist. Genuine Meta OAuth/webhook/publishing verification remains a separate live-account gate.
+- **Registrations:** workflows preserve manual-required states where an organization or filing cannot truthfully be completed automatically.
+- **Offline:** bounded local audio/metadata inspection exists; the application is not generally offline-capable.
+- **Commerce:** Founding Artist Beta pricing is decided publicly, but paid checkout must remain closed until backend entitlements and live price configuration agree.
 
-### How It Works
+## Founder-beta pricing
 
-1. **Device Pairing:** The user pairs their mobile device to the indii ecosystem.
-2. **Atomic Execution:** The mobile dashboard displays a real-time feed of active AI agent actions and allows the user to trigger commands (Execute, Explain, Fix Bugs, etc.) which are routed securely via the Cloud Relay.
-3. **Edge Streaming:** For playback and heavy assets, the mobile device establishes a secure WebSocket connection over the Ngrok tunnel directly to the desktop.
+Current public beta packaging:
 
-By maintaining both a reliable Cloud Relay and an encrypted Edge Connection, indiiREMOTE guarantees high-availability control alongside maximum privacy for your sensitive assets.
+| Stage | Monthly price |
+| --- | ---: |
+| Free | $0 |
+| Start | $22 |
+| Build | $55 |
+| Scale | $110 |
+| Founding Owner License | $2,500 one time |
 
----
+Commitment savings are approximately 5% quarterly, 10% for six months, and 20% annually. These are beta prices and remain subject to operating-cost validation before broad paid activation.
 
-## 🧠 indii Cognitive Core: Always-On Memory Agent
+## Architecture
 
-Adapted from Google's [Always-On Memory Agent](https://github.com/GoogleCloudPlatform/generative-ai/tree/main/gemini/agents/always-on-memory-agent) reference architecture, indii's memory system is a native TypeScript **Neural Engine** built for absolute persistence and zero-latency recall.
+indii.music uses a layered operating model:
 
-The Memory Agent is a **state-of-the-art, autonomous cognitive system** that operates silently in the background — continuously ingesting, consolidating, and synthesizing information across your entire creative business. It functions as the platform's **Digital Hippocampus**: it converts raw daily interactions into a rich, structured knowledge graph during idle cycles, ensuring your agents are always grounded in the precise truth of your brand.
+1. **Directives / SOPs** define intent, constraints, and expected outcomes.
+2. **Orchestration / intelligence** routes work and supplies bounded semantic reasoning.
+3. **Deterministic execution** performs exact operations, API calls, validation, persistence, and calculations.
 
-### ✨ The Memory Advantage
+The architectural rule is simple: probabilistic systems may advise; they do not silently manufacture business truth.
 
-- **Infinite Recall:** Never repeat yourself. Every decision, stylistic preference, and business rule is etched into the long-term vector store.
-- **Cross-Module Intelligence:** Knowledge generated in the *Legal* module (e.g., a specific royalty split) is instantly available to the *Finance* and *Social* agents.
-- **Autonomous Consolidation:** During "sleep cycles," the engine automatically merges redundant facts and resolves contradictory information using high-thinking reasoning loops.
-- **Temporal Awareness:** Navigate your brand's history with a visual timeline that shows how your creative identity has evolved over months and years.
+### TypeSafe / JEV
 
-### How It Works
+TypeSafe JEV System One supplies typed low-latency semantic judgments where semantic interpretation is more appropriate than brittle string parsing. Questions and thresholds are centrally reviewable, deterministic fallbacks remain available, and production credentials stay behind the server-side `typesafeJudge` Firebase callable.
 
-```
-User Input / Files / Sessions
-        │
-        ▼
-┌─────────────────────┐
-│  Ingestion Pipeline  │  ← Entity extraction, topic assignment, importance scoring
-│  (Gemini Flash)      │  ← Multimodal: text, images, audio, video, PDFs
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│  Tiered Memory Store │  ← working → shortTerm → longTerm → archived
-│  (Firestore)         │  ← Importance decay + reinforcement on access
-└────────┬────────────┘
-         │
-    ┌────┴────┐
-    ▼         ▼
-┌────────┐ ┌──────────────┐
-│ Query  │ │ Consolidation │  ← Timer-based background loop (every 30min)
-│ Agent  │ │ Agent         │  ← Cross-cutting insight generation
-│(Pro)   │ │(Flash)        │  ← Connection discovery between memories
-└────────┘ └──────────────┘
+JEV does not establish legal permission, ownership, financial truth, security authorization, or deterministic identifiers.
+
+### Remote execution
+
+The phone-to-Studio path uses a durable Firestore relay, server-authorized Studio presence, executor leases, atomic command claims, and explicit cloud-versus-local execution boundaries. Desktop-only work remains on the desktop rather than being simulated by the phone.
+
+## AI-assisted engineering workflow
+
+The repository contains founder-defined slash workflows under `.agent/workflows/`.
+
+The core development loop is:
+
+```text
+/start → /middle → /end
 ```
 
-### Key Features
+Supporting workflows include `/ci-validate`, `/review`, `/proceed`, and other bounded development procedures.
 
-| Feature | Description |
-|---------|-------------|
-| **Longitudinal Timeline** | Tracks facts over years with semantic supersession chains (`supersedes` / `supersededBy`). The system knows what was true 4 years ago vs. what is true today. |
-| **Temporal Search** | Multi-mode retrieval: switch between `Recency-Weighted` (latest news) and `Temporal-Aware` (deep historical context) modes. |
-| **Performance Lookback** | $O(1)$ write performance at scale. Semantic dedup only audits the last 30 days of high-density facts, maintaining speed even as history grows to 10k+ records. |
-| **Metadata Preservation** | Automated consolidation preserves original categories. The system explicitly distinguishes between a raw `fact`, a system-generated `insight`, and a high-level `summary`. |
-| **Tiered Memory Store** | Memories move through `working → shortTerm → longTerm → archived` based on importance decay and reinforcement on access. |
-| **Semantic Supersession** | Detects when new information makes an old fact obsolete. Links the timeline automatically while preserving the archived "original" fact for provenance. |
-| **Entity Graph** | Extracted entities (people, companies, products) are linked across memories to build a global relationship graph. |
-| **Dashboard UI** | Premium React dashboard with a visual memory timeline, insight cards, and temporal query interface. |
+The intent is to make AI-assisted development auditable:
 
-### Usage
+- define the objective and evidence before mutation;
+- work in bounded verification units;
+- protect unrelated repository state;
+- distinguish structural, simulated, local-real, and production-real evidence;
+- run proportional tests, type checking, linting, builds, and security checks;
+- bind remote acceptance to the exact pushed SHA;
+- invalidate a gate when post-gate edits occur.
 
-```typescript
-import { alwaysOnMemoryEngine } from '@/services/agent/AlwaysOnMemoryEngine';
+The AI saying “done” is never proof that work is done.
 
-// Start the engine (called automatically on auth)
-engine.start('user-123');
+## CI/CD
 
-// Ingest text
-await engine.ingestText('user-123', 'User prefers dark blue album art with minimal typography');
+`.github/workflows/deploy.yml` is the main deployment pipeline. It includes:
 
-// Ingest a file (Electron desktop)
-await engine.ingestFile('user-123', fileBytes, 'image/png', 'album-ref.png');
+- setup and security sanity checks;
+- 20 sharded unit-test jobs;
+- Firestore / Storage rules tests;
+- lint and TypeScript checks;
+- production builds;
+- staging deployment;
+- staging E2E validation;
+- production deployment.
 
-// Query with citations
-const answer = await engine.queryMemory('user-123', 'What visual style does the user prefer?');
+Exact-SHA CI is the acceptance boundary for repository delivery.
 
-// Manual consolidation
-await engine.runConsolidation('user-123');
-```
+## SOC 2 readiness
 
----
+The repository includes a compliance framework under `compliance/` and a scheduled evidence workflow at `.github/workflows/soc2-evidence-collector.yml`.
 
-## ⏱️ Timeline Orchestrator (Autonomous Campaign Engine)
+This is **SOC 2 readiness and evidence collection**, not SOC 2 certification.
 
-The **Timeline Orchestrator** is indii's progressive campaign automation system. It enables multi-month, fully autonomous marketing campaigns that escalate in intensity over time — from teaser posts in week 1 to daily multi-platform saturation by release day — all without manual intervention.
+The goal is to accumulate control evidence as the company operates so a future auditor is not forced to reconstruct the development history after the fact. The current GitHub artifact archive is a 90-day hot-evidence store; longer Type II observation periods require durable evidence retention outside expiring Actions artifacts. See `compliance/EVIDENCE_RETENTION.md`.
 
-### How It Works
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  Cloud Scheduler (every 15 min)                              │
-│  → pollTimelineMilestones (Cloud Function)                   │
-│    → Dispatches timeline/milestone.due events to Inngest     │
-│      → executeMilestoneFn calls Gemini server-side           │
-│        → Result stored in Firestore + audit log              │
-│                                                              │
-│  Zero human in the loop. Campaigns run at 3am unattended.    │
-└──────────────────────────────────────────────────────────────┘
-```
-
-### Key Features
-
-| Feature | Description |
-|---------|-------------|
-| **Progressive Intensity** | Campaigns start with low-frequency "seed" posts and auto-escalate through phases to high-frequency saturation toward the climax |
-| **4 Pre-Built Templates** | Single Release (8 weeks), Album Rollout (16 weeks), Merch Drop (4 weeks), Tour Promotion (12 weeks) |
-| **Agent-Agnostic** | Works with any specialist agent — marketing, social, brand, publicist, distribution, video, etc. |
-| **Smart Asset Strategy** | Each milestone can `create_new` assets via AI, `use_existing` pre-made assets, or `auto` mode (agent decides) |
-| **Lifecycle Management** | Draft → Active → Paused → Resumed → Completed / Cancelled — full control |
-| **Adaptive Cadence** | Adjust posting frequency per-phase in real-time without rebuilding the timeline |
-| **Inngest Durability** | Built-in retries (2x), concurrency limits (5), step-based execution for crash recovery |
-| **Audit Trail** | Every autonomous execution is logged to `timelineExecutionLogs` for transparency |
-
-### 9 Agent Tools
-
-Any agent can orchestrate timelines using these registered tools:
-
-| Tool | Purpose |
-|------|---------|
-| `create_timeline` | Create from template or custom brief |
-| `activate_timeline` | Start autonomous execution |
-| `pause_timeline` / `resume_timeline` | Lifecycle control |
-| `advance_phase` | Skip to next intensity phase |
-| `adjust_cadence` | Change posting frequency |
-| `get_timeline_status` | Progress metrics |
-| `list_timelines` | All user timelines |
-| `list_timeline_templates` | Available templates |
-
-### Usage
-
-```typescript
-import { timelineOrchestrator } from '@/services/timeline/TimelineOrchestratorService';
-
-// Create a progressive campaign from a template
-const timeline = await timelineOrchestrator.createTimeline('user-123', {
-  title: 'Spring Album Rollout',
-  domain: 'marketing',
-  templateId: 'album_rollout_16w',
-  startDate: '2026-04-01',
-  goal: 'Build anticipation and drive 100k first-week streams',
-  assetStrategy: 'create_new',
-});
-
-// Activate it — from here, Cloud Scheduler + Inngest handle everything
-await timelineOrchestrator.activateTimeline('user-123', timeline.id);
-```
-
-### Architecture
-
-```
-packages/renderer/src/services/timeline/
-├── TimelineOrchestratorService.ts    # Core engine (creation, lifecycle, progress)
-├── TimelinePhaseTemplates.ts         # 4 pre-built campaign templates
-├── TimelineTypes.ts                  # Type definitions
-└── TimelineOrchestratorService.test.ts  # 25 unit tests
-
-packages/renderer/src/services/agent/tools/
-└── TimelineTools.ts                  # 9 agent tools (registered in TOOL_REGISTRY)
-
-packages/firebase/src/timeline/
-├── pollTimelineMilestones.ts         # Cloud Scheduler: finds due milestones
-└── milestone_execution.ts            # Inngest: Gemini server-side execution
-```
-
----
-
-## 📊 Growth Intelligence Engine
-
-The **Growth Intelligence Engine** is indii's production analytics system — a real-time viral scoring and breakout prediction pipeline that ingests data directly from your connected streaming and social platforms.
-
-### How It Works
-
-```
-Connected Platforms (Spotify, YouTube, TikTok, Instagram)
-        │
-        ▼
-┌───────────────────────────────────────────┐
-│  PlatformDataService                       │
-│  Aggregates real API data → TrackAnalytics │
-└──────────────────┬────────────────────────┘
-                   │
-                   ▼
-┌───────────────────────────────────────────┐
-│  ViralScoreService                         │
-│  Weighted composite score (0-100):         │
-│  Save Rate (35%) + Completion (25%) +      │
-│  Repeat Listeners (20%) + Playlist (10%)   │
-│  + Shares (10%)                            │
-└──────────────────┬────────────────────────┘
-                   │
-                   ▼
-┌───────────────────────────────────────────┐
-│  GrowthPatternService                      │
-│  8 pattern archetypes + confidence scores  │
-│  Alerts: breakout_candidate, velocity,     │
-│  creator_trend_detected                    │
-└──────────────────┬────────────────────────┘
-                   │
-                   ▼
-┌───────────────────────────────────────────┐
-│  14-Day Forecast (Logistic Growth Curve)   │
-│  y = L / (1 + e^(-k(x - x0)))             │
-│  Upper/lower confidence bounds             │
-└───────────────────────────────────────────┘
-```
-
-### 8 Growth Pattern Archetypes
-
-| Pattern | Trigger |
-|---------|---------|
-| `slow_burn_growth` | Consistent week-over-week compound growth |
-| `72_hour_spike` | Sharp momentum spike within first 3 days |
-| `creator_cascade` | TikTok/Reels creator adoption surge |
-| `regional_spark` | Breakout in a specific geography before global |
-| `playlist_ladder` | Accelerating playlist additions |
-| `algorithm_cluster_expansion` | Viral algorithm recommendation cluster |
-| `weekend_amplification` | Saturday/Sunday stream amplification pattern |
-| `cross_platform_feedback_loop` | Synchronized multi-platform uplift |
-
-### Platform Integrations
-
-| Platform | API | Data |
-|----------|-----|------|
-| **Spotify** | Spotify Web API (PKCE OAuth) | Top tracks, audio features, recently played, stream history |
-| **YouTube** | YouTube Analytics API v2 (Google OAuth) | Real views, watch time, subscribers, geographic breakdown |
-| **TikTok** | TikTok Display API v2 (OAuth 2.0 via Cloud Functions) | Video views, likes, shares, account engagement |
-| **Instagram** | Instagram Graph API (Facebook Login → long-lived token) | Reels plays, reach, impressions, saves |
-| **Apple Music** | MusicKit JS *(coming soon)* | Streams, Shazam counts, radio airplay |
-
-All platform OAuth tokens are stored encrypted in Firestore (`users/{uid}/analyticsTokens/{platform}`). The `PlatformConnector` UI provides a polished one-click connect/disconnect interface for each platform.
-
-### Server-Side Token Security
-
-```
-Cloud Functions (packages/firebase/src/analytics/platformTokenExchange.ts)
-├── analyticsExchangeToken   — code → token exchange (Spotify PKCE, TikTok, Instagram)
-├── analyticsRefreshToken    — rotate expired tokens
-└── analyticsRevokeToken     — revoke + delete from Firestore
-
-GCP Secret Manager secrets:
-  SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET
-  TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET
-  META_APP_ID / META_APP_SECRET
-```
-
-Client secrets are **never exposed to the browser** — all token operations route through server-side Cloud Functions.
-
----
-
-## 🌍 indiiREMOTE: Edge Computing Layer
-
-indiiREMOTE transforms your desktop into a globally accessible, private edge server. As part of its Hybrid Architecture, it maintains a true, low-latency, end-to-end encrypted connection between your mobile device and your Mac Studio for high-bandwidth tasks.
-
-### How It Works
-
-For low-latency asset preview and direct UI serving, the indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**.
-
-```
-📱 Phone (Anywhere on Earth)
-        │
-        ▼ (HTTPS / WSS)
-┌───────────────────────────────────────────┐
-│  Ngrok Secure Global Edge Network         │
-│  End-to-End Encrypted Tunnel              │
-└──────────────────┬────────────────────────┘
-                   │
-                   ▼ (localhost:3333)
-┌───────────────────────────────────────────┐
-│  IndiiRemoteService (Electron Main)       │
-│  Express Server + WebSocket Router        │
-└──────────────────┬────────────────────────┘
-                   │
-                   ▼ (IPC Bus)
-┌───────────────────────────────────────────┐
-│  indii Desktop React App                  │
-│  Mainframe Execution                      │
-└───────────────────────────────────────────┘
-```
-
-### Edge Layer Features
-
-| Feature | Description |
-|---------|-------------|
-| **Zero-Install Thin Client** | The phone UI can be served as a blazing-fast, standalone React SPA directly from your Mac. No App Store download required. |
-| **Direct WebSocket Sync** | Sub-millisecond latency for audio/video playback and high-bandwidth asset streaming directly to your phone. |
-| **Secure PIN Auth** | The IPC bridge generates a cryptographic, single-use 6-digit Session Passcode unique to each boot. |
-| **Instant QR Provisioning** | Navigating to the `Mobile Remote` tab visually generates the Ngrok QR code in real-time, masking complex IP routing from the user. |
-
----
-
-## 📦 Core Modules (36)
-
-indii ships with 36 lazy-loaded modules organized across four domains:
-
-### 🎨 Creative Studios
-
-| Module | Route | Description |
-|--------|-------|-------------|
-| **Creative Director** | `/creative` | Infinite Fabric.js canvas for AI image generation (Gemini 3 Pro Image), product visualization, and asset editing |
-| **Video Producer** | `/video` | Production-grade pipeline for **Veo 3.1** video synthesis with Director's Cut QA step |
-| **Workflow Lab** | `/workflow` | Node-based automation editor (React Flow) to chain AI tasks into repeatable recipes. Fully wired: Art, Video (text-to-video / img2vid / extend), Marketing, Social, Campaign, Knowledge Base departments + Router, Gatekeeper, and Variables logic nodes |
-| **Design Studio** | `/design` | Brand-first design system for consistent visual identity |
-| **Capture** | `/capture` | Quick-capture tool for ideas, references, and inspiration |
-
-### 📈 Business Operations
-
-| Module | Route | Description |
-|--------|-------|-------------|
-| **Distribution** | `/distribution` | Direct Proprietary Ingestion delivery to DSPs (Merlin, Apple, Spotify, Amazon, Tidal) — no aggregator middlemen |
-| **Release Manager** | `/release` | End-to-end release lifecycle: metadata, artwork, scheduling, delivery, and QC |
-| **Finance** | `/finance` | Streaming revenue tracking, waterfall royalty splits, and automated payout calculations |
-| **Royalty** | `/royalty` | Detailed royalty statement parsing, reconciliation, and split management |
-| **Legal** | `/legal` | AI-powered contract review (score + risk extraction), rights management, IP protection. Analysis history is persisted to Firestore and restored on every page load |
-| **Licensing** | `/licensing` | Sync licensing deal management and opportunity matching |
-| **Publishing** | `/publishing` | Music publishing dashboard — song registration and rights administration |
-| **Commerce** | `/commerce` | E-commerce integration for direct-to-fan sales |
-| **Merchandise** | `/merch` | Merchandise and print-on-demand (POD) integration |
-
-### 📣 Marketing & Growth
-
-| Module | Route | Description |
-|--------|-------|-------------|
-| **Marketing** | `/marketing` | Campaign execution, AI copywriting, and brand asset management |
-| **Brand Manager** | `/brand` | Brand kit management — logos, colors, fonts, voice guidelines |
-| **Campaign Manager** | `/campaign` | Multi-channel campaign planning and execution |
-| **Social** | `/social` | Cross-platform social media management and scheduling |
-| **Publicist** | `/publicist` | Press release generation, media outreach, and PR management |
-| **Showroom** | `/showroom` | Public-facing portfolio for showcasing releases and brand |
-
-### 🛠️ Intelligence & Tools
-
-| Module | Route | Description |
-|--------|-------|-------------|
-| **Agent Tools** | `/agent` | Hub for Agent Swarm interactions and specialist agent routing |
-| **Memory Agent** | `/memory` | Always-On Memory dashboard — memory timeline, insights, and query interface |
-| **Knowledge Base** | `/knowledge` | Searchable knowledge repository for artists and labels |
-| **Audio Analyzer** | `/audio-analyzer` | Hybrid audio analysis — local Python background thread execution (BPM, key, scale, loudness) + local YAMNet ONNX semantic tagging |
-| **Road Manager** | `/road` | Tour logistics, fuel calculations, venue discovery, and route planning |
-| **Files** | `/files` | Integrated file manager for project assets |
-| **Marketplace** | `/marketplace` | Marketplace for beats, samples, presets, and services |
-| **Web3** | `/web3` | Blockchain integration for NFTs and decentralized rights |
-| **Analytics** | `/analytics` | **Growth Intelligence Engine** — viral scoring, growth pattern detection, 14-day breakout forecasts, cross-platform analytics (Spotify, YouTube, TikTok, Instagram) |
-| **Dashboard** | `/dashboard` | Central command — KPIs, recent activity, and quick actions |
-| **Investor** | `/investor` | Investor-facing data room and pitch materials |
-| **Observability** | `/observability` | System health monitoring and AI agent performance tracking |
-| **History** | `/history` | Full activity log and audit trail |
-| **Settings** | `/settings` | User preferences, organization management, and integrations |
-| **Onboarding** | `/onboarding` | AI-driven onboarding flow with brand kit setup |
-| **Debug** | `/debug` | Developer tools and system diagnostics |
-
----
-
-## 🔐 Security & Compliance
-
-### Privacy & Legal
-
-- **GDPR Compliant** — Right to erasure, data portability, and explicit consent management
-- **CCPA/CPRA Compliant** — "Do Not Sell My Personal Information" toggle with opt-out tracking
-- **COPPA Aware** — Age verification gate during onboarding
-- **Cookie Consent** — Granular consent banner with essential/analytics/marketing categories
-- **Legal Pages** — Auto-generated Privacy Policy, Terms of Service, and Cookie Policy
-
-### Security Hardening
-
-- **HSTS Headers** — Strict Transport Security enforced via Firebase hosting
-- **Sentry Integration** — Real-time error monitoring with PII scrubbing
-- **Secret Scanning** — Automated gitleaks checks in CI/CD pipeline
-- **App Check** — Firebase App Check for API abuse prevention
-- **Context Isolation** — Electron runs with hardened sandbox and context isolation enabled
-- **R2A2 Scanning** — Reflective Risk-Awareness scanning for prompt injection attacks
-
-### API Credentials Policy
-
-Firebase API keys are **identifiers, not secrets** — security is enforced via Firestore/Storage Security Rules. True secrets (Stripe keys, service accounts) are managed exclusively through environment variables and never committed to source control. See [`docs/API_CREDENTIALS_POLICY.md`](docs/API_CREDENTIALS_POLICY.md) for the full policy.
-
----
-
-## 🚀 Tech Stack
-
-### Frontend & Desktop
-
-| Category | Technology | Notes |
-|----------|-----------|-------|
-| UI Framework | React 18 | Lazy-loaded modules via `React.lazy()` |
-| Build | Vite 6.4 | Port 4242 for dev, terser minification in prod |
-| Styling | TailwindCSS 4.1 | CSS-first config with `tailwind-merge` + `clsx` |
-| State | Zustand 5.0 | Slice-based store pattern with persistence |
-| Animation | Framer Motion 12.x | Micro-animations and page transitions |
-| Canvas | Fabric.js 6.9 | Infinite canvas image editing |
-| Graph Editor | React Flow 11.11 | Node-based workflow automation |
-| Audio | Wavesurfer.js 7.11 + Essentia.js + Python (YAMNet ONNX) | Local-first analysis and visualization |
-| Video | Remotion 4.0 | Programmatic video rendering |
-| 3D | Three.js 0.182 | `@react-three/fiber` integration |
-| Charts | Recharts 3.6 | Data visualization |
-| Router | React Router 7.11 | URL-synced navigation |
-| UI Kit | Radix UI + Lucide Icons | Accessible primitives |
-| Desktop | Electron 33 | Hardened sandbox, context isolation |
-
-### Backend & AI
-
-| Category | Technology | Notes |
-|----------|-----------|-------|
-| Cloud Functions | Firebase Functions 7.0 (Gen 2) | Node.js 22 runtime |
-| AI SDK | `@google/genai` 1.30 + Genkit 1.26 | Unified Google Gen AI SDK |
-| AI Models | Gemini 3 Pro / Flash / Image | See [Model Policy](MODEL_POLICY.md) |
-| Video AI | Veo 3.1 | `veo-3.1-generate-preview` |
-| TTS | Gemini 3.1 Flash TTS Preview | `gemini-3.1-flash-tts-preview` |
-| Embeddings | `text-embedding-004` | Vector similarity search |
-| Jobs | Inngest 3.46 | Reliable background task orchestration |
-| Payments | Stripe 20.1 | Subscription billing and payouts |
-| Database | Firestore | Real-time sync with security rules |
-| Storage | Firebase Storage | Media assets with security rules |
-| Analytics | BigQuery | Revenue analytics pipeline |
-| Distribution | Proprietary Ingestion IP 4.3 | Direct DSP delivery via SFTP |
-
-### AI Model Policy
-
-All AI interactions follow a strict model policy. Manual model string hardcoding is forbidden — always use `AI_MODELS` from `@/core/config/ai-models`.
-
-| Task | Model | Thinking Level |
-|------|-------|---------------|
-| Complex Reasoning | `gemini-3-pro-preview` | HIGH |
-| Fast Routing | `gemini-3-flash-preview` | MEDIUM |
-| Image Generation | `gemini-3-pro-image` | — |
-| Video Generation | `veo-3.1-generate-preview` | — |
-| Text-to-Speech | `gemini-3.1-flash-tts-preview` | — |
-
-> **Banned Models:** `gemini-1.5-*`, `gemini-2.0-*`, `gemini-pro`, `gemini-pro-vision` — runtime validation enforces this.
-
----
-
-## 🛠️ Getting Started
-
-> **Fastest path:** See the [⚡ Quick Start](#-quick-start-15-minutes) section at the top.
-
-### Prerequisites
-
-- **Node.js:** >= 24.0.0
-- **Make:** Pre-installed on macOS/Linux (Windows: use WSL or Git Bash)
-- **Firebase CLI:** `npm install -g firebase-tools`
-- **Docker:** (Optional) Required for Agent Zero Sidecar execution
-
-### Installation
+## Quick start
 
 ```bash
 git clone https://github.com/indii-music-founder/indii-music-founder.git
 cd indii-music-founder
-make prime                 # installs deps + runs health check
-```
 
-### Environment Setup
-
-Copy `.env.example` to `.env` and provide your API keys:
-
-```bash
+make prime
 cp .env.example .env
+
+make dev-web
+# or
+make dev
 ```
 
-**Required:**
-
-| Variable | Purpose |
-|----------|---------|
-| `VITE_FIREBASE_API_KEY` | Firebase project identifier |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
-| `VITE_FIREBASE_STORAGE_BUCKET` | Storage bucket |
-
-**Optional:**
-
-| Variable | Purpose |
-|----------|---------|
-| `VERTEX_PROJECT_ID` | Backend Vertex AI project override |
-| `VERTEX_LOCATION` | Backend default Vertex AI location |
-| `VERTEX_IMAGE_LOCATION` | Backend image model location, defaults to `global` |
-| `VERTEX_VIDEO_LOCATION` | Backend video model location |
-| `VITE_GOOGLE_MAPS_API_KEY` | Google Maps |
-| `VITE_SKIP_ONBOARDING` | Skip onboarding in dev |
-| `VITE_FIREBASE_APP_CHECK_KEY` | App Check (required in prod) |
-| `VITE_SPOTIFY_CLIENT_ID` | Growth Intelligence: Spotify OAuth (PKCE) |
-| `VITE_TIKTOK_CLIENT_KEY` | Growth Intelligence: TikTok OAuth public key |
-| `VITE_META_APP_ID` | Growth Intelligence: Instagram/Facebook App ID |
-
-### Development
+Useful commands:
 
 ```bash
-# Fastest: Vite-only renderer (no Electron overhead)
-make dev-web               # Port 4243, instant hot reload
-
-# Full stack: Vite + Electron
-make dev                   # Port 4242 + Electron shell
-
-# Health check (run if anything feels wrong)
 make doctor
+npm run typecheck
+npm run lint
+npm run ci
 ```
 
-### Building
+Before repository delivery, follow `.agent/workflows/branch-safety.md`, `.agent/workflows/ci-validate.md`, and `.agent/workflows/end.md`.
 
-```bash
-make build                 # Fast production build (Vite only)
-make build-ci              # Gated: typecheck + lint + build
-make ship                  # Full pipeline: lint → typecheck → test → build → deploy
+## Repository map
 
-# Desktop targets
-npm run build:desktop:mac  # macOS (DMG/ZIP)
-npm run build:desktop:win  # Windows (NSIS)
-npm run build:desktop:linux # Linux (AppImage)
+```text
+packages/renderer        React Studio application
+packages/main            Electron main process / local execution
+packages/firebase        Cloud Functions, rules, server workflows
+packages/shared          Shared schemas and deterministic contracts
+packages/landing         Public landing / beta site
+packages/render-worker   Background rendering
+packages/admin-dashboard Internal operator surface
+agents/                  Specialist agent definitions
+execution/               Deterministic execution scripts
+directives/              Operating procedures
+docs/                    Architecture, product, security, and operating docs
+compliance/              SOC 2 readiness, policies, controls, risk, vendors
+.agent/workflows/        Founder-defined AI development workflows
 ```
 
-### Task Runner (`Makefile`)
+## Documentation truth hierarchy
 
-All common operations are wrapped in the root `Makefile`. Run `make help` to see every target:
+For external company, funding, or accelerator claims, use:
 
-```
-  build           Production build (Vite + electron-vite, fast)
-  build-ci        CI build: typecheck + lint + build (gated)
-  clean           Remove build artifacts and caches
-  dev             Start full Electron dev environment (:4242)
-  dev-web         Start Vite renderer only — no Electron (:4243)
-  doctor          Run unified environment health check
-  fix             ESLint auto-fix all packages
-  lint            ESLint all packages
-  nuke            Nuclear clean: rm node_modules + dist + reinstall
-  prime           Full setup → install, doctor check, start dev server
-  ship            Full ship pipeline: lint → typecheck → test → build → deploy
-  test            Run Vitest unit tests (watch mode)
-  test-ci         Run Vitest once (CI mode, no watch)
-  test-e2e        Run Playwright E2E tests (Chromium)
-  typecheck       TypeScript type check (all packages)
-```
+1. `docs/funding/APPLICATION_SOURCE_OF_TRUTH.md`
+2. current business-decision documents
+3. current architecture / phase-status documents
+4. implementation and exact-SHA CI evidence
 
----
+Historical acquisition worksheets, test fixtures, projections, demo records, and generated sample data are not commercial actuals.
 
-## 📜 Automation & Scripts
+## License
 
-The project includes a rich catalog of 20+ automation scripts for environment setup, data seeding, and diagnostics.
-
-| Command | Action |
-| :--- | :--- |
-| `npm run doctor` | Run the unified health check (recommended after setup) |
-| `npm run scripts` | View the full **[Scripts Catalog](scripts/SCRIPTS_CATALOG.md)** |
-| `scripts/env-guardian.sh` | Backup/Restore your sensitive environment variables |
-
-**Protip:** Use `npx ts-node scripts/FILENAME.ts` to run any TypeScript utility in the `scripts/` folder.
-
----
-
-## 🧪 Testing & Quality
-
-indii maintains a **"Zero-Regression"** policy with multi-layer testing:
-
-```bash
-npm test                   # Vitest in watch mode across all packages
-npm test -- --run          # Vitest once (CI mode)
-npm run test:renderer      # Run tests for a specific workspace package
-npm run test:e2e           # Playwright E2E (60+ specs)
-npm run lint               # ESLint check across all packages
-npm run typecheck          # TypeScript type checking (all packages)
-```
-
-| Layer | Tool | Coverage |
-|-------|------|----------|
-| **Unit** | Vitest (jsdom) | Service logic, store slices, utilities |
-| **E2E** | Playwright | 60+ critical path specs (agent flows, creative persistence, mobile responsiveness) |
-| **Accessibility** | axe-core 4.11 | WCAG 2.1 AA compliance |
-| **Security** | gitleaks | Automated secret scanning in CI |
-| **AI Agent** | Custom stress tests | "The Gauntlet" protocol for agent reliability |
-
-### The Two-Strike Pivot Rule
-
-If a fix fails verification **twice**:
-
-1. **STOP** the current approach
-2. **Re-diagnose** with extensive logging
-3. **Propose** a fundamentally different solution
-4. **Never** pivot to the "easy way out"
-
----
-
-## 🚢 Deployment
-
-### CI/CD Pipeline (GitHub Actions)
-
-```
-Push to main → Lint → Unit Tests → E2E Tests → Build Landing → Build Studio → Deploy to Firebase
-```
-
-| Target | Platform | Hosting |
-|--------|----------|---------|
-| Studio App | Web (SPA) | Firebase Hosting → `dist/` |
-| Landing Page | Web | Firebase Hosting → `packages/landing/dist/` |
-| Desktop (macOS) | Electron | DMG/ZIP distribution |
-| Desktop (Windows) | Electron | NSIS installer |
-| Desktop (Linux) | Electron | AppImage |
-| Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
-
----
-
-## 📂 Project Structure
-
-```
-indii-music-founder/
-├── packages/
-│   ├── renderer/               # Main React application source (indii studio)
-│   ├── main/                   # Electron desktop wrapper
-│   ├── firebase/               # Firebase Cloud Functions (Node.js 22, Gen 2)
-│   ├── shared/                 # Shared types and schemas
-│   ├── landing/                # Separate marketing site (React + Vite)
-│   ├── sdk/                    # SDKs
-│   ├── admin-dashboard/        # Admin dashboard
-│   ├── mcp-server-local/       # Local MCP server
-│   ├── mcp-server-harness/     # Harness MCP server
-│   └── engine-dsp/             # DSP Engine
-├── agents/                 # 20 AI agent definitions (A2A Swarm Protocol)
-├── execution/              # Deterministic scripts for agent tools (Layer 3)
-├── directives/             # AI agent SOPs (Layer 1)
-├── e2e/                    # Playwright E2E tests (60+ spec files)
-├── docs/                   # Documentation (specs, plans, design, testing)
-├── .agent/                 # Agent system configuration and error memory
-├── scripts/                # Build and utility scripts
-├── python/                 # Python scripts
-└── python-functions/       # Experimental Python cloud functions (not the production creative gateway)
-```
-
----
-
-## 📜 Documentation
-
-For deep-dives into specific subsystems:
-
-| Document | Description |
-|----------|-------------|
-| [indii.music Architecture Blueprint](docs/INDII_MUSIC_ARCHITECTURE.md) | 5-API Waterfall and thin client architecture |
-| [Architecture Standard](directives/architecture_standard.md) | 3-layer architecture guidelines |
-| [Agent Stability Protocol](directives/agent_stability.md) | Agent reliability standards |
-| [Proprietary Ingestion Implementation Plan](docs/PROPRIETARY_INGESTION_IMPLEMENTATION_PLAN.md) | Distribution engine specification |
-| [Model Usage Policy](MODEL_POLICY.md) | AI model selection and enforcement |
-| [API Credentials Policy](docs/API_CREDENTIALS_POLICY.md) | Security policy for credential management |
-| [Production Checklist](docs/PRODUCTION_300.md) | 300+ item production readiness audit |
-
----
-
-## 🔄 Recent Updates
-
-### v1.64.2 — Hybrid Local-First Audio Intelligence & Swarm FSM (June 2026)
-
-**15 files changed, +956 / −124 lines** — This release implements the hybrid local-first audio analysis pipeline for the Premium Electron desktop tier and introduces concurrent multi-agent FSM orchestration.
-
-#### 🎵 Hybrid Local-First Audio Analysis
-- **Local Python Analysis Background Engine** — Executes acoustic features extraction (BPM, key, scale, energy, loudness) and YAMNet ONNX semantic tagging locally in background threads, eliminating external API latency and cloud dependencies.
-- **On-Demand YAMNet ONNX Downloader** — Automatically fetches and caches the YAMNet ONNX model from a HuggingFace mirror directly to `~/.cache/indii/yamnet.onnx` on demand, falling back gracefully to rules-based classifications in offline mode.
-- **Secure File Streaming** — Introduces a secure `safe-file://` custom protocol handler in Electron's main process, enabling browser-safe range-request audio streaming directly from the local filesystem without memory growth.
-- **Cheap Text-only Gemini Synthesis** — Optimizes costs by using local acoustic vectors to run lightweight, text-only semantic synthesis prompts on Gemini instead of raw audio/Base64 uploads.
-
-#### 🤖 Swarm FSM & Security Hardening
-- **Multi-Agent Orchestration FSM** — Implements a concurrent multi-agent state machine with toggles and circuit breakers for robust swarm execution.
-- **Defensive Stripe Escrow Guards** — Stabilizes and secures escrow handling routines within the billing services.
-
----
-
-### v1.50.0 — Developer Experience & CI/CD Hardening (April 2026)
-
-**42 commits, 196 files changed, +9,628 / −3,524 lines** — this release is a top-to-bottom engineering quality overhaul.
-
-#### 🛠️ 10/10 Developer Experience Overhaul
-
-The entire development workflow has been rebuilt around a single `Makefile` entry point and automated quality gates:
-
-| Tool | Purpose |
-|------|---------|
-| `Makefile` (15 targets) | `make prime`, `make dev-web`, `make ship` — zero guesswork |
-| `scripts/doctor.sh` | Unified health checker — Node, Python, Git, .env, dep sanity |
-| Husky `pre-push` hook | Gates every push behind `typecheck` + `lint` — broken code stays local |
-| Husky `commit-msg` hook | Enforces Conventional Commits — non-conforming messages are rejected |
-| `.editorconfig` | Consistent formatting across all editors |
-| VS Code settings | Recommended extensions, format-on-save, import sorting |
-| `CONTRIBUTING.md` | Complete contribution guide with branch naming, PR checklist, testing standards |
-| `ONBOARDING.md` | Day-1 engineer onboarding — zero-to-running in 15 minutes |
-| `SCRIPTS_CATALOG.md` | Documented catalog of 20+ automation scripts |
-
-#### 🧪 CI/CD Pipeline Stabilization
-
-The deployment pipeline has been hardened from end to end:
-
-- **Vitest Workspace Migration** — Replaced fragile negative-include globs with an explicit `vitest.workspace.ts` pattern, eliminating stale test discovery
-- **533 test files, 2,952 tests passing** — all unit tests green in CI mode
-- **Deploy pipeline fixes** — Added missing `build:studio` script, corrected `dist/` paths, bumped bundle size threshold to 25MB for Electron builds
-- **Legacy workflow cleanup** — Deleted duplicate `main_deploy.yml` to stop double pipeline triggers
-- **firebase-admin / firebase-functions mocks** — Shared centralized mocks prevent import-time crashes in the test environment
-
-#### 🤖 Autoagent Phase A — Sidecar Harness
-
-Introduced the Conductor autoagent experiment loop — a sidecar harness that profiles prompt performance and generates optimization candidates for the indii Conductor routing prompt.
-
-#### 🖥️ Desktop Auto-Update Channel
-
-Electron now supports a UI toggle for auto-update channels (stable/beta), enabling controlled staged rollouts for desktop releases.
-
-#### 📝 Music Training Dataset Rewrite
-
-Rewrote the music agent training dataset to remove DAW/mixing scenarios and enforce baseline audio intelligence capabilities.
-
-#### 🔒 Repository Sealing
-
-- Added `LICENSE` (Proprietary, © 2026 New Detroit Music LLC)
-- Added `/1percent` workflow — the "Final 1%" sealing protocol for release readiness
-- Bundle size, branch protection, and secret scanning verified
-
----
-
-### v1.49.0 — Production Hardening & TypeScript Strict Mode (March–April 2026)
-
-The codebase now enforces a zero-tolerance `any` ban across all production files.
-
-**28 type casts eliminated** from the Road Manager module, introducing clean typed interfaces:
-
-| Interface | Purpose |
-|-----------|---------|
-| `FuelLogistics` | Fuel cost and stop estimation for tour legs |
-| `NearbyPlace` | Venue discovery result from Google Maps |
-| `LogisticsReport` | Tour logistics summary object |
-
-Chart tooltip handlers in `PlatformBreakdown` and `WaterfallChart` are now strictly typed — no silent `unknown` payloads in the render layer.
-
-A `pre-push` git hook gates every push behind `npm run typecheck` + `npm run lint`. Broken code stays local.
-
-**Memory Inbox** — approve or reject digital handshakes from the Dashboard without leaving your current module.
-
-**Stripe Webhooks** — 10/10 test coverage now exists for all webhook event types (subscription lifecycle, payment events, trial expiry, checkout completion).
-
----
-
-### v0.1.0-beta.2 — March 2026
-
-**TypeScript Type Safety Sweep**
-
-Systematic resolution of `possibly undefined` (TS18048, TS2532, TS2322) errors across the entire codebase — production services and test files alike. This eliminates an entire class of runtime risks where array indexing, `Record` lookups, and dynamic property access were unguarded.
-
-| Category | Files Fixed | Errors Resolved |
-|----------|-------------|-----------------|
-| Service Layer | `SceneExtensionService`, `GrowthPatternService`, `DashboardService`, `ERNMapper`, `ISRCService`, `MasteringService`, `ENSIdentityService` | ~40 |
-| UI Components | `BannerAnimations` (Remotion) | ~17 |
-| Test Files | `VenueScoutService.test`, `AnnotationPalette.test`, `CreativeDaisychain12.test` | ~10 |
-
-Key patterns addressed:
-
-- **Array bounds assertions** — Non-null assertions (`!`) for loop-bounded index access where length is pre-validated
-- **Record lookup narrowing** — Explicit type annotations and nullish coalescing for dynamic `Record<string, T>` access
-- **Tuple destructuring** — `as const` and tuple-typed assertions for fixed-length array destructuring
-- **Snapshot empty checks** — Non-null assertions after Firestore `snapshot.empty` guards
-
-**Workflow Lab — Full Node Execution**
-
-The `WorkflowEngine` now executes every node type with real service calls:
-
-| Node | Handler |
-|------|---------|
-| Art Department | `ImageGenerationService.generateImages()` |
-| Video Department | `VideoGenerationService.generateVideo()` — text-to-video, image-to-video (`img2vid`), and extend-video jobs |
-| Marketing Department | Gemini AI copywriting (multimodal: text or image input) |
-| Social Media Department | AI caption generation → `SocialService.createPost()` as a DRAFT |
-| Campaign Manager | Gemini strategy generation |
-| Knowledge Base | Agentic RAG workflow |
-| Router (Logic) | Evaluates a `$data`-interpolated condition and routes the `true`/`false` edge |
-| Gatekeeper (Logic) | Pauses execution at `WAITING_FOR_APPROVAL`; the UI calls `engine.resolveGatekeeper(nodeId, approved)` to resume. Auto-rejects after 5 minutes to prevent hung workflows |
-| Variables set/get | Shared blackboard `Map` — store named values and retrieve them in downstream nodes |
-
-**Legal Module — Persistent Analysis History**
-
-- `LegalService.saveAnalysis()` / `getAnalyses()` added — contract analyses are now stored in Firestore under `users/{uid}/contract_analyses`.
-- `LegalDashboard` loads the 20 most recent analyses on mount, so the history panel is populated immediately instead of being blank on every page load.
-- Persistence is fire-and-forget — failures are logged as warnings and never surface to the user.
-
-**Remote Relay Hardening & Telegram Bot Adapter**
-
-- **Infrastructure Hardening:** Audited and corrected all GCS storage bucket references across 7+ files to point to the production `indii-alpha-electron` bucket, eliminating CI/CD deployment conflicts. Re-enabled and successfully deployed all 8 previously disabled Cloud Function exports (resolving Gen 1/Gen 2 conflicts).
-- **Multi-Channel Architecture (Phase 2):** Designed and deployed a robust HTTPS webhook adapter for the Telegram Bot API (`telegramWebhook`), bridging external messages directly into the existing Firestore `remote-relay-commands` pipeline.
-- **Secret Management:** Integrated `TELEGRAM_BOT_TOKEN` securely via GCP Secret Manager with Cloud Functions IAM bindings, ensuring no secrets are exposed in the codebase.
-
----
-
-### v0.1.0-beta.3 — April 2026
-
-**Indii Growth Protocol & PLP: The Three Pillars**
-
-PLP (Promote · Launch · Push) is the operational backbone of indii — a unified three-pillar system that orchestrates every release from creative testing through global scaling. [Learn more](docs/PLP_THREE_PILLARS.md).
-
-- **PROMOTE**: Design, test, and optimize 15-variant creative assets (10 images, 5 videos via Veo 3.1) across Meta networks (Instagram Stories/Reels/Feed) with autonomous A/B testing and cost-per-save optimization.
-- **LAUNCH**: Execute metadata-optimized, DSP-ready release coordination across Spotify, Apple Music, Amazon Music with full DDEX compliance, ISRC generation, and smart contract splits.
-- **PUSH**: Scale post-release momentum through 28-day front-loaded budget allocation, Saver Lookalike audiences, and autonomous playlist curator outreach driven by stream velocity analytics.
-
-- **Creative Studio Integration**: 15-variant batch generation with real-time performance tracking, kill-switch automation (CPS < 5%), and audience evolution.
-- **Automated Deployment**: PLP directly interfaces with `AdAutomationService` for seamless variant deployment to Meta networks for algorithmic A/B testing.
-- **Dashboard Observability**: Real-time viral scoring, stream velocity trends, and CPS Kill-Switch status indicators across all three pillars integrated into the Analytics module.
-
-**Command Bar Enhancements (UI/UX)**
-
-- **Slash Commands**: `/deploy-plp` (activate full workflow), `/promote-status` (check variant health), `/launch-readiness` (DSP metadata validation), `/push-analytics` (stream velocity & growth metrics).
-- **Accessibility**: 100% WCAG 2.1 AA compliance achieved on dynamic UI elements and Delegate Menus, verified by automated `jest-axe` tests.
-
-**Indii Conductor (Agentic Harness) Hardening**
-
-- **Persistent Worflows (`WorkflowStateService`)**: Replaced in-memory orchestration with Firestore-backed execution tracks (`users/{userId}/workflowExecutions`). Multi-agent workflows are now fully resumable across session reloads and crash-resistant.
-- **Risk-Aware Tool Governance (`ToolRiskRegistry`)**: Migrated boolean `isDestructive` checks to a centralized 3-tier framework (`read`, `write`, `destructive`). Secure digital handshakes automatically enforce appropriate user-approval gates based on tool severity, providing safety for 103+ autonomous capabilities.
-
-## ⚖️ License
-
-Proprietary. © 2026 New Detroit Music LLC. All Rights Reserved.
-
-<div align="center">
-  <sub>Built by Artists, for Artists. Powered by High-Intelligence.</sub>
-</div>
+Copyright 2024–2026 New Detroit Music LLC. Proprietary software. See `LICENSE`.
