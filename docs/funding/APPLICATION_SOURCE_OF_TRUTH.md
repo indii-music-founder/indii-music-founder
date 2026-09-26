@@ -77,6 +77,14 @@ Repository scale snapshot on 2026-09-26: approximately 3,605 TypeScript/TSX file
 
 This is an important technical-founder fact: the founder did not merely prompt AI to write code; he designed the operating process that governs how AI development work is accepted.
 
+## Internal operations / founder surface
+
+The founder/internal version of indii.music is also used to operate indii.music itself. The mobile Boardroom can send conversational requests through the remote relay to the desktop Studio, so the founder or authorized employees can ask about current capabilities, trigger business workflows, create content, coordinate campaign work, and inspect operational state from the same product they are building for artists.
+
+The error model intentionally differs by audience: founder/internal users may see raw technical diagnostics needed to fix the system, while subscriber-facing flows can file a durable error report and return a reference ID without exposing internal technical detail.
+
+This is useful evidence of dogfooding and product depth, but status answers must remain evidence-bound. A chat response may not claim a report was pushed, a system is production-ready, or a capability is live unless an actual tool/action or current runtime evidence proves it.
+
 ## TypeSafe / JEV
 
 JEV System One is integrated as a typed semantic judgment layer.
