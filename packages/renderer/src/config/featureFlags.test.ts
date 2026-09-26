@@ -55,7 +55,12 @@ describe('FeatureFlagService', () => {
 
         it('defines PROJECT_CANVAS flag name and default', () => {
             expect(FEATURE_FLAG_NAMES.PROJECT_CANVAS).toBe('enable_project_canvas');
-            expect(typeof featureFlags.isEnabled(FEATURE_FLAG_NAMES.PROJECT_CANVAS)).toBe('boolean');
+            // ISSUE-1445 regression lock: Project Canvas is a shipped feature —
+            // the flag defaults ON (opt-out via VITE_ENABLE_PROJECT_CANVAS=false).
+            // The 01a72211a gate wiring + dev-only default removed it from
+            // production once already; this assertion fails loudly if the
+            // default is ever flipped back.
+            expect(featureFlags.isEnabled(FEATURE_FLAG_NAMES.PROJECT_CANVAS)).toBe(true);
         });
 
         it('returns false for unknown flags', () => {
