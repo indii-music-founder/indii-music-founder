@@ -14,6 +14,7 @@ Production creative image generation is routed through the TypeScript Firebase g
 |----------|-------------|
 | [APP_OVERVIEW.md](./APP_OVERVIEW.md) | Product surfaces, repository structure, extension guide |
 | [AGENT_SYSTEM_ARCHITECTURE.md](./AGENT_SYSTEM_ARCHITECTURE.md) | Swarm protocol, foundational skills, tool calling |
+| [TYPESAFE_JEV_SYSTEM_ONE_GUIDE.md](./architecture/TYPESAFE_JEV_SYSTEM_ONE_GUIDE.md) | TypeSafe Jev System One registry, triggers, and Judgment 72 implementation guide |
 | [CAPABILITY_DEPLOYMENT.md](../brain/8b951874-3f4c-4ba3-a1cc-952202c6f4a6/CAPABILITY_DEPLOYMENT.md) | Autonomous agent seeding and capability registry |
 | [BACKEND_ARCHITECTURE.md](./BACKEND_ARCHITECTURE.md) | Firebase Functions, Vertex AI, hybrid architecture |
 
