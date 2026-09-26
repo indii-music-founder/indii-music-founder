@@ -35,6 +35,9 @@
 10. **WORK_HANDOFF_2026-09-26.md**  
    Current browser-execution order, deadlines, program-specific positioning, and unresolved facts.
 
+11. **WORK_START_PROMPT.md**  
+   Ready-to-use Work/browser instruction that loads the canonical evidence, starts with the live PearX application, and prevents the founder interview from being repeated.
+
 ## Related current diligence files
 
 - ../data-room/09_FINANCIALS_REVENUE_SUMMARY.md
