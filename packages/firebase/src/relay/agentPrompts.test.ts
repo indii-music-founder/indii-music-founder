@@ -15,9 +15,13 @@ describe('getAgentPrompt — judgment layer execution contract', () => {
         expect(prompt).toContain('ZERO TOLERANCE FOR FABRICATING ENGINEERING ROADMAPS');
     });
 
-    it('generalist conductor prompt affirms all 23 departments and zero roadmap fabrication', () => {
+    it('generalist conductor prompt requires evidence-bound status without a hard-coded department count', () => {
         const { prompt } = getAgentPrompt('generalist');
-        expect(prompt).toContain('across all 23 departments');
+        expect(prompt).toContain('registered specialist departments');
+        expect(prompt).toContain('current registry/runtime evidence');
         expect(prompt).toContain('Capability & Status Grounding (Zero Hallucination)');
+        expect(prompt).toContain('configured, implemented, tested, live-verified, degraded, blocked, and unverified');
+        expect(prompt).not.toContain('across all 23 departments');
+        expect(prompt).not.toContain('All 23 departments are fully implemented');
     });
 });
