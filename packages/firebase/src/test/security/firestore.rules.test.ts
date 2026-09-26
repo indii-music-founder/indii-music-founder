@@ -658,6 +658,90 @@ describe('Firestore Security Rules', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────
+    // 2c. AGENT ERROR REPORTS — owner-filed, owner/admin-readable (ISSUE-1446)
+    //
+    // The subscriber-facing error path: any verified user may file a report
+    // pinned to their own uid; they read their own; admins read all for
+    // triage; no client updates or deletes (immutable once filed).
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('errorReports/{reportId} (ISSUE-1446)', () => {
+        const reportData = {
+            reportId: 'er_test_1',
+            userId: ALICE_UID,
+            agentId: 'generalist',
+            summary: 'Finalizing an asset failed',
+            detail: 'raw technical detail for the fix team',
+            surface: 'creative director chat',
+            status: 'open',
+            createdAt: Date.now(),
+        };
+
+        it('owner: file report allowed (userId pinned to caller)', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(setDoc(doc(db, 'errorReports', 'er_test_1'), reportData));
+        });
+
+        it('owner: read own report allowed', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'errorReports', 'er_test_1'), reportData);
+            });
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'errorReports', 'er_test_1')));
+        });
+
+        it('other user: read denied', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'errorReports', 'er_test_1'), reportData);
+            });
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(db, 'errorReports', 'er_test_1')));
+        });
+
+        it('create with mismatched userId denied (cannot file as someone else)', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(setDoc(doc(db, 'errorReports', 'er_bob_spoof'), {
+                ...reportData,
+                reportId: 'er_bob_spoof',
+                userId: ALICE_UID,
+            }));
+        });
+
+        it('unauthenticated: create denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(setDoc(doc(db, 'errorReports', 'er_anon_1'), {
+                ...reportData,
+                reportId: 'er_anon_1',
+                userId: ANON_UID,
+            }));
+        });
+
+        it('update denied (reports are immutable once filed)', async () => {
+            if (requireEmulator()) return;
+            const adminDb = verifiedCtx(ALICE_UID).firestore();
+            await setDoc(doc(adminDb, 'errorReports', 'er_test_1'), reportData);
+            await assertFails(updateDoc(doc(adminDb, 'errorReports', 'er_test_1'), { status: 'closed' }));
+        });
+
+        it('admin: read any report allowed (triage)', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            await setDoc(doc(aliceDb, 'errorReports', 'er_test_1'), reportData);
+            const adminCtx = testEnv.authenticatedContext('admin-uid-001', {
+                admin: true,
+                firebase: { sign_in_provider: 'password' },
+            } as const);
+            const adminDb = adminCtx.firestore();
+            await assertSucceeds(getDoc(doc(adminDb, 'errorReports', 'er_test_1')));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
     // 2b. VIDEO PROJECTS — owner-namespaced (ISSUE-1197)
     //
     // Regression: the timeline document used to live at top-level

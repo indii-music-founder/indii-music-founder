@@ -259,6 +259,18 @@ export class BaseAgent implements SpecializedAgent {
                     limit: typeof args.limit === 'number' ? args.limit : undefined,
                 });
             },
+            // Subscriber-facing error reports (ISSUE-1446): raw diagnostics are
+            // founder-only in chat, but every user can file a report with a
+            // short reference ID. Detail stays in the report document.
+            report_error: async (args: Record<string, unknown>) => {
+                const { ErrorReportTools } = await importWithRetry(() => import('./tools/ErrorReportTools'));
+                return await ErrorReportTools.report_error({
+                    agentId: this.id,
+                    summary: typeof args.summary === 'string' ? args.summary : '',
+                    detail: typeof args.detail === 'string' ? args.detail : undefined,
+                    surface: typeof args.surface === 'string' ? args.surface : undefined,
+                });
+            },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             delegate_task: async ({ targetAgentId, task }: DelegateTaskArgs, context, _toolContext?: ToolExecutionContext) => {
                 // Phase 2: Check for delegation loops

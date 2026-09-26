@@ -2486,6 +2486,19 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Agent Error Reports (ISSUE-1446) — the subscriber-facing error path.
+    // Any signed-in user may file a report about their OWN failures (their
+    // uid is pinned as userId); they can read their own reports; admins can
+    // read all for triage. Reports are immutable once filed — no client can
+    // rewrite status/evidence after the fact (triage happens server-side).
+    // =========================================================================
+    match /errorReports/{reportId} {
+      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
+      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || isAdmin();
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
     // Boardroom & Session Synced Messages
     // =========================================================================
     match /sessions/{sessionId} {

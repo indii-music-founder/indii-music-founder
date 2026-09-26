@@ -37,13 +37,33 @@ const ZERO_WIDTH_REGEX = /\u{200B}|\u{200C}|\u{200D}|\u{200E}|\u{200F}|\u{FEFF}|
 export type AgentAmbition = 'focused' | 'balanced' | 'ideas';
 
 /**
+ * Audience controls for the execution contract.
+ * `founderDiagnostics` — the operator (founder) reads raw technical
+ * diagnostics by design; subscribers get plain-language failures plus an
+ * error-report path instead.
+ */
+export interface ExecutionContractOptions {
+    founderDiagnostics?: boolean;
+}
+
+/**
+ * Founder detection for prompt assembly — mirrors useIsFounderTier
+ * semantics (explicit flag wins; 'founder' subscription tier qualifies).
+ */
+export function isFounderUserProfile(
+    profile: { isFounder?: boolean; subscriptionTier?: string; tier?: string } | undefined
+): boolean {
+    return profile?.isFounder === true || profile?.subscriptionTier === 'founder';
+}
+
+/**
  * EXECUTION CONTRACT — shared behavioral constraints injected into EVERY agent prompt.
  * The judgment layer: scope discipline, definition-of-done, verbosity, and the user's
  * ambition dial (how many unsolicited ideas an agent may offer, never execute).
  * SYNC NOTE: a condensed copy lives in packages/firebase/src/relay/agentPrompts.ts
  * (EXECUTION_CONTRACT). Update both when changing behavior rules.
  */
-export function buildExecutionContract(ambition: AgentAmbition = 'balanced'): string {
+export function buildExecutionContract(ambition: AgentAmbition = 'balanced', options: ExecutionContractOptions = {}): string {
     const ideaRules: Record<AgentAmbition, string> = {
         focused: `- Do NOT offer suggestions or extra ideas. Deliver the task, then stop.`,
         balanced: `- If you spot valuable extra work, DO NOT do it. After your answer, offer at most 2 ideas in ONE short conversational line in your own voice (e.g. "If you want, I could also X or Y — say the word; otherwise they stay parked."). Never execute an offered idea unless the user asks.`,
@@ -70,8 +90,14 @@ ${ideaRules[ambition]}
    - All 23 departments (Finance, Legal, Distribution, Marketing, Brand, Music, Video, Social, Publicist, Publishing, Licensing, Road, Hospitality, Event Planning, Merchandise, Creative, Producer, Director, Screenwriter, DevOps, Security, Curriculum, Keeper) are fully implemented and operational with their specialized tool suites deployed in production.
    - Any status assessment, audit, verdict, risk level, or capability statement MUST adhere strictly to verified runtime state. If asked about status or audit, never invent narrative drama, fictional deficits, or bureaucratic roadmaps.
    - If you do not have a tool to perform an action directly, state what you can do or route to the qualified specialist; NEVER roleplay that an engineering team is building it or that you are waiting for a release.
-   - TOOL-FAILURE HONESTY: When a tool call fails, quote the raw error message verbatim and state plainly that the action did not complete. Never reframe a failed action as done, and never invent follow-up processes (escalations, tickets, pipelines, team handoffs, notifications) that no tool actually performed.
-   - NO PHANTOM ESCALATIONS: You may claim an escalation, handoff, or notification happened only if a real tool call executed it in this conversation and returned evidence of it. If no such tool exists or it failed, say exactly that — silence about internal plumbing is always better than a fabricated process story.
+${
+   options.founderDiagnostics
+? `   - FOUNDER DIAGNOSTICS MODE: You are speaking with the platform founder, who reads raw diagnostics by design. When a tool call fails, quote the raw error message verbatim and state plainly that the action did not complete. Never reframe a failed action as done.
+   - NO PHANTOM ESCALATIONS: You may claim an escalation, handoff, or notification happened only if a real tool call executed it in this conversation and returned evidence of it. If no such tool exists or it failed, say exactly that — silence about internal plumbing is always better than a fabricated process story.`
+: `   - SUBSCRIBER ERROR ETIQUETTE: When a tool call fails, tell the user plainly that the action did not complete, with a one-sentence plain-language reason. NEVER paste raw error text, error codes, stack traces, database paths, or internal service names into the chat — use that technical detail only internally, to retry, adjust, or route the task.
+   - NO PHANTOM ESCALATIONS: You may claim an escalation, handoff, or notification happened only if a real tool call executed it in this conversation and returned evidence of it. If none did, say exactly that.
+   - ERROR REPORTS: If a failure persists after one retry, offer to report it. When the user agrees (or when the failure blocks their request), call report_error with a one-sentence plain-language summary; put the raw technical detail in the report's detail field (the fix team sees it, the user does not) and give the user the short report ID.`
+}
 `;
 }
 
@@ -309,8 +335,12 @@ export class AgentPromptBuilder {
         const temporalContext = this.buildTemporalContext(context);
         const spatialContext = this.buildSpatialContext(context);
 
-        // Judgment layer: scope/stop/verbosity contract, calibrated by the user's ambition dial
-        const executionContract = buildExecutionContract(context?.ambitionLevel);
+        // Judgment layer: scope/stop/verbosity contract, calibrated by the user's ambition dial.
+        // Audience layer: raw technical diagnostics are founder-only (ISSUE-1446);
+        // subscribers get plain-language failures plus the report_error path.
+        const executionContract = buildExecutionContract(context?.ambitionLevel, {
+            founderDiagnostics: isFounderUserProfile(context?.userProfile),
+        });
 
         return cleanPrompt(`
 # MISSION

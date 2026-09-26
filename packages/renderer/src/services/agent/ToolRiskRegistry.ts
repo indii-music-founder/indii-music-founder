@@ -32,6 +32,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     list_notes: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     save_note: { riskTier: 'write', permissionTier: 'builtin', requiresApproval: false, description: 'Appends a note to the creator\'s own Notes module' },
     save_media_note: { riskTier: 'write', permissionTier: 'builtin', requiresApproval: false, description: 'Attaches stored media to a note in the creator\'s Notes module' },
+    report_error: { riskTier: 'write', permissionTier: 'builtin', requiresApproval: false, description: 'Files an error report in the creator\'s own errorReports scope (owner-created, owner-readable)' },
     search_knowledge: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     get_organization_details: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     get_studio_assets: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
