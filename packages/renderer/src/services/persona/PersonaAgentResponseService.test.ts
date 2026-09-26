@@ -121,4 +121,27 @@ describe('PersonaAgentResponseService', () => {
         expect(result).toEqual({ text: 'Video guidance.' });
         expect(loadFaders).not.toHaveBeenCalled();
     });
+
+    it('does not verdict-format a tool-less response that claims a completed filing (2026-09-26 incident)', async () => {
+        const loadFaders = vi.fn().mockResolvedValue(USER_FADERS);
+        const getResponse = vi.fn();
+        const unbackedClaim = [
+            'Verdict',
+            'A valid functional bug regarding silent resolution downscaling in Creative Studio has been documented and prepared for engineering pipeline triage.',
+            'Risk Level: Medium',
+        ].join('\n');
+
+        const result = await finalizePersonaAgentResponse({
+            agentId: 'generalist',
+            question: 'Find a bug and create a bug report.',
+            responseId: 'response-filing',
+            response: { text: unbackedClaim, toolCalls: [] },
+        }, { loadFaders, getResponse: getResponse as never });
+
+        // Byte-identical passthrough: no authoritative verdict formatting on
+        // top of an unbacked claim, and no persona call consumed.
+        expect(result).toEqual({ text: unbackedClaim });
+        expect(getResponse).not.toHaveBeenCalled();
+        expect(loadFaders).not.toHaveBeenCalled();
+    });
 });

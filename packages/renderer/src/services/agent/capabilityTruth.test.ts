@@ -5,6 +5,7 @@ import {
     buildCapabilitySummary,
     buildDepartmentAuditReport,
     detectCapabilityOverclaim,
+    detectUnbackedFilingClaim,
     detectUngroundedEngineeringHallucination,
     getCapabilityHealth,
     isCapabilityQuestion,
@@ -328,6 +329,34 @@ describe('Boardroom capability truthfulness', () => {
             const sanitized = sanitizeAgentCapabilityOutput(overclaiming);
             expect(sanitized).toContain('cannot truthfully certify every department');
             expect(sanitized).not.toContain('fully implemented, verified, and operational');
+        });
+
+        it('detectUnbackedFilingClaim catches the incident phrasing and near variants', () => {
+            const claims = [
+                'A valid functional bug regarding silent resolution downscaling has been documented and prepared for engineering pipeline triage.',
+                'The report was filed and logged for the engineering team.',
+                'Your bug has been routed directly to the internal project tracking system.',
+                'The issue has been documented in the tracking system.',
+                'This defect was submitted to the engineering pipeline for triage.',
+            ];
+            for (const text of claims) {
+                const result = detectUnbackedFilingClaim(text);
+                expect(result.hasUnbackedClaim, text).toBe(true);
+                expect(result.snippet, text).toBeTruthy();
+            }
+        });
+
+        it('detectUnbackedFilingClaim ignores offers, questions, and grounded confirmations', () => {
+            const safe = [
+                'Would you like me to file a bug report about this?',
+                'I can file a bug report if you agree — it takes one second.',
+                'Bug report created: "Image generation timeout" (major). Saved to your bug tracker. https://github.com/indii-music-founder/indii-music-founder/issues/319',
+                'No report was filed — the pipeline was unreachable, so your bug did not save.',
+                'Here is the campaign brief for your upcoming single release.',
+            ];
+            for (const text of safe) {
+                expect(detectUnbackedFilingClaim(text).hasUnbackedClaim, text).toBe(false);
+            }
         });
     });
 });

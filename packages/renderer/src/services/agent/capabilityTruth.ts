@@ -347,6 +347,48 @@ export function detectCapabilityOverclaim(text: string): CapabilityOverclaimResu
     return { hasOverclaim: false };
 }
 
+// ---------------------------------------------------------------------------
+// Unbacked filing-claim detection (2026-09-26 incident): a tool-less response
+// claimed a bug report was "documented and prepared for engineering pipeline
+// triage" while zero durable writes existed anywhere. These patterns match
+// completed-filing phrasing so presentation layers can refuse to add
+// authoritative formatting to an unverified claim. Best-effort heuristic —
+// the real enforcement is the prompt contract (report_bug must execute) and
+// the tool's durability gate.
+// ---------------------------------------------------------------------------
+
+export interface UnbackedFilingClaimResult {
+    hasUnbackedClaim: boolean;
+    matchedPattern?: string;
+    snippet?: string;
+}
+
+const UNBACKED_FILING_PATTERNS: RegExp[] = [
+    /\b(?:has\s+been|were|was|is)\s+(?:successfully\s+)?(?:documented|filed|logged|recorded|submitted|registered)\b[^.?!]{0,60}\b(?:for|in|to|with)\b[^.?!]{0,40}\b(?:triage|engineering|tracker|tracking|issue|pipeline|system|team)\b/i,
+    /\b(?:documented|filed|logged|recorded|submitted)\b[^.?!]{0,40}\b(?:and|then)\b[^.?!]{0,40}\bprepared\s+for\b/i,
+    /\bprepared\s+for\s+(?:engineering\s+)?(?:pipeline\s+)?triage\b/i,
+    /\brouted?\s+(?:directly\s+)?(?:to|into)\s+(?:the\s+)?(?:internal\s+)?(?:project\s+|issue\s+|bug\s+|ticket\s+)?(?:tracking\s+system|tracker|issue\s+tracker)\b/i,
+    /\b(?:bug\s+report|issue|ticket|defect)\b[^.?!]{0,40}\bhas\s+been\s+(?:documented|created|filed|logged)\b/i,
+];
+
+export function detectUnbackedFilingClaim(text: string): UnbackedFilingClaimResult {
+    if (!text || typeof text !== 'string') {
+        return { hasUnbackedClaim: false };
+    }
+    for (const pattern of UNBACKED_FILING_PATTERNS) {
+        pattern.lastIndex = 0;
+        const match = pattern.exec(text);
+        if (match) {
+            return {
+                hasUnbackedClaim: true,
+                matchedPattern: pattern.source,
+                snippet: match[0],
+            };
+        }
+    }
+    return { hasUnbackedClaim: false };
+}
+
 export function sanitizeAgentCapabilityOutput(output: string): string {
     const detection = detectUngroundedEngineeringHallucination(output);
     if (!detection.hasHallucination && !detectCapabilityOverclaim(output).hasOverclaim) {
