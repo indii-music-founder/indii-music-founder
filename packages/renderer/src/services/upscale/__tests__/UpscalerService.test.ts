@@ -8,14 +8,13 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import {
-    UpscaleUnavailableError,
     UpscalerService,
     type UpscaleBridge,
     type UpscaleModel,
 } from '../UpscalerService';
 
 function makeBridge(overrides: Partial<UpscaleBridge> = {}): UpscaleBridge & { runMock: ReturnType<typeof vi.fn> } {
-    const runMock = vi.fn(async (req: { requestId: string; dataUrl: string; scale: 2 | 4; model?: string }) => ({
+    const runMock = vi.fn(async (_req: { requestId: string; dataUrl: string; scale: 2 | 4; model?: string }) => ({
         outputDataUrl: 'data:image/png;base64,Tk9UQVJFQUxJTUFHUQ==',
         durationMs: 1234,
     }));
@@ -88,7 +87,7 @@ describe('UpscalerService — routing and fallback (structural)', () => {
         const svc = new UpscalerService();
         const listeners: ((p: { requestId: string; fraction: number }) => void)[] = [];
         let capturedReqId = '';
-        let bridge = makeBridge({
+        const bridge = makeBridge({
             onProgress: vi.fn((cb: (p: { requestId: string; fraction: number }) => void) => {
                 listeners.push(cb);
                 return () => {};

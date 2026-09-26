@@ -77,13 +77,9 @@ export const registerUpscaleHandlers = (): void => {
     });
 
     ipcMain.handle('upscale:probe', async (event) => {
-        try {
-            validateSender(event);
-            const { enginePath } = await ensureEngine();
-            return await probeEngine({ engine: enginePath });
-        } catch (error) {
-            throw error;
-        }
+        validateSender(event);
+        const { enginePath } = await ensureEngine();
+        return probeEngine({ engine: enginePath });
     });
 
     ipcMain.handle('upscale:run', async (event, raw: unknown) => {
@@ -123,8 +119,6 @@ export const registerUpscaleHandlers = (): void => {
                 outputDataUrl: encodeDataUrl(outputBytes, ext),
                 durationMs: outcome.durationMs,
             };
-        } catch (error) {
-            throw error;
         } finally {
             if (scratch) await rm(scratch, { recursive: true, force: true }).catch(() => {});
         }
