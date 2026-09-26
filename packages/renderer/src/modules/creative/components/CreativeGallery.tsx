@@ -473,6 +473,33 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                             e.stopPropagation();
                                                             setShowSendMenu(false);
                                                             try {
+                                                                const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                                                                const resolved = await resolveStorageUrl(item.url);
+                                                                const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+                                                                    const img = new Image();
+                                                                    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+                                                                    img.onerror = () => reject(new Error('image load failed'));
+                                                                    img.src = resolved;
+                                                                });
+                                                                const { PrintSpecDialog } = await import('@/components/ui/PrintSpecDialog');
+                                                                const plan = await PrintSpecDialog.call({ srcWidth: dims.w, srcHeight: dims.h });
+                                                                if (plan) {
+                                                                    toast.info(`Print plan: ${plan.summary}`);
+                                                                }
+                                                            } catch {
+                                                                toast.error("Print size check failed.");
+                                                            }
+                                                        }}
+                                                        data-testid="send-to-print-check"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-teal-600/20 hover:text-teal-300 transition-colors"
+                                                    >
+                                                        <span>→ Print Size Check</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            setShowSendMenu(false);
+                                                            try {
                                                                 const { exportMasterAsset, downloadAsZip } = await import('@/services/export/AssetExporter');
                                                                 const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
                                                                 const resolved = await resolveStorageUrl(item.url);
