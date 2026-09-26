@@ -252,6 +252,9 @@ export { onAnalysisReceiptComplete } from './functions/audit/triggers';
 // Post-Mastering Administrative Engine (P4) — autonomous master upload trigger
 export { onMasterUploaded } from './functions/audit/onMasterUploaded';
 
+// Post-Mastering Administrative Engine — weekly continuous-audit sweep (Pillar 1)
+export { catalogAdminSweep } from './functions/audit/catalogAdminSweep';
+
 // Post-Mastering Administrative Engine (P5) — public semantic catalog JSON-LD API
 export { catalogSemanticApi } from './functions/catalog/semanticProjection';
 
