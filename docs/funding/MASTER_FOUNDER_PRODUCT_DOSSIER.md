@@ -445,6 +445,82 @@ Founder mode intentionally exposes richer operational truth than a normal subscr
 
 This is a meaningful product differentiator because the company is continuously dogfooding the operating architecture.
 
+## 10.1 Restricted founder/admin operations console
+
+**VERIFIED:** indii has a separate standalone internal admin console in addition to the artist-facing product.
+
+The current console is deliberately restricted to company accounts. Repository code shows:
+
+- email-link Firebase authentication;
+- only `@indii.music` accounts accepted by the frontend;
+- server-side Firebase ID-token verification on protected data routes;
+- no password or mock-token bypass;
+- real-data-only empty/error states rather than invented dashboard metrics.
+
+The current admin navigation includes:
+
+- **Token Usage** — per-user model/token/cost telemetry;
+- **AI Providers** — provider participation/operational telemetry without storing prompts or response bodies in the dashboard feed;
+- **Founders Portal** — activated Founding Owners plus the Founding Artist waitlist lifecycle;
+- **Inbox & Messaging** — internal business communications;
+- **Google Workspace Hub** — connected Gmail/Calendar/Drive operations;
+- **DDEX Deliveries** — delivery records/status;
+- **Nexus System Monitor** — infrastructure/system-event visibility;
+- **Access Log** — administrative access history.
+
+The Founders Portal also contains operational controls for the verified beta queue, invitation sequencing, milestone communications, CRM history, notes, and direct outreach.
+
+This internal console should not be confused with the customer-facing **Founding Owner License**. The console is an employee/founder operating surface; the Founding Owner program is a product-access tier for external customers.
+
+The founder described the login from memory as receiving a code by email. **Current repository implementation uses an emailed magic link rather than a numeric code.** Use the current implementation in diligence/application descriptions unless deployment evidence proves a newer flow.
+
+## 10.2 Public landing, education, and acquisition surface
+
+**VERIFIED:** the public landing package is a substantial product-education and acquisition surface, not a placeholder marketing page.
+
+Current sections include:
+
+- the core ownership/independence hero;
+- verified-email Founding Artist waitlist;
+- Detroit/company story;
+- the indii thesis;
+- traditional/legacy comparison material;
+- capability/product demonstrations;
+- an **“overlooked work”** section covering business tasks artists may not initially realize belong in their operating system;
+- Connected Intelligence / Conductor explanation;
+- guided onboarding;
+- Founding Owner access;
+- beta pricing/term options.
+
+Examples of currently surfaced “overlooked work” include:
+
+- mileage/business-trip logging;
+- venue research, day sheets, and technical-rider preparation;
+- turning long-form video into separate social edits;
+- moving artwork into merchandise/print-on-demand preparation.
+
+The landing application also supports founder-specific routing/preview behavior while keeping public preview access closed by default unless explicitly enabled.
+
+This surface matters to fundraising because it demonstrates that product positioning, customer education, waitlist capture, onboarding expectations, and pricing are already being designed as one connected commercial system.
+
+## 10.3 Continuous limitation-to-capability development loop
+
+The founder's daily product-development loop is broader than conventional bug fixing.
+
+The recurring pattern is:
+
+**use indii in real work → expose a bug, limitation, missing connection, or missing tool → classify the gap → move the evidence into engineering → implement or connect the missing capability → test/CI/review → return to the product and retest**
+
+The Road Manager screenshots are a good example. The domain workspace, records, route draft, map surface, specialist agent, and structured report already exist. The remaining failure is not necessarily a defect in those surfaces; it is incomplete live service wiring for certain routing/map operations.
+
+The same pattern applies elsewhere:
+
+- when the product exposes a true bug, the repair/report loop handles it;
+- when an agent lacks a capability the product genuinely needs, the founder can define the missing bounded tool/service;
+- when a workflow exists but an external integration is not connected, the remaining work is classified as integration completion rather than pretending the feature is absent or fully finished.
+
+This is the practical expression of the workshop architecture described later in this dossier: the founder is increasingly extending the system by adding bounded capabilities into an existing harness rather than rebuilding the application around each new need.
+
 ---
 
 # 11. Case study: Road Manager — implemented surface, incomplete integration
