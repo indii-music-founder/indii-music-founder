@@ -131,6 +131,8 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
 
     // State
     const [productAsset, setProductAsset] = useState<string | null>(initialAsset);
+    const [isUpscalingAsset, setIsUpscalingAsset] = useState(false);
+    const [assetUpscaledNote, setAssetUpscaledNote] = useState<string | null>(null);
 
     // Sync state with prop if it changes from outside
     useEffect(() => {
@@ -219,6 +221,31 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
 
     // Get current placement options based on product type
     const currentPlacements = placementOptions[productType] || placementOptions['t-shirt'] || [];
+
+    // AI Upscale the design asset in place (ISSUE-326): mockups and prints
+    // automatically consume the higher-resolution source afterwards.
+    const handleUpscaleAsset = async (scale: 2 | 4) => {
+        if (!productAsset || isUpscalingAsset) return;
+        setIsUpscalingAsset(true);
+        try {
+            const { upscalerService } = await import('@/services/upscale/UpscalerService');
+            const outcome = await upscalerService.upscale({ dataUrl: productAsset, scale });
+            setProductAsset(outcome.outputDataUrl);
+            setAssetUpscaledNote(`${scale}× · ${outcome.model.replace('realesrgan-', '')}`);
+            toast.success(`Design upscaled ${scale}× — mockups will use the sharper source.`);
+        } catch (err) {
+            const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
+            if (err instanceof UpscaleUnavailableError) {
+                if (err.reason === 'gpu-not-ready') toast.error('Local engine cannot run on this machine (no usable GPU/Vulkan).');
+                else if (err.reason === 'no-electron') toast.info('Local upscaling runs in the indii desktop app.');
+                else toast.error(`Engine setup failed: ${err.message}`);
+            } else {
+                toast.error('Asset upscale failed.');
+            }
+        } finally {
+            setIsUpscalingAsset(false);
+        }
+    };
 
     // Handlers
     const handleAssetUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -585,7 +612,28 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         {productAsset ? (
                             <>
                                 <img src={productAsset} alt="Asset" className="w-full h-full object-contain p-4" />
-                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between gap-2">
+                                    <div className="flex gap-1.5">
+                                        {[2, 4].map((s) => (
+                                            <button
+                                                key={s}
+                                                onClick={(e) => { e.stopPropagation(); void handleUpscaleAsset(s as 2 | 4); }}
+                                                disabled={isUpscalingAsset}
+                                                data-testid={`merch-upscale-${s}x`}
+                                                className="px-2 py-1 rounded-md bg-black/70 border border-cyan-500/40 text-[10px] font-bold text-cyan-300 hover:bg-cyan-600/30 transition-colors disabled:opacity-50"
+                                                title={`AI upscale the design ${s}× before generating mockups`}
+                                            >
+                                                {isUpscalingAsset ? '…' : `AI Upscale ${s}×`}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {assetUpscaledNote && (
+                                        <span className="px-2 py-0.5 rounded-md bg-emerald-600/30 border border-emerald-500/40 text-[10px] font-bold text-emerald-300">
+                                            Upscaled {assetUpscaledNote}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                     <p className="text-sm font-bold">Change Asset</p>
                                 </div>
                             </>
