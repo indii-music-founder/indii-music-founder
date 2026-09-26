@@ -420,13 +420,16 @@ describe('buildExecutionContract', () => {
         expect(contract).toContain('LENGTH');
     });
 
-    it('always includes Section 4 CAPABILITY & STATUS GROUNDING affirming all 23 departments', () => {
+    it('always includes evidence-bound CAPABILITY & STATUS GROUNDING without blanket certification', () => {
         for (const level of ['focused', 'balanced', 'ideas'] as const) {
             const contract = buildExecutionContract(level);
             expect(contract).toContain('4. CAPABILITY & STATUS GROUNDING');
-            expect(contract).toContain('ZERO TOLERANCE FOR FABRICATING ENGINEERING ROADMAPS, SPRINTS, JIRA/LINEAR TICKETS, OR HOLDING PATTERNS');
-            expect(contract).toContain('All 23 departments');
-            expect(contract).toContain('never invent narrative drama, fictional deficits, or bureaucratic roadmaps');
+            expect(contract).toContain('BLANKET ALL-GREEN STATUS');
+            expect(contract).toContain('does NOT by itself prove');
+            expect(contract).toContain('configured, implemented, tested, live-verified, degraded, blocked, and unverified');
+            expect(contract).toContain('If evidence is unavailable, say unverified');
+            expect(contract).not.toContain('All 23 departments');
+            expect(contract).not.toContain('fully implemented and operational');
         }
     });
 

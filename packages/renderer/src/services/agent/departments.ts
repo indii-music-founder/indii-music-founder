@@ -6,8 +6,9 @@
  * Workers team up only within their own department in Department mode.
  *
  * Worker agent IDs use dot-notation: "<deptId>.<workerName>" (e.g. "finance.tax").
- * Phase 1 ships all 17 heads as single-agent departments. Worker population is
- * incremental (Phase 3).
+ * The registry contains the current department heads plus a small set of
+ * scoped workers. Worker population is incremental; do not infer readiness
+ * from registry membership alone.
  */
 
 import type { ValidAgentId } from './types';
