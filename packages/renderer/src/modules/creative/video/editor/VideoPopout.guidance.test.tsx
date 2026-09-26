@@ -14,6 +14,21 @@ const mocks = vi.hoisted(() => ({
     preview: vi.fn(),
 }));
 
+// jsdom cannot construct the real player custom element (same as
+// VideoPreview.test.tsx) — stub the element with the APIs the viewer uses.
+vi.mock('@hyperframes/player', () => {
+    class TestHyperframesPlayer extends HTMLElement {
+        currentTime = 0;
+        play = vi.fn();
+        pause = vi.fn();
+        seek = vi.fn();
+    }
+    if (!customElements.get('hyperframes-player')) {
+        customElements.define('hyperframes-player', TestHyperframesPlayer);
+    }
+    return { HyperframesPlayer: TestHyperframesPlayer };
+});
+
 vi.mock('@/config/typesafeJudgments', () => ({
     judgePreviewErrorGuidance: mocks.judge,
 }));
