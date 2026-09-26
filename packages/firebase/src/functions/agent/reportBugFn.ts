@@ -106,7 +106,13 @@ export const reportBugFn = onCall(
 
         // 2. GitHub integration (server-side token via centralized secrets)
         const resolvedGithubToken = getGithubToken();
-        const githubRepo = process.env.GITHUB_REPO;
+        // The repo slug is a stable public identifier (same pattern as
+        // activateFounderPass.ts), not an infra-minted rotating ID. Falling
+        // back to it here keeps bug→issue delivery alive when the deployed
+        // function was created or hot-patched without the GITHUB_REPO env var
+        // (regression found 2026-09-26: every in-app report dead-ended in
+        // Firestore because the live revision lacked this variable).
+        const githubRepo = process.env.GITHUB_REPO?.trim() || 'indii-music-founder/indii-music-founder';
         if (!githubRepo) {
             throw new HttpsError(
                 'failed-precondition',
