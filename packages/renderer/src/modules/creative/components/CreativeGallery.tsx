@@ -316,6 +316,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                 <div className="relative">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setShowSendMenu(!showSendMenu); }}
+                                        data-testid="send-menu-trigger"
                                         className={`p-1.5 rounded transition-colors ${showSendMenu ? 'bg-violet-600 text-white' : 'bg-gray-800/50 text-white hover:bg-violet-500'}`}
                                         title="Send to workspace..."
                                         aria-label="Send to workspace"
@@ -635,7 +636,15 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                                 const { PrintSpecDialog } = await import('@/components/ui/PrintSpecDialog');
                                                                 const plan = await PrintSpecDialog.call({ srcWidth: dims.w, srcHeight: dims.h });
                                                                 if (plan) {
-                                                                    toast.info(`Print plan: ${plan.summary}`);
+                                                                    // ISSUE-322: export the exact print file (px + DPI metadata).
+                                                                    toast.info(`Exporting ${plan.summary}…`);
+                                                                    const { exportMasterAsset, downloadAsZip } = await import('@/services/export/AssetExporter');
+                                                                    const bundle = await exportMasterAsset({
+                                                                        masterUrl: resolved,
+                                                                        presets: [{ dimensionId: 'print', printPresetId: plan.presetId }],
+                                                                    });
+                                                                    await downloadAsZip(bundle, `print-${plan.presetId}-${Date.now()}`);
+                                                                    toast.success(`Print file exported: ${bundle[0]!.width}×${bundle[0]!.height} @ ${bundle[0]!.dpi} DPI.`);
                                                                 }
                                                             } catch {
                                                                 toast.error("Print size check failed.");
