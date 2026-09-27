@@ -14,6 +14,9 @@ import {
 } from 'firebase/firestore';
 import { useStore } from '@/core/store';
 import { LegalContract, ContractStatus } from '@/modules/legal/types';
+import { rightsIntelligenceService } from '@/services/rights/RightsIntelligenceService';
+import type { ClaimsInboxProjection, ClaimsInboxInput } from '@indii/shared';
+
 
 export interface ContractAnalysis {
     id?: string;
@@ -158,4 +161,24 @@ export class LegalService {
         if (!tools.draft_contract) throw new Error('Tool draft_contract is missing');
         return tools.draft_contract({ type, parties, terms });
     }
+
+    // -----------------------------------------------------------------------
+    // Claims Inbox (Phase 12 Operational Gate / Phase 20 Surface)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Projects the advisory claims inbox view for the user.
+     * Uses platform-neutral canonical claim records without altering ownership.
+     */
+    static getClaimsInbox(input?: Partial<ClaimsInboxInput>): ClaimsInboxProjection {
+        const claims = input?.claims || [];
+        const events = input?.events || [];
+        const evaluatedAt = input?.evaluatedAt || new Date().toISOString();
+        return rightsIntelligenceService.projectClaims({
+            claims,
+            events,
+            evaluatedAt,
+        });
+    }
 }
+

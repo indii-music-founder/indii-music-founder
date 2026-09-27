@@ -106,4 +106,13 @@ describe('LegalDashboard', () => {
         expect(scanInput).toBeInTheDocument();
         expect(scanInput).toHaveAttribute('capture', 'environment');
     });
+
+    it('renders Claims Inbox tab when selected', () => {
+        render(<LegalDashboard />);
+        const claimsTabTrigger = screen.getByTestId('legal-tab-claims');
+        expect(claimsTabTrigger).toBeInTheDocument();
+        fireEvent.click(claimsTabTrigger);
+        expect(screen.getByTestId('claims-inbox-container')).toBeInTheDocument();
+    });
 });
+

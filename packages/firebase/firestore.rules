@@ -577,6 +577,19 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Micro-Transactions & Credit Wallet (Phase 20)
+      // Users can read their own wallet balance and credit transaction history,
+      // but cannot forge direct balance writes (only trusted backend transactions).
+      match /wallet/{walletId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      match /credit_transactions/{txId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
       // Server-only financial ledger subcollection written by webhook handlers.
       match /ledger/{entryId} {
         allow read, write: if false;

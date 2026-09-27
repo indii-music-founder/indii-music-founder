@@ -78,3 +78,7 @@ export * from './schemas/adminLedger.js';
 export * from './schemas/semanticCatalog.js';
 export * from './finance/shareUnits.js';
 export * from './distribution/mandatoryMetadata.js';
+
+// Micro-Transactions & Credit-Based Purchases (Phase 20)
+export * from './schemas/creditWallet.js';
+

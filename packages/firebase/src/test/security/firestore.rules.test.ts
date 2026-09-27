@@ -3492,6 +3492,57 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{userId}/wallet and users/{userId}/credit_transactions (Phase 20 micro-transactions)', () => {
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'wallet', 'current'), {
+                    userId: ALICE_UID,
+                    balanceCredits: 500,
+                    updatedAt: Date.now(),
+                });
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'credit_transactions', 'tx-1'), {
+                    id: 'tx-1',
+                    userId: ALICE_UID,
+                    type: 'PURCHASE',
+                    amountCredits: 500,
+                    balanceAfter: 500,
+                    reason: 'Pack purchase',
+                });
+            });
+        });
+
+        it('allows authenticated owner to read their own wallet and transaction history', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(aliceDb, 'users', ALICE_UID, 'wallet', 'current')));
+            await assertSucceeds(getDoc(doc(aliceDb, 'users', ALICE_UID, 'credit_transactions', 'tx-1')));
+
+            // Denies cross-user reads
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'wallet', 'current')));
+            await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'credit_transactions', 'tx-1')));
+        });
+
+        it('denies client writes to wallet and credit_transactions to prevent credit fabrication', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            // Attempting to self-credit
+            await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'wallet', 'current'), {
+                userId: ALICE_UID,
+                balanceCredits: 999999,
+            }));
+            await assertFails(updateDoc(doc(aliceDb, 'users', ALICE_UID, 'wallet', 'current'), {
+                balanceCredits: 999999,
+            }));
+            await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'credit_transactions', 'forged-tx'), {
+                id: 'forged-tx',
+                userId: ALICE_UID,
+                amountCredits: 5000,
+            }));
+        });
+    });
+
     describe('Founding Artist canonical waitlist collections', () => {
         const serverOwnedDocuments = [
             ['foundingArtistWaitlist', ALICE_UID],

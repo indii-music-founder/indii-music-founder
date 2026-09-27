@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award, FolderOpen, Fingerprint } from 'lucide-react';
+import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Briefcase, BookOpen, Star, ExternalLink, ChevronRight, Search, MapPin, Award, FolderOpen, Fingerprint, ShieldAlert } from 'lucide-react';
 import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
 import { MyContracts } from './components/MyContracts';
 import { CreatorProtectionCenter } from './components/CreatorProtectionCenter';
+import { ClaimsInboxTab } from './components/ClaimsInboxTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
@@ -234,6 +235,9 @@ Only return valid JSON.
                         <TabsTrigger value="dmca" data-testid="legal-tab-dmca" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Shield size={14} /> {t('legal.tabs.dmca')}
                         </TabsTrigger>
+                        <TabsTrigger value="claims" data-testid="legal-tab-claims" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                            <ShieldAlert size={14} /> Claims Inbox
+                        </TabsTrigger>
                         <TabsTrigger value="protection" data-testid="legal-tab-protection" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <Fingerprint size={14} /> Creator Protection
                         </TabsTrigger>
@@ -343,6 +347,10 @@ Only return valid JSON.
 
                 <TabsContent value="dmca" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0 p-4 md:p-6">
                     <DMCANoticeGenerator />
+                </TabsContent>
+
+                <TabsContent value="claims" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0 p-4 md:p-6">
+                    <ClaimsInboxTab />
                 </TabsContent>
 
                 <TabsContent value="protection" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0 p-4 md:p-6">

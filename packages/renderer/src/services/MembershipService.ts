@@ -7,10 +7,19 @@
  */
 
 import { db } from '@/services/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, query, collection, where, getCountFromServer } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, query, collection, where, getCountFromServer, runTransaction } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { v4 as uuidv4 } from 'uuid';
+import {
+    CreditWalletSchema,
+    CreditTransactionSchema,
+    type CreditWallet,
+    type CreditTransaction,
+    type CreditTransactionType,
+} from '@indii/shared';
 
 export type MembershipTier = 'free' | 'pro' | 'founder' | 'enterprise';
+
 
 /**
  * Daily usage tracking stored in Firestore
@@ -667,7 +676,233 @@ class MembershipServiceImpl {
             tierName: this.getTierDisplayName(tier)
         };
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Phase 20: Micro-Transactions & Credit-Based Purchases
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Get credit balance for a user's wallet.
+     * Path: users/{userId}/wallet/current
+     */
+    async getCreditBalance(userId?: string): Promise<number> {
+        const uid = userId || await this.getCurrentUserId();
+        if (!uid) return 0;
+
+        try {
+            const walletRef = doc(db, 'users', uid, 'wallet', 'current');
+            const snap = await getDoc(walletRef);
+            if (!snap.exists()) return 0;
+            const data = snap.data();
+            return typeof data.balanceCredits === 'number' ? Math.max(0, data.balanceCredits) : 0;
+        } catch (err) {
+            logger.warn('[MembershipService] Failed to get credit balance:', err);
+            return 0;
+        }
+    }
+
+    /**
+     * Check if user can deduct a specified amount of credits.
+     */
+    async canDeductCredits(amount: number, userId?: string): Promise<{
+        allowed: boolean;
+        balance: number;
+        required: number;
+    }> {
+        if (amount <= 0) return { allowed: true, balance: 0, required: 0 };
+        const balance = await this.getCreditBalance(userId);
+        return {
+            allowed: balance >= amount,
+            balance,
+            required: amount,
+        };
+    }
+
+    /**
+     * Atomically deduct credits from user's wallet and record a transaction ledger entry.
+     * Prevents balance from falling below zero.
+     */
+    async deductCredits(
+        amount: number,
+        reason: string,
+        referenceId?: string,
+        userId?: string
+    ): Promise<{
+        success: boolean;
+        balanceAfter: number;
+        transactionId?: string;
+        error?: string;
+    }> {
+        if (amount <= 0) {
+            const currentBal = await this.getCreditBalance(userId);
+            return { success: true, balanceAfter: currentBal };
+        }
+
+        const uid = userId || await this.getCurrentUserId();
+        if (!uid) {
+            return { success: false, balanceAfter: 0, error: 'User not authenticated' };
+        }
+
+        const walletRef = doc(db, 'users', uid, 'wallet', 'current');
+        const txId = uuidv4();
+        const txRef = doc(db, 'users', uid, 'credit_transactions', txId);
+
+        try {
+            const result = await runTransaction(db, async (transaction) => {
+                const snap = await transaction.get(walletRef);
+                const currentBalance = snap.exists() && typeof snap.data().balanceCredits === 'number'
+                    ? snap.data().balanceCredits
+                    : 0;
+
+                if (currentBalance < amount) {
+                    throw new Error(`Insufficient credits: balance is ${currentBalance}, requested ${amount}`);
+                }
+
+                const balanceAfter = currentBalance - amount;
+                const now = Date.now();
+
+                const walletUpdate: Partial<CreditWallet> = {
+                    balanceCredits: balanceAfter,
+                    updatedAt: now,
+                };
+
+                if (!snap.exists()) {
+                    transaction.set(walletRef, {
+                        userId: uid,
+                        balanceCredits: balanceAfter,
+                        autoTopUp: false,
+                        autoTopUpThreshold: 100,
+                        currency: 'USD',
+                        createdAt: now,
+                        updatedAt: now,
+                    });
+                } else {
+                    transaction.update(walletRef, walletUpdate);
+                }
+
+                const creditTx: CreditTransaction = {
+                    id: txId,
+                    userId: uid,
+                    type: 'CONSUMPTION',
+                    amountCredits: -amount,
+                    balanceAfter,
+                    reason,
+                    ...(referenceId ? { referenceId } : {}),
+                    createdAt: now,
+                };
+
+                transaction.set(txRef, creditTx);
+
+                return { balanceAfter, txId };
+            });
+
+            return {
+                success: true,
+                balanceAfter: result.balanceAfter,
+                transactionId: result.txId,
+            };
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            logger.warn('[MembershipService] Failed credit deduction:', err);
+            const fallbackBal = await this.getCreditBalance(uid);
+            return {
+                success: false,
+                balanceAfter: fallbackBal,
+                error: msg,
+            };
+        }
+    }
+
+    /**
+     * Add credits to user's wallet (e.g. from Stripe purchase or promotional grant).
+     */
+    async addCredits(
+        amount: number,
+        reason: string,
+        type: CreditTransactionType = 'PURCHASE',
+        referenceId?: string,
+        userId?: string
+    ): Promise<{
+        success: boolean;
+        balanceAfter: number;
+        transactionId?: string;
+        error?: string;
+    }> {
+        if (amount <= 0) {
+            const currentBal = await this.getCreditBalance(userId);
+            return { success: true, balanceAfter: currentBal };
+        }
+
+        const uid = userId || await this.getCurrentUserId();
+        if (!uid) {
+            return { success: false, balanceAfter: 0, error: 'User not authenticated' };
+        }
+
+        const walletRef = doc(db, 'users', uid, 'wallet', 'current');
+        const txId = uuidv4();
+        const txRef = doc(db, 'users', uid, 'credit_transactions', txId);
+
+        try {
+            const result = await runTransaction(db, async (transaction) => {
+                const snap = await transaction.get(walletRef);
+                const currentBalance = snap.exists() && typeof snap.data().balanceCredits === 'number'
+                    ? snap.data().balanceCredits
+                    : 0;
+
+                const balanceAfter = currentBalance + amount;
+                const now = Date.now();
+
+                if (!snap.exists()) {
+                    transaction.set(walletRef, {
+                        userId: uid,
+                        balanceCredits: balanceAfter,
+                        autoTopUp: false,
+                        autoTopUpThreshold: 100,
+                        currency: 'USD',
+                        createdAt: now,
+                        updatedAt: now,
+                    });
+                } else {
+                    transaction.update(walletRef, {
+                        balanceCredits: balanceAfter,
+                        updatedAt: now,
+                    });
+                }
+
+                const creditTx: CreditTransaction = {
+                    id: txId,
+                    userId: uid,
+                    type,
+                    amountCredits: amount,
+                    balanceAfter,
+                    reason,
+                    ...(referenceId ? { referenceId } : {}),
+                    createdAt: now,
+                };
+
+                transaction.set(txRef, creditTx);
+
+                return { balanceAfter, txId };
+            });
+
+            return {
+                success: true,
+                balanceAfter: result.balanceAfter,
+                transactionId: result.txId,
+            };
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            logger.error('[MembershipService] Failed credit addition:', err);
+            const fallbackBal = await this.getCreditBalance(uid);
+            return {
+                success: false,
+                balanceAfter: fallbackBal,
+                error: msg,
+            };
+        }
+    }
 }
+
 
 export const MembershipService = new MembershipServiceImpl();
 
