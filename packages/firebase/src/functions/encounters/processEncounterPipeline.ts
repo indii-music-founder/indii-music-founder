@@ -175,9 +175,13 @@ export const processEncounterPipeline = onDocumentCreated(
             });
 
             console.info(`[EncounterPipeline] Encounter ${encounterId} successfully processed.`);
-        } catch {
+        } catch (err: unknown) {
+            // Cloud Logging is fix-team-only: the raw failure reason stays
+            // server-side, while the encounter document carries a generic,
+            // non-PII user-facing message.
+            const detail = err instanceof Error ? err.message : String(err);
+            console.error(`[EncounterPipeline] Analysis failed for encounter ${encounterId}:`, detail);
             const errorMsg = "Media analysis failed. Your original capture is saved; contact extraction has not been completed.";
-            console.error(`[EncounterPipeline] Analysis failed for encounter ${encounterId}`);
             await encounterRef.update({
                 status: "failed",
                 error: errorMsg,
