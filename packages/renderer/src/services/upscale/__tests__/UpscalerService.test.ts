@@ -13,7 +13,7 @@ import {
     type UpscaleModel,
 } from '../UpscalerService';
 
-function makeBridge(overrides: Partial<UpscaleBridge> = {}): UpscaleBridge & { runMock: ReturnType<typeof vi.fn> } {
+function makeBridge(overrides: Partial<UpscaleBridge> = {}): UpscaleBridge & { runMock: ReturnType<typeof vi.fn>; cancelMock: ReturnType<typeof vi.fn> } {
     const runMock = vi.fn(async (_req: { requestId: string; dataUrl: string; scale: 2 | 4; model?: string }) => ({
         outputDataUrl: 'data:image/png;base64,Tk9UQVJFQUxJTUFHUQ==',
         durationMs: 1234,
@@ -27,7 +27,6 @@ function makeBridge(overrides: Partial<UpscaleBridge> = {}): UpscaleBridge & { r
         cancel: cancelMock,
         ...overrides,
     };
-    void cancelMock;
     return { ...bridge, runMock, cancelMock };
 }
 
