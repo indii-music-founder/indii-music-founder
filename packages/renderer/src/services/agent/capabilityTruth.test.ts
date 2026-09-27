@@ -1,3 +1,4 @@
+import { listHeadIds } from './departments';
 import type { CapabilitySnapshot, CapabilityStatus } from '@shared/schemas/capabilitySnapshot';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -237,6 +238,8 @@ describe('Boardroom capability truthfulness', () => {
             'Are any of the 23 agents in a holding pattern?',
             'Are we in a holding pattern waiting for the engineering sprint?',
             'status report on the 23 department heads',
+            'status report on the 24 department heads',
+            'What is the current implementation and production verification status of all departments?',
         ])('recognizes department tool audit and readiness questions: %s', query => {
             expect(isDepartmentAuditOrReadinessQuestion(query)).toBe(true);
             expect(isCapabilityQuestion(query)).toBe(true);
@@ -245,7 +248,7 @@ describe('Boardroom capability truthfulness', () => {
         it('buildDepartmentAuditReport refuses a blanket all-green fleet claim without runtime evidence', () => {
             const report = buildDepartmentAuditReport();
             expect(report).toContain('cannot truthfully certify every department');
-            expect(report).toContain('will not claim that all 23 departments are fully verified');
+            expect(report).toContain(`will not claim that all ${listHeadIds().length} departments are fully verified`);
             expect(report).toContain('will not claim there are no pending engineering items');
             expect(report).toContain('available, degraded, blocked, or unverified');
             expect(report).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
@@ -259,7 +262,7 @@ describe('Boardroom capability truthfulness', () => {
                 query: 'Did the other agents the other 23 get their requested tools?',
             });
             expect(output).toContain('cannot truthfully certify every department');
-            expect(output).toContain('will not claim that all 23 departments are fully verified');
+            expect(output).toContain(`will not claim that all ${listHeadIds().length} departments are fully verified`);
             expect(output).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
         });
 

@@ -1,3 +1,4 @@
+import { listHeadIds } from './departments';
 import type {
     CapabilityKey,
     CapabilitySnapshot,
@@ -50,23 +51,24 @@ export function isDepartmentAuditOrReadinessQuestion(task: string): boolean {
         return false;
     }
 
-    const targets = String.raw`(?:(?:the )?(?:other )?(?:23 )?(?:agents?|departments?|specialists?|department heads?)|(?:all|any)(?: of the)? (?:23 )?(?:agents?|departments?|specialists?|department heads?)|(?:all )?(?:23 )?departments?|all \d+ department heads?|(?:the )?other \d+|\ball \d+\b)`;
+    const targets = String.raw`(?:(?:the )?(?:other )?(?:\d+ )?(?:agents?|departments?|specialists?|department heads?)|(?:all|any)(?: of the)? (?:\d+ )?(?:agents?|departments?|specialists?|department heads?)|(?:all )?(?:\d+ )?departments?|all \d+ department heads?|(?:the )?other \d+|\ball \d+\b)`;
 
     return [
+        /\b(?:implementation|production|verification|readiness)\s+(?:(?:and|production|verification)\s+)*status\s+of\s+(?:all\s+|the\s+)?departments?\b/i,
         new RegExp(String.raw`\bdid ${targets}(?: (?:the )?other \d+)? (?:get|have|receive) (?:their )?(?:requested )?tools?\b`, 'i'),
         new RegExp(String.raw`\bhave ${targets}(?: (?:the )?other \d+)? (?:gotten|received|got|acquired) (?:their )?(?:requested )?tools?\b`, 'i'),
         new RegExp(String.raw`\bare (?:the )?(?:tools? (?:for|of) )?${targets}(?:'s)? (?:tools? )?(?:ready|deployed|implemented|operational|available|working|built)(?: right now| now)?\b`, 'i'),
         new RegExp(String.raw`\b(?:what|which) tools? (?:do|can) ${targets} (?:have|use|access)\b`, 'i'),
         new RegExp(String.raw`\b(?:do|can) ${targets} have (?:their )?(?:requested )?tools?\b`, 'i'),
         new RegExp(String.raw`\b(?:board-wide|department|fleet|agent|system-wide) audit\b`, 'i'),
-        new RegExp(String.raw`\baudit (?:of )?(?:all )?(?:the )?(?:23 )?(?:department heads?|departments?|agents?)\b`, 'i'),
+        new RegExp(String.raw`\baudit (?:of )?(?:all )?(?:the )?(?:\d+ )?(?:department heads?|departments?|agents?)\b`, 'i'),
         new RegExp(String.raw`\b(?:are|is) ${targets} (?:in a )?holding pattern\b`, 'i'),
         new RegExp(String.raw`\b(?:in a )?holding pattern\b`, 'i'),
         new RegExp(String.raw`\b(?:is there|are we in) (?:an? )?(?:holding pattern|engineering sprint|build phase)\b`, 'i'),
         new RegExp(String.raw`\bwaiting for (?:an? |the )?engineering sprint\b`, 'i'),
         new RegExp(String.raw`\bengineering[- ]sprint\b`, 'i'),
-        new RegExp(String.raw`\bstatus of (?:the )?(?:23 )?(?:department heads?|departments?|specialists?|agents?)\b`, 'i'),
-        new RegExp(String.raw`\bstatus (?:check|report) on (?:the )?(?:23 )?(?:department heads?|departments?|agents?)\b`, 'i'),
+        new RegExp(String.raw`\bstatus of (?:the )?(?:\d+ )?(?:department heads?|departments?|specialists?|agents?)\b`, 'i'),
+        new RegExp(String.raw`\bstatus (?:check|report) on (?:the )?(?:\d+ )?(?:department heads?|departments?|agents?)\b`, 'i'),
         new RegExp(String.raw`\bhow are (?:all |the )?${targets} (?:doing|equipped|configured|faring)\b`, 'i'),
         new RegExp(String.raw`\b(?:what is the|give me a) status of (?:all |the )?${targets}\b`, 'i'),
         new RegExp(String.raw`\bare (?:all )?${targets} (?:ready|working|operational|online|set up|active)\b`, 'i'),
@@ -244,7 +246,7 @@ export function buildDepartmentAuditReport(_options?: { query?: string }): strin
         '',
         'The application has a configured specialist system spanning the major music-business departments, but implementation status, live provider connectivity, and production readiness are separate evidence questions.',
         '',
-        '- I will not claim that all 23 departments are fully verified unless fresh runtime evidence proves that.',
+        `- I will not claim that all ${listHeadIds().length} departments are fully verified unless fresh runtime evidence proves that.`,
         '- I will not claim there are no pending engineering items without checking the current repository/status evidence.',
         '- External actions such as DSP delivery, rights-society registration, social publishing, payments, and other provider operations require their own live credentials and receipts.',
         '- For a specific capability, I can report the current attested status as available, degraded, blocked, or unverified.',
