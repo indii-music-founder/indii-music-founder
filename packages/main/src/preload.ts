@@ -351,6 +351,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         probe: () => ipcRenderer.invoke('upscale:probe'),
         run: (req: { requestId: string; dataUrl: string; scale: 2 | 4; model?: string; tilePx?: number }) =>
             ipcRenderer.invoke('upscale:run', req),
+        cancel: (requestId: string) => ipcRenderer.invoke('upscale:cancel', { requestId }),
         onProgress: (callback: (progress: { requestId: string; fraction: number }) => void) => {
             const handler = (_event: unknown, progress: { requestId: string; fraction: number }) => callback(progress);
             ipcRenderer.on('upscale:progress', handler);

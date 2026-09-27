@@ -7,7 +7,7 @@
  * the result comes back base64-encoded.
  */
 
-import { ipcMain } from 'electron';
+import { app, ipcMain } from 'electron';
 import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -50,7 +50,14 @@ const encodeDataUrl = (bytes: Buffer, ext: string): string =>
     `data:image/${ext === 'jpg' ? 'jpeg' : 'png'};base64,${bytes.toString('base64')}`;
 
 /** Install dir persists across sessions inside the Electron user-data tree. */
-const installDir = (): string => path.join(tmpdir(), `indii-upscale-${ENGINE_ASSET_VERSION}`);
+const installDir = (): string => path.join(app.getPath('userData'), `upscale-engine-${ENGINE_ASSET_VERSION}`);
+
+/**
+ * Active upscale runs by requestId (ISSUE-323 cancellation contract): the
+ * cancel IPC aborts the controller, the executor SIGKILLs the engine, and the
+ * run handler rejects without orphaned processes.
+ */
+const activeRuns = new Map<string, AbortController>();
 
 let engineReady: Promise<EngineInstall> | null = null;
 
@@ -84,10 +91,15 @@ export const registerUpscaleHandlers = (): void => {
 
     ipcMain.handle('upscale:run', async (event, raw: unknown) => {
         let scratch: string | null = null;
+        let requestId: string | null = null;
         try {
             validateSender(event);
             const req = UpscaleRunSchema.parse(raw);
+            requestId = req.requestId;
             const { enginePath } = await ensureEngine();
+
+            const controller = new AbortController();
+            activeRuns.set(req.requestId, controller);
 
             const inputBytes = decodeDataUrl(req.dataUrl);
             scratch = await mkdtemp(path.join(tmpdir(), 'indii-upscale-run-'));
@@ -103,7 +115,7 @@ export const registerUpscaleHandlers = (): void => {
                     scale: req.scale,
                     model: req.model,
                     tilePx: req.tilePx,
-                    signal: undefined,
+                    signal: controller.signal,
                     onProgress: (fraction) => {
                         if (!event.sender.isDestroyed()) {
                             event.sender.send('upscale:progress', { requestId: req.requestId, fraction });
@@ -120,7 +132,19 @@ export const registerUpscaleHandlers = (): void => {
                 durationMs: outcome.durationMs,
             };
         } finally {
+            if (requestId) activeRuns.delete(requestId);
             if (scratch) await rm(scratch, { recursive: true, force: true }).catch(() => {});
         }
+    });
+
+    ipcMain.handle('upscale:cancel', async (event, raw: unknown) => {
+        validateSender(event);
+        const req = z.object({ requestId: z.string().min(6).max(64) }).parse(raw);
+        const controller = activeRuns.get(req.requestId);
+        if (controller) {
+            controller.abort();
+            return { cancelled: true };
+        }
+        return { cancelled: false };
     });
 };

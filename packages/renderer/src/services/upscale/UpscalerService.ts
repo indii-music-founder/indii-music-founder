@@ -28,6 +28,8 @@ export interface UpscaleBridge {
     run: (req: { requestId: string; dataUrl: string; scale: 2 | 4; model?: string; tilePx?: number }) =>
         Promise<{ outputDataUrl: string; durationMs: number }>;
     onProgress: (callback: (progress: { requestId: string; fraction: number }) => void) => () => void;
+    /** ISSUE-323 cancellation contract: aborts the engine process for the run. */
+    cancel?: (requestId: string) => Promise<void>;
 }
 
 export interface UpscaleOptions {
@@ -37,6 +39,8 @@ export interface UpscaleOptions {
     prompt?: string;
     tilePx?: number;
     onProgress?: (fraction: number) => void;
+    /** ISSUE-323: aborting the signal cancels the engine run. */
+    signal?: AbortSignal;
     model?: UpscaleModel;
 }
 
@@ -98,6 +102,8 @@ export class UpscalerService {
             ?? DEFAULT_MODEL;
 
         const requestId = `up-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        const onAbort = () => { void bridge.cancel?.(requestId); };
+        opts.signal?.addEventListener('abort', onAbort, { once: true });
         const unsubscribe = opts.onProgress
             ? bridge.onProgress((progress) => {
                 if (progress.requestId === requestId) opts.onProgress!(progress.fraction);
@@ -114,6 +120,7 @@ export class UpscalerService {
             });
             return { outputDataUrl: result.outputDataUrl, scale: opts.scale, model, durationMs: result.durationMs };
         } finally {
+            opts.signal?.removeEventListener('abort', onAbort);
             unsubscribe?.();
         }
     }

@@ -18,14 +18,17 @@ function makeBridge(overrides: Partial<UpscaleBridge> = {}): UpscaleBridge & { r
         outputDataUrl: 'data:image/png;base64,Tk9UQVJFQUxJTUFHUQ==',
         durationMs: 1234,
     }));
+    const cancelMock = vi.fn(async (_requestId: string) => {});
     const bridge: UpscaleBridge = {
         ensureEngine: vi.fn(async () => ({ enginePath: '/eng', version: 'v0.2.5.0', fromCache: true })),
         probe: vi.fn(async () => ({ enginePresent: true, gpuReady: true, detail: 'ok' })),
         run: runMock,
         onProgress: vi.fn(() => () => {}),
+        cancel: cancelMock,
         ...overrides,
     };
-    return { ...bridge, runMock };
+    void cancelMock;
+    return { ...bridge, runMock, cancelMock };
 }
 
 describe('UpscalerService — routing and fallback (structural)', () => {
@@ -105,5 +108,32 @@ describe('UpscalerService — routing and fallback (structural)', () => {
         await svc.upscale({ dataUrl: 'data:image/png;base64,QQ==', scale: 2, onProgress: (f) => seen.push(f) });
         expect(seen).toEqual([0.5]);
         expect(capturedReqId).toMatch(/^up-/);
+    });
+});
+
+describe('UpscalerService — cancellation contract (ISSUE-323)', () => {
+    it('invokes the bridge cancel when the caller aborts the signal', async () => {
+        const svc = new UpscalerService();
+        const bridge = makeBridge();
+        // Hold the run open until the test aborts.
+        bridge.runMock.mockImplementation(() => new Promise(() => { /* never settles */ }));
+        svc.configure(bridge as unknown as UpscaleBridge, vi.fn(async () => null));
+
+        const controller = new AbortController();
+        const run = svc.upscale({ dataUrl: 'data:image/png;base64,QQ==', scale: 2, signal: controller.signal });
+        await new Promise((r) => setTimeout(r, 0)); // let the run reach the bridge
+        controller.abort();
+        await new Promise((r) => setTimeout(r, 0));
+        const requestId = (bridge.runMock.mock.calls[0] as unknown[])[0] as { requestId: string };
+        expect(bridge.cancelMock).toHaveBeenCalledWith(requestId.requestId);
+        void run; // still pending by construction; the contract under test is cancel()
+    });
+
+    it('does not touch cancel when no signal is supplied', async () => {
+        const svc = new UpscalerService();
+        const bridge = makeBridge();
+        svc.configure(bridge as unknown as UpscaleBridge, vi.fn(async () => null));
+        await svc.upscale({ dataUrl: 'data:image/png;base64,QQ==', scale: 2 });
+        expect(bridge.cancelMock).not.toHaveBeenCalled();
     });
 });

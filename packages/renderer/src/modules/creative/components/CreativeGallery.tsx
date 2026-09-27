@@ -21,6 +21,7 @@ const runLocalUpscale = async (
     item: HistoryItem,
     scale: 2 | 4,
     toast: ReturnType<typeof useToast>,
+    onProgress?: (fraction: number) => void,
 ): Promise<void> => {
     try {
         const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
@@ -37,7 +38,7 @@ const runLocalUpscale = async (
         });
 
         const { upscalerService, UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
-        const outcome = await upscalerService.upscale({ dataUrl, scale, prompt: item.prompt });
+        const outcome = await upscalerService.upscale({ dataUrl, scale, prompt: item.prompt, onProgress });
 
         const projId = useStore.getState().currentProjectId || 'default';
         useStore.getState().addToHistory?.({
@@ -164,6 +165,8 @@ interface GalleryItemProps {
 const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule, sendToStage, openInLayerEditor }: GalleryItemProps) => {
     const [showSendMenu, setShowSendMenu] = useState(false);
     const [imageLoadFailed, setImageLoadFailed] = useState(false);
+    // ISSUE-323: local engine progress streams to the card while a run is active.
+    const [upscaleProgress, setUpscaleProgress] = useState<number | null>(null);
     const videoUrlToResolve = item.type === 'video' && !item.localPath ? item.url : null;
     // ISSUE-920: prefer the small grid thumbnail when present; the resolver
     // passes plain HTTPS/data URLs through and converts gs:// URIs.
@@ -314,6 +317,14 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
 
                                 {/* Send To dropdown */}
                                 <div className="relative">
+                                    {upscaleProgress !== null && (
+                                        <div className="absolute bottom-8 right-0 w-40 bg-[#0d0d11] border border-white/10 rounded-lg shadow-2xl p-2.5 z-30" data-testid="upscale-progress">
+                                            <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                                                <div className="h-full bg-cyan-400 transition-all" style={{ width: `${Math.max(3, Math.round(upscaleProgress * 100))}%` }} />
+                                            </div>
+                                            <span className="block mt-1 text-[9px] text-gray-400 font-mono">Upscaling… {Math.round(upscaleProgress * 100)}%</span>
+                                        </div>
+                                    )}
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setShowSendMenu(!showSendMenu); }}
                                         data-testid="send-menu-trigger"
@@ -591,7 +602,9 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         onClick={async (e) => {
                                                             e.stopPropagation();
                                                             setShowSendMenu(false);
-                                                            await runLocalUpscale(item, 2, toast);
+                                                            setUpscaleProgress(0);
+                                                            await runLocalUpscale(item, 2, toast, setUpscaleProgress);
+                                                            setUpscaleProgress(null);
                                                         }}
                                                         data-testid="send-to-upscale-2x"
                                                         className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
@@ -602,7 +615,9 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         onClick={async (e) => {
                                                             e.stopPropagation();
                                                             setShowSendMenu(false);
-                                                            await runLocalUpscale(item, 4, toast);
+                                                            setUpscaleProgress(0);
+                                                            await runLocalUpscale(item, 4, toast, setUpscaleProgress);
+                                                            setUpscaleProgress(null);
                                                         }}
                                                         data-testid="send-to-upscale-4x"
                                                         className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
