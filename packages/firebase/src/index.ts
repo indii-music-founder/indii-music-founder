@@ -1894,6 +1894,7 @@ import { trackUsage } from "./subscription/trackUsage";
 import { stripeWebhook } from "./stripe/webhookHandler";
 import { activateFounderPass } from "./subscription/activateFounderPass";
 import { createMicroTransaction } from "./subscription/createMicroTransaction";
+import { deductCredits } from "./subscription/deductCredits";
 import { createMarketplaceCheckout } from "./marketplace/createMarketplaceCheckout";
 import { getStemDownloadUrl } from "./marketplace/getStemDownloadUrl";
 
@@ -1911,7 +1912,8 @@ export {
     trackUsage,
     stripeWebhook,
     activateFounderPass,
-    createMicroTransaction
+    createMicroTransaction,
+    deductCredits
 };
 
 // ----------------------------------------------------------------------------

@@ -13,9 +13,17 @@ const mockWallet = {
     updatedAt: 1000,
 };
 
+const mockHttpsCallableFn = vi.fn();
+
 vi.mock('@/services/firebase', () => ({
     db: {},
     auth: { currentUser: { uid: 'user-credit-1' } },
+    functions: {},
+}));
+
+vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(() => ({})),
+    httpsCallable: vi.fn(() => mockHttpsCallableFn),
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -37,6 +45,8 @@ vi.mock('firebase/firestore', () => ({
 describe('MembershipService (Credit Wallet & Micro-Transactions)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockHttpsCallableFn.mockReset();
+        mockHttpsCallableFn.mockRejectedValue(new Error('Function not available'));
     });
 
     describe('getCreditBalance', () => {
@@ -86,6 +96,27 @@ describe('MembershipService (Credit Wallet & Micro-Transactions)', () => {
     });
 
     describe('deductCredits', () => {
+        it('uses server-authoritative deductCredits callable when available', async () => {
+            mockHttpsCallableFn.mockResolvedValueOnce({
+                data: {
+                    success: true,
+                    balanceAfter: 450,
+                    transactionId: 'tx-cf-deduct-1',
+                },
+            });
+
+            const result = await MembershipService.deductCredits(
+                50,
+                'AI Audio Mastering',
+                'ref-m-1',
+                'user-credit-1'
+            );
+
+            expect(result.success).toBe(true);
+            expect(result.balanceAfter).toBe(450);
+            expect(result.transactionId).toBe('tx-cf-deduct-1');
+        });
+
         it('deducts credits atomically and generates transaction', async () => {
             const mockTx = {
                 get: vi.fn().mockResolvedValue({
@@ -229,6 +260,31 @@ describe('MembershipService (Credit Wallet & Micro-Transactions)', () => {
 
             const wallet = await MembershipService.getCreditWallet('user-credit-1');
             expect(wallet).toEqual(mockWallet);
+        });
+    });
+
+    describe('createCreditCheckoutSession', () => {
+        it('creates a Stripe checkout session via createMicroTransaction', async () => {
+            mockHttpsCallableFn.mockResolvedValueOnce({
+                data: {
+                    checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_abc123',
+                    sessionId: 'cs_test_abc123',
+                },
+            });
+
+            const session = await MembershipService.createCreditCheckoutSession(
+                'pack_starter_500',
+                500,
+                undefined,
+                'user-credit-1'
+            );
+
+            expect(session.checkoutUrl).toBe('https://checkout.stripe.com/c/pay/cs_test_abc123');
+            expect(session.sessionId).toBe('cs_test_abc123');
+            expect(mockHttpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({
+                userId: 'user-credit-1',
+                credits: 500,
+            }));
         });
     });
 });

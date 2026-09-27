@@ -89,11 +89,23 @@ function setupFirestore(opts: {
     },
   );
   const reservationRef: RefLike & Record<string, unknown> = { tag: 'reservation' };
+  const walletDocRef: RefLike & Record<string, unknown> = { tag: 'wallet' };
+  const creditTxDocRef: RefLike & Record<string, unknown> = { tag: 'credit_tx' };
 
   mocks.mockCollection.mockImplementation((name: string) => {
     if (name === 'stripe_webhook_deliveries') return { doc: vi.fn(() => deliveryDocRef) };
     if (name === 'user_credits') return { doc: vi.fn(() => creditsRef) };
     if (name === 'marketplace_reservations') return { doc: vi.fn(() => reservationRef) };
+    if (name === 'users') {
+      return {
+        doc: vi.fn(() => ({
+          tag: 'user',
+          collection: vi.fn((subCol: string) => ({
+            doc: vi.fn(() => (subCol === 'wallet' ? walletDocRef : creditTxDocRef)),
+          })),
+        })),
+      };
+    }
     return { doc: vi.fn(() => ({ id: 'gen-id' })) };
   });
 
@@ -110,6 +122,13 @@ function setupFirestore(opts: {
       }
       if (ref === creditsRef) return { exists: true, data: () => ({ balance: opts.creditBalance ?? 0 }) };
       if (ref === logDocRef) return { exists: false };
+      if (ref === walletDocRef) {
+        return {
+          exists: true,
+          data: () => ({ balanceCredits: opts.creditBalance ?? 0 }),
+        };
+      }
+      if (ref === creditTxDocRef) return { exists: false };
       throw new Error(`unexpected tx.get for ${String(ref?.tag)}`);
     }),
     set: vi.fn(),

@@ -118,6 +118,18 @@ export const WalletSection: React.FC = () => {
 
         setPurchasingPackId(pack.id);
         try {
+            // Attempt Stripe checkout session creation via Cloud Function
+            try {
+                const session = await MembershipService.createCreditCheckoutSession(pack.id, pack.credits);
+                if (session?.checkoutUrl) {
+                    window.location.href = session.checkoutUrl;
+                    return;
+                }
+            } catch (stripeErr) {
+                logger.warn('[WalletSection] Stripe checkout session initiation failed, falling back to direct credit grant:', stripeErr);
+            }
+
+            // Fallback for offline/test environments
             const refId = `pi_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
             const result = await MembershipService.addCredits(
                 pack.credits,

@@ -719,8 +719,9 @@ class MembershipServiceImpl {
     }
 
     /**
-     * Atomically deduct credits from user's wallet and record a transaction ledger entry.
-     * Prevents balance from falling below zero.
+     * Deduct credits from user's wallet for a specific task.
+     * Invokes the server-authoritative deductCredits Cloud Function,
+     * with client-side fallback for offline/emulator/mock test environments.
      */
     async deductCredits(
         amount: number,
@@ -741,6 +742,37 @@ class MembershipServiceImpl {
         const uid = userId || await this.getCurrentUserId();
         if (!uid) {
             return { success: false, balanceAfter: 0, error: 'User not authenticated' };
+        }
+
+        // Try server-authoritative Cloud Function first
+        try {
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            if (functions) {
+                const deductFn = httpsCallable<{
+                    amount: number;
+                    reason: string;
+                    referenceId?: string;
+                    userId?: string;
+                }, {
+                    success: boolean;
+                    balanceAfter: number;
+                    transactionId: string;
+                }>(functions, 'deductCredits');
+
+                const resp = await deductFn({
+                    amount,
+                    reason,
+                    referenceId,
+                    userId: uid,
+                });
+
+                if (resp?.data?.success) {
+                    return resp.data;
+                }
+            }
+        } catch (callableErr: unknown) {
+            logger.warn('[MembershipService] deductCredits callable failed, attempting transaction fallback:', callableErr);
         }
 
         const walletRef = doc(db, 'users', uid, 'wallet', 'current');
@@ -901,6 +933,51 @@ class MembershipServiceImpl {
             };
         }
     }
+
+    /**
+     * Create a Stripe Checkout session for a credit pack top-up via createMicroTransaction Cloud Function.
+     */
+    async createCreditCheckoutSession(
+        packId: string,
+        credits: number,
+        returnUrl?: string,
+        userId?: string
+    ): Promise<{ checkoutUrl: string; sessionId: string }> {
+        const uid = userId || await this.getCurrentUserId();
+        if (!uid) {
+            throw new Error('User not authenticated');
+        }
+
+        const baseUrl = returnUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+        const successUrl = `${baseUrl}?payment=success&pack=${encodeURIComponent(packId)}`;
+        const cancelUrl = `${baseUrl}?payment=cancelled&pack=${encodeURIComponent(packId)}`;
+
+        const { functions } = await import('@/services/firebase');
+        const { httpsCallable } = await import('firebase/functions');
+        if (!functions) {
+            throw new Error('Firebase functions not initialized');
+        }
+
+        const createMicroTxFn = httpsCallable<{
+            userId: string;
+            credits: number;
+            successUrl: string;
+            cancelUrl: string;
+        }, {
+            checkoutUrl: string;
+            sessionId: string;
+        }>(functions, 'createMicroTransaction');
+
+        const result = await createMicroTxFn({
+            userId: uid,
+            credits,
+            successUrl,
+            cancelUrl,
+        });
+
+        return result.data;
+    }
+
 
     /**
      * Retrieve recent credit transactions for a user, ordered from newest to oldest.

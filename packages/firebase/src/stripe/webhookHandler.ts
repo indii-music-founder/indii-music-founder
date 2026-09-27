@@ -88,6 +88,8 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
   // (>5 min) re-executes this handler, and without this guard the second
   // transaction would credit the balance again for the same purchase.
   const logRef = db.collection('user_credits').doc(userId).collection('transactions').doc(session.id);
+  const walletRef = db.collection('users').doc(userId).collection('wallet').doc('current');
+  const creditTxRef = db.collection('users').doc(userId).collection('credit_transactions').doc(session.id);
 
   await db.runTransaction(async (t) => {
     const logSnap = await t.get(logRef);
@@ -95,19 +97,54 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
       logger.info(`[handleMicroTransaction] Session ${session.id} already credited — skipping duplicate delivery.`);
       return;
     }
+    const now = Date.now();
     const doc = await t.get(creditsRef);
     if (!doc.exists) {
-      t.set(creditsRef, { balance: credits, updatedAt: Date.now() });
+      t.set(creditsRef, { balance: credits, updatedAt: now });
     } else {
       const currentBalance = doc.data()?.balance || 0;
-      t.update(creditsRef, { balance: currentBalance + credits, updatedAt: Date.now() });
+      t.update(creditsRef, { balance: currentBalance + credits, updatedAt: now });
     }
 
     t.set(logRef, {
       amount: credits,
       type: 'purchase',
       sessionId: session.id,
-      timestamp: Date.now()
+      timestamp: now
+    });
+
+    // Phase 20 canonical wallet update
+    const walletSnap = await t.get(walletRef);
+    let balanceAfter = credits;
+    if (!walletSnap.exists) {
+      t.set(walletRef, {
+        userId,
+        balanceCredits: credits,
+        autoTopUp: false,
+        autoTopUpThreshold: 100,
+        currency: 'USD',
+        createdAt: now,
+        updatedAt: now,
+      });
+    } else {
+      const currentBal = walletSnap.data()?.balanceCredits;
+      const validBal = typeof currentBal === 'number' ? currentBal : 0;
+      balanceAfter = validBal + credits;
+      t.update(walletRef, {
+        balanceCredits: balanceAfter,
+        updatedAt: now,
+      });
+    }
+
+    t.set(creditTxRef, {
+      id: session.id,
+      userId,
+      type: 'PURCHASE',
+      amountCredits: credits,
+      balanceAfter,
+      reason: 'Credit Pack Purchase',
+      referenceId: session.id,
+      createdAt: now,
     });
   });
 

@@ -54,6 +54,7 @@ vi.mock('@/services/MembershipService', () => ({
         getCreditBalance: vi.fn(),
         getCreditTransactions: vi.fn(),
         addCredits: vi.fn(),
+        createCreditCheckoutSession: vi.fn(),
     },
 }));
 
@@ -71,6 +72,7 @@ describe('WalletSection', () => {
         vi.clearAllMocks();
         vi.mocked(MembershipService.getCreditBalance).mockResolvedValue(2450);
         vi.mocked(MembershipService.getCreditTransactions).mockResolvedValue(mockTransactions as any);
+        vi.mocked(MembershipService.createCreditCheckoutSession).mockRejectedValue(new Error('Stripe not configured'));
     });
 
     it('renders the balance and feature unlocks', async () => {
@@ -130,6 +132,35 @@ describe('WalletSection', () => {
                 'success'
             );
         });
+    });
+
+    it('redirects to Stripe Checkout session when checkoutUrl is returned', async () => {
+        const originalLocation = window.location;
+        (window as any).location = { ...originalLocation, href: '' };
+
+        vi.mocked(MembershipService.createCreditCheckoutSession).mockResolvedValueOnce({
+            checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_checkout',
+            sessionId: 'cs_test_checkout',
+        });
+
+        render(<WalletSection />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('buy-pack-pack_growth_2500')).toBeInTheDocument();
+        });
+
+        const buyButton = screen.getByTestId('buy-pack-pack_growth_2500');
+        fireEvent.click(buyButton);
+
+        await waitFor(() => {
+            expect(MembershipService.createCreditCheckoutSession).toHaveBeenCalledWith(
+                'pack_growth_2500',
+                2500
+            );
+            expect(window.location.href).toBe('https://checkout.stripe.com/c/pay/cs_test_checkout');
+        });
+
+        (window as any).location = originalLocation;
     });
 
     it('renders transaction ledger rows', async () => {
