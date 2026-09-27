@@ -364,7 +364,12 @@ function normalizeImageSize(imageSize?: string): '512' | '1K' | '2K' | '4K' | un
   if (imageSize.toLowerCase() === '1k') return '1K';
   if (imageSize.toLowerCase() === '2k') return '2K';
   if (imageSize.toLowerCase() === '4k') return '4K';
-  return '1K';
+  // Issue #319/#320: an unrecognized size must never silently downgrade the
+  // request to 1K — that is exactly the silent-downgrade failure artists hit.
+  throw new HttpsError(
+    'invalid-argument',
+    `Unsupported imageSize "${imageSize}". Supported: 0.5K, 1K, 2K, 4K.`
+  );
 }
 
 function normalizeThinkingLevel(thinkingLevel?: string): 'minimal' | 'high' | undefined {
@@ -1271,7 +1276,7 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
 /**
  * generateImageV3 - Routes to Gemini 3 image models via Interactions API.
  */
-export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeoutSeconds: 120, memory: '1GiB' }, async (request) => {
+export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeoutSeconds: 300, memory: '1GiB' }, async (request) => {
   const { userId } = await requireCreativeGatewayAdmission(request, 'generate-image');
   
   const parsed = GenerateImageSchema.safeParse(request.data);

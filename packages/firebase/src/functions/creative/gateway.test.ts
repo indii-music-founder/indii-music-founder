@@ -388,10 +388,10 @@ describe('creative gateway generateImageV3', () => {
     mockGetMetadata.mockResolvedValue([{ contentType: 'image/png', size: '15' }]);
   });
 
-  it('allocates enough memory for the Gemini image SDK path', () => {
+  it('allocates enough memory and a 4K-capable timeout for the Gemini image SDK path (#319)', () => {
     expect(mockOnCallOptions).toContainEqual(
       expect.objectContaining({
-        timeoutSeconds: 120,
+        timeoutSeconds: 300,
         memory: '1GiB',
         enforceAppCheck: expect.any(Boolean),
       }),
@@ -480,6 +480,45 @@ describe('creative gateway generateImageV3', () => {
       operationId: 'image-op-1',
       outcome: 'SETTLED',
     });
+  });
+
+  it('passes 4K through to the model config for print-eligible generation (issues #319/#320)', async () => {
+    mockInteractionsCreate.mockResolvedValueOnce({
+      output_image: {
+        data: Buffer.from('image-bytes-4k').toString('base64'),
+        mime_type: 'image/png',
+      },
+    });
+
+    await callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'LP cover artwork at distributor resolution',
+        aspectRatio: '1:1',
+        model: 'fast',
+        imageSize: '4K',
+        costReservationId: 'image-op-4k',
+      },
+    });
+
+    expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
+      generation_config: expect.objectContaining({
+        image_config: expect.objectContaining({ image_size: '4K' }),
+      }),
+    }));
+  });
+
+  it('rejects an unsupported imageSize loudly instead of silently downgrading (#319/#320)', async () => {
+    await expect(callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Cover artwork with a bogus size tier',
+        model: 'fast',
+        imageSize: '3000x3000',
+        costReservationId: 'image-op-bad-size',
+      },
+    })).rejects.toMatchObject({ code: 'invalid-argument' });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
   });
 
   it('rejects search grounding requests when using fast image model', async () => {

@@ -31,7 +31,7 @@ export class ImageGenerationInstrument implements Instrument {
     version: '1.0.0',
     author: 'indii Core Team',
     isAsync: true,
-    timeoutMs: 120000, // 2 minutes timeout
+    timeoutMs: 300000, // 5 minutes: 4K generations exceed the old 2-minute window (issue #319)
     cost: {
       type: 'quota',
       amount: 1
@@ -109,6 +109,17 @@ export class ImageGenerationInstrument implements Instrument {
       schema: {
         type: 'string',
         maxLength: 500
+      }
+    },
+    {
+      name: 'imageSize',
+      description: 'Output resolution tier. Defaults to 4k — the full Nano Banana capability — so agent-generated art is print-eligible (issues #319/#320).',
+      required: false,
+      defaultValue: '4k',
+      schema: {
+        type: 'string',
+        enum: ['512', '1k', '2k', '4k'],
+        default: '4k'
       }
     },
     {
@@ -200,6 +211,7 @@ export class ImageGenerationInstrument implements Instrument {
         aspectRatio: params.aspectRatio || '1:1',
         count: params.count || 1,
         negativePrompt: params.negativePrompt,
+        imageSize: (params.imageSize as '512' | '1k' | '2k' | '4k') || '4k',
         personGeneration: params.personGeneration || 'ALLOW_ADULT'});
 
       if (!results || results.length === 0) {
@@ -268,6 +280,14 @@ export class ImageGenerationInstrument implements Instrument {
       const validRatios = ['1:1', '16:9', '9:16', '4:3', '3:4', '3:2'];
       if (!validRatios.includes(params.aspectRatio)) {
         errors.push(`Aspect ratio must be one of: ${validRatios.join(', ')}`);
+      }
+    }
+
+    // Validate imageSize (issues #319/#320: no silent tier downgrade)
+    if (params.imageSize !== undefined) {
+      const validSizes = ['512', '1k', '2k', '4k'];
+      if (!validSizes.includes(params.imageSize)) {
+        errors.push(`imageSize must be one of: ${validSizes.join(', ')}`);
       }
     }
 
