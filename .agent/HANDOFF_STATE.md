@@ -1077,3 +1077,29 @@ Plan of record for execution details: `docs/POD_CHECKOUT_AND_WEBHOOK_FIXES_PLAN.
 ## Shared-tree note
 
 Foreign in-flight work observed and untouched: VideoJsPlayer.tsx/.test.tsx edits, e2e/video-preview-display.spec.ts, packages/renderer/public/e2e/, `.agent/observations/`, untracked `videos/`, brand pixel engine commit `b640f8a26` (another agent's, CI theirs).
+
+---
+
+# Session Close — Phase 20 Track B Micro-Transactions & GitHub Issues Consolidation (2026-09-27)
+
+**Final state: Phase 20 Track B delivered to `origin/main`, exact-SHA CI green, production deployed.**
+
+| SHA | What | Evidence |
+|---|---|---|
+| `96532b288` | Phase 20 Track B: Server-authoritative credit deduction (`deductCredits` callable), dual wallet/ledger synchronization in Stripe webhook, client `createCreditCheckoutSession` with `createMicroTransaction` callable, `WalletSection.tsx` Stripe Checkout redirect with dev fallback | CI run 36342808482 ✅ (all 20 unit shards, rules-tests, build, staging deploy, e2e-staging, deploy-production passed) |
+
+## Key Accomplishments & Deliverables
+1. **GitHub Issues Status:** 0 open issues remain in `indii-music-founder/indii-music-founder`. All 155 recorded issues closed, consolidated, or resolved on `main`.
+2. **Server-Authoritative Credit Deduction (`deductCredits`):** Admin SDK transaction enforcing integer deduction > 0, zero-balance floor prevention, atomic updates to `users/{userId}/wallet/current`, transaction ledger logging under `users/{userId}/credit_transactions`, and legacy sync to `user_credits`.
+3. **Stripe Webhook Dual Fulfillment:** Updated `webhookHandler.ts` to write to canonical Phase 20 `wallet/current` and `credit_transactions/{session.id}` paths in addition to legacy paths.
+4. **Client & UI Wiring:** `MembershipService.createCreditCheckoutSession` connects to `createMicroTransaction` callable with return URLs. `WalletSection.tsx` initiates checkout redirect on pack purchase with offline/test fallback.
+5. **Quality Verification:**
+   - 31 unit tests passing across affected suites.
+   - Pre-commit gates passed (typecheck, lint, test quality diff scan).
+   - Monorepo `npm run typecheck` and `npm run lint` clean (0 errors).
+   - CI Run [36342808482](https://github.com/indii-music-founder/indii-music-founder/actions/runs/36342808482) 100% green across all shards and production deployed.
+
+## Limits & Caveats
+- Real end-to-end checkout with live credit card processing requires live Stripe environment with `STRIPE_PRICE_CREDIT_PACK` provisioned in Secret Manager; tested structurally with mock and emulator fallbacks.
+- Untracked `assets/marketing-screenshots/` preserved untouched.
+
