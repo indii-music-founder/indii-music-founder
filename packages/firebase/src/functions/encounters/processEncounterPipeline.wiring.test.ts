@@ -16,7 +16,7 @@ interface WiringMocks {
         name: string;
         file: (path: string) => { getMetadata: ReturnType<typeof vi.fn> };
     };
-    lastPath?: string;
+    state: { lastPath: string };
 }
 
 const mocks: WiringMocks = vi.hoisted(() => {
