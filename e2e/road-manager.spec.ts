@@ -2,7 +2,13 @@ import { test, expect } from './fixtures/auth';
 
 /**
  * Road Manager (Touring) Module E2E Tests
- * Covers: module load, tour list, venue view, waypoint input, route initialization, stops table rendering, interactive edit modals, tab switching, and location gas station scans.
+ * Covers: module load, Tour Parameters waypoint entry, honest route-draft save
+ * (user_inputs_only contract), schedule-only check, stop edit, route-draft
+ * delete, live waypoint sync, and the On-the-Road nearby-places scan.
+ *
+ * The generateItinerary/checkLogistics mocks mirror the exact runtime contracts
+ * the client validators (`isRouteDraftResponse`, `isScheduleReview`) enforce —
+ * the route draft is Planning-typed with empty venues, never fabricated shows.
  */
 
 test.describe('Road Manager Module', () => {
@@ -16,7 +22,9 @@ test.describe('Road Manager Module', () => {
     };
 
     test.beforeEach(async ({ authedPage: page }) => {
-        // Mock generateItinerary Firebase function
+        // Mock generateItinerary — must satisfy the client-side
+        // isRouteDraftResponse validator: Planning stops with empty venues,
+        // user_inputs_only authority, and one stop per submitted waypoint.
         await page.route(/.*generateItinerary.*/i, async route => {
             if (route.request().method() === "OPTIONS") {
                 await route.fulfill({ status: 204, headers: corsHeaders });
@@ -28,29 +36,36 @@ test.describe('Road Manager Module', () => {
                 contentType: 'application/json',
                 body: JSON.stringify({
                     data: {
+                        status: 'route_draft',
+                        authority: 'user_inputs_only',
                         stops: [
                             {
                                 date: '2026-06-08',
                                 city: 'Austin, TX',
-                                venue: "Antone's Nightclub",
-                                activity: 'Show',
-                                notes: 'Austin show'
+                                venue: '',
+                                activity: 'Planning',
+                                type: 'Planning',
+                                notes: '',
                             },
                             {
-                                date: '2026-06-09',
+                                date: '2026-06-12',
                                 city: 'Houston, TX',
-                                venue: 'White Oak Music Hall',
-                                activity: 'Show',
-                                notes: 'Houston show'
-                            }
+                                venue: '',
+                                activity: 'Planning',
+                                type: 'Planning',
+                                notes: '',
+                            },
                         ],
-                        totalDistanceMiles: 162
-                    }
+                        limitations: [
+                            'Waypoints remain in the order entered by the user.',
+                            'Road routing, distance, drive time, traffic, venue availability, and budget are not calculated.',
+                        ],
+                    },
                 }),
             });
         });
 
-        // Mock checkLogistics Firebase function
+        // Mock checkLogistics — must satisfy isScheduleReview (schedule-only scope).
         await page.route(/.*checkLogistics.*/i, async route => {
             if (route.request().method() === "OPTIONS") {
                 await route.fulfill({ status: 204, headers: corsHeaders });
@@ -62,10 +77,16 @@ test.describe('Road Manager Module', () => {
                 contentType: 'application/json',
                 body: JSON.stringify({
                     data: {
-                        isFeasible: true,
+                        scope: 'schedule_only',
+                        hasConflicts: false,
                         issues: [],
-                        suggestions: ['Looks good']
-                    }
+                        suggestions: [],
+                        summary: 'No date-order or same-day multi-city conflicts were found within the limited check scope.',
+                        limitations: [
+                            'This check covers date order and same-day multi-city conflicts only.',
+                            'Road distance, drive time, traffic, venue availability, staffing, and operational feasibility are not verified.',
+                        ],
+                    },
                 }),
             });
         });
@@ -121,9 +142,13 @@ test.describe('Road Manager Module', () => {
 
     test('navigates to road manager module and displays components', async ({ authedPage: page }) => {
         await expect(page.locator('text=Tour Parameters')).toBeVisible({ timeout: 15_000 });
+        await expect(page.locator('#newLocation')).toBeVisible();
+        await expect(page.locator('text=Route Waypoints')).toBeVisible();
+        // Fresh editor: no waypoint counter overlay until the user adds one.
+        await expect(page.getByText('Total Waypoints')).toBeHidden();
     });
 
-    test('verifies touring planning tab flow: initializes route, runs logistics check and edits stops', async ({ authedPage: page }) => {
+    test('saves an honest route draft, checks schedule, edits and deletes the draft', async ({ authedPage: page }) => {
         // Fill dates
         await page.locator('#startDate').fill('2026-06-08');
         await page.locator('#endDate').fill('2026-06-12');
@@ -132,42 +157,69 @@ test.describe('Road Manager Module', () => {
         const waypointsInput = page.locator('#newLocation');
         await waypointsInput.fill('Austin, TX');
         await page.getByRole('button', { name: 'Add location' }).click();
-        await expect(page.locator('text=Austin, TX').first()).toBeVisible({ timeout: 5_000 }); // bypass-strict: text appears in multiple DOM containers or preview cards
- 
+        await expect(page.getByLabel('Remove Austin, TX')).toBeVisible({ timeout: 5_000 });
+
         // Add Houston, TX waypoint
         await waypointsInput.fill('Houston, TX');
         await waypointsInput.press('Enter');
-        await expect(page.locator('text=Houston, TX').first()).toBeVisible({ timeout: 5_000 }); // bypass-strict: text appears in multiple DOM containers or preview cards
+        await expect(page.getByLabel('Remove Houston, TX')).toBeVisible({ timeout: 5_000 });
 
-        // Click Initialize Route
-        await page.getByRole('button', { name: 'Initialize Route' }).click();
+        // Live waypoint counter mirrors the editor list
+        const waypointsOverlay = page.getByText('Total Waypoints').locator('..');
+        await expect(waypointsOverlay.getByText('2', { exact: true })).toBeVisible();
 
-        // Expect Generated Itinerary table to load
-        await expect(page.locator('text=Generated Itinerary')).toBeVisible({ timeout: 15_000 });
+        // Save the route draft (user_inputs_only — venues stay unset)
+        await page.getByRole('button', { name: 'Save Route Draft' }).click();
+
+        await expect(page.getByText('Route Draft', { exact: true })).toBeVisible({ timeout: 15_000 });
         await expect(page.getByRole('cell', { name: 'Austin, TX' })).toBeVisible();
-        await expect(page.locator("text=Antone's Nightclub")).toBeVisible();
+        await expect(page.getByRole('cell', { name: 'Houston, TX' })).toBeVisible();
+        // Honest draft contract: no fabricated venues or distances.
+        await expect(page.getByText('TBD').first()).toBeVisible(); // bypass-strict: one TBD venue cell per draft row; presence is the assertion
+        await expect(page.getByText('Not checked').first()).toBeVisible(); // bypass-strict: one road-distance cell per row; presence is the assertion
 
-        // Run Logistics Check
-        const logisticsBtn = page.getByRole('button', { name: 'Run Logistics Check' });
-        await logisticsBtn.click();
-        await expect(page.getByRole('button', { name: 'Logistics Verified' })).toBeVisible({ timeout: 10_000 });
+        // Run the schedule-only check
+        await page.getByRole('button', { name: 'Check Schedule' }).click();
+        await expect(page.getByRole('button', { name: 'Schedule Checked' })).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText(/within the limited check scope/)).toBeVisible();
 
-        // Open edit logistics modal
-        await page.getByRole('button', { name: 'Edit' }).first().click(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
-        await expect(page.locator('text=Edit Logistics')).toBeVisible({ timeout: 5_000 });
+        // Open the edit modal and modify the venue
+        await page.getByRole('button', { name: 'Edit', exact: true }).first().click(); // bypass-strict: one Edit action per itinerary row; editing the first row is the intent
+        await expect(page.getByText('Edit Route Stop')).toBeVisible({ timeout: 5_000 });
 
-        // Modify venue
         const editVenueInput = page.locator('#editVenue');
         await editVenueInput.fill('Mohawk Austin');
         await page.getByRole('button', { name: 'Save Changes' }).click();
 
-        // Check that table displays modified venue
-        await expect(page.locator('text=Mohawk Austin')).toBeVisible({ timeout: 5_000 });
+        await expect(page.getByText('Mohawk Austin')).toBeVisible({ timeout: 5_000 });
+
+        // Waypoints the user typed stay authoritative after the draft saves
+        await expect(page.getByLabel('Remove Austin, TX')).toBeVisible();
+
+        // Delete the draft through the confirmation dialog
+        await page.getByRole('button', { name: 'Delete Draft' }).click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible({ timeout: 5_000 });
+        await dialog.getByRole('button', { name: 'Delete Draft' }).click();
+
+        await expect(page.getByText('Route Draft', { exact: true })).toBeHidden({ timeout: 10_000 });
+        // The editor keeps the user's waypoint list; only the saved record is gone.
+        await expect(page.getByLabel('Remove Austin, TX')).toBeVisible();
+    });
+
+    test('keeps newly added waypoints visible without saving the draft', async ({ authedPage: page }) => {
+        const waypointsInput = page.locator('#newLocation');
+        await waypointsInput.fill('Toledo, OH');
+        await page.getByRole('button', { name: 'Add location' }).click();
+
+        await expect(page.getByLabel('Remove Toledo, OH')).toBeVisible({ timeout: 5_000 });
+        const waypointsOverlay = page.getByText('Total Waypoints').locator('..');
+        await expect(waypointsOverlay.getByText('1', { exact: true })).toBeVisible();
     });
 
     test('verifies on the road tab: switches tabs and scans nearby gas stations', async ({ authedPage: page }) => {
-        // Switch tab to On The Road
-        await page.getByRole('button').filter({ hasText: 'On The Road' }).click();
+        // Switch tab to On the Road
+        await page.getByRole('button').filter({ hasText: 'On the Road' }).click();
         await expect(page.getByRole('heading', { name: 'Command Center' })).toBeVisible({ timeout: 10_000 });
 
         // Enter current location
@@ -179,7 +231,7 @@ test.describe('Road Manager Module', () => {
         await scanBtn.click();
 
         // Verify nearby places are rendered in list
-        await expect(page.locator('text=E2E Gas Station A')).toBeVisible({ timeout: 10_000 });
-        await expect(page.locator('text=E2E Gas Station B')).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText('E2E Gas Station A')).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText('E2E Gas Station B')).toBeVisible({ timeout: 10_000 });
     });
 });
