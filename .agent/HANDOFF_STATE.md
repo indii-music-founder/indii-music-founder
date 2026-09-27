@@ -1,3 +1,28 @@
+# Session Close — Visual Asset Catalog & Landing Page Live Studio Showcase (2026-09-27)
+
+**Final state: Generated, categorized, and cataloged 49 high-resolution production and studio screenshots across desktop (2560×1440 @ 2x DPR) and mobile (390×844 @ 3x DPR). Produced comprehensive asset reference guide in `assets/marketing-screenshots/README.md`. Integrated live studio screen viewer with interactive view toggle (`Live UI Capture` vs `Workflow Specs`) and full-screen lightbox modal directly into `packages/landing/src/components/AppStudioShowcase.tsx`. Verified 10/10 preservation tests green in `page.preservation.test.tsx`, production Vite build passed (1.71s), ESLint 0 errors, quality scanner 0 violations. Delivered directly to `origin/main` via single coherent commit `3e8faf2b3`. CI run `36347074739` triggered on GitHub Actions.**
+
+## Shipped & Integrated
+- **Automated Capture Engine (`e2e/marketing-capture.spec.ts`):**
+  - Built full-spectrum crawl script using Playwright `authedPage` fixture and live production landing crawler.
+  - Captured all 25 primary studio modules, 11 production landing folds, 2 modal overlays (Cmd+K CommandBar & Keyboard Shortcuts), and 11 mobile views.
+- **Marketing Asset Catalog (`assets/marketing-screenshots/README.md`):**
+  - Structured inventory tables with filenames, pixel dimensions, file sizes, department tags, and recommended marketing copy angles.
+  - Added CLI documentation for deterministic one-line re-generation.
+- **Landing Page Real Studio Showcase (`packages/landing/src/components/AppStudioShowcase.tsx`):**
+  - Added `viewMode` toggle switcher between `Live UI Capture` (real high-res studio screenshots) and `Workflow Specs` (interactive specification cards).
+  - Wired public static screenshots into `packages/landing/public/screenshots/`.
+  - Added fullscreen expandable lightbox with zoom inspection for all 5 core departments.
+  - Maintained 100% of conversion claims, tripwire strings, and brand guidelines.
+- **Quality Gates & CI:**
+  - `npm --prefix packages/landing run build`: ✅ passed in 1.71s (0 errors).
+  - `npx vitest run packages/landing/src/page.preservation.test.tsx`: ✅ 10/10 tests passing (17.1s).
+  - `npm run check:test-quality`: ✅ 0 violations.
+  - `npm run validate:mainline-workflows`: ✅ 37 workflows valid.
+  - Delivered commit `3e8faf2b3` to `origin/main`. CI run `36347074739`.
+
+---
+
 # Session Close — GitHub Issues Resolution, Status Organization & Credit Wallet UI (2026-09-27)
 
 **Final state: All 13 open GitHub issues audit-verified and closed on `indii-music-founder/indii-music-founder` (zero open issues remaining on repository). All closed issues categorized with `status:completed` label (`#0e8a16`) with stale triage labels removed. Delivered Phase 20 Track B Artist Credit Wallet & Micro-Transactions UI to `origin/main` in commit `8a95fbca9` (all tests passing, 20/20 CI unit test shards green). Updated `.agent/test_ledger/OPEN_ISSUES_V3.md` marking ISSUE-1447 as FIXED.**
