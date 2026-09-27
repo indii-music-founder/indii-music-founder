@@ -33,9 +33,11 @@ The root code fix is commit 5504361c9, which adds a canonical-repository fallbac
 
 GitHub issue #319 is a backfill of one group of those real in-product reports.
 
-Do not use #319 as proof that a fresh post-repair report has already completed the entire automatic Firestore-to-GitHub roundtrip. That final live roundtrip should be verified with a new genuine report.
+Later the same day, fresh in-product reports **#332** and **#333** reached GitHub in the canonical auto-report format: `[MAJOR]` title prefix, `## Bug Report` body, reporter `wiil@indii.music`, `Reported from indii` footer, and auto-reported severity/module labels. That provides live post-repair evidence that the app-to-GitHub forwarding path is functioning.
 
-This episode is itself useful process evidence: the report data survived the forwarding failure, the failure mode was diagnosed, the pipeline was repaired, and the stranded reports could be recovered.
+The duplicate pair was created about 44 seconds apart, so the evidence also exposes a remaining deduplication/concurrency hardening task. The correct status is therefore: **live reporting path verified; duplicate suppression still imperfect under near-simultaneous reports.**
+
+This episode is useful process evidence: the report data survived the earlier forwarding failure, the failure mode was diagnosed, the pipeline was repaired, the stranded reports were recoverable, and a later fresh report completed the repaired path.
 
 ## 2. Founder/internal operating surface
 
