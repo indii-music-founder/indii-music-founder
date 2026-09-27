@@ -13,6 +13,7 @@ export interface DeductCreditsResponse {
   success: boolean;
   balanceAfter: number;
   transactionId: string;
+  autoTopUpTriggered?: boolean;
 }
 
 export const deductCredits = onCall({
@@ -52,8 +53,9 @@ export const deductCredits = onCall({
   try {
     const result = await db.runTransaction(async (transaction) => {
       const walletSnap = await transaction.get(walletRef);
-      const currentBalance = walletSnap.exists && typeof walletSnap.data()?.balanceCredits === 'number'
-        ? walletSnap.data()!.balanceCredits
+      const walletData = walletSnap.exists ? walletSnap.data() : null;
+      const currentBalance = typeof walletData?.balanceCredits === 'number'
+        ? walletData.balanceCredits
         : 0;
 
       if (currentBalance < amount) {
@@ -65,6 +67,12 @@ export const deductCredits = onCall({
 
       const balanceAfter = currentBalance - amount;
       const now = Date.now();
+
+      const autoTopUpEnabled = !!walletData?.autoTopUp;
+      const threshold = typeof walletData?.autoTopUpThreshold === 'number'
+        ? walletData.autoTopUpThreshold
+        : 100;
+      const shouldTriggerAutoTopUp = autoTopUpEnabled && balanceAfter <= threshold;
 
       transaction.update(walletRef, {
         balanceCredits: balanceAfter,
@@ -82,6 +90,21 @@ export const deductCredits = onCall({
         createdAt: now,
       });
 
+      if (shouldTriggerAutoTopUp) {
+        const eventId = `event_${now}_${crypto.randomUUID()}`;
+        const eventRef = db.collection('users').doc(targetUserId).collection('wallet_events').doc(eventId);
+        transaction.set(eventRef, {
+          id: eventId,
+          userId: targetUserId,
+          type: 'AUTO_TOP_UP_TRIGGERED',
+          balanceAfter,
+          threshold,
+          packId: walletData?.autoTopUpPackId || 'pack_starter_500',
+          createdAt: now,
+          status: 'PENDING',
+        });
+      }
+
       // Synchronize legacy user_credits if document exists
       const legacySnap = await transaction.get(legacyCreditsRef);
       if (legacySnap.exists) {
@@ -92,13 +115,14 @@ export const deductCredits = onCall({
         });
       }
 
-      return { balanceAfter, txId };
+      return { balanceAfter, txId, autoTopUpTriggered: shouldTriggerAutoTopUp };
     });
 
     return {
       success: true,
       balanceAfter: result.balanceAfter,
       transactionId: result.txId,
+      autoTopUpTriggered: result.autoTopUpTriggered,
     };
   } catch (error: unknown) {
     if (error instanceof HttpsError) {

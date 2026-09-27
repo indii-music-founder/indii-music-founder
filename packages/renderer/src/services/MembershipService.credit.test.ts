@@ -287,4 +287,120 @@ describe('MembershipService (Credit Wallet & Micro-Transactions)', () => {
             }));
         });
     });
+
+    describe('updateWalletSettings', () => {
+        it('invokes updateWalletSettings callable when available', async () => {
+            mockHttpsCallableFn.mockResolvedValueOnce({
+                data: {
+                    success: true,
+                    wallet: {
+                        ...mockWallet,
+                        autoTopUp: true,
+                        autoTopUpThreshold: 200,
+                        autoTopUpPackId: 'pack_growth_2500',
+                    },
+                },
+            });
+
+            const res = await MembershipService.updateWalletSettings(
+                {
+                    autoTopUp: true,
+                    autoTopUpThreshold: 200,
+                    autoTopUpPackId: 'pack_growth_2500',
+                },
+                'user-credit-1'
+            );
+
+            expect(res.success).toBe(true);
+            expect(res.wallet?.autoTopUp).toBe(true);
+            expect(res.wallet?.autoTopUpThreshold).toBe(200);
+            expect(mockHttpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({
+                userId: 'user-credit-1',
+                autoTopUp: true,
+                autoTopUpThreshold: 200,
+                autoTopUpPackId: 'pack_growth_2500',
+            }));
+        });
+
+        it('falls back to direct document update if callable fails', async () => {
+            mockHttpsCallableFn.mockRejectedValueOnce(new Error('Callable offline'));
+
+            vi.mocked(getDoc).mockResolvedValueOnce({
+                exists: () => true,
+                data: () => mockWallet,
+            } as any);
+
+            const res = await MembershipService.updateWalletSettings(
+                {
+                    autoTopUp: true,
+                    autoTopUpThreshold: 50,
+                },
+                'user-credit-1'
+            );
+
+            expect(res.success).toBe(true);
+            expect(res.wallet?.autoTopUp).toBe(true);
+            expect(res.wallet?.autoTopUpThreshold).toBe(50);
+        });
+    });
+
+    describe('consumeCreditsForFeature', () => {
+        it('rejects unknown feature key', async () => {
+            const res = await MembershipService.consumeCreditsForFeature(
+                'unknown_feature' as any,
+                'ref-1',
+                'user-credit-1'
+            );
+
+            expect(res.success).toBe(false);
+            expect(res.error).toContain('Unknown feature key');
+        });
+
+        it('rejects when balance is insufficient for feature', async () => {
+            vi.mocked(getDoc).mockResolvedValueOnce({
+                exists: () => true,
+                data: () => ({ ...mockWallet, balanceCredits: 30 }),
+            } as any);
+
+            const res = await MembershipService.consumeCreditsForFeature(
+                'cover_art', // costs 50
+                'ref-1',
+                'user-credit-1'
+            );
+
+            expect(res.success).toBe(false);
+            expect(res.costCredits).toBe(50);
+            expect(res.error).toContain('Insufficient credits');
+        });
+
+        it('successfully consumes credits for mastering using callable', async () => {
+            // Preflight check
+            vi.mocked(getDoc).mockResolvedValueOnce({
+                exists: () => true,
+                data: () => ({ ...mockWallet, balanceCredits: 500 }),
+            } as any);
+
+            // Callable deduction
+            mockHttpsCallableFn.mockResolvedValueOnce({
+                data: {
+                    success: true,
+                    balanceAfter: 400,
+                    transactionId: 'tx-mastering-1',
+                    autoTopUpTriggered: false,
+                },
+            });
+
+            const res = await MembershipService.consumeCreditsForFeature(
+                'mastering', // costs 100
+                'ref-track-99',
+                'user-credit-1'
+            );
+
+            expect(res.success).toBe(true);
+            expect(res.costCredits).toBe(100);
+            expect(res.balanceAfter).toBe(400);
+            expect(res.featureName).toBe('Audio Mastering & Loudness Optimization');
+            expect(res.transactionId).toBe('tx-mastering-1');
+        });
+    });
 });

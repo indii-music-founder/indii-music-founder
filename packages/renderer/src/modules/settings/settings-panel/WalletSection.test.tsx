@@ -53,6 +53,8 @@ vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
         getCreditBalance: vi.fn(),
         getCreditTransactions: vi.fn(),
+        getCreditWallet: vi.fn(),
+        updateWalletSettings: vi.fn(),
         addCredits: vi.fn(),
         createCreditCheckoutSession: vi.fn(),
     },
@@ -72,7 +74,18 @@ describe('WalletSection', () => {
         vi.clearAllMocks();
         vi.mocked(MembershipService.getCreditBalance).mockResolvedValue(2450);
         vi.mocked(MembershipService.getCreditTransactions).mockResolvedValue(mockTransactions as any);
+        vi.mocked(MembershipService.getCreditWallet).mockResolvedValue({
+            userId: 'user-wallet-test-123',
+            balanceCredits: 2450,
+            autoTopUp: false,
+            autoTopUpThreshold: 100,
+            autoTopUpPackId: 'pack_starter_500',
+            currency: 'USD',
+            createdAt: 1727400000000,
+            updatedAt: 1727400000000,
+        });
         vi.mocked(MembershipService.createCreditCheckoutSession).mockRejectedValue(new Error('Stripe not configured'));
+        vi.mocked(MembershipService.updateWalletSettings).mockResolvedValue({ success: true });
     });
 
     it('renders the balance and feature unlocks', async () => {
@@ -187,5 +200,66 @@ describe('WalletSection', () => {
         });
 
         expect(screen.getByText('No transactions recorded yet')).toBeInTheDocument();
+    });
+
+    it('renders auto-reload preferences and toggles config panel', async () => {
+        render(<WalletSection />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('auto-reload-card')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByTestId('auto-reload-config-panel')).not.toBeInTheDocument();
+
+        // Toggle auto-reload ON
+        const toggleBtn = screen.getByTestId('toggle-auto-reload');
+        fireEvent.click(toggleBtn);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('auto-reload-config-panel')).toBeInTheDocument();
+            expect(screen.getByTestId('auto-reload-active-badge')).toBeInTheDocument();
+        });
+    });
+
+    it('updates auto-reload threshold and saves preferences', async () => {
+        vi.mocked(MembershipService.getCreditWallet).mockResolvedValueOnce({
+            userId: 'user-wallet-test-123',
+            balanceCredits: 2450,
+            autoTopUp: true,
+            autoTopUpThreshold: 100,
+            autoTopUpPackId: 'pack_growth_2500',
+            currency: 'USD',
+            createdAt: 1727400000000,
+            updatedAt: 1727400000000,
+        });
+
+        render(<WalletSection />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('auto-reload-config-panel')).toBeInTheDocument();
+        });
+
+        // Select threshold 250
+        const thresholdBtn = screen.getByTestId('threshold-option-250');
+        fireEvent.click(thresholdBtn);
+
+        // Click Save Preferences
+        const saveBtn = screen.getByTestId('save-auto-reload-settings');
+        fireEvent.click(saveBtn);
+
+        await waitFor(() => {
+            expect(MembershipService.updateWalletSettings).toHaveBeenCalledWith(
+                {
+                    autoTopUp: true,
+                    autoTopUpThreshold: 250,
+                    autoTopUpPackId: 'pack_growth_2500',
+                },
+                mockUser.uid
+            );
+            expect(mockShowToast).toHaveBeenCalledWith(
+                'Auto-reload preferences updated successfully.',
+                'success'
+            );
+        });
     });
 });

@@ -590,6 +590,11 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      match /wallet_events/{eventId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
       // Server-only financial ledger subcollection written by webhook handlers.
       match /ledger/{entryId} {
         allow read, write: if false;

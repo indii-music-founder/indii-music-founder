@@ -732,6 +732,7 @@ class MembershipServiceImpl {
         success: boolean;
         balanceAfter: number;
         transactionId?: string;
+        autoTopUpTriggered?: boolean;
         error?: string;
     }> {
         if (amount <= 0) {
@@ -758,6 +759,7 @@ class MembershipServiceImpl {
                     success: boolean;
                     balanceAfter: number;
                     transactionId: string;
+                    autoTopUpTriggered?: boolean;
                 }>(functions, 'deductCredits');
 
                 const resp = await deductFn({
@@ -792,6 +794,11 @@ class MembershipServiceImpl {
 
                 const balanceAfter = currentBalance - amount;
                 const now = Date.now();
+                const autoTopUpEnabled = snap.exists() ? !!snap.data().autoTopUp : false;
+                const autoTopUpThreshold = snap.exists() && typeof snap.data().autoTopUpThreshold === 'number'
+                    ? snap.data().autoTopUpThreshold
+                    : 100;
+                const autoTopUpTriggered = autoTopUpEnabled && balanceAfter <= autoTopUpThreshold;
 
                 const walletUpdate: Partial<CreditWallet> = {
                     balanceCredits: balanceAfter,
@@ -825,13 +832,14 @@ class MembershipServiceImpl {
 
                 transaction.set(txRef, creditTx);
 
-                return { balanceAfter, txId };
+                return { balanceAfter, txId, autoTopUpTriggered };
             });
 
             return {
                 success: true,
                 balanceAfter: result.balanceAfter,
                 transactionId: result.txId,
+                autoTopUpTriggered: result.autoTopUpTriggered,
             };
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
@@ -1014,8 +1022,178 @@ class MembershipServiceImpl {
             return null;
         }
     }
+
+    /**
+     * Update user credit wallet configuration (auto top-up preferences).
+     * Invokes server-authoritative updateWalletSettings Cloud Function with client fallback.
+     */
+    async updateWalletSettings(
+        settings: {
+            autoTopUp: boolean;
+            autoTopUpThreshold?: number;
+            autoTopUpPackId?: string;
+        },
+        userId?: string
+    ): Promise<{ success: boolean; wallet?: CreditWallet; error?: string }> {
+        const uid = userId || await this.getCurrentUserId();
+        if (!uid) {
+            return { success: false, error: 'User not authenticated' };
+        }
+
+        try {
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            if (functions) {
+                const updateFn = httpsCallable<{
+                    userId: string;
+                    autoTopUp: boolean;
+                    autoTopUpThreshold?: number;
+                    autoTopUpPackId?: string;
+                }, {
+                    success: boolean;
+                    wallet: CreditWallet;
+                }>(functions, 'updateWalletSettings');
+
+                const resp = await updateFn({
+                    userId: uid,
+                    ...settings,
+                });
+
+                if (resp?.data?.success) {
+                    return resp.data;
+                }
+            }
+        } catch (callableErr: unknown) {
+            logger.warn('[MembershipService] updateWalletSettings callable failed, attempting transaction fallback:', callableErr);
+        }
+
+        // Offline / dev fallback: Direct Firestore update
+        try {
+            const walletRef = doc(db, 'users', uid, 'wallet', 'current');
+            const snap = await getDoc(walletRef);
+            const now = Date.now();
+
+            let updatedWallet: CreditWallet;
+            if (!snap.exists()) {
+                updatedWallet = {
+                    userId: uid,
+                    balanceCredits: 0,
+                    autoTopUp: settings.autoTopUp,
+                    autoTopUpThreshold: settings.autoTopUpThreshold ?? 100,
+                    ...(settings.autoTopUpPackId ? { autoTopUpPackId: settings.autoTopUpPackId } : {}),
+                    currency: 'USD',
+                    createdAt: now,
+                    updatedAt: now,
+                };
+                await setDoc(walletRef, updatedWallet);
+            } else {
+                const existing = snap.data() as CreditWallet;
+                updatedWallet = {
+                    ...existing,
+                    autoTopUp: settings.autoTopUp,
+                    autoTopUpThreshold: settings.autoTopUpThreshold ?? existing.autoTopUpThreshold ?? 100,
+                    ...(settings.autoTopUpPackId ? { autoTopUpPackId: settings.autoTopUpPackId } : {}),
+                    updatedAt: now,
+                };
+                await updateDoc(walletRef, {
+                    autoTopUp: updatedWallet.autoTopUp,
+                    autoTopUpThreshold: updatedWallet.autoTopUpThreshold,
+                    ...(updatedWallet.autoTopUpPackId ? { autoTopUpPackId: updatedWallet.autoTopUpPackId } : {}),
+                    updatedAt: now,
+                });
+            }
+
+            return { success: true, wallet: updatedWallet };
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            logger.error('[MembershipService] Failed to update wallet settings:', err);
+            return { success: false, error: msg };
+        }
+    }
+
+    /**
+     * Deducts credits for a standardized platform consumable feature.
+     */
+    async consumeCreditsForFeature(
+        feature: ConsumableFeatureKey,
+        referenceId?: string,
+        userId?: string
+    ): Promise<{
+        success: boolean;
+        balanceAfter?: number;
+        costCredits: number;
+        featureName: string;
+        transactionId?: string;
+        autoTopUpTriggered?: boolean;
+        error?: string;
+    }> {
+        const config = CONSUMABLE_FEATURE_COSTS[feature];
+        if (!config) {
+            return {
+                success: false,
+                costCredits: 0,
+                featureName: String(feature),
+                error: `Unknown feature key: ${String(feature)}`,
+            };
+        }
+
+        const uid = userId || await this.getCurrentUserId();
+        if (!uid) {
+            return {
+                success: false,
+                costCredits: config.credits,
+                featureName: config.name,
+                error: 'User not authenticated',
+            };
+        }
+
+        const preflight = await this.canDeductCredits(config.credits, uid);
+        if (!preflight.allowed) {
+            return {
+                success: false,
+                costCredits: config.credits,
+                featureName: config.name,
+                balanceAfter: preflight.balance,
+                error: `Insufficient credits. Required: ${config.credits}, Available: ${preflight.balance}`,
+            };
+        }
+
+        const deduction = await this.deductCredits(
+            config.credits,
+            config.name,
+            referenceId,
+            uid
+        );
+
+        if (!deduction.success) {
+            return {
+                success: false,
+                costCredits: config.credits,
+                featureName: config.name,
+                balanceAfter: deduction.balanceAfter,
+                error: deduction.error || 'Credit deduction failed',
+            };
+        }
+
+        return {
+            success: true,
+            balanceAfter: deduction.balanceAfter,
+            costCredits: config.credits,
+            featureName: config.name,
+            transactionId: deduction.transactionId,
+            autoTopUpTriggered: deduction.autoTopUpTriggered,
+        };
+    }
 }
 
+export const CONSUMABLE_FEATURE_COSTS = {
+    cover_art: { credits: 50, name: 'Cover Art & 4K Upscale Generation' },
+    mastering: { credits: 100, name: 'Audio Mastering & Loudness Optimization' },
+    distribution: { credits: 250, name: 'Global DSP Distribution Package Delivery' },
+    legal_splits: { credits: 75, name: 'Legal Splits & Autonomous Claims Review' },
+} as const;
+
+export type ConsumableFeatureKey = keyof typeof CONSUMABLE_FEATURE_COSTS;
 
 export const MembershipService = new MembershipServiceImpl();
 

@@ -201,4 +201,47 @@ describe('deductCredits', () => {
       })
     );
   });
+
+  it('triggers autoTopUp event when balance drops below threshold', async () => {
+    const auth = { uid: 'user-1' };
+
+    mocks.mockTransaction.get.mockImplementation(async (ref: any) => {
+      if (ref.path === 'users/user-1/wallet/current') {
+        return {
+          exists: true,
+          data: () => ({
+            balanceCredits: 120,
+            autoTopUp: true,
+            autoTopUpThreshold: 100,
+            autoTopUpPackId: 'pack_growth_2500',
+          }),
+        };
+      }
+      return { exists: false, data: () => null };
+    });
+
+    const result = await fn(
+      makeRequest(
+        { amount: 50, reason: 'Mastering Session' },
+        auth
+      )
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.balanceAfter).toBe(70);
+    expect(result.autoTopUpTriggered).toBe(true);
+
+    // Verify wallet_events document was set
+    expect(mocks.mockTransaction.set).toHaveBeenCalledWith(
+      expect.objectContaining({ path: expect.stringContaining('users/user-1/wallet_events/event_') }),
+      expect.objectContaining({
+        userId: 'user-1',
+        type: 'AUTO_TOP_UP_TRIGGERED',
+        balanceAfter: 70,
+        threshold: 100,
+        packId: 'pack_growth_2500',
+        status: 'PENDING',
+      })
+    );
+  });
 });

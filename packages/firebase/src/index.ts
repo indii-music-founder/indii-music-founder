@@ -1895,6 +1895,7 @@ import { stripeWebhook } from "./stripe/webhookHandler";
 import { activateFounderPass } from "./subscription/activateFounderPass";
 import { createMicroTransaction } from "./subscription/createMicroTransaction";
 import { deductCredits } from "./subscription/deductCredits";
+import { updateWalletSettings } from "./subscription/updateWalletSettings";
 import { createMarketplaceCheckout } from "./marketplace/createMarketplaceCheckout";
 import { getStemDownloadUrl } from "./marketplace/getStemDownloadUrl";
 
@@ -1913,7 +1914,8 @@ export {
     stripeWebhook,
     activateFounderPass,
     createMicroTransaction,
-    deductCredits
+    deductCredits,
+    updateWalletSettings
 };
 
 // ----------------------------------------------------------------------------

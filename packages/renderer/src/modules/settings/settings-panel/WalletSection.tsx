@@ -23,6 +23,7 @@ import {
     Music,
     Palette,
     FileText,
+    Settings2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStore, StoreState } from '@/core/store';
@@ -33,6 +34,7 @@ import {
     STANDARD_CREDIT_PACKS,
     type CreditPack,
     type CreditTransaction,
+    type CreditWallet,
 } from '@indii/shared';
 import { SectionHeader } from './SettingsShared';
 import { logger } from '@/utils/logger';
@@ -78,6 +80,12 @@ export const WalletSection: React.FC = () => {
     const [purchasingPackId, setPurchasingPackId] = useState<string | null>(null);
     const [filterType, setFilterType] = useState<'ALL' | 'PURCHASE' | 'CONSUMPTION'>('ALL');
 
+    // Auto-Reload settings state
+    const [autoTopUp, setAutoTopUp] = useState<boolean>(false);
+    const [autoTopUpThreshold, setAutoTopUpThreshold] = useState<number>(100);
+    const [autoTopUpPackId, setAutoTopUpPackId] = useState<string>('pack_starter_500');
+    const [savingSettings, setSavingSettings] = useState<boolean>(false);
+
     const loadWalletData = useCallback(async (isRefresh = false) => {
         if (!user?.uid) {
             setLoading(false);
@@ -91,12 +99,20 @@ export const WalletSection: React.FC = () => {
         }
 
         try {
-            const [bal, txs] = await Promise.all([
+            const [bal, txs, wallet] = await Promise.all([
                 MembershipService.getCreditBalance(user.uid),
                 MembershipService.getCreditTransactions(30, user.uid),
+                MembershipService.getCreditWallet(user.uid),
             ]);
             setBalance(bal);
             setTransactions(txs);
+            if (wallet) {
+                setAutoTopUp(!!wallet.autoTopUp);
+                setAutoTopUpThreshold(typeof wallet.autoTopUpThreshold === 'number' ? wallet.autoTopUpThreshold : 100);
+                if (wallet.autoTopUpPackId) {
+                    setAutoTopUpPackId(wallet.autoTopUpPackId);
+                }
+            }
         } catch (err) {
             logger.error('[WalletSection] Failed to load wallet state:', err);
             showToast('Unable to load credit wallet details.', 'error');
@@ -109,6 +125,36 @@ export const WalletSection: React.FC = () => {
     useEffect(() => {
         void loadWalletData();
     }, [loadWalletData]);
+
+    const handleSaveAutoReloadSettings = async () => {
+        if (!user?.uid) {
+            showToast('Please sign in to update wallet settings.', 'error');
+            return;
+        }
+
+        setSavingSettings(true);
+        try {
+            const res = await MembershipService.updateWalletSettings(
+                {
+                    autoTopUp,
+                    autoTopUpThreshold,
+                    autoTopUpPackId,
+                },
+                user.uid
+            );
+
+            if (res.success) {
+                showToast('Auto-reload preferences updated successfully.', 'success');
+            } else {
+                showToast(res.error || 'Failed to update auto-reload preferences.', 'error');
+            }
+        } catch (err) {
+            logger.error('[WalletSection] Error saving auto-reload settings:', err);
+            showToast('Failed to save auto-reload preferences.', 'error');
+        } finally {
+            setSavingSettings(false);
+        }
+    };
 
     const handlePurchasePack = async (pack: CreditPack) => {
         if (!user?.uid) {
@@ -315,6 +361,124 @@ export const WalletSection: React.FC = () => {
                         );
                     })}
                 </div>
+            </div>
+
+            {/* Auto-Reload Preferences Card */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-xl" data-testid="auto-reload-card">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 flex-shrink-0 mt-0.5">
+                            <Settings2 size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                                <span>Auto-Reload Preferences</span>
+                                {autoTopUp && (
+                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full" data-testid="auto-reload-active-badge">
+                                        Active
+                                    </span>
+                                )}
+                            </h3>
+                            <p className="text-xs text-slate-400 mt-1">
+                                Automatically replenish your credit balance before high-demand AI rendering or distribution delivery is interrupted.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        role="switch"
+                        aria-checked={autoTopUp}
+                        onClick={() => setAutoTopUp(!autoTopUp)}
+                        data-testid="toggle-auto-reload"
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            autoTopUp ? 'bg-purple-600' : 'bg-slate-700'
+                        }`}
+                    >
+                        <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                autoTopUp ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                        />
+                    </button>
+                </div>
+
+                {autoTopUp && (
+                    <div className="mt-5 space-y-5" data-testid="auto-reload-config-panel">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Threshold Selection */}
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                                    Trigger Threshold
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[50, 100, 250].map((thr) => (
+                                        <button
+                                            key={thr}
+                                            type="button"
+                                            onClick={() => setAutoTopUpThreshold(thr)}
+                                            data-testid={`threshold-option-${thr}`}
+                                            className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                                                autoTopUpThreshold === thr
+                                                    ? 'bg-purple-600/20 border-purple-500 text-purple-300 shadow-sm'
+                                                    : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:text-white'
+                                            }`}
+                                        >
+                                            &le; {thr}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-[11px] text-slate-500 mt-1.5">
+                                    Reloads whenever available credits fall to or below this level.
+                                </p>
+                            </div>
+
+                            {/* Reload Pack Selection */}
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                                    Pack to Reload
+                                </label>
+                                <select
+                                    value={autoTopUpPackId}
+                                    onChange={(e) => setAutoTopUpPackId(e.target.value)}
+                                    data-testid="select-auto-top-up-pack"
+                                    className="w-full py-2 px-3 rounded-xl text-xs font-semibold bg-slate-800/60 border border-slate-700 text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+                                >
+                                    {STANDARD_CREDIT_PACKS.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name} ({p.credits.toLocaleString()} credits — ${(p.priceUsdCents / 100).toFixed(2)})
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-[11px] text-slate-500 mt-1.5">
+                                    Billed seamlessly via your saved payment profile.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                            <span className="text-xs text-slate-400">
+                                Status: Auto-reloads <strong className="text-white">{STANDARD_CREDIT_PACKS.find(p => p.id === autoTopUpPackId)?.name || 'Starter Pack'}</strong> when balance &le; <strong className="text-white">{autoTopUpThreshold}</strong> credits.
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => void handleSaveAutoReloadSettings()}
+                                disabled={savingSettings}
+                                data-testid="save-auto-reload-settings"
+                                className="py-2 px-4 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shadow-md"
+                            >
+                                {savingSettings ? (
+                                    <>
+                                        <RefreshCw size={13} className="animate-spin" />
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <span>Save Preferences</span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Transparent Transaction Ledger */}
