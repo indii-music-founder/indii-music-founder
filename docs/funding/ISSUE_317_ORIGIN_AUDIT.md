@@ -63,7 +63,25 @@ Commit `5504361c9` documents the repair:
 - a canonical repository fallback was added;
 - live secret/environment configuration was repaired separately.
 
-Therefore #319 is evidence that genuine in-product reports existed and were durable/recoverable, but it is not itself proof of a fresh automatic post-repair roundtrip.
+Therefore #319 is evidence that genuine in-product reports existed and were durable/recoverable, but it was not itself proof of a fresh automatic post-repair roundtrip.
+
+## Fresh post-repair live proof — #332 and #333
+
+That remaining proof gate was crossed later on 2026-09-26.
+
+GitHub issues **#332** and **#333** were created about 44 seconds apart and match the in-product `reportBugFn` contract:
+
+- title format: `[MAJOR] Image generation tool fails to output 3000x3000 resolution`;
+- body heading: `## Bug Report`;
+- reporter: `wiil@indii.music`;
+- footer: `Reported from indii`;
+- GitHub creator: `wiil-tech`;
+- labels: `bug`, `severity:major`, and `module:Creative Studio`;
+- label descriptions explicitly identify severity/module as auto-reported.
+
+This is fresh, post-repair evidence that the product-originated reporting path can reach GitHub successfully.
+
+The two near-simultaneous issues are also evidence of a remaining hardening task: duplicate suppression did not collapse these reports into a single issue under this timing pattern. Treat that as a deduplication/concurrency gap, not as a failure of the reporting path itself.
 
 ## Current implementation after the #317 audit
 
@@ -84,9 +102,13 @@ Also safe:
 
 > Boardroom readiness overclaims now have deterministic and JEV guardrails that can route the defect into the same reporting pipeline automatically.
 
-Still gated:
+Live-verified:
 
-> A new genuine post-repair report must complete the repaired Firestore-to-GitHub path automatically before calling that production forwarding leg live-verified end to end.
+> Fresh post-repair in-product reports have completed the reporting path into GitHub Issues (#332 and #333), using the expected auto-reported metadata and app-originated issue format.
+
+Remaining hardening:
+
+> Near-simultaneous duplicate reports still need stronger deduplication/concurrency handling.
 
 ## Why this still matters
 
@@ -96,8 +118,9 @@ The failure is useful engineering evidence rather than something to hide:
 2. the outage was diagnosable;
 3. the repair was made;
 4. stranded reports were recoverable;
-5. the remaining proof requirement is explicit.
+5. a fresh post-repair roundtrip was subsequently proven by #332/#333;
+6. the duplicate pair exposed the next bounded hardening task: deduplication under near-simultaneous reports.
 
 That is consistent with the broader indii.music engineering rule: distinguish implemented, tested, and live-verified behavior rather than collapsing them into one claim.
 
-**Audited:** 2026-09-26
+**Audited / updated:** 2026-09-26
