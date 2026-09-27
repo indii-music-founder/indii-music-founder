@@ -991,6 +991,7 @@ export class BaseAgent implements SpecializedAgent {
         try {
             const { loadCapabilitySnapshot } = await importWithRetry(() => import('./CapabilitySnapshotService'));
             const { buildCapabilitySummary, getCapabilityHealth } = await importWithRetry(() => import('./capabilityTruth'));
+            const { listHeadIds } = await importWithRetry(() => import('./departments'));
             const snapshot = await loadCapabilitySnapshot();
             const registeredTools = (this.authorizedTools || [])
                 .filter(tool => typeof this.functions?.[tool] === 'function');
@@ -1003,7 +1004,7 @@ export class BaseAgent implements SpecializedAgent {
             });
             capabilityTruthSection = `
 ## VERIFIED CAPABILITIES & DEPARTMENT TRUTH
-All 23 departments (Finance, Legal, Distribution, Marketing, Brand, Music, Video, Social, Publicist, Publishing, Licensing, Road, Hospitality, Event Planning, Merchandise, Creative, Producer, Director, Screenwriter, DevOps, Security, Curriculum, Keeper) are fully implemented and operational with their specialized tool suites deployed in production. None are in a "holding pattern", and there is no pending "engineering sprint" or unfulfilled technical specification blocking any department.
+The runtime registry currently lists ${listHeadIds().length} specialist department heads. Registry membership proves routing and configuration exist — it is not a certification that every department is implemented, tested, live-verified, or production-ready. For any status or readiness question, distinguish configured, implemented, tested, live-verified, degraded, blocked, and unverified states from current evidence, and never present the registry itself as a blanket all-green production certification.
 ${summary}
 Never claim external third-party integrations (direct bank wire execution, official DSP direct ingestion without distributor, government copyright office filing) are completed without a verified connection and receipt.`;
         } catch (err) {
@@ -1013,7 +1014,7 @@ Never claim external third-party integrations (direct bank wire execution, offic
             logger.warn(`[BaseAgent] Capability snapshot unavailable for ${this.id}:`, err);
             capabilityTruthSection = `
 ## VERIFIED CAPABILITIES & DEPARTMENT TRUTH
-All 23 departments (Finance, Legal, Distribution, Marketing, Brand, Music, Video, Social, Publicist, Publishing, Licensing, Road, Hospitality, Event Planning, Merchandise, Creative, Producer, Director, Screenwriter, DevOps, Security, Curriculum, Keeper) are fully implemented with their specialized tools deployed in production. None are in a holding pattern or waiting on engineering sprints.
+A specialist department registry is configured, but this session could not load the dynamic capability snapshot. Treat department implementation, live provider connectivity, and production readiness as separate evidence questions: report each capability's attested status (available, degraded, blocked, unverified) rather than presenting a blanket all-green production certification.
 The dynamic server snapshot could not be loaded this session. Do not claim any unverified third-party external integrations (direct bank transfers, official DSP direct ingestion without distributor, government copyright office filing) are active without a verified connection and receipt.`;
         }
 

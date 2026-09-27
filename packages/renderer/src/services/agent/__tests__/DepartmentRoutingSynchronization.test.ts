@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DEPARTMENTS } from '../departments';
+import { DEPARTMENTS, listHeadIds } from '../departments';
 import {
     buildDepartmentAuditReport,
     isDepartmentAuditOrReadinessQuestion,
@@ -47,11 +47,35 @@ describe('DepartmentRoutingSynchronization & Capability Truth Architectural Guar
         const report = buildDepartmentAuditReport();
 
         expect(report).toContain('cannot truthfully certify every department');
-        expect(report).toContain('will not claim that all 23 departments are fully verified');
+        // Issue #317: derive the count from the registry so the guard cannot
+        // silently diverge when a department head is added or removed.
+        expect(report).toContain(`will not claim that all ${listHeadIds().length} departments are fully verified`);
         expect(report).toContain('will not claim there are no pending engineering items');
         expect(report).toContain('available, degraded, blocked, or unverified');
         // The abandoned blanket claim must never return:
         expect(report).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
+        expect(report).not.toMatch(/All \d+ departments .* fully implemented and operational/i);
+    });
+
+    it('keeps all-green department overclaims out of every agent-facing prompt source (#317)', () => {
+        // The exact overclaim issue #317 describes was injected from static
+        // prompt sources. Guard every file the agent runtime reads so the
+        // claim cannot return silently.
+        const sources = ['agents/conductor/prompt.md', 'packages/renderer/src/services/agent/BaseAgent.ts'].map(relative => {
+            const candidates = [
+                path.resolve(process.cwd(), relative),
+                path.resolve(process.cwd(), `../../${relative}`),
+                path.resolve(__dirname, `../../../../../../${relative}`),
+            ];
+            const found = candidates.find(p => fs.existsSync(p));
+            expect(found, `Could not locate ${relative}`).toBeDefined();
+            return fs.readFileSync(found!, 'utf-8');
+        });
+
+        for (const content of sources) {
+            expect(content).not.toMatch(/All \d+ departments \(?[^)]*\)?\s*(are\s+)?fully implemented and operational/i);
+            expect(content).not.toMatch(/deployed in production\. None are in a "holding pattern"/i);
+        }
     });
 
     it('intercepts abstract variations of audit and readiness questions', () => {
