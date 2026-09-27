@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, UserPlus, Phone, Mail, MapPin, CheckCircle, Clock, AlertTriangle, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Pause, UserPlus, Phone, CheckCircle, Clock, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { FieldEncounter } from '@/types/encounter';
 import type { FieldContact } from '@/types/contacts';
@@ -15,6 +15,27 @@ export default function EncounterFeedView() {
     const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const toast = useToast();
+    const [reviewId, setReviewId] = useState<string | null>(null);
+    const [reviewFields, setReviewFields] = useState({ name: '', phone: '', email: '', organization: '', notes: '', role: 'other' as FieldContact['role'] });
+    const [isSavingReview, setIsSavingReview] = useState(false);
+    const startReview = (encounter: FieldEncounter) => {
+        const contact = encounter.extractedContact;
+        setReviewFields({ name: contact?.name || '', phone: contact?.phone || '', email: contact?.email || '', organization: contact?.organization || '', notes: contact?.notes || '', role: contact?.role || 'other' });
+        setReviewId(encounter.id);
+    };
+    const saveReview = async () => {
+        if (!reviewId || isSavingReview) return;
+        setIsSavingReview(true);
+        try {
+            await EncounterService.reviewContact(reviewId, reviewFields);
+            setReviewId(null);
+            toast.success('Contact details confirmed and saved.');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Unable to save contact review.');
+        } finally {
+            setIsSavingReview(false);
+        }
+    };
 
     useEffect(() => {
         const unsub = EncounterService.subscribeRecentEncounters((items) => {
@@ -45,7 +66,7 @@ export default function EncounterFeedView() {
     };
 
     const handleSaveToIPhone = async (encounter: FieldEncounter) => {
-        if (!encounter.extractedContact?.name) return;
+        if (!encounter.extractedContact?.name || encounter.contactReviewStatus === 'needs_review') return;
         triggerHaptic([50, 100]);
 
         const contact: FieldContact = {
@@ -54,7 +75,7 @@ export default function EncounterFeedView() {
             phone: encounter.extractedContact.phone,
             email: encounter.extractedContact.email,
             organization: encounter.extractedContact.organization,
-            role: (encounter.extractedContact.role as any) || 'other',
+            role: encounter.extractedContact.role || 'other',
             notes: encounter.extractedContact.notes || encounter.summary,
             photoUrl: encounter.assets.find(a => a.type === 'photo')?.downloadUrl,
             audioMemoUrl: encounter.assets.find(a => a.type === 'audio')?.downloadUrl,
@@ -151,6 +172,9 @@ export default function EncounterFeedView() {
                                         <Clock className="w-3 h-3" /> Analyzing
                                     </span>
                                 )}
+                                {enc.status === 'failed' && (
+                                    <span role="alert" className="text-xs text-red-400">Analysis failed — capture saved</span>
+                                )}
                                 {enc.status === 'pending' && (
                                     <span className="inline-flex items-center gap-1 text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full font-mono">
                                         Queued
@@ -161,6 +185,9 @@ export default function EncounterFeedView() {
 
                         {/* Summary & Transcript */}
                         <div className="px-4 pb-3 text-xs text-stone-300">
+                            {enc.status === 'failed' && <p role="alert" className="mb-2 text-red-300">{enc.error || 'Analysis failed. Original media is still available below.'}</p>}
+                            {enc.analysisCoverage && <p className="mb-2 text-amber-300">{enc.analysisCoverage}</p>}
+                            {enc.contactReviewStatus === 'needs_review' && <p className="mb-2 text-amber-300">Review the extracted contact against the original media before use.</p>}
                             {enc.summary && <p className="mb-2 italic text-stone-400">"{enc.summary}"</p>}
 
                             {/* Audio Player Row */}
@@ -201,6 +228,9 @@ export default function EncounterFeedView() {
                                 )}
                             </AnimatePresence>
 
+                            {enc.assets.filter(asset => asset.type === 'document' || asset.type === 'receipt').map(asset => (
+                                <a key={asset.id} href={asset.downloadUrl} target="_blank" rel="noopener noreferrer" className="block mt-2 underline text-emerald-300">Open captured {asset.type}</a>
+                            ))}
                             {/* Video Stream Preview */}
                             {videoAsset?.downloadUrl && (
                                 <div className="mt-3 rounded-xl overflow-hidden border border-white/10 bg-black">
@@ -215,6 +245,26 @@ export default function EncounterFeedView() {
                             )}
                         </div>
 
+                        {reviewId === enc.id && (
+                            <form className="p-4 space-y-2" onSubmit={event => { event.preventDefault(); void saveReview(); }}>
+                                {(['name', 'phone', 'email', 'organization', 'notes'] as const).map(field => (
+                                    <label key={field} className="block text-xs text-stone-300 capitalize">
+                                        {field}
+                                        <input className="block w-full p-2 rounded bg-stone-900 text-white" value={reviewFields[field]}
+                                            required={field === 'name'} maxLength={field === 'notes' ? 2000 : field === 'name' ? 200 : field === 'phone' ? 80 : field === 'email' ? 320 : 300}
+                                            onChange={event => setReviewFields(current => ({ ...current, [field]: event.target.value }))} />
+                                    </label>
+                                ))}
+                                <label className="block text-xs text-stone-300">Role
+                                    <select className="block w-full p-2 rounded bg-stone-900 text-white" value={reviewFields.role}
+                                        onChange={event => setReviewFields(current => ({ ...current, role: event.target.value as FieldContact['role'] }))}>
+                                        {(['musician', 'promoter', 'venue_staff', 'engineer', 'manager', 'fan', 'industry', 'media', 'other'] as const).map(role => <option key={role} value={role}>{role.replace('_', ' ')}</option>)}
+                                    </select>
+                                </label>
+                                <button type="submit" disabled={isSavingReview} className="px-3 py-2 rounded bg-emerald-400 text-black">{isSavingReview ? 'Saving…' : 'Confirm and save contact'}</button>
+                                <button type="button" disabled={isSavingReview} onClick={() => setReviewId(null)} className="px-3 py-2 text-stone-300">Cancel</button>
+                            </form>
+                        )}
                         {/* Action Bar (Contacts + Notes Bridge) */}
                         <div className="border-t border-white/5 bg-white/[0.02] px-4 py-2.5 flex items-center justify-between gap-2">
                             {enc.extractedContact?.phone ? (
@@ -226,10 +276,11 @@ export default function EncounterFeedView() {
                                     {enc.extractedContact.phone}
                                 </a>
                             ) : (
-                                <span className="text-[11px] text-stone-500 font-mono">Saved to Notes</span>
+                                <span className="text-[11px] text-stone-500 font-mono">{enc.noteId ? 'Saved to Notes' : 'Capture saved'}</span>
                             )}
 
-                            {enc.extractedContact?.name && (
+                            {enc.extractedContact?.name && <button onClick={() => startReview(enc)} className="text-xs text-emerald-300">Review / edit contact</button>}
+                            {enc.extractedContact?.name && enc.contactReviewStatus !== 'needs_review' && (
                                 <button
                                     onClick={() => handleSaveToIPhone(enc)}
                                     className="flex items-center gap-1.5 text-xs font-semibold text-black bg-emerald-400 hover:bg-emerald-300 px-3 py-1.5 rounded-lg shadow active:scale-95 transition-transform"

@@ -34,6 +34,8 @@ export interface FieldEncounter {
     location?: EncounterGeoLocation;
     extractedContact?: Partial<FieldContact>;
     contactId?: string;
+    contactReviewStatus?: 'needs_review' | 'confirmed';
+    analysisCoverage?: string;
     noteId?: string;
     audioTranscript?: string;
     createdAt: string;

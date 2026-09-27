@@ -2,6 +2,7 @@ import {
     collection,
     doc,
     setDoc,
+    runTransaction,
     query,
     orderBy,
     limit,
@@ -13,6 +14,7 @@ import { db, auth } from '@/services/firebase';
 import { StorageService } from '@/services/StorageService';
 import type { FieldEncounter, CreateEncounterInput, EncounterAsset } from '@/types/encounter';
 import { logger } from '@/utils/logger';
+import type { FieldContactRole } from '@/types/contacts';
 
 export class EncounterService {
     private static getCollection(userId: string) {
@@ -79,6 +81,39 @@ export class EncounterService {
         return encounterId;
     }
 
+    /** Confirm or correct a candidate through the signed-in user's normal write path. */
+    static async reviewContact(encounterId: string, fields: { name: string; phone: string; email: string; organization: string; notes: string; role: FieldContactRole }): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('Sign in to review this contact.');
+        const name = fields.name.trim();
+        if (!name || name.length > 200) throw new Error('Enter a contact name (up to 200 characters).');
+        const contactFields = {
+            name, phone: fields.phone.trim().slice(0, 80), email: fields.email.trim().slice(0, 320),
+            organization: fields.organization.trim().slice(0, 300), notes: fields.notes.trim().slice(0, 2000),
+        };
+        const encounterRef = doc(this.getCollection(userId), encounterId);
+        await runTransaction(db, async transaction => {
+            const snapshot = await transaction.get(encounterRef);
+            const encounter = snapshot.data();
+            if (!encounter || encounter.status !== 'completed' || !encounter.extractedContact?.name) {
+                throw new Error('This encounter has no completed contact analysis to review.');
+            }
+            const contactId = `contact_encounter_${encounterId}`;
+            const role = fields.role;
+            transaction.set(doc(db, 'users', userId, 'fieldContacts', contactId), {
+                ...contactFields, role, encounterId, source: 'encounter_ai',
+                reviewStatus: 'confirmed', reviewedAt: serverTimestamp(),
+                capturedAt: encounter.createdAt || serverTimestamp(),
+                photoUrl: encounter.assets?.find((asset: EncounterAsset) => asset.type === 'photo')?.downloadUrl || null,
+                audioMemoUrl: encounter.assets?.find((asset: EncounterAsset) => asset.type === 'audio')?.downloadUrl || null,
+            }, { merge: true });
+            transaction.update(encounterRef, {
+                extractedContact: { ...contactFields, role }, contactId,
+                contactReviewStatus: 'confirmed', updatedAt: serverTimestamp(),
+            });
+        });
+    }
+
     /**
      * Subscribe to the most recent encounters for the authenticated user (real-time stream).
      */
@@ -113,6 +148,8 @@ export class EncounterService {
                         location: data.location || undefined,
                         extractedContact: data.extractedContact || undefined,
                         contactId: data.contactId || undefined,
+                        contactReviewStatus: data.contactReviewStatus || undefined,
+                        analysisCoverage: data.analysisCoverage || undefined,
                         noteId: data.noteId || undefined,
                         audioTranscript: data.audioTranscript || undefined,
                         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),

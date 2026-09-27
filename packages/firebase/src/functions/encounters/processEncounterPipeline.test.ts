@@ -1,62 +1,41 @@
-import { describe, it, expect, vi } from 'vitest';
-import { analyzeEncounterWithGemini } from './processEncounterPipeline';
-import * as vertexClientModule from '../../lib/vertexClient';
+/** Pure contract tests only; these do not claim live media extraction works. */
+import { describe, it, expect } from 'vitest';
+import { buildEncounterMediaPart, resolveEncounterAsset, parseEncounterAnalysis } from './encounterEvidence';
 
-describe('Encounter Pipeline Multimodal Intelligence', () => {
-    it('returns a fallback analysis when Vertex AI fails or credentials are unavailable', async () => {
-        vi.spyOn(vertexClientModule, 'getVertexAIClient').mockImplementation(() => {
-            throw new Error('No ADC credentials in test');
-        });
-
-        const result = await analyzeEncounterWithGemini({
-            clientContext: 'Test backstage interaction',
-        });
-        expect(result).toBeDefined();
-        expect(result.summary).toContain('Test backstage interaction');
+describe('Encounter evidence boundaries (structural)', () => {
+    it.each([
+        ['audio', 'audio/webm'], ['photo', 'image/jpeg'], ['video', 'video/mp4'],
+        ['document', 'application/pdf'], ['receipt', 'image/png'],
+    ])('attaches %s evidence as a media part', (type, mime) => {
+        const part = buildEncounterMediaPart(type, 'gs://project/users/owner/assets/capture', mime, 100);
+        expect(part.fileData).toEqual({ fileUri: 'gs://project/users/owner/assets/capture', mimeType: mime });
+        expect(part.videoMetadata).toEqual(type === 'video' ? { startOffset: '0s', endOffset: '120s', fps: 1 } : undefined);
     });
-
-    it('parses structured multimodal Gemini output when Vertex AI succeeds', async () => {
-        const mockResponse = {
-            summary: 'Met Alex Rivers backstage.',
-            transcript: 'Just met Alex Rivers at Live Nation',
-            contact: {
-                name: 'Alex Rivers',
-                phone: '+13135550199',
-                organization: 'Live Nation',
-                role: 'manager',
-            },
-        };
-
-        vi.spyOn(vertexClientModule, 'getVertexAIClient').mockReturnValue({
-            models: {
-                generateContent: vi.fn().mockResolvedValue({
-                    text: JSON.stringify(mockResponse),
-                }),
-            },
-        } as any);
-
-        const result = await analyzeEncounterWithGemini({
-            clientContext: 'Backstage',
-        });
-        expect(result.contact?.name).toBe('Alex Rivers');
-        expect(result.summary).toBe('Met Alex Rivers backstage.');
+    it('accepts owned voice memos and rejects cross-account storage', () => {
+        expect(resolveEncounterAsset({ type: 'audio', storagePath: 'users/owner/voice_memos/capture.webm' }, 'owner', 'project')).toBe('users/owner/voice_memos/capture.webm');
+        expect(() => resolveEncounterAsset({ type: 'photo', storagePath: 'users/other/assets/capture.jpg' }, 'owner', 'project')).toThrow();
+        expect(() => resolveEncounterAsset({ type: 'photo', storagePath: 'users/owner/../other/capture.jpg' }, 'owner', 'project')).toThrow();
     });
-
-    it('handles contact detection payload structure cleanly', async () => {
-        const mockAnalysis = {
-            summary: 'Met Marcus Vance at backstage lounge.',
-            transcript: 'Just met Marcus Vance, tour manager at Live Nation, phone number 313-555-0199',
-            contact: {
-                name: 'Marcus Vance',
-                phone: '+13135550199',
-                organization: 'Live Nation',
-                role: 'manager' as const,
-                notes: 'Backstage pass follow up',
-            }
-        };
-
-        expect(mockAnalysis.contact.name).toBe('Marcus Vance');
-        expect(mockAnalysis.contact.phone).toBe('+13135550199');
-        expect(mockAnalysis.contact.role).toBe('manager');
+    it('rejects unrelated buckets and mismatched download references', () => {
+        expect(() => resolveEncounterAsset({ type: 'photo', downloadUrl: 'gs://foreign/users/owner/capture' }, 'owner', 'project')).toThrow();
+        expect(() => resolveEncounterAsset({ type: 'photo', storagePath: 'users/owner/a', downloadUrl: 'https://storage.googleapis.com/project/users/owner/b' }, 'owner', 'project')).toThrow();
+    });
+    it('rejects unsupported, empty and oversized files before model dispatch', () => {
+        expect(() => buildEncounterMediaPart('photo', 'gs://project/image', 'text/html', 1)).toThrow();
+        expect(() => buildEncounterMediaPart('audio', 'gs://project/audio', 'audio/webm', 0)).toThrow();
+        expect(() => buildEncounterMediaPart('video', 'gs://project/video', 'video/mp4', 51 * 1024 * 1024)).toThrow();
+    });
+    it('keeps uncertainty and removes fields without supplied evidence references', () => {
+        const result = parseEncounterAnalysis(JSON.stringify({ summary: 'Contract fixture', contact: {
+            name: 'Example', phone: 'unsupported', organization: 'Example Org', confidence: 'uncertain',
+            evidence: { name: ['asset_0'], phone: ['invented_source'], organization: ['asset_0'] },
+        } }), ['asset_0']);
+        expect(result.contact).toEqual({ name: 'Example', organization: 'Example Org' });
+        expect(result.confidence).toBe('uncertain');
+    });
+    it('rejects malformed output and unsupported contact identity', () => {
+        expect(() => parseEncounterAnalysis('not json', ['asset_0'])).toThrow();
+        expect(() => parseEncounterAnalysis(JSON.stringify({ summary: 'x', contact: { name: 'Example', confidence: 'high', evidence: { name: ['absent'] } } }), ['asset_0'])).toThrow();
+        expect(parseEncounterAnalysis('{"summary":"No contact found","contact":null}', ['asset_0']).contact).toBeUndefined();
     });
 });
