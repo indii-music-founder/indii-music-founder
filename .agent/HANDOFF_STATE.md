@@ -1,3 +1,37 @@
+# Session Close — Phase 20 Track B Micro-Transactions & Credit Wallet Full Delivery (2026-09-27)
+
+**Final state: Phase 20 Track B expanded and completed to platinum standard on `main`. Single coherent commit `d29d277ee` delivered to `origin/main`. GitHub Actions CI run `36352114864` triggered. Monorepo typecheck clean (8/8 packages + firebase tests), ESLint 0 errors, 49/49 targeted tests green, test quality scanner 0 violations.**
+
+## Shipped & Integrated
+- **Server-Authoritative Auto-Reload Settings (`packages/firebase/src/subscription/updateWalletSettings.ts`):**
+  - Added `updateWalletSettings` callable Cloud Function with App Check, Firebase Auth validation, cross-user denial, and schema boundary enforcement against `CreditWalletSchema`.
+  - Exported in `packages/firebase/src/index.ts`.
+  - Added 8 unit tests in `packages/firebase/src/subscription/updateWalletSettings.test.ts`.
+- **DeductCredits Auto-Top-Up Alerting & Audit Log (`packages/firebase/src/subscription/deductCredits.ts`):**
+  - Updated `deductCredits` callable to evaluate `autoTopUp` and `autoTopUpThreshold`.
+  - Emits immutable `AUTO_TOP_UP_TRIGGERED` audit event under `users/{userId}/wallet_events` for automated background processing.
+  - Returns `autoTopUpTriggered: true` in `DeductCreditsResponse`.
+  - Added 2 test cases in `packages/firebase/src/subscription/deductCredits.test.ts`.
+- **Firestore Security Rule Hardening (`packages/firebase/firestore.rules`):**
+  - Added `match /wallet_events/{eventId}` with owner-read, write-denied access control.
+- **Client Service Primitives (`packages/renderer/src/services/MembershipService.ts`):**
+  - Added `updateWalletSettings()` with Cloud Function invocation and local/emulator fallback.
+  - Added `consumeCreditsForFeature()` with `CONSUMABLE_FEATURE_COSTS` mapping: Cover Art & 4K Upscale (50 credits), Audio Mastering & Loudness (100 credits), Global DSP Distribution (250 credits), Legal Splits & Claims Review (75 credits).
+  - Added 5 new unit tests in `packages/renderer/src/services/MembershipService.credit.test.ts` (17/17 tests passing).
+- **Studio Settings UI Expansion (`packages/renderer/src/modules/settings/settings-panel/WalletSection.tsx`):**
+  - Added Auto-Reload Preferences card with toggle switch, trigger threshold selector (<= 50, <= 100, <= 250 credits), reload pack picker, and live preference persistence.
+  - Added 2 unit tests in `packages/renderer/src/modules/settings/settings-panel/WalletSection.test.tsx` (8/8 tests passing).
+
+## Verification Evidence
+- `npx vitest run packages/shared/src/schemas/creditWallet.test.ts packages/firebase/src/subscription/deductCredits.test.ts packages/firebase/src/subscription/updateWalletSettings.test.ts packages/firebase/src/subscription/createMicroTransaction.test.ts packages/firebase/src/stripe/webhookHandler.micro-transaction.test.ts packages/renderer/src/services/MembershipService.credit.test.ts packages/renderer/src/modules/settings/settings-panel/WalletSection.test.tsx`: 49/49 tests passed (4.68s).
+- `npm run typecheck`: Exited code 0 (all 8 packages + firebase test tsconfigs clean).
+- `npm run lint`: Exited code 0 (0 errors, 218 warnings).
+- `node scripts/check-test-quality.js`: 0 violations.
+- Git SHA: `d29d277ee6fd8abb96beaa57034cce4510797c68`.
+- GitHub Actions CI Run: [36352114864](https://github.com/indii-music-founder/indii-music-founder/actions/runs/36352114864).
+
+---
+
 # Session Close — Landing Page Live Video Walkthrough, Demos & Ambient Motion (2026-09-27)
 
 **Final state: Produced, web-optimized, and integrated 4 live product video assets across the landing page (`packages/landing/public/videos/`). Wired full-screen 1:18 Founder Movie walkthrough modal to Hero "See how indii.music works" CTA with Escape key dismiss and studio jump link in `Hero.tsx`. Added "Live Video Walkthrough" toggle mode to `AppStudioShowcase.tsx` rendering continuous 1080p 5-department studio screencast, and embedded live video canvas in Creative Studio tab. Embedded 16:9 to 9:16 video slicing loop in `OverlookedWorkSection.tsx` ("Give a long video another life"). Reactivated `ExperienceShell.tsx` mounting seamless ambient dark studio video loop with reduced-motion protection. Verified 11/11 test files passed (62/62 tests green, including 10/10 preservation tripwires in `page.preservation.test.tsx`), Vite production build passed (2.08s), ESLint 0 errors, quality scanner 0 violations. Mainline delivery prepared directly on `origin/main`.**
