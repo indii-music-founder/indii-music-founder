@@ -22,14 +22,15 @@ interface WiringMocks {
 const mocks: WiringMocks = vi.hoisted(() => {
     const generateContent = vi.fn();
     const getMetadata = vi.fn();
+    const state = { lastPath: 'audio' };
     const bucket = {
         name: 'proj',
         file: (path: string) => {
-            mocks.lastPath = path;
+            state.lastPath = path;
             return { getMetadata };
         },
     };
-    return { generateContent, getMetadata, bucket };
+    return { generateContent, getMetadata, bucket, state };
 });
 
 vi.mock('firebase-admin', () => {
@@ -73,7 +74,7 @@ beforeEach(() => {
     mocks.getMetadata.mockReset();
     // Storage metadata is authoritative: derive contentType/size from the object path.
     mocks.getMetadata.mockImplementation(async () => {
-        const path = mocks.lastPath ?? 'audio';
+        const path = mocks.state.lastPath ?? 'audio';
         const type = ['audio', 'photo', 'video'].find(t => path.includes(`/${t}`)) ?? 'audio';
         return [{ size: '100', contentType: MIME_BY_TYPE[type] }];
     });

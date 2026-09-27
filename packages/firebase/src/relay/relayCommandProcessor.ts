@@ -121,10 +121,14 @@ export const processRelayCommand = onDocumentCreated(
             return;
         }
 
-        // Validate targetAgentId if provided
+        // Validate targetAgentId if provided. Issue #330: an unrecognized
+        // specialist target must fail VISIBLY, never silently become the
+        // generalist — a founder selecting a specialist from the phone has to
+        // know when the cloud relay cannot honor that identity.
         if (targetAgentId && !VALID_AGENT_IDS.includes(targetAgentId)) {
-            console.warn(`[Relay] Unknown agent "${targetAgentId}" for command ${commandId} — falling back to Conductor.`);
-            // Don't fail — just route to Conductor
+            console.warn(`[Relay] Unknown agent "${targetAgentId}" for command ${commandId} — failing visibly per parity contract.`);
+            await markFailed(userId, commandId, `The "${targetAgentId}" specialist is not available on the cloud relay. Open indii Studio to reach that department head directly.`);
+            return;
         }
 
         // ---------------------------------------------------------------
@@ -309,6 +313,10 @@ async function sendResponse(
             commandId,
             text,
             agentId: agentId || "generalist",
+            // Issue #330: every cloud-relay response honestly declares its
+            // runtime — a prompt-specialized shared advisory model, never the
+            // Studio trained specialist runtime (tuned endpoints + tools).
+            runtime: "cloud-advisory",
             isStreaming,
             isFinal: !isStreaming,
             timestamp: admin.firestore.FieldValue.serverTimestamp(),

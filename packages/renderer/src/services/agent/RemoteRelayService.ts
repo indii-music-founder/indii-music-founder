@@ -80,6 +80,8 @@ export interface RemoteResponse {
     isStreaming: boolean;
     boardroomMessageId?: string;
     rating?: number;
+    /** Issue #330: cloud-relay responses declare their advisory runtime. */
+    runtime?: string;
 }
 
 /** One transport-neutral response contract. Optional keys are omitted, never undefined. */

@@ -51,6 +51,8 @@ interface ChatMessage {
     isStreaming?: boolean;
     boardroomMessageId?: string;
     rating?: number;
+    /** Issue #330: cloud-relay responses declare their advisory runtime. */
+    runtime?: string;
 }
 
 interface AgentChatProps {
@@ -268,6 +270,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 isStreaming: res.isStreaming,
                 boardroomMessageId: res.boardroomMessageId,
                 rating: res.rating,
+                runtime: res.runtime,
             });
         });
 
@@ -440,11 +443,16 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                 )}
                             >
                                 {showAgentHeader && agentIdentity && (
-                                    <span 
+                                    <span
                                         className="text-[10px] font-bold uppercase tracking-[0.2em] ml-2 mb-0.5 font-display"
                                         style={{ color: agentIdentity.cssProperties['--agent-accent'] }}
                                     >
                                         {agentIdentity.displayName}
+                                    </span>
+                                )}
+                                {showAgentHeader && msg.runtime === 'cloud-advisory' && (
+                                    <span className="text-[9px] uppercase tracking-[0.15em] ml-2 mb-0.5 text-stone-500 font-mono">
+                                        Cloud advisory — Studio runtime unavailable
                                     </span>
                                 )}
                                 
