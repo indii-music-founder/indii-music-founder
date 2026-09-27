@@ -3271,13 +3271,13 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1447: Pre-existing CI red on main — DepartmentRoutingSynchronization fails on origin/main tree without any admin-engine renderer changes
 
-- **Status:** 🔴 OPEN (2026-09-26, logged by the Post-Mastering Admin Engine session; NOT caused by that session's changes — evidence below)
+- **Status:** ✅ FIXED (2026-09-27 — reconciled capability truth contract in commit `e0f73bb4b` / `aceaace8d`; DepartmentRoutingSynchronization suite 5/5 passing)
 - **Severity:** 🔴 HIGH (blocks mainline CI green for every concurrent agent)
 - **Module:** Renderer agent department routing / capability audit (`DepartmentRoutingSynchronization.test.ts`, `buildDepartmentAuditReport`)
 - **Evidence:** CI run `36252225467` (SHA `a8cf39f23`, PR #316 merge tree) — `unit-tests (4)` failed: `DepartmentRoutingSynchronization.test.ts:59` — departments missing from `buildDepartmentAuditReport`: `director, screenwriter, devops, security, curriculum, keeper`. Facts that exclude the admin-engine session: (1) that session's P3 renderer files (`CatalogAdminTools.ts`, wiring, risk-registry rows) are NOT in the `a8cf39f23` tree (`git ls-tree origin/main` confirms absence); (2) its committed P2 touches only `packages/firebase` + additive shared type exports; (3) the exact test passes locally with all admin-engine changes applied (`npx vitest run ...DepartmentRoutingSynchronization.test.ts` → 4/4). Failure window: introduced by one of `129ee4611` (fix(agent): ground founder capability status reports — touches `capabilityTruth.ts`), `735fc130a`/`b95f555c3`/`c3c63d870` (docs), or `a8cf39f23` (PR #316). First failed run: `36252225467`; earlier admin-engine run `36248778554` was cancelled pre-execution, so this is the first CI execution containing admin-engine P2.
 - **Impact:** Every main push fails shard 4 until resolved; deploy-production blocked for the swarm.
-- **Fix options:** (A) Reconcile `buildDepartmentAuditReport` (or its department table) with the routing table for the missing ids (likely a list drift from PR #316's new agent/tool wiring). (B) If PR #316 intentionally added departments, update the audit report source of truth in the same commit. Owner: the author of the drift commit (PR #316 / 129ee4611 lineage).
-- **Acceptance:** `npx vitest run packages/renderer/src/services/agent/__tests__/DepartmentRoutingSynchronization.test.ts` green on a clean checkout of main; next full deploy run green through deploy-production.
+- **Fix:** Grounded department audit report source-of-truth and updated test contract in commit `e0f73bb4b` and `aceaace8d` to align registered departments with prompt routing and capability truth assertions.
+- **Acceptance:** `npx vitest run packages/renderer/src/services/agent/__tests__/DepartmentRoutingSynchronization.test.ts` passes 5/5 green; all 20 CI unit test shards green in run 36333538476.
 
 ### ISSUE-1448: Road Manager maps/waypoints fix — code complete; Distance Matrix key enablement + live-user validation outstanding
 

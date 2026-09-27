@@ -1,3 +1,25 @@
+# Session Close — GitHub Issues Resolution, Status Organization & Credit Wallet UI (2026-09-27)
+
+**Final state: All 13 open GitHub issues audit-verified and closed on `indii-music-founder/indii-music-founder` (zero open issues remaining on repository). All closed issues categorized with `status:completed` label (`#0e8a16`) with stale triage labels removed. Delivered Phase 20 Track B Artist Credit Wallet & Micro-Transactions UI to `origin/main` in commit `8a95fbca9` (all tests passing, 20/20 CI unit test shards green). Updated `.agent/test_ledger/OPEN_ISSUES_V3.md` marking ISSUE-1447 as FIXED.**
+
+## Shipped & Resolved
+- **GitHub Issues Resolution & Organization:**
+  - Audited, verified against code on `main`, and closed all 13 open issues (`#317, #318, #319, #320, #323, #324, #325, #326, #327, #328, #329, #330, #334`), plus related upscale workstreams (`#321, #322`) and recent tickets (`#335, #336, #337, #338`).
+  - Created label `status:completed` (`#0e8a16`, "Resolved, verified, and closed on main") and applied to all completed issues.
+  - Removed stale triage tags (`triage/ready-for-agent`, `triage/ready-for-human`).
+  - Verified live via `gh issue list --state open` and live HTML DOM: 0 open issues remain (blankslate "No results").
+- **Phase 20 Track B: Artist Credit Wallet UI (`/middle`):**
+  - Built `WalletSection.tsx` (`packages/renderer/src/modules/settings/settings-panel/WalletSection.tsx`) with real-time balance display, package purchase flows, transaction ledger, and auto-reload toggle.
+  - Registered `'wallet'` in `SettingsNavigation.ts` and `SettingsPanel.tsx`.
+  - Added `getCreditTransactions` and `getCreditWallet` service methods in `MembershipService.ts`.
+  - Added unit test coverage: `WalletSection.test.tsx` (5/5 passed), `MembershipService.credit.test.ts` (10/10 passed).
+  - Delivered directly to `origin/main` via commit `8a95fbca9`.
+- **Ledger & Quality Verification:**
+  - Reconciled and marked ISSUE-1447 as FIXED in `.agent/test_ledger/OPEN_ISSUES_V3.md`. Verified `DepartmentRoutingSynchronization.test.ts` (5/5 passed).
+  - CI pipeline verified: run `36333538476` (all 20 unit test shards, rules tests, build, deploy-staging, e2e-staging green); successor run `36334578044` triggered on `main`.
+
+---
+
 # Session Close — GTM & Growth Architecture Reference Archived (2026-09-26)
 
 **Final state: Consolidated GTM reference doc archived at `docs/product/GTM_GROWTH_ARCHITECTURE_REFERENCE.md`. Status: ARCHIVED — NOT ACTIVATED. Contents: (1) AEO/semantic search mechanics (JSON-LD schemas, narrow-concession comparison pages, FAQ microdata), (2) autonomous technical web ops (vitals/metadata auditing, GSC query mining), (3) high-value B2B ABM framework (reverse-DNS deanonymization, intent-triggered outreach with human sign-off, custom account landing endpoints) — gated strictly on approaching boutique labels/publishing admins/sync libraries/agencies, (4) GTM segmentation table defining which mechanics to prioritize and avoid per segment (indie producers/artists = PLG only, no IP tracking; boutique labels = hybrid inbound; enterprise catalogs = high-touch ABM). Companion docs: `PRODUCT_COPYWRITING_BRIEF.md` + `JEV_NATIVE_POSITIONING_AND_COPY_PLAYBOOK.md` (all GTM copy must obey brand voice rules). No site code, outreach, or tracking was activated this session — doc-only archival.**
