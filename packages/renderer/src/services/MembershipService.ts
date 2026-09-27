@@ -7,7 +7,7 @@
  */
 
 import { db } from '@/services/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, query, collection, where, getCountFromServer, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, query, collection, where, getCountFromServer, runTransaction, getDocs, orderBy, limit } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -899,6 +899,42 @@ class MembershipServiceImpl {
                 balanceAfter: fallbackBal,
                 error: msg,
             };
+        }
+    }
+
+    /**
+     * Retrieve recent credit transactions for a user, ordered from newest to oldest.
+     */
+    async getCreditTransactions(limitCount: number = 20, userId?: string): Promise<CreditTransaction[]> {
+        const uid = userId || await this.getCurrentUserId();
+        if (!uid) return [];
+
+        try {
+            const txCollection = collection(db, 'users', uid, 'credit_transactions');
+            const q = query(txCollection, orderBy('createdAt', 'desc'), limit(limitCount));
+            const snap = await getDocs(q);
+            return snap.docs.map(d => d.data() as CreditTransaction);
+        } catch (err) {
+            logger.warn('[MembershipService] Failed to get credit transactions:', err);
+            return [];
+        }
+    }
+
+    /**
+     * Retrieve user full credit wallet document.
+     */
+    async getCreditWallet(userId?: string): Promise<CreditWallet | null> {
+        const uid = userId || await this.getCurrentUserId();
+        if (!uid) return null;
+
+        try {
+            const walletRef = doc(db, 'users', uid, 'wallet', 'current');
+            const snap = await getDoc(walletRef);
+            if (!snap.exists()) return null;
+            return snap.data() as CreditWallet;
+        } catch (err) {
+            logger.warn('[MembershipService] Failed to get credit wallet:', err);
+            return null;
         }
     }
 }

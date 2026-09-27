@@ -19,6 +19,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     User,
+    Coins,
     Bell,
     Link2,
     Palette,
@@ -32,6 +33,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import ProfileSection from './settings-panel/ProfileSection';
+import WalletSection from './settings-panel/WalletSection';
 import PersonaFadersSection from './settings-panel/PersonaFadersSection';
 import MasterPlaybookSection from './settings-panel/MasterPlaybookSection';
 import ConnectionsSection from './settings-panel/ConnectionsSection';
@@ -56,6 +58,7 @@ import { Sliders } from 'lucide-react';
 
 const SECTIONS: Array<{ id: SettingsSectionId; label: string; icon: LucideIcon; description: string }> = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Name, avatar, and bio' },
+    { id: 'wallet', label: 'Credit Wallet', icon: Coins, description: 'Balance, top-up packs, and transaction history' },
     { id: 'personas', label: 'Agent Personas', icon: Sliders, description: 'Personality sliders and posture for each agent' },
     { id: 'playbook', label: 'Master Directive', icon: BookOpen, description: 'Living Artist Playbook and Supreme Directives' },
     { id: 'connections', label: 'Connected Services', icon: Link2, description: 'Email, social, and integrations' },
@@ -93,6 +96,7 @@ const SettingsPanel: React.FC = () => {
     const renderSection = () => {
         switch (activeSection) {
             case 'profile': return <ProfileSection />;
+            case 'wallet': return <WalletSection />;
             case 'personas': return <PersonaFadersSection />;
             case 'playbook': return <MasterPlaybookSection />;
             case 'connections': return <ConnectionsSection />;

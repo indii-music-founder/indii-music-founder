@@ -50,6 +50,10 @@ vi.mock('./settings-panel/RemoteSection', () => ({
     default: () => <div>Remote pairing controls</div>,
 }));
 
+vi.mock('./settings-panel/WalletSection', () => ({
+    default: () => <div data-testid="wallet-section">Credit Wallet & Micro-Transactions</div>,
+}));
+
 vi.mock('zustand/react/shallow', () => ({
     useShallow: (fn: unknown) => fn,
 }));
@@ -148,6 +152,14 @@ describe('SettingsPanel', () => {
 
         expect(screen.getByText('Remote pairing controls')).toBeInTheDocument();
         expect(screen.getAllByText('settings.sections.remote.label')[0]!.closest('button')).toHaveClass(getColorForModule('settings').bg);
+    });
+
+    it('switches to Credit Wallet when clicked', () => {
+        render(<SettingsPanel />);
+        const buttons = screen.getAllByText('settings.sections.wallet.label');
+        fireEvent.click(buttons[0]!);
+        expect(screen.getByTestId('wallet-section')).toBeInTheDocument();
+        expect(buttons[0]!.closest('button')).toHaveClass(getColorForModule('settings').bg);
     });
 
     it('switches to Connected Services when clicked', () => {

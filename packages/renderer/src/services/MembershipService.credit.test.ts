@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.unmock('@/services/MembershipService');
 import { MembershipService } from './MembershipService';
-import { doc, getDoc, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, getDocs, runTransaction } from 'firebase/firestore';
 
 const mockWallet = {
     userId: 'user-credit-1',
@@ -22,12 +22,15 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
     doc: vi.fn((_db, ...parts) => ({ path: parts.join('/') })),
     getDoc: vi.fn(),
+    getDocs: vi.fn(),
     setDoc: vi.fn(),
     updateDoc: vi.fn(),
     runTransaction: vi.fn(),
     increment: vi.fn(n => n),
     query: vi.fn(),
     where: vi.fn(),
+    orderBy: vi.fn(),
+    limit: vi.fn(),
     getCountFromServer: vi.fn(),
 }));
 
@@ -170,6 +173,62 @@ describe('MembershipService (Credit Wallet & Micro-Transactions)', () => {
             expect(result.balanceAfter).toBe(3000);
             expect(result.transactionId).toBeDefined();
             expect(mockTx.update).toHaveBeenCalled();
+        });
+    });
+
+    describe('getCreditTransactions', () => {
+        it('returns empty array when user is unauthenticated or has no records', async () => {
+            vi.mocked(getDocs).mockResolvedValueOnce({
+                docs: [],
+            } as any);
+
+            const txs = await MembershipService.getCreditTransactions(20, 'user-credit-1');
+            expect(txs).toEqual([]);
+        });
+
+        it('returns mapped transactions when records exist', async () => {
+            const mockTxRecord = {
+                id: 'tx-1',
+                userId: 'user-credit-1',
+                type: 'PURCHASE',
+                amountCredits: 500,
+                balanceAfter: 500,
+                reason: 'Starter Pack Purchase',
+                createdAt: 1000,
+            };
+
+            vi.mocked(getDocs).mockResolvedValueOnce({
+                docs: [
+                    { data: () => mockTxRecord },
+                ],
+            } as any);
+
+            const txs = await MembershipService.getCreditTransactions(10, 'user-credit-1');
+            expect(txs).toHaveLength(1);
+            expect(txs[0].amountCredits).toBe(500);
+            expect(txs[0].reason).toBe('Starter Pack Purchase');
+        });
+    });
+
+    describe('getCreditWallet', () => {
+        it('returns null when wallet does not exist', async () => {
+            vi.mocked(getDoc).mockResolvedValueOnce({
+                exists: () => false,
+                data: () => null,
+            } as any);
+
+            const wallet = await MembershipService.getCreditWallet('user-credit-1');
+            expect(wallet).toBeNull();
+        });
+
+        it('returns full wallet data when exists', async () => {
+            vi.mocked(getDoc).mockResolvedValueOnce({
+                exists: () => true,
+                data: () => mockWallet,
+            } as any);
+
+            const wallet = await MembershipService.getCreditWallet('user-credit-1');
+            expect(wallet).toEqual(mockWallet);
         });
     });
 });
