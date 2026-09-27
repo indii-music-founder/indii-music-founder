@@ -11,7 +11,7 @@ describe('CandidatesCarousel Interaction (🖱️ Click)', () => {
     const mockOnSelect = vi.fn();
     const mockOnClose = vi.fn();
 
-    it('verifies the selection lifecycle (Click → Callback)', () => {
+    it('verifies the selection lifecycle (Click → Callback)', async () => {
         render(
             <CandidatesCarousel
                 candidates={mockCandidates}
@@ -21,7 +21,7 @@ describe('CandidatesCarousel Interaction (🖱️ Click)', () => {
         );
 
         // 1. Ready State: Buttons exist
-        const selectBtn1 = screen.getByTestId('candidate-select-btn-0');
+        const selectBtn1 = await screen.findByTestId('candidate-select-btn-0');
         const selectBtn2 = screen.getByTestId('candidate-select-btn-1');
 
         // 2. Action: Click first candidate
@@ -37,7 +37,7 @@ describe('CandidatesCarousel Interaction (🖱️ Click)', () => {
         expect(mockOnSelect).toHaveBeenCalledWith(mockCandidates[1], 1);
     });
 
-    it('verifies the close lifecycle (Click → Close)', () => {
+    it('verifies the close lifecycle (Click → Close)', async () => {
         render(
             <CandidatesCarousel
                 candidates={mockCandidates}
@@ -46,7 +46,7 @@ describe('CandidatesCarousel Interaction (🖱️ Click)', () => {
             />
         );
 
-        const closeBtn = screen.getByTestId('carousel-close-btn');
+        const closeBtn = await screen.findByTestId('carousel-close-btn');
 
         // Action: Click Close
         fireEvent.click(closeBtn);
@@ -65,5 +65,20 @@ describe('CandidatesCarousel Interaction (🖱️ Click)', () => {
         );
 
         expect(container).toBeEmptyDOMElement();
+    });
+
+    it('renders Jev recommended pick badge when candidates are presented', async () => {
+        render(
+            <CandidatesCarousel
+                candidates={mockCandidates}
+                onSelect={mockOnSelect}
+                onClose={mockOnClose}
+            />
+        );
+
+        // When judgeTopImageVariationCandidate resolves (defaulting to c1 as first candidate fallback)
+        const badge = await screen.findByTestId('jev-recommended-badge');
+        expect(badge).toBeInTheDocument();
+        expect(badge).toHaveTextContent('⭐ Jev Pick');
     });
 });

@@ -8185,3 +8185,502 @@ export async function judgeUpscaleModel(prompt: string): Promise<UpscaleModelCho
         return null;
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment 72: Video Camera Motion Intensity & Preset Resolution
+// ---------------------------------------------------------------------------
+
+export type MotionIntensityPreset = 'SLOW_DRIFT' | 'DYNAMIC_TRACKING' | 'KINETIC_WHIP' | 'STATIC_LOCK';
+
+export interface MotionIntensityVerdict {
+    preset: MotionIntensityPreset;
+    intensityScore: number; // 1 (subtle) to 5 (extreme)
+    recommendedDamping: number; // 0.1 (sharp) to 1.0 (smooth)
+    explanation: string;
+}
+
+export async function judgeMotionIntensityPreset(
+    promptOrDescription: string
+): Promise<MotionIntensityVerdict> {
+    const text = (promptOrDescription || '').toLowerCase().trim();
+
+    // Deterministic fallback
+    let fallbackPreset: MotionIntensityPreset = 'DYNAMIC_TRACKING';
+    let fallbackScore = 3;
+    let fallbackDamping = 0.6;
+    let fallbackExpl = 'Balanced dynamic tracking motion suited for modern music video presentation.';
+
+    if (/\b(slow|calm|serene|ambient|float|drift|gentle|peaceful|dreamy)\b/.test(text)) {
+        fallbackPreset = 'SLOW_DRIFT';
+        fallbackScore = 1;
+        fallbackDamping = 0.9;
+        fallbackExpl = 'Subtle, gentle camera drift with high damping for a calm, atmospheric vibe.';
+    } else if (/\b(whip|shake|fast|frenetic|glitch|hyper|intense|aggressive|chaos|rapid)\b/.test(text)) {
+        fallbackPreset = 'KINETIC_WHIP';
+        fallbackScore = 5;
+        fallbackDamping = 0.2;
+        fallbackExpl = 'High-velocity kinetic pans and snap transitions with minimal damping.';
+    } else if (/\b(static|lock|locked|tripod|still|stationary|fixed|rigid)\b/.test(text)) {
+        fallbackPreset = 'STATIC_LOCK';
+        fallbackScore = 1;
+        fallbackDamping = 1.0;
+        fallbackExpl = 'Rock-steady tripod lock with zero camera jitter or translation.';
+    }
+
+    if (!judgmentsAvailable() || !promptOrDescription.trim()) {
+        return {
+            preset: fallbackPreset,
+            intensityScore: fallbackScore,
+            recommendedDamping: fallbackDamping,
+            explanation: fallbackExpl,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { prompt: promptOrDescription.slice(0, 500) },
+            questions: {
+                preset: {
+                    type: 'choice' as const,
+                    instructions: 'Categorize the camera motion intensity and style needed for this video scene.',
+                    criteria: {
+                        SLOW_DRIFT: 'Gentle, atmospheric, meditative, or ambient camera drift.',
+                        DYNAMIC_TRACKING: 'Smooth cinematic push-in, dolly, or subject tracking.',
+                        KINETIC_WHIP: 'High-speed whip pans, rapid snap zooms, or aggressive glitch camera moves.',
+                        STATIC_LOCK: 'Locked-off tripod shot with no camera movement.',
+                    },
+                },
+                intensity: {
+                    type: 'score' as const,
+                    instructions: 'Score camera movement intensity from 1 (completely subtle/still) to 5 (extreme hyper-kinetic).',
+                    range: [1, 5] as [number, number],
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const presetAns = ans?.preset as { choice?: unknown } | undefined;
+        const intensityAns = ans?.intensity as { score?: unknown } | undefined;
+
+        const resolvedPreset = (typeof presetAns?.choice === 'string' ? presetAns.choice : fallbackPreset) as MotionIntensityPreset;
+        const resolvedScore = typeof intensityAns?.score === 'number' ? Math.round(intensityAns.score) : fallbackScore;
+        const dampingMap: Record<MotionIntensityPreset, number> = {
+            SLOW_DRIFT: 0.9,
+            DYNAMIC_TRACKING: 0.6,
+            KINETIC_WHIP: 0.2,
+            STATIC_LOCK: 1.0,
+        };
+
+        return {
+            preset: resolvedPreset,
+            intensityScore: resolvedScore,
+            recommendedDamping: dampingMap[resolvedPreset] ?? fallbackDamping,
+            explanation: `TypeSafe camera motion calibrated as ${resolvedPreset} (intensity ${resolvedScore}/5).`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'motion intensity judgment');
+        return {
+            preset: fallbackPreset,
+            intensityScore: fallbackScore,
+            recommendedDamping: fallbackDamping,
+            explanation: fallbackExpl,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 73: Audio Stem Separation Recipe Resolution
+// ---------------------------------------------------------------------------
+
+export type StemSeparationRecipe = 'TWO_STEM_VOCAL_INST' | 'FOUR_STEM_CLASSIC' | 'FIVE_STEM_DETAILED' | 'PASS_THROUGH';
+
+export interface StemSeparationRecipeVerdict {
+    recipe: StemSeparationRecipe;
+    recommendedModel: 'htdemucs' | 'mdx_extra' | 'bs_roformer';
+    isolationConfidence: number; // 1 to 5
+    rationale: string;
+}
+
+export interface StemSeparationRecipeInput {
+    genre?: string;
+    tempoBpm?: number;
+    hasVocals?: boolean;
+    instrumentTypes?: string[];
+}
+
+export async function judgeStemSeparationRecipe(
+    input: StemSeparationRecipeInput
+): Promise<StemSeparationRecipeVerdict> {
+    const genre = (input.genre || '').toLowerCase();
+    const hasVocals = input.hasVocals !== false; // default true
+
+    // Deterministic fallback
+    let fallbackRecipe: StemSeparationRecipe = 'FOUR_STEM_CLASSIC';
+    let fallbackModel: 'htdemucs' | 'mdx_extra' | 'bs_roformer' = 'htdemucs';
+    let fallbackScore = 4;
+    let fallbackRationale = 'Standard 4-stem extraction (Vocals, Drums, Bass, Other) via HTDemucs.';
+
+    if (!hasVocals) {
+        fallbackRecipe = 'PASS_THROUGH';
+        fallbackModel = 'htdemucs';
+        fallbackScore = 5;
+        fallbackRationale = 'Instrumental track detected: vocal separation unneeded; passing raw master.';
+    } else if (/\b(acoustic|folk|ambient|classical|lofi|piano)\b/.test(genre)) {
+        fallbackRecipe = 'TWO_STEM_VOCAL_INST';
+        fallbackModel = 'bs_roformer';
+        fallbackScore = 5;
+        fallbackRationale = 'Acoustic / organic arrangement benefits most from clean 2-stem vocal isolation via BS-RoFormer.';
+    } else if (/\b(electronic|techno|house|drill|trap|edm)\b/.test(genre)) {
+        fallbackRecipe = 'FIVE_STEM_DETAILED';
+        fallbackModel = 'mdx_extra';
+        fallbackScore = 4;
+        fallbackRationale = 'Multi-layered synthetic arrangement requires 5-stem isolation with sub-bass extraction.';
+    }
+
+    if (!judgmentsAvailable()) {
+        return {
+            recipe: fallbackRecipe,
+            recommendedModel: fallbackModel,
+            isolationConfidence: fallbackScore,
+            rationale: fallbackRationale,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                genre: input.genre || 'Unknown',
+                tempo: input.tempoBpm || 120,
+                vocals: hasVocals,
+                instruments: input.instrumentTypes || [],
+            },
+            questions: {
+                recipe: {
+                    type: 'choice' as const,
+                    instructions: 'Choose the optimal audio stem separation recipe for this music track.',
+                    criteria: {
+                        TWO_STEM_VOCAL_INST: 'Acoustic, folk, or simple tracks needing pristine vocal vs instrumental isolation.',
+                        FOUR_STEM_CLASSIC: 'Standard pop, rock, and hip-hop tracks needing Vocals, Drums, Bass, and Other.',
+                        FIVE_STEM_DETAILED: 'Complex electronic, dance, or heavy production with distinct synth and percussion layers.',
+                        PASS_THROUGH: 'Purely instrumental tracks where vocal separation is redundant.',
+                    },
+                },
+                confidence: {
+                    type: 'score' as const,
+                    instructions: 'Score separation quality confidence from 1 (unreliable artifact risk) to 5 (pristine phase alignment).',
+                    range: [1, 5] as [number, number],
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const recipeAns = ans?.recipe as { choice?: unknown } | undefined;
+        const confAns = ans?.confidence as { score?: unknown } | undefined;
+
+        const resolvedRecipe = (typeof recipeAns?.choice === 'string' ? recipeAns.choice : fallbackRecipe) as StemSeparationRecipe;
+        const resolvedScore = typeof confAns?.score === 'number' ? Math.round(confAns.score) : fallbackScore;
+
+        const modelMap: Record<StemSeparationRecipe, 'htdemucs' | 'mdx_extra' | 'bs_roformer'> = {
+            TWO_STEM_VOCAL_INST: 'bs_roformer',
+            FOUR_STEM_CLASSIC: 'htdemucs',
+            FIVE_STEM_DETAILED: 'mdx_extra',
+            PASS_THROUGH: 'htdemucs',
+        };
+
+        return {
+            recipe: resolvedRecipe,
+            recommendedModel: modelMap[resolvedRecipe] ?? fallbackModel,
+            isolationConfidence: resolvedScore,
+            rationale: `Recipe certified by Jev Audio Intelligence: ${resolvedRecipe}.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'stem separation recipe judgment');
+        return {
+            recipe: fallbackRecipe,
+            recommendedModel: fallbackModel,
+            isolationConfidence: fallbackScore,
+            rationale: fallbackRationale,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 74: Fast DAW Filename & Stem Metadata Sanitization
+// ---------------------------------------------------------------------------
+
+export type TrackVersionTag = 'Original' | 'Radio Edit' | 'Remix' | 'Instrumental' | 'Acoustic' | 'Extended' | 'Live';
+
+export interface DawTitleSanitizationVerdict {
+    cleanTitle: string;
+    cleanArtist: string | null;
+    versionTag: TrackVersionTag;
+    isExplicit: boolean;
+    confidence: number; // 1 to 5
+}
+
+export async function judgeDawTitleSanitization(
+    rawFilenameOrTitle: string
+): Promise<DawTitleSanitizationVerdict> {
+    const raw = (rawFilenameOrTitle || '').trim();
+
+    // Check explicit tag
+    const isExplicit = /(?:^|[\s_.-])(explicit|dirty|uncensored)(?:$|[\s_.-])/i.test(raw);
+
+    // Check version tag
+    let versionTag: TrackVersionTag = 'Original';
+    if (/(?:^|[\s_.-])(radio\s*edit|clean)(?:$|[\s_.-])/i.test(raw)) versionTag = 'Radio Edit';
+    else if (/(?:^|[\s_.-])(remix|flip|bootleg)(?:$|[\s_.-])/i.test(raw)) versionTag = 'Remix';
+    else if (/(?:^|[\s_.-])(instrumental|inst|beat)(?:$|[\s_.-])/i.test(raw)) versionTag = 'Instrumental';
+    else if (/(?:^|[\s_.-])(acoustic|unplugged)(?:$|[\s_.-])/i.test(raw)) versionTag = 'Acoustic';
+    else if (/(?:^|[\s_.-])(extended|club\s*mix)(?:$|[\s_.-])/i.test(raw)) versionTag = 'Extended';
+    else if (/(?:^|[\s_.-])(live|concert|in\s*session)(?:$|[\s_.-])/i.test(raw)) versionTag = 'Live';
+
+    // Deterministic fallback: tokenize by underscores, hyphens, and whitespace to cleanly remove engineering & version tags
+    const ignoredTokens = new Set([
+        'wav', 'mp3', 'flac', 'aiff', 'aif', 'm4a', 'ogg',
+        '24bit', '16bit', '44.1k', '441k', '48k', '96k', '192k',
+        'final', 'master', 'mastered', 'rough', 'demo', 'bounce', 'alt', 'edit',
+        'clean', 'explicit', 'dirty', 'uncensored',
+        'radio', 'remix', 'flip', 'bootleg', 'instrumental', 'inst', 'beat', 'acoustic', 'unplugged', 'extended', 'live',
+    ]);
+
+    // Check hyphenated artist - title first
+    let cleanArtist: string | null = null;
+    let titlePortion = raw.replace(/\.(wav|mp3|flac|aif{1,2}|m4a|ogg)$/i, '');
+
+    if (/[ \-_]-+[ \-_]/.test(titlePortion)) {
+        const parts = titlePortion.split(/[ \-_]-+[ \-_]/);
+        cleanArtist = parts[0].replace(/_/g, ' ').replace(/^[-_.\s]+|[-_.\s]+$/g, '').trim();
+        titlePortion = parts.slice(1).join(' - ');
+    } else if (titlePortion.includes(' - ')) {
+        const parts = titlePortion.split(' - ');
+        cleanArtist = parts[0].replace(/_/g, ' ').replace(/^[-_.\s]+|[-_.\s]+$/g, '').trim();
+        titlePortion = parts.slice(1).join(' - ');
+    }
+
+    // Filter tokens from titlePortion
+    const cleanedTokens = titlePortion
+        .split(/[_\s]+/)
+        .filter((tok) => {
+            const lower = tok.toLowerCase().replace(/^[^\w]+|[^\w]+$/g, '');
+            if (!lower) return false;
+            if (ignoredTokens.has(lower)) return false;
+            if (/^v\d+$/i.test(lower)) return false;
+            if (/^mix\d*$/i.test(lower)) return false;
+            return true;
+        });
+
+    const cleanTitle = cleanedTokens.join(' ').replace(/^[-_.\s]+|[-_.\s]+$/g, '').trim() || 'Untitled Track';
+
+    if (!judgmentsAvailable() || !raw) {
+        return {
+            cleanTitle,
+            cleanArtist,
+            versionTag,
+            isExplicit,
+            confidence: 4,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: { rawFilename: raw.slice(0, 300) },
+            questions: {
+                version: {
+                    type: 'choice' as const,
+                    instructions: 'Classify the release version from the DAW audio filename.',
+                    criteria: {
+                        Original: 'Standard master release.',
+                        'Radio Edit': 'Censored clean or broadcast shortened edit.',
+                        Remix: 'Remixed by another producer or VIP version.',
+                        Instrumental: 'No lead vocals, karaoke, or backing track.',
+                        Acoustic: 'Unplugged or acoustic instrument version.',
+                        Extended: 'Long club, DJ extended, or festival mix.',
+                        Live: 'Live concert or live session performance.',
+                    },
+                },
+                explicit: {
+                    type: 'noul' as const,
+                    instructions: 'Is this track marked as containing explicit lyrics or dirty version?',
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const versionAns = ans?.version as { choice?: unknown } | undefined;
+        const explicitAns = ans?.explicit as { probability?: unknown } | undefined;
+
+        const resolvedVersion = (typeof versionAns?.choice === 'string' ? versionAns.choice : versionTag) as TrackVersionTag;
+        const resolvedExplicit = typeof explicitAns?.probability === 'number' ? explicitAns.probability >= 0.5 : isExplicit;
+
+        return {
+            cleanTitle,
+            cleanArtist,
+            versionTag: resolvedVersion,
+            isExplicit: resolvedExplicit,
+            confidence: 5,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'DAW title sanitization judgment');
+        return {
+            cleanTitle,
+            cleanArtist,
+            versionTag,
+            isExplicit,
+            confidence: 4,
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 75: Release Catalog Collision & Remaster Disambiguation
+// ---------------------------------------------------------------------------
+
+export type CatalogCollisionDisposition = 'IDENTICAL_COLLISION' | 'INTENTIONAL_REMASTER' | 'DELUXE_EDITION' | 'NEW_CANONICAL_TRACK';
+
+export interface CatalogCollisionVerdict {
+    disposition: CatalogCollisionDisposition;
+    matchedTrackId: string | null;
+    collisionConfidence: number; // 1 to 5
+    recommendation: string;
+}
+
+export interface CatalogCollisionInput {
+    incomingTitle: string;
+    incomingIsrc?: string;
+    existingCatalog: Array<{ id: string; title: string; isrc?: string }>;
+}
+
+export async function judgeCatalogCollisionRisk(
+    input: CatalogCollisionInput
+): Promise<CatalogCollisionVerdict> {
+    const incTitle = (input.incomingTitle || '').trim().toLowerCase();
+    const incIsrc = (input.incomingIsrc || '').trim().toUpperCase();
+
+    // Deterministic fallback
+    let disposition: CatalogCollisionDisposition = 'NEW_CANONICAL_TRACK';
+    let matchedTrackId: string | null = null;
+    let confidence = 5;
+    let recommendation = 'Safe to register: no conflicting title or ISRC found in catalog.';
+
+    for (const track of input.existingCatalog) {
+        const catTitle = (track.title || '').trim().toLowerCase();
+        const catIsrc = (track.isrc || '').trim().toUpperCase();
+
+        if (incIsrc && catIsrc && incIsrc === catIsrc) {
+            disposition = 'IDENTICAL_COLLISION';
+            matchedTrackId = track.id;
+            confidence = 5;
+            recommendation = `Identical ISRC (${incIsrc}) already exists in catalog track "${track.title}". Duplicate submission rejected.`;
+            break;
+        }
+
+        if (incTitle === catTitle) {
+            disposition = 'IDENTICAL_COLLISION';
+            matchedTrackId = track.id;
+            confidence = 4;
+            recommendation = `Identical song title "${track.title}" already exists. Verify if this is an intentional new version.`;
+            break;
+        }
+
+        if (catTitle.length > 3 && incTitle.startsWith(catTitle)) {
+            const remainder = incTitle.slice(catTitle.length).toLowerCase();
+            if (/\b(remaster(ed)?|202\d|anniversary)\b/.test(remainder)) {
+                disposition = 'INTENTIONAL_REMASTER';
+                matchedTrackId = track.id;
+                confidence = 5;
+                recommendation = `Recognized as an intentional remaster of catalog track "${track.title}". New ISRC required under DDEX standard.`;
+                break;
+            } else if (/\b(deluxe|bonus|expanded)\b/.test(remainder)) {
+                disposition = 'DELUXE_EDITION';
+                matchedTrackId = track.id;
+                confidence = 5;
+                recommendation = `Recognized as deluxe or bonus edition of catalog track "${track.title}".`;
+                break;
+            }
+        }
+    }
+
+    if (!judgmentsAvailable() || !matchedTrackId || disposition === 'NEW_CANONICAL_TRACK') {
+        return {
+            disposition,
+            matchedTrackId,
+            collisionConfidence: confidence,
+            recommendation,
+        };
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                incomingTitle: input.incomingTitle,
+                incomingIsrc: input.incomingIsrc || 'None',
+                matchedTitle: input.existingCatalog.find(t => t.id === matchedTrackId)?.title,
+            },
+            questions: {
+                disposition: {
+                    type: 'choice' as const,
+                    instructions: 'Determine the release intent of this incoming track relative to existing catalog.',
+                    criteria: {
+                        IDENTICAL_COLLISION: 'Duplicate release with same recording; risk of duplicate royalty accounting.',
+                        INTENTIONAL_REMASTER: 'Legitimate remastered release requiring new metadata and master identifier.',
+                        DELUXE_EDITION: 'Deluxe, extended, or bonus edition of an existing track.',
+                        NEW_CANONICAL_TRACK: 'Wholly distinct song with coincidence in title phrasing.',
+                    },
+                },
+                confidence: {
+                    type: 'score' as const,
+                    instructions: 'Rate disambiguation confidence from 1 (ambiguous) to 5 (ironclad).',
+                    range: [1, 5] as [number, number],
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const dispAns = ans?.disposition as { choice?: unknown } | undefined;
+        const confAns = ans?.confidence as { score?: unknown } | undefined;
+
+        const resolvedDisp = (typeof dispAns?.choice === 'string' ? dispAns.choice : disposition) as CatalogCollisionDisposition;
+        const resolvedConf = typeof confAns?.score === 'number' ? Math.round(confAns.score) : confidence;
+
+        return {
+            disposition: resolvedDisp,
+            matchedTrackId,
+            collisionConfidence: resolvedConf,
+            recommendation,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'catalog collision risk judgment');
+        return {
+            disposition,
+            matchedTrackId,
+            collisionConfidence: confidence,
+            recommendation,
+        };
+    }
+}
+

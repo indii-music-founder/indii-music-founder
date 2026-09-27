@@ -1,22 +1,28 @@
-# TypeSafe Jev System One Knowledge Base & Judgment 72 Guide
+# TypeSafe Jev System One Knowledge Base & Judgment 76+ Guide
 
-This document is the authoritative repo guide and trigger checklist for knowing **when and how to implement Judgment 72** (and any future System One judgments) in indii.
+This document is the authoritative repo guide and trigger checklist for knowing **when and how to implement Judgment 76** (and any future System One judgments) in indii.
 
 ---
 
-## 1. Current State: Complete Coverage (Judgments 1–71)
+## 1. Current State: Complete Coverage (Judgments 1–75)
 
-As of September 2026, **71 typed judgments** are active across indii, backed by:
+As of September 2026, **75 typed judgments** are active across indii, backed by:
 - **Central Registry:** All questions, options, criteria, and probability thresholds are consolidated in [`packages/renderer/src/config/typesafeJudgments.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/config/typesafeJudgments.ts).
 - **Execution Gateway:** Securely proxied through the server-side `typesafeJudge` Firebase Cloud Function.
 - **Fail-Safe Offline Contract:** Every judgment implements an instantaneous, 100% deterministic offline fallback.
-- **Test Integrity:** Every judgment is unit-tested in [`packages/renderer/src/config/typesafeJudgments.test.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/config/typesafeJudgments.test.ts).
+- **Test Integrity:** Every judgment is unit-tested in [`packages/renderer/src/config/typesafeJudgments.test.ts`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/config/typesafeJudgments.test.ts) (189 passing tests).
+
+### Recent Additions (Judgments 72–75):
+- **Judgment 72 (`judgeMotionIntensityPreset`):** Video Camera Motion Intensity & Preset Resolution (`SLOW_DRIFT`, `DYNAMIC_TRACKING`, `KINETIC_WHIP`, `STATIC_LOCK`).
+- **Judgment 73 (`judgeStemSeparationRecipe`):** Audio Stem Separation Recipe Resolution (`TWO_STEM_VOCAL_INST`, `FOUR_STEM_CLASSIC`, `FIVE_STEM_DETAILED`, `PASS_THROUGH`).
+- **Judgment 74 (`judgeDawTitleSanitization`):** Fast DAW Filename & Stem Metadata Sanitization (`Original`, `Radio Edit`, `Remix`, `Instrumental`, etc. + explicit detection).
+- **Judgment 75 (`judgeCatalogCollisionRisk`):** Release Catalog Collision & Remaster Disambiguation (`IDENTICAL_COLLISION`, `INTENTIONAL_REMASTER`, `DELUXE_EDITION`, `NEW_CANONICAL_TRACK`).
 
 ---
 
-## 2. Trigger Matrix: When is Judgment 72 Required?
+## 2. Trigger Matrix: When is Judgment 76 Required?
 
-Do **NOT** create a speculative judgment. Add Judgment 72 **only** when a new feature or real user workflow meets all 4 of these conditions:
+Do **NOT** create a speculative judgment. Add Judgment 76 **only** when a new feature or real user workflow meets all 4 of these conditions:
 
 | Condition | Description | Acceptable Example | Violation / Anti-Pattern |
 | :--- | :--- | :--- | :--- |
@@ -27,9 +33,9 @@ Do **NOT** create a speculative judgment. Add Judgment 72 **only** when a new fe
 
 ---
 
-## 3. High-Value Candidate Triggers for Judgment 72
+## 3. High-Value Candidate Triggers for Judgment 76+
 
-When one of these product surfaces is actively built, Judgment 72 should be invoked:
+When one of these product surfaces is actively built, Judgment 76 should be invoked:
 
 1. **Touring / Hospitality Rider Clause Classifier (`judgeContractRiderClause`)**
    - *Trigger:* Parsing festival performance agreements or venue technical/hospitality riders to auto-detect deal-breaker clauses (e.g. radius clause restrictions, merchandise fee cuts > 20%, technical power constraints).
@@ -49,15 +55,15 @@ When one of these product surfaces is actively built, Judgment 72 should be invo
 
 ---
 
-## 4. Step-by-Step Implementation Recipe for Judgment 72
+## 4. Step-by-Step Implementation Recipe for Judgment 76+
 
 When the need arises, follow this exact 5-step playbook:
 
 ### Step 1: Add to `packages/renderer/src/config/typesafeJudgments.ts`
 1. Define the input interface and return type:
    ```typescript
-   export interface Judgment72Input { ... }
-   export interface Judgment72Verdict { ... }
+   export interface Judgment76Input { ... }
+   export interface Judgment76Verdict { ... }
    ```
 2. Write the **offline deterministic heuristic** first (must execute in < 1ms without network).
 3. Check `judgmentsAvailable()`: if false, immediately return the offline result.
@@ -75,7 +81,7 @@ When the need arises, follow this exact 5-step playbook:
        },
    });
    ```
-5. Wrap in `try/catch` with `noteJudgmentFailure(err, 'judgment 72 description')` and fallback.
+5. Wrap in `try/catch` with `noteJudgmentFailure(err, 'judgment 76 description')` and fallback.
 6. Export the function and any thresholds.
 
 ### Step 2: Add Comprehensive Unit Tests in `typesafeJudgments.test.ts`

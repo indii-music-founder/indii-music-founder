@@ -94,6 +94,10 @@ import {
     judgeVideoTreatmentIntent,
     judgeExpenseDeductibility,
     judgeTourStopFeasibility,
+    judgeMotionIntensityPreset,
+    judgeStemSeparationRecipe,
+    judgeDawTitleSanitization,
+    judgeCatalogCollisionRisk,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -3971,4 +3975,206 @@ describe('Judgment 71: Tour Stop Feasibility & Turnaround Gate (judgeTourStopFea
         expect(result.feasibilityRating).toBe(2);
     });
 });
+
+describe('judgeMotionIntensityPreset (Judgment 72)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    it('falls back to deterministic classification for slow drift and kinetic whip', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const slow = await judgeMotionIntensityPreset('A calm, serene, ambient floating drift across the stage');
+        expect(slow.preset).toBe('SLOW_DRIFT');
+        expect(slow.intensityScore).toBe(1);
+        expect(slow.recommendedDamping).toBe(0.9);
+
+        const whip = await judgeMotionIntensityPreset('Aggressive fast whip pans and rapid chaos cuts');
+        expect(whip.preset).toBe('KINETIC_WHIP');
+        expect(whip.intensityScore).toBe(5);
+        expect(whip.recommendedDamping).toBe(0.2);
+
+        const locked = await judgeMotionIntensityPreset('Locked tripod static still performance');
+        expect(locked.preset).toBe('STATIC_LOCK');
+        expect(locked.intensityScore).toBe(1);
+        expect(locked.recommendedDamping).toBe(1.0);
+    });
+
+    it('evaluates camera motion presets via online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    preset: { choice: 'DYNAMIC_TRACKING' },
+                    intensity: { score: 3.8 },
+                },
+            },
+        }));
+
+        const result = await judgeMotionIntensityPreset('Cinematic dolly follow shot keeping lead artist centered');
+        expect(result.preset).toBe('DYNAMIC_TRACKING');
+        expect(result.intensityScore).toBe(4);
+        expect(result.recommendedDamping).toBe(0.6);
+        expect(result.explanation).toContain('DYNAMIC_TRACKING');
+    });
+});
+
+describe('judgeStemSeparationRecipe (Judgment 73)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    it('falls back to deterministic acoustic vs electronic recipes', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const acoustic = await judgeStemSeparationRecipe({
+            genre: 'Acoustic Folk',
+            hasVocals: true,
+        });
+        expect(acoustic.recipe).toBe('TWO_STEM_VOCAL_INST');
+        expect(acoustic.recommendedModel).toBe('bs_roformer');
+        expect(acoustic.isolationConfidence).toBe(5);
+
+        const instrumental = await judgeStemSeparationRecipe({
+            genre: 'Ambient Beat',
+            hasVocals: false,
+        });
+        expect(instrumental.recipe).toBe('PASS_THROUGH');
+
+        const dance = await judgeStemSeparationRecipe({
+            genre: 'Detroit Techno',
+            hasVocals: true,
+        });
+        expect(dance.recipe).toBe('FIVE_STEM_DETAILED');
+        expect(dance.recommendedModel).toBe('mdx_extra');
+    });
+
+    it('resolves separation recipe through online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    recipe: { choice: 'FOUR_STEM_CLASSIC' },
+                    confidence: { score: 4.6 },
+                },
+            },
+        }));
+
+        const result = await judgeStemSeparationRecipe({
+            genre: 'Alternative Rock',
+            tempoBpm: 128,
+            hasVocals: true,
+        });
+
+        expect(result.recipe).toBe('FOUR_STEM_CLASSIC');
+        expect(result.recommendedModel).toBe('htdemucs');
+        expect(result.isolationConfidence).toBe(5);
+    });
+});
+
+describe('judgeDawTitleSanitization (Judgment 74)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    it('cleans messy DAW filenames deterministically', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const res1 = await judgeDawTitleSanitization('Nova_Sky_-_Midnight_Ride_FINAL_v3_24bit_48k_clean.wav');
+        expect(res1.cleanTitle).toBe('Midnight Ride');
+        expect(res1.cleanArtist).toBe('Nova Sky');
+        expect(res1.versionTag).toBe('Radio Edit');
+        expect(res1.isExplicit).toBe(false);
+
+        const res2 = await judgeDawTitleSanitization('Trap_Banger_explicit_remix_master_bounce.mp3');
+        expect(res2.cleanTitle).toBe('Trap Banger');
+        expect(res2.versionTag).toBe('Remix');
+        expect(res2.isExplicit).toBe(true);
+    });
+
+    it('resolves version and explicit metadata via online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    version: { choice: 'Acoustic' },
+                    explicit: { probability: 0.9 },
+                },
+            },
+        }));
+
+        const result = await judgeDawTitleSanitization('Echoes - Unplugged Session (Live 24bit).wav');
+        expect(result.versionTag).toBe('Acoustic');
+        expect(result.isExplicit).toBe(true);
+        expect(result.confidence).toBe(5);
+    });
+});
+
+describe('judgeCatalogCollisionRisk (Judgment 75)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    it('detects identical collisions and intentional remasters deterministically', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const catalog = [
+            { id: 'trk_1', title: 'Solar Flare', isrc: 'USABC2600001' },
+            { id: 'trk_2', title: 'Midnight Drive', isrc: 'USABC2600002' },
+        ];
+
+        const duplicateIsrc = await judgeCatalogCollisionRisk({
+            incomingTitle: 'Solar Flare (Alt)',
+            incomingIsrc: 'USABC2600001',
+            existingCatalog: catalog,
+        });
+        expect(duplicateIsrc.disposition).toBe('IDENTICAL_COLLISION');
+        expect(duplicateIsrc.matchedTrackId).toBe('trk_1');
+
+        const remaster = await judgeCatalogCollisionRisk({
+            incomingTitle: 'Midnight Drive (2026 Remaster)',
+            incomingIsrc: 'USABC2600099',
+            existingCatalog: catalog,
+        });
+        expect(remaster.disposition).toBe('INTENTIONAL_REMASTER');
+        expect(remaster.matchedTrackId).toBe('trk_2');
+
+        const brandNew = await judgeCatalogCollisionRisk({
+            incomingTitle: 'Neon Highway',
+            incomingIsrc: 'USABC2600055',
+            existingCatalog: catalog,
+        });
+        expect(brandNew.disposition).toBe('NEW_CANONICAL_TRACK');
+        expect(brandNew.matchedTrackId).toBeNull();
+    });
+
+    it('disambiguates catalog collision through online Jev callable', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    disposition: { choice: 'DELUXE_EDITION' },
+                    confidence: { score: 4.8 },
+                },
+            },
+        }));
+
+        const catalog = [{ id: 'trk_1', title: 'Lunar Eclipse', isrc: 'USABC2600001' }];
+
+        const result = await judgeCatalogCollisionRisk({
+            incomingTitle: 'Lunar Eclipse (Deluxe Bonus Track)',
+            incomingIsrc: 'USABC2600077',
+            existingCatalog: catalog,
+        });
+
+        expect(result.disposition).toBe('DELUXE_EDITION');
+        expect(result.collisionConfidence).toBe(5);
+        expect(result.matchedTrackId).toBe('trk_1');
+    });
+});
+
 
