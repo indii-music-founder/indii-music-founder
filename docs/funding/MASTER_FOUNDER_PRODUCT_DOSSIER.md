@@ -397,7 +397,7 @@ That issue triggered a stronger implementation:
 - cooldown/deduplication;
 - visible sync-failure warnings.
 
-## 9.3 Repair of the reporting pipeline
+## 9.3 Repair and live verification of the reporting pipeline
 
 A same-day audit found a real problem:
 
@@ -405,11 +405,17 @@ A same-day audit found a real problem:
 - the GitHub-forwarding leg had broken runtime configuration;
 - later, the client-side path was found capable of falsely claiming success even when persistence had failed.
 
-The current repair adds an **honesty gate**:
+The repair adds an **honesty gate**:
 
 > the agent may not tell the user a bug was filed unless the server confirms durable persistence.
 
-This episode is highly useful diligence evidence because it demonstrates the company's core philosophy in practice: failure is not hidden; it becomes evidence, repair work, tests, and stronger system rules.
+Later on 2026-09-26, the repaired production path produced fresh GitHub issues **#332** and **#333** from indii. Both match the canonical auto-report contract: reporter `wiil@indii.music`, `Reported from indii` footer, app-style bug body, and auto-reported severity/module labels.
+
+That crosses an important proof threshold: **product-native bug reporting is live-verified through GitHub creation, not merely implemented or simulated.**
+
+The duplicate pair arrived about 44 seconds apart, which exposes a remaining concurrency/deduplication gap. The loop therefore works, while duplicate suppression still needs refinement.
+
+This episode is highly useful diligence evidence because it demonstrates the company's core philosophy in practice: failure is not hidden; it becomes evidence, repair work, tests, stronger system rules, and another measurable hardening target.
 
 ## 9.4 Closed-loop repair-shop vision
 
@@ -419,7 +425,7 @@ Do not claim fully autonomous software repair today.
 
 Safe wording:
 
-> indii is moving toward a closed-loop repair operation in which the product can capture its own defects, convert them into structured engineering work, and route them through the same bounded agent/human development system used to build the product.
+> indii now has a live-verified product-native defect-reporting path that can turn an in-app problem into a structured GitHub engineering issue. The broader closed-loop repair operation — automated triage, bounded coding-agent repair, CI verification, and human escalation when required — is still being hardened and should not be described as fully autonomous.
 
 ---
 
