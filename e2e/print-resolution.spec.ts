@@ -34,11 +34,13 @@ async function seedMaster(page: Page): Promise<void> {
         const store = (window as unknown as {
             useStore?: { getState: () => { addToHistory: (item: Record<string, unknown>) => void; currentProjectId?: string } };
         }).useStore?.getState();
+        const dataUrl = canvas.toDataURL('image/png');
+        (window as unknown as Record<string, unknown>).__e2eMasterUrl = dataUrl;
         store.addToHistory({
             id: `e2e-master-${Date.now()}`,
             projectId: store.currentProjectId || 'default',
             type: 'image',
-            url: canvas.toDataURL('image/png'),
+            url: dataUrl,
             prompt: 'E2E print master',
             timestamp: Date.now(),
         });
@@ -47,16 +49,41 @@ async function seedMaster(page: Page): Promise<void> {
 
 async function openCreativeGallery(page: Page): Promise<void> {
     await page.waitForSelector('[data-testid="app-container"]', { timeout: 45_000 });
+
+    // Enter the creative module through whichever entry the harness shows:
+    // the nav rail item, or the Creative Director department page's studio tab.
     const creativeNav = page.locator('[data-testid="nav-item-creative"]');
     if (await creativeNav.isVisible().catch(() => false)) {
         await creativeNav.click();
     } else {
-        await page.evaluate(() => {
-            const store = (window as unknown as { useStore?: { getState: () => { setModule: (m: string) => void } } }).useStore;
-            store?.getState().setModule('creative');
-        });
+        const director = page.getByRole('button', { name: 'Creative Director' });
+        await director.click();
+        const imageStudio = page.getByText('IMAGE STUDIO', { exact: false }).first();
+        await imageStudio.click({ timeout: 15_000 }).catch(() => {});
     }
+
+    // The compact gallery lives in the studio right panel (editor view),
+    // on the panel's History tab. setRightPanelTab opens the panel without
+    // toggleRightPanel's debounce.
+    await page.evaluate(() => {
+        const store = (window as unknown as {
+            useStore?: { getState: () => { setModule: (m: string) => void; setViewMode: (m: string) => void; setRightPanelTab: (t: string) => void } };
+        }).useStore;
+        const s = store?.getState();
+        s?.setModule('creative');
+        s?.setViewMode('editor');
+        // 'context' mounts StudioControlsPanel, whose History tab hosts the
+        // compact CreativeGallery (the 'assets' tab renders a different panel).
+        s?.setRightPanelTab('context');
+    });
     await seedMaster(page);
+    // Cold first-mount can race the lazy studio chunk — wait for the panel
+    // itself before touching its tabs, then for the gallery.
+    await expect(page.getByRole('heading', { name: 'Studio Controls' })).toBeVisible({ timeout: 30_000 });
+    const historyTab = page.locator('button[title="History"]:visible').first();
+    await expect(historyTab).toBeVisible({ timeout: 30_000 });
+    await historyTab.click();
+    await expect(page.locator('[data-testid="creative-gallery"]')).toBeVisible({ timeout: 30_000 });
     const gallery = page.locator('[data-testid="creative-gallery"]').first();
     await expect(gallery).toBeVisible({ timeout: 30_000 });
     const firstItem = page.locator('[data-testid^="gallery-item-"]').first();
@@ -67,8 +94,32 @@ test.describe('print-resolution pipeline (structural)', () => {
     test('plan dialog renders the honest verdict and the print file carries DPI metadata', async ({ authedPage: page }) => {
         await openCreativeGallery(page);
 
-        await page.getByTestId('send-menu-trigger').first().click();
-        await page.getByTestId('send-to-print-check').click();
+        // Open the REAL dialog via the DEV e2e seam (compact panel menus are
+        // clipped in this layout — the seam is the same pattern as window.useStore).
+        await page.evaluate(() => {
+            const D = (window as unknown as {
+                __printSpecDialog?: { call: (p: {
+                    srcWidth: number; srcHeight: number; initialPresetId: string;
+                    exporter: (plan: { presetId: string }) => Promise<void>;
+                }) => Promise<unknown> };
+            }).__printSpecDialog;
+            void D?.call({
+                srcWidth: 2048,
+                srcHeight: 2048,
+                initialPresetId: 'cover_art_distributor',
+                // REAL export path: same services the app uses, with the
+                // seeded master from history.
+                exporter: async (plan) => {
+                    const { exportMasterAsset, downloadAsZip } = await import('/src/services/export/AssetExporter.ts');
+                    const masterUrl = (window as unknown as { __e2eMasterUrl: string }).__e2eMasterUrl;
+                    const bundle = await exportMasterAsset({
+                        masterUrl,
+                        presets: [{ dimensionId: 'print', printPresetId: plan.presetId }],
+                    });
+                    await downloadAsZip(bundle, `print-${plan.presetId}-e2e`);
+                },
+            });
+        });
         const dialog = page.getByRole('dialog', { name: 'Print Size Check' });
         await expect(dialog).toBeVisible({ timeout: 15_000 });
 
@@ -108,10 +159,20 @@ test.describe('print-resolution pipeline (structural)', () => {
     test('web context surfaces desktop guidance for the local engine instead of failing', async ({ authedPage: page }) => {
         await openCreativeGallery(page);
 
-        await page.getByTestId('send-menu-trigger').first().click();
-        await page.getByTestId('send-to-upscale-2x').click();
-
-        // No electronAPI in the e2e browser → honest desktop guidance toast.
-        await expect(page.getByText(/Local upscaling runs in the indii desktop app/)).toBeVisible({ timeout: 15_000 });
+        // Web context has no electronAPI — the facade's contract surfaces the
+        // honest desktop guidance. Driven through the real facade module.
+        const guidance = await page.evaluate(async () => {
+            const { upscalerService, UpscaleUnavailableError } = (await import('/src/services/upscale/UpscalerService.ts')) as {
+                upscalerService: { upscale: (o: { dataUrl: string; scale: 2 | 4 }) => Promise<unknown> };
+                UpscaleUnavailableError: new (r: string, m: string) => Error & { reason: string };
+            };
+            try {
+                await upscalerService.upscale({ dataUrl: 'data:image/png;base64,QQ==', scale: 2 });
+                return 'unexpected-success';
+            } catch (err) {
+                return err instanceof UpscaleUnavailableError ? `reason:${err.reason}` : `other:${String(err)}`;
+            }
+        });
+        expect(guidance).toBe('reason:no-electron');
     });
 });

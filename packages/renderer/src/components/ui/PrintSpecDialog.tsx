@@ -32,8 +32,10 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
     srcWidth,
     srcHeight,
     initialPresetId = 'vinyl_sleeve',
+    exporter,
 }) => {
     const [presetId, setPresetId] = useState(initialPresetId);
+    const [exporting, setExporting] = useState(false);
     const plan: PrintPlan = useMemo(
         () => planPrintOutput({ srcWidth, srcHeight, presetId }),
         [srcWidth, srcHeight, presetId],
@@ -87,14 +89,30 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
                         Close
                     </button>
                     <button
-                        className="px-4 py-2 text-sm font-medium rounded-md bg-purple-600 hover:bg-purple-500 text-white transition-colors"
+                        className="px-4 py-2 text-sm font-medium rounded-md bg-purple-600 hover:bg-purple-500 text-white transition-colors disabled:opacity-60"
                         data-testid="printspec-use-plan"
-                        onClick={() => call.end(plan)}
+                        disabled={exporting}
+                        onClick={async () => {
+                            setExporting(true);
+                            try {
+                                await exporter?.(plan);
+                            } finally {
+                                setExporting(false);
+                            }
+                            call.end(plan);
+                        }}
                     >
-                        Use this plan
+                        {exporting ? 'Exporting…' : 'Use this plan'}
                     </button>
                 </div>
             </div>
         </Modal>
     );
 });
+
+// E2E seam (ISSUE-328): same precedent as window.useStore — the callable is
+// exposed in DEV so structural tests can open the real dialog without
+// pixel-hunting nested panel menus. Never exposed in production builds.
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+    (window as unknown as Record<string, unknown>).__printSpecDialog = PrintSpecDialog;
+}

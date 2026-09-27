@@ -634,17 +634,23 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                                     img.src = resolved;
                                                                 });
                                                                 const { PrintSpecDialog } = await import('@/components/ui/PrintSpecDialog');
-                                                                const plan = await PrintSpecDialog.call({ srcWidth: dims.w, srcHeight: dims.h });
+                                                                const plan = await PrintSpecDialog.call({
+                                                                    srcWidth: dims.w,
+                                                                    srcHeight: dims.h,
+                                                                    // ISSUE-322: the dialog delivers the exact print file
+                                                                    // (px + DPI metadata) itself; caller holds the master.
+                                                                    exporter: async (p) => {
+                                                                        const { exportMasterAsset, downloadAsZip } = await import('@/services/export/AssetExporter');
+                                                                        const bundle = await exportMasterAsset({
+                                                                            masterUrl: resolved,
+                                                                            presets: [{ dimensionId: 'print', printPresetId: p.presetId }],
+                                                                        });
+                                                                        await downloadAsZip(bundle, `print-${p.presetId}-${Date.now()}`);
+                                                                        toast.success(`Print file exported: ${bundle[0]!.width}×${bundle[0]!.height} @ ${bundle[0]!.dpi} DPI.`);
+                                                                    },
+                                                                });
                                                                 if (plan) {
-                                                                    // ISSUE-322: export the exact print file (px + DPI metadata).
-                                                                    toast.info(`Exporting ${plan.summary}…`);
-                                                                    const { exportMasterAsset, downloadAsZip } = await import('@/services/export/AssetExporter');
-                                                                    const bundle = await exportMasterAsset({
-                                                                        masterUrl: resolved,
-                                                                        presets: [{ dimensionId: 'print', printPresetId: plan.presetId }],
-                                                                    });
-                                                                    await downloadAsZip(bundle, `print-${plan.presetId}-${Date.now()}`);
-                                                                    toast.success(`Print file exported: ${bundle[0]!.width}×${bundle[0]!.height} @ ${bundle[0]!.dpi} DPI.`);
+                                                                    toast.info(`Print plan delivered: ${plan.summary}`);
                                                                 }
                                                             } catch {
                                                                 toast.error("Print size check failed.");
