@@ -9,7 +9,17 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mocks = vi.hoisted(() => {
+interface WiringMocks {
+    generateContent: ReturnType<typeof vi.fn>;
+    getMetadata: ReturnType<typeof vi.fn>;
+    bucket: {
+        name: string;
+        file: (path: string) => { getMetadata: ReturnType<typeof vi.fn> };
+    };
+    lastPath?: string;
+}
+
+const mocks: WiringMocks = vi.hoisted(() => {
     const generateContent = vi.fn();
     const getMetadata = vi.fn();
     const bucket = {
@@ -40,8 +50,6 @@ vi.mock('../../lib/vertexClient', () => ({
 
 import { analyzeEncounterWithGemini } from './processEncounterPipeline';
 import type { EncounterMediaAsset } from './encounterEvidence';
-
-const METADATA = { size: '100', contentType: 'audio/webm' };
 
 function asset(type: EncounterMediaAsset['type'], i: number): EncounterMediaAsset {
     return { type, storagePath: `users/owner/encounters/e1/${type}${i}`, downloadUrl: `gs://proj/users/owner/encounters/e1/${type}${i}` } as EncounterMediaAsset;
