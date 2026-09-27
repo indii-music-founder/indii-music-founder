@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Layers, Share2, Activity, DollarSign, CheckCircle2, Disc, FileCode, Zap } from 'lucide-react';
+import { Sparkles, Layers, Share2, Activity, DollarSign, CheckCircle2, Disc, FileCode, Zap, Monitor, Sliders, Maximize2, X } from 'lucide-react';
 
 interface TabItem {
   id: string;
@@ -12,6 +12,39 @@ interface TabItem {
   hex: string;
   glow: string;
 }
+
+const REAL_SCREENSHOTS: Record<string, { src: string; alt: string; caption: string; tag: string }> = {
+  boardroom: {
+    src: '/screenshots/dashboard.png',
+    alt: 'indii.music Studio Dashboard — Unified artist command center',
+    caption: 'Real-time studio dashboard showing catalog, streaming velocity, audio master stems, and pending tasks for Artist Review.',
+    tag: 'Production Studio / Dashboard',
+  },
+  creative: {
+    src: '/screenshots/creative.png',
+    alt: 'Creative Director — Video timeline and canvas editor',
+    caption: 'Production Creative Director workspace for video generation, canvas manipulation, and brand guideline sync.',
+    tag: 'Creative Director / Video Engine',
+  },
+  distribution: {
+    src: '/screenshots/distribution.png',
+    alt: 'Distribution Engine — Direct delivery pipeline and metadata QC',
+    caption: 'Direct delivery preparation console with DDEX ERN 4.3 XML validator and DSP store targeting.',
+    tag: 'Delivery Preparation / DDEX ERN 4.3',
+  },
+  audio: {
+    src: '/screenshots/analytics.png',
+    alt: 'Analytics & Audio Intelligence — Cross-platform audience clusters',
+    caption: 'Deep DSP performance tracking, streaming cluster analytics, and revenue trends across global platforms.',
+    tag: 'Analytics & Sonic DNA©',
+  },
+  finance: {
+    src: '/screenshots/finance.png',
+    alt: 'Financial Command — Royalty splits and automated ledger',
+    caption: 'Transparent ledger accounting, automated split sheet distribution, and 0% platform fee payout management.',
+    tag: 'Financial Command / 0% Cut',
+  },
+};
 
 const tabs: TabItem[] = [
   {
@@ -58,6 +91,8 @@ const tabs: TabItem[] = [
 
 export default function AppStudioShowcase() {
   const [activeTab, setActiveTab] = useState<string>('boardroom');
+  const [viewMode, setViewMode] = useState<'screen' | 'workflow'>('workflow');
+  const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
 
   return (
     <section id="studio-preview" data-system-section="studio" className="relative z-20 w-full border-t border-white/10 bg-black py-24 md:py-36">
@@ -138,17 +173,46 @@ export default function AppStudioShowcase() {
             className="absolute inset-x-0 top-0 h-[1px] specular-line-gold z-10"
           />
           {/* Studio Title Bar */}
-          <div className="flex h-12 items-center justify-between border-b border-white/10 bg-[#090909] px-5 font-mono text-[10px] text-white/40">
+          <div className="flex flex-wrap items-center justify-between border-b border-white/10 bg-[#090909] px-5 py-2.5 font-mono text-[10px] text-white/40 gap-3">
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-red-500/80" />
               <span className="h-3 w-3 rounded-full bg-yellow-500/80" />
               <span className="h-3 w-3 rounded-full bg-green-500/80" />
-              <span className="ml-4 tracking-[0.2em] uppercase text-white/60">indii.music / illustrative beta walkthrough</span>
+              <span className="ml-4 tracking-[0.2em] uppercase text-white/60">indii.music / studio walkthrough</span>
             </div>
-            <div className="hidden items-center gap-6 md:flex">
+
+            {/* View Mode Switcher */}
+            <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-black/60 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('screen')}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-[10px] font-semibold transition-colors ${
+                  viewMode === 'screen'
+                    ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                <Monitor size={12} />
+                Live UI Capture
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('workflow')}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-[10px] font-semibold transition-colors ${
+                  viewMode === 'workflow'
+                    ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                <Sliders size={12} />
+                Workflow Specs
+              </button>
+            </div>
+
+            <div className="hidden items-center gap-6 lg:flex">
               <span className="flex items-center gap-1.5 text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                Illustrative Preview
+                {viewMode === 'screen' ? 'Verified 2560×1440 Retina' : 'Illustrative Preview'}
               </span>
               <span>Connected Project Context</span>
               <span className="text-amber-400 font-bold">Artist Controlled</span>
@@ -157,7 +221,46 @@ export default function AppStudioShowcase() {
 
           {/* Studio Content View */}
           <div className="min-h-[520px] p-6 md:p-10">
-            <AnimatePresence mode="wait">
+            {viewMode === 'screen' ? (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-amber-400 font-bold">
+                      {REAL_SCREENSHOTS[activeTab]?.tag}
+                    </span>
+                    <p className="mt-1 text-sm text-white/70">
+                      {REAL_SCREENSHOTS[activeTab]?.caption}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLightboxOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/[0.04] px-4 py-1.5 font-mono text-[10px] uppercase tracking-wider text-white hover:border-amber-400 hover:text-amber-400 transition-colors"
+                  >
+                    <Maximize2 size={12} />
+                    Inspect Fullscreen
+                  </button>
+                </div>
+
+                <div
+                  className="group relative cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-black/60 shadow-2xl transition-all hover:border-amber-400/40"
+                  onClick={() => setLightboxOpen(true)}
+                >
+                  <img
+                    src={REAL_SCREENSHOTS[activeTab]?.src}
+                    alt={REAL_SCREENSHOTS[activeTab]?.alt}
+                    className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-[1.01]"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                    <span className="font-mono text-[10px] text-amber-400 flex items-center gap-1.5">
+                      <Maximize2 size={12} /> Click to expand full resolution 2560×1440 capture
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <AnimatePresence mode="wait">
               {activeTab === 'boardroom' && (
                 <motion.div
                   key="boardroom"
@@ -481,9 +584,47 @@ export default function AppStudioShowcase() {
                 </motion.div>
               )}
             </AnimatePresence>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Lightbox Modal */}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxOpen(false)}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 p-4 md:p-8 backdrop-blur-2xl"
+          >
+            <div className="flex w-full max-w-7xl items-center justify-between pb-3 text-white">
+              <div className="font-mono text-xs uppercase tracking-wider text-amber-400">
+                {REAL_SCREENSHOTS[activeTab]?.tag} (2560×1440 Retina)
+              </div>
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(false)}
+                className="rounded-full border border-white/20 p-2 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                aria-label="Close full preview"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="max-h-[85vh] max-w-7xl overflow-auto rounded-xl border border-white/20 shadow-2xl">
+              <img
+                src={REAL_SCREENSHOTS[activeTab]?.src}
+                alt={REAL_SCREENSHOTS[activeTab]?.alt}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+            <p className="mt-3 text-center text-xs text-white/50">
+              {REAL_SCREENSHOTS[activeTab]?.caption}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
