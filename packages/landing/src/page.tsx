@@ -18,6 +18,7 @@ import { emitSystemPulse } from './three/signals';
 import Hero from './components/sections/Hero';
 import WaitlistSection from './components/sections/WaitlistSection';
 import FooterSection from './components/sections/FooterSection';
+import ExperienceShell from './components/ExperienceShell';
 
 const ThesisCrawl = lazy(() => import('./components/ThesisCrawl'));
 
@@ -322,6 +323,8 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,transparent_20%,#000000_85%)]" />
         <div className="absolute inset-0 opacity-[0.02] [background-image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:80px_80px]" />
       </div>
+
+      <ExperienceShell />
 
       <nav className="fixed inset-x-0 top-0 z-50 border-b border-amber-400/20 bg-[#14100C]/85 shadow-[0_10px_35px_rgba(0,0,0,0.7)] backdrop-blur-2xl" aria-label="Main navigation">
         <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/30 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black shadow-[0_1px_15px_rgba(255,184,0,0.3),0_1px_25px_rgba(229,57,53,0.15)]">

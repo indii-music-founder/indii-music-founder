@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { ArrowDown, ArrowRight, Play } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { ArrowDown, ArrowRight, Play, X } from 'lucide-react';
 import { emitSystemPulse } from '../../three/signals';
 import { getStudioUrl } from '../../lib/auth';
 import { INDII_BRAND } from '@shared/brand';
@@ -17,10 +17,20 @@ interface HeroProps {
 }
 
 export default function Hero({ founder, previewEnabled, previewHref, trackPreview }: HeroProps) {
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const reducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll();
   const heroScale = useTransform(scrollYProgress, [0, 0.16], [1, reducedMotion ? 1 : 0.96]);
   const heroY = useTransform(scrollYProgress, [0, 0.16], [0, reducedMotion ? 0 : 40]);
+
+  useEffect(() => {
+    if (!isVideoModalOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsVideoModalOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isVideoModalOpen]);
 
   const pulseHero = (strength: number) => {
     emitSystemPulse('cta', 0, strength);
@@ -208,7 +218,12 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                 </a>
                 <a
                   href="#studio-preview"
-                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-5 py-3 text-xs md:text-sm font-bold text-white/80 backdrop-blur-md transition-all hover:border-[#FFB800]/50 hover:bg-white/[0.06] hover:text-white"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    trackPreview('hero_watch_video');
+                    setIsVideoModalOpen(true);
+                  }}
+                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-5 py-3 text-xs md:text-sm font-bold text-white/80 backdrop-blur-md transition-all hover:border-[#FFB800]/50 hover:bg-white/[0.06] hover:text-white cursor-pointer"
                 >
                   <Play size={13} fill="currentColor" />
                   See how indii.music works
@@ -240,6 +255,68 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
         <span>Continue</span>
         <ArrowDown size={14} />
       </a>
+
+      {/* Video Walkthrough Modal */}
+      <AnimatePresence>
+        {isVideoModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="indii.music product walkthrough video"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-2xl md:p-8"
+            onClick={() => setIsVideoModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="lacquer-card-gold relative w-full max-w-5xl overflow-hidden rounded-2xl border border-white/20 bg-black shadow-[0_30px_100px_rgba(0,0,0,0.95)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-white/10 bg-[#0d0d0d] px-5 py-3">
+                <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-[#FFB800]">
+                  <span className="h-2 w-2 rounded-full bg-[#00C853] shadow-[0_0_8px_#00C853]" />
+                  Official Product Walkthrough / 1080p
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsVideoModalOpen(false)}
+                  aria-label="Close video"
+                  className="rounded-full p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="relative aspect-video w-full bg-black">
+                <video
+                  controls
+                  autoPlay
+                  playsInline
+                  src="/videos/indii-overview.mp4"
+                  poster="/videos/indii-overview-poster.jpg"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-[#0a0a0a] px-5 py-3 text-xs text-white/70">
+                <span>1:18 Overview of the connected music operating system.</span>
+                <a
+                  href="#studio-preview"
+                  onClick={() => setIsVideoModalOpen(false)}
+                  className="font-mono text-[10px] uppercase tracking-wider text-amber-400 hover:underline"
+                >
+                  Explore Studio Preview ↓
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.section>
   );
 }

@@ -44,6 +44,23 @@ export default function OverlookedWorkSection() {
               <Icon size={24} className="text-amber-400" aria-hidden="true" />
               <h3 className="mt-5 text-xl font-bold tracking-tight text-white md:text-2xl">{title}</h3>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/65 md:text-base">{description}</p>
+              {title === 'Give a long video another life.' && (
+                <div className="mt-5 overflow-hidden rounded-xl border border-white/15 bg-black/80 aspect-[88/38] relative shadow-lg">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    poster="/videos/video-slicing-poster.jpg"
+                    src="/videos/video-slicing-demo.mp4"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/85 px-2 py-0.5 font-mono text-[9px] text-amber-400 border border-white/10 backdrop-blur-md">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#00FF66]" />
+                    16:9 Master → 9:16 Social Cut
+                  </div>
+                </div>
+              )}
             </article>
           ))}
         </div>

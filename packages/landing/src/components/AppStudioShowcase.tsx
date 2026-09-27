@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Layers, Share2, Activity, DollarSign, CheckCircle2, Disc, FileCode, Zap, Monitor, Sliders, Maximize2, X } from 'lucide-react';
+import { Sparkles, Layers, Share2, Activity, DollarSign, CheckCircle2, Disc, FileCode, Zap, Monitor, Sliders, Maximize2, X, Film } from 'lucide-react';
 
 interface TabItem {
   id: string;
@@ -91,7 +91,7 @@ const tabs: TabItem[] = [
 
 export default function AppStudioShowcase() {
   const [activeTab, setActiveTab] = useState<string>('boardroom');
-  const [viewMode, setViewMode] = useState<'screen' | 'workflow'>('workflow');
+  const [viewMode, setViewMode] = useState<'screen' | 'workflow' | 'video'>('workflow');
   const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
 
   return (
@@ -197,6 +197,18 @@ export default function AppStudioShowcase() {
               </button>
               <button
                 type="button"
+                onClick={() => setViewMode('video')}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-[10px] font-semibold transition-colors ${
+                  viewMode === 'video'
+                    ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                <Film size={12} />
+                Live Video Walkthrough
+              </button>
+              <button
+                type="button"
                 onClick={() => setViewMode('workflow')}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-[10px] font-semibold transition-colors ${
                   viewMode === 'workflow'
@@ -212,7 +224,7 @@ export default function AppStudioShowcase() {
             <div className="hidden items-center gap-6 lg:flex">
               <span className="flex items-center gap-1.5 text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                {viewMode === 'screen' ? 'Verified 2560×1440 Retina' : 'Illustrative Preview'}
+                {viewMode === 'screen' ? 'Verified 2560×1440 Retina' : viewMode === 'video' ? '1080p Studio Screencast' : 'Illustrative Preview'}
               </span>
               <span>Connected Project Context</span>
               <span className="text-amber-400 font-bold">Artist Controlled</span>
@@ -221,7 +233,37 @@ export default function AppStudioShowcase() {
 
           {/* Studio Content View */}
           <div className="min-h-[520px] p-6 md:p-10">
-            {viewMode === 'screen' ? (
+            {viewMode === 'video' ? (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-amber-400 font-bold">
+                      Full Studio Walkthrough / 1080p Master
+                    </span>
+                    <p className="mt-1 text-sm text-white/70">
+                      Continuous video walkthrough across Conductor, Creative Director, Distribution, Audio Intelligence, and Finance.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-wider text-emerald-400">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                    Studio in Motion
+                  </div>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-white/10 bg-black/80 shadow-2xl">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    controls
+                    poster="/videos/studio-showcase-poster.jpg"
+                    src="/videos/studio-showcase-walkthrough.mp4"
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              </div>
+            ) : viewMode === 'screen' ? (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
                   <div>
@@ -386,10 +428,22 @@ export default function AppStudioShowcase() {
                     </div>
 
                     <div className="my-auto text-center">
-                      <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-2xl border border-[#00FF66]/40 bg-black/80 shadow-[0_0_40px_rgba(0,255,102,0.25)]">
-                        <Disc size={48} className="animate-spin text-[#00FF66] [animation-duration:12s]" />
+                      <div className="relative mx-auto max-w-sm overflow-hidden rounded-xl border border-[#00FF66]/40 bg-black shadow-[0_0_40px_rgba(0,255,102,0.25)]">
+                        <video
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          poster="/videos/video-slicing-poster.jpg"
+                          src="/videos/video-slicing-demo.mp4"
+                          className="w-full h-36 object-cover"
+                        />
+                        <div className="absolute bottom-1.5 left-2 flex items-center gap-1.5 rounded bg-black/80 px-2 py-0.5 font-mono text-[9px] text-[#00FF66]">
+                          <Disc size={10} className="animate-spin" />
+                          <span>NOSTALGIA_V4_FINAL.WAV / Live Cut</span>
+                        </div>
                       </div>
-                      <p className="mt-4 text-xs font-mono text-white/70">
+                      <p className="mt-3 text-xs font-mono text-white/70">
                         Title: <span className="text-[#00FF66]">NOSTALGIA_V4_FINAL.WAV</span>
                       </p>
                       <p className="text-[10px] font-mono text-white/40">Typography: Neue Haas Grotesk Light</p>

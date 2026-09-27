@@ -1,3 +1,27 @@
+# Session Close — Landing Page Live Video Walkthrough, Demos & Ambient Motion (2026-09-27)
+
+**Final state: Produced, web-optimized, and integrated 4 live product video assets across the landing page (`packages/landing/public/videos/`). Wired full-screen 1:18 Founder Movie walkthrough modal to Hero "See how indii.music works" CTA with Escape key dismiss and studio jump link in `Hero.tsx`. Added "Live Video Walkthrough" toggle mode to `AppStudioShowcase.tsx` rendering continuous 1080p 5-department studio screencast, and embedded live video canvas in Creative Studio tab. Embedded 16:9 to 9:16 video slicing loop in `OverlookedWorkSection.tsx` ("Give a long video another life"). Reactivated `ExperienceShell.tsx` mounting seamless ambient dark studio video loop with reduced-motion protection. Verified 11/11 test files passed (62/62 tests green, including 10/10 preservation tripwires in `page.preservation.test.tsx`), Vite production build passed (2.08s), ESLint 0 errors, quality scanner 0 violations. Mainline delivery prepared directly on `origin/main`.**
+
+## Shipped & Integrated
+- **Optimized Video Assets (`packages/landing/public/videos/`):**
+  - `indii-overview.mp4` (6.6 MB, 1080p, 1:18 duration, faststart) + `indii-overview-poster.jpg`.
+  - `studio-showcase-walkthrough.mp4` (356 KB, 1080p, 15s kinetic department loop) + `studio-showcase-poster.jpg`.
+  - `video-slicing-demo.mp4` (323 KB, 6s loop, 16:9 master to 9:16 social cut side-by-side) + `video-slicing-poster.jpg`.
+  - `ambient-studio-loop.mp4` (5.1 MB, seamless dark ambient particle loop).
+- **Component Implementations:**
+  - `packages/landing/src/components/sections/Hero.tsx`: Fullscreen video walkthrough modal triggered by `<Play /> See how indii.music works`.
+  - `packages/landing/src/components/AppStudioShowcase.tsx`: `Live Video Walkthrough` switcher mode + live canvas preview in Creative Studio.
+  - `packages/landing/src/components/sections/OverlookedWorkSection.tsx`: Embedded video slicing demonstration.
+  - `packages/landing/src/components/ExperienceShell.tsx` & `packages/landing/src/page.tsx`: Ambient dark studio motion background.
+- **Verification & Quality Gates:**
+  - `packages/landing/src/components/videoSpots.test.tsx`: 4/4 targeted tests passed.
+  - Full landing suite: 11/11 files passed, 62/62 tests passed (17.5s).
+  - `npm --prefix packages/landing run build`: Passed in 2.08s (0 errors).
+  - `node scripts/check-test-quality.js`: 0 violations.
+  - `git diff --check`: Clean (0 whitespace/formatting issues).
+
+---
+
 # Session Close — Visual Asset Catalog & Landing Page Live Studio Showcase (2026-09-27)
 
 **Final state: Generated, categorized, and cataloged 49 high-resolution production and studio screenshots across desktop (2560×1440 @ 2x DPR) and mobile (390×844 @ 3x DPR). Produced comprehensive asset reference guide in `assets/marketing-screenshots/README.md`. Integrated live studio screen viewer with interactive view toggle (`Live UI Capture` vs `Workflow Specs`) and full-screen lightbox modal directly into `packages/landing/src/components/AppStudioShowcase.tsx`. Verified 10/10 preservation tests green in `page.preservation.test.tsx`, production Vite build passed (1.71s), ESLint 0 errors, quality scanner 0 violations. Delivered directly to `origin/main` via single coherent commit `3e8faf2b3`. CI run `36347074739` triggered on GitHub Actions.**
