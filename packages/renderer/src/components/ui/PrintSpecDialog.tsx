@@ -12,6 +12,8 @@ interface PrintSpecProps {
     srcWidth: number;
     srcHeight: number;
     initialPresetId?: string;
+    /** Injectable export sink (tests). Default: no export — callers holding the master deliver the file. */
+    exporter?: (plan: PrintPlan) => Promise<void>;
 }
 
 const VERDICT_STYLES: Record<PrintVerdict, { badge: string; label: string }> = {
