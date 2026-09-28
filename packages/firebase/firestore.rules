@@ -150,7 +150,6 @@ service cloud.firestore {
     // Check if user is owner of organization
     function isOrgOwner(orgId) {
       return isAuthenticated() && 
-        exists(/databases/$(database)/documents/organizations/$(orgId)) &&
         get(/databases/$(database)/documents/organizations/$(orgId)).data.ownerId == request.auth.uid;
     }
 
@@ -683,10 +682,10 @@ service cloud.firestore {
             request.resource.data.get('timestamp', 0) > 0 &&
             request.resource.data.get('userId', '') == request.auth.uid;
         }
-        allow read: if isOwner(userId);
+        allow read: if isOwner(request.resource.data.get('userId', ''));
         allow create: if isAuthenticated() && isValidAudioAsset();
         allow update: if false; // Audio assets are immutable
-        allow delete: if isOwner(userId);
+        allow delete: if isOwner(resource.data.get('userId', ''));
       }
 
       // ── Platform Stats Cache (Social Analytics) ──────────────────────────
@@ -738,7 +737,7 @@ service cloud.firestore {
         allow create, update: if isOwner(userId) &&
           request.resource.data.keys().hasOnly([
             'id', 'name', 'email', 'country', 'formType', 'status',
-            'uploadedAt', 'fileName', 'storagePath', 'sizeBytes', 'requestedAt',
+            'uploadedAt', 'fileName', 'storagePath', 'requestedAt',
             'consumedToken', 'consumedAt', 'reviewedAt', 'on_file'
           ]);
         allow delete: if isOwner(userId);
@@ -1999,6 +1998,15 @@ service cloud.firestore {
 
     // PODCredentialService — POD provider API keys, field-level per provider.
     match /users/{userId}/integrations/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Tax Form Collection (ISSUE-1118) — W-9/W-8BEN collaborator records.
+    // Owner-scoped; artist may delete anytime (retention is the taxpayer's
+    // duty, not ours). Actual file bytes live in Storage at
+    // tax_docs/{userId}/{collaboratorId}/{fileName}; this doc tracks status
+    // and metadata only.
+    match /users/{userId}/tax_collaborators/{collaboratorId} {
       allow read, write: if isOwner(userId);
     }
 

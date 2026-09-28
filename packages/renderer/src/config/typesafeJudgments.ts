@@ -8525,25 +8525,11 @@ export async function judgeDawTitleSanitization(
         });
 
         const ans = result.data.answers;
-        const versionRaw = ans?.version;
-        const explicitRaw = ans?.explicit;
+        const versionAns = ans?.version as { choice?: unknown } | undefined;
+        const explicitAns = ans?.explicit as { probability?: unknown } | undefined;
 
-        const versionChoice = typeof versionRaw === 'string'
-            ? versionRaw
-            : (typeof (versionRaw as { choice?: unknown })?.choice === 'string'
-                ? (versionRaw as { choice: string }).choice
-                : undefined);
-
-        const explicitProb = typeof explicitRaw === 'number'
-            ? explicitRaw
-            : (typeof (explicitRaw as { probability?: unknown })?.probability === 'number'
-                ? (explicitRaw as { probability: number }).probability
-                : (typeof (explicitRaw as { noul?: unknown })?.noul === 'number'
-                    ? (explicitRaw as { noul: number }).noul
-                    : undefined));
-
-        const resolvedVersion = (versionChoice ?? versionTag) as TrackVersionTag;
-        const resolvedExplicit = typeof explicitProb === 'number' ? explicitProb >= 0.5 : isExplicit;
+        const resolvedVersion = (typeof versionAns?.choice === 'string' ? versionAns.choice : versionTag) as TrackVersionTag;
+        const resolvedExplicit = typeof explicitAns?.probability === 'number' ? explicitAns.probability >= 0.5 : isExplicit;
 
         return {
             cleanTitle,
@@ -8675,25 +8661,11 @@ export async function judgeCatalogCollisionRisk(
         });
 
         const ans = result.data.answers;
-        const dispRaw = ans?.disposition;
-        const confRaw = ans?.confidence;
+        const dispAns = ans?.disposition as { choice?: unknown } | undefined;
+        const confAns = ans?.confidence as { score?: unknown } | undefined;
 
-        const dispChoice = typeof dispRaw === 'string'
-            ? dispRaw
-            : (typeof (dispRaw as { choice?: unknown })?.choice === 'string'
-                ? (dispRaw as { choice: string }).choice
-                : undefined);
-
-        const confScore = typeof confRaw === 'number'
-            ? confRaw
-            : (typeof (confRaw as { score?: unknown })?.score === 'number'
-                ? (confRaw as { score: number }).score
-                : undefined);
-
-        const resolvedDisp = (dispChoice ?? disposition) as CatalogCollisionDisposition;
-        const resolvedConf = typeof confScore === 'number' && Number.isFinite(confScore)
-            ? Math.round(confScore)
-            : confidence;
+        const resolvedDisp = (typeof dispAns?.choice === 'string' ? dispAns.choice : disposition) as CatalogCollisionDisposition;
+        const resolvedConf = typeof confAns?.score === 'number' ? Math.round(confAns.score) : confidence;
 
         return {
             disposition: resolvedDisp,

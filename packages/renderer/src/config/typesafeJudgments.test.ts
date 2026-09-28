@@ -4175,30 +4175,6 @@ describe('judgeCatalogCollisionRisk (Judgment 75)', () => {
         expect(result.collisionConfidence).toBe(5);
         expect(result.matchedTrackId).toBe('trk_1');
     });
-
-    it('disambiguates catalog collision when Jev returns primitive answer values', async () => {
-        mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({
-            data: {
-                answers: {
-                    disposition: 'DELUXE_EDITION',
-                    confidence: 4,
-                },
-            },
-        }));
-
-        const catalog = [{ id: 'trk_1', title: 'Lunar Eclipse', isrc: 'USABC2600001' }];
-
-        const result = await judgeCatalogCollisionRisk({
-            incomingTitle: 'Lunar Eclipse (Deluxe Bonus Track)',
-            incomingIsrc: 'USABC2600077',
-            existingCatalog: catalog,
-        });
-
-        expect(result.disposition).toBe('DELUXE_EDITION');
-        expect(result.collisionConfidence).toBe(4);
-        expect(result.matchedTrackId).toBe('trk_1');
-    });
 });
 
 
