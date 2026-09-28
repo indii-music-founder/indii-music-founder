@@ -18,7 +18,7 @@ import {
     type CreditTransactionType,
 } from '@indii/shared';
 
-export type MembershipTier = 'free' | 'pro' | 'founder' | 'enterprise';
+export type MembershipTier = 'free' | 'pro' | 'founder' | 'enterprise' | 'start' | 'build' | 'scale';
 
 
 /**
@@ -81,6 +81,54 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
         hasCustomBranding: false,
         hasPriorityQueue: false,
         hasAPIAccess: false,
+    },
+    start: {
+        maxVideoDuration: 15 * 60,         // 15 minutes
+        maxVideoGenerationsPerDay: 15,
+        maxImagesPerDay: 250,
+        maxBatchSize: 8,
+        maxDesignResolution: 2048,
+        maxExportDPI: 300,
+        hasCMYKSupport: true,
+        maxStorageMB: 25 * 1024,           // 25 GB
+        maxProjects: 10,
+        maxDailySpend: 5.0,                 // $5.00 Daily Limit
+        hasAdvancedEditing: false,
+        hasCustomBranding: true,
+        hasPriorityQueue: false,
+        hasAPIAccess: false,
+    },
+    build: {
+        maxVideoDuration: 60 * 60,         // 60 minutes
+        maxVideoGenerationsPerDay: 50,
+        maxImagesPerDay: 1000,
+        maxBatchSize: 32,
+        maxDesignResolution: 4096,          // 4K
+        maxExportDPI: 300,
+        hasCMYKSupport: true,
+        maxStorageMB: 100 * 1024,          // 100 GB
+        maxProjects: 50,
+        maxDailySpend: 15.0,                // $15.00 Daily Limit
+        hasAdvancedEditing: true,
+        hasCustomBranding: true,
+        hasPriorityQueue: true,
+        hasAPIAccess: false,
+    },
+    scale: {
+        maxVideoDuration: 180 * 60,        // 180 minutes
+        maxVideoGenerationsPerDay: 200,
+        maxImagesPerDay: 3000,
+        maxBatchSize: 64,
+        maxDesignResolution: 8192,          // 8K
+        maxExportDPI: 600,
+        hasCMYKSupport: true,
+        maxStorageMB: 500 * 1024,          // 500 GB
+        maxProjects: 200,
+        maxDailySpend: 30.0,                // $30.00 Daily Limit
+        hasAdvancedEditing: true,
+        hasCustomBranding: true,
+        hasPriorityQueue: true,
+        hasAPIAccess: true,
     },
     pro: {
         maxVideoDuration: 60 * 60,         // 60 minutes

@@ -122,7 +122,14 @@ export function policyClassForServerEntitlement(input: ServerOwnedArcjetPolicyIn
     if (input.isAdmin) return "admin";
     if (input.bringYourOwnApiEnabled === true) return "byo-api";
     if (input.tier === SubscriptionTier.FOUNDER) return "founder";
-    if (input.tier === SubscriptionTier.PRO_MONTHLY || input.tier === SubscriptionTier.PRO_YEARLY || input.tier === SubscriptionTier.STUDIO) {
+    if (
+        input.tier === SubscriptionTier.START ||
+        input.tier === SubscriptionTier.BUILD ||
+        input.tier === SubscriptionTier.SCALE ||
+        input.tier === SubscriptionTier.PRO_MONTHLY ||
+        input.tier === SubscriptionTier.PRO_YEARLY ||
+        input.tier === SubscriptionTier.STUDIO
+    ) {
         return "paid";
     }
     return "verified-free";

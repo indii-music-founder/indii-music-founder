@@ -3,7 +3,7 @@
  */
 
 import Stripe from 'stripe';
-import { Subscription, SubscriptionTier } from '../shared/subscription/types';
+import { Subscription, SubscriptionTier, BillingPeriod } from '../shared/subscription/types';
 
 import { getStripeSecretKey } from '../config/secrets';
 
@@ -48,35 +48,87 @@ function resolvePriceId(envVar: string): string {
 // Stripe price IDs for each tier and billing period (lazy getters for test safety and dynamic env resolution)
 export const STRIPE_PRICES: Record<SubscriptionTier, {
   monthly?: string;
+  quarterly?: string;
+  six_month?: string;
   yearly?: string;
+  annual?: string;
   oneTime?: string;
 }> = {
   [SubscriptionTier.FREE]: {},
+  [SubscriptionTier.START]: {
+    get monthly() { return resolvePriceId('STRIPE_PRICE_START_MONTHLY') || resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'); },
+    get quarterly() { return resolvePriceId('STRIPE_PRICE_START_QUARTERLY'); },
+    get six_month() { return resolvePriceId('STRIPE_PRICE_START_SIX_MONTH'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_START_ANNUAL') || resolvePriceId('STRIPE_PRICE_START_YEARLY') || resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
+    get annual() { return this.yearly; },
+  },
+  [SubscriptionTier.BUILD]: {
+    get monthly() { return resolvePriceId('STRIPE_PRICE_BUILD_MONTHLY') || resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'); },
+    get quarterly() { return resolvePriceId('STRIPE_PRICE_BUILD_QUARTERLY'); },
+    get six_month() { return resolvePriceId('STRIPE_PRICE_BUILD_SIX_MONTH'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_BUILD_ANNUAL') || resolvePriceId('STRIPE_PRICE_BUILD_YEARLY') || resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'); },
+    get annual() { return this.yearly; },
+  },
+  [SubscriptionTier.SCALE]: {
+    get monthly() { return resolvePriceId('STRIPE_PRICE_SCALE_MONTHLY') || resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'); },
+    get quarterly() { return resolvePriceId('STRIPE_PRICE_SCALE_QUARTERLY'); },
+    get six_month() { return resolvePriceId('STRIPE_PRICE_SCALE_SIX_MONTH'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_SCALE_ANNUAL') || resolvePriceId('STRIPE_PRICE_SCALE_YEARLY') || resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'); },
+    get annual() { return this.yearly; },
+  },
   [SubscriptionTier.PRO_MONTHLY]: {
     get monthly() { return resolvePriceId('STRIPE_PRICE_START_MONTHLY') || resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'); },
-    get yearly() { return resolvePriceId('STRIPE_PRICE_START_YEARLY') || resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_START_ANNUAL') || resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
+    get annual() { return this.yearly; },
   },
   [SubscriptionTier.PRO_YEARLY]: {
     get monthly() { return resolvePriceId('STRIPE_PRICE_START_MONTHLY') || resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'); },
-    get yearly() { return resolvePriceId('STRIPE_PRICE_START_YEARLY') || resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_START_ANNUAL') || resolvePriceId('STRIPE_PRICE_PRO_YEARLY'); },
+    get annual() { return this.yearly; },
   },
   [SubscriptionTier.STUDIO]: {
-    get monthly() { return resolvePriceId('STRIPE_PRICE_BUILD_MONTHLY') || resolvePriceId('STRIPE_PRICE_SCALE_MONTHLY') || resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'); },
-    get yearly() { return resolvePriceId('STRIPE_PRICE_BUILD_YEARLY') || resolvePriceId('STRIPE_PRICE_SCALE_YEARLY') || resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'); },
+    get monthly() { return resolvePriceId('STRIPE_PRICE_BUILD_MONTHLY') || resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'); },
+    get yearly() { return resolvePriceId('STRIPE_PRICE_BUILD_ANNUAL') || resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY'); },
+    get annual() { return this.yearly; },
   },
-  [SubscriptionTier.FOUNDER]: {},
+  [SubscriptionTier.FOUNDER]: {
+    get oneTime() { return resolvePriceId('STRIPE_PRICE_FOUNDER_ONE_TIME'); },
+  },
 };
+
 /**
  * Get Stripe price ID for a tier and billing period.
+ * Supports boolean isYearly for backwards compatibility, or explicit BillingPeriod.
  * Returns the oneTime price if present.
  */
-export function getPriceId(tier: SubscriptionTier, isYearly: boolean): string | null {
+export function getPriceId(
+  tier: SubscriptionTier,
+  periodOrIsYearly: boolean | BillingPeriod | 'six-month' | 'yearly' = 'monthly'
+): string | null {
   const prices = STRIPE_PRICES[tier];
   if (!prices) return null;
 
   if (prices.oneTime) return prices.oneTime;
 
-  return (isYearly ? prices.yearly : prices.monthly) || null;
+  if (typeof periodOrIsYearly === 'boolean') {
+    return (periodOrIsYearly ? prices.yearly : prices.monthly) || null;
+  }
+
+  const normalized = periodOrIsYearly === 'six-month' ? 'six_month'
+    : periodOrIsYearly === 'yearly' ? 'annual'
+    : periodOrIsYearly;
+
+  switch (normalized) {
+    case 'annual':
+      return prices.annual || prices.yearly || null;
+    case 'quarterly':
+      return prices.quarterly || null;
+    case 'six_month':
+      return prices.six_month || null;
+    case 'monthly':
+    default:
+      return prices.monthly || null;
+  }
 }
 
 /**
@@ -115,25 +167,23 @@ export function mapStripeTierToSubscriptionTier(
   productId: string,
   billingInterval?: 'month' | 'year' | string | null
 ): SubscriptionTier | null {
-
-
-  // Studio (interval doesn't distinguish tiers here — Studio is Studio)
-  if (process.env.STRIPE_PRODUCT_STUDIO && productId === process.env.STRIPE_PRODUCT_STUDIO) return SubscriptionTier.STUDIO;
-
-  // Pro — use billing interval to distinguish monthly vs yearly
-  if (process.env.STRIPE_PRODUCT_PRO && productId === process.env.STRIPE_PRODUCT_PRO) {
-    return billingInterval === 'year' ? SubscriptionTier.PRO_YEARLY : SubscriptionTier.PRO_MONTHLY;
-  }
-
-  // ISSUE-1422: Support public beta tiers (Start / Build / Scale)
+  // Public beta tiers (Start / Build / Scale)
   if (process.env.STRIPE_PRODUCT_START && productId === process.env.STRIPE_PRODUCT_START) {
-    return billingInterval === 'year' ? SubscriptionTier.PRO_YEARLY : SubscriptionTier.PRO_MONTHLY;
+    return SubscriptionTier.START;
   }
   if (process.env.STRIPE_PRODUCT_BUILD && productId === process.env.STRIPE_PRODUCT_BUILD) {
-    return SubscriptionTier.STUDIO;
+    return SubscriptionTier.BUILD;
   }
   if (process.env.STRIPE_PRODUCT_SCALE && productId === process.env.STRIPE_PRODUCT_SCALE) {
-    return SubscriptionTier.STUDIO;
+    return SubscriptionTier.SCALE;
+  }
+
+  // Legacy Studio
+  if (process.env.STRIPE_PRODUCT_STUDIO && productId === process.env.STRIPE_PRODUCT_STUDIO) return SubscriptionTier.STUDIO;
+
+  // Legacy Pro — use billing interval to distinguish monthly vs yearly
+  if (process.env.STRIPE_PRODUCT_PRO && productId === process.env.STRIPE_PRODUCT_PRO) {
+    return billingInterval === 'year' ? SubscriptionTier.PRO_YEARLY : SubscriptionTier.PRO_MONTHLY;
   }
 
   return null;

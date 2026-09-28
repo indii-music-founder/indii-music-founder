@@ -2,8 +2,21 @@
  * Type definitions for subscription and usage tracking
  */
 
-import { SubscriptionTier } from './SubscriptionTier';
-export { SubscriptionTier };
+import {
+  SubscriptionTier,
+  BillingPeriod,
+  BillingPeriodConfig,
+  BILLING_PERIODS,
+  calculateBillingTotal,
+} from './SubscriptionTier';
+export {
+  SubscriptionTier,
+  type BillingPeriod,
+  type BillingPeriodConfig,
+  BILLING_PERIODS,
+  calculateBillingTotal,
+};
+
 
 /**
  * User subscription record
@@ -157,6 +170,7 @@ export interface SubscriptionChangeRequest {
 export interface CheckoutSessionParams {
   userId: string;
   tier: SubscriptionTier;
+  billingPeriod?: BillingPeriod | 'six-month' | 'yearly';
   successUrl: string;
   cancelUrl: string;
   customerEmail?: string;

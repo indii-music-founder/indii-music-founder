@@ -27,6 +27,10 @@ describe('subscriptionDefaults', () => {
     expect(normalizeSubscriptionTier('pro')).toBe(SubscriptionTier.PRO_MONTHLY);
     expect(normalizeSubscriptionTier('enterprise')).toBe(SubscriptionTier.STUDIO);
     expect(normalizeSubscriptionTier('founder')).toBe(SubscriptionTier.FOUNDER);
+    expect(normalizeSubscriptionTier('start')).toBe(SubscriptionTier.START);
+    expect(normalizeSubscriptionTier('build')).toBe(SubscriptionTier.BUILD);
+    expect(normalizeSubscriptionTier('scale')).toBe(SubscriptionTier.SCALE);
+    expect(normalizeSubscriptionTier('creator')).toBe(SubscriptionTier.START);
     expect(normalizeSubscriptionTier('unknown')).toBe(SubscriptionTier.FREE);
   });
 

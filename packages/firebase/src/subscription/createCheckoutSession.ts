@@ -19,7 +19,7 @@ export const createCheckoutSession = onCall({
   memory: '512MiB',
   enforceAppCheck: true,
 }, async (request) => {
-  const { userId, tier, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;
+  const { userId, tier, billingPeriod, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;
 
   if (!userId || userId !== request.auth?.uid) {
     throw new HttpsError('unauthenticated', 'Unauthorized');
@@ -64,12 +64,12 @@ export const createCheckoutSession = onCall({
       stripeCustomerId = customer.id;
     }
 
-    // Determine price ID
-    const isYearly = tier === SubscriptionTier.PRO_YEARLY;
-    const priceId = getPriceId(tier, isYearly);
+    // Determine price ID and cadence
+    const cadence = billingPeriod ?? (tier === SubscriptionTier.PRO_YEARLY ? 'annual' : 'monthly');
+    const priceId = getPriceId(tier, cadence);
 
     if (!priceId) {
-      throw new HttpsError('failed-precondition', `No Stripe price configured for tier: ${tier}`);
+      throw new HttpsError('failed-precondition', `No Stripe price configured for tier: ${tier} (${cadence})`);
     }
 
     // Build checkout session parameters
@@ -85,7 +85,7 @@ export const createCheckoutSession = onCall({
       ],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      metadata: { userId, tier },
+      metadata: { userId, tier, billingPeriod: cadence },
       allow_promotion_codes: true,
       automatic_tax: { enabled: true },
       client_reference_id: userId
@@ -99,7 +99,7 @@ export const createCheckoutSession = onCall({
     if (trialDays && trialDays > 0) {
       sessionParams.subscription_data = {
         trial_period_days: Math.min(Math.floor(trialDays), SERVER_MAX_TRIAL_DAYS),
-        metadata: { userId, tier }
+        metadata: { userId, tier, billingPeriod: cadence }
       };
     }
 

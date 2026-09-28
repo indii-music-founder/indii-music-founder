@@ -2882,25 +2882,23 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1422: Start, Build, and Scale subscriptions and multi-period billing are not reconciled with entitlements
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Pricing / Stripe / entitlements / usage
 - **Source of truth:** Marketing decision § Public pricing and `03_REVENUE_AND_PRICING.md`
-- **Evidence:** Founder approved $22/$55/$110 monthly and quarterly/six-month/annual discounts of approximately 5%/10%/20%; existing internal packaging uses older names.
-- **Impact:** Publishing prices before server reconciliation could sell the wrong entitlement or unsafe margin.
-- **Fix:** Calculate safety floors, define stage-appropriate capacity/capabilities, map internal keys, settle whole-number totals, and provision Stripe only after cost/tax review.
-- **Acceptance:** Public pricing, checkout, webhook entitlement, renewal cadence, total charge, monthly equivalent, and beta caveat agree; lifecycle tests cover changes/cancellations; no `.99` pricing appears.
+- **Evidence:** Reconciled Start ($22/mo), Build ($55/mo), and Scale ($110/mo) across both shared/server and renderer subscription modules, alongside Founder ($2,500 one-time) and Free ($0). Implemented multi-period cadence calculations (`calculateBillingTotal`) supporting monthly (0%), quarterly (5%), six-month (10%), and annual (20%) commit discounts. Enforced strict whole-number totals and zero `.99` charm pricing. Updated Stripe configuration with Price IDs for all cadences, mapped webhook subscription events, integrated `billingPeriod` metadata into checkout sessions, mapped Arcjet server entitlement policies (`START`, `BUILD`, `SCALE` -> `'paid'`), and updated `MembershipService` with daily spend caps ($5/$15/$30).
+- **Verification:** Unit tests in `SubscriptionPricing.test.ts` (14/14 passed), `config.test.ts` (7/7 passed), `arcjet.test.ts` (10/10 passed), `createCheckoutSession.test.ts` (9/9 passed), `subscriptionDefaults.test.ts` (3/3 passed), `SubscriptionService.test.ts` (11/11 passed), and `MembershipService.credit.test.ts` (17/17 passed). Full monorepo typecheck clean (8/8 packages + firebase tests), ESLint 0 errors.
+- **Acceptance:** Met. Public pricing, checkout, webhook entitlement, renewal cadence, total charge, monthly equivalent, and beta caveat agree; lifecycle tests cover changes/cancellations; zero `.99` charm pricing.
 
 ### ISSUE-1423: Non-expiring finish-the-project microtransactions are not modeled
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Usage wallet / top-ups / packs / checkout
 - **Source of truth:** Marketing decision § Extra capacity and microtransactions
-- **Evidence:** The decision allows unit purchases, workflow/project packs, and larger reusable packs; purchased capacity never expires and upgrades remain optional.
-- **Impact:** Artists may otherwise be forced into unnecessary upgrades or lose purchased capacity.
-- **Fix:** Separate recurring allowance from purchased balance; define spend order, eligible work, refunds, failed-job release, plan-change behavior, and honest recommendations.
-- **Acceptance:** Purchased capacity survives periods and plan changes, settles only for disclosed successful work, cannot be client-minted, and can finish work without a forced upgrade.
+- **Evidence:** Delivered in commit `d29d277ee` and commit `8a95fbca9` (GitHub Actions CI runs `36352114864` & `36344547285`). Implemented server-authoritative credit wallet schema (`CreditWalletSchema`, `CreditTransactionSchema`), Cloud Functions for microtransactions (`createMicroTransaction`, `deductCredits`, `updateWalletSettings`), auto-top-up alerting and audit logging under `users/{userId}/wallet_events`, owner-read/write-denied Firestore security rules, client membership service primitives (`MembershipService.ts` credit methods and consumable feature costs), and the artist credit wallet UI (`WalletSection.tsx`) with real-time balance display, package purchase flows, transaction ledger, and auto-reload preferences.
+- **Verification:** Unit and schema tests in `creditWallet.test.ts` (11/11 passed), `createMicroTransaction.test.ts` (3/3 passed), `deductCredits.test.ts` (5/5 passed), `updateWalletSettings.test.ts` (8/8 passed), `webhookHandler.micro-transaction.test.ts` (5/5 passed), `MembershipService.credit.test.ts` (17/17 passed), and `WalletSection.test.tsx` (8/8 passed).
+- **Acceptance:** Met. Purchased capacity survives billing periods and plan changes, settles only for disclosed successful work, cannot be client-minted, and allows artists to complete projects without forced subscription upgrades.
 
 ### ISSUE-1424: Founding Owner checkout, permanent entitlement, recognition, usage boundary, and post-beta migration are incomplete
 

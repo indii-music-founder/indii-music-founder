@@ -16,6 +16,10 @@ const LEGACY_TIER_MAP: Record<string, SubscriptionTier> = {
   enterprise: SubscriptionTier.STUDIO,
   studio_monthly: SubscriptionTier.STUDIO,
   studio_yearly: SubscriptionTier.STUDIO,
+  start: SubscriptionTier.START,
+  build: SubscriptionTier.BUILD,
+  scale: SubscriptionTier.SCALE,
+  creator: SubscriptionTier.START,
 };
 
 export function createDefaultSubscription(userId: string, now = Date.now()): Subscription {

@@ -605,10 +605,17 @@ async function updateSubscriptionByCustomer(
 async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
   const subscription = event.data.object as Stripe.Subscription;
   const priceItem = subscription.items.data[0];
-  const tier = mapStripeTierToSubscriptionTier(
+  let tier = mapStripeTierToSubscriptionTier(
     priceItem?.price.product as string,
     priceItem?.price.recurring?.interval ?? null
   );
+
+  if (!tier && subscription.metadata?.tier) {
+    const metaTier = subscription.metadata.tier.toLowerCase();
+    if (Object.values(SubscriptionTier).includes(metaTier as SubscriptionTier)) {
+      tier = metaTier as SubscriptionTier;
+    }
+  }
 
   if (!tier) {
     logger.error('[handleSubscriptionCreated] Unknown tier');
@@ -631,10 +638,17 @@ async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
 async function handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
   const subscription = event.data.object as Stripe.Subscription;
   const priceItem = subscription.items.data[0];
-  const tier = mapStripeTierToSubscriptionTier(
+  let tier = mapStripeTierToSubscriptionTier(
     priceItem?.price.product as string,
     priceItem?.price.recurring?.interval ?? null
   );
+
+  if (!tier && subscription.metadata?.tier) {
+    const metaTier = subscription.metadata.tier.toLowerCase();
+    if (Object.values(SubscriptionTier).includes(metaTier as SubscriptionTier)) {
+      tier = metaTier as SubscriptionTier;
+    }
+  }
 
   if (!tier) {
     logger.error('[handleSubscriptionUpdated] Unknown tier');

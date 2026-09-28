@@ -14,11 +14,60 @@
  */
 export enum SubscriptionTier {
   FREE = 'free',
+  START = 'start',
+  BUILD = 'build',
+  SCALE = 'scale',
+  FOUNDER = 'founder',
+  // Legacy aliases for backward compatibility
   PRO_MONTHLY = 'pro_monthly',
   PRO_YEARLY = 'pro_yearly',
   STUDIO = 'studio',
-  FOUNDER = 'founder'
 }
+
+/**
+ * Supported billing periods with commit discounts
+ */
+export type BillingPeriod = 'monthly' | 'quarterly' | 'six_month' | 'annual';
+
+export interface BillingPeriodConfig {
+  period: BillingPeriod;
+  label: string;
+  months: number;
+  discountRate: number;
+}
+
+export const BILLING_PERIODS: Record<BillingPeriod, BillingPeriodConfig> = {
+  monthly: { period: 'monthly', label: 'Monthly', months: 1, discountRate: 0 },
+  quarterly: { period: 'quarterly', label: 'Quarterly', months: 3, discountRate: 0.05 },
+  six_month: { period: 'six_month', label: 'Six-month', months: 6, discountRate: 0.10 },
+  annual: { period: 'annual', label: 'Annual', months: 12, discountRate: 0.20 },
+};
+
+/**
+ * Settle whole-number totals for subscription cadences.
+ * Enforces NO .99 charm pricing and stage-appropriate discounts (approx 5%/10%/20%).
+ */
+export function calculateBillingTotal(monthlyPrice: number, period: BillingPeriod | 'six-month' = 'monthly'): {
+  total: number;
+  monthlyEquivalent: number;
+  months: number;
+  discountPercent: number;
+} {
+  const normalizedPeriod = period === 'six-month' ? 'six_month' : period;
+  const config = BILLING_PERIODS[normalizedPeriod] ?? BILLING_PERIODS.monthly;
+  if (monthlyPrice <= 0) {
+    return { total: 0, monthlyEquivalent: 0, months: config.months, discountPercent: 0 };
+  }
+  const total = Math.round(monthlyPrice * config.months * (1 - config.discountRate));
+  const monthlyEquivalent = Math.round(total / config.months);
+  return {
+    total,
+    monthlyEquivalent,
+    months: config.months,
+    discountPercent: Math.round(config.discountRate * 100),
+  };
+}
+
 
 /**
  * Image generation limits for a tier
@@ -91,7 +140,7 @@ export interface TierLimits {
 export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   [SubscriptionTier.FREE]: {
     name: 'indii Free',
-    description: 'Perfect for beginners to explore Intelligence-powered creativity',
+    description: 'Verified artist completing one bounded guided creative proof',
     price: 0,
     billingPeriod: 'once',
     imageGenerations: {
@@ -126,10 +175,159 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
     maxTeamMembers: 1
   },
 
+  [SubscriptionTier.START]: {
+    name: 'indii Start',
+    description: 'For an artist beginning to organize and operate the business behind the music',
+    price: 22,
+    billingPeriod: 'month',
+    imageGenerations: {
+      monthly: 250,
+      generationsPerMonth: 250,
+      allowedFormats: ['png', 'jpg', 'webp', 'svg']
+    },
+    videoGenerations: {
+      totalDurationMinutes: 15,
+      maxResolution: '1080p',
+      maxDurationSeconds: 45,
+      allowedFormats: ['mp4', 'mov', 'webm']
+    },
+    aiChat: {
+      tokensPerMonth: 50000,
+      modelTier: 'basic'
+    },
+    storage: {
+      totalGB: 25,
+      fileTypeAccess: ['jpg', 'png', 'webp', 'svg', 'mp4', 'mov', 'webm', 'mp3', 'wav', 'flac', 'pdf'],
+      maxFileSizeMB: 250
+    },
+    features: {
+      collaboration: false,
+      exportFormats: ['png', 'jpg', 'webp', 'svg', 'mp4', 'mov', 'webm', 'mp3', 'wav', 'flac'],
+      agentCapabilities: ['basic_chat', 'suggestions', 'assistant', 'release_workspace'],
+      advancedTools: ['metadata_management', 'planning'],
+      prioritySupport: false,
+      apiAccess: false
+    },
+    maxProjects: 10,
+    maxTeamMembers: 2
+  },
+
+  [SubscriptionTier.BUILD]: {
+    name: 'indii Build',
+    description: 'For an artist actively releasing music and building repeatable operations',
+    price: 55,
+    billingPeriod: 'month',
+    imageGenerations: {
+      monthly: 1000,
+      generationsPerMonth: 1000,
+      allowedFormats: ['png', 'jpg', 'webp', 'svg', 'tiff', 'psd']
+    },
+    videoGenerations: {
+      totalDurationMinutes: 60,
+      maxResolution: '1080p',
+      maxDurationSeconds: 120,
+      allowedFormats: ['mp4', 'mov', 'webm']
+    },
+    aiChat: {
+      tokensPerMonth: 250000,
+      modelTier: 'advanced'
+    },
+    storage: {
+      totalGB: 100,
+      fileTypeAccess: ['all'],
+      maxFileSizeMB: 1000
+    },
+    features: {
+      collaboration: true,
+      exportFormats: ['all'],
+      agentCapabilities: ['basic_chat', 'suggestions', 'assistant', 'delegation', 'long_term_memory', 'workflow_automation'],
+      advancedTools: ['batch_processing', 'style_transfer', 'video_editing', 'audio_editing', 'metadata_management'],
+      prioritySupport: false,
+      apiAccess: false
+    },
+    maxProjects: 50,
+    maxTeamMembers: 5
+  },
+
+  [SubscriptionTier.SCALE]: {
+    name: 'indii Scale',
+    description: 'For an artist with an active career, larger workload, and music income',
+    price: 110,
+    billingPeriod: 'month',
+    imageGenerations: {
+      monthly: 3000,
+      generationsPerMonth: 3000,
+      allowedFormats: ['all']
+    },
+    videoGenerations: {
+      totalDurationMinutes: 180,
+      maxResolution: '4K',
+      maxDurationSeconds: 300,
+      allowedFormats: ['all']
+    },
+    aiChat: {
+      tokensPerMonth: 1000000,
+      modelTier: 'unlimited'
+    },
+    storage: {
+      totalGB: 500,
+      fileTypeAccess: ['all'],
+      maxFileSizeMB: 2000
+    },
+    features: {
+      collaboration: true,
+      exportFormats: ['all'],
+      agentCapabilities: ['all'],
+      advancedTools: ['all'],
+      prioritySupport: true,
+      apiAccess: true
+    },
+    maxProjects: 200,
+    maxTeamMembers: 15
+  },
+
+  [SubscriptionTier.FOUNDER]: {
+    name: 'indii Founder',
+    description: 'Lifetime founding access. One-time $2,500. Unlimited indii product access; provider compute billed at pass-through cost.',
+    price: 2500,
+    billingPeriod: 'once',
+    imageGenerations: {
+      monthly: 999999,
+      generationsPerMonth: 999999,
+      allowedFormats: ['png', 'jpg', 'webp', 'svg', 'tiff', 'psd']
+    },
+    videoGenerations: {
+      totalDurationMinutes: 999999,
+      maxResolution: '4K',
+      maxDurationSeconds: 99999,
+      allowedFormats: ['mp4', 'mov', 'webm', 'avi', 'mkv']
+    },
+    aiChat: {
+      tokensPerMonth: 999999999,
+      modelTier: 'unlimited'
+    },
+    storage: {
+      totalGB: 10000,
+      fileTypeAccess: ['all'],
+      maxFileSizeMB: 10000
+    },
+    features: {
+      collaboration: true,
+      exportFormats: ['all'],
+      agentCapabilities: ['all'],
+      advancedTools: ['all'],
+      prioritySupport: true,
+      apiAccess: true
+    },
+    maxProjects: 999999,
+    maxTeamMembers: 100
+  },
+
+  // Legacy Tiers (Backward Compatibility)
   [SubscriptionTier.PRO_MONTHLY]: {
     name: 'indii Pro',
     description: 'Professional tools for serious creators',
-    price: 19,
+    price: 22,
     billingPeriod: 'month',
     imageGenerations: {
       monthly: 500,
@@ -165,8 +363,8 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
 
   [SubscriptionTier.PRO_YEARLY]: {
     name: 'indii Pro (Yearly)',
-    description: 'Save 17% with annual billing',
-    price: 190,
+    description: 'Save 20% with annual billing',
+    price: 211,
     billingPeriod: 'year',
     imageGenerations: {
       monthly: 500,
@@ -203,7 +401,7 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   [SubscriptionTier.STUDIO]: {
     name: 'indii Studio',
     description: 'Desktop-native with local computing and unlimited creativity',
-    price: 49,
+    price: 55,
     billingPeriod: 'month',
     imageGenerations: {
       monthly: 2000,
@@ -235,42 +433,6 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
     },
     maxProjects: 100,
     maxTeamMembers: 25
-  },
-  [SubscriptionTier.FOUNDER]: {
-    name: 'indii Founder',
-    description: 'Lifetime founding access. One-time $2,500. Unlimited indii product access; provider compute billed at pass-through cost.',
-    price: 2500,
-    billingPeriod: 'once',
-    imageGenerations: {
-      monthly: 999999,
-      generationsPerMonth: 999999,
-      allowedFormats: ['png', 'jpg', 'webp', 'svg', 'tiff', 'psd']
-    },
-    videoGenerations: {
-      totalDurationMinutes: 999999,
-      maxResolution: '4K',
-      maxDurationSeconds: 99999,
-      allowedFormats: ['mp4', 'mov', 'webm', 'avi', 'mkv']
-    },
-    aiChat: {
-      tokensPerMonth: 999999999,
-      modelTier: 'unlimited'
-    },
-    storage: {
-      totalGB: 10000,
-      fileTypeAccess: ['all'],
-      maxFileSizeMB: 10000
-    },
-    features: {
-      collaboration: true,
-      exportFormats: ['all'],
-      agentCapabilities: ['all'],
-      advancedTools: ['all'],
-      prioritySupport: true,
-      apiAccess: true
-    },
-    maxProjects: 999999,
-    maxTeamMembers: 100
   }
 };
 
@@ -287,8 +449,10 @@ export function getTierConfig(tier: SubscriptionTier): TierLimits {
 export function getTierOrder(): SubscriptionTier[] {
   return [
     SubscriptionTier.FREE,
-    SubscriptionTier.PRO_MONTHLY,
-    SubscriptionTier.STUDIO
+    SubscriptionTier.START,
+    SubscriptionTier.BUILD,
+    SubscriptionTier.SCALE,
+    SubscriptionTier.FOUNDER
   ];
 }
 

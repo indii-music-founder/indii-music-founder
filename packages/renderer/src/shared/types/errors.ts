@@ -68,8 +68,21 @@ export class AppException extends Error {
  * QuotaExceededError - Thrown when a user exceeds their membership tier limits.
  * Contains actionable upgrade information for UI display.
  */
+import type { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
+
 export type QuotaLimitType = 'images' | 'video' | 'video_duration' | 'storage' | 'projects' | 'resolution' | 'export';
-export type MembershipTier = 'free' | 'pro' | 'enterprise' | 'pro_monthly' | 'pro_yearly' | 'studio' | 'founder';
+export type MembershipTier =
+    | 'free'
+    | 'start'
+    | 'build'
+    | 'scale'
+    | 'pro'
+    | 'enterprise'
+    | 'pro_monthly'
+    | 'pro_yearly'
+    | 'studio'
+    | 'founder'
+    | SubscriptionTier;
 
 export class QuotaExceededError extends AppException {
     limitType: QuotaLimitType;

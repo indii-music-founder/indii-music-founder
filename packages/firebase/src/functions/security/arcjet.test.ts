@@ -247,6 +247,9 @@ describe("Arcjet request protection", () => {
         const { SubscriptionTier } = await import("../../shared/subscription/types");
 
         expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FREE, isAdmin: false })).toBe("verified-free");
+        expect(policyClassForServerEntitlement({ tier: SubscriptionTier.START, isAdmin: false })).toBe("paid");
+        expect(policyClassForServerEntitlement({ tier: SubscriptionTier.BUILD, isAdmin: false })).toBe("paid");
+        expect(policyClassForServerEntitlement({ tier: SubscriptionTier.SCALE, isAdmin: false })).toBe("paid");
         expect(policyClassForServerEntitlement({ tier: SubscriptionTier.PRO_MONTHLY, isAdmin: false })).toBe("paid");
         expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FOUNDER, isAdmin: false })).toBe("founder");
         expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FREE, isAdmin: true })).toBe("admin");

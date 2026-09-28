@@ -50,6 +50,7 @@ vi.mock('../config/secrets', () => ({
 function makeRequest(overrides: Partial<{
   userId: string;
   tier: string;
+  billingPeriod: string;
   authUid: string;
   successUrl: string;
   cancelUrl: string;
@@ -58,6 +59,7 @@ function makeRequest(overrides: Partial<{
     data: {
       userId: overrides.userId ?? 'user-123',
       tier: overrides.tier ?? 'pro_monthly',
+      ...(overrides.billingPeriod ? { billingPeriod: overrides.billingPeriod } : {}),
       successUrl: overrides.successUrl ?? 'https://indii.music/success',
       cancelUrl: overrides.cancelUrl ?? 'https://indii.music/cancel',
     },
@@ -161,5 +163,54 @@ describe('createCheckoutSession', () => {
       subscription_data?: { trial_period_days?: number };
     };
     expect(params.subscription_data?.trial_period_days).toBe(14);
+  });
+
+  it('creates checkout session for Start tier with quarterly billing and passes billingPeriod in metadata', async () => {
+    mocks.mockCustomersCreate.mockResolvedValue({ id: 'cus_quarterly_customer' });
+    mocks.mockSessionsCreate.mockResolvedValue({ id: 'cs_qtr_123', url: 'https://checkout.stripe.com/cs_qtr_123' });
+
+    const { createCheckoutSession } = await import('./createCheckoutSession');
+    const request = makeRequest({ tier: 'start', billingPeriod: 'quarterly' });
+
+    const result = await (createCheckoutSession as unknown as (req: unknown) => Promise<{ checkoutUrl: string; sessionId: string }>)(request);
+
+    expect(result).toEqual({ checkoutUrl: 'https://checkout.stripe.com/cs_qtr_123', sessionId: 'cs_qtr_123' });
+    expect(mocks.mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { userId: 'user-123', tier: 'start', billingPeriod: 'quarterly' },
+      })
+    );
+  });
+
+  it('creates checkout session for Build tier with six-month billing', async () => {
+    mocks.mockCustomersCreate.mockResolvedValue({ id: 'cus_six_mo_customer' });
+    mocks.mockSessionsCreate.mockResolvedValue({ id: 'cs_6mo_123', url: 'https://checkout.stripe.com/cs_6mo_123' });
+
+    const { createCheckoutSession } = await import('./createCheckoutSession');
+    const request = makeRequest({ tier: 'build', billingPeriod: 'six_month' });
+
+    await (createCheckoutSession as unknown as (req: unknown) => Promise<{ checkoutUrl: string; sessionId: string }>)(request);
+
+    expect(mocks.mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { userId: 'user-123', tier: 'build', billingPeriod: 'six_month' },
+      })
+    );
+  });
+
+  it('creates checkout session for Scale tier with annual billing', async () => {
+    mocks.mockCustomersCreate.mockResolvedValue({ id: 'cus_annual_customer' });
+    mocks.mockSessionsCreate.mockResolvedValue({ id: 'cs_ann_123', url: 'https://checkout.stripe.com/cs_ann_123' });
+
+    const { createCheckoutSession } = await import('./createCheckoutSession');
+    const request = makeRequest({ tier: 'scale', billingPeriod: 'annual' });
+
+    await (createCheckoutSession as unknown as (req: unknown) => Promise<{ checkoutUrl: string; sessionId: string }>)(request);
+
+    expect(mocks.mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { userId: 'user-123', tier: 'scale', billingPeriod: 'annual' },
+      })
+    );
   });
 });
