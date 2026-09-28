@@ -1,3 +1,44 @@
+# Session Close — Subscriptions & Multi-Period Billing Reconciliation (ISSUE-1422 & ISSUE-1423) (2026-09-27)
+
+**Final state: Start ($22/mo), Build ($55/mo), and Scale ($110/mo) subscriptions and multi-period billing cadences reconciled with server entitlements, Stripe, Arcjet policies, and renderer limits to platinum standard on `main`. Zero `.99` charm pricing enforced across all periods (Monthly, Quarterly [5% off], Six-Month [10% off], Annual [20% off]). Single coherent commit `23ef127c8` delivered to `origin/main`. GitHub Actions CI run `36361889905` triggered. Monorepo typecheck clean (8/8 packages + firebase test tsconfigs), ESLint 0 errors, 75/75 affected unit tests green, test quality scanner 0 violations.**
+
+## Shipped & Integrated
+- **Shared & Server Subscription Tier Matrix (`packages/firebase/src/shared/subscription/SubscriptionTier.ts`):**
+  - Added `START = 'start'`, `BUILD = 'build'`, `SCALE = 'scale'` to `SubscriptionTier` enum alongside legacy aliases.
+  - Added `calculateBillingTotal()` supporting monthly, quarterly (5%), six-month (10%), and annual (20%) commit discounts. Enforced strict whole-number totals and integer monthly equivalents (zero `.99` charm pricing).
+  - Defined stage-appropriate capacity, safety floors, and pricing in `TIER_CONFIGS`:
+    - Start: $22/mo (15 min video 1080p, 250 images, 50k tokens, 25 GB storage, $5.00 daily spend cap).
+    - Build: $55/mo (60 min video 1080p, 1,000 images, 250k tokens, 100 GB storage, $15.00 daily spend cap).
+    - Scale: $110/mo (180 min video 4K, 3,000 images, 1M tokens, 500 GB storage, $30.00 daily spend cap).
+- **Renderer Subscription Tier Mirroring (`packages/renderer/src/services/subscription/SubscriptionTier.ts` & `types.ts`):**
+  - Mirrored types, enums, limits, whole-number math, and `getTierOrder()` (Free -> Start -> Build -> Scale -> Founder).
+  - Fixed isolatedModules type re-exports in `types.ts`.
+- **Firebase Subscription Defaults (`packages/firebase/src/subscription/subscriptionDefaults.ts`):**
+  - Added `start`, `build`, `scale`, and `creator` to `LEGACY_TIER_MAP`.
+- **Arcjet Server Entitlement Policy (`packages/firebase/src/functions/security/arcjet.ts`):**
+  - Mapped `START`, `BUILD`, `SCALE` to `'paid'` server entitlement.
+- **Stripe Price ID & Webhook Mapping (`packages/firebase/src/stripe/config.ts` & `webhookHandler.ts`):**
+  - Configured `STRIPE_PRICES` across cadences for all tiers.
+  - Enhanced `getPriceId()` to accept both legacy boolean and `BillingPeriod` cadence strings.
+  - Added webhook metadata tier fallback.
+- **Stripe Checkout Session Callable (`packages/firebase/src/subscription/createCheckoutSession.ts`):**
+  - Extracted `billingPeriod`, resolved price with cadence, attached `billingPeriod` to session metadata and subscription data.
+- **Renderer Membership & Error Types (`packages/renderer/src/services/MembershipService.ts` & `errors.ts`):**
+  - Added `start`, `build`, `scale` to `MembershipTier` and `TIER_LIMITS` with daily spend caps.
+  - Updated `errors.ts` `MembershipTier` with `SubscriptionTier` union.
+- **Unit Test Coverage (`packages/renderer/src/services/subscription/__tests__/SubscriptionPricing.test.ts`):**
+  - 14 tests verifying whole numbers, zero `.99` charm pricing, discounts, limits, and tier ordering.
+
+## Verification Evidence
+- `npx vitest run packages/firebase/src/stripe/config.test.ts packages/firebase/src/functions/security/arcjet.test.ts packages/firebase/src/subscription/createCheckoutSession.test.ts packages/firebase/src/subscription/subscriptionDefaults.test.ts packages/renderer/src/services/subscription/__tests__/SubscriptionPricing.test.ts packages/renderer/src/services/subscription/subscriptionSchemas.test.ts packages/renderer/src/services/subscription/__tests__/SubscriptionService.test.ts packages/renderer/src/services/MembershipService.credit.test.ts`: 75/75 passed.
+- `npm run typecheck`: Exited code 0 (all 8 packages + firebase test tsconfigs clean).
+- `npm run lint`: Exited code 0 (0 errors, 218 warnings).
+- `node scripts/check-test-quality.js`: 0 violations.
+- Git SHA: `23ef127c8`.
+- GitHub Actions CI Run: [36361889905](https://github.com/indii-music-founder/indii-music-founder/actions/runs/36361889905).
+
+---
+
 # Session Close — Phase 20 Track B Micro-Transactions & Credit Wallet Full Delivery (2026-09-27)
 
 **Final state: Phase 20 Track B expanded and completed to platinum standard on `main`. Single coherent commit `d29d277ee` delivered to `origin/main`. GitHub Actions CI run `36352114864` triggered. Monorepo typecheck clean (8/8 packages + firebase tests), ESLint 0 errors, 49/49 targeted tests green, test quality scanner 0 violations.**
