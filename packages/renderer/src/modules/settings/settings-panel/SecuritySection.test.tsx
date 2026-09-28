@@ -103,7 +103,7 @@ describe('SecuritySection plan and usage overview', () => {
         render(<SecuritySection />);
 
         expect(await screen.findByText('indii Pro')).toBeInTheDocument();
-        expect(screen.getByText('$19/month')).toBeInTheDocument();
+        expect(screen.getByText('$22/month')).toBeInTheDocument();
         expect(screen.getByText(/Status: active/i)).toBeInTheDocument();
         expect(screen.getByText('125 of 500 used (25%)')).toBeInTheDocument();
         expect(screen.getByText('10 of 30 used (33%)')).toBeInTheDocument();
