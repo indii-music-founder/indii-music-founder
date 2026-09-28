@@ -18,8 +18,9 @@ describe('PrintSpecDialog callable Root (ISSUE-321)', () => {
 
         // Vinyl sleeve from a 2K square: upscale needed.
         expect(screen.getByTestId('printspec-verdict')).toHaveTextContent('Upscale needed');
-        expect(screen.getByTestId('printspec-summary')).toHaveTextContent('3713 × 3713 px');
+        expect(screen.getByTestId('printspec-summary')).toHaveTextContent('3788 × 3788 px');
         expect(screen.getByTestId('printspec-summary')).toHaveTextContent('300 DPI');
+        expect(screen.getByText(/keep important content 0.125″ inside trim/)).toBeInTheDocument();
 
         await user.click(screen.getByTestId('printspec-use-plan'));
         const plan = await response;

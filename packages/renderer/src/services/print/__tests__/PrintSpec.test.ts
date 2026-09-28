@@ -31,15 +31,19 @@ describe('planPrintOutput — verdicts', () => {
         expect(plan.verdict).toBe('sufficient');
         expect(plan.recommendedEngine).toBe('none');
         expect(plan.requiredUpscaleFactor).toBeLessThanOrEqual(1);
-        expect(plan.required).toEqual({ width: 3713, height: 3713 }); // 12.375 × 300
+        expect(plan.required).toEqual({ width: 3788, height: 3788 }); // (12.375 + 2 × 0.125) × 300
         expect(plan.exportMeta).toEqual({
-            pixelWidth: 3713,
-            pixelHeight: 3713,
+            pixelWidth: 3788,
+            pixelHeight: 3788,
             dpi: 300,
-            widthIn: 12.375,
-            heightIn: 12.375,
+            widthIn: 12.625,
+            heightIn: 12.625,
+            trimWidthIn: 12.375,
+            trimHeightIn: 12.375,
+            bleedIn: 0.125,
+            safeIn: 0.125,
         });
-        expect(plan.summary).toContain('12.38 × 12.38 in @ 300 DPI');
+        expect(plan.summary).toContain('12.38 × 12.38 in trim @ 300 DPI');
         expect(plan.warnings).toHaveLength(0);
     });
 
@@ -47,7 +51,7 @@ describe('planPrintOutput — verdicts', () => {
         const plan = planPrintOutput({ srcWidth: 2048, srcHeight: 2048, presetId: 'vinyl_sleeve' });
         expect(plan.verdict).toBe('upscale');
         expect(plan.recommendedEngine).toBe('local');
-        expect(plan.requiredUpscaleFactor).toBeCloseTo(3713 / 2048, 2);
+        expect(plan.requiredUpscaleFactor).toBeCloseTo(3788 / 2048, 2);
         expect(plan.requiredUpscaleFactor).toBeLessThanOrEqual(MAX_CREDIBLE_UPSCALE);
     });
 
@@ -58,8 +62,8 @@ describe('planPrintOutput — verdicts', () => {
         expect(plan.recommendedEngine).toBe('tile-refine');
         expect(plan.requiredUpscaleFactor).toBeGreaterThan(MAX_CREDIBLE_UPSCALE);
         expect(plan.warnings[0]).toContain(`a ${MAX_CREDIBLE_UPSCALE}× upscale reaches`);
-        // best achievable = min(2048/24, 2048/36) × 4 = 227.6 → 228 DPI
-        expect(plan.warnings[0]).toContain('228 DPI');
+        // best achievable includes bleed: min(2048/24.25, 2048/36.25) × 4 ≈ 226 DPI
+        expect(plan.warnings[0]).toContain('226 DPI');
         expect(plan.warnings[0]).toContain('150 DPI floor');
     });
 
@@ -77,6 +81,24 @@ describe('planPrintOutput — verdicts', () => {
         expect(plan.warnings).toHaveLength(0);
     });
 
+    it('adds bleed to a letter flyer and keeps the distributor file bleed-free', () => {
+        const flyer = planPrintOutput({ srcWidth: 5000, srcHeight: 6000, presetId: 'flyer_letter' });
+        expect(flyer.required).toEqual({ width: 2625, height: 3375 });
+        expect(flyer.trim).toEqual({ widthIn: 8.5, heightIn: 11 });
+        expect(flyer.safeIn).toBe(0.125);
+        expect(flyer.summary).toContain('incl. 0.125″ bleed/side');
+        const distributor = planPrintOutput({ srcWidth: 3000, srcHeight: 3000, presetId: 'cover_art_distributor' });
+        expect(distributor.bleedIn).toBe(0);
+        expect(distributor.required).toEqual({ width: 3000, height: 3000 });
+    });
+
+    it('uses a vendor-specific 350 DPI target for GotPrint flyers', () => {
+        const plan = planPrintOutput({ srcWidth: 4000, srcHeight: 5000, presetId: 'gotprint_flyer_letter' });
+        expect(plan.required).toEqual({ width: 3063, height: 3938 });
+        expect(plan.dpi).toBe(350);
+        expect(plan.handoff).toContain('CMYK');
+    });
+
     it('digital social target is trivially covered by generation output', () => {
         const plan = planPrintOutput({ srcWidth: 2048, srcHeight: 2048, presetId: 'social_1080x1350' });
         expect(plan.verdict).toBe('sufficient');
@@ -85,11 +107,10 @@ describe('planPrintOutput — verdicts', () => {
 
 describe('planPrintOutput — warnings and guards', () => {
     it('flags extreme aspect mismatch when resolution still needs an upscale', () => {
-        // 8000×2000 is 4:1 against a 1:1 sleeve — ratio 4 > 1.6 threshold —
-        // and the short side still needs a 1.86× upscale.
+        // 8000×2000 is 4:1 against a 1:1 sleeve — ratio 4 > 1.6 threshold.
         const plan = planPrintOutput({ srcWidth: 8000, srcHeight: 2000, presetId: 'vinyl_sleeve' });
         expect(plan.verdict).toBe('upscale');
-        expect(plan.requiredUpscaleFactor).toBeCloseTo(3713 / 2000, 2);
+        expect(plan.requiredUpscaleFactor).toBeCloseTo(3788 / 2000, 2);
         expect(plan.warnings.some(w => w.startsWith('Aspect mismatch'))).toBe(true);
     });
 

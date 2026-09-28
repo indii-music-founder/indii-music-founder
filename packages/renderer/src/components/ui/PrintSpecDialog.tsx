@@ -38,6 +38,7 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
 }) => {
     const [presetId, setPresetId] = useState(initialPresetId);
     const [exporting, setExporting] = useState(false);
+    const [exportError, setExportError] = useState<string | null>(null);
     const plan: PrintPlan = useMemo(
         () => planPrintOutput({ srcWidth, srcHeight, presetId }),
         [srcWidth, srcHeight, presetId],
@@ -68,6 +69,10 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
                 </div>
 
                 <p className="text-white font-mono text-sm mb-1" data-testid="printspec-summary">{plan.summary}</p>
+                {plan.bleedIn > 0 && (
+                    <p className="text-xs text-gray-300 mb-1">Bleed: {plan.bleedIn}″ each edge · keep important content {plan.safeIn}″ inside trim.</p>
+                )}
+                {plan.handoff && <p className="text-xs text-amber-200 mb-3">{plan.handoff}</p>}
                 <p className="text-xs text-gray-400 mb-4">
                     Source covers {plan.requiredUpscaleFactor <= 1 ? 'fully' : `${plan.requiredUpscaleFactor}× short of`} this target
                     {plan.recommendedEngine !== 'none' && <> · recommended engine: <span className="text-gray-200">{plan.recommendedEngine}</span></>}
@@ -83,6 +88,8 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
                     </ul>
                 )}
 
+                {exportError && <p role="alert" className="text-xs text-red-300 mb-3">{exportError}</p>}
+
                 <div className="flex justify-end gap-3">
                     <button
                         className="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"
@@ -93,18 +100,21 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
                     <button
                         className="px-4 py-2 text-sm font-medium rounded-md bg-purple-600 hover:bg-purple-500 text-white transition-colors disabled:opacity-60"
                         data-testid="printspec-use-plan"
-                        disabled={exporting}
+                        disabled={exporting || plan.verdict === 'insufficient'}
                         onClick={async () => {
                             setExporting(true);
+                            setExportError(null);
                             try {
                                 await exporter?.(plan);
+                                call.end(plan);
+                            } catch (error) {
+                                setExportError(error instanceof Error ? error.message : 'Print export failed.');
                             } finally {
                                 setExporting(false);
                             }
-                            call.end(plan);
                         }}
                     >
-                        {exporting ? 'Exporting…' : 'Use this plan'}
+                        {exporting ? 'Preparing…' : plan.verdict === 'upscale' ? 'Upscale & export' : plan.verdict === 'insufficient' ? 'Target unavailable' : 'Export print file'}
                     </button>
                 </div>
             </div>

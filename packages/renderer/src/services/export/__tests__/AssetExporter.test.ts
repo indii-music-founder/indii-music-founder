@@ -346,7 +346,7 @@ function walkTypes(bytes: Uint8Array): string[] {
 
 describe('exportMasterAsset — print targets (ISSUE-322)', () => {
     it('renders at the exact print-plan pixels and tags the file bytes with DPI', async () => {
-        const image = makeMockImage(2048, 2048);
+        const image = makeMockImage(4096, 4096);
         const { host, created, pngUrl } = makePrintHost(image);
 
         const results = await exportMasterAsset(
@@ -366,6 +366,14 @@ describe('exportMasterAsset — print targets (ISSUE-322)', () => {
         expect(outBytes[0]).toBe(PNG_SIG[0]);
         expect(walkTypes(new Uint8Array(outBytes))).toContain('pHYs');
         expect(results[0]!.url).not.toBe(pngUrl); // rewritten, not passthrough
+    });
+
+    it('does not label a stretched low-resolution image print-ready', async () => {
+        const { host } = makePrintHost(makeMockImage(1024, 1024));
+        await expect(exportMasterAsset(
+            { masterUrl: 'x', presets: [{ dimensionId: 'print', printPresetId: 'cover_art_distributor' }] },
+            host,
+        )).rejects.toThrow(/upscale before print export/);
     });
 
     it('leaves non-print exports byte-identical to the canvas output', async () => {

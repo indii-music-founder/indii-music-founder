@@ -13,6 +13,26 @@ import { projectBucketMatches } from '@/core/constants';
 
 import { HistoryItem } from '@/core/store';
 
+async function sourceDataUrl(url: string): Promise<string> {
+    const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+    const { blob } = await safeStorageFetch(url);
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error('Could not read the source image.'));
+        reader.readAsDataURL(blob);
+    });
+}
+
+async function imageSize(url: string): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+        image.onerror = () => reject(new Error('Could not inspect the image dimensions.'));
+        image.src = url;
+    });
+}
+
 /**
  * Run the local upscale engine on an artwork and add the result as a new
  * history asset (ISSUE-323). Never mutates the source asset.
@@ -26,31 +46,38 @@ const runLocalUpscale = async (
     try {
         const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
         const resolved = await resolveStorageUrl(item.url);
-        const blob = await fetch(resolved).then((r) => {
-            if (!r.ok) throw new Error(`fetch ${r.status}`);
-            return r.blob();
-        });
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result));
-            reader.onerror = () => reject(new Error('could not read image bytes'));
-            reader.readAsDataURL(blob);
-        });
-
-        const { upscalerService, UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
-        const outcome = await upscalerService.upscale({ dataUrl, scale, prompt: item.prompt, onProgress });
+        const dataUrl = await sourceDataUrl(resolved);
+        const dims = await imageSize(dataUrl);
+        let outputUrl: string;
+        let model: string;
+        let durationMs = 0;
+        if (window.electronAPI?.upscale) {
+            const { upscalerService } = await import('@/services/upscale/UpscalerService');
+            const outcome = await upscalerService.upscale({ dataUrl, scale, prompt: item.prompt, onProgress });
+            outputUrl = outcome.outputDataUrl;
+            model = outcome.model;
+            durationMs = outcome.durationMs;
+        } else {
+            const { hostedUpscale } = await import('@/services/upscale/HostedUpscale');
+            const outcome = await hostedUpscale(dataUrl, dims, { width: dims.width * scale, height: dims.height * scale });
+            outputUrl = outcome.url;
+            model = 'cloud reference enhancement';
+            onProgress?.(1);
+        }
 
         const projId = useStore.getState().currentProjectId || 'default';
         useStore.getState().addToHistory?.({
             id: `upscale_${Date.now()}`,
             projectId: projId,
             type: 'image',
-            url: outcome.outputDataUrl,
-            prompt: `${item.prompt || 'Artwork'} (AI Upscale ${outcome.scale}× · ${outcome.model})`,
+            url: outputUrl,
+            prompt: `${item.prompt || 'Artwork'} (AI Upscale ${scale}× · ${model})`,
             timestamp: Date.now(),
             meta: 'upscale',
         });
-        toast.success(`Upscaled ${outcome.scale}× in ${(outcome.durationMs / 1000).toFixed(1)}s — saved to history.`);
+        toast.success(window.electronAPI?.upscale
+            ? `Upscaled ${scale}× in ${(durationMs / 1000).toFixed(1)}s — saved to history.`
+            : 'Cloud-enhanced image saved to history. Review details and lettering before printing.');
     } catch (err) {
         const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
         if (err instanceof UpscaleUnavailableError) {
@@ -63,7 +90,7 @@ const runLocalUpscale = async (
             }
             return;
         }
-        toast.error('Upscale failed.');
+        toast.error(err instanceof Error ? `Upscale failed: ${err.message}` : 'Upscale failed.');
     }
 };
 
@@ -642,22 +669,35 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                             try {
                                                                 const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
                                                                 const resolved = await resolveStorageUrl(item.url);
-                                                                const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
-                                                                    const img = new Image();
-                                                                    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-                                                                    img.onerror = () => reject(new Error('image load failed'));
-                                                                    img.src = resolved;
-                                                                });
+                                                                const dims = await imageSize(resolved);
                                                                 const { PrintSpecDialog } = await import('@/components/ui/PrintSpecDialog');
                                                                 const plan = await PrintSpecDialog.call({
-                                                                    srcWidth: dims.w,
-                                                                    srcHeight: dims.h,
+                                                                    srcWidth: dims.width,
+                                                                    srcHeight: dims.height,
                                                                     // ISSUE-322: the dialog delivers the exact print file
                                                                     // (px + DPI metadata) itself; caller holds the master.
                                                                     exporter: async (p) => {
                                                                         const { exportMasterAsset, downloadAsZip } = await import('@/services/export/AssetExporter');
+                                                                        let printMasterUrl = resolved;
+                                                                        if (p.verdict === 'insufficient') {
+                                                                            throw new Error('This source cannot reach the selected target with the available engines. Choose a smaller print size or a larger source.');
+                                                                        }
+                                                                        if (p.verdict === 'upscale') {
+                                                                            const dataUrl = await sourceDataUrl(resolved);
+                                                                            if (window.electronAPI?.upscale) {
+                                                                                const { upscalerService } = await import('@/services/upscale/UpscalerService');
+                                                                                const scale = p.requiredUpscaleFactor <= 2 ? 2 : 4;
+                                                                                const outcome = await upscalerService.upscale({ dataUrl, scale, prompt: item.prompt });
+                                                                                printMasterUrl = outcome.outputDataUrl;
+                                                                            } else {
+                                                                                const { hostedUpscale } = await import('@/services/upscale/HostedUpscale');
+                                                                                const outcome = await hostedUpscale(dataUrl, dims, p.required);
+                                                                                printMasterUrl = outcome.url;
+                                                                                toast.info('Cloud-enhanced art can change details. Review the exported proof before ordering.');
+                                                                            }
+                                                                        }
                                                                         const bundle = await exportMasterAsset({
-                                                                            masterUrl: resolved,
+                                                                            masterUrl: printMasterUrl,
                                                                             presets: [{ dimensionId: 'print', printPresetId: p.presetId }],
                                                                         });
                                                                         await downloadAsZip(bundle, `print-${p.presetId}-${Date.now()}`);
@@ -667,8 +707,8 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                                 if (plan) {
                                                                     toast.info(`Print plan delivered: ${plan.summary}`);
                                                                 }
-                                                            } catch {
-                                                                toast.error("Print size check failed.");
+                                                            } catch (error) {
+                                                                toast.error(error instanceof Error ? `Print size check failed: ${error.message}` : 'Print size check failed.');
                                                             }
                                                         }}
                                                         data-testid="send-to-print-check"

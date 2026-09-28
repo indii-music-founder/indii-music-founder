@@ -21,6 +21,7 @@ import {
 } from '@/services/export/SmartCrop';
 import { planPrintOutput } from '@/services/print/PrintSpec';
 import { dataUrlWithDpi } from '@/services/print/dpiMetadata';
+import { safeStorageFetch } from '@/services/storage/safeStorageFetch';
 import { logger } from '@/utils/logger';
 
 export type FitMode = 'cover' | 'contain-blur-pad';
@@ -96,19 +97,30 @@ function defaultHost(): ExportHost {
             c.height = height;
             return c;
         },
-        loadImage(url) {
+        async loadImage(url) {
+            // A Firebase download URL can render in <img> while tainting the
+            // canvas. Load readable bytes first and draw from an origin-local
+            // blob URL so toDataURL remains available for print export.
+            const { blob } = await safeStorageFetch(url);
+            const objectUrl = URL.createObjectURL(blob);
             return new Promise((resolve, reject) => {
                 const img = new Image();
-                img.onload = () => resolve({
+                img.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve({
                     width: img.naturalWidth,
                     height: img.naturalHeight,
                     draw(ctx, dx, dy, dw, dh) { ctx.drawImage(img, dx, dy, dw, dh); },
                     drawRegion(ctx, sx, sy, sw, sh, dx, dy, dw, dh) {
                         ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
                     }
-                });
-                img.onerror = () => reject(new Error(`AssetExporter: failed to load master image from ${url}`));
-                img.src = url;
+                    });
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error(`AssetExporter: failed to load master image from ${url}`));
+                };
+                img.src = objectUrl;
             });
         },
         byteLength(dataUrl) {
@@ -204,6 +216,9 @@ export async function exportMasterAsset(
                 throw new Error(`AssetExporter: print target "${preset.printPresetId}" requires PNG or JPEG (got ${format})`);
             }
             const plan = planPrintOutput({ srcWidth: image.width, srcHeight: image.height, presetId: preset.printPresetId });
+            if (plan.verdict !== 'sufficient') {
+                throw new Error(`AssetExporter: ${preset.printPresetId} needs ${plan.required.width} × ${plan.required.height} source pixels; upscale before print export`);
+            }
             dimW = plan.exportMeta.pixelWidth;
             dimH = plan.exportMeta.pixelHeight;
             dpi = plan.dpi;
