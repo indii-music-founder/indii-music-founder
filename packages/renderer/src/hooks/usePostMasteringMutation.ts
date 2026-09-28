@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
@@ -14,6 +14,12 @@ export function usePostMasteringMutation() {
     const [isMutating, setIsMutating] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const [lastMutatedFingerprint, setLastMutatedFingerprint] = useState<string | null>(null);
+
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     const invalidateAudioProfile = useStore(state => state.invalidateAudioProfile);
 
@@ -60,13 +66,17 @@ export function usePostMasteringMutation() {
                 logger.info(`[PostMasteringMutation] Evicted audio profile cache for ${fingerprint}`);
             }
 
-            setLastMutatedFingerprint(fingerprint);
+            if (isMountedRef.current) {
+                setLastMutatedFingerprint(fingerprint);
+            }
             return updated;
 
         } catch (err: unknown) {
             const mutationError = err instanceof Error ? err : new Error(String(err));
             logger.error(`[PostMasteringMutation] Failed mutation for ${fingerprint}:`, mutationError);
-            setError(mutationError);
+            if (isMountedRef.current) {
+                setError(mutationError);
+            }
 
             // Rollback optimistic update
             if (onRollback) {
@@ -75,7 +85,9 @@ export function usePostMasteringMutation() {
 
             throw mutationError;
         } finally {
-            setIsMutating(false);
+            if (isMountedRef.current) {
+                setIsMutating(false);
+            }
         }
     }, [invalidateAudioProfile]);
 
