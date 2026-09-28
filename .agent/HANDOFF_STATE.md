@@ -34,8 +34,8 @@
 - `npm run typecheck`: Exited code 0 (all 8 packages + firebase test tsconfigs clean).
 - `npm run lint`: Exited code 0 (0 errors, 218 warnings).
 - `node scripts/check-test-quality.js`: 0 violations.
-- Git SHA: `23ef127c8`.
-- GitHub Actions CI Run: [36361889905](https://github.com/indii-music-founder/indii-music-founder/actions/runs/36361889905).
+- Git SHA: `23ef127c8` (delivery), `377dcd749` (SecuritySection Pro Monthly price test alignment).
+- GitHub Actions CI Run: [36364985375](https://github.com/indii-music-founder/indii-music-founder/actions/runs/36364985375) (successor to [36361889905](https://github.com/indii-music-founder/indii-music-founder/actions/runs/36361889905)).
 
 ---
 
