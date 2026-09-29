@@ -3746,4 +3746,70 @@ describe('Firestore Security Rules', () => {
             }
         });
     });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 29. SECURITY AUDIT REGRESSION TESTS (Provenance Bugfixes)
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('audit bugfixes: audio_assets, isOrgOwner, tax_collaborators', () => {
+        it('users/{userId}/audio_assets/{assetId}: owner can read and delete, non-owner denied', async () => {
+            if (requireEmulator()) return;
+            const assetData = {
+                type: 'music',
+                duration: 120,
+                prompt: 'Lo-fi chill beats',
+                mimeType: 'audio/mpeg',
+                storageUrl: 'https://storage.googleapis.com/example/audio.mp3',
+                timestamp: Date.now(),
+                userId: ALICE_UID,
+            };
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+
+            // Create as owner
+            await assertSucceeds(setDoc(doc(aliceDb, 'users', ALICE_UID, 'audio_assets', 'asset-1'), assetData));
+            // Read as owner (verifies request.resource bugfix)
+            await assertSucceeds(getDoc(doc(aliceDb, 'users', ALICE_UID, 'audio_assets', 'asset-1')));
+            // Read by non-owner denied
+            await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'audio_assets', 'asset-1')));
+            // Delete by non-owner denied
+            await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'audio_assets', 'asset-1')));
+            // Delete by owner succeeds
+            await assertSucceeds(deleteDoc(doc(aliceDb, 'users', ALICE_UID, 'audio_assets', 'asset-1')));
+        });
+
+        it('isOrgOwner: safely fails closed on nonexistent organization document without CEL runtime error', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            // Organization nonexistent-org does NOT exist in Firestore.
+            // Attempting delete on a project under nonexistent org evaluates isOrgOwner('nonexistent-org').
+            // With exists() guard, it fails closed cleanly rather than crashing CEL evaluation.
+            await assertFails(deleteDoc(doc(aliceDb, 'organizations', 'nonexistent-org', 'projects', 'proj-1')));
+        });
+
+        it('users/{userId}/tax_collaborators/{collabId}: enforces strict schema whitelist and allows sizeBytes', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const validCollab = {
+                id: 'collab-1',
+                name: 'Jane Doe',
+                email: 'jane@example.com',
+                country: 'US',
+                formType: 'W-9',
+                status: 'needed',
+                sizeBytes: 1048576,
+            };
+
+            // Valid fields with sizeBytes succeeds
+            await assertSucceeds(setDoc(doc(aliceDb, 'users', ALICE_UID, 'tax_collaborators', 'collab-1'), validCollab));
+
+            // Malicious/unknown field rejected because duplicate unconstrained rule was removed
+            const invalidCollab = {
+                ...validCollab,
+                unauthorizedInjectedField: 'malicious-payload',
+            };
+            await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'tax_collaborators', 'collab-2'), invalidCollab));
+        });
+    });
 });
+
