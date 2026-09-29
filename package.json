@@ -71,6 +71,7 @@
     "test:payloads": "npx vitest run packages/firebase/src/shared/creative.integration.test.ts",
     "test:async": "npx vitest run packages/renderer/src/utils/async.test.ts",
     "test:api": "npm run test:contracts && npm run test:generation && npm run test:initialization && npm run test:payloads && npm run test:async",
+    "issue:monitor": "tsx scripts/issue_monitor.ts",
     "test:api:ci": "CI=true npm run test:api -- --run",
     "detect:bugs": "bash scripts/detect-hidden-bugs.sh",
     "check:dep-drift": "node scripts/check-dep-version-drift.cjs",

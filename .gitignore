@@ -19,7 +19,9 @@ lerna-debug.log*
 yarn.lock
 pnpm-lock.yaml
 
-node_modules
+packages/shared/src/foundry/*.js
+packages/shared/src/foundry/*.d.ts
+packages/shared/src/foundry/*.js.map
 dist
 dist-electron
 dist-ssr
