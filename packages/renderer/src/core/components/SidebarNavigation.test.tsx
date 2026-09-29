@@ -37,22 +37,22 @@ vi.mock('../context/ToastContext', () => ({
 }));
 
 // Mock Lazy Loaded Components
-vi.mock('@/modules/marketing/components/BrandManager', () => ({ default: () => <div data-testid="brand-manager">Brand Manager</div> }));
-vi.mock('@/modules/marketing/components/CampaignDashboard', () => ({ default: () => <div data-testid="campaign-dashboard">Campaign Dashboard</div> }));
-vi.mock('@/modules/publicist/PublicistDashboard', () => ({ default: () => <div data-testid="publicist-dashboard">Publicist Dashboard</div> }));
-vi.mock('@/modules/publishing/PublishingDashboard', () => ({ default: () => <div data-testid="publishing-dashboard">Publishing Dashboard</div> }));
-vi.mock('@/modules/finance/FinanceDashboard', () => ({ default: () => <div data-testid="finance-dashboard">Finance Dashboard</div> }));
-vi.mock('@/modules/licensing/LicensingDashboard', () => ({ default: () => <div data-testid="licensing-dashboard">Licensing Dashboard</div> }));
-vi.mock('@/modules/touring/RoadManager', () => ({ default: () => <div data-testid="road-manager">Road Manager</div> }));
-vi.mock('@/modules/social/SocialDashboard', () => ({ default: () => <div data-testid="social-dashboard">Social Dashboard</div> }));
-vi.mock('@/modules/creative/CreativeStudio', () => ({ default: () => <div data-testid="creative-studio">Creative Studio</div> }));
-vi.mock('@/modules/legal/LegalDashboard', () => ({ default: () => <div data-testid="legal-dashboard">Legal Dashboard</div> }));
-vi.mock('@/modules/creative/video/VideoStudioContainer', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
-vi.mock('@/modules/workflow/WorkflowLab', () => ({ default: () => <div data-testid="workflow-lab">Workflow Lab</div> }));
-vi.mock('@/modules/dashboard/Dashboard', () => ({ default: () => <div data-testid="dashboard">Dashboard</div> }));
-vi.mock('@/modules/knowledge/KnowledgeBase', () => ({ default: () => <div data-testid="knowledge-base">Knowledge Base</div> }));
-vi.mock('@/modules/notes/NotesModule', () => ({ default: () => <div data-testid="notes-module">Notes Module</div> }));
-vi.mock('@/modules/auth/SelectOrg', () => ({ default: () => <div data-testid="select-org">Select Org</div> }));
+vi.mock('../modules/marketing/components/BrandManager', () => ({ default: () => <div data-testid="brand-manager">Brand Manager</div> }));
+vi.mock('../modules/marketing/components/CampaignDashboard', () => ({ default: () => <div data-testid="campaign-dashboard">Campaign Dashboard</div> }));
+vi.mock('../modules/publicist/PublicistDashboard', () => ({ default: () => <div data-testid="publicist-dashboard">Publicist Dashboard</div> }));
+vi.mock('../modules/publishing/PublishingDashboard', () => ({ default: () => <div data-testid="publishing-dashboard">Publishing Dashboard</div> }));
+vi.mock('../modules/finance/FinanceDashboard', () => ({ default: () => <div data-testid="finance-dashboard">Finance Dashboard</div> }));
+vi.mock('../modules/licensing/LicensingDashboard', () => ({ default: () => <div data-testid="licensing-dashboard">Licensing Dashboard</div> }));
+vi.mock('../modules/touring/RoadManager', () => ({ default: () => <div data-testid="road-manager">Road Manager</div> }));
+vi.mock('../modules/social/SocialDashboard', () => ({ default: () => <div data-testid="social-dashboard">Social Dashboard</div> }));
+vi.mock('../modules/creative/CreativeStudio', () => ({ default: () => <div data-testid="creative-studio">Creative Studio</div> }));
+vi.mock('../modules/legal/LegalDashboard', () => ({ default: () => <div data-testid="legal-dashboard">Legal Dashboard</div> }));
+vi.mock('../modules/creative/video/VideoStudioContainer', () => ({ default: () => <div data-testid="video-studio">Video Studio</div> }));
+vi.mock('../modules/workflow/WorkflowLab', () => ({ default: () => <div data-testid="workflow-lab">Workflow Lab</div> }));
+vi.mock('../modules/dashboard/Dashboard', () => ({ default: () => <div data-testid="dashboard">Dashboard</div> }));
+vi.mock('../modules/knowledge/KnowledgeBase', () => ({ default: () => <div data-testid="knowledge-base">Knowledge Base</div> }));
+vi.mock('../modules/notes/NotesModule', () => ({ default: () => <div data-testid="notes-module">Notes Module</div> }));
+vi.mock('../modules/auth/SelectOrg', () => ({ default: () => <div data-testid="select-org">Select Org</div> }));
 
 // Mock other components used in App
 vi.mock('./CommandBar', () => ({ default: () => <div data-testid="command-bar">Command Bar</div> }));

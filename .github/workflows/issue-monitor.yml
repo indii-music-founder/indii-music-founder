@@ -1,0 +1,18 @@
+name: Issue Monitor
+on:
+  schedule:
+    - cron: '0 0 * * *'  # runs daily at UTC midnight
+  workflow_dispatch:      # allow manual triggering
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run issue:monitor
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
