@@ -48,16 +48,15 @@ describe('Health Check workflow clean-install contract', () => {
     expect(deployWorkflow).toMatch(
       /npm pack \.\/packages\/shared --pack-destination packages\/firebase/,
     );
-    expect(deployWorkflow).toMatch(
-      /npm pkg set "dependencies\.@indii\/shared=file:\.\/\$SHARED_TGZ_NAME" -w packages\/firebase/,
-    );
   });
 
   it('creates a standalone deployment lock without inheriting workspace links', () => {
     // Real npm + filesystem integration for packaging; not production user evidence.
     const workflow = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8');
     const lockCommand = workflow.match(/FUNCTIONS_LOCK_DIR=\$\(mktemp -d\)[\s\S]+?rm -rf "\$FUNCTIONS_LOCK_DIR"/)?.[0];
+    const manifestCommand = workflow.match(/SHARED_TGZ_NAME="\$SHARED_TGZ_NAME" node <<'NODE'[\s\S]+?\n {10}NODE/)?.[0].replace(/^ {10}/gm, '');
     expect(lockCommand).toBeDefined();
+    expect(manifestCommand).toBeDefined();
     const fixture = mkdtempSync(join(tmpdir(), 'functions-lock-check-'));
     const shared = join(fixture, 'packages/shared');
     const functions = join(fixture, 'packages/firebase');
@@ -68,10 +67,10 @@ describe('Health Check workflow clean-install contract', () => {
       writeFileSync(join(shared, 'package.json'), JSON.stringify({ name: '@indii/shared', version: '0.0.1' }));
       const tarball = execFileSync('npm', ['pack', '--quiet'], { cwd: shared, encoding: 'utf8' }).trim();
       copyFileSync(join(shared, tarball), join(functions, tarball));
-      writeFileSync(join(functions, 'package.json'), JSON.stringify({ name: '@indii/firebase', version: '0.0.1', dependencies: { '@indii/shared': `file:./${tarball}` } }));
+      writeFileSync(join(functions, 'package.json'), JSON.stringify({ name: '@indii/firebase', version: '0.0.1', dependencies: { '@indii/shared': '*' } }));
       mkdirSync(join(fixture, 'node_modules/@indii'), { recursive: true });
       symlinkSync(shared, join(fixture, 'node_modules/@indii/shared'), 'dir');
-      execFileSync('bash', ['-euo', 'pipefail', '-c', lockCommand!], { cwd: fixture, env: { ...process.env, SHARED_TGZ_NAME: tarball }, stdio: 'pipe' });
+      execFileSync('bash', ['-euo', 'pipefail', '-c', `${manifestCommand!}\n${lockCommand!}`], { cwd: fixture, env: { ...process.env, SHARED_TGZ_NAME: tarball }, stdio: 'pipe' });
       const lock = JSON.parse(readFileSync(join(functions, 'package-lock.json'), 'utf8'));
       expect(lock.packages[''].dependencies['@indii/shared']).toBe(`file:./${tarball}`);
       expect(lock.packages['node_modules/@indii/shared'].resolved).toBe(`file:${tarball}`);

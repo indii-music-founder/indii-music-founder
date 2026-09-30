@@ -896,7 +896,14 @@ jobs:
           # Package @indii/shared as a pre-packed tarball to eliminate Arborist tree calculation defects on local directory references (ISSUE-1434).
           npm pack ./packages/shared --pack-destination packages/firebase
           SHARED_TGZ_NAME="$(basename "$(ls packages/firebase/indii-shared-*.tgz | head -n 1)")"
-          npm pkg set "dependencies.@indii/shared=file:./$SHARED_TGZ_NAME" -w packages/firebase
+          # Update only the deployment manifest; npm workspace mutation loads Arborist.
+          SHARED_TGZ_NAME="$SHARED_TGZ_NAME" node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'packages/firebase/package.json';
+          const manifest = JSON.parse(fs.readFileSync(path, 'utf8'));
+          manifest.dependencies['@indii/shared'] = `file:./${process.env.SHARED_TGZ_NAME}`;
+          fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');
+          NODE
           # Generate the deployment lock outside the workspace and its cached symlinks.
           # npm Arborist can crash on the packed shared dependency inside the workspace;
           # Cloud Build must receive a complete lockfile, not a warning and a missing file.
