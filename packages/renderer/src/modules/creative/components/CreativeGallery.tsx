@@ -58,15 +58,15 @@ const runLocalUpscale = async (
             model = outcome.model;
             durationMs = outcome.durationMs;
         } else {
-            const { hostedUpscale } = await import('@/services/upscale/HostedUpscale');
-            const outcome = await hostedUpscale(dataUrl, dims, { width: dims.width * scale, height: dims.height * scale });
+            const { browserUpscale } = await import('@/services/upscale/BrowserUpscale');
+            const outcome = await browserUpscale({ dataUrl, required: { width: dims.width * scale, height: dims.height * scale }, onProgress });
             outputUrl = outcome.url;
-            model = 'cloud reference enhancement';
+            model = 'ESRGAN Slim on-device';
             onProgress?.(1);
         }
 
         const projId = useStore.getState().currentProjectId || 'default';
-        useStore.getState().addToHistory?.({
+        const asset: HistoryItem = {
             id: `upscale_${Date.now()}`,
             projectId: projId,
             type: 'image',
@@ -74,10 +74,13 @@ const runLocalUpscale = async (
             prompt: `${item.prompt || 'Artwork'} (AI Upscale ${scale}× · ${model})`,
             timestamp: Date.now(),
             meta: 'upscale',
-        });
+        };
+        const { StorageService } = await import('@/services/StorageService');
+        const saved = await StorageService.saveItem(asset);
+        useStore.getState().addToHistory?.({ ...asset, ...saved });
         toast.success(window.electronAPI?.upscale
             ? `Upscaled ${scale}× in ${(durationMs / 1000).toFixed(1)}s — saved to history.`
-            : 'Cloud-enhanced image saved to history. Review details and lettering before printing.');
+            : 'Enhanced image saved at full resolution. Review the print proof before ordering.');
     } catch (err) {
         const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
         if (err instanceof UpscaleUnavailableError) {
@@ -108,36 +111,24 @@ const runPrintPack = async (
     try {
         const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
         const resolved = await resolveStorageUrl(item.url);
-        const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-            img.onerror = () => reject(new Error('image load failed'));
-            img.src = resolved;
-        });
-
+        const dataUrl = await sourceDataUrl(resolved);
+        const dims = await imageSize(dataUrl);
         const { planPrintOutput } = await import('@/services/print/PrintSpec');
-        const plans = PACK_PRESET_IDS.map((id) => planPrintOutput({ srcWidth: dims.w, srcHeight: dims.h, presetId: id }));
-        const maxFactor = Math.max(...plans.map((p) => p.requiredUpscaleFactor));
-
+        const plans = PACK_PRESET_IDS.map((id) => planPrintOutput({ srcWidth: dims.width, srcHeight: dims.height, presetId: id }));
+        const unavailable = plans.filter(p => p.verdict === 'insufficient');
+        if (unavailable.length) throw new Error(`This master cannot reach: ${unavailable.map(p => p.presetId).join(', ')}. Enlarge and save a master first, or use Print Size Check for individual targets.`);
+        const maxFactor = Math.max(...plans.map(p => p.requiredUpscaleFactor));
         let masterUrl = resolved;
-        if (maxFactor > 1.01) {
+        if (maxFactor > 1) {
             const scale = maxFactor <= 2 ? 2 : 4;
-            toast.info(`Upscaling master ${scale}× for the print pack…`);
-            const { upscalerService } = await import('@/services/upscale/UpscalerService');
-            const blob = await fetch(resolved).then((r) => {
-                if (!r.ok) throw new Error(`fetch ${r.status}`);
-                return r.blob();
-            });
-            const dataUrl = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result));
-                reader.onerror = () => reject(new Error('could not read image bytes'));
-                reader.readAsDataURL(blob);
-            });
-            const outcome = await upscalerService.upscale({ dataUrl, scale, prompt: item.prompt });
-            masterUrl = outcome.outputDataUrl;
-        } else {
-            toast.info('Master already covers the pack — exporting print files…');
+            toast.info(`Enlarging the master ${scale}× for the print pack…`);
+            if (window.electronAPI?.upscale) {
+                const { upscalerService } = await import('@/services/upscale/UpscalerService');
+                masterUrl = (await upscalerService.upscale({ dataUrl, scale })).outputDataUrl;
+            } else {
+                const { browserUpscale } = await import('@/services/upscale/BrowserUpscale');
+                masterUrl = (await browserUpscale({ dataUrl, required: { width: dims.width * scale, height: dims.height * scale } })).url;
+            }
         }
 
         const { exportMasterAsset, downloadAsZip } = await import('@/services/export/AssetExporter');
@@ -145,7 +136,12 @@ const runPrintPack = async (
             masterUrl,
             presets: PACK_PRESET_IDS.map((id) => ({ dimensionId: 'print', printPresetId: id })),
         });
-        await downloadAsZip(bundle, `print-pack-${Date.now()}`);
+        const { preparePressHandoff } = await import('@/services/print/preparePressHandoff');
+        const press = await preparePressHandoff(bundle);
+        if (press) {
+            const a = document.createElement('a'); a.href = press.href; a.download = press.filename;
+            document.body.appendChild(a); a.click(); a.remove();
+        } else await downloadAsZip(bundle, `print-pack-${Date.now()}`);
         toast.success(`Print pack ready: ${bundle.length} DPI-tagged files downloaded.`);
     } catch (err) {
         const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
@@ -155,7 +151,7 @@ const runPrintPack = async (
             else toast.error(`Engine setup failed: ${err.message}`);
             return;
         }
-        toast.error('Print pack failed.');
+        toast.error(err instanceof Error ? err.message : 'Print pack failed.');
     }
 };
 
@@ -284,7 +280,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                 )
             )}
 
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex flex-col justify-end p-3">
+            <div className={`absolute inset-0 bg-black/60 ${showSendMenu ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} transition-opacity flex flex-col justify-end p-3`}>
                 <p className="text-xs text-white line-clamp-2 mb-2">{item.prompt}</p>
                 <div className="flex justify-between items-center">
                     <span className="text-[10px] text-gray-400 uppercase">{item.type}</span>
@@ -362,7 +358,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                         <Send size={14} />
                                     </button>
                                     {showSendMenu && (
-                                        <div className="absolute bottom-8 right-0 bg-[#0d0d11] border border-white/10 rounded-lg shadow-2xl py-1 w-36 z-30 overflow-hidden text-left">
+                                        <div className="absolute bottom-8 right-0 bg-[#0d0d11] border border-white/10 rounded-lg shadow-2xl py-1 w-44 z-30 max-h-[260px] overflow-y-auto text-left">
                                             <div className="px-2.5 py-1 text-[8px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5">
                                                 Destinations
                                             </div>
@@ -676,8 +672,9 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                                     srcHeight: dims.height,
                                                                     // ISSUE-322: the dialog delivers the exact print file
                                                                     // (px + DPI metadata) itself; caller holds the master.
-                                                                    exporter: async (p) => {
-                                                                        const { exportMasterAsset, downloadAsZip } = await import('@/services/export/AssetExporter');
+                                                                    sourceUrl: resolved,
+                                                                    exporter: async (p, onProgress) => {
+                                                                        const { exportMasterAsset } = await import('@/services/export/AssetExporter');
                                                                         let printMasterUrl = resolved;
                                                                         if (p.verdict === 'insufficient') {
                                                                             throw new Error('This source cannot reach the selected target with the available engines. Choose a smaller print size or a larger source.');
@@ -690,18 +687,21 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                                                 const outcome = await upscalerService.upscale({ dataUrl, scale, prompt: item.prompt });
                                                                                 printMasterUrl = outcome.outputDataUrl;
                                                                             } else {
-                                                                                const { hostedUpscale } = await import('@/services/upscale/HostedUpscale');
-                                                                                const outcome = await hostedUpscale(dataUrl, dims, p.required);
+                                                                                const { browserUpscale } = await import('@/services/upscale/BrowserUpscale');
+                                                                                const outcome = await browserUpscale({ dataUrl, required: p.required, onProgress });
                                                                                 printMasterUrl = outcome.url;
-                                                                                toast.info('Cloud-enhanced art can change details. Review the exported proof before ordering.');
+
                                                                             }
                                                                         }
                                                                         const bundle = await exportMasterAsset({
                                                                             masterUrl: printMasterUrl,
-                                                                            presets: [{ dimensionId: 'print', printPresetId: p.presetId }],
+                                                                            presets: [{ dimensionId: 'print', printPresetId: p.presetId, printDpi: p.dpi, fit: 'cover' }],
                                                                         });
-                                                                        await downloadAsZip(bundle, `print-${p.presetId}-${Date.now()}`);
-                                                                        toast.success(`Print file exported: ${bundle[0]!.width}×${bundle[0]!.height} @ ${bundle[0]!.dpi} DPI.`);
+                                                                        const { preparePressHandoff } = await import('@/services/print/preparePressHandoff');
+                                                                        const pressDownload = await preparePressHandoff(bundle);
+                                                                        if (pressDownload) return pressDownload;
+                                                                        const { prepareZipDownload } = await import('@/services/export/AssetExporter');
+                                                                        return prepareZipDownload(bundle, `print-${p.presetId}-${Date.now()}`);
                                                                     },
                                                                 });
                                                                 if (plan) {

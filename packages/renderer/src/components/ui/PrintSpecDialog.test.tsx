@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { PrintSpecDialog } from './PrintSpecDialog';
 import type { PrintPlan } from '@/services/print/PrintSpec';
 
+// Structural component checks only; production acceptance uses the signed-in browser.
 describe('PrintSpecDialog callable Root (ISSUE-321)', () => {
     it('opens for a call, shows the pre-flight verdict, and resolves the plan', async () => {
         const user = userEvent.setup();
@@ -45,7 +46,7 @@ describe('PrintSpecDialog callable Root (ISSUE-321)', () => {
         expect(screen.getByTestId('printspec-verdict')).toHaveTextContent('Target not reachable');
         const warnings = screen.getByTestId('printspec-warnings');
         expect(warnings).toHaveTextContent(`a ${4}× upscale reaches`);
-        expect(warnings).toHaveTextContent('DPI floor');
+        expect(warnings).toHaveTextContent('selected 300 DPI target');
     });
 
     it('resolves null when dismissed', async () => {

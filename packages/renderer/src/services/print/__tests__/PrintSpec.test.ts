@@ -61,10 +61,10 @@ describe('planPrintOutput — verdicts', () => {
         expect(plan.verdict).toBe('insufficient');
         expect(plan.recommendedEngine).toBe('tile-refine');
         expect(plan.requiredUpscaleFactor).toBeGreaterThan(MAX_CREDIBLE_UPSCALE);
-        expect(plan.warnings[0]).toContain(`a ${MAX_CREDIBLE_UPSCALE}× upscale reaches`);
+        expect(plan.warnings.join(' ')).toContain(`a ${MAX_CREDIBLE_UPSCALE}× upscale reaches`);
         // best achievable includes bleed: min(2048/24.25, 2048/36.25) × 4 ≈ 226 DPI
-        expect(plan.warnings[0]).toContain('226 DPI');
-        expect(plan.warnings[0]).toContain('150 DPI floor');
+        expect(plan.warnings.join(' ')).toContain('226 DPI');
+        expect(plan.warnings.join(' ')).toContain('selected 300 DPI target');
     });
 
     it('distributor cover art enforces the 3000×3000 pixel floor over inches×DPI', () => {

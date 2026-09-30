@@ -228,10 +228,28 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
         if (!productAsset || isUpscalingAsset) return;
         setIsUpscalingAsset(true);
         try {
-            const { upscalerService } = await import('@/services/upscale/UpscalerService');
-            const outcome = await upscalerService.upscale({ dataUrl: productAsset, scale });
-            setProductAsset(outcome.outputDataUrl);
-            setAssetUpscaledNote(`${scale}× · ${outcome.model.replace('realesrgan-', '')}`);
+            if (window.electronAPI?.upscale) {
+                const { upscalerService } = await import('@/services/upscale/UpscalerService');
+                const outcome = await upscalerService.upscale({ dataUrl: productAsset, scale });
+                setProductAsset(outcome.outputDataUrl);
+                setAssetUpscaledNote(`${scale}× · ${outcome.model}`);
+            } else {
+                const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+                const { blob } = await safeStorageFetch(productAsset);
+                const dataUrl = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(String(reader.result));
+                    reader.onerror = () => reject(new Error('Could not read the design.'));
+                    reader.readAsDataURL(blob);
+                });
+                const image = new Image();
+                image.src = dataUrl;
+                await image.decode();
+                const { browserUpscale } = await import('@/services/upscale/BrowserUpscale');
+                const outcome = await browserUpscale({ dataUrl, required: { width: image.naturalWidth * scale, height: image.naturalHeight * scale } });
+                setProductAsset(outcome.url);
+                setAssetUpscaledNote(`${scale}× · on-device ESRGAN`);
+            }
             toast.success(`Design upscaled ${scale}× — mockups will use the sharper source.`);
         } catch (err) {
             const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
@@ -240,7 +258,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
                 else if (err.reason === 'no-electron') toast.info('Local upscaling runs in the indii desktop app.');
                 else toast.error(`Engine setup failed: ${err.message}`);
             } else {
-                toast.error('Asset upscale failed.');
+                toast.error(err instanceof Error ? err.message : 'Asset upscale failed.');
             }
         } finally {
             setIsUpscalingAsset(false);

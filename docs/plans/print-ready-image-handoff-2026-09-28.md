@@ -31,9 +31,21 @@ Sources: [Disc Makers CD guide](https://www.discmakers.com/resources/getting-cd-
 5. A printer-specific job is marked *ready for that printer* only after its template, color profile, page geometry, fonts, and accepted format are verified. A raster PNG is not presented as a CMYK PDF/X-4 file.
 6. Repeat the full production browser path on a genuine account and inspect the actual downloaded image bytes. A local test or mock-backed browser suite is structural evidence only.
 
+## Implementation update — 2026-09-30
+
+- Replaced web reference generation with tiled on-device ESRGAN 2×/4× super-resolution. Models are served from our own origin; no image-generation quota is consumed.
+- A local browser codec check completed a 1024 × 1024 source at 3000 × 3000, with decoded image dimensions verified. This is engineering evidence; deployed user acceptance remains required.
+- Enlarged masters persist as full-resolution PNGs, bypassing the normal 2048-pixel storage compression.
+- Print previews expose trim, safe margins, and J-card folds. The cassette preset now covers a full three-panel 4.125 × 4-inch layout with folds at 1 and 1.5 inches, rather than the old single-panel estimate. Manufacturers’ final templates still govern exact geometry.
+- Physical paper exports include actual ICC-managed CMYK image data in a PDF with MediaBox, TrimBox, BleedBox, and an embedded output intent. A ZIP also includes the sRGB PNG and print settings. DTF retains transparent PNG artwork.
+- Poster targets support the documented 150 DPI minimum as an explicit choice; 300 DPI remains preferred. Unreachable targets fail before processing and explain the required larger master.
+- PDF/X certification and manufacturer-specific template import remain outside this generic handoff. Files are not labeled universally press-ready.
+
+Cassette reference: [Unified Manufacturing three-panel J-card template](https://api.unifiedmanufacturing.com/public/templates/UM%20-%20J%20Card%20%28Front%29.pdf). Its stated overall dimensions and individual panel measurements differ slightly, so final supplier proof remains mandatory.
+
 ## Remaining production work
 
 - Add vendor dieline import and proof overlays for vinyl jackets, CD packaging, folded work, and labels. Template geometry varies too much for one universal preset.
-- Add press PDF with bleed/trim boxes and an explicit CMYK output-intent workflow; do not claim PDF/X compliance until a preflight tool validates it.
-- Add a fidelity-preserving hosted super-resolution provider for web users. Current cloud fallback uses reference-guided 4K generation, which can change detail and cannot cover every large-format target.
+- Validate PDF/X compliance with a dedicated preflight tool before offering printer-certified PDF/X exports.
+- Complete deployed browser acceptance for every target and inspect actual downloaded file dimensions, density, color profiles and page boxes.
 - Add actual source-content safe-zone checks where text and logo layers are available, plus file-size and transparency checks for product uploads.

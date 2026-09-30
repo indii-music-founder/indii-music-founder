@@ -2292,3 +2292,4 @@ export { queryKnowledgeBase } from './functions/knowledge/query';
 
 // Universal reversible Trash purge gateway
 export { createPurgeIntent, purgeTrashItems } from './functions/trash/trashFunctions';
+export { preparePrintHandoff } from './functions/print/preparePrintHandoff';

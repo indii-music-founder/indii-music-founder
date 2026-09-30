@@ -38,6 +38,7 @@ export interface ExportPreset {
      * encoded file is tagged with the plan's DPI. Requires PNG or JPEG.
      */
     printPresetId?: string;
+    printDpi?: number;
 }
 
 export interface ExportBundleRequest {
@@ -57,6 +58,7 @@ export interface ExportResult {
     fit: FitMode;
     /** Physical DPI tagged into the encoded file, when a print target drove the export. */
     dpi?: number;
+    printSettings?: ReturnType<typeof planPrintOutput>;
 }
 
 /** A loaded master image, abstracted so tests can inject a mock drawable. */
@@ -210,12 +212,14 @@ export async function exportMasterAsset(
         let dimW: number;
         let dimH: number;
         let dpi: number | undefined;
+        let printSettings: ReturnType<typeof planPrintOutput> | undefined;
         let dimensionLabel: string;
         if (preset.printPresetId) {
             if (format !== 'image/png' && format !== 'image/jpeg') {
                 throw new Error(`AssetExporter: print target "${preset.printPresetId}" requires PNG or JPEG (got ${format})`);
             }
-            const plan = planPrintOutput({ srcWidth: image.width, srcHeight: image.height, presetId: preset.printPresetId });
+            const plan = planPrintOutput({ srcWidth: image.width, srcHeight: image.height, presetId: preset.printPresetId, dpi: preset.printDpi });
+            printSettings = plan;
             if (plan.verdict !== 'sufficient') {
                 throw new Error(`AssetExporter: ${preset.printPresetId} needs ${plan.required.width} × ${plan.required.height} source pixels; upscale before print export`);
             }
@@ -238,7 +242,7 @@ export async function exportMasterAsset(
         const ctx = canvas.getContext('2d');
         if (!ctx) throw new Error(`AssetExporter: could not acquire 2D context for ${dimensionLabel}`);
 
-        const fit = resolveFit(preset, image.width, image.height, dimW, dimH);
+        const fit = preset.printPresetId ? (preset.fit ?? 'cover') : resolveFit(preset, image.width, image.height, dimW, dimH);
         renderPreset(ctx, canvas, image, fit, preset.anchors);
 
         let url = canvas.toDataURL(format, req.quality);
@@ -252,7 +256,7 @@ export async function exportMasterAsset(
             height: dimH,
             bytes: host.byteLength(url),
             fit,
-            ...(dpi !== undefined ? { dpi } : {})
+            ...(dpi !== undefined ? { dpi, printSettings } : {})
         });
     }
 
@@ -272,7 +276,7 @@ export function sanitizeFilenameId(id: string): string {
 /**
  * Bundle export results into a downloadable zip. Uses jszip (existing renderer dep).
  */
-export async function downloadAsZip(results: ExportResult[], name: string): Promise<void> {
+export async function prepareZipDownload(results: ExportResult[], name: string): Promise<{ href: string; filename: string }> {
     if (results.length === 0) throw new Error('AssetExporter.downloadAsZip: nothing to bundle');
 
     const { default: JSZip } = await import('jszip');
@@ -282,26 +286,36 @@ export async function downloadAsZip(results: ExportResult[], name: string): Prom
     for (const r of results) {
         // Print presets produce ids like "print:vinyl_sleeve" — sanitize for filesystems.
         const safeId = sanitizeFilenameId(r.platformId);
-        let filename = `${safeId}_${r.width}x${r.height}.png`;
+        const ext = r.url.startsWith('data:image/jpeg') ? 'jpg' : r.url.startsWith('data:image/webp') ? 'webp' : 'png';
+        let filename = `${safeId}_${r.width}x${r.height}.${ext}`;
         let n = 2;
-        while (used.has(filename)) filename = `${safeId}_${r.width}x${r.height}_${n++}.png`;
+        while (used.has(filename)) filename = `${safeId}_${r.width}x${r.height}_${n++}.${ext}`;
         used.add(filename);
 
         const commaIdx = r.url.indexOf(',');
         const b64 = commaIdx >= 0 ? r.url.slice(commaIdx + 1) : r.url;
         zip.file(filename, b64, { base64: true });
+        if (r.printSettings) zip.file(`${safeId}_print-settings.json`, JSON.stringify({
+            ...r.printSettings.exportMeta, pixelWidth: r.width, pixelHeight: r.height,
+            colorSpace: 'sRGB', format: ext, fit: r.fit,
+            status: 'Raster artwork; printer template and color requirements need final proof',
+            foldsFromLeftTrimIn: r.printSettings.foldsIn,
+            printerInstructions: r.printSettings.handoff ?? 'Confirm bleed, safe area, and color profile with the selected printer.',
+        }, null, 2));
     }
 
     const blob = await zip.generateAsync({ type: 'blob' });
-    const href = URL.createObjectURL(blob);
-    try {
-        const a = document.createElement('a');
-        a.href = href;
-        a.download = name.endsWith('.zip') ? name : `${name}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-    } finally {
-        URL.revokeObjectURL(href);
-    }
+    return { href: URL.createObjectURL(blob), filename: name.endsWith('.zip') ? name : `${name}.zip` };
+}
+
+export async function downloadAsZip(results: ExportResult[], name: string): Promise<void> {
+    const { href, filename } = await prepareZipDownload(results, name);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Allow the browser to consume the URL before reclaiming it.
+    setTimeout(() => URL.revokeObjectURL(href), 60_000);
 }
