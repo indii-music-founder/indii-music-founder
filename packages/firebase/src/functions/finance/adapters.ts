@@ -1,6 +1,6 @@
 import { DistroKidStatementAdapter as DKAdapter } from '@indii/shared/dist/foundry/adapters/DistroKidStatementAdapter.js';
 import { TuneCoreStatementAdapter as TCAdapter } from '@indii/shared/dist/foundry/adapters/TuneCoreStatementAdapter.js';
-import type { NormalizedStatementReport } from '../../../../shared/src/foundry/types';
+import type { NormalizedStatementReport } from '@indii/shared/dist/foundry/types.js';
 
 /** Wrapper exposing static canParse/parse methods expected by the Firebase function. */
 export class DistroKidStatementAdapter {

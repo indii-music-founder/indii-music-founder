@@ -2,7 +2,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { processEarningsReport } from './ingestEarningsReport';
 import { DistroKidStatementAdapter, TuneCoreStatementAdapter } from './adapters';
-import type { NormalizedStatementReport, NormalizedStatementTransaction } from '../../../../shared/src/foundry/types';
+import type { NormalizedStatementReport, NormalizedStatementTransaction } from '@indii/shared/dist/foundry/types.js';
 
 /**
  * Cloud Function that accepts a raw royalty report (CSV/TSV/JSON) uploaded from a DSP,
