@@ -24,11 +24,5 @@
     ],
     "include": [
         "src"
-    ],
-    "references": [
-        { "path": "../shared" }
-    ],
-    "paths": {
-        "@shared/*": ["../shared/src/*"]
-    }
+    ]
 }

@@ -1,4 +1,6 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync, symlinkSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -49,13 +51,36 @@ describe('Health Check workflow clean-install contract', () => {
     expect(deployWorkflow).toMatch(
       /npm pkg set "dependencies\.@indii\/shared=file:\.\/\$SHARED_TGZ_NAME" -w packages\/firebase/,
     );
-    // ISSUE-1442 fix: the lock must be generated INSIDE packages/firebase with
-    // --no-workspaces — the old --prefix form wrote the workspace-root lock,
-    // leaving Cloud Build to crash-regenerate (Arborist edgesOut).
-    expect(deployWorkflow).toMatch(
-      /cd packages\/firebase && npm install --package-lock-only --no-workspaces --quiet/,
-    );
   });
+
+  it('creates a standalone deployment lock without inheriting workspace links', () => {
+    // Real npm + filesystem integration for packaging; not production user evidence.
+    const workflow = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8');
+    const lockCommand = workflow.match(/FUNCTIONS_LOCK_DIR=\$\(mktemp -d\)[\s\S]+?rm -rf "\$FUNCTIONS_LOCK_DIR"/)?.[0];
+    expect(lockCommand).toBeDefined();
+    const fixture = mkdtempSync(join(tmpdir(), 'functions-lock-check-'));
+    const shared = join(fixture, 'packages/shared');
+    const functions = join(fixture, 'packages/firebase');
+    try {
+      mkdirSync(shared, { recursive: true });
+      mkdirSync(functions, { recursive: true });
+      writeFileSync(join(fixture, 'package.json'), JSON.stringify({ name: 'packaging-check', private: true, workspaces: ['packages/*'] }));
+      writeFileSync(join(shared, 'package.json'), JSON.stringify({ name: '@indii/shared', version: '0.0.1' }));
+      const tarball = execFileSync('npm', ['pack', '--quiet'], { cwd: shared, encoding: 'utf8' }).trim();
+      copyFileSync(join(shared, tarball), join(functions, tarball));
+      writeFileSync(join(functions, 'package.json'), JSON.stringify({ name: '@indii/firebase', version: '0.0.1', dependencies: { '@indii/shared': `file:./${tarball}` } }));
+      mkdirSync(join(fixture, 'node_modules/@indii'), { recursive: true });
+      symlinkSync(shared, join(fixture, 'node_modules/@indii/shared'), 'dir');
+      execFileSync('bash', ['-euo', 'pipefail', '-c', lockCommand!], { cwd: fixture, env: { ...process.env, SHARED_TGZ_NAME: tarball }, stdio: 'pipe' });
+      const lock = JSON.parse(readFileSync(join(functions, 'package-lock.json'), 'utf8'));
+      expect(lock.packages[''].dependencies['@indii/shared']).toBe(`file:./${tarball}`);
+      expect(lock.packages['node_modules/@indii/shared'].resolved).toBe(`file:${tarball}`);
+      expect(lock.packages['node_modules/@indii/shared'].link).not.toBe(true);
+      expect(existsSync(join(fixture, 'package-lock.json'))).toBe(false);
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
+    }
+  }, 30_000);
 
   it('pins the Cloud Build npm runtime past the Node 22 Arborist install crash', () => {
     const firebasePackage = JSON.parse(
