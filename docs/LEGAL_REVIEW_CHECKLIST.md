@@ -20,6 +20,15 @@ will need before they can write a single sentence. Gather these first.
 
 ### Business & Company Info
 
+### Meta integration — founder follow-up (2026-09-30)
+
+- [ ] Decide whether indii.music remains operated by New Detroit Music LLC or will be operated by a newly formed subsidiary LLC (possible name: indii.music LLC; not yet formed or confirmed).
+- [ ] Confirm the current legal entity and country responsible for deciding why and how subscriber/Meta Platform Data is processed. Hosting or storing data through a service provider does not alone determine this responsibility. Do not name a proposed entity in Meta attestations before it exists and the operating/data responsibility is established.
+- [ ] If the operating entity changes, review the necessary Meta business/app ownership, verification, privacy policy, terms, processor agreements, and subscriber notices with counsel before making changes.
+- [ ] Establish and document procedures for reviewing government data requests, challenging unlawful requests, minimizing disclosure, and recording requests and responses. Founder reports **no such written procedures currently**; do not attest otherwise in App Review.
+
+Founder-reported Meta questionnaire answer: **no Meta user-data disclosures in response to national-security requests during the past 12 months**. Current entity responsibility remains to be explicitly confirmed; a possible future subsidiary is a planning item, not a completed legal fact.
+
 | # | Decision / Info needed | Your answer |
 |---|------------------------|-------------|
 | F1 | **Launch date** — What is the actual go-live date? Needed for "Effective date" on all legal docs. | `___________` |
