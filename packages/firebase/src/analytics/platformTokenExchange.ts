@@ -48,6 +48,13 @@ const tokenPath = (uid: string, platform: string) =>
 const pendingInstagramIntentPath = (uid: string, intentId: string) =>
     admin.firestore().collection('users').doc(uid).collection('serverSocialConnectionIntents').doc(intentId);
 const PENDING_INSTAGRAM_INTENT_TTL_MS = 10 * 60 * 1000;
+const INSTAGRAM_CONTENT_SCOPES = [
+    'instagram_basic',
+    'instagram_manage_insights',
+    'instagram_content_publish',
+    'pages_show_list',
+    'pages_read_engagement',
+];
 const ANALYTICS_PLATFORMS = ['spotify', 'tiktok', 'instagram'] as const;
 type AnalyticsPlatform = typeof ANALYTICS_PLATFORMS[number];
 
@@ -216,14 +223,7 @@ export const auditInstagramConnectionCallable = onCall(
                 status: 'RECONNECT_REQUIRED',
                 connected: false,
                 permissions: [],
-                missingPermissions: [
-                    'instagram_basic',
-                    'instagram_content_publish',
-                    'instagram_manage_comments',
-                    'instagram_manage_messages',
-                    'pages_show_list',
-                    'pages_read_engagement',
-                ],
+                missingPermissions: INSTAGRAM_CONTENT_SCOPES,
                 lastCheckedAt: Date.now(),
             };
         }
@@ -231,14 +231,7 @@ export const auditInstagramConnectionCallable = onCall(
         const expiresAt = typeof token.expiresAt === 'number' ? token.expiresAt : undefined;
         const isExpired = !!expiresAt && expiresAt <= Date.now();
 
-        const requiredScopes = [
-            'instagram_basic',
-            'instagram_content_publish',
-            'instagram_manage_comments',
-            'instagram_manage_messages',
-            'pages_show_list',
-            'pages_read_engagement',
-        ];
+        const requiredScopes = INSTAGRAM_CONTENT_SCOPES;
 
         let activePermissions: string[] = Array.isArray(token.permissions) ? (token.permissions as string[]) : [];
 
@@ -262,8 +255,8 @@ export const auditInstagramConnectionCallable = onCall(
 
         let status: 'HEALTHY' | 'RECONNECT_REQUIRED' | 'MISSING_PERMISSIONS' | 'EXPIRED' = 'HEALTHY';
         if (isExpired) status = 'EXPIRED';
-        else if (missingPermissions.length > 0 && activePermissions.length > 0) status = 'MISSING_PERMISSIONS';
         else if (!token.accessToken) status = 'RECONNECT_REQUIRED';
+        else if (missingPermissions.length > 0) status = 'MISSING_PERMISSIONS';
 
         return {
             status,

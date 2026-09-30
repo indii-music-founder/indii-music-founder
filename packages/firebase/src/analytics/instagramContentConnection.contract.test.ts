@@ -17,6 +17,39 @@ const persistence = source.statements.find(
 );
 
 describe('Instagram content connection persistence contract (structural)', () => {
+    it('keeps health requirements aligned with content OAuth, without optional messaging grants', () => {
+        const readScopeArray = (text: string, name: string): string[] => {
+            const values: string[] = [];
+            const parsed = ts.createSourceFile('scopes.tsx', text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+            const visit = (node: ts.Node): void => {
+                if (ts.isVariableDeclaration(node) && node.name.getText(parsed) === name && node.initializer) {
+                    const initializer = ts.isCallExpression(node.initializer)
+                        && ts.isPropertyAccessExpression(node.initializer.expression)
+                        ? node.initializer.expression.expression : node.initializer;
+                    if (ts.isArrayLiteralExpression(initializer)) {
+                        for (const element of initializer.elements) {
+                            if (ts.isStringLiteral(element)) values.push(element.text);
+                        }
+                    }
+                }
+                ts.forEachChild(node, visit);
+            };
+            visit(parsed);
+            return values.sort();
+        };
+        const backend = readScopeArray(source.text, 'INSTAGRAM_CONTENT_SCOPES');
+        const login = readFileSync(new URL('../../../renderer/src/services/analytics/InstagramAnalyticsService.ts', import.meta.url), 'utf8');
+        const card = readFileSync(new URL('../../../renderer/src/modules/social/components/InstagramHealthCard.tsx', import.meta.url), 'utf8');
+        expect(backend).toHaveLength(5);
+        expect(backend).toEqual(readScopeArray(login, 'scopes'));
+        expect(backend).toEqual(readScopeArray(card, 'requiredScopes'));
+        expect(backend).not.toContain('instagram_manage_messages');
+        expect(backend).not.toContain('instagram_manage_comments');
+        expect(source.text).toContain('missingPermissions: INSTAGRAM_CONTENT_SCOPES');
+        expect(source.text).toContain('const requiredScopes = INSTAGRAM_CONTENT_SCOPES');
+        expect(source.text).not.toContain('missingPermissions.length > 0 && activePermissions.length > 0');
+    });
+
     it('only persists the authorized token, without requiring a messaging subscription', () => {
         expect(persistence?.body).toBeDefined();
         const statements = persistence!.body!.statements;
