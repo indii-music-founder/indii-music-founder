@@ -254,30 +254,15 @@
       "body-parser": "2.3.0"
     }
   },
+
+  "license": "SEE LICENSE IN LICENSE",
+
   "lint-staged": {
-    "package.json": [
-      "node --import tsx scripts/production-gate.ts --dev"
-    ],
-    "packages/renderer/src/**/*.{ts,tsx}": [
-      "eslint"
-    ],
-    "packages/main/src/**/*.{ts,tsx}": [
-      "eslint"
-    ],
-    "packages/shared/src/**/*.{ts,tsx}": [
-      "eslint"
-    ],
-    "packages/firebase/src/**/*.{ts,tsx}": [
-      "eslint"
-    ],
-    "packages/landing/src/**/*.{ts,tsx}": [
-      "eslint"
-    ],
-    "packages/mcp-server-local/src/**/*.{ts,tsx}": [
-      "eslint"
+    "*.{js,ts,tsx}": [
+      "eslint --fix",
+      "git add"
     ]
   },
-  "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
     "url": "https://github.com/indii-music-founder/indii-music-founder.git"

@@ -203,3 +203,4 @@ packages/firebase/test_function.js
 packages/firebase/test_entitlement.ts
 packages/firebase/diag-*.js
 packages/firebase/close-*.js
+quarantine/
