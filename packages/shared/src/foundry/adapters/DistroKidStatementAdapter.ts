@@ -8,6 +8,14 @@ import { DecimalMoney } from '../DecimalMoney.js';
 import { parseMoneyAmount } from '../parseMoney.js';
 
 export class DistroKidStatementAdapter {
+  // Static helpers for external callers
+  static canParse(content: string): boolean {
+    return new DistroKidStatementAdapter().canParse(content);
+  }
+
+  static parse(rawContent: string, _options: any = {}): NormalizedStatementReport {
+    return new DistroKidStatementAdapter().parse(rawContent, _options);
+  }
   readonly formatId = 'distrokid_statement';
   readonly formatName = 'DistroKid TSV Sales Statement';
   readonly version = '2026.1';

@@ -8,6 +8,14 @@ import { DecimalMoney } from '../DecimalMoney.js';
 import { parseMoneyAmount } from '../parseMoney.js';
 
 export class TuneCoreStatementAdapter {
+  // Static helpers for external callers
+  static canParse(content: string): boolean {
+    return new TuneCoreStatementAdapter().canParse(content);
+  }
+
+  static parse(rawContent: string, _options: any = {}): NormalizedStatementReport {
+    return new TuneCoreStatementAdapter().parse(rawContent, _options);
+  }
   readonly formatId = 'tunecore_statement';
   readonly formatName = 'TuneCore CSV Sales Statement';
   readonly version = '2026.1';
