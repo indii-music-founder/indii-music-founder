@@ -13,7 +13,7 @@ export class DistroKidStatementAdapter {
     return new DistroKidStatementAdapter().canParse(content);
   }
 
-  static parse(rawContent: string, _options: any = {}): NormalizedStatementReport {
+  static parse(rawContent: string, _options: ParseOptions = {}): NormalizedStatementReport {
     return new DistroKidStatementAdapter().parse(rawContent, _options);
   }
   readonly formatId = 'distrokid_statement';

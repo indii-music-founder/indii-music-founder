@@ -13,7 +13,7 @@ export class TuneCoreStatementAdapter {
     return new TuneCoreStatementAdapter().canParse(content);
   }
 
-  static parse(rawContent: string, _options: any = {}): NormalizedStatementReport {
+  static parse(rawContent: string, _options: ParseOptions = {}): NormalizedStatementReport {
     return new TuneCoreStatementAdapter().parse(rawContent, _options);
   }
   readonly formatId = 'tunecore_statement';

@@ -20,9 +20,15 @@
     },
     "exclude": [
         "src/__tests__",
-        "src/**/*.test.ts"
+        "src/**/*.test.ts",
+        "src/**/*.test.*.ts"
     ],
     "include": [
         "src"
+    ],
+    "references": [
+        {
+            "path": "../shared"
+        }
     ]
 }

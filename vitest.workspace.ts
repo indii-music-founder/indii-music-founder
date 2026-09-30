@@ -62,6 +62,7 @@ export default [
       environment: 'node',
       include: [
         'packages/firebase/src/**/*.{test,spec}.{ts,tsx}',
+        'packages/firebase/src/observability/__tests__/GcpErrorReporter.test.backup.ts',
       ],
       exclude: ['dist/**', 'e2e/**', 'node_modules/**', 'packages/firebase/src/test/security/**'],
       setupFiles: [path.resolve(import.meta.dirname, './packages/firebase/src/test/setup.ts')],
