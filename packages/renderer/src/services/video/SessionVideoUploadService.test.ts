@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
     callable: vi.fn(),
     httpsCallable: vi.fn(),
+    getAppCheck: vi.fn(() => ({ name: 'app-check' })),
+    getToken: vi.fn().mockResolvedValue({ token: 'test-app-check-token' }),
     fetch: vi.fn(),
 }));
 
 vi.mock('firebase/functions', () => ({ httpsCallable: mocks.httpsCallable }));
-vi.mock('../firebase', () => ({ functions: { region: 'us-central1' } }));
+vi.mock('firebase/app-check', () => ({ getToken: mocks.getToken }));
+vi.mock('../firebase', () => ({ functions: { region: 'us-central1' }, getAppCheck: mocks.getAppCheck }));
 
 import { SessionVideoUploadService, normalizeSessionVideoFile } from './SessionVideoUploadService';
 
@@ -66,12 +69,39 @@ function response(byteSize: number) {
 describe('SessionVideoUploadService (legacy structural-only; real transfer unverified)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.getAppCheck.mockReturnValue({ name: 'app-check' });
+        mocks.getToken.mockResolvedValue({ token: 'test-app-check-token' });
         vi.stubGlobal('fetch', mocks.fetch);
         mocks.httpsCallable.mockImplementation((_functions, name) => {
             if (name === 'createVideoSession') return mocks.callable;
             if (name === 'cancelVideoSession') return vi.fn().mockResolvedValue({ data: { ok: true } });
             throw new Error(`unexpected callable ${name}`);
         });
+    });
+
+    it('does not create a server session if App Check has not initialized', async () => {
+        const file = new File(['test'], 'session.mp4', { type: 'video/mp4' });
+        mocks.getAppCheck.mockReturnValue(null);
+
+        await expect(SessionVideoUploadService.start(file, {
+            organizationId: 'org-1',
+            projectId: 'project-1',
+            idempotencyKey: 'session-upload-idempotency-1',
+        })).rejects.toThrow(/App Check is not initialized/i);
+        expect(mocks.getToken).not.toHaveBeenCalled();
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('does not create a server session when App Check cannot provide a token', async () => {
+        const file = new File(['test'], 'session.mp4', { type: 'video/mp4' });
+        mocks.getToken.mockResolvedValue({ token: '' });
+
+        await expect(SessionVideoUploadService.start(file, {
+            organizationId: 'org-1',
+            projectId: 'project-1',
+            idempotencyKey: 'session-upload-idempotency-1',
+        })).rejects.toThrow(/did not return a token/i);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 
     it('resumes at the server-confirmed byte offset instead of replacing uploaded bytes', async () => {

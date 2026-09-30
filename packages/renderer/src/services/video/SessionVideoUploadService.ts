@@ -1,6 +1,7 @@
 import { VideoSessionSchema, type VideoSession } from '@indii/shared';
+import { getToken } from 'firebase/app-check';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../firebase';
+import { functions, getAppCheck } from '../firebase';
 
 const MAX_SESSION_BYTES = 20 * 1024 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set([
@@ -146,6 +147,20 @@ export class SessionVideoUploadService {
     ): Promise<SessionUploadHandle> {
         file = normalizeSessionVideoFile(file);
         validateFile(file);
+
+        // The create-session callable is App Check protected in production.
+        // Warm and validate the attestation first so a missing/failed provider
+        // is reported at the point of failure instead of appearing later as a
+        // generic server rejection (or creating a session that cannot upload).
+        const appCheck = getAppCheck();
+        if (!appCheck) {
+            throw new Error('Video upload authorization is unavailable because Firebase App Check is not initialized.');
+        }
+        const appCheckToken = await getToken(appCheck);
+        if (!appCheckToken.token) {
+            throw new Error('Video upload authorization is unavailable because Firebase App Check did not return a token.');
+        }
+
         const createSession = httpsCallable<
             CreateSessionUploadRequest & { expectedMimeType: string; expectedByteSize: number },
             unknown
