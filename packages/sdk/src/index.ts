@@ -27,4 +27,5 @@ export type {
   Webhook,
   CreateWebhook,
   AnalyticsEvent,
+  CatalogJsonLd,
 } from '@indii/shared';

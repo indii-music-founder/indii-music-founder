@@ -82,6 +82,46 @@ describe('indiiClient', () => {
     });
   });
 
+  describe('Semantic catalog methods', () => {
+    const entity = {
+      '@context': 'https://schema.org',
+      '@type': 'MusicRecording',
+      '@id': 'https://indii.music/ns/catalog/v1#track-1',
+      name: 'Midnight Motorway',
+      identifier: 'USABC7123456',
+      additionalProperty: [],
+      'indii:relations': [],
+    };
+
+    it('reads a validated public entity and URL-encodes its id', async () => {
+      let calledUrl = '';
+      vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+        calledUrl = String(url);
+        return { ok: true, status: 200, json: async () => ({ data: entity }) } as unknown as Response;
+      }));
+      await expect(client.getCatalogEntity('track/one')).resolves.toEqual(entity);
+      expect(calledUrl).toContain('/catalog/v1?entityId=track%2Fone');
+    });
+
+    it('reads a cursor-paged artist feed and validates every JSON-LD node', async () => {
+      let calledUrl = '';
+      vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+        calledUrl = String(url);
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ data: { '@context': 'https://schema.org', '@graph': [entity], hasMore: true, nextCursor: 'track-1' } }),
+        } as unknown as Response;
+      }));
+      await expect(client.getArtistCatalogFeed('artist-1', { limit: 10, cursor: 'track-0' })).resolves.toMatchObject({
+        '@graph': [entity], hasMore: true, nextCursor: 'track-1',
+      });
+      expect(calledUrl).toContain('artistId=artist-1');
+      expect(calledUrl).toContain('limit=10');
+      expect(calledUrl).toContain('cursor=track-0');
+    });
+  });
+
   describe('Account Methods', () => {
     it('should have getProfile method', () => {
       expect(typeof client.getProfile).toBe('function');

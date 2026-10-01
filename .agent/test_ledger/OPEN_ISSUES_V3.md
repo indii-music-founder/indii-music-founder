@@ -3363,3 +3363,10 @@ per the task closeout. The stale structural Road Manager spec was reconciled
 in `47630d90b`. Those two earlier outstanding items are delivered; live
 `search_places`/`get_distance_matrix` provider results and route
 persistence/deletion are still unverified. Keep the issue open for those gates.
+
+### ISSUE-1452 progress update — 2026-10-01
+
+- **Status:** 🟡 PARTIAL
+- **Delivered:** `catalogSemanticApi` now serves bounded cursor-paged artist feeds from the owner-tagged public projection, alongside single-entity retrieval. Public mirror rows are validated against the shared semantic-node schema before conversion to JSON-LD; malformed stored rows fail instead of receiving guessed values. The SDK now exposes schema-validated entity and feed readers.
+- **Validation:** Focused Firebase semantic projection tests cover owner scoping, page bounds/cursors, private-row exclusion, and invalid projections. SDK tests cover URL encoding, feed cursors, and response validation.
+- **Still open:** `projectSemanticNode` still has no production caller; no authoritative receipt/runbook projection or owner visibility callable exists. Do not expose the feed as a complete catalog or advance the master FSM to `DISTRIBUTION_READY` until those prerequisites are implemented and verified.

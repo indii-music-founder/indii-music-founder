@@ -10,8 +10,13 @@
  */
 
 import type { Track, CreateTrack, UpdateTrack, Distribution, CreateDistribution, AnalyticsEvent } from '@indii/shared';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { TrackSchema, CreateTrackSchema, UpdateTrackSchema, DistributionSchema, CreateDistributionSchema } from '@indii/shared';
+import {
+  CatalogJsonLdSchema,
+  CreateTrackSchema,
+  UpdateTrackSchema,
+  CreateDistributionSchema,
+  type CatalogJsonLd,
+} from '@indii/shared';
 
 export interface ClientConfig {
   apiUrl: string;
@@ -163,6 +168,39 @@ export class indiiClient {
     if (params?.limit) query.append('limit', String(params.limit));
     if (params?.offset) query.append('offset', String(params.offset));
     return this.request<AnalyticsEvent[]>('GET', `/analytics/events?${query.toString()}`);
+  }
+
+  /** Read a public semantic catalog entity. Only the server's public projection is returned. */
+  async getCatalogEntity(entityId: string): Promise<CatalogJsonLd> {
+    const query = new URLSearchParams({ entityId });
+    const value = await this.request<unknown>('GET', `/catalog/v1?${query.toString()}`);
+    return CatalogJsonLdSchema.parse(value);
+  }
+
+  /** Read a bounded page from an artist's public semantic catalog feed. */
+  async getArtistCatalogFeed(
+    artistId: string,
+    params: { limit?: number; cursor?: string } = {},
+  ): Promise<{ '@context': string; '@graph': CatalogJsonLd[]; hasMore: boolean; nextCursor: string | null }> {
+    const query = new URLSearchParams({ artistId });
+    if (params.limit !== undefined) query.set('limit', String(params.limit));
+    if (params.cursor) query.set('cursor', params.cursor);
+    const value = await this.request<unknown>('GET', `/catalog/v1?${query.toString()}`);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new Error('Invalid semantic catalog feed response.');
+    }
+    const feed = value as Record<string, unknown>;
+    if (feed['@context'] !== 'https://schema.org' || !Array.isArray(feed['@graph']) ||
+      typeof feed['hasMore'] !== 'boolean' ||
+      !(feed['nextCursor'] === null || typeof feed['nextCursor'] === 'string')) {
+      throw new Error('Invalid semantic catalog feed response.');
+    }
+    return {
+      '@context': 'https://schema.org',
+      '@graph': feed['@graph'].map(item => CatalogJsonLdSchema.parse(item)),
+      hasMore: feed['hasMore'],
+      nextCursor: feed['nextCursor'],
+    };
   }
 
   // Account & User

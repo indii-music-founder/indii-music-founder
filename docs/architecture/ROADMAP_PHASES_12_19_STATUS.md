@@ -23,11 +23,11 @@ succeeded. Those delivery facts do not close the integration gaps below.
 
 - **Post-mastering administrative engine:** P1–P5 code landed, but
   `projectSemanticNode` has no non-test caller. The runbook does not regenerate
-  the catalog projection; the public endpoint implements `?entityId=` rather
-  than the planned entity/artist-feed routes; the SDK has no semantic catalog
-  methods. The runbook explicitly defers `DISTRIBUTION_READY` integration to a
-  later phase. These are open integration work, not a completed semantic
-  surface (ISSUE-1452).
+  catalog projections. The public endpoint now supports the planned bounded
+  public artist feed as well as single public entity retrieval; the SDK exposes
+  validated readers for both. Projection triggers, owner visibility controls,
+  verified-input lifecycle, and `DISTRIBUTION_READY` integration remain open
+  (ISSUE-1452).
 - **Long-video upload:** App Check fix #349 and production release landed.
   A fresh inspection of the existing genuine signed-in
   `https://app.indii.music/creative` tab showed Long recording / Choose phone

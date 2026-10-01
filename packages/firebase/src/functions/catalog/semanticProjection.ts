@@ -2,8 +2,11 @@ import { onRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import {
     derivePreclearance,
+    SemanticCatalogNodeSchema,
     toCatalogJsonLd,
+    CatalogJsonLdSchema,
     type SemanticCatalogNode,
+    type CatalogJsonLd,
 } from '@indii/shared';
 
 /**
@@ -131,43 +134,86 @@ export const catalogSemanticApi = onRequest(
             response.status(405).json({ error: 'GET only' });
             return;
         }
-        const entityId = String(request.query['entityId'] ?? '').trim();
-        if (!entityId || entityId.length > 160) {
-            response.status(400).json({ error: 'entityId query parameter is required.' });
+        const entityId = typeof request.query['entityId'] === 'string' ? request.query['entityId'].trim() : '';
+        const ownerId = typeof request.query['artistId'] === 'string' ? request.query['artistId'].trim() : '';
+        const hasEntityId = typeof request.query['entityId'] === 'string' && request.query['entityId'].trim().length > 0;
+        const requestedLimit = Number(request.query['limit'] ?? 20);
+        const limit = Number.isFinite(requestedLimit) ? Math.min(50, Math.max(1, Math.floor(requestedLimit))) : 20;
+        const rawCursor = typeof request.query['cursor'] === 'string' ? request.query['cursor'].trim() : '';
+
+        if (hasEntityId && (typeof request.query['artistId'] === 'string' || typeof request.query['cursor'] === 'string')) {
+            response.status(400).json({ error: 'Use either entityId or artistId feed parameters, not both.' });
             return;
         }
-        const snapshot = await getDb().collection('public_catalog').doc(entityId).get();
-        if (!snapshot.exists) {
-            response.setHeader('Cache-Control', 'public, max-age=60');
-            response.status(404).json({ error: 'No public catalog entity with this id.' });
+        if (entityId) {
+            if (entityId.length > 160) {
+                response.status(400).json({ error: 'entityId must be at most 160 characters.' });
+                return;
+            }
+            const snapshot = await getDb().collection('public_catalog').doc(entityId).get();
+            if (!snapshot.exists) {
+                response.setHeader('Cache-Control', 'public, max-age=60');
+                response.status(404).json({ error: 'No public catalog entity with this id.' });
+                return;
+            }
+            const jsonLd = publicProjectionToJsonLd(entityId, snapshot.data() ?? {});
+            response.setHeader('Content-Type', 'application/ld+json');
+            response.setHeader('Cache-Control', 'public, max-age=300');
+            response.status(200).json(jsonLd);
             return;
         }
-        const data = snapshot.data() ?? {};
-        const node = {
-            entityId: String(data['entityId'] ?? entityId),
-            ownerId: String(data['ownerId'] ?? ''),
-            schemaVersion: 'semantic-catalog-node.v1' as const,
-            kind: (data['kind'] ?? 'track') as SemanticCatalogNode['kind'],
-            displayName: String(data['displayName'] ?? 'untitled'),
-            moodTags: Array.isArray(data['moodTags']) ? data['moodTags'] as string[] : [],
-            instrumentalAvailable: Boolean(data['instrumentalAvailable']),
-            stemsAvailable: Boolean(data['stemsAvailable']),
-            master100PercentPrecleared: Boolean(data['master100PercentPrecleared']),
-            publishing100PercentPrecleared: Boolean(data['publishing100PercentPrecleared']),
-            syncContactEndpoint: (data['syncContactEndpoint'] ?? null) as string | null,
-            territoryRestrictions: Array.isArray(data['territoryRestrictions']) ? data['territoryRestrictions'] as string[] : [],
-            relations: Array.isArray(data['relations']) ? data['relations'] as SemanticCatalogNode['relations'] : [],
-            visibility: 'public' as const,
-            generatedAt: typeof data['generatedAt'] === 'string' ? data['generatedAt'] : new Date().toISOString(),
-            ...(typeof data['isrc'] === 'string' && data['isrc'] ? { isrc: data['isrc'] } : {}),
-            ...(typeof data['iswc'] === 'string' && data['iswc'] ? { iswc: data['iswc'] } : {}),
-            ...(typeof data['upc'] === 'string' && data['upc'] ? { upc: data['upc'] } : {}),
-            ...(typeof data['bpm'] === 'number' && data['bpm'] > 0 ? { bpm: data['bpm'] } : {}),
-            ...(typeof data['key'] === 'string' && data['key'] ? { key: data['key'] } : {}),
-        };
-        const jsonLd = toCatalogJsonLd(node);
+
+        if (!ownerId || ownerId.length > 128 || (rawCursor && rawCursor.length > 160)) {
+            response.status(400).json({ error: 'artistId is required for a public catalog feed; cursor must be a document id.' });
+            return;
+        }
+        if (!/^[A-Za-z0-9_-]+$/.test(ownerId) || (rawCursor && !/^[A-Za-z0-9_-]+$/.test(rawCursor))) {
+            response.status(400).json({ error: 'artistId and cursor must use document-id characters only.' });
+            return;
+        }
+        let query = getDb().collection('public_catalog')
+            .where('ownerId', '==', ownerId)
+            .orderBy('__name__')
+            .limit(limit + 1);
+        if (rawCursor) query = query.startAfter(rawCursor);
+        const page = await query.get();
+        const documents = page.docs.slice(0, limit);
+        const graph: CatalogJsonLd[] = documents.map(document => publicProjectionToJsonLd(document.id, document.data()));
+        const hasMore = page.docs.length > limit;
         response.setHeader('Content-Type', 'application/ld+json');
-        response.setHeader('Cache-Control', 'public, max-age=300');
-        response.status(200).json(jsonLd);
+        response.setHeader('Cache-Control', 'public, max-age=60');
+        response.status(200).json({
+            '@context': 'https://schema.org',
+            '@graph': graph,
+            hasMore,
+            nextCursor: hasMore ? documents[documents.length - 1]?.id ?? null : null,
+        });
     },
 );
+
+function publicProjectionToJsonLd(entityId: string, data: Record<string, unknown>): CatalogJsonLd {
+    const candidate = {
+        entityId: String(data['entityId'] ?? entityId),
+        ownerId: String(data['ownerId'] ?? ''),
+        schemaVersion: 'semantic-catalog-node.v1' as const,
+        kind: data['kind'],
+        displayName: data['displayName'],
+        moodTags: data['moodTags'],
+        instrumentalAvailable: data['instrumentalAvailable'],
+        stemsAvailable: data['stemsAvailable'],
+        master100PercentPrecleared: data['master100PercentPrecleared'],
+        publishing100PercentPrecleared: data['publishing100PercentPrecleared'],
+        syncContactEndpoint: data['syncContactEndpoint'] ?? null,
+        territoryRestrictions: data['territoryRestrictions'],
+        relations: data['relations'],
+        visibility: 'public' as const,
+        generatedAt: data['generatedAt'],
+        ...(typeof data['isrc'] === 'string' && data['isrc'] ? { isrc: data['isrc'] } : {}),
+        ...(typeof data['iswc'] === 'string' && data['iswc'] ? { iswc: data['iswc'] } : {}),
+        ...(typeof data['upc'] === 'string' && data['upc'] ? { upc: data['upc'] } : {}),
+        ...(typeof data['bpm'] === 'number' ? { bpm: data['bpm'] } : {}),
+        ...(typeof data['key'] === 'string' && data['key'] ? { key: data['key'] } : {}),
+    };
+    const node = SemanticCatalogNodeSchema.parse(candidate);
+    return CatalogJsonLdSchema.parse(toCatalogJsonLd(node));
+}

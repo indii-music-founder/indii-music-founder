@@ -15,13 +15,30 @@ const docRef = (path: string) => ({
     delete: async () => { deletes.push(path); store.delete(path); },
     collection: (sub: string) => colRef(`${path}/${sub}`),
 });
-const colRef = (path: string) => ({
-    doc: (id: string) => docRef(`${path}/${id}`),
-    collection: (sub: string) => colRef(`${path}/${sub}`),
-    where: () => colRef(path),
-    limit: () => colRef(path),
-    get: async () => ({ docs: [], empty: true, forEach: () => {} }),
-});
+const colRef = (path: string, state: { ownerId?: string; limit?: number; cursor?: string } = {}) => {
+    const query = {
+        doc: (id: string) => docRef(`${path}/${id}`),
+        collection: (sub: string) => colRef(`${path}/${sub}`),
+        where: (_field: string, _op: string, ownerId: string) => colRef(path, { ...state, ownerId }),
+        orderBy: () => colRef(path, state),
+        limit: (limit: number) => colRef(path, { ...state, limit }),
+        startAfter: (cursor: string) => colRef(path, { ...state, cursor }),
+        get: async () => {
+            const matched = [...store.entries()]
+                .filter(([key, value]) => key.startsWith(`${path}/`) && value.exists)
+                .map(([key, value]) => ({ id: key.slice(path.length + 1), data: () => value.data }))
+                .filter(document => !state.ownerId || document.data()['ownerId'] === state.ownerId)
+                .sort((left, right) => left.id.localeCompare(right.id))
+                .filter(document => !state.cursor || document.id > state.cursor);
+            return {
+                docs: matched.slice(0, state.limit ?? matched.length),
+                empty: matched.length === 0,
+                forEach: (fn: (item: (typeof matched)[number]) => void) => matched.forEach(fn),
+            };
+        },
+    };
+    return query;
+};
 
 vi.mock('firebase-admin', () => ({
     firestore: Object.assign(
@@ -146,5 +163,56 @@ describe('catalogSemanticApi (public JSON-LD endpoint)', () => {
         res = makeRes();
         await (catalogSemanticApi as unknown as (req: unknown, res: unknown) => Promise<void>)({ method: 'GET', query: {} }, res);
         expect(res.statusCode).toBe(400);
+    });
+
+    it('rejects mixed entity and feed selectors and invalid feed cursors', async () => {
+        const mixed = makeRes();
+        await (catalogSemanticApi as unknown as (req: unknown, res: unknown) => Promise<void>)(
+            { method: 'GET', query: { entityId: 'track-1', artistId: 'artist-1' } }, mixed,
+        );
+        expect(mixed.statusCode).toBe(400);
+        const cursor = makeRes();
+        await (catalogSemanticApi as unknown as (req: unknown, res: unknown) => Promise<void>)(
+            { method: 'GET', query: { artistId: 'artist-1', cursor: '/' } }, cursor,
+        );
+        expect(cursor.statusCode).toBe(400);
+    });
+
+    it('serves only an owner-scoped bounded public feed with a continuation cursor', async () => {
+        for (const [entityId, ownerId] of [['track-1', 'artist-1'], ['track-2', 'artist-1'], ['private-1', 'artist-1'], ['other-1', 'artist-2']]) {
+            const node = buildSemanticNode({ ...CLEAN_INPUT, entityId, ownerId, visibility: entityId === 'private-1' ? 'private' : 'public' });
+            await projectSemanticNode(ownerId, node);
+        }
+
+        const first = makeRes();
+        await (catalogSemanticApi as unknown as (req: unknown, res: unknown) => Promise<void>)(
+            { method: 'GET', query: { artistId: 'artist-1', limit: '1' } },
+            first,
+        );
+        expect(first.statusCode).toBe(200);
+        expect((first.body as { '@graph': unknown[] })['@graph']).toHaveLength(1);
+        expect((first.body as { hasMore: boolean }).hasMore).toBe(true);
+        const cursor = (first.body as { nextCursor: string }).nextCursor;
+        expect(cursor).toBe('track-1');
+
+        const second = makeRes();
+        await (catalogSemanticApi as unknown as (req: unknown, res: unknown) => Promise<void>)(
+            { method: 'GET', query: { artistId: 'artist-1', limit: '1', cursor } },
+            second,
+        );
+        expect((second.body as { '@graph': unknown[] })['@graph']).toHaveLength(1);
+        expect((second.body as { '@graph': Array<{ '@id': string }> })['@graph'][0]?.['@id']).toContain('track-2');
+        expect((second.body as { hasMore: boolean }).hasMore).toBe(false);
+    });
+
+    it('caps feed pages and rejects an invalid public projection rather than inventing fields', async () => {
+        const invalid = { ...buildSemanticNode(CLEAN_INPUT), visibility: 'public' } as Record<string, unknown>;
+        invalid['displayName'] = '';
+        store.set('public_catalog/bad', { exists: true, data: invalid });
+        const res = makeRes();
+        await expect((catalogSemanticApi as unknown as (req: unknown, res: unknown) => Promise<void>)(
+            { method: 'GET', query: { artistId: 'user-1', limit: '1000' } },
+            res,
+        )).rejects.toThrow();
     });
 });
