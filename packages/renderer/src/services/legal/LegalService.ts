@@ -12,10 +12,20 @@ import {
     serverTimestamp,
     updateDoc
 } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { useStore } from '@/core/store';
+import { functions } from '@/services/firebase';
 import { LegalContract, ContractStatus } from '@/modules/legal/types';
 import { rightsIntelligenceService } from '@/services/rights/RightsIntelligenceService';
-import type { ClaimsInboxProjection, ClaimsInboxInput } from '@indii/shared';
+import {
+    CanonicalClaimsInboxSnapshotSchema,
+    CanonicalDeclaredClaimResultSchema,
+    type ClaimsInboxProjection,
+    type ClaimsInboxInput,
+    type CanonicalClaimsInboxSnapshot,
+    type CanonicalDeclaredClaimResult,
+    type RightsClaim,
+} from '@indii/shared';
 
 
 export interface ContractAnalysis {
@@ -180,5 +190,32 @@ export class LegalService {
             evaluatedAt,
         });
     }
-}
 
+    static async loadCanonicalClaimsInbox(): Promise<CanonicalClaimsInboxSnapshot> {
+        const userId = useStore.getState().userProfile?.id;
+        if (!userId) throw new AppException(AppErrorCode.AUTH_ERROR, 'Sign in to load the claims inbox.');
+        if (!functions) throw new Error('Claims inbox service is unavailable.');
+        const read = httpsCallable<{ scope: { kind: 'user'; id: string } }, unknown>(functions, 'getCanonicalClaimsInbox');
+        const response = await read({ scope: { kind: 'user', id: userId } });
+        return CanonicalClaimsInboxSnapshotSchema.parse(response.data);
+    }
+
+    static async declareCanonicalRightsClaim(input: {
+        targetEntityId: string;
+        claimantEntityId?: string;
+        type: RightsClaim['type'];
+        territoryCodes: string[];
+        evidence?: RightsClaim['provenance']['evidence'];
+        note?: string;
+    }): Promise<CanonicalDeclaredClaimResult> {
+        const userId = useStore.getState().userProfile?.id;
+        if (!userId) throw new AppException(AppErrorCode.AUTH_ERROR, 'Sign in to record a claim.');
+        if (!functions) throw new Error('Claims inbox service is unavailable.');
+        const create = httpsCallable<typeof input & { scope: { kind: 'user'; id: string } }, unknown>(
+            functions,
+            'declareCanonicalRightsClaim',
+        );
+        const response = await create({ ...input, scope: { kind: 'user', id: userId } });
+        return CanonicalDeclaredClaimResultSchema.parse(response.data);
+    }
+}

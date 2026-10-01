@@ -67,10 +67,11 @@ function fakeFirestore(options: {
                             data: () => ({ ownerId: options.ownerId ?? 'owner-1' }),
                         }),
                     }
-                    : {
-                        create: (value: unknown) => create(path, id, value),
-                    },
+                    : { __path: path, __id: id, create: (value: unknown) => create(path, id, value) },
             };
+        },
+        runTransaction: async (callback: (transaction: { create: (ref: { __path: string; __id: string }, value: unknown) => void }) => Promise<unknown>) => {
+            await callback({ create: (ref, value) => { writes.push({ path: ref.__path, id: ref.__id, value }); } });
         },
     } as unknown as Firestore;
 
@@ -207,6 +208,96 @@ describe('CanonicalMusicCatalogStore', () => {
         });
         expect(stored.provenance.state).toBe('DETECTED');
         expect(stored.status).toBe('ASSERTED');
+    });
+
+    it('reads claims and their events only from the authenticated owner scope', async () => {
+        const claim = {
+            schemaVersion: 'rights-claim.v1',
+            id: 'claim-1',
+            targetEntityId: 'recording-1',
+            type: 'MASTER',
+            status: 'ASSERTED',
+            territoryCodes: ['US'],
+            provenance: { ...provenance, state: 'USER_DECLARED', sourceType: 'USER', sourceId: 'alice-1' },
+            createdAt: '2026-09-25T12:00:00.000Z',
+            updatedAt: '2026-09-25T12:00:00.000Z',
+        };
+        const event = {
+            schemaVersion: 'music-domain-event.v1',
+            eventId: 'claim-received:claim-1',
+            eventType: 'claim.received',
+            subject: { entityId: 'claim-1', entityType: 'rights_claim' },
+            occurredAt: '2026-09-25T12:00:00.000Z',
+            recordedAt: '2026-09-25T12:00:00.000Z',
+            details: { intake: 'owner-declared' },
+            provenance: { ...provenance, state: 'USER_DECLARED', sourceType: 'USER' },
+        };
+        const { firestore, reads } = fakeFirestore({ records: {
+            'users/alice-1/musicCatalogClaims': [{ id: claim.id, value: claim }],
+            'users/alice-1/musicCatalogEvents': [{ id: event.eventId, value: event }],
+        } });
+        const store = createCanonicalMusicCatalogStore(firestore);
+
+        await expect(store.readClaimsInboxInput('alice-1', { kind: 'user', id: 'alice-1' }))
+            .resolves.toMatchObject({ claims: [claim], events: [event], storageTruncated: false });
+        expect(reads).toContain('users/alice-1/musicCatalogClaims');
+        expect(reads).toContain('users/alice-1/musicCatalogEvents');
+        await expect(store.readClaimsInboxInput('alice-1', { kind: 'user', id: 'bob-2' }))
+            .rejects.toMatchObject({ code: 'permission-denied' });
+    });
+
+    it('atomically appends only user-declared ASSERTED claims with a received event', async () => {
+        const { firestore, writes } = fakeFirestore();
+        const store = createCanonicalMusicCatalogStore(firestore);
+        const claim = {
+            schemaVersion: 'rights-claim.v1',
+            id: 'claim:one',
+            targetEntityId: 'recording:one',
+            type: 'MASTER',
+            status: 'ASSERTED',
+            territoryCodes: ['US'],
+            provenance: { ...provenance, state: 'USER_DECLARED', sourceType: 'USER', sourceId: 'alice-1' },
+            createdAt: '2026-09-25T12:00:00.000Z',
+            updatedAt: '2026-09-25T12:00:00.000Z',
+        };
+
+        await store.appendUserDeclaredClaim('alice-1', { kind: 'user', id: 'alice-1' }, claim);
+
+        expect(writes).toHaveLength(2);
+        expect(writes).toEqual(expect.arrayContaining([
+            expect.objectContaining({ path: 'users/alice-1/musicCatalogClaims', id: claim.id, value: claim }),
+            expect.objectContaining({
+                path: 'users/alice-1/musicCatalogEvents',
+                id: `claim-received:${claim.id}`,
+                value: expect.objectContaining({ eventType: 'claim.received', subject: { entityId: claim.id, entityType: 'rights_claim' } }),
+            }),
+        ]));
+    });
+
+    it('rejects reviewed statuses and provenance attributed to another actor', async () => {
+        const { firestore, writes } = fakeFirestore();
+        const store = createCanonicalMusicCatalogStore(firestore);
+        const claim = {
+            schemaVersion: 'rights-claim.v1',
+            id: 'claim:one',
+            targetEntityId: 'recording:one',
+            type: 'MASTER',
+            status: 'ASSERTED',
+            territoryCodes: [],
+            provenance: { ...provenance, state: 'USER_DECLARED', sourceType: 'USER', sourceId: 'alice-1' },
+            createdAt: '2026-09-25T12:00:00.000Z',
+            updatedAt: '2026-09-25T12:00:00.000Z',
+        };
+
+        await expect(store.appendUserDeclaredClaim('alice-1', { kind: 'user', id: 'alice-1' }, {
+            ...claim,
+            status: 'CONFIRMED',
+        })).rejects.toMatchObject({ code: 'invalid-argument' });
+        await expect(store.appendUserDeclaredClaim('alice-1', { kind: 'user', id: 'alice-1' }, {
+            ...claim,
+            provenance: { ...claim.provenance, sourceId: 'another-user' },
+        })).rejects.toMatchObject({ code: 'invalid-argument' });
+        expect(writes).toHaveLength(0);
     });
 
     it('stores external identifiers as values attached to internal entity IDs', async () => {

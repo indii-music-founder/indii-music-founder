@@ -1,5 +1,7 @@
 import {
     CatalogIntelligenceInputSchema,
+    CanonicalClaimsInboxSnapshotSchema,
+    CanonicalDeclaredClaimResultSchema,
     CanonicalMusicEntitySchema,
     MusicDomainEventSchema,
     MusicIdentifierSchema,
@@ -56,6 +58,7 @@ const MAX_SERIALIZED_RECORD_BYTES = 900_000;
 const MAX_CATALOG_ANALYSIS_RECORDS_PER_COLLECTION = 5_000;
 const CATALOG_ANALYSIS_PAGE_SIZE = 10;
 const MAX_CATALOG_ANALYSIS_BYTES = 4_000_000;
+const MAX_CLAIMS_INBOX_RECORDS = 2_000;
 
 function invalidArgument(message: string): never {
     throw new HttpsError('invalid-argument', message);
@@ -105,6 +108,8 @@ export type CanonicalMusicCatalogRecordKind = CatalogCollection;
 
 export interface CanonicalMusicCatalogStore {
     readCatalogIntelligenceInput(callerUid: string, scope: CanonicalMusicCatalogScope): Promise<CatalogIntelligenceInput>;
+    readClaimsInboxInput(callerUid: string, scope: CanonicalMusicCatalogScope): Promise<z.infer<typeof CanonicalClaimsInboxSnapshotSchema>>;
+    appendUserDeclaredClaim(callerUid: string, scope: CanonicalMusicCatalogScope, input: unknown): Promise<z.infer<typeof CanonicalDeclaredClaimResultSchema>>;
     appendEntity(callerUid: string, scope: CanonicalMusicCatalogScope, input: unknown): Promise<CanonicalMusicEntity>;
     appendRelationship(callerUid: string, scope: CanonicalMusicCatalogScope, input: unknown): Promise<MusicRelationship>;
     appendIdentifier(callerUid: string, scope: CanonicalMusicCatalogScope, input: unknown): Promise<MusicIdentifier>;
@@ -241,6 +246,77 @@ export function createCanonicalMusicCatalogStore(
     firestore: Firestore = getFirestore(),
 ): CanonicalMusicCatalogStore {
     return {
+        async readClaimsInboxInput(callerUid, scope) {
+            const authorizedScope = await assertOwnerScope(firestore, callerUid, scope, 'read');
+            const [claimSnapshot, eventSnapshot] = await Promise.all([
+                firestore.collection(scopeCollectionPath(authorizedScope, 'claims'))
+                    .orderBy('updatedAt', 'desc').limit(MAX_CLAIMS_INBOX_RECORDS + 1).get(),
+                firestore.collection(scopeCollectionPath(authorizedScope, 'events'))
+                    .orderBy('recordedAt', 'desc').limit(MAX_CLAIMS_INBOX_RECORDS + 1).get(),
+            ]);
+            const claimDocuments = claimSnapshot.docs.slice(0, MAX_CLAIMS_INBOX_RECORDS);
+            const eventDocuments = eventSnapshot.docs.slice(0, MAX_CLAIMS_INBOX_RECORDS);
+            const claims = claimDocuments.map(document => {
+                const parsed = RightsClaimSchema.safeParse(document.data());
+                if (!parsed.success || parsed.data.id !== document.id) {
+                    throw new HttpsError('data-loss', 'A stored canonical rights claim failed validation.');
+                }
+                return parsed.data;
+            });
+            const events = eventDocuments.map(document => {
+                const parsed = MusicDomainEventSchema.safeParse(document.data());
+                if (!parsed.success || parsed.data.eventId !== document.id) {
+                    throw new HttpsError('data-loss', 'A stored canonical music event failed validation.');
+                }
+                return parsed.data;
+            });
+            return CanonicalClaimsInboxSnapshotSchema.parse({
+                claims,
+                events,
+                evaluatedAt: new Date().toISOString(),
+                storageTruncated: claimSnapshot.docs.length > MAX_CLAIMS_INBOX_RECORDS
+                    || eventSnapshot.docs.length > MAX_CLAIMS_INBOX_RECORDS,
+            });
+        },
+        async appendUserDeclaredClaim(callerUid, scope, input) {
+            const authorizedScope = await assertOwnerScope(firestore, callerUid, scope, 'write');
+            const claim = parse(RightsClaimSchema, input, 'rights claim');
+            if (claim.provenance.state !== 'USER_DECLARED' || claim.provenance.sourceType !== 'USER'
+                || claim.provenance.sourceId !== callerUid || claim.status !== 'ASSERTED') {
+                invalidArgument('Owner-entered claims must remain user-declared assertions pending review.');
+            }
+            assertInternalEntityReference(claim.id);
+            assertInternalEntityReference(claim.targetEntityId);
+            if (claim.claimantEntityId) assertInternalEntityReference(claim.claimantEntityId);
+            const now = new Date().toISOString();
+            const event: MusicDomainEvent = {
+                schemaVersion: 'music-domain-event.v1',
+                eventId: `claim-received:${claim.id}`,
+                eventType: 'claim.received',
+                subject: { entityId: claim.id, entityType: 'rights_claim' },
+                relatedEntities: [],
+                occurredAt: claim.createdAt,
+                recordedAt: now,
+                details: { intake: 'owner-declared', targetEntityId: claim.targetEntityId },
+                provenance: {
+                    state: 'USER_DECLARED',
+                    sourceType: 'USER',
+                    sourceId: callerUid,
+                    observedAt: now,
+                    evidence: [],
+                },
+            };
+            const parsedEvent = parse(MusicDomainEventSchema, event, 'claim event');
+            assertBoundedJson(claim);
+            assertBoundedJson(parsedEvent);
+            const claimRef = firestore.collection(scopeCollectionPath(authorizedScope, 'claims')).doc(claim.id);
+            const eventRef = firestore.collection(scopeCollectionPath(authorizedScope, 'events')).doc(parsedEvent.eventId);
+            await firestore.runTransaction(async transaction => {
+                transaction.create(claimRef, claim as FirebaseFirestore.DocumentData);
+                transaction.create(eventRef, parsedEvent as FirebaseFirestore.DocumentData);
+            });
+            return CanonicalDeclaredClaimResultSchema.parse({ claim, event: parsedEvent });
+        },
         async readCatalogIntelligenceInput(callerUid, scope) {
             const authorizedScope = await assertOwnerScope(firestore, callerUid, scope, 'read');
             const budget: CatalogReadBudget = { bytesRead: 0, truncated: false };

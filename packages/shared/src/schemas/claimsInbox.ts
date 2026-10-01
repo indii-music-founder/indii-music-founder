@@ -52,6 +52,26 @@ export const ClaimsInboxInputSchema = z.object({
 });
 export type ClaimsInboxInput = z.input<typeof ClaimsInboxInputSchema>;
 
+/** Owner-scoped persisted snapshot. A cap flag prevents a limited read from looking complete. */
+export const CanonicalClaimsInboxSnapshotSchema = z.object({
+  claims: z.array(RightsClaimSchema).max(MaximumClaims),
+  events: z.array(MusicDomainEventSchema).max(10_000).default([]),
+  evaluatedAt: IsoDateTimeSchema,
+  storageTruncated: z.boolean(),
+}).strict().superRefine(({ storageTruncated: _storageTruncated, ...input }, ctx) => {
+  const result = ClaimsInboxInputSchema.safeParse(input);
+  if (!result.success) {
+    for (const issue of result.error.issues) ctx.addIssue(issue);
+  }
+});
+export type CanonicalClaimsInboxSnapshot = z.infer<typeof CanonicalClaimsInboxSnapshotSchema>;
+
+export const CanonicalDeclaredClaimResultSchema = z.object({
+  claim: RightsClaimSchema,
+  event: MusicDomainEventSchema,
+}).strict();
+export type CanonicalDeclaredClaimResult = z.infer<typeof CanonicalDeclaredClaimResultSchema>;
+
 export const ClaimsInboxReviewReasonSchema = z.enum([
   'CLAIM_RECEIVED',
   'CLAIM_STATUS_CHANGED',

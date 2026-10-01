@@ -3348,6 +3348,14 @@ PRs. Full phase/product acceptance is not established by those facts. See
 - **Honest fallback:** Keep private/no-public-result and non-ready lifecycle states explicit until authoritative inputs and authorized opt-in exist.
 - **DO NOT:** Publish private data, infer signature execution from an empty task list, create assumed clearance, or jump to DISTRIBUTION_READY to satisfy the plan.
 
+### ISSUE-1450 progress update — 2026-10-01
+
+- **Status:** 🟡 PARTIAL
+- **Delivered:** Added `getCanonicalClaimsInbox` and `declareCanonicalRightsClaim` callables using the existing App Check, entitlement and request-admission boundary. The server store reads only the authenticated owner scope. Owner intake forces `USER_DECLARED` provenance and `ASSERTED` status, and commits the claim plus its `claim.received` event in one Firestore transaction. The Legal Dashboard now loads persisted claims, shows separate loading/unavailable/empty states, labels the empty state as internal-only, and provides an owner-declared intake form. Bounded reads expose a truncation flag rather than implying the projection is complete.
+- **Validation:** Root typecheck and focused store/callable/renderer/shared tests are recorded with the delivery commit; the focused suite covers the owner scope, forced assertion provenance, atomic receipt event, unavailable source, and persisted-intake UI.
+- **Still open:** No external platform/partner intake is connected. There is no durable human review, status transition, or response record workflow, and genuine-user deployed reload acceptance remains outstanding. An owner declaration is not third-party verification, clearance, or proof of ownership.
+- **Evidence files:** `packages/firebase/src/functions/music/claimsInbox.ts`, `packages/firebase/src/functions/music/canonicalMusicCatalogStore.ts`, `packages/renderer/src/modules/legal/components/ClaimsInboxTab.tsx`, and `packages/shared/src/schemas/claimsInbox.ts`.
+
 ### ISSUE-1448 acceptance correction — 2026-10-01
 
 Distance Matrix was added to the key restrictions and saved in the console
