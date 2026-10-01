@@ -73,7 +73,7 @@ export const UniversalTools = {
                             connected: true,
                             service: targetService,
                             hasToken: !!(data.accessToken || data.token),
-                            permissions: data.permissions || ['instagram_basic', 'instagram_content_publish', 'instagram_manage_comments', 'instagram_manage_messages'],
+                            permissions: Array.isArray(data.permissions) ? data.permissions : [],
                             username: data.username || data.instagramUsername,
                             igUserId: data.igUserId,
                         }

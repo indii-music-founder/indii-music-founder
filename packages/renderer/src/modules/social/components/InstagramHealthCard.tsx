@@ -47,8 +47,7 @@ export const InstagramHealthCard: React.FC<InstagramHealthCardProps> = ({ onConn
     const requiredScopes = [
         'instagram_basic',
         'instagram_content_publish',
-        'instagram_manage_comments',
-        'instagram_manage_messages',
+        'instagram_manage_insights',
         'pages_show_list',
         'pages_read_engagement',
     ];
@@ -67,7 +66,7 @@ export const InstagramHealthCard: React.FC<InstagramHealthCardProps> = ({ onConn
                                 <span className="text-xs font-normal text-rose-400">@{audit.instagramUsername}</span>
                             )}
                         </h3>
-                        <p className="text-xs text-zinc-400">v23.0 Graph API & Messenger Automation</p>
+                        <p className="text-xs text-zinc-400">Content & analytics connection · messaging requires separate authorization</p>
                     </div>
                 </div>
 
