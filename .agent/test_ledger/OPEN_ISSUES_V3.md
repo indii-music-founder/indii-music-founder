@@ -3304,3 +3304,54 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 - **Evidence (ISSUE-1449):** `e2e/boardroom-swarm.spec.ts:6` — real history and explicit service-error rejection; `e2e/boardroom-swarm.spec.ts:84` — actual request observation; `e2e/boardroom-swarm.spec.ts:95` — asset payload assertions; `e2e/boardroom-swarm.spec.ts:116` — follow-up request/context assertions (blocked before this step).
 - **Verification (ISSUE-1449):** Original command on `eba4da2d6` reproduced 1 passed / 3 timed out. After correction, `npx playwright test e2e/boardroom-swarm.spec.ts --project=chromium --timeout=30000` reports 1 passed / 3 failed with the specific response `Error: AI stream ended before billing settlement completed.` The asset request assertions passed before that failure; multi-agent completion and cross-specialist continuity remain blocked. `npm run typecheck` and `npm run lint` passed. Local `http://localhost:4242`, simulated auth from the existing fixture, simulated pro entitlement; no genuine account or real-user/persistence proof.
 - **Blocker evidence (ISSUE-1449):** `e2e/fixtures/auth.ts:291` constructs an SSE body containing only `{text,functionCalls}`; `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts:542` requires the backend `complete:true` event and `:575` rejects EOF without it. The spec retains the real client rejection. Adding fabricated billing success or weakening this production guard would hide the boundary failure; neither was done. Firestore also rejects missing-project paths in this checkout and persistence remains unverified.
+
+
+## Completion audit — 2026-10-01 (started work since 2026-09-17)
+
+The audit reviewed the history of 382 reachable commits in the date window,
+recent task closeouts, closed issue acceptance notes and selected current
+source wiring. It is not a line-by-line review of every changed file. Main at
+`4ee4136f7` is synchronized and its deployment CI is green; GitHub has no open
+PRs. Full phase/product acceptance is not established by those facts. See
+`docs/architecture/ROADMAP_PHASES_12_19_STATUS.md` for the reconciled evidence.
+
+### ISSUE-1450: Claims Inbox has no persisted claim source and presents missing input as a clean catalog
+
+- **Status:** 🔴 OPEN (2026-10-01)
+- **Severity:** 🔴 HIGH
+- **Module:** Legal / Phase 12 operational gate
+- **Evidence:** `LegalDashboard.tsx` renders `<ClaimsInboxTab />`; `ClaimsInboxTab.tsx` projects `initialClaims || []`. `LegalService.getClaimsInbox` is synchronous projection of caller data. No data is passed by the dashboard, yet the empty UI says the catalog has no overlapping assertions or unresolved external disputes.
+- **Impact:** A missing integration appears to establish an absence of rights disputes.
+- **Expected (acceptance):** Owner-scoped canonical claims/events enter through genuine authorized intake, load in the tab, preserve evidence and review requirements, and survive reload. Missing/unavailable source and a verified empty result must be distinct. No ownership, clearance or external response is inferred.
+- **Honest fallback:** Show unavailable/unverified claims data until authoritative intake/read contracts exist; do not assert a clean catalog.
+- **DO NOT:** Seed claims, treat an omitted prop as a complete empty catalog, or fabricate resolved rights.
+
+### ISSUE-1451: Workflow execution client writes conflict with server-authoritative rules
+
+- **Status:** 🔴 OPEN (2026-10-01)
+- **Severity:** 🔴 HIGH
+- **Module:** Agent orchestration / Phase 14 history
+- **Evidence:** `WorkflowStateService.createExecution` calls client `FirestoreService.set`; cancel/execute/advance/skip/fail methods use client transactions. `packages/firebase/firestore.rules:513` permits owner reads and denies all writes to that collection. `OrchestrationService.executeWorkflowWithStatus` calls this creation path. `workflowOrchestrator` is a document trigger, not an authenticated creation callable.
+- **Impact:** Persisted orchestration cannot create or advance its records under the intended deployed rule; prediction completion evidence is not operationally established.
+- **Expected (acceptance):** Authenticated, owner-scoped backend creation and bounded human-action transitions; backend-owned completion evidence and idempotency; renderer uses those contracts; genuine execution/resume/reload demonstrates persisted results. Coordinate renderer and backend execution so a step cannot execute twice.
+- **Honest fallback:** Explicit unavailable execution state while keeping history owner-readable and server-write-only.
+- **DO NOT:** Restore client permission to manufacture completion, accept arbitrary client success reports as authoritative, bypass auth or simulate persisted history.
+
+### ISSUE-1452: Post-mastering runbook and semantic catalog remain unconnected
+
+- **Status:** 🟡 PARTIAL (2026-10-01)
+- **Severity:** 🔴 HIGH
+- **Module:** Post-mastering admin engine P4/P5 / semantic catalog / SDK
+- **Evidence:** `projectSemanticNode` in `functions/catalog/semanticProjection.ts` has no production callers. `masterIngestionRunbook.ts` does not project catalog nodes and explicitly defers `DISTRIBUTION_READY` to a later phase. The endpoint supports a single `entityId` query, without the planned artist feed; `packages/sdk/src/client.ts` exposes no semantic catalog consumer. P1–P5 commits deliver primitives without these connections.
+- **Impact:** The planned receipt-to-semantic-catalog consumer path cannot be established from current wiring.
+- **Expected (acceptance):** Idempotent receipt/runbook projection from verified canonical inputs; authenticated owner visibility control with private default; public-only entity/feed reads; SDK consumer; approved distribution path advances the FSM only after its deterministic prerequisites. Demonstrate reload/downstream retrieval with a genuine owner and no synthetic rights or signatures.
+- **Honest fallback:** Keep private/no-public-result and non-ready lifecycle states explicit until authoritative inputs and authorized opt-in exist.
+- **DO NOT:** Publish private data, infer signature execution from an empty task list, create assumed clearance, or jump to DISTRIBUTION_READY to satisfy the plan.
+
+### ISSUE-1448 acceptance correction — 2026-10-01
+
+Distance Matrix was added to the key restrictions and saved in the console
+per the task closeout. The stale structural Road Manager spec was reconciled
+in `47630d90b`. Those two earlier outstanding items are delivered; live
+`search_places`/`get_distance_matrix` provider results and route
+persistence/deletion are still unverified. Keep the issue open for those gates.

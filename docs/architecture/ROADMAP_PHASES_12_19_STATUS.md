@@ -1,5 +1,78 @@
 # Canonical Roadmap Engineering Status: Phases 12–19
 
+## Current acceptance audit — 2026-10-01
+
+Audited against `main` at `4ee4136f7100b38b25dc3df9b1d8a89901e5b591`.
+Local and remote main agree; the worktree was clean. All phase PRs below are
+merged and there are no open repository PRs. The exact-SHA deployment workflow
+[36882789774](https://github.com/indii-music-founder/indii-music-founder/actions/runs/36882789774)
+succeeded. Those delivery facts do not close the integration gaps below.
+
+| Phase | Delivered | Remaining acceptance work |
+| --- | --- | --- |
+| 12 | Claims/conflict projection and Legal Dashboard tab (#305; Phase 20). | `LegalDashboard.tsx` renders `<ClaimsInboxTab />` without data. The tab defaults to `[]`; `LegalService.getClaimsInbox` projects supplied inputs rather than loading persisted claims. Its empty-state claim about the user's catalog is unsupported. Durable canonical intake, owner-scoped reads, events and reviewed response persistence remain unconnected. ISSUE-1450. |
+| 13 | Catalog evaluator, owner-scoped canonical snapshot persistence and Registration Center consumer (#304). | No automatic legacy migration; incomplete snapshots remain UNKNOWN/PARTIAL. Genuine-account reload/downstream acceptance is not established by the engineering tests. |
+| 14 | Deterministic artist-scoped predictions and sidebar consumer (#307); explicit owner-read/server-write rule. | The renderer still creates and mutates `users/{uid}/workflowExecutions` directly. The rule denies those writes. A backend trigger can only react after a record exists; it does not supply the missing authorized creation/human-action path. Verified history production remains incomplete. ISSUE-1451. |
+| 15 | Deterministic review pointers on Connected Intelligence results (#308). | No persisted review queue, lease/dispatch or department consumer completion receipts. A review pointer is not automatic cross-department execution. |
+| 16 | RDR-RCC TSV framing/escaping primitives (#310). | Full partner/profile/AVS validation, DPID/licence setup, reviewed field mapping and exchange remain separate gates. No external transmission is authorized by this audit. |
+| 17 | Scoped AI_USE grant contracts and non-authorizing review projection (#311). | No authoritative grant repository integrated with an AI-ingestion execution gate. Every review remains `executionAuthorized: false`; rule changes to workflow history do not complete AI-rights integration. |
+| 18 | Local audio/metadata QC estimates (#312). | General offline operation is not delivered. Approximate local QC must retain its estimate labels. |
+| 19 | Server-owned founder entitlements and subscription-state hardening (#313). | Merged delivery replaces the old pending-PR gate. Genuine-account entitlement/reload acceptance remains unverified here; no entitlement mutation was performed. |
+
+### Other started work reconciled in the same audit
+
+- **Post-mastering administrative engine:** P1–P5 code landed, but
+  `projectSemanticNode` has no non-test caller. The runbook does not regenerate
+  the catalog projection; the public endpoint implements `?entityId=` rather
+  than the planned entity/artist-feed routes; the SDK has no semantic catalog
+  methods. The runbook explicitly defers `DISTRIBUTION_READY` integration to a
+  later phase. These are open integration work, not a completed semantic
+  surface (ISSUE-1452).
+- **Long-video upload:** App Check fix #349 and production release landed.
+  A fresh inspection of the existing genuine signed-in
+  `https://app.indii.music/creative` tab showed Long recording / Choose phone
+  recording, with no file selected. The account was pre-existing, not created
+  in this audit; its previous verification recorded Founding Member, Lifetime,
+  but this audit did not reopen Settings to reconfirm that plan. Original
+  iPhone file selection, non-zero-offset resume, terminal proxy processing,
+  Timeline playback/reload and conditional social draft remain unverified.
+- **Print/upscale:** Browser neural upscale and bleed/CMYK handoff landed in
+  `d9186692a` and `f18555900`. The generic export implementation is separate
+  from every-target production byte inspection, vendor dieline import and
+  PDF/X certification. See the [print handoff plan](../plans/print-ready-image-handoff-2026-09-28.md).
+- **Domain-trained upscaler #329:** synthesis and benchmark harnesses landed;
+  real corpus extraction, hardware benchmark execution and human review did
+  not follow merely from closing the issue. GPU training remains owner-gated.
+  **Tile-refine #325** was explicitly deferred; it is not implemented.
+- **Road Manager ISSUE-1448:** the key restriction change was completed in the
+  console and the structural spec was updated in `47630d90b`. Real provider
+  results and genuine-user route persistence/deletion remain unverified.
+- **Boardroom ISSUE-1449:** assertions were corrected; the existing simulated
+  stream lacks billing completion, yielding one pass and three explicit
+  failures. Do not fabricate completion or weaken the production guard.
+- **Meta:** content connection code landed; the latest task report records
+  business verification Verified, access verification In review. App Review
+  and broader subscriber permission acceptance remain incomplete. This is a
+  recorded prior observation, not a fresh Meta-console check.
+- **Funding applications:** the 2026-09-28 handoff starts PearX and Detroit
+  Startup Fund applications but supplies no submission receipt. Do not label
+  applications submitted from a prepared dossier or closed engineering PR.
+  Final consequential submission still needs founder approval.
+
+### Evidence limits
+
+This is a repository/task-history completion audit, not a new customer-path
+acceptance pass. No mocks, seeded data, injected auth, artificial plans,
+external submissions or production data mutations were used in this audit.
+The prior structural suites and CI may establish engineering regression
+coverage; they cannot establish genuine-user acceptance. Missing user actions,
+credentials, external review and explicit spending/legal gates remain visible.
+
+The historical snapshot below explains earlier findings. Its open-PR,
+branch-head and pending-CI statements are historical, not current instructions.
+
+## Historical snapshot — 2026-09-25
+
 Verified 2026-09-25 18:30 UTC. This ledger distinguishes code/tests from
 phase acceptance; an open PR or green CI alone does not complete a phase.
 
