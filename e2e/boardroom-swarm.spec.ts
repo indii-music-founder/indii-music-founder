@@ -1,9 +1,28 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { test } from './fixtures/auth';
+
+// A stopped stream is insufficient: a service error must remain a failure,
+// with its actual message, rather than being counted as a successful response.
+async function assertAgentResponse(page: Page, agentId: string, priorMessageIds: string[] = []) {
+    await expect.poll(async () => page.evaluate(({ agentId, priorMessageIds }) =>
+        window.useStore.getState().agentHistory.some(message =>
+            message.agentId === agentId && message.role === 'model' &&
+            !priorMessageIds.includes(message.id) && message.isStreaming === false
+        ), { agentId, priorMessageIds }), { timeout: 15_000, message: `${agentId} must finish its actual Boardroom response` }).toBe(true);
+    const response = await page.evaluate(({ agentId, priorMessageIds }) =>
+        window.useStore.getState().agentHistory.find(message =>
+            message.agentId === agentId && message.role === 'model' &&
+            !priorMessageIds.includes(message.id) && message.isStreaming === false
+        )!, { agentId, priorMessageIds });
+    expect(response.text, `${agentId} structural coverage blocked by service failure: ${response.text}`).not.toMatch(/^Error:/);
+    expect(response.text.trim()).not.toBe('');
+    await expect(page.locator(`[data-message-id="${response.id}"]`)).toBeVisible();
+    await expect(page.locator(`[data-message-id="${response.id}"] .message-content`)).not.toHaveText(/^\s*$/);
+}
 
 // STRUCTURAL ONLY: the mock-auth fixture and direct store setup below are not
 // customer-path or production evidence.
-test.describe('Boardroom Swarm Protocol E2E', () => {
+test.describe('Boardroom swarm — structural-only', () => {
     test.beforeEach(async ({ authedPage: page }) => {
         // Setup mock environment and auth
         // Relies on `auth.ts` fixture for Gemini API and RAG network mocking.
@@ -33,41 +52,17 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
         await expect(page.getByText('Seat at least one agent on the table to start the discussion.')).toBeVisible();
     });
 
-    test('should dispatch message to multiple seated agents sequentially', async ({ authedPage: page }) => {
-        page.on('console', msg => console.log('BROWSER_LOG:', msg.text()));
-
-        // Seat multiple agents
+    test('should dispatch message to multiple seated agents', async ({ authedPage: page }) => {
+        // Seat multiple agents using the existing structural store seam.
         await page.evaluate(() => {
             window.useStore.setState({ activeAgents: ['marketing', 'finance'] });
         });
 
-        await page.evaluate(() => {
-            window._testInterval = setInterval(() => {
-                console.log('POLL STATE 2:', JSON.stringify(window.useStore.getState().boardroomMessages));
-            }, 1000);
-        });
-        
         await page.fill('[data-testid="main-prompt-input"]', 'How much should we spend on ads?');
         await page.locator('[data-testid="main-prompt-input"]').press('Enter');
 
-        await page.waitForTimeout(1000);
-        await page.evaluate(() => {
-            console.log("BOARDROOM MESSAGES:", JSON.stringify(window.useStore.getState().boardroomMessages));
-            console.log("ACTIVE AGENTS:", window.useStore.getState().activeAgents);
-        });
-
-        // Both agents should finish streaming their responses
-        await page.waitForFunction(() => {
-            const state = window.useStore.getState();
-            const msgs = state.boardroomMessages || [];
-            const hasMarketing = msgs.filter(m => m.agentId === 'marketing' && m.role === 'model');
-            const hasFinance = msgs.filter(m => m.agentId === 'finance' && m.role === 'model');
-            if (hasMarketing.length === 0 || hasFinance.length === 0) return false;
-            return hasMarketing[hasMarketing.length - 1].isStreaming === false && 
-                   hasFinance[hasFinance.length - 1].isStreaming === false;
-        }, { timeout: 30000 });
-        
-        await page.evaluate(() => clearInterval(window._testInterval));
+        await assertAgentResponse(page, 'marketing');
+        await assertAgentResponse(page, 'finance');
     });
 
     test('should include referenced assets in the prompt context', async ({ authedPage: page }) => {
@@ -84,15 +79,23 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
             });
         });
 
+        // Observe the real submitted request; do not infer asset inclusion
+        // from a generic response or replace the existing service fixture.
+        const requestPromise = page.waitForRequest(request =>
+            request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/generateContentStream')
+        );
         await page.fill('[data-testid="main-prompt-input"]', 'Review this asset');
         await page.locator('[data-testid="main-prompt-input"]').press('Enter');
-
-        // For E2E, we assume success if the agent responds without error
-        await page.waitForFunction(() => {
-            const state = window.useStore.getState();
-            const msgs = state.boardroomMessages || [];
-            return msgs.some(m => m.agentId === 'marketing' && m.role === 'model');
-        }, { timeout: 30000 });
+        const payload = (await requestPromise).postDataJSON();
+        const userText = payload.contents
+            .filter((content: { role: string }) => content.role === 'user')
+            .flatMap((content: { parts: { text?: string }[] }) => content.parts)
+            .map((part: { text?: string }) => part.text || '')
+            .join('\n');
+        expect(userText).toContain('Review this asset');
+        expect(userText).toContain('[BOARDROOM REFERENCED ASSETS]');
+        expect(userText).toContain('- Album Cover (image): base64://fake');
+        await assertAgentResponse(page, 'marketing');
     });
 
     test('should maintain memory continuity across different specialist agents', async ({ authedPage: page }) => {
@@ -105,35 +108,25 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
         await page.fill('[data-testid="main-prompt-input"]', "Music Director, let's establish the 'Neon Phantom' vibe. It should be 'Dark Industrial Synth with Neon Green accents'. Commit this to our shared memory.");
         await page.locator('[data-testid="main-prompt-input"]').press('Enter');
 
-        // Wait for Music Director to finish streaming (proving it doesn't hang)
-        await page.waitForFunction(() => {
-            const state = window.useStore.getState();
-            const msgs = state.boardroomMessages || [];
-            const musicMsgs = msgs.filter(m => m.agentId === 'music' && m.role === 'model');
-            if (musicMsgs.length === 0) return false;
-            // It should finish streaming
-            return musicMsgs[musicMsgs.length - 1].isStreaming === false;
-        }, { timeout: 30000 });
-        
-        // 2. Ask Video Director to recall and build upon the context
+        await assertAgentResponse(page, 'music');
+        await assertAgentResponse(page, 'video');
+        const priorMessageIds = await page.evaluate(() => window.useStore.getState().agentHistory.map(message => message.id));
+
+        // 2. Observe the actual follow-up request's prior-turn context.
+        const followUpRequest = page.waitForRequest(request => {
+            if (request.method() !== 'POST' || !new URL(request.url()).pathname.endsWith('/generateContentStream')) return false;
+            return (request.postData() || '').includes('based on that vibe');
+        });
         await page.fill('[data-testid="main-prompt-input"]', "Video Director, based on that vibe, what visual effects should we use?");
         await page.locator('[data-testid="main-prompt-input"]').press('Enter');
 
-        // Wait for Video Director to finish streaming
-        await page.waitForFunction(() => {
-            const state = window.useStore.getState();
-            const msgs = state.boardroomMessages || [];
-            const videoMsgs = msgs.filter(m => m.agentId === 'video' && m.role === 'model');
-            if (videoMsgs.length === 0) return false;
-            return videoMsgs[videoMsgs.length - 1].isStreaming === false;
-        }, { timeout: 30000 });
-
-        // 3. Verify the UI did not hang and a response was generated
-        // We ensure the circuit breaker and memory threshold fixes kept the swarm running
-        const responseLocator = page.locator('[data-agent-id="video"]').getByTestId('agent-message');
-        await expect(responseLocator).toBeVisible({ timeout: 10_000 });
-        const responseText = await responseLocator.innerText();
-        expect(responseText.length).toBeGreaterThan(0);
-        // If the AI is not mocked, it should explicitly mention the dark industrial/neon green theme.
+        const payload = (await followUpRequest).postDataJSON();
+        const submittedText = payload.contents
+            .flatMap((content: { parts: { text?: string }[] }) => content.parts)
+            .map((part: { text?: string }) => part.text || '')
+            .join('\n');
+        expect(submittedText).toContain('Neon Phantom');
+        expect(submittedText).toContain('Dark Industrial Synth with Neon Green accents');
+        await assertAgentResponse(page, 'video', priorMessageIds);
     });
 });
