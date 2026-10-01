@@ -3,6 +3,9 @@ import { test } from './fixtures/auth';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
+ * STRUCTURAL ONLY: these checks use the mock-auth fixture and are not customer
+ * journey or production evidence.
+ *
  * Accessibility (a11y) Smoke Tests — WCAG 2.1 AA
  *
  * Uses axe-core under the hood to scan for:

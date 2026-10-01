@@ -1,6 +1,8 @@
 import { expect } from '@playwright/test';
 import { test } from './fixtures/auth';
 
+// STRUCTURAL ONLY: the mock-auth fixture and direct store setup below are not
+// customer-path or production evidence.
 test.describe('Boardroom Swarm Protocol E2E', () => {
     test.beforeEach(async ({ authedPage: page }) => {
         // Setup mock environment and auth
@@ -24,22 +26,11 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
             window.useStore.setState({ activeAgents: [] });
         });
 
-        // Send a message
-        await page.evaluate(() => {
-            window._testInterval = setInterval(() => {
-                console.log('POLL STATE:', JSON.stringify(window.useStore.getState().boardroomMessages));
-            }, 1000);
-        });
+        // Sending without a seated agent is rejected in the UI before any
+        // message is sent to the model.
         await page.fill('[data-testid="main-prompt-input"]', 'What is our strategy?');
-        await page.click('[data-testid="command-bar-run-btn"]');
-
-        // Expect the system warning message
-        await page.waitForFunction(() => {
-            const msgs = window.useStore.getState().boardroomMessages || [];
-            return msgs.some(m => m.role === 'model' && m.agentId === 'system');
-        }, { timeout: 15000 });
-        
-        await page.evaluate(() => clearInterval(window._testInterval));
+        await page.locator('[data-testid="main-prompt-input"]').press('Enter');
+        await expect(page.getByText('Seat at least one agent on the table to start the discussion.')).toBeVisible();
     });
 
     test('should dispatch message to multiple seated agents sequentially', async ({ authedPage: page }) => {
@@ -57,7 +48,7 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
         });
         
         await page.fill('[data-testid="main-prompt-input"]', 'How much should we spend on ads?');
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.locator('[data-testid="main-prompt-input"]').press('Enter');
 
         await page.waitForTimeout(1000);
         await page.evaluate(() => {
@@ -94,7 +85,7 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
         });
 
         await page.fill('[data-testid="main-prompt-input"]', 'Review this asset');
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.locator('[data-testid="main-prompt-input"]').press('Enter');
 
         // For E2E, we assume success if the agent responds without error
         await page.waitForFunction(() => {
@@ -112,7 +103,7 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
 
         // 1. Establish the context with the Music Director
         await page.fill('[data-testid="main-prompt-input"]', "Music Director, let's establish the 'Neon Phantom' vibe. It should be 'Dark Industrial Synth with Neon Green accents'. Commit this to our shared memory.");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.locator('[data-testid="main-prompt-input"]').press('Enter');
 
         // Wait for Music Director to finish streaming (proving it doesn't hang)
         await page.waitForFunction(() => {
@@ -126,7 +117,7 @@ test.describe('Boardroom Swarm Protocol E2E', () => {
         
         // 2. Ask Video Director to recall and build upon the context
         await page.fill('[data-testid="main-prompt-input"]', "Video Director, based on that vibe, what visual effects should we use?");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.locator('[data-testid="main-prompt-input"]').press('Enter');
 
         // Wait for Video Director to finish streaming
         await page.waitForFunction(() => {

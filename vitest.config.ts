@@ -15,6 +15,9 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './packages/renderer/src'),
       '@agents': path.resolve(import.meta.dirname, './agents'),
       '@shared': path.resolve(import.meta.dirname, './packages/shared/src'),
+      // The runtime package import path must resolve to compiled package output;
+      // the source alias below would otherwise turn `/dist/...` into `src/dist/...`.
+      '@indii/shared/dist': path.resolve(import.meta.dirname, './packages/shared/dist'),
       '@indii/shared': path.resolve(import.meta.dirname, './packages/shared/src'),
       '@indii/video-compiler/fontAssets': path.resolve(import.meta.dirname, './packages/video-compiler/src/fontAssets.generated'),
       '@indii/video-compiler': path.resolve(import.meta.dirname, './packages/video-compiler/src'),

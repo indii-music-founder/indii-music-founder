@@ -527,7 +527,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
     class="px-3 pb-2 pt-2"
   >
     <div
-      class="px-2 pb-1.5 text-[10px] font-bold text-indigo-400/80 uppercase tracking-wider"
+      class="px-2 pb-1.5 text-[10px] font-bold text-indigo-300 uppercase tracking-wider"
     >
       Intelligence & Automations
     </div>

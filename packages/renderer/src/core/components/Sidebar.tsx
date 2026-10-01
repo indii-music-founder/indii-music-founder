@@ -316,7 +316,7 @@ export default function Sidebar() {
             {/* Swarm Intelligence & Automations Cluster */}
             <div className={`px-3 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-2 border-b border-white/5 border-dashed'}`}>
                 {isSidebarOpen && (
-                    <div className="px-2 pb-1.5 text-[10px] font-bold text-indigo-400/80 uppercase tracking-wider">
+                    <div className="px-2 pb-1.5 text-[10px] font-bold text-indigo-300 uppercase tracking-wider">
                         Intelligence & Automations
                     </div>
                 )}

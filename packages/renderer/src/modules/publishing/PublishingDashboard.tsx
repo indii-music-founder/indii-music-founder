@@ -285,20 +285,14 @@ export default function PublishingDashboard() {
                     <DSRUploadModal
                         isOpen={isDSRModalOpen}
                         onClose={() => setIsDSRModalOpen(false)}
-                        onProcess={async (report) => {
+                        onProcess={async (file) => {
                             // ISSUE-966: this callback must reject on failure and let the
                             // modal (the single terminal-messaging owner) handle the error
                             // path — it must NOT swallow the error here, or the modal's
                             // `await onProcess(...)` resolves normally and shows success
                             // (plus closes, discarding the preview) even when processing failed.
                             const { dsrUploadService } = await import('@/services/distribution/proprietary-ingestion/EarningsUploadService');
-                            const catalog = new Map(
-                                releases
-                                    .filter(r => r.metadata.isrc)
-                                    .map(r => [r.metadata.isrc!, r.metadata])
-                            );
-
-                            const result = await dsrUploadService.processAndSaveReport(report, catalog);
+                            const result = await dsrUploadService.processAndSaveStatement(file);
 
                             if (!result.success) {
                                 logger.error('[DSR Upload] Processing failed:', result.error);

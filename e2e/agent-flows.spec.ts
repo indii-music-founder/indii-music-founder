@@ -1,7 +1,10 @@
 import { test, expect } from './fixtures/auth';
 
 /**
- * Agent Flows E2E Tests
+ * STRUCTURAL ONLY: these browser checks use the mock-auth fixture and route stubs.
+ * They verify UI wiring and do not prove a real customer or service journey.
+ *
+ * Agent Flows Tests
  *
  * Covers: AgentDashboard tabs (scout, browser, campaigns, inbox),
  * ScoutMapVisualization rendering, venue card interactions, and
@@ -39,7 +42,9 @@ test.describe('Agent Dashboard', () => {
 
     test('agent dashboard tab navigation works and shows distinct content', async ({ authedPage: page }) => {
         const tabs = [
-            { id: 'browser', contentId: 'agent-content-browser' },
+            { id: 'chat', contentId: 'agent-content-chat' },
+            { id: 'tasks', contentId: 'agent-content-tasks' },
+            { id: 'loops', contentId: 'agent-content-loops' },
             { id: 'campaigns', contentId: 'agent-content-campaigns' },
             { id: 'inbox', contentId: 'agent-content-inbox' },
             { id: 'scout', contentId: 'agent-content-scout' },

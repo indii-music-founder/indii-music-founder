@@ -2,7 +2,9 @@ import { expect } from '@playwright/test';
 import { test } from './fixtures/auth';
 import { join } from 'path';
 
-test.describe('Boardroom Real User Multi-Turn Scenario', () => {
+// STRUCTURAL ONLY: this scenario injects store state and intercepts AI calls;
+// it does not represent a genuine account or customer service journey.
+test.describe('Boardroom Structural Multi-Turn Scenario', () => {
     test('should execute a realistic multi-turn conversation with dynamic seating and unseating', async ({ authedPage: page }) => {
         test.setTimeout(300_000);
         // Enforce full desktop window size
@@ -542,7 +544,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
             console.log(`[E2E:Scenario] Submitting prompt: "${promptText}"`);
             await cleanOverlays();
             await page.fill('[data-testid="main-prompt-input"]', promptText);
-            await page.click('[data-testid="command-bar-run-btn"]');
+            await page.locator('[data-testid="main-prompt-input"]').press('Enter');
             
             // Wait 1.5 seconds for the processing state to initialize and start E2E mock loop
             await page.waitForTimeout(1500);

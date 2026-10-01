@@ -3,57 +3,36 @@ import { motion, AnimatePresence } from 'motion/react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, ChevronRight } from 'lucide-react';
 import FileUpload from '@/components/kokonutui/file-upload';
-import { earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
-import { type EarningsReportReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
+import { MAX_ROYALTY_REPORT_BYTES } from '@/services/distribution/proprietary-ingestion/EarningsUploadService';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 
 interface DSRUploadModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onProcess: (report: EarningsReportReport) => Promise<void>;
+    onProcess: (file: File) => Promise<void>;
 }
 
 export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose, onProcess }) => {
     const [file, setFile] = useState<File | null>(null);
     const [isParsing, setIsParsing] = useState(false);
-    const [parsedReport, setParsedReport] = useState<EarningsReportReport | null>(null);
     const [error, setError] = useState<string | null>(null);
     const toast = useToast();
 
     const handleFileChange = async (files: File[]) => {
         if (files.length === 0) return;
         const selectedFile = files[0]!;
+        if (selectedFile.size <= 0 || selectedFile.size > MAX_ROYALTY_REPORT_BYTES) {
+            setFile(null);
+            setError('Choose a report file between 1 byte and 6 MB.');
+            return;
+        }
         setFile(selectedFile);
         setError(null);
-        setParsedReport(null);
-
-        setIsParsing(true);
-        try {
-            // Read file as text
-            const text = await selectedFile.text();
-
-            // Basic parsing logic simulation matching earningsReportService capabilities
-            const result = await earningsReportService.ingestFlatFile(text);
-
-            if (result.success && result.data) {
-                setParsedReport(result.data);
-                toast.success('Report parsed successfully');
-            } else {
-                setError(result.error || 'Failed to parse DSR report.');
-                toast.error('Parsing failed');
-            }
-        } catch (err: unknown) {
-            logger.error('Error parsing DSR:', err);
-            setError(err instanceof Error ? err.message : 'Failed to parse DSR report. Ensure it follows DDEX standards.');
-            toast.error('Parsing failed');
-        } finally {
-            setIsParsing(false);
-        }
     };
 
     const handleProcess = async () => {
-        if (!parsedReport) return;
+        if (!file) return;
 
         setIsParsing(true);
         setError(null);
@@ -62,10 +41,11 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
             // terminal-messaging boundary: close + parent's own success toast only
             // fire if that promise actually resolves. On failure, the parsed
             // preview and file stay intact for retry, and the error is shown here.
-            await onProcess(parsedReport);
+            await onProcess(file);
             onClose();
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Failed to process report data.';
+            logger.error('Error importing royalty report:', err);
             setError(message);
             toast.error(message);
         } finally {
@@ -105,18 +85,15 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
 
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                        {!parsedReport ? (
+                        {!file ? (
                             <div className="space-y-4">
                                 <FileUpload
                                     onFilesSelected={handleFileChange}
+                                    acceptedFileTypes={['.tsv', '.csv']}
+                                    maxFileSize={MAX_ROYALTY_REPORT_BYTES}
                                 />
 
-                                {isParsing && (
-                                    <div className="flex flex-col items-center justify-center py-12 gap-4">
-                                        <Loader2 size={32} className="text-blue-500 animate-spin" />
-                                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest animate-pulse">Analyzing Data Structure...</p>
-                                    </div>
-                                )}
+                                <p className="text-xs text-gray-500">DistroKid TSV and TuneCore CSV reports up to 6 MB are parsed securely when you import.</p>
 
                                 {error && (
                                     <motion.div
@@ -147,42 +124,9 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                     <CheckCircle2 className="text-green-500" size={20} />
                                 </div>
 
-                                {/* Preview Stats */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 bg-gray-900/30 border border-gray-800 rounded-xl">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Total Transactions</p>
-                                        <p className="text-2xl font-black text-white">{parsedReport.transactions.length.toLocaleString('en-US')}</p>
-                                    </div>
-                                    <div className="p-4 bg-gray-900/30 border border-gray-800 rounded-xl">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Estimated Revenue</p>
-                                        <p className="text-2xl font-black text-green-400">${parsedReport.summary.totalRevenue.toFixed(2)}</p>
-                                    </div>
-                                </div>
-
-                                {/* Data Preview Table */}
-                                <div className="space-y-3">
-                                    <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">Preview (First 5 Rows)</h4>
-                                    <div className="border border-gray-800 rounded-xl overflow-hidden overflow-x-auto">
-                                        <table className="w-full text-left text-xs">
-                                            <thead className="bg-gray-900/80 text-gray-400 font-bold uppercase tracking-tighter">
-                                                <tr>
-                                                    <th className="px-4 py-2 border-b border-gray-800">ISRC</th>
-                                                    <th className="px-4 py-2 border-b border-gray-800">Streams</th>
-                                                    <th className="px-4 py-2 border-b border-gray-800">Revenue</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-800/50">
-                                                
-                                                {parsedReport.transactions.slice(0, 5).map((row: { resourceId: { isrc?: string }; usageCount: number; revenueAmount: number }, i: number) => (
-                                                    <tr key={i} className="text-gray-300">
-                                                        <td className="px-4 py-2 font-mono">{row.resourceId.isrc}</td>
-                                                        <td className="px-4 py-2">{row.usageCount.toLocaleString('en-US')}</td>
-                                                        <td className="px-4 py-2 text-green-500/80">${row.revenueAmount.toFixed(4)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                <div className="p-4 bg-gray-900/30 border border-gray-800 rounded-xl">
+                                    <p className="font-bold text-white">Ready to import</p>
+                                    <p className="mt-1 text-xs text-gray-500">The server will validate the report rows, totals, and reporting period before saving anything.</p>
                                 </div>
 
                                 {error && (
@@ -208,7 +152,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                             Cancel
                         </button>
 
-                        {parsedReport && (
+                        {file && (
                             <button
                                 onClick={handleProcess}
                                 disabled={isParsing}

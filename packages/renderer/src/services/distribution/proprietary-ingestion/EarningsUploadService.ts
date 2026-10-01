@@ -3,8 +3,8 @@ import * as Sentry from '@sentry/react';
 
 import { auth, functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import type { EarningsReportReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
-import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+
+export const MAX_ROYALTY_REPORT_BYTES = 6 * 1024 * 1024;
 
 export interface EarningsReportUploadResult {
     success: boolean;
@@ -39,27 +39,29 @@ interface BackendRoyaltyAllocationResult {
 }
 
 /**
- * Sends a parsed DSR to the authenticated backend ingestion boundary.
+ * Sends the original report file to the authenticated backend parser and ledger.
  *
  * Financial collections are intentionally backend-only in Firestore Rules.
  * The server re-validates totals/identifiers and loads the caller's catalog
  * itself; client-provided catalog metadata is never trusted for ledger writes.
  */
 export class EarningsReportUploadService {
-    async processAndSaveReport(
-        report: EarningsReportReport,
-        _userCatalog?: Map<string, ExtendedGoldenMetadata>
-    ): Promise<EarningsReportUploadResult> {
+    async processAndSaveStatement(file: File): Promise<EarningsReportUploadResult> {
         try {
             if (!auth.currentUser?.uid) {
                 throw new Error('User not authenticated');
             }
+            if (file.size <= 0 || file.size > MAX_ROYALTY_REPORT_BYTES) {
+                throw new Error('Choose a report file between 1 byte and 6 MB.');
+            }
+
+            const contentBase64 = await fileToBase64(file);
 
             const ingest = httpsCallable<
-                { report: EarningsReportReport },
+                { fileName: string; contentBase64: string },
                 BackendEarningsIngestionResult
-            >(functions, 'ingestEarningsReport');
-            const response = await ingest({ report });
+            >(functions, 'parseAndIngestRoyaltyReport');
+            const response = await ingest({ fileName: file.name, contentBase64 });
             if (response.data.matchedReleases === 0) return response.data;
 
             try {
@@ -91,6 +93,16 @@ export class EarningsReportUploadService {
             };
         }
     }
+}
+
+async function fileToBase64(file: File): Promise<string> {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+    }
+    return btoa(binary);
 }
 
 export const dsrUploadService = new EarningsReportUploadService();

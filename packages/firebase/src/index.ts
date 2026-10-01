@@ -133,6 +133,7 @@ export { requestTaxForms } from './stripe/taxForms';
 
 // Finance Functions (server-owned DSR/earnings ledger writes)
 export { ingestEarningsReport } from './functions/finance/ingestEarningsReport';
+export { parseAndIngestRoyaltyReport } from './functions/finance/parseAndIngestReport';
 export { calculateRoyaltyAllocations } from './functions/finance/calculateRoyaltyAllocations';
 export { setRecoupmentBalance } from './functions/finance/setRecoupmentBalance';
 

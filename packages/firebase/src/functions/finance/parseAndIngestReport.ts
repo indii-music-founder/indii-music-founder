@@ -2,17 +2,19 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { processEarningsReport } from './ingestEarningsReport';
 import { DistroKidStatementAdapter, TuneCoreStatementAdapter } from './adapters';
-import type { NormalizedStatementReport, NormalizedStatementTransaction } from '@indii/shared/dist/foundry/types.js';
+import { mapNormalizedStatementToEarningsReport } from './normalizedStatementMapper';
+import type { NormalizedStatementReport } from '@indii/shared/dist/foundry/types.js';
+
+const MAX_REPORT_BYTES = 6 * 1024 * 1024;
 
 /**
  * Cloud Function that accepts a raw royalty report (CSV/TSV/JSON) uploaded from a DSP,
  * parses it using the appropriate adapter, and forwards the normalized report to the
  * existing earnings ingestion pipeline.
  *
- * The client should send an object with the following shape:
+ * The authenticated client should send an object with the following shape:
  * ```ts
  * {
- *   userId: string; // Firebase UID of the uploader
  *   fileName: string; // Original file name (used for format detection)
  *   contentBase64: string; // Base64‑encoded file bytes
  * }
@@ -30,13 +32,24 @@ export const parseAndIngestRoyaltyReport = onCall({
     throw new HttpsError('unauthenticated', 'Authentication required.');
   }
 
-  const { userId, fileName, contentBase64 } = request.data ?? {};
-  if (typeof userId !== 'string' || typeof fileName !== 'string' || typeof contentBase64 !== 'string') {
-    throw new HttpsError('invalid-argument', 'Missing required fields: userId, fileName, contentBase64');
+  const { fileName, contentBase64 } = request.data ?? {};
+  if (typeof fileName !== 'string' || !fileName.trim() || fileName.length > 255 || typeof contentBase64 !== 'string') {
+    throw new HttpsError('invalid-argument', 'A fileName and contentBase64 value are required.');
   }
 
-  // Decode the base64 payload.
+  if (contentBase64.length > Math.ceil(MAX_REPORT_BYTES / 3) * 4
+    || !/^[A-Za-z0-9+/]*={0,2}$/.test(contentBase64)
+    || contentBase64.length % 4 !== 0) {
+    throw new HttpsError('invalid-argument', 'The report file is not valid base64 data.');
+  }
+
   const buffer = Buffer.from(contentBase64, 'base64');
+  if (buffer.length === 0 || buffer.length > MAX_REPORT_BYTES) {
+    throw new HttpsError('invalid-argument', 'The report file must be between 1 byte and 6 MB.');
+  }
+  if (buffer.toString('base64') !== contentBase64) {
+    throw new HttpsError('invalid-argument', 'The report file is not valid base64 data.');
+  }
   const rawContent = buffer.toString('utf8');
 
   // Simple format detection based on the first line.
@@ -59,31 +72,14 @@ export const parseAndIngestRoyaltyReport = onCall({
     throw new HttpsError('failed-precondition', `Failed to parse report: ${errMsg}`);
   }
 
-  // Build the report shape expected by the ingestion pipeline.
-  const mappedReport = {
-    reportId: normalized.reportId,
-    senderId: normalized.reportingEntity,
-    recipientId: normalized.reportingEntity,
-    reportingPeriod: normalized.periodStart && normalized.periodEnd ? { startDate: normalized.periodStart, endDate: normalized.periodEnd } : { startDate: '', endDate: '' },
-    reportCreatedDateTime: normalized.provenance?.parsedAt ?? '',
-    currencyCode: normalized.currency,
-    summary: {
-      totalUsageCount: normalized.totalQuantity,
-      totalRevenue: normalized.totalGrossRevenue,
-    },
-    transactions: normalized.transactions.map((t: NormalizedStatementTransaction) => ({
-      transactionId: t.transactionId,
-      resourceId: { isrc: t.isrc },
-      usageType: t.transactionType,
-      usageCount: t.quantity,
-      revenueAmount: t.grossRevenue,
-      currencyCode: t.currency,
-      territoryCode: t.territory,
-      serviceName: t.dspName,
-    })),
-  };
+  let mappedReport: ReturnType<typeof mapNormalizedStatementToEarningsReport>;
+  try {
+    mappedReport = mapNormalizedStatementToEarningsReport(normalized, rawContent);
+  } catch (e: any) {
+    throw new HttpsError('failed-precondition', `Report is missing required ingestion data: ${e?.message ?? String(e)}`);
+  }
 
-  // Forward to the earnings ingestion logic.
-  const result = await processEarningsReport(userId, mappedReport);
+  // Ownership comes only from Firebase Auth; never accept a caller-selected UID.
+  const result = await processEarningsReport(request.auth.uid, mappedReport);
   return result;
 });

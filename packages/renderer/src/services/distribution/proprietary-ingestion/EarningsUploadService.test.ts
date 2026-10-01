@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { EarningsReportReport } from './types/dsr';
 
 const mocks = vi.hoisted(() => ({
     ingestCallable: vi.fn(),
@@ -21,28 +20,15 @@ vi.mock('@sentry/react', () => ({ captureException: vi.fn() }));
 
 import { dsrUploadService } from './EarningsUploadService';
 
-function makeReport(): EarningsReportReport {
+function makeFile(): File {
     return {
-        reportId: 'RPT-001',
-        senderId: 'PADPIDA2011112001R',
-        recipientId: 'PA-DPIDA-INDII',
-        reportingPeriod: { startDate: '2026-06-01', endDate: '2026-06-30' },
-        reportCreatedDateTime: '2026-07-15T12:00:00.000Z',
-        currencyCode: 'USD',
-        summary: { totalUsageCount: 10, totalRevenue: 12.5, currencyCode: 'USD' },
-        transactions: [{
-            transactionId: 'TX-1',
-            resourceId: { isrc: 'USABC2600001' },
-            usageType: 'OnDemandStream',
-            usageCount: 10,
-            revenueAmount: 12.5,
-            currencyCode: 'USD',
-            territoryCode: 'US',
-        }],
-    };
+        name: 'earnings.tsv',
+        size: 6,
+        arrayBuffer: async () => new TextEncoder().encode('report').buffer,
+    } as File;
 }
 
-describe('EarningsReportUploadService.processAndSaveReport', () => {
+describe('EarningsReportUploadService.processAndSaveStatement', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.auth.currentUser = { uid: 'user-1' };
@@ -73,15 +59,15 @@ describe('EarningsReportUploadService.processAndSaveReport', () => {
                 blockedEarnings: 0,
             },
         });
-        const report = makeReport();
+        const file = makeFile();
 
-        const result = await dsrUploadService.processAndSaveReport(report);
+        const result = await dsrUploadService.processAndSaveStatement(file);
 
         expect(mocks.httpsCallable).toHaveBeenCalledWith(
             expect.anything(),
-            'ingestEarningsReport'
+            'parseAndIngestRoyaltyReport'
         );
-        expect(mocks.ingestCallable).toHaveBeenCalledWith({ report });
+        expect(mocks.ingestCallable).toHaveBeenCalledWith({ fileName: 'earnings.tsv', contentBase64: 'cmVwb3J0' });
         expect(mocks.allocationCallable).toHaveBeenCalledWith({ batchId: 'dsr-stable' });
         expect(result).toEqual(expect.objectContaining({
             success: true,
@@ -97,7 +83,7 @@ describe('EarningsReportUploadService.processAndSaveReport', () => {
     it('returns a failure when the backend rejects reconciliation', async () => {
         mocks.ingestCallable.mockRejectedValue(new Error('totalRevenue does not reconcile'));
 
-        const result = await dsrUploadService.processAndSaveReport(makeReport());
+        const result = await dsrUploadService.processAndSaveStatement(makeFile());
 
         expect(result.success).toBe(false);
         expect(result.error).toContain('does not reconcile');
@@ -106,7 +92,7 @@ describe('EarningsReportUploadService.processAndSaveReport', () => {
     it('refuses to submit without an authenticated user', async () => {
         mocks.auth.currentUser = null;
 
-        const result = await dsrUploadService.processAndSaveReport(makeReport());
+        const result = await dsrUploadService.processAndSaveStatement(makeFile());
 
         expect(result.success).toBe(false);
         expect(result.error).toContain('not authenticated');
