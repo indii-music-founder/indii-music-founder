@@ -134,7 +134,7 @@ export class InstagramAnalyticsService {
     async initiateOAuth(): Promise<void> {
         const appId = import.meta.env.VITE_META_APP_ID;
         if (!appId) {
-            throw new Error('VITE_META_APP_ID is not configured. Add it to your .env file.');
+            throw new Error('Instagram connection is temporarily unavailable. Please contact support.');
         }
 
         const ownerUid = auth.currentUser?.uid;

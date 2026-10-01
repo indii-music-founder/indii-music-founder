@@ -9,6 +9,7 @@ import { useSocial } from './hooks/useSocial';
 import SocialFeed from './components/SocialFeed';
 import { InstagramHealthCard } from './components/InstagramHealthCard';
 import { InstagramInbox } from './components/InstagramInbox';
+import { instagramAnalyticsService } from '@/services/analytics/InstagramAnalyticsService';
 import { logger } from '@/utils/logger';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 
@@ -26,10 +27,18 @@ import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 /* ================================================================== */
 
 export default function SocialDashboard() {
-    const _toast = useToast();
+    const toast = useToast();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [selectedScheduleDate, setSelectedScheduleDate] = useState<string | undefined>();
     const [isAccountWizardOpen, setIsAccountWizardOpen] = useState(false);
+
+    const handleInstagramConnect = async () => {
+        try {
+            await instagramAnalyticsService.initiateOAuth();
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Unable to connect Instagram. Please try again.');
+        }
+    };
 
     const {
         stats,
@@ -142,7 +151,7 @@ export default function SocialDashboard() {
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     <div className="p-4 md:p-6 space-y-6">
                              {/* Instagram Health Audit Card */}
-                            <InstagramHealthCard onConnectClick={() => setIsAccountWizardOpen(true)} />
+                            <InstagramHealthCard onConnectClick={() => void handleInstagramConnect()} />
 
                             {/* Calendar */}
                             <div className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden">
