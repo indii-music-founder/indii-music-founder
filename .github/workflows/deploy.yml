@@ -200,6 +200,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: unit-tests
+    outputs:
+      artifact-id: ${{ steps.upload-build.outputs.artifact-id }}
     env:
       SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -330,6 +332,7 @@ jobs:
           ignore_missing: true
 
       - name: Upload build artifacts
+        id: upload-build
         uses: actions/upload-artifact@v4
         with:
           name: build-dist-${{ github.sha }}
@@ -365,7 +368,8 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-dist-${{ github.sha }}
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          merge-multiple: true
 
       - name: Authenticate with Google Cloud
         id: auth
@@ -549,7 +553,7 @@ jobs:
   # ─── Production Deploy ──────────────────────────────────────────────────────
   deploy-production:
     runs-on: ubuntu-latest
-    needs: [deploy-staging, e2e-staging, rules-tests]
+    needs: [build, deploy-staging, e2e-staging, rules-tests]
     if: ${{ always() && needs.deploy-staging.result == 'success' && needs.e2e-staging.result == 'success' && needs.rules-tests.result == 'success' }}
 
     steps:
@@ -572,7 +576,8 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-dist-${{ github.sha }}
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          merge-multiple: true
 
       - name: Authenticate with Google Cloud
         id: auth
