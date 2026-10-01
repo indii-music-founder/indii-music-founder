@@ -107,7 +107,7 @@ describe('Deploy workflow staging gate contract', () => {
   it('requires successful staging E2E before production deploy starts', () => {
     const workflow = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8');
 
-    expect(workflow).toContain('needs: [deploy-staging, e2e-staging, rules-tests]');
+    expect(workflow).toContain('needs: [build, deploy-staging, e2e-staging, rules-tests]');
     expect(workflow).toContain("needs.e2e-staging.result == 'success'");
   });
 
