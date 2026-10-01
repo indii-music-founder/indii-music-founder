@@ -36,7 +36,7 @@ import { DetailRow } from './components/DetailRow';
 import { FileTree } from './components/FileTree';
 import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
 import { trashService } from '@/services/trash/TrashService';
-import { TrashItem, TrashResourceType } from '@indii/shared';
+import { TrashItem } from '@indii/shared';
 import { auth } from '@/services/firebase';
 import {
     EmailAuthProvider,
@@ -62,7 +62,7 @@ export default function FileDashboard() {
     const [activeTab, setActiveTab] = useState<'active' | 'trash'>('active');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterType, setFilterType] = useState<TrashResourceType | 'all'>('all');
+    const [filterType, setFilterType] = useState<NonNullable<FileNode['fileType']> | 'all'>('all');
     const [sourceFilter, setSourceFilter] = useState<TrashSourceFilter>('all');
 
     // Trash state
@@ -88,7 +88,6 @@ export default function FileDashboard() {
         setIsLoadingTrash(true);
         try {
             const items = await trashService.listTrash({
-                type: filterType === 'all' ? undefined : filterType,
                 projectId: currentProjectId || undefined,
             });
             setTrashItems(items);
@@ -97,7 +96,7 @@ export default function FileDashboard() {
         } finally {
             setIsLoadingTrash(false);
         }
-    }, [currentProjectId, filterType]);
+    }, [currentProjectId]);
 
     useEffect(() => {
         if (activeTab === 'trash') {
@@ -109,7 +108,7 @@ export default function FileDashboard() {
     const displayActiveNodes = fileNodes.filter((node: FileNode) => {
         if (node.isTrashed) return false;
         const matchesSearch = node.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesFilter = filterType === 'all' || (node.fileType as string) === filterType;
+        const matchesFilter = filterType === 'all' || node.fileType === filterType;
         return matchesSearch && matchesFilter;
     });
 
@@ -342,9 +341,9 @@ export default function FileDashboard() {
                         count={fileNodes.filter((n: FileNode) => n.fileType === 'image' && !n.isTrashed).length}
                         onClick={() => {
                             setActiveTab('active');
-                            setFilterType('file_nodes');
+                            setFilterType('image');
                         }}
-                        active={activeTab === 'active' && filterType === 'file_nodes'}
+                        active={activeTab === 'active' && filterType === 'image'}
                     />
                     <NavItem
                         icon={Video}
@@ -352,8 +351,9 @@ export default function FileDashboard() {
                         count={fileNodes.filter((n: FileNode) => n.fileType === 'video' && !n.isTrashed).length}
                         onClick={() => {
                             setActiveTab('active');
-                            setFilterType('file_nodes');
+                            setFilterType('video');
                         }}
+                        active={activeTab === 'active' && filterType === 'video'}
                     />
                     <NavItem
                         icon={Music}
@@ -361,8 +361,9 @@ export default function FileDashboard() {
                         count={fileNodes.filter((n: FileNode) => n.fileType === 'audio' && !n.isTrashed).length}
                         onClick={() => {
                             setActiveTab('active');
-                            setFilterType('file_nodes');
+                            setFilterType('audio');
                         }}
+                        active={activeTab === 'active' && filterType === 'audio'}
                     />
                     <NavItem
                         icon={FileText}
@@ -370,8 +371,9 @@ export default function FileDashboard() {
                         count={fileNodes.filter((n: FileNode) => n.fileType === 'document' && !n.isTrashed).length}
                         onClick={() => {
                             setActiveTab('active');
-                            setFilterType('knowledge_docs');
+                            setFilterType('document');
                         }}
+                        active={activeTab === 'active' && filterType === 'document'}
                     />
 
                     <div className="mt-8 mb-2 px-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Locations</div>

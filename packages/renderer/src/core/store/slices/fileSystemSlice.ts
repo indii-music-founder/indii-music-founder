@@ -87,6 +87,8 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
             const message = error instanceof Error ? error.message : 'Failed to create file';
             set({ fileSystemError: message });
             logger.error('Error creating file:', error);
+            // Upload callers must only report success after the library record is saved.
+            throw error;
         }
     },
 
