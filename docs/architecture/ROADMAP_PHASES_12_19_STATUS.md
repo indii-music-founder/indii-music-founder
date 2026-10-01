@@ -59,6 +59,17 @@ succeeded. Those delivery facts do not close the integration gaps below.
   applications submitted from a prepared dossier or closed engineering PR.
   Final consequential submission still needs founder approval.
 
+### Recovered recent uncommitted evaluation work
+
+A read-only worktree inventory also found four staged, uncommitted TypeSafe
+shadow-evaluation files in `typesafe-evidence-shadow-eval` (base dated
+2026-09-24). The minimal patch was recovered onto current `main`, preserving
+that worktree. It adds candidate-level false-positive/false-negative metrics,
+a five-threshold sweep, additional literal evaluation cases and opt-in provider
+telemetry. The default production evidence gate is unchanged. These are
+structural evaluation tools; the opt-in external-provider run does not establish
+a genuine customer path and was not executed during this completion audit.
+
 ### Evidence limits
 
 This is a repository/task-history completion audit, not a new customer-path
