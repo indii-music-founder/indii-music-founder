@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { projectSemanticNodeMock } = vi.hoisted(() => ({ projectSemanticNodeMock: vi.fn() }));
+vi.mock('../catalog/semanticProjection.js', async () => {
+    const actual = await vi.importActual<typeof import('../catalog/semanticProjection.js')>('../catalog/semanticProjection.js');
+    return { ...actual, projectSemanticNode: projectSemanticNodeMock };
+});
+
 // ── firebase-admin/firestore double: path-keyed store + query chains ────────
 type Doc = { exists: boolean; data: Record<string, unknown> };
 const store = new Map<string, Doc>();
@@ -16,9 +22,11 @@ const docRef = (path: string) => ({
         store.set(path, { exists: true, data });
         written.push({ path, data });
     },
+    delete: async () => { store.delete(path); },
     collection: (sub: string) => colRef(`${path}/${sub}`),
     update: vi.fn(),
 });
+
 const colRef = (path: string) => {
     const filters: Array<{ field: string; op: string; value: unknown }> = [];
     const chain = {
@@ -60,10 +68,15 @@ import {
     evaluateAdminLock,
     findLinkedReleaseId,
     ledgerReceiptIdFor,
+    projectLockedReceiptPrivately,
 } from './masterIngestionRunbook.js';
 import { AdminLedgerReceiptSchema } from '@indii/shared';
 
 const HALF = 500_000;
+
+beforeEach(() => {
+    projectSemanticNodeMock.mockReset().mockResolvedValue({ mirrored: false });
+});
 
 describe('countOpenBlockingTasks (master binding, client-side filters)', () => {
     beforeEach(() => {
@@ -204,5 +217,53 @@ describe('buildLedgerReceipt (content-addressed, schema-validated)', () => {
     it('differs per master (different hashes never collide)', () => {
         const other = buildLedgerReceipt({ ...base, masterHash: 'b'.repeat(64) });
         expect(other['id']).not.toBe(ledgerReceiptIdFor(base));
+    });
+});
+
+describe('projectLockedReceiptPrivately (verified private catalog projection)', () => {
+    const receipt = buildLedgerReceipt({
+        userId: 'user-1',
+        masterHash: 'a'.repeat(64),
+        generation: '17273000000000000',
+        releaseId: 'rel-1',
+        evaluation: {
+            lockable: true,
+            reason: 'ok',
+            splits: {
+                recording: [{ collaboratorId: 'Ana', shareBasisUnits: 1_000_000 }],
+                publishing: [{ collaboratorId: 'Ana', shareBasisUnits: 1_000_000 }],
+            },
+            signatories: [{ collaboratorId: 'Ana', method: 'split-invitation@v1', receiptHash: 'b'.repeat(40) }],
+        },
+        identifiers: { isrc: 'USABC7123456' },
+        lockedAtIso: '2026-09-26T12:00:00.000Z',
+    });
+
+    beforeEach(() => {
+        store.clear();
+    });
+
+    it('projects only the validated receipt and always keeps the node private', async () => {
+        const result = await projectLockedReceiptPrivately('user-1', receipt, {
+            userId: 'user-1',
+            metadata: { trackTitle: 'Verified title', instrumentalAvailable: true },
+        });
+        expect(result).toEqual({ projected: true });
+        const node = projectSemanticNodeMock.mock.calls[0]?.[1] as Record<string, unknown>;
+        expect(node['visibility']).toBe('private');
+        expect(node['master100PercentPrecleared']).toBe(true);
+        expect(node['publishing100PercentPrecleared']).toBe(true);
+        expect(node['displayName']).toBe('Verified title');
+        expect(projectSemanticNodeMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('fails closed on owner mismatch, invalid receipt, or missing title', async () => {
+        expect(await projectLockedReceiptPrivately('other-user', receipt, { userId: 'user-1', metadata: { trackTitle: 'Title' } }))
+            .toEqual({ projected: false, reason: 'ledger receipt owner mismatch' });
+        expect(await projectLockedReceiptPrivately('user-1', { ...receipt, masterHash: 'bad' }, { userId: 'user-1', metadata: { trackTitle: 'Title' } }))
+            .toEqual({ projected: false, reason: 'ledger receipt failed schema validation' });
+        expect(await projectLockedReceiptPrivately('user-1', receipt, { userId: 'user-1', metadata: {} }))
+            .toEqual({ projected: false, reason: 'release title unavailable' });
+        expect(projectSemanticNodeMock).not.toHaveBeenCalled();
     });
 });

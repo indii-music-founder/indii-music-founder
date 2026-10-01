@@ -1,7 +1,8 @@
 import { Inngest } from 'inngest';
 import { createHash } from 'node:crypto';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { splitsResolveExactly } from '@indii/shared';
+import { AdminLedgerReceiptSchema, SemanticCatalogNodeSchema, splitsResolveExactly } from '@indii/shared';
+import { buildSemanticNode, projectSemanticNode } from '../catalog/semanticProjection.js';
 import {
     ensureMasterAdminState,
     readMasterAdminState,
@@ -248,6 +249,55 @@ async function writeLedgerReceipt(receipt: Record<string, unknown>): Promise<voi
         .set({ ...receipt, serverUpdatedAt: FieldValue.serverTimestamp() });
 }
 
+/** Project a private catalog node only from the exact, persisted ADMIN_LOCK receipt. */
+export async function projectLockedReceiptPrivately(
+    userId: string,
+    receiptData: Record<string, unknown>,
+    release: Record<string, unknown>,
+): Promise<{ projected: boolean; reason?: string }> {
+    const parsed = AdminLedgerReceiptSchema.safeParse(receiptData);
+    if (!parsed.success) return { projected: false, reason: 'ledger receipt failed schema validation' };
+    const receipt = parsed.data;
+    if (receipt.userId !== userId) return { projected: false, reason: 'ledger receipt owner mismatch' };
+    if (release['userId'] !== userId) return { projected: false, reason: 'release owner mismatch' };
+
+    const metadata = (release['metadata'] ?? {}) as Record<string, unknown>;
+    const displayName = typeof metadata['trackTitle'] === 'string' ? metadata['trackTitle'].trim() : '';
+    if (!displayName) return { projected: false, reason: 'release title unavailable' };
+
+    const node = buildSemanticNode({
+        entityId: receipt.masterHash,
+        ownerId: userId,
+        kind: 'track',
+        displayName,
+        ...(receipt.identifiers.isrc ? { isrc: receipt.identifiers.isrc } : {}),
+        ...(receipt.identifiers.iswc ? { iswc: receipt.identifiers.iswc } : {}),
+        ...(receipt.identifiers.upc ? { upc: receipt.identifiers.upc } : {}),
+        ...(typeof metadata['bpm'] === 'number' ? { bpm: metadata['bpm'] } : {}),
+        ...(typeof metadata['key'] === 'string' ? { key: metadata['key'] } : {}),
+        moodTags: Array.isArray(metadata['moodTags'])
+            ? metadata['moodTags'].filter((tag): tag is string => typeof tag === 'string')
+            : [],
+        // These mean an available deliverable was verified; absent metadata is false.
+        instrumentalAvailable: metadata['instrumentalAvailable'] === true,
+        stemsAvailable: metadata['stemsAvailable'] === true,
+        recordingShareBasisUnits: receipt.splits.recording.map(line => line.shareBasisUnits),
+        publishingShareBasisUnits: receipt.splits.publishing.map(line => line.shareBasisUnits),
+        recordingHolders: receipt.splits.recording.map(line => line.collaboratorId),
+        publishingHolders: receipt.splits.publishing.map(line => line.collaboratorId),
+        signedCollaboratorIds: new Set(receipt.signatories.map(signatory => signatory.collaboratorId)),
+        territoryRestrictions: [],
+        relations: [{ subject: receipt.masterHash, predicate: 'part_of_release', object: receipt.id }],
+        visibility: 'private',
+        ledgerReceiptId: receipt.id,
+        generatedAtIso: receipt.lockedAt,
+    });
+    const validated = SemanticCatalogNodeSchema.safeParse(node);
+    if (!validated.success) return { projected: false, reason: 'semantic catalog node failed schema validation' };
+    await projectSemanticNode(userId, validated.data);
+    return { projected: true };
+}
+
 // ── Inngest function ────────────────────────────────────────────────────────
 
 async function transition(userId: string, masterHash: string, to: MasterLifecycleStatus, actor: LifecycleActor, reason: string): Promise<{ to: MasterLifecycleStatus; changed: boolean }> {
@@ -349,6 +399,10 @@ export const masterIngestionRunbookFn = (inngestClient: Inngest) =>
                     lockedAtIso,
                 });
                 await writeLedgerReceipt(receipt);
+                const projection = await projectLockedReceiptPrivately(payload.userId, receipt, release);
+                if (!projection.projected) {
+                    console.log(`[MasterIngestionRunbook] ${payload.masterHash}: private catalog projection skipped — ${projection.reason}`);
+                }
                 const locked = await transition(payload.userId, payload.masterHash, 'ADMIN_LOCKED', 'runbook', `ledger receipt ${receipt['id']} written`);
                 transitions.push(locked);
                 return { locked: locked.changed || locked.to === 'ADMIN_LOCKED', ledgerReceiptId: String(receipt['id']) };
