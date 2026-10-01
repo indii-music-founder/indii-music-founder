@@ -321,8 +321,8 @@ export interface CapabilityOverclaimResult {
 }
 
 const CAPABILITY_OVERCLAIM_PATTERNS: RegExp[] = [
-    /\ball\s+(?:23\s+)?(?:departments?|department heads?|specialists?|agents?|systems?)\b[^.?!]{0,80}\b(?:fully\s+)?(?:implemented|verified|operational|production[- ]ready|deployed|complete[d]?)\b/i,
-    /\b(?:fully|completely|entirely)\s+(?:implemented|verified|operational|production[- ]ready)\b/i,
+    /\b(?:all|every)\s+(?:\d+\s+)?(?:departments?|department heads?|specialists?|agents?|systems?|capabilities?)\b[^.?!]{0,80}\b(?:(?:fully|completely|entirely)\s+)?(?:implemented|verified|operational|production[- ]ready|deployed|complete[d]?)\b/i,
+    /\b(?:i|we|our team|the (?:app|application|platform|product|system|service))\b[^.?!]{0,30}\b(?:am|are|is|have|has|was|were)\s+(?:fully|completely|entirely)\s+(?:implemented|verified|operational|production[- ]ready)\b/i,
     /\ball\s+(?:systems?|departments?)\s+(?:are\s+)?(?:verified|operational|go)\b/i,
     /\bno\s+engineering\s+(?:work|items?|tasks?)\s+(?:remain(?:s|ing)?|left|required|needed)\b/i,
     /\beverything\s+is\s+(?:implemented|verified|operational|complete[d]?|production[- ]ready)\b/i,
@@ -339,6 +339,20 @@ export function detectCapabilityOverclaim(text: string): CapabilityOverclaimResu
         pattern.lastIndex = 0;
         const match = pattern.exec(text);
         if (match) {
+            const sentenceStart = Math.max(
+                text.lastIndexOf('.', match.index - 1),
+                text.lastIndexOf('!', match.index - 1),
+                text.lastIndexOf('?', match.index - 1),
+                text.lastIndexOf(';', match.index - 1),
+                text.lastIndexOf('\n', match.index - 1),
+            );
+            const assertionContext = text.slice(sentenceStart + 1, match.index + match[0].length);
+            // Grounded audit wording often names an overclaim in order to deny
+            // or qualify it. Only report affirmative claims; otherwise the
+            // truth guardrail files an issue about its own correction text.
+            if (/\b(?:not|never|cannot|can't|couldn't|won't|wouldn't|shouldn't|isn't|aren't)\b/i.test(assertionContext)) {
+                continue;
+            }
             return {
                 hasOverclaim: true,
                 matchedPattern: pattern.source,
