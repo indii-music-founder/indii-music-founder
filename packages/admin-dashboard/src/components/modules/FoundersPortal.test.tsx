@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+
+vi.mock('../../firebase', () => ({
+  functions: {},
+  getAdminToken: vi.fn(async () => localStorage.getItem('indii_admin_token')),
+}));
+
 import { FoundersPortal } from './FoundersPortal';
 
 function jsonResponse(body: unknown, status = 200) {

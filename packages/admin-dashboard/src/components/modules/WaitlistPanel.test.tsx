@@ -7,6 +7,9 @@ const adminActions = vi.hoisted(() => ({
 }));
 
 vi.mock('../../lib/foundingArtistAdmin', () => adminActions);
+vi.mock('../../firebase', () => ({
+  getAdminToken: vi.fn(async () => localStorage.getItem('indii_admin_token')),
+}));
 
 import { WaitlistPanel } from './WaitlistPanel';
 
