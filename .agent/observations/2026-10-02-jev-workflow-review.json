@@ -1,0 +1,57 @@
+{
+  "mode": "live API advisory source review; no customer validation",
+  "questions": {
+    "manufactured_completion": {
+      "type": "noul",
+      "instructions": "Does the new history UI manufacture completion from a queued response or a successful action call instead of reading server state?"
+    },
+    "cross_scope_display": {
+      "type": "noul",
+      "instructions": "Can a mismatched owner/project/document record pass the new parser and be displayed as a valid workflow?"
+    },
+    "draft_launch_overclaim": {
+      "type": "noul",
+      "instructions": "Does this new history view claim saved text or a completed preparation workflow proves live campaign launch?"
+    },
+    "missing_ui_contract": {
+      "type": "choice",
+      "instructions": "Select the most significant concrete remaining defect in this bounded UI implementation, if the supplied source establishes one.",
+      "criteria": {
+        "optimistic_completion": "Local action success changes displayed completion without server evidence.",
+        "cross_scope": "Wrong owner or project records pass the boundary.",
+        "draft_launch": "Saved outputs are labelled as an actual launched campaign.",
+        "none": "None of these concrete defects is established by the source."
+      }
+    }
+  },
+  "answers": {
+    "manufactured_completion": {
+      "type": "noul",
+      "noul": 0.1
+    },
+    "cross_scope_display": {
+      "type": "noul",
+      "noul": 0.04
+    },
+    "draft_launch_overclaim": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "missing_ui_contract": {
+      "type": "choice",
+      "choice": "none",
+      "confidence": 0.8,
+      "probabilities": {
+        "draft_launch": 0.01,
+        "none": 0.85,
+        "cross_scope": 0.09,
+        "optimistic_completion": 0.05
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 6008,
+    "output_tokens": 110
+  },
+  "requestId": "req_01a0fd1092c6724f988d77676a5128f3"
+}

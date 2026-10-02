@@ -1,0 +1,11 @@
+# Workflow results consumer — ISSUE-1451
+
+Marketing & Growth now displays saved project-scoped workflow executions and individual step outputs. It remains open after preparation, and queued notifications point to the saved results view. Completion is read from persisted backend state; preparation outputs are labelled as drafts, never as an actual ad launch.
+
+The bounded listener queries the authenticated owner's workflow collection by project/session, ordered by update time descending. Its matching composite index is included for the existing STANDARD edition default database. It validates schema and owner/project/document identities before display, clears rows on error, remounts on owner/project change, and marks the latest 50-record view as partial when another record exists. Metadata-only updates distinguish cached records from server-confirmed state. Cached empty reads do not claim an empty history, and cached records cannot initiate lifecycle actions.
+
+Cancel/resume controls use the existing authenticated backend actions, without renderer writes or step execution. Resume appears only for a failed execution with a failed step. Server-reported completion with nonterminal or missing step evidence is flagged for review. Step outputs render as plain text.
+
+Jev supplied a live advisory source review before the additional cache-freshness hardening. It found none of the proposed optimistic-completion, cross-scope-display or draft-as-launch defects (Choice confidence 0.80). The respective Nouls were 0.10, 0.04 and 0.03. This agrees with source inspection and is not a calibrated safety verdict. Usage: 6,008 input and 110 output tokens; questions, answers and request ID are in `2026-10-02-jev-workflow-review.json`. Credentials stayed in the existing process environment and did not enter the diff; no renderer-side Jev call was added.
+
+Validation covers pure schema/summary boundaries and the existing isolated structural MarketingPanel regression. No new authentication, service, or customer-history mocks were added. No production account, plan, execution, cancellation, resume, reload, or live launch was exercised. ISSUE-1451 remains partial for genuine-owner acceptance; this change closes the missing persisted-result UI consumer.

@@ -5,6 +5,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { OrchestrationService } from '@/services/agent/OrchestrationService';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
+import { WorkflowExecutionHistory } from './WorkflowExecutionHistory';
 
 interface MarketingPanelProps {
     toggleRightPanel: () => void;
@@ -17,6 +18,7 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
     const [dailyBudget, setDailyBudget] = useState(10);
     const projectId = useStore(state => state.currentProjectId || DEFAULT_PROJECT_ID);
     const userProfile = useStore(state => state.userProfile);
+    const signedInUserId = useStore(state => state.user?.uid);
 
     const handleDeploy = async () => {
         if (!userProfile?.id) {
@@ -35,15 +37,11 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
 
             const result = await orchestrationService.executeWorkflowWithStatus(selectedTemplate, context);
             if (!result.completed) {
-                toast.info(`Protocol queued as ${result.executionId}. This panel does not yet display persisted execution results.`);
+                toast.info(`Protocol queued as ${result.executionId}. Follow its progress in Saved workflow results.`);
                 return;
             }
             toast.success('indii Growth Protocol package prepared for review.');
 
-            // Auto close panel after success
-            setTimeout(() => {
-                toggleRightPanel();
-            }, 1500);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Failed to deploy protocol');
         } finally {
@@ -140,6 +138,7 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
                         )}
                     </motion.button>
                 </div>
+                {signedInUserId && <WorkflowExecutionHistory key={`${signedInUserId}:${projectId}`} userId={signedInUserId} projectId={projectId} />}
             </div>
         </div>
     );
