@@ -67,11 +67,28 @@ function fakeFirestore(options: {
                             data: () => ({ ownerId: options.ownerId ?? 'owner-1' }),
                         }),
                     }
-                    : { __path: path, __id: id, create: (value: unknown) => create(path, id, value) },
+                    : {
+                        __path: path,
+                        __id: id,
+                        get: async () => {
+                            reads.push(`${path}/${id}`);
+                            const record = options.records?.[path]?.find(item => item.id === id);
+                            return { exists: Boolean(record), data: () => record?.value };
+                        },
+                        create: (value: unknown) => create(path, id, value),
+                    },
             };
         },
-        runTransaction: async (callback: (transaction: { create: (ref: { __path: string; __id: string }, value: unknown) => void }) => Promise<unknown>) => {
-            await callback({ create: (ref, value) => { writes.push({ path: ref.__path, id: ref.__id, value }); } });
+        runTransaction: async (callback: (transaction: {
+            get: (ref: { get: () => Promise<unknown> }) => Promise<unknown>;
+            create: (ref: { __path: string; __id: string }, value: unknown) => void;
+            update: (ref: { __path: string; __id: string }, value: unknown) => void;
+        }) => Promise<unknown>) => {
+            return await callback({
+                get: ref => ref.get(),
+                create: (ref, value) => { writes.push({ path: ref.__path, id: ref.__id, value }); },
+                update: (ref, value) => { writes.push({ path: ref.__path, id: ref.__id, value }); },
+            });
         },
     } as unknown as Firestore;
 
@@ -272,6 +289,67 @@ describe('CanonicalMusicCatalogStore', () => {
                 value: expect.objectContaining({ eventType: 'claim.received', subject: { entityId: claim.id, entityType: 'rights_claim' } }),
             }),
         ]));
+    });
+
+    it('records owner dispute and withdrawal responses as atomic claim updates plus immutable events', async () => {
+        const claim = {
+            schemaVersion: 'rights-claim.v1',
+            id: 'claim:one',
+            targetEntityId: 'recording:one',
+            type: 'MASTER',
+            status: 'ASSERTED',
+            territoryCodes: ['US'],
+            provenance: { ...provenance, state: 'USER_DECLARED', sourceType: 'USER', sourceId: 'alice-1' },
+            createdAt: '2026-09-25T12:00:00.000Z',
+            updatedAt: '2026-09-25T12:00:00.000Z',
+        };
+        const { firestore, writes } = fakeFirestore({ records: { 'users/alice-1/musicCatalogClaims': [{ id: claim.id, value: claim }] } });
+        const store = createCanonicalMusicCatalogStore(firestore);
+        const result = await store.respondToUserDeclaredClaim('alice-1', { kind: 'user', id: 'alice-1' }, claim.id, {
+            status: 'DISPUTED', note: 'The stated ownership share is being challenged.'
+        });
+
+        expect(result.claim).toMatchObject({ status: 'DISPUTED', provenance: { state: 'USER_DECLARED', sourceId: 'alice-1' } });
+        expect(result.event).toMatchObject({
+            eventType: 'claim.status_changed',
+            details: { previousStatus: 'ASSERTED', status: 'DISPUTED', intake: 'owner-response' },
+            provenance: { state: 'USER_DECLARED', sourceId: 'alice-1' },
+        });
+        expect(writes).toHaveLength(2);
+        expect(writes).toEqual(expect.arrayContaining([
+            expect.objectContaining({ path: 'users/alice-1/musicCatalogClaims', id: claim.id, value: expect.objectContaining({ status: 'DISPUTED' }) }),
+            expect.objectContaining({ path: 'users/alice-1/musicCatalogEvents', id: result.event.eventId, value: expect.objectContaining({ eventType: 'claim.status_changed' }) }),
+        ]));
+    });
+
+    it('rejects responses to another owner claim and illegal lifecycle jumps', async () => {
+        const claim = {
+            schemaVersion: 'rights-claim.v1',
+            id: 'claim:one',
+            targetEntityId: 'recording:one',
+            type: 'MASTER',
+            status: 'WITHDRAWN',
+            territoryCodes: ['US'],
+            provenance: { ...provenance, state: 'USER_DECLARED', sourceType: 'USER', sourceId: 'bob-2' },
+            createdAt: '2026-09-25T12:00:00.000Z',
+            updatedAt: '2026-09-25T12:00:00.000Z',
+        };
+        const { firestore, writes } = fakeFirestore({ records: { 'users/alice-1/musicCatalogClaims': [{ id: claim.id, value: claim }] } });
+        const store = createCanonicalMusicCatalogStore(firestore);
+        await expect(store.respondToUserDeclaredClaim('alice-1', { kind: 'user', id: 'alice-1' }, claim.id, { status: 'ASSERTED' }))
+            .rejects.toMatchObject({ code: 'permission-denied' });
+        expect(writes).toHaveLength(0);
+
+        const withdrawnClaim = {
+            ...claim,
+            status: 'WITHDRAWN',
+            provenance: { ...claim.provenance, sourceId: 'alice-1' },
+        };
+        const second = fakeFirestore({ records: { 'users/alice-1/musicCatalogClaims': [{ id: claim.id, value: withdrawnClaim }] } });
+        const secondStore = createCanonicalMusicCatalogStore(second.firestore);
+        await expect(secondStore.respondToUserDeclaredClaim('alice-1', { kind: 'user', id: 'alice-1' }, claim.id, { status: 'ASSERTED' }))
+            .rejects.toMatchObject({ code: 'failed-precondition' });
+        expect(second.writes).toHaveLength(0);
     });
 
     it('rejects reviewed statuses and provenance attributed to another actor', async () => {

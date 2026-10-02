@@ -112,7 +112,7 @@ export { persistFraudAlert } from './functions/security/persistFraudAlert';
 export { logAuditEvent } from './functions/security/logAuditEvent';
 export { getOrganizationAccessMatrix, updateOrganizationMemberAccess } from './functions/security/organizationAccess';
 export { getCanonicalMusicCatalogIntelligence } from './functions/music/getCanonicalMusicCatalogIntelligence';
-export { getCanonicalClaimsInbox, declareCanonicalRightsClaim } from './functions/music/claimsInbox';
+export { getCanonicalClaimsInbox, declareCanonicalRightsClaim, respondToCanonicalRightsClaim } from './functions/music/claimsInbox';
 export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
 export { claimComputerApproval, denyComputerApproval } from './functions/security/claimComputerApproval';
 export { listErrorReports, updateErrorReportStatus } from './functions/security/errorReportCallables';

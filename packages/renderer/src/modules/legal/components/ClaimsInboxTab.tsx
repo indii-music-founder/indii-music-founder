@@ -23,6 +23,9 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
     const [intakeNote, setIntakeNote] = useState('');
     const [saving, setSaving] = useState(false);
     const [intakeError, setIntakeError] = useState<string | null>(null);
+    const [responseError, setResponseError] = useState<string | null>(null);
+    const [responseNote, setResponseNote] = useState('');
+    const [respondingClaimId, setRespondingClaimId] = useState<string | null>(null);
 
     useEffect(() => {
         if (initialClaims !== undefined) {
@@ -70,6 +73,27 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
             setIntakeError(error instanceof Error ? error.message : 'Could not save this claim.');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleClaimResponse = async (claimId: string, status: 'ASSERTED' | 'DISPUTED' | 'WITHDRAWN') => {
+        if (status === 'WITHDRAWN' && !window.confirm('Record that you withdraw this claim? This is an owner-declared status change, not a legal ownership finding.')) return;
+        setRespondingClaimId(claimId);
+        setResponseError(null);
+        try {
+            const note = responseNote.trim();
+            const result = await LegalService.respondToCanonicalRightsClaim({
+                claimId,
+                status,
+                ...(note ? { note } : {}),
+            });
+            setClaims(current => current.map(claim => claim.id === claimId ? result.claim : claim));
+            setEvents(current => [...current, result.event]);
+            setResponseNote('');
+        } catch (error) {
+            setResponseError(error instanceof Error ? error.message : 'Could not save this claim response.');
+        } finally {
+            setRespondingClaimId(null);
         }
     };
 
@@ -198,6 +222,9 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
                                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/10 text-gray-300">
                                                     {item.claim.type}
                                                 </span>
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/5 text-gray-400">
+                                                    {item.claim.status}
+                                                </span>
                                                 {item.hasPotentialConflict && (
                                                     <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1">
                                                         <AlertTriangle size={10} />
@@ -237,6 +264,20 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
                                             </div>
                                         </div>
 
+                                        {item.sourceEvents.some(event => event.eventType === 'claim.status_changed') && (
+                                            <div>
+                                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Recorded responses</h4>
+                                                <ul className="space-y-1">
+                                                    {item.sourceEvents.filter(event => event.eventType === 'claim.status_changed').map(event => (
+                                                        <li key={event.eventId} className="text-xs text-gray-400">
+                                                            {String(event.details['previousStatus'] ?? 'UNKNOWN')} → {String(event.details['status'] ?? 'UNKNOWN')} · {new Date(event.recordedAt).toLocaleString()}
+                                                            {typeof event.details['note'] === 'string' && ` — ${event.details['note']}`}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
                                         <div>
                                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Submitted provenance and evidence (unverified)</h4>
                                             <p className="text-xs text-gray-300">Source: {item.claim.provenance.state} / {item.claim.provenance.sourceType}</p>
@@ -275,6 +316,32 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {item.claim.provenance.state === 'USER_DECLARED'
+                                            && item.claim.provenance.sourceType === 'USER'
+                                            && item.claim.status !== 'WITHDRAWN' && (
+                                                <div className="rounded-lg border border-white/10 bg-black/20 p-3 space-y-2">
+                                                    <p className="text-xs text-gray-400">Respond to your assertion. These statuses record your response and do not determine legal ownership.</p>
+                                                    <label className="block text-xs text-gray-400">Response note (optional)
+                                                        <textarea value={responseNote} onChange={event => setResponseNote(event.target.value)} maxLength={2000} rows={2} className="mt-1 w-full rounded border border-white/10 bg-black/30 px-3 py-2 text-sm text-white" />
+                                                    </label>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {item.claim.status === 'ASSERTED' ? (
+                                                            <button type="button" disabled={respondingClaimId === item.claim.id} onClick={() => void handleClaimResponse(item.claim.id, 'DISPUTED')} className="rounded bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200 disabled:opacity-50">
+                                                                {respondingClaimId === item.claim.id ? 'Saving…' : 'Record a dispute'}
+                                                            </button>
+                                                        ) : (
+                                                            <button type="button" disabled={respondingClaimId === item.claim.id} onClick={() => void handleClaimResponse(item.claim.id, 'ASSERTED')} className="rounded bg-white/10 px-3 py-1.5 text-xs text-gray-200 disabled:opacity-50">
+                                                                {respondingClaimId === item.claim.id ? 'Saving…' : 'Clear my dispute'}
+                                                            </button>
+                                                        )}
+                                                        <button type="button" disabled={respondingClaimId === item.claim.id} onClick={() => void handleClaimResponse(item.claim.id, 'WITHDRAWN')} className="rounded bg-white/10 px-3 py-1.5 text-xs text-gray-300 disabled:opacity-50">
+                                                            Withdraw assertion…
+                                                        </button>
+                                                    </div>
+                                                    {responseError && respondingClaimId === null && <p role="alert" className="text-xs text-red-300">{responseError}</p>}
+                                                </div>
+                                            )}
                                     </div>
                                 )}
                             </div>

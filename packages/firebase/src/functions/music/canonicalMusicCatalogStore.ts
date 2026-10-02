@@ -15,6 +15,7 @@ import {
     type RightsClaim,
 } from '@indii/shared';
 import { FieldPath, getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { randomUUID } from 'node:crypto';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 
@@ -110,6 +111,7 @@ export interface CanonicalMusicCatalogStore {
     readCatalogIntelligenceInput(callerUid: string, scope: CanonicalMusicCatalogScope): Promise<CatalogIntelligenceInput>;
     readClaimsInboxInput(callerUid: string, scope: CanonicalMusicCatalogScope): Promise<z.infer<typeof CanonicalClaimsInboxSnapshotSchema>>;
     appendUserDeclaredClaim(callerUid: string, scope: CanonicalMusicCatalogScope, input: unknown): Promise<z.infer<typeof CanonicalDeclaredClaimResultSchema>>;
+    respondToUserDeclaredClaim(callerUid: string, scope: CanonicalMusicCatalogScope, claimId: string, input: unknown): Promise<z.infer<typeof CanonicalDeclaredClaimResultSchema>>;
     appendEntity(callerUid: string, scope: CanonicalMusicCatalogScope, input: unknown): Promise<CanonicalMusicEntity>;
     appendRelationship(callerUid: string, scope: CanonicalMusicCatalogScope, input: unknown): Promise<MusicRelationship>;
     appendIdentifier(callerUid: string, scope: CanonicalMusicCatalogScope, input: unknown): Promise<MusicIdentifier>;
@@ -316,6 +318,74 @@ export function createCanonicalMusicCatalogStore(
                 transaction.create(eventRef, parsedEvent as FirebaseFirestore.DocumentData);
             });
             return CanonicalDeclaredClaimResultSchema.parse({ claim, event: parsedEvent });
+        },
+        async respondToUserDeclaredClaim(callerUid, scope, claimId, input) {
+            const authorizedScope = await assertOwnerScope(firestore, callerUid, scope, 'write');
+            const response = z.object({
+                status: z.enum(['ASSERTED', 'DISPUTED', 'WITHDRAWN']),
+                note: z.string().trim().max(2000).optional(),
+            }).strict().safeParse(input);
+            if (!response.success) invalidArgument('The owner claim response is invalid.');
+            assertInternalEntityReference(claimId);
+
+            const claimsPath = scopeCollectionPath(authorizedScope, 'claims');
+            const claimRef = firestore.collection(claimsPath).doc(claimId);
+            const now = new Date().toISOString();
+            return firestore.runTransaction(async transaction => {
+                const snapshot = await transaction.get(claimRef);
+                if (!snapshot.exists) throw new HttpsError('not-found', 'The rights claim was not found.');
+                const parsedClaim = RightsClaimSchema.safeParse(snapshot.data());
+                if (!parsedClaim.success || parsedClaim.data.id !== claimId) {
+                    throw new HttpsError('data-loss', 'The stored rights claim failed validation.');
+                }
+                const current = parsedClaim.data;
+                if (current.provenance.state !== 'USER_DECLARED' || current.provenance.sourceType !== 'USER'
+                    || current.provenance.sourceId !== callerUid) {
+                    throw new HttpsError('permission-denied', 'You can respond only to a claim you declared.');
+                }
+                const allowed: Record<RightsClaim['status'], RightsClaim['status'][]> = {
+                    ASSERTED: ['DISPUTED', 'WITHDRAWN'],
+                    DISPUTED: ['ASSERTED', 'WITHDRAWN'],
+                    CONFIRMED: [],
+                    WITHDRAWN: [],
+                    UNKNOWN: [],
+                };
+                if (!allowed[current.status].includes(response.data.status)) {
+                    throw new HttpsError('failed-precondition', `A ${current.status} claim cannot change to ${response.data.status}.`);
+                }
+
+                const claim = RightsClaimSchema.parse({ ...current, status: response.data.status, updatedAt: now });
+                const eventId = `claim-status:${randomUUID()}`;
+                const event = MusicDomainEventSchema.parse({
+                    schemaVersion: 'music-domain-event.v1',
+                    eventId,
+                    eventType: 'claim.status_changed',
+                    subject: { entityId: claim.id, entityType: 'rights_claim' },
+                    relatedEntities: [],
+                    occurredAt: now,
+                    recordedAt: now,
+                    details: {
+                        previousStatus: current.status,
+                        status: claim.status,
+                        intake: 'owner-response',
+                        ...(response.data.note ? { note: response.data.note } : {}),
+                    },
+                    provenance: {
+                        state: 'USER_DECLARED',
+                        sourceType: 'USER',
+                        sourceId: callerUid,
+                        observedAt: now,
+                        evidence: [],
+                        ...(response.data.note ? { note: response.data.note } : {}),
+                    },
+                });
+                assertBoundedJson(claim);
+                assertBoundedJson(event);
+                const eventRef = firestore.collection(scopeCollectionPath(authorizedScope, 'events')).doc(eventId);
+                transaction.update(claimRef, claim as FirebaseFirestore.DocumentData);
+                transaction.create(eventRef, event as FirebaseFirestore.DocumentData);
+                return CanonicalDeclaredClaimResultSchema.parse({ claim, event });
+            });
         },
         async readCatalogIntelligenceInput(callerUid, scope) {
             const authorizedScope = await assertOwnerScope(firestore, callerUid, scope, 'read');

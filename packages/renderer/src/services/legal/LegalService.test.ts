@@ -5,6 +5,8 @@ import { useStore } from '@/core/store';
 import { ContractStatus } from '@/modules/legal/types';
 import { addDoc, getDocs } from 'firebase/firestore';
 
+const mockHttpsCallable = vi.hoisted(() => vi.fn());
+
 // Mock dependencies
 vi.mock('@/services/firebase', () => ({
     db: {},
@@ -37,6 +39,7 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/core/store', () => ({
     useStore: { getState: vi.fn() }
 }));
+vi.mock('firebase/functions', () => ({ httpsCallable: mockHttpsCallable }));
 
 describe('LegalService', () => {
     beforeEach(() => {
@@ -127,5 +130,30 @@ describe('LegalService', () => {
         expect(analyses[0]!.score).toBe(72);
         expect(analyses[1]!.score).toBe(90);
     });
-});
 
+    it('records a human claim response through the admitted callable', async () => {
+        const now = '2026-10-02T12:00:00.000Z';
+        const claim = {
+            schemaVersion: 'rights-claim.v1', id: 'claim:one', targetEntityId: 'recording:one', type: 'MASTER',
+            status: 'DISPUTED', territoryCodes: ['US'],
+            provenance: { state: 'USER_DECLARED', sourceType: 'USER', sourceId: 'test-user-id', observedAt: now, evidence: [] },
+            createdAt: now, updatedAt: now,
+        };
+        const event = {
+            schemaVersion: 'music-domain-event.v1', eventId: 'claim-status:event-1', eventType: 'claim.status_changed',
+            subject: { entityId: 'claim:one', entityType: 'rights_claim' }, relatedEntities: [],
+            occurredAt: now, recordedAt: now,
+            details: { previousStatus: 'ASSERTED', status: 'DISPUTED', intake: 'owner-response' },
+            provenance: { ...claim.provenance },
+        };
+        const invoke = vi.fn().mockResolvedValue({ data: { claim, event } });
+        mockHttpsCallable.mockReturnValue(invoke);
+
+        await expect(LegalService.respondToCanonicalRightsClaim({ claimId: 'claim:one', status: 'DISPUTED' }))
+            .resolves.toMatchObject({ claim: { status: 'DISPUTED' }, event: { eventType: 'claim.status_changed' } });
+        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'respondToCanonicalRightsClaim');
+        expect(invoke).toHaveBeenCalledWith({
+            claimId: 'claim:one', status: 'DISPUTED', scope: { kind: 'user', id: 'test-user-id' },
+        });
+    });
+});

@@ -36,6 +36,12 @@ const DeclareRequestSchema = z.object({
     evidence: z.array(OwnerEvidenceSchema).max(100).default([]),
     note: z.string().trim().max(2000).optional(),
 }).strict();
+const RespondRequestSchema = z.object({
+    scope: CanonicalMusicCatalogScopeSchema,
+    claimId: InternalEntityIdSchema,
+    status: z.enum(['ASSERTED', 'DISPUTED', 'WITHDRAWN']),
+    note: z.string().trim().max(2000).optional(),
+}).strict();
 
 type RequestAdmission = (request: CallableRequest<unknown>, operation: string) => Promise<string>;
 
@@ -93,6 +99,23 @@ export async function resolveDeclareRightsClaim(
         .appendUserDeclaredClaim(uid, parsed.data.scope, claim);
 }
 
+export async function resolveRespondToRightsClaim(
+    request: CallableRequest<unknown>,
+    dependencies: {
+        admit?: RequestAdmission;
+        store?: CanonicalMusicCatalogStore;
+    } = {},
+) {
+    const parsed = RespondRequestSchema.safeParse(request.data);
+    if (!parsed.success) throw new HttpsError('invalid-argument', 'The claim response is invalid.');
+    const uid = await (dependencies.admit ?? admitOrganizationAccessRequest)(request, 'claims-inbox-respond');
+    return (dependencies.store ?? createCanonicalMusicCatalogStore())
+        .respondToUserDeclaredClaim(uid, parsed.data.scope, parsed.data.claimId, {
+            status: parsed.data.status,
+            ...(parsed.data.note ? { note: parsed.data.note } : {}),
+        });
+}
+
 export const getCanonicalClaimsInbox = onCall(
     organizationAccessCallableOptions,
     request => resolveClaimsInbox(request),
@@ -101,4 +124,9 @@ export const getCanonicalClaimsInbox = onCall(
 export const declareCanonicalRightsClaim = onCall(
     organizationAccessCallableOptions,
     request => resolveDeclareRightsClaim(request),
+);
+
+export const respondToCanonicalRightsClaim = onCall(
+    organizationAccessCallableOptions,
+    request => resolveRespondToRightsClaim(request),
 );

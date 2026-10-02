@@ -134,4 +134,35 @@ describe('ClaimsInboxTab', () => {
         })));
         expect(await screen.findByTestId('claim-item-claim:new')).toBeInTheDocument();
     });
+
+    it('lets the owner record a dispute and shows the persisted status event', async () => {
+        const now = '2026-10-02T12:00:00.000Z';
+        const ownedClaim: RightsClaim = {
+            ...mockClaims[0]!,
+            provenance: { ...mockClaims[0]!.provenance, sourceId: 'owner-1' },
+        };
+        const disputedClaim = { ...ownedClaim, status: 'DISPUTED' as const, updatedAt: now };
+        const event = {
+            schemaVersion: 'music-domain-event.v1' as const,
+            eventId: 'claim-status:event-1',
+            eventType: 'claim.status_changed' as const,
+            subject: { entityId: ownedClaim.id, entityType: 'rights_claim' as const },
+            relatedEntities: [],
+            occurredAt: now,
+            recordedAt: now,
+            details: { previousStatus: 'ASSERTED', status: 'DISPUTED', intake: 'owner-response' },
+            provenance: { ...ownedClaim.provenance, observedAt: now, evidence: [] },
+        };
+        vi.spyOn(LegalService, 'loadCanonicalClaimsInbox').mockResolvedValueOnce({
+            claims: [ownedClaim], events: [], evaluatedAt: now, storageTruncated: false,
+        });
+        const respond = vi.spyOn(LegalService, 'respondToCanonicalRightsClaim').mockResolvedValueOnce({ claim: disputedClaim, event });
+
+        render(<ClaimsInboxTab />);
+        const item = await screen.findByTestId(`claim-item-${ownedClaim.id}`);
+        fireEvent.click(item.querySelector('div')!);
+        fireEvent.click(screen.getByRole('button', { name: 'Record a dispute' }));
+        await waitFor(() => expect(respond).toHaveBeenCalledWith({ claimId: ownedClaim.id, status: 'DISPUTED' }));
+        expect(await screen.findByText(/ASSERTED → DISPUTED/)).toBeInTheDocument();
+    });
 });

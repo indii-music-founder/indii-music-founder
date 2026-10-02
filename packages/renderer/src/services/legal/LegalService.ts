@@ -218,4 +218,20 @@ export class LegalService {
         const response = await create({ ...input, scope: { kind: 'user', id: userId } });
         return CanonicalDeclaredClaimResultSchema.parse(response.data);
     }
+
+    static async respondToCanonicalRightsClaim(input: {
+        claimId: string;
+        status: 'ASSERTED' | 'DISPUTED' | 'WITHDRAWN';
+        note?: string;
+    }): Promise<CanonicalDeclaredClaimResult> {
+        const userId = useStore.getState().userProfile?.id;
+        if (!userId) throw new AppException(AppErrorCode.AUTH_ERROR, 'Sign in to respond to a claim.');
+        if (!functions) throw new Error('Claims inbox service is unavailable.');
+        const respond = httpsCallable<typeof input & { scope: { kind: 'user'; id: string } }, unknown>(
+            functions,
+            'respondToCanonicalRightsClaim',
+        );
+        const response = await respond({ ...input, scope: { kind: 'user', id: userId } });
+        return CanonicalDeclaredClaimResultSchema.parse(response.data);
+    }
 }
