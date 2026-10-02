@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { HistoryItem } from '@/core/store';
+import React, { useEffect, useState } from 'react';
+import { HistoryItem, useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 import { CanvasHeader } from './CanvasHeader';
 import { CanvasToolbar } from './CanvasToolbar';
@@ -11,6 +11,8 @@ import { CanvasActionRail } from './CanvasActionRail';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { canvasOps } from '../services/CanvasOperationsService';
 import { useCreativeCanvas } from '../hooks/useCreativeCanvas';
+import { printReadyUpscaleService } from '@/services/upscale/PrintReadyUpscaleService';
+import { useToast } from '@/core/context/ToastContext';
 
 interface CreativeCanvasProps {
     item: HistoryItem | null;
@@ -82,6 +84,51 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleAddSketchLayer,
         handleSendToCanvas,
     } = useCreativeCanvas({ item, onClose, onRefine });
+
+    const [isUpscaling, setIsUpscaling] = useState(false);
+    const toast = useToast();
+
+    const handleUpscaleToPrintReady = async () => {
+        if (!item || !item.url) return;
+        setIsUpscaling(true);
+        try {
+            toast.info("Upscaling to 3000x3000px @ 300 DPI print standard...");
+            const result = await printReadyUpscaleService.upscaleToPrintReady({
+                dataUrl: item.url,
+                prompt: item.prompt,
+            });
+            const { addToHistory, setSelectedItem } = useStore.getState();
+            const upscaledItem: HistoryItem = {
+                ...item,
+                id: `print-3000-${Date.now()}`,
+                url: result.dataUrl,
+                timestamp: Date.now(),
+                origin: 'editor',
+                distributorCompliance: {
+                    valid: true,
+                    errors: [],
+                    warnings: [],
+                    measuredWidth: 3000,
+                    measuredHeight: 3000,
+                    mimeType: result.format,
+                },
+                meta: JSON.stringify({
+                    width: 3000,
+                    height: 3000,
+                    dpi: 300,
+                    upscaled: true,
+                    upscaleMethod: result.method,
+                }),
+            };
+            addToHistory(upscaledItem);
+            setSelectedItem(upscaledItem);
+            toast.success(`Upscaled to 3000x3000px (300 DPI) via ${result.method === 'desktop-realesrgan' ? 'Desktop AI' : 'Bicubic High-DPI'}`);
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Upscaling failed');
+        } finally {
+            setIsUpscaling(false);
+        }
+    };
 
     // ISSUE-1390: Escape always returns to the canvas — the editor overlay
     // previously had no keyboard path back, and on mobile no visible one.
@@ -200,6 +247,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 // ISSUE-1395: the canvas board is image-only —
                                 // hide the rail send action for video items.
                                 onSendToCanvas={item.type === 'image' ? handleSendToCanvas : undefined}
+                                onUpscaleToPrint={handleUpscaleToPrintReady}
+                                isUpscaling={isUpscaling}
                             />
                         </div>
                     </div>

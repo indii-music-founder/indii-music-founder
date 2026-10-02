@@ -1,5 +1,5 @@
 import React from 'react';
-import { Film, Image as ImageIcon, Layers, Play, Save, Sparkles, Wand2, X, MonitorUp } from 'lucide-react';
+import { Film, Image as ImageIcon, Layers, Play, Save, Sparkles, Wand2, X, MonitorUp, Maximize2 } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -35,6 +35,8 @@ interface CanvasActionRailProps {
     flattenCanvas?: () => void;
     // ISSUE-1391: direct handoff of the edited asset onto the canvas.
     onSendToCanvas?: () => void | Promise<void>;
+    onUpscaleToPrint?: () => void | Promise<void>;
+    isUpscaling?: boolean;
 }
 
 export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
@@ -52,6 +54,8 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
     batchExportDimensions,
     flattenCanvas,
     onSendToCanvas,
+    onUpscaleToPrint,
+    isUpscaling,
 }) => {
     const actionButtonClass = "w-11 h-11 rounded-xl border border-white/10 bg-[#0b0d10]/90 text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed";
     const primaryButtonClass = "w-11 h-11 rounded-xl border border-dept-creative/30 bg-dept-creative text-white shadow-[0_0_22px_rgba(0,255,136,0.25)] hover:bg-dept-creative/80 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/60 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -65,6 +69,18 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
         ...(isImage ? [{
             id: 'exports',
             actions: [
+                ...(onUpscaleToPrint
+                    ? [{
+                        id: 'upscale-3000',
+                        label: isUpscaling ? 'Upscaling to 3000px...' : 'Upscale (3000px Print Spec)',
+                        icon: Maximize2,
+                        onClick: () => void onUpscaleToPrint(),
+                        disabled: isProcessing || isUpscaling,
+                        className: `${actionButtonClass} text-amber-400 hover:text-amber-300 border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 hover:bg-amber-500/20`,
+                        testId: 'upscale-3000-btn',
+                        spin: isUpscaling,
+                    }]
+                    : []),
                 {
                     id: 'multi-format',
                     label: 'Multi-Format Export',

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as fabric from 'fabric';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
@@ -11,6 +11,8 @@ import { ExportBar, type ExportFormat } from './ExportBar';
 import { useCanvasAutosave } from '../../hooks/useCanvasAutosave';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { canvasDocToPsd } from '@/services/canvas/PsdExportService';
+import { printReadyUpscaleService } from '@/services/upscale/PrintReadyUpscaleService';
+import { useToast } from '@/core/context/ToastContext';
 
 type LayerIdCarrier = fabric.FabricObject & { layerId?: string };
 
@@ -52,6 +54,7 @@ export const CanvasEditor: React.FC = () => {
             closeDoc: state.closeDoc,
         })),
     );
+    const toast = useToast();
 
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const fabricRef = useRef<fabric.Canvas | null>(null);
@@ -199,6 +202,32 @@ export const CanvasEditor: React.FC = () => {
         [currentDoc],
     );
 
+    const [isUpscaling, setIsUpscaling] = useState(false);
+    const handleUpscalePrintReady = async () => {
+        if (!currentDoc) return;
+        const canvas = fabricRef.current;
+        if (!canvas) return;
+        setIsUpscaling(true);
+        try {
+            toast.info("Upscaling canvas to 3000x3000px @ 300 DPI print standard...");
+            const { proxyScale } = getViewportProxy(currentDoc.width, currentDoc.height);
+            const exportMultiplier = 1 / proxyScale;
+            const dataUrl = canvas.toDataURL({ format: 'png', multiplier: exportMultiplier });
+            const result = await printReadyUpscaleService.upscaleToPrintReady({
+                dataUrl,
+                prompt: currentDoc.id,
+            });
+            const stem = `canvas-${currentDoc.id.slice(0, 8)}-3000px`;
+            const { downloadAsset } = await import('@/utils/download');
+            await downloadAsset(result.dataUrl, `${stem}.png`);
+            toast.success(`Exported 3000x3000px (300 DPI) via ${result.method === 'desktop-realesrgan' ? 'Desktop AI' : 'Bicubic High-DPI'}`);
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Upscale export failed');
+        } finally {
+            setIsUpscaling(false);
+        }
+    };
+
     if (!currentDoc) {
         return (
             <div
@@ -248,7 +277,11 @@ export const CanvasEditor: React.FC = () => {
                     />
                 )}
                 <div className="mt-auto">
-                    <ExportBar onExport={(f, s) => void handleExport(f, s)} />
+                    <ExportBar
+                        onExport={(f, s) => void handleExport(f, s)}
+                        onUpscaleToPrint={handleUpscalePrintReady}
+                        isUpscaling={isUpscaling}
+                    />
                 </div>
             </aside>
         </div>

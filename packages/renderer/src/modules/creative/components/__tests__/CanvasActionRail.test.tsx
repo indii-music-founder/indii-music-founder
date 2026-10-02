@@ -111,4 +111,14 @@ describe('CanvasActionRail', () => {
         expect(screen.getByTestId('send-to-video-btn')).toBeDisabled();
         expect(screen.getByTestId('create-last-frame-inline-btn')).toBeDisabled();
     });
+
+    it('triggers upscale to 3000px when onUpscaleToPrint is provided', () => {
+        const onUpscaleToPrint = vi.fn();
+        renderRail({ onUpscaleToPrint });
+
+        const upscaleBtn = screen.getByTestId('upscale-3000-btn');
+        expect(upscaleBtn).toBeInTheDocument();
+        fireEvent.click(upscaleBtn);
+        expect(onUpscaleToPrint).toHaveBeenCalledOnce();
+    });
 });
