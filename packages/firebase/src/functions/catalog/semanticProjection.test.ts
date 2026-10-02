@@ -13,6 +13,10 @@ const docRef = (path: string) => ({
     },
     set: async (data: Record<string, unknown>) => { store.set(path, { exists: true, data }); },
     delete: async () => { deletes.push(path); store.delete(path); },
+    update: async (data: Record<string, unknown>) => {
+        const current = store.get(path);
+        if (current) store.set(path, { exists: true, data: { ...current.data, ...data } });
+    },
     collection: (sub: string) => colRef(`${path}/${sub}`),
 });
 const colRef = (path: string, state: { ownerId?: string; limit?: number; cursor?: string } = {}) => {
@@ -42,12 +46,35 @@ const colRef = (path: string, state: { ownerId?: string; limit?: number; cursor?
 
 vi.mock('firebase-admin', () => ({
     firestore: Object.assign(
-        () => ({ collection: (p: string) => colRef(p), doc: (p: string) => docRef(p) }),
+        () => ({
+            collection: (p: string) => colRef(p),
+            doc: (p: string) => docRef(p),
+            runTransaction: async (callback: (tx: unknown) => Promise<unknown>) => callback({
+                get: (ref: ReturnType<typeof docRef>) => ref.get(),
+                update: (ref: ReturnType<typeof docRef>, data: Record<string, unknown>) => ref.update(data),
+                set: (ref: ReturnType<typeof docRef>, data: Record<string, unknown>) => ref.set(data),
+                delete: (ref: ReturnType<typeof docRef>) => ref.delete(),
+            }),
+            batch: () => {
+                const writes: Array<() => Promise<void>> = [];
+                return {
+                    set: (ref: ReturnType<typeof docRef>, data: Record<string, unknown>) => { writes.push(() => ref.set(data)); },
+                    delete: (ref: ReturnType<typeof docRef>) => { writes.push(() => ref.delete()); },
+                    commit: async () => { await Promise.all(writes.map(write => write())); },
+                };
+            },
+        }),
         { FieldValue: { serverTimestamp: () => 'SERVER_TIMESTAMP' }, Timestamp: { now: () => ({ toDate: () => new Date() }) } },
     ),
 }));
 
-import { buildSemanticNode, catalogSemanticApi, projectSemanticNode } from './semanticProjection.js';
+vi.mock('firebase-functions/v2/https', () => ({
+    onRequest: (_options: unknown, handler: unknown) => handler,
+    onCall: (_options: unknown, handler: unknown) => handler,
+    HttpsError: class HttpsError extends Error { constructor(readonly code: string, message: string) { super(message); } },
+}));
+
+import { buildSemanticNode, catalogSemanticApi, projectSemanticNode, setCatalogVisibility, toPublicCatalogProjection } from './semanticProjection.js';
 
 function makeRes() {
     const res = {
@@ -214,5 +241,77 @@ describe('catalogSemanticApi (public JSON-LD endpoint)', () => {
             { method: 'GET', query: { artistId: 'user-1', limit: '1000' } },
             res,
         )).rejects.toThrow();
+    });
+});
+
+describe('setCatalogVisibility (owner publication control)', () => {
+    const masterHash = 'a'.repeat(64);
+    const receiptId = `led_v1_${'b'.repeat(40)}`;
+    const receipt = {
+        id: receiptId,
+        userId: 'user-1',
+        schemaVersion: 'admin-ledger-receipt.v1',
+        masterHash,
+        storageGeneration: '17273000000000000',
+        splits: {
+            recording: [{ collaboratorId: 'ana', shareBasisUnits: 1_000_000 }],
+            publishing: [{ collaboratorId: 'ana', shareBasisUnits: 1_000_000 }],
+        },
+        signatories: [{ collaboratorId: 'ana', method: 'split-invitation@v1', signedAt: '2026-09-26T12:00:00.000Z', receiptHash: 'c'.repeat(40) }],
+        identifiers: { isrc: 'USABC7123456' },
+        lockedAt: '2026-09-26T12:00:00.000Z',
+    };
+
+    beforeEach(() => {
+        store.clear();
+        deletes.length = 0;
+    });
+
+    function seedLockedProjection(precleared = true) {
+        const node = {
+            ...buildSemanticNode({
+                ...CLEAN_INPUT,
+                entityId: masterHash,
+                ownerId: 'user-1',
+                relations: [{ subject: masterHash, predicate: 'master_owned_by', object: receiptId }],
+                signedCollaboratorIds: precleared ? new Set(['ana', 'zed', 'wren']) : new Set(['ana']),
+                visibility: 'private',
+            }),
+        };
+        store.set(`users/user-1/master_admin/${masterHash}`, { exists: true, data: { lifecycle: 'ADMIN_LOCKED', ledgerReceiptId: receiptId, catalogVisibility: 'private' } });
+        store.set(`users/user-1/catalog_graph/${masterHash}`, { exists: true, data: node });
+        store.set(`users/user-1/admin_ledger/${receiptId}`, { exists: true, data: receipt });
+        return node;
+    }
+
+    it('atomically publishes only an owner-scoped projection backed by its locked receipt', async () => {
+        seedLockedProjection();
+        await expect((setCatalogVisibility as unknown as (request: unknown) => Promise<unknown>)({
+            auth: { uid: 'user-1' }, data: { masterHash, visibility: 'public' },
+        })).resolves.toEqual({ masterHash, visibility: 'public' });
+        expect(store.get(`users/user-1/master_admin/${masterHash}`)?.data['catalogVisibility']).toBe('public');
+        expect(store.get(`users/user-1/catalog_graph/${masterHash}`)?.data['visibility']).toBe('public');
+        expect(store.get(`public_catalog/${masterHash}`)?.data['ownerId']).toBe('user-1');
+    });
+
+    it('requires authentication and refuses publication without verified preclearance', async () => {
+        seedLockedProjection(false);
+        await expect((setCatalogVisibility as unknown as (request: unknown) => Promise<unknown>)({
+            data: { masterHash, visibility: 'public' },
+        })).rejects.toMatchObject({ code: 'unauthenticated' });
+        await expect((setCatalogVisibility as unknown as (request: unknown) => Promise<unknown>)({
+            auth: { uid: 'user-1' }, data: { masterHash, visibility: 'public' },
+        })).rejects.toMatchObject({ code: 'failed-precondition' });
+        expect(store.has(`public_catalog/${masterHash}`)).toBe(false);
+    });
+
+    it('removes the public mirror when the owner returns an item to private', async () => {
+        const node = seedLockedProjection();
+        store.set(`public_catalog/${masterHash}`, { exists: true, data: toPublicCatalogProjection({ ...node, visibility: 'public' }) });
+        await (setCatalogVisibility as unknown as (request: unknown) => Promise<unknown>)({
+            auth: { uid: 'user-1' }, data: { masterHash, visibility: 'private' },
+        });
+        expect(store.get(`users/user-1/catalog_graph/${masterHash}`)?.data['visibility']).toBe('private');
+        expect(store.has(`public_catalog/${masterHash}`)).toBe(false);
     });
 });

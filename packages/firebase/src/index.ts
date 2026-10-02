@@ -259,7 +259,7 @@ export { onMasterUploaded } from './functions/audit/onMasterUploaded';
 export { catalogAdminSweep } from './functions/audit/catalogAdminSweep';
 
 // Post-Mastering Administrative Engine (P5) — public semantic catalog JSON-LD API
-export { catalogSemanticApi } from './functions/catalog/semanticProjection';
+export { catalogSemanticApi, setCatalogVisibility } from './functions/catalog/semanticProjection';
 
 // Billing / Cost Control
 export { enforceOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';

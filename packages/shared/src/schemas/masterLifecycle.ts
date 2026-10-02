@@ -89,6 +89,7 @@ export const LifecycleTransitionSchema = z
 export type LifecycleTransition = z.infer<typeof LifecycleTransitionSchema>;
 
 export const MASTER_ADMIN_STATE_SCHEMA_VERSION = 'master-admin-state.v1';
+export const MasterCatalogVisibilitySchema = z.enum(['private', 'public']);
 
 export const MasterAdminStateSchema = z
     .object({
@@ -110,6 +111,8 @@ export const MasterAdminStateSchema = z
          */
         generation: z.string().regex(/^\d{1,20}$/),
         lifecycle: MasterLifecycleStatusSchema,
+        /** Owner-selected publication state; defaults closed until rights are locked. */
+        catalogVisibility: MasterCatalogVisibilitySchema.default('private'),
         enteredAt: z.string().datetime(),
         history: z.array(LifecycleTransitionSchema).max(200),
         openTaskIds: z.array(z.string().min(1).max(160)).max(500),

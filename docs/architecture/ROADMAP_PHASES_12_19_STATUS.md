@@ -12,7 +12,7 @@ succeeded. Those delivery facts do not close the integration gaps below.
 | --- | --- | --- |
 | 12 | Claims/conflict projection and Legal Dashboard tab (#305; Phase 20). Owner-declared claims now enter the canonical owner store through an authenticated callable; claim and receipt event are created atomically. The tab reads the persisted scope and distinguishes loading/unavailable from an empty recorded inbox. | Owner-declared records do not cover external platform/partner intake. There is no durable human review/status-response workflow, and an empty internal inbox does not establish outside-source coverage or catalog completeness. ISSUE-1450 remains partial. |
 | 13 | Catalog evaluator, owner-scoped canonical snapshot persistence and Registration Center consumer (#304). | No automatic legacy migration; incomplete snapshots remain UNKNOWN/PARTIAL. Genuine-account reload/downstream acceptance is not established by the engineering tests. |
-| 14 | Deterministic artist-scoped predictions and sidebar consumer (#307); explicit owner-read/server-write rule. Authenticated create/cancel/resume callables and transactional dependency-aware step claims are now implemented locally; renderer completion writes were removed. | Exact-SHA CI/deploy and genuine-owner execution, cancellation/resume, and reload acceptance remain pending. Marketing panel does not yet display persisted results. ISSUE-1451 remains partial. |
+| 14 | Deterministic artist-scoped predictions and sidebar consumer (#307); explicit owner-read/server-write rule. Authenticated create/cancel/resume callables and transactional dependency-aware step claims are deployed by green exact-SHA run `36956977880`; renderer completion writes were removed. | Genuine-owner execution, cancellation/resume, and reload acceptance remain pending. Marketing panel does not yet display persisted results. ISSUE-1451 remains partial. |
 | 15 | Deterministic review pointers on Connected Intelligence results (#308). | No persisted review queue, lease/dispatch or department consumer completion receipts. A review pointer is not automatic cross-department execution. |
 | 16 | RDR-RCC TSV framing/escaping primitives (#310). | Full partner/profile/AVS validation, DPID/licence setup, reviewed field mapping and exchange remain separate gates. No external transmission is authorized by this audit. |
 | 17 | Scoped AI_USE grant contracts and non-authorizing review projection (#311). | No authoritative grant repository integrated with an AI-ingestion execution gate. Every review remains `executionAuthorized: false`; rule changes to workflow history do not complete AI-rights integration. |
@@ -21,13 +21,16 @@ succeeded. Those delivery facts do not close the integration gaps below.
 
 ### Other started work reconciled in the same audit
 
-- **Post-mastering administrative engine:** P1–P5 code landed, but
-  `projectSemanticNode` has no non-test caller. The runbook does not regenerate
-  catalog projections. The public endpoint now supports the planned bounded
-  public artist feed as well as single public entity retrieval; the SDK exposes
-  validated readers for both. Projection triggers, owner visibility controls,
-  verified-input lifecycle, and `DISTRIBUTION_READY` integration remain open
-  (ISSUE-1452).
+- **Post-mastering administrative engine:** The runbook regenerates semantic
+  projections from the persisted, schema-validated ADMIN_LOCK receipt, and the
+  owner can now set a locked projection private/public through an App Check
+  callable. Publication is rejected unless the projection is bound to that
+  owner's exact receipt and both rights streams are precleared; private
+  revocation removes the public mirror transactionally. A missing visibility
+  choice defaults to private. The public endpoint supports a bounded artist
+  feed and entity retrieval, with validated SDK readers already present.
+  Owner-facing visibility UI, production lifecycle evidence, and
+  human-approved `DISTRIBUTION_READY` integration remain open (ISSUE-1452).
 - **Long-video upload:** App Check fix #349 and production release landed.
   A fresh inspection of the existing genuine signed-in
   `https://app.indii.music/creative` tab showed Long recording / Choose phone

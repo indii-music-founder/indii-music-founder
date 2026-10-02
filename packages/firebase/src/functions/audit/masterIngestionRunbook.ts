@@ -249,13 +249,15 @@ async function writeLedgerReceipt(receipt: Record<string, unknown>): Promise<voi
         .set({ ...receipt, serverUpdatedAt: FieldValue.serverTimestamp() });
 }
 
-/** Project a private catalog node only from the exact, persisted ADMIN_LOCK receipt. */
-export async function projectLockedReceiptPrivately(
+/** Project a catalog node only from the exact, persisted ADMIN_LOCK receipt. */
+export async function projectLockedReceipt(
     userId: string,
     receiptData: Record<string, unknown>,
     release: Record<string, unknown>,
+    visibility: 'private' | 'public' = 'private',
 ): Promise<{ projected: boolean; reason?: string }> {
-    const parsed = AdminLedgerReceiptSchema.safeParse(receiptData);
+    const { serverUpdatedAt: _serverUpdatedAt, ...persistedReceipt } = receiptData;
+    const parsed = AdminLedgerReceiptSchema.safeParse(persistedReceipt);
     if (!parsed.success) return { projected: false, reason: 'ledger receipt failed schema validation' };
     const receipt = parsed.data;
     if (receipt.userId !== userId) return { projected: false, reason: 'ledger receipt owner mismatch' };
@@ -288,10 +290,14 @@ export async function projectLockedReceiptPrivately(
         signedCollaboratorIds: new Set(receipt.signatories.map(signatory => signatory.collaboratorId)),
         territoryRestrictions: [],
         relations: [{ subject: receipt.masterHash, predicate: 'part_of_release', object: receipt.id }],
-        visibility: 'private',
+        visibility,
         ledgerReceiptId: receipt.id,
         generatedAtIso: receipt.lockedAt,
     });
+    if (node.visibility === 'public' &&
+        (!node.master100PercentPrecleared || !node.publishing100PercentPrecleared)) {
+        node.visibility = 'private';
+    }
     const validated = SemanticCatalogNodeSchema.safeParse(node);
     if (!validated.success) return { projected: false, reason: 'semantic catalog node failed schema validation' };
     await projectSemanticNode(userId, validated.data);
@@ -300,9 +306,9 @@ export async function projectLockedReceiptPrivately(
 
 // ── Inngest function ────────────────────────────────────────────────────────
 
-async function transition(userId: string, masterHash: string, to: MasterLifecycleStatus, actor: LifecycleActor, reason: string): Promise<{ to: MasterLifecycleStatus; changed: boolean }> {
+async function transition(userId: string, masterHash: string, to: MasterLifecycleStatus, actor: LifecycleActor, reason: string, metadata: { ledgerReceiptId?: string; distributionReadyRef?: string } = {}): Promise<{ to: MasterLifecycleStatus; changed: boolean }> {
     try {
-        const result = await transitionMasterLifecycle(userId, masterHash, to, actor, reason);
+        const result = await transitionMasterLifecycle(userId, masterHash, to, actor, reason, metadata);
         return { to, changed: result.changed };
     } catch {
         // Illegal edge (e.g. state not yet INGESTED): non-fatal — a later
@@ -399,11 +405,16 @@ export const masterIngestionRunbookFn = (inngestClient: Inngest) =>
                     lockedAtIso,
                 });
                 await writeLedgerReceipt(receipt);
-                const projection = await projectLockedReceiptPrivately(payload.userId, receipt, release);
+                const persistedReceipt = await getDb().collection('users').doc(payload.userId).collection('admin_ledger').doc(String(receipt['id'])).get();
+                const projection = await projectLockedReceipt(
+                    payload.userId,
+                    persistedReceipt.data() ?? {},
+                    release,
+                );
                 if (!projection.projected) {
                     console.log(`[MasterIngestionRunbook] ${payload.masterHash}: private catalog projection skipped — ${projection.reason}`);
                 }
-                const locked = await transition(payload.userId, payload.masterHash, 'ADMIN_LOCKED', 'runbook', `ledger receipt ${receipt['id']} written`);
+                const locked = await transition(payload.userId, payload.masterHash, 'ADMIN_LOCKED', 'runbook', `ledger receipt ${receipt['id']} written`, { ledgerReceiptId: String(receipt['id']) });
                 transitions.push(locked);
                 return { locked: locked.changed || locked.to === 'ADMIN_LOCKED', ledgerReceiptId: String(receipt['id']) };
             });

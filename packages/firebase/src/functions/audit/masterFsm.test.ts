@@ -98,6 +98,21 @@ describe('masterFsm (transactional lifecycle guard)', () => {
         expect(txUpdate).not.toHaveBeenCalled();
     });
 
+    it('stores the exact verified receipt id with the ADMIN_LOCKED transition', async () => {
+        docState.data = {
+            ...structuredClone(ingestedState),
+            lifecycle: 'SPLITS_PENDING',
+            history: [
+                ...structuredClone(ingestedState.history),
+                { from: 'INGESTED', to: 'METADATA_AUDITED', at: '2026-09-26T11:00:00.000Z', actor: 'audit' },
+                { from: 'METADATA_AUDITED', to: 'SPLITS_PENDING', at: '2026-09-26T11:30:00.000Z', actor: 'runbook' },
+            ],
+        };
+        const receiptId = `led_v1_${'c'.repeat(40)}`;
+        await transitionMasterLifecycle('user-1', 'a'.repeat(40), 'ADMIN_LOCKED', 'runbook', 'validated lock', { ledgerReceiptId: receiptId });
+        expect(updatedData?.['ledgerReceiptId']).toBe(receiptId);
+    });
+
     it('throws on illegal edges — no gate may be skipped', async () => {
         await expect(
             transitionMasterLifecycle('user-1', 'a'.repeat(40), 'ADMIN_LOCKED', 'runbook'),
@@ -125,6 +140,7 @@ describe('masterFsm (transactional lifecycle guard)', () => {
         expect(created).toEqual({ created: true });
         expect(txSet).toHaveBeenCalledTimes(1);
         expect(setData?.['lifecycle']).toBe('DRAFT');
+        expect(setData?.['catalogVisibility']).toBe('private');
         expect(setData?.['id']).toBe('b'.repeat(40));
         expect(Array.isArray(setData?.['history'])).toBe(true);
 

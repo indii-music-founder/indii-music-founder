@@ -68,7 +68,7 @@ import {
     evaluateAdminLock,
     findLinkedReleaseId,
     ledgerReceiptIdFor,
-    projectLockedReceiptPrivately,
+    projectLockedReceipt,
 } from './masterIngestionRunbook.js';
 import { AdminLedgerReceiptSchema } from '@indii/shared';
 
@@ -220,7 +220,7 @@ describe('buildLedgerReceipt (content-addressed, schema-validated)', () => {
     });
 });
 
-describe('projectLockedReceiptPrivately (verified private catalog projection)', () => {
+describe('projectLockedReceipt (verified catalog projection)', () => {
     const receipt = buildLedgerReceipt({
         userId: 'user-1',
         masterHash: 'a'.repeat(64),
@@ -243,26 +243,36 @@ describe('projectLockedReceiptPrivately (verified private catalog projection)', 
         store.clear();
     });
 
-    it('projects only the validated receipt and always keeps the node private', async () => {
-        const result = await projectLockedReceiptPrivately('user-1', receipt, {
+    it('projects only the validated persisted receipt and keeps the default private', async () => {
+        const result = await projectLockedReceipt('user-1', receipt, {
             userId: 'user-1',
             metadata: { trackTitle: 'Verified title', instrumentalAvailable: true },
         });
         expect(result).toEqual({ projected: true });
         const node = projectSemanticNodeMock.mock.calls[0]?.[1] as Record<string, unknown>;
         expect(node['visibility']).toBe('private');
+        expect(node['relations']).toContainEqual({ subject: 'a'.repeat(64), predicate: 'master_owned_by', object: receipt['id'] });
         expect(node['master100PercentPrecleared']).toBe(true);
         expect(node['publishing100PercentPrecleared']).toBe(true);
         expect(node['displayName']).toBe('Verified title');
         expect(projectSemanticNodeMock).toHaveBeenCalledTimes(1);
     });
 
+    it('honors a persisted public choice only when both rights streams are precleared', async () => {
+        const result = await projectLockedReceipt('user-1', { ...receipt, serverUpdatedAt: 'server-time' }, {
+            userId: 'user-1',
+            metadata: { trackTitle: 'Verified title' },
+        }, 'public');
+        expect(result).toEqual({ projected: true });
+        expect((projectSemanticNodeMock.mock.calls[0]?.[1] as Record<string, unknown>)['visibility']).toBe('public');
+    });
+
     it('fails closed on owner mismatch, invalid receipt, or missing title', async () => {
-        expect(await projectLockedReceiptPrivately('other-user', receipt, { userId: 'user-1', metadata: { trackTitle: 'Title' } }))
+        expect(await projectLockedReceipt('other-user', receipt, { userId: 'user-1', metadata: { trackTitle: 'Title' } }))
             .toEqual({ projected: false, reason: 'ledger receipt owner mismatch' });
-        expect(await projectLockedReceiptPrivately('user-1', { ...receipt, masterHash: 'bad' }, { userId: 'user-1', metadata: { trackTitle: 'Title' } }))
+        expect(await projectLockedReceipt('user-1', { ...receipt, masterHash: 'bad' }, { userId: 'user-1', metadata: { trackTitle: 'Title' } }))
             .toEqual({ projected: false, reason: 'ledger receipt failed schema validation' });
-        expect(await projectLockedReceiptPrivately('user-1', receipt, { userId: 'user-1', metadata: {} }))
+        expect(await projectLockedReceipt('user-1', receipt, { userId: 'user-1', metadata: {} }))
             .toEqual({ projected: false, reason: 'release title unavailable' });
         expect(projectSemanticNodeMock).not.toHaveBeenCalled();
     });

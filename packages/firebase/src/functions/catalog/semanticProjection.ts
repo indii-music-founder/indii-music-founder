@@ -1,6 +1,8 @@
-import { onRequest } from 'firebase-functions/v2/https';
+import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
+import { z } from 'zod';
 import {
+    AdminLedgerReceiptSchema,
     derivePreclearance,
     SemanticCatalogNodeSchema,
     toCatalogJsonLd,
@@ -92,12 +94,20 @@ export function buildSemanticNode(input: ProjectionInput): SemanticCatalogNode {
 /** Public mirror is written ONLY for opted-in nodes (link/public). */
 export async function projectSemanticNode(userId: string, node: SemanticCatalogNode): Promise<{ mirrored: boolean }> {
     const db = getDb();
-    await db.collection('users').doc(userId).collection('catalog_graph').doc(node.entityId).set(node);
+    const batch = db.batch();
+    batch.set(db.collection('users').doc(userId).collection('catalog_graph').doc(node.entityId), node);
     if (node.visibility === 'private') {
-        await db.collection('public_catalog').doc(node.entityId).delete().catch(() => undefined);
+        batch.delete(db.collection('public_catalog').doc(node.entityId));
+        await batch.commit();
         return { mirrored: false };
     }
-    await db.collection('public_catalog').doc(node.entityId).set({
+    batch.set(db.collection('public_catalog').doc(node.entityId), toPublicCatalogProjection(node));
+    await batch.commit();
+    return { mirrored: true };
+}
+
+export function toPublicCatalogProjection(node: SemanticCatalogNode): Record<string, unknown> {
+    return {
         entityId: node.entityId,
         ownerId: node.ownerId,
         kind: node.kind,
@@ -116,9 +126,65 @@ export async function projectSemanticNode(userId: string, node: SemanticCatalogN
         territoryRestrictions: node.territoryRestrictions,
         relations: node.relations,
         generatedAt: node.generatedAt,
-    });
-    return { mirrored: true };
+    };
 }
+
+const SetCatalogVisibilityPayload = z.object({
+    masterHash: z.string().regex(/^[0-9a-f]{16,64}$/),
+    visibility: z.enum(['private', 'public']),
+}).strict();
+
+/** Owner-controlled publication of a rights-verified catalog projection. */
+export const setCatalogVisibility = onCall(
+    { region: 'us-central1', enforceAppCheck: true, memory: '512MiB' },
+    async request => {
+        if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to change catalog visibility.');
+        const parsed = SetCatalogVisibilityPayload.safeParse(request.data);
+        if (!parsed.success) throw new HttpsError('invalid-argument', 'Catalog visibility request is invalid.');
+        const { masterHash, visibility } = parsed.data;
+        const userId = request.auth.uid;
+        const db = getDb();
+        const stateRef = db.collection('users').doc(userId).collection('master_admin').doc(masterHash);
+        const projectionRef = db.collection('users').doc(userId).collection('catalog_graph').doc(masterHash);
+        const mirrorRef = db.collection('public_catalog').doc(masterHash);
+        const result = await db.runTransaction(async tx => {
+            const [stateSnap, projectionSnap] = await Promise.all([tx.get(stateRef), tx.get(projectionRef)]);
+            if (!stateSnap.exists || !projectionSnap.exists) {
+                throw new HttpsError('not-found', 'A locked catalog projection was not found.');
+            }
+            const state = stateSnap.data() ?? {};
+            const lifecycle = state['lifecycle'];
+            const receiptId = state['ledgerReceiptId'];
+            if (!['ADMIN_LOCKED', 'DISTRIBUTION_READY'].includes(String(lifecycle)) || typeof receiptId !== 'string') {
+                throw new HttpsError('failed-precondition', 'Catalog visibility is available only after the master is administratively locked.');
+            }
+            const receiptRef = db.collection('users').doc(userId).collection('admin_ledger').doc(receiptId);
+            const receiptSnap = await tx.get(receiptRef);
+            if (!receiptSnap.exists) throw new HttpsError('failed-precondition', 'The lock receipt is unavailable.');
+            const { serverUpdatedAt: _serverUpdatedAt, ...receiptData } = receiptSnap.data() ?? {};
+            const receipt = AdminLedgerReceiptSchema.safeParse(receiptData);
+            if (!receipt.success || receipt.data.id !== receiptId || receipt.data.userId !== userId || receipt.data.masterHash !== masterHash) {
+                throw new HttpsError('failed-precondition', 'The persisted lock receipt does not match this master.');
+            }
+            const node = SemanticCatalogNodeSchema.safeParse(projectionSnap.data());
+            if (!node.success || node.data.ownerId !== userId || node.data.entityId !== masterHash ||
+                !node.data.relations.some(relation => relation.predicate === 'master_owned_by' && relation.object === receiptId)) {
+                throw new HttpsError('failed-precondition', 'The semantic projection is not bound to this verified lock receipt.');
+            }
+            if (visibility === 'public' &&
+                (!node.data.master100PercentPrecleared || !node.data.publishing100PercentPrecleared)) {
+                throw new HttpsError('failed-precondition', 'This catalog item is not fully rights-precleared for publication.');
+            }
+            const updated = { ...node.data, visibility };
+            tx.update(stateRef, { catalogVisibility: visibility, updatedAt: admin.firestore.FieldValue.serverTimestamp(), serverUpdatedAt: admin.firestore.FieldValue.serverTimestamp() });
+            tx.set(projectionRef, updated);
+            if (visibility === 'public') tx.set(mirrorRef, toPublicCatalogProjection(updated));
+            else tx.delete(mirrorRef);
+            return { masterHash, visibility };
+        });
+        return result;
+    },
+);
 
 // ── Public JSON-LD endpoint ─────────────────────────────────────────────────
 

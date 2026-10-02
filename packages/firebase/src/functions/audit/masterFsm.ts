@@ -41,6 +41,7 @@ export class MasterLifecycleTransitionError extends Error {
 
 export interface MasterAdminSnapshot {
     lifecycle: MasterLifecycleStatus;
+    catalogVisibility: 'private' | 'public';
     generation: string;
     openTaskIds: string[];
     ledgerReceiptId?: string;
@@ -62,6 +63,7 @@ export async function readMasterAdminState(
     const data = snap.data() ?? {};
     return {
         lifecycle: data['lifecycle'] as MasterLifecycleStatus,
+        catalogVisibility: data['catalogVisibility'] === 'public' ? 'public' : 'private',
         generation: String(data['generation'] ?? ''),
         openTaskIds: Array.isArray(data['openTaskIds']) ? (data['openTaskIds'] as string[]) : [],
         ledgerReceiptId: typeof data['ledgerReceiptId'] === 'string' ? data['ledgerReceiptId'] : undefined,
@@ -89,6 +91,7 @@ export async function ensureMasterAdminState(
             storagePath: params.storagePath,
             generation: params.generation,
             lifecycle: 'DRAFT',
+            catalogVisibility: 'private',
             enteredAt: nowIso,
             history: [],
             openTaskIds: [],
@@ -110,6 +113,7 @@ export async function transitionMasterLifecycle(
     to: MasterLifecycleStatus,
     actor: LifecycleActor,
     reason?: string,
+    metadata: { ledgerReceiptId?: string; distributionReadyRef?: string } = {},
 ): Promise<{ from: MasterLifecycleStatus; to: MasterLifecycleStatus; changed: boolean }> {
     const reference = docPath(userId, masterHash);
     let result: { from: MasterLifecycleStatus; to: MasterLifecycleStatus; changed: boolean } =
@@ -146,6 +150,8 @@ export async function transitionMasterLifecycle(
             'history': trimmedHistory,
             updatedAt: now,
             serverUpdatedAt: now,
+            ...(to === 'ADMIN_LOCKED' && metadata.ledgerReceiptId ? { ledgerReceiptId: metadata.ledgerReceiptId } : {}),
+            ...(to === 'DISTRIBUTION_READY' && metadata.distributionReadyRef ? { distributionReadyRef: metadata.distributionReadyRef } : {}),
         });
         result = { from, to, changed: true };
     });
