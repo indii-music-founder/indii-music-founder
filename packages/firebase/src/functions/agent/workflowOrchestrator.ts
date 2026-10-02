@@ -1,12 +1,14 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import * as logger from 'firebase-functions/logger';
-
+import * as admin from 'firebase-admin';
+import { findReadyWorkflowStep, hasActiveWorkflowStep } from './workflowExecutionGraph';
 
 interface WorkflowStepExecution {
     stepId: string;
     agentId: string;
     prompt?: string;
     status: 'PLANNED' | 'EXECUTING_GENERATION' | 'AWAITING_HUMAN' | 'AWAITING_EVALUATION' | 'STEP_COMPLETE' | 'SKIPPED' | 'FAILED' | 'CANCELLED';
+    idempotencyKey: string;
     result?: string;
     error?: string;
 }
@@ -16,118 +18,80 @@ interface WorkflowExecution {
     userId: string;
     status: 'PLANNED' | 'EXECUTING' | 'AWAITING_HUMAN' | 'AWAITING_EVALUATION' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
     steps: Record<string, WorkflowStepExecution>;
+    edges?: Array<{ from: string; to: string }>;
 }
 
-/**
- * Workflow Orchestrator (Cloud Function)
- *
- * Agentic Harness Primitive: Event-Driven Dormancy
- * Listens for state changes to workflow executions and processes them asynchronously.
- * This allows the agent to "sleep" (consume 0 compute) while waiting for events
- * (e.g. human approval, external webhooks) and wake up only when the state transitions.
- */
 export const workflowOrchestrator = onDocumentWritten(
-    {
-        document: 'users/{userId}/workflowExecutions/{executionId}',
-        region: 'us-central1',
-        // Optional: configure concurrency/memory for heavy agent workloads
-        memory: '512MiB',
-    },
-    async (event) => {
+    { document: 'users/{userId}/workflowExecutions/{executionId}', region: 'us-central1', memory: '512MiB' },
+    async event => {
         const snapshot = event.data;
-        if (!snapshot) {
-            logger.info('No data associated with the event');
-            return;
-        }
+        const after = snapshot?.after.data() as WorkflowExecution | undefined;
+        if (!snapshot || !after) return;
 
-        const after = snapshot.after.data() as WorkflowExecution | undefined;
+        const ref = snapshot.after.ref;
+        const db = admin.firestore();
 
-        if (!after) {
-            logger.info(`Workflow execution ${event.params.executionId} was deleted.`);
-            return;
-        }
-
-        // 1. Check if the workflow was just planned (newly created) or resumed
         if (after.status === 'PLANNED') {
-            logger.info(`[WorkflowOrchestrator] Starting newly planned workflow ${after.id}`);
-            // Transition to EXECUTING
-            await snapshot.after.ref.update({
-                status: 'EXECUTING',
-                updatedAt: Date.now()
+            await db.runTransaction(async tx => {
+                const fresh = await tx.get(ref);
+                if (fresh.exists && fresh.get('status') === 'PLANNED') tx.update(ref, { status: 'EXECUTING', updatedAt: Date.now() });
             });
-            return; // Exit and let the trigger fire again for the EXECUTING state
-        }
-
-        // 2. Check if we are actively executing
-        if (after.status === 'EXECUTING') {
-            logger.info(`[WorkflowOrchestrator] Processing EXECUTING workflow ${after.id}`);
-
-            // Find the next planned step
-            const steps = Object.values(after.steps || {});
-            const nextStep = steps.find(s => s.status === 'PLANNED');
-
-            if (!nextStep) {
-                // Check if all steps are complete
-                const allComplete = steps.every(s => s.status === 'STEP_COMPLETE' || s.status === 'SKIPPED');
-                if (allComplete) {
-                    logger.info(`[WorkflowOrchestrator] All steps complete for ${after.id}. Transitioning to COMPLETED.`);
-                    await snapshot.after.ref.update({
-                        status: 'COMPLETED',
-                        updatedAt: Date.now()
-                    });
-                } else {
-                    const hasFailed = steps.some(s => s.status === 'FAILED');
-                    if (hasFailed) {
-                        logger.error(`[WorkflowOrchestrator] Workflow ${after.id} has failed steps. Transitioning to FAILED.`);
-                        await snapshot.after.ref.update({
-                            status: 'FAILED',
-                            updatedAt: Date.now()
-                        });
-                    } else {
-                        logger.info(`[WorkflowOrchestrator] Workflow ${after.id} is waiting (e.g., AWAITING_HUMAN or AWAITING_EVALUATION). Sleeping.`);
-                    }
-                }
-                return;
-            }
-
-            logger.info(`[WorkflowOrchestrator] Executing step ${nextStep.stepId} (${nextStep.agentId})`);
-
-            // Transition step to EXECUTING_GENERATION
-            await snapshot.after.ref.update({
-                [`steps.${nextStep.stepId}.status`]: 'EXECUTING_GENERATION',
-                [`steps.${nextStep.stepId}.startedAt`]: Date.now(),
-                updatedAt: Date.now()
-            });
-
-            // Get Inngest Client
-            const { inngest } = await import('../orchestration/inngest');
-
-            try {
-                // Fire an event to Inngest to handle the execution in the background
-                await inngest.send({
-                    name: 'workflow/step-started',
-                    data: {
-                        executionId: after.id,
-                        userId: after.userId,
-                        stepId: nextStep.stepId,
-                        agentId: nextStep.agentId,
-                        prompt: nextStep.prompt || 'Execute step'
-                    }
-                });
-                
-                logger.info(`[WorkflowOrchestrator] Successfully dispatched step ${nextStep.stepId} to Inngest`);
-            } catch (err) {
-                const error = err instanceof Error ? err : new Error(String(err));
-                logger.error(`[WorkflowOrchestrator] Failed to dispatch step to Inngest`, error);
-                await snapshot.after.ref.update({
-                    [`steps.${nextStep.stepId}.status`]: 'FAILED',
-                    [`steps.${nextStep.stepId}.error`]: error.message,
-                    updatedAt: Date.now()
-                });
-            }
             return;
         }
+        if (after.status !== 'EXECUTING') return;
 
-        logger.info(`[WorkflowOrchestrator] No action needed for workflow ${after.id} in state ${after.status}`);
-    }
+        const claimed = await db.runTransaction(async tx => {
+            const fresh = await tx.get(ref);
+            if (!fresh.exists || fresh.get('status') !== 'EXECUTING') return null;
+            const execution = fresh.data() as WorkflowExecution;
+            const steps = execution.steps ?? {};
+            const ordered = Object.values(steps);
+            const ready = findReadyWorkflowStep(steps, execution.edges ?? []);
+
+            if (!ready) {
+                const values = Object.values(steps);
+                if (values.length > 0 && values.every(step => ['STEP_COMPLETE', 'SKIPPED'].includes(step.status))) {
+                    tx.update(ref, { status: 'COMPLETED', updatedAt: Date.now() });
+                } else if (values.some(step => step.status === 'FAILED') && !hasActiveWorkflowStep(ordered)) {
+                    tx.update(ref, { status: 'FAILED', updatedAt: Date.now() });
+                }
+                return null;
+            }
+            const now = Date.now();
+            tx.update(ref, {
+                [`steps.${ready.stepId}.status`]: 'EXECUTING_GENERATION',
+                [`steps.${ready.stepId}.startedAt`]: now,
+                updatedAt: now,
+            });
+            return ready;
+        });
+        if (!claimed) return;
+
+        const { inngest } = await import('../orchestration/inngest');
+        try {
+            await inngest.send({
+                name: 'workflow/step-started',
+                data: {
+                    executionId: after.id,
+                    userId: after.userId,
+                    stepId: claimed.stepId,
+                    agentId: claimed.agentId,
+                    prompt: claimed.prompt || 'Execute step',
+                    idempotencyKey: claimed.idempotencyKey,
+                },
+            });
+        } catch (cause) {
+            const error = cause instanceof Error ? cause : new Error(String(cause));
+            logger.error('[WorkflowOrchestrator] Failed to dispatch step to Inngest', error);
+            await db.runTransaction(async tx => {
+                const fresh = await tx.get(ref);
+                if (!fresh.exists || fresh.get('status') === 'CANCELLED' || fresh.get(`steps.${claimed.stepId}.idempotencyKey`) !== claimed.idempotencyKey) return;
+                tx.update(ref, {
+                    [`steps.${claimed.stepId}.status`]: 'FAILED',
+                    [`steps.${claimed.stepId}.error`]: error.message,
+                    updatedAt: Date.now(),
+                });
+            });
+        }
+    },
 );

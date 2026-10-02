@@ -1,65 +1,31 @@
+import { httpsCallable } from 'firebase/functions';
 import { FirestoreService } from '../FirestoreService';
 import { logger } from '@/utils/logger';
-import { v4 as uuidv4 } from 'uuid';
-import { doc, runTransaction } from 'firebase/firestore';
-import { auth, db } from '@/services/firebase';
-import type {
-    WorkflowExecution,
-    WorkflowStepExecution,
-    WorkflowStep,
-    WorkflowEdge,
-} from './types';
+import { auth, functions } from '@/services/firebase';
+import type { WorkflowExecution, WorkflowStep, WorkflowEdge } from './types';
 import {
     WorkflowExecutionSchema,
     WorkflowExecutionStatusEnum,
-    WorkflowStepStatusEnum,
     CanonicalArtistEntityIdSchema,
     predictNextWorkflows,
     type WorkflowPredictionReport,
 } from '@indii/shared';
 
-/**
- * WorkflowStateService — Persistent Workflow State Machine
- *
- * Agentic Harness Primitive #4: Workflow State Tracking
- *
- * Tracks the discrete execution state of multi-step workflows in Firestore
- * so that interrupted workflows can be resumed exactly where they left off
- * without duplicating completed steps.
- *
- * Stored under: `users/{userId}/workflowExecutions/{id}`
- */
+type WorkflowActionResponse = { executionId: string; status: string };
+
 class WorkflowStateServiceImpl {
     private getService(userId: string): FirestoreService<WorkflowExecution> {
         return new FirestoreService<WorkflowExecution>(`users/${userId}/workflowExecutions`);
     }
 
     private normalizeExecution(execution: WorkflowExecution): WorkflowExecution {
-        return WorkflowExecutionSchema.parse({
-            edges: [],
-            ...execution,
-            steps: execution.steps || {},
-        }) as WorkflowExecution;
+        return WorkflowExecutionSchema.parse({ edges: [], ...execution, steps: execution.steps || {} }) as WorkflowExecution;
     }
 
-    private getCanonicalArtistId(value: string | undefined): string | undefined {
-        const parsed = CanonicalArtistEntityIdSchema.safeParse(value);
-        return parsed.success ? parsed.data : undefined;
+    private requireOwner(userId: string): void {
+        if (!userId || auth.currentUser?.uid !== userId) throw new Error('Sign in as the workflow owner to continue.');
     }
 
-    private serializeEdges(edges: WorkflowEdge[]): WorkflowEdge[] {
-        return edges.map(({ from, to, label, metadata }) => ({
-            from,
-            to,
-            ...(label ? { label } : {}),
-            ...(metadata ? { metadata } : {}),
-        }));
-    }
-
-    /**
-     * Create a new workflow execution record with all steps initialized as WorkflowStepStatusEnum.enum.PLANNED.
-     * DEFERRAL: This write will trigger the backend orchestrator to take over.
-     */
     async createExecution(
         userId: string,
         workflowId: string,
@@ -68,345 +34,72 @@ class WorkflowStateServiceImpl {
         sessionId?: string,
         artistEntityId?: string,
     ): Promise<WorkflowExecution> {
-        const service = this.getService(userId);
-        const id = uuidv4();
-        const now = Date.now();
-
-        const stepExecutions: Record<string, WorkflowStepExecution> = {};
-        for (const step of steps) {
-            stepExecutions[step.id] = {
-                stepId: step.id,
-                agentId: step.agentId,
-                prompt: step.prompt,
-                status: WorkflowStepStatusEnum.enum.PLANNED,
-                idempotencyKey: uuidv4(),
-            };
-        }
-
-        const canonicalArtistEntityId = this.getCanonicalArtistId(artistEntityId);
-
-        const execution: WorkflowExecution = {
-            id,
+        this.requireOwner(userId);
+        const parsedArtistId = artistEntityId ? CanonicalArtistEntityIdSchema.safeParse(artistEntityId) : undefined;
+        if (parsedArtistId && !parsedArtistId.success) throw new Error('Workflow artist context must be a canonical artist entity ID.');
+        const create = httpsCallable<{
+            workflowId: string;
+            steps: WorkflowStep[];
+            edges: Array<Pick<WorkflowEdge, 'from' | 'to' | 'label'>>;
+            sessionId?: string;
+            artistEntityId?: string;
+        }, { executionId: string; status: string }>(functions, 'createWorkflowExecution');
+        const response = await create({
             workflowId,
-            ...(canonicalArtistEntityId ? { artistEntityId: canonicalArtistEntityId } : {}),
-            sessionId,
-            userId,
-            status: WorkflowExecutionStatusEnum.enum.PLANNED,
-            steps: stepExecutions,
-            edges: this.serializeEdges(edges),
-            createdAt: now,
-            updatedAt: now,
-        };
-
-        await service.set(id, execution);
-        logger.info(`[WorkflowState] Created execution ${id} for workflow '${workflowId}' with ${steps.length} steps and ${edges.length} edges`);
+            steps,
+            edges: edges.map(({ from, to, label }) => ({ from, to, ...(label ? { label } : {}) })),
+            ...(sessionId ? { sessionId } : {}),
+            ...(parsedArtistId?.success ? { artistEntityId: parsedArtistId.data } : {}),
+        });
+        const execution = await this.getExecution(userId, response.data.executionId);
+        if (!execution) throw new Error('Workflow was accepted, but its persisted state is not yet readable. Refresh to check its status.');
+        logger.info(`[WorkflowState] Server created execution ${execution.id} for workflow '${workflowId}'`);
         return execution;
     }
 
-    /**
-     * Get all workflow executions for a specific user.
-     */
     async getExecutionsByUser(userId: string): Promise<WorkflowExecution[]> {
-        const service = this.getService(userId);
-        const executions = await service.list();
-        return executions.map(execution => this.normalizeExecution(execution));
+        this.requireOwner(userId);
+        return (await this.getService(userId).list()).map(execution => this.normalizeExecution(execution));
     }
 
-    /**
-     * Return an advisory next-workflow suggestion from this authenticated
-     * user's persisted completion history. This is read-only and never starts
-     * or authorizes a workflow.
-     */
     async getNextWorkflowPrediction(userId: string, artistEntityId: string): Promise<WorkflowPredictionReport | null> {
-        const scopedUserId = userId.trim();
         const canonicalArtistId = CanonicalArtistEntityIdSchema.safeParse(artistEntityId);
-        if (!scopedUserId || !canonicalArtistId.success || auth.currentUser?.uid !== scopedUserId) return null;
-        const executions = await this.getExecutionsByUser(scopedUserId);
-        return predictNextWorkflows({
-            userId: scopedUserId,
-            artistEntityId: canonicalArtistId.data,
-            executions,
-            evaluatedAt: new Date().toISOString(),
-        });
+        if (!canonicalArtistId.success || auth.currentUser?.uid !== userId) return null;
+        const executions = await this.getExecutionsByUser(userId);
+        return predictNextWorkflows({ userId, artistEntityId: canonicalArtistId.data, executions, evaluatedAt: new Date().toISOString() });
     }
 
-    /**
-     * Get a specific workflow execution by ID.
-     */
     async getExecution(userId: string, executionId: string): Promise<WorkflowExecution | null> {
-        const service = this.getService(userId);
-        const execution = await service.get(executionId);
+        this.requireOwner(userId);
+        const execution = await this.getService(userId).get(executionId);
         return execution ? this.normalizeExecution(execution) : null;
     }
 
-    /**
-     * Find all non-terminal (resumable) workflow executions for a user.
-     * Returns executions with status WorkflowStepStatusEnum.enum.PLANNED, WorkflowExecutionStatusEnum.enum.EXECUTING, or WorkflowExecutionStatusEnum.enum.FAILED (can be retried).
-     */
     async getResumableExecutions(userId: string): Promise<WorkflowExecution[]> {
-        const service = this.getService(userId);
-        const all = await service.list();
-        const executions = all.map(execution => this.normalizeExecution(execution));
-        return executions.filter(e =>
-            e.status === WorkflowExecutionStatusEnum.enum.PLANNED ||
-            e.status === WorkflowExecutionStatusEnum.enum.EXECUTING ||
-            e.status === WorkflowExecutionStatusEnum.enum.FAILED
-        );
+        const executions = await this.getExecutionsByUser(userId);
+        const resumable: string[] = [
+            WorkflowExecutionStatusEnum.enum.PLANNED,
+            WorkflowExecutionStatusEnum.enum.EXECUTING,
+            WorkflowExecutionStatusEnum.enum.FAILED,
+        ];
+        return executions.filter(execution => resumable.includes(execution.status));
     }
 
-    /**
-     * Cancel a workflow execution. Terminal state — cannot be resumed.
-     * Operates within a Firestore atomic transaction.
-     */
     async cancelExecution(userId: string, executionId: string): Promise<void> {
-        const docRef = doc(db, 'users', userId, 'workflowExecutions', executionId);
-        await runTransaction(db, async (tx) => {
-            const snap = await tx.get(docRef);
-            if (!snap.exists()) {
-                throw new Error(`Execution ${executionId} not found`);
-            }
-            const execution = snap.data() as WorkflowExecution;
-            const now = Date.now();
-            const updates: Record<string, unknown> = {
-                status: WorkflowExecutionStatusEnum.enum.CANCELLED,
-                updatedAt: now,
-            };
-
-            if (execution.steps) {
-                Object.entries(execution.steps).forEach(([stepId, step]: [string, WorkflowStepExecution]) => {
-                    if (
-                        step.status === WorkflowStepStatusEnum.enum.PLANNED ||
-                        step.status === WorkflowStepStatusEnum.enum.EXECUTING_GENERATION ||
-                        step.status === WorkflowStepStatusEnum.enum.AWAITING_EVALUATION
-                    ) {
-                        updates[`steps.${stepId}.status`] = WorkflowStepStatusEnum.enum.CANCELLED;
-                        updates[`steps.${stepId}.completedAt`] = now;
-                    }
-                });
-            }
-
-            tx.update(docRef, updates);
-        });
-        logger.info(`[WorkflowState] Execution ${executionId} cancelled`);
+        await this.manageExecution(userId, executionId, 'cancel');
+        logger.info(`[WorkflowState] Execution ${executionId} cancellation requested`);
     }
 
-    /**
-     * Mark a step as currently executing.
-     * Operates within a Firestore atomic transaction with an idempotency lock.
-     */
-    async markStepExecuting(
-        userId: string,
-        executionId: string,
-        stepId: string
-    ): Promise<void> {
-        const docRef = doc(db, 'users', userId, 'workflowExecutions', executionId);
-        await runTransaction(db, async (tx) => {
-            const snap = await tx.get(docRef);
-            if (!snap.exists()) {
-                throw new Error(`Execution ${executionId} not found`);
-            }
-            const execution = snap.data() as WorkflowExecution;
-            const step = execution.steps?.[stepId];
-            if (!step) {
-                throw new Error(`Step ${stepId} not found in execution ${executionId}`);
-            }
-
-            if (step.status !== WorkflowStepStatusEnum.enum.PLANNED && step.status !== WorkflowStepStatusEnum.enum.FAILED) {
-                throw new Error(`Step ${stepId} cannot be executed - currently ${step.status} (Idempotency Lock)`);
-            }
-
-            const now = Date.now();
-            tx.update(docRef, {
-                [`steps.${stepId}.status`]: WorkflowStepStatusEnum.enum.EXECUTING_GENERATION,
-                [`steps.${stepId}.startedAt`]: now,
-                status: WorkflowExecutionStatusEnum.enum.EXECUTING,
-                updatedAt: now,
-            });
-        });
-        logger.debug(`[WorkflowState] Step ${stepId} now executing`);
+    async resumeExecution(userId: string, executionId: string): Promise<void> {
+        await this.manageExecution(userId, executionId, 'resume');
+        logger.info(`[WorkflowState] Execution ${executionId} resume requested`);
     }
 
-    /**
-     * Advance a step to WorkflowStepStatusEnum.enum.STEP_COMPLETE and persist the result.
-     * If this was the last step, the entire workflow transitions to WorkflowExecutionStatusEnum.enum.COMPLETED.
-     * Operates within a Firestore atomic transaction.
-     *
-     * ISSUE-571: If blockers are provided, the step fails instead of completing.
-     * This enforces readiness gates: workflow steps cannot advance if the harness reports blockers.
-     */
-    async advanceStep(
-        userId: string,
-        executionId: string,
-        stepId: string,
-        result: string,
-        blockers?: string[]
-    ): Promise<WorkflowExecution> {
-        const docRef = doc(db, 'users', userId, 'workflowExecutions', executionId);
-        return await runTransaction(db, async (tx) => {
-            const snap = await tx.get(docRef);
-            if (!snap.exists()) {
-                throw new Error(`Execution ${executionId} not found`);
-            }
-            const execution = snap.data() as WorkflowExecution;
-            const step = execution.steps?.[stepId];
-            if (!step) {
-                throw new Error(`Step ${stepId} not found in execution ${executionId}`);
-            }
-
-            const now = Date.now();
-
-            // ISSUE-571: If readiness blockers exist, fail the step instead of completing it
-            if (blockers && blockers.length > 0) {
-                tx.update(docRef, {
-                    [`steps.${stepId}.status`]: WorkflowStepStatusEnum.enum.FAILED,
-                    [`steps.${stepId}.result`]: `Blocked by readiness: ${blockers.join('; ')}`,
-                    [`steps.${stepId}.completedAt`]: now,
-                    status: WorkflowExecutionStatusEnum.enum.FAILED,
-                    updatedAt: now,
-                });
-                logger.warn(`[WorkflowState] Step ${stepId} failed due to readiness blockers: ${blockers.join(', ')}`);
-                execution.steps[stepId] = {
-                    ...step,
-                    status: WorkflowStepStatusEnum.enum.FAILED,
-                    result: `Blocked by readiness: ${blockers.join('; ')}`,
-                    completedAt: now,
-                };
-                execution.status = WorkflowExecutionStatusEnum.enum.FAILED;
-                execution.updatedAt = now;
-                return this.normalizeExecution(execution);
-            }
-
-            const updatedSteps = { ...(execution.steps || {}) };
-            updatedSteps[stepId] = {
-                ...step,
-                status: WorkflowStepStatusEnum.enum.STEP_COMPLETE,
-                result,
-                completedAt: now,
-            };
-
-            const allDone = Object.values(updatedSteps).every((s: WorkflowStepExecution) =>
-                s.status === WorkflowStepStatusEnum.enum.STEP_COMPLETE || s.status === WorkflowStepStatusEnum.enum.SKIPPED
-            );
-
-            const newOverallStatus = allDone
-                ? WorkflowExecutionStatusEnum.enum.COMPLETED
-                : execution.status === WorkflowExecutionStatusEnum.enum.PLANNED
-                    ? WorkflowExecutionStatusEnum.enum.EXECUTING
-                    : execution.status;
-
-            tx.update(docRef, {
-                [`steps.${stepId}.status`]: WorkflowStepStatusEnum.enum.STEP_COMPLETE,
-                [`steps.${stepId}.result`]: result,
-                [`steps.${stepId}.completedAt`]: now,
-                status: newOverallStatus,
-                updatedAt: now,
-            });
-
-            execution.steps = updatedSteps;
-            execution.status = newOverallStatus;
-            execution.updatedAt = now;
-            return this.normalizeExecution(execution);
-        });
-    }
-
-    /**
-     * Mark a step as skipped due to a failed condition.
-     * Operates within a Firestore atomic transaction.
-     */
-    async skipStep(
-        userId: string,
-        executionId: string,
-        stepId: string,
-        reason?: string
-    ): Promise<WorkflowExecution> {
-        const docRef = doc(db, 'users', userId, 'workflowExecutions', executionId);
-        return await runTransaction(db, async (tx) => {
-            const snap = await tx.get(docRef);
-            if (!snap.exists()) {
-                throw new Error(`Execution ${executionId} not found`);
-            }
-            const execution = snap.data() as WorkflowExecution;
-            const step = execution.steps?.[stepId];
-            if (!step) {
-                throw new Error(`Step ${stepId} not found in execution ${executionId}`);
-            }
-
-            const now = Date.now();
-            const updatedSteps = { ...(execution.steps || {}) };
-            updatedSteps[stepId] = {
-                ...step,
-                status: WorkflowStepStatusEnum.enum.SKIPPED,
-                result: reason,
-                completedAt: now,
-            };
-
-            const allDone = Object.values(updatedSteps).every((s: WorkflowStepExecution) =>
-                s.status === WorkflowStepStatusEnum.enum.STEP_COMPLETE || s.status === WorkflowStepStatusEnum.enum.SKIPPED
-            );
-
-            const newOverallStatus = allDone
-                ? WorkflowExecutionStatusEnum.enum.COMPLETED
-                : execution.status;
-
-            tx.update(docRef, {
-                [`steps.${stepId}.status`]: WorkflowStepStatusEnum.enum.SKIPPED,
-                [`steps.${stepId}.result`]: reason,
-                [`steps.${stepId}.completedAt`]: now,
-                status: newOverallStatus,
-                updatedAt: now,
-            });
-
-            execution.steps = updatedSteps;
-            execution.status = newOverallStatus;
-            execution.updatedAt = now;
-            logger.info(`[WorkflowState] Step ${stepId} (${step.agentId}) skipped due to condition`);
-            return this.normalizeExecution(execution);
-        });
-    }
-
-    /**
-     * Mark a step as failed and set the workflow to WorkflowExecutionStatusEnum.enum.FAILED.
-     * Subsequent planned steps remain untouched for resumability.
-     * Operates within a Firestore atomic transaction.
-     */
-    async failStep(
-        userId: string,
-        executionId: string,
-        stepId: string,
-        error: string
-    ): Promise<WorkflowExecution> {
-        const docRef = doc(db, 'users', userId, 'workflowExecutions', executionId);
-        return await runTransaction(db, async (tx) => {
-            const snap = await tx.get(docRef);
-            if (!snap.exists()) {
-                throw new Error(`Execution ${executionId} not found`);
-            }
-            const execution = snap.data() as WorkflowExecution;
-            const step = execution.steps?.[stepId];
-            if (!step) {
-                throw new Error(`Step ${stepId} not found in execution ${executionId}`);
-            }
-
-            const now = Date.now();
-            tx.update(docRef, {
-                [`steps.${stepId}.status`]: WorkflowStepStatusEnum.enum.FAILED,
-                [`steps.${stepId}.error`]: error,
-                [`steps.${stepId}.completedAt`]: now,
-                status: WorkflowExecutionStatusEnum.enum.FAILED,
-                updatedAt: now,
-            });
-
-            execution.steps[stepId] = {
-                ...step,
-                status: WorkflowStepStatusEnum.enum.FAILED,
-                error,
-                completedAt: now,
-            };
-            execution.status = WorkflowExecutionStatusEnum.enum.FAILED;
-            execution.updatedAt = now;
-            logger.warn(`[WorkflowState] Step ${stepId} (${step.agentId}) failed: ${error}`);
-            return this.normalizeExecution(execution);
-        });
+    private async manageExecution(userId: string, executionId: string, action: 'cancel' | 'resume'): Promise<WorkflowActionResponse> {
+        this.requireOwner(userId);
+        const manage = httpsCallable<{ executionId: string; action: 'cancel' | 'resume' }, WorkflowActionResponse>(functions, 'manageWorkflowExecution');
+        const response = await manage({ executionId, action });
+        return response.data;
     }
 }
 

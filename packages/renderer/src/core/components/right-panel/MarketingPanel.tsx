@@ -35,7 +35,7 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
 
             const result = await orchestrationService.executeWorkflowWithStatus(selectedTemplate, context);
             if (!result.completed) {
-                toast.error(`Protocol stopped before completion. Execution ${result.executionId} was saved for review or resume.`);
+                toast.info(`Protocol queued as ${result.executionId}. This panel does not yet display persisted execution results.`);
                 return;
             }
             toast.success('indii Growth Protocol package prepared for review.');

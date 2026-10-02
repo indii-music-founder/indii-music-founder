@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     executeWorkflowWithStatus: vi.fn(),
     success: vi.fn(),
     error: vi.fn(),
+    info: vi.fn(),
 }));
 
 vi.mock('@/services/agent/OrchestrationService', () => ({
@@ -16,7 +17,7 @@ vi.mock('@/services/agent/OrchestrationService', () => ({
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => ({ success: mocks.success, error: mocks.error }),
+    useToast: () => ({ success: mocks.success, error: mocks.error, info: mocks.info }),
 }));
 
 vi.mock('@/core/store', () => ({
@@ -40,7 +41,7 @@ describe('MarketingPanel', () => {
         vi.clearAllMocks();
     });
 
-    it('does not report a protocol as deployed when workflow steps failed', async () => {
+    it('reports the server-accepted job as queued without claiming completion', async () => {
         mocks.executeWorkflowWithStatus.mockResolvedValue({
             executionId: 'exec-failed',
             report: 'step failed',
@@ -52,8 +53,9 @@ describe('MarketingPanel', () => {
         fireEvent.click(screen.getByRole('button', { name: /prepare protocol/i }));
 
         await waitFor(() => {
-            expect(mocks.error).toHaveBeenCalledWith(expect.stringContaining('exec-failed'));
+            expect(mocks.info).toHaveBeenCalledWith(expect.stringContaining('exec-failed'));
         });
+        expect(mocks.error).not.toHaveBeenCalled();
         expect(mocks.success).not.toHaveBeenCalled();
         expect(closePanel).not.toHaveBeenCalled();
     });

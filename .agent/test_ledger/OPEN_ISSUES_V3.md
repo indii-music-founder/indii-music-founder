@@ -3337,6 +3337,13 @@ PRs. Full phase/product acceptance is not established by those facts. See
 - **Honest fallback:** Explicit unavailable execution state while keeping history owner-readable and server-write-only.
 - **DO NOT:** Restore client permission to manufacture completion, accept arbitrary client success reports as authoritative, bypass auth or simulate persisted history.
 
+### ISSUE-1451 progress update — 2026-10-01
+
+- **Status:** 🟡 PARTIAL — server-owned code landed pending exact-SHA CI/deploy and genuine-owner acceptance.
+- **Implemented locally:** App-Check-enforced, authenticated callables create owner-scoped bounded execution records and allow only cancel or failed-step resume actions. The renderer no longer writes step state or runs Maestro locally; it reports queued, and its marketing panel no longer describes an accepted job as a failure. Server orchestration now claims graph-ready steps transactionally, and worker results commit only while execution and step idempotency state still match. Worker prompts explicitly limit output to written drafts/plans and require missing evidence to be stated.
+- **Local evidence:** Focused callable-validation, dependency-ordering, renderer service, orchestration, and panel tests pass (15 tests). `npm run typecheck`, `npm run lint`, and `npm run ci` pass; the full CI suite reported 334 test files and 2,409 tests passing, with 2 skipped.
+- **Still open:** Genuine owner execution/cancel/resume/reload, production callable deployment, and a UI consumer for persisted execution results. No production execution has been claimed.
+
 ### ISSUE-1452: Post-mastering runbook and semantic catalog remain unconnected
 
 - **Status:** 🟡 PARTIAL (2026-10-01)
