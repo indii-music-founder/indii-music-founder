@@ -126,7 +126,7 @@ export const manageWorkflowExecution = onCall(
             update[`steps.${stepId}.completedAt`] = now;
           }
         }
-        tx.update(ref, update);
+        tx.update(ref, update as admin.firestore.UpdateData<admin.firestore.DocumentData>);
         return;
       }
       if (execution.status !== 'FAILED') throw new HttpsError('failed-precondition', 'Only a failed workflow can be resumed.');
@@ -140,7 +140,7 @@ export const manageWorkflowExecution = onCall(
         update[`steps.${stepId}.completedAt`] = admin.firestore.FieldValue.delete();
         update[`steps.${stepId}.idempotencyKey`] = randomUUID();
       }
-      tx.update(ref, update);
+      tx.update(ref, update as admin.firestore.UpdateData<admin.firestore.DocumentData>);
     });
     return { executionId, status: action === 'cancel' ? 'CANCELLED' as const : 'PLANNED' as const };
   },
