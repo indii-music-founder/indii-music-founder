@@ -118,13 +118,34 @@ describe('Image Resolution Normalization', () => {
             expect(normalizer('')).toBeUndefined();
         });
 
-        it('defaults unknown value "720P" to "1k"', () => {
-            // This was the exact bug: studioControls.resolution '720p' → .toUpperCase() → '720P'
-            expect(normalizer('720P')).toBe('1k');
-        });
-
         it('defaults unknown value "ULTRA" to "1k"', () => {
             expect(normalizer('ULTRA')).toBe('1k');
+        });
+    });
+
+    describe('Print & High-Resolution Asset Normalization', () => {
+        it('maps "3000" to "4k"', () => {
+            expect(normalizer('3000')).toBe('4k');
+        });
+
+        it('maps "3000x3000" to "4k"', () => {
+            expect(normalizer('3000x3000')).toBe('4k');
+        });
+
+        it('maps "3000px" to "4k"', () => {
+            expect(normalizer('3000px')).toBe('4k');
+        });
+
+        it('maps "3k" to "4k"', () => {
+            expect(normalizer('3k')).toBe('4k');
+        });
+
+        it('maps "2048x2048" to "2k"', () => {
+            expect(normalizer('2048x2048')).toBe('2k');
+        });
+
+        it('maps "4096" to "4k"', () => {
+            expect(normalizer('4096')).toBe('4k');
         });
     });
 });

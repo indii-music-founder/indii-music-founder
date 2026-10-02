@@ -218,27 +218,38 @@ export class ImageGenerationService {
     }
 
     /**
-     * Maps video-style resolution strings to Gemini image API values.
+     * Maps video-style resolution strings or pixel dimensions to Gemini image API values.
      * The studioControls store uses VideoResolution ('720p', '1080p', '4k')
-     * but the image API expects '512' | '1K' | '2K' | '4K'.
+     * or print resolution strings ('3000', '3000x3000', '3k', '4k'),
+     * but the image API expects '512' | '1k' | '2k' | '4k'.
      */
     private normalizeImageResolution(resolution?: string): string | undefined {
         if (!resolution) return undefined;
 
+        const normalizedKey = resolution.trim().toLowerCase();
+
         const RESOLUTION_MAP: Record<string, string> = {
-            '720p':  '1k',
-            '1080p': '2k',
-            '4k':    '4k',
-            // Direct passthrough for already-correct values
-            '512':   '512',
-            '1k':    '1k',
-            '1K':    '1k',
-            '2k':    '2k',
-            '2K':    '2k',
-            '4K':    '4k',
+            '720p':       '1k',
+            '1080p':      '2k',
+            '4k':         '4k',
+            '512':        '512',
+            '512x512':    '512',
+            '1k':         '1k',
+            '1024':       '1k',
+            '1024x1024':  '1k',
+            '2k':         '2k',
+            '2048':       '2k',
+            '2048x2048':  '2k',
+            '3k':         '4k',
+            '3000':       '4k',
+            '3000px':     '4k',
+            '3000x3000':  '4k',
+            '3000x3000px':'4k',
+            '4096':       '4k',
+            '4096x4096':  '4k',
         };
 
-        const mapped = RESOLUTION_MAP[resolution] || RESOLUTION_MAP[resolution.toLowerCase()];
+        const mapped = RESOLUTION_MAP[normalizedKey];
         if (!mapped) {
             logger.warn(`[ImageGen] Unknown resolution "${resolution}", defaulting to 1k`);
             return '1k';
@@ -404,8 +415,11 @@ export class ImageGenerationService {
 
             const aspectRatio = this.getAspectRatio(options);
 
-            // Resolve imageSize: prefer explicit imageSize, fall back to resolution.
-            const imageSize = options.imageSize || this.normalizeImageResolution(options.resolution);
+            // Resolve imageSize: prefer explicit imageSize, fall back to resolution or default to '4k' for cover art.
+            let imageSize = options.imageSize || this.normalizeImageResolution(options.resolution);
+            if (!imageSize && options.isCoverArt) {
+                imageSize = '4k';
+            }
 
             let referenceUris = options.referenceUris?.slice(0, 14);
             const allReferenceImages: { mimeType: string; data: string }[] = [...(options.sourceImages || [])];

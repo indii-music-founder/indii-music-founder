@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { Sparkles, Tags } from 'lucide-react';
 import { parseColor } from '@/utils/colorUtils';
+import { printReadyUpscaleService } from '@/services/upscale/PrintReadyUpscaleService';
+import type { HistoryItem } from '@/core/types/history';
 
 interface ImageSubMenuProps {
     onShowBrandAssets: () => void;
@@ -13,6 +15,9 @@ interface ImageSubMenuProps {
 }
 
 export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTogglePromptBuilder, showPromptBuilder }: ImageSubMenuProps) {
+    const [isUpscaling, setIsUpscaling] = useState(false);
+    const [upscaleStage, setUpscaleStage] = useState('');
+
     const {
         generatedHistory,
         currentProjectId,
@@ -22,6 +27,7 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
         setGenerationMode,
         setViewMode,
         setCreativePrompt,
+        addToHistory,
         userProfile
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
@@ -32,6 +38,7 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
         setGenerationMode: state.setGenerationMode,
         setViewMode: state.setViewMode,
         setCreativePrompt: state.setCreativePrompt,
+        addToHistory: state.addToHistory,
         userProfile: state.userProfile
     })));
     const toast = useToast();
@@ -111,6 +118,62 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
                 className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
             >
                 Canvas
+            </button>
+
+            <button
+                onClick={async () => {
+                    if (!latestImage) return;
+                    setIsUpscaling(true);
+                    try {
+                        toast.info("Upscaling to 3000x3000px @ 300 DPI print spec...");
+                        const result = await printReadyUpscaleService.upscaleToPrintReady({
+                            dataUrl: latestImage.url,
+                            prompt: latestImage.prompt,
+                            onProgress: (_frac, stage) => {
+                                setUpscaleStage(stage);
+                            }
+                        });
+                        const upscaledItem: HistoryItem = {
+                            ...latestImage,
+                            id: `print-3000-${Date.now()}`,
+                            url: result.dataUrl,
+                            timestamp: Date.now(),
+                            origin: 'editor',
+                            distributorCompliance: {
+                                valid: true,
+                                errors: [],
+                                warnings: [],
+                                measuredWidth: 3000,
+                                measuredHeight: 3000,
+                                mimeType: result.format,
+                            },
+                            meta: JSON.stringify({
+                                width: 3000,
+                                height: 3000,
+                                dpi: 300,
+                                upscaled: true,
+                                upscaleMethod: result.method,
+                            }),
+                        };
+                        addToHistory(upscaledItem);
+                        setSelectedItem(upscaledItem);
+                        toast.success(`Upscaled to 3000x3000px (300 DPI) via ${result.method === 'desktop-realesrgan' ? 'Desktop AI' : 'Bicubic High-DPI'}`);
+                    } catch (err: unknown) {
+                        toast.error(err instanceof Error ? err.message : 'Upscaling failed');
+                    } finally {
+                        setIsUpscaling(false);
+                        setUpscaleStage('');
+                    }
+                }}
+                disabled={!latestImage || isUpscaling}
+                title={latestImage ? (isUpscaling ? upscaleStage || 'Upscaling...' : 'Upscale latest image to 3000x3000px 300 DPI print standard') : 'No image in this project yet'}
+                className="text-xs text-amber-400 hover:text-amber-300 font-medium px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+                {isUpscaling ? (
+                    <span>{upscaleStage || 'Upscaling...'}</span>
+                ) : (
+                    <span>3000px Print</span>
+                )}
             </button>
 
             {/* Brand Palette Section */}

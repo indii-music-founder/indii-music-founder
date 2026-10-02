@@ -148,71 +148,78 @@ ${errorMessage ? `### Error Message\n\`\`\`\n${errorMessage}\n\`\`\`` : ''}
 *Reported from indii*`;
 
                 // Search for existing issues with same title + module
-                const searchQuery = `repo:${githubRepo} is:open type:issue title:"${title}" label:module:${module}`;
-                const searchResponse = await fetch(`https://api.github.com/search/issues?q=${encodeURIComponent(searchQuery)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${resolvedGithubToken}`,
-                        'Accept': 'application/vnd.github+json',
-                        'X-GitHub-Api-Version': '2022-11-28',
-                    },
-                });
-
-                if (searchResponse.ok) {
-                    const searchData = await searchResponse.json() as { items: Array<{ number: number; html_url: string }> };
-                    if (searchData.items?.length > 0) {
-                        // Append comment to existing issue
-                        const existingIssue = searchData.items[0];
-                        const commentBody = `**Duplicate Report** (${new Date().toISOString()})\n\n${description}`;
-                        const commentResponse = await fetch(`https://api.github.com/repos/${githubRepo}/issues/${existingIssue.number}/comments`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${resolvedGithubToken}`,
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/vnd.github+json',
-                                'X-GitHub-Api-Version': '2022-11-28',
-                            },
-                            body: JSON.stringify({ body: commentBody }),
-                        });
-
-                        if (commentResponse.ok) {
-                            issueUrl = existingIssue.html_url;
-                            githubStatus = 'merged_as_comment';
-                            console.log(`[reportBugFn] Merged to existing issue #${existingIssue.number}`);
-                        } else {
-                            githubStatus = 'failed';
-                            console.warn(`[reportBugFn] Failed to append comment: ${commentResponse.status}`);
-                        }
+                // Strip special punctuation from title to avoid GitHub search syntax parse errors (422)
+                const sanitizedTitle = title.replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+                const searchQuery = `repo:${githubRepo} is:open type:issue ${sanitizedTitle ? `"${sanitizedTitle}"` : ''} label:module:${module}`;
+                
+                let searchData: { items: Array<{ number: number; html_url: string }> } | null = null;
+                try {
+                    const searchResponse = await fetch(`https://api.github.com/search/issues?q=${encodeURIComponent(searchQuery)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${resolvedGithubToken}`,
+                            'Accept': 'application/vnd.github+json',
+                            'X-GitHub-Api-Version': '2022-11-28',
+                        },
+                    });
+                    if (searchResponse.ok) {
+                        searchData = await searchResponse.json() as { items: Array<{ number: number; html_url: string }> };
                     } else {
-                        // Create new issue
-                        const createResponse = await fetch(`https://api.github.com/repos/${githubRepo}/issues`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${resolvedGithubToken}`,
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/vnd.github+json',
-                                'X-GitHub-Api-Version': '2022-11-28',
-                            },
-                            body: JSON.stringify({
-                                title: issueTitle,
-                                body: markdownBody,
-                                labels: ['bug', `severity:${severity}`, `module:${module}`],
-                            }),
-                        });
+                        console.warn(`[reportBugFn] GitHub search returned ${searchResponse.status}, proceeding with direct issue creation fallback`);
+                    }
+                } catch (searchErr) {
+                    console.warn('[reportBugFn] GitHub search error, proceeding with direct issue creation fallback:', searchErr);
+                }
 
-                        if (createResponse.ok) {
-                            const issue = await createResponse.json() as { number: number; html_url: string };
-                            issueUrl = issue.html_url;
-                            githubStatus = 'ok';
-                            console.log(`[reportBugFn] Created GitHub issue #${issue.number}`);
-                        } else {
-                            githubStatus = 'failed';
-                            console.warn(`[reportBugFn] Failed to create issue: ${createResponse.status}`);
-                        }
+                if (searchData && searchData.items?.length > 0) {
+                    // Append comment to existing issue
+                    const existingIssue = searchData.items[0];
+                    const commentBody = `**Duplicate Report** (${new Date().toISOString()})\n\n${description}`;
+                    const commentResponse = await fetch(`https://api.github.com/repos/${githubRepo}/issues/${existingIssue.number}/comments`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${resolvedGithubToken}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/vnd.github+json',
+                            'X-GitHub-Api-Version': '2022-11-28',
+                        },
+                        body: JSON.stringify({ body: commentBody }),
+                    });
+
+                    if (commentResponse.ok) {
+                        issueUrl = existingIssue.html_url;
+                        githubStatus = 'merged_as_comment';
+                        console.log(`[reportBugFn] Merged to existing issue #${existingIssue.number}`);
+                    } else {
+                        githubStatus = 'failed';
+                        console.warn(`[reportBugFn] Failed to append comment: ${commentResponse.status}`);
                     }
                 } else {
-                    githubStatus = 'failed';
-                    console.warn(`[reportBugFn] GitHub search failed: ${searchResponse.status}`);
+                    // Create new issue directly
+                    const createResponse = await fetch(`https://api.github.com/repos/${githubRepo}/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${resolvedGithubToken}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/vnd.github+json',
+                            'X-GitHub-Api-Version': '2022-11-28',
+                        },
+                        body: JSON.stringify({
+                            title: issueTitle,
+                            body: markdownBody,
+                            labels: ['bug', `severity:${severity}`, `module:${module}`],
+                        }),
+                    });
+
+                    if (createResponse.ok) {
+                        const issue = await createResponse.json() as { number: number; html_url: string };
+                        issueUrl = issue.html_url;
+                        githubStatus = 'ok';
+                        console.log(`[reportBugFn] Created GitHub issue #${issue.number}`);
+                    } else {
+                        githubStatus = 'failed';
+                        console.warn(`[reportBugFn] Failed to create issue: ${createResponse.status}`);
+                    }
                 }
             } catch (ghErr: unknown) {
                 githubStatus = 'failed';

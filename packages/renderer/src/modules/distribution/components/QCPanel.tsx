@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { distributionService } from '@/services/distribution/DistributionService';
+import { MetadataValidationService } from '@/services/distribution/MetadataValidationService';
 import { audioAnalysisService, type LocalOnlyAudioAnalysisReport } from '@/services/audio/AudioAnalysisService';
 import { localAudioMetadataService, type LocalAudioMetadataReport } from '@/services/audio/LocalAudioMetadataService';
 import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
@@ -347,13 +348,35 @@ export const QCPanel: React.FC = () => {
                     explicit: false,
                     isrc: metadata.isrc
                 }],
+                upc: metadata.upc,
                 label: 'Indii Records',
                 artwork_url: metadata.artwork_url
             };
-            const report = await distributionService.validateReleaseMetadata(ddexMetadata);
+
+            // Comprehensive pre-flight DSP metadata validation (ISSUE-353)
+            const preflight = MetadataValidationService.validateRelease(ddexMetadata);
+            let report = MetadataValidationService.toValidationReport(preflight);
+
+            // If running in Electron, augment with IPC validation engine
+            if (window.electronAPI && report.valid) {
+                try {
+                    const ipcReport = await distributionService.validateReleaseMetadata(ddexMetadata);
+                    if (!ipcReport.valid) {
+                        report = {
+                            valid: false,
+                            errors: [...report.errors, ...(ipcReport.errors || [])],
+                            warnings: [...(report.warnings || []), ...(ipcReport.warnings || [])],
+                            summary: ipcReport.summary || report.summary
+                        };
+                    }
+                } catch (ipcErr: unknown) {
+                    logger.warn('[QCPanel] Electron IPC validation skipped or failed:', ipcErr);
+                }
+            }
+
             setQcResult(report);
             if (report.valid) {
-                toast.success('Metadata passed QC validation');
+                toast.success('Metadata passed pre-flight QC validation');
             } else {
                 toast.error(`QC Failed: ${report.errors.length} error(s)`);
             }
