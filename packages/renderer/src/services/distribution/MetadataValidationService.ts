@@ -32,11 +32,21 @@ export interface PreFlightValidationResult {
     summary: string;
 }
 
+export interface PreFlightValidationOptions {
+    /**
+     * If true, missing UPC, artwork, and ISRC are treated as blocking errors.
+     * If false, missing optional/draft identifiers generate warnings instead of blocking errors.
+     * Defaults to false for interactive draft inspection; true for submission.
+     */
+    strictMode?: boolean;
+}
+
 export class MetadataValidationService {
     /**
      * Validates an entire release and its constituent tracks for DSP compliance.
      */
-    static validateRelease(release: IngestionMetadata): PreFlightValidationResult {
+    static validateRelease(release: IngestionMetadata, options: PreFlightValidationOptions = {}): PreFlightValidationResult {
+        const strict = options.strictMode ?? false;
         const errors: PreFlightCheckItem[] = [];
         const warnings: PreFlightCheckItem[] = [];
         let checksPassed = 0;
@@ -90,12 +100,21 @@ export class MetadataValidationService {
 
         // ── 3. UPC / Barcode ───────────────────────────────────────────
         if (!release.upc || !release.upc.trim()) {
-            recordError({
-                id: 'rel-upc-missing',
-                category: 'identifier',
-                field: 'upc',
-                message: 'Release UPC / EAN barcode is required for commercial DSP ingestion.',
-            });
+            if (strict) {
+                recordError({
+                    id: 'rel-upc-missing',
+                    category: 'identifier',
+                    field: 'upc',
+                    message: 'Release UPC / EAN barcode is required for commercial DSP ingestion.',
+                });
+            } else {
+                recordWarning({
+                    id: 'rel-upc-missing',
+                    category: 'identifier',
+                    field: 'upc',
+                    message: 'Release UPC / EAN barcode not yet assigned. Required prior to final distribution submission.',
+                });
+            }
         } else {
             const cleanUpc = release.upc.trim();
             if (IdentifierService.validateUPC(cleanUpc)) {
@@ -113,12 +132,21 @@ export class MetadataValidationService {
         // ── 4. Cover Artwork ───────────────────────────────────────────
         const hasCover = Boolean(release.artwork_url || release.artworkUrl || release.cover_asset || release.cover_filename);
         if (!hasCover) {
-            recordError({
-                id: 'rel-cover-missing',
-                category: 'artwork',
-                field: 'artwork_url',
-                message: 'Cover art is required (minimum 3000x3000px square @ 300 DPI recommended for DSPs).',
-            });
+            if (strict) {
+                recordError({
+                    id: 'rel-cover-missing',
+                    category: 'artwork',
+                    field: 'artwork_url',
+                    message: 'Cover art is required (minimum 3000x3000px square @ 300 DPI recommended for DSPs).',
+                });
+            } else {
+                recordWarning({
+                    id: 'rel-cover-missing',
+                    category: 'artwork',
+                    field: 'artwork_url',
+                    message: 'Cover art not yet assigned. Minimum 3000x3000px square @ 300 DPI recommended for DSPs.',
+                });
+            }
         } else {
             recordPass();
         }
@@ -189,13 +217,23 @@ export class MetadataValidationService {
 
                 // Track ISRC
                 if (!track.isrc || !track.isrc.trim()) {
-                    recordError({
-                        id: `track-${idx}-isrc-missing`,
-                        category: 'identifier',
-                        trackIndex: idx,
-                        field: 'tracks.isrc',
-                        message: `Track #${trackNum} is missing an ISRC code.`,
-                    });
+                    if (strict) {
+                        recordError({
+                            id: `track-${idx}-isrc-missing`,
+                            category: 'identifier',
+                            trackIndex: idx,
+                            field: 'tracks.isrc',
+                            message: `Track #${trackNum} is missing an ISRC code.`,
+                        });
+                    } else {
+                        recordWarning({
+                            id: `track-${idx}-isrc-missing`,
+                            category: 'identifier',
+                            trackIndex: idx,
+                            field: 'tracks.isrc',
+                            message: `Track #${trackNum} is missing an ISRC code (will be auto-assigned at submission if unassigned).`,
+                        });
+                    }
                 } else {
                     const cleanIsrc = track.isrc.trim().toUpperCase();
                     if (IdentifierService.validateISRC(cleanIsrc)) {

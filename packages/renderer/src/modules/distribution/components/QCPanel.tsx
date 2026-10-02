@@ -357,21 +357,21 @@ export const QCPanel: React.FC = () => {
             const preflight = MetadataValidationService.validateRelease(ddexMetadata);
             let report = MetadataValidationService.toValidationReport(preflight);
 
-            // If running in Electron, augment with IPC validation engine
-            if (window.electronAPI && report.valid) {
-                try {
-                    const ipcReport = await distributionService.validateReleaseMetadata(ddexMetadata);
-                    if (!ipcReport.valid) {
-                        report = {
-                            valid: false,
-                            errors: [...report.errors, ...(ipcReport.errors || [])],
-                            warnings: [...(report.warnings || []), ...(ipcReport.warnings || [])],
-                            summary: ipcReport.summary || report.summary
-                        };
-                    }
-                } catch (ipcErr: unknown) {
-                    logger.warn('[QCPanel] Electron IPC validation skipped or failed:', ipcErr);
+            // Run backend/IPC release validator
+            try {
+                const ipcReport = await distributionService.validateReleaseMetadata(ddexMetadata);
+                if (!ipcReport.valid) {
+                    report = {
+                        valid: false,
+                        errors: [...report.errors, ...(ipcReport.errors || [])],
+                        warnings: [...(report.warnings || []), ...(ipcReport.warnings || [])],
+                        summary: ipcReport.summary || report.summary
+                    };
+                } else if (report.valid && ipcReport.summary) {
+                    report.summary = ipcReport.summary;
                 }
+            } catch (ipcErr: unknown) {
+                logger.warn('[QCPanel] Release metadata validation warning:', ipcErr);
             }
 
             setQcResult(report);
