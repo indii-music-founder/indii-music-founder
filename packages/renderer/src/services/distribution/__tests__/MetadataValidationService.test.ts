@@ -85,8 +85,13 @@ describe('MetadataValidationService', () => {
             cover_asset: undefined,
             cover_filename: undefined,
         };
-        const result = MetadataValidationService.validateRelease(releaseNoArt);
-        expect(result.valid).toBe(false);
-        expect(result.errors.some(e => e.id === 'rel-cover-missing')).toBe(true);
+        const draftResult = MetadataValidationService.validateRelease(releaseNoArt);
+        expect(draftResult.valid).toBe(true);
+        expect(draftResult.warnings.some(w => w.id === 'rel-cover-missing')).toBe(true);
+
+        const strictResult = MetadataValidationService.validateRelease(releaseNoArt, { strict: true });
+        expect(strictResult.valid).toBe(false);
+        expect(strictResult.errors.some(e => e.id === 'rel-cover-missing')).toBe(true);
     });
 });
+

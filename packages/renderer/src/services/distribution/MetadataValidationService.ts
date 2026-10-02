@@ -39,6 +39,8 @@ export interface PreFlightValidationOptions {
      * Defaults to false for interactive draft inspection; true for submission.
      */
     strictMode?: boolean;
+    /** Alias for strictMode */
+    strict?: boolean;
 }
 
 export class MetadataValidationService {
@@ -46,7 +48,7 @@ export class MetadataValidationService {
      * Validates an entire release and its constituent tracks for DSP compliance.
      */
     static validateRelease(release: IngestionMetadata, options: PreFlightValidationOptions = {}): PreFlightValidationResult {
-        const strict = options.strictMode ?? false;
+        const strict = options.strictMode ?? options.strict ?? false;
         const errors: PreFlightCheckItem[] = [];
         const warnings: PreFlightCheckItem[] = [];
         let checksPassed = 0;
