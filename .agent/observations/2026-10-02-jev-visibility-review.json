@@ -1,0 +1,36 @@
+{
+  "mode": "live API advisory code review; structural checks remain authoritative",
+  "questions": {
+    "client_authorizes_rights": {
+      "type": "noul",
+      "instructions": "Does this change allow the client to assert rights preclearance or bypass the backend receipt and owner checks?"
+    },
+    "optimistic_public_status": {
+      "type": "noul",
+      "instructions": "Does this UI display public visibility as successful before reading persisted server state?"
+    },
+    "owner_switch_leak": {
+      "type": "noul",
+      "instructions": "Given the keyed parent mount, does a previous owner record remain actionable after account switch?"
+    }
+  },
+  "answers": {
+    "client_authorizes_rights": {
+      "type": "noul",
+      "noul": 0.04
+    },
+    "optimistic_public_status": {
+      "type": "noul",
+      "noul": 0.11
+    },
+    "owner_switch_leak": {
+      "type": "noul",
+      "noul": 0.1
+    }
+  },
+  "usage": {
+    "input_tokens": 2828,
+    "output_tokens": 65
+  },
+  "requestId": "req_01a0fcb7c00e7b0c87ca19d8d69c3f86"
+}

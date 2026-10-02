@@ -1,0 +1,43 @@
+{
+  "mode": "live API, advisory build-time judgment on repository evidence; not production acceptance",
+  "sha": "2785e9c5b757e8e17fecc7265e98f1adaf018a6f",
+  "questions": {
+    "next_build": {
+      "type": "choice",
+      "instructions": "Which remaining implementation is the best bounded next build to expose already-delivered server functionality and advance this objective?",
+      "criteria": {
+        "catalog_visibility_ui": "Add owner UI for the delivered private/public semantic catalog visibility callable, showing prerequisites and errors.",
+        "workflow_results_ui": "Add UI to read server-persisted workflow results and execution status.",
+        "department_dispatch": "Build persisted cross-department review dispatch from scratch.",
+        "none": "Evidence insufficient to select a bounded implementation."
+      }
+    },
+    "all_complete": {
+      "type": "noul",
+      "instructions": "Does the supplied evidence establish that all started work and genuine-user acceptance are completed?"
+    }
+  },
+  "answers": {
+    "next_build": {
+      "type": "choice",
+      "choice": "catalog_visibility_ui",
+      "confidence": 0.95,
+      "probabilities": {
+        "department_dispatch": 0,
+        "workflow_results_ui": 0.04,
+        "catalog_visibility_ui": 0.96,
+        "none": 0
+      }
+    },
+    "all_complete": {
+      "type": "noul",
+      "noul": 0.02
+    }
+  },
+  "usage": {
+    "input_tokens": 2212,
+    "output_tokens": 71
+  },
+  "requestId": "req_01a0fcb535f37b1e9d186ca0981dbb7c",
+  "elapsedMs": 536
+}

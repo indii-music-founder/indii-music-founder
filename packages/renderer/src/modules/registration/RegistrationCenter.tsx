@@ -10,6 +10,7 @@ import {
 import { RegistrationSheet } from './components/RegistrationSheet';
 import { RegistrationAutonomousRail } from './components/RegistrationAutonomousRail';
 import { FounderReadinessPanel } from './components/FounderReadinessPanel';
+import { CatalogVisibilityPanel } from './components/CatalogVisibilityPanel';
 import { Building2, Music } from 'lucide-react';
 import { ORG_ADAPTERS } from './adapters';
 import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord } from './types';
@@ -102,7 +103,7 @@ export default function RegistrationCenter() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [canonicalIntelligenceReport, setCanonicalIntelligenceReport] = useState<CatalogIntelligenceReport | null>(null);
   const [canonicalIntelligenceStatus, setCanonicalIntelligenceStatus] = useState<CanonicalCatalogIntelligenceStatus>('loading');
-  const [activeTab, setActiveTab] = useState<'tracks' | 'founder'>('tracks');
+  const [activeTab, setActiveTab] = useState<'tracks' | 'founder' | 'visibility'>('tracks');
 
   const selectedTrack = registrationFocus.trackId
     ? (tracks.find(t => t.id === registrationFocus.trackId) ?? tracks[0] ?? null)
@@ -221,10 +222,11 @@ export default function RegistrationCenter() {
     );
   }
 
-  if (tracks.length === 0 && activeTab !== 'founder') {
+  if (tracks.length === 0 && activeTab === 'tracks') {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400 text-sm px-8 text-center">
         <p>No tracks found in your catalog yet.</p>
+        <button onClick={() => setActiveTab('visibility')} className="text-green-400 underline">Manage catalog visibility</button>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setActiveTab('founder')}
@@ -272,6 +274,7 @@ export default function RegistrationCenter() {
               Founder
             </button>
           </div>
+          <button onClick={() => setActiveTab('visibility')} className={`w-full py-2 text-xs rounded ${activeTab === 'visibility' ? 'bg-white/10 text-white' : 'text-neutral-400'}`}>Catalog visibility</button>
         </div>
         {activeTab === 'tracks' ? (
           <CatalogRail
@@ -285,9 +288,11 @@ export default function RegistrationCenter() {
           />
         ) : (
           <div className="p-4 text-xs text-neutral-400 space-y-3">
-            <div className="font-semibold text-white">Prerequisites Scope</div>
+            <div className="font-semibold text-white">{activeTab === 'visibility' ? 'Publication controls' : 'Prerequisites Scope'}</div>
             <p className="leading-relaxed text-[11px]">
-              Organization credentials apply across all catalog releases. Once verified with the US ISRC Agency and GS1, prefixes are permanently owned by your company.
+              {activeTab === 'visibility'
+                ? 'Manage public catalog metadata for administratively locked masters. Publication requires the server to verify the receipt and rights prerequisites.'
+                : 'Organization credentials apply across all catalog releases. Once verified with the US ISRC Agency and GS1, prefixes are permanently owned by your company.'}
             </p>
           </div>
         )}
@@ -295,7 +300,9 @@ export default function RegistrationCenter() {
 
       {/* Center: Content View */}
       <div className="flex-1 min-w-0 border-r border-white/[0.05] flex flex-col overflow-hidden">
-        {activeTab === 'founder' ? (
+        {activeTab === 'visibility' ? (
+          <CatalogVisibilityPanel key={user?.uid ?? 'signed-out'} userId={user?.uid ?? ''} />
+        ) : activeTab === 'founder' ? (
           <FounderReadinessPanel userId={user?.uid ?? ''} />
         ) : (
           <RegistrationSheet
@@ -311,12 +318,12 @@ export default function RegistrationCenter() {
       </div>
 
       {/* Right: Intelligence Co-Pilot Rail */}
-      <div className="w-72 flex-shrink-0">
+      {activeTab !== 'visibility' && <div className="w-72 flex-shrink-0">
         <RegistrationAutonomousRail
           focusedAdapter={focusedAdapter}
           track={selectedTrack}
         />
-      </div>
+      </div>}
     </div>
   );
 }
