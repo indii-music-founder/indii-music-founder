@@ -62,5 +62,13 @@ export const McpTools: Record<string, AnyToolFunction> = {
     // ----------------------------------------------------
     // DISTRIBUTION
     // ----------------------------------------------------
-    draft_dsp_metadata: createMcpWrapper('draft_dsp_metadata')
+    draft_dsp_metadata: createMcpWrapper('draft_dsp_metadata'),
+
+    // ----------------------------------------------------
+    // 3D VIDEO & BLENDER (Director / Video / Creative)
+    // ----------------------------------------------------
+    blender_get_status: createMcpWrapper('blender_get_status'),
+    blender_list_templates: createMcpWrapper('blender_list_templates'),
+    blender_render_music_video: createMcpWrapper('blender_render_music_video'),
+    blender_live_command: createMcpWrapper('blender_live_command')
 };

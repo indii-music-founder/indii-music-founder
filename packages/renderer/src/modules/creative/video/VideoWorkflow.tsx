@@ -12,10 +12,11 @@ import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '@/services/firebase';
 import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
 import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
-import { Clapperboard, Scissors, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film, Send, Settings } from 'lucide-react';
+import { Clapperboard, Scissors, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Send, Settings, Box } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { StoryboardTimeline } from './components/StoryboardTimeline';
 import { SessionIngestionPanel } from './components/SessionIngestionPanel';
+import { BlenderVideoPanel } from './components/BlenderVideoPanel';
 
 import { IntelligencePromptInput } from '../components/veo/IntelligencePromptInput';
 import { DailiesStrip } from './components/DailiesStrip';
@@ -1075,6 +1076,21 @@ export default function VideoWorkflow() {
                         <Layers size={13} className={viewMode === 'storyboard' ? 'text-indigo-400' : 'text-gray-400'} />
                         <span>Storyboard</span>
                     </button>
+                    <button
+                        role="tab"
+                        aria-selected={viewMode === '3d'}
+                        onClick={() => setViewMode('3d')}
+                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                            viewMode === '3d'
+                                ? 'bg-cyan-500/20 text-cyan-300 shadow-sm ring-1 ring-cyan-500/30'
+                                : 'text-gray-300 hover:text-white hover:bg-white/10'
+                        }`}
+                        title="3D Blender — render 3D music videos, audio tunnels & turntables"
+                        data-testid="video-mode-3d"
+                    >
+                        <Box size={13} className={viewMode === '3d' ? 'text-cyan-400' : 'text-gray-400'} />
+                        <span>3D Blender</span>
+                    </button>
                 </div>
 
                 {/* Session Ingestion (keep in top-left, separate from mode pill) */}
@@ -1299,6 +1315,43 @@ export default function VideoWorkflow() {
                     <div className="flex-1 min-h-0">
                         <ErrorBoundary fallback={<div className="p-10 text-red-500">Storyboard Sync Error</div>}>
                             <StoryboardTimeline />
+                        </ErrorBoundary>
+                    </div>
+                </div>
+            )}
+            {/* 3D Blender Video Studio */}
+            {viewMode === '3d' && (
+                <div
+                    id="blender-panel"
+                    role="tabpanel"
+                    aria-label="3D Blender Studio"
+                    className="absolute inset-0 z-50 bg-background flex flex-col overflow-y-auto"
+                >
+                    <div className="flex justify-between items-center p-4 border-b border-white/5 bg-[#0e1117]/40 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setViewMode('director')}
+                                className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                title="Back to Director View"
+                            >
+                                <ChevronDown size={20} className="rotate-90" />
+                            </button>
+                            <h2 className="text-white font-bold uppercase tracking-wider text-xs flex items-center gap-2">
+                                <Box size={14} className="text-cyan-400" />
+                                3D Blender Music Video Studio
+                            </h2>
+                        </div>
+                    </div>
+                    <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
+                        <ErrorBoundary fallback={<div className="p-10 text-red-500">3D Blender Studio Error</div>}>
+                            <BlenderVideoPanel
+                                currentAudioPath={useVideoEditorStore.getState().inputAudio || ''}
+                                currentCoverArtPath={activeVideo?.url || ''}
+                                bpm={120}
+                                onRenderComplete={(outPath) => {
+                                    toast.success(`3D Render Complete: ${outPath}`);
+                                }}
+                            />
                         </ErrorBoundary>
                     </div>
                 </div>

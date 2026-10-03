@@ -94,4 +94,14 @@ export default [
       setupFiles: [],
     }
   },
+  {
+    extends: './vitest.config.ts',
+    test: {
+      name: 'mcp-server-local',
+      environment: 'node',
+      include: ['packages/mcp-server-local/src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
+      setupFiles: [],
+    }
+  },
 ];

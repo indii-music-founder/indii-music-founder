@@ -371,6 +371,14 @@ export interface ElectronAPI {
             Promise<{ outputDataUrl: string; durationMs: number }>;
         onProgress: (callback: (progress: { requestId: string; fraction: number }) => void) => () => void;
     };
+    // Blender 3D Engine integration
+    blender?: {
+        getStatus: () => Promise<import('../services/blender/types').BlenderStatus>;
+        listTemplates: () => Promise<import('../services/blender/types').BlenderTemplateInfo[]>;
+        renderMusicVideo: (req: import('../services/blender/types').BlenderRenderRequest) => Promise<{ success: boolean; outputPath: string; error?: string }>;
+        sendLiveCommand: (action: string, params?: Record<string, unknown>) => Promise<unknown>;
+        onProgress: (callback: (progress: import('../services/blender/types').BlenderRenderProgress) => void) => () => void;
+    };
 }
 
 declare global {

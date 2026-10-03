@@ -428,4 +428,18 @@ describe('VideoWorkflow (legacy structural-only)', () => {
             }),
         }));
     });
+
+    it('switches to 3d viewMode when 3D Blender tab is clicked', async () => {
+        render(
+            <ToastProvider>
+                <VideoWorkflow />
+            </ToastProvider>
+        );
+
+        const tab3d = screen.getByTestId('video-mode-3d');
+        expect(tab3d).toBeDefined();
+        fireEvent.click(tab3d);
+
+        expect(mockVideoEditorState.setViewMode).toHaveBeenCalledWith('3d');
+    });
 });

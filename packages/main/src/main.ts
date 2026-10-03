@@ -113,6 +113,7 @@ import { registerPinataHandlers } from './handlers/pinata';
 import { registerRawHandlers } from './handlers/raw';
 import { registerUpscaleHandlers } from './handlers/upscale';
 import { registerFoundryHandlers } from './handlers/foundry';
+import { registerBlenderHandlers } from './handlers/blender';
 import Store from 'electron-store';
 
 let tray: Tray | null = null;
@@ -556,13 +557,15 @@ if (!gotTheLock) {
             'web3:pinata-upload',
             'raw:inspect', 'raw:convert', 'raw:batch-convert', 'raw:cancel', 'raw:verify',
             'foundry:read-file', 'foundry:get-metadata',
+            'blender:get-status', 'blender:list-templates', 'blender:render-music-video', 'blender:live-command',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
 
         // Item 375: Audit session cookies for security flags on startup
         auditSessionCookies();
 
-
+        // Blender 3D Bridge Handlers
+        registerBlenderHandlers();
 
         // Built-in Task Scheduler
         registerSchedulerHandlers();

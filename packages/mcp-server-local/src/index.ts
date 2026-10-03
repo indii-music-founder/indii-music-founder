@@ -12,6 +12,18 @@ import fs from 'fs';
 import path from 'path';
 import * as dotenv from 'dotenv';
 import { extractPdfContractText } from './pdf.js';
+import { getBlenderStatus } from './blender/discovery.js';
+import { listAvailableTemplates } from './blender/templates.js';
+import { executeBlenderRender } from './blender/executor.js';
+import { sendLiveBlenderCommand, checkLiveBlenderConnected } from './blender/liveBridge.js';
+import type {
+    BlenderRenderOptions,
+    BlenderTemplateId,
+    BlenderResolution,
+    BlenderAspectRatio,
+    BlenderRenderEngine,
+    BlenderVisualTokens,
+} from './blender/types.js';
 
 // Load env variables from the root .env file
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
@@ -86,6 +98,67 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                         project_slug: { type: 'string', description: 'Sentry project slug' }
                     },
                     required: ['organization_slug', 'project_slug'],
+                },
+            },
+            {
+                name: 'blender_get_status',
+                description: 'Checks Blender installation, CLI path, version, GPU acceleration (Metal/CUDA/CPU), and live addon connection.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {},
+                },
+            },
+            {
+                name: 'blender_list_templates',
+                description: 'Lists all 5 available procedural 3D music video templates (Audio Tunnel, Vinyl Turntable, Chrome Text, Spectrum Bars, Concert Stage).',
+                inputSchema: {
+                    type: 'object',
+                    properties: {},
+                },
+            },
+            {
+                name: 'blender_render_music_video',
+                description: 'Renders an audio-reactive 3D music video or visualizer headlessly using Blender.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        audioFilePath: { type: 'string', description: 'Absolute path to song master audio file (.wav/.mp3)' },
+                        outputVideoPath: { type: 'string', description: 'Destination path for rendered MP4 video' },
+                        templateId: {
+                            type: 'string',
+                            enum: ['audio_reactive_tunnel', 'vinyl_turntable', 'chrome_text', 'spectrum_bars', 'concert_stage'],
+                            description: 'Procedural template to render'
+                        },
+                        bpm: { type: 'number', description: 'Track tempo in BPM for beat synchronization' },
+                        durationSeconds: { type: 'number', description: 'Duration of video in seconds (default 30)' },
+                        fps: { type: 'number', description: 'Framerate (default 30)' },
+                        resolution: { type: 'string', enum: ['720p', '1080p', '4k'], description: 'Resolution (default 1080p)' },
+                        aspectRatio: { type: 'string', enum: ['16:9', '9:16', '1:1'], description: 'Aspect ratio (16:9 widescreen, 9:16 vertical, 1:1 square)' },
+                        engine: { type: 'string', enum: ['BLENDER_EEVEE_NEXT', 'CYCLES'], description: 'Render engine' },
+                        visualTokens: {
+                            type: 'object',
+                            properties: {
+                                primaryColor: { type: 'string', description: 'Hex primary color e.g. #00F0FF' },
+                                secondaryColor: { type: 'string', description: 'Hex secondary color e.g. #FF0055' },
+                                artistName: { type: 'string', description: 'Artist name for 3D typography' },
+                                trackTitle: { type: 'string', description: 'Track title for 3D typography' },
+                                coverArtPath: { type: 'string', description: 'Path to album cover art image' }
+                            }
+                        }
+                    },
+                    required: ['audioFilePath', 'outputVideoPath', 'templateId'],
+                },
+            },
+            {
+                name: 'blender_live_command',
+                description: 'Sends a command to the active interactive Blender session via the indii 3D Bridge addon.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        action: { type: 'string', enum: ['ping', 'get_scene_info', 'exec_code'], description: 'Action to execute' },
+                        params: { type: 'object', description: 'Action parameters (e.g. code: string)' }
+                    },
+                    required: ['action'],
                 },
             },
         ],
@@ -262,6 +335,84 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const errorMessage = error instanceof Error ? error.message : String(error);
             return {
                 content: [{ type: 'text', text: `Error fetching Sentry issues: ${errorMessage}` }],
+                isError: true,
+            };
+        }
+    }
+
+    if (name === 'blender_get_status') {
+        try {
+            const isLive = await checkLiveBlenderConnected();
+            const status = await getBlenderStatus(isLive);
+            return {
+                content: [{ type: 'text', text: JSON.stringify(status, null, 2) }],
+            };
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return {
+                content: [{ type: 'text', text: `Error checking Blender status: ${errorMessage}` }],
+                isError: true,
+            };
+        }
+    }
+
+    if (name === 'blender_list_templates') {
+        try {
+            const templates = listAvailableTemplates();
+            return {
+                content: [{ type: 'text', text: JSON.stringify(templates, null, 2) }],
+            };
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return {
+                content: [{ type: 'text', text: `Error listing templates: ${errorMessage}` }],
+                isError: true,
+            };
+        }
+    }
+
+    if (name === 'blender_render_music_video') {
+        try {
+            const renderOptions: BlenderRenderOptions = {
+                audioFilePath: String(args?.audioFilePath),
+                outputVideoPath: String(args?.outputVideoPath),
+                templateId: (args?.templateId as BlenderTemplateId) ?? 'audio_reactive_tunnel',
+                bpm: args?.bpm ? Number(args.bpm) : undefined,
+                durationSeconds: args?.durationSeconds ? Number(args.durationSeconds) : 30,
+                fps: args?.fps ? Number(args.fps) : 30,
+                resolution: (args?.resolution as BlenderResolution) ?? '1080p',
+                aspectRatio: (args?.aspectRatio as BlenderAspectRatio) ?? '16:9',
+                engine: (args?.engine as BlenderRenderEngine) ?? 'BLENDER_EEVEE_NEXT',
+                visualTokens: args?.visualTokens as BlenderVisualTokens | undefined
+            };
+
+            const result = await executeBlenderRender(renderOptions);
+            return {
+                content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+                isError: !result.success
+            };
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return {
+                content: [{ type: 'text', text: `Blender render failed: ${errorMessage}` }],
+                isError: true,
+            };
+        }
+    }
+
+    if (name === 'blender_live_command') {
+        try {
+            const action = String(args?.action);
+            const params = (args?.params as Record<string, unknown>) ?? {};
+            const result = await sendLiveBlenderCommand(action, params);
+            return {
+                content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+                isError: result.status === 'error'
+            };
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return {
+                content: [{ type: 'text', text: `Blender live command failed: ${errorMessage}` }],
                 isError: true,
             };
         }

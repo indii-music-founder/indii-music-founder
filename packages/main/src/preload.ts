@@ -363,5 +363,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     foundry: {
         readFile: (filePath: string) => ipcRenderer.invoke('foundry:read-file', filePath),
         getMetadata: (filePath: string) => ipcRenderer.invoke('foundry:get-metadata', filePath),
+    },
+
+    // indii Blender 3D Bridge (MCP & Headless 3D Music Videos)
+    blender: {
+        getStatus: () => ipcRenderer.invoke('blender:get-status'),
+        listTemplates: () => ipcRenderer.invoke('blender:list-templates'),
+        renderMusicVideo: (options: unknown) => ipcRenderer.invoke('blender:render-music-video', options),
+        sendLiveCommand: (action: string, params?: Record<string, unknown>) =>
+            ipcRenderer.invoke('blender:live-command', { action, params }),
     }
 });

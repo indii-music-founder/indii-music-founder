@@ -377,6 +377,19 @@ export interface ElectronAPI {
             Promise<{ outputDataUrl: string; durationMs: number }>;
         onProgress: (callback: (progress: { requestId: string; fraction: number }) => void) => () => void;
     };
+
+    // Blender 3D Engine integration
+    blender?: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        getStatus: () => Promise<any>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        listTemplates: () => Promise<any[]>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        renderMusicVideo: (req: any) => Promise<{ success: boolean; outputPath: string; error?: string }>;
+        sendLiveCommand: (action: string, params?: Record<string, unknown>) => Promise<unknown>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onProgress: (callback: (progress: any) => void) => () => void;
+    };
 }
 
 // ── Window Augmentation ───────────────────────────────────────────────────
