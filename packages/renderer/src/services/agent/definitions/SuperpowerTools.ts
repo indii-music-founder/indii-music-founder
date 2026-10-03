@@ -429,5 +429,103 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
             required: ['trashId']
         }
     },
+    {
+        name: 'blender_get_status',
+        description: 'Check Blender 3D integration status, binary installation path, version, and GPU acceleration capabilities on the host system.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {},
+            required: []
+        }
+    },
+    {
+        name: 'blender_list_templates',
+        description: 'List available procedural 3D music video templates (e.g. audio-reactive tunnels, spectrum analyzers, particles, vinyl turntables).',
+        parameters: {
+            type: 'OBJECT',
+            properties: {},
+            required: []
+        }
+    },
+    {
+        name: 'blender_render_music_video',
+        description: 'Render a procedural 3D music video or audio-reactive visualizer using Blender EEVEE/Cycles.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                audioFilePath: { type: 'STRING', description: 'Absolute path to the input audio file (WAV/MP3/AAC).' },
+                outputVideoPath: { type: 'STRING', description: 'Absolute destination path for the rendered MP4 video.' },
+                templateId: { type: 'STRING', description: 'Template identifier: audio_reactive_tunnel, frequency_spectrum_bars, particle_nebula, neon_grid_horizon, vinyl_turntable, abstract_geometry_morph.' },
+                bpm: { type: 'NUMBER', description: 'Optional tempo in BPM to sync visual pulsations and camera motion.' },
+                durationSeconds: { type: 'NUMBER', description: 'Duration of the output render in seconds (default 30).' },
+                fps: { type: 'NUMBER', description: 'Frames per second (default 30).' },
+                resolution: { type: 'STRING', enum: ['720p', '1080p', '4k'], description: 'Render resolution (default 1080p).' },
+                aspectRatio: { type: 'STRING', enum: ['16:9', '9:16', '1:1'], description: 'Aspect ratio (default 16:9).' },
+                engine: { type: 'STRING', enum: ['BLENDER_EEVEE_NEXT', 'CYCLES'], description: 'Blender render engine (default BLENDER_EEVEE_NEXT).' }
+            },
+            required: ['audioFilePath', 'outputVideoPath']
+        }
+    },
+    {
+        name: 'blender_live_command',
+        description: 'Execute a command against a live running Blender instance via the Blender MCP server bridge.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                action: { type: 'STRING', description: 'Action to execute (e.g. ping, run_script, get_scene_info).' },
+                params: { type: 'OBJECT', description: 'Parameters for the action.' }
+            },
+            required: ['action']
+        }
+    },
+    {
+        name: 'foundry_inspect_format',
+        description: 'Run format forensics inspection on arbitrary distributor or royalty file content using deterministic analysis augmented with Jev type-safe semantic judgments.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                evidenceId: { type: 'STRING', description: 'Identifier of the evidence or file.' },
+                content: { type: 'STRING', description: 'Raw content of the file or statement.' }
+            },
+            required: ['evidenceId', 'content']
+        }
+    },
+    {
+        name: 'foundry_synthesize_hypotheses',
+        description: 'Synthesize format hypothesis ledger for an inspected statement file.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                evidenceId: { type: 'STRING', description: 'Identifier of the evidence item.' },
+                content: { type: 'STRING', description: 'Raw file content.' },
+                formatName: { type: 'STRING', description: 'Optional format family name override.' }
+            },
+            required: ['evidenceId', 'content']
+        }
+    },
+    {
+        name: 'foundry_parse_and_validate',
+        description: 'Parse raw statement content through an adapter candidate and validate against business graph schema.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                content: { type: 'STRING', description: 'Raw statement content.' },
+                adapterCode: { type: 'STRING', description: 'JavaScript code of the statement adapter.' }
+            },
+            required: ['content', 'adapterCode']
+        }
+    },
+    {
+        name: 'foundry_normalize_to_graph',
+        description: 'Normalize parsed rows into canonical Artist Business Graph (ABG) schema.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                rawRows: { type: 'ARRAY', description: 'Array of parsed row records.' },
+                formatFamily: { type: 'STRING', description: 'The detected distributor format family.' }
+            },
+            required: ['rawRows', 'formatFamily']
+        }
+    },
     ...ARTIFACT_TOOL_DECLARATIONS as unknown as FunctionDeclaration[]
 ];
