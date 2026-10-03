@@ -31,6 +31,16 @@ describe('FinanceAgent', () => {
         expect(FinanceAgent.category).toBe('department');
     });
 
+    it('should expose Format Foundry tools in authorizedTools and functions', () => {
+        expect(FinanceAgent.authorizedTools).toContain('foundry_inspect_format');
+        expect(FinanceAgent.authorizedTools).toContain('foundry_parse_and_validate');
+        expect(FinanceAgent.authorizedTools).toContain('foundry_normalize_to_graph');
+
+        expect(FinanceAgent.functions!.foundry_inspect_format).toBeDefined();
+        expect(FinanceAgent.functions!.foundry_parse_and_validate).toBeDefined();
+        expect(FinanceAgent.functions!.foundry_normalize_to_graph).toBeDefined();
+    });
+
     describe('analyze_budget', () => {
         it('should calculate budget and manager fee saved correctly', async () => {
             const args = { amount: 10000, breakdown: 'Travel' };

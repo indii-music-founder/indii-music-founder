@@ -14,6 +14,25 @@ vi.mock('../tools/VideoTools', () => ({
         extend_video: vi.fn(),
         update_keyframe: vi.fn(),
         orchestrate_timeline: vi.fn(),
+        create_performance_video: vi.fn(),
+        animate_still: vi.fn(),
+    }
+}));
+
+// Mock DirectorTools
+vi.mock('../tools/DirectorTools', () => ({
+    DirectorTools: {
+        analyze_audio: vi.fn(),
+    }
+}));
+
+// Mock BlenderTools
+vi.mock('../tools/BlenderTools', () => ({
+    BlenderTools: {
+        blender_get_status: vi.fn(),
+        blender_list_templates: vi.fn(),
+        blender_render_music_video: vi.fn(),
+        blender_live_command: vi.fn(),
     }
 }));
 
@@ -87,6 +106,11 @@ describe('VideoAgent', () => {
         expect(VideoAgent.authorizedTools).toContain('video_render_stitch');
         expect(VideoAgent.authorizedTools).toContain('video_render_chain');
         expect(VideoAgent.authorizedTools).toContain('video_get_render_status');
+        expect(VideoAgent.authorizedTools).toContain('create_performance_video');
+        expect(VideoAgent.authorizedTools).toContain('analyze_audio');
+        expect(VideoAgent.authorizedTools).toContain('animate_still');
+        expect(VideoAgent.authorizedTools).toContain('blender_get_status');
+        expect(VideoAgent.authorizedTools).toContain('blender_render_music_video');
     });
 
     it('should map the functions to correct tool implementations', () => {
@@ -111,5 +135,10 @@ describe('VideoAgent', () => {
         expect(VideoAgent.functions!.video_render_stitch).toBeDefined();
         expect(VideoAgent.functions!.video_render_chain).toBeDefined();
         expect(VideoAgent.functions!.video_get_render_status).toBeDefined();
+        expect(VideoAgent.functions!.create_performance_video).toBeDefined();
+        expect(VideoAgent.functions!.analyze_audio).toBeDefined();
+        expect(VideoAgent.functions!.animate_still).toBeDefined();
+        expect(VideoAgent.functions!.blender_get_status).toBeDefined();
+        expect(VideoAgent.functions!.blender_render_music_video).toBeDefined();
     });
 });

@@ -8,6 +8,7 @@ import { StorageTools } from '../tools/StorageTools';
 import { VideoProjectTools } from '../tools/VideoProjectTools';
 import { EditorTools } from '../tools/EditorTools';
 import { BlenderTools } from '../tools/BlenderTools';
+import { DirectorTools } from '../tools/DirectorTools';
 
 
 
@@ -67,6 +68,8 @@ export const VideoAgent: AgentConfig = {
                     return { success: false, error: (e as Error).message };
                 }
             },
+            analyze_audio: DirectorTools.analyze_audio,
+            animate_still: VideoTools.animate_still,
             ...BlenderTools
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
@@ -94,6 +97,8 @@ export const VideoAgent: AgentConfig = {
         'video_render_stitch',
         'video_render_chain',
         'video_get_render_status',
+        'analyze_audio',
+        'animate_still',
         'blender_get_status',
         'blender_list_templates',
         'blender_render_music_video',
@@ -215,6 +220,48 @@ export const VideoAgent: AgentConfig = {
                         artStyle: { type: "STRING", description: "The overarching visual style to append to each prompt (e.g., 'Cinematic 35mm, neon noir')." }
                     },
                     required: ["masterScript", "totalDuration", "artStyle"]
+                }
+            },
+            {
+                name: "create_performance_video",
+                description: "Create a multi-scene performance video aligned to a verified canonical master track with stylistic visual direction.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        masterAsset: { type: "OBJECT", description: "Verified canonical master audio reference." },
+                        artistImageUrl: { type: "STRING", description: "Optional image URL of the artist for visual continuity." },
+                        artistDescription: { type: "STRING", description: "Description of the artist's visual appearance and style." },
+                        style: { type: "STRING", description: "Artistic/cinematic style directive." },
+                        aspectRatio: { type: "STRING", enum: ["9:16", "16:9", "1:1"], description: "Target aspect ratio." },
+                        sceneCount: { type: "NUMBER", description: "Number of performance scenes to generate." }
+                    },
+                    required: ["masterAsset"]
+                }
+            },
+            {
+                name: "analyze_audio",
+                description: "Perform 'Audio-to-Visual' analysis to extract BPM, key, mood, transients, and energy from an uploaded track to guide video cutting and tempo sync.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        uploadedAudioIndex: { type: "NUMBER", description: "Optional index of a recently uploaded audio file." }
+                    },
+                    required: []
+                }
+            },
+            {
+                name: "animate_still",
+                description: "Render a deterministic camera move (dolly-in, pan, tilt, ken-burns) over a still image into a short promotional video clip. Free, no generative AI tokens.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        imageUrl: { type: "STRING", description: "URL of the still image." },
+                        imageIndex: { type: "NUMBER", description: "Index of image if URL is omitted." },
+                        preset: { type: "STRING", enum: ["dolly-in", "dolly-out", "pan-left", "pan-right", "tilt-up", "tilt-down", "ken-burns"], description: "Camera move preset." },
+                        resolution: { type: "STRING", enum: ["9:16", "16:9", "1:1"], description: "Aspect ratio." },
+                        durationSeconds: { type: "NUMBER", description: "Clip duration in seconds (default 3.0)." }
+                    },
+                    required: []
                 }
             },
             {

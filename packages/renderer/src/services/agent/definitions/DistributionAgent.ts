@@ -10,6 +10,7 @@ import { DistributionTools } from '../tools/DistributionTools';
 import { CatalogAdminTools } from '../tools/CatalogAdminTools';
 import { MusicTools } from '../tools/MusicTools';
 import { UniversalTools } from '../tools/UniversalTools';
+import { FormatFoundryTools } from '../tools/FormatFoundryTools';
 import systemPrompt from '@agents/distribution/prompt.md?raw';
 
 
@@ -53,10 +54,13 @@ export const DistributionAgent: AgentConfig = {
             draft_dsp_metadata: McpTools.draft_dsp_metadata,
             catalog_query_gaps: CatalogAdminTools.catalog_query_gaps,
             catalog_stage_registration_payload: CatalogAdminTools.catalog_stage_registration_payload,
-            catalog_dispatch_split_invitations: CatalogAdminTools.catalog_dispatch_split_invitations
+            catalog_dispatch_split_invitations: CatalogAdminTools.catalog_dispatch_split_invitations,
+            foundry_inspect_format: FormatFoundryTools.foundry_inspect_format,
+            foundry_parse_and_validate: FormatFoundryTools.foundry_parse_and_validate,
+            foundry_normalize_to_graph: FormatFoundryTools.foundry_normalize_to_graph
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'web_extract', 'pro_scraper', 'payment_gate', 'credential_vault', 'draft_dsp_metadata', 'catalog_query_gaps', 'catalog_stage_registration_payload', 'catalog_dispatch_split_invitations'],
+    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'web_extract', 'pro_scraper', 'payment_gate', 'credential_vault', 'draft_dsp_metadata', 'catalog_query_gaps', 'catalog_stage_registration_payload', 'catalog_dispatch_split_invitations', 'foundry_inspect_format', 'foundry_parse_and_validate', 'foundry_normalize_to_graph'],
     tools: [{
         functionDeclarations: [
             ...distributionRetrievalDeclarations,
@@ -359,6 +363,42 @@ export const DistributionAgent: AgentConfig = {
                         bio_token: { type: "STRING", description: "Biometric session token" }
                     },
                     required: ["action", "service"]
+                }
+            },
+            {
+                name: "foundry_inspect_format",
+                description: "Inspect unknown distributor statements, DDEX releases, or royalty exports using Format Forensics Engine.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        evidenceId: { type: "STRING", description: "Identifier for the file or evidence." },
+                        content: { type: "STRING", description: "Raw statement or metadata file content (CSV/JSON/XML/TSV)." }
+                    },
+                    required: ["evidenceId", "content"]
+                }
+            },
+            {
+                name: "foundry_parse_and_validate",
+                description: "Deterministically parse distributor statements and run 7-stage layered validation against industry standards.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        content: { type: "STRING", description: "Raw statement content to parse and validate." },
+                        formatId: { type: "STRING", description: "Optional known format identifier (e.g. 'distrokid-tsv', 'tunecore-csv')." }
+                    },
+                    required: ["content"]
+                }
+            },
+            {
+                name: "foundry_normalize_to_graph",
+                description: "Normalize parsed distributor transactions and metadata into the canonical Artist Business Graph (ABG).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        content: { type: "STRING", description: "Raw file content to normalize." },
+                        catalogMap: { type: "OBJECT", description: "Map of track titles/ISRCs to ExtendedGoldenMetadata." }
+                    },
+                    required: ["content", "catalogMap"]
                 }
             }
         ]

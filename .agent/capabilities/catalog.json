@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "ac39d6d18fc0ac74039985d9392aee613af9454b1cec199ee12194045dc57e4b",
+  "sourceDigest": "3b8350c8b7934a0fea314cc22c03649886a98411f6f0bb8a1a22db173d2593ee",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
   "dynamicOverlayRule": "At runtime, merge only tools actually exposed by the current host. Session tools inherit active authority and require the same contract checks.",
   "counts": {
-    "certified": 36,
+    "certified": 37,
     "conditional": 70,
     "quarantined": 92,
     "deprecated": 1
@@ -2773,6 +2773,35 @@
       ],
       "verification": [
         "Every valuation claim is labeled by evidence class and calculations reconcile"
+      ],
+      "failure": "Stop after bounded retries and return the useful error plus a safe fallback.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-read current state before repeating; never duplicate external writes.",
+      "authenticity": "Do not promote mocks, fixtures, or local structure into a live claim.",
+      "conflicts": []
+    },
+    {
+      "id": "skill:owned:agent-capability-wiring",
+      "name": "agent-capability-wiring",
+      "kind": "skill",
+      "registry": ".agent/skills",
+      "path": ".agent/skills/agent-capability-wiring/SKILL.md",
+      "mutable": true,
+      "available": true,
+      "description": "Audit, wire, and verify end-to-end tool exposure, capability declarations, and system prompt awareness across all indii specialist agents and the Conductor. Use whenever a new capability, MCP server, tool, engine, or system is added, or when agents say they \"cannot find\" or don't know about tools built into the platform.",
+      "descriptionHash": "7955e741cfffae07bc75d78122a3b9a49fd0d512bdf73ea3bebabfb67ed17ff9",
+      "contentHash": "d7f0cf606f9e8d80b773e653278a69c7d390c99b5fdc4dec2070c30fbc0cd74d",
+      "state": "certified",
+      "authority": "bounded-local-writes",
+      "prerequisites": [
+        "The request matches the skill description",
+        "Required files and tools are available"
+      ],
+      "outputs": [
+        "The skill-defined artifact, result, or evidence"
+      ],
+      "verification": [
+        "Tool implementations, agent definitions, system prompts, and tests pass alignment audit"
       ],
       "failure": "Stop after bounded retries and return the useful error plus a safe fallback.",
       "fallback": "workflow:skill-skill",

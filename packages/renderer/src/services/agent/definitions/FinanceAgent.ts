@@ -4,6 +4,7 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { UniversalTools } from '../tools/UniversalTools';
 import { FinanceTools } from '../tools/FinanceTools';
+import { FormatFoundryTools } from '../tools/FormatFoundryTools';
 
 const financeRetrievalConfig = {
     'revenue': { path: 'revenue', requiresUserIdFilter: true },
@@ -182,8 +183,11 @@ export const FinanceAgent: AgentConfig = {
         web_extract: UniversalTools.web_extract,
         calculate_recoupment: McpTools.calculate_recoupment,
         stage_stripe_payouts: McpTools.stage_stripe_payouts,
+        foundry_inspect_format: FormatFoundryTools.foundry_inspect_format,
+        foundry_parse_and_validate: FormatFoundryTools.foundry_parse_and_validate,
+        foundry_normalize_to_graph: FormatFoundryTools.foundry_normalize_to_graph,
     },
-    authorizedTools: ['list_domain_records', 'royalty_distribution_calculator', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'web_extract', 'generate_tax_report', 'forecast_revenue', 'calculate_recoupment', 'stage_stripe_payouts'],
+    authorizedTools: ['list_domain_records', 'royalty_distribution_calculator', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'web_extract', 'generate_tax_report', 'forecast_revenue', 'calculate_recoupment', 'stage_stripe_payouts', 'foundry_inspect_format', 'foundry_parse_and_validate', 'foundry_normalize_to_graph'],
     tools: [{
         functionDeclarations: [
             ...financeRetrievalDeclarations,
@@ -383,6 +387,42 @@ export const FinanceAgent: AgentConfig = {
                         releaseId: { type: "STRING" }
                     },
                     required: ["releaseId"]
+                }
+            },
+            {
+                name: "foundry_inspect_format",
+                description: "Inspect unknown royalty accounting reports, distributor CSVs, or payout statements using Format Forensics Engine.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        evidenceId: { type: "STRING", description: "Identifier for the file or evidence." },
+                        content: { type: "STRING", description: "Raw statement or metadata file content (CSV/JSON/XML/TSV)." }
+                    },
+                    required: ["evidenceId", "content"]
+                }
+            },
+            {
+                name: "foundry_parse_and_validate",
+                description: "Deterministically parse distributor statements and run 7-stage layered validation against industry standards.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        content: { type: "STRING", description: "Raw statement content to parse and validate." },
+                        formatId: { type: "STRING", description: "Optional known format identifier (e.g. 'distrokid-tsv', 'tunecore-csv')." }
+                    },
+                    required: ["content"]
+                }
+            },
+            {
+                name: "foundry_normalize_to_graph",
+                description: "Normalize parsed royalty transactions and earnings into the canonical Artist Business Graph (ABG).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        content: { type: "STRING", description: "Raw file content to normalize." },
+                        catalogMap: { type: "OBJECT", description: "Map of track titles/ISRCs to ExtendedGoldenMetadata." }
+                    },
+                    required: ["content", "catalogMap"]
                 }
             }
         ]

@@ -100,6 +100,7 @@
     "workflow:health-audit": {"state":"deprecated","reason":"This workflow is explicitly planned and unimplemented; use skill:owned:health-audit."},
 
     "skill:owned:20m": {"state":"conditional","authority":"bounded-document-writes-and-research","prerequisites":["The target, evidence date, buyer context, and permitted external research are explicit"],"verification":["Every valuation claim is labeled by evidence class and calculations reconcile"]},
+    "skill:owned:agent-capability-wiring": {"state":"certified","authority":"bounded-local-writes","verification":["Tool implementations, agent definitions, system prompts, and tests pass alignment audit"]},
     "skill:owned:agentic-harness-architect": {"state":"conditional","authority":"bounded-local-writes","prerequisites":["The user asks to design or implement an agent harness", "The target host and tool surface are known"],"verification":["Threat model, approval boundaries, and harness tests pass"]},
     "skill:owned:auto-qa": {"state":"conditional","authority":"local-interactive","prerequisites":["An approved browser capability is available", "REAL_USER_AUTHENTICITY.md has been read", "The target environment is running"],"verification":["DOM, screenshot, console, and environment evidence are recorded"],"conflicts":["skill:owned:test"]},
     "skill:owned:caveman": {"state":"certified","authority":"response-style-only","verification":["Technical meaning and safety warnings remain intact"]},
