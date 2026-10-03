@@ -100,9 +100,11 @@ export function isCapabilityQuestion(task: string): boolean {
         new RegExp(String.raw`\bdid (?:the )?(?:other )?agents?(?: (?:the )?other \d+)? (?:get|have) (?:their )?(?:requested )?tools?\b`, 'i'),
         new RegExp(String.raw`\bhave (?:the )?(?:other )?agents?(?: (?:the )?other \d+)? (?:gotten|received|got) (?:their )?(?:requested )?tools?\b`, 'i'),
         /\b(?:is|are) (?:image|video)(?: generation)? (?:available|ready|working)(?: right now| now)?\b/i,
-        new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos)(?: right now| now)?\??$`, 'i'),
-        new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos).{0,40}\b(?:ability|able|capable|available|ready)\b`, 'i'),
-        new RegExp(String.raw`\b(?:is|are) ${subject} (?:able|ready) to (?:generate|create|make)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos)(?: right now| now)?\b`, 'i'),
+        /\b(?:is|are) (?:blender|3d video|visualizer)(?: generation)? (?:available|ready|working)(?: right now| now)?\b/i,
+        new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make|render)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos|3d (?:video|videos)|blender|3d|visualizer)(?: (?:with|using) blender)?(?: right now| now)?\??$`, 'i'),
+        new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make|render)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos|3d (?:video|videos)|blender|3d|visualizer).{0,40}\b(?:ability|abilities|able|capable|available|ready)\b`, 'i'),
+        new RegExp(String.raw`\b(?:find|check|tell me about|what are) (?:your|its|the) (?:new )?(?:abilities|capabilities|tools) (?:with|for|related to) blender\b`, 'i'),
+        new RegExp(String.raw`\b(?:is|are) ${subject} (?:able|ready) to (?:generate|create|make|render)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos|3d)(?: right now| now)?\b`, 'i'),
     ].some(pattern => pattern.test(normalized));
 }
 
@@ -123,6 +125,7 @@ const SAFE_DIRECT_CAPABILITIES: Array<{
     },
     { tools: ['generate_image'], key: 'image_generation', label: 'create images' },
     { tools: ['generate_video'], key: 'video_generation', label: 'create videos' },
+    { tools: ['blender_render_music_video'], key: 'video_generation', label: 'render 3D music videos & visualizers with Blender' },
 ];
 
 const SAFE_SPECIALIST_LABELS: Record<string, string> = {
@@ -132,7 +135,7 @@ const SAFE_SPECIALIST_LABELS: Record<string, string> = {
     marketing: 'marketing planning',
     brand: 'brand identity & compliance',
     music: 'music and metadata review',
-    video: 'video production',
+    video: 'video production & Blender 3D rendering',
     social: 'social scheduling & strategy',
     publicist: 'PR & media outreach',
     publishing: 'publishing & PRO catalog review',

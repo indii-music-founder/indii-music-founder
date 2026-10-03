@@ -173,9 +173,13 @@ describe('GeneralistAgent', () => {
         expect(toolNames).toContain('save_memory');
         expect(toolNames).toContain('recall_memories');
         expect(toolNames).toContain('delegate_task');
+        expect(toolNames).toContain('blender_get_status');
+        expect(toolNames).toContain('blender_list_templates');
+        expect(toolNames).toContain('blender_render_music_video');
+        expect(toolNames).toContain('blender_live_command');
     });
 
-    it('should have access to full TOOL_REGISTRY via functions property', async () => {
+    it('should have access to full TOOL_REGISTRY including Blender tools', async () => {
         await agent.initialize();
         const agentAny = agent as unknown as { functions: Record<string, unknown> };
         expect(agentAny.functions).toBeDefined();
@@ -185,5 +189,9 @@ describe('GeneralistAgent', () => {
         expect(agentAny.functions).toHaveProperty('generate_image');
         expect(agentAny.functions).toHaveProperty('save_memory');
         expect(agentAny.functions).toHaveProperty('list_projects');
+        expect(agentAny.functions).toHaveProperty('blender_get_status');
+        expect(agentAny.functions).toHaveProperty('blender_list_templates');
+        expect(agentAny.functions).toHaveProperty('blender_render_music_video');
+        expect(agentAny.functions).toHaveProperty('blender_live_command');
     });
 });

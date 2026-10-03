@@ -54,7 +54,8 @@ export class GeneralistAgent extends BaseAgent {
         'edit_image_with_annotations', 'edit_document_with_annotations', 'open_remote_setup', 'get_remote_status',
         'seat_agent', 'seat_all_department_heads', 'unseat_agent',
         'list_trash', 'move_to_trash', 'restore_from_trash',
-        'canvas_inspect', 'canvas_push', 'canvas_clear', 'draw_shape', 'canvas_get_project_canvas'
+        'canvas_inspect', 'canvas_push', 'canvas_clear', 'draw_shape', 'canvas_get_project_canvas',
+        'blender_get_status', 'blender_list_templates', 'blender_render_music_video', 'blender_live_command'
     ];
 
     constructor() {
@@ -638,6 +639,55 @@ export class GeneralistAgent extends BaseAgent {
                         globalInstruction: { type: 'STRING', description: 'Overall instruction for the document edit.' }
                     },
                     required: ['documentId', 'annotations']
+                }
+            },
+            {
+                name: 'blender_get_status',
+                description: 'Check Blender 3D integration status, binary installation path, version, and GPU acceleration capabilities on the host system.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {},
+                    required: []
+                }
+            },
+            {
+                name: 'blender_list_templates',
+                description: 'List available procedural 3D music video templates (e.g. audio-reactive tunnels, spectrum analyzers, particles, vinyl turntables).',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {},
+                    required: []
+                }
+            },
+            {
+                name: 'blender_render_music_video',
+                description: 'Render a procedural 3D music video or audio-reactive visualizer using Blender EEVEE/Cycles.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        audioFilePath: { type: 'STRING', description: 'Absolute path to the input audio file (WAV/MP3/AAC).' },
+                        outputVideoPath: { type: 'STRING', description: 'Absolute destination path for the rendered MP4 video.' },
+                        templateId: { type: 'STRING', description: 'Template identifier: audio_reactive_tunnel, frequency_spectrum_bars, particle_nebula, neon_grid_horizon, vinyl_turntable, abstract_geometry_morph.' },
+                        bpm: { type: 'NUMBER', description: 'Optional tempo in BPM to sync visual pulsations and camera motion.' },
+                        durationSeconds: { type: 'NUMBER', description: 'Duration of the output render in seconds (default 30).' },
+                        fps: { type: 'NUMBER', description: 'Frames per second (default 30).' },
+                        resolution: { type: 'STRING', enum: ['720p', '1080p', '4k'], description: 'Render resolution (default 1080p).' },
+                        aspectRatio: { type: 'STRING', enum: ['16:9', '9:16', '1:1'], description: 'Aspect ratio (default 16:9).' },
+                        engine: { type: 'STRING', enum: ['BLENDER_EEVEE_NEXT', 'CYCLES'], description: 'Blender render engine (default BLENDER_EEVEE_NEXT).' }
+                    },
+                    required: ['audioFilePath', 'outputVideoPath']
+                }
+            },
+            {
+                name: 'blender_live_command',
+                description: 'Execute a command against a live running Blender instance via the Blender MCP server bridge.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        action: { type: 'STRING', description: 'Action to execute (e.g. ping, run_script, get_scene_info).' },
+                        params: { type: 'OBJECT', description: 'Parameters for the action.' }
+                    },
+                    required: ['action']
                 }
             }
         ];

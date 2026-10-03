@@ -7,6 +7,7 @@ import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../
 import { StorageTools } from '../tools/StorageTools';
 import { VideoProjectTools } from '../tools/VideoProjectTools';
 import { EditorTools } from '../tools/EditorTools';
+import { BlenderTools } from '../tools/BlenderTools';
 
 
 
@@ -65,7 +66,8 @@ export const VideoAgent: AgentConfig = {
                 } catch (e: unknown) {
                     return { success: false, error: (e as Error).message };
                 }
-            }
+            },
+            ...BlenderTools
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: [
@@ -91,7 +93,11 @@ export const VideoAgent: AgentConfig = {
         'video_plan_chain',
         'video_render_stitch',
         'video_render_chain',
-        'video_get_render_status'
+        'video_get_render_status',
+        'blender_get_status',
+        'blender_list_templates',
+        'blender_render_music_video',
+        'blender_live_command'
     ],
     tools: [{
         functionDeclarations: [
@@ -362,6 +368,55 @@ export const VideoAgent: AgentConfig = {
                         renderId: { type: 'STRING', description: 'Render ID returned by video_render_stitch.' }
                     },
                     required: ['renderId']
+                }
+            },
+            {
+                name: 'blender_get_status',
+                description: 'Check Blender 3D integration status, binary installation path, version, and GPU acceleration capabilities on the host system.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {},
+                    required: []
+                }
+            },
+            {
+                name: 'blender_list_templates',
+                description: 'List available procedural 3D music video templates (e.g. audio-reactive tunnels, spectrum analyzers, particles, vinyl turntables).',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {},
+                    required: []
+                }
+            },
+            {
+                name: 'blender_render_music_video',
+                description: 'Render a procedural 3D music video or audio-reactive visualizer using Blender EEVEE/Cycles.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        audioFilePath: { type: 'STRING', description: 'Absolute path to the input audio file (WAV/MP3/AAC).' },
+                        outputVideoPath: { type: 'STRING', description: 'Absolute destination path for the rendered MP4 video.' },
+                        templateId: { type: 'STRING', description: 'Template identifier: audio_reactive_tunnel, frequency_spectrum_bars, particle_nebula, neon_grid_horizon, vinyl_turntable, abstract_geometry_morph.' },
+                        bpm: { type: 'NUMBER', description: 'Optional tempo in BPM to sync visual pulsations and camera motion.' },
+                        durationSeconds: { type: 'NUMBER', description: 'Duration of the output render in seconds (default 30).' },
+                        fps: { type: 'NUMBER', description: 'Frames per second (default 30).' },
+                        resolution: { type: 'STRING', enum: ['720p', '1080p', '4k'], description: 'Render resolution (default 1080p).' },
+                        aspectRatio: { type: 'STRING', enum: ['16:9', '9:16', '1:1'], description: 'Aspect ratio (default 16:9).' },
+                        engine: { type: 'STRING', enum: ['BLENDER_EEVEE_NEXT', 'CYCLES'], description: 'Blender render engine (default BLENDER_EEVEE_NEXT).' }
+                    },
+                    required: ['audioFilePath', 'outputVideoPath']
+                }
+            },
+            {
+                name: 'blender_live_command',
+                description: 'Execute a command against a live running Blender instance via the Blender MCP server bridge.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        action: { type: 'STRING', description: 'Action to execute (e.g. ping, run_script, get_scene_info).' },
+                        params: { type: 'OBJECT', description: 'Parameters for the action.' }
+                    },
+                    required: ['action']
                 }
             }
         ]

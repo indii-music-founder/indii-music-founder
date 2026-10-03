@@ -69,6 +69,9 @@ describe('Boardroom capability truthfulness', () => {
         'Did the other agents the other 23 get their requested tools?',
         'Did the other agents get their requested tools?',
         'Are the other departments tools deployed right now?',
+        'find your new abilities with blender',
+        'what are your capabilities with blender',
+        'can you render 3d videos with blender right now',
     ])('recognizes explicit capability or readiness intent: %s', task => {
         expect(isCapabilityQuestion(task)).toBe(true);
     });
@@ -122,6 +125,21 @@ describe('Boardroom capability truthfulness', () => {
         expect(output).not.toContain('unregistered_tool');
         expect(output).not.toContain('generate_image');
         expect(output).not.toContain('save_memory');
+    });
+
+    it('claims Blender 3D rendering when authorized and attested by video capability', () => {
+        const output = buildCapabilitySummary({
+            authorizedTools: ['blender_render_music_video', 'consult_specialist'],
+            registeredSpecialistIds: ['video'],
+            snapshot: snapshot({
+                video_generation: 'available',
+                specialist_routing: 'available',
+            }),
+        });
+
+        expect(output).toContain('Available now');
+        expect(output).toContain('render 3D music videos & visualizers with Blender');
+        expect(output).toContain('video production & Blender 3D rendering');
     });
 
     it('does not overstate a grouped capability when only part of its tool set is registered', () => {
