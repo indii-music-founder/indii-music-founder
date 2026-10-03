@@ -384,11 +384,29 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
 
                 const responses = collectRemoteAgentResponses(startedAt);
 
-                const relays = responses.slice(0, MAX_REMOTE_AGENT_RESPONSES).map(response => ({
-                    text: response.text.trim(),
-                    agentId: response.agentId || command.targetAgentId || 'generalist',
-                    boardroomMessageId: response.id,
-                }));
+                // Collect any new images added to generatedHistory during this run (e.g. flyers, artwork)
+                const currentHistory = useStore.getState().generatedHistory || [];
+                const newHistoryImages = currentHistory
+                    .filter(item => {
+                        const ts = typeof item.timestamp === 'number'
+                            ? item.timestamp
+                            : (item.timestamp as { toMillis?: () => number })?.toMillis?.() || 0;
+                        return ts >= startedAt && Boolean(item.url);
+                    })
+                    .map(item => item.url);
+
+                const relays = responses.slice(0, MAX_REMOTE_AGENT_RESPONSES).map((response, index) => {
+                    const messageImages = (response.attachments || [])
+                        .filter(att => att.mimeType?.startsWith('image/'))
+                        .map(att => (att.base64.startsWith('data:') ? att.base64 : `data:${att.mimeType};base64,${att.base64}`));
+                    const allImages = Array.from(new Set([...messageImages, ...(index === 0 ? newHistoryImages : [])]));
+                    return {
+                        text: response.text.trim(),
+                        agentId: response.agentId || command.targetAgentId || 'generalist',
+                        boardroomMessageId: response.id,
+                        ...(allImages.length > 0 ? { imageUrls: allImages } : {}),
+                    };
+                });
                 if (responses.length > MAX_REMOTE_AGENT_RESPONSES) {
                     logger.warn(`[RemoteAdapter] Relaying first ${MAX_REMOTE_AGENT_RESPONSES} of ${responses.length} agent responses for ${command.id}`);
                 }

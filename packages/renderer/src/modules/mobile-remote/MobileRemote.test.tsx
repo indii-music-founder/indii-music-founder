@@ -165,6 +165,14 @@ vi.mock('@/modules/touring/components/RoadMode', async () => {
     };
 });
 
+vi.mock('./components/StudioWorkView', () => ({
+    default: () => <div>Studio Work & Chat</div>,
+}));
+
+vi.mock('./components/EncounterFeedView', () => ({
+    default: () => <div>Encounter Feed</div>,
+}));
+
 function renderController() {
     return render(
         <MobileRemoteProviders>
@@ -311,11 +319,10 @@ describe('MobileRemote', () => {
 
         const rooms = [
             { name: 'Capture', content: 'Quick Capture' },
-            { name: 'Boardroom', content: 'Agent Chat' },
+            { name: 'Studio', content: 'Studio Work & Chat' },
+            { name: 'Contacts', content: 'Encounter Feed' },
             { name: 'Road', content: 'Road Mode Surface' },
-            { name: 'Stream', content: 'Stream View' },
-            { name: 'Settings', content: 'Settings View' },
-            { name: 'Home', content: 'Home Dashboard' },
+            { name: 'More', content: 'Settings View' },
         ];
 
         for (const room of rooms) {

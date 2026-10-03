@@ -29,9 +29,9 @@ import { auth } from '@/services/firebase';
 import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
-  LayoutDashboard, MessageSquare, Navigation,
+  Navigation,
   LucideIcon, WifiOff, AlertCircle, RefreshCw,
-  Camera, Radio, Settings, Sparkles
+  Settings, Sparkles, Mic, Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -45,19 +45,18 @@ export { triggerHaptic } from './haptics';
 import { triggerHaptic } from './haptics';
 
 // Lazy load sub-components for performance on remote devices
-const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
 const QuickCaptureView = lazy(() => import('./components/QuickCaptureView'));
 const EncounterFeedView = lazy(() => import('./components/EncounterFeedView'));
 const StreamView = lazy(() => import('./components/StreamView'));
 const SettingsView = lazy(() => import('./components/SettingsView'));
-const AgentChat = lazy(() => import('./components/AgentChat'));
+const StudioWorkView = lazy(() => import('./components/StudioWorkView'));
 const RoadMode = lazy(() =>
   import('@/modules/touring/components/RoadMode').then(module => ({ default: module.RoadMode }))
 );
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'home' | 'capture' | 'encounters' | 'boardroom' | 'road' | 'stream' | 'settings';
+type TabId = 'capture' | 'studio' | 'encounters' | 'road' | 'settings' | 'home' | 'boardroom' | 'stream';
 
 interface Tab {
   id: TabId;
@@ -66,13 +65,11 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { id: 'home', icon: LayoutDashboard, label: 'Home' },
-  { id: 'capture', icon: Camera, label: 'Capture' },
-  { id: 'encounters', icon: Sparkles, label: 'Encounters' },
-  { id: 'boardroom', icon: MessageSquare, label: 'Boardroom' },
+  { id: 'home', icon: Mic, label: 'Capture' },
+  { id: 'studio', icon: Sparkles, label: 'Studio' },
+  { id: 'encounters', icon: Users, label: 'Contacts' },
   { id: 'road', icon: Navigation, label: 'Road' },
-  { id: 'stream', icon: Radio, label: 'Stream' },
-  { id: 'settings', icon: Settings, label: 'Settings' },
+  { id: 'settings', icon: Settings, label: 'More' },
 ];
 
 const TRANSIENT_HEARTBEAT_GRACE_MS = 10_000;
@@ -540,30 +537,24 @@ export default function MobileRemote() {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'capture':
       case 'home':
         return (
           <Suspense fallback={<TabFallback />}>
-            <div className="space-y-6 pt-4">
-              <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} onTabChange={setActiveTab} />
-            </div>
+            <QuickCaptureView isPaired={isPaired} />
           </Suspense>
         );
-      case 'capture':
+      case 'studio':
+      case 'boardroom':
         return (
           <Suspense fallback={<TabFallback />}>
-            <QuickCaptureView isPaired={isPaired} />
+            <StudioWorkView isPaired={isPaired} onSendCommand={sendCommand} />
           </Suspense>
         );
       case 'encounters':
         return (
           <Suspense fallback={<TabFallback />}>
             <EncounterFeedView />
-          </Suspense>
-        );
-      case 'boardroom':
-        return (
-          <Suspense fallback={<TabFallback />}>
-            <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
           </Suspense>
         );
       case 'road':
@@ -616,10 +607,10 @@ export default function MobileRemote() {
 
       {/* ─── Header ─────────────────────────────────────────────────────── */}
       <header
-        className="sticky top-0 z-40 bg-[#14100c]/80 backdrop-blur-2xl border-b border-white/5"
+        className="sticky top-0 z-40 bg-[#14100c]/85 backdrop-blur-2xl border-b border-white/5"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between px-4 py-2.5">
           <motion.div 
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -724,8 +715,12 @@ export default function MobileRemote() {
         className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-smooth relative z-10 custom-scrollbar"
       >
         <div
-          className="p-6 max-w-md mx-auto w-full relative"
-          style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}
+          className={cn(
+            "max-w-md mx-auto w-full relative",
+            activeTab === 'home' || activeTab === 'capture'
+              ? "h-full flex flex-col p-2 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]"
+              : "p-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+          )}
         >
           
           {/* Pull-to-refresh visualizer */}
@@ -774,7 +769,7 @@ export default function MobileRemote() {
             )}
           </AnimatePresence>
 
-          {!isPaired && (connectionStatus === 'idle' || connectionStatus === 'error') && !isReconnecting && activeTab !== 'encounters' && activeTab !== 'capture' && activeTab !== 'settings' ? (
+          {handoffError || (!isPaired && (connectionStatus === 'idle' || connectionStatus === 'error') && !isReconnecting && activeTab !== 'encounters' && activeTab !== 'capture' && activeTab !== 'settings' && activeTab !== 'studio') ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -845,17 +840,16 @@ export default function MobileRemote() {
 
       <nav
         aria-label="Mobile Remote rooms"
-        className="fixed bottom-0 inset-x-0 z-40 px-6 pointer-events-none"
-        style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+        className="fixed bottom-0 inset-x-0 z-40 px-3 pointer-events-none pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]"
       >
-        <div className="max-w-md mx-auto h-[72px] bg-[#14100c]/85 backdrop-blur-3xl border border-white/10 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex items-center justify-around px-2 pointer-events-auto relative overflow-hidden">
+        <div className="max-w-md mx-auto h-[60px] bg-[#14100c]/90 backdrop-blur-3xl border border-white/10 rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex items-center justify-around px-1 pointer-events-auto relative overflow-hidden">
           {/* Subtle Inner Warm Glow */}
           <div className="absolute inset-0 bg-linear-to-b from-white/[0.03] to-transparent pointer-events-none" />
           
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
-            // Field-independent tabs (Encounters, Capture, Settings) can function standalone in the field
-            const isFieldReadyTab = tab.id === 'encounters' || tab.id === 'capture' || tab.id === 'settings' || isPaired;
+            // Field-independent tabs (Encounters, Capture, Settings, Studio) can function standalone in the field
+            const isFieldReadyTab = tab.id === 'encounters' || tab.id === 'capture' || tab.id === 'settings' || tab.id === 'studio' || isPaired;
             return (
                 <button
                 key={tab.id}
@@ -868,17 +862,17 @@ export default function MobileRemote() {
                 disabled={!isFieldReadyTab}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  "relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-300 cursor-pointer",
+                  "relative flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-all duration-300 cursor-pointer",
                   !isFieldReadyTab ? "opacity-20 grayscale cursor-not-allowed" : "active:scale-90",
                   isActive ? "text-white" : "text-stone-500 hover:text-stone-300"
                 )}
-                style={{ minHeight: '56px' }}
+                style={{ minHeight: '48px' }}
               >
                 <AnimatePresence>
                   {isActive && (
                     <motion.div
                       layoutId="active-tab-bg"
-                      className="absolute inset-1.5 rounded-2xl bg-white/[0.06] border border-white/5"
+                      className="absolute inset-1 rounded-2xl bg-white/[0.06] border border-white/5"
                       initial={false}
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                     />
@@ -887,16 +881,16 @@ export default function MobileRemote() {
 
                 <div className={cn(
                   "relative z-10 transition-transform duration-300",
-                  isActive && "-translate-y-0.5 scale-110"
+                  isActive && "-translate-y-0.5 scale-105"
                 )}>
                   <tab.icon className={cn(
-                    "w-6 h-6",
-                    isActive ? "text-[#00ff66] drop-shadow-[0_0_12px_rgba(0,255,102,0.5)]" : "text-inherit"
+                    "w-5 h-5",
+                    isActive ? "text-[#00ff66] drop-shadow-[0_0_10px_rgba(0,255,102,0.5)]" : "text-inherit"
                   )} />
                 </div>
                 
                 <span className={cn(
-                  "relative z-10 text-[9px] font-bold uppercase tracking-widest transition-all duration-300 font-display",
+                  "relative z-10 text-[8.5px] font-bold uppercase tracking-wider transition-all duration-300 font-display",
                   isActive ? "opacity-100 scale-100 text-stone-100" : "opacity-60 scale-90 text-stone-500"
                 )}>
                   {tab.label}
@@ -905,7 +899,7 @@ export default function MobileRemote() {
                 {isActive && (
                   <motion.div 
                     layoutId="active-pill"
-                    className="absolute bottom-1.5 w-1 h-1 bg-[#00ff66] rounded-full shadow-[0_0_8px_rgba(0,255,102,0.9)]"
+                    className="absolute bottom-1 w-1 h-1 bg-[#00ff66] rounded-full shadow-[0_0_8px_rgba(0,255,102,0.9)]"
                   />
                 )}
               </button>
