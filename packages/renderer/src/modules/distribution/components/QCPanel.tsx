@@ -306,9 +306,12 @@ export const QCPanel: React.FC = () => {
     };
 
     // ── Metadata & Rights Validation State ─────────────────────────
+    const user = useStore(state => state.user);
+    const setDistributionTab = useStore(state => state.setDistributionTab);
+
     const [metadata, setMetadata] = useState({
         title: '',
-        artist: '',
+        artist: user?.displayName || '',
         artwork_url: '',
         version: '',
         isrc: '',
@@ -316,7 +319,7 @@ export const QCPanel: React.FC = () => {
     });
     const [rights, setRights] = useState({
         exclusiveRights: false,
-        label: '',
+        label: user?.displayName || '',
         matchPolicy: '' as '' | 'monetize' | 'track' | 'block',
         territories: ''
     });
@@ -1031,9 +1034,21 @@ export const QCPanel: React.FC = () => {
                                             <div className="space-y-2">
                                                 <span className="text-xs font-bold text-dept-marketing uppercase tracking-widest">Errors</span>
                                                 {qcResult.errors.map((err, i) => (
-                                                    <div key={i} className="flex items-start gap-2 p-3 bg-dept-marketing/10 border border-dept-marketing/20 rounded-lg">
-                                                        <XCircle className="w-4 h-4 text-dept-marketing mt-0.5 flex-shrink-0" />
-                                                        <span className="text-xs text-dept-marketing/80">{err}</span>
+                                                    <div key={i} className="flex flex-col gap-2 p-3 bg-dept-marketing/10 border border-dept-marketing/20 rounded-lg">
+                                                        <div className="flex items-start gap-2">
+                                                            <XCircle className="w-4 h-4 text-dept-marketing mt-0.5 flex-shrink-0" />
+                                                            <span className="text-xs text-dept-marketing/80">{err}</span>
+                                                        </div>
+                                                        {err.toLowerCase().includes('isrc') && (
+                                                            <button
+                                                                type="button"
+                                                                data-testid="qc-resolve-isrc-authority-btn"
+                                                                onClick={() => setDistributionTab?.('authority')}
+                                                                className="self-start text-[10px] font-bold text-dept-distribution hover:underline uppercase tracking-wider flex items-center gap-1 ml-6"
+                                                            >
+                                                                Configure Authority & Auto-Generate ISRCs →
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>

@@ -1,17 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { Send, Server, Shield, Loader2, CheckCircle, XCircle, Terminal, HardDrive } from 'lucide-react';
+import { Send, Server, Shield, Loader2, CheckCircle, XCircle, Terminal, HardDrive, KeyRound, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { SFTPConfig, SFTPReport } from '@/types/distribution';
+import { credentialService } from '@/services/security/CredentialService';
+import { DistributorService } from '@/services/distribution/DistributorService';
+import { DistributorId } from '@/services/distribution/types/distributor';
+import ConnectDistributorModal from './ConnectDistributorModal';
+import { DIRECT_DSP_PROFILES } from '@/core/config/distributors';
+import { logger } from '@/utils/logger';
 
 export const TransferPanel: React.FC = () => {
-    const { success, error } = useToast();
+    const { success, error, info } = useToast();
     const [loading, setLoading] = useState(false);
     const [report, setReport] = useState<SFTPReport | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
     const [progress, setProgress] = useState<number>(0);
     const [authMode, setAuthMode] = useState<'PASSWORD' | 'KEY'>('PASSWORD');
     const [protocol, setProtocol] = useState<'SFTP' | 'ASPERA'>('SFTP');
+    const [selectedDistributor, setSelectedDistributor] = useState<string>('');
+    const [isConfiguring, setIsConfiguring] = useState(false);
     const [config, setConfig] = useState<SFTPConfig>({
         host: '',
         port: 22,
@@ -99,12 +107,72 @@ export const TransferPanel: React.FC = () => {
     const inputClasses = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-dept-distribution/50 transition-colors uppercase tracking-widest font-bold placeholder:text-gray-600 backdrop-blur-sm";
     const labelClasses = "block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1";
 
+    const handleSelectDistributor = async (distId: string) => {
+        setSelectedDistributor(distId);
+        if (!distId) return;
+
+        // Check if preset has direct profile host
+        const dspProfile = DIRECT_DSP_PROFILES[distId];
+        const defaultHost = dspProfile?.ftpHost || (distId === 'distrokid' ? 'sftp.distrokid.com' : distId === 'symphonic' ? 'sftp.symphonicms.com' : distId === 'cdbaby' ? 'sftp.cdbaby.com' : '');
+        const defaultPort = dspProfile?.ftpPort || 22;
+
+        try {
+            const stored = await credentialService.getCredentials(distId as DistributorId);
+            if (stored) {
+                setConfig(prev => ({
+                    ...prev,
+                    host: stored.sftpHost || defaultHost || prev.host,
+                    port: Number(stored.sftpPort) || defaultPort || prev.port,
+                    user: stored.sftpUsername || stored.username || prev.user,
+                    password: stored.sftpPassword || stored.password || prev.password,
+                    remotePath: (stored.sftpPath as string) || (distId === 'distrokid' ? '/incoming/' : '/inbound/'),
+                }));
+                info(`Loaded saved credentials for ${distId.toUpperCase()}`);
+            } else {
+                setConfig(prev => ({
+                    ...prev,
+                    host: defaultHost || prev.host,
+                    port: defaultPort,
+                    remotePath: distId === 'distrokid' ? '/incoming/' : '/inbound/',
+                }));
+                info(`Loaded preset for ${distId.toUpperCase()}. Credentials not yet configured.`);
+            }
+        } catch (err: unknown) {
+            logger.warn(`[TransferPanel] Could not load stored credentials for ${distId}:`, err);
+            setConfig(prev => ({
+                ...prev,
+                host: defaultHost || prev.host,
+                port: defaultPort,
+            }));
+        }
+    };
+
+    const handleConfigureDistributor = async (distId: string) => {
+        const adapter = DistributorService.getAdapter(distId as DistributorId);
+        if (!adapter) {
+            error(`Configuration adapter not available for ${distId}`);
+            return;
+        }
+        setIsConfiguring(true);
+        try {
+            const connected = await ConnectDistributorModal.call({ adapter });
+            if (connected) {
+                success(`Successfully configured and saved credentials for ${adapter.name}!`);
+                await handleSelectDistributor(distId);
+            }
+        } catch (err: unknown) {
+            error(err instanceof Error ? err.message : 'Configuration failed');
+        } finally {
+            setIsConfiguring(false);
+        }
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Configuration Section */}
                 <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-8">
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 bg-dept-distribution/10 border border-dept-distribution/20 rounded-xl">
                                 <Server className="w-5 h-5 text-dept-distribution" />
@@ -131,6 +199,41 @@ export const TransferPanel: React.FC = () => {
                                 Aspera
                             </button>
                         </div>
+                    </div>
+
+                    {/* Distributor Preset & Autofill Selector */}
+                    <div className="mb-6 p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-3" data-testid="distro-preset-autofill-box">
+                        <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                                <Sparkles size={12} className="text-dept-distribution" />
+                                Target Distributor Preset
+                            </label>
+                            {selectedDistributor && (
+                                <button
+                                    type="button"
+                                    data-testid="configure-selected-distro-btn"
+                                    onClick={() => handleConfigureDistributor(selectedDistributor)}
+                                    disabled={isConfiguring}
+                                    className="text-[10px] font-bold text-dept-distribution hover:text-dept-distribution/80 uppercase tracking-wider flex items-center gap-1"
+                                >
+                                    <KeyRound size={11} />
+                                    {isConfiguring ? 'Configuring...' : 'Manage Credentials'}
+                                </button>
+                            )}
+                        </div>
+                        <select
+                            data-testid="distro-target-preset-select"
+                            value={selectedDistributor}
+                            onChange={(e) => handleSelectDistributor(e.target.value)}
+                            className="w-full bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-dept-distribution/50"
+                        >
+                            <option value="">-- Manual Configuration (Custom Host) --</option>
+                            <option value="merlin">Merlin Network (sftp.merlinnetwork.org)</option>
+                            <option value="apple">Apple Music Transporter (transporter.apple.com)</option>
+                            <option value="distrokid">DistroKid (sftp.distrokid.com)</option>
+                            <option value="symphonic">Symphonic (sftp.symphonicms.com)</option>
+                            <option value="cdbaby">CD Baby (sftp.cdbaby.com)</option>
+                        </select>
                     </div>
 
                     <div className="space-y-6">

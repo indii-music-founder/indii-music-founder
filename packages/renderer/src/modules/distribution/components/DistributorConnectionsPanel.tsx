@@ -6,6 +6,8 @@ import ConnectDistributorModal from './ConnectDistributorModal';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import { logger } from '@/utils/logger';
 
+import DistributorCredentialsPanel from './DistributorCredentialsPanel';
+
 export const DistributorConnectionsPanel: React.FC = () => {
     const { distribution, fetchDistributors } = useStore(
         useShallow(state => ({
@@ -14,6 +16,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
         }))
     );
     const { connections, loading, error } = distribution;
+    const [showGuides, setShowGuides] = useState(false);
 
     // ISSUE-1207: connect/cancel is now driven by ConnectDistributorModal.call()
     // (react-call) rather than isModalOpen/selectedAdapter state. Kept only for
@@ -50,11 +53,20 @@ export const DistributorConnectionsPanel: React.FC = () => {
 
     return (
         <div className="animate-in fade-in duration-700" data-testid="distro-connections-list">
-            <div className="mb-12">
-                <h2 className="text-lg font-black tracking-tighter text-white mb-2 uppercase italic">Management Console</h2>
-                <p className="text-gray-500 font-medium max-w-2xl">
-                    Bridge your existing distribution accounts with indii. Real-time sync for metadata, deliveries, and high-fidelity reporting.
-                </p>
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 className="text-lg font-black tracking-tighter text-white mb-1 uppercase italic">Management Console</h2>
+                    <p className="text-gray-500 font-medium text-xs max-w-2xl">
+                        Bridge your existing distribution accounts with indii. Real-time sync for metadata, deliveries, and high-fidelity reporting.
+                    </p>
+                </div>
+                <button
+                    data-testid="toggle-distributor-guides-btn"
+                    onClick={() => setShowGuides(prev => !prev)}
+                    className="self-start sm:self-auto px-3 py-2 rounded-lg bg-dept-distribution/10 hover:bg-dept-distribution/20 text-dept-distribution border border-dept-distribution/30 text-xs font-bold uppercase tracking-wider transition-colors"
+                >
+                    {showGuides ? 'Hide Setup Guides' : 'Distributor Setup & SFTP Guides'}
+                </button>
             </div>
 
             {error && (
@@ -76,6 +88,13 @@ export const DistributorConnectionsPanel: React.FC = () => {
                     />
                 ))}
             </div>
+
+            {/* In-Place Credential Setup Guides */}
+            {showGuides && (
+                <div className="mt-8 pt-8 border-t border-white/10" data-testid="distro-guides-container">
+                    <DistributorCredentialsPanel />
+                </div>
+            )}
 
             {/* Recommendations Section */}
             <div className="mt-16 p-10 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-md relative overflow-hidden group">
