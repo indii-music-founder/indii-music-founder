@@ -31,25 +31,41 @@ describe('QuickContactModal Component', () => {
         expect(container.firstChild).toBeNull();
     });
 
-    it('renders form elements when isOpen is true', () => {
+    it('renders voice-first interface by default with no keyboard-triggering inputs', () => {
         render(<QuickContactModal isOpen={true} onClose={vi.fn()} />);
 
-        expect(screen.getByText('Quick Contact')).toBeDefined();
+        expect(screen.getByText('Voice Contact')).toBeDefined();
+        expect(screen.getByText('Tap to Speak')).toBeDefined();
+        expect(screen.getByText('Speak Contact Information')).toBeDefined();
+        expect(screen.getByText(/Say: "Alex Morgan/)).toBeDefined();
+        expect(screen.getByText('Snap Photo')).toBeDefined();
+        expect(screen.queryByPlaceholderText('Jane Doe / DJ Shadow')).toBeNull();
+    });
+
+    it('switches to manual entry mode and displays form inputs', () => {
+        render(<QuickContactModal isOpen={true} onClose={vi.fn()} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Manual' }));
+
+        expect(screen.getByText('Manual Contact')).toBeDefined();
         expect(screen.getByPlaceholderText('Jane Doe / DJ Shadow')).toBeDefined();
         expect(screen.getByPlaceholderText('555-0199')).toBeDefined();
         expect(screen.getByPlaceholderText('jane@mgmt.com')).toBeDefined();
         expect(screen.getByText('Promoter')).toBeDefined();
         expect(screen.getByText('Artist')).toBeDefined();
-        expect(screen.getByText('Save Contact')).toBeDefined();
+        expect(screen.getByRole('button', { name: 'Save Contact' })).toBeDefined();
     });
 
-    it('submits contact details and saves via EncounterService', async () => {
+    it('submits manual contact details and saves via EncounterService', async () => {
         const onClose = vi.fn();
         const onSaved = vi.fn();
 
         render(
             <QuickContactModal isOpen={true} onClose={onClose} onSaved={onSaved} />
         );
+
+        // Switch to manual mode
+        fireEvent.click(screen.getByRole('button', { name: 'Manual' }));
 
         fireEvent.change(screen.getByPlaceholderText('Jane Doe / DJ Shadow'), {
             target: { value: 'Alex Morgan' },
@@ -62,7 +78,7 @@ describe('QuickContactModal Component', () => {
         });
         fireEvent.click(screen.getByText('Promoter'));
 
-        fireEvent.click(screen.getByText('Save Contact'));
+        fireEvent.click(screen.getByRole('button', { name: 'Save Contact' }));
 
         await waitFor(() => {
             expect(EncounterService.createEncounter).toHaveBeenCalledWith(
