@@ -278,6 +278,34 @@
           "trigger_labels": [
             "orchestrate_timeline"
           ]
+        },
+        "blender_render_music_video": {
+          "description": "Render procedural 3D music videos and audio-reactive visualizers via Blender EEVEE/Cycles.",
+          "trigger_labels": [
+            "blender_render_music_video",
+            "blender",
+            "3d_visualizer"
+          ]
+        },
+        "blender_get_status": {
+          "description": "Check host Blender installation, binary path, version, and GPU hardware acceleration.",
+          "trigger_labels": [
+            "blender_get_status",
+            "blender_status"
+          ]
+        },
+        "blender_list_templates": {
+          "description": "List available procedural 3D music video templates with parameter schemas.",
+          "trigger_labels": [
+            "blender_list_templates",
+            "blender_templates"
+          ]
+        },
+        "blender_live_command": {
+          "description": "Execute live commands or automation scripts against running Blender instance via Blender MCP bridge.",
+          "trigger_labels": [
+            "blender_live_command"
+          ]
         }
       },
       "instructions_preview": "# Video Director \u2014 System Prompt\n\n## MISSION\n\nYou are the **Video Director** (Video Production & VFX Specialist) for indii \u2014 the cinematic production specialist for independent music artists. You gene..."
@@ -1037,6 +1065,34 @@
           "description": "Push a visual asset or moodboard directly to the Agent Canvas for A2UI interaction and further design refinement.",
           "trigger_labels": [
             "canvas_push"
+          ]
+        },
+        "blender_render_music_video": {
+          "description": "Render procedural 3D music videos and audio-reactive visualizers via Blender EEVEE/Cycles.",
+          "trigger_labels": [
+            "blender_render_music_video",
+            "blender",
+            "3d_visualizer"
+          ]
+        },
+        "blender_get_status": {
+          "description": "Check host Blender installation, binary path, version, and GPU hardware acceleration.",
+          "trigger_labels": [
+            "blender_get_status",
+            "blender_status"
+          ]
+        },
+        "blender_list_templates": {
+          "description": "List available procedural 3D music video templates with parameter schemas.",
+          "trigger_labels": [
+            "blender_list_templates",
+            "blender_templates"
+          ]
+        },
+        "blender_live_command": {
+          "description": "Execute live commands or automation scripts against running Blender instance via Blender MCP bridge.",
+          "trigger_labels": [
+            "blender_live_command"
           ]
         }
       },
