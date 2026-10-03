@@ -85,19 +85,29 @@ def setup_audio_in_vse(audio_filepath):
     if not scene.sequence_editor:
         scene.sequence_editor_create()
 
-    # Add audio strip on channel 1 starting at frame 1
-    sound_strip = scene.sequence_editor.sequences.new_sound(
-        name="Master_Audio_Track",
-        filepath=audio_filepath,
-        channel=1,
-        frame_start=1
-    )
-    print(f"[BlenderRunner] Added master audio track to VSE: {sound_strip.name}")
+    # Support Blender 5.x ('strips') and Blender 4.x ('sequences')
+    strips_coll = getattr(scene.sequence_editor, 'strips', None) or getattr(scene.sequence_editor, 'sequences', None)
+    if strips_coll is not None and hasattr(strips_coll, 'new_sound'):
+        sound_strip = strips_coll.new_sound(
+            name="Master_Audio_Track",
+            filepath=audio_filepath,
+            channel=1,
+            frame_start=1
+        )
+        print(f"[BlenderRunner] Added master audio track to VSE: {sound_strip.name}")
 
 def setup_output_format(output_filepath):
     """Sets output format to FFmpeg H.264 MP4 with AAC 320kbps audio."""
     scene = bpy.context.scene
     scene.render.filepath = output_filepath
+
+    # Support Blender 5.x media_type
+    if hasattr(scene.render.image_settings, 'media_type'):
+        try:
+            scene.render.image_settings.media_type = 'VIDEO'
+        except Exception:
+            pass
+
     scene.render.image_settings.file_format = 'FFMPEG'
     scene.render.ffmpeg.format = 'MPEG4'
     scene.render.ffmpeg.codec = 'H264'

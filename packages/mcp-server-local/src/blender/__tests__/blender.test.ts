@@ -74,6 +74,17 @@ describe('Blender MCP Module', () => {
             expect(progress?.estimatedSecondsRemaining).toBeGreaterThanOrEqual(0);
         });
 
+        it('parses Blender 5.x Video append frame format', () => {
+            const stdout = '00:08.760  render           | Video append frame 45';
+            const startTime = Date.now() - 4500;
+            const progress = parseBlenderFrameProgress(stdout, 90, startTime);
+
+            expect(progress).not.toBeNull();
+            expect(progress?.currentFrame).toBe(45);
+            expect(progress?.totalFrames).toBe(90);
+            expect(progress?.percentage).toBe(50);
+        });
+
         it('returns null if line does not contain frame indicator', () => {
             const line = 'Blender 4.3.0 initialized successfully.';
             const progress = parseBlenderFrameProgress(line, 90, Date.now());

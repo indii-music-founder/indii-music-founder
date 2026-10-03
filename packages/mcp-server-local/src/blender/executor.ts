@@ -10,8 +10,8 @@ export function parseBlenderFrameProgress(
     totalFrames: number,
     startTimeMs: number
 ): Partial<BlenderRenderProgress> | null {
-    // Blender frame output pattern: "Fra:12 Mem:45.2M (Peak 48.0M) | Time:00:01.23 | Remaining:00:15.45 | ..."
-    const match = stdoutLine.match(/Fra:(\d+)/i);
+    // Blender frame output patterns: "Fra:12 Mem:45.2M..." or "render | Video append frame 12"
+    const match = stdoutLine.match(/(?:Fra:|Video append frame\s+)(\d+)/i);
     if (!match) return null;
 
     const currentFrame = parseInt(match[1], 10);
@@ -135,7 +135,8 @@ export async function executeBlenderRender(
             try { fs.unlinkSync(tempConfigFile); } catch { /* ignore */ }
             const elapsed = Math.round((Date.now() - startTimeMs) / 1000);
 
-            if (code === 0) {
+            const fileExists = fs.existsSync(options.outputVideoPath);
+            if (code === 0 && fileExists) {
                 if (onProgress) {
                     onProgress({
                         jobId,
@@ -150,7 +151,9 @@ export async function executeBlenderRender(
                 }
                 resolve({ success: true, outputPath: options.outputVideoPath });
             } else {
-                const errMsg = `Blender exited with code ${code}: ${stderrBuffer.slice(-500)}`;
+                const errMsg = fileExists
+                    ? `Blender exited with code ${code}: ${stderrBuffer.slice(-500)}`
+                    : `Blender render failed: output file not generated. ${stderrBuffer.slice(-500)}`;
                 if (onProgress) {
                     onProgress({
                         jobId,

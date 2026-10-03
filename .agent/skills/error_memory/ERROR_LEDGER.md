@@ -1,3 +1,37 @@
+## 2026-10-03 Blender 5.x Media Type Video Separation & VSE Strips Collection (BLENDER_5_MEDIA_TYPE_AND_VSE_STRIPS)
+
+- **SEVERITY:** Major (Blender headless video generation crashed on modern Blender 5.x with TypeError and AttributeError)
+- **FILES:** `packages/mcp-server-local/src/blender/python/runner.py`, `packages/mcp-server-local/src/blender/executor.ts`
+- **ERROR:** In Blender 5.x, assigning `scene.render.image_settings.file_format = 'FFMPEG'` threw `TypeError: bpy_struct: item.attr = val: enum "FFMPEG" not found in ('AVIF', 'JPEG', 'PNG'...)`. In VSE, accessing `scene.sequence_editor.sequences` threw `AttributeError: 'SequenceEditor' object has no attribute 'sequences'`.
+- **CAUSE:** Blender 5.x segregated image formats from video containers using a new `media_type` enum (`'IMAGE'`, `'MULTI_LAYER_IMAGE'`, `'VIDEO'`). Until `media_type = 'VIDEO'` is set, `'FFMPEG'` is hidden from `file_format`. Additionally, `scene.sequence_editor.sequences` was renamed to `scene.sequence_editor.strips`.
+- **FIX:**
+  1. In `runner.py`, conditionally set `scene.render.image_settings.media_type = 'VIDEO'` if present, prior to setting `file_format = 'FFMPEG'`.
+  2. Dynamically resolve `getattr(scene.sequence_editor, 'strips', None) or getattr(scene.sequence_editor, 'sequences', None)` for audio track insertion.
+  3. Expand `parseBlenderFrameProgress` regex to match Blender 5.x `render | Video append frame <N>` pattern.
+  4. Ensure `executor.ts` verifies `fs.existsSync(outputVideoPath)` before resolving success.
+- **PREVENTION:** Always probe runtime RNA properties when automating external creative software tools across major versions.
+
+## 2026-10-02 Image Resolution Normalization Cap & GitHub Sync Punctuation 422 (IMAGE_RES_CAP_AND_GITHUB_SYNC_422)
+
+- **SEVERITY:** Major (GitHub #352: native 3000x3000px generation defaulted to 1024x1024; bug reporting failed to sync to GitHub on special characters)
+- **FILES:** `packages/renderer/src/services/image/ImageGenerationService.ts`, `packages/firebase/src/functions/agent/reportBugFn.ts`
+- **ERROR:** Image generation requests for `3000`, `3000px`, `3000x3000` were not recognized in `RESOLUTION_MAP` and fell back to `1k`. In `reportBugFn`, search queries containing punctuation like quotes or brackets failed GitHub search API syntax validation with HTTP 422 Unprocessable Entity, aborting issue creation.
+- **CAUSE:** Omission of print-dimension strings in frontend resolution mapping, and unhandled 422 search syntax rejections when searching for duplicate bug reports before creation.
+- **FIX:**
+  1. In `ImageGenerationService.ts`, added explicit mappings for `3k`, `3000`, `3000px`, `3000x3000`, and `3000x3000px` to `4k`.
+  2. In `reportBugFn.ts`, sanitized title strings before searching, and wrapped GitHub search in try/catch with fallback to direct issue creation upon search error.
+- **PREVENTION:** Always sanitize strings passed into GitHub Search API query parameters (`q=`), and ensure all supported resolution UI strings are covered in resolution mapping unit tests.
+
+## 2026-10-02 Missing Pre-Flight Metadata & Creative Print Upscaling (DISTRIBUTION_METADATA_AND_UPSCALE_TOOLS)
+
+- **SEVERITY:** Major (GitHub #353 & #355: Missing ISRC/UPC validation prior to DSP delivery; missing native 3000x3000px 300 DPI upscaling in Studio)
+- **FILES:** `packages/renderer/src/services/distribution/MetadataValidationService.ts`, `packages/renderer/src/services/upscale/PrintReadyUpscaleService.ts`
+- **ERROR:** Pre-flight distribution QC did not check GTIN check digits on UPCs or format and uniqueness on ISRCs. Creative Studio had no built-in mechanism to upscale 1024x1024 album art to physical print standards (3000x3000px @ 300 DPI).
+- **FIX:**
+  1. Built `MetadataValidationService.ts` validating release UPCs and track ISRCs against standard check algorithms with draft warnings vs strict error levels.
+  2. Built `PrintReadyUpscaleService.ts` providing desktop Real-ESRGAN super-resolution with browser canvas fallback and physical 300 DPI metadata injection.
+- **PREVENTION:** All asset export and distribution paths must have deterministic validation services and matching unit test suites before release pipelines trigger.
+
 ## 2026-09-26 Merge Artifact Leaves Unclosed Test Block → ESLint Parse Error at EOF (MERGE_ARTIFACT_UNCLOSED_IT_BLOCK)
 
 - **SEVERITY:** High (failed CI `Lint` step in deploy.yml, blocking PR #316; run 36234673561)

@@ -1,3 +1,32 @@
+# Session Close — Blender 3D Music Video MCP Integration & Procedural Video Rendering (2026-10-03)
+
+**Final state: Full Blender 3D MCP integration and headless procedural video rendering pipeline built and delivered directly to `origin/main`. Adapted and verified against live host installation of Blender 5.2.2 LTS (macOS Apple Silicon Metal GPU acceleration). Headless 3D render executed in 6 seconds generating 48-frame 720p 16:9 H.264/AAC MP4 video artifact (`/tmp/indii_blender_spectrum.mp4`, 203 KB). 40/40 affected unit tests passing; monorepo typecheck clean (0 errors across 9 workspaces); ESLint 0 errors, 0 warnings across all task files.**
+
+## Shipped & Integrated
+- **MCP Server Tools (`packages/mcp-server-local/`):**
+  - Exposed `blender_get_status`, `blender_list_templates`, `blender_render_music_video`, `blender_live_command`.
+  - Multi-platform binary auto-discovery (macOS `/Applications/Blender.app`, `/opt/homebrew`, Linux, Windows, `BLENDER_PATH`) and GPU detection (Metal, CUDA, OptiX, CPU). Verified live against local `Blender 5.2.2 LTS`.
+  - Blender 5.x runtime adaptation: configured `scene.render.image_settings.media_type = 'VIDEO'` to expose FFmpeg H.264/AAC output; supported `scene.sequence_editor.strips` (5.x) alongside `sequences` (4.x); enhanced progress parser for `render | Video append frame <N>`.
+  - Headless CLI automation pipeline with F-curve audio frequency baking (`bpy.ops.graph.sound_bake`) and 5 procedural visualizer presets: `audio_reactive_tunnel`, `vinyl_turntable`, `chrome_text`, `spectrum_bars`, `concert_stage`.
+  - Live TCP socket bridge (`localhost:9876`) and companion Blender N-Panel addon (`indii_blender_addon.py`).
+- **Electron Main Process IPC Bridge (`packages/main/`):**
+  - Secure IPC handlers in `src/handlers/blender.ts` with strict Zod schemas and `validateSender` frame checks.
+  - Registered handlers on allowlist in `KNOWN_IPC_CHANNELS` (`blender:get-status`, `blender:list-templates`, `blender:render-music-video`, `blender:live-command`).
+  - Coordinated background process runner in `BlenderService.ts`.
+- **Decoupled Frontend & UI Panel (`packages/renderer/` & `@indii/shared`):**
+  - Canonical `ElectronBlenderAPI` interface in `packages/shared/src/ipc/electron-api.types.ts`.
+  - Decoupled `BlenderService.ts` in renderer supporting both native Electron IPC and web MCP fallback without Node.js coupling.
+  - Added Swarm agent tools (`BlenderTools.ts`) registered in `TOOL_REGISTRY` and `BASE_TOOLS` for autonomous video generation.
+  - Built interactive Creative Studio workspace panel `BlenderVideoPanel.tsx` mounted in Video Workflow with aspect ratios (16:9, 9:16, 1:1), duration, and live progress.
+- **Verification Evidence:**
+  - 40/40 Vitest tests passing across all packages.
+  - Real host execution: rendered 48 frames with Blender 5.2.2 producing `/tmp/indii_blender_spectrum.mp4` (verified via `ffprobe` with H.264 video & AAC stereo audio).
+  - Full monorepo `npm run typecheck` clean (0 errors).
+  - ESLint 0 errors, 0 warnings across all task files.
+  - Initial delivery commit: `97734395429e7de4041ef5e16bbf8405ac9c7a05` to `origin/main` (CI Run `37133543101` SUCCESS).
+
+---
+
 # Session Close — Subscriptions & Multi-Period Billing Reconciliation (ISSUE-1422 & ISSUE-1423) (2026-09-27)
 
 **Final state: Start ($22/mo), Build ($55/mo), and Scale ($110/mo) subscriptions and multi-period billing cadences reconciled with server entitlements, Stripe, Arcjet policies, and renderer limits to platinum standard on `main`. Zero `.99` charm pricing enforced across all periods (Monthly, Quarterly [5% off], Six-Month [10% off], Annual [20% off]). Single coherent commit `23ef127c8` delivered to `origin/main`. GitHub Actions CI run `36361889905` triggered. Monorepo typecheck clean (8/8 packages + firebase test tsconfigs), ESLint 0 errors, 75/75 affected unit tests green, test quality scanner 0 violations.**

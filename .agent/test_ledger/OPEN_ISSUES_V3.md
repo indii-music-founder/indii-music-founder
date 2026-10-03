@@ -3384,3 +3384,33 @@ persistence/deletion are still unverified. Keep the issue open for those gates.
 - **Delivered:** After `ADMIN_LOCK`, the master runbook now validates the ledger receipt and linked release owner, builds a schema-validated semantic track node from receipt shares/signatories and verified release metadata, and projects it with `visibility: 'private'`. Missing title, owner mismatch, or invalid receipt skips projection with an explicit reason. The private projection writer removes any stale public mirror. No owner visibility or public publishing control was added.
 - **Validation:** Runbook + semantic projection focused tests 22/22; root typecheck, scoped ESLint, diff check, and pre-commit gates passed. Commit `31a56e33fa33b251235233cc95273a688341c469` is on `main`; exact-SHA CI run [36913234835](https://github.com/indii-music-founder/indii-music-founder/actions/runs/36913234835) passed rules, all 20 unit shards, build, staging deploy, staging smoke, and production deploy.
 - **Still open:** The projection uses a private internal master-hash entity ID and only executes when an `ADMIN_LOCK` event carries sufficient release metadata. No owner visibility callable, opt-in public lifecycle, deployed genuine-owner reload/downstream retrieval acceptance, or approved `DISTRIBUTION_READY` transition exists. Do not expose the feed as complete or infer additional rights/availability fields.
+
+### GitHub Issues Consolidation — Issues #352, #353, #354, #355 (2026-10-03)
+
+- **Status:** ✅ CLOSED / RESOLVED ON MAIN
+- **Delivered Commits:** `225296c54`, `c5edc66f2`, `0f90c7625`, `681fe278a`, `2bc9203ba`, `bb90281f8`
+
+1. **GitHub Issue #352: Native image generation resolution cap and GitHub synchronization failure**
+   - **Root Cause & Fix:**
+     - Resolution cap: Inputs like `3000`, `3000px`, `3000x3000`, `3000x3000px`, `3k` were missing from `RESOLUTION_MAP` in `ImageGenerationService.ts`, falling back to `1k`. Mapped them to `4k` in `225296c54`.
+     - Bug report sync: GitHub search query punctuation triggered 422 search syntax errors in `reportBugFn.ts`. Sanitized query strings and added graceful fallback to direct issue creation when search fails.
+   - **Validation:** 18/18 tests pass in `ImageResolutionNormalization.test.ts`. Issue closed on GitHub.
+
+2. **GitHub Issue #353: Missing Metadata Validation Tool for Distribution**
+   - **Root Cause & Fix:**
+     - Built `MetadataValidationService.ts` providing pre-flight compliance checks for release UPCs (length & GTIN check-digit calculation via `IdentifierService.validateUPC`) and track ISRCs (standard 12-char format & duplicate detection via `IdentifierService.validateISRC`).
+     - Integrated into `QCPanel.tsx` in Distribution Studio with support for draft warnings vs strict submission errors.
+   - **Validation:** 5/5 tests pass in `MetadataValidationService.test.ts`; 12/12 test suites (67 tests) pass in `packages/renderer/src/modules/distribution/`. Issue closed on GitHub.
+
+3. **GitHub Issue #354: Missing Automated Split Sheet and Copyright Registration Tools**
+   - **Root Cause & Fix:**
+     - Implemented `SplitSheetGeneratorModal.tsx` for automated split sheet creation, co-writer percentage validation (100% check), PRO affiliation, and signature block generation.
+     - Implemented `CopyrightRegistrationModal.tsx` for automated preparation of US Copyright Office eCO packages (Forms PA and SR).
+     - Wired both tools into `LegalDashboard.tsx` under `LegalTemplatesPanel`.
+   - **Validation:** 19/19 tests pass in legal test suites (`packages/renderer/src/modules/legal/`). Issue closed on GitHub.
+
+4. **GitHub Issue #355: Missing Native Upscaling Tool for 3000x3000px Print Assets**
+   - **Root Cause & Fix:**
+     - Implemented `PrintReadyUpscaleService.ts` converting images to exact 3000x3000px bitmaps with 300 DPI physical density tag injection (`dataUrlWithDpi`) using desktop Real-ESRGAN or browser multi-pass bicubic canvas scaling fallback.
+     - Integrated into Creative Studio action rail, layer editor, and image submenu.
+   - **Validation:** 2/2 tests pass in `PrintReadyUpscaleService.test.ts`; 107/107 test suites (737 tests) pass in `packages/renderer/src/modules/creative/`. Issue closed on GitHub.
