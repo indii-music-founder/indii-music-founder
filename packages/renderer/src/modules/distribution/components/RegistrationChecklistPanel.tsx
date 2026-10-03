@@ -4,6 +4,9 @@ import { CheckCircle2, Circle, AlertCircle, FileAudio, Image as ImageIcon, Align
 import { distributionService } from '@/services/distribution/DistributionService';
 import { useToast } from '@/core/context/ToastContext';
 
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+
 type ItemStatus = 'complete' | 'missing' | 'warning' | 'checking';
 
 interface ChecklistItem {
@@ -30,6 +33,12 @@ export function RegistrationChecklistPanel() {
     const [expanded, setExpanded] = useState(true);
     const [items, setItems] = useState<ChecklistItem[]>(INITIAL_ITEMS);
     const { success, error: toastError } = useToast();
+    const { setDistributionTab, setModule } = useStore(
+        useShallow(state => ({
+            setDistributionTab: state.setDistributionTab,
+            setModule: state.setModule,
+        }))
+    );
 
     const setItemStatus = (id: string, status: ItemStatus) => {
         setItems(prev => prev.map(item => item.id === id ? { ...item, status } : item));
@@ -131,15 +140,49 @@ export function RegistrationChecklistPanel() {
 
 
     const handleUploadCoverArt = async () => {
-        setItemStatus('art', 'checking');
-        toastError('Cover art upload: please add via release form. Requires 3000x3000px minimum.');
+        if (window.electronAPI) {
+            setItemStatus('art', 'checking');
+            const filePath = await window.electronAPI.selectFile({
+                title: 'Select Cover Art (3000x3000px minimum)',
+                filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png'] }]
+            }).catch((err: unknown) => {
+                console.warn('[RegistrationChecklistPanel] Failed to select cover art file:', err);
+                return null;
+            });
+
+            if (filePath) {
+                // Image file chosen directly
+                const fileName = typeof filePath === 'string' ? filePath.split(/[/\\]/).pop() : 'Selected';
+                success(`Cover art staged: ${fileName}. Verifying 3000x3000px in release form.`);
+                setItemStatus('art', 'complete');
+                setItems(prev => prev.map(item =>
+                    item.id === 'art'
+                        ? { ...item, label: `Cover Art: ${fileName}`, status: 'complete' }
+                        : item
+                ));
+                return;
+            }
+        }
+
+        // Contextual routing fallback: navigate to releases tab to upload/attach cover art or open creative module
+        setDistributionTab('releases');
+        success('Redirected to Releases tab to attach or upload cover art.');
         setItemStatus('art', 'warning');
     };
 
-    const handleAddMetadata = async () => {
-        setItemStatus('metadata', 'checking');
-        toastError('Metadata must be added in the main release form (title, date, artist). Static defaults are not accepted.');
-        setItemStatus('metadata', 'warning');
+    const handleOpenCreative = () => {
+        void setModule('creative');
+        success('Opening Creative Studio for 3000x3000px cover art design.');
+    };
+
+    const handleAddMetadata = () => {
+        setDistributionTab('releases');
+        success('Redirected to Releases tab to complete title, artist, and release metadata.');
+    };
+
+    const handleReviewSplits = () => {
+        void setModule('registration');
+        success('Redirected to Registration Center to review contributor splits.');
     };
 
     const handleAction = (id: string) => {
@@ -148,6 +191,7 @@ export function RegistrationChecklistPanel() {
         else if (id === 'metadata') handleAddMetadata();
         else if (id === 'isrc') handleGenerateISRC();
         else if (id === 'upc') handleAssignUPC();
+        else if (id === 'splits') handleReviewSplits();
     };
 
     const _completeCount = items.filter(item => item.status === 'complete').length;
@@ -241,16 +285,27 @@ export function RegistrationChecklistPanel() {
                                             </p>
                                         </div>
                                         {item.actionText && item.status !== 'complete' && item.status !== 'checking' && (
-                                            <button
-                                                data-testid={`checklist-action-${item.id}`}
-                                                onClick={() => handleAction(item.id)}
-                                                className={`mt-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded transition-colors ${item.status === 'warning'
-                                                    ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.2)]'
-                                                    : 'bg-dept-publishing/20 text-dept-publishing hover:bg-dept-publishing/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
-                                                    }`}
-                                            >
-                                                {item.actionText}
-                                            </button>
+                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                <button
+                                                    data-testid={`checklist-action-${item.id}`}
+                                                    onClick={() => handleAction(item.id)}
+                                                    className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded transition-colors ${item.status === 'warning'
+                                                        ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.2)]'
+                                                        : 'bg-dept-publishing/20 text-dept-publishing hover:bg-dept-publishing/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
+                                                        }`}
+                                                >
+                                                    {item.actionText}
+                                                </button>
+                                                {item.id === 'art' && (
+                                                    <button
+                                                        data-testid="checklist-action-art-creative"
+                                                        onClick={handleOpenCreative}
+                                                        className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded transition-colors bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border border-white/10"
+                                                    >
+                                                        Design in Studio
+                                                    </button>
+                                                )}
+                                            </div>
                                         )}
                                         {!item.required && <p className="text-[9px] text-gray-500 uppercase mt-1">Optional</p>}
                                     </div>

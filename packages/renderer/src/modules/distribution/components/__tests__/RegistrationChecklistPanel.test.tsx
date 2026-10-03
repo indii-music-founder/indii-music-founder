@@ -4,7 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RegistrationChecklistPanel } from '../RegistrationChecklistPanel';
 import { distributionService } from '@/services/distribution/DistributionService';
 
+import { useStore } from '@/core/store';
+
 // Mock dependencies
+vi.mock('@/core/store', () => ({
+    useStore: vi.fn(),
+}));
+
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
         success: vi.fn(),
@@ -29,10 +35,23 @@ const mockElectronAPI = {
     }
 };
 
+const mockSetDistributionTab = vi.fn();
+const mockSetModule = vi.fn();
+
 describe('RegistrationChecklistPanel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.stubGlobal('electronAPI', undefined);
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector?: (state: {
+            setDistributionTab: typeof mockSetDistributionTab;
+            setModule: typeof mockSetModule;
+        }) => unknown) => {
+            const state = {
+                setDistributionTab: mockSetDistributionTab,
+                setModule: mockSetModule,
+            };
+            return typeof selector === 'function' ? selector(state) : state;
+        });
     });
 
     it('should render the checklist in expanded state by default', () => {
@@ -125,4 +144,79 @@ describe('RegistrationChecklistPanel', () => {
             expect(screen.getByText(/Audio Master — 22.05kHz\/8-bit \(below spec\)/i)).toBeDefined();
         });
     });
+
+    it('should stage cover art directly when selected via electronAPI', async () => {
+        vi.stubGlobal('electronAPI', mockElectronAPI);
+        mockElectronAPI.selectFile.mockResolvedValue('/path/to/artwork-cover.png');
+
+        render(<RegistrationChecklistPanel />);
+
+        const actionBtn = screen.getByTestId('checklist-action-art');
+        await act(async () => {
+            fireEvent.click(actionBtn);
+        });
+
+        await waitFor(() => {
+            expect(mockElectronAPI.selectFile).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    title: expect.stringContaining('3000x3000px'),
+                    filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png'] }]
+                })
+            );
+            expect(screen.getByText(/Cover Art: artwork-cover.png/i)).toBeDefined();
+        });
+    });
+
+    it('should route to releases tab when cover art file selection is cancelled or unavailable', async () => {
+        render(<RegistrationChecklistPanel />);
+
+        const actionBtn = screen.getByTestId('checklist-action-art');
+        await act(async () => {
+            fireEvent.click(actionBtn);
+        });
+
+        await waitFor(() => {
+            expect(mockSetDistributionTab).toHaveBeenCalledWith('releases');
+        });
+    });
+
+    it('should route to creative module when Design in Studio is clicked', async () => {
+        render(<RegistrationChecklistPanel />);
+
+        const designBtn = screen.getByTestId('checklist-action-art-creative');
+        await act(async () => {
+            fireEvent.click(designBtn);
+        });
+
+        await waitFor(() => {
+            expect(mockSetModule).toHaveBeenCalledWith('creative');
+        });
+    });
+
+    it('should route to releases tab when Add Metadata is clicked', async () => {
+        render(<RegistrationChecklistPanel />);
+
+        const actionBtn = screen.getByTestId('checklist-action-metadata');
+        await act(async () => {
+            fireEvent.click(actionBtn);
+        });
+
+        await waitFor(() => {
+            expect(mockSetDistributionTab).toHaveBeenCalledWith('releases');
+        });
+    });
+
+    it('should route to registration module when Review Splits is clicked', async () => {
+        render(<RegistrationChecklistPanel />);
+
+        const actionBtn = screen.getByTestId('checklist-action-splits');
+        await act(async () => {
+            fireEvent.click(actionBtn);
+        });
+
+        await waitFor(() => {
+            expect(mockSetModule).toHaveBeenCalledWith('registration');
+        });
+    });
 });
+
