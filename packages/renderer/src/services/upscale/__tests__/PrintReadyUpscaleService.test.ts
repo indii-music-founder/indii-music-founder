@@ -1,76 +1,30 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PrintReadyUpscaleService } from '../PrintReadyUpscaleService';
+import { describe, it, expect } from 'vitest';
+import { planPrintUpscale, printUpscaleMethodLabel } from '../printUpscalePlan';
 
-vi.mock('@/services/upscale/UpscalerService', () => ({
-    upscalerService: {
-        upscale: vi.fn(),
-    },
-}));
-
-vi.mock('@/utils/logger', () => ({
-    logger: {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-    },
-}));
-
-describe('PrintReadyUpscaleService', () => {
-    let service: PrintReadyUpscaleService;
-
-    beforeEach(() => {
-        service = new PrintReadyUpscaleService();
-        vi.clearAllMocks();
-
-        // jsdom does not implement real canvas rasterization; return a valid 1x1 PNG dataUrl
-        HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue(
-            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-        );
-
-        // jsdom does not trigger onload for HTMLImageElement by default
-        vi.stubGlobal('Image', class {
-            naturalWidth = 512;
-            naturalHeight = 512;
-            onload: (() => void) | null = null;
-            onerror: (() => void) | null = null;
-            crossOrigin = '';
-            private _src = '';
-
-            get src() {
-                return this._src;
-            }
-
-            set src(val: string) {
-                this._src = val;
-                setTimeout(() => {
-                    this.onload?.();
-                }, 0);
-            }
-        });
+// Pure geometry checks only. No synthetic image, canvas, GPU, auth, or service
+// response: these tests do not certify enhanced pixels or a customer export.
+describe('print enhancement requirements', () => {
+    it('requires the short edge to reach a square trim without stretching', () => {
+        expect(planPrintUpscale(2048, 1024, 3000, 3000)).toEqual({ scale: 4, width: 8192, height: 4096 });
     });
-
-    it('exports a singleton instance and class definition', () => {
-        expect(service).toBeDefined();
-        expect(typeof service.upscaleToPrintReady).toBe('function');
+    it('uses 2x for a reachable enlargement', () => {
+        expect(planPrintUpscale(2048, 2048, 3000, 3000)).toEqual({ scale: 2, width: 4096, height: 4096 });
     });
-
-    it('upscales to 3000x3000px print specification and applies DPI metadata', async () => {
-        // Minimal valid 1x1 base64 PNG
-        const base64Png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-
-        const result = await service.upscaleToPrintReady({
-            dataUrl: base64Png,
-            targetWidth: 3000,
-            targetHeight: 3000,
-            dpi: 300,
-        });
-
-        expect(result.width).toBe(3000);
-        expect(result.height).toBe(3000);
-        expect(result.dpi).toBe(300);
-        expect(result.format).toBe('image/png');
-        expect(result.method).toBe('browser-bicubic');
-        expect(result.dataUrl.startsWith('data:image/png;base64,')).toBe(true);
+    it('retains existing pixels when the crop has enough resolution', () => {
+        expect(planPrintUpscale(4096, 4096, 3000, 3000).scale).toBe(1);
+    });
+    it('refuses an enlargement beyond the engine capability', () => {
+        expect(() => planPrintUpscale(512, 512, 3000, 3000)).toThrow('more than a 4×');
+    });
+    it.each([0, -1, 1.5, NaN, Infinity])('refuses invalid dimensions (%s)', value => {
+        expect(() => planPrintUpscale(2048, 2048, value, 3000)).toThrow('positive whole pixels');
+    });
+    it('refuses an oversized output before canvas allocation', () => {
+        expect(() => planPrintUpscale(5000, 5000, 10000, 10000)).toThrow('80 megapixel');
+    });
+    it('distinguishes browser enhancement from a resize of existing pixels', () => {
+        expect(printUpscaleMethodLabel('browser-esrgan')).toBe('Browser AI');
+        expect(printUpscaleMethodLabel('resize-only')).toBe('Source pixels (no AI enlargement)');
+        expect(printUpscaleMethodLabel('desktop-realesrgan')).toBe('Desktop AI');
     });
 });

@@ -12,6 +12,7 @@ import { useCanvasAutosave } from '../../hooks/useCanvasAutosave';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { canvasDocToPsd } from '@/services/canvas/PsdExportService';
 import { printReadyUpscaleService } from '@/services/upscale/PrintReadyUpscaleService';
+import { printUpscaleMethodLabel } from '@/services/upscale/printUpscalePlan';
 import { useToast } from '@/core/context/ToastContext';
 
 type LayerIdCarrier = fabric.FabricObject & { layerId?: string };
@@ -220,7 +221,7 @@ export const CanvasEditor: React.FC = () => {
             const stem = `canvas-${currentDoc.id.slice(0, 8)}-3000px`;
             const { downloadAsset } = await import('@/utils/download');
             await downloadAsset(result.dataUrl, `${stem}.png`);
-            toast.success(`Exported 3000x3000px (300 DPI) via ${result.method === 'desktop-realesrgan' ? 'Desktop AI' : 'Bicubic High-DPI'}`);
+            toast.success(`Exported 3000x3000px (300 DPI) via ${printUpscaleMethodLabel(result.method)}`);
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : 'Upscale export failed');
         } finally {

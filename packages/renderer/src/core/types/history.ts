@@ -9,6 +9,8 @@ export interface HistoryItem {
     projectId: string;
     orgId?: string;
     meta?: string;
+    /** Save the actual master bytes; ordinary preview compression caps at 2048px. */
+    preserveResolution?: boolean;
     mask?: string;
     category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
     tags?: string[];

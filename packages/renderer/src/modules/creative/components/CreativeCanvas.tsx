@@ -12,6 +12,7 @@ import { CanvasActionRail } from './CanvasActionRail';
 import { canvasOps } from '../services/CanvasOperationsService';
 import { useCreativeCanvas } from '../hooks/useCreativeCanvas';
 import { printReadyUpscaleService } from '@/services/upscale/PrintReadyUpscaleService';
+import { printUpscaleMethodLabel } from '@/services/upscale/printUpscalePlan';
 import { useToast } from '@/core/context/ToastContext';
 
 interface CreativeCanvasProps {
@@ -104,6 +105,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 url: result.dataUrl,
                 timestamp: Date.now(),
                 origin: 'editor',
+                preserveResolution: true,
                 distributorCompliance: {
                     valid: true,
                     errors: [],
@@ -116,13 +118,16 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     width: 3000,
                     height: 3000,
                     dpi: 300,
-                    upscaled: true,
+                    upscaled: result.method !== 'resize-only',
                     upscaleMethod: result.method,
                 }),
             };
-            addToHistory(upscaledItem);
-            setSelectedItem(upscaledItem);
-            toast.success(`Upscaled to 3000x3000px (300 DPI) via ${result.method === 'desktop-realesrgan' ? 'Desktop AI' : 'Bicubic High-DPI'}`);
+            const { StorageService } = await import('@/services/StorageService');
+            const saved = await StorageService.saveItem(upscaledItem);
+            const persistedItem = { ...upscaledItem, url: saved.url, storageUri: saved.storageUri };
+            addToHistory(persistedItem);
+            setSelectedItem(persistedItem);
+            toast.success(`Upscaled to 3000x3000px (300 DPI) via ${printUpscaleMethodLabel(result.method)}`);
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : 'Upscaling failed');
         } finally {

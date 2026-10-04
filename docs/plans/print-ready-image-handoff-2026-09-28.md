@@ -43,6 +43,18 @@ Sources: [Disc Makers CD guide](https://www.discmakers.com/resources/getting-cd-
 
 Cassette reference: [Unified Manufacturing three-panel J-card template](https://api.unifiedmanufacturing.com/public/templates/UM%20-%20J%20Card%20%28Front%29.pdf). Its stated overall dimensions and individual panel measurements differ slightly, so final supplier proof remains mandatory.
 
+## Native print-service correction — 2026-10-04
+
+The September browser engine and legacy gallery master-upload path did not
+automatically cover the subsequently added `PrintReadyUpscaleService` buttons.
+That service still interpolated web images, and its JSON metadata missed the
+legacy full-resolution upload condition. The correction wires actual tiled
+ESRGAN into those buttons, identifies sufficient source pixels separately,
+preserves full-resolution master bytes, and awaits durable saving before
+success. See `.agent/observations/2026-10-04-print-engine-delivery.md` for bounded
+validation evidence. None of the six production acceptance gates above is
+waived by this source correction or by structural tests.
+
 ## Remaining production work
 
 - Add vendor dieline import and proof overlays for vinyl jackets, CD packaging, folded work, and labels. Template geometry varies too much for one universal preset.

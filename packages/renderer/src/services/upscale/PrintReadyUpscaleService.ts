@@ -7,8 +7,8 @@
  *
  * Architecture:
  * 1. Checks if local Electron Real-ESRGAN super-resolution engine is available (4x upscale).
- * 2. If desktop engine is unavailable, falls back gracefully to in-browser high-precision
- *    bicubic/multi-pass canvas scaling or browser super-resolution.
+ * 2. Web uses the tiled on-device ESRGAN engine. An engine failure is reported,
+ *    never silently replaced by interpolation advertised as AI enlargement.
  * 3. Draws the resulting high-resolution bitmap onto an exact 3000x3000px canvas with
  *    high image-smoothing quality.
  * 4. Injects physical 300 DPI density tags (PNG pHYs / JPEG JFIF APP0) via `dataUrlWithDpi`.
@@ -16,8 +16,8 @@
 
 import { upscalerService } from '@/services/upscale/UpscalerService';
 import { dataUrlWithDpi } from '@/services/print/dpiMetadata';
-import { logger } from '@/utils/logger';
 import { calculateCoverBox, drawBleedMirror, drawGuideOverlay } from '@indii/shared';
+import { planPrintUpscale, type PrintUpscaleMethod } from './printUpscalePlan';
 
 export interface PrintReadyUpscaleOptions {
     dataUrl: string;
@@ -43,7 +43,7 @@ export interface PrintReadyUpscaleResult {
     height: number;
     dpi: number;
     format: string;
-    method: 'desktop-realesrgan' | 'browser-bicubic';
+    method: PrintUpscaleMethod;
     durationMs: number;
 }
 
@@ -79,18 +79,35 @@ export class PrintReadyUpscaleService {
         options.onProgress?.(0.1, 'Analyzing image dimensions...');
         options.signal?.throwIfAborted();
 
-        const sourceImg = await loadImage(options.dataUrl);
-        let intermediateDataUrl = options.dataUrl;
-        let method: 'desktop-realesrgan' | 'browser-bicubic' = 'browser-bicubic';
+        // Firebase display URLs can load as images while remaining unreadable to
+        // canvas. Resolve and read the owned bytes through the existing storage
+        // bridge before either enhancement engine or canvas receives them.
+        let sourceDataUrl = options.dataUrl;
+        if (!sourceDataUrl.startsWith('data:')) {
+            const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+            const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
+            const resolved = await resolveStorageUrl(sourceDataUrl);
+            const { base64, mimeType } = await fetchAsBase64(resolved);
+            sourceDataUrl = `data:${mimeType};base64,${base64}`;
+        }
+        options.signal?.throwIfAborted();
+        const sourceImg = await loadImage(sourceDataUrl);
+        const plan = planPrintUpscale(sourceImg.naturalWidth, sourceImg.naturalHeight, trimWidth, trimHeight);
+        if (!Number.isInteger(bleedPx) || bleedPx < 0 || !Number.isInteger(safePx) || safePx < 0 ||
+            !Number.isFinite(dpi) || dpi <= 0 || fullWidth * fullHeight > 80_000_000) {
+            throw new Error('Print density, margins, or output size is invalid.');
+        }
+        let intermediateDataUrl = sourceDataUrl;
+        let method: PrintUpscaleMethod = 'resize-only';
 
         // 1. Try Desktop Real-ESRGAN engine first (if running in Electron)
         const isDesktop = typeof window !== 'undefined' && Boolean(window.electronAPI?.upscale);
-        if (isDesktop) {
-            try {
+        if (plan.scale !== 1) {
+            if (isDesktop) {
                 options.onProgress?.(0.3, 'Enhancing details with local AI upscaler...');
                 const outcome = await upscalerService.upscale({
-                    dataUrl: options.dataUrl,
-                    scale: 4,
+                    dataUrl: sourceDataUrl,
+                    scale: plan.scale,
                     prompt: options.prompt,
                     signal: options.signal,
                     onProgress: (frac) => {
@@ -99,9 +116,17 @@ export class PrintReadyUpscaleService {
                 });
                 intermediateDataUrl = outcome.outputDataUrl;
                 method = 'desktop-realesrgan';
-            } catch (err: unknown) {
-                logger.warn('[PrintReadyUpscaleService] Local Real-ESRGAN engine failed, using high-precision bicubic fallback:', err);
-                method = 'browser-bicubic';
+            } else {
+                options.onProgress?.(0.3, 'Enhancing details with on-device browser AI...');
+                const { browserUpscale } = await import('./BrowserUpscale');
+                const outcome = await browserUpscale({
+                    dataUrl: sourceDataUrl,
+                    required: { width: plan.width, height: plan.height },
+                    signal: options.signal,
+                    onProgress: fraction => options.onProgress?.(0.3 + fraction * 0.4, 'Upscaling image...'),
+                });
+                intermediateDataUrl = outcome.url;
+                method = 'browser-esrgan';
             }
         }
 
@@ -109,7 +134,10 @@ export class PrintReadyUpscaleService {
         options.onProgress?.(0.8, 'Resizing to print specifications with bleed geometry...');
 
         // 2. Load intermediate or source and draw into target canvas
-        const finalImg = intermediateDataUrl === options.dataUrl ? sourceImg : await loadImage(intermediateDataUrl);
+        const finalImg = intermediateDataUrl === sourceDataUrl ? sourceImg : await loadImage(intermediateDataUrl);
+        if (finalImg.naturalWidth < trimWidth || finalImg.naturalHeight < trimHeight) {
+            throw new Error('The enhancement did not return enough pixels for this print. No print file was produced.');
+        }
 
         // Aspect ratio crop calculation using focal center
         const crop = calculateCoverBox(

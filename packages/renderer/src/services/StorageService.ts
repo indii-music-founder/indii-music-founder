@@ -205,13 +205,14 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                 try {
                     const mimeMatch = /^data:([^;,]+)/.exec(item.url);
                     const mimeType = mimeMatch?.[1] || '';
-                    if (item.type === 'image' && item.meta === 'upscale') {
+                    if (item.type === 'image' && (item.meta === 'upscale' || item.preserveResolution === true)) {
                         // Preserve print masters: smartSave caps ordinary previews at 2048px.
                         const { safeStorageFetch } = await import('./storage/safeStorageFetch');
                         const { blob } = await safeStorageFetch(item.url);
-                        const storagePath = `users/${userId}/assets/${item.id}.png`;
+                        const extension = blob.type === 'image/jpeg' ? 'jpg' : blob.type === 'image/webp' ? 'webp' : 'png';
+                        const storagePath = `users/${userId}/assets/${item.id}.${extension}`;
                         const storageRef = ref(storage, storagePath);
-                        await uploadBytes(storageRef, blob, { contentType: 'image/png' });
+                        await uploadBytes(storageRef, blob, { contentType: blob.type || 'image/png' });
                         imageUrl = await getDownloadURL(storageRef);
                         storageUri = `gs://${storage.app.options.storageBucket}/${storagePath}`;
                     } else if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) {

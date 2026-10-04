@@ -1,0 +1,44 @@
+{
+  "mode": "live API source review; advisory only, no production validation",
+  "questions": {
+    "interpolation_claim": {
+      "type": "noul",
+      "instructions": "Does this service report AI enhancement despite bypassing both actual enhancement engines for a source that needs enlargement?"
+    },
+    "compression_regression": {
+      "type": "noul",
+      "instructions": "Does the supplied saved-master path still send the newly prepared master through ordinary 2048px preview compression?"
+    },
+    "premature_success": {
+      "type": "noul",
+      "instructions": "Does the supplied canvas handler report successful saved enlargement before its explicit durable StorageService.saveItem call resolves?"
+    },
+    "focal_loss": {
+      "type": "noul",
+      "instructions": "Does the supplied plan enhance only a centered crop before applying the requested focus point, losing content needed for off-center focal crops?"
+    }
+  },
+  "answers": {
+    "interpolation_claim": {
+      "type": "noul",
+      "noul": 0.09
+    },
+    "compression_regression": {
+      "type": "noul",
+      "noul": 0.14
+    },
+    "premature_success": {
+      "type": "noul",
+      "noul": 0.12
+    },
+    "focal_loss": {
+      "type": "noul",
+      "noul": 0.18
+    }
+  },
+  "usage": {
+    "input_tokens": 5940,
+    "output_tokens": 78
+  },
+  "requestId": null
+}
