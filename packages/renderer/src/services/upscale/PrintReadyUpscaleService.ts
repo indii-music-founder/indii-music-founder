@@ -18,6 +18,7 @@ import { upscalerService } from '@/services/upscale/UpscalerService';
 import { dataUrlWithDpi } from '@/services/print/dpiMetadata';
 import { calculateCoverBox, drawBleedMirror, drawGuideOverlay } from '@indii/shared';
 import { planPrintUpscale, type PrintUpscaleMethod } from './printUpscalePlan';
+import { runPrintStage } from './runPrintStage';
 
 export interface PrintReadyUpscaleOptions {
     dataUrl: string;
@@ -84,14 +85,17 @@ export class PrintReadyUpscaleService {
         // bridge before either enhancement engine or canvas receives them.
         let sourceDataUrl = options.dataUrl;
         if (!sourceDataUrl.startsWith('data:')) {
-            const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
-            const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
-            const resolved = await resolveStorageUrl(sourceDataUrl);
-            const { base64, mimeType } = await fetchAsBase64(resolved);
+            const sourceUrl = sourceDataUrl;
+            const { base64, mimeType } = await runPrintStage('Reading the original artwork', 60_000, async () => {
+                const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
+                const resolved = await resolveStorageUrl(sourceUrl);
+                return fetchAsBase64(resolved);
+            }, options.signal);
             sourceDataUrl = `data:${mimeType};base64,${base64}`;
         }
         options.signal?.throwIfAborted();
-        const sourceImg = await loadImage(sourceDataUrl);
+        const sourceImg = await runPrintStage('Decoding the original artwork', 60_000, () => loadImage(sourceDataUrl), options.signal);
         const plan = planPrintUpscale(sourceImg.naturalWidth, sourceImg.naturalHeight, trimWidth, trimHeight);
         if (!Number.isInteger(bleedPx) || bleedPx < 0 || !Number.isInteger(safePx) || safePx < 0 ||
             !Number.isFinite(dpi) || dpi <= 0 || fullWidth * fullHeight > 80_000_000) {
@@ -118,12 +122,18 @@ export class PrintReadyUpscaleService {
                 method = 'desktop-realesrgan';
             } else {
                 options.onProgress?.(0.3, 'Enhancing details with on-device browser AI...');
-                const { browserUpscale } = await import('./BrowserUpscale');
+                const { browserUpscale } = await runPrintStage('Loading browser enhancement', 120_000,
+                    () => import('./BrowserUpscale'), options.signal);
+                let browserFraction = 0;
                 const outcome = await browserUpscale({
                     dataUrl: sourceDataUrl,
                     required: { width: plan.width, height: plan.height },
                     signal: options.signal,
-                    onProgress: fraction => options.onProgress?.(0.3 + fraction * 0.4, 'Upscaling image...'),
+                    onProgress: fraction => {
+                        browserFraction = fraction;
+                        options.onProgress?.(0.3 + fraction * 0.4, 'Enhancing image details...');
+                    },
+                    onStage: stage => options.onProgress?.(0.3 + browserFraction * 0.4, stage),
                 });
                 intermediateDataUrl = outcome.url;
                 method = 'browser-esrgan';
@@ -134,7 +144,9 @@ export class PrintReadyUpscaleService {
         options.onProgress?.(0.8, 'Resizing to print specifications with bleed geometry...');
 
         // 2. Load intermediate or source and draw into target canvas
-        const finalImg = intermediateDataUrl === sourceDataUrl ? sourceImg : await loadImage(intermediateDataUrl);
+        const finalImg = intermediateDataUrl === sourceDataUrl ? sourceImg : await runPrintStage(
+            'Decoding the enhanced artwork', 60_000, () => loadImage(intermediateDataUrl), options.signal,
+        );
         if (finalImg.naturalWidth < trimWidth || finalImg.naturalHeight < trimHeight) {
             throw new Error('The enhancement did not return enough pixels for this print. No print file was produced.');
         }

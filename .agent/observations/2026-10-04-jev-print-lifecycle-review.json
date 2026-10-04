@@ -1,0 +1,43 @@
+{
+  "mode": "live API source review; advisory only, no production validation",
+  "questions": {
+    "late_success": {
+      "type": "noul",
+      "instructions": "Does the supplied print lifecycle allow a result arriving after cancellation or deadline expiry to be returned as successful and then saved by the supplied CreativeCanvas handler?"
+    },
+    "uncancellable_save_claim": {
+      "type": "noul",
+      "instructions": "Can the supplied visible Cancel print preparation button report that no file was saved after durable StorageService.saveItem persistence has already started?"
+    },
+    "stuck_cleanup": {
+      "type": "noul",
+      "instructions": "Does BrowserUpscale still await the enhancement engine ready/dispose promise without a deadline in its finally cleanup, keeping the UI busy after a stage deadline rejects?"
+    },
+    "progress_regression": {
+      "type": "noul",
+      "instructions": "Do browser stage label updates reset enhancement progress to its initial value after tiles have completed, rather than retaining the fraction of completed tiles?"
+    }
+  },
+  "answers": {
+    "late_success": {
+      "type": "noul",
+      "noul": 0.09
+    },
+    "uncancellable_save_claim": {
+      "type": "noul",
+      "noul": 0.36
+    },
+    "stuck_cleanup": {
+      "type": "noul",
+      "noul": 0.47
+    },
+    "progress_regression": {
+      "type": "noul",
+      "noul": 0.22
+    }
+  },
+  "usage": {
+    "input_tokens": 9660,
+    "output_tokens": 79
+  }
+}

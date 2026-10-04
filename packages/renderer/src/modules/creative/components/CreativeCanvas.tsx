@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { HistoryItem, useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 import { CanvasHeader } from './CanvasHeader';
@@ -87,17 +87,29 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
     } = useCreativeCanvas({ item, onClose, onRefine });
 
     const [isUpscaling, setIsUpscaling] = useState(false);
+    const [upscaleStatus, setUpscaleStatus] = useState({ stage: '', progress: 0, saving: false });
+    const printRun = useRef<{ controller: AbortController; saving: boolean } | null>(null);
     const toast = useToast();
 
+    useEffect(() => () => {
+        if (printRun.current && !printRun.current.saving) printRun.current.controller.abort();
+    }, [item?.id]);
+
     const handleUpscaleToPrintReady = async () => {
-        if (!item || !item.url) return;
+        if (!item || !item.url || printRun.current) return;
+        const run = { controller: new AbortController(), saving: false };
+        printRun.current = run;
         setIsUpscaling(true);
+        setUpscaleStatus({ stage: 'Reading the original artwork...', progress: 0, saving: false });
         try {
             toast.info("Upscaling to 3000x3000px @ 300 DPI print standard...");
             const result = await printReadyUpscaleService.upscaleToPrintReady({
                 dataUrl: item.url,
                 prompt: item.prompt,
+                signal: run.controller.signal,
+                onProgress: (progress, stage) => setUpscaleStatus({ stage, progress, saving: false }),
             });
+            run.controller.signal.throwIfAborted();
             const { addToHistory, setSelectedItem } = useStore.getState();
             const upscaledItem: HistoryItem = {
                 ...item,
@@ -123,14 +135,23 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 }),
             };
             const { StorageService } = await import('@/services/StorageService');
+            run.controller.signal.throwIfAborted();
+            // Once persistence begins, cancellation cannot promise no saved file.
+            run.saving = true;
+            setUpscaleStatus({ stage: 'Saving the print master...', progress: 1, saving: true });
             const saved = await StorageService.saveItem(upscaledItem);
             const persistedItem = { ...upscaledItem, url: saved.url, storageUri: saved.storageUri };
             addToHistory(persistedItem);
             setSelectedItem(persistedItem);
             toast.success(`Upscaled to 3000x3000px (300 DPI) via ${printUpscaleMethodLabel(result.method)}`);
         } catch (err: unknown) {
-            toast.error(err instanceof Error ? err.message : 'Upscaling failed');
+            if (run.controller.signal.aborted && !run.saving) {
+                toast.info('Print preparation cancelled. No print master was saved.');
+            } else {
+                toast.error(err instanceof Error ? err.message : 'Upscaling failed');
+            }
         } finally {
+            printRun.current = null;
             setIsUpscaling(false);
         }
     };
@@ -258,6 +279,23 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                         </div>
                     </div>
 
+                    {isUpscaling && (
+                        <div className="absolute inset-x-4 top-4 z-40 mx-auto max-w-sm rounded-xl border border-amber-500/30 bg-[#050608]/95 p-4 shadow-xl">
+                            <div role="status" aria-live="polite" className="text-sm text-white">
+                                <p className="font-medium">Preparing 3000px print master</p>
+                                <p className="mt-1 text-white/70">{upscaleStatus.stage}</p>
+                                {!upscaleStatus.saving && <progress className="mt-2 w-full" value={upscaleStatus.progress} max={1} aria-label="Print preparation progress" />}
+                            </div>
+                            <button
+                                className="mt-3 rounded-lg border border-white/20 px-3 py-1 text-sm text-white disabled:opacity-40"
+                                disabled={upscaleStatus.saving}
+                                onClick={() => {
+                                    const run = printRun.current;
+                                    if (run && !run.saving) run.controller.abort();
+                                }}
+                            >Cancel print preparation</button>
+                        </div>
+                    )}
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-black/35 to-transparent md:inset-x-[72px]" />
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-black/30 to-transparent md:inset-x-[72px]" />
 
