@@ -96,6 +96,20 @@
   ],
   "indexes": [
     {
+      "collectionGroup": "tool_approvals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "workflowExecutions",
       "queryScope": "COLLECTION",
       "fields": [

@@ -1,0 +1,54 @@
+{
+  "mode": "live Jev API advisory evidence review",
+  "state": {
+    "observed": "Production Firestore listener reports required composite index: tool_approvals status ASCENDING, createdAt DESCENDING. The existing query is per-user collection where status == pending orderBy createdAt desc. Current manifest had no tool_approvals index.",
+    "change": {
+      "collectionGroup": "tool_approvals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    "limits": "No live approval was executed. Artwork reused from existing user history. Loaded image element measured 2048x2048. Download event timed out. No downloaded bytes measured."
+  },
+  "questions": {
+    "closes_read_failure": {
+      "type": "noul",
+      "instructions": "Does the proposed composite index exactly address the logged missing-index query?"
+    },
+    "proves_approval_execution": {
+      "type": "noul",
+      "instructions": "Does fixing this index alone prove that approve/resume successfully executes a real pending tool call?"
+    },
+    "proves_print_output": {
+      "type": "noul",
+      "instructions": "Does the supplied evidence prove a downloaded 3000px image at 300 DPI?"
+    }
+  },
+  "answers": {
+    "closes_read_failure": {
+      "type": "noul",
+      "noul": 0.62
+    },
+    "proves_approval_execution": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "proves_print_output": {
+      "type": "noul",
+      "noul": 0.01
+    }
+  },
+  "usage": {
+    "input_tokens": 525,
+    "output_tokens": 63
+  },
+  "requestId": null
+}
