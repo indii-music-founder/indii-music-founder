@@ -1,3 +1,25 @@
+# Session Close — Agent Capability Wiring & Cross-Department Tool Alignment (2026-10-03)
+
+**Final state: Delivered end-to-end tool alignment across specialist agents (`VideoAgent`, `FinanceAgent`, `DistributionAgent`), mounted Blender 3D and Format Foundry into `SUPERPOWER_TOOLS` for all agent runtimes, and created the canonical `agent-capability-wiring` skill (`.agent/skills/agent-capability-wiring/SKILL.md`) to guarantee that all newly built platform engines are systematically exposed, declared, prompted, and verifiable. Single coherent delivery commit `d171197a8` pushed to `origin/main` (CI Run `37153123510`). All unit tests green; monorepo typecheck clean (0 errors across 9 workspaces); capability catalog certified.**
+
+## Shipped & Integrated
+- **Universal Tool Pool (`SuperpowerTools.ts`):**
+  - Added declarations for `blender_get_status`, `blender_list_templates`, `blender_render_music_video`, `blender_live_command`, and `foundry_*` tools to `SUPERPOWER_TOOLS`.
+  - Ensures every agent runtime using `ToolPoolAssembler` has native function declarations available when communicating or orchestrating.
+- **Video Director Alignment (`VideoAgent.ts` & `VideoAgent.test.ts`):**
+  - Mounted `create_performance_video`, `animate_still`, and `analyze_audio` into `authorizedTools`, `functions`, and `functionDeclarations`.
+  - Mounted Blender 3D MCP tools (`blender_get_status`, `blender_render_music_video`).
+  - Added unit test assertions verifying mappings.
+- **Finance & Distribution Alignment (`FinanceAgent.ts`, `DistributionAgent.ts`, `FinanceAgent.test.ts`):**
+  - Mounted Format Foundry forensic tools (`foundry_inspect_format`, `foundry_synthesize_hypotheses`, `foundry_parse_and_validate`, `foundry_normalize_to_graph`).
+  - Enables direct execution of Jev TypeSafe System One (`judgeColumnSemantics`) to autonomously parse, validate, and normalize distributor royalty statements into the Artist Business Graph (ABG).
+  - Updated department system prompts (`agents/video/prompt.md`, `agents/finance/prompt.md`, `agents/distribution/prompt.md`).
+- **New Skill: `agent-capability-wiring` (`.agent/skills/agent-capability-wiring/SKILL.md`):**
+  - Codified the 5-Layer Capability Wire Contract (Implementation -> Triad Binding -> System Prompt -> Registry & Truth -> Contract Tests).
+  - Integrated into `.agent/capabilities/registry.json`, `catalog.json`, and `catalog.md` with certified state.
+
+---
+
 # Session Close — Blender 3D Music Video MCP Integration & Procedural Video Rendering (2026-10-03)
 
 **Final state: Full Blender 3D MCP integration and headless procedural video rendering pipeline built and delivered directly to `origin/main`. Adapted and verified against live host installation of Blender 5.2.2 LTS (macOS Apple Silicon Metal GPU acceleration). Headless 3D render executed in 6 seconds generating 48-frame 720p 16:9 H.264/AAC MP4 video artifact (`/tmp/indii_blender_spectrum.mp4`, 203 KB). 40/40 affected unit tests passing; monorepo typecheck clean (0 errors across 9 workspaces); ESLint 0 errors, 0 warnings across all task files.**
