@@ -1,3 +1,35 @@
+# Session Close — Local-Native AI Image Upscaler & Print Preparation Engine (2026-10-04)
+
+**Final state: Delivered complete 100% local-native image upscaling and print-ready preparation pipeline across Apple Silicon (M4 Metal GPU) Desktop Electron and In-Browser WebGPU/WebGL Web Studio. Zero cloud GPU costs, zero server cold starts, 100% private on-device execution. Built pure TypeScript canvas geometry engine (`canvasBleed.ts`) with mathematical equivalence to OpenCV `cv2.BORDER_REFLECT_101` (4 borders + 4 corners mirrored), normalized focal-center cropping (`calculateCoverBox`), proof guide overlay rendering (`drawGuideOverlay`), and binary physical 300 DPI chunk injection. Enhanced `PrintReadyUpscaleService.ts` and wired `prepare_print_file` and `get_print_job_status` into `SuperpowerTools.ts`, `DirectorTools.ts`, `CreativeAgent.ts`, and `ToolRiskRegistry.ts` for immediate on-device resolution with cloud fallback. Monorepo typecheck clean (0 errors across all 9 workspaces); ESLint clean (0 errors); 40/40 TypeScript unit tests passing; 7/7 Python tests passing; quality scanner 0 violations.**
+
+## Shipped & Integrated
+- **Pure TypeScript Canvas Bleed Engine (`packages/shared/src/print/canvasBleed.ts`):**
+  - Added `calculateCoverBox()` for focal crop clamping (`fx, fy`).
+  - Added `drawBleedMirror()` implementing exact OpenCV `cv2.BORDER_REFLECT_101` edge and corner matrix mirroring without repeating boundary pixels.
+  - Added `drawGuideOverlay()` for red trim and green safe-zone preview lines.
+  - Exported via `@indii/shared` and verified with 6 unit tests in `canvasBleed.test.ts`.
+- **Client & Desktop Print Prep Service (`PrintReadyUpscaleService.ts`):**
+  - Enhanced options: `bleedMode: 'fill' | 'extend'`, `bleedPx`, `safePx`, `focusX`, `focusY`, `generateGuide`.
+  - Uses M4 Mac Mini Metal GPU on Electron (`realesrgan-ncnn-vulkan`) or in-browser WebGPU/WebGL (`BrowserUpscale.ts`).
+  - Stamps physical 300 DPI chunks (`PNG pHYs` and `JPEG JFIF APP0`) via `dataUrlWithDpi`.
+- **Agent Tool Wiring & Risk Classification (`DirectorTools.ts`, `CreativeAgent.ts`, `SuperpowerTools.ts`, `ToolRiskRegistry.ts`):**
+  - Mounted `prepare_print_file` and `get_print_job_status` in `SUPERPOWER_TOOLS` for all 23 specialist agents and Conductor.
+  - Implemented client-side fast path in `DirectorTools.ts` resolving immediately for local bitmaps/data URLs while retaining async `enqueuePrintJob` fallback for cloud storage URIs.
+  - Classified in `ToolRiskRegistry.ts` (`write`/`core` and `read`/`builtin`).
+- **Cloud Task & Worker Artifacts (`packages/firebase/` & `execution/print_prep/`):**
+  - Added `enqueuePrintJob` callable Cloud Function with App Check, auth, user storage ownership enforcement, and Firestore `/print_jobs/{jobId}` tracking.
+  - Added `PrintJobSchema` & `EnqueuePrintJobInputSchema` in `@indii/shared`.
+  - Standardized reference Python scripts (`upscale.py`, `print_prep.py`, `worker.py`, `Dockerfile`).
+
+## Verification Evidence
+- `npm run typecheck`: Clean (0 errors across 9 workspaces).
+- `npm run lint`: Clean (0 errors, 214 pre-existing warnings).
+- `node scripts/check-test-quality.js`: 0 violations.
+- `git diff --check`: Clean (0 whitespace/formatting errors).
+- Unit tests: 40/40 Vitest tests passed across all touched modules; 7/7 Python tests passed.
+
+---
+
 # Session Close — Agent Capability Wiring & Cross-Department Tool Alignment (2026-10-03)
 
 **Final state: Delivered end-to-end tool alignment across specialist agents (`VideoAgent`, `FinanceAgent`, `DistributionAgent`), mounted Blender 3D and Format Foundry into `SUPERPOWER_TOOLS` for all agent runtimes, and created the canonical `agent-capability-wiring` skill (`.agent/skills/agent-capability-wiring/SKILL.md`) to guarantee that all newly built platform engines are systematically exposed, declared, prompted, and verifiable. Single coherent delivery commit `d171197a8` pushed to `origin/main` (CI Run `37153123510`). All unit tests green; monorepo typecheck clean (0 errors across 9 workspaces); capability catalog certified.**

@@ -29,6 +29,8 @@ vi.mock('../tools/DirectorTools', () => ({
         record_asset_version: vi.fn(),
         promote_asset_version: vi.fn(),
         set_asset_rights: vi.fn(),
+        prepare_print_file: vi.fn(),
+        get_print_job_status: vi.fn(),
     }
 }));
 
@@ -126,10 +128,14 @@ describe('CreativeAgent', () => {
         expect(CreativeAgent.authorizedTools).toContain('video_render_stitch');
         expect(CreativeAgent.authorizedTools).toContain('video_render_chain');
         expect(CreativeAgent.authorizedTools).toContain('video_get_render_status');
+        expect(CreativeAgent.authorizedTools).toContain('prepare_print_file');
+        expect(CreativeAgent.authorizedTools).toContain('get_print_job_status');
     });
 
     it('should map the functions to correct tool implementations', () => {
         expect(CreativeAgent.functions!.generate_image).toBeDefined();
+        expect(CreativeAgent.functions!.prepare_print_file).toBeDefined();
+        expect(CreativeAgent.functions!.get_print_job_status).toBeDefined();
         expect(CreativeAgent.functions!.list_stored_assets).toBeDefined();
         expect(CreativeAgent.functions!.search_stored_assets).toBeDefined();
         expect(CreativeAgent.functions!.batch_edit_images).toBeDefined();

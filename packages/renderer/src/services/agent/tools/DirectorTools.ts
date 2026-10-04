@@ -808,6 +808,94 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             topic: args.industry_or_genre
         }, `Please provide a comprehensive visual trends analysis for "${args.industry_or_genre}" using your internal knowledge, structured around the provided framework. Note: This analysis is based on your general knowledge and is not a live data feed.`);
     }),
+
+    prepare_print_file: wrapTool('prepare_print_file', async (args: {
+        imageUri: string;
+        presetId: string;
+        bleedMode?: 'fill' | 'extend';
+        focusX?: number;
+        focusY?: number;
+        generateGuide?: boolean;
+    }) => {
+        try {
+            const { getPrintPreset } = await import('@indii/shared');
+            const preset = getPrintPreset(args.presetId);
+            if (!preset) {
+                return toolError(`Unknown print preset "${args.presetId}".`, 'INVALID_PRESET');
+            }
+
+            // If the image is a data URL or accessible locally/client-side, execute local-native upscale directly
+            if (args.imageUri.startsWith('data:image/') || args.imageUri.startsWith('blob:') || args.imageUri.startsWith('http')) {
+                const { printReadyUpscaleService } = await import('@/services/upscale/PrintReadyUpscaleService');
+                const bleedPx = Math.round((preset.bleedIn ?? 0) * preset.dpi);
+                const safePx = Math.round((preset.safeIn ?? 0) * preset.dpi);
+                const targetW = Math.round(preset.widthIn * preset.dpi);
+                const targetH = Math.round(preset.heightIn * preset.dpi);
+
+                const outcome = await printReadyUpscaleService.upscaleToPrintReady({
+                    dataUrl: args.imageUri,
+                    targetWidth: targetW,
+                    targetHeight: targetH,
+                    dpi: preset.dpi,
+                    bleedPx,
+                    safePx,
+                    bleedMode: args.bleedMode ?? 'extend',
+                    focusX: args.focusX ?? 0.5,
+                    focusY: args.focusY ?? 0.5,
+                    generateGuide: args.generateGuide ?? false,
+                });
+
+                return toolSuccess({
+                    presetId: args.presetId,
+                    width: outcome.width,
+                    height: outcome.height,
+                    dpi: outcome.dpi,
+                    method: outcome.method,
+                    durationMs: outcome.durationMs,
+                    dataUrl: outcome.dataUrl,
+                    guideDataUrl: outcome.guideDataUrl,
+                }, `Print file prepared successfully on-device (${outcome.method}) at ${outcome.width}x${outcome.height}px (${outcome.dpi} DPI in ${outcome.durationMs}ms).`);
+            }
+
+            // Fallback for gs:// storage URIs: enqueue async job
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            const enqueueFn = httpsCallable<typeof args, {
+                jobId: string;
+                status: string;
+                estimatedDurationSec: number;
+                plan: Record<string, unknown>;
+            }>(functions, 'enqueuePrintJob');
+
+            const result = await enqueueFn({
+                imageUri: args.imageUri,
+                presetId: args.presetId,
+                bleedMode: args.bleedMode || 'extend',
+                focusX: args.focusX ?? 0.5,
+                focusY: args.focusY ?? 0.5,
+                generateGuide: args.generateGuide ?? false,
+            });
+
+            return toolSuccess(result.data, `Print preparation job ${result.data.jobId} enqueued successfully. Status: ${result.data.status}. Estimated processing time: ~${result.data.estimatedDurationSec} seconds.`);
+        } catch (err: unknown) {
+            return handleGenerationError(err, 'prepare_print_file');
+        }
+    }),
+
+    get_print_job_status: wrapTool('get_print_job_status', async (args: { jobId: string }) => {
+        try {
+            const { db } = await import('@/services/firebase');
+            const { doc, getDoc } = await import('firebase/firestore');
+            const jobSnap = await getDoc(doc(db, 'print_jobs', args.jobId));
+            if (!jobSnap.exists()) {
+                return toolError(`Print job "${args.jobId}" not found.`, 'NOT_FOUND');
+            }
+            const data = jobSnap.data();
+            return toolSuccess(data, `Print job ${args.jobId} is currently ${data.status} (Progress: ${data.progress || 0}%).`);
+        } catch (err: unknown) {
+            return toolError(`Failed to fetch print job status: ${err instanceof Error ? err.message : String(err)}`, 'FETCH_ERROR');
+        }
+    }),
 };
 
 /**

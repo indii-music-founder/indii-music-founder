@@ -86,6 +86,8 @@ export const CreativeAgent: AgentConfig = {
             video_render_stitch: EditorTools.video_render_stitch,
             video_render_chain: EditorTools.video_render_chain,
             video_get_render_status: EditorTools.video_get_render_status,
+            prepare_print_file: DirectorTools.prepare_print_file,
+            get_print_job_status: DirectorTools.get_print_job_status,
             ...BlenderTools
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
@@ -127,6 +129,8 @@ export const CreativeAgent: AgentConfig = {
         'video_render_stitch',
         'video_render_chain',
         'video_get_render_status',
+        'prepare_print_file',
+        'get_print_job_status',
         'blender_get_status',
         'blender_list_templates',
         'blender_render_music_video',

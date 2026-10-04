@@ -316,6 +316,10 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     // Foundational (Artifacts)
     create_artifact: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create an artifact document to present structured information to the user' },
     multi_replace_file_content: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Modify multiple non-contiguous blocks of text in a single file' },
+
+    // Print Preparation & Upscaling
+    prepare_print_file: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Prepare artwork for print/DSP delivery with bleed and DPI tagging' },
+    get_print_job_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Check status of an asynchronous print preparation job' },
 };
 
 /**

@@ -17,12 +17,19 @@
 import { upscalerService } from '@/services/upscale/UpscalerService';
 import { dataUrlWithDpi } from '@/services/print/dpiMetadata';
 import { logger } from '@/utils/logger';
+import { calculateCoverBox, drawBleedMirror, drawGuideOverlay } from '@indii/shared';
 
 export interface PrintReadyUpscaleOptions {
     dataUrl: string;
     targetWidth?: number;
     targetHeight?: number;
     dpi?: number;
+    bleedPx?: number;
+    safePx?: number;
+    bleedMode?: 'fill' | 'extend';
+    focusX?: number;
+    focusY?: number;
+    generateGuide?: boolean;
     format?: 'image/png' | 'image/jpeg';
     prompt?: string;
     onProgress?: (progress: number, stage: string) => void;
@@ -31,6 +38,7 @@ export interface PrintReadyUpscaleOptions {
 
 export interface PrintReadyUpscaleResult {
     dataUrl: string;
+    guideDataUrl?: string;
     width: number;
     height: number;
     dpi: number;
@@ -51,14 +59,22 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 export class PrintReadyUpscaleService {
     /**
-     * Upscales an image asset to exact 3000x3000px @ 300 DPI.
+     * Upscales an image asset to exact print specifications @ specified DPI with bleed & safe bounds.
      */
     async upscaleToPrintReady(options: PrintReadyUpscaleOptions): Promise<PrintReadyUpscaleResult> {
         const startTime = Date.now();
-        const targetWidth = options.targetWidth ?? 3000;
-        const targetHeight = options.targetHeight ?? 3000;
+        const trimWidth = options.targetWidth ?? 3000;
+        const trimHeight = options.targetHeight ?? 3000;
         const dpi = options.dpi ?? 300;
+        const bleedPx = options.bleedPx ?? 0;
+        const safePx = options.safePx ?? 0;
+        const bleedMode = options.bleedMode ?? 'fill';
+        const focusX = options.focusX ?? 0.5;
+        const focusY = options.focusY ?? 0.5;
         const format = options.format ?? 'image/png';
+
+        const fullWidth = trimWidth + (bleedMode === 'extend' ? 2 * bleedPx : 0);
+        const fullHeight = trimHeight + (bleedMode === 'extend' ? 2 * bleedPx : 0);
 
         options.onProgress?.(0.1, 'Analyzing image dimensions...');
         options.signal?.throwIfAborted();
@@ -90,51 +106,86 @@ export class PrintReadyUpscaleService {
         }
 
         options.signal?.throwIfAborted();
-        options.onProgress?.(0.8, 'Resizing to 3000x3000px print specification...');
+        options.onProgress?.(0.8, 'Resizing to print specifications with bleed geometry...');
 
-        // 2. Load intermediate or source and draw into target 3000x3000px canvas
+        // 2. Load intermediate or source and draw into target canvas
         const finalImg = intermediateDataUrl === options.dataUrl ? sourceImg : await loadImage(intermediateDataUrl);
 
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
+        // Aspect ratio crop calculation using focal center
+        const crop = calculateCoverBox(
+            finalImg.naturalWidth,
+            finalImg.naturalHeight,
+            trimWidth,
+            trimHeight,
+            focusX,
+            focusY,
+        );
+
+        // Render trim-sized art
+        const trimCanvas = document.createElement('canvas');
+        trimCanvas.width = trimWidth;
+        trimCanvas.height = trimHeight;
+        const trimCtx = trimCanvas.getContext('2d');
+        if (!trimCtx) {
+            throw new Error('Could not create 2D canvas context for trim rendering');
+        }
+        trimCtx.imageSmoothingEnabled = true;
+        trimCtx.imageSmoothingQuality = 'high';
+        trimCtx.drawImage(
+            finalImg,
+            crop.x0,
+            crop.y0,
+            crop.width,
+            crop.height,
+            0,
+            0,
+            trimWidth,
+            trimHeight,
+        );
+
+        // Render final canvas with bleed (if extend mode, mirror edges; if fill mode, trim art IS full art)
+        const outputCanvas = document.createElement('canvas');
+        outputCanvas.width = fullWidth;
+        outputCanvas.height = fullHeight;
+        const outCtx = outputCanvas.getContext('2d');
+        if (!outCtx) {
             throw new Error('Could not create 2D canvas context for print export');
         }
+        outCtx.imageSmoothingEnabled = true;
+        outCtx.imageSmoothingQuality = 'high';
 
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-
-        // Draw centered with cover aspect ratio
-        const srcAspect = finalImg.naturalWidth / finalImg.naturalHeight;
-        const tgtAspect = targetWidth / targetHeight;
-        let renderWidth = targetWidth;
-        let renderHeight = targetHeight;
-        let offsetX = 0;
-        let offsetY = 0;
-
-        if (srcAspect > tgtAspect) {
-            renderWidth = targetHeight * srcAspect;
-            offsetX = (targetWidth - renderWidth) / 2;
+        if (bleedMode === 'extend' && bleedPx > 0) {
+            drawBleedMirror(outCtx, trimCanvas, trimWidth, trimHeight, bleedPx);
         } else {
-            renderHeight = targetWidth / srcAspect;
-            offsetY = (targetHeight - renderHeight) / 2;
+            outCtx.drawImage(trimCanvas, 0, 0, fullWidth, fullHeight);
         }
 
-        ctx.drawImage(finalImg, offsetX, offsetY, renderWidth, renderHeight);
+        options.onProgress?.(0.9, 'Injecting print DPI metadata...');
 
-        options.onProgress?.(0.9, 'Injecting 300 DPI print metadata...');
-
-        const rawDataUrl = canvas.toDataURL(format, format === 'image/jpeg' ? 0.95 : undefined);
+        const rawDataUrl = outputCanvas.toDataURL(format, format === 'image/jpeg' ? 0.95 : undefined);
         const taggedDataUrl = dataUrlWithDpi(rawDataUrl, format, dpi);
+
+        // Optional guide overlay rendering
+        let guideDataUrl: string | undefined;
+        if (options.generateGuide) {
+            const guideCanvas = document.createElement('canvas');
+            guideCanvas.width = fullWidth;
+            guideCanvas.height = fullHeight;
+            const guideCtx = guideCanvas.getContext('2d');
+            if (guideCtx) {
+                guideCtx.drawImage(outputCanvas, 0, 0);
+                drawGuideOverlay(guideCtx, fullWidth, fullHeight, bleedPx, safePx);
+                guideDataUrl = guideCanvas.toDataURL('image/png');
+            }
+        }
 
         options.onProgress?.(1.0, 'Complete');
 
         return {
             dataUrl: taggedDataUrl,
-            width: targetWidth,
-            height: targetHeight,
+            guideDataUrl,
+            width: fullWidth,
+            height: fullHeight,
             dpi,
             format,
             method,

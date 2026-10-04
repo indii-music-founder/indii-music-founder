@@ -379,4 +379,25 @@ describe('DirectorTools', () => {
             );
         });
     });
+
+    describe('prepare_print_file and get_print_job_status', () => {
+        it('prepare_print_file enqueues job via httpsCallable', async () => {
+            const result = await DirectorTools.prepare_print_file!({
+                imageUri: 'gs://indii-bucket/artwork.png',
+                presetId: 'poster_18x24',
+                bleedMode: 'extend',
+            });
+
+            expect(result).toBeDefined();
+            expect(result.data).toBeDefined();
+        });
+
+        it('get_print_job_status queries print_jobs document', async () => {
+            const result = await DirectorTools.get_print_job_status!({
+                jobId: 'print_test_job_123',
+            });
+
+            expect(result).toBeDefined();
+        });
+    });
 });
