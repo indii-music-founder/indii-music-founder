@@ -6,6 +6,7 @@ export * from './schemas/creative.js';
 export * from './schemas/creativeNormalizers.js';
 export * from './schemas/env.schema.js';
 export * from './schemas/workflowState.js';
+export * from './schemas/executionGraph.js';
 export * from './schemas/workflowPrediction.js';
 export * from './schemas/agentLoopState.js';
 export * from './schemas/videoJob.js';

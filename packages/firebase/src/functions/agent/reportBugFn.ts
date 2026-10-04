@@ -227,6 +227,18 @@ ${errorMessage ? `### Error Message\n\`\`\`\n${errorMessage}\n\`\`\`` : ''}
             }
         }
 
+        // Publish only the durable GitHub pointer after the existing intake path finishes.
+        // The graph trigger is an observer above GitHub; it cannot create/close bug issues.
+        if (firestoreStatus === 'ok') {
+            try {
+                await admin.firestore().collection('bug_reports').doc(bugReportId).update({
+                    githubStatus, issueUrl: issueUrl ?? null,
+                });
+            } catch (error) {
+                console.warn('[reportBugFn] Failed to persist GitHub graph pointer:', error);
+            }
+        }
+
         return {
             firestore: firestoreStatus,
             github: githubStatus,

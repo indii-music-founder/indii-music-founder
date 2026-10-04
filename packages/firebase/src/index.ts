@@ -100,6 +100,7 @@ export { mintElectronAppCheckToken } from './functions/auth/mintElectronAppCheck
 
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
+export { ingestBugExecutionGraph, ingestExecutionIntelligence } from './functions/agent/executionGraphStore';
 export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
 export { createWorkflowExecution, manageWorkflowExecution } from './functions/agent/workflowExecutionCallables';
 export { manageSemanticMemory, batchEmbedText } from './functions/agent/manageSemanticMemory';
