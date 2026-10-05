@@ -1,3 +1,12 @@
+# Blender desktop resource follow-up (2026-10-04)
+
+The installed 1.80.1 native app lacks the 3D tab and both expected MCP resource
+directories. The resource-build, bundled-runtime launch and exact-package checks
+are tracked in `.agent/observations/2026-10-04-blender-runtime-packaging-delivery.md`.
+An isolated actual embedded-runtime probe detects Blender 5.2.2 and Metal;
+liveConnected is false. Updated signed-app installation and genuine app rendering
+remain unverified. Do not close discovery reports from tool registration alone.
+
 # Session Close — Local-Native AI Image Upscaler & Print Preparation Engine (2026-10-04)
 
 **Acceptance correction (2026-10-04):** The completion claim below was too broad.

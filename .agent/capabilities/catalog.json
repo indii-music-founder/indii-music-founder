@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "3b8350c8b7934a0fea314cc22c03649886a98411f6f0bb8a1a22db173d2593ee",
+  "sourceDigest": "c949ec30335c1038016b72b3d21208f75a4c325840d28df6be3a8ac2de99cddc",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 37,
     "conditional": 70,
-    "quarantined": 92,
+    "quarantined": 93,
     "deprecated": 1
   },
   "capabilities": [
@@ -2750,6 +2750,36 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Re-run only when the script is documented as repeat-safe.",
       "authenticity": "Local command success is local evidence only.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:verify:desktop:mcp",
+      "name": "npm run verify:desktop:mcp",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/build-bundled-mcp.cjs && node scripts/verify-bundled-mcp.mjs",
+      "descriptionHash": "1cb5642b55dbe673d30ecd24f879542d6203a147b9af7dc952385f6ed5af92aa",
+      "contentHash": "8f6cea413ae315db4dbbccc790a1654df7898a474cf9988f81893fa083dfd759",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
       "conflicts": []
     },
     {

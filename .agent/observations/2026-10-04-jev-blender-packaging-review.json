@@ -1,0 +1,43 @@
+{
+  "mode": "live source advisory; not customer acceptance",
+  "questions": {
+    "runtime_dependency_gap": {
+      "type": "noul",
+      "instructions": "Can either bundled MCP server still require repository node_modules or a system-installed node executable when launched inside the packaged Electron app? Evaluate explicit external runtime packages, copied dependency closure, and process.execPath/ELECTRON_RUN_AS_NODE."
+    },
+    "python_path_gap": {
+      "type": "noul",
+      "instructions": "Will bundled Blender executor __dirname/python/runner.py be missing given the build copy to local/dist/python and collected resource destination? Note the executor uses path.resolve(__dirname, python, runner.py)."
+    },
+    "false_customer_claim": {
+      "type": "noul",
+      "instructions": "Does this package verification impersonate authentication, seed product state, mock services, or claim that a real customer rendered a video? It is explicitly package/protocol verification using genuine isolated processes."
+    },
+    "packaged_resource_gap": {
+      "type": "noul",
+      "instructions": "Can electron-builder silently omit an entire MCP resource directory and still pass the shown afterPack verification? Evaluate copied actual resource paths and MCP real-process checks."
+    }
+  },
+  "answers": {
+    "runtime_dependency_gap": {
+      "type": "noul",
+      "noul": 0.8
+    },
+    "python_path_gap": {
+      "type": "noul",
+      "noul": 0.2
+    },
+    "false_customer_claim": {
+      "type": "noul",
+      "noul": 0.65
+    },
+    "packaged_resource_gap": {
+      "type": "noul",
+      "noul": 0.38
+    }
+  },
+  "usage": {
+    "input_tokens": 4819,
+    "output_tokens": 77
+  }
+}

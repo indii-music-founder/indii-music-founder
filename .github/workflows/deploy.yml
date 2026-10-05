@@ -239,6 +239,9 @@ jobs:
       - name: TypeScript type check (Item 343)
         run: npm run typecheck
 
+      - name: Verify isolated desktop MCP packages
+        run: npm run verify:desktop:mcp
+
       # ISSUE-1238: a function pinned below the shared cold-start footprint OOMs
       # before it can bind port 8080, fails its deploy health check, and fails
       # the ENTIRE functions deploy step — blocking every unrelated fix in the

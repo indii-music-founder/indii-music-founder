@@ -57,9 +57,9 @@ export class MCPClientService {
         }
 
         this.localTransport = new StdioClientTransport({
-            command: 'node',
+            command: process.execPath,
             args: [serverPath],
-            env: process.env as Record<string, string>,
+            env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' } as Record<string, string>,
         });
 
         this.localClient = new Client(
@@ -98,9 +98,9 @@ export class MCPClientService {
         }
 
         this.harnessTransport = new StdioClientTransport({
-            command: 'node',
+            command: process.execPath,
             args: [serverPath],
-            env: process.env as Record<string, string>,
+            env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' } as Record<string, string>,
         });
 
         this.harnessClient = new Client(

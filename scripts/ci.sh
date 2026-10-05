@@ -74,6 +74,14 @@ else
   echo "✅ Flowchart validation passed."
 fi
 
+echo "--> Step 4.5: Isolated Desktop MCP Package Check"
+if ! npm run verify:desktop:mcp; then
+  echo "❌ Desktop MCP package verification failed."
+  fail=1
+else
+  echo "✅ Desktop MCP package verification passed."
+fi
+
 echo "--> Step 5: Running Sharded Tests (Sequentially to prevent CPU starvation)"
 npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=1/4 || fail=1
 npm test -- --run --reporter=dot --pool=forks --maxWorkers=2 --testTimeout=60000 --bail=3 --shard=2/4 || fail=1

@@ -1,5 +1,7 @@
 {
   "appId": "com.indii.music",
+  "beforePack": "./scripts/build-bundled-mcp.cjs",
+  "afterPack": "./scripts/verify-packed-mcp.cjs",
   "directories": {
     "output": "dist-electron"
   },
@@ -12,6 +14,14 @@
     "**/node_modules/ffprobe-static/**"
   ],
   "extraResources": [
+    {
+      "from": "dist/bundled-mcp/local",
+      "to": "mcp-server-local"
+    },
+    {
+      "from": "dist/bundled-mcp/harness",
+      "to": "mcp-server-harness"
+    },
     {
       "from": "execution",
       "to": "execution",

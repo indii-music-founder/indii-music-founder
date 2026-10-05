@@ -55,6 +55,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Verify isolated desktop MCP packages
+        run: npm run verify:desktop:mcp
+
       - name: Prepare Code Signing Environment
         shell: bash
         run: |
