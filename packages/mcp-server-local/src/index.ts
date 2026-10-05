@@ -166,7 +166,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 // Handle tool execution
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args } = request.params;
 
     if (name === 'read_wav_tags') {
@@ -386,7 +386,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 visualTokens: args?.visualTokens as BlenderVisualTokens | undefined
             };
 
-            const result = await executeBlenderRender(renderOptions);
+            const token = request.params._meta?.progressToken;
+            const result = await executeBlenderRender(renderOptions, progress => {
+                if (token !== undefined) {
+                    void extra.sendNotification({ method: 'notifications/progress', params: {
+                        progressToken: token, progress: progress.percentage, total: 100,
+                        message: progress.message || progress.status,
+                    }}).catch(() => { /* Caller disconnected; signal handles process cancellation. */ });
+                }
+            }, extra.signal);
             return {
                 content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
                 isError: !result.success

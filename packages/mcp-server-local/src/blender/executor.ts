@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { spawn } from 'child_process';
+import { randomUUID } from 'crypto';
 import { findBlenderExecutable } from './discovery.js';
 import type { BlenderRenderOptions, BlenderRenderProgress } from './types.js';
 
@@ -35,8 +36,15 @@ export function parseBlenderFrameProgress(
 
 export async function executeBlenderRender(
     options: BlenderRenderOptions,
-    onProgress?: (progress: BlenderRenderProgress) => void
+    onProgress?: (progress: BlenderRenderProgress) => void,
+    signal?: AbortSignal
 ): Promise<{ success: boolean; outputPath: string; error?: string }> {
+    signal?.throwIfAborted();
+    const audio = await fs.promises.stat(options.audioFilePath).catch(() => null);
+    if (!audio?.isFile() || audio.size === 0) {
+        throw new Error('Select an existing, non-empty music file before rendering.');
+    }
+    await fs.promises.access(options.audioFilePath, fs.constants.R_OK);
     const executablePath = await findBlenderExecutable();
     if (!executablePath) {
         throw new Error(
@@ -47,24 +55,37 @@ export async function executeBlenderRender(
     const durationSeconds = options.durationSeconds ?? 30;
     const fps = options.fps ?? 30;
     const totalFrames = Math.round(durationSeconds * fps);
-    const jobId = `blender_render_${Date.now()}`;
+    const jobId = `blender_render_${randomUUID()}`;
     const startTimeMs = Date.now();
 
     // Prepare temp config JSON
-    const tempConfigDir = path.join(os.tmpdir(), 'indii_blender');
-    fs.mkdirSync(tempConfigDir, { recursive: true });
+    const tempConfigDir = fs.mkdtempSync(path.join(os.tmpdir(), 'indii_blender_'));
+    fs.chmodSync(tempConfigDir, 0o700);
     const tempConfigFile = path.join(tempConfigDir, `render_config_${jobId}.json`);
 
-    fs.writeFileSync(tempConfigFile, JSON.stringify(options, null, 2), 'utf-8');
+    fs.writeFileSync(tempConfigFile, JSON.stringify(options, null, 2), { encoding: 'utf-8', mode: 0o600 });
 
     const runnerScriptPath = path.resolve(__dirname, 'python', 'runner.py');
     if (!fs.existsSync(runnerScriptPath)) {
+        fs.rmSync(tempConfigDir, { recursive: true, force: true });
         throw new Error(`Blender runner script not found at: ${runnerScriptPath}`);
     }
+
+    try {
+        const output = fs.openSync(options.outputVideoPath, 'wx', 0o600);
+        fs.closeSync(output);
+    } catch (error) {
+        fs.rmSync(tempConfigDir, { recursive: true, force: true });
+        throw error;
+    }
+    const deletePartialOutput = () => {
+        try { fs.unlinkSync(options.outputVideoPath); } catch { /* Already absent. */ }
+    };
 
     const args = [
         '-b', // Headless background mode
         '--factory-startup', // Skip user addons/preferences for deterministic rendering
+        '--python-exit-code', '1', // Treat runner failures as failed renders.
         '-P', runnerScriptPath,
         '--',
         '--config', tempConfigFile
@@ -89,10 +110,29 @@ export async function executeBlenderRender(
         });
 
         let stderrBuffer = '';
+        let stopped = false;
+        let killTimer: ReturnType<typeof setTimeout> | undefined;
+        const stop = () => {
+            if (stopped) return;
+            stopped = true;
+            child.kill('SIGTERM');
+            killTimer = setTimeout(() => { if (child.exitCode === null) child.kill('SIGKILL'); }, 2000);
+        };
+        const deadline = setTimeout(stop, 2 * 60 * 60 * 1000);
+        signal?.addEventListener('abort', stop, { once: true });
+        if (signal?.aborted) stop();
+        const cleanup = () => {
+            clearTimeout(deadline);
+            clearTimeout(killTimer);
+            signal?.removeEventListener('abort', stop);
+            fs.rmSync(tempConfigDir, { recursive: true, force: true });
+        };
+        let stdoutRemainder = '';
 
         child.stdout?.on('data', (chunk: Buffer) => {
-            const text = chunk.toString();
-            const lines = text.split('\n');
+            stdoutRemainder += chunk.toString();
+            const lines = stdoutRemainder.split(/[\r\n]+/);
+            stdoutRemainder = lines.pop() || '';
             for (const line of lines) {
                 const prog = parseBlenderFrameProgress(line, totalFrames, startTimeMs);
                 if (prog && onProgress) {
@@ -111,11 +151,12 @@ export async function executeBlenderRender(
         });
 
         child.stderr?.on('data', (chunk: Buffer) => {
-            stderrBuffer += chunk.toString();
+            stderrBuffer = (stderrBuffer + chunk.toString()).slice(-16000);
         });
 
         child.on('error', (err) => {
-            try { fs.unlinkSync(tempConfigFile); } catch { /* ignore */ }
+            cleanup();
+            deletePartialOutput();
             if (onProgress) {
                 onProgress({
                     jobId,
@@ -132,10 +173,16 @@ export async function executeBlenderRender(
         });
 
         child.on('close', (code) => {
-            try { fs.unlinkSync(tempConfigFile); } catch { /* ignore */ }
+            cleanup();
             const elapsed = Math.round((Date.now() - startTimeMs) / 1000);
 
-            const fileExists = fs.existsSync(options.outputVideoPath);
+            if (stopped) {
+                deletePartialOutput();
+                resolve({ success: false, outputPath: options.outputVideoPath,
+                    error: signal?.aborted ? 'Render cancelled. No completed video was saved.' : 'Render exceeded the two-hour limit.' });
+                return;
+            }
+            const fileExists = fs.existsSync(options.outputVideoPath) && fs.statSync(options.outputVideoPath).size > 0;
             if (code === 0 && fileExists) {
                 if (onProgress) {
                     onProgress({
@@ -154,6 +201,7 @@ export async function executeBlenderRender(
                 const errMsg = fileExists
                     ? `Blender exited with code ${code}: ${stderrBuffer.slice(-500)}`
                     : `Blender render failed: output file not generated. ${stderrBuffer.slice(-500)}`;
+                deletePartialOutput();
                 if (onProgress) {
                     onProgress({
                         jobId,

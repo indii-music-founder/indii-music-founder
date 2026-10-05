@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Box,
     Sparkles,
@@ -6,13 +6,13 @@ import {
     AlertCircle,
     Play,
     Loader2,
-    Copy,
     Disc,
     Radio,
     Flame,
     Music,
     Layers
 } from 'lucide-react';
+import { ElectronPlatformAdapter } from '@/services/platform/PlatformBridgeService';
 import { blenderService, FALLBACK_TEMPLATES } from '@/services/blender/BlenderService';
 import type {
     BlenderStatus,
@@ -27,7 +27,8 @@ interface BlenderVideoPanelProps {
     artistName?: string;
     trackTitle?: string;
     bpm?: number;
-    onRenderComplete?: (outputPath: string) => void;
+    pendingSaveKey?: string;
+    onRenderComplete?: (outputPath: string) => Promise<string | void> | string | void;
 }
 
 const TEMPLATE_ICONS: Record<BlenderTemplateId, React.ReactNode> = {
@@ -44,8 +45,18 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
     artistName = 'Artist',
     trackTitle = 'Track',
     bpm = 120,
+    pendingSaveKey,
     onRenderComplete
 }) => {
+    const [audioPath, setAudioPath] = useState(currentAudioPath && !/^(https?:|gs:|blob:)/.test(currentAudioPath) ? currentAudioPath : '');
+    const [coverPath, setCoverPath] = useState(currentCoverArtPath && !/^(https?:|gs:|blob:)/.test(currentCoverArtPath) ? currentCoverArtPath : '');
+    const activeRequest = useRef<string | null>(null);
+    const currentSaveKey = useRef(pendingSaveKey);
+    currentSaveKey.current = pendingSaveKey;
+    const [progressMessage, setProgressMessage] = useState('');
+    const pendingSave = useRef<{ path: string; key?: string; save: () => Promise<string | void> } | null>(null);
+    const [hasPendingSave, setHasPendingSave] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [status, setStatus] = useState<BlenderStatus | null>(null);
     const [templates, setTemplates] = useState<BlenderTemplateInfo[]>(FALLBACK_TEMPLATES);
     const [selectedTemplate, setSelectedTemplate] = useState<BlenderTemplateId>('audio_reactive_tunnel');
@@ -53,9 +64,9 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
     const [durationSeconds, setDurationSeconds] = useState<number>(30);
     const [isRendering, setIsRendering] = useState(false);
     const [renderProgress, setRenderProgress] = useState<number>(0);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [renderResult, setRenderResult] = useState<string | null>(null);
     const [renderError, setRenderError] = useState<string | null>(null);
-    const [copiedInstallCmd, setCopiedInstallCmd] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -65,30 +76,106 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
         blenderService.listTemplates().then(t => {
             if (mounted && t.length > 0) setTemplates(t);
         });
-        return () => { mounted = false; };
+        const unsubscribe = window.electronAPI?.blender?.onProgress?.(progress => {
+            if (mounted && progress.requestId === activeRequest.current) {
+                setRenderProgress(Math.min(100, Math.max(0, progress.percentage)));
+                setProgressMessage(progress.message || 'Rendering…');
+            }
+        });
+        return () => {
+            mounted = false;
+            unsubscribe?.();
+            if (activeRequest.current) void window.electronAPI?.blender?.cancelRender?.(activeRequest.current);
+        };
     }, []);
 
-    const handleCopyInstallCmd = () => {
-        navigator.clipboard.writeText('brew install --cask blender');
-        setCopiedInstallCmd(true);
-        setTimeout(() => setCopiedInstallCmd(false), 2000);
+    useEffect(() => {
+        activeRequest.current = null;
+        setIsRendering(false);
+        setIsSaving(false);
+        setRenderProgress(0);
+        setRenderResult(null);
+        setPreviewUrl(null);
+        setRenderError(null);
+        pendingSave.current = null;
+        setHasPendingSave(false);
+        if (pendingSaveKey) {
+            try {
+                const output = localStorage.getItem(`indii.blender.pending:${pendingSaveKey}`);
+                if (output && /^[a-f0-9-]{36}\.mp4$/i.test(output.split(/[\\/]/).pop() || '') && onRenderComplete) {
+                    pendingSave.current = { path: output, key: pendingSaveKey,
+                        save: async () => onRenderComplete(output) };
+                    setHasPendingSave(true);
+                }
+            } catch (error) { setRenderError(error instanceof Error ? error.message : String(error)); }
+        }
+        return () => {
+            if (activeRequest.current) void window.electronAPI?.blender?.cancelRender?.(activeRequest.current);
+        };
+        // Capture the callback for this account/project; a rerender must not
+        // retarget a pending save to a newly selected account or project.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pendingSaveKey]);
+
+    const refreshStatus = async () => {
+        try { setStatus(await blenderService.getStatus()); }
+        catch (error) { setRenderError(error instanceof Error ? error.message : String(error)); }
+    };
+
+    const chooseInput = async (kind: 'audio' | 'image') => {
+        try {
+            const selected = await new ElectronPlatformAdapter().selectFile({
+                title: kind === 'audio' ? 'Choose music for this video' : 'Choose cover art',
+                filters: [{ name: kind === 'audio' ? 'Music' : 'Images', extensions: kind === 'audio'
+                    ? ['wav', 'mp3', 'flac', 'm4a', 'aiff', 'ogg'] : ['png', 'jpg', 'jpeg', 'webp'] }],
+            });
+            if (selected) { if (kind === 'audio') setAudioPath(selected); else setCoverPath(selected); }
+        } catch (error) { setRenderError(error instanceof Error ? error.message : String(error)); }
+    };
+
+    const saveCompletedVideo = async () => {
+        const pending = pendingSave.current;
+        if (!pending) return;
+        setIsSaving(true);
+        setRenderError(null);
+        setProgressMessage('Saving video to your project…');
+        try {
+            const savedUrl = await pending.save();
+            if (pending.key) {
+                try { localStorage.removeItem(`indii.blender.pending:${pending.key}`); }
+                catch { /* Cloud records are committed; retrying a leftover reminder is idempotent. */ }
+            }
+            if (currentSaveKey.current !== pending.key) return;
+            if (savedUrl) setPreviewUrl(savedUrl);
+            setRenderResult(pending.path);
+            pendingSave.current = null;
+            setHasPendingSave(false);
+        } catch (error) {
+            if (currentSaveKey.current === pending.key) setRenderError(error instanceof Error ? error.message : String(error));
+        } finally {
+            if (currentSaveKey.current === pending.key) setIsSaving(false);
+        }
     };
 
     const handleStartRender = async () => {
+        if (!audioPath || !status?.installed || !window.electronAPI?.blender || !onRenderComplete || !pendingSaveKey) {
+            setRenderError('Open a signed-in project in the desktop studio and choose a music file before rendering.');
+            return;
+        }
+        const originSaveKey = pendingSaveKey;
+        const requestId = crypto.randomUUID();
+        activeRequest.current = requestId;
         setIsRendering(true);
-        setRenderProgress(10);
+        setRenderProgress(0);
+        setProgressMessage('Starting Blender…');
         setRenderResult(null);
+        setPreviewUrl(null);
         setRenderError(null);
 
-        const fakeProgress = setInterval(() => {
-            setRenderProgress(prev => (prev < 90 ? prev + 15 : prev));
-        }, 1200);
-
         try {
-            const outPath = `/tmp/indii_${selectedTemplate}_${Date.now()}.mp4`;
             const res = await blenderService.renderMusicVideo({
-                audioFilePath: currentAudioPath || '/tmp/audio_placeholder.wav',
-                outputVideoPath: outPath,
+                audioFilePath: audioPath,
+                requestId,
                 templateId: selectedTemplate,
                 bpm,
                 durationSeconds,
@@ -96,24 +183,34 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
                 visualTokens: {
                     artistName,
                     trackTitle,
-                    coverArtPath: currentCoverArtPath
+                    coverArtPath: coverPath || undefined
                 }
             });
 
-            clearInterval(fakeProgress);
-            setRenderProgress(100);
 
             if (res.success) {
-                setRenderResult(res.outputPath);
-                onRenderComplete?.(res.outputPath);
+                if (!res.outputPath) throw new Error('Blender returned no completed video.');
+                const output = res.outputPath;
+                if (originSaveKey) {
+                    try { localStorage.setItem(`indii.blender.pending:${originSaveKey}`, output); }
+                    catch (error) { setRenderError(error instanceof Error ? error.message : String(error)); }
+                }
+                if (currentSaveKey.current !== originSaveKey) return;
+                pendingSave.current = { path: output, key: originSaveKey, save: async () => onRenderComplete(output) };
+                setHasPendingSave(true);
+                await saveCompletedVideo();
+                if (currentSaveKey.current === originSaveKey) setRenderProgress(100);
             } else {
-                setRenderError(res.error || 'Rendering encountered an error.');
+                if (currentSaveKey.current === originSaveKey) setRenderError(res.error || 'Rendering encountered an error.');
             }
         } catch (err) {
-            clearInterval(fakeProgress);
-            setRenderError(err instanceof Error ? err.message : String(err));
+            if (currentSaveKey.current === originSaveKey) setRenderError(err instanceof Error ? err.message : String(err));
         } finally {
-            setIsRendering(false);
+            if (activeRequest.current === requestId) {
+                activeRequest.current = null;
+                setIsSaving(false);
+                setIsRendering(false);
+            }
         }
     };
 
@@ -128,19 +225,17 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
                     <div>
                         <h3 className="text-lg font-semibold flex items-center gap-2">
                             Blender 3D Music Video Engine
-                            <span className="text-xs font-mono uppercase bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded">
-                                MCP Integration
-                            </span>
+
                         </h3>
                         <p className="text-sm text-neutral-400">
-                            Headless & interactive 3D visualizers, vinyl turntables, and reactive music videos.
+                            Make 3D visualizers and music videos driven by your track.
                         </p>
                     </div>
                 </div>
 
                 {/* Status Badge */}
                 <div>
-                    {status?.installed ? (
+                    {status?.installed && window.electronAPI?.blender ? (
                         <div className="flex items-center space-x-2 text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-full">
                             <CheckCircle2 className="w-4 h-4" />
                             <span>{status.version || 'Blender Ready'} ({status.gpuAcceleration} GPU)</span>
@@ -148,7 +243,7 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
                     ) : (
                         <div className="flex items-center space-x-2 text-xs bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-full">
                             <AlertCircle className="w-4 h-4" />
-                            <span>Blender Not Detected</span>
+                            <span>{!window.electronAPI?.blender ? 'Open desktop studio' : !status ? 'Checking Blender…' : 'Blender Not Detected'}</span>
                         </div>
                     )}
                 </div>
@@ -158,21 +253,28 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
             {status && !status.installed && (
                 <div className="bg-neutral-950 border border-amber-500/20 rounded-lg p-4 flex items-center justify-between text-sm">
                     <div className="space-y-1">
-                        <p className="text-neutral-200 font-medium">Install Blender to unlock 3D rendering</p>
+                        <p className="text-neutral-200 font-medium">{window.electronAPI?.blender ? 'Install Blender to unlock 3D rendering' : 'Render 3D videos in the desktop studio'}</p>
                         <p className="text-neutral-400 text-xs">
-                            Run Homebrew command on macOS or download from blender.org.
+                            {window.electronAPI?.blender ? 'Download Blender for your computer from blender.org.' : 'The web studio cannot inspect Blender installed on your computer.'}
                         </p>
                     </div>
-                    <button
-                        onClick={handleCopyInstallCmd}
-                        className="flex items-center space-x-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 px-3 py-1.5 rounded text-xs transition"
-                    >
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>{copiedInstallCmd ? 'Copied!' : 'brew install --cask blender'}</span>
-                    </button>
+                    {window.electronAPI?.blender ? <div className="flex gap-2">
+                        <a href="https://www.blender.org/download/" target="_blank" rel="noreferrer" className="px-3 py-2 bg-neutral-800 rounded">Get Blender</a>
+                        <button type="button" onClick={() => void refreshStatus()} className="px-3 py-2 bg-neutral-800 rounded">Check again</button>
+                    </div> : <a href="https://indii.music/" target="_blank" rel="noreferrer" className="px-3 py-2 bg-neutral-800 rounded">Get desktop studio</a>}
                 </div>
             )}
 
+            <div className="space-y-3 text-sm">
+                <button type="button" onClick={() => void chooseInput('audio')} disabled={isRendering || !window.electronAPI?.blender}
+                    className="px-4 py-2 rounded bg-neutral-800 disabled:opacity-50">Choose music file</button>
+                <p>{audioPath ? audioPath.split(/[\\/]/).pop() : 'Choose the track to animate.'}</p>
+                {templates.find(template => template.id === selectedTemplate)?.supportsCoverArt && <>
+                    <button type="button" onClick={() => void chooseInput('image')} disabled={isRendering || !window.electronAPI?.blender}
+                        className="px-4 py-2 rounded bg-neutral-800 disabled:opacity-50">Choose cover art (optional)</button>
+                    {coverPath && <p>{coverPath.split(/[\\/]/).pop()}</p>}
+                </>}
+            </div>
             {/* Template Selection Grid */}
             <div className="space-y-3">
                 <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
@@ -257,7 +359,7 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
                     <div className="flex justify-between text-xs text-neutral-400">
                         <span className="flex items-center gap-1.5 text-cyan-400">
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            Rendering 3D frames with Blender...
+                            {progressMessage}
                         </span>
                         <span className="font-mono">{renderProgress}%</span>
                     </div>
@@ -273,20 +375,31 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
             {/* Result / Error Notification */}
             {renderResult && (
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded text-emerald-400 text-xs flex items-center justify-between">
-                    <span>Render complete! Video saved to {renderResult}</span>
+                    <span>Video saved to your project.</span>
                 </div>
             )}
+            {previewUrl && <video controls src={previewUrl} preload="metadata"
+                className="w-full max-h-96 rounded-lg bg-black"
+                onError={() => setRenderError('The video is saved, but playback could not load. Open it from your project library to retry.')} />}
             {renderError && (
                 <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-xs">
                     <span>Error: {renderError}</span>
                 </div>
             )}
 
+            {hasPendingSave && !isRendering && <div className="space-y-2 text-sm">
+                <p>The video is rendered locally. Save it to your project before starting another render.</p>
+                <button type="button" disabled={isSaving} onClick={() => void saveCompletedVideo()}
+                    className="px-4 py-2 rounded bg-cyan-700 disabled:opacity-50">{isSaving ? 'Saving…' : 'Retry project save'}</button>
+            </div>}
+            {isRendering && !isSaving && <button type="button" onClick={() => {
+                if (activeRequest.current) void window.electronAPI?.blender?.cancelRender?.(activeRequest.current);
+            }} className="px-4 py-2 rounded bg-neutral-800">Cancel render</button>}
             {/* Action Buttons */}
             <div className="flex items-center justify-end space-x-3 pt-2">
                 <button
                     onClick={handleStartRender}
-                    disabled={isRendering}
+                    disabled={isRendering || isSaving || hasPendingSave || !pendingSaveKey || !audioPath || !status?.installed || !window.electronAPI?.blender}
                     className="flex items-center space-x-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-neutral-800 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition shadow-lg shadow-cyan-600/20"
                 >
                     {isRendering ? (

@@ -1,0 +1,36 @@
+{
+  "scope": "Source review; genuine signed-desktop customer rendering and project save remain unverified. Real isolated MCP startup cancellation observed actual Blender child exit and no partial output; no input media was supplied in that negative lifecycle probe. Review source defects, not whether notes sound complete.",
+  "sourceFiles": [
+    "packages/main/src/handlers/blender.ts",
+    "packages/main/src/services/blender/BlenderService.ts",
+    "packages/mcp-server-local/src/blender/executor.ts",
+    "packages/renderer/src/modules/creative/video/components/BlenderVideoPanel.tsx",
+    "packages/renderer/src/services/blender/BlenderRenderAssetService.ts"
+  ],
+  "rawResponse": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "cancel_leak": {
+        "type": "noul",
+        "noul": 0.35
+      },
+      "owner_retarget": {
+        "type": "noul",
+        "noul": 0.13
+      },
+      "save_retry_loss": {
+        "type": "noul",
+        "noul": 0.69
+      },
+      "progress_fabrication": {
+        "type": "noul",
+        "noul": 0.12
+      }
+    },
+    "usage": {
+      "input_tokens": 11235,
+      "output_tokens": 79
+    }
+  },
+  "dollarCostReturned": false
+}

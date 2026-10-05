@@ -5,8 +5,11 @@ import path from 'path';
 import log from 'electron-log';
 import { app } from 'electron';
 import { existsSync } from 'fs';
+import type { RequestOptions } from '@modelcontextprotocol/sdk/shared/protocol.js';
 
 export class MCPClientService {
+    private localConnection: Promise<boolean> | null = null;
+    private harnessConnection: Promise<boolean> | null = null;
     private localClient: Client | null = null;
     private localTransport: StdioClientTransport | null = null;
 
@@ -46,10 +49,19 @@ export class MCPClientService {
      * Initializes the connection to the local MCP server running over stdio
      */
     public async connectLocal(): Promise<boolean> {
-        if (this.localClient) {
-            return true;
-        }
+        if (this.localConnection) return this.localConnection;
+        if (this.localClient) return true;
+        this.localConnection = this.initializeLocal();
+        try { return await this.localConnection; }
+        catch (error) {
+            await this.localTransport?.close().catch(() => { /* Failed transport is already closed. */ });
+            this.localClient = null;
+            this.localTransport = null;
+            throw error;
+        } finally { this.localConnection = null; }
+    }
 
+    private async initializeLocal(): Promise<boolean> {
         const serverPath = this.resolveBundledServerPath('mcp-server-local');
         if (!serverPath) {
             log.warn('[MCP] Local MCP server is not built; skipping local MCP connection. Run `npm run build -w packages/mcp-server-local`.');
@@ -87,10 +99,19 @@ export class MCPClientService {
      * Initializes the connection to the harness MCP server running over stdio
      */
     public async connectHarness(): Promise<boolean> {
-        if (this.harnessClient) {
-            return true;
-        }
+        if (this.harnessConnection) return this.harnessConnection;
+        if (this.harnessClient) return true;
+        this.harnessConnection = this.initializeHarness();
+        try { return await this.harnessConnection; }
+        catch (error) {
+            await this.harnessTransport?.close().catch(() => { /* Failed transport is already closed. */ });
+            this.harnessClient = null;
+            this.harnessTransport = null;
+            throw error;
+        } finally { this.harnessConnection = null; }
+    }
 
+    private async initializeHarness(): Promise<boolean> {
         const serverPath = this.resolveBundledServerPath('mcp-server-harness');
         if (!serverPath) {
             log.warn('[MCP] Harness MCP server is not built; skipping harness MCP connection. Run `npm run build -w packages/mcp-server-harness`.');
@@ -190,7 +211,7 @@ export class MCPClientService {
      * Executes a tool provided by the MCP server
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public async executeTool(toolName: string, args: Record<string, unknown>): Promise<any> {
+    public async executeTool(toolName: string, args: Record<string, unknown>, options?: RequestOptions): Promise<any> {
         const remoteTools = ['format_dsp_metadata'];
         const harnessTools = [
             'list_harness_catalog',
@@ -214,6 +235,14 @@ export class MCPClientService {
             clientType = 'harness';
         }
 
+        if (clientType === 'local') {
+            if (this.localConnection) await this.localConnection;
+            targetClient = this.localClient;
+        } else if (clientType === 'harness') {
+            if (this.localConnection) await this.localConnection;
+            if (this.harnessConnection) await this.harnessConnection;
+            targetClient = this.harnessClient;
+        }
         if (!targetClient) {
             throw new Error(`MCP Client (${clientType}) is not connected for tool: ${toolName}`);
         }
@@ -222,7 +251,7 @@ export class MCPClientService {
             const response = await targetClient.callTool({
                 name: toolName,
                 arguments: args,
-            });
+            }, undefined, options);
             return response;
         } catch (error) {
             log.error(`[MCP] Tool Call Error (${toolName} via ${clientType}):`, error);

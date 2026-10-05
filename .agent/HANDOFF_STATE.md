@@ -1,3 +1,19 @@
+# Blender render workflow follow-up (2026-10-05 UTC)
+
+Packaging SHA a98b2653910b6244b0a29f96f5958560667612bd is fully green in CI
+37251716199 (26 jobs, production health passed). Current uncommitted workflow
+repair selects actual files, forwards engine progress/cancellation, preserves
+managed native outputs, and atomically saves project history/library records.
+A real MCP/OS startup-cancellation probe observed Blender PID 43326 exit with no
+partial output before the final required-input guard; this is not completed
+customer rendering. Full local CI passed (9,353 tests); the final frozen-tree
+gate follows the collection and late-context guards. Typecheck passed.
+Print-test commit ca34b120 was independently published; local main and origin
+agree. Preserve it as the base of this repair. Signed local app build waits on the user's Developer ID certificate;
+no substitute signing/authentication was used. Customer render/save/reload and
+playback, signed distribution and the eight Blender issue closures remain open.
+See .agent/observations/2026-10-05-blender-render-workflow-delivery.md.
+
 # Blender desktop resource follow-up (2026-10-04)
 
 The installed 1.80.1 native app lacks the 3D tab and both expected MCP resource

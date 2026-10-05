@@ -6,7 +6,8 @@ import { blenderService, BlenderRenderRequest } from '../services/blender/Blende
 
 const RenderRequestSchema = z.object({
     audioFilePath: z.string().min(1),
-    outputVideoPath: z.string().min(1),
+    outputVideoPath: z.string().min(1).optional(),
+    requestId: z.string().uuid().optional(),
     templateId: z.enum([
         'audio_reactive_tunnel',
         'vinyl_turntable',
@@ -29,6 +30,15 @@ const LiveCommandSchema = z.object({
 });
 
 export function registerBlenderHandlers(): void {
+    const activeRenders = new Map<string, { senderId: number; controller: AbortController }>();
+    ipcMain.handle('blender:cancel-render', (event: IpcMainInvokeEvent, requestId: unknown) => {
+        validateSender(event);
+        const id = z.string().uuid().parse(requestId);
+        const render = activeRenders.get(id);
+        if (!render || render.senderId !== event.sender.id) return false;
+        render.controller.abort();
+        return true;
+    });
     ipcMain.handle('blender:get-status', async (event: IpcMainInvokeEvent) => {
         validateSender(event);
         try {
@@ -53,7 +63,24 @@ export function registerBlenderHandlers(): void {
         validateSender(event);
         try {
             const validated = RenderRequestSchema.parse(request) as BlenderRenderRequest;
-            return await blenderService.renderMusicVideo(validated);
+            // Older desktop callers do not supply a progress/cancellation request ID.
+            if (!validated.requestId) return await blenderService.renderMusicVideo(validated);
+            const id = validated.requestId;
+            if (activeRenders.has(id)) throw new Error('This render request is already running.');
+            const controller = new AbortController();
+            activeRenders.set(id, { senderId: event.sender.id, controller });
+            const stop = () => controller.abort();
+            event.sender.once('destroyed', stop);
+            try {
+                return await blenderService.renderMusicVideo(validated, progress => {
+                    if (!event.sender.isDestroyed()) event.sender.send('blender:render-progress', {
+                        requestId: id, percentage: progress.progress, message: progress.message,
+                    });
+                }, controller.signal);
+            } finally {
+                activeRenders.delete(id);
+                event.sender.removeListener('destroyed', stop);
+            }
         } catch (error) {
             log.error('[IPC blender:render-music-video] Failed:', error);
             if (error instanceof z.ZodError) {

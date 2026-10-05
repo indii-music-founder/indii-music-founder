@@ -373,6 +373,7 @@ export interface ElectronAPI {
     };
     // Blender 3D Engine integration
     blender?: {
+        cancelRender: (requestId: string) => Promise<boolean>;
         getStatus: () => Promise<import('../services/blender/types').BlenderStatus>;
         listTemplates: () => Promise<import('../services/blender/types').BlenderTemplateInfo[]>;
         renderMusicVideo: (req: import('../services/blender/types').BlenderRenderRequest) => Promise<{ success: boolean; outputPath: string; error?: string }>;

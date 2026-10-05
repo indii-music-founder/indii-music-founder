@@ -34,7 +34,8 @@ vi.mock('@/services/blender/BlenderService', () => ({
     ]
 }));
 
-describe('BlenderVideoPanel Component', () => {
+// Legacy doubles remain structural-only; this suite is not render/customer acceptance.
+describe('BlenderVideoPanel structural guards', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(blenderService.getStatus).mockResolvedValue({
@@ -63,18 +64,19 @@ describe('BlenderVideoPanel Component', () => {
         });
     });
 
-    it('renders header and Blender Ready status badge', async () => {
+    it('renders the header and requires the desktop bridge even if legacy status says installed', async () => {
         await act(async () => {
             render(<BlenderVideoPanel />);
         });
         expect(screen.getByText(/Blender 3D Music Video Engine/i)).toBeInTheDocument();
 
         await waitFor(() => {
-            expect(screen.getByText(/Blender 4.3 \(Metal GPU\)/i)).toBeInTheDocument();
+            expect(screen.getByText(/Open desktop studio/i)).toBeInTheDocument();
+            expect(screen.queryByText(/Blender 4.3 \(Metal GPU\)/i)).not.toBeInTheDocument();
         });
     });
 
-    it('shows install prompt when Blender is not installed', async () => {
+    it('asks for desktop studio when the browser cannot inspect local Blender', async () => {
         vi.mocked(blenderService.getStatus).mockResolvedValueOnce({
             installed: false,
             executablePath: null,
@@ -88,8 +90,8 @@ describe('BlenderVideoPanel Component', () => {
             render(<BlenderVideoPanel />);
         });
         await waitFor(() => {
-            expect(screen.getByText(/Blender Not Detected/i)).toBeInTheDocument();
-            expect(screen.getByText(/Install Blender to unlock 3D rendering/i)).toBeInTheDocument();
+            expect(screen.getByText(/Open desktop studio/i)).toBeInTheDocument();
+            expect(screen.getByText(/Render 3D videos in the desktop studio/i)).toBeInTheDocument();
         });
     });
 
@@ -105,7 +107,7 @@ describe('BlenderVideoPanel Component', () => {
         expect(shortsButton.className).toContain('border-cyan-500');
     });
 
-    it('triggers renderMusicVideo and displays completion message', async () => {
+    it('blocks rendering and completion without the desktop bridge', async () => {
         const onCompleteMock = vi.fn();
         await act(async () => {
             render(
@@ -123,15 +125,9 @@ describe('BlenderVideoPanel Component', () => {
             fireEvent.click(renderButton);
         });
 
-        await waitFor(() => {
-            expect(blenderService.renderMusicVideo).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    audioFilePath: '/audio/song.wav',
-                    templateId: 'audio_reactive_tunnel'
-                })
-            );
-            expect(screen.getByText(/Render complete!/i)).toBeInTheDocument();
-            expect(onCompleteMock).toHaveBeenCalledWith('/renders/music_video.mp4');
-        });
+        expect(renderButton).toBeDisabled();
+        expect(blenderService.renderMusicVideo).not.toHaveBeenCalled();
+        expect(onCompleteMock).not.toHaveBeenCalled();
+        expect(screen.queryByText(/Video rendered and saved/i)).not.toBeInTheDocument();
     });
 });

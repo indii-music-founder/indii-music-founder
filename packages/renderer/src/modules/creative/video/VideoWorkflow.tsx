@@ -10,6 +10,7 @@ import { VideoGeneration } from "@/services/video/VideoGenerationService";
 import { WhiskService } from "@/services/WhiskService";
 import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '@/services/firebase';
+import { saveBlenderRender } from '@/services/blender/BlenderRenderAssetService';
 import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
 import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { Clapperboard, Scissors, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Send, Settings, Box } from 'lucide-react';
@@ -291,6 +292,7 @@ export default function VideoWorkflow() {
     })));
 
     const toast = useToast();
+    const blenderOwnerUid = useStore(state => state.user?.uid);
 
     // View State: 'director' (Generation) or 'editor' (Timeline)
     const [localPrompt, setLocalPrompt] = useState(creativePrompt ?? '');
@@ -1346,10 +1348,18 @@ export default function VideoWorkflow() {
                         <ErrorBoundary fallback={<div className="p-10 text-red-500">3D Blender Studio Error</div>}>
                             <BlenderVideoPanel
                                 currentAudioPath={useVideoEditorStore.getState().inputAudio || ''}
-                                currentCoverArtPath={activeVideo?.url || ''}
+                                currentCoverArtPath=""
                                 bpm={120}
-                                onRenderComplete={(outPath) => {
-                                    toast.success(`3D Render Complete: ${outPath}`);
+                                pendingSaveKey={blenderOwnerUid && currentProjectId ? JSON.stringify([blenderOwnerUid, currentProjectId, currentOrganizationId || 'org-default']) : undefined}
+                                onRenderComplete={async (outPath) => {
+                                    if (!blenderOwnerUid || !currentProjectId) throw new Error('Open a signed-in project before saving this video.');
+                                    const item = await saveBlenderRender(outPath, {
+                                        ownerUid: blenderOwnerUid, projectId: currentProjectId,
+                                        organizationId: currentOrganizationId || 'org-default',
+                                    });
+                                    setActiveVideo(item);
+                                    toast.success('3D video saved to your project.');
+                                    return item.url;
                                 }}
                             />
                         </ErrorBoundary>

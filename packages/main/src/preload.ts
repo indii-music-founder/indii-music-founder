@@ -372,5 +372,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
         renderMusicVideo: (options: unknown) => ipcRenderer.invoke('blender:render-music-video', options),
         sendLiveCommand: (action: string, params?: Record<string, unknown>) =>
             ipcRenderer.invoke('blender:live-command', { action, params }),
+        cancelRender: (requestId: string) => ipcRenderer.invoke('blender:cancel-render', requestId),
+        onProgress: (callback: (progress: { requestId: string; percentage: number; message?: string }) => void) => {
+            const handler = (_event: unknown, progress: { requestId: string; percentage: number; message?: string }) => callback(progress);
+            ipcRenderer.on('blender:render-progress', handler);
+            return () => ipcRenderer.removeListener('blender:render-progress', handler);
+        },
     }
 });

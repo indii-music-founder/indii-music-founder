@@ -146,10 +146,10 @@ class FrontendBlenderService {
             if (text) {
                 return JSON.parse(text);
             }
-            return { success: !result?.isError, outputPath: request.outputVideoPath };
+            return { success: false, outputPath: request.outputVideoPath || '', error: 'Blender did not return a verified render result.' };
         } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
-            return { success: false, outputPath: request.outputVideoPath, error: msg };
+            return { success: false, outputPath: request.outputVideoPath || '', error: msg };
         }
     }
 

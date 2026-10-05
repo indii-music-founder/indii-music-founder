@@ -78,15 +78,18 @@ def setup_resolution_and_framerate(aspect_ratio="16:9", resolution="1080p", fps=
 def setup_audio_in_vse(audio_filepath):
     """Loads the audio file into the VSE so the output video has audio included."""
     if not audio_filepath or not os.path.exists(audio_filepath):
-        print(f"[BlenderRunner] Notice: No audio file found at {audio_filepath}")
-        return
+        raise RuntimeError("The selected music file is no longer available.")
 
     scene = bpy.context.scene
     if not scene.sequence_editor:
         scene.sequence_editor_create()
 
     # Support Blender 5.x ('strips') and Blender 4.x ('sequences')
-    strips_coll = getattr(scene.sequence_editor, 'strips', None) or getattr(scene.sequence_editor, 'sequences', None)
+    strips_coll = getattr(scene.sequence_editor, 'strips', None)
+    if strips_coll is None:
+        strips_coll = getattr(scene.sequence_editor, 'sequences', None)
+    if strips_coll is None or not hasattr(strips_coll, 'new_sound'):
+        raise RuntimeError("This Blender version cannot add the music track.")
     if strips_coll is not None and hasattr(strips_coll, 'new_sound'):
         sound_strip = strips_coll.new_sound(
             name="Master_Audio_Track",
@@ -160,8 +163,7 @@ def main():
 
     # 4. Audio loading
     audio_path = config.get("audioFilePath", "")
-    if audio_path:
-        setup_audio_in_vse(audio_path)
+    setup_audio_in_vse(audio_path)
 
     # 5. Output file setup
     output_path = config.get("outputVideoPath", "/tmp/blender_render.mp4")

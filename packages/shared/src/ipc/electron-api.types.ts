@@ -380,6 +380,7 @@ export interface ElectronAPI {
 
     // Blender 3D Engine integration
     blender?: {
+        cancelRender: (requestId: string) => Promise<boolean>;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         getStatus: () => Promise<any>;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

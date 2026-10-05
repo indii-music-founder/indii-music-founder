@@ -557,7 +557,7 @@ if (!gotTheLock) {
             'web3:pinata-upload',
             'raw:inspect', 'raw:convert', 'raw:batch-convert', 'raw:cancel', 'raw:verify',
             'foundry:read-file', 'foundry:get-metadata',
-            'blender:get-status', 'blender:list-templates', 'blender:render-music-video', 'blender:live-command',
+            'blender:cancel-render', 'blender:get-status', 'blender:list-templates', 'blender:render-music-video', 'blender:live-command',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
 

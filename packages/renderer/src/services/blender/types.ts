@@ -32,7 +32,8 @@ export interface BlenderVisualTokens {
 
 export interface BlenderRenderRequest {
     audioFilePath: string;
-    outputVideoPath: string;
+    outputVideoPath?: string;
+    requestId?: string;
     templateId: BlenderTemplateId;
     bpm?: number;
     durationSeconds?: number;
@@ -52,4 +53,10 @@ export interface BlenderTemplateInfo {
     supportsCoverArt: boolean;
     supportsCustomText: boolean;
     tags: string[];
+}
+
+export interface BlenderRenderProgress {
+    requestId: string;
+    percentage: number;
+    message?: string;
 }
