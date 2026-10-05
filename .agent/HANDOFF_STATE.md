@@ -1,3 +1,16 @@
+# Smart Next Action Banner Real-Data & TypeSafe AI Closeout (2026-10-05 UTC)
+
+Delivered commit `da7466b895efd60ab63fb8789532df4dc6818eff` directly to `main`.
+Full GitHub Actions CI run 37337678925 passed 100% green (rules tests, 20 unit-test shards, studio & landing builds, staging preview, e2e smoke tests, and production deploy).
+
+- **Objective:** Eliminate hardcoded, fabricated metrics and songs (`14200` streams, `Detroit Rain (Mastered)`, ungrounded priority) from the global top-bar `SmartNextActionBanner` and align Judgment 68 (`judgeNextBestModule`) strictly with genuine artist state.
+- **TypeSafe Closeout Details:**
+  - **Judged:** Next Best Action Candidate selection (`judgeNextBestModule`, Judgment 68) when multiple genuine candidates exist.
+  - **Mode:** Hybrid / Progressive. If 0 candidates -> banner null. If 1 candidate or offline -> deterministic baseline. If 2+ candidates and TypeSafe available -> live `typesafeJudge` callable arbitration using strict `choice` criteria over candidate IDs and `score` for urgency (1-5).
+  - **Security:** Zero client-side API keys; all calls route through authenticated Firebase Cloud Function `typesafeJudge`. Zero raw LLM hallucinations; options strictly bounded by real facts.
+  - **Unit Proof:** 5/5 tests passing in `nextActionFacts.test.ts`, 5/5 tests passing in `SmartNextActionBanner.test.tsx`, 194/194 tests passing in `typesafeJudgments.test.ts`.
+- **Status:** ISSUE-1442 marked ✅ FIXED in `.agent/test_ledger/OPEN_ISSUES_V3.md`.
+
 # Blender render workflow follow-up (2026-10-05 UTC)
 
 Packaging SHA a98b2653910b6244b0a29f96f5958560667612bd is fully green in CI
