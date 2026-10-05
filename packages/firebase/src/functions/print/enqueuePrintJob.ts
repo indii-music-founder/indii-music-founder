@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { CloudTasksClient } from '@google-cloud/tasks';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import {
@@ -11,6 +12,68 @@ import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { requireVerifiedCreativeUser } from '../billing/enforceOperationCost';
 import { assertUserOwnsStoragePath, parseStorageUri } from '../../lib/storageUri';
 import { enforceRateLimit } from '../../lib/rateLimit';
+
+const SERVICE_ACCOUNT_PATTERN = /^[^\s@]+@[^\s@]+\.iam\.gserviceaccount\.com$/;
+
+interface PrintTasksClient {
+    queuePath(project: string, location: string, queue: string): string;
+    createTask(request: {
+        parent: string;
+        task: {
+            name: string;
+            dispatchDeadline: { seconds: number };
+            httpRequest: {
+                httpMethod: 'POST';
+                url: string;
+                body: string;
+                headers: Record<string, string>;
+                oidcToken: { serviceAccountEmail: string; audience: string };
+            };
+        };
+    }): Promise<unknown>;
+}
+
+let tasksClientFactory: () => PrintTasksClient = () => new CloudTasksClient() as unknown as PrintTasksClient;
+
+export function setPrintTasksClientFactoryForTests(factory: () => PrintTasksClient): void {
+    tasksClientFactory = factory;
+}
+
+function printWorkerConfig(env: NodeJS.ProcessEnv = process.env) {
+    const project = env.GCLOUD_PROJECT || env.GOOGLE_CLOUD_PROJECT;
+    const workerUrl = env.PRINT_WORKER_URL?.trim();
+    const serviceAccount = env.PRINT_WORKER_SERVICE_ACCOUNT?.trim();
+    const location = env.PRINT_TASKS_LOCATION?.trim() || 'us-central1';
+    const queue = env.PRINT_TASKS_QUEUE?.trim() || 'print-prep-queue';
+    if (!project || !workerUrl || !serviceAccount) {
+        throw new HttpsError('unavailable', 'Print preparation is temporarily unavailable.');
+    }
+
+    let parsedUrl: URL;
+    try {
+        parsedUrl = new URL(workerUrl);
+    } catch {
+        throw new HttpsError('failed-precondition', 'Print worker URL configuration is invalid.');
+    }
+    if (parsedUrl.protocol !== 'https:' || !SERVICE_ACCOUNT_PATTERN.test(serviceAccount)) {
+        throw new HttpsError('failed-precondition', 'Print worker authentication configuration is invalid.');
+    }
+
+    return {
+        project,
+        location,
+        queue,
+        workerUrl: parsedUrl.toString(),
+        audience: env.PRINT_WORKER_AUDIENCE?.trim() || parsedUrl.origin,
+        serviceAccount,
+    };
+}
+
+function isAlreadyExists(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const code = (error as { code?: unknown }).code;
+    return code === 6 || code === 'ALREADY_EXISTS';
+}
 
 export const enqueuePrintJob = onCall(
     { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false },
@@ -35,6 +98,10 @@ export const enqueuePrintJob = onCall(
         // Validate storage URI ownership
         const storageRef = parseStorageUri(imageUri);
         assertUserOwnsStoragePath(storageRef.path, userId);
+
+        // Fail before writing a queued document if the authenticated worker path
+        // is not provisioned. A queued job must always have a durable dispatcher.
+        const worker = printWorkerConfig();
 
         // Assume standard base dimension (1024x1024 or higher) for initial plan
         // The worker will calculate exact pixel plan upon reading the source image
@@ -62,6 +129,10 @@ export const enqueuePrintJob = onCall(
 
         const now = new Date().toISOString();
 
+        const taskId = jobId.replace(/[^A-Za-z0-9_-]/g, '_');
+        const tasksClient = tasksClientFactory();
+        const parent = tasksClient.queuePath(worker.project, worker.location, worker.queue);
+
         await jobRef.set({
             jobId,
             userId,
@@ -71,7 +142,7 @@ export const enqueuePrintJob = onCall(
             focusX,
             focusY,
             generateGuide,
-            status: 'queued',
+            status: 'dispatching',
             progress: 0,
             plan: planSummary,
             estimatedDurationSec: 25,
@@ -80,30 +151,36 @@ export const enqueuePrintJob = onCall(
             serverTimestamp: admin.firestore.FieldValue.serverTimestamp(),
         });
 
-        // Optionally dispatch to Cloud Run worker if configured in environment
-        const workerUrl = process.env.PRINT_WORKER_URL;
-        if (workerUrl) {
-            try {
-                fetch(`${workerUrl}/process`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        jobId,
-                        userId,
-                        sourceUri: imageUri,
-                        presetId,
-                        bleedMode,
-                        focusX,
-                        focusY,
-                        generateGuide,
-                    }),
-                }).catch(() => {
-                    // Async worker execution fires in background
+        try {
+            await tasksClient.createTask({
+                parent,
+                task: {
+                    name: `${parent}/tasks/${taskId}`,
+                    dispatchDeadline: { seconds: 1_800 },
+                    httpRequest: {
+                        httpMethod: 'POST',
+                        url: new URL('/process', worker.workerUrl).toString(),
+                        body: Buffer.from(JSON.stringify({ jobId })).toString('base64'),
+                        headers: { 'Content-Type': 'application/json' },
+                        oidcToken: {
+                            serviceAccountEmail: worker.serviceAccount,
+                            audience: worker.audience,
+                        },
+                    },
+                },
+            });
+        } catch (error: unknown) {
+            if (!isAlreadyExists(error)) {
+                await jobRef.update({
+                    status: 'failed',
+                    error: 'Print job dispatch failed. Please retry.',
+                    updatedAt: new Date().toISOString(),
                 });
-            } catch {
-                // Ignore worker dispatch failure in offline/testing environments
+                throw new HttpsError('unavailable', 'Unable to dispatch print preparation. Please retry.');
             }
         }
+
+        await jobRef.update({ status: 'queued', updatedAt: new Date().toISOString() });
 
         return {
             jobId,

@@ -43,13 +43,6 @@ except ImportError:
 
 class ProcessJobRequest(BaseModel):
     jobId: str
-    userId: str
-    sourceUri: str
-    presetId: str
-    bleedMode: str = Field(default="extend")
-    focusX: float = Field(default=0.5)
-    focusY: float = Field(default=0.5)
-    generateGuide: bool = Field(default=False)
 
 
 def parse_gcs_uri(uri: str):
@@ -80,24 +73,56 @@ async def process_job(payload: ProcessJobRequest):
     storage_client = storage.Client()
     db = firestore.Client()
     job_ref = db.collection("print_jobs").document(payload.jobId)
+    job_snapshot = job_ref.get()
+    if not job_snapshot.exists:
+        raise HTTPException(status_code=404, detail="Print job not found.")
+    job = job_snapshot.to_dict() or {}
+    required = ("userId", "sourceUri", "presetId")
+    if any(not isinstance(job.get(key), str) or not job[key].strip() for key in required):
+        raise HTTPException(status_code=409, detail="Stored print job is invalid.")
+    if job.get("status") not in ("dispatching", "queued"):
+        # Cloud Tasks is at-least-once: acknowledge duplicate deliveries after
+        # processing has started or completed, without re-running paid GPU work.
+        if job.get("status") in ("processing", "done", "failed"):
+            return {"success": True, "jobId": payload.jobId, "duplicate": True}
+        raise HTTPException(status_code=409, detail="Print job is not dispatchable.")
+
+    user_id = job["userId"]
+    source_uri = job["sourceUri"]
+    preset_id = job["presetId"]
+    bleed_mode = job.get("bleedMode", "extend")
+    focus_x = job.get("focusX", 0.5)
+    focus_y = job.get("focusY", 0.5)
+    generate_guide = bool(job.get("generateGuide", False))
+    bucket_name, source_path = parse_gcs_uri(source_uri)
+    if not source_path.startswith((f"users/{user_id}/", f"creative/{user_id}/")):
+        raise HTTPException(status_code=403, detail="Print source is not owned by the job user.")
 
     # Mark job as processing
-    job_ref.update({
-        "status": "processing",
-        "progress": 20,
-    })
+    transaction = db.transaction()
+    @firestore.transactional
+    def claim_job(tx):
+        current_snapshot = job_ref.get(transaction=tx)
+        current = current_snapshot.to_dict() or {}
+        if current.get("status") not in ("dispatching", "queued"):
+            return False
+        tx.update(job_ref, {"status": "processing", "progress": 20})
+        return True
+
+    if not claim_job(transaction):
+        return {"success": True, "jobId": payload.jobId, "duplicate": True}
 
     with tempfile.TemporaryDirectory() as tmpdir:
         try:
             # 1. Download source image from GCS
-            src_bucket_name, src_blob_name = parse_gcs_uri(payload.sourceUri)
+            src_bucket_name, src_blob_name = bucket_name, source_path
             src_blob = storage_client.bucket(src_bucket_name).blob(src_blob_name)
             local_input = os.path.join(tmpdir, "source_input.png")
             src_blob.download_to_filename(local_input)
 
             # 2. Prepare paths
             local_output = os.path.join(tmpdir, "print_output.png")
-            local_guide = os.path.join(tmpdir, "print_guide.png") if payload.generateGuide else None
+            local_guide = os.path.join(tmpdir, "print_guide.png") if generate_guide else None
             model_path = DEFAULT_MODEL_PATH if os.path.exists(DEFAULT_MODEL_PATH) else None
 
             # 3. Execute print prep
@@ -105,10 +130,10 @@ async def process_job(payload: ProcessJobRequest):
             prep_result = prepare_artwork(
                 input_path=local_input,
                 output_path=local_output,
-                preset_id=payload.presetId,
-                bleed_mode=payload.bleedMode,
-                fx=payload.focusX,
-                fy=payload.focusY,
+                preset_id=preset_id,
+                bleed_mode=bleed_mode,
+                fx=focus_x,
+                fy=focus_y,
                 guide_path=local_guide,
                 model_path=model_path,
             )
@@ -116,14 +141,14 @@ async def process_job(payload: ProcessJobRequest):
             job_ref.update({"progress": 80})
 
             # 4. Upload output to GCS
-            output_blob_name = f"users/{payload.userId}/assets/print_ready_{payload.jobId}.png"
+            output_blob_name = f"users/{user_id}/assets/print_ready_{payload.jobId}.png"
             output_blob = storage_client.bucket(src_bucket_name).blob(output_blob_name)
             output_blob.upload_from_filename(local_output, content_type="image/png")
             output_uri = f"gs://{src_bucket_name}/{output_blob_name}"
 
             guide_uri = None
             if local_guide and os.path.exists(local_guide):
-                guide_blob_name = f"users/{payload.userId}/assets/print_guide_{payload.jobId}.png"
+                guide_blob_name = f"users/{user_id}/assets/print_guide_{payload.jobId}.png"
                 guide_blob = storage_client.bucket(src_bucket_name).blob(guide_blob_name)
                 guide_blob.upload_from_filename(local_guide, content_type="image/png")
                 guide_uri = f"gs://{src_bucket_name}/{guide_blob_name}"

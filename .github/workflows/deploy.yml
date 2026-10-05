@@ -747,6 +747,11 @@ jobs:
           ENGINE_DSP_AUDIENCE: https://engine-dsp-148015878263.us-central1.run.app
           DSP_TASKS_QUEUE: dsp-processing-queue
           DSP_TASKS_LOCATION: us-central1
+          PRINT_WORKER_URL: https://print-prep-148015878263.us-central1.run.app
+          PRINT_WORKER_SERVICE_ACCOUNT: print-prep-invoker@indii-music-founder.iam.gserviceaccount.com
+          PRINT_WORKER_AUDIENCE: https://print-prep-148015878263.us-central1.run.app
+          PRINT_TASKS_QUEUE: print-prep-queue
+          PRINT_TASKS_LOCATION: us-central1
         run: |
           # Firebase Tools copies stale CPU metadata from existing gen1 endpoints
           # during deploy validation. These two functions were created with bad
@@ -899,6 +904,11 @@ jobs:
             "ENGINE_DSP_AUDIENCE=$ENGINE_DSP_AUDIENCE" \
             "DSP_TASKS_QUEUE=$DSP_TASKS_QUEUE" \
             "DSP_TASKS_LOCATION=$DSP_TASKS_LOCATION" \
+            "PRINT_WORKER_URL=$PRINT_WORKER_URL" \
+            "PRINT_WORKER_SERVICE_ACCOUNT=$PRINT_WORKER_SERVICE_ACCOUNT" \
+            "PRINT_WORKER_AUDIENCE=$PRINT_WORKER_AUDIENCE" \
+            "PRINT_TASKS_QUEUE=$PRINT_TASKS_QUEUE" \
+            "PRINT_TASKS_LOCATION=$PRINT_TASKS_LOCATION" \
             > packages/firebase/.env.indii-music-founder
           rm -rf packages/firebase/lib packages/firebase/shared-pkg packages/firebase/indii-shared-*.tgz packages/firebase/package-lock.json
           npx tsc -b packages/shared
@@ -1031,6 +1041,41 @@ jobs:
             --project indii-music-founder \
             --cors-file=cors.json \
             --quiet
+
+      - name: Provision print preparation task identities and queue
+        run: |
+          set -euo pipefail
+          PROJECT=indii-music-founder
+          REGION=us-central1
+          for account in print-prep-runtime print-prep-invoker; do
+            gcloud iam service-accounts describe "$account@$PROJECT.iam.gserviceaccount.com" \
+              --project "$PROJECT" --quiet >/dev/null 2>&1 || \
+            gcloud iam service-accounts create "$account" \
+              --project "$PROJECT" --display-name="indii print prep $account" --quiet
+          done
+          gcloud projects add-iam-policy-binding "$PROJECT" \
+            --member="serviceAccount:print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
+            --role=roles/datastore.user --quiet
+          gcloud projects add-iam-policy-binding "$PROJECT" \
+            --member="serviceAccount:print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
+            --role=roles/storage.objectUser --quiet
+          gcloud projects add-iam-policy-binding "$PROJECT" \
+            --member="serviceAccount:print-prep-invoker@$PROJECT.iam.gserviceaccount.com" \
+            --role=roles/cloudtasks.enqueuer --quiet
+          gcloud iam service-accounts add-iam-policy-binding \
+            "print-prep-invoker@$PROJECT.iam.gserviceaccount.com" \
+            --project "$PROJECT" \
+            --member="serviceAccount:$PROJECT@appspot.gserviceaccount.com" \
+            --role=roles/iam.serviceAccountUser --quiet
+          gcloud iam service-accounts add-iam-policy-binding \
+            "print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
+            --project "$PROJECT" \
+            --member="serviceAccount:github-actions@$PROJECT.iam.gserviceaccount.com" \
+            --role=roles/iam.serviceAccountUser --quiet
+          gcloud tasks queues describe print-prep-queue \
+            --project "$PROJECT" --location "$REGION" --quiet >/dev/null 2>&1 || \
+          gcloud tasks queues create print-prep-queue \
+            --project "$PROJECT" --location "$REGION" --quiet
           gcloud storage buckets add-iam-policy-binding \
             gs://indii-music-founder.firebasestorage.app \
             --project indii-music-founder \
@@ -1044,6 +1089,32 @@ jobs:
           gcloud tasks queues describe session-proxy-queue \
             --project indii-music-founder \
             --location us-central1 \
+            --quiet
+
+      - name: Deploy authenticated print preparation worker
+        run: |
+          set -euo pipefail
+          gcloud tasks queues describe print-prep-queue \
+            --project indii-music-founder \
+            --location us-central1 \
+            --quiet
+          gcloud run deploy print-prep \
+            --project indii-music-founder \
+            --region us-central1 \
+            --source . \
+            --service-account print-prep-runtime@indii-music-founder.iam.gserviceaccount.com \
+            --cpu 4 \
+            --memory 8Gi \
+            --concurrency 1 \
+            --timeout 30m \
+            --no-allow-unauthenticated \
+            --update-env-vars GOOGLE_CLOUD_PROJECT=indii-music-founder \
+            --quiet
+          gcloud run services add-iam-policy-binding print-prep \
+            --project indii-music-founder \
+            --region us-central1 \
+            --member=serviceAccount:print-prep-invoker@indii-music-founder.iam.gserviceaccount.com \
+            --role=roles/run.invoker \
             --quiet
           gcloud run deploy engine-dsp \
             --project indii-music-founder \

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import * as admin from 'firebase-admin';
 
 // Mock storageUri functions
@@ -33,11 +33,24 @@ vi.mock('../../middleware/appCheck', () => ({
     validateAppCheckV2: vi.fn(),
 }));
 
-import { enqueuePrintJob } from './enqueuePrintJob';
+import { enqueuePrintJob, setPrintTasksClientFactoryForTests } from './enqueuePrintJob';
 
 describe('enqueuePrintJob Callable Function', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        process.env.GCLOUD_PROJECT = 'structural-test-project';
+        process.env.PRINT_WORKER_URL = 'https://print-worker.invalid';
+        process.env.PRINT_WORKER_SERVICE_ACCOUNT = 'print-worker@structural-test-project.iam.gserviceaccount.com';
+        setPrintTasksClientFactoryForTests(() => ({
+            queuePath: (project, location, queue) => `projects/${project}/locations/${location}/queues/${queue}`,
+            createTask: async () => ({}),
+        }));
+    });
+
+    afterAll(() => {
+        delete process.env.GCLOUD_PROJECT;
+        delete process.env.PRINT_WORKER_URL;
+        delete process.env.PRINT_WORKER_SERVICE_ACCOUNT;
     });
 
     it('successfully validates request and enqueues print job to Firestore', async () => {
