@@ -7678,55 +7678,41 @@ export async function judgeTopImageVariationCandidate(
 // Consumer: SmartNextActionBanner / Global App Shell Navigation
 // ---------------------------------------------------------------------------
 
-export interface ArtistContextState {
-    currentModule: string;
-    hasUnreleasedMaster: boolean;
-    recentMasterTitle?: string;
-    hasPendingDistribution: boolean;
-    hasUnallocatedSplits: boolean;
-    totalMonthlyStreams?: number;
-    hasActiveTourCampaign: boolean;
+export interface NextActionCandidate {
+    id: string;
+    targetModule: 'distribution' | 'finance';
+    title: string;
+    description: string;
+    evidence: string;
 }
 
 export interface NextBestModuleVerdict {
-    targetModule: 'creative' | 'distribution' | 'finance' | 'social' | 'rights' | 'road' | 'analytics';
-    relevanceScore: number; // 1 to 5
+    targetModule: 'distribution' | 'finance';
+    relevanceScore?: number; // 1 to 5
     actionTitle: string;
     actionDescription: string;
+    source: 'rules' | 'jev';
 }
 
 export async function judgeNextBestModule(
-    context: ArtistContextState
-): Promise<NextBestModuleVerdict> {
-    let targetModule: NextBestModuleVerdict['targetModule'] = 'social';
-    let relevanceScore = 4;
-    let actionTitle = 'Engage Fanbase';
-    let actionDescription = 'Share behind-the-scenes clips and teaser audio to drive algorithm momentum.';
-
-    if (context.hasUnreleasedMaster) {
-        targetModule = 'distribution';
-        relevanceScore = 5;
-        actionTitle = `Distribute '${context.recentMasterTitle || 'New Track'}'`;
-        actionDescription = 'Master track acoustic QC complete. Upload metadata to deliver to 150+ DSPs.';
-    } else if (context.hasUnallocatedSplits) {
-        targetModule = 'rights';
-        relevanceScore = 5;
-        actionTitle = 'Finalize Split Sheet';
-        actionDescription = 'Unclaimed publishing or master points detected. Lock splits to protect royalties.';
-    } else if (context.hasPendingDistribution) {
-        targetModule = 'creative';
-        relevanceScore = 4;
-        actionTitle = 'Generate Video Assets';
-        actionDescription = 'Release queued for DSPs. Create matching Spotify Canvas and vertical Reels promos.';
-    } else if ((context.totalMonthlyStreams || 0) > 10000) {
-        targetModule = 'finance';
-        relevanceScore = 4;
-        actionTitle = 'Review DSP Settlements';
-        actionDescription = 'Surging listener volume detected. Audit mechanical and master payouts.';
+    candidates: NextActionCandidate[]
+): Promise<NextBestModuleVerdict | null> {
+    if (!candidates || candidates.length === 0) {
+        return null;
     }
 
-    if (!judgmentsAvailable()) {
-        return { targetModule, relevanceScore, actionTitle, actionDescription };
+    // Deterministic baseline selection (first candidate is prioritized by default order)
+    const defaultCandidate = candidates[0];
+    const defaultVerdict: NextBestModuleVerdict = {
+        targetModule: defaultCandidate.targetModule,
+        actionTitle: defaultCandidate.title,
+        actionDescription: defaultCandidate.description,
+        source: 'rules',
+    };
+
+    // If there is only 1 candidate, or Jev is offline/unavailable, return deterministic default immediately
+    if (candidates.length === 1 || !judgmentsAvailable()) {
+        return defaultVerdict;
     }
 
     try {
@@ -7736,53 +7722,58 @@ export async function judgeNextBestModule(
             { answers: Record<string, unknown> }
         >(functions, 'typesafeJudge');
 
+        // Formulate choice criteria strictly from real candidate descriptions
+        const criteria: Record<string, string> = {};
+        for (const c of candidates) {
+            criteria[c.id] = `${c.title}: ${c.description}`;
+        }
+
         const result = await judgeFn({
             state: {
-                current: context.currentModule,
-                unreleased: context.hasUnreleasedMaster,
-                pendingDistro: context.hasPendingDistribution,
-                unallocatedSplits: context.hasUnallocatedSplits,
-                streams: context.totalMonthlyStreams || 0,
-                tourActive: context.hasActiveTourCampaign,
+                candidateCount: candidates.length,
+                candidates: candidates.map(c => ({
+                    id: c.id,
+                    targetModule: c.targetModule,
+                    title: c.title,
+                    description: c.description,
+                    evidence: c.evidence,
+                })),
             },
             questions: {
-                next_module: {
+                best_action: {
                     type: 'choice' as const,
-                    instructions: 'Anticipate the single best next module for the artist to eliminate blank-slate hesitation.',
-                    criteria: {
-                        distribution: 'Submit finalized music to streaming services and stores.',
-                        creative: 'Produce artwork, video visualizers, or marketing collateral.',
-                        rights: 'Protect co-writing splits, register works, and avoid royalty disputes.',
-                        finance: 'Inspect streaming revenue, recoupment pace, or expense deductions.',
-                        social: 'Engage audience, run direct-to-fan campaigns, or post teasers.',
-                        road: 'Plan tour dates, coordinate venue routing, or budget travel.',
-                        analytics: 'Review audience demographics, playlist adds, and streaming retention.',
-                    },
+                    instructions: 'Select the single most urgent next action candidate for the artist based strictly on the provided real evidence.',
+                    criteria,
                 },
-                priority: {
+                urgency: {
                     type: 'score' as const,
-                    instructions: 'Rate the urgency of this next step from 1 (optional background task) to 5 (critical blocker).',
+                    instructions: 'Rate the urgency of this step from 1 (background hygiene) to 5 (critical blocker or actionable revenue).',
                     range: [1, 5] as [number, number],
                 },
             },
         });
 
         const ans = result.data.answers;
-        const modAns = ans?.next_module as { choice?: unknown } | undefined;
-        const prioAns = ans?.priority as { score?: unknown } | undefined;
+        const actionAns = ans?.best_action as { choice?: unknown } | undefined;
+        const urgencyAns = ans?.urgency as { score?: unknown } | undefined;
 
-        const resolvedMod = (typeof modAns?.choice === 'string' ? modAns.choice : targetModule) as NextBestModuleVerdict['targetModule'];
-        const resolvedPrio = typeof prioAns?.score === 'number' ? Math.round(prioAns.score) : relevanceScore;
+        const chosenId = typeof actionAns?.choice === 'string' ? actionAns.choice : defaultCandidate.id;
+        const chosenCandidate = candidates.find(c => c.id === chosenId) || defaultCandidate;
+
+        const resolvedPrio = typeof urgencyAns?.score === 'number'
+            ? Math.max(1, Math.min(5, Math.round(urgencyAns.score)))
+            : undefined;
 
         return {
-            targetModule: resolvedMod,
+            targetModule: chosenCandidate.targetModule,
             relevanceScore: resolvedPrio,
-            actionTitle,
-            actionDescription,
+            actionTitle: chosenCandidate.title,
+            actionDescription: chosenCandidate.description,
+            source: 'jev',
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'next best module judgment');
-        return { targetModule, relevanceScore, actionTitle, actionDescription };
+        return defaultVerdict;
     }
 }
 

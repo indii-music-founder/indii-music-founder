@@ -3444,3 +3444,19 @@ Full `/issue-sweep` executed across Sentry, GitHub Pull Requests, GitHub Issues,
 - Local CI test suite (`bash scripts/ci.sh`): PASS (339 test files passed, 2,464 tests passed, 2 skipped).
 5. **New Regression Plan:**
 - Generated `.agent/test_ledger/MEGA_STRESS_TEST_V13_BLENDER_MCP_AND_ASSET_LIFECYCLE.md` (Routines 131–140) locking down Blender MCP lifecycle, 300 DPI upscale, pre-flight compliance, and server-authoritative state rules.
+
+---
+
+### ISSUE-1442: Global top bar SmartNextActionBanner passed hardcoded metrics and titles to Judgment 68
+
+- **Status:** ✅ FIXED (2026-10-05)
+- **Severity:** 🔴 HIGH (Real-User Authenticity Standard violation)
+- **Module:** UI Navigation / SmartNextActionBanner / Typesafe AI (Judgment 68)
+- **Evidence:** `SmartNextActionBanner.tsx` unconditionally displayed "Review DSP Settlements ★ Priority 4/5 — Surging listener volume detected. Audit mechanical and master payouts." with fabricated inputs (`totalMonthlyStreams: 14200`, `recentMasterTitle: 'Detroit Rain (Mastered)'`, `hasUnreleasedMaster: currentModule === 'creative'`).
+- **Impact:** Misled real artists with fabricated streaming numbers and phantom releases, violating the core Real-User Authenticity Standard.
+- **Root Cause & Fix:**
+  - Created `packages/renderer/src/components/layout/nextActionFacts.ts` (`deriveNextActionFacts`): purely derives genuine next-action candidates (`release_needs_submission`, `release_delivery_issue`, `review_earnings`) strictly from loaded Zustand store slices (`distribution.releases` and `finance.earningsSummary`). Returns an empty candidate array when data is absent, loading, or has 0 streams.
+  - Refactored Judgment 68 (`judgeNextBestModule`) in `packages/renderer/src/config/typesafeJudgments.ts`: accepts `NextActionCandidate[]`. Returns `null` if empty. Returns deterministic baseline if 1 candidate or offline. Formulates Jev `Choice` criteria strictly from candidate IDs and evidence descriptions when multiple genuine candidates exist. Constrained target modules strictly to `'distribution' | 'finance'`.
+  - Refactored `packages/renderer/src/components/layout/SmartNextActionBanner.tsx`: renders nothing when 0 candidates exist or when artist is in the target module. Corrected typography and badge contrast (`text-xs py-0.5`). Fixed `MODULE_DISPLAY_NAMES` import.
+  - Added unit test suites in `nextActionFacts.test.ts` (5/5 passing) and `SmartNextActionBanner.test.tsx` (5/5 passing). Updated `typesafeJudgments.test.ts` (194/194 passing).
+- **Acceptance:** Full typecheck (`npm run typecheck`) and ESLint (`npm run lint`) pass with 0 errors. Store with no draft releases and 0 streams renders 0 banner suggestions.

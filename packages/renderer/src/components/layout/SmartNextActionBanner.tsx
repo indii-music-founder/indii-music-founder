@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, Sparkles, X } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { judgeNextBestModule, NextBestModuleVerdict } from '@/config/typesafeJudgments';
-import type { ModuleId } from '@/core/constants';
+import { deriveNextActionFacts } from './nextActionFacts';
+import { MODULE_DISPLAY_NAMES, type ModuleId } from '@/core/constants';
 
 interface SmartNextActionBannerProps {
     className?: string;
@@ -13,8 +15,23 @@ export const SmartNextActionBanner: React.FC<SmartNextActionBannerProps> = ({
     className = '',
     onDismiss
 }) => {
-    const currentModule = useStore((state) => state.currentModule);
-    const setModule = useStore((state) => state.setModule);
+    const {
+        currentModule,
+        setModule,
+        releases,
+        releasesLoading,
+        earnings,
+        earningsLoading,
+    } = useStore(
+        useShallow((state) => ({
+            currentModule: state.currentModule,
+            setModule: state.setModule,
+            releases: state.distribution?.releases,
+            releasesLoading: state.distribution?.loading ?? false,
+            earnings: state.finance?.earningsSummary,
+            earningsLoading: state.finance?.loading ?? false,
+        }))
+    );
 
     const [recommendation, setRecommendation] = useState<{
         module: ModuleId;
@@ -25,26 +42,39 @@ export const SmartNextActionBanner: React.FC<SmartNextActionBannerProps> = ({
     useEffect(() => {
         let active = true;
 
-        // Fetch recommendations based on artist workflow state
-        judgeNextBestModule({
-            currentModule,
-            hasUnreleasedMaster: currentModule === 'creative',
-            recentMasterTitle: 'Detroit Rain (Mastered)',
-            hasPendingDistribution: currentModule === 'distribution',
-            hasUnallocatedSplits: false,
-            totalMonthlyStreams: 14200,
-            hasActiveTourCampaign: false,
-        })
-            .then((res) => {
+        const candidates = deriveNextActionFacts({
+            releases,
+            releasesLoading,
+            earnings,
+            earningsLoading,
+        });
+
+        if (candidates.length === 0) {
+            Promise.resolve().then(() => {
+                if (active) setRecommendation(null);
+            });
+            return () => {
+                active = false;
+            };
+        }
+
+        judgeNextBestModule(candidates)
+            .then((verdict) => {
                 if (!active) return;
-                setRecommendation({ module: currentModule, verdict: res });
+                if (!verdict) {
+                    setRecommendation(null);
+                    return;
+                }
+                setRecommendation({ module: currentModule, verdict });
             })
-            .catch(() => undefined);
+            .catch(() => {
+                if (active) setRecommendation(null);
+            });
 
         return () => {
             active = false;
         };
-    }, [currentModule]);
+    }, [currentModule, releases, releasesLoading, earnings, earningsLoading]);
 
     if (isDismissed || !recommendation || recommendation.module !== currentModule) {
         return null;
@@ -56,6 +86,8 @@ export const SmartNextActionBanner: React.FC<SmartNextActionBannerProps> = ({
     if (verdict.targetModule === currentModule) {
         return null;
     }
+
+    const targetLabel = MODULE_DISPLAY_NAMES[verdict.targetModule as ModuleId] || verdict.targetModule;
 
     const handleActionClick = () => {
         setModule(verdict.targetModule as ModuleId);
@@ -82,9 +114,11 @@ export const SmartNextActionBanner: React.FC<SmartNextActionBannerProps> = ({
                 <div className="flex items-center gap-2 min-w-0">
                     <span className="font-semibold text-white truncate flex items-center gap-1.5">
                         {verdict.actionTitle}
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-900/60 text-purple-300 font-mono font-normal">
-                            ★ Priority {verdict.relevanceScore}/5
-                        </span>
+                        {verdict.relevanceScore !== undefined && (
+                            <span className="text-xs opacity-90 px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300 font-mono font-normal">
+                                ★ Priority {verdict.relevanceScore}/5
+                            </span>
+                        )}
                     </span>
                     <span className="text-gray-400 hidden sm:inline truncate">
                         — {verdict.actionDescription}
@@ -98,7 +132,7 @@ export const SmartNextActionBanner: React.FC<SmartNextActionBannerProps> = ({
                     data-testid="smart-action-navigate-btn"
                     className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-medium transition-colors shadow-sm"
                 >
-                    <span>Proceed to {verdict.targetModule}</span>
+                    <span>Proceed to {targetLabel}</span>
                     <ArrowRight className="w-3 h-3" />
                 </button>
 

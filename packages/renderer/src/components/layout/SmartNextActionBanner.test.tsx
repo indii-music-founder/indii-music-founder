@@ -4,31 +4,29 @@ import { SmartNextActionBanner } from './SmartNextActionBanner';
 
 const mockSetModule = vi.fn();
 
+let mockStoreState: Record<string, unknown> = {
+    currentModule: 'creative',
+    setModule: mockSetModule,
+    distribution: { releases: [], loading: false },
+    finance: { earningsSummary: null, loading: false },
+};
+
 vi.mock('@/core/store', () => ({
     useStore: vi.fn((selector) => {
-        const state = {
-            currentModule: 'creative',
-            setModule: mockSetModule,
-        };
-        return typeof selector === 'function' ? selector(state) : state;
+        return typeof selector === 'function' ? selector(mockStoreState) : mockStoreState;
     }),
 }));
 
 vi.mock('@/config/typesafeJudgments', () => ({
-    judgeNextBestModule: vi.fn(async (context) => {
-        if (context.hasUnreleasedMaster) {
-            return {
-                targetModule: 'distribution',
-                relevanceScore: 5,
-                actionTitle: "Distribute 'Detroit Rain'",
-                actionDescription: 'Master track ready for DSP delivery.',
-            };
-        }
+    judgeNextBestModule: vi.fn(async (candidates) => {
+        if (!candidates || candidates.length === 0) return null;
+        const candidate = candidates[0];
         return {
-            targetModule: 'social',
-            relevanceScore: 3,
-            actionTitle: 'Engage Fanbase',
-            actionDescription: 'Share behind-the-scenes teasers.',
+            targetModule: candidate.targetModule,
+            relevanceScore: 5,
+            actionTitle: candidate.title,
+            actionDescription: candidate.description,
+            source: 'rules',
         };
     }),
 }));
@@ -36,19 +34,67 @@ vi.mock('@/config/typesafeJudgments', () => ({
 describe('SmartNextActionBanner', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockStoreState = {
+            currentModule: 'creative',
+            setModule: mockSetModule,
+            distribution: { releases: [], loading: false },
+            finance: { earningsSummary: null, loading: false },
+        };
     });
 
-    it('renders ambient recommendation banner based on artist state', async () => {
+    it('renders nothing when store has no releases or earnings', async () => {
+        render(<SmartNextActionBanner />);
+
+        await waitFor(() => {
+            expect(screen.queryByTestId('smart-next-action-banner')).not.toBeInTheDocument();
+        });
+    });
+
+    it('never renders fabricated text (Detroit Rain, 14200, DSP Settlements) on empty state', async () => {
+        render(<SmartNextActionBanner />);
+
+        await waitFor(() => {
+            expect(screen.queryByText(/Detroit Rain/)).not.toBeInTheDocument();
+            expect(screen.queryByText(/14200/)).not.toBeInTheDocument();
+            expect(screen.queryByText(/DSP Settlements/)).not.toBeInTheDocument();
+        });
+    });
+
+    it('renders banner when genuine draft release exists', async () => {
+        mockStoreState.distribution = {
+            releases: [
+                {
+                    id: 'r1',
+                    title: 'Motor City Midnight',
+                    artist: 'Detroit Artist',
+                    deployments: { spotify: { status: 'draft' } },
+                },
+            ],
+            loading: false,
+        };
+
         render(<SmartNextActionBanner />);
 
         await waitFor(() => {
             expect(screen.getByTestId('smart-next-action-banner')).toBeInTheDocument();
-            expect(screen.getByText(/Distribute 'Detroit Rain'/)).toBeInTheDocument();
-            expect(screen.getByText(/Priority 5\/5/)).toBeInTheDocument();
+            expect(screen.getByText(/Finish submitting 'Motor City Midnight'/)).toBeInTheDocument();
+            expect(screen.getByText(/Proceed to Distribution/)).toBeInTheDocument();
         });
     });
 
     it('navigates to recommended target module when clicked', async () => {
+        mockStoreState.distribution = {
+            releases: [
+                {
+                    id: 'r1',
+                    title: 'Motor City Midnight',
+                    artist: 'Detroit Artist',
+                    deployments: { spotify: { status: 'draft' } },
+                },
+            ],
+            loading: false,
+        };
+
         render(<SmartNextActionBanner />);
 
         await waitFor(() => {
@@ -60,6 +106,18 @@ describe('SmartNextActionBanner', () => {
     });
 
     it('dismisses banner when close button is clicked', async () => {
+        mockStoreState.distribution = {
+            releases: [
+                {
+                    id: 'r1',
+                    title: 'Motor City Midnight',
+                    artist: 'Detroit Artist',
+                    deployments: { spotify: { status: 'draft' } },
+                },
+            ],
+            loading: false,
+        };
+
         const mockDismiss = vi.fn();
         render(<SmartNextActionBanner onDismiss={mockDismiss} />);
 

@@ -3768,60 +3768,63 @@ describe('Judgment 67: Image Variation Batch Pre-Selector (judgeTopImageVariatio
 });
 
 describe('Judgment 68: Contextual Next-Best Module Navigation (judgeNextBestModule)', () => {
-    it('prioritizes distribution when artist has unreleased master offline', async () => {
-        mocks.enabled.mockReturnValue(false);
-
-        const result = await judgeNextBestModule({
-            currentModule: 'creative',
-            hasUnreleasedMaster: true,
-            recentMasterTitle: 'Electric Dawn',
-            hasPendingDistribution: false,
-            hasUnallocatedSplits: false,
-            hasActiveTourCampaign: false,
-        });
-
-        expect(result.targetModule).toBe('distribution');
-        expect(result.relevanceScore).toBe(5);
-        expect(result.actionTitle).toContain('Electric Dawn');
+    it('returns null when candidates array is empty', async () => {
+        const result = await judgeNextBestModule([]);
+        expect(result).toBeNull();
     });
 
-    it('prioritizes rights when artist has unallocated splits offline', async () => {
+    it('returns deterministic baseline when single candidate provided offline', async () => {
         mocks.enabled.mockReturnValue(false);
 
-        const result = await judgeNextBestModule({
-            currentModule: 'finance',
-            hasUnreleasedMaster: false,
-            hasPendingDistribution: false,
-            hasUnallocatedSplits: true,
-            hasActiveTourCampaign: false,
-        });
+        const result = await judgeNextBestModule([
+            {
+                id: 'release_needs_submission',
+                targetModule: 'distribution',
+                title: 'Submit "Electric Dawn" for Distribution',
+                description: 'Release is drafted. Finalize metadata and dispatch.',
+                evidence: 'Status: draft',
+            },
+        ]);
 
-        expect(result.targetModule).toBe('rights');
-        expect(result.actionTitle).toContain('Split Sheet');
+        expect(result).not.toBeNull();
+        expect(result?.targetModule).toBe('distribution');
+        expect(result?.actionTitle).toBe('Submit "Electric Dawn" for Distribution');
+        expect(result?.source).toBe('rules');
     });
 
-    it('processes next module prediction via online Jev callable', async () => {
+    it('processes multi-candidate priority arbitration via online Jev callable', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    next_module: { choice: 'finance' },
-                    priority: { score: 4 },
+                    best_action: { choice: 'review_earnings' },
+                    urgency: { score: 4 },
                 },
             },
         }));
 
-        const result = await judgeNextBestModule({
-            currentModule: 'analytics',
-            hasUnreleasedMaster: false,
-            hasPendingDistribution: false,
-            hasUnallocatedSplits: false,
-            totalMonthlyStreams: 45000,
-            hasActiveTourCampaign: false,
-        });
+        const result = await judgeNextBestModule([
+            {
+                id: 'release_needs_submission',
+                targetModule: 'distribution',
+                title: 'Submit "Electric Dawn" for Distribution',
+                description: 'Release is drafted. Finalize metadata and dispatch.',
+                evidence: 'Status: draft',
+            },
+            {
+                id: 'review_earnings',
+                targetModule: 'finance',
+                title: 'Review Streaming Revenue',
+                description: '45,000 streams accrued. Review royalties and payouts.',
+                evidence: 'Accrued streams: 45000',
+            },
+        ]);
 
-        expect(result.targetModule).toBe('finance');
-        expect(result.relevanceScore).toBe(4);
+        expect(result).not.toBeNull();
+        expect(result?.targetModule).toBe('finance');
+        expect(result?.actionTitle).toBe('Review Streaming Revenue');
+        expect(result?.relevanceScore).toBe(4);
+        expect(result?.source).toBe('jev');
     });
 });
 
