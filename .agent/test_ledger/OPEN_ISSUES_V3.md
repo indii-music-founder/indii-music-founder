@@ -3410,7 +3410,37 @@ persistence/deletion are still unverified. Keep the issue open for those gates.
    - **Validation:** 19/19 tests pass in legal test suites (`packages/renderer/src/modules/legal/`). Issue closed on GitHub.
 
 4. **GitHub Issue #355: Missing Native Upscaling Tool for 3000x3000px Print Assets**
-   - **Root Cause & Fix:**
-     - Implemented `PrintReadyUpscaleService.ts` converting images to exact 3000x3000px bitmaps with 300 DPI physical density tag injection (`dataUrlWithDpi`) using desktop Real-ESRGAN or browser multi-pass bicubic canvas scaling fallback.
-     - Integrated into Creative Studio action rail, layer editor, and image submenu.
-   - **Validation:** 2/2 tests pass in `PrintReadyUpscaleService.test.ts`; 107/107 test suites (737 tests) pass in `packages/renderer/src/modules/creative/`. Issue closed on GitHub.
+- **Root Cause & Fix:**
+- Implemented `PrintReadyUpscaleService.ts` converting images to exact 3000x3000px bitmaps with 300 DPI physical density tag injection (`dataUrlWithDpi`) using desktop Real-ESRGAN or browser multi-pass bicubic canvas scaling fallback.
+- Integrated into Creative Studio action rail, layer editor, and image submenu.
+- **Validation:** 2/2 tests pass in `PrintReadyUpscaleService.test.ts`; 107/107 test suites (737 tests) pass in `packages/renderer/src/modules/creative/`. Issue closed on GitHub.
+## Issue Sweep & Triage Audit — 2026-10-05
+Full `/issue-sweep` executed across Sentry, GitHub Pull Requests, GitHub Issues, and Monorepo Code Quality gates.
+1. **Sentry Organizations Audit (`thewalkingagency` & `indiimusic`):**
+- Unresolved Sentry issues: 0 across all active projects. Clean slate ✅.
+2. **GitHub Pull Request & CodeRabbit Audit:**
+- Open PRs: 0.
+- Scanned recent PRs #331, #343, #344, #345, #346, #347, #348, #349.
+- Actionable CodeRabbit review comments: 0. Clean slate ✅.
+3. **GitHub Issues Consolidation (#356–#363):**
+   - **Status:** ✅ CLOSED / RESOLVED ON MAIN (2026-10-05)
+   - **Delivered Commits:** `a98b26539`, `ade36d903`
+   - **Artifacts & Documentation:**
+     - Layer 1 Directive SOP: `directives/blender_mcp_workflow.md`
+     - Technical Architecture Spec: `docs/specs/blender_mcp_integration.md`
+   - **Issues Closed on GitHub:**
+     - #356: Blender MCP Integration Missing from Tool Registry
+     - #357: Blender MCP Integration Documentation Missing from Registry
+     - #358: Blender MCP integration files not detected
+     - #359: Missing Blender MCP Integration Resources
+     - #360: Blender MCP Integration Not Found in Workspace
+     - #361: Blender MCP Integration Documentation Not Found
+     - #362: Blender MCP integration documentation not indexed
+     - #363: Blender MCP Integration Documentation Not Found
+   - **Validation:** 69/69 tests passed across `blender.security.test.ts`, `capabilityTruth.test.ts`, `BlenderVideoPanel.test.tsx`, and `BlenderTools.test.ts`. Full monorepo CI passed on `ade36d903` (run 37318113012). Formalized in **Mega Stress Test Plan v13.0** (Routines 131–134).
+4. **Monorepo Quality Gates:**
+- TypeScript typecheck (`npm run typecheck` across all 9 workspaces + tests): PASS (exit code 0).
+- ESLint (`npm run lint`): PASS (0 errors, 217 warnings).
+- Local CI test suite (`bash scripts/ci.sh`): PASS (339 test files passed, 2,464 tests passed, 2 skipped).
+5. **New Regression Plan:**
+- Generated `.agent/test_ledger/MEGA_STRESS_TEST_V13_BLENDER_MCP_AND_ASSET_LIFECYCLE.md` (Routines 131–140) locking down Blender MCP lifecycle, 300 DPI upscale, pre-flight compliance, and server-authoritative state rules.
