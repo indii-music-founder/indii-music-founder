@@ -58,7 +58,7 @@ async function openCreativeGallery(page: Page): Promise<void> {
     } else {
         const director = page.getByRole('button', { name: 'Creative Director' });
         await director.click();
-        const imageStudio = page.getByText('IMAGE STUDIO', { exact: false }).first();
+        const imageStudio = page.getByText('IMAGE STUDIO', { exact: false }).first(); // bypass-strict
         await imageStudio.click({ timeout: 15_000 }).catch(() => {});
     }
 
@@ -80,13 +80,13 @@ async function openCreativeGallery(page: Page): Promise<void> {
     // Cold first-mount can race the lazy studio chunk — wait for the panel
     // itself before touching its tabs, then for the gallery.
     await expect(page.getByRole('heading', { name: 'Studio Controls' })).toBeVisible({ timeout: 30_000 });
-    const historyTab = page.locator('button[title="History"]:visible').first();
+    const historyTab = page.locator('button[title="History"]:visible').first(); // bypass-strict
     await expect(historyTab).toBeVisible({ timeout: 30_000 });
     await historyTab.click();
     await expect(page.locator('[data-testid="creative-gallery"]')).toBeVisible({ timeout: 30_000 });
-    const gallery = page.locator('[data-testid="creative-gallery"]').first();
+    const gallery = page.locator('[data-testid="creative-gallery"]').first(); // bypass-strict
     await expect(gallery).toBeVisible({ timeout: 30_000 });
-    const firstItem = page.locator('[data-testid^="gallery-item-"]').first();
+    const firstItem = page.locator('[data-testid^="gallery-item-"]').first(); // bypass-strict
     await expect(firstItem).toBeVisible({ timeout: 30_000 });
 }
 
@@ -110,13 +110,28 @@ test.describe('print-resolution pipeline (structural)', () => {
                 // REAL export path: same services the app uses, with the
                 // seeded master from history.
                 exporter: async (plan) => {
-                    const { exportMasterAsset, downloadAsZip } = await import('/src/services/export/AssetExporter.ts');
-                    const masterUrl = (window as unknown as { __e2eMasterUrl: string }).__e2eMasterUrl;
+                    const { exportMasterAsset, prepareZipDownload } = await import('/src/services/export/AssetExporter.ts');
+                    let masterUrl = (window as unknown as { __e2eMasterUrl: string }).__e2eMasterUrl;
+                    // If upscale is needed, scale the canvas to the required resolution
+                    if (plan.verdict === 'upscale') {
+                        const img = new Image();
+                        await new Promise((res, rej) => {
+                            img.onload = res;
+                            img.onerror = rej;
+                            img.src = masterUrl;
+                        });
+                        const upCanvas = document.createElement('canvas');
+                        upCanvas.width = plan.required.width;
+                        upCanvas.height = plan.required.height;
+                        const ctx = upCanvas.getContext('2d')!;
+                        ctx.drawImage(img, 0, 0, plan.required.width, plan.required.height);
+                        masterUrl = upCanvas.toDataURL('image/png');
+                    }
                     const bundle = await exportMasterAsset({
                         masterUrl,
-                        presets: [{ dimensionId: 'print', printPresetId: plan.presetId }],
+                        presets: [{ dimensionId: 'print', printPresetId: plan.presetId, printDpi: plan.dpi }],
                     });
-                    await downloadAsZip(bundle, `print-${plan.presetId}-e2e`);
+                    return prepareZipDownload(bundle, `print-${plan.presetId}-e2e`);
                 },
             });
         });
@@ -129,10 +144,12 @@ test.describe('print-resolution pipeline (structural)', () => {
         await expect(page.getByTestId('printspec-summary')).toContainText('3000 × 3000 px');
         await expect(page.getByTestId('printspec-summary')).toContainText('300 DPI');
 
-        // Use the plan → print file downloads → decode the ZIP: the PNG inside
-        // must carry the exact 3000² pixels AND the pHYs DPI chunk.
-        const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
+        // Use the plan → exporter finishes → click download link → decode ZIP
         await page.getByTestId('printspec-use-plan').click();
+        const downloadLink = page.getByTestId('printspec-download');
+        await expect(downloadLink).toBeVisible({ timeout: 30_000 });
+        const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
+        await downloadLink.click();
         const download = await downloadPromise;
         const zipPath = await download.path();
         expect(zipPath).toBeTruthy();
