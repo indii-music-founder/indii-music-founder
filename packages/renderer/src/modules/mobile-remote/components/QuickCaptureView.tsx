@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard, Download, Receipt, UserPlus } from 'lucide-react';
+import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard, Download, Receipt, UserPlus, Film } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { remoteRelayService, waitForDispatchConfirmation } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
@@ -515,6 +515,70 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         }
     };
 
+    const handleSendToVideoEditor = async () => {
+        const sourceFile = capturedVideoBlob || capturedImageBlob?.file || capturedAudioBlob;
+        if (!sourceFile) return;
+
+        setIsDispatching(true);
+        triggerHaptic([40, 80]);
+        let uploadedPath: string | null = null;
+
+        try {
+            const { auth } = await import('@/services/firebase');
+            const userId = auth.currentUser?.uid;
+            if (!userId) throw new Error('User not authenticated');
+
+            const mediaKind = capturedVideoBlob ? 'video' : capturedAudioBlob ? 'audio' : 'image';
+            const ext = capturedAudioBlob
+                ? audioExtensionForMimeType(capturedAudioBlob.type)
+                : (sourceFile as File).name?.split('.').pop() || (mediaKind === 'video' ? 'mp4' : 'jpg');
+            const filename = `editor_${mediaKind}_${Date.now()}.${ext}`;
+            const path = `users/${userId}/assets/editor_intake/${filename}`;
+
+            const downloadUrl = await StorageService.uploadFile(sourceFile, path);
+            uploadedPath = path;
+
+            if (isPaired) {
+                const taskId = await remoteRelayService.dispatchTask({
+                    type: 'editor_import',
+                    payload: {
+                        videoUrl: mediaKind === 'video' ? downloadUrl : undefined,
+                        imageUrl: mediaKind === 'image' ? downloadUrl : undefined,
+                        audioUrl: mediaKind === 'audio' ? downloadUrl : undefined,
+                        mediaType: mediaKind,
+                        title: `Field ${mediaKind === 'video' ? 'Footage' : mediaKind === 'image' ? 'Photo' : 'Audio Memo'}`,
+                    },
+                });
+
+                const outcome = await waitForDispatchConfirmation(taskId);
+                if (outcome.status === 'failed') {
+                    throw new Error(outcome.error?.message || 'Failed to import into Studio Editor');
+                }
+                toast.success('Opened footage directly in Studio Timeline Editor!');
+            } else {
+                // If not paired, import directly into local videoEditorStore if running in browser studio
+                const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
+                useVideoEditorStore.getState().importMediaUrlAsClip(
+                    downloadUrl,
+                    mediaKind,
+                    `Mobile Field ${mediaKind === 'video' ? 'Video' : mediaKind === 'image' ? 'Photo' : 'Audio'}`
+                );
+                useStore.getState().setModule('creative');
+                useStore.getState().setViewMode('video_production');
+                toast.success('Mounted to Timeline Editor!');
+            }
+
+            clearCapture();
+            triggerHaptic([50, 100, 50]);
+        } catch (error) {
+            logger.error('[QuickCapture] Failed to send media to Video Editor:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to send to Video Editor');
+            triggerHaptic([100, 200, 100]);
+        } finally {
+            setIsDispatching(false);
+        }
+    };
+
     const clearCapture = () => {
         clearMediaState();
         if (photoInputRef.current) photoInputRef.current.value = '';
@@ -557,7 +621,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     >
                         <Mic className={cn("w-9 h-9", isRecording ? "animate-pulse text-[#061806]" : "text-[#00ff66]")} />
                         <span className="text-[10px] font-bold uppercase tracking-widest font-mono" role="status">
-                            {isRecording ? 'Listening — tap to stop' : 'Speak'}
+                            {isRecording ? 'Listening — tap to stop' : 'Voice Memo'}
                         </span>
                     </motion.button>
                 </div>
@@ -725,7 +789,19 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                                 )}
                             </div>
 
-                            <div className="mt-4 flex items-center gap-3">
+                            {/* Direct Video Editor Pipeline Action for Media */}
+                            {(capturedVideoBlob || (capturedImageBlob && capturedImageBlob.type === 'photo')) && (
+                                <button
+                                    onClick={handleSendToVideoEditor}
+                                    disabled={isDispatching}
+                                    className="mt-3 w-full py-2.5 px-3 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-200 hover:text-white hover:bg-purple-600/30 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                                >
+                                    <Film className="w-4 h-4 text-purple-400" />
+                                    <span>Open &amp; Edit in Studio Video Editor</span>
+                                </button>
+                            )}
+
+                            <div className="mt-3 flex items-center gap-3">
                                 <button
                                     onClick={downloadReviewCopy}
                                     disabled={isDispatching}

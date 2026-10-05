@@ -67,6 +67,8 @@ interface VideoEditorState {
     moveTrack: (trackId: string, targetIndex: number) => void;
 
     addClip: (clip: Omit<VideoClip, 'id'>) => void;
+    /** Imports a media URL (video/image/audio) as a new clip onto an appropriate track. */
+    importMediaUrlAsClip: (mediaUrl: string, mediaType: 'video' | 'image' | 'audio', title?: string) => void;
     updateClip: (id: string, updates: Partial<VideoClip>) => void;
     /** Update clip during active drag/trim without pushing to past undo history. */
     updateClipTransient: (id: string, updates: Partial<VideoClip>) => void;
@@ -714,6 +716,54 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                     clips: [...state.project.clips, newClip],
                     durationInFrames: requiredDuration
                 }
+            };
+        }),
+
+        importMediaUrlAsClip: (mediaUrl, mediaType, title) => set((state) => {
+            const targetTrackType: TrackType = mediaType === 'audio' ? 'audio' : 'video';
+            let targetTrack = state.project.tracks.find(t => t.type === targetTrackType);
+            const nextTracks = [...state.project.tracks];
+
+            if (!targetTrack) {
+                targetTrack = {
+                    id: uuidv4(),
+                    name: `${mediaType === 'audio' ? 'Audio' : 'Video'} Track`,
+                    type: targetTrackType,
+                    isMuted: false,
+                    isLocked: false,
+                    isSolo: false,
+                };
+                nextTracks.push(targetTrack);
+            }
+
+            // Calculate start frame right after the latest clip on that track
+            const trackClips = state.project.clips.filter(c => c.trackId === targetTrack!.id);
+            const startFrame = trackClips.reduce((max, c) => Math.max(max, c.startFrame + c.durationInFrames), 0);
+            const defaultDurationFrames = mediaType === 'image' ? 150 : 240; // 5s for image, 8s for video/audio @ 30fps
+
+            const newClip: VideoClip = {
+                id: uuidv4(),
+                name: title || `Imported ${mediaType}`,
+                type: mediaType,
+                src: mediaUrl,
+                startFrame,
+                durationInFrames: defaultDurationFrames,
+                trackId: targetTrack.id,
+            };
+
+            const requiredDuration = Math.max(
+                state.project.durationInFrames,
+                startFrame + defaultDurationFrames
+            );
+
+            return {
+                project: {
+                    ...state.project,
+                    tracks: nextTracks,
+                    clips: [...state.project.clips, newClip],
+                    durationInFrames: requiredDuration,
+                },
+                selectedClipId: newClip.id,
             };
         }),
 

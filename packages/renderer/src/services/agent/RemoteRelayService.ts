@@ -197,12 +197,14 @@ export function resolveRemoteCommandExecutionTarget(
 
 export interface AgentDispatchTask {
     id?: string;
-    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'live_moment' | 'media_capture' | 'document_scan' | 'venue_log' | 'computer_task' | 'video_render';
+    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'live_moment' | 'media_capture' | 'document_scan' | 'venue_log' | 'computer_task' | 'video_render' | 'editor_import';
     payload: {
         audioUrl?: string;
         videoUrl?: string;
         transcription?: string;
         imageUrl?: string;
+        mediaType?: 'video' | 'image' | 'audio';
+        title?: string;
         amount?: number;
         commandText?: string;
         noteText?: string;

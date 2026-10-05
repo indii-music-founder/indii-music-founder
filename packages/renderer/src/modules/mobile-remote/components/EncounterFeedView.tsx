@@ -231,7 +231,7 @@ export default function EncounterFeedView() {
                             {enc.assets.filter(asset => asset.type === 'document' || asset.type === 'receipt').map(asset => (
                                 <a key={asset.id} href={asset.downloadUrl} target="_blank" rel="noopener noreferrer" className="block mt-2 underline text-emerald-300">Open captured {asset.type}</a>
                             ))}
-                            {/* Video Stream Preview */}
+                            {/* Video Stream Preview & Editor Bridge */}
                             {videoAsset?.downloadUrl && (
                                 <div className="mt-3 rounded-xl overflow-hidden border border-white/10 bg-black">
                                     <video
@@ -241,6 +241,71 @@ export default function EncounterFeedView() {
                                         preload="metadata"
                                         className="w-full max-h-48 object-cover"
                                     />
+                                    <div className="p-2 bg-stone-900/90 flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                triggerHaptic([40, 80]);
+                                                try {
+                                                    const { remoteRelayService } = await import('@/services/agent/RemoteRelayService');
+                                                    await remoteRelayService.dispatchTask({
+                                                        type: 'editor_import',
+                                                        payload: {
+                                                            videoUrl: videoAsset.downloadUrl,
+                                                            mediaType: 'video',
+                                                            title: enc.title || 'Field Video Encounter',
+                                                        },
+                                                    });
+                                                    toast.success('Sent video to Studio Timeline Editor!');
+                                                } catch {
+                                                    // Fallback to local store if web studio
+                                                    const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
+                                                    const { useStore } = await import('@/core/store');
+                                                    useVideoEditorStore.getState().importMediaUrlAsClip(videoAsset.downloadUrl, 'video', enc.title || 'Field Video');
+                                                    useStore.getState().setModule('creative');
+                                                    useStore.getState().setViewMode('video_production');
+                                                    toast.success('Opened in Studio Timeline Editor!');
+                                                }
+                                            }}
+                                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:text-white text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                        >
+                                            <span>Open in Video Editor</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Photo Asset Editor Bridge */}
+                            {photoAsset?.downloadUrl && !videoAsset && (
+                                <div className="mt-2 flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            triggerHaptic([40, 80]);
+                                            try {
+                                                const { remoteRelayService } = await import('@/services/agent/RemoteRelayService');
+                                                await remoteRelayService.dispatchTask({
+                                                    type: 'editor_import',
+                                                    payload: {
+                                                        imageUrl: photoAsset.downloadUrl,
+                                                        mediaType: 'image',
+                                                        title: enc.title || 'Field Photo Encounter',
+                                                    },
+                                                });
+                                                toast.success('Sent photo to Studio Timeline Editor!');
+                                            } catch {
+                                                const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
+                                                const { useStore } = await import('@/core/store');
+                                                useVideoEditorStore.getState().importMediaUrlAsClip(photoAsset.downloadUrl, 'image', enc.title || 'Field Photo');
+                                                useStore.getState().setModule('creative');
+                                                useStore.getState().setViewMode('video_production');
+                                                toast.success('Opened in Studio Timeline Editor!');
+                                            }
+                                        }}
+                                        className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-stone-300 hover:text-white text-[10px] font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                                    >
+                                        <span>Edit in Studio Editor</span>
+                                    </button>
                                 </div>
                             )}
                         </div>

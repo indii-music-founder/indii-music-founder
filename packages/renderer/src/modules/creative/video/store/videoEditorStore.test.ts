@@ -560,4 +560,40 @@ describe('useVideoEditorStore', () => {
             expect(useVideoEditorStore.getState().past).toHaveLength(0);
         });
     });
+
+    describe('importMediaUrlAsClip', () => {
+        it('imports media clip on appropriate track and updates project bounds', () => {
+            const store = useVideoEditorStore.getState();
+            store.setProject({
+                id: 'p1',
+                name: 'P1',
+                fps: 30,
+                durationInFrames: 100,
+                width: 1920,
+                height: 1080,
+                tracks: [],
+                clips: [],
+            });
+
+            store.importMediaUrlAsClip('https://storage.mock/video.mp4', 'video', 'Field Video');
+
+            const state = useVideoEditorStore.getState();
+            expect(state.project.tracks).toHaveLength(1);
+            expect(state.project.tracks[0]!.type).toBe('video');
+            expect(state.project.clips).toHaveLength(1);
+            expect(state.project.clips[0]!.src).toBe('https://storage.mock/video.mp4');
+            expect(state.project.clips[0]!.name).toBe('Field Video');
+            expect(state.project.clips[0]!.startFrame).toBe(0);
+            expect(state.project.durationInFrames).toBe(240); // Extended from 100 to 240
+            expect(state.selectedClipId).toBe(state.project.clips[0]!.id);
+
+            // Import a second clip on the same track; verify startFrame cascades
+            store.importMediaUrlAsClip('https://storage.mock/photo.jpg', 'image', 'Field Photo');
+            const state2 = useVideoEditorStore.getState();
+            expect(state2.project.clips).toHaveLength(2);
+            expect(state2.project.clips[1]!.startFrame).toBe(240);
+            expect(state2.project.clips[1]!.durationInFrames).toBe(150);
+            expect(state2.project.durationInFrames).toBe(390); // 240 + 150
+        });
+    });
 });

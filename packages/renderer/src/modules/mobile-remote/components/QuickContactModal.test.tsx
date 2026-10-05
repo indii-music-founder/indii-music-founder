@@ -10,12 +10,23 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user-123' } },
+    remoteConfig: {},
+    functionsWest1: {},
+    storage: {},
+    db: {},
+    ai: {},
 }));
 
 vi.mock('@/services/encounters/EncounterService', () => ({
     EncounterService: {
         createEncounter: vi.fn(() => Promise.resolve('enc_test_1')),
         reviewContact: vi.fn(() => Promise.resolve()),
+    },
+}));
+
+vi.mock('@/services/image/ImageGenerationService', () => ({
+    ImageGeneration: {
+        generateImages: vi.fn(() => Promise.resolve([{ id: 'img-1', url: 'https://cdn.test/avatar.png', prompt: 'test' }])),
     },
 }));
 
@@ -97,6 +108,41 @@ describe('QuickContactModal Component', () => {
             );
             expect(onSaved).toHaveBeenCalled();
             expect(onClose).toHaveBeenCalled();
+        });
+    });
+
+    it('renders avatar generation trigger when photo preview exists', async () => {
+        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+        vi.spyOn(ImageGeneration, 'generateImages').mockResolvedValue([
+            { id: 'img-1', url: 'https://cdn.test/avatar.png', prompt: 'test' },
+        ]);
+
+        render(<QuickContactModal isOpen={true} onClose={vi.fn()} />);
+
+        // Simulate choosing a card photo
+        const file = new File(['fake-image-bytes'], 'portrait.jpg', { type: 'image/jpeg' });
+        // JSDOM File might not have arrayBuffer implemented
+        if (!file.arrayBuffer) {
+            file.arrayBuffer = () => Promise.resolve(new ArrayBuffer(8));
+        } else {
+            vi.spyOn(file, 'arrayBuffer').mockResolvedValue(new ArrayBuffer(8));
+        }
+
+        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+        expect(input).toBeDefined();
+
+        fireEvent.change(input, { target: { files: [file] } });
+
+        // Verify the generate avatar button renders
+        await waitFor(() => {
+            expect(screen.getByText('Generate AI Avatar from Photo')).toBeDefined();
+        });
+
+        fireEvent.click(screen.getByText('Generate AI Avatar from Photo'));
+
+        await waitFor(() => {
+            expect(ImageGeneration.generateImages).toHaveBeenCalled();
+            expect(screen.getByText('AI Avatar Ready')).toBeDefined();
         });
     });
 });

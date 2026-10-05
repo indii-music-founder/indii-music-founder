@@ -504,6 +504,31 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
                 return;
             }
 
+            case 'editor_import': {
+                const { videoUrl, imageUrl, audioUrl, mediaType = 'video', title } = task.payload;
+                const mediaUrl = videoUrl || imageUrl || audioUrl;
+                if (!mediaUrl) {
+                    await remoteRelayService.updateDispatchTaskStatus(task.id, 'failed', {
+                        code: 'MISSING_MEDIA_URL',
+                        message: 'editor_import requires videoUrl, imageUrl, or audioUrl in payload',
+                    });
+                    return;
+                }
+
+                logger.info(`[RemoteAdapter] 🎬 Importing mobile media into Studio Video Editor: ${mediaUrl} (${mediaType})`);
+                wakeStudio();
+
+                const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
+                useVideoEditorStore.getState().importMediaUrlAsClip(mediaUrl, mediaType, title || 'Imported Mobile Media');
+
+                // Navigate Studio desktop UI to Video Production Timeline
+                useStore.getState().setModule('creative');
+                useStore.getState().setViewMode('video_production');
+
+                await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
+                return;
+            }
+
             default:
                 logger.warn(`[RemoteAdapter] Unknown dispatch task type: ${(task as { type: string }).type}`);
                 await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');

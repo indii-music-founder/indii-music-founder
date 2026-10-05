@@ -75,6 +75,8 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     // Photo/Avatar state
     const [cardPhoto, setCardPhoto] = useState<File | null>(null);
     const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+    const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState<string | null>(null);
+    const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Manual form state (fallback for loud environments)
@@ -109,6 +111,8 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             URL.revokeObjectURL(photoPreviewUrl);
             setPhotoPreviewUrl(null);
         }
+        setGeneratedAvatarUrl(null);
+        setIsGeneratingAvatar(false);
         setCapturedAudioBlob(null);
         setCardPhoto(null);
         setIsRecording(false);
@@ -130,6 +134,8 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
         setOrganization('');
         setRole('other');
         setNotes('');
+        setGeneratedAvatarUrl(null);
+        setIsGeneratingAvatar(false);
         setMode('voice');
         (document.activeElement as HTMLElement)?.blur();
         onClose();
@@ -227,6 +233,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
             setCardPhoto(file);
             setPhotoPreviewUrl(URL.createObjectURL(file));
+            setGeneratedAvatarUrl(null);
             triggerHaptic(30);
         }
     };
@@ -235,7 +242,69 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
         if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
         setCardPhoto(null);
         setPhotoPreviewUrl(null);
+        setGeneratedAvatarUrl(null);
         triggerHaptic(20);
+    };
+
+    const handleGenerateAvatar = async () => {
+        if (!cardPhoto && !photoPreviewUrl) return;
+
+        setIsGeneratingAvatar(true);
+        triggerHaptic([30, 60]);
+
+        try {
+            const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+            // Convert file to base64 for vision/image generation reference
+            let base64Data: string;
+            const mimeType = cardPhoto?.type || 'image/jpeg';
+
+            if (cardPhoto) {
+                if (typeof cardPhoto.arrayBuffer === 'function') {
+                    const arrayBuf = await cardPhoto.arrayBuffer();
+                    const uint8 = new Uint8Array(arrayBuf);
+                    base64Data = uint8.length > 0
+                        ? btoa(uint8.reduce((data, byte) => data + String.fromCharCode(byte), ''))
+                        : 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+                } else {
+                    base64Data = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const res = reader.result as string;
+                            resolve(res.split(',')[1] || res);
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(cardPhoto);
+                    });
+                }
+            } else {
+                base64Data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+            }
+
+            const prompt = 'Stylized high-definition music industry artist avatar portrait, cinematic lighting, ultra-detailed professional studio headshot, vibrant background';
+            const results = await ImageGeneration.generateImages({
+                prompt,
+                aspectRatio: '1:1',
+                count: 1,
+                model: 'pro',
+                sourceImages: [{
+                    mimeType,
+                    data: base64Data,
+                }],
+            });
+
+            if (results && results.length > 0 && results[0]?.url) {
+                setGeneratedAvatarUrl(results[0].url);
+                triggerHaptic([40, 80, 40]);
+                toast.success('Generated AI avatar from portrait!');
+            } else {
+                throw new Error('Image generation completed without a valid result URL');
+            }
+        } catch (error) {
+            logger.error('[QuickContactModal] Failed to generate avatar:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to generate avatar');
+        } finally {
+            setIsGeneratingAvatar(false);
+        }
     };
 
     // ── Submit Handlers ───────────────────────────────────────────────────────
@@ -262,7 +331,10 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             // 2. Upload optional photo/avatar
             let photoDownloadUrl: string | undefined;
             let photoStoragePath: string | undefined;
-            if (cardPhoto) {
+            if (generatedAvatarUrl) {
+                photoDownloadUrl = generatedAvatarUrl;
+                photoStoragePath = `users/${userId}/assets/captured_contacts/generated_avatar_${Date.now()}.png`;
+            } else if (cardPhoto) {
                 const photoExt = cardPhoto.name.split('.').pop() || 'jpg';
                 const photoFilename = `contact_avatar_${Date.now()}.${photoExt}`;
                 photoStoragePath = `users/${userId}/assets/captured_contacts/${photoFilename}`;
@@ -282,7 +354,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                         type: 'photo' as const,
                         storagePath: photoStoragePath,
                         downloadUrl: photoDownloadUrl,
-                        mimeType: cardPhoto?.type || 'image/jpeg',
+                        mimeType: generatedAvatarUrl ? 'image/png' : cardPhoto?.type || 'image/jpeg',
                     }] : []),
                 ],
                 clientContext: 'Contact Intake: Extract contact information (name, phone, email, organization, role, notes)',
@@ -329,7 +401,9 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             const userId = auth.currentUser?.uid;
             let photoUrl: string | undefined;
 
-            if (cardPhoto && userId) {
+            if (generatedAvatarUrl) {
+                photoUrl = generatedAvatarUrl;
+            } else if (cardPhoto && userId) {
                 const filename = `contact_card_${Date.now()}.${cardPhoto.name.split('.').pop() || 'jpg'}`;
                 const path = `users/${userId}/assets/captured_contacts/${filename}`;
                 photoUrl = await StorageService.uploadFile(cardPhoto, path);
@@ -341,7 +415,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                     type: 'photo',
                     storagePath: `users/${userId}/assets/captured_contacts/`,
                     downloadUrl: photoUrl,
-                    mimeType: cardPhoto?.type || 'image/jpeg',
+                    mimeType: generatedAvatarUrl ? 'image/png' : cardPhoto?.type || 'image/jpeg',
                 }] : [],
                 clientContext: `Direct field contact: ${trimmedName}${organization ? ` (${organization})` : ''}`,
             });
@@ -502,6 +576,28 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                                 : 'Say: "Alex Morgan, booking manager at Live Nation, 313-555-0199, alex@livenation.com"'}
                                     </p>
                                 </div>
+
+                                {/* Active Recording Waveform Visualizer */}
+                                {isRecording && (
+                                    <div className="flex items-center justify-center gap-1.5 h-8 mt-2">
+                                        {[0.4, 0.8, 0.6, 1, 0.7, 0.9, 0.5, 0.85, 0.65, 0.45, 0.75, 0.35, 0.8, 0.6, 0.95, 0.5, 0.7].map((h, idx) => (
+                                            <motion.div
+                                                key={idx}
+                                                animate={{
+                                                    scaleY: [h * 0.3, h * 1.3, h * 0.4],
+                                                    opacity: [0.6, 1, 0.6],
+                                                }}
+                                                transition={{
+                                                    repeat: Infinity,
+                                                    duration: 0.6 + (idx % 4) * 0.15,
+                                                    ease: 'easeInOut',
+                                                    delay: idx * 0.04,
+                                                }}
+                                                className="w-1 rounded-full bg-gradient-to-t from-red-500 via-[#00ff66] to-[#12C6D4] h-7 origin-center"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Audio Playback pill when recorded */}
@@ -533,50 +629,78 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                             )}
 
                             {/* Optional Photo / Avatar / Card Snap */}
-                            <div className="w-full flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] border border-white/10">
-                                <div className="flex items-center gap-3">
-                                    {photoPreviewUrl ? (
-                                        <div className="relative">
-                                            <img
-                                                src={photoPreviewUrl}
-                                                alt="Contact Avatar / Card"
-                                                className="w-12 h-12 rounded-xl object-cover border border-[#00ff66]/50"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={removePhoto}
-                                                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-xs shadow-md"
-                                            >
-                                                <X className="w-3 h-3" />
-                                            </button>
+                            <div className="w-full flex flex-col gap-2 p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        {(generatedAvatarUrl || photoPreviewUrl) ? (
+                                            <div className="relative">
+                                                <img
+                                                    src={generatedAvatarUrl || photoPreviewUrl!}
+                                                    alt="Contact Avatar / Card"
+                                                    className={`w-12 h-12 rounded-xl object-cover border ${generatedAvatarUrl ? 'border-[#00ff66] ring-2 ring-[#00ff66]/30' : 'border-white/20'}`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={removePhoto}
+                                                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-xs shadow-md"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-stone-400">
+                                                <Camera className="w-5 h-5" />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="text-xs font-semibold text-stone-200">
+                                                {generatedAvatarUrl ? 'AI Avatar Ready' : 'Photo / Portrait'}
+                                            </p>
+                                            <p className="text-[10px] text-stone-400">
+                                                {generatedAvatarUrl ? 'Generated from captured portrait' : 'Snap headshot or card'}
+                                            </p>
                                         </div>
-                                    ) : (
-                                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-stone-400">
-                                            <Camera className="w-5 h-5" />
-                                        </div>
-                                    )}
-                                    <div>
-                                        <p className="text-xs font-semibold text-stone-200">Photo / Avatar / Card</p>
-                                        <p className="text-[10px] text-stone-400">Optional headshot or business card</p>
                                     </div>
+
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        ref={fileInputRef}
+                                        onChange={handlePhotoSelect}
+                                        className="hidden"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/15 text-xs font-semibold text-stone-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                                    >
+                                        {cardPhoto ? 'Change' : 'Snap Photo'}
+                                    </button>
                                 </div>
 
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    ref={fileInputRef}
-                                    onChange={handlePhotoSelect}
-                                    className="hidden"
-                                />
-
-                                <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="px-3.5 py-2 rounded-xl bg-white/5 border border-white/15 text-xs font-semibold text-stone-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                                >
-                                    {cardPhoto ? 'Change' : 'Snap Photo'}
-                                </button>
+                                {/* Avatar Generation Action Button */}
+                                {photoPreviewUrl && !generatedAvatarUrl && (
+                                    <button
+                                        type="button"
+                                        onClick={handleGenerateAvatar}
+                                        disabled={isGeneratingAvatar}
+                                        className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-emerald-500/20 border border-purple-500/30 text-purple-200 hover:text-white hover:border-purple-400/50 flex items-center justify-center gap-1.5 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+                                    >
+                                        {isGeneratingAvatar ? (
+                                            <>
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                                                <span>Crafting AI Avatar…</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                                                <span>Generate AI Avatar from Photo</span>
+                                            </>
+                                        )}
+                                    </button>
+                                )}
                             </div>
 
                             {/* Save with AI button */}
