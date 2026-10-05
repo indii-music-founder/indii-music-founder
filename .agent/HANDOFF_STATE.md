@@ -13,6 +13,12 @@ without a verified saved master. The bounded stage/progress/cancellation repair
 is tracked in `.agent/observations/2026-10-04-print-lifecycle-delivery.md`.
 No production completion claim follows from its structural lifecycle checks.
 
+**Readback follow-up (2026-10-04):** Production reached the first enhancement
+tile and failed with `Reading enhanced pixels did not finish in time`; no
+master was saved. The direct per-tile model-output readback repair is tracked
+in `.agent/observations/2026-10-04-print-readback-delivery.md`. Successful pixels,
+download, cancellation and reload durability still require genuine acceptance.
+
 **Final state: Delivered complete 100% local-native image upscaling and print-ready preparation pipeline across Apple Silicon (M4 Metal GPU) Desktop Electron and In-Browser WebGPU/WebGL Web Studio. Zero cloud GPU costs, zero server cold starts, 100% private on-device execution. Built pure TypeScript canvas geometry engine (`canvasBleed.ts`) with mathematical equivalence to OpenCV `cv2.BORDER_REFLECT_101` (4 borders + 4 corners mirrored), normalized focal-center cropping (`calculateCoverBox`), proof guide overlay rendering (`drawGuideOverlay`), and binary physical 300 DPI chunk injection. Enhanced `PrintReadyUpscaleService.ts` and wired `prepare_print_file` and `get_print_job_status` into `SuperpowerTools.ts`, `DirectorTools.ts`, `CreativeAgent.ts`, and `ToolRiskRegistry.ts` for immediate on-device resolution with cloud fallback. Monorepo typecheck clean (0 errors across all 9 workspaces); ESLint clean (0 errors); 40/40 TypeScript unit tests passing; 7/7 Python tests passing; quality scanner 0 violations.**
 
 ## Shipped & Integrated

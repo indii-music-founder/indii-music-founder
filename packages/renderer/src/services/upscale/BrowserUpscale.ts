@@ -1,5 +1,6 @@
 /** Tiled, on-device super-resolution. No generation, quota, or artwork prompt. */
 import { runPrintStage } from './runPrintStage';
+import { enhancedTilePixels } from './enhancedTilePixels';
 const MAX_OUTPUT_PIXELS = 80_000_000;
 const PATCH = 128;
 const PADDING = 12;
@@ -52,8 +53,9 @@ export async function browserUpscale({ dataUrl, required, onProgress, onStage, s
     const patch = document.createElement('canvas');
     const patchContext = patch.getContext('2d');
     const pixels = document.createElement('canvas');
+    const pixelContext = pixels.getContext('2d');
     try {
-        if (!context || !patchContext) throw new Error('Could not allocate the print canvas.');
+        if (!context || !patchContext || !pixelContext) throw new Error('Could not allocate the print canvas.');
         onStage?.('Loading the enhancement model...');
         await runPrintStage('Loading the enhancement model', 120_000, () => engine.ready, signal);
         for (let row = 0; row < rows; row++) {
@@ -85,12 +87,19 @@ export async function browserUpscale({ dataUrl, required, onProgress, onStage, s
                     activeSignal => engine.execute(patch, { output: 'tensor', signal: activeSignal, awaitNextFrame: false }),
                     signal, lateTensor => lateTensor.dispose());
                 try {
+                    if (tensor.shape[0] !== patch.height * scale || tensor.shape[1] !== patch.width * scale || tensor.shape[2] !== 3) {
+                        throw new Error('The enhancement returned an unexpected tile shape.');
+                    }
                     pixels.width = tensor.shape[1];
                     pixels.height = tensor.shape[0];
-                    const integers = tf.tidy(() => tensor.round().toInt());
-                    try {
-                        await runPrintStage('Reading enhanced pixels', 60_000, () => tf.browser.toPixels(integers, pixels), signal);
-                    } finally { integers.dispose(); }
+                    onStage?.(`Preparing enhanced tile ${row * cols + col + 1} of ${rows * cols}...`);
+                    signal?.throwIfAborted();
+                    // Async TensorFlow readback timed out in production. Avoid
+                    // its fence polling path and read the actual small tensor
+                    // directly, then yield between tiles for UI cancellation.
+                    const bytes = enhancedTilePixels(tensor.dataSync(), pixels.width, pixels.height);
+                    signal?.throwIfAborted();
+                    pixelContext.putImageData(new ImageData(bytes, pixels.width, pixels.height), 0, 0);
                     // Draw one tile directly into the final canvas, never concatenate
                     // the full enhanced image into a hundreds-of-MB GPU tensor.
                     const left = Math.round(x * factor);

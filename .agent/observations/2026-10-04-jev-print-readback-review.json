@@ -1,0 +1,43 @@
+{
+  "mode": "live API source review; advisory only, not production acceptance",
+  "questions": {
+    "async_pixel_read": {
+      "type": "noul",
+      "instructions": "Does the supplied browser path still depend on TensorFlow tensor.data() or tf.browser.toPixels() for model-output pixel readback, rather than reading the returned per-tile tensor directly?"
+    },
+    "color_corruption": {
+      "type": "noul",
+      "instructions": "Does the supplied RGB byte packing change channel order, normalize already 0..255 model-output values a second time, or silently accept non-finite or out-of-range color values?"
+    },
+    "alpha_loss": {
+      "type": "noul",
+      "instructions": "Does setting tile alpha to opaque permanently discard original artwork transparency, considering the supplied final destination-in operation with the original source image?"
+    },
+    "unbounded_tensor_read": {
+      "type": "noul",
+      "instructions": "Can the supplied browser path read back an unexpected full-size tensor without checking that its shape matches the current bounded padded tile enlarged by the selected scale?"
+    }
+  },
+  "answers": {
+    "async_pixel_read": {
+      "type": "noul",
+      "noul": 0.05
+    },
+    "color_corruption": {
+      "type": "noul",
+      "noul": 0.07
+    },
+    "alpha_loss": {
+      "type": "noul",
+      "noul": 0.11
+    },
+    "unbounded_tensor_read": {
+      "type": "noul",
+      "noul": 0.07
+    }
+  },
+  "usage": {
+    "input_tokens": 5633,
+    "output_tokens": 79
+  }
+}
