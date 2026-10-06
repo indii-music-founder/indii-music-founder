@@ -2,13 +2,13 @@
 
 The canonical open-issues ledger lives at:
 
-- `.agent/test_ledger/OPEN_ISSUES_V2.md`
+- `.agent/test_ledger/OPEN_ISSUES_V3.md`
 
-**Last updated:** 2026-07-21
+**Last updated:** 2026-10-06
 
 Do not add regular issue entries to this root file. Add product, CI, flowchart,
 beta-launch, verification, and follow-up issues to the detailed ledger in
-`.agent/test_ledger/OPEN_ISSUES_V2.md`.
+`.agent/test_ledger/OPEN_ISSUES_V3.md`.
 
 This file exists only as a discoverable pointer for agents and humans looking
 for the issue tracker from the repository root.
@@ -50,11 +50,11 @@ Electron, Firestore rules). Ordered roughly by severity. No code was modified.
 
 ## Cross-Reference
 
-All 7 findings above are **also logged** to the canonical ledger at `.agent/test_ledger/OPEN_ISSUES_V2.md` under the 2026-07-15 session header. Both documents are authoritative; when fixing, reference whichever is most convenient. Cross-links make them equally discoverable.
+The active canonical ledger is `.agent/test_ledger/OPEN_ISSUES_V3.md`. Historical copies remain in older ledgers/archives; use V3 for current status and new entries. Cross-links make them equally discoverable.
 
 ### Creative Suite / Agent gaps (2026-07-16) — canonical-ledger only
 
-These are detailed build specs; they live in `.agent/test_ledger/OPEN_ISSUES_V2.md` (2026-07-16 session), not mirrored in full here:
+These are detailed build specs; they live in `.agent/test_ledger/OPEN_ISSUES_V3.md` (2026-07-16 session), not mirrored in full here:
 
 - **ISSUE-1054** — Creative Director has no tool to retrieve stored assets from Firebase; confabulates "checking the database." Full build spec (reuse existing `StorageTools`, render thumbnails, register on the agent, prompt honesty fix).
 - **ISSUE-1055** — Uploaded photo has no confirmed/discoverable destination; upload handler ignores the persistence-success boolean and navigates away, so failed saves look successful.
