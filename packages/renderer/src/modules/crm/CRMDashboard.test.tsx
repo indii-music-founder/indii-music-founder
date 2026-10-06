@@ -200,4 +200,32 @@ describe('CRMDashboard', () => {
             expect(mockDeleteCampaign).toHaveBeenCalledWith('camp-2');
         });
     });
+
+    it('ISSUE-1466: renders safely without crashing when supply or price are undefined or malformed', () => {
+        const malformedState = {
+            ...defaultState,
+            crm: {
+                campaigns: [
+                    {
+                        id: 'camp-bad',
+                        name: 'Corrupt Drop',
+                        supply: undefined as any,
+                        price: undefined as any,
+                        status: 'active' as const,
+                        type: 'Digital Vinyl' as const,
+                    }
+                ],
+                loading: false,
+                error: null,
+            }
+        };
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
+            if (selector) return selector(malformedState);
+            return malformedState;
+        });
+
+        render(<CRMDashboard />);
+        expect(screen.getByText('Corrupt Drop')).toBeInTheDocument();
+        expect(screen.getAllByText('$0.00').length).toBeGreaterThan(0);
+    });
 });

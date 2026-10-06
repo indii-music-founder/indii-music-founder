@@ -61,7 +61,7 @@ export default function MarketingDashboard() {
     return (
         <div className="h-full flex flex-col">
             {/* Specialist tab strip — one department, no separate destinations */}
-            <div className="flex items-center gap-2 px-4 pt-3 flex-shrink-0 bg-background/60 backdrop-blur-sm border-b border-white/5" role="tablist" aria-label="Marketing department sections">
+            <div className="flex items-center gap-2 px-4 pt-3 flex-shrink-0 bg-background/60 backdrop-blur-sm border-b border-white/5 relative z-20" role="tablist" aria-label="Marketing department sections">
                 {TABS.map(tab => (
                     <button
                         key={tab.id}
@@ -80,14 +80,14 @@ export default function MarketingDashboard() {
                 ))}
             </div>
 
-            <div className="flex-1 min-h-0" data-testid={`marketing-pane-${activeTab}`}>
+            <div className="flex-1 min-h-0 relative" data-testid={`marketing-pane-${activeTab}`}>
                 {activeTab === 'departments' ? (
-                    <ModuleErrorBoundary moduleName="Marketing">
+                    <ModuleErrorBoundary key="departments" moduleName="Marketing">
                         <CampaignDashboard />
                     </ModuleErrorBoundary>
                 ) : (
                     <Suspense fallback={<LoadingFallback />}>
-                        <ModuleErrorBoundary moduleName={`Marketing / ${activeTab}`}>
+                        <ModuleErrorBoundary key={activeTab} moduleName={`Marketing / ${activeTab}`}>
                             {activeTab === 'brand' && <BrandManagerLazy />}
                             {activeTab === 'publicist' && <PublicistDashboardLazy />}
                             {activeTab === 'social' && <SocialDashboardLazy />}

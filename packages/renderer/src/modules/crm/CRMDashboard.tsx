@@ -45,10 +45,10 @@ export default function CRMDashboard() {
     // Calculate metrics — draft campaigns never count as active or projected live value.
     const totalCampaigns = campaigns.length;
     const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
-    const totalSupply = campaigns.reduce((acc, c) => acc + (c.supply || 0), 0);
+    const totalSupply = campaigns.reduce((acc, c) => acc + (Number(c.supply) || 0), 0);
     const projectedRevenue = campaigns
         .filter(c => c.status === 'active')
-        .reduce((acc, c) => acc + ((c.supply || 0) * (c.price || 0)), 0);
+        .reduce((acc, c) => acc + ((Number(c.supply) || 0) * (Number(c.price) || 0)), 0);
 
     const getTypeColor = (type: Campaign['type']) => {
         switch (type) {
@@ -219,13 +219,13 @@ export default function CRMDashboard() {
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium">Total Supply</span>
                                         <span className="text-base font-bold text-text-primary mt-0.5">
-                                            {camp.supply.toLocaleString('en-US')}
+                                            {(Number(camp.supply) || 0).toLocaleString('en-US')}
                                         </span>
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium">Unit Price</span>
                                         <span className="text-base font-bold text-text-primary mt-0.5">
-                                            ${parseFloat(camp.price.toString()).toFixed(2)}
+                                            ${(Number(camp.price) || 0).toFixed(2)}
                                         </span>
                                     </div>
                                 </div>
@@ -245,7 +245,7 @@ export default function CRMDashboard() {
                                     </div>
                                     <div className="flex items-center gap-1 text-accent-primary font-medium">
                                         <span>Total:</span>
-                                        <span className="font-bold">${((camp.supply || 0) * (camp.price || 0)).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                                        <span className="font-bold">${((Number(camp.supply) || 0) * (Number(camp.price) || 0)).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                                     </div>
                                 </div>
                             </motion.div>

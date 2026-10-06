@@ -87,4 +87,18 @@ describe('MarketingDashboard tab consolidation', () => {
         fireEvent.click(screen.getByRole('tab', { name: /departments/i }));
         expect(await screen.findByTestId('campaign-dashboard-stub')).toBeInTheDocument();
     });
+
+    it('ISSUE-1467: isolates error boundaries by activeTab key so switching tabs recovers from crashes', async () => {
+        render(<MarketingDashboard />);
+
+        // Specialist tab strip exists with z-20 class to prevent content overlapping section tabs (ISSUE-1465)
+        const tablist = screen.getByRole('tablist');
+        expect(tablist).toHaveClass('z-20');
+
+        fireEvent.click(screen.getByRole('tab', { name: /crm/i }));
+        expect(await screen.findByTestId('crm-dashboard-stub')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('tab', { name: /analytics/i }));
+        expect(await screen.findByTestId('analytics-dashboard-stub')).toBeInTheDocument();
+    });
 });

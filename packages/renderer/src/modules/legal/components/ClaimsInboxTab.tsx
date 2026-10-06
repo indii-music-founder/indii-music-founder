@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { AlertTriangle, ChevronDown, ChevronRight, FileQuestion, Shield, ShieldAlert } from 'lucide-react';
 import { LegalService } from '@/services/legal/LegalService';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import type { PotentialClaimConflict, RightsClaim } from '@indii/shared';
 
 interface ClaimsInboxTabProps {
@@ -77,7 +78,16 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
     };
 
     const handleClaimResponse = async (claimId: string, status: 'ASSERTED' | 'DISPUTED' | 'WITHDRAWN') => {
-        if (status === 'WITHDRAWN' && !window.confirm('Record that you withdraw this claim? This is an owner-declared status change, not a legal ownership finding.')) return;
+        if (status === 'WITHDRAWN') {
+            const confirmed = await ConfirmDialog.call({
+                title: 'Withdraw Rights Claim',
+                message: 'Record that you withdraw this claim? This is an owner-declared status change, not a legal ownership finding.',
+                confirmText: 'Withdraw Claim',
+                cancelText: 'Keep Claim',
+                variant: 'destructive',
+            });
+            if (!confirmed) return;
+        }
         setRespondingClaimId(claimId);
         setResponseError(null);
         try {

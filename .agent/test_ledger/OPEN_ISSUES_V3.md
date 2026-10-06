@@ -3461,187 +3461,498 @@ Full `/issue-sweep` executed across Sentry, GitHub Pull Requests, GitHub Issues,
   - Added unit test suites in `nextActionFacts.test.ts` (5/5 passing) and `SmartNextActionBanner.test.tsx` (5/5 passing). Updated `typesafeJudgments.test.ts` (194/194 passing).
 - **Acceptance:** Full typecheck (`npm run typecheck`) and ESLint (`npm run lint`) pass with 0 errors. Store with no draft releases and 0 streams renders 0 banner suggestions.
 
+## Live browser handoff — 2026-10-05
 
-## Repository Truth Audit — 2026-10-05 (recorded 2026-10-06)
+Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii.music.demo.music/08 - LIVE TEST RUN 2026-10-04.md`, runs 17–61. Real existing `wiil` session at `https://app.indii.music/creative`; signup/plan/free-tier behavior not verified. No mocks, credential bypasses or artificial entitlements. Observations are not source-level diagnoses. No new screenshots per user instruction. Fixing platform should read the linked runs before implementing and verify deployment freshness. Preserve other agents' changes. These are local ledger IDs, not newly created GitHub issues.
 
-- **Evidence baseline:** `ca34b120b9fec2c2e8af4338be046beabb3d0f9d`, version 1.80.1; [exact-SHA CI run 37313793966](https://github.com/indii-music-founder/indii-music-founder/actions/runs/37313793966).
-- **Run status correction:** On 2026-10-06 the referenced run is completed/cancelled. Individual passing jobs observed during the audit remain scoped evidence; the overall run is not a genuine full green result.
-- **Scope:** Historical audit findings appended for fixing agents; these entries do not assert that later mainline commits are unchanged. Reinspect current code before implementation or closure. No implementation fixes or genuine-user acceptance were performed by this ledger update.
-- **Classification:** Confirmed source defects are Structural; unavailable deployment/installed-app evidence is Conditional or Unknown. Mock-backed checks establish structure only. No verified Critical finding was identified. HyperFrames is current; Remotion/Vino are retired.
-- **Ledger reconciliation:** ISSUE-1454 below cross-references ISSUE-1443 without erasing its delivered locale-money fixes or historical acceptance record. New gaps and verification requirements remain open until exact evidence resolves them.
+### ISSUE-1460: Timeline treatment preset remains unchanged after selection
 
-### ISSUE-1453: Cloud rendering acknowledges work before durable enqueue and lacks bounded ownership-safe downloads
+- **Status:** 🔴 OPEN
+- **Severity:** MEDIUM
+- **Module:** Creative / Video Studio / Timeline Editor
+- **Evidence:** Run 69. Once the canvas overlay was closed through the confirmed image-to-video handoff, the `Apply a cinematic treatment preset` control was enabled and its center hit-tested to itself. `Vinyl Warm` was attempted through both the labeled control and combobox role, then via click/keyboard; after settling the selected option remained `None` and the project UI showed no selection change. This distinguishes the result from the earlier canvas obstruction in ISSUE-1453. No render was run, so visual treatment output is unverified.
+- **Impact:** User cannot tell whether choosing a timeline treatment takes effect; video styling workflow stalls silently.
+- **Fix:** Trace selection state and event handling for the timeline treatment picker; surface the applied state or an actionable failure. Preserve legitimate empty/disabled states where no eligible clip exists.
+- **Acceptance:** With an eligible video clip selected, choosing a named treatment visibly updates selection/state; undo/reload behavior is clear; a real preview/render later confirms the treatment without mock evidence.
 
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+### ISSUE-1462: History asset View Fullsize has no identifiable preview result
+
+- **Status:** 🔴 OPEN
+- **Severity:** MEDIUM — observable feedback/preview investigation
+- **Module:** Creative / Context History / asset inspection
+- **Evidence:** Run76, October6, existing wiil session at https://app.indii.music/creative (signup and plan unverified). The first abstract artwork's enabled View Fullsize control center hit its own maximize icon. Activation left the editor/history visible with no identifiable preview, new browser tab, notification, or console error. No screenshots per user instruction. Unlike ISSUE-1453, this target was not covered by Canvas.
+- **Impact:** Artist cannot establish that the requested full-size inspection opened or find a clear return path.
+- **Fix:** Trace the full-size preview action and destination; expose the asset viewer or actionable failure with accessible close/return controls.
+- **Acceptance:** A real existing asset opens an identifiable decoded full-size preview; source identity and close/return behavior are clear. Do not infer storage failure from this observation.
+
+### October 6 print export evidence — ISSUE-1458 follow-up
+
+- Runs76–77: Print Size Check target selection and dialog close worked. Distributor Export print file reached a visible prepared3000×3000 result and explicit Download print files link, filename `print-cover_art_distributor-1791287540134.zip`.
+- Clicking the link with a listener registered first yielded no download event within15seconds. macOS denied read-only Downloads inspection. Disk delivery and archive contents remain unverified; timeout alone is not evidence of a broken export. Do not regenerate the package solely to retry observation.
+- Loading status mentioned an enlargement model despite source/target both3000×3000; investigate whether copy or processing is appropriate, without claiming actual resizing or charges. No paid upscale option was selected.
+- Run78: separate `→ Distribution Bundle` action closed the destination menu without an identifiable prepared result, notification, navigation or console error. File delivery was not instrumented for that action and disk access is unavailable; this is a feedback concern, not proof of a missing bundle. Verify intended artifact/destination at source before repair.
+
+### ISSUE-1461: Create Last Frame silently fails image-remix validation
+
+- **Status:** 🔴 OPEN
 - **Severity:** HIGH
-- **Module:** Cloud render worker
-- **Evidence:** `packages/render-worker/src/index.ts:49–53` follows URL redirects and buffers the entire response; `:170–171` returns HTTP 202 before in-process rendering completes. `packages/firebase/src/functions/video/dispatchCloudVideoRender.ts:41–48` selects this asynchronous HTTP path. Shared-bearer/path-shape checks do not independently establish caller/job/project ownership. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Accepted jobs can disappear on process termination; arbitrary fetches and unbounded downloads expose security/resource risks. Deployed exposure remains Conditional.
-- **Fix:** Durably enqueue before 202; enforce identity and owner agreement, approved storage/HTTPS sources with redirect/SSRF protection, streaming byte/time/type/checksum limits, transactional leases, idempotency, cancellation and retries.
-- **Acceptance:** Boundary tests reject wrong-owner/private-IP/redirect/oversized inputs; duplicate enqueue executes once; crash recovery preserves jobs; credentialed staging proves delivery, otherwise retain Conditional.
+- **Module:** Creative / image-to-video handoff
+- **Evidence:** Run75. With the Layers panel closed, `Create Last Frame` was enabled and its center hit-tested to the button. It changed to `Analyzing Scene…` for several seconds, then returned to its idle label with no visible success/error and no last-frame state in the Director. At approximately the same time, browser console logged `[ImageGeneration] remixImage failed: Validation failed: Expected string, received object, Expected string, received object` (2026-10-06T00:58:56Z). Recent creative operations showed a matching-time `agent stream` entry, `$0.00`, `Settled — provider output billed` (op-1791248305503-81n4xxu3); Project Assets remained at 50. Strong time correlation, but exact backend request correlation should be confirmed at source.
+- **Impact:** User gets no end frame and no actionable error; UI may imply an AI operation completed when its output was rejected.
+- **Fix:** Trace Create Last Frame's request path and `remixImage` input contract; correct the string/object payload mismatch or route to the proper frame-setting action. Preserve source art and clearly expose operation completion/failure and any applicable charge/refund.
+- **Acceptance:** On a test image, Create Last Frame produces a visible, reviewable final-frame assignment or a useful error; no silent failure; operation ledger accurately reports cost/settlement; verify a genuinely rendered output separately before claiming video success.
 
-### ISSUE-1454: Statement imports retain unstable identities, fragile parsing and fee reconciliation defects
+### ISSUE-1453: Creative Canvas persists across close/back/media navigation and obstructs underlying controls
 
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Status:** 🔴 OPEN
 - **Severity:** HIGH
-- **Module:** Finance / Format Foundry
-- **Evidence:** `packages/shared/src/foundry/adapters/DistroKidStatementAdapter.ts:60,108,131,153,157` retains an unincremented fee accumulator, empty-string/nullish fee fallback, synthetic row hashes and timestamp report IDs. TuneCore `:64,140` retains comma splitting and timestamp IDs. Renderer adapter copies remain separate. This qualifies the financial acceptance recorded under ISSUE-1443; its locale-money fixes are preserved. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Reimports/reordered statements are not proven idempotent; quoted fields and fee totals can be wrong. Persistent duplicate-event behavior is Unknown.
-- **Fix:** Make shared adapters canonical; parse CSV/TSV correctly; hash original bytes with SHA-256; use stable normalized identities with legitimate duplicate occurrence handling; preserve lineage and fixed-point amounts through persistence; quarantine malformed rows.
-- **Acceptance:** Provider-shaped fixtures prove same-file zero-new-event reimport, documented reorder semantics, genuine duplicate preservation, quoted multiline parsing, exact per-currency gross/net/fee reconciliation and matching renderer/shared output.
+- **Module:** Creative / navigation / canvas overlay
+- **Evidence:** Runs25,41,57–68,72–74. Open existing artwork in Canvas Editor. Close/back/media transitions have left multiple workspaces layered in earlier runs. Outer Add Image center hits unrelated DIV. Canvas ancestry lacks dialog/modal semantics; focus from Close can reach outer controls. Runs62–67: timeline treatment, Asset Library, clip details, render/download, and social-copy targets were physically covered. Run68 verified `Send to Video` confirmation switches out of canvas and reports `Set as Start Frame`; timeline Asset Library and social-copy form then opened normally, showing those controls are obstructed only while the canvas layer persists. Run72: with Creative Canvas and Studio History both present, enabled Prompts tab center hit the Canvas header. Run73: Studio History Close button was covered by the canvas header; after switching Video Studio, Director prompt center hit the Fabric wrapper and long-recording import center hit a different SVG path. Run74: Create Last Frame center hit the open Layers panel's Purple layer card. These actions were not meaningfully exercised at those covered targets. Treat as layered-surface obstruction, not dead handler.
+- **Impact:** Mixed workspaces, misleading empty state, covered import/actions and unclear exit/focus behavior.
+- **Fix:** Trace overlay lifecycle and view transitions; dismiss or intentionally manage overlay, make background controls inert if modal, and provide coherent navigation/focus. Do not infer lost assets.
+- **Acceptance:** Close and Back yield intended single working surface; image/video switches do not retain unintended overlay; visible toolbar targets are reachable, including timeline treatment preset, Asset Library, clip details, social-copy action, render and download, and Studio History tabs; keyboard behavior matches declared modal/nonmodal contract. Test uploaded selfie and existing generated image without modifying originals.
 
-### ISSUE-1455: Dependency security advisories remain advisory without documented reachability triage
+### ISSUE-1454: Reference and lower control layouts cause oversized tiles and inaccessible controls
 
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Status:** 🔴 OPEN
+- **Severity:** MEDIUM
+- **Module:** Creative / reference panels / responsive layout
+- **Evidence:** Runs 22,30,31,42,44,47–48. Add Person square490px inside max-height286px scrolling panel (scrollHeight636); collapsing recovers300px. Project Assets covered Visual Dock. Layers open covered Save/Close centers in one layout. Brand Compliance lower-edge center unreachable; keyboard after reducing Reference Mixer opened it. All9 action-strip centers reachable with Studio Controls in current wide viewport: preserve this passing case.
+- **Impact:** Excess internal scroll, clipped guidance, unreachable buttons at screen edge.
+- **Fix:** Compact responsive references and coordinated panel/dock positioning; correct scroll containment and hit targets rather than treating obstructed controls as dead handlers.
+- **Acceptance:** Test narrow and wide window sizes, expanded assets/layers/studio controls, all bottom actions and dock; no overlap/clipped targets, guidance/count remains discoverable. Promotional journey emphasis must be distinguishable from active task state (Run31 correction).
+
+### ISSUE-1455: Editing and saving reference text closes editor but loses revision
+
+- **Status:** 🔴 OPEN
+- **Severity:** MEDIUM
+- **Module:** Creative / Reference Mixer
+- **Evidence:** Run56. Add Style `Warm industrial analog texture.` with Enter. Edit text; replace with `Warm industrial analog texture, muted amber highlights.`; Save. Settled item retained original; revised checkbox0/original1; no error. Temporary reference removed after test.
+- **Impact:** User revisions silently discarded.
+- **Fix:** Investigate Save/blur sequencing and state synchronization; label edit field and show success/error. Related cancellation semantics Run55: Cancel hides but retains unsubmitted scene text; explain retention versus discard.
+- **Acceptance:** Revision replaces original exactly without duplicate; Cancel behavior explicit; reopening shows expected content; genuine persistence checked separately.
+
+### ISSUE-1456: Sidebar Pro selection disagrees with editor Speed/Rapid Edit state
+
+- **Status:** 🔴 OPEN
+- **Severity:** MEDIUM
+- **Module:** Creative / model settings
+- **Evidence:** Run51. Sidebar Model & Constraints → Pro changes Tier:Pro but editor button remains Speed, title Switch to High Fidelity (Pro), Rapid Edit visible. Restored Flash. Direct quality toggle itself synchronized correctly in Run40.
+- **Impact:** User cannot determine intended quality/model/cost from contradictory signals.
+- **Fix:** Synchronize settings or clearly explain independent controls and which request consumes each. Related scope concerns: image-editor interpolation/Motion settings, negative prompt and requested dimensions (runs45,50,52–53).
+- **Acceptance:** Both entry points show consistent state or explicit distinct semantics; submitted real request and billing match reviewable configuration. No backend omission/cost claim proven by current UI-only evidence.
+
+### ISSUE-1457: Open Projector opens duplicate default Creative Studio instead of identifiable projector
+
+- **Status:** 🔴 OPEN
+- **Severity:** MEDIUM
+- **Module:** Creative / projector
+- **Evidence:** Run35. Open Projector from Video Creator opens new same `/creative` tab with ordinary navigation/context and default Image Creator/Nano Banana2; no projector-specific view or preserved video context. Closed only new test tab.
+- **Impact:** Presentation action has unclear/wrong destination and loses intended medium context.
+- **Fix:** Confirm intended destination/context contract; route to projector or rename if duplicate studio intentional.
+- **Acceptance:** Opens identifiable presentation with intended asset/context and clear exit; original workspace preserved.
+
+### ISSUE-1458: Image save/download and social-clip operations lack verified terminal result
+
+- **Status:** 🔴 OPEN
+- **Severity:** MEDIUM — completion/feedback investigation, not confirmed storage failure
+- **Module:** Creative / save / downloads / social clips
+- **Evidence:** Run1 Save Canvas has no observed destination/confirmation. Runs6–16 valid2→6s Feed clip remained Saving without job handle/error/cancel. Run38 Download asset on decoded3000×3000 image: listener registered first timed out15s, no toast/new tab/error log. Disk delivery unverified; timeout alone is not proof failure. Do not restart jobs solely on timeout.
+- **Impact:** Users cannot establish completion or safely recover.
+- **Fix:** Trace operation lifecycle and saved/downloaded artifact identity; expose progress, terminal result/error and appropriate recovery. Recheck exact existing job if obtainable.
+- **Acceptance:** Genuine operation yields identifiable reopenable/downloadable artifact; errors actionable; saved content survives reload. No mock-backed test counts as live proof.
+
+### ISSUE-1459: Creative controls lack labels, selected-state semantics and setup navigation
+
+- **Status:** 🔴 OPEN
+- **Severity:** MEDIUM
+- **Module:** Creative / accessibility / wayfinding
+- **Evidence:** Runs18,23–24,26–29,43,45–46,48–53,70–71. Generic asset card/remove naming; unnamed picker/tag closes; some configuration controls lack selected-state semantics; output dropdowns, negative prompt, Motion slider and likeness retry count unnamed. Run71 confirms annotation swatches do expose `[active]` state (Green/Orange selected, Purple restored); this is a passing control and is not evidence against other settings. Likeness correctly reports no verified headshots/disables fusion but has no My Likeness setup link. Compliance honestly reports no palette but no target setup link. Typography correctly errors Upload a font first after enabled Render click. Run70 reproduced asset search `vinyl` → “No assets yet” with gallery total still 50; searching a known title returned matches, so distinguish no matches from an empty catalog. The 50 gallery entries were all classified as images; this alone is not evidence of mock data or a missing database.
+- **Impact:** Human and browser-agent users cannot reliably identify state, prerequisites or next action.
+- **Fix:** Associate stable labels/descriptions, expose selection state, distinguish no matches from empty catalog, provide setup links and request-scope explanations. Do not count default form drafts as mock catalog data.
+- **Acceptance:** Keyboard/accessibility navigation identifies every control/current state; search empty results recover clearly; prerequisite panels link to setup; actions advertise readiness before click.
+
+### Investigation notes — not confirmed defects / not completed acceptance
+
+- Run102 (2026-10-06): Exit Studio→Home and existing Video Test Project→Project Canvas both retain `/merch` URL (ISSUE-1471 route/content scope). Project entries/archive generic, no selected project name in canvas heading. File Explorer opens zero-count vault with empty query, filter-style No files found wording/no visible add next step/two unnamed controls (ISSUE-1459). Global creations versus empty project vault scope not proven data loss. HQ's DDEX Scheduled, Action Required escrow, WAV48kHz and 100% Safe badges need data provenance review; not confirmed mock records. No data edits/archive/upload.
+
+- Run101 (2026-10-06), Merchandise Text tool adds one selected layer and notification. Properties exposes named Font Size/Color/Blend controls but no text-content or font-family input/edit guidance in accessible UI; layer display leaks timestamp/random object ID. Canvas lacks accessible label, role, or tab stop (ISSUE-1459). Font Size changed 60→48; one Undo removed the entire text layer rather than restoring size, indicating property edit isn't a distinct undo step. Final canvas restored to zero layers, no explicit save/export. Autosave persistence not verified.
+
+- Run100 (2026-10-06): Merchandise template discovery/filter/close passed: ten labeled templates, Tour Posters (1) returns one template, named dismissal works. Placeholder dates/names are visibly template examples, not evidence of mocked persisted bookings. No template applied or content saved.
+
+- Run98 (2026-10-06), Merchandise Designer: history resolves to zero versions with autosave guidance while toolbar emits Saved timestamps; clarify draft-versus-version semantics, persistence unverified. Collapse Assets works, Focus hides remaining layers, named Exit restores both panels and loses the prior collapsed-assets choice. Preserve pre-focus layout if intended. History X works but unnamed/no dialog semantics (ISSUE-1459). No content edits/save/export/generation.
+
+- Run97 (2026-10-06), Merchandise Designer route correctly opens editor. Keyboard Shortcuts help opens and X closes, but help lacks dialog semantics and close-button name (ISSUE-1459). No canvas changes/save/export/generation. Run96 POD rail invites connecting Printify/Gooten despite both being marked in development; unconnected “24h Fulfillment” metric requires provenance/qualification, not an assumption of live service telemetry.
+
+- Run 95 (2026-10-06), Merchandise: empty sales/partners/templates and untracked funnel accurately disclosed, but “empire is thriving,” “Production pace is stable,” and “All designs approved” are misleading empty-state success summaries. Pricing explicitly identifies static starter benchmarks, not live data; connected provider estimates remain unverified. Create Drop opens named wizard, empty products disable Next, but provides no direct product-setup action and close icon is unnamed (ISSUE-1459). Escape dismissal confirmed after delayed UI update. No draft persisted or published. Registration catalog publication prerequisites displayed; enforcement untested.
+
+- Run 94 (2026-10-06), Registration Center: Founder-to-Tracks navigation passed. Empty canonical scan expressly disclaims complete coverage and legacy migration. Seven “Mark verified” controls need credential-specific accessible names (related accessibility finding ISSUE-1459). “Apply at ASCAP / BMI / SESAC (CISAC)” links to `https://www.cisac.org/services/information-services/ipi`, so its application wording does not describe its destination. No identifiers entered, verification asserted, or progress saved; legal prerequisites/fees not audited.
+
+- Run93 Licensing: Brief Matcher honestly loads an empty result but offers no clear catalog/feed setup route. Micro-License clearly blocks checkout and draft generation on unmet prerequisites; this is a passing readiness disclosure. Price/share numeric controls and territory/term selectors unnamed, text inputs mostly placeholder-only; extend ISSUE-1459 labeling scope. No rights confirmations, generated agreement or monetary action.
+
+### ISSUE-1469: Mechanical license estimate presents outdated unscoped statutory rate
+
+- **Status:** 🔴 OPEN
 - **Severity:** HIGH
-- **Module:** Dependencies / CI
-- **Evidence:** Audited CI npm audit reported 51 advisories (3 low, 17 moderate, 31 high). `.github/workflows/deploy.yml:230` treats this check as advisory with continue-on-error. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Green CI does not establish a clean dependency security posture; advisory counts alone do not establish exploitable production exposure.
-- **Fix:** Record affected packages, production/dev reachability and mitigations; apply bounded compatible upgrades with lockfile integrity checks; explicitly document advisory policy.
-- **Acceptance:** Exact-SHA audit and regression results demonstrate each high advisory fixed or explicitly reviewed with owner, rationale and follow-up.
+- **Module:** Publishing / Mechanical
+- **Evidence:** Run91, live existing wiil session (signup/plan unverified). Panel and Add Cover Track form declare $0.091/copy, estimate$91 for1000copies. Official2026 rule gives13.1¢ or2.52¢ per minute/fraction, whichever greater, for physical phonorecords/permanent downloads: https://public-inspection.federalregister.gov/2025-21695.pdf . UI lacks year/duration/use qualification and bundles DSP distribution in its wording.
+- **Impact:** Artist could rely on an outdated fee estimate and misunderstand which rights/use it covers.
+- **Fix:** Use authoritative effective-dated/scoped rate data or clearly withhold unsupported estimates; include duration/use inputs where relevant and explain record preparation versus purchased/issued license. Verify provider-integration claims separately; do not fabricate licensing responses.
+- **Acceptance:** Correct authoritative year/use/duration handling, reviewable calculation and clear draft/purchase boundaries; no stale flat rate presented as universally applicable. Genuine provider/licensing completion requires separate authorized validation.
 
-### ISSUE-1456: CI root runtime differs from the declared Node requirement
+### ISSUE-1470: Licensing Draft New Deal has no observable entry result
 
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Status:** 🔴 OPEN
 - **Severity:** MEDIUM
-- **Module:** CI / Runtime reproducibility
-- **Evidence:** Root declares Node >=24; audited CI used Node 22.23.3/npm 10.9.9. `.github/workflows/deploy.yml` uses setup-node 22.x, including setup and unit shards. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** CI compilation/test evidence does not validate the declared root runtime. Firebase's supported deployment runtime is a separate constraint.
-- **Fix:** Align root CI with the intentional engine requirement; retain separately documented supported Functions runtime; verify lockfile installs and dependency drift/integrity.
-- **Acceptance:** Clean installs and required gates pass on the declared root runtime; backend runtime compatibility is independently tested and documented.
+- **Module:** Licensing / overview onboarding
+- **Evidence:** Run92, live existing authorized wiil session (signup/plan unverified). Enabled Draft New Deal center hit itself. Activation left empty overview unchanged, no form/prompt/notification/navigation, and no native JS dialog after settling. Not a covered-target verdict.
+- **Impact:** Advertised first action does not give an artist an identifiable way to start a draft or understand missing prerequisites.
+- **Fix:** Trace the entry action; open a reviewable draft workflow or explain unavailable capability/prerequisites. Avoid silently suggesting a working AI workflow.
+- **Acceptance:** Genuine overview action leads to identifiable draft setup with safe cancel, or actionable unavailability. No agreement signing or external contact required for this entry test.
 
-### ISSUE-1457: Mainline required-check protection is not established by branch metadata
+### ISSUE-1471: Merchandise Catalog and Settings routes retain unrelated POD panel
 
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
-- **Severity:** HIGH
-- **Module:** Repository governance
-- **Evidence:** Audit branch metadata reported protected=false and required-status-check protection off. Organization/repository rulesets were not fully established by that result. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Direct mainline delivery is not proven to require the intended truth gates; absence of all protection must not be inferred without ruleset evidence.
-- **Fix:** Inspect effective rulesets and branch protection; document required checks and authorized bypasses; configure appropriate enforcement only with applicable administrative authorization.
-- **Acceptance:** Effective rule evidence shows the intended required checks enforce mainline updates; record administrative blockers rather than claiming protection.
-
-### ISSUE-1458: Packaged Python, DDEX XSD and native runtime reproducibility remain unproven
-
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Status:** 🔴 OPEN
 - **Severity:** MEDIUM
-- **Module:** Desktop packaging / DDEX
-- **Evidence:** `packages/main/src/utils/python-bridge.ts:7–18` falls back to host python3/python. `execution/distribution/xsd_validator.py:95,132` allows non-strict operation and rejects missing official schemas in strict mode; no XSD assets were found in the audited tree. Builder hooks/MCP package checks do not prove installed RAW/FFmpeg/Python paths. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Developer-machine success does not establish an offline installed-app capability or standards conformance.
-- **Fix:** Bundle pinned checksummed runtimes/locked dependencies or replace critical paths; package authorized XSDs with license provenance; build native assets from controlled inputs and verify ASAR lookup paths.
-- **Acceptance:** Supported OS/architecture installed-app smoke tests execute RAW conversion, FFmpeg/FFprobe render and strict offline XSD validation; TypeScript/Python differential conformance results and binary hashes are retained.
+- **Module:** Merchandise / nested navigation
+- **Evidence:** Run96, October6, existing authorized wiil at app.indii.music (signup/tier unverified). From POD Partners, Catalog link changed URL to `/merch/catalog`, but content remained POD Partners. Settings then changed URL to `/merch/settings`, still retaining POD Partners and no settings controls. Both observations taken after navigation settled.
+- **Impact:** Two competing navigation systems disagree; artists cannot identify catalog or settings workflows from the advertised links.
+- **Fix:** Reconcile nested routes with selected content, or remove unsupported links with clear capability guidance.
+- **Acceptance:** Each advertised link renders its named destination with appropriate active navigation; no unrelated panel retained.
 
-### ISSUE-1459: Active architecture instructions still identify retired video and sidecar components
+### ISSUE-1472: Designer Showroom mode opens file-export dialog instead of preview
 
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Status:** 🔴 OPEN
 - **Severity:** MEDIUM
-- **Module:** Documentation / Agent instructions
-- **Evidence:** `CLAUDE.md` identifies Remotion 4.0.445; `.agent-os/product/tech-stack.md:15,58` likewise identifies Remotion and retains Docker/Python-sidecar architecture. Roadmap's Remotion checklist is explicitly a historical snapshot and should remain labeled Historical. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Agents can select retired architecture from active instructions despite current HyperFrames integration.
-- **Fix:** Update active instruction mirrors and tech-stack from manifests/runtime code; retain explicitly dated history. HyperFrames is current; Remotion and Vino stay retired.
-- **Acceptance:** Active documentation and instruction mirrors match current code; historical references are clearly separated; no retired dependency is reintroduced.
+- **Module:** Merchandise Designer / mode navigation
+- **Evidence:** Run99, existing authorized wiil at app.indii.music/merch/design (signup/tier unverified). Clicking top “Showroom” (`data-testid="mode-showroom-btn"`) opened “Export Design” with PNG/JPEG/SVG/WebP and Export/Cancel, leaving editor visible. No showroom preview or prerequisite explanation. Target center hits its own Showroom span, not a covering export control. Cancel closed the dialog.
+- **Impact:** A view/mode label unexpectedly leads to file export; artist cannot predict the action or discover product-preview workflow.
+- **Fix:** Implement clear showroom entry or explain prerequisites; if the action is intentionally download, label it as export rather than mode navigation.
+- **Acceptance:** Showroom opens recognizable preview/setup, or honestly signals unavailable preview. Cancel has no side effects; no order/publish needed.
 
-### ISSUE-1460: HyperFrames telemetry opt-out is not proven across all isolated execution environments
+- Run90: Closing Context panel restored reachable release-wizard X and successful dismissal, corroborating ISSUE-1468 overlap. Royalties shows All Systems Nominal alongside zero releases/reports and disconnected distributors; clarify the health scope/provenance, do not assume fabricated telemetry. Import guidance and disabled empty-history CSV are clear. Setup guides expand/hide successfully; vendor instructions/storage guarantees unverified, credentials untouched.
 
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- Run86 Social: Calendar date carried correctly into the post dialog; Cancel passed. Schedule Post remains enabled with empty copy, and no timezone appears in dialog text; validation/connection gating not exercised, so investigate readiness explanation rather than claiming submission failure. Add social account wizard lacks an accessible close-button name; Escape did not dismiss it, while its X button did. Extend ISSUE-1459 to account-wizard labeling/dismissal. No connection or posting attempted.
+
+### ISSUE-1463: Booking Campaigns Go to Marketing link returns to Booking Scout
+
+- **Status:** 🔴 OPEN
 - **Severity:** MEDIUM
-- **Module:** HyperFrames / Privacy
-- **Evidence:** Weekly audit workflow explicitly invokes telemetry disable; deployed test workflow has no corresponding opt-out identified. HyperFramesAdapter changes HOME to /tmp/hyperframes-home, so a developer or other job preference does not prove this CLI home is opted out. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Privacy claims exceed verified opt-out coverage. This is a coverage gap, not proof of observed telemetry leakage.
-- **Fix:** Apply supported opt-out before CLI use in each relevant isolated job and packaged execution home; verify pinned player/CLI compatibility and FFmpeg/browser prerequisites.
-- **Acceptance:** Tests and runtime evidence demonstrate opt-out applies to the actual CLI home with no unwanted telemetry egress; real artifacts probe as playable media.
+- **Module:** Booking / campaign empty-state navigation
+- **Evidence:** Run83, October6, live existing authorized wiil session (signup/plan unverified). Campaigns → Go to Marketing link has href `?module=marketing`. Clicking it navigated to `/agent?module=marketing`; after settling the Booking Agent heading and The Scout view remained. Normal Marketing Department sidebar navigation reached `/marketing?module=marketing` and the actual Marketing dashboard.
+- **Impact:** The empty-state next step sends artists back to the wrong workspace and resets their selected Booking panel.
+- **Fix:** Route the handoff through the actual module navigation contract, not a query-only link on the Booking path. Preserve intentional query context where appropriate.
+- **Acceptance:** From Booking Campaigns, Go to Marketing reaches the Marketing dashboard and correct heading; return navigation is understandable. Verify via the deployed UI, not mocked routing.
 
-### ISSUE-1461: Computer-control approval implementation needs complete security-boundary acceptance evidence
+### ISSUE-1464: Marketing search no-match state incorrectly asks users to create their first campaign
 
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
-- **Severity:** MEDIUM
-- **Module:** Computer control / Checkpoint C
-- **Evidence:** `packages/main/src/handlers/computer.ts` and `packages/main/src/services/computer/ComputerAuthorizationService.ts` provide authorization structure, native approval and scoped tokens. Existing structure must not be described as absent; complete deployed OS/identity transition proof was not established. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Approval bypass/replay resistance and genuine-user execution remain Structural/Conditional until boundary evidence is mapped.
-- **Fix:** Trace existing approval UI through IPC/main/provider; verify user/session/exact-argument binding, atomic one-use consumption, revocation, expiry, abort, OS permissions, app allowlist and autonomous-drive scope without adding a parallel approval system.
-- **Acceptance:** Direct IPC/bypass, wrong-user/tool/arguments, expired/replayed/concurrent tokens, signout/reload and abort tests fail closed; approved exact call executes once; genuine OS path is separately evidenced.
-
-### ISSUE-1462: Studio execution retains renderer dependencies and headless durability is unproven
-
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
-- **Severity:** MEDIUM
-- **Module:** Studio executor / Remote execution
-- **Evidence:** `packages/renderer/src/services/remote/rendererExecutionAdapter.ts:13–14,132,199` depends on renderer stores/AgentService/window despite separated core interfaces. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Core separation does not establish execution while the renderer is closed, asleep or disconnected.
-- **Fix:** Document renderer-dependent operating limits; connect bounded authenticated admission and durable execution/lease recovery where headless operation is intended.
-- **Acceptance:** Real non-renderer execution plus sleep/reconnect/cancellation/ownership tests establish persistence and recovery; otherwise keep the capability renderer-dependent.
-
-### ISSUE-1463: Execution graph foundation is present but the complete verified feedback loop remains conditional
-
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
-- **Severity:** MEDIUM
-- **Module:** Execution graph / Closed-loop orchestration
-- **Evidence:** `packages/shared/src/schemas/executionGraph.ts`, `packages/firebase/src/functions/agent/executionGraphStore.ts`, and exported intake functions implement graph schemas/store and receipt structure. `docs/execution-graph/2026-10-04-baseline.md` records missing CI/review/observability event adapters, daily brief producer and executor admission/dispatch. Bug intake uses a timestamp ID in `reportBugFn.ts:74`; replay deduplication requires proof. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** An implemented graph and green build do not establish bug→issue→graph→authorized patch→exact-SHA CI→verified closure or autonomous self-upgrade.
-- **Fix:** Connect authoritative event adapters and existing issue lineage, replay-safe intake, bounded authorized executor and evidence-driven completion gates; preserve planned versus discovered children and owner isolation.
-- **Acceptance:** A genuine authorized intake survives replay/reload; issue linkage deduplicates; exact-SHA results enter the graph; failed/missing evidence blocks closure; successful bounded execution records durable provenance. Credentialed deployment remains Conditional until verified.
-
-### ISSUE-1464: Audit quality and release claims need explicit unresolved-gate evidence
-
-- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Status:** 🔴 OPEN
 - **Severity:** LOW
-- **Module:** Verification / Release claims
-- **Evidence:** At audited SHA, typecheck passed (112s), lint passed (101s; 217 warnings), 20 test shards/rules passed, studio build completed electron-vite build (58s), and two public smoke tests passed (4.9s). Dependency drift/integrity execution was not proven; chunk-size/source-map warnings remain. Catalog: 201 entries, 37 certified, 70 conditional. MCP checks prove their specific scope. Source references are at the audit baseline SHA above.
-- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
-- **Impact:** Passing compilation/mocks/public smoke does not prove full authenticated customer flows, production preflight, packaged runtimes or absence of warnings.
-- **Fix:** Record exact command/exit/status evidence for dependency gates, meaningful skipped tests, warning/chunk/heap budgets and protected production preflight; map customer and packaged claims to genuine acceptance evidence.
-- **Acceptance:** Publish per-claim evidence classifications; required failures propagate; production preflight stays fail-closed; full customer/packaged claims remain Conditional/Unknown until real acceptance. Do not fabricate a full green result from a cancelled run.
+- **Module:** Marketing / campaign search
+- **Evidence:** Run84, live existing wiil session at app.indii.music/marketing, signup/plan unverified. Six campaigns were visible. An unmatched search changed heading count to0 and showed No active campaigns / Create your first campaign. Clearing search restored6.
+- **Impact:** Search implies existing campaigns are absent and encourages unnecessary creation instead of query recovery.
+- **Fix:** Distinguish filtered no matches from an empty campaign collection; offer clear-search guidance and label filtered counts appropriately.
+- **Acceptance:** No-match searches state no results for the query and provide recovery; genuinely empty accounts retain first-campaign onboarding. Verify live UI without seeded data.
 
+### ISSUE-1465: Marketing narrative content covers section-tab pointer targets
+
+- **Status:** ✅ FIXED
+- **Severity:** HIGH
+- **Module:** Marketing / section navigation / layout
+- **Evidence:** `MarketingDashboard.tsx:64` — tab strip given `relative z-20` and department pane container given `relative` to isolate stacking contexts and guarantee tab pointer targets are on top of pane narrative containers.
+- **Fix:** Elevated the tab strip stacking context (`relative z-20`) so narrative banner and campaign workspace contents cannot cover department section tabs.
+- **Files:** `packages/renderer/src/modules/marketing/MarketingDashboard.tsx`, `packages/renderer/src/modules/marketing/MarketingDashboard.tabs.test.tsx`
+- **Impact:** Section tabs remain visible, stacked above underlying pane content, and pointer-reachable across all screen widths.
+- **Acceptance:** At normal and scrolled positions, every Marketing section tab is visible, pointer-reachable, keyboard-operable and exposes selected state; no panel/header overlap at relevant desktop breakpoints. Verify actual deployed layout.
+
+### ISSUE-1466: CRM crashes on entry while formatting an undefined value
+
+- **Status:** ✅ FIXED
+- **Severity:** HIGH
+- **Module:** Marketing / CRM
+- **Evidence:** `CRMDashboard.tsx:48` and `CRMDashboard.tsx:222` — wrapped `c.supply` and `c.price` in `Number(...) || 0` conversions for all metrics, item supply counts, unit prices, and projected revenue totals, preventing `undefined.toLocaleString()` crashes.
+- **Fix:** Added defensive number coercion and zero fallbacks for campaign supply, price, and projected revenue formatting across both overall metrics and item cards.
+- **Files:** `packages/renderer/src/modules/crm/CRMDashboard.tsx`, `packages/renderer/src/modules/crm/CRMDashboard.test.tsx`
+- **Impact:** Contact and drop campaign dashboard renders safely even when account campaigns contain undefined or unparsed numeric metrics.
+- **Acceptance:** Genuine account data, loading and empty states render safely; CRM remains usable and meaningful errors recover. Verify deployed real-session entry and contact workflow separately.
+
+### ISSUE-1467: Marketing error boundary carries CRM failure into healthy Analytics section
+
+- **Status:** ✅ FIXED
+- **Severity:** MEDIUM
+- **Module:** Marketing / cross-section recovery
+- **Evidence:** `MarketingDashboard.tsx:85` and `MarketingDashboard.tsx:90` — keyed `ModuleErrorBoundary` instances by `activeTab` (`key="departments"` and `key={activeTab}`) so switching tabs unmounts/resets the error boundary rather than retaining stale errors from previous sections.
+- **Fix:** Keyed `ModuleErrorBoundary` by `activeTab` so navigating to a healthy section automatically resets boundary state instead of carrying over previous tab crashes.
+- **Files:** `packages/renderer/src/modules/marketing/MarketingDashboard.tsx`, `packages/renderer/src/modules/marketing/MarketingDashboard.tabs.test.tsx`
+- **Impact:** Navigating away from a crashed specialist section immediately mounts the target section cleanly without requiring a manual 'Try Again' reset.
+- **Acceptance:** Navigate away from a failing section to a healthy one without stale error carryover; genuine destination errors remain accurately reported. Verify live navigation rather than fabricated service responses.
+
+### ISSUE-1468: Context panel covers Publishing release-wizard close control
+
+- **Status:** 🔴 OPEN
+- **Severity:** HIGH
+- **Module:** Publishing / Create Release / modal layout
+- **Evidence:** Run89, live existing authorized wiil session, signup/plan unverified. Untouched Create Release form opened; header X activation left it open. Close control bounds x1283,y70.34,w36,h36; center hit Context panel user-message container. Escape from Track Title did not dismiss. Snapshot lacks named dialog semantics; close button lacks text/title/aria-label.
+- **Impact:** Artist cannot easily exit first-release setup; chat overlays a modal action. Related label gaps: Release Type/Date/BPM/Energy (ISSUE-1459).
+- **Fix:** Give the wizard proper modal layering/focus/dismissal semantics and a named reachable close control; ensure Context panel cannot cover it. Explain prefilled label/DPID provenance without manufacturing registrations.
+- **Acceptance:** Open and cancel an untouched release wizard at relevant desktop widths with Context panel open/closed; pointer and keyboard exit work, no release created, no obscured actions. Required metadata gating remains intact.
+
+- Run82 Road Insights: DJ mode adds composer/classification fields; unsaved Add Song/remove round trip passes. Classification uses visual CSS but no aria-pressed/selected; date/attendance controls unnamed, row-trash buttons unnamed, text fields mostly placeholder-only. Extend ISSUE-1459's Road accessibility scope. Clear draft-only/not-filed guidance and honest empty history passed. Temporary fictional input was cleared, added row removed, original mode restored; no record saved.
+
+- Run81 usability: Road Quick Expense opens a named dialog but Vendor/Description are placeholder-only, amount/category controls unnamed, and icon close has no text/title/aria-label. Extend ISSUE-1459's labeling repair to this form; Escape dismissal passed without submitting a record. International checklist blank-input gating and planning-only disclosures passed. Gas without Location set lacked retained actionable feedback in observed state; investigate prerequisite guidance without claiming a provider failure. Existing wiil session/actual plan unverified; no fabricated service data.
+
+- Run80 usability: Command Menu search `tour` successfully navigated to Road/tour and removed Creative Canvas. Tour Book tabs expose selected state. Day Sheets renders a bare `@` for the existing stop with absent venue; consider explicit “Venue not set” plus a visible editing route. Tech Rider fields include unnamed numeric spinbuttons and placeholder-only identity inputs; add associated labels (same accessibility class as ISSUE-1459, now Road scope). Export Rider is enabled with blank identity, but export validation was not exercised. Preset equipment defaults are form drafts, not evidence of mock database data. Existing draft provenance unverified.
+
+- Run79 (October6): History artwork → Omni (ref) correctly populated Reference to video mode with one named image reference. However, retained Creative Canvas covered the Omni generation-mode picker; center hit Canvas header at x957.5,y233. ISSUE-1453 applies to this route. Rendering, source-clip duration enforcement, watermark/audio behavior and persistence remain unverified. No generation submitted.
+
+- Runs36–37: Escape/menu sequence changed workspace; timeline load later reset to default studio. Exclude deployment/reload/concurrent user/session activity before root-cause claim. Timeline later loaded (Run61), so not globally blocked.
+- Audio Error persists in existing timeline (Run61); source provenance and audio intelligence consumption remain unverified. Trace genuine uploaded audio/catalog indexing; do not substitute samples or assume mock from filename alone.
+- Region definitions retain separate Green/Orange instructions (Run39), but actual region-aware editing pixels, real-selfie fusion, video generation/edit/export, and cross-session persistence remain unverified. UI passes do not complete those paths.
+- Timeline treatment is untestable while the canvas overlay covers the selector (Run62). Retest preset behavior after overlay lifecycle is repaired; previous attempt is not evidence of a broken preset handler.
 
 ---
 
-## Competitive Intelligence Intake — 2026-10-06
+## 2026-10-06 /finish Sweep Findings
 
-- **Source/provenance:** Daily indii.music competitive-intelligence brief, reconciled against repository truth on 2026-10-06.
-- **Intake rule:** External signals are evidence, not automatic feature requests. Only demonstrated work becomes an OPEN issue. WATCH/ATTACH evidence below must not spawn implementation until a repository gap or acceptance failure is proven.
-- **Execution-graph rule:** Preserve `report_bug/reportBugFn -> Firestore/GitHub` as durable bug intake. These ledger entries describe planned/audit/verification work and must converge on existing durable GitHub issues when a matching issue exists.
+### ISSUE-1473: syncEmailList claims 100% sync success without calling external provider
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/firebase/src/marketing/marketingCallables.ts:366-406`
+- **Details:** Validates provider key exists in Firestore but performs no REST API calls to Mailchimp, Klaviyo, or Resend; unconditionally returns `{ synced: members.length, failed: 0, status: 'synced' }`.
+- **Expected (acceptance):** Dispatch subscriber list upsert to provider REST API using stored credentials, returning real synced and failed counts based on provider HTTP responses.
+- **Honest fallback:** If external provider sync is not yet wired, throw `HttpsError('unavailable', 'External synchronization for provider is not yet connected.')`.
+- **DO NOT:** Do not return fabricated `{ synced: members.length, failed: 0 }`.
 
-### ISSUE-1465: Production deployment remains unverified after print task IAM/queue fixes
+### ISSUE-1474: sendSMSBlast writes fake sent status without invoking Twilio
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/firebase/src/marketing/marketingCallables.ts:513-565`
+- **Details:** Checks Twilio credentials but never instantiates the Twilio client; writes `users/{userId}/smsDeliveries/{blastId}` with `status: 'sent'` and returns `{ sent: phones.length, failed: 0, status: 'sent' }`.
+- **Expected (acceptance):** Instantiate Twilio Messaging client, dispatch SMS in batches, capture actual Message SIDs, and record genuine delivery state.
+- **Honest fallback:** Fail closed with `HttpsError('unavailable', 'Live Twilio SMS dispatch is not yet wired to this callable.')`.
+- **DO NOT:** Do not write `status: 'sent'` or return fake zero-failure counts when no HTTP call was made.
 
-- **Status:** 🔴 OPEN (2026-10-06)
-- **Severity:** HIGH
-- **Module:** Production deployment / Print preparation / Cloud Tasks IAM
-- **Source/provenance:** 2026-10-06 daily competitive-intelligence/repository reconciliation.
-- **Evidence:** Authoritative GitHub Actions run `37394728999` executed on exact head `d8a0eebbff89df92b1570f72de5000dfa1ffaf1c` and completed **failure**. Setup, Firestore/Storage rules tests, all 20 unit-test shards, build, staging deploy, and staging E2E passed. In `deploy-production`, Cloud Functions, both Hosting targets, Firestore rules/indexes, Storage rules, and deterministic media-storage configuration succeeded; step 19, `Provision print preparation task identities and queue`, failed, so the deterministic media worker, authenticated print-preparation worker, and pipeline health summary were skipped. Scheduled Health Check run `37412812716` and SOC 2 run `37453274952` later succeeded on the same SHA, but neither proves the failed production deploy completed.
-- **Impact:** Local/staging/test success does not establish that the current print queue, task identity, worker source, and production deployment path are actually provisioned and usable in production.
-- **Relationship:** Discovered from production verification; blocks any claim that the current print preparation deployment is terminally verified. Does not supersede code fixes already landed.
-- **Fix:** Reproduce the exact failing provisioning step from run `37394728999`, determine whether the defect is IAM binding semantics, task-service identity, queue provisioning/idempotency, service-account scope, or workflow configuration, and apply the smallest correction. Do not add a parallel queue/identity mechanism.
-- **Acceptance:** Record an exact commit SHA and successful production workflow/run ID showing print task identity + queue provisioning succeeds, worker source deploys, required services become healthy, and post-deploy health/behavior checks pass. If deployment remains externally blocked, record the blocker and keep the issue OPEN/Conditional.
+### ISSUE-1475: getSMSDeliveryStatus fabricates delivered state from unverified documents
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/firebase/src/marketing/marketingCallables.ts:572-605`
+- **Details:** Reads delivery doc and defaults unverified status to `'delivered'`, without querying Twilio API or relying on verified webhooks.
+- **Expected (acceptance):** Query Twilio Message Status API or return status updated exclusively by verified Twilio StatusCallback webhooks.
+- **Honest fallback:** Return `status: 'untracked'` or throw `HttpsError('unavailable', 'Real-time SMS delivery tracking requires Twilio StatusCallback webhook configuration.')`.
+- **DO NOT:** Do not default missing delivery status to `'delivered'`.
 
-### ISSUE-1466: Rights & Royalty Recovery needs a repository gap audit against the newly converging competitor stack
+### ISSUE-1476: deployEmailCampaign leaves campaigns in unmonitored queued state
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/firebase/src/marketing/marketingCallables.ts:412-465`
+- **Details:** Writes campaign doc with `status: 'queued'`, but no Cloud Function, Cloud Task, or Inngest job watches or executes the queue.
+- **Expected (acceptance):** Enqueue an Inngest background event (`campaign/email.queued`) or Cloud Task to send via provider, updating status to `sending` -> `sent` / `failed`.
+- **Honest fallback:** If background dispatch worker is missing, fail closed with `HttpsError('unimplemented', 'Automated campaign dispatch worker is not yet configured.')`.
+- **DO NOT:** Do not mark campaigns as queued if there is no background processor to run them.
 
-- **Status:** 🔴 OPEN (2026-10-06)
-- **Severity:** HIGH (strategic product / revenue capture)
-- **Module:** Registration Center / Rights administration / Finance / Distribution
-- **Source/provenance:** 2026-10-06 daily competitive-intelligence brief.
-- **External evidence:**
-  - DistroKid launched DistroKid Publishing on 2026-10-05 and states it acts as publishing administrator, registers works, tracks usage, collects composition royalties worldwide, and leaves copyright ownership with the songwriter. Public pricing states a one-time £55 songwriter setup fee and 20% commission on publishing royalties: https://distrokid.com/resources/blog/introducing-distrokid-publishing/ and https://distrokid.com/sw/publishing/
-  - DistroKid's support material says the service registers works with PROs/global societies and collects eligible publishing royalties: https://support.distrokid.com/hc/en-us/articles/46710189184147-How-Does-DistroKid-Publishing-Work
-  - Royalti exposes permissioned royalty/catalog workflows through MCP/REST (169 MCP tools / 700+ REST endpoints) and publicly documents works, writers, agreements, CWR, DDEX delivery, statement reconciliation, splits, payments and recoupment: https://royalti.io/developers and https://royalti.io/publishing
-  - limbo's API documentation (updated 2026-10-05) exposes albums, tracks, DSP deliveries/status, royalties and signed webhooks, reinforcing that delivery rails are increasingly replaceable API infrastructure: https://developer.limbomusic.com/
-- **Impact:** Distribution, publishing administration, royalty reconciliation and agent-addressable music-business infrastructure are converging. indii's zero-cut/provider-neutral thesis remains differentiated only if the repository actually supports the canonical rights chain and can identify/repair missing steps without pretending external registrations or collections completed.
-- **Relationship:** Parent program = Rights & Royalty Recovery. Depends on current repository truth. Existing open children/dependencies that must be reused rather than duplicated include ISSUE-1450 (authoritative claims intake), ISSUE-1452 (post-mastering runbook ↔ semantic catalog wiring), ISSUE-1454 (statement identity/parsing/reconciliation), ISSUE-1458 (packaged DDEX/XSD/runtime conformance), and ISSUE-1463 (execution-graph feedback loop). Historical overlap includes ISSUE-1121 (founder/registration readiness, fixed) and ISSUE-1133 (DDEX readiness authority, fixed). Rights/accounting actions exposed to agents must remain bounded, permissioned and evidence-gated.
-- **Fix:** Perform a repository-backed gap audit before implementation. Map existing support for person/writer/publisher identity; works↔recordings; ownership/splits; IPI/ISWC/ISRC/UPC; PRO/MLC/SoundExchange registration state; CWR/DDEX messaging; acknowledgements; statements; claims/disputes; recoupment; reconciliation; catalog migration; delivery-provider abstraction; and evidence of external completion. Classify each capability as implemented/partial/missing/external-only.
-- **Acceptance:** Produce an auditable capability matrix with code/test references and an explicit decision for every demonstrated gap (build, integrate, defer, or intentionally exclude). Only confirmed gaps may spawn child implementation issues. Competitor evidence alone must never produce a feature clone. Preserve the intended canonical chain: `identity -> work -> recording -> ownership -> authorization -> registration -> delivery -> usage -> claims -> royalties -> reconciliation`.
+### ISSUE-1477: processEncounterPipeline Cloud Function is never deployed
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/firebase/src/functions/encounters/processEncounterPipeline.ts:35`
+- **Details:** Implemented in `src/functions/encounters/` but missing from `packages/firebase/src/index.ts` export root; encounters sit in `pending` forever.
+- **Expected (acceptance):** Export `processEncounterPipeline` from `packages/firebase/src/index.ts` so Firebase Cloud Functions deploys the trigger.
+- **Honest fallback:** Must be deployed to Google Cloud Functions.
+- **DO NOT:** Do not mock transcription or encounter completion in client services.
 
-### Competitive evidence attached without creating separate issues
+### ISSUE-1478: onWhiteGloveAssetUploaded storage trigger is not exported in index.ts
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/firebase/src/functions/ingestion/onWhiteGloveAssetUploaded.ts:4`
+- **Details:** Storage trigger listening to `ingest/white-glove/` uploads is omitted from `packages/firebase/src/index.ts` and never deployed.
+- **Expected (acceptance):** Re-export `onWhiteGloveAssetUploaded` from `packages/firebase/src/index.ts`.
+- **Honest fallback:** Deploy trigger or reject white-glove uploads if ingestion engine is offline.
+- **DO NOT:** Do not silently ignore uploaded white-glove assets.
 
-- **AI identity / impersonation — ATTACH:** Sony Music reported more than 260,000 AI-generated impersonation-track removal requests by the end of September 2026. Treat this as evidence for identity/authorization/provenance lineage. Do not create a generic AI-detector project unless a repository audit proves a specific missing capability. Source: https://www.ft.com/content/51aed058-f8e0-4426-b92a-790b7863d350
-- **Royalti MCP — ATTACH to ISSUE-1463:** Market evidence now shows royalty/accounting platforms exposing real business state to AI clients. indii's response should remain `agent request -> permission -> deterministic operation -> durable result -> evidence`, not unrestricted LLM access to financial state.
-- **limbo API — ATTACH to Distribution & Catalog Portability:** Treat delivery rails/providers as substitutable infrastructure. Preserve canonical catalog/release state independently of any one distributor.
-- **Broader artist-service expansion — WATCH:** Do not create an implementation issue from management/service breadth alone; retain as investor/competitive evidence.
+### ISSUE-1479: onIswcAssigned release trigger is not exported in index.ts
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/firebase/src/publishing/iswc.ts:15`
+- **Details:** Trigger listening to ISWC assignments on releases is not exported in `packages/firebase/src/index.ts`, preventing automated release unblocking.
+- **Expected (acceptance):** Export `onIswcAssigned` from `packages/firebase/src/index.ts`.
+- **Honest fallback:** Retain manual trigger/review path if trigger is disabled.
+- **DO NOT:** Do not leave publishing releases permanently blocked on automated ISWC listeners.
+
+### ISSUE-1480: Inngest functions missing from inngestApi serve registration
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/firebase/src/index.ts:1111-1115`
+- **Details:** Four implemented Inngest functions (`processDistribution`, `exportAnalytics`, `retryWebhook`, `onboardingWorkflow`) in `src/functions/orchestration/inngest.ts` are missing from `inngestApi` handler's `functions` array, resulting in 404 errors during orchestration.
+- **Expected (acceptance):** Register `[processDistribution, exportAnalytics, retryWebhook, onboardingWorkflow]` into the `serve` array in `packages/firebase/src/index.ts`.
+- **Honest fallback:** Register all implemented functions or deprecate unused handlers cleanly.
+- **DO NOT:** Do not trigger Inngest events whose functions are unregistered in the serving endpoint.
+
+### ISSUE-1481: AdapterConstructor ignores hypotheses and hardcodes TuneCore fallback
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/shared/src/foundry/AdapterConstructor.ts:90-96`
+- **Details:** `synthesizeAdapterFromHypotheses` ignores verified hypotheses in `ledgerState` and uses a crude string check that routes all non-DistroKid statements through `TuneCoreStatementAdapter()`.
+- **Expected (acceptance):** Compile deterministic CSV/TSV parser honoring column positions, delimiters, and transforms from verified hypotheses.
+- **Honest fallback:** If hypothesis set is insufficient to construct a parser, throw `Error('Insufficient hypotheses to synthesize deterministic statement adapter')`.
+- **DO NOT:** Do not route arbitrary or unknown statements through TuneCore fallback.
+
+### ISSUE-1482: PinataService embeds hardcoded mock IPFS CID in production code
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/main/src/services/web3/PinataService.ts:5-8`
+- **Details:** Production service contains `if (process.env.NODE_ENV === 'test') return { success: true, hash: 'QmTestMockHashIPFSDataValueGoesHereCompleteParity12345' }`.
+- **Expected (acceptance):** Production code must not contain synthetic mocks; test mocks belong in test setup/fixtures. Service fails closed if JWT is missing.
+- **Honest fallback:** Return `{ success: false, error: 'PINATA_JWT missing or invalid' }`.
+- **DO NOT:** Do not embed synthetic success hashes in production source files.
+
+### ISSUE-1483: Web3Handler swallows RPC failures and misreports missing provider
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/main/src/handlers/web3.ts:147-154, 160-162`
+- **Details:** When `eth_sendRawTransaction` fails, the error is caught, and execution falls through to `simulateTransactionExecution` which throws `Simulation unavailable: No active RPC provider configured`.
+- **Expected (acceptance):** Return the actual RPC error message and details (`{ success: false, error: err.message }`).
+- **Honest fallback:** Surface exact node/contract/gas error to caller.
+- **DO NOT:** Do not replace real contract or node errors with a bogus 'no provider configured' message.
+
+### ISSUE-1484: ElectronAPI type definition missing fs, foundry, and raw namespaces
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/shared/src/ipc/electron-api.types.ts:340-375` & `packages/main/src/preload.ts:300-325`
+- **Details:** `preload.ts` exposes `fs`, `foundry`, and `raw` on `window.electron`, but `ElectronAPI` interface omits them and includes unused `remote`.
+- **Expected (acceptance):** Add `fs: ElectronFsAPI`, `foundry: ElectronFoundryAPI`, and `raw: ElectronRawAPI` to `ElectronAPI`; mark `remote` optional or remove if obsolete.
+- **Honest fallback:** Align TypeScript types strictly with runtime preload exposure.
+- **DO NOT:** Do not force renderer code to use `(window.electron as any)`.
+
+### ISSUE-1485: Dead auth.login and zombie sidecar listeners exposed in preload.ts
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Location:** `packages/main/src/preload.ts:44-47, 287-294`
+- **Details:** `auth.login` is a no-op returning `undefined`, and `sidecar.onStatusUpdate` listens to a channel whose backend was removed.
+- **Expected (acceptance):** Prune dead `auth.login` and zombie `sidecar` IPC bindings from `preload.ts` and type contracts.
+- **Honest fallback:** Remove dead stubs cleanly.
+- **DO NOT:** Do not expose dummy functions that give the illusion of active desktop auth or sidecar events.
+
+### ISSUE-1486: KNOWN_IPC_CHANNELS security allowlist missing 30+ registered channels
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Location:** `packages/main/src/main.ts:530-563`
+- **Details:** Allowlist audit set omits active `computer:*`, `foundry:*`, `upscale:*`, `agent:*`, and `sftp:*` channels registered on startup.
+- **Expected (acceptance):** Synchronize `KNOWN_IPC_CHANNELS` with all legitimately registered IPC channels in `main.ts`.
+- **Honest fallback:** Keep security audit set comprehensive and up-to-date.
+- **DO NOT:** Do not allow security audits to emit false negatives or flag legitimate channels.
+
+### ISSUE-1487: Orphaned 560-line custom ipc-validator.ts infrastructure
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Location:** `packages/main/src/utils/ipc-validator.ts:1-560`
+- **Details:** Contains unused custom validation framework; all active handlers use Zod in `validation.ts`.
+- **Expected (acceptance):** Remove orphaned `ipc-validator.ts` and migrate any test coverage to `validation.ts`.
+- **Honest fallback:** Delete dead code.
+- **DO NOT:** Do not maintain parallel unused validation libraries.
+
+### ISSUE-1488: ClaimsInboxTab invokes banned native window.confirm
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/legal/components/ClaimsInboxTab.tsx:80`
+- **Details:** Directly calls `window.confirm()` in `handleClaimResponse`, violating the repository standard.
+- **Expected (acceptance):** Use `ConfirmDialog.call(...)` from `@/components/ui/dialog/ConfirmDialog` (`react-call`).
+- **Honest fallback:** Keep claim state intact if cancelled.
+- **DO NOT:** Do not use native browser dialogs `window.confirm`, `window.alert`, or `window.prompt`.
+
+### ISSUE-1489: PublicistTools implementation orphaned by obsolete tools/index.ts import
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/services/agent/tools/index.ts:1, 97` & `PublicistTools.ts:167`
+- **Details:** `tools/index.ts` imports from `@/modules/publicist/tools` with missing stubs while the complete implementation in `services/agent/tools/PublicistTools.ts` is orphaned.
+- **Expected (acceptance):** Wire `services/agent/tools/PublicistTools.ts` into the master agent tool registry in `tools/index.ts`.
+- **Honest fallback:** Return descriptive `toolError` when LLM generation fails.
+- **DO NOT:** Do not register incomplete tool stubs or fabricate press releases.
+
+### ISSUE-1490: BudgetVsActuals permanently renders empty state with hardcoded array
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/finance/components/BudgetVsActuals.tsx:17, 36`
+- **Details:** `INITIAL_CATEGORIES` is a hardcoded empty array with no service connection or UI to add budget items.
+- **Expected (acceptance):** Connect `categories` to `FinanceService` budget store or provide an "Add Category" modal.
+- **Honest fallback:** Maintain honest empty state with active creation affordance; do not inject fake amounts.
+- **DO NOT:** Do not render fake pre-populated budget amounts.
+
+### ISSUE-1491: DSP AnomalyDetector graph and analysis dead due to file-scope empty arrays
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/finance/components/AnomalyDetector.tsx:35, 38, 125`
+- **Details:** `TRACK_NAMES` and `STREAM_DATA` are file-scope empty constants, making the entire Recharts velocity graph and anomaly algorithm dead code.
+- **Expected (acceptance):** Wire `STREAM_DATA` to `AnalyticsService` streaming ingestion pipeline, or show "Connect Distributor to Detect Anomalies" CTA.
+- **Honest fallback:** Honest empty state when no stream history exists.
+- **DO NOT:** Do not generate pseudo-random streaming spikes or synthetic anomalies.
+
+### ISSUE-1492: MultiCurrencyLedger displays hardcoded static timestamp and empty data
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/finance/components/MultiCurrencyLedger.tsx:27, 48, 139`
+- **Details:** Hardcodes `lastUpdated = '2026-03-07 09:42 UTC'` and empty ledger data with inert currency controls.
+- **Expected (acceptance):** Ingest multi-currency records from `RevenueService` and display dynamic sync timestamps.
+- **Honest fallback:** Display honest empty state ("No currency conversions recorded") without fake static timestamps.
+- **DO NOT:** Do not hardcode static past timestamps.
+
+### ISSUE-1493: StandardMerch dead hero buttons and category filter pills
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/merchandise/components/StandardMerch.tsx:36, 40, 57-67`
+- **Details:** "Explore Catalog" and "Our Story" buttons lack `onClick` handlers; category filter pills lack click handlers and hardcode `aria-pressed`.
+- **Expected (acceptance):** Wire category filter state to filter product grid; wire "Explore Catalog" to scroll to grid; provide real destination or remove "Our Story".
+- **Honest fallback:** Remove unauthored "Our Story" button rather than displaying dead controls.
+- **DO NOT:** Do not leave non-functional buttons on storefronts.
+
+### ISSUE-1494: ProMerch Authenticate Access button is inert
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/merchandise/components/ProMerch.tsx:35`
+- **Details:** `<button>AUTHENTICATE ACCESS</button>` has no `onClick` handler or type, remaining completely inert.
+- **Expected (acceptance):** Wire button to check user tier entitlement or open membership upgrade dialog.
+- **Honest fallback:** Open upgrade dialog explaining Pro access requirements.
+- **DO NOT:** Do not leave action buttons inert.
+
+### ISSUE-1495: StandardProductCard fabricates Best Seller badge and 5-star reviews on all cards
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/merchandise/components/StandardProductCard.tsx:25, 35`
+- **Details:** Every rendered product card unconditionally displays "Best Seller" and 5 stars with `(24 reviews)`.
+- **Expected (acceptance):** Only render "Best Seller" if `product.isBestSeller` is true; only render review ratings if genuine reviews exist on the product.
+- **Honest fallback:** Omit badges and star ratings when product record lacks verified review data.
+- **DO NOT:** Do not fabricate 5-star ratings or sales badges on unreviewed merchandise.
+
+### ISSUE-1496: ReleaseDetailPage hardcodes Original Mix 4:24 track details
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/publishing/components/ReleaseDetailPage.tsx:244`
+- **Details:** Hardcodes `Original Mix • 4:24` for every track on release detail views.
+- **Expected (acceptance):** Read track duration and mix subtitle from `metadata.tracks` or audio intelligence analysis.
+- **Honest fallback:** Render "Duration pending" or omit mix title if not provided.
+- **DO NOT:** Do not hardcode track durations or mix names.
+
+### ISSUE-1497: StudioControlsPanel passes dummy onToggle to frame dropzones
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Location:** `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:591, 623`
+- **Details:** Passes `onToggle={() => {}}` to `WhiskDropZone` for Start and End frames, rendering interactive checkboxes that click but do nothing.
+- **Expected (acceptance):** Wire `onToggle` to toggle enabled state of start/end frame inputs, or pass `hideCheckbox={true}`.
+- **Honest fallback:** Hide checkbox UI if toggling is unsupported.
+- **DO NOT:** Do not expose dead toggle checkboxes.
+
+### ISSUE-1498: VideoPropertySections uses dummy onChange to suppress React warning
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Location:** `packages/renderer/src/modules/creative/video/editor/components/VideoPropertySections.tsx:30`
+- **Details:** Project name rendered as input with dummy `onChange={() => {}}` solely to silence warnings while preventing edits.
+- **Expected (acceptance):** Provide `onUpdateProjectName` handler or render static heading/badge.
+- **Honest fallback:** Render static read-only text if editing is not supported.
+- **DO NOT:** Do not use dummy `onChange` handlers on editable-styled inputs.
+
+### ISSUE-1499: SettingsPanel renderSection lacks default fallback arm
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Location:** `packages/renderer/src/modules/settings/SettingsPanel.tsx:97-110`
+- **Details:** Switch statement has no `default:` case, returning `undefined` and rendering a blank screen on unrecognized section IDs.
+- **Expected (acceptance):** Add `default: return <ProfileSection />;` with warning log.
+- **Honest fallback:** Safely fall back to default profile section.
+- **DO NOT:** Do not return `undefined` from section renderers.

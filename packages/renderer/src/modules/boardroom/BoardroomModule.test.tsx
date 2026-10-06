@@ -144,11 +144,13 @@ describe('BoardroomModule', () => {
 });
 
 describe('BoardroomEmptyState', () => {
-    it('renders the three text elements', () => {
+    it('renders the header and executive starter cards', () => {
         render(<BoardroomEmptyState />);
         expect(screen.getByText('Boardroom Active')).toBeInTheDocument();
-        expect(screen.getByText('Awaiting your brief...')).toBeInTheDocument();
-        expect(screen.getByText('Select participants to join the discussion.')).toBeInTheDocument();
+        expect(screen.getByText('Your Executive Music Team is Assembled')).toBeInTheDocument();
+        expect(screen.getByText('Executive Business Starters')).toBeInTheDocument();
+        expect(screen.getByTestId('starter-card-master-audit')).toBeInTheDocument();
+        expect(screen.getByTestId('starter-card-split-sheet')).toBeInTheDocument();
     });
 });
 

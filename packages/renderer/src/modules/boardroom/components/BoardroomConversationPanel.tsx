@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { BoardroomAssetStrip } from './BoardroomAssetStrip';
+import { BoardroomStarterCards } from './BoardroomStarterCards';
 import {
     Bot,
     BriefcaseBusiness,
@@ -156,27 +157,32 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     if (messages.length === 0) {
         return (
             <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
-                {/* Empty State — centered vertically in the available space */}
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 min-w-0">
-                    <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-4">
-                        <MessageSquare size={22} className="text-indigo-400/50" />
-                    </div>
-                    <TextEffect preset="fade" className="text-sm font-medium text-white/40">Awaiting discussion...</TextEffect>
-                    {isAnyPhone ? (
-                        activeAgents.length > 0 ? (
-                            <TextEffect preset="fade" delay={0.5} className="text-xs text-white/20 mt-1 max-w-[240px]">
-                                {`Talk to ${activeAgents.map(id => resolveAgentVisualIdentity(id).displayName).join(', ')}. Tap '${activeAgents.length} active' above to change.`}
-                            </TextEffect>
+                {/* Empty State — centered vertically in the available space with executive starter cards */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center justify-center text-center p-6 min-w-0 space-y-4">
+                    <div className="flex flex-col items-center">
+                        <div className="w-12 h-12 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-3">
+                            <MessageSquare size={20} className="text-indigo-400/60" />
+                        </div>
+                        <TextEffect preset="fade" className="text-sm font-medium text-white/50">Awaiting discussion...</TextEffect>
+                        {isAnyPhone ? (
+                            activeAgents.length > 0 ? (
+                                <TextEffect preset="fade" delay={0.5} className="text-xs text-white/30 mt-1 max-w-[240px]">
+                                    {`Talk to ${activeAgents.map(id => resolveAgentVisualIdentity(id).displayName).join(', ')}.`}
+                                </TextEffect>
+                            ) : (
+                                <TextEffect preset="fade" delay={0.5} className="text-xs text-white/30 mt-1 max-w-[240px]">
+                                    Tap 'Seat Agents' above to select participants and start.
+                                </TextEffect>
+                            )
                         ) : (
-                            <TextEffect preset="fade" delay={0.5} className="text-xs text-white/20 mt-1 max-w-[240px]">
-                                Tap 'Seat Agents' above to select participants and start.
+                            <TextEffect preset="fade" delay={0.5} className="text-xs text-white/30 mt-1 max-w-[280px]">
+                                Select agents and submit a brief to start the boardroom session.
                             </TextEffect>
-                        )
-                    ) : (
-                        <TextEffect preset="fade" delay={0.5} className="text-xs text-white/20 mt-1 max-w-[240px]">
-                            Select agents and submit a brief to start the boardroom session.
-                        </TextEffect>
-                    )}
+                        )}
+                    </div>
+
+                    {/* Quick executive action starters */}
+                    <BoardroomStarterCards compact={isAnyPhone} />
                 </div>
 
                 {/* Prompt Area — always visible so users can start the conversation */}
