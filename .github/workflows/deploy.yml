@@ -1055,23 +1055,23 @@ jobs:
           done
           gcloud projects add-iam-policy-binding "$PROJECT" \
             --member="serviceAccount:print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/datastore.user --quiet
+            --role=roles/datastore.user --condition=None --quiet
           gcloud projects add-iam-policy-binding "$PROJECT" \
             --member="serviceAccount:print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/storage.objectUser --quiet
+            --role=roles/storage.objectUser --condition=None --quiet
           gcloud projects add-iam-policy-binding "$PROJECT" \
             --member="serviceAccount:print-prep-invoker@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/cloudtasks.enqueuer --quiet
+            --role=roles/cloudtasks.enqueuer --condition=None --quiet
           gcloud iam service-accounts add-iam-policy-binding \
             "print-prep-invoker@$PROJECT.iam.gserviceaccount.com" \
             --project "$PROJECT" \
             --member="serviceAccount:$PROJECT@appspot.gserviceaccount.com" \
-            --role=roles/iam.serviceAccountUser --quiet
+            --role=roles/iam.serviceAccountUser --condition=None --quiet
           gcloud iam service-accounts add-iam-policy-binding \
             "print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
             --project "$PROJECT" \
             --member="serviceAccount:github-actions@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/iam.serviceAccountUser --quiet
+            --role=roles/iam.serviceAccountUser --condition=None --quiet
           gcloud tasks queues describe print-prep-queue \
             --project "$PROJECT" --location "$REGION" --quiet >/dev/null 2>&1 || \
           gcloud tasks queues create print-prep-queue \
