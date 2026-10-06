@@ -3601,3 +3601,47 @@ Full `/issue-sweep` executed across Sentry, GitHub Pull Requests, GitHub Issues,
 - **Impact:** Passing compilation/mocks/public smoke does not prove full authenticated customer flows, production preflight, packaged runtimes or absence of warnings.
 - **Fix:** Record exact command/exit/status evidence for dependency gates, meaningful skipped tests, warning/chunk/heap budgets and protected production preflight; map customer and packaged claims to genuine acceptance evidence.
 - **Acceptance:** Publish per-claim evidence classifications; required failures propagate; production preflight stays fail-closed; full customer/packaged claims remain Conditional/Unknown until real acceptance. Do not fabricate a full green result from a cancelled run.
+
+
+---
+
+## Competitive Intelligence Intake — 2026-10-06
+
+- **Source/provenance:** Daily indii.music competitive-intelligence brief, reconciled against repository truth on 2026-10-06.
+- **Intake rule:** External signals are evidence, not automatic feature requests. Only demonstrated work becomes an OPEN issue. WATCH/ATTACH evidence below must not spawn implementation until a repository gap or acceptance failure is proven.
+- **Execution-graph rule:** Preserve `report_bug/reportBugFn -> Firestore/GitHub` as durable bug intake. These ledger entries describe planned/audit/verification work and must converge on existing durable GitHub issues when a matching issue exists.
+
+### ISSUE-1465: Production deployment remains unverified after print task IAM/queue fixes
+
+- **Status:** 🔴 OPEN (2026-10-06)
+- **Severity:** HIGH
+- **Module:** Production deployment / Print preparation / Cloud Tasks IAM
+- **Source/provenance:** 2026-10-06 daily competitive-intelligence/repository reconciliation.
+- **Evidence:** The daily repository pass reported a production deployment failure at the print task identity/queue provisioning step. Follow-up commits `5d38dfbe1d3426c3941c745decbeb7ea3bb911cc` ("fix(deploy): specify unconditional print IAM bindings") and `d8a0eebbff89df92b1570f72de5000dfa1ffaf1c` ("fix(print): scope task identity and build worker source") landed afterward. At ledger intake, the repository connector returned no exact-SHA workflow run for `d8a0eebb...`; that is a verification gap, not proof that no run occurred.
+- **Impact:** Local/staging/test success does not establish that the current print queue, task identity, worker source, and production deployment path are actually provisioned and usable in production.
+- **Relationship:** Discovered from production verification; blocks any claim that the current print preparation deployment is terminally verified. Does not supersede code fixes already landed.
+- **Fix:** Re-run or locate authoritative production deployment evidence on an exact descendant SHA containing both fixes. Do not add another queue/identity mechanism unless the current implementation demonstrably fails.
+- **Acceptance:** Record an exact commit SHA and successful production workflow/run ID showing print task identity + queue provisioning succeeds, worker source deploys, required services become healthy, and post-deploy health/behavior checks pass. If deployment remains externally blocked, record the blocker and keep the issue OPEN/Conditional.
+
+### ISSUE-1466: Rights & Royalty Recovery needs a repository gap audit against the newly converging competitor stack
+
+- **Status:** 🔴 OPEN (2026-10-06)
+- **Severity:** HIGH (strategic product / revenue capture)
+- **Module:** Registration Center / Rights administration / Finance / Distribution
+- **Source/provenance:** 2026-10-06 daily competitive-intelligence brief.
+- **External evidence:**
+  - DistroKid launched DistroKid Publishing on 2026-10-05 and states it acts as publishing administrator, registers works, tracks usage, collects composition royalties worldwide, and leaves copyright ownership with the songwriter. Public pricing states a one-time £55 songwriter setup fee and 20% commission on publishing royalties: https://distrokid.com/resources/blog/introducing-distrokid-publishing/ and https://distrokid.com/sw/publishing/
+  - DistroKid's support material says the service registers works with PROs/global societies and collects eligible publishing royalties: https://support.distrokid.com/hc/en-us/articles/46710189184147-How-Does-DistroKid-Publishing-Work
+  - Royalti exposes permissioned royalty/catalog workflows through MCP/REST (169 MCP tools / 700+ REST endpoints) and publicly documents works, writers, agreements, CWR, DDEX delivery, statement reconciliation, splits, payments and recoupment: https://royalti.io/developers and https://royalti.io/publishing
+  - limbo's API documentation (updated 2026-10-05) exposes albums, tracks, DSP deliveries/status, royalties and signed webhooks, reinforcing that delivery rails are increasingly replaceable API infrastructure: https://developer.limbomusic.com/
+- **Impact:** Distribution, publishing administration, royalty reconciliation and agent-addressable music-business infrastructure are converging. indii's zero-cut/provider-neutral thesis remains differentiated only if the repository actually supports the canonical rights chain and can identify/repair missing steps without pretending external registrations or collections completed.
+- **Relationship:** Parent program = Rights & Royalty Recovery. Depends on current repository truth. Overlaps historical ISSUE-1121 (founder/registration readiness, fixed) and ISSUE-1133 (DDEX readiness authority, fixed). Cross-cutting overlap with ISSUE-1463 (execution graph): rights/accounting actions exposed to agents must remain bounded, permissioned and evidence-gated.
+- **Fix:** Perform a repository-backed gap audit before implementation. Map existing support for person/writer/publisher identity; works↔recordings; ownership/splits; IPI/ISWC/ISRC/UPC; PRO/MLC/SoundExchange registration state; CWR/DDEX messaging; acknowledgements; statements; claims/disputes; recoupment; reconciliation; catalog migration; delivery-provider abstraction; and evidence of external completion. Classify each capability as implemented/partial/missing/external-only.
+- **Acceptance:** Produce an auditable capability matrix with code/test references and an explicit decision for every demonstrated gap (build, integrate, defer, or intentionally exclude). Only confirmed gaps may spawn child implementation issues. Competitor evidence alone must never produce a feature clone. Preserve the intended canonical chain: `identity -> work -> recording -> ownership -> authorization -> registration -> delivery -> usage -> claims -> royalties -> reconciliation`.
+
+### Competitive evidence attached without creating separate issues
+
+- **AI identity / impersonation — ATTACH:** Sony Music reported more than 260,000 AI-generated impersonation-track removal requests by the end of September 2026. Treat this as evidence for identity/authorization/provenance lineage. Do not create a generic AI-detector project unless a repository audit proves a specific missing capability. Source: https://www.ft.com/content/51aed058-f8e0-4426-b92a-790b7863d350
+- **Royalti MCP — ATTACH to ISSUE-1463:** Market evidence now shows royalty/accounting platforms exposing real business state to AI clients. indii's response should remain `agent request -> permission -> deterministic operation -> durable result -> evidence`, not unrestricted LLM access to financial state.
+- **limbo API — ATTACH to Distribution & Catalog Portability:** Treat delivery rails/providers as substitutable infrastructure. Preserve canonical catalog/release state independently of any one distributor.
+- **Broader artist-service expansion — WATCH:** Do not create an implementation issue from management/service breadth alone; retain as investor/competitive evidence.
