@@ -3460,3 +3460,144 @@ Full `/issue-sweep` executed across Sentry, GitHub Pull Requests, GitHub Issues,
   - Refactored `packages/renderer/src/components/layout/SmartNextActionBanner.tsx`: renders nothing when 0 candidates exist or when artist is in the target module. Corrected typography and badge contrast (`text-xs py-0.5`). Fixed `MODULE_DISPLAY_NAMES` import.
   - Added unit test suites in `nextActionFacts.test.ts` (5/5 passing) and `SmartNextActionBanner.test.tsx` (5/5 passing). Updated `typesafeJudgments.test.ts` (194/194 passing).
 - **Acceptance:** Full typecheck (`npm run typecheck`) and ESLint (`npm run lint`) pass with 0 errors. Store with no draft releases and 0 streams renders 0 banner suggestions.
+
+
+## Repository Truth Audit — 2026-10-05 (recorded 2026-10-06)
+
+- **Evidence baseline:** `ca34b120b9fec2c2e8af4338be046beabb3d0f9d`, version 1.80.1; [exact-SHA CI run 37313793966](https://github.com/indii-music-founder/indii-music-founder/actions/runs/37313793966).
+- **Run status correction:** On 2026-10-06 the referenced run is completed/cancelled. Individual passing jobs observed during the audit remain scoped evidence; the overall run is not a genuine full green result.
+- **Scope:** Historical audit findings appended for fixing agents; these entries do not assert that later mainline commits are unchanged. Reinspect current code before implementation or closure. No implementation fixes or genuine-user acceptance were performed by this ledger update.
+- **Classification:** Confirmed source defects are Structural; unavailable deployment/installed-app evidence is Conditional or Unknown. Mock-backed checks establish structure only. No verified Critical finding was identified. HyperFrames is current; Remotion/Vino are retired.
+- **Ledger reconciliation:** ISSUE-1454 below cross-references ISSUE-1443 without erasing its delivered locale-money fixes or historical acceptance record. New gaps and verification requirements remain open until exact evidence resolves them.
+
+### ISSUE-1453: Cloud rendering acknowledges work before durable enqueue and lacks bounded ownership-safe downloads
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** HIGH
+- **Module:** Cloud render worker
+- **Evidence:** `packages/render-worker/src/index.ts:49–53` follows URL redirects and buffers the entire response; `:170–171` returns HTTP 202 before in-process rendering completes. `packages/firebase/src/functions/video/dispatchCloudVideoRender.ts:41–48` selects this asynchronous HTTP path. Shared-bearer/path-shape checks do not independently establish caller/job/project ownership. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Accepted jobs can disappear on process termination; arbitrary fetches and unbounded downloads expose security/resource risks. Deployed exposure remains Conditional.
+- **Fix:** Durably enqueue before 202; enforce identity and owner agreement, approved storage/HTTPS sources with redirect/SSRF protection, streaming byte/time/type/checksum limits, transactional leases, idempotency, cancellation and retries.
+- **Acceptance:** Boundary tests reject wrong-owner/private-IP/redirect/oversized inputs; duplicate enqueue executes once; crash recovery preserves jobs; credentialed staging proves delivery, otherwise retain Conditional.
+
+### ISSUE-1454: Statement imports retain unstable identities, fragile parsing and fee reconciliation defects
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** HIGH
+- **Module:** Finance / Format Foundry
+- **Evidence:** `packages/shared/src/foundry/adapters/DistroKidStatementAdapter.ts:60,108,131,153,157` retains an unincremented fee accumulator, empty-string/nullish fee fallback, synthetic row hashes and timestamp report IDs. TuneCore `:64,140` retains comma splitting and timestamp IDs. Renderer adapter copies remain separate. This qualifies the financial acceptance recorded under ISSUE-1443; its locale-money fixes are preserved. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Reimports/reordered statements are not proven idempotent; quoted fields and fee totals can be wrong. Persistent duplicate-event behavior is Unknown.
+- **Fix:** Make shared adapters canonical; parse CSV/TSV correctly; hash original bytes with SHA-256; use stable normalized identities with legitimate duplicate occurrence handling; preserve lineage and fixed-point amounts through persistence; quarantine malformed rows.
+- **Acceptance:** Provider-shaped fixtures prove same-file zero-new-event reimport, documented reorder semantics, genuine duplicate preservation, quoted multiline parsing, exact per-currency gross/net/fee reconciliation and matching renderer/shared output.
+
+### ISSUE-1455: Dependency security advisories remain advisory without documented reachability triage
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** HIGH
+- **Module:** Dependencies / CI
+- **Evidence:** Audited CI npm audit reported 51 advisories (3 low, 17 moderate, 31 high). `.github/workflows/deploy.yml:230` treats this check as advisory with continue-on-error. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Green CI does not establish a clean dependency security posture; advisory counts alone do not establish exploitable production exposure.
+- **Fix:** Record affected packages, production/dev reachability and mitigations; apply bounded compatible upgrades with lockfile integrity checks; explicitly document advisory policy.
+- **Acceptance:** Exact-SHA audit and regression results demonstrate each high advisory fixed or explicitly reviewed with owner, rationale and follow-up.
+
+### ISSUE-1456: CI root runtime differs from the declared Node requirement
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** MEDIUM
+- **Module:** CI / Runtime reproducibility
+- **Evidence:** Root declares Node >=24; audited CI used Node 22.23.3/npm 10.9.9. `.github/workflows/deploy.yml` uses setup-node 22.x, including setup and unit shards. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** CI compilation/test evidence does not validate the declared root runtime. Firebase's supported deployment runtime is a separate constraint.
+- **Fix:** Align root CI with the intentional engine requirement; retain separately documented supported Functions runtime; verify lockfile installs and dependency drift/integrity.
+- **Acceptance:** Clean installs and required gates pass on the declared root runtime; backend runtime compatibility is independently tested and documented.
+
+### ISSUE-1457: Mainline required-check protection is not established by branch metadata
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** HIGH
+- **Module:** Repository governance
+- **Evidence:** Audit branch metadata reported protected=false and required-status-check protection off. Organization/repository rulesets were not fully established by that result. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Direct mainline delivery is not proven to require the intended truth gates; absence of all protection must not be inferred without ruleset evidence.
+- **Fix:** Inspect effective rulesets and branch protection; document required checks and authorized bypasses; configure appropriate enforcement only with applicable administrative authorization.
+- **Acceptance:** Effective rule evidence shows the intended required checks enforce mainline updates; record administrative blockers rather than claiming protection.
+
+### ISSUE-1458: Packaged Python, DDEX XSD and native runtime reproducibility remain unproven
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** MEDIUM
+- **Module:** Desktop packaging / DDEX
+- **Evidence:** `packages/main/src/utils/python-bridge.ts:7–18` falls back to host python3/python. `execution/distribution/xsd_validator.py:95,132` allows non-strict operation and rejects missing official schemas in strict mode; no XSD assets were found in the audited tree. Builder hooks/MCP package checks do not prove installed RAW/FFmpeg/Python paths. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Developer-machine success does not establish an offline installed-app capability or standards conformance.
+- **Fix:** Bundle pinned checksummed runtimes/locked dependencies or replace critical paths; package authorized XSDs with license provenance; build native assets from controlled inputs and verify ASAR lookup paths.
+- **Acceptance:** Supported OS/architecture installed-app smoke tests execute RAW conversion, FFmpeg/FFprobe render and strict offline XSD validation; TypeScript/Python differential conformance results and binary hashes are retained.
+
+### ISSUE-1459: Active architecture instructions still identify retired video and sidecar components
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** MEDIUM
+- **Module:** Documentation / Agent instructions
+- **Evidence:** `CLAUDE.md` identifies Remotion 4.0.445; `.agent-os/product/tech-stack.md:15,58` likewise identifies Remotion and retains Docker/Python-sidecar architecture. Roadmap's Remotion checklist is explicitly a historical snapshot and should remain labeled Historical. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Agents can select retired architecture from active instructions despite current HyperFrames integration.
+- **Fix:** Update active instruction mirrors and tech-stack from manifests/runtime code; retain explicitly dated history. HyperFrames is current; Remotion and Vino stay retired.
+- **Acceptance:** Active documentation and instruction mirrors match current code; historical references are clearly separated; no retired dependency is reintroduced.
+
+### ISSUE-1460: HyperFrames telemetry opt-out is not proven across all isolated execution environments
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** MEDIUM
+- **Module:** HyperFrames / Privacy
+- **Evidence:** Weekly audit workflow explicitly invokes telemetry disable; deployed test workflow has no corresponding opt-out identified. HyperFramesAdapter changes HOME to /tmp/hyperframes-home, so a developer or other job preference does not prove this CLI home is opted out. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Privacy claims exceed verified opt-out coverage. This is a coverage gap, not proof of observed telemetry leakage.
+- **Fix:** Apply supported opt-out before CLI use in each relevant isolated job and packaged execution home; verify pinned player/CLI compatibility and FFmpeg/browser prerequisites.
+- **Acceptance:** Tests and runtime evidence demonstrate opt-out applies to the actual CLI home with no unwanted telemetry egress; real artifacts probe as playable media.
+
+### ISSUE-1461: Computer-control approval implementation needs complete security-boundary acceptance evidence
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** MEDIUM
+- **Module:** Computer control / Checkpoint C
+- **Evidence:** `packages/main/src/handlers/computer.ts` and `packages/main/src/services/computer/ComputerAuthorizationService.ts` provide authorization structure, native approval and scoped tokens. Existing structure must not be described as absent; complete deployed OS/identity transition proof was not established. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Approval bypass/replay resistance and genuine-user execution remain Structural/Conditional until boundary evidence is mapped.
+- **Fix:** Trace existing approval UI through IPC/main/provider; verify user/session/exact-argument binding, atomic one-use consumption, revocation, expiry, abort, OS permissions, app allowlist and autonomous-drive scope without adding a parallel approval system.
+- **Acceptance:** Direct IPC/bypass, wrong-user/tool/arguments, expired/replayed/concurrent tokens, signout/reload and abort tests fail closed; approved exact call executes once; genuine OS path is separately evidenced.
+
+### ISSUE-1462: Studio execution retains renderer dependencies and headless durability is unproven
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** MEDIUM
+- **Module:** Studio executor / Remote execution
+- **Evidence:** `packages/renderer/src/services/remote/rendererExecutionAdapter.ts:13–14,132,199` depends on renderer stores/AgentService/window despite separated core interfaces. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Core separation does not establish execution while the renderer is closed, asleep or disconnected.
+- **Fix:** Document renderer-dependent operating limits; connect bounded authenticated admission and durable execution/lease recovery where headless operation is intended.
+- **Acceptance:** Real non-renderer execution plus sleep/reconnect/cancellation/ownership tests establish persistence and recovery; otherwise keep the capability renderer-dependent.
+
+### ISSUE-1463: Execution graph foundation is present but the complete verified feedback loop remains conditional
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** MEDIUM
+- **Module:** Execution graph / Closed-loop orchestration
+- **Evidence:** `packages/shared/src/schemas/executionGraph.ts`, `packages/firebase/src/functions/agent/executionGraphStore.ts`, and exported intake functions implement graph schemas/store and receipt structure. `docs/execution-graph/2026-10-04-baseline.md` records missing CI/review/observability event adapters, daily brief producer and executor admission/dispatch. Bug intake uses a timestamp ID in `reportBugFn.ts:74`; replay deduplication requires proof. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** An implemented graph and green build do not establish bug→issue→graph→authorized patch→exact-SHA CI→verified closure or autonomous self-upgrade.
+- **Fix:** Connect authoritative event adapters and existing issue lineage, replay-safe intake, bounded authorized executor and evidence-driven completion gates; preserve planned versus discovered children and owner isolation.
+- **Acceptance:** A genuine authorized intake survives replay/reload; issue linkage deduplicates; exact-SHA results enter the graph; failed/missing evidence blocks closure; successful bounded execution records durable provenance. Credentialed deployment remains Conditional until verified.
+
+### ISSUE-1464: Audit quality and release claims need explicit unresolved-gate evidence
+
+- **Status:** 🔴 OPEN (2026-10-06; audit baseline 2026-10-05)
+- **Severity:** LOW
+- **Module:** Verification / Release claims
+- **Evidence:** At audited SHA, typecheck passed (112s), lint passed (101s; 217 warnings), 20 test shards/rules passed, studio build completed electron-vite build (58s), and two public smoke tests passed (4.9s). Dependency drift/integrity execution was not proven; chunk-size/source-map warnings remain. Catalog: 201 entries, 37 certified, 70 conditional. MCP checks prove their specific scope. Source references are at the audit baseline SHA above.
+- **Classification:** Structural / Conditional / Unknown as distinguished in the evidence and acceptance; no end-to-end claim follows from interfaces or mocks.
+- **Impact:** Passing compilation/mocks/public smoke does not prove full authenticated customer flows, production preflight, packaged runtimes or absence of warnings.
+- **Fix:** Record exact command/exit/status evidence for dependency gates, meaningful skipped tests, warning/chunk/heap budgets and protected production preflight; map customer and packaged claims to genuine acceptance evidence.
+- **Acceptance:** Publish per-claim evidence classifications; required failures propagate; production preflight stays fail-closed; full customer/packaged claims remain Conditional/Unknown until real acceptance. Do not fabricate a full green result from a cancelled run.
