@@ -1047,7 +1047,7 @@ jobs:
           set -euo pipefail
           PROJECT=indii-music-founder
           REGION=us-central1
-          for account in print-prep-runtime print-prep-invoker; do
+          for account in print-prep-runtime print-prep-invoker print-prep-dispatcher; do
             gcloud iam service-accounts describe "$account@$PROJECT.iam.gserviceaccount.com" \
               --project "$PROJECT" --quiet >/dev/null 2>&1 || \
             gcloud iam service-accounts create "$account" \
@@ -1056,16 +1056,15 @@ jobs:
           gcloud projects add-iam-policy-binding "$PROJECT" \
             --member="serviceAccount:print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
             --role=roles/datastore.user --condition=None --quiet
-          gcloud projects add-iam-policy-binding "$PROJECT" \
+          gcloud storage buckets add-iam-policy-binding \
+            gs://indii-music-founder.firebasestorage.app \
+            --project "$PROJECT" \
             --member="serviceAccount:print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/storage.objectUser --condition=None --quiet
-          gcloud projects add-iam-policy-binding "$PROJECT" \
-            --member="serviceAccount:print-prep-invoker@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/cloudtasks.enqueuer --condition=None --quiet
+            --role=roles/storage.objectUser --quiet
           gcloud iam service-accounts add-iam-policy-binding \
             "print-prep-invoker@$PROJECT.iam.gserviceaccount.com" \
             --project "$PROJECT" \
-            --member="serviceAccount:$PROJECT@appspot.gserviceaccount.com" \
+            --member="serviceAccount:print-prep-dispatcher@$PROJECT.iam.gserviceaccount.com" \
             --role=roles/iam.serviceAccountUser --condition=None --quiet
           gcloud iam service-accounts add-iam-policy-binding \
             "print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
@@ -1076,6 +1075,10 @@ jobs:
             --project "$PROJECT" --location "$REGION" --quiet >/dev/null 2>&1 || \
           gcloud tasks queues create print-prep-queue \
             --project "$PROJECT" --location "$REGION" --quiet
+          gcloud tasks queues add-iam-policy-binding print-prep-queue \
+            --project "$PROJECT" --location "$REGION" \
+            --member="serviceAccount:print-prep-dispatcher@$PROJECT.iam.gserviceaccount.com" \
+            --role=roles/cloudtasks.enqueuer --quiet
           gcloud storage buckets add-iam-policy-binding \
             gs://indii-music-founder.firebasestorage.app \
             --project indii-music-founder \
@@ -1101,7 +1104,7 @@ jobs:
           gcloud run deploy print-prep \
             --project indii-music-founder \
             --region us-central1 \
-            --source . \
+            --source execution/print_prep \
             --service-account print-prep-runtime@indii-music-founder.iam.gserviceaccount.com \
             --cpu 4 \
             --memory 8Gi \

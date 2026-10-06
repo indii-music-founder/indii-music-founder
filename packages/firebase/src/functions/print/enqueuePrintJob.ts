@@ -76,7 +76,12 @@ function isAlreadyExists(error: unknown): boolean {
 }
 
 export const enqueuePrintJob = onCall(
-    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false },
+    {
+        timeoutSeconds: 30,
+        memory: '512MiB',
+        enforceAppCheck: false,
+        serviceAccount: 'print-prep-dispatcher@indii-music-founder.iam.gserviceaccount.com',
+    },
     async (request): Promise<EnqueuePrintJobResult> => {
         validateAppCheckV2(request);
         const userId = requireVerifiedCreativeUser(request.auth);

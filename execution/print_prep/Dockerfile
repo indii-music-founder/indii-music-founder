@@ -40,7 +40,7 @@ RUN mkdir -p /app/models && \
     wget -q https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth -O /app/models/RealESRGAN_x4plus.pth && \
     wget -q https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth -O /app/models/RealESRGAN_x4plus_anime_6B.pth
 
-COPY execution /app/execution
+COPY print_prep.py upscale.py worker.py /app/execution/print_prep/
 
 ENV MODEL_DIR=/app/models
 ENV PORT=8080

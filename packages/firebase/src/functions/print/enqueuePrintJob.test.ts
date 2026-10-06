@@ -35,6 +35,14 @@ vi.mock('../../middleware/appCheck', () => ({
 
 import { enqueuePrintJob, setPrintTasksClientFactoryForTests } from './enqueuePrintJob';
 
+// STRUCTURAL ONLY: this legacy suite uses mock auth, Firestore and Cloud Tasks;
+// it verifies callable validation, not a real print job or production dispatch.
+const originalWorkerEnv = {
+    GCLOUD_PROJECT: process.env.GCLOUD_PROJECT,
+    PRINT_WORKER_URL: process.env.PRINT_WORKER_URL,
+    PRINT_WORKER_SERVICE_ACCOUNT: process.env.PRINT_WORKER_SERVICE_ACCOUNT,
+};
+
 describe('enqueuePrintJob Callable Function', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -48,9 +56,10 @@ describe('enqueuePrintJob Callable Function', () => {
     });
 
     afterAll(() => {
-        delete process.env.GCLOUD_PROJECT;
-        delete process.env.PRINT_WORKER_URL;
-        delete process.env.PRINT_WORKER_SERVICE_ACCOUNT;
+        for (const [key, original] of Object.entries(originalWorkerEnv)) {
+            if (original === undefined) delete process.env[key];
+            else process.env[key] = original;
+        }
     });
 
     it('successfully validates request and enqueues print job to Firestore', async () => {
