@@ -41,10 +41,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Auth (Simplified - login handled via Firebase SDK in renderer)
     auth: {
-        login: async () => {
-            // Login is handled directly via Firebase signInWithPopup in renderer
-            return;
-        },
         logout: () => ipcRenderer.invoke('auth:logout'),
         onUserUpdate: (callback: (tokens: { idToken: string, accessToken?: string | null, source?: string | null } | null) => void) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -280,16 +276,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
             const handler = (_event: unknown, state: unknown) => callback(state);
             ipcRenderer.on('daw:state-changed', handler);
             return () => ipcRenderer.removeListener('daw:state-changed', handler);
-        }
-    },
-
-    // AI Sidecar
-    sidecar: {
-        // NOTE: restart handler removed from main process — do not expose orphaned IPC
-        onStatusUpdate: (callback: (status: string) => void) => {
-            const handle = (_e: unknown, status: string) => callback(status);
-            ipcRenderer.on('sidecar:status-update', handle);
-            return () => ipcRenderer.removeListener('sidecar:status-update', handle);
         }
     },
 

@@ -3715,244 +3715,251 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 ## 2026-10-06 /finish Sweep Findings
 
 ### ISSUE-1473: syncEmailList claims 100% sync success without calling external provider
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/firebase/src/marketing/marketingCallables.ts:366-406`
 - **Details:** Validates provider key exists in Firestore but performs no REST API calls to Mailchimp, Klaviyo, or Resend; unconditionally returns `{ synced: members.length, failed: 0, status: 'synced' }`.
 - **Expected (acceptance):** Dispatch subscriber list upsert to provider REST API using stored credentials, returning real synced and failed counts based on provider HTTP responses.
 - **Honest fallback:** If external provider sync is not yet wired, throw `HttpsError('unavailable', 'External synchronization for provider is not yet connected.')`.
-- **DO NOT:** Do not return fabricated `{ synced: members.length, failed: 0 }`.
+- **Fix:** Fails closed throwing `HttpsError('unavailable', 'External synchronization for provider ${provider} is not yet connected.')`.
+- **Evidence:** `packages/firebase/src/marketing/marketingCallables.ts:397`, verified by `packages/firebase/src/marketing/marketingCallables.test.ts:153-157`.
 
 ### ISSUE-1474: sendSMSBlast writes fake sent status without invoking Twilio
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/firebase/src/marketing/marketingCallables.ts:513-565`
 - **Details:** Checks Twilio credentials but never instantiates the Twilio client; writes `users/{userId}/smsDeliveries/{blastId}` with `status: 'sent'` and returns `{ sent: phones.length, failed: 0, status: 'sent' }`.
 - **Expected (acceptance):** Instantiate Twilio Messaging client, dispatch SMS in batches, capture actual Message SIDs, and record genuine delivery state.
 - **Honest fallback:** Fail closed with `HttpsError('unavailable', 'Live Twilio SMS dispatch is not yet wired to this callable.')`.
-- **DO NOT:** Do not write `status: 'sent'` or return fake zero-failure counts when no HTTP call was made.
+- **Fix:** Fails closed throwing `HttpsError('unavailable', 'Live Twilio SMS dispatch is not yet wired to this callable.')`.
+- **Evidence:** `packages/firebase/src/marketing/marketingCallables.ts:553`, verified by `packages/firebase/src/marketing/marketingCallables.test.ts:219-223`.
 
 ### ISSUE-1475: getSMSDeliveryStatus fabricates delivered state from unverified documents
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/firebase/src/marketing/marketingCallables.ts:572-605`
 - **Details:** Reads delivery doc and defaults unverified status to `'delivered'`, without querying Twilio API or relying on verified webhooks.
 - **Expected (acceptance):** Query Twilio Message Status API or return status updated exclusively by verified Twilio StatusCallback webhooks.
 - **Honest fallback:** Return `status: 'untracked'` or throw `HttpsError('unavailable', 'Real-time SMS delivery tracking requires Twilio StatusCallback webhook configuration.')`.
-- **DO NOT:** Do not default missing delivery status to `'delivered'`.
+- **Fix:** Checks for `verifiedStatus` on delivery record, failing closed throwing `HttpsError('unavailable')` instead of defaulting to delivered.
+- **Evidence:** `packages/firebase/src/marketing/marketingCallables.ts:592`, verified by `packages/firebase/src/marketing/marketingCallables.test.ts:241-245`.
 
 ### ISSUE-1476: deployEmailCampaign leaves campaigns in unmonitored queued state
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/firebase/src/marketing/marketingCallables.ts:412-465`
 - **Details:** Writes campaign doc with `status: 'queued'`, but no Cloud Function, Cloud Task, or Inngest job watches or executes the queue.
 - **Expected (acceptance):** Enqueue an Inngest background event (`campaign/email.queued`) or Cloud Task to send via provider, updating status to `sending` -> `sent` / `failed`.
 - **Honest fallback:** If background dispatch worker is missing, fail closed with `HttpsError('unimplemented', 'Automated campaign dispatch worker is not yet configured.')`.
-- **DO NOT:** Do not mark campaigns as queued if there is no background processor to run them.
+- **Fix:** Fails closed throwing `HttpsError('unimplemented', 'Automated email campaign dispatch worker is not yet configured.')`.
+- **Evidence:** `packages/firebase/src/marketing/marketingCallables.ts:446`, verified by `packages/firebase/src/marketing/marketingCallables.test.ts:182-186`.
 
 ### ISSUE-1477: processEncounterPipeline Cloud Function is never deployed
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/firebase/src/functions/encounters/processEncounterPipeline.ts:35`
 - **Details:** Implemented in `src/functions/encounters/` but missing from `packages/firebase/src/index.ts` export root; encounters sit in `pending` forever.
 - **Expected (acceptance):** Export `processEncounterPipeline` from `packages/firebase/src/index.ts` so Firebase Cloud Functions deploys the trigger.
-- **Honest fallback:** Must be deployed to Google Cloud Functions.
-- **DO NOT:** Do not mock transcription or encounter completion in client services.
+- **Fix:** Exported `processEncounterPipeline` in `packages/firebase/src/index.ts`.
+- **Evidence:** `packages/firebase/src/index.ts:121`.
 
 ### ISSUE-1478: onWhiteGloveAssetUploaded storage trigger is not exported in index.ts
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/firebase/src/functions/ingestion/onWhiteGloveAssetUploaded.ts:4`
 - **Details:** Storage trigger listening to `ingest/white-glove/` uploads is omitted from `packages/firebase/src/index.ts` and never deployed.
 - **Expected (acceptance):** Re-export `onWhiteGloveAssetUploaded` from `packages/firebase/src/index.ts`.
-- **Honest fallback:** Deploy trigger or reject white-glove uploads if ingestion engine is offline.
-- **DO NOT:** Do not silently ignore uploaded white-glove assets.
+- **Fix:** Re-exported `onWhiteGloveAssetUploaded` in `packages/firebase/src/index.ts`.
+- **Evidence:** `packages/firebase/src/index.ts:122`.
 
 ### ISSUE-1479: onIswcAssigned release trigger is not exported in index.ts
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/firebase/src/publishing/iswc.ts:15`
 - **Details:** Trigger listening to ISWC assignments on releases is not exported in `packages/firebase/src/index.ts`, preventing automated release unblocking.
 - **Expected (acceptance):** Export `onIswcAssigned` from `packages/firebase/src/index.ts`.
-- **Honest fallback:** Retain manual trigger/review path if trigger is disabled.
-- **DO NOT:** Do not leave publishing releases permanently blocked on automated ISWC listeners.
+- **Fix:** Exported `onIswcAssigned` in `packages/firebase/src/index.ts`.
+- **Evidence:** `packages/firebase/src/index.ts:123`.
 
 ### ISSUE-1480: Inngest functions missing from inngestApi serve registration
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/firebase/src/index.ts:1111-1115`
 - **Details:** Four implemented Inngest functions (`processDistribution`, `exportAnalytics`, `retryWebhook`, `onboardingWorkflow`) in `src/functions/orchestration/inngest.ts` are missing from `inngestApi` handler's `functions` array, resulting in 404 errors during orchestration.
 - **Expected (acceptance):** Register `[processDistribution, exportAnalytics, retryWebhook, onboardingWorkflow]` into the `serve` array in `packages/firebase/src/index.ts`.
-- **Honest fallback:** Register all implemented functions or deprecate unused handlers cleanly.
-- **DO NOT:** Do not trigger Inngest events whose functions are unregistered in the serving endpoint.
+- **Fix:** Registered `processDistribution`, `exportAnalytics`, `retryWebhook`, and `onboardingWorkflow` in `inngestApi` serve list in `packages/firebase/src/index.ts`.
+- **Evidence:** `packages/firebase/src/index.ts:1120-1127`.
 
 ### ISSUE-1481: AdapterConstructor ignores hypotheses and hardcodes TuneCore fallback
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/shared/src/foundry/AdapterConstructor.ts:90-96`
 - **Details:** `synthesizeAdapterFromHypotheses` ignores verified hypotheses in `ledgerState` and uses a crude string check that routes all non-DistroKid statements through `TuneCoreStatementAdapter()`.
 - **Expected (acceptance):** Compile deterministic CSV/TSV parser honoring column positions, delimiters, and transforms from verified hypotheses.
 - **Honest fallback:** If hypothesis set is insufficient to construct a parser, throw `Error('Insufficient hypotheses to synthesize deterministic statement adapter')`.
-- **DO NOT:** Do not route arbitrary or unknown statements through TuneCore fallback.
+- **Fix:** Implemented deterministic adapter synthesizer mapping proven hypotheses for delimiter, column names, financial scaling, and currency; throws Error if necessary financial mappings are missing.
+- **Evidence:** `packages/shared/src/foundry/AdapterConstructor.ts:90-138`, verified by `packages/shared/src/foundry/AdapterConstructor.test.ts:40-108`.
 
 ### ISSUE-1482: PinataService embeds hardcoded mock IPFS CID in production code
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/main/src/services/web3/PinataService.ts:5-8`
 - **Details:** Production service contains `if (process.env.NODE_ENV === 'test') return { success: true, hash: 'QmTestMockHashIPFSDataValueGoesHereCompleteParity12345' }`.
 - **Expected (acceptance):** Production code must not contain synthetic mocks; test mocks belong in test setup/fixtures. Service fails closed if JWT is missing.
-- **Honest fallback:** Return `{ success: false, error: 'PINATA_JWT missing or invalid' }`.
-- **DO NOT:** Do not embed synthetic success hashes in production source files.
+- **Fix:** Removed synthetic mock hash check; returns `{ success: false, error: 'PINATA_JWT missing or invalid' }` when unconfigured.
+- **Evidence:** `packages/main/src/services/web3/PinataService.ts:5-12`.
 
 ### ISSUE-1483: Web3Handler swallows RPC failures and misreports missing provider
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/main/src/handlers/web3.ts:147-154, 160-162`
 - **Details:** When `eth_sendRawTransaction` fails, the error is caught, and execution falls through to `simulateTransactionExecution` which throws `Simulation unavailable: No active RPC provider configured`.
 - **Expected (acceptance):** Return the actual RPC error message and details (`{ success: false, error: err.message }`).
-- **Honest fallback:** Surface exact node/contract/gas error to caller.
-- **DO NOT:** Do not replace real contract or node errors with a bogus 'no provider configured' message.
+- **Fix:** Surfaces actual RPC error message instead of swallowing error and misreporting missing provider.
+- **Evidence:** `packages/main/src/handlers/web3.ts:147-152`.
 
 ### ISSUE-1484: ElectronAPI type definition missing fs, foundry, and raw namespaces
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/shared/src/ipc/electron-api.types.ts:340-375` & `packages/main/src/preload.ts:300-325`
 - **Details:** `preload.ts` exposes `fs`, `foundry`, and `raw` on `window.electron`, but `ElectronAPI` interface omits them and includes unused `remote`.
 - **Expected (acceptance):** Add `fs: ElectronFsAPI`, `foundry: ElectronFoundryAPI`, and `raw: ElectronRawAPI` to `ElectronAPI`; mark `remote` optional or remove if obsolete.
-- **Honest fallback:** Align TypeScript types strictly with runtime preload exposure.
-- **DO NOT:** Do not force renderer code to use `(window.electron as any)`.
+- **Fix:** Added `fs`, `foundry`, and `raw` interfaces to `packages/shared/src/ipc/electron-api.types.ts`; marked `remote` and `sidecar` optional.
+- **Evidence:** `packages/shared/src/ipc/electron-api.types.ts:354-365`.
 
 ### ISSUE-1485: Dead auth.login and zombie sidecar listeners exposed in preload.ts
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟢 LOW
 - **Location:** `packages/main/src/preload.ts:44-47, 287-294`
 - **Details:** `auth.login` is a no-op returning `undefined`, and `sidecar.onStatusUpdate` listens to a channel whose backend was removed.
 - **Expected (acceptance):** Prune dead `auth.login` and zombie `sidecar` IPC bindings from `preload.ts` and type contracts.
-- **Honest fallback:** Remove dead stubs cleanly.
-- **DO NOT:** Do not expose dummy functions that give the illusion of active desktop auth or sidecar events.
+- **Fix:** Removed dead `auth.login` stub and removed zombie sidecar listener in `packages/main/src/preload.ts`.
+- **Evidence:** `packages/main/src/preload.ts:44-50`.
 
 ### ISSUE-1486: KNOWN_IPC_CHANNELS security allowlist missing 30+ registered channels
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟢 LOW
 - **Location:** `packages/main/src/main.ts:530-563`
 - **Details:** Allowlist audit set omits active `computer:*`, `foundry:*`, `upscale:*`, `agent:*`, and `sftp:*` channels registered on startup.
 - **Expected (acceptance):** Synchronize `KNOWN_IPC_CHANNELS` with all legitimately registered IPC channels in `main.ts`.
-- **Honest fallback:** Keep security audit set comprehensive and up-to-date.
-- **DO NOT:** Do not allow security audits to emit false negatives or flag legitimate channels.
+- **Fix:** Added all 36 active channels to `KNOWN_IPC_CHANNELS` in `packages/main/src/main.ts`.
+- **Evidence:** `packages/main/src/main.ts:530-580`.
 
 ### ISSUE-1487: Orphaned 560-line custom ipc-validator.ts infrastructure
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟢 LOW
 - **Location:** `packages/main/src/utils/ipc-validator.ts:1-560`
 - **Details:** Contains unused custom validation framework; all active handlers use Zod in `validation.ts`.
 - **Expected (acceptance):** Remove orphaned `ipc-validator.ts` and migrate any test coverage to `validation.ts`.
-- **Honest fallback:** Delete dead code.
-- **DO NOT:** Do not maintain parallel unused validation libraries.
+- **Fix:** Deleted dead orphaned `packages/main/src/utils/ipc-validator.ts` and its test file.
+- **Evidence:** `git status` shows deleted files, remaining utils tests pass 8/8 suites (79 tests).
 
 ### ISSUE-1488: ClaimsInboxTab invokes banned native window.confirm
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/legal/components/ClaimsInboxTab.tsx:80`
 - **Details:** Directly calls `window.confirm()` in `handleClaimResponse`, violating the repository standard.
 - **Expected (acceptance):** Use `ConfirmDialog.call(...)` from `@/components/ui/dialog/ConfirmDialog` (`react-call`).
-- **Honest fallback:** Keep claim state intact if cancelled.
-- **DO NOT:** Do not use native browser dialogs `window.confirm`, `window.alert`, or `window.prompt`.
+- **Fix:** Replaced native `window.confirm` with `ConfirmDialog.call({ title, message, confirmText })`.
+- **Evidence:** `packages/renderer/src/modules/legal/components/ClaimsInboxTab.tsx:80-86`.
 
 ### ISSUE-1489: PublicistTools implementation orphaned by obsolete tools/index.ts import
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/services/agent/tools/index.ts:1, 97` & `PublicistTools.ts:167`
 - **Details:** `tools/index.ts` imports from `@/modules/publicist/tools` with missing stubs while the complete implementation in `services/agent/tools/PublicistTools.ts` is orphaned.
 - **Expected (acceptance):** Wire `services/agent/tools/PublicistTools.ts` into the master agent tool registry in `tools/index.ts`.
-- **Honest fallback:** Return descriptive `toolError` when LLM generation fails.
-- **DO NOT:** Do not register incomplete tool stubs or fabricate press releases.
+- **Fix:** Wired `PublicistTools` from `packages/renderer/src/services/agent/tools/PublicistTools.ts` into `TOOL_REGISTRY` in `tools/index.ts`.
+- **Evidence:** `packages/renderer/src/services/agent/tools/index.ts:2, 99`, verified by `packages/renderer/src/services/agent/specialists/Agents.test.ts:92-97`.
 
 ### ISSUE-1490: BudgetVsActuals permanently renders empty state with hardcoded array
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/finance/components/BudgetVsActuals.tsx:17, 36`
 - **Details:** `INITIAL_CATEGORIES` is a hardcoded empty array with no service connection or UI to add budget items.
 - **Expected (acceptance):** Connect `categories` to `FinanceService` budget store or provide an "Add Category" modal.
-- **Honest fallback:** Maintain honest empty state with active creation affordance; do not inject fake amounts.
-- **DO NOT:** Do not render fake pre-populated budget amounts.
+- **Fix:** Added "Add Category" modal and empty-state quick create action allowing interactive category addition, removal, and editing.
+- **Evidence:** `packages/renderer/src/modules/finance/components/BudgetVsActuals.tsx:36-150`.
 
 ### ISSUE-1491: DSP AnomalyDetector graph and analysis dead due to file-scope empty arrays
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/finance/components/AnomalyDetector.tsx:35, 38, 125`
 - **Details:** `TRACK_NAMES` and `STREAM_DATA` are file-scope empty constants, making the entire Recharts velocity graph and anomaly algorithm dead code.
 - **Expected (acceptance):** Wire `STREAM_DATA` to `AnalyticsService` streaming ingestion pipeline, or show "Connect Distributor to Detect Anomalies" CTA.
-- **Honest fallback:** Honest empty state when no stream history exists.
-- **DO NOT:** Do not generate pseudo-random streaming spikes or synthetic anomalies.
+- **Fix:** Verified honest "DSP Streaming Data Not Connected" / "Connect your distributor accounts in the Distribution module" empty state that never fakes streaming spikes.
+- **Evidence:** `packages/renderer/src/modules/finance/components/AnomalyDetector.tsx:199-214`.
 
 ### ISSUE-1492: MultiCurrencyLedger displays hardcoded static timestamp and empty data
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/finance/components/MultiCurrencyLedger.tsx:27, 48, 139`
 - **Details:** Hardcodes `lastUpdated = '2026-03-07 09:42 UTC'` and empty ledger data with inert currency controls.
 - **Expected (acceptance):** Ingest multi-currency records from `RevenueService` and display dynamic sync timestamps.
 - **Honest fallback:** Display honest empty state ("No currency conversions recorded") without fake static timestamps.
-- **DO NOT:** Do not hardcode static past timestamps.
+- **Fix:** Replaced hardcoded static timestamp string with dynamic state, refresh button, and honest "No currency conversions recorded" label when empty.
+- **Evidence:** `packages/renderer/src/modules/finance/components/MultiCurrencyLedger.tsx:48-96`.
 
 ### ISSUE-1493: StandardMerch dead hero buttons and category filter pills
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/merchandise/components/StandardMerch.tsx:36, 40, 57-67`
 - **Details:** "Explore Catalog" and "Our Story" buttons lack `onClick` handlers; category filter pills lack click handlers and hardcode `aria-pressed`.
 - **Expected (acceptance):** Wire category filter state to filter product grid; wire "Explore Catalog" to scroll to grid; provide real destination or remove "Our Story".
-- **Honest fallback:** Remove unauthored "Our Story" button rather than displaying dead controls.
-- **DO NOT:** Do not leave non-functional buttons on storefronts.
+- **Fix:** Wired `selectedCategory` state to filter products and toggle `aria-pressed`, wired "Explore Catalog" to scroll to product grid, and removed dead "Our Story" button.
+- **Evidence:** `packages/renderer/src/modules/merchandise/components/StandardMerch.tsx:10-93`.
 
 ### ISSUE-1494: ProMerch Authenticate Access button is inert
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/merchandise/components/ProMerch.tsx:35`
 - **Details:** `<button>AUTHENTICATE ACCESS</button>` has no `onClick` handler or type, remaining completely inert.
 - **Expected (acceptance):** Wire button to check user tier entitlement or open membership upgrade dialog.
-- **Honest fallback:** Open upgrade dialog explaining Pro access requirements.
-- **DO NOT:** Do not leave action buttons inert.
+- **Fix:** Wired `handleAuthenticateAccess` via `AlertDialog.call` explaining Pro Access requirements and membership verification.
+- **Evidence:** `packages/renderer/src/modules/merchandise/components/ProMerch.tsx:10-18, 33-40`.
 
 ### ISSUE-1495: StandardProductCard fabricates Best Seller badge and 5-star reviews on all cards
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/merchandise/components/StandardProductCard.tsx:25, 35`
 - **Details:** Every rendered product card unconditionally displays "Best Seller" and 5 stars with `(24 reviews)`.
 - **Expected (acceptance):** Only render "Best Seller" if `product.isBestSeller` is true; only render review ratings if genuine reviews exist on the product.
-- **Honest fallback:** Omit badges and star ratings when product record lacks verified review data.
-- **DO NOT:** Do not fabricate 5-star ratings or sales badges on unreviewed merchandise.
+- **Fix:** Conditionally renders "Best Seller" badge only when `product.isBestSeller` is truthy, and only renders star rating when `product.reviewCount > 0`.
+- **Evidence:** `packages/renderer/src/modules/merchandise/components/StandardProductCard.tsx:23-47`.
 
 ### ISSUE-1496: ReleaseDetailPage hardcodes Original Mix 4:24 track details
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/publishing/components/ReleaseDetailPage.tsx:244`
 - **Details:** Hardcodes `Original Mix • 4:24` for every track on release detail views.
 - **Expected (acceptance):** Read track duration and mix subtitle from `metadata.tracks` or audio intelligence analysis.
-- **Honest fallback:** Render "Duration pending" or omit mix title if not provided.
-- **DO NOT:** Do not hardcode track durations or mix names.
+- **Fix:** Reads duration from `metadata.durationFormatted` or formatted `metadata.durationSeconds`, falling back to honest "Duration pending" instead of hardcoded 4:24.
+- **Evidence:** `packages/renderer/src/modules/publishing/components/ReleaseDetailPage.tsx:244-246`.
 
 ### ISSUE-1497: StudioControlsPanel passes dummy onToggle to frame dropzones
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟢 LOW
 - **Location:** `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:591, 623`
 - **Details:** Passes `onToggle={() => {}}` to `WhiskDropZone` for Start and End frames, rendering interactive checkboxes that click but do nothing.
 - **Expected (acceptance):** Wire `onToggle` to toggle enabled state of start/end frame inputs, or pass `hideCheckbox={true}`.
-- **Honest fallback:** Hide checkbox UI if toggling is unsupported.
-- **DO NOT:** Do not expose dead toggle checkboxes.
+- **Fix:** Added `hideCheckbox` prop to `WhiskDropZone` and passed `hideCheckbox={true}` in start/end frame dropzones in `StudioControlsPanel.tsx`.
+- **Evidence:** `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:591, 622`, `packages/renderer/src/modules/creative/components/whisk/WhiskDropZone.tsx:24, 294`.
 
 ### ISSUE-1498: VideoPropertySections uses dummy onChange to suppress React warning
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟢 LOW
 - **Location:** `packages/renderer/src/modules/creative/video/editor/components/VideoPropertySections.tsx:30`
 - **Details:** Project name rendered as input with dummy `onChange={() => {}}` solely to silence warnings while preventing edits.
 - **Expected (acceptance):** Provide `onUpdateProjectName` handler or render static heading/badge.
-- **Honest fallback:** Render static read-only text if editing is not supported.
-- **DO NOT:** Do not use dummy `onChange` handlers on editable-styled inputs.
+- **Fix:** Rendered clean read-only display element showing project name instead of input with dummy `onChange`.
+- **Evidence:** `packages/renderer/src/modules/creative/video/editor/components/VideoPropertySections.tsx:25-29`.
 
 ### ISSUE-1499: SettingsPanel renderSection lacks default fallback arm
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** 🟢 LOW
 - **Location:** `packages/renderer/src/modules/settings/SettingsPanel.tsx:97-110`
 - **Details:** Switch statement has no `default:` case, returning `undefined` and rendering a blank screen on unrecognized section IDs.
 - **Expected (acceptance):** Add `default: return <ProfileSection />;` with warning log.
-- **Honest fallback:** Safely fall back to default profile section.
-- **DO NOT:** Do not return `undefined` from section renderers.
+- **Fix:** Added `default:` fallback arm logging a warning with `logger.warn` and rendering `<ProfileSection />`.
+- **Evidence:** `packages/renderer/src/modules/settings/SettingsPanel.tsx:110-113`.
+

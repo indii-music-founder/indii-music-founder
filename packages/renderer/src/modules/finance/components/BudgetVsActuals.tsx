@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, BarChart3, Plus, X, Trash2 } from 'lucide-react';
 
 /* ================================================================== */
 /*  Budget vs. Actuals — Finance Tracking Module                       */
@@ -15,6 +15,8 @@ interface BudgetCategory {
 }
 
 const INITIAL_CATEGORIES: BudgetCategory[] = [];
+
+const CATEGORY_COLORS = ['#6366f1', '#ec4899', '#8b5cf6', '#10b981', '#f59e0b', '#06b6d4', '#3b82f6'];
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; fill: string }>; label?: string }) => {
     if (active && payload && payload.length) {
@@ -34,6 +36,38 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 
 export function BudgetVsActuals() {
     const [categories, setCategories] = useState<BudgetCategory[]>(INITIAL_CATEGORIES);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newCategoryLabel, setNewCategoryLabel] = useState('');
+    const [newCategoryBudget, setNewCategoryBudget] = useState('');
+    const [newCategoryActual, setNewCategoryActual] = useState('');
+
+    const handleAddCategory = (e: React.FormEvent) => {
+        e.preventDefault();
+        const label = newCategoryLabel.trim();
+        if (!label) return;
+
+        const budgeted = parseFloat(newCategoryBudget) || 0;
+        const actual = parseFloat(newCategoryActual) || 0;
+        const color = CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length] || '#6366f1';
+
+        const newCat: BudgetCategory = {
+            id: `cat-${Date.now()}`,
+            label,
+            budgeted,
+            actual,
+            color,
+        };
+
+        setCategories(prev => [...prev, newCat]);
+        setNewCategoryLabel('');
+        setNewCategoryBudget('');
+        setNewCategoryActual('');
+        setShowAddModal(false);
+    };
+
+    const removeCategory = (id: string) => {
+        setCategories(prev => prev.filter(c => c.id !== id));
+    };
 
     const updateBudgeted = (id: string, val: string) => {
         const num = parseFloat(val) || 0;
@@ -53,15 +87,101 @@ export function BudgetVsActuals() {
     return (
         <div className="space-y-6 pb-6">
             {/* Header */}
-            <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                    <BarChart3 size={16} className="text-indigo-400" />
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                        <BarChart3 size={16} className="text-indigo-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-base font-black text-white uppercase tracking-tight">Budget vs. Actuals</h2>
+                        <p className="text-[10px] text-gray-500">Track spending across budget categories</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 className="text-base font-black text-white uppercase tracking-tight">Budget vs. Actuals</h2>
-                    <p className="text-[10px] text-gray-500">Track spending across budget categories</p>
-                </div>
+                <button
+                    onClick={() => setShowAddModal(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors"
+                >
+                    <Plus size={14} />
+                    Add Category
+                </button>
             </div>
+
+            {/* Add Category Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div className="bg-gray-900 border border-white/10 rounded-xl p-5 w-full max-w-sm shadow-2xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-sm font-bold text-white">Add Budget Category</h3>
+                            <button
+                                onClick={() => setShowAddModal(false)}
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleAddCategory} className="space-y-3">
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                                    Category Name
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Marketing, Touring, Studio"
+                                    value={newCategoryLabel}
+                                    onChange={e => setNewCategoryLabel(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                                        Budgeted ($)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        placeholder="0.00"
+                                        value={newCategoryBudget}
+                                        onChange={e => setNewCategoryBudget(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                                        Actual ($)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        placeholder="0.00"
+                                        value={newCategoryActual}
+                                        onChange={e => setNewCategoryActual(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddModal(false)}
+                                    className="px-3 py-1.5 text-xs font-semibold text-gray-400 hover:text-white"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold"
+                                >
+                                    Create Category
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Summary Row */}
             <div className="grid grid-cols-3 gap-3">
@@ -119,7 +239,14 @@ export function BudgetVsActuals() {
             <div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden">
                 {categories.length === 0 ? (
                     <div className="p-8 text-center flex flex-col items-center">
-                        <p className="text-xs text-gray-500">Your budget categories will appear here once created.</p>
+                        <p className="text-xs text-gray-500 mb-3">Your budget categories will appear here once created.</p>
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 text-xs font-bold transition-colors border border-indigo-500/30"
+                        >
+                            <Plus size={14} />
+                            Add First Category
+                        </button>
                     </div>
                 ) : (
                     <>
@@ -134,7 +261,7 @@ export function BudgetVsActuals() {
                             const pct = c.budgeted > 0 ? Math.min((c.actual / c.budgeted) * 100, 100) : 0;
                             const isOver = c.actual > c.budgeted;
                             return (
-                                <div key={c.id} className="grid grid-cols-5 gap-3 items-center px-4 py-3 border-b border-white/[0.03] hover:bg-white/[0.01] transition-colors">
+                                <div key={c.id} className="grid grid-cols-5 gap-3 items-center px-4 py-3 border-b border-white/[0.03] hover:bg-white/[0.01] transition-colors group">
                                     {/* Label */}
                                     <div className="flex items-center gap-2 col-span-1">
                                         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
@@ -161,7 +288,7 @@ export function BudgetVsActuals() {
                                         </span>
                                     </div>
 
-                                    {/* Bar & Variance */}
+                                    {/* Bar & Variance & Delete */}
                                     <div className="col-span-2 flex items-center gap-3">
                                         <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                                             <div
@@ -175,6 +302,13 @@ export function BudgetVsActuals() {
                                         <span className={`text-[10px] font-bold w-16 text-right flex-shrink-0 ${variance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                                             {variance >= 0 ? '+' : ''}${variance.toLocaleString('en-US')}
                                         </span>
+                                        <button
+                                            onClick={() => removeCategory(c.id)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-red-400 transition-opacity"
+                                            title="Delete category"
+                                        >
+                                            <Trash2 size={13} />
+                                        </button>
                                     </div>
                                 </div>
                             );

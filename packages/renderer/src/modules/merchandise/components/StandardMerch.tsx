@@ -7,6 +7,22 @@ import { DeptLoader } from '@/components/ui/DeptLoader';
 
 export const StandardMerch: React.FC = () => {
     const { standardProducts: products, loading, error } = useMerchandise();
+    const [selectedCategory, setSelectedCategory] = React.useState<string>('All');
+    const catalogRef = React.useRef<HTMLDivElement>(null);
+
+    const filteredProducts = React.useMemo(() => {
+        if (selectedCategory === 'All') return products;
+        const lower = selectedCategory.toLowerCase();
+        return products.filter(p => {
+            if (p.tags?.some(t => t.toLowerCase().includes(lower))) return true;
+            if (p.title.toLowerCase().includes(lower)) return true;
+            return false;
+        });
+    }, [products, selectedCategory]);
+
+    const scrollToCatalog = () => {
+        catalogRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
@@ -33,19 +49,20 @@ export const StandardMerch: React.FC = () => {
                         Premium streetwear engineered for the modern digital creator.
                     </p>
                     <div className="flex gap-4 mt-8">
-                        <button type="button" className="bg-primary text-primary-foreground font-black px-8 py-4 rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center gap-3 uppercase text-sm tracking-wider focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">
+                        <button
+                            type="button"
+                            onClick={scrollToCatalog}
+                            className="bg-primary text-primary-foreground font-black px-8 py-4 rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center gap-3 uppercase text-sm tracking-wider focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none cursor-pointer"
+                        >
                             <Star size={20} fill="currentColor" />
                             Explore Catalog
-                        </button>
-                        <button type="button" className="bg-white/10 backdrop-blur-md border border-white/20 text-foreground font-bold px-8 py-4 rounded-full hover:bg-white/20 transition-all text-sm tracking-wider focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:outline-none">
-                            Our Story
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Product Grid */}
-            <div>
+            <div ref={catalogRef}>
                 <div className="flex items-center justify-between mb-8">
                     <h3 className="text-3xl font-black text-foreground flex items-center gap-3 tracking-tighter">
                         <div className="p-2 bg-primary rounded-lg">
@@ -54,16 +71,24 @@ export const StandardMerch: React.FC = () => {
                         LATEST DROPS
                     </h3>
                     <div className="flex gap-2" role="group" aria-label="Filter products">
-                        {['All', 'Tees', 'Hoodies', 'Accessories'].map((cat, i) => (
-                            <button
-                                key={cat}
-                                type="button"
-                                aria-pressed={i === 0}
-                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary border border-border/50'}`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
+                        {['All', 'Tees', 'Hoodies', 'Accessories'].map((cat) => {
+                            const isSelected = selectedCategory === cat;
+                            return (
+                                <button
+                                    key={cat}
+                                    type="button"
+                                    onClick={() => setSelectedCategory(cat)}
+                                    aria-pressed={isSelected}
+                                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none cursor-pointer ${
+                                        isSelected
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-secondary/50 text-muted-foreground hover:bg-secondary border border-border/50'
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -81,12 +106,15 @@ export const StandardMerch: React.FC = () => {
                                 <p className="text-muted-foreground text-sm max-w-[300px]">{error}</p>
                             </div>
                         </div>
+                    ) : filteredProducts.length === 0 ? (
+                        <div className="col-span-full py-12 text-center text-muted-foreground text-sm">
+                            No products found in category "{selectedCategory}".
+                        </div>
                     ) : (
                         <>
-                            {products.map(product => (
+                            {filteredProducts.map(product => (
                                 <StandardProductCard key={product.id} product={product} />
                             ))}
-
                         </>
                     )}
                 </div>

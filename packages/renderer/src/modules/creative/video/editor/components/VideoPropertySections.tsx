@@ -23,12 +23,9 @@ export const ProjectSettingsSection = memo(({ project, onApplyAspect }: ProjectS
     return (
         <PanelSection title="Project Settings" defaultOpen={true}>
             <PropertyRow label="Project Name">
-                <StyledInput
-                    type="text"
-                    value={project.name || 'Untitled Project'}
-                    readOnly
-                    onChange={() => { }}
-                />
+                <div className="w-full bg-[#141414] border border-[#2a2a2a] rounded px-2.5 py-1 text-xs text-neutral-300 font-medium truncate select-text">
+                    {project.name || 'Untitled Project'}
+                </div>
             </PropertyRow>
             {onApplyAspect && (
                 <PropertyRow label="Aspect" className="mt-1.5">

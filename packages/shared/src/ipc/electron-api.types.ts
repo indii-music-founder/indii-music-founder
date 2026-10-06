@@ -317,6 +317,27 @@ export interface ElectronTrashAPI {
     }>;
 }
 
+export interface ElectronFsAPI {
+    listFiles: (dirPath: string) => Promise<{ name: string; path: string; extension: string; sizeBytes: number }[]>;
+    readTextFile: (filePath: string) => Promise<string>;
+    readBinaryFile: (filePath: string) => Promise<Uint8Array>;
+    mkdir: (dirPath: string) => Promise<void>;
+}
+
+export interface ElectronFoundryAPI {
+    readFile: (filePath: string) => Promise<{ success: boolean; content?: string; sha256?: string; sizeBytes?: number; error?: string }>;
+    getMetadata: (filePath: string) => Promise<{ success: boolean; size?: number; modifiedAt?: string; error?: string }>;
+}
+
+export interface ElectronRawAPI {
+    inspect: (filePath: string) => Promise<unknown>;
+    convert: (options: unknown) => Promise<unknown>;
+    batchConvert: (options: unknown) => Promise<unknown>;
+    cancel: (jobId: string) => Promise<unknown>;
+    verify: (dngPath: string, sourcePath?: string) => Promise<unknown>;
+    onProgress: (callback: (progress: unknown) => void) => () => void;
+}
+
 // ── Root ElectronAPI Interface ─────────────────────────────────────────────
 
 export interface ElectronAPI {
@@ -332,6 +353,9 @@ export interface ElectronAPI {
     showNotification: (title: string, body: string) => void;
 
     // Namespaced APIs
+    fs?: ElectronFsAPI;
+    foundry?: ElectronFoundryAPI;
+    raw?: ElectronRawAPI;
     auth: ElectronAuthAPI;
     credentials: ElectronCredentialsAPI;
     audio: ElectronAudioAPI;
@@ -346,7 +370,7 @@ export interface ElectronAPI {
     video: ElectronVideoAPI;
     daw: ElectronDawAPI;
     distribution: ElectronDistributionAPI;
-    remote: ElectronRemoteAPI;
+    remote?: ElectronRemoteAPI;
     trash?: ElectronTrashAPI;
     /**
      * Optional: only present in builds where the Sonic Bridge preload block is
@@ -358,7 +382,7 @@ export interface ElectronAPI {
     pinata?: ElectronPinataAPI;
     updater: ElectronUpdaterAPI;
     scheduler: ElectronSchedulerAPI;
-    sidecar: ElectronSidecarAPI;
+    sidecar?: ElectronSidecarAPI;
     power: ElectronPowerAPI;
     window: ElectronWindowAPI;
 

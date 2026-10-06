@@ -1,9 +1,18 @@
 import React from 'react';
 import { Crown, ShieldCheck } from 'lucide-react';
 import { useMerchandise } from '../hooks/useMerchandise';
+import { AlertDialog } from '@/components/ui/AlertDialog';
 
 export const ProMerch: React.FC = () => {
     const { proProducts: products } = useMerchandise();
+
+    const handleAuthenticateAccess = async () => {
+        await AlertDialog.call({
+            title: 'Pro Merch Access',
+            message: 'Pro Merch requires a verified Pro or Founder artist membership. Upgrade your membership or verify your active label contract in Settings to unlock physical sample distribution and zero-minimum cut-and-sew manufacturing.',
+            buttonText: 'Got It'
+        });
+    };
 
     return (
         <div className="space-y-16 animate-in fade-in slide-in-from-right-8 duration-700 pb-20 max-w-7xl mx-auto">
@@ -32,7 +41,11 @@ export const ProMerch: React.FC = () => {
 
                     <div className="mt-12 group/btn relative">
                         <div className="absolute inset-0 bg-primary blur-xl opacity-20 group-hover/btn:opacity-40 transition-opacity" />
-                        <button className="relative bg-foreground text-background font-black px-12 py-5 rounded-sm hover:-translate-y-1 active:translate-y-0 transition-all text-sm tracking-[0.3em] uppercase">
+                        <button
+                            type="button"
+                            onClick={handleAuthenticateAccess}
+                            className="relative bg-foreground text-background font-black px-12 py-5 rounded-sm hover:-translate-y-1 active:translate-y-0 transition-all text-sm tracking-[0.3em] uppercase cursor-pointer"
+                        >
                             AUTHENTICATE ACCESS
                         </button>
                     </div>

@@ -45,7 +45,11 @@ const CURRENCY_COLORS: Record<string, string> = {
 export function MultiCurrencyLedger() {
     const [currencyFilter, setCurrencyFilter] = useState<string>('ALL');
     const [convertAll, setConvertAll] = useState(false);
-    const lastUpdated = '2026-03-07 09:42 UTC';
+    const [lastSyncTime, setLastSyncTime] = useState<Date>(() => new Date());
+
+    const formattedSyncTime = useMemo(() => {
+        return lastSyncTime.toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
+    }, [lastSyncTime]);
 
     const filteredData = useMemo(() => {
         if (currencyFilter === 'ALL') return LEDGER_DATA;
@@ -78,12 +82,22 @@ export function MultiCurrencyLedger() {
                     </div>
                     <div>
                         <h2 className="text-sm font-bold text-white">Multi-Currency Ledger</h2>
-                        <p className="text-[10px] text-gray-500">Exchange rates as of {lastUpdated}</p>
+                        <p className="text-[10px] text-gray-500">
+                            {LEDGER_DATA.length === 0
+                                ? 'No currency conversions recorded'
+                                : `Exchange rates as of ${formattedSyncTime}`}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <RefreshCw size={10} className="text-gray-600" />
-                    <span className="text-[10px] text-gray-500">{lastUpdated}</span>
+                    <button
+                        onClick={() => setLastSyncTime(new Date())}
+                        className="p-1 hover:bg-white/5 rounded text-gray-400 hover:text-white transition-colors"
+                        title="Refresh Rates"
+                    >
+                        <RefreshCw size={12} />
+                    </button>
+                    <span className="text-[10px] text-gray-500">{formattedSyncTime}</span>
                 </div>
             </div>
 

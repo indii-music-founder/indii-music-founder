@@ -241,7 +241,9 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors">{metadata.trackTitle}</p>
-                                        <p className="text-xs font-medium text-gray-600">Original Mix • 4:24</p>
+                                        <p className="text-xs font-medium text-gray-600">
+                                            {metadata.durationFormatted || (metadata.durationSeconds ? `${Math.floor(metadata.durationSeconds / 60)}:${Math.floor(metadata.durationSeconds % 60).toString().padStart(2, '0')}` : 'Duration pending')}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">

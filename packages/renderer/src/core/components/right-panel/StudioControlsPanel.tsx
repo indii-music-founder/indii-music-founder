@@ -588,7 +588,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                             });
                                                         }}
                                                         onRemove={() => setVideoInput('firstFrame', null)}
-                                                        onToggle={() => {}}
+                                                        hideCheckbox={true}
                                                         onUpdate={(id, updates) => {
                                                             if (videoInputs.firstFrame) {
                                                                 setVideoInput('firstFrame', {
@@ -620,7 +620,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                             });
                                                         }}
                                                         onRemove={() => setVideoInput('lastFrame', null)}
-                                                        onToggle={() => {}}
+                                                        hideCheckbox={true}
                                                         onUpdate={(id, updates) => {
                                                             if (videoInputs.lastFrame) {
                                                                 setVideoInput('lastFrame', {

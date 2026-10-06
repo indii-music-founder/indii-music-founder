@@ -21,9 +21,10 @@ interface WhiskDropZoneProps {
     description: string;
     accentColor?: string; // For video-related categories
     compact?: boolean;
+    hideCheckbox?: boolean;
 }
 
-export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUpdate, description, accentColor: _accentColor = 'purple', compact }: WhiskDropZoneProps) => {
+export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUpdate, description, accentColor: _accentColor = 'purple', compact, hideCheckbox }: WhiskDropZoneProps) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
@@ -290,18 +291,20 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                 }`}
                                         >
                                             {/* Toggle Checkbox */}
-                                            <button
-                                                onClick={() => onToggle?.(item.id)}
-                                                className={`shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
-                                                    ? 'bg-green-500 border-green-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
-                                                    : 'bg-transparent border-gray-600 hover:border-gray-400'
-                                                    }`}
-                                                role="checkbox"
-                                                aria-checked={item.checked}
-                                                aria-label={`Select ${item.type === 'text' ? item.content : (item.intelligenceCaption || 'Image reference')}`}
-                                            >
-                                                {item.checked && <Check size={12} strokeWidth={3} />}
-                                            </button>
+                                            {!hideCheckbox && (
+                                                <button
+                                                    onClick={() => onToggle?.(item.id)}
+                                                    className={`shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
+                                                        ? 'bg-green-500 border-green-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
+                                                        : 'bg-transparent border-gray-600 hover:border-gray-400'
+                                                        }`}
+                                                    role="checkbox"
+                                                    aria-checked={item.checked}
+                                                    aria-label={`Select ${item.type === 'text' ? item.content : (item.intelligenceCaption || 'Image reference')}`}
+                                                >
+                                                    {item.checked && <Check size={12} strokeWidth={3} />}
+                                                </button>
+                                            )}
 
                                             {/* Thumbnail/Content */}
                                             <div className="flex-1 min-w-0 flex items-center gap-2">

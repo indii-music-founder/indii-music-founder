@@ -51,6 +51,7 @@ import {
 } from './SettingsNavigation';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { Sliders } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 // ---------------------------------------------------------------------------
 // Types & Navigation Config
@@ -106,6 +107,9 @@ const SettingsPanel: React.FC = () => {
             case 'automation': return <AutomationSection />;
             case 'desktop': return <DesktopSection />;
             case 'security': return <SecuritySection />;
+            default:
+                logger.warn(`[SettingsPanel] Unrecognized section: ${activeSection}, falling back to ProfileSection`);
+                return <ProfileSection />;
         }
     };
 

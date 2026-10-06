@@ -397,11 +397,11 @@ export const syncEmailList = onCall(
             );
         }
 
-        return {
-            synced: members.length,
-            failed: 0,
-            status: 'synced',
-        };
+        // Live external synchronization via REST API is not yet wired
+        throw new HttpsError(
+            'unavailable',
+            `External subscriber list synchronization for '${provider}' is not yet connected.`,
+        );
     },
 );
 
@@ -445,22 +445,11 @@ export const deployEmailCampaign = onCall(
             );
         }
 
-        const campaignId = `email_camp_${Date.now()}`;
-        await getDb().collection('users').doc(userId).collection('emailCampaigns').doc(campaignId).set({
-            campaignId,
-            provider,
-            templateId,
-            subject,
-            htmlContent: htmlContent ? `${htmlContent.slice(0, 500)}...` : '',
-            listId,
-            status: 'queued',
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        return {
-            campaignId,
-            status: 'queued',
-        };
+        // ISSUE-1476: No automated background processor is wired to drain email campaigns
+        throw new HttpsError(
+            'unimplemented',
+            'Automated email campaign dispatch worker is not yet configured.',
+        );
     },
 );
 
@@ -521,8 +510,8 @@ export const sendSMSBlast = onCall(
         const data = (request.data ?? {}) as Record<string, unknown>;
         const phones = Array.isArray(data.phones) ? (data.phones as string[]) : [];
         const text = String(data.text || '').trim();
-        const messageId = String(data.messageId || '').trim();
-        const imageUrl = typeof data.imageUrl === 'string' ? data.imageUrl : undefined;
+        const _messageId = String(data.messageId || '').trim();
+        const _imageUrl = typeof data.imageUrl === 'string' ? data.imageUrl : undefined;
 
         if (!phones.length) {
             throw new HttpsError('invalid-argument', 'Recipient phones array is required.');
@@ -547,27 +536,17 @@ export const sendSMSBlast = onCall(
             );
         }
 
-        const blastId = messageId || `sms_${Date.now()}`;
-        await getDb().collection('users').doc(userId).collection('smsDeliveries').doc(blastId).set({
-            messageId: blastId,
-            recipientCount: phones.length,
-            text,
-            imageUrl: imageUrl || null,
-            status: 'sent',
-            sentAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        return {
-            sent: phones.length,
-            failed: 0,
-            status: 'sent',
-        };
+        // ISSUE-1474: Live Twilio SMS dispatch is not yet wired to this callable
+        throw new HttpsError(
+            'unavailable',
+            'Live Twilio SMS dispatch is not yet wired to this callable.',
+        );
     },
 );
 
 /**
  * Retrieves delivery status for an SMS message.
- * Fails closed with 'unavailable' rather than fabricating a "pending" status.
+ * Fails closed with 'unavailable' rather than fabricating a "delivered" status.
  */
 export const getSMSDeliveryStatus = onCall(
     DEFAULT_CALLABLE_OPTS,
@@ -589,9 +568,9 @@ export const getSMSDeliveryStatus = onCall(
             .collection('smsDeliveries').doc(messageId)
             .get();
 
-        if (deliveryDoc.exists) {
-            const status = deliveryDoc.data()?.status || 'delivered';
-            const deliveredAt = deliveryDoc.data()?.sentAt?.toDate?.()?.toISOString?.();
+        if (deliveryDoc.exists && deliveryDoc.data()?.verifiedStatus) {
+            const status = String(deliveryDoc.data()?.verifiedStatus);
+            const deliveredAt = deliveryDoc.data()?.deliveredAt?.toDate?.()?.toISOString?.();
             return {
                 status,
                 ...(deliveredAt ? { deliveredAt } : {}),
@@ -600,7 +579,7 @@ export const getSMSDeliveryStatus = onCall(
 
         throw new HttpsError(
             'unavailable',
-            `SMS delivery status unavailable for message '${messageId}': provider tracking is not connected.`,
+            `SMS delivery status unavailable for message '${messageId}': real-time tracking requires Twilio StatusCallback webhook configuration.`,
         );
     },
 );

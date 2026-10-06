@@ -62,6 +62,9 @@ export interface MerchProduct {
     category: 'standard' | 'pro';
     tags?: string[];
     features?: string[];
+    isBestSeller?: boolean;
+    rating?: number;
+    reviewCount?: number;
     createdAt?: Timestamp | Date | FieldValue | null;
 }
 

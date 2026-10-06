@@ -20,20 +20,32 @@ export const StandardProductCard = React.memo(({ product }: StandardProductCardP
                     alt={product.title}
                     className="w-full h-full group-hover:scale-105 transition-transform duration-700"
                 />
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                    <div className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter shadow-lg">
-                        Best Seller
+                {product.isBestSeller && (
+                    <div className="absolute top-4 left-4 flex flex-col gap-2">
+                        <div className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter shadow-lg">
+                            Best Seller
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
             <div className="p-6">
                 <div className="flex justify-between items-start mb-3">
                     <div>
                         <h4 className="text-foreground font-black text-xl tracking-tight leading-tight">{product.title}</h4>
-                        <div className="flex items-center gap-1 mt-1">
-                            {STARS.map(s => <Star key={s} size={10} className="fill-primary text-primary" />)}
-                            <span className="text-[10px] text-muted-foreground ml-1">(24 reviews)</span>
-                        </div>
+                        {typeof product.reviewCount === 'number' && product.reviewCount > 0 && (
+                            <div className="flex items-center gap-1 mt-1">
+                                {STARS.map(s => (
+                                    <Star
+                                        key={s}
+                                        size={10}
+                                        className={s <= Math.round(product.rating || 5) ? "fill-primary text-primary" : "text-muted-foreground/30"}
+                                    />
+                                ))}
+                                <span className="text-[10px] text-muted-foreground ml-1">
+                                    ({product.reviewCount} review{product.reviewCount !== 1 ? 's' : ''})
+                                </span>
+                            </div>
+                        )}
                     </div>
                     <span className="text-primary font-black text-lg">{product.price}</span>
                 </div>

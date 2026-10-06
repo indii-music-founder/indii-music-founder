@@ -1,4 +1,5 @@
 import { PUBLICIST_TOOLS } from '@/modules/publicist/tools';
+import { PublicistTools } from './PublicistTools';
 import { CREATIVE_TOOLS } from '@/modules/creative/tools';
 import { DirectorTools } from './DirectorTools';
 import { EditImageWithAnnotationsTool } from './EditImageWithAnnotationsTool';
@@ -95,6 +96,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...SecurityTools,
     ...DevOpsTools,
     ...PUBLICIST_TOOLS,
+    ...PublicistTools,
     ...FinanceTools,
     ...DistributionTools,
     ...TimelineTools,

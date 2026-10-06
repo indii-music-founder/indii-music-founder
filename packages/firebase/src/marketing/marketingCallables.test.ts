@@ -288,17 +288,26 @@ describe('marketingCallables contract & security tests (ISSUE-1435)', () => {
             ).rejects.toThrow(/Email marketing provider 'mailchimp' is not configured/);
         });
 
-        it('deploys campaign when configured', async () => {
+        it('fails closed with unavailable when email sync is not yet wired to external API', async () => {
             mocks.firestoreDocGet.mockResolvedValue({ exists: true, data: () => ({ apiKey: 'valid-key' }) });
-            mocks.firestoreDocSet.mockResolvedValue({});
 
-            const res = await (deployEmailCampaign as any)({
-                auth,
-                data: { provider: 'mailchimp', subject: 'Newsletter #1', listId: 'l1' },
-            });
+            await expect(
+                (syncEmailList as any)({
+                    auth,
+                    data: { provider: 'mailchimp', listId: 'l1', members: [{ email: 'fan@example.com' }] },
+                }),
+            ).rejects.toThrow(/External subscriber list synchronization for 'mailchimp' is not yet connected/);
+        });
 
-            expect(res.status).toBe('queued');
-            expect(res.campaignId).toBeDefined();
+        it('fails closed with unimplemented when email campaign worker is unconfigured', async () => {
+            mocks.firestoreDocGet.mockResolvedValue({ exists: true, data: () => ({ apiKey: 'valid-key' }) });
+
+            await expect(
+                (deployEmailCampaign as any)({
+                    auth,
+                    data: { provider: 'mailchimp', subject: 'Newsletter #1', listId: 'l1' },
+                }),
+            ).rejects.toThrow(/Automated email campaign dispatch worker is not yet configured/);
         });
     });
 
@@ -316,7 +325,18 @@ describe('marketingCallables contract & security tests (ISSUE-1435)', () => {
             ).rejects.toThrow(/SMS provider 'Twilio' is not configured/);
         });
 
-        it('fails closed when SMS delivery status is unavailable', async () => {
+        it('fails closed with unavailable when live Twilio SMS dispatch is not yet wired', async () => {
+            mocks.firestoreDocGet.mockResolvedValue({ exists: true, data: () => ({ accountSid: 'AC123' }) });
+
+            await expect(
+                (sendSMSBlast as any)({
+                    auth,
+                    data: { phones: ['+15550001111'], text: 'New music is live!' },
+                }),
+            ).rejects.toThrow(/Live Twilio SMS dispatch is not yet wired to this callable/);
+        });
+
+        it('fails closed when SMS delivery status is unavailable or unverified', async () => {
             mocks.firestoreDocGet.mockResolvedValue({ exists: false });
 
             await expect(
@@ -325,6 +345,24 @@ describe('marketingCallables contract & security tests (ISSUE-1435)', () => {
                     data: { messageId: 'sms-123' },
                 }),
             ).rejects.toThrow(/SMS delivery status unavailable/);
+        });
+
+        it('returns verified status when present on delivery doc', async () => {
+            mocks.firestoreDocGet.mockResolvedValue({
+                exists: true,
+                data: () => ({
+                    verifiedStatus: 'delivered',
+                    deliveredAt: { toDate: () => new Date('2026-10-06T12:00:00Z') },
+                }),
+            });
+
+            const res = await (getSMSDeliveryStatus as any)({
+                auth,
+                data: { messageId: 'sms-123' },
+            });
+
+            expect(res.status).toBe('delivered');
+            expect(res.deliveredAt).toBe('2026-10-06T12:00:00.000Z');
         });
     });
 });
