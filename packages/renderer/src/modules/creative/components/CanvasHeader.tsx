@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Lock, MonitorUp, Sparkles, Star, Wand2, Shield } from 'lucide-react';
+import { ArrowLeft, Lock, MonitorUp, Sparkles, Star, Wand2, Shield, X } from 'lucide-react';
 import { auth } from '@/services/firebase';
 
 interface CanvasHeaderProps {
@@ -153,7 +153,19 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                 </div>
             </div>
 
-            <div className="min-w-0" />
+            <div className="min-w-0 flex items-center justify-end">
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        title="Close editor (Esc)"
+                        aria-label="Close editor"
+                        data-testid="canvas-header-close"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                        <X size={15} />
+                    </button>
+                )}
+            </div>
         </header>
     );
 };

@@ -585,4 +585,43 @@ describe('CreativeCanvas', () => {
             expect(ImageGeneration.remixImage).toHaveBeenCalledOnce();
         }, { timeout: 3000 });
     });
+
+    it('renders with modal dialog role and handles header close button click', async () => {
+        render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+
+        const container = screen.getByRole('dialog', { name: 'Creative Canvas Editor' });
+        expect(container).toBeInTheDocument();
+        expect(container).toHaveAttribute('aria-modal', 'true');
+
+        const closeBtn = screen.getByTestId('canvas-header-close');
+        expect(closeBtn).toBeInTheDocument();
+        fireEvent.click(closeBtn);
+        expect(mockOnClose).toHaveBeenCalledOnce();
+    });
+
+    it('traps Tab navigation within the modal container', async () => {
+        render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+
+        const container = screen.getByTestId('creative-canvas-container');
+        const focusable = container.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        expect(focusable.length).toBeGreaterThan(1);
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        // Focus first and press Shift+Tab -> wraps to last
+        first.focus();
+        expect(document.activeElement).toBe(first);
+        fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+        expect(document.activeElement).toBe(last);
+
+        // Focus last and press Tab -> wraps to first
+        last.focus();
+        expect(document.activeElement).toBe(last);
+        fireEvent.keyDown(window, { key: 'Tab', shiftKey: false });
+        expect(document.activeElement).toBe(first);
+    });
 });
+

@@ -320,10 +320,10 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     }, [initialMode, setGenerationMode]);
 
     // P0 FIX: Restore canvas editor when returning to Studio
-    // If the store still has a selectedItem from before navigation, re-open the editor.
-    // This prevents the "state lost" feeling when users navigate away and come back.
+    // If the store still has a selectedItem from before navigation, re-open the editor only if returning to an editor/canvas view.
+    // This prevents the "state lost" feeling when users navigate away and come back, without imposing the editor onto other workspaces.
     useEffect(() => {
-        if (selectedItem && viewMode !== 'editor') {
+        if (selectedItem && (viewMode === 'canvas' || viewMode === 'editor')) {
             setViewMode('editor');
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally only on mount
@@ -335,6 +335,10 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         useStore.setState({ isAgentOpen: false });
         
         if (generationMode !== prevGenerationMode.current) {
+            // Dismiss selected canvas item when switching generation modes so it doesn't obstruct the new workspace
+            if (selectedItem) {
+                setSelectedItem(null);
+            }
             if (generationMode === 'video') {
                 // Allow navigating to editor to pick assets even while in video mode
                 if (viewMode !== 'editor' && viewMode !== 'video_production' && viewMode !== 'direct' && viewMode !== 'omni') {
@@ -346,7 +350,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             }
             prevGenerationMode.current = generationMode;
         }
-    }, [generationMode, viewMode, setViewMode]);
+    }, [generationMode, viewMode, setViewMode, selectedItem, setSelectedItem]);
 
     // Handle Pending Prompt for Image Mode
     useEffect(() => {
@@ -685,7 +689,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             </div>
                         )}
 
-                        {/* Legacy Editor Modal Overlay */}
+                        {/* Legacy Editor Modal Overlay — only renders when explicitly in editor or canvas mode */}
+                        {Boolean(selectedItem) && (viewMode === 'editor' || viewMode === 'canvas') && (
                             <CreativeCanvas
                                 item={selectedItem}
                                 onClose={() => {
@@ -721,6 +726,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     }
                                 }}
                             />
+                        )}
 
                         {/* Layer Editor overlay (C1.3) — opens whenever a CanvasDoc is active. */}
                         {Boolean(currentDoc) && (

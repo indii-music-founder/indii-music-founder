@@ -176,6 +176,7 @@ describe('CreativeStudio', () => {
         const editorStore = {
             ...currentStore,
             viewMode: 'editor',
+            selectedItem: { id: 'test-item-1', url: 'https://example.com/test.png', type: 'image' },
             _viewModeIndex: 1,
             viewModeBack: mockViewModeBack,
             setViewMode: mockSetViewMode,
