@@ -1053,32 +1053,15 @@ jobs:
             gcloud iam service-accounts create "$account" \
               --project "$PROJECT" --display-name="indii print prep $account" --quiet
           done
-          gcloud projects add-iam-policy-binding "$PROJECT" \
-            --member="serviceAccount:print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/datastore.user --condition=None --quiet
           gcloud storage buckets add-iam-policy-binding \
             gs://indii-music-founder.firebasestorage.app \
             --project "$PROJECT" \
             --member="serviceAccount:print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
             --role=roles/storage.objectUser --quiet
-          gcloud iam service-accounts add-iam-policy-binding \
-            "print-prep-invoker@$PROJECT.iam.gserviceaccount.com" \
-            --project "$PROJECT" \
-            --member="serviceAccount:print-prep-dispatcher@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/iam.serviceAccountUser --condition=None --quiet
-          gcloud iam service-accounts add-iam-policy-binding \
-            "print-prep-runtime@$PROJECT.iam.gserviceaccount.com" \
-            --project "$PROJECT" \
-            --member="serviceAccount:github-actions@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/iam.serviceAccountUser --condition=None --quiet
           gcloud tasks queues describe print-prep-queue \
             --project "$PROJECT" --location "$REGION" --quiet >/dev/null 2>&1 || \
           gcloud tasks queues create print-prep-queue \
             --project "$PROJECT" --location "$REGION" --quiet
-          gcloud tasks queues add-iam-policy-binding print-prep-queue \
-            --project "$PROJECT" --location "$REGION" \
-            --member="serviceAccount:print-prep-dispatcher@$PROJECT.iam.gserviceaccount.com" \
-            --role=roles/cloudtasks.enqueuer --quiet
           gcloud storage buckets add-iam-policy-binding \
             gs://indii-music-founder.firebasestorage.app \
             --project indii-music-founder \
