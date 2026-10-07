@@ -1,6 +1,6 @@
 # indii.music Funding & Application Workspace
 
-**As of:** 2026-09-26  
+**As of:** 2026-10-05
 **Purpose:** Single entry point for grants, accelerators, investors, startup-credit programs, and application-browser work.
 
 ## Read in this order
@@ -37,6 +37,9 @@
 
 11. **WORK_START_PROMPT.md**  
    Ready-to-use Work/browser instruction that loads the canonical evidence, starts with the live PearX application, and prevents the founder interview from being repeated.
+
+12. **COMPETITION_AND_NOVELTY_DOSSIER.md**
+   Dated, source-linked competitive map and bounded novelty statement (evidence snapshot: October 5, 2026). It distinguishes market signals from indii implementation and commercial validation.
 
 ## Related current diligence files
 

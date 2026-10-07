@@ -6,6 +6,8 @@
 
 This document synthesizes founder-reported history, current repository evidence, live product testing, screenshots, CI/workflow evidence, and the current application source of truth.
 
+For the dated competitor map and defensible novelty language, use the [Competition & Novelty Dossier](COMPETITION_AND_NOVELTY_DOSSIER.md) (evidence snapshot: October 5, 2026). Its market claims do not update the product-status labels in this master dossier.
+
 It is intentionally broader than a pitch deck. It preserves the reasoning behind the company while separating what is implemented, what is being hardened, and what remains an intended operating model.
 
 ---
