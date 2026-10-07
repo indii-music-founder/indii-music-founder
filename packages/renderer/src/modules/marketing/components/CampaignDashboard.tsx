@@ -218,6 +218,8 @@ const CampaignDashboard: React.FC = () => {
                                     onUpdateCampaign={handleUpdateCampaign}
                                     onCreateNew={handleCreateNew}
                                     onAIGenerate={handleAIGenerate}
+                                    searchQuery={campaignSearch}
+                                    onClearSearch={() => setCampaignSearch('')}
                                 />
                             )
                         ) : activeTab === 'asset-generator' ? (

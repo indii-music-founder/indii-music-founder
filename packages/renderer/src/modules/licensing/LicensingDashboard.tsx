@@ -8,6 +8,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 
 import { useLicensing } from './hooks/useLicensing';
+import { PromptDialog } from '@/components/ui/PromptDialog';
+import { AlertDialog } from '@/components/ui/AlertDialog';
 import { DealFlowChart } from './components/LicensingWidgets';
 import { EmptyActionState } from './components/EmptyActionState';
 import { SkeletonStat, SkeletonList } from '@/components/shared/SkeletonLoader';
@@ -31,9 +33,8 @@ import { logger } from '@/utils/logger';
 
 export default function LicensingDashboard() {
     const { licenses, requests, projectedValue, loading: isLoading, initiateDrafting } = useLicensing();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { currentModule } = useStore(useShallow(state => ({
-        currentModule: state.currentModule
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile,
     })));
     const toast = useToast();
 
@@ -46,6 +47,41 @@ export default function LicensingDashboard() {
 
     const handleDraftAction = async (request: LicenseRequest) => {
         await initiateDrafting(request);
+    };
+
+    const handleCreateDeal = async () => {
+        const title = await PromptDialog.call({
+            title: 'Draft New Deal',
+            message: 'Enter the track or composition title for this licensing deal:',
+            placeholder: 'e.g. Midnight Horizon',
+            confirmText: 'Next',
+        });
+        if (!title || !title.trim()) return;
+
+        const usage = await PromptDialog.call({
+            title: 'Deal Usage / License Type',
+            message: `Specify the intended usage for "${title.trim()}":`,
+            placeholder: 'e.g. Sync TV/Film, Podcast Intro, Commercial Advertisement',
+            defaultValue: 'Sync Placement',
+            confirmText: 'Create Deal Draft',
+        });
+        if (!usage || !usage.trim()) return;
+
+        try {
+            await licensingService.createRequest({
+                title: title.trim(),
+                artist: userProfile?.displayName || 'Independent Artist',
+                usage: usage.trim(),
+                status: 'checking',
+            });
+            toast.success(`Draft deal created for "${title.trim()}".`);
+        } catch (err: unknown) {
+            logger.error('Failed to create licensing deal:', err);
+            await AlertDialog.call({
+                title: 'Unable to Create Deal',
+                message: err instanceof Error ? err.message : 'Failed to draft new deal.',
+            });
+        }
     };
 
     if (isLoading) {
@@ -129,7 +165,7 @@ export default function LicensingDashboard() {
                                         title="No Pending Clearances"
                                         description="Start a new licensing deal to track its progress here. All drafted agreements will appear in this timeline."
                                         actionLabel="Draft New Deal"
-                                        onAction={() => logger.info('Open draft modal')}
+                                        onAction={handleCreateDeal}
                                         gradient="from-yellow-500/20 to-orange-500/20"
                                     />
                                 ) : (

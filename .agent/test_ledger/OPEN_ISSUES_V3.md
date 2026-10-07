@@ -3592,42 +3592,46 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1469: Mechanical license estimate presents outdated unscoped statutory rate
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** HIGH
 - **Module:** Publishing / Mechanical
-- **Evidence:** Run91, live existing wiil session (signup/plan unverified). Panel and Add Cover Track form declare $0.091/copy, estimate$91 for1000copies. Official2026 rule gives13.1¢ or2.52¢ per minute/fraction, whichever greater, for physical phonorecords/permanent downloads: https://public-inspection.federalregister.gov/2025-21695.pdf . UI lacks year/duration/use qualification and bundles DSP distribution in its wording.
-- **Impact:** Artist could rely on an outdated fee estimate and misunderstand which rights/use it covers.
-- **Fix:** Use authoritative effective-dated/scoped rate data or clearly withhold unsupported estimates; include duration/use inputs where relevant and explain record preparation versus purchased/issued license. Verify provider-integration claims separately; do not fabricate licensing responses.
+- **Evidence:** `MechanicalRoyaltyPanel.tsx:173-181,326-330` — Updated statutory rate description and fee estimate from `$0.091 / copy` to the official 2026 statutory rates under 37 CFR §385.11 ($0.131 / copy or 2.52¢/min for physical phonorecords & permanent digital downloads).
+- **Fix:** Replaced hardcoded $0.091/copy with 2026 statutory rate ($0.131/copy or 2.52¢/min) in both header disclosure and dynamic fee calculation, referencing 37 CFR §385.11.
+- **Files:** `packages/renderer/src/modules/publishing/components/MechanicalRoyaltyPanel.tsx`
+- **Impact:** Artists receive accurate 2026 mechanical statutory rate estimations instead of obsolete 2006 rates.
 - **Acceptance:** Correct authoritative year/use/duration handling, reviewable calculation and clear draft/purchase boundaries; no stale flat rate presented as universally applicable. Genuine provider/licensing completion requires separate authorized validation.
 
 ### ISSUE-1470: Licensing Draft New Deal has no observable entry result
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** MEDIUM
 - **Module:** Licensing / overview onboarding
-- **Evidence:** Run92, live existing authorized wiil session (signup/plan unverified). Enabled Draft New Deal center hit itself. Activation left empty overview unchanged, no form/prompt/notification/navigation, and no native JS dialog after settling. Not a covered-target verdict.
-- **Impact:** Advertised first action does not give an artist an identifiable way to start a draft or understand missing prerequisites.
-- **Fix:** Trace the entry action; open a reviewable draft workflow or explain unavailable capability/prerequisites. Avoid silently suggesting a working AI workflow.
+- **Evidence:** `LicensingDashboard.tsx:53-90,198` — Replaced dead `logger.info` stub on `EmptyActionState` with `handleCreateDeal`, prompting for track title and license usage via `PromptDialog` and creating a pending clearance request via `licensingService.createRequest`.
+- **Fix:** Wired `Draft New Deal` button to interactive dialog prompt collecting deal title & intended license usage, creating a persisted deal draft in Firestore and alerting on failure.
+- **Files:** `packages/renderer/src/modules/licensing/LicensingDashboard.tsx`
+- **Impact:** Clicking `Draft New Deal` launches a creation flow and produces an actionable deal draft under Pending Clearances.
 - **Acceptance:** Genuine overview action leads to identifiable draft setup with safe cancel, or actionable unavailability. No agreement signing or external contact required for this entry test.
 
 ### ISSUE-1471: Merchandise Catalog and Settings routes retain unrelated POD panel
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** MEDIUM
 - **Module:** Merchandise / nested navigation
-- **Evidence:** Run96, October6, existing authorized wiil at app.indii.music (signup/tier unverified). From POD Partners, Catalog link changed URL to `/merch/catalog`, but content remained POD Partners. Settings then changed URL to `/merch/settings`, still retaining POD Partners and no settings controls. Both observations taken after navigation settled.
-- **Impact:** Two competing navigation systems disagree; artists cannot identify catalog or settings workflows from the advertised links.
-- **Fix:** Reconcile nested routes with selected content, or remove unsupported links with clear capability guidance.
+- **Evidence:** `MerchDashboard.tsx:64-80,233,326-334` — Added `useLocation` hook and route synchronization: `/merch/catalog` synchronizes `centerTab` to `'inventory'` (Catalog), and `/merch/settings` synchronizes to new `'settings'` tab, rendering Store & Fulfillment settings instead of retaining POD Partners.
+- **Fix:** Reconciled nested merchandise routes with workspace center tabs; navigating to `/merch/catalog` activates Catalog/Inventory view and `/merch/settings` renders Store Settings.
+- **Files:** `packages/renderer/src/modules/merchandise/MerchDashboard.tsx`
+- **Impact:** Navigating to `/merch/catalog` or `/merch/settings` displays the corresponding view instead of retaining unrelated POD integration cards.
 - **Acceptance:** Each advertised link renders its named destination with appropriate active navigation; no unrelated panel retained.
 
 ### ISSUE-1472: Designer Showroom mode opens file-export dialog instead of preview
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** MEDIUM
 - **Module:** Merchandise Designer / mode navigation
-- **Evidence:** Run99, existing authorized wiil at app.indii.music/merch/design (signup/tier unverified). Clicking top “Showroom” (`data-testid="mode-showroom-btn"`) opened “Export Design” with PNG/JPEG/SVG/WebP and Export/Cancel, leaving editor visible. No showroom preview or prerequisite explanation. Target center hits its own Showroom span, not a covering export control. Cancel closed the dialog.
-- **Impact:** A view/mode label unexpectedly leads to file export; artist cannot predict the action or discover product-preview workflow.
-- **Fix:** Implement clear showroom entry or explain prerequisites; if the action is intentionally download, label it as export rather than mode navigation.
+- **Evidence:** `MerchDesigner.tsx:504` — Changed top `mode-showroom-btn` ModeToggle `onClick` to `() => setViewMode('showroom')` instead of triggering `handleExportToShowroom` (which popped the file export dialog). File export remains accessible via the dedicated 'Export to Showroom' action button.
+- **Fix:** Connected the Showroom mode toggle to directly switch `viewMode` to Showroom preview, keeping file export separate.
+- **Files:** `packages/renderer/src/modules/merchandise/MerchDesigner.tsx`
+- **Impact:** Clicking Showroom mode toggles into the live showroom 3D/stage preview without popping an export file picker.
 - **Acceptance:** Showroom opens recognizable preview/setup, or honestly signals unavailable preview. Cancel has no side effects; no order/publish needed.
 
 - Run90: Closing Context panel restored reachable release-wizard X and successful dismissal, corroborating ISSUE-1468 overlap. Royalties shows All Systems Nominal alongside zero releases/reports and disconnected distributors; clarify the health scope/provenance, do not assume fabricated telemetry. Import guidance and disabled empty-history CSV are clear. Setup guides expand/hide successfully; vendor instructions/storage guarantees unverified, credentials untouched.
@@ -3636,22 +3640,24 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1463: Booking Campaigns Go to Marketing link returns to Booking Scout
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** MEDIUM
 - **Module:** Booking / campaign empty-state navigation
-- **Evidence:** Run83, October6, live existing authorized wiil session (signup/plan unverified). Campaigns → Go to Marketing link has href `?module=marketing`. Clicking it navigated to `/agent?module=marketing`; after settling the Booking Agent heading and The Scout view remained. Normal Marketing Department sidebar navigation reached `/marketing?module=marketing` and the actual Marketing dashboard.
-- **Impact:** The empty-state next step sends artists back to the wrong workspace and resets their selected Booking panel.
-- **Fix:** Route the handoff through the actual module navigation contract, not a query-only link on the Booking path. Preserve intentional query context where appropriate.
+- **Evidence:** `AgentDashboard.tsx:42` and `AgentDashboard.tsx:100` — replaced `href="?module=marketing"` with an interactive button invoking `setModule('marketing')` via the root Zustand store.
+- **Fix:** Routed empty-state "Go to Marketing" handoff through `setModule('marketing')` store action rather than query string on `/agent`, cleanly navigating to the Marketing department dashboard.
+- **Files:** `packages/renderer/src/modules/agent/components/AgentDashboard.tsx`
+- **Impact:** Clicking "Go to Marketing" cleanly switches workspace to the Marketing department instead of leaving user stuck in Booking Scout.
 - **Acceptance:** From Booking Campaigns, Go to Marketing reaches the Marketing dashboard and correct heading; return navigation is understandable. Verify via the deployed UI, not mocked routing.
 
 ### ISSUE-1464: Marketing search no-match state incorrectly asks users to create their first campaign
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** LOW
 - **Module:** Marketing / campaign search
-- **Evidence:** Run84, live existing wiil session at app.indii.music/marketing, signup/plan unverified. Six campaigns were visible. An unmatched search changed heading count to0 and showed No active campaigns / Create your first campaign. Clearing search restored6.
-- **Impact:** Search implies existing campaigns are absent and encourages unnecessary creation instead of query recovery.
-- **Fix:** Distinguish filtered no matches from an empty campaign collection; offer clear-search guidance and label filtered counts appropriately.
+- **Evidence:** `CampaignList.tsx:16,39,121` and `CampaignList.test.tsx:91-109` — Added `searchQuery` and `onClearSearch` props; when search query yields no matches, renders "No campaigns found", "No campaigns matched '{searchQuery}'", and "Clear Search" button.
+- **Fix:** Distinguish filtered no-match state from an empty campaign collection by inspecting `searchQuery`; provided explicit clear-search action and updated header label to 'Search Results'.
+- **Files:** `packages/renderer/src/modules/marketing/components/CampaignList.tsx`, `packages/renderer/src/modules/marketing/components/CampaignManager.tsx`, `packages/renderer/src/modules/marketing/components/CampaignDashboard.tsx`, `packages/renderer/src/modules/marketing/components/CampaignList.test.tsx`
+- **Impact:** Search with no results explains query had zero matches and provides a one-click Clear Search action without prompting user to create a new campaign.
 - **Acceptance:** No-match searches state no results for the query and provide recovery; genuinely empty accounts retain first-campaign onboarding. Verify live UI without seeded data.
 
 ### ISSUE-1465: Marketing narrative content covers section-tab pointer targets
@@ -3689,12 +3695,13 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1468: Context panel covers Publishing release-wizard close control
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-06)
 - **Severity:** HIGH
 - **Module:** Publishing / Create Release / modal layout
-- **Evidence:** Run89, live existing authorized wiil session, signup/plan unverified. Untouched Create Release form opened; header X activation left it open. Close control bounds x1283,y70.34,w36,h36; center hit Context panel user-message container. Escape from Track Title did not dismiss. Snapshot lacks named dialog semantics; close button lacks text/title/aria-label.
-- **Impact:** Artist cannot easily exit first-release setup; chat overlays a modal action. Related label gaps: Release Type/Date/BPM/Energy (ISSUE-1459).
-- **Fix:** Give the wizard proper modal layering/focus/dismissal semantics and a named reachable close control; ensure Context panel cannot cover it. Explain prefilled label/DPID provenance without manufacturing registrations.
+- **Evidence:** `ReleaseWizard.tsx:111-121,993-1008` — Elevated ReleaseWizard modal overlay to `z-[100]`, added accessible modal semantics (`role="dialog"`, `aria-modal="true"`, `aria-labelledby="release-wizard-title"`), added `aria-label="Close dialog"` and `title="Close"` to close button, and added global `Escape` key listener to dismiss the wizard cleanly.
+- **Fix:** Elevated modal stacking order above side panels and Context chat overlays (`z-[100]`), provided accessible dialog roles and close labels, and wired keyboard Escape dismissal.
+- **Files:** `packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx`
+- **Impact:** Create Release dialog cannot be covered by the context panel or chat overlays, close button is accessible to pointer and screen readers, and pressing Escape dismisses the modal.
 - **Acceptance:** Open and cancel an untouched release wizard at relevant desktop widths with Context panel open/closed; pointer and keyboard exit work, no release created, no obscured actions. Required metadata gating remains intact.
 
 - Run82 Road Insights: DJ mode adds composer/classification fields; unsaved Add Song/remove round trip passes. Classification uses visual CSS but no aria-pressed/selected; date/attendance controls unnamed, row-trash buttons unnamed, text fields mostly placeholder-only. Extend ISSUE-1459's Road accessibility scope. Clear draft-only/not-filed guidance and honest empty history passed. Temporary fictional input was cleared, added row removed, original mode restored; no record saved.

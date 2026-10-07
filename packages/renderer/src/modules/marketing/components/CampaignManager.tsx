@@ -21,6 +21,8 @@ interface CampaignManagerProps {
     onUpdateCampaign: (updatedCampaign: CampaignAsset) => Promise<void>;
     onCreateNew: () => void;
     onAIGenerate?: () => void;
+    searchQuery?: string;
+    onClearSearch?: () => void;
 }
 
 const CampaignManager: React.FC<CampaignManagerProps> = ({
@@ -29,7 +31,9 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
     onSelectCampaign,
     onUpdateCampaign,
     onCreateNew,
-    onAIGenerate
+    onAIGenerate,
+    searchQuery,
+    onClearSearch,
 }) => {
     const toast = useToast();
     const [editingPost, setEditingPost] = useState<ScheduledPost | null>(null);
@@ -177,6 +181,8 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     onSelectCampaign={onSelectCampaign}
                     onCreateNew={onCreateNew}
                     onAIGenerate={onAIGenerate}
+                    searchQuery={searchQuery}
+                    onClearSearch={onClearSearch}
                 />
             )}
         </div>

@@ -39,6 +39,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const CampaignsTab: React.FC = () => {
     const { t } = useTranslation();
+    const setModule = useStore(state => state.setModule);
     const [campaigns, setCampaigns] = React.useState<CampaignAsset[]>([]);
     const [loading, setLoading] = React.useState(true);
     const moduleColor = getColorForModule('agent');
@@ -95,12 +96,12 @@ const CampaignsTab: React.FC = () => {
                 <div className="flex flex-col items-center justify-center py-20 text-slate-600 space-y-3">
                     <Megaphone size={32} className="opacity-30" />
                     <p className="text-sm">{t('agent.campaigns.noCampaigns')}</p>
-                    <a
-                        href="?module=marketing"
-                        className={`text-xs ${moduleColor.text} ${moduleColor.hoverText} flex items-center gap-1 transition-colors`}
+                    <button
+                        onClick={() => void setModule('marketing')}
+                        className={`text-xs ${moduleColor.text} ${moduleColor.hoverText} flex items-center gap-1 transition-colors cursor-pointer bg-transparent border-none p-0`}
                     >
                         {t('agent.campaigns.goToMarketing')} <ExternalLink size={10} />
-                    </a>
+                    </button>
                 </div>
             ) : (
                 <div className="space-y-3">

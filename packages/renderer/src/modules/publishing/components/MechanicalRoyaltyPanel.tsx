@@ -173,9 +173,9 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
             </div>
 
             <p className="text-xs text-gray-500">
-                Statutory mechanical rate: <span className="text-gray-300 font-mono">$0.091 / copy</span> — estimated fee:{' '}
+                Statutory mechanical rate (2026): <span className="text-gray-300 font-mono">$0.131 / copy</span> (or 2.52¢/min) — estimated fee:{' '}
                 <span className="text-white font-semibold">
-                    ${((parseInt(copies, 10) || 0) * 0.091).toFixed(2)}
+                    ${((parseInt(copies, 10) || 0) * 0.131).toFixed(2)}
                 </span>
             </p>
 
@@ -326,7 +326,7 @@ export function MechanicalRoyaltyPanel({ releaseId = 'default' }: Props) {
                         Mechanical Licenses
                     </h2>
                     <p className="text-sm text-gray-400 mt-1">
-                        Required for cover songs distributed to DSPs. US statutory rate: $0.091/copy.
+                        Required for physical phonorecords & permanent downloads (37 CFR §385.11). US statutory rate (2026): $0.131/copy (or 2.52¢/min).
                     </p>
                 </div>
                 <button

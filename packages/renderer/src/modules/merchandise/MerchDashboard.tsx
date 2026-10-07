@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { MerchCard } from './components/MerchCard';
 import { MerchButton } from './components/MerchButton';
 import {
@@ -27,7 +27,7 @@ import { SmartContractGenerator } from './components/SmartContractGenerator';
 import { BlockchainLedger } from './components/BlockchainLedger';
 import { TokenGatedPreview } from './components/TokenGatedPreview';
 
-type CenterTab = 'dashboard' | 'inventory' | 'pricing' | 'pod' | 'web3';
+type CenterTab = 'dashboard' | 'inventory' | 'pricing' | 'pod' | 'web3' | 'settings';
 type Web3SubTab = 'wallet' | 'contracts' | 'ledger' | 'gated';
 
 /* ================================================================== */
@@ -59,11 +59,21 @@ const MerchNavItem = ({ to, icon, children, exact }: { to: string; icon: React.R
 
 export default function MerchDashboard() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
     const { stats, topSellingProducts, products, loading, error } = useMerchandise();
-    const [centerTab, setCenterTab] = useState<CenterTab>('dashboard');
+    const [overrideTab, setOverrideTab] = useState<CenterTab | null>(null);
+    const centerTab: CenterTab = overrideTab ?? (
+        location.pathname.includes('/merch/catalog') ? 'inventory' :
+        location.pathname.includes('/merch/settings') ? 'settings' :
+        'dashboard'
+    );
     const [web3SubTab, setWeb3SubTab] = useState<Web3SubTab>('wallet');
     const [dropWizardOpen, setDropWizardOpen] = useState(false);
+
+    const handleTabChange = useCallback((tab: CenterTab) => {
+        setOverrideTab(tab);
+    }, []);
 
     const handleDesignClick = useCallback(() => {
         navigate('/merch/design');
@@ -98,7 +108,7 @@ export default function MerchDashboard() {
             >
                 <MerchWorkspaceCenter
                     centerTab={centerTab}
-                    setCenterTab={setCenterTab}
+                    setCenterTab={handleTabChange}
                     web3SubTab={web3SubTab}
                     setWeb3SubTab={setWeb3SubTab}
                     stats={stats}
@@ -190,7 +200,7 @@ function MerchWorkspaceCenter({
     onCreateDrop,
 }: {
     centerTab: CenterTab;
-    setCenterTab: React.Dispatch<React.SetStateAction<CenterTab>>;
+    setCenterTab: (tab: CenterTab) => void;
     web3SubTab: Web3SubTab;
     setWeb3SubTab: React.Dispatch<React.SetStateAction<Web3SubTab>>;
     stats: MerchStats;
@@ -215,10 +225,11 @@ function MerchWorkspaceCenter({
             <div className="relative z-10 flex min-w-0 items-center gap-1 overflow-x-auto border-b border-white/5 px-4 pb-0 pt-4 scrollbar-hide">
                 {([
                     { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
-                    { id: 'inventory', label: 'Inventory', icon: Package },
+                    { id: 'inventory', label: 'Catalog', icon: Package },
                     { id: 'pricing', label: 'Pricing', icon: TrendingUp },
                     { id: 'pod', label: 'POD Partners', icon: Truck },
                     { id: 'web3', label: 'Web3', icon: Shield },
+                    { id: 'settings', label: 'Settings', icon: Settings },
                 ] as { id: CenterTab; label: string; icon: LucideIcon }[]).map(tab => (
                     <button
                         key={tab.id}
@@ -305,6 +316,15 @@ function MerchWorkspaceCenter({
                         {web3SubTab === 'contracts' && <SmartContractGenerator />}
                         {web3SubTab === 'ledger' && <BlockchainLedger />}
                         {web3SubTab === 'gated' && <TokenGatedPreview />}
+                    </div>
+                )}
+                {centerTab === 'settings' && (
+                    <div className={isFocused ? 'p-4 pt-16 space-y-6' : 'p-6 space-y-6'}>
+                        <div>
+                            <h2 className="text-xl font-bold text-white mb-1">Store & Fulfillment Settings</h2>
+                            <p className="text-sm text-neutral-400">Configure global merchandise margins, default POD routing, and payout accounts.</p>
+                        </div>
+                        <PODIntegrationPanel />
                     </div>
                 )}
             </div>

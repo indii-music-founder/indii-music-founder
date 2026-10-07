@@ -108,6 +108,17 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
   // so the required metadata grid stays scannable.
   const [advancedMetadataOpen, setAdvancedMetadataOpen] = useState(false);
 
+  // ISSUE-1468: Escape key dismisses the wizard dialog cleanly
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // Handle submission
   const handleSubmit = async () => {
     try {
@@ -979,13 +990,20 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
   const showNavigation = !['submitting', 'complete'].includes(currentStep);
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="release-wizard-title"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+    >
       <div className="bg-[#161b22] border border-gray-800 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-xl font-semibold text-white">Create Release</h2>
+          <h2 id="release-wizard-title" className="text-xl font-semibold text-white">Create Release</h2>
           <button
             onClick={onClose}
+            aria-label="Close dialog"
+            title="Close"
             className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
           >
             <X size={20} />

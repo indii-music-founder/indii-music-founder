@@ -501,7 +501,7 @@ export default function MerchDesigner() {
                                 />
                                 <ModeToggle
                                     active={currentMode === 'showroom'}
-                                    onClick={handleExportToShowroom}
+                                    onClick={() => setViewMode('showroom')}
                                     icon={<Monitor size={16} />}
                                     label="Showroom"
                                     data-testid="mode-showroom-btn"

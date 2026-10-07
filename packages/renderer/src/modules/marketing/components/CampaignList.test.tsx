@@ -87,4 +87,23 @@ describe('CampaignList', () => {
         fireEvent.click(screen.getByText('Campaign 1'));
         expect(mockOnSelect).toHaveBeenCalledWith(mockCampaigns[0]);
     });
+
+    it('renders search empty state and invokes onClearSearch when search yields no matches', () => {
+        const mockClearSearch = vi.fn();
+        render(
+            <CampaignList
+                campaigns={[]}
+                onSelectCampaign={mockOnSelect}
+                onCreateNew={mockOnCreateNew}
+                searchQuery="nonexistent"
+                onClearSearch={mockClearSearch}
+            />
+        );
+
+        expect(screen.getByText('No campaigns found')).toBeInTheDocument();
+        expect(screen.getByText(/No campaigns matched "nonexistent"/i)).toBeInTheDocument();
+        const clearBtn = screen.getByRole('button', { name: /Clear Search/i });
+        fireEvent.click(clearBtn);
+        expect(mockClearSearch).toHaveBeenCalledTimes(1);
+    });
 });
