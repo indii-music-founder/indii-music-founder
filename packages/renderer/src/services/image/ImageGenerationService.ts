@@ -714,35 +714,19 @@ export class ImageGenerationService {
     }
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
-        return withServiceError('ImageGeneration', 'remixImage', async () => {
-            const { functions } = await import('@/services/firebase');
-            const { httpsCallable } = await import('firebase/functions');
-            const editImageFn = httpsCallable(functions, 'editImage');
-
-            logger.info('[ImageGen] remixImage: using secured backend path', {
-                hasContent: !!options.contentImage,
-                hasStyle: !!options.styleImage,
-                promptSnippet: (options.prompt || '').substring(0, 60),
-            });
-
-            const result = await editImageFn({
-                image: {
-                    mimeType: options.contentImage.mimeType,
-                    data: options.contentImage.data,
-                },
-                referenceImage: options.styleImage ? {
-                    mimeType: options.styleImage.mimeType,
-                    data: options.styleImage.data,
-                } : undefined,
-                prompt: options.prompt || 'Remix this image',
-                model: 'pro'
-            });
-
-            const data = normalizeEditImageResult(result.data, options.prompt || 'Remix this image');
-            if (!data?.url) return null;
-
-            return { url: data.url };
+        const prompt = options.prompt || 'Remix this image';
+        const result = await this.editImage({
+            image: options.contentImage.data,
+            imageMimeType: options.contentImage.mimeType,
+            referenceImage: options.styleImage?.data,
+            refMimeType: options.styleImage?.mimeType,
+            prompt,
+            model: 'pro',
         });
+
+        if (!result || typeof result !== 'object' || !('url' in result)) return null;
+        const url = result.url;
+        return typeof url === 'string' && url.trim().length > 0 ? { url } : null;
     }
 
     async extractStyle(image: { mimeType: string; data: string }): Promise<{ prompt_desc?: string, style_context?: string, negative_prompt?: string }> {
@@ -832,6 +816,7 @@ export class ImageGenerationService {
         imageMimeType?: string;
         maskMimeType?: string;
         refMimeType?: string;
+        model?: string;
         aspectRatio?: string;
         imageSize?: string;
         thinkingLevel?: string;

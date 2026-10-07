@@ -23,35 +23,36 @@ export const TreatmentPicker: React.FC = () => {
         const presetId = value as VideoTreatmentPresetId;
         const treatment = resolveTreatment({ preset: presetId });
         const state = useVideoEditorStore.getState();
-        if (treatment.background) state.updateProjectSettings({ background: treatment.background });
-        if (treatment.seam) state.updateProjectSettings({ seam: treatment.seam });
-        if (treatment.entrance && treatment.entrance !== 'none') {
-            for (const clip of state.project.clips) {
-                if (clip.type !== 'text') continue;
-                state.updateClip(clip.id, { entrance: { type: treatment.entrance } });
+        const clips = state.project.clips.map(clip => {
+            if (clip.type === 'text' && treatment.entrance && treatment.entrance !== 'none') {
+                return { ...clip, entrance: { type: treatment.entrance } };
             }
-        }
-        if (treatment.audioFade) {
-            for (const clip of state.project.clips) {
-                if (clip.type === 'audio' || clip.hasAudio === true) {
-                    state.updateClip(clip.id, { audioFade: treatment.audioFade });
-                }
+            if (treatment.audioFade && (clip.type === 'audio' || clip.hasAudio === true)) {
+                return { ...clip, audioFade: treatment.audioFade };
             }
-        }
+            return clip;
+        });
+
+        state.updateProjectSettings({
+            treatmentPresetId: presetId,
+            ...(treatment.background ? { background: treatment.background } : {}),
+            ...(treatment.seam ? { seam: treatment.seam } : {}),
+            clips,
+        });
     };
 
     return (
         <label className="flex items-center gap-2 text-[10px] text-gray-400">
             <span className="uppercase font-bold tracking-wide">Treatment</span>
             <select
-                value=""
+                value={project.treatmentPresetId ?? ''}
                 onChange={handleChange}
                 disabled={project.clips.length === 0}
                 data-testid="video-treatment-picker"
                 className={`bg-gray-800 border border-gray-700 text-gray-200 rounded-md px-2 py-1.5 text-xs ${project.clips.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-500'}`}
                 aria-label="Apply a cinematic treatment preset"
             >
-                <option value="">None</option>
+                <option value="">Choose treatment…</option>
                 {VIDEO_TREATMENT_PRESET_IDS.map(id => (
                     <option key={id} value={id}>{VIDEO_TREATMENT_PRESETS[id].label}</option>
                 ))}

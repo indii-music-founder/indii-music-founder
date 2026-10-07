@@ -5,6 +5,9 @@ const mocks = vi.hoisted(() => {
     const project = {
         id: 'project-1', name: 'Project', width: 1920, height: 1080, fps: 30,
         durationInFrames: 60,
+        treatmentPresetId: undefined as string | undefined,
+        background: undefined as Record<string, unknown> | undefined,
+        seam: undefined as Record<string, unknown> | undefined,
         tracks: [
             { id: 'video-track', name: 'Video', type: 'video' as const },
             { id: 'text-track', name: 'Text', type: 'text' as const },
@@ -40,6 +43,13 @@ import { TreatmentPicker } from './TreatmentPicker';
 describe('TreatmentPicker', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.project.treatmentPresetId = undefined;
+        mocks.project.background = undefined;
+        mocks.project.seam = undefined;
+        for (const clip of mocks.project.clips) {
+            delete (clip as { entrance?: unknown }).entrance;
+            delete (clip as { audioFade?: unknown }).audioFade;
+        }
     });
 
     it('applies a preset to the project, text clips, and audio clips', () => {
@@ -49,13 +59,18 @@ describe('TreatmentPicker', () => {
             target: { value: 'amber-night-cinematic' },
         });
 
+        expect(mocks.updateProjectSettings).toHaveBeenCalledOnce();
         expect(mocks.updateProjectSettings).toHaveBeenCalledWith(
-            expect.objectContaining({ background: expect.objectContaining({ kind: 'radial-glow' }) }),
+            expect.objectContaining({
+                treatmentPresetId: 'amber-night-cinematic',
+                background: expect.objectContaining({ kind: 'radial-glow' }),
+                seam: { type: 'cut-the-curve', direction: 'LEFT' },
+                clips: expect.arrayContaining([
+                    expect.objectContaining({ id: 't1', entrance: { type: 'waterfall' } }),
+                ]),
+            }),
         );
-        expect(mocks.updateProjectSettings).toHaveBeenCalledWith(
-            expect.objectContaining({ seam: { type: 'cut-the-curve', direction: 'LEFT' } }),
-        );
-        expect(mocks.updateClip).toHaveBeenCalledWith('t1', { entrance: { type: 'waterfall' } });
+        expect(mocks.updateClip).not.toHaveBeenCalled();
     });
 
     it('does nothing when the placeholder option is selected', () => {
@@ -67,5 +82,19 @@ describe('TreatmentPicker', () => {
 
         expect(mocks.updateProjectSettings).not.toHaveBeenCalled();
         expect(mocks.updateClip).not.toHaveBeenCalled();
+    });
+
+    it('shows the applied preset from persisted project state after rerender', () => {
+        const { rerender } = render(<TreatmentPicker />);
+        fireEvent.change(screen.getByTestId('video-treatment-picker'), {
+            target: { value: 'vinyl-warm' },
+        });
+
+        rerender(<TreatmentPicker />);
+
+        expect(screen.getByTestId('video-treatment-picker')).toHaveValue('vinyl-warm');
+        expect(mocks.updateProjectSettings).toHaveBeenCalledWith(
+            expect.objectContaining({ treatmentPresetId: 'vinyl-warm' }),
+        );
     });
 });

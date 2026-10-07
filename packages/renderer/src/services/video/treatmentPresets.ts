@@ -1,4 +1,9 @@
-import type { IndiiAudioFade, IndiiBackground, IndiiSeam } from '@indii/shared';
+import type {
+    IndiiAudioFade,
+    IndiiBackground,
+    IndiiSeam,
+    IndiiVideoTreatmentPresetId,
+} from '@indii/shared';
 import { judgeVideoTreatmentPreset } from '@/config/typesafeJudgments';
 
 /**
@@ -9,16 +14,7 @@ import { judgeVideoTreatmentPreset } from '@/config/typesafeJudgments';
  * syntax may appear here.
  */
 
-export type VideoTreatmentPresetId =
-    | 'amber-night-cinematic'
-    | 'clean-grid'
-    | 'bold-arrival'
-    | 'neon-night'
-    | 'vinyl-warm'
-    | 'cold-blue'
-    | 'sunset-punch'
-    | 'raw-documentary'
-    | 'candy-pop';
+export type VideoTreatmentPresetId = IndiiVideoTreatmentPresetId;
 
 export interface VideoTreatmentPreset {
     id: VideoTreatmentPresetId;

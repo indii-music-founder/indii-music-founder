@@ -1172,21 +1172,23 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 prompt: refinedPrompt
             });
 
-            if (synthResults) {
-                const storageUri = resolveStorageUri(synthResults.url);
-                const targetAsset: HistoryItem = {
-                    id: crypto.randomUUID(),
-                    url: synthResults.url,
-                    storageUri,
-                    prompt: `End Frame: ${refinedPrompt}`,
-                    type: 'image',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId
-                };
-                useStore.getState().addToHistory(targetAsset);
-                setEndFrameItem(targetAsset as { id: string; url: string; prompt: string; type: 'image' | 'video' });
-                toast.success("Climax frame created!");
+            if (!synthResults?.url) {
+                throw new Error('The image service did not return a usable end frame. Try again.');
             }
+
+            const storageUri = resolveStorageUri(synthResults.url);
+            const targetAsset: HistoryItem = {
+                id: crypto.randomUUID(),
+                url: synthResults.url,
+                storageUri,
+                prompt: `End Frame: ${refinedPrompt}`,
+                type: 'image',
+                timestamp: Date.now(),
+                projectId: currentProjectId
+            };
+            useStore.getState().addToHistory(targetAsset);
+            setEndFrameItem(targetAsset as { id: string; url: string; prompt: string; type: 'image' | 'video' });
+            toast.success("Climax frame created!");
         } catch (error: unknown) {
             toast.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         } finally {

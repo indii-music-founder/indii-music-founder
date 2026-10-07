@@ -18,6 +18,18 @@ import type { MusicRelationshipType } from '../schemas/musicRelationship.js';
 
 export type IndiiClipType = 'video' | 'image' | 'text' | 'audio';
 
+/** Stable, persisted identity for a named cinematic treatment in the editor. */
+export type IndiiVideoTreatmentPresetId =
+    | 'amber-night-cinematic'
+    | 'clean-grid'
+    | 'bold-arrival'
+    | 'neon-night'
+    | 'vinyl-warm'
+    | 'cold-blue'
+    | 'sunset-punch'
+    | 'raw-documentary'
+    | 'candy-pop';
+
 /**
  * Cinematic treatment vocabulary (MIG-010). Framework-neutral descriptions of
  * the compositor-level effects users ask for in plain language ("make it feel
@@ -213,6 +225,8 @@ export interface IndiiVideoProject {
     background?: IndiiBackground;
     /** Transition applied at every adjacent-clip boundary. */
     seam?: IndiiSeam;
+    /** The named preset most recently applied; persisted so the picker reflects project state. */
+    treatmentPresetId?: IndiiVideoTreatmentPresetId;
 }
 
 const US_PER_SECOND = 1_000_000;

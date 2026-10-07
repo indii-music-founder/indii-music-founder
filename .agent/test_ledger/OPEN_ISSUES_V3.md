@@ -3342,7 +3342,8 @@ PRs. Full phase/product acceptance is not established by those facts. See
 - **Status:** 🟡 PARTIAL — server-owned code landed pending exact-SHA CI/deploy and genuine-owner acceptance.
 - **Implemented locally:** App-Check-enforced, authenticated callables create owner-scoped bounded execution records and allow only cancel or failed-step resume actions. The renderer no longer writes step state or runs Maestro locally; it reports queued, and its marketing panel no longer describes an accepted job as a failure. Server orchestration now claims graph-ready steps transactionally, and worker results commit only while execution and step idempotency state still match. Worker prompts explicitly limit output to written drafts/plans and require missing evidence to be stated.
 - **Local evidence:** Focused callable-validation, dependency-ordering, renderer service, orchestration, and panel tests pass (15 tests). `npm run typecheck`, `npm run lint`, and `npm run ci` pass; the full CI suite reported 334 test files and 2,409 tests passing, with 2 skipped.
-- **Still open:** Genuine owner execution/cancel/resume/reload, production callable deployment, and a UI consumer for persisted execution results. No production execution has been claimed.
+- **Still open:** Genuine owner execution/cancel/resume/reload acceptance. No production execution has been claimed.
+- **Current evidence correction — 2026-10-07:** `WorkflowExecutionHistory.tsx` is mounted in the Marketing panel and subscribes to the owner-scoped persisted execution collection, with server-confirmation gating and cancel/resume controls. Exact-SHA CI run [37644250994](https://github.com/indii-music-founder/indii-music-founder/actions/runs/37644250994) passed production deployment. The earlier statement that no UI consumer or production callable deployment existed is historical and no longer current. No genuine owner workflow execution or reload acceptance has been performed.
 
 ### ISSUE-1452: Post-mastering runbook and semantic catalog remain unconnected
 
@@ -3384,6 +3385,12 @@ persistence/deletion are still unverified. Keep the issue open for those gates.
 - **Delivered:** After `ADMIN_LOCK`, the master runbook now validates the ledger receipt and linked release owner, builds a schema-validated semantic track node from receipt shares/signatories and verified release metadata, and projects it with `visibility: 'private'`. Missing title, owner mismatch, or invalid receipt skips projection with an explicit reason. The private projection writer removes any stale public mirror. No owner visibility or public publishing control was added.
 - **Validation:** Runbook + semantic projection focused tests 22/22; root typecheck, scoped ESLint, diff check, and pre-commit gates passed. Commit `31a56e33fa33b251235233cc95273a688341c469` is on `main`; exact-SHA CI run [36913234835](https://github.com/indii-music-founder/indii-music-founder/actions/runs/36913234835) passed rules, all 20 unit shards, build, staging deploy, staging smoke, and production deploy.
 - **Still open:** The projection uses a private internal master-hash entity ID and only executes when an `ADMIN_LOCK` event carries sufficient release metadata. No owner visibility callable, opt-in public lifecycle, deployed genuine-owner reload/downstream retrieval acceptance, or approved `DISTRIBUTION_READY` transition exists. Do not expose the feed as complete or infer additional rights/availability fields.
+
+### ISSUE-1452 evidence correction — 2026-10-07
+
+- **Status:** 🟡 PARTIAL
+- **Current implementation:** `projectSemanticNode` is called by `masterIngestionRunbook.ts`; the owner-scoped `CatalogVisibilityPanel` is mounted in Registration Center; `setCatalogVisibility` is exported and checks the persisted lock receipt and rights-clearance fields before public publication. The owner feed and SDK readers are also present. Exact-SHA CI run [37644250994](https://github.com/indii-music-founder/indii-music-founder/actions/runs/37644250994) passed production deployment.
+- **Still open:** Genuine owner publication/reload and downstream retrieval acceptance; authoritative inputs may not exist for a given master, and the FSM must remain non-ready until deterministic prerequisites hold. Earlier statements that no projection caller, visibility callable, or owner UI exists are historical, not current.
 
 ### GitHub Issues Consolidation — Issues #352, #353, #354, #355 (2026-10-03)
 
@@ -3467,12 +3474,13 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1460: Timeline treatment preset remains unchanged after selection
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-10-07 — persisted selected-state fix implemented; CI/deployed preview acceptance remains)
 - **Severity:** MEDIUM
 - **Module:** Creative / Video Studio / Timeline Editor
 - **Evidence:** Run 69. Once the canvas overlay was closed through the confirmed image-to-video handoff, the `Apply a cinematic treatment preset` control was enabled and its center hit-tested to itself. `Vinyl Warm` was attempted through both the labeled control and combobox role, then via click/keyboard; after settling the selected option remained `None` and the project UI showed no selection change. This distinguishes the result from the earlier canvas obstruction in ISSUE-1453. No render was run, so visual treatment output is unverified.
 - **Impact:** User cannot tell whether choosing a timeline treatment takes effect; video styling workflow stalls silently.
-- **Fix:** Trace selection state and event handling for the timeline treatment picker; surface the applied state or an actionable failure. Preserve legitimate empty/disabled states where no eligible clip exists.
+- **Fix:** The selected preset ID is now part of the canonical project model. Applying a preset updates the selected ID, background/seam, and eligible clip settings in one project update so undo restores one coherent prior state. The picker reads the ID from project state and uses a truthful “Choose treatment…” placeholder.
+- **Local validation:** `TreatmentPicker.test.tsx` passes 3/3 tests, including the controlled selected state after project update; repository typecheck passes. Production preview/render behavior and genuine project reload remain unverified.
 - **Acceptance:** With an eligible video clip selected, choosing a named treatment visibly updates selection/state; undo/reload behavior is clear; a real preview/render later confirms the treatment without mock evidence.
 
 ### ISSUE-1462: History asset View Fullsize has no identifiable preview result
@@ -3494,12 +3502,13 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1461: Create Last Frame silently fails image-remix validation
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-10-07 — callable payload and empty-result feedback fixed locally; CI/deployed acceptance remains)
 - **Severity:** HIGH
 - **Module:** Creative / image-to-video handoff
 - **Evidence:** Run75. With the Layers panel closed, `Create Last Frame` was enabled and its center hit-tested to the button. It changed to `Analyzing Scene…` for several seconds, then returned to its idle label with no visible success/error and no last-frame state in the Director. At approximately the same time, browser console logged `[ImageGeneration] remixImage failed: Validation failed: Expected string, received object, Expected string, received object` (2026-10-06T00:58:56Z). Recent creative operations showed a matching-time `agent stream` entry, `$0.00`, `Settled — provider output billed` (op-1791248305503-81n4xxu3); Project Assets remained at 50. Strong time correlation, but exact backend request correlation should be confirmed at source.
 - **Impact:** User gets no end frame and no actionable error; UI may imply an AI operation completed when its output was rejected.
-- **Fix:** Trace Create Last Frame's request path and `remixImage` input contract; correct the string/object payload mismatch or route to the proper frame-setting action. Preserve source art and clearly expose operation completion/failure and any applicable charge/refund.
+- **Fix:** `remixImage` now delegates through the authenticated `editImage` service contract, passing base64 strings with separate MIME-type fields as required by the callable schema. Create Last Frame now shows an error when the service returns no usable output instead of silently returning to idle.
+- **Local validation:** `ImageGenerationService.test.ts` passes 16/16 tests, asserting the callable field shape and unusable-output behavior; repository typecheck passes. This does not establish a genuine generated output or its billing/settlement record.
 - **Acceptance:** On a test image, Create Last Frame produces a visible, reviewable final-frame assignment or a useful error; no silent failure; operation ledger accurately reports cost/settlement; verify a genuinely rendered output separately before claiming video success.
 
 ### ISSUE-1453: Creative Canvas persists across close/back/media navigation and obstructs underlying controls
@@ -3969,4 +3978,3 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Expected (acceptance):** Add `default: return <ProfileSection />;` with warning log.
 - **Fix:** Added `default:` fallback arm logging a warning with `logger.warn` and rendering `<ProfileSection />`.
 - **Evidence:** `packages/renderer/src/modules/settings/SettingsPanel.tsx:110-113`.
-

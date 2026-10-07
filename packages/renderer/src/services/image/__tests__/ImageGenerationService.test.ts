@@ -417,11 +417,15 @@ describe("ImageGenerationService", () => {
 
       expect(result).toHaveProperty("url");
       expect(result!.url).toMatch(/^data:image\/png;base64,/);
+      expect(httpsCallable).toHaveBeenCalledWith(expect.anything(), "editImage");
       expect(mockGenerateImage).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: "Apply this style",
-          image: { mimeType: "image/jpeg", data: "contentdata" },
-          referenceImage: { mimeType: "image/png", data: "styledata" }
+          image: "contentdata",
+          imageMimeType: "image/jpeg",
+          referenceImage: "styledata",
+          refMimeType: "image/png",
+          model: "pro",
         })
       );
     });
@@ -457,6 +461,26 @@ describe("ImageGenerationService", () => {
       expect(result).toEqual({
         url: "data:image/png;base64,candidate-preview-data",
       });
+      expect(mockGenerateImage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          image: "contentdata",
+          imageMimeType: "image/jpeg",
+          referenceImage: "styledata",
+          refMimeType: "image/png",
+        }),
+      );
+    });
+
+    it("returns null when the edit callable has no usable image output", async () => {
+      mockGenerateImage.mockResolvedValue({ data: {} });
+
+      const result = await ImageGeneration.remixImage({
+        contentImage: { mimeType: "image/jpeg", data: "contentdata" },
+        styleImage: { mimeType: "image/png", data: "styledata" },
+        prompt: "Apply this style",
+      });
+
+      expect(result).toBeNull();
     });
   });
 
