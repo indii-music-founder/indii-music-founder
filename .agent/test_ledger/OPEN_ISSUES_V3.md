@@ -3523,10 +3523,10 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1454: Reference and lower control layouts cause oversized tiles and inaccessible controls
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-07)
 - **Severity:** MEDIUM
 - **Module:** Creative / reference panels / responsive layout
-- **Evidence:** Runs 22,30,31,42,44,47–48. Add Person square490px inside max-height286px scrolling panel (scrollHeight636); collapsing recovers300px. Project Assets covered Visual Dock. Layers open covered Save/Close centers in one layout. Brand Compliance lower-edge center unreachable; keyboard after reducing Reference Mixer opened it. All9 action-strip centers reachable with Studio Controls in current wide viewport: preserve this passing case.
+- **Evidence:** Runs 22,30,31,42,44,47–48. Add Person square490px inside max-height286px scrolling panel (scrollHeight636); collapsing recovers300px. Project Assets covered Visual Dock. Layers open covered Save/Close centers in one layout. Brand Compliance lower-edge center unreachable; keyboard after reducing Reference Mixer opened it. All9 action-strip centers reachable with Studio Controls in current wide viewport: preserve this passing case. Fixed in `CharacterLibrary.tsx`, `CreativeClipboard.tsx`, and `StudioControlsPanel.tsx`: bounded reference cards and Add Person placeholder button to `max-h-28` with `max-w-md` grid containment; coordinated Visual Dock position with `isRightPanelOpen` so dock shifts leftward when RightPanel is active (`right-[min(26rem,calc(100%-4rem))]`); and added `pb-28` bottom scroll clearance to StudioControlsPanel history and creation views so Brand Compliance and governance action buttons never hit viewport boundaries. Verified by `CharacterLibrary.test.tsx`, `CreativeClipboard.test.tsx`, `StudioControlsPanel.test.tsx`, and `BrandCompliancePanel.test.tsx` (27/27 tests passing), plus full monorepo typecheck passing.
 - **Impact:** Excess internal scroll, clipped guidance, unreachable buttons at screen edge.
 - **Fix:** Compact responsive references and coordinated panel/dock positioning; correct scroll containment and hit targets rather than treating obstructed controls as dead handlers.
 - **Acceptance:** Test narrow and wide window sizes, expanded assets/layers/studio controls, all bottom actions and dock; no overlap/clipped targets, guidance/count remains discoverable. Promotional journey emphasis must be distinguishable from active task state (Run31 correction).

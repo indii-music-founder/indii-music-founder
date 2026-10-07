@@ -195,7 +195,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
             </div>
 
             {activeTab === 'history' ? (
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 pb-28 space-y-4">
                     {/* ISSUE-1440 residue: the metered-operations ledger lives in the
                         History tab — full Refresh/Load-more usability without a popover. */}
                     <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px]" data-testid="cost-operation-history">
@@ -252,7 +252,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                     <CreativeGallery compact={true} />
                 </div>
             ) : (
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 pb-28">
                     {/* ISSUE-1441: Typography / Likeness / Brand Compliance governance cards
                         demoted to the bottom of the panel — they occupied the top three slots
                         above the core creation flow. */}

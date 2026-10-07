@@ -21,12 +21,14 @@ export default function CreativeClipboard() {
         clipboardItems,
         unpinFromClipboard,
         clearClipboard,
-        sendToModule
+        sendToModule,
+        isRightPanelOpen
     } = useStore(useShallow(state => ({
         clipboardItems: state.clipboardItems ?? EMPTY_CLIPBOARD_ITEMS,
         unpinFromClipboard: state.unpinFromClipboard,
         clearClipboard: state.clearClipboard,
-        sendToModule: state.sendToModule
+        sendToModule: state.sendToModule,
+        isRightPanelOpen: state.isRightPanelOpen
     })));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,7 +59,9 @@ export default function CreativeClipboard() {
     }
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
+        <div className={`fixed bottom-6 z-40 pointer-events-none transition-all duration-300 ${
+            isRightPanelOpen ? 'right-[min(26rem,calc(100%-4rem))]' : 'right-6'
+        }`}>
             <AnimatePresence>
                 {!isOpen ? (
                     // Collapsed Indicator

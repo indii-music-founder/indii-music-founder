@@ -348,9 +348,9 @@ export const CharacterLibrary: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 max-w-md">
                 {characterReferences.map((ref, index) => (
-                    <div key={ref.image.id} className="relative group bg-black/40 aspect-square rounded-lg overflow-hidden border border-white/10 flex flex-col cursor-pointer" onClick={() => setPreviewIndex(index)}>
+                    <div key={ref.image.id} className="relative group bg-black/40 aspect-square max-h-28 rounded-lg overflow-hidden border border-white/10 flex flex-col cursor-pointer" onClick={() => setPreviewIndex(index)}>
                         <img
                             src={ref.image.url}
                             alt={`Character Ref ${index + 1}`}
@@ -449,7 +449,7 @@ export const CharacterLibrary: React.FC = () => {
                     <button
                         onClick={() => setShowAddOptions(true)}
                         disabled={isValidating}
-                        className="group relative bg-black/40 aspect-square rounded-lg border border-dashed border-white/20 hover:border-blue-500/50 hover:bg-blue-500/10 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                        className="group relative bg-black/40 aspect-square max-h-28 rounded-lg border border-dashed border-white/20 hover:border-blue-500/50 hover:bg-blue-500/10 flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                     >
                         {isValidating ? (
                             <>
