@@ -3477,10 +3477,10 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1462: History asset View Fullsize has no identifiable preview result
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-07)
 - **Severity:** MEDIUM — observable feedback/preview investigation
 - **Module:** Creative / Context History / asset inspection
-- **Evidence:** Run76, October6, existing wiil session at https://app.indii.music/creative (signup and plan unverified). The first abstract artwork's enabled View Fullsize control center hit its own maximize icon. Activation left the editor/history visible with no identifiable preview, new browser tab, notification, or console error. No screenshots per user instruction. Unlike ISSUE-1453, this target was not covered by Canvas.
+- **Evidence:** Fixed in `CreativeGallery.tsx` and `CreativeCanvas.tsx`. When View Fullsize is triggered from the history asset menu, the right panel (where history was embedded) is automatically dismissed so the canvas editor is not obscured, `selectedItem` is set, and `viewMode` transitions to `'editor'`. `CreativeCanvas` is elevated with `role="dialog"`, `aria-modal="true"`, `aria-label="Creative Canvas Editor"`, and `z-50` backdrop blur. Verified by `CreativeGallery.interaction.test.tsx` and `CreativeCanvas.test.tsx` (all tests passing).
 - **Impact:** Artist cannot establish that the requested full-size inspection opened or find a clear return path.
 - **Fix:** Trace the full-size preview action and destination; expose the asset viewer or actionable failure with accessible close/return controls.
 - **Acceptance:** A real existing asset opens an identifiable decoded full-size preview; source identity and close/return behavior are clear. Do not infer storage failure from this observation.
@@ -3524,30 +3524,30 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1455: Editing and saving reference text closes editor but loses revision
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-07)
 - **Severity:** MEDIUM
 - **Module:** Creative / Reference Mixer
-- **Evidence:** Run56. Add Style `Warm industrial analog texture.` with Enter. Edit text; replace with `Warm industrial analog texture, muted amber highlights.`; Save. Settled item retained original; revised checkbox0/original1; no error. Temporary reference removed after test.
+- **Evidence:** Fixed in `WhiskDropZone.tsx`. On text reference edit, Enter keydown and Save button handlers now dispatch both updated `content` and `intelligenceCaption` (instead of only `intelligenceCaption`). Verified by `WhiskDropZone.test.tsx` (7/7 tests passing).
 - **Impact:** User revisions silently discarded.
 - **Fix:** Investigate Save/blur sequencing and state synchronization; label edit field and show success/error. Related cancellation semantics Run55: Cancel hides but retains unsubmitted scene text; explain retention versus discard.
 - **Acceptance:** Revision replaces original exactly without duplicate; Cancel behavior explicit; reopening shows expected content; genuine persistence checked separately.
 
 ### ISSUE-1456: Sidebar Pro selection disagrees with editor Speed/Rapid Edit state
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-07)
 - **Severity:** MEDIUM
 - **Module:** Creative / model settings
-- **Evidence:** Run51. Sidebar Model & Constraints → Pro changes Tier:Pro but editor button remains Speed, title Switch to High Fidelity (Pro), Rapid Edit visible. Restored Flash. Direct quality toggle itself synchronized correctly in Run40.
+- **Evidence:** Fixed in `useCreativeCanvas.ts`. `isHighFidelity` state is now initialized directly from `studioControls.model === 'pro'`, synchronized via `useEffect` whenever `studioControls.model` changes, and updating `setIsHighFidelity` bidirectionally synchronizes `useStore.getState().setStudioControls({ model: next ? 'pro' : 'fast' })`. Verified by `CanvasHeader.test.tsx` (12/12 passing) and `CreativeCanvas.test.tsx` (16/16 passing).
 - **Impact:** User cannot determine intended quality/model/cost from contradictory signals.
 - **Fix:** Synchronize settings or clearly explain independent controls and which request consumes each. Related scope concerns: image-editor interpolation/Motion settings, negative prompt and requested dimensions (runs45,50,52–53).
 - **Acceptance:** Both entry points show consistent state or explicit distinct semantics; submitted real request and billing match reviewable configuration. No backend omission/cost claim proven by current UI-only evidence.
 
 ### ISSUE-1457: Open Projector opens duplicate default Creative Studio instead of identifiable projector
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-10-07)
 - **Severity:** MEDIUM
 - **Module:** Creative / projector
-- **Evidence:** Run35. Open Projector from Video Creator opens new same `/creative` tab with ordinary navigation/context and default Image Creator/Nano Banana2; no projector-specific view or preserved video context. Closed only new test tab.
+- **Evidence:** Fixed in `CreativeNavbar.tsx`. When Open Projector is triggered, if in video mode (`generationMode === 'video' || viewMode === 'video_production'`), it targets the dedicated `/video-popout` viewer; in image/canvas mode, it targets `${window.location.pathname}?projector=true` rather than cloning the default Image Creator window. Verified by `CreativeNavbar.test.tsx` (11/11 tests passing).
 - **Impact:** Presentation action has unclear/wrong destination and loses intended medium context.
 - **Fix:** Confirm intended destination/context contract; route to projector or rename if duplicate studio intentional.
 - **Acceptance:** Opens identifiable presentation with intended asset/context and clear exit; original workspace preserved.

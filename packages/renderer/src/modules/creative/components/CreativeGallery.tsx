@@ -182,10 +182,11 @@ interface GalleryItemProps {
     sendToModule: (target: SendToTarget, payload: SendToPayload) => void;
     sendToStage: (target: CreativeStage, payload: StageHandoffPayload) => void;
     openInLayerEditor: (item: HistoryItem) => void;
+    onDismissPanel?: () => void;
     key?: React.Key;
 }
 
-const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule, sendToStage, openInLayerEditor }: GalleryItemProps) => {
+const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule, sendToStage, openInLayerEditor, onDismissPanel }: GalleryItemProps) => {
     const [showSendMenu, setShowSendMenu] = useState(false);
     const [imageLoadFailed, setImageLoadFailed] = useState(false);
     // ISSUE-323: local engine progress streams to the card while a run is active.
@@ -788,7 +789,19 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             </button>
                         )}
                         <button
-                            onClick={(e) => { e.stopPropagation(); setSelectedItem(item); setViewMode('editor'); }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onDismissPanel) {
+                                    onDismissPanel();
+                                } else if (typeof useStore.getState === 'function') {
+                                    const state = useStore.getState();
+                                    if (state?.isRightPanelOpen && typeof state?.toggleRightPanel === 'function') {
+                                        state.toggleRightPanel();
+                                    }
+                                }
+                                setSelectedItem(item);
+                                setViewMode('editor');
+                            }}
                             data-testid="view-fullsize-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-gray-700 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="View Fullsize"
@@ -898,9 +911,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack,
-        pinToClipboard, sendToModule, sendToStage, isHistoryInitialized, historySyncError, openImage
+        pinToClipboard, sendToModule, sendToStage, isHistoryInitialized, historySyncError, openImage,
+        isRightPanelOpen, toggleRightPanel
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         removeItemFromProject: state.removeItemFromProject,
@@ -918,6 +931,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         addCharacterReference: state.addCharacterReference,
         setPrompt: state.setCreativePrompt,
         setViewMode: state.setViewMode,
+        isRightPanelOpen: state.isRightPanelOpen,
+        toggleRightPanel: state.toggleRightPanel,
         playTrack: state.playTrack,
         stopTrack: state.stopTrack,
         currentTrack: state.currentTrack,
@@ -1217,6 +1232,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                             sendToModule={sendToModule}
                                             sendToStage={sendToStage}
                                             openInLayerEditor={openInLayerEditor}
+                                            onDismissPanel={() => { if (isRightPanelOpen) toggleRightPanel(); }}
                                         />
                                     ))}
                                 </div>

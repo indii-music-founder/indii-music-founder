@@ -318,7 +318,8 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                             autoFocus
                                                             onKeyDown={(e) => {
                                                                 if (e.key === 'Enter' && editValue.trim()) {
-                                                                    onUpdate?.(item.id, { intelligenceCaption: editValue.trim() });
+                                                                    const trimmed = editValue.trim();
+                                                                    onUpdate?.(item.id, item.type === 'text' ? { content: trimmed, intelligenceCaption: trimmed } : { intelligenceCaption: trimmed });
                                                                     setEditingItemId(null);
                                                                 }
                                                                 if (e.key === 'Escape') {
@@ -329,7 +330,8 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                         <button
                                                             onClick={() => {
                                                                 if (editValue.trim()) {
-                                                                    onUpdate?.(item.id, { intelligenceCaption: editValue.trim() });
+                                                                    const trimmed = editValue.trim();
+                                                                    onUpdate?.(item.id, item.type === 'text' ? { content: trimmed, intelligenceCaption: trimmed } : { intelligenceCaption: trimmed });
                                                                     setEditingItemId(null);
                                                                 }
                                                             }}

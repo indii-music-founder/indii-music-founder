@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
-import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
@@ -133,7 +133,24 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const [generatedCandidates, setGeneratedCandidates] = useState<Candidate[]>([]);
     const [endFrameItem, setEndFrameItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video' } | null>(null);
     const [magicFillPrompt, setMagicFillPrompt] = useState('');
-    const [isHighFidelity, setIsHighFidelity] = useState(false);
+    // ISSUE-1456: Synchronize isHighFidelity directly with studioControls.model
+    const [isHighFidelity, setIsHighFidelityState] = useState(studioControls?.model === 'pro');
+
+    useEffect(() => {
+        setIsHighFidelityState(studioControls?.model === 'pro');
+    }, [studioControls?.model]);
+
+    const setIsHighFidelity = useCallback((nextVal: boolean | ((prev: boolean) => boolean)) => {
+        setIsHighFidelityState(prev => {
+            const next = typeof nextVal === 'function' ? nextVal(prev) : nextVal;
+            const currentModel = useStore.getState?.()?.studioControls?.model;
+            const desiredModel = next ? 'pro' : 'fast';
+            if (currentModel !== desiredModel && typeof useStore.getState?.()?.setStudioControls === 'function') {
+                useStore.getState().setStudioControls({ model: desiredModel });
+            }
+            return next;
+        });
+    }, []);
 
     // Canvas ref
     const canvasEl = useRef<HTMLCanvasElement>(null);

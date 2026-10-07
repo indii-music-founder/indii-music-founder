@@ -491,7 +491,7 @@ describe('CreativeCanvas', () => {
             studioControls: {
                 aspectRatio: '1:1',
                 imageSize: '1k',
-                model: 'pro',
+                model: 'fast',
                 resolution: '1k',
                 useGrounding: false,
             },

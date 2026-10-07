@@ -114,7 +114,7 @@ describe('WhiskDropZone', () => {
         fireEvent.click(saveBtn);
         
         await waitFor(() => {
-            expect(mockUpdateWhiskItem).toHaveBeenCalledWith('1', { intelligenceCaption: 'New Robot Caption' });
+            expect(mockUpdateWhiskItem).toHaveBeenCalledWith('1', { content: 'New Robot Caption', intelligenceCaption: 'New Robot Caption' });
         });
     });
 

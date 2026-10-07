@@ -171,10 +171,14 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
     return (
         <AnimatePresence>
             <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Creative Canvas Editor"
+                tabIndex={-1}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 z-40 bg-background/80 backdrop-blur-xl flex flex-col overflow-hidden"
+                className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col overflow-hidden"
                 data-testid="creative-canvas-container"
             >
                 <CanvasHeader

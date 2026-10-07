@@ -213,7 +213,10 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         onClick={async () => {
                             const granted = await ScreenControl.requestPermission();
                             if (granted) {
-                                ScreenControl.openProjectorWindow(window.location.href);
+                                // ISSUE-1457: Open identifiable projector target instead of cloning default studio
+                                const isVideo = generationMode === 'video' || viewMode === 'video_production';
+                                const targetUrl = isVideo ? '/video-popout' : `${window.location.pathname}?projector=true`;
+                                ScreenControl.openProjectorWindow(targetUrl);
                             } else {
                                 toast.error('Screen Control API not supported or permission denied.');
                             }
