@@ -41,6 +41,7 @@ vi.mock('@/core/store', () => ({
 }));
 vi.mock('firebase/functions', () => ({ httpsCallable: mockHttpsCallable }));
 
+// Legacy mock-backed structural checks only; not authenticated/persisted journey evidence.
 describe('LegalService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -63,7 +64,7 @@ describe('LegalService', () => {
         await expect(LegalService.saveContract({} as unknown as Parameters<typeof LegalService.saveContract>[0])).rejects.toThrow('User not authenticated');
     });
 
-    it('returns empty array for getContracts when unauthenticated', async () => {
+    it('returns the empty query result when the presentation profile is unavailable', async () => {
         vi.mocked(useStore.getState).mockReturnValue({ userProfile: null } as unknown as ReturnType<typeof useStore.getState>);
         const result = await LegalService.getContracts();
         expect(result).toEqual([]);

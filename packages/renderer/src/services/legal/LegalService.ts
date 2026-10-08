@@ -1,5 +1,5 @@
 import { AppException, AppErrorCode } from '@/shared/types/errors';
-import { db } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
 import {
     collection,
     doc,
@@ -86,11 +86,15 @@ export class LegalService {
      * Get all contracts for the current user
      */
     static async getContracts(): Promise<LegalContract[]> {
-        const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) return [];
+        // The authenticated shell can mount before the presentation profile loads.
+        // Use the Firebase identity, never the profile's initial "pending" ID.
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'User not authenticated');
+        }
 
         const q = query(
-            collection(db, 'users', userProfile.id, 'contracts'),
+            collection(db, 'users', userId, 'contracts'),
             orderBy('updatedAt', 'desc')
         );
 
