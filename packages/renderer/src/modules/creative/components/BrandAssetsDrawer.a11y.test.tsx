@@ -42,7 +42,7 @@ describe('BrandAssetsDrawer Accessibility', () => {
 
     it('close button should have aria-label', () => {
         render(<BrandAssetsDrawer onClose={vi.fn()} />);
-        const closeButton = screen.getByLabelText('Close brand assets');
+        const closeButton = screen.getByRole('button', { name: 'Close brand assets drawer' });
         expect(closeButton).toBeInTheDocument();
     });
 
@@ -50,7 +50,7 @@ describe('BrandAssetsDrawer Accessibility', () => {
         render(<BrandAssetsDrawer onClose={vi.fn()} />);
         // The "Convert to Style Reference" button appears on hover in the asset grid
         // Since we mock the assets, we expect one asset to be rendered
-        const actionButton = screen.getByTitle('Convert to Style Reference');
+        const actionButton = screen.getByRole('button', { name: 'Convert Asset 1 to style reference' });
         expect(actionButton).toBeInTheDocument();
     });
 });
