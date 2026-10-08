@@ -566,10 +566,10 @@ export default function OmniWorkflow() {
                 beatPulse: studioControls.beatPulse,
                 characterXRay: studioControls.characterXRay,
                 activePosePreset: studioControls.activePosePreset,
-                lyricsText: studioControls.lyricsText || undefined,
+                ...(studioControls.lyricsText ? { lyricsText: studioControls.lyricsText } : {}),
                 typographyStyle: studioControls.typographyStyle,
                 visualizerColor: studioControls.visualizerColor,
-                parentId: sourceJobId || undefined,
+                ...(sourceJobId ? { parentId: sourceJobId } : {}),
             };
             const basePayloadValidation = GenerateOmniRemixSchema.safeParse(basePayload);
             if (!basePayloadValidation.success) {
