@@ -77,10 +77,6 @@ export function registerVideoHandlers() {
             if (path.isAbsolute(filename)) {
                 throw new Error(`Invalid filename: Absolute paths not allowed`);
             }
-            // Validate URL (SSRF Protection)
-            FetchUrlSchema.parse(url);
-            await validateSafeUrlAsync(url);
-
             // Validate Filename presence
             if (!filename || typeof filename !== 'string') {
                 throw new Error("Invalid filename");
@@ -99,8 +95,24 @@ export function registerVideoHandlers() {
             const safeName = baseName.replace(/[^a-z0-9.]/gi, '_');
             const destinationPath = path.join(assetDir, safeName);
 
-            // Check if file already exists to avoid overwriting (optional: append index)
-            // For now, we overwrite or rely on unique filenames (UUIDs usually)
+            // Handle data URI payloads directly (e.g. 3000x3000px canvas prints, local captures)
+            if (url.startsWith('data:')) {
+                const matches = url.match(/^data:([^;]+);base64,(.+)$/);
+                if (!matches || matches.length !== 3) {
+                    throw new Error('Invalid data URI format');
+                }
+                if (matches[2].length > Math.ceil(MAX_VIDEO_ASSET_BYTES / 3) * 4) {
+                    throw new Error('Data URI exceeds the asset size cap.');
+                }
+                const buffer = Buffer.from(matches[2], 'base64');
+                await fs.promises.writeFile(destinationPath, buffer);
+                accessControlService.grantAccess(destinationPath);
+                return destinationPath;
+            }
+
+            // Validate URL (SSRF Protection)
+            FetchUrlSchema.parse(url);
+            await validateSafeUrlAsync(url);
 
             log.info(`[VideoHandler] Downloading video to: ${destinationPath}`);
             await downloadFile(url, destinationPath);

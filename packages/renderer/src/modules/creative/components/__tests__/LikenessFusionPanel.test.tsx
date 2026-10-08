@@ -9,6 +9,7 @@ import { useStore } from '@/core/store';
 vi.mock('@/services/image/LikenessService', () => ({
     LikenessService: {
         getAll: vi.fn(),
+        add: vi.fn(),
     },
 }));
 
@@ -103,6 +104,33 @@ describe('LikenessFusionPanel', () => {
         await waitFor(() => {
             expect(screen.getByText('No verified headshots found')).toBeInTheDocument();
         });
+        expect(screen.getByTestId('upload-likeness-selfie-btn')).toBeDisabled();
+        fireEvent.click(screen.getByRole('checkbox', { name: /I consent to storing/ }));
+        expect(screen.getByTestId('upload-likeness-selfie-btn')).toBeEnabled();
         expect(screen.getByTestId('fuse-likeness-btn')).toBeDisabled();
     });
+    it('does not record consent or enroll an image without an affirmative choice', async () => {
+        vi.mocked(LikenessService.getAll).mockResolvedValue([]);
+        render(<LikenessFusionPanel />);
+        await screen.findByText('No verified headshots found');
+        fireEvent.change(screen.getByTestId('likeness-selfie-upload-input'), {
+            target: { files: [new File(['image'], 'selfie.png', { type: 'image/png' })] },
+        });
+        expect(LikenessService.add).not.toHaveBeenCalled();
+        expect(screen.getByText('Confirm your consent before uploading a likeness photo.')).toBeInTheDocument();
+    });
+
+    it('reports failed persistence rather than claiming enrollment succeeded', async () => {
+        vi.mocked(LikenessService.getAll).mockResolvedValue([]);
+        vi.mocked(LikenessService.add).mockResolvedValue(null);
+        render(<LikenessFusionPanel />);
+        await screen.findByText('No verified headshots found');
+        fireEvent.click(screen.getByRole('checkbox', { name: /I consent to storing/ }));
+        fireEvent.change(screen.getByTestId('likeness-selfie-upload-input'), {
+            target: { files: [new File(['image'], 'selfie.png', { type: 'image/png' })] },
+        });
+        await screen.findByText(/The selfie could not be saved/);
+        expect(LikenessService.add).toHaveBeenCalledWith(expect.stringMatching(/^data:image\/png;base64,/), 'acceptable', expect.any(String), true);
+    });
+
 });

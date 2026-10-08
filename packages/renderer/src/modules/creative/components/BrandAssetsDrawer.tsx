@@ -335,7 +335,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
                     <ImageIcon size={14} className="text-white" />
                     Brand Assets
                 </h3>
-                <button onClick={onClose} aria-label="Close brand assets" className="text-gray-500 hover:text-white transition-colors">
+                <button onClick={onClose} aria-label="Close brand assets drawer" title="Close" className="text-gray-500 hover:text-white transition-colors">
                     <X size={14} />
                 </button>
             </div>
@@ -491,7 +491,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
                                             <div className="flex gap-1.5">
                                                 <button
                                                     className="p-1.5 bg-white rounded text-black hover:bg-gray-200 shadow-xl transition-transform active:scale-90"
-                                                    title="Use as Style Input"
+                                                    title={`Use ${img.description || 'asset'} as style input`}
+                                                    aria-label={`Use ${img.description || 'asset'} as style input`}
                                                     onClick={() => {
                                                         setActiveReferenceImage({
                                                             id: img.id || crypto.randomUUID(),
@@ -508,14 +509,16 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
                                                 </button>
                                                 <button
                                                     className="p-1.5 bg-gray-800 rounded text-white hover:bg-white hover:text-black shadow-xl transition-transform active:scale-90"
-                                                    title="Move to Logos & Graphics"
+                                                    title={`Move ${img.description || 'asset'} to logos and graphics`}
+                                                    aria-label={`Move ${img.description || 'asset'} to logos and graphics`}
                                                     onClick={() => moveAsset(img, 'style')}
                                                 >
                                                     <ArrowRightLeft size={12} />
                                                 </button>
                                                 <button
                                                     className="p-1.5 bg-red-900/50 rounded text-red-100 hover:bg-red-500 hover:text-white shadow-xl transition-transform active:scale-90"
-                                                    title="Delete Asset"
+                                                    title={`Delete style reference: ${img.description || 'asset'}`}
+                                                    aria-label={`Delete style reference: ${img.description || 'asset'}`}
                                                     onClick={() => deleteAsset(img, 'style')}
                                                 >
                                                     <Trash2 size={12} />
@@ -554,6 +557,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
                                                 {onSelect ? (
                                                     <button
                                                         className="p-1.5 bg-white rounded text-black hover:bg-gray-200 shadow-xl transition-transform active:scale-90 flex items-center gap-1 text-[10px] font-bold"
+                                                        aria-label={`Select ${asset.description || 'logo asset'}`}
+                                                        title={`Select ${asset.description || 'logo asset'}`}
                                                         onClick={() => onSelect(asset)}
                                                     >
                                                         <Plus size={10} /> Select
@@ -561,7 +566,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
                                                 ) : (
                                                     <button
                                                         className="p-1.5 bg-gray-800 rounded text-white hover:bg-white hover:text-black shadow-xl transition-transform active:scale-90"
-                                                        title="Convert to Style Reference"
+                                                        title={`Convert ${asset.description || 'logo asset'} to style reference`}
+                                                        aria-label={`Convert ${asset.description || 'logo asset'} to style reference`}
                                                         onClick={() => moveAsset(asset, 'logo')}
                                                     >
                                                         <ArrowRightLeft size={12} />
@@ -569,7 +575,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
                                                 )}
                                                 <button
                                                     className="p-1.5 bg-red-900/50 rounded text-red-100 hover:bg-red-500 hover:text-white shadow-xl transition-transform active:scale-90"
-                                                    title="Delete Asset"
+                                                    title={`Delete logo asset: ${asset.description || 'asset'}`}
+                                                    aria-label={`Delete logo asset: ${asset.description || 'asset'}`}
                                                     onClick={() => deleteAsset(asset, 'logo')}
                                                 >
                                                     <Trash2 size={12} />

@@ -23,6 +23,7 @@ export default function BrandCompliancePanel({
 }: BrandCompliancePanelProps): React.ReactElement {
     const selectedItem = useStore(state => state.selectedItem);
     const userProfile = useStore(state => state.userProfile);
+    const setModule = useStore(state => state.setModule);
 
     const [isScanning, setIsScanning] = useState<boolean>(false);
     const [report, setReport] = useState<BrandComplianceReport | null>(null);
@@ -133,7 +134,17 @@ export default function BrandCompliancePanel({
                                 />
                             ))
                         ) : (
-                            <span className="text-[10px] text-amber-400">No palette defined</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-amber-400">No palette defined</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setModule('brand')}
+                                    data-testid="configure-brand-kit-link"
+                                    className="text-[10px] text-purple-400 hover:text-purple-300 underline font-medium cursor-pointer"
+                                >
+                                    Configure Brand Kit
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>

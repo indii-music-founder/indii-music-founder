@@ -121,4 +121,12 @@ describe('CanvasActionRail', () => {
         fireEvent.click(upscaleBtn);
         expect(onUpscaleToPrint).toHaveBeenCalledOnce();
     });
+
+    it('shows saving label and disables save button when isSavingCanvas is true', () => {
+        renderRail({ isSavingCanvas: true });
+
+        const saveBtn = screen.getByTestId('save-canvas-btn');
+        expect(saveBtn).toBeDisabled();
+        expect(saveBtn).toHaveAttribute('aria-label', 'Saving Canvas...');
+    });
 });

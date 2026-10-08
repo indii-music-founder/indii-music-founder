@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
     },
     shell: { showItemInFolder: vi.fn() },
     fs: {
-        promises: { mkdir: vi.fn() },
+        promises: { mkdir: vi.fn(), writeFile: vi.fn().mockResolvedValue(undefined) },
         createWriteStream: vi.fn(),
         realpathSync: vi.fn((p) => p),
     },
@@ -122,6 +122,20 @@ describe('🛡️ Shield: Video Handler Security Test', () => {
                 'http://example.com/video.mp4',
                 '../../../../etc/passwd'
             )).rejects.toThrow(/Invalid filename: Path traversal detected/);
+        });
+
+        it('should save data: URIs directly to disk via Buffer without HTTP fetch', async () => {
+            const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+            const result = await invoke(
+                'video:save-asset',
+                { senderFrame: { url: 'file:///app/index.html' } },
+                dataUrl,
+                'print_3000.png'
+            );
+
+            expect(result).toBe('/mock/documents/indii/Assets/Video/print_3000.png');
+            expect(mocks.fs.promises.writeFile).toHaveBeenCalled();
+            expect(mocks.fetch).not.toHaveBeenCalled();
         });
     });
 

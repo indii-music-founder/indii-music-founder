@@ -25,6 +25,7 @@ interface CreativeCanvasProps {
 export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefine }: CreativeCanvasProps) {
     const {
         isProcessing,
+        isSavingCanvas,
         isMagicFillMode,
         isSelectingEndFrame,
         isDefinitionsOpen,
@@ -300,6 +301,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 isProcessing={isProcessing}
                                 processingStatus={processingStatus}
                                 saveCanvas={saveCanvas}
+                                isSavingCanvas={isSavingCanvas}
                                 batchExportDimensions={batchExportDimensions}
                                 flattenCanvas={handleFlattenCanvas}
                                 // ISSUE-1395: the canvas board is image-only —

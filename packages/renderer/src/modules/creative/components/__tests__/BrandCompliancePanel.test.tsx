@@ -49,6 +49,24 @@ describe('BrandCompliancePanel', () => {
         expect(screen.getByTestId('scan-compliance-btn')).toBeInTheDocument();
     });
 
+    it('renders Configure Brand Kit link when no palette is defined', () => {
+        const mockSetModule = vi.fn();
+        (useStore as unknown as import("vitest").Mock).mockImplementation((selector) =>
+            selector({
+                selectedItem: { id: 'img_test_1', type: 'image', url: 'https://storage.indii.music/artwork.png' },
+                userProfile: { brandKit: { colors: [] } },
+                setModule: mockSetModule,
+            })
+        );
+
+        render(<BrandCompliancePanel />);
+        expect(screen.getByText('No palette defined')).toBeInTheDocument();
+        const configBtn = screen.getByTestId('configure-brand-kit-link');
+        expect(configBtn).toBeInTheDocument();
+        fireEvent.click(configBtn);
+        expect(mockSetModule).toHaveBeenCalledWith('brand');
+    });
+
     it('runs scan and displays passing scorecard when compliant', async () => {
         (scanAsset as ReturnType<typeof vi.fn>).mockResolvedValue({
             assetId: 'artwork.png',

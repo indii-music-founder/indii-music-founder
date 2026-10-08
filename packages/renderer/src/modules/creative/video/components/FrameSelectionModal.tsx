@@ -153,6 +153,7 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                                     onClose();
                                 }}
                                 searchQuery={searchQuery}
+                                onClearSearch={() => setSearchQuery('')}
                                 className="bg-[#0f0f0f]"
                             />
                         </div>

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { downloadAsset } from './download';
 
 vi.mock('@/utils/logger', () => ({
@@ -8,7 +8,13 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 describe('downloadAsset', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+    });
+
     afterEach(() => {
+        vi.runOnlyPendingTimers();
+        vi.useRealTimers();
         vi.unstubAllGlobals();
         vi.restoreAllMocks();
         document.body.innerHTML = '';
@@ -28,7 +34,7 @@ describe('downloadAsset', () => {
         expect(clickSpy).not.toHaveBeenCalled();
     });
 
-    it('downloads fetched assets only after a successful response', async () => {
+    it('downloads fetched assets only after a successful response and defers revokeObjectURL', async () => {
         const blob = new Blob(['video'], { type: 'video/mp4' });
         const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
         const createObjectURL = vi.fn().mockReturnValue('blob:video');
@@ -43,6 +49,31 @@ describe('downloadAsset', () => {
             .resolves.toBe(true);
         expect(createObjectURL).toHaveBeenCalledWith(blob);
         expect(clickSpy).toHaveBeenCalledTimes(1);
+        // Deferred revocation should not have fired yet
+        expect(revokeObjectURL).not.toHaveBeenCalled();
+
+        // Advance timers by 60s
+        vi.advanceTimersByTime(60_000);
         expect(revokeObjectURL).toHaveBeenCalledWith('blob:video');
+    });
+
+    it('handles data: URIs by converting to Blob to prevent browser navigation size drop', async () => {
+        const blob = new Blob(['png-bytes'], { type: 'image/png' });
+        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+        const createObjectURL = vi.fn().mockReturnValue('blob:data-img');
+        const revokeObjectURL = vi.fn();
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            ok: true,
+            blob: vi.fn().mockResolvedValue(blob),
+        }));
+        vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
+
+        await expect(downloadAsset('data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==', 'canvas_print.png'))
+            .resolves.toBe(true);
+        expect(createObjectURL).toHaveBeenCalledWith(blob);
+        expect(clickSpy).toHaveBeenCalledTimes(1);
+
+        vi.advanceTimersByTime(60_000);
+        expect(revokeObjectURL).toHaveBeenCalledWith('blob:data-img');
     });
 });

@@ -160,6 +160,7 @@ interface CreativeGalleryProps {
     onSelect?: (item: HistoryItem) => void;
     className?: string;
     searchQuery?: string;
+    onClearSearch?: () => void;
 }
 
 interface GalleryItemProps {
@@ -849,8 +850,8 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             }}
                             data-testid="download-asset-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-green-600 transition-colors"
-                            title="Export"
-                            aria-label="Export"
+                            title={`Export asset: ${item.prompt || item.id}`}
+                            aria-label={`Export asset: ${item.prompt || item.id}`}
                         >
                             <Download size={14} />
                         </button>
@@ -858,8 +859,8 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.type, item.origin as 'generated' | 'uploaded'); }}
                             data-testid="delete-asset-btn"
                             className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"
-                            title="Delete"
-                            aria-label="Delete"
+                            title={`Delete asset: ${item.prompt || item.id}`}
+                            aria-label={`Delete asset: ${item.prompt || item.id}`}
                         >
                             <Trash2 size={14} />
                         </button>
@@ -904,7 +905,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
     );
 });
 
-export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
+export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '', onClearSearch }: CreativeGalleryProps) {
     // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates
     const {
         generatedHistory, removeItemFromProject, uploadedImages, addUploadedImage, removeUploadedImage,
@@ -1122,6 +1123,25 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             bg: 'bg-[#111]',
                             border: 'border-amber-500/20',
                             glow: 'shadow-amber-500/5'
+                        }}
+                    />
+                </div>
+            );
+        }
+        if (searchQuery.trim().length > 0) {
+            return (
+                <div className="flex-1 p-8">
+                    <ActionableEmptyState
+                        icon={<ImageIcon size={48} />}
+                        title="NO ASSETS FOUND"
+                        description={`No assets match your search for "${searchQuery.trim()}". Clear the search to view all catalog assets.`}
+                        actionLabel={onClearSearch ? 'Clear Search' : undefined}
+                        onAction={onClearSearch}
+                        colorClasses={{
+                            text: 'text-gray-400',
+                            bg: 'bg-[#111]',
+                            border: 'border-white/5',
+                            glow: 'shadow-white/5'
                         }}
                     />
                 </div>

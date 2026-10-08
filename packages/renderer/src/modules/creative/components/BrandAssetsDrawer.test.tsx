@@ -68,7 +68,7 @@ describe('BrandAssetsDrawer', () => {
         render(<BrandAssetsDrawer onClose={mockOnClose} />);
 
         // Find close button by aria-label
-        const closeButton = screen.getByLabelText('Close brand assets');
+        const closeButton = screen.getByRole('button', { name: 'Close brand assets drawer' });
         fireEvent.click(closeButton);
 
         expect(mockOnClose).toHaveBeenCalled();
@@ -102,7 +102,7 @@ describe('BrandAssetsDrawer', () => {
 
         // Find the "Use as Style Input" button.
         // It has title "Use as Style Input".
-        const addButton = screen.getByTitle('Use as Style Input');
+        const addButton = screen.getByRole('button', { name: 'Use Ref 1 as style input' });
         fireEvent.click(addButton);
 
         expect(mockSetActiveReferenceImage).toHaveBeenCalledWith(expect.objectContaining({

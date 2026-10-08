@@ -123,6 +123,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const [activeTool, setActiveTool] = useState<'select' | 'line' | 'polygon' | 'text' | 'brush'>('brush');
      
     const [historyTrigger, setHistoryTrigger] = useState(0); // Used to force UI update for canUndo/canRedo
+    const [isSavingCanvas, setIsSavingCanvas] = useState(false);
 
     // Data State
     const [prompt, setPrompt] = useState('');
@@ -991,6 +992,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             return null;
         }
 
+        setIsSavingCanvas(true);
         try {
             // 1. Get the data URL (inside try: throws/returns '' if canvas is tainted — ISSUE-482)
             const dataUrl = canvasOps.saveCanvas();
@@ -1051,6 +1053,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             // ISSUE-917: No disk save actually happened in catch path
             toast.error('Canvas save failed. Changes are not persistent.');
             return null;
+        } finally {
+            setIsSavingCanvas(false);
         }
     };
 
@@ -1294,6 +1298,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleCandidateSelect,
         handleCandidateApply,
         saveCanvas,
+        isSavingCanvas,
         handleFlattenCanvas,
         handleRefine: onRefine || handleRefineInternal,
         handleCreateLastFrame,

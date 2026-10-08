@@ -55,6 +55,14 @@ describe('CreativeGallery', () => {
         expect(screen.getByText('Upload media or generate new Autonomous assets to see them appear in your gallery.')).toBeInTheDocument();
     });
 
+    it('renders NO ASSETS FOUND empty state when search yields no matches', () => {
+        render(<CreativeGallery searchQuery="vinyl" onClearSearch={vi.fn()} />);
+
+        expect(screen.getByText('NO ASSETS FOUND')).toBeInTheDocument();
+        expect(screen.getByText(/No assets match your search for "vinyl"/)).toBeInTheDocument();
+        expect(screen.getByText('Clear Search')).toBeInTheDocument();
+    });
+
     it('renders generated history items correctly', () => {
         (useStore as unknown as import("vitest").Mock).mockReturnValue({
             ...mockStore,
@@ -82,7 +90,8 @@ describe('CreativeGallery', () => {
 
         // Check for aria-labels on buttons (Like/Dislike were removed —
         // they only faked success toasts with no stored state).
-        expect(screen.getByLabelText('Delete')).toBeInTheDocument();
+        expect(screen.getByLabelText(/Delete asset/)).toBeInTheDocument();
+        expect(screen.getByLabelText(/Export asset/)).toBeInTheDocument();
         expect(screen.getByLabelText('View Fullsize')).toBeInTheDocument();
 
         // Check for role="button" on the item container

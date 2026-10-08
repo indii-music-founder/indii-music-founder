@@ -37,6 +37,7 @@ interface CanvasActionRailProps {
     onSendToCanvas?: () => void | Promise<void>;
     onUpscaleToPrint?: () => void | Promise<void>;
     isUpscaling?: boolean;
+    isSavingCanvas?: boolean;
 }
 
 export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
@@ -56,6 +57,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
     onSendToCanvas,
     onUpscaleToPrint,
     isUpscaling,
+    isSavingCanvas,
 }) => {
     const actionButtonClass = "w-11 h-11 rounded-xl border border-white/10 bg-[#0b0d10]/90 text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed";
     const primaryButtonClass = "w-11 h-11 rounded-xl border border-dept-creative/30 bg-dept-creative text-white shadow-[0_0_22px_rgba(0,255,136,0.25)] hover:bg-dept-creative/80 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/60 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -124,11 +126,13 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
             actions: [
                 {
                     id: 'save',
-                    label: 'Save Canvas',
+                    label: isSavingCanvas ? 'Saving Canvas...' : 'Save Canvas',
                     icon: Save,
                     onClick: saveCanvas,
+                    disabled: isProcessing || isSavingCanvas,
                     className: primaryButtonClass,
                     testId: 'save-canvas-btn',
+                    spin: isSavingCanvas,
                 },
             ],
         }] : []),

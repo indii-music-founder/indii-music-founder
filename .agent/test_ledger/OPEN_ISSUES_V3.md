@@ -3563,23 +3563,31 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1458: Image save/download and social-clip operations lack verified terminal result
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — implementation updated; genuine user acceptance pending (2026-10-07)
 - **Severity:** MEDIUM — completion/feedback investigation, not confirmed storage failure
 - **Module:** Creative / save / downloads / social clips
-- **Evidence:** Run1 Save Canvas has no observed destination/confirmation. Runs6–16 valid2→6s Feed clip remained Saving without job handle/error/cancel. Run38 Download asset on decoded3000×3000 image: listener registered first timed out15s, no toast/new tab/error log. Disk delivery unverified; timeout alone is not proof failure. Do not restart jobs solely on timeout.
-- **Impact:** Users cannot establish completion or safely recover.
-- **Fix:** Trace operation lifecycle and saved/downloaded artifact identity; expose progress, terminal result/error and appropriate recovery. Recheck exact existing job if obtainable.
-- **Acceptance:** Genuine operation yields identifiable reopenable/downloadable artifact; errors actionable; saved content survives reload. No mock-backed test counts as live proof.
+- **Evidence:**
+  1. `packages/main/src/handlers/video.ts`: Direct Buffer decode/write for `data:` URIs in `video:save-asset` without failing HTTP schema check; verified by `video.security.test.ts` (6/6 passing).
+  2. `packages/renderer/src/utils/download.ts`: Reliable `downloadBlob`/`downloadDataUrl` handling with delayed object URL revocation; verified by `download.test.ts` (3/3 passing).
+  3. `packages/renderer/src/modules/creative/components/CanvasActionRail.tsx` & `useCreativeCanvas.ts`: Added observable `isSavingCanvas` spinner, status feedback, and safe `try / finally` persistence handling; verified by `CanvasActionRail.test.tsx` (7/7 passing).
+  4. `packages/renderer/src/modules/creative/video/editor/components/SocialClipPanel.tsx`: Scope-aware busy cleanup in `finally`, added cancellation checks between persistence stages and warnings about already-created destinations, visible progress stage states, and terminal open-copy CTA (`data-testid="open-social-copy-btn"`); verified by `socialClipProject.test.ts` (10/10 passing) and `SocialClipPanel.test.tsx` (4/4 structural lifecycle tests passing).
+- **Impact:** Users establish observable progress, cancellation, and download initiation feedback for Canvas saves, 3000×3000 asset exports, and social-clip jobs.
+- **Fix:** Added direct buffer writing for data URIs, observable saving feedback in CanvasActionRail, resilient download helper with delayed cleanup, and cancellation/error recovery in SocialClipPanel.
+- **Acceptance:** Structural renderer/main-process tests cover implementation. Genuine saved/downloaded artifact delivery, reopen and reload acceptance remain unverified. Cancellation requests stop subsequent steps but cannot abort a persistence request already in progress.
 
 ### ISSUE-1459: Creative controls lack labels, selected-state semantics and setup navigation
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — implementation updated; genuine user acceptance pending (2026-10-07)
 - **Severity:** MEDIUM
 - **Module:** Creative / accessibility / wayfinding
-- **Evidence:** Runs18,23–24,26–29,43,45–46,48–53,70–71. Generic asset card/remove naming; unnamed picker/tag closes; some configuration controls lack selected-state semantics; output dropdowns, negative prompt, Motion slider and likeness retry count unnamed. Run71 confirms annotation swatches do expose `[active]` state (Green/Orange selected, Purple restored); this is a passing control and is not evidence against other settings. Likeness correctly reports no verified headshots/disables fusion but has no My Likeness setup link. Compliance honestly reports no palette but no target setup link. Typography correctly errors Upload a font first after enabled Render click. Run70 reproduced asset search `vinyl` → “No assets yet” with gallery total still 50; searching a known title returned matches, so distinguish no matches from an empty catalog. The 50 gallery entries were all classified as images; this alone is not evidence of mock data or a missing database.
-- **Impact:** Human and browser-agent users cannot reliably identify state, prerequisites or next action.
-- **Fix:** Associate stable labels/descriptions, expose selection state, distinguish no matches from empty catalog, provide setup links and request-scope explanations. Do not count default form drafts as mock catalog data.
-- **Acceptance:** Keyboard/accessibility navigation identifies every control/current state; search empty results recover clearly; prerequisite panels link to setup; actions advertise readiness before click.
+- **Evidence:**
+  1. `packages/renderer/src/modules/creative/components/CreativeGallery.tsx`: Specific accessible names for `download-asset-btn` (`Export asset: ${item.prompt || item.id}`) and `delete-asset-btn` (`Delete asset: ${item.prompt || item.id}`). Added `onClearSearch` support and distinguished filtered search no-match state (`NO ASSETS FOUND` with clear search action) from an empty gallery (`GALLERY IS EMPTY`); verified by `CreativeGallery.test.tsx` (4/4 passing) and `CreativeGallery.interaction.test.tsx` (9/9 passing).
+  2. `packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx`: Accessible drawer close button name (`aria-label="Close brand assets drawer"`, `title="Close"`) and specific accessible action/delete labels for Style References and Logos.
+  3. `packages/renderer/src/modules/creative/components/LikenessFusionPanel.tsx`: Added actionable `Upload Likeness Selfie` button with explicit consent required before a file picker connected to `LikenessService.add(...)`; null persistence results are reported as errors; verified by `LikenessFusionPanel.test.tsx` (5/5 passing).
+  4. `packages/renderer/src/modules/creative/components/BrandCompliancePanel.tsx`: Added `Configure Brand Kit` link routing to the Brand module (`setModule('brand')`) when palette is empty; verified by `BrandCompliancePanel.test.tsx` (4/4 passing).
+- **Impact:** Artists and assistive tech identify individual asset actions, dismiss controls, recover from filtered queries, and access prerequisites via actionable setup links.
+- **Fix:** Provided specific accessible names on gallery cards and drawer buttons, separated empty catalog from no search matches with clear action, and added interactive setup/upload triggers for empty likeness and brand compliance states.
+- **Acceptance:** Structural tests cover labels and prerequisite controls. Genuine keyboard/screen-reader navigation and owner setup acceptance remain unverified.
 
 ### Investigation notes — not confirmed defects / not completed acceptance
 

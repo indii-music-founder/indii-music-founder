@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Sparkles, UserCheck, AlertCircle, RefreshCw, Layers, CheckCircle2, XCircle, ArrowUpRight } from 'lucide-react';
 import { LikenessService, type LikenessImage } from '@/services/image/LikenessService';
 import {
@@ -25,11 +25,14 @@ export default function LikenessFusionPanel({
     const currentProjectId = useStore(state => state.currentProjectId);
     const openDoc = useStore(state => state.openDoc);
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [headshots, setHeadshots] = useState<LikenessImage[]>([]);
     const [selectedHeadshotId, setSelectedHeadshotId] = useState<string>('');
     const [maxAttempts, setMaxAttempts] = useState<number>(3);
     const [preservePromptNote, setPreservePromptNote] = useState<string>('');
     const [isLoadingHeadshots, setIsLoadingHeadshots] = useState<boolean>(true);
+    const [isUploadingSelfie, setIsUploadingSelfie] = useState<boolean>(false);
+    const [selfieConsent, setSelfieConsent] = useState(false);
     const [isFusing, setIsFusing] = useState<boolean>(false);
     const [fusionResult, setFusionResult] = useState<FusionResult | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -56,6 +59,34 @@ export default function LikenessFusionPanel({
     useEffect(() => {
         loadHeadshots();
     }, [loadHeadshots]);
+
+    const handleUploadSelfie = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!selfieConsent) {
+            setError('Confirm your consent before uploading a likeness photo.');
+            e.target.value = '';
+            return;
+        }
+        e.target.value = '';
+        setIsUploadingSelfie(true);
+        setError(null);
+        try {
+            const reader = new FileReader();
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(new Error('Failed to read image file.'));
+                reader.readAsDataURL(file);
+            });
+            const enrolled = await LikenessService.add(dataUrl, 'acceptable', 'Selfie uploaded by the user; quality not independently assessed.', selfieConsent);
+            if (!enrolled) throw new Error('The selfie could not be saved. Check your sign-in and likeness image limit.');
+            await loadHeadshots();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to enroll likeness selfie.');
+        } finally {
+            setIsUploadingSelfie(false);
+        }
+    };
 
     const handleFuse = async () => {
         if (!activeTarget) {
@@ -163,6 +194,30 @@ export default function LikenessFusionPanel({
                         <p className="text-[10px] text-gray-400">
                             Likeness fusion requires a verified selfie uploaded in My Likeness to ensure biometric authenticity.
                         </p>
+                        <label className="flex items-start gap-2 mt-2 text-xs text-gray-300">
+                            <input type="checkbox" checked={selfieConsent} onChange={event => setSelfieConsent(event.target.checked)} />
+                            I consent to storing and using my likeness photo for identity-based image generation.
+                        </label>
+                        <div className="flex items-center gap-2 mt-1">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                ref={fileInputRef}
+                                className="hidden"
+                                onChange={handleUploadSelfie}
+                                data-testid="likeness-selfie-upload-input"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploadingSelfie || !selfieConsent}
+                                data-testid="upload-likeness-selfie-btn"
+                                className="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 rounded text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                            >
+                                <Sparkles size={12} />
+                                {isUploadingSelfie ? 'Enrolling Selfie...' : 'Upload Likeness Selfie'}
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-3 gap-2">
