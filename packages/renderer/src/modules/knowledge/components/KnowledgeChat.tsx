@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Send, Loader2, Sparkles, X, Copy, Trash2 } from 'lucide-react';
 import { knowledgeBaseService, KnowledgeDoc } from '../services/KnowledgeBaseService';
@@ -159,7 +160,8 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
 
     if (!isOpen) return null;
 
-    return (
+    // Escape the main-content stacking context so the context rail cannot cover chat controls.
+    return createPortal(
         <div className="fixed inset-0 md:inset-auto md:right-0 md:top-[64px] md:bottom-0 w-full md:w-[420px] bg-bg-dark/95 backdrop-blur-2xl border-l border-gray-800 shadow-2xl z-40 flex flex-col transition-all duration-300 animate-in slide-in-from-right">
             {/* Header */}
             <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-black/40">
@@ -270,6 +272,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                     </button>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 };

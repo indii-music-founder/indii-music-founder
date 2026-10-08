@@ -11,6 +11,7 @@ import {
   type KnowledgeQueryRequest,
 } from '@indii/shared';
 import { cosineSimilarityRelevance } from './evidenceJudgment';
+import { readKnowledgeEmbedding } from './vectorEncoding';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 
 if (!admin.apps.length) {
@@ -100,7 +101,7 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   const citations: KnowledgeCitation[] = [];
   vectorQuerySnap.docs.forEach((doc) => {
     const chunkData = doc.data() as KnowledgeChunk;
-    const relevanceScore = cosineSimilarityRelevance(queryEmbedding, chunkData.embedding);
+    const relevanceScore = cosineSimilarityRelevance(queryEmbedding, readKnowledgeEmbedding(chunkData.embedding));
 
     // Fail closed when a stored embedding is missing or unusable. The caller's
     // minRelevance contract must not be bypassed with a fabricated score.

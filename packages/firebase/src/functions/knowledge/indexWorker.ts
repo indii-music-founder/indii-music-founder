@@ -1,3 +1,4 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError } from 'firebase-functions/v2/https';
@@ -186,7 +187,7 @@ export async function executeDocumentIndexing(
           startOffset: item.startOffset,
           endOffset: item.endOffset,
           ...(item.pageNumber ? { pageNumber: item.pageNumber } : {}),
-          embedding: item.embedding,
+          embedding: FieldValue.vector(item.embedding),
           embeddingModel: KNOWLEDGE_EMBEDDING_MODEL,
           chunkHash: item.chunkHash,
           createdAt: nowIso,
