@@ -1492,7 +1492,9 @@ describe('creative gateway generateOmniRemixV3', () => {
   });
 
   it('rejects an exact provider-counted context that exceeds the Omni input limit', async () => {
-    mockCountTokens.mockResolvedValueOnce({ totalTokens: 1_048_577 });
+    // Structural-only: verifies admission at Vertex's documented limit.
+    // Provider access and successful generation require real UI acceptance.
+    mockCountTokens.mockResolvedValueOnce({ totalTokens: 131_073 });
     await expect(callGenerateOmniRemix({
       auth: { uid: 'user-123' },
       data: {
@@ -1501,7 +1503,7 @@ describe('creative gateway generateOmniRemixV3', () => {
       },
     })).rejects.toMatchObject({ code: 'resource-exhausted' });
     expect(mockCountTokens).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-omni-1.1-flash',
+      model: 'gemini-omni-1.1-flash-preview',
       contents: expect.any(Array),
     }));
     expect(mockInteractionsCreate).not.toHaveBeenCalled();
@@ -1531,7 +1533,7 @@ describe('creative gateway generateOmniRemixV3', () => {
     });
 
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-omni-1.1-flash',
+      model: 'gemini-omni-1.1-flash-preview',
       input: expect.arrayContaining([
         {
           type: 'video',

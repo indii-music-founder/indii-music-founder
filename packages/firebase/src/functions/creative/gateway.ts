@@ -696,8 +696,8 @@ function buildOmniPrompt(data: OmniVideoRequest, task: OmniVideoTask): string {
   ].filter(Boolean).join('\n');
 }
 
-/** Gemini Omni Flash's documented maximum input context window. */
-const OMNI_INPUT_CONTEXT_TOKENS = 1_048_576;
+/** Vertex Omni 1.1 preview's input limit (not the Developer API limit). */
+const OMNI_INPUT_CONTEXT_TOKENS = 131_072;
 
 interface OmniContextBudget {
   limitTokens: number;
