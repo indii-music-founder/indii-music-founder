@@ -90,6 +90,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         let firestoreOk = false;
         let githubStatus: 'ok' | 'failed' | 'skipped' | 'merged_as_comment' = 'skipped';
         let issueUrl: string | undefined;
+        let persistedBugId: string | undefined;
         let callableError: string | undefined;
 
         try {
@@ -109,6 +110,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
                 github: 'ok' | 'failed' | 'skipped' | 'merged_as_comment';
                 issueUrl?: string;
                 message: string;
+                bugId?: string;
             }>(functions, 'reportBugFn');
 
             const result = await reportBug({
@@ -125,6 +127,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             firestoreOk = result.data.firestore === 'ok';
             githubStatus = result.data.github;
             issueUrl = result.data.issueUrl;
+            persistedBugId = result.data.bugId;
             logger.info(`[BugReportTools] Cloud Function response: github=${githubStatus} firestore=${firestoreOk}`, result.data);
         } catch (cfErr: unknown) {
             callableError = cfErr instanceof Error ? cfErr.message : String(cfErr);
@@ -164,13 +167,14 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             ? `Bug report merged as comment on existing issue: ${issueUrl}`
             : githubStatus === 'ok'
             ? `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker. ${issueUrl || ''}`
-            : `Bug report created locally: "${bugReport.title}" (${bugReport.severity}). GitHub sync failed.`;
+            : `Bug report saved to the project bug tracker: "${bugReport.title}" (${bugReport.severity}).${persistedBugId ? ` Report ID: ${persistedBugId}.` : ""} GitHub sync failed.`;
 
         return toolSuccess({
-            bugId: bugReport.id,
+            bugId: persistedBugId,
             title: bugReport.title,
-            issueUrl
-        }, `Bug report successfully filed.\n\n${finalMessage}\n\n### ${bugReport.title} (${bugReport.severity})\n\n${markdownBody}`);
+            issueUrl,
+            githubStatus
+        }, `Bug report successfully filed.\n\n${finalMessage}\n\n### ${bugReport.title} (${bugReport.severity})\n\n${markdownBody}`, { durableReceipt: true, receiptText: finalMessage });
     }),
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

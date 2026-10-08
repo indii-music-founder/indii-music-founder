@@ -32,6 +32,7 @@ import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
 import { ExecutionContextFactory } from './context/AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
 import { toolError } from './utils/ToolUtils';
+import { getDurableReportReceipt } from './utils/durableReportReceipt';
 import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
 import { AgentEventBus } from './governance/AgentEventBus';
 import { getFineTunedModel } from './fine-tuned-models';
@@ -1431,6 +1432,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 logger.debug(`[BaseAgent] Extracted functionCalls for agent ${this.id}:`, JSON.stringify(functionCalls));
 
                 if (functionCalls.length > 0) {
+                    const batchStart = toolCalls.length;
                     for (const functionCall of functionCalls) {
                         const { name, args } = functionCall;
 
@@ -1713,6 +1715,15 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         }
 
                     } // end for loop over function calls
+
+                    // report_bug has already persisted and returned an authoritative
+                    // receipt. Do not ask the model to file it again. Mixed batches
+                    // and failed reports still follow the normal execution loop.
+                    const reportReceipt = getDurableReportReceipt(toolCalls.slice(batchStart));
+                    if (reportReceipt) {
+                        if (executionContext.hasUncommittedChanges()) await executionContext.commit();
+                        return { text: reportReceipt, data: lastToolResult, toolCalls, thoughtSignature: currentThoughtSignature };
+                    }
 
                     // For most tools, we continue to let the Autonomous process the result
                     continue;

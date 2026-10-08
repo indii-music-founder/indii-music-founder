@@ -59,6 +59,8 @@ export interface InstrumentedPersonaResponseResult extends PersonaResponseResult
 export interface PersonaResponseRuntimeContext {
     personaId: PersonaId;
     responseId: string;
+    /** Completed answers may retain their original text; do not measure an unseen rewrite. */
+    displayedText?: string;
     randomSource?: () => number;
     measurementRecorder?: (request: PersonaMeasurementRequest) => Promise<unknown>;
     interactionRecorder?: typeof recordSignal;
@@ -182,7 +184,9 @@ export async function getPersonaResponse(
     const assignment = assignAndResolve(faderValues, runtime.randomSource);
     const styledResponse = await renderInStyle(verdict, assignment.effectiveFaderValues);
     const measurementRecorder = runtime.measurementRecorder ?? recordPersonaResponseMeasurement;
-    const measurementRecorded = measurementRecorder({
+    const measurementRecorded = runtime.displayedText !== undefined && runtime.displayedText !== styledResponse
+        ? Promise.resolve(false)
+        : measurementRecorder({
         personaId: runtime.personaId,
         responseId: runtime.responseId,
         responseText: styledResponse,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   FileText,
   ShieldCheck,
@@ -14,6 +14,7 @@ import {
 import { FormatForensicsEngine } from '@/services/foundry/FormatForensicsEngine';
 import { HypothesisLedger } from '@/services/foundry/HypothesisLedger';
 import { AdapterConstructor } from '@/services/foundry/AdapterConstructor';
+import { canBookStatement } from '@/services/foundry/statementBooking';
 import { LayeredValidator } from '@/services/foundry/LayeredValidator';
 import { ArtistBusinessGraphNormalizer } from '@/services/foundry/ArtistBusinessGraphNormalizer';
 import type {
@@ -77,6 +78,9 @@ export const FormatFoundryModule: React.FC = () => {
   const [graph, setGraph] = useState<ArtistBusinessGraphResolution | null>(null);
   const [isBooked, setIsBooked] = useState<boolean>(false);
 
+  const analysisVersion = useRef(0);
+  const bookingAllowed = canBookStatement(report, validation);
+
   const handleLoadPreset = (key: keyof typeof PRESETS) => {
     const content = PRESETS[key];
     setRawText(content);
@@ -85,11 +89,17 @@ export const FormatFoundryModule: React.FC = () => {
   };
 
   const runAnalysis = async (content: string) => {
+    const version = ++analysisVersion.current;
+    setReport(null);
+    setValidation(null);
+    setGraph(null);
+    setIsBooked(false);
     if (!content.trim()) return;
 
     // 1. Forensics
     // TypeSafe jev refines column semantics; falls back to the deterministic baseline.
     const fReport = await FormatForensicsEngine.analyzeWithJudgment('manual_input', content);
+    if (version !== analysisVersion.current) return;
     setForensics(fReport);
 
     // 2. Hypotheses
@@ -100,10 +110,11 @@ export const FormatFoundryModule: React.FC = () => {
     const adapter = AdapterConstructor.resolveAdapter(content);
     if (adapter) {
       const parsed = adapter.parse(content);
-      setReport(parsed);
 
       // 4. Layered Validation
       const vReport = await LayeredValidator.validate(content, parsed);
+      if (version !== analysisVersion.current) return;
+      setReport(parsed);
       setValidation(vReport);
 
       // 5. Graph Normalization
@@ -123,6 +134,7 @@ export const FormatFoundryModule: React.FC = () => {
     if (val.trim()) {
       runAnalysis(val);
     } else {
+      ++analysisVersion.current;
       setForensics(null);
       setLedgerState(null);
       setReport(null);
@@ -132,6 +144,7 @@ export const FormatFoundryModule: React.FC = () => {
   };
 
   const handleConfirmBooking = () => {
+    if (!bookingAllowed) return;
     setIsBooked(true);
   };
 
@@ -296,12 +309,12 @@ export const FormatFoundryModule: React.FC = () => {
             </h2>
             <span
               className={`px-2.5 py-1 rounded text-xs font-semibold ${
-                validation.allPassed
+                bookingAllowed
                   ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
                   : 'bg-amber-950/80 text-amber-300 border border-amber-500/40'
               }`}
             >
-              {validation.allPassed ? 'ALL LAYERS PASSED' : 'VALIDATION WARNINGS DETECTED'}
+              {bookingAllowed ? 'ALL LAYERS PASSED' : 'VALIDATION WARNINGS DETECTED'}
             </span>
           </div>
 
@@ -362,15 +375,16 @@ export const FormatFoundryModule: React.FC = () => {
               <span className="text-indigo-200">
                 {isBooked
                   ? 'Statement successfully booked to canonical Artist Business Graph.'
-                  : validation.humanReview.requiresArtistConfirmation
-                  ? 'Human review required before booking due to quarantined rows or unverified fields.'
+                  : !bookingAllowed
+                  ? 'Booking blocked: resolve validation warnings or quarantined rows, then analyze again.'
                   : 'Statement passed all automated validation criteria. Ready to book.'}
               </span>
             </div>
             {!isBooked ? (
               <button
                 onClick={handleConfirmBooking}
-                className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition flex items-center space-x-1.5"
+                disabled={!bookingAllowed}
+                className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition flex items-center space-x-1.5"
               >
                 <span>Approve & Book Statement</span>
                 <ArrowRight className="w-3.5 h-3.5" />

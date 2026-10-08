@@ -10,6 +10,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
+import { ContractLoadError } from './ContractLoadError';
 
 /* ================================================================== */
 /*  My Contracts — Live contract list with PDF export & management      */
@@ -24,6 +25,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
     const toast = useToast();
     const [contracts, setContracts] = useState<LegalContract[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadFailed, setLoadFailed] = useState(false);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const [sendingId, setSendingId] = useState<string | null>(null);
@@ -34,10 +36,12 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
     // Load contracts on mount
     const loadContracts = useCallback(async () => {
         setLoading(true);
+        setLoadFailed(false);
         try {
             const results = await LegalService.getContracts();
             setContracts(results);
         } catch (err) {
+            setLoadFailed(true);
             logger.error('[MyContracts] Failed to load contracts:', err);
             toast.error('Failed to load contracts.');
         } finally {
@@ -164,6 +168,10 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                 <p className="text-sm text-gray-400 animate-pulse">Loading contracts…</p>
             </div>
         );
+    }
+
+    if (loadFailed) {
+        return <ContractLoadError onRetry={() => void loadContracts()} />;
     }
 
     // ── Empty state ────────────────────────────────────────────────

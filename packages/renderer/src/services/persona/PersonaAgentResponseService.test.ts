@@ -16,7 +16,7 @@ describe('PersonaAgentResponseService', () => {
         const loadFaders = vi.fn().mockResolvedValue(USER_FADERS);
         const getResponse = vi.fn().mockResolvedValue({
             verdict: { verdict: 'Keep the termination right.', riskLevel: 'high', caveats: [], escalate: true },
-            styledResponse: 'Styled Contract Reader answer',
+            styledResponse: 'Keep the termination right and obtain independent review.',
             tracking: {
                 responseId: 'response-123',
                 isControlGroup: false,
@@ -41,11 +41,11 @@ describe('PersonaAgentResponseService', () => {
             expect.stringContaining('Should I sign?'),
             expect.stringContaining('Contract Reader substance stage'),
             USER_FADERS,
-            { personaId: 'contractReader', responseId: 'response-123' },
+            { personaId: 'contractReader', responseId: 'response-123', displayedText: 'Keep the termination right and obtain independent review.' },
         );
         expect(getResponse.mock.calls[0]?.[0]).toContain('Keep the termination right');
         expect(result).toEqual({
-            text: 'Styled Contract Reader answer',
+            text: 'Keep the termination right and obtain independent review.',
             tracking: {
                 personaId: 'contractReader',
                 responseId: 'response-123',

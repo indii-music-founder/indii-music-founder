@@ -68,14 +68,18 @@ export class TuneCoreStatementAdapter {
       const rawQuantity = getCol(parts, 'quantity');
 
       const earnings = parseMoneyAmount(rawEarnings);
-      const quantity = parseInt(rawQuantity.replace(/[^0-9-]/g, ''), 10) || 0;
+      // Quantities may include signed adjustments, but must be complete safe integers.
+      const parsedQuantity = /^[+-]?\d+$/.test(rawQuantity) ? Number(rawQuantity) : NaN;
+      const quantity = Number.isSafeInteger(parsedQuantity) ? parsedQuantity : null;
 
-      if (earnings === null || !isrc || isrc === 'MALFORMED_ISRC') {
+      if (earnings === null || quantity === null || !isrc || isrc === 'MALFORMED_ISRC') {
         quarantinedRows.push({
           lineIndex,
           rawContent: line,
-          reason: earnings === null ? 'Invalid total earned number' : 'Missing or malformed ISRC',
-          errorCode: earnings === null ? 'ERR_INVALID_NUMERIC' : 'ERR_INVALID_ISRC',
+          reason: earnings === null ? 'Invalid total earned number'
+            : quantity === null ? 'Invalid quantity: expected a complete safe integer'
+            : 'Missing or malformed ISRC',
+          errorCode: earnings === null || quantity === null ? 'ERR_INVALID_NUMERIC' : 'ERR_INVALID_ISRC',
           severity: 'warning',
         });
         continue;

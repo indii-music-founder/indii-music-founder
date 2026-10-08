@@ -7,6 +7,7 @@ import {
     type InstrumentedPersonaResponseResult,
 } from './PersonaResponseService';
 import type { PersonaResponseMetadata } from './PersonaResponseMetadata';
+import { preserveCompletedResponse } from './preserveCompletedResponse';
 import { isTrivialInput } from '@/services/agent/utils/trivialInput';
 
 const AGENT_PERSONA_MAP: Readonly<Record<string, PersonaId>> = Object.freeze({
@@ -126,11 +127,20 @@ export async function finalizePersonaAgentResponse(
             {
                 personaId,
                 responseId: input.responseId,
+                displayedText: input.response.text,
             },
         ) as InstrumentedPersonaResponseResult;
 
+        // A verdict is a lossy advisory schema, not a replacement for a completed
+        // deliverable. Never remove captions, templates, or checklist items. Its
+        // measurement cannot be attached to a different displayed answer either.
+        const preserved = preserveCompletedResponse(input.response.text, result.styledResponse);
+        if (!preserved.measurementMatchesDisplayedText) {
+            return { text: preserved.text };
+        }
+
         return {
-            text: result.styledResponse,
+            text: input.response.text,
             tracking: {
                 personaId,
                 responseId: result.tracking.responseId,

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { HistoryItem, useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 import { CanvasHeader } from './CanvasHeader';
+import { CanvasEditorPortal } from './CanvasEditorPortal';
 import { CanvasToolbar } from './CanvasToolbar';
 import AnnotationPalette from './AnnotationPalette';
 import EditDefinitionsPanel from './EditDefinitionsPanel';
@@ -197,6 +198,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
     if (!item) return null;
 
     return (
+        <CanvasEditorPortal>
         <AnimatePresence>
             <motion.div
                 ref={containerRef}
@@ -390,5 +392,6 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 </div>
             </motion.div>
         </AnimatePresence>
+        </CanvasEditorPortal>
     );
 }
