@@ -21,9 +21,11 @@ describe('Adapter static helpers', () => {
   });
 
   test('TuneCore parse returns report', () => {
-    const sample = `Sales Period,Posted Date,Store Name,ISRC,Total Earned\n2022-01,2022-01-15,Spotify,US-ABC-12345,10.00`;
+    const sample = `Sales Period,Posted Date,Store Name,ISRC,Quantity,Total Earned\n2022-01,2022-01-15,Spotify,US-ABC-12345,100,10.00`;
     const report = TuneCoreStatementAdapter.parse(sample);
     expect(report).toHaveProperty('transactions');
     expect(report.transactions.length).toBeGreaterThan(0);
+    expect(report.quarantinedRows).toHaveLength(0);
+    expect(report.transactions[0]?.quantity).toBe(100);
   });
 });
