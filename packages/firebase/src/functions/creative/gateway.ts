@@ -1857,6 +1857,7 @@ interface OmniInteractionResponse {
   id: string;
   status: OmniInteractionStatus;
   output_video?: OmniInteractionVideoOutput;
+  outputs?: OmniInteractionVideoOutput[];
   steps?: Array<{
     type: string;
     content?: Array<{ type?: string; data?: string; uri?: string; mime_type?: string }>;
@@ -2006,8 +2007,11 @@ async function pollInteraction(
   throw new HttpsError('deadline-exceeded', 'Gemini Omni generation timed out before the interaction completed.');
 }
 
-function extractInteractionVideo(interaction: OmniInteractionResponse): OmniInteractionVideoOutput {
+export function extractInteractionVideo(interaction: OmniInteractionResponse): OmniInteractionVideoOutput {
   if (interaction.output_video?.data || interaction.output_video?.uri) return interaction.output_video;
+  // Vertex Interactions returns generated media in the outputs collection.
+  const output = interaction.outputs?.find(item => item.type === 'video' && (item.data || item.uri));
+  if (output) return output;
   for (const step of interaction.steps ?? []) {
     if (step.error?.message) throw new Error(step.error.message);
     const video = step.content?.find(content => content.type === 'video' && (content.data || content.uri));
@@ -2203,7 +2207,10 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
         aspect_ratio: data.aspectRatio,
         resolution: data.resolution,
         duration: `${durationSeconds}s`,
-        delivery: 'uri',
+        // Receive bytes in this authenticated backend, then persist through
+        // uploadToStorage below in the job's owner-scoped output namespace.
+        // Vertex URI delivery requires a gcs_uri and a separate GCS reader.
+        delivery: 'inline',
       },
       ...(data.previousInteractionId ? { previous_interaction_id: data.previousInteractionId } : {}),
       background: false,

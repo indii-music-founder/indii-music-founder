@@ -190,6 +190,7 @@ vi.mock('./getMediaDuration', () => ({
 
 import {
   classifyMediaFinishFailure,
+  extractInteractionVideo,
   generateAudioV3,
   generateImageV3,
   generateOmniRemixV3,
@@ -1415,6 +1416,28 @@ describe('creative gateway generateVideoV3', () => {
   });
 });
 
+describe('Omni video output selection (pure structural parsing)', () => {
+  it('selects populated video bytes from the Vertex outputs collection', () => {
+    const video = { type: 'video' as const, data: 'Ynl0ZXM=', mime_type: 'video/mp4' };
+    expect(extractInteractionVideo({
+      id: 'parse-only', status: 'completed', outputs: [{ type: 'video' }, video],
+    })).toEqual(video);
+  });
+
+  it('retains parsing of older step-based inline video outputs', () => {
+    expect(extractInteractionVideo({
+      id: 'parse-only', status: 'completed',
+      steps: [{ type: 'model_output', content: [{ type: 'video', data: 'Ynl0ZXM=', mime_type: 'video/mp4' }] }],
+    })).toEqual({ type: 'video', data: 'Ynl0ZXM=', mime_type: 'video/mp4', uri: undefined });
+  });
+
+  it('rejects an output collection that contains no usable video', () => {
+    expect(() => extractInteractionVideo({
+      id: 'parse-only', status: 'completed', outputs: [{ type: 'video' }],
+    })).toThrow('No video output');
+  });
+});
+
 describe('creative gateway generateOmniRemixV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -1549,7 +1572,7 @@ describe('creative gateway generateOmniRemixV3', () => {
         type: 'video',
         aspect_ratio: '16:9',
         duration: '8s',
-        delivery: 'uri',
+        delivery: 'inline',
         resolution: '720p',
       },
       background: false,
