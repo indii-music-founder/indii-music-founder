@@ -1571,8 +1571,6 @@ describe('creative gateway generateOmniRemixV3', () => {
       generation_config: { video_config: { task: 'edit' } },
       response_format: {
         type: 'video',
-        aspect_ratio: '16:9',
-        duration: '8s',
         delivery: 'inline',
         resolution: '720p',
       },

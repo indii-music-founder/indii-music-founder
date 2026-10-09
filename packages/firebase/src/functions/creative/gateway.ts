@@ -13,6 +13,7 @@ import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from '.
 import { arcjetKey } from '../../config/secrets';
 import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from '../security/arcjet';
 import { probeDurationSeconds } from './getMediaDuration';
+import { buildOmniResponseFormat } from './omniResponseFormat';
 import {
   adminVideoInputStorage,
   authorizeAndStageVideoInputs,
@@ -2189,16 +2190,7 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
           task,
         },
       },
-      response_format: {
-        type: 'video',
-        aspect_ratio: data.aspectRatio,
-        resolution: data.resolution,
-        duration: `${durationSeconds}s`,
-        // Receive bytes in this authenticated backend, then persist through
-        // uploadToStorage below in the job's owner-scoped output namespace.
-        // Vertex URI delivery requires a gcs_uri and a separate GCS reader.
-        delivery: 'inline',
-      },
+      response_format: buildOmniResponseFormat(task, data.aspectRatio, data.resolution, durationSeconds),
       ...(data.previousInteractionId ? { previous_interaction_id: data.previousInteractionId } : {}),
       background: false,
       stream: false,
