@@ -1,6 +1,7 @@
 import { FunctionDeclaration } from '../types';
 import { VALID_AGENT_IDS_LIST } from '../types';
 import { ARTIFACT_TOOL_DECLARATIONS } from '../tools/ArtifactTools';
+import { PRINT_TOOL_DECLARATIONS } from './PrintToolDeclarations';
 
 /**
  * SUPERPOWER_TOOLS defines the advanced cross-cutting capabilities available to all agents.
@@ -527,32 +528,6 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
             required: ['rawRows', 'formatFamily']
         }
     },
-    {
-        name: 'prepare_print_file',
-        description: 'Prepare album artwork or merchandise graphics for high-resolution physical printing or DSP submission with exact bleed, DPI, and dimensions.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                imageUri: { type: 'STRING', description: 'Cloud Storage URI or asset path of source artwork.' },
-                presetId: { type: 'STRING', description: 'Print target preset (e.g. streaming_3000, vinyl_sleeve, poster_18x24, poster_24x36, cover_art_distributor).' },
-                bleedMode: { type: 'STRING', enum: ['fill', 'extend'], description: 'Bleed mode: fill (crops border for bleed) or extend (mirrors edges outward).' },
-                focusX: { type: 'NUMBER', description: 'Normalized focal crop center X (0.0 to 1.0, default 0.5).' },
-                focusY: { type: 'NUMBER', description: 'Normalized focal crop center Y (0.0 to 1.0, default 0.5).' },
-                generateGuide: { type: 'BOOLEAN', description: 'Whether to produce a preview image with trim and safe-zone lines.' }
-            },
-            required: ['imageUri', 'presetId']
-        }
-    },
-    {
-        name: 'get_print_job_status',
-        description: 'Check the status, progress, and download output URIs of a print preparation job.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                jobId: { type: 'STRING', description: 'The print job ID returned by prepare_print_file.' }
-            },
-            required: ['jobId']
-        }
-    },
+    ...PRINT_TOOL_DECLARATIONS,
     ...ARTIFACT_TOOL_DECLARATIONS as unknown as FunctionDeclaration[]
 ];

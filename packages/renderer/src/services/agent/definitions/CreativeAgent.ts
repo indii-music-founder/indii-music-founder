@@ -10,6 +10,7 @@ import { VideoProjectTools } from '../tools/VideoProjectTools';
 import { VideoTools } from '../tools/VideoTools';
 import { EditorTools } from '../tools/EditorTools';
 import { BlenderTools } from '../tools/BlenderTools';
+import { PRINT_TOOL_DECLARATIONS } from './PrintToolDeclarations';
 
 const creativeRetrievalConfig = {
     canvases: {
@@ -139,6 +140,7 @@ export const CreativeAgent: AgentConfig = {
     tools: [{
         functionDeclarations: [
             ...creativeRetrievalDeclarations,
+            ...PRINT_TOOL_DECLARATIONS,
             {
                 name: 'list_stored_assets',
                 description: 'List the user’s saved gallery images, brand assets, reference images, and recent uploads. Use before claiming that an existing asset is unavailable.',
