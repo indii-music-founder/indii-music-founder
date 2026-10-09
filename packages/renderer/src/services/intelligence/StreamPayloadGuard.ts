@@ -26,6 +26,7 @@ import { AppErrorCode, AppException } from '@/shared/types/errors';
 import type { Content } from '@/shared/types/ai.dto';
 import { CloudStorageService } from '@/services/CloudStorageService';
 import { logger } from '@/utils/logger';
+import { elideBase64Payloads } from './Base64PayloadElision';
 
 /** Must match the server guard in packages/firebase/src/index.ts exactly (800KB limit). */
 export const AGENT_STREAM_CHAR_BUDGET = 800_000;
@@ -169,14 +170,7 @@ export async function compressStreamImageAttachments<
  * image itself reaches the model as inlineData via attachments or the
  * creative auto-inject.
  */
-const EMBEDDED_BASE64_PATTERN = /data:([a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=]{1024,})/g;
-
-export function elideBase64Payloads(text: string): string {
-    if (!text || text.indexOf(';base64,') === -1) return text;
-    return text.replace(EMBEDDED_BASE64_PATTERN, (_match: string, mime: string, payload: string) =>
-        `data:${mime};base64,[elided ${Math.max(1, Math.round((payload.length * 3) / 4 / 1024))}KB — delivered to the model as inlineData when needed]`
-    );
-}
+export { elideBase64Payloads } from './Base64PayloadElision';
 
 /**
  * Recursively sanitizes an object for prompt injection by replacing any raw
