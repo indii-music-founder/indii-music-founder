@@ -234,7 +234,9 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 />
 
                 <div className="flex-1 relative overflow-hidden bg-transparent">
-                    <div className="absolute inset-0 grid grid-cols-[minmax(0,1fr)] gap-0 md:grid-cols-[72px_minmax(0,1fr)_72px]">
+                    <div className={`absolute inset-0 grid grid-cols-[minmax(0,1fr)] gap-0 ${item.type === 'image'
+                        ? 'md:grid-cols-[72px_minmax(0,1fr)_72px]'
+                        : 'md:grid-cols-[minmax(0,1fr)_72px]'}`}>
                         {/* ISSUE-1395: the fabric editing tools only exist for
                             image items — a video is a plain player, so the
                             tool/annotation rail is hidden (video preview has
