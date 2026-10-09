@@ -1485,7 +1485,7 @@ describe('creative gateway generateOmniRemixV3', () => {
         aspectRatio: '16:9', durationSeconds: 8, costReservationId: 'cost-op-1',
       },
     });
-    expect(mockFilesUpload).toHaveBeenCalledTimes(2);
+    expect(mockFilesUpload).not.toHaveBeenCalled();
     expect(mockCountTokens).toHaveBeenCalledWith(expect.objectContaining({
       contents: [expect.objectContaining({
         parts: expect.arrayContaining([
@@ -1532,7 +1532,7 @@ describe('creative gateway generateOmniRemixV3', () => {
     expect(mockInteractionsCreate).not.toHaveBeenCalled();
   });
 
-  it('uploads an owned edit source and sends the official Omni interaction contract', async () => {
+  it('passes a validated owned edit source directly to Vertex (structural-only)', async () => {
     mockInteractionsCreate.mockResolvedValueOnce({
       id: 'interaction-123',
       status: 'completed',
@@ -1560,7 +1560,8 @@ describe('creative gateway generateOmniRemixV3', () => {
       input: expect.arrayContaining([
         {
           type: 'video',
-          uri: 'https://generativelanguage.googleapis.com/v1beta/files/source-123',
+          uri: 'gs://test-bucket/creative/user-123/video/assets/performance.mp4',
+          mime_type: 'video/mp4',
         },
         expect.objectContaining({
           type: 'text',
@@ -1579,9 +1580,7 @@ describe('creative gateway generateOmniRemixV3', () => {
       stream: false,
       store: true,
     }));
-    expect(mockFilesUpload).toHaveBeenCalledWith(expect.objectContaining({
-      config: expect.objectContaining({ mimeType: 'video/mp4' }),
-    }));
+    expect(mockFilesUpload).not.toHaveBeenCalled();
     expect(mockGenerateVideos).not.toHaveBeenCalled();
     expect(result).toEqual(expect.objectContaining({
       jobId: 'job-123',

@@ -1920,13 +1920,12 @@ async function waitForGeminiFileActive(ai: GoogleGenAI, file: GeminiFile, label:
   throw new HttpsError('deadline-exceeded', `${label} processing timed out.`);
 }
 
-/** Upload an authenticated user's Storage video through the Gemini Files API. */
-async function uploadOwnedVideoToGeminiFiles(
-  ai: GoogleGenAI,
+/** Validate an owner's stored video, then pass its GCS URI directly to Vertex. */
+async function prepareOwnedVideoForVertex(
   userId: string,
   gsUri: string,
   maxDurationSeconds = 10,
-): Promise<{ input: { type: 'video'; uri: string }; providerFileName: string; durationSeconds: number; mimeType: string }> {
+): Promise<{ input: { type: 'video'; uri: string; mime_type: string }; durationSeconds: number; mimeType: string }> {
   const { bucket, path } = parseStorageUri(gsUri);
   const defaultBucket = getStorage().bucket().name;
   if (bucket !== defaultBucket) {
@@ -1963,20 +1962,8 @@ async function uploadOwnedVideoToGeminiFiles(
     if (durationSeconds > maxDurationSeconds + 0.05) {
       throw new HttpsError('invalid-argument', `Gemini Omni Flash ${maxDurationSeconds === 3 ? 'reference clips' : 'edit inputs'} must be ${maxDurationSeconds} seconds or shorter.`);
     }
-    const uploaded = await ai.files.upload({
-      file: tempPath,
-      config: {
-        mimeType,
-        displayName: path.split('/').pop()?.slice(0, 512) || 'omni-source-video',
-      },
-    });
-    const active = await waitForGeminiFileActive(ai, uploaded, 'Source video');
-    if (!active.uri || !active.name) {
-      throw new HttpsError('internal', 'Gemini Files did not return a usable source video URI.');
-    }
     return {
-      input: { type: 'video', uri: active.uri },
-      providerFileName: active.name,
+      input: { type: 'video', uri: gsUri, mime_type: mimeType },
       durationSeconds,
       mimeType,
     };
@@ -2140,10 +2127,10 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
     await getDb().collection('creative_jobs').doc(jobId).set(stripUndefined(initialJob));
     const ai = getOmniAiClient();
     const sourceVideo = data.referenceVideoUri && !data.previousInteractionId
-      ? await uploadOwnedVideoToGeminiFiles(ai, userId, data.referenceVideoUri)
+      ? await prepareOwnedVideoForVertex(userId, data.referenceVideoUri)
       : undefined;
     const referenceVideos = await Promise.all((data.referenceVideoUris ?? []).map(uri =>
-      uploadOwnedVideoToGeminiFiles(ai, userId, uri, 3)));
+      prepareOwnedVideoForVertex(userId, uri, 3)));
     const previousMetadata = previousJob?.metadata && typeof previousJob.metadata === 'object'
       ? previousJob.metadata as Record<string, unknown>
       : undefined;
@@ -2247,8 +2234,8 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
         durationSeconds,
         sequenceDurationSeconds,
         mimeType,
-        providerInputFileName: sourceVideo?.providerFileName,
-        providerReferenceFileNames: referenceVideos.map(video => video.providerFileName),
+        sourceInputUri: sourceVideo?.input.uri,
+        referenceInputUris: referenceVideos.map(video => video.input.uri),
         hasSourceVideo: !!data.referenceVideoUri,
         hasFirstFrame: !!data.firstFrameUri,
         hasLastFrame: !!data.lastFrameUri,
