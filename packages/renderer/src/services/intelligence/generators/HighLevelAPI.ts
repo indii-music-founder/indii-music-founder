@@ -23,6 +23,7 @@ import { PromptSanitizer } from '@/services/security/PromptSanitizer';
 import { aiCache } from '../IntelligenceResponseCache';
 import { logger } from '@/utils/logger';
 import type { ChatMessage } from '../types';
+import { normalizeDisabledThinkingConfig } from './thinkingConfig';
 
 /**
  * Generate text with optional thinking budget and system instruction.
@@ -77,6 +78,8 @@ export async function generateText(
             systemInstruction = config.systemInstruction;
         }
     }
+
+    config = normalizeDisabledThinkingConfig(config);
 
     // Semantic Cache Check
     const cached = await aiCache.get(cacheKey, modelName, config);
@@ -142,6 +145,8 @@ export async function generateStructuredData<T>(
             config = { ...config, ...thinkingBudgetOrConfig };
         }
     }
+
+    config = normalizeDisabledThinkingConfig(config);
 
     // Create a lean cache key that avoids stringifying large binary/base64 data
     const leanPrompt = Array.isArray(prompt)
