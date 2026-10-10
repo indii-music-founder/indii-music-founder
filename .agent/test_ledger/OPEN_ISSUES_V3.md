@@ -4068,3 +4068,12 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Expected (acceptance):** Full GS1 Modulo 10 check-digit validation; duplicate ISRC checks across tracks; complete tool wiring in `DistributionAgent.ts`.
 - **Fix:** Implemented GS1 Modulo 10 check-digit algorithm in Python (`qc_validator.py`) and TypeScript (`DistributionTools.ts`); mounted `validate_metadata` in `DistributionAgent.ts`.
 - **Evidence:** `DistributionTools.test.ts` (23/23 tests green), `MetadataValidationService.test.ts` (5/5 tests green), Python `test_pipeline_e2e.py` (11/11 tests green).
+
+### ISSUE-1509: Issue #372 Finance & Accounting Verification & Unskipped Integration Suite
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/services/finance/FinanceService.integration.test.ts`, `execution/finance/test_waterfall_payout.py`
+- **Details:** FinanceService integration test suite was skipped with `describe.skip`; Python waterfall payout script lacked dedicated unit tests.
+- **Expected (acceptance):** Unskip and verify FinanceService integration tests against production Zod validation and auth boundaries; create unit tests for Python waterfall payout engine.
+- **Fix:** Unskipped `FinanceService.integration.test.ts` (4/4 tests green); created `test_waterfall_payout.py` verifying clean splits, full debt recoupment, and partial recoupment (3/3 tests green).
+- **Evidence:** `packages/renderer/src/services/finance/FinanceService.integration.test.ts` (4/4 passed), `execution/finance/test_waterfall_payout.py` (3/3 passed).

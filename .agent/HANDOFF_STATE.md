@@ -10,6 +10,7 @@ Delivered coherent platinum remediation across all reported open issues on `orig
 - **Issue #365 (Native Image Generation Resolution Cap):** Expanded Director agent configuration to support 3000x3000, 2k, and 4k resolution requirements.
 - **Issue #412 (Protect Licensed Samples & Electronic Music from False AI Flags):** Calibrated `ForensicAuditService.ts` to recognize quantized MIDI, EDM synthesis, and licensed loop packs as legitimate human production. 2/2 tests green.
 - **Issue #366 & #377 (Distribution Metadata Validation Tool & Modulo 10 Check Digits):** Implemented GS1 Modulo 10 check-digit validation and duplicate ISRC detection in `qc_validator.py` and `DistributionTools.ts`; mounted `validate_metadata` on `DistributionAgent.ts`. 28/28 tests green.
+- **Issue #372 (Finance & Accounting Verification):** Unskipped integration test suite in `FinanceService.integration.test.ts` (4/4 green); added unit test suite `test_waterfall_payout.py` for Python waterfall engine (3/3 green). All 106 tests across 22 finance test files passing.
 
 # Oneday × Replit Hackathon Stage 1 Closeout & Production CI (2026-10-10 EDT)
 
