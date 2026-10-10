@@ -171,4 +171,64 @@ describe('FreeMiniCampaignService', () => {
             expect(result.message).toContain('permanently deleted');
         });
     });
+
+    describe('downloadAsset', () => {
+        it('assigns correct audio extensions (.wav or .mp3) instead of .png for audio clips', async () => {
+            const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+            let capturedElement: HTMLAnchorElement | null = null;
+            const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+                if (node instanceof HTMLAnchorElement) capturedElement = node;
+                return node;
+            });
+            const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+
+            await FreeMiniCampaignService.downloadAsset({
+                id: 'audio_1',
+                type: 'audio_clip',
+                title: 'Stank Face House — 8s Teaser Clip',
+                url: 'https://example.com/audio/master.wav',
+                aspectRatio: 'audio',
+                isWatermarked: false,
+            });
+
+            expect(capturedElement).not.toBeNull();
+            expect(capturedElement?.download).toBe('stank-face-house-8s-teaser-clip.wav');
+            expect(clickSpy).toHaveBeenCalled();
+
+            clickSpy.mockRestore();
+            appendSpy.mockRestore();
+            removeSpy.mockRestore();
+        });
+
+        it('assigns .png extension and crops square covers (1:1) from wide source images', async () => {
+            const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+            let capturedElement: HTMLAnchorElement | null = null;
+            const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+                if (node instanceof HTMLAnchorElement) capturedElement = node;
+                return node;
+            });
+            const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+            const cropSpy = vi.spyOn(FreeMiniCampaignService, 'cropVisualToAspectRatio').mockResolvedValue('data:image/png;base64,mockPngSquareData');
+
+            await FreeMiniCampaignService.downloadAsset({
+                id: 'square_1',
+                type: 'square_cover',
+                title: 'Stank Face House — Square Cover (1:1)',
+                url: 'https://example.com/visual/cover.jpg',
+                aspectRatio: '1:1',
+                isWatermarked: false,
+            });
+
+            expect(cropSpy).toHaveBeenCalledWith('https://example.com/visual/cover.jpg', '1:1');
+            expect(capturedElement).not.toBeNull();
+            expect(capturedElement?.href).toBe('data:image/png;base64,mockPngSquareData');
+            expect(capturedElement?.download).toBe('stank-face-house-square-cover-1-1-.png');
+            expect(clickSpy).toHaveBeenCalled();
+
+            cropSpy.mockRestore();
+            clickSpy.mockRestore();
+            appendSpy.mockRestore();
+            removeSpy.mockRestore();
+        });
+    });
 });

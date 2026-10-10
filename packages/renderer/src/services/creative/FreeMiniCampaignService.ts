@@ -238,14 +238,122 @@ export class FreeMiniCampaignService {
     }
 
     /**
-     * Triggers a direct browser file download without branding.
+     * Crops visual assets to their claimed aspect ratio (1:1 or 9:16) via HTML Canvas,
+     * returning a data URL containing valid PNG bytes.
      */
-    static downloadAsset(asset: MiniCampaignAssetItem, filename?: string): void {
+    static async cropVisualToAspectRatio(
+        imageUrl: string,
+        targetRatio: '1:1' | '9:16',
+    ): Promise<string> {
+        if (typeof document === 'undefined' || typeof Image === 'undefined') {
+            return imageUrl;
+        }
+
+        return new Promise<string>((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            const timeoutId = setTimeout(() => {
+                resolve(imageUrl);
+            }, 3000);
+
+            img.onload = () => {
+                clearTimeout(timeoutId);
+                try {
+                    const naturalW = img.naturalWidth || img.width;
+                    const naturalH = img.naturalHeight || img.height;
+
+                    if (!naturalW || !naturalH) {
+                        resolve(imageUrl);
+                        return;
+                    }
+
+                    let sourceX = 0;
+                    let sourceY = 0;
+                    let sourceW = naturalW;
+                    let sourceH = naturalH;
+
+                    if (targetRatio === '1:1') {
+                        const size = Math.min(naturalW, naturalH);
+                        sourceX = Math.round((naturalW - size) / 2);
+                        sourceY = Math.round((naturalH - size) / 2);
+                        sourceW = size;
+                        sourceH = size;
+                    } else if (targetRatio === '9:16') {
+                        const targetRatioVal = 9 / 16;
+                        const currentRatioVal = naturalW / naturalH;
+                        if (currentRatioVal > targetRatioVal) {
+                            const fittedWidth = Math.round(naturalH * targetRatioVal);
+                            sourceX = Math.round((naturalW - fittedWidth) / 2);
+                            sourceW = fittedWidth;
+                        } else {
+                            const fittedHeight = Math.round(naturalW / targetRatioVal);
+                            sourceY = Math.round((naturalH - fittedHeight) / 2);
+                            sourceH = fittedHeight;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = sourceW;
+                    canvas.height = sourceH;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        resolve(imageUrl);
+                        return;
+                    }
+
+                    ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, 0, 0, sourceW, sourceH);
+                    resolve(canvas.toDataURL('image/png'));
+                } catch {
+                    resolve(imageUrl);
+                }
+            };
+
+            img.onerror = () => {
+                clearTimeout(timeoutId);
+                resolve(imageUrl);
+            };
+
+            img.src = imageUrl;
+        });
+    }
+
+    /**
+     * Triggers a direct browser file download without branding.
+     * Accurately crops visual assets to their claimed aspect ratio (1:1 / 9:16)
+     * and sets matching file extensions for image and audio media.
+     */
+    static async downloadAsset(asset: MiniCampaignAssetItem, filename?: string): Promise<void> {
         if (typeof document === 'undefined') return;
 
-        const effectiveName = filename || `${asset.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
+        let downloadUrl = asset.url;
+        let extension = 'png';
+
+        if (asset.type === 'audio_clip') {
+            if (asset.url.includes('.wav') || asset.url.endsWith('.wav')) {
+                extension = 'wav';
+            } else if (asset.url.includes('.m4a') || asset.url.endsWith('.m4a')) {
+                extension = 'm4a';
+            } else {
+                extension = 'mp3';
+            }
+        } else if (asset.aspectRatio === '1:1' || asset.aspectRatio === '9:16') {
+            extension = 'png';
+            try {
+                downloadUrl = await this.cropVisualToAspectRatio(asset.url, asset.aspectRatio);
+            } catch {
+                downloadUrl = asset.url;
+            }
+        } else if (asset.url.includes('.jpg') || asset.url.includes('.jpeg')) {
+            extension = 'jpg';
+        }
+
+        const effectiveName =
+            filename ||
+            `${asset.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${extension}`;
+
         const link = document.createElement('a');
-        link.href = asset.url;
+        link.href = downloadUrl;
         link.download = effectiveName;
         link.rel = 'noopener noreferrer';
         document.body.appendChild(link);

@@ -121,11 +121,11 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
         }
     };
 
-    const handleDownloadAll = () => {
+    const handleDownloadAll = async () => {
         if (!pack) return;
-        pack.assets.forEach((asset) => {
-            FreeMiniCampaignService.downloadAsset(asset);
-        });
+        for (const asset of pack.assets) {
+            await FreeMiniCampaignService.downloadAsset(asset);
+        }
         toast.success('Unwatermarked campaign pack assets downloaded successfully.');
         setStep('decision');
     };
