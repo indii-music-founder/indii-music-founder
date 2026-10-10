@@ -38,6 +38,13 @@ import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { catalogAdminAuditFn } from "./functions/audit/catalogAdminAudit";
 import { masterIngestionRunbookFn } from "./functions/audit/masterIngestionRunbook";
+import {
+    processDistribution,
+    exportAnalytics,
+    retryWebhookDelivery,
+    sendOnboardingWorkflow,
+    batchAnalyticsAggregation,
+} from "./functions/orchestration/inngest";
 import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
 import { recordUsage } from "./functions/creative/gateway";
@@ -117,6 +124,11 @@ export { getCanonicalClaimsInbox, declareCanonicalRightsClaim, respondToCanonica
 export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
 export { claimComputerApproval, denyComputerApproval } from './functions/security/claimComputerApproval';
 export { listErrorReports, updateErrorReportStatus } from './functions/security/errorReportCallables';
+
+// Field Intelligence & Ingestion Triggers (ISSUE-1477, ISSUE-1478, ISSUE-1479)
+export { processEncounterPipeline } from './functions/encounters/processEncounterPipeline';
+export { onWhiteGloveAssetUploaded } from './functions/ingestion/onWhiteGloveAssetUploaded';
+export { onIswcAssigned } from './publishing/iswc';
 
 // REST API Router — ISSUE-1442: track-CRUD, distribution-REST, and
 // queryAnalytics routes removed (zero client callers; the live pipeline
@@ -1110,7 +1122,21 @@ export const inngestApi = onRequest(
 
         const handler = serve({
             client: inngestClient,
-            functions: [generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall, canvasRender, catalogAdminAudit, masterIngestionRunbook],
+            functions: [
+                generateLongFormVideo,
+                stitchVideo,
+                executeMilestone,
+                executeWorkflowStep,
+                campaignWaterfall,
+                canvasRender,
+                catalogAdminAudit,
+                masterIngestionRunbook,
+                processDistribution,
+                exportAnalytics,
+                retryWebhookDelivery,
+                sendOnboardingWorkflow,
+                batchAnalyticsAggregation,
+            ],
             signingKey: inngestSigningKey.value(),
         });
 

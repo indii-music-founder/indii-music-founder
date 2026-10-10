@@ -131,4 +131,23 @@ describe('Founding Artist verified waitlist enrollment', () => {
       firestore,
     )).rejects.toMatchObject({ code: 'already-exists' });
   });
+
+  it('preserves and records custom source slugs such as replit_passport', async () => {
+    const { firestore, writes } = makeFirestore({
+      'foundingArtistWaitlistMeta/sequence': { nextPosition: 12 },
+    });
+
+    const result = await enrollVerifiedFoundingArtist(
+      { uid: 'artist-replit-123', email: 'producer@replit.dev' },
+      { source: 'replit_passport', majorMilestoneUpdates: true },
+      firestore,
+    );
+
+    expect(result).toEqual({ status: 'waitlisted', queuePosition: 12, alreadyJoined: false });
+    const eventWrite = writes.find((write) => write.path === 'foundingArtistEvents/artist-replit-123_verified_enrollment');
+    expect(eventWrite?.data).toMatchObject({
+      source: 'replit_passport',
+      type: 'verified_enrollment',
+    });
+  });
 });

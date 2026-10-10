@@ -45,10 +45,10 @@ export function getStoredMilestoneConsent(): boolean {
   }
 }
 
-export function getStoredWaitlistSource(): 'landing_page' | 'free_demo' {
+export function getStoredWaitlistSource(): string {
   try {
     const stored = localStorage.getItem(WAITLIST_SOURCE_STORAGE_KEY);
-    return stored === 'free_demo' ? 'free_demo' : 'landing_page';
+    return stored || 'landing_page';
   } catch {
     return 'landing_page';
   }
@@ -56,11 +56,11 @@ export function getStoredWaitlistSource(): 'landing_page' | 'free_demo' {
 
 async function finalizeEnrollment(
   majorMilestoneUpdates: boolean,
-  source: 'landing_page' | 'free_demo' = 'landing_page',
+  source: string = 'landing_page',
 ): Promise<FoundingArtistEnrollmentResult> {
   const { firebaseFunctions } = requireFirebase();
   const callable = httpsCallable<
-    { source: 'landing_page' | 'free_demo'; majorMilestoneUpdates: boolean },
+    { source: string; majorMilestoneUpdates: boolean },
     FoundingArtistEnrollmentResult
   >(firebaseFunctions, 'joinFoundingArtistWaitlist');
   const response = await callable({ source, majorMilestoneUpdates });
@@ -70,7 +70,7 @@ async function finalizeEnrollment(
 export async function beginFoundingArtistVerification(
   email: string,
   majorMilestoneUpdates: boolean,
-  source: 'landing_page' | 'free_demo' = 'landing_page',
+  source: string = 'landing_page',
 ): Promise<void> {
   const { firebaseAuth } = requireFirebase();
   const normalizedEmail = normalizeEmail(email);
@@ -97,7 +97,7 @@ export async function beginFoundingArtistVerification(
 export async function completeFoundingArtistVerification(
   email: string,
   majorMilestoneUpdates: boolean,
-  source?: 'landing_page' | 'free_demo',
+  source?: string,
 ): Promise<FoundingArtistEnrollmentResult> {
   const { firebaseAuth } = requireFirebase();
   if (!isSignInWithEmailLink(firebaseAuth, window.location.href)) {
@@ -125,7 +125,7 @@ export async function completeFoundingArtistVerification(
 export async function enrollCurrentVerifiedArtist(
   email: string,
   majorMilestoneUpdates: boolean,
-  source: 'landing_page' | 'free_demo' = 'landing_page',
+  source: string = 'landing_page',
 ): Promise<FoundingArtistEnrollmentResult | null> {
   const { firebaseAuth } = requireFirebase();
   const currentUser = firebaseAuth.currentUser;

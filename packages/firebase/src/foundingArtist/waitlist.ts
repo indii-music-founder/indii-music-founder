@@ -11,7 +11,7 @@ export const FOUNDING_ARTIST_EVENTS_COLLECTION = 'foundingArtistEvents';
 export const FOUNDING_ARTIST_CONSENT_VERSION = '2026-08-29';
 
 const requestSchema = z.object({
-  source: z.enum(['landing_page', 'free_demo']).default('landing_page'),
+  source: z.string().trim().min(1).max(64).regex(/^[a-z0-9_-]+$/i, 'Invalid source slug').default('landing_page'),
   majorMilestoneUpdates: z.boolean().default(true),
 }).strict();
 
@@ -27,7 +27,7 @@ interface VerifiedIdentity {
 }
 
 interface EnrollmentInput {
-  source: 'landing_page' | 'free_demo';
+  source: string;
   majorMilestoneUpdates: boolean;
 }
 

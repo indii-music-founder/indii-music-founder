@@ -38,7 +38,12 @@ export async function signInWithEmail(email: string, password: string) {
 /**
  * Create new account with email and password
  */
-export async function signUpWithEmail(email: string, password: string, displayName: string) {
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  displayName: string,
+  acquisitionSource?: string,
+) {
   const firebaseAuth = auth;
   if (!firebaseAuth) throw new Error('Firebase Auth not initialized');
   const result = await createUserWithEmailAndPassword(firebaseAuth, email, password);
@@ -50,7 +55,7 @@ export async function signUpWithEmail(email: string, password: string, displayNa
   await result.user.getIdToken(true);
 
   // Create user document in Firestore
-  await createUserDocument(result.user, displayName);
+  await createUserDocument(result.user, displayName, acquisitionSource);
 
   // Send verification email
   await sendEmailVerification(result.user);
@@ -102,19 +107,23 @@ export async function resetPassword(email: string) {
 /**
  * Create user document in Firestore
  */
-async function createUserDocument(user: User, displayName?: string) {
+async function createUserDocument(user: User, displayName?: string, acquisitionSource?: string) {
   if (!db) {
     throw new Error('Firestore not initialized');
   }
   const userRef = doc(db, 'users', user.uid);
-  await setDoc(userRef, {
+  const data: Record<string, unknown> = {
     uid: user.uid,
     email: user.email,
     displayName: displayName || user.displayName || 'Anonymous',
     photoURL: user.photoURL || null,
     createdAt: serverTimestamp(),
     lastLoginAt: serverTimestamp(),
-  });
+  };
+  if (acquisitionSource) {
+    data.acquisitionSource = acquisitionSource;
+  }
+  await setDoc(userRef, data);
 }
 
 /**
@@ -130,21 +139,31 @@ async function updateLastLogin(uid: string) {
 
 /**
  * Get redirect URL for studio app.
- * Appends ?source=founder when the visitor is on the founder domain or VITE_FOUNDER_MODE is set,
- * so the app auth screen can show founder-contextual copy and trigger the guided walkthrough.
+ * Appends ?source=... when present, or ?source=founder when the visitor is on the founder domain
+ * or VITE_FOUNDER_MODE is set, so the app auth screen can show contextual copy and trigger walkthroughs.
  */
 export function getStudioUrl() {
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const source = searchParams?.get('source');
   const isFounderDomain =
     typeof window !== 'undefined' &&
     (window.location.hostname.startsWith('founder') ||
       import.meta.env.VITE_FOUNDER_MODE === 'true' ||
-      window.location.search.includes('founder=true'));
+      window.location.search.includes('founder=true') ||
+      source === 'founder');
 
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return isFounderDomain ? 'http://localhost:4242?source=founder' : 'http://localhost:4242';
+  const baseStudioUrl =
+    typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:4242'
+      : STUDIO_URL;
+
+  if (source) {
+    return `${baseStudioUrl}?source=${encodeURIComponent(source)}`;
   }
-
-  return isFounderDomain ? `${STUDIO_URL}?source=founder` : STUDIO_URL;
+  if (isFounderDomain) {
+    return `${baseStudioUrl}?source=founder`;
+  }
+  return baseStudioUrl;
 }
 
 /**

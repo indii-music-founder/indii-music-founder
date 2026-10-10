@@ -145,7 +145,8 @@ class EthereumNetworkWrapper {
                     rpcUrl: this.rpcUrl
                 };
             } catch (err: unknown) {
-                log.warn(`[Web3] RPC execution failed: ${errorMessage(err)}. Routing to simulated provider stub.`);
+                log.error(`[Web3] RPC execution failed: ${errorMessage(err)}`);
+                throw new Error(`RPC transaction submission failed: ${errorMessage(err)}`);
             }
         }
 

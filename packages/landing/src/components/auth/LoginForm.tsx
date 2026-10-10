@@ -16,11 +16,11 @@ export default function LoginForm() {
     const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
     const [verificationNotice, setVerificationNotice] = useState<string | null>(null);
 
-    // Detect founder traffic via ?source=founder query param
-    const isFounderSource = typeof window !== 'undefined' &&
-        (window.location.search.includes('source=founder') ||
-         window.location.hostname.startsWith('founder'));
-    const sourceSuffix = isFounderSource ? '?source=founder' : '';
+    // Detect referral traffic via ?source= query param
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const referralSource = searchParams?.get('source') || (typeof window !== 'undefined' && window.location.hostname.startsWith('founder') ? 'founder' : null);
+    const isFounderSource = referralSource === 'founder';
+    const sourceSuffix = referralSource ? `?source=${encodeURIComponent(referralSource)}` : '';
 
     useEffect(() => {
         flushFounderFunnelQueue();
