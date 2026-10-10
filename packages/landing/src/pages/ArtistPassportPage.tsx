@@ -12,6 +12,8 @@ import {
   Disc3,
   Sparkles,
   RotateCcw,
+  Music,
+  Upload,
 } from 'lucide-react';
 import {
   type PassportAnswers,
@@ -35,6 +37,15 @@ export default function ArtistPassportPage() {
   const searchParams = new URLSearchParams(location.search);
   const acquisitionSource = searchParams.get('source') || 'passport_organic';
   const referralQuery = `?source=${encodeURIComponent(acquisitionSource)}`;
+
+  // Studio destination for free mini-campaign trial
+  const studioBase =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:4242'
+      : (import.meta.env.VITE_STUDIO_URL || 'https://app.indii.music');
+
+  const freeMiniCampaignUrl = `${studioBase}?mode=free_demo&module=creative${acquisitionSource ? `&source=${encodeURIComponent(acquisitionSource)}` : ''}`;
 
   // Step state: 0 = Hero, 1 = Stage, 2 = Genre, 3 = Rights, 4 = Distribution, 5 = Goals, 6 = Results
   const [currentStep, setCurrentStep] = useState<number>(() => {
@@ -191,6 +202,14 @@ export default function ArtistPassportPage() {
                   <span>Start Free Business Audit</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
+
+                <a
+                  href={freeMiniCampaignUrl}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#FFB800]/40 transition-all"
+                >
+                  <span>Or Test Drive 1 Track Free</span>
+                  <Sparkles className="w-4 h-4 text-[#FFB800]" />
+                </a>
               </div>
 
               <div className="grid grid-cols-3 gap-3 pt-8 border-t border-[#1F222A] text-left">
@@ -200,7 +219,7 @@ export default function ArtistPassportPage() {
                 </div>
                 <div className="p-3 rounded-lg bg-[#070709] border border-[#1F222A]">
                   <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Value First</div>
-                  <div className="text-xs font-semibold text-white mt-1">No Email Required</div>
+                  <div className="text-xs font-semibold text-white mt-1">Free Mini-Campaign</div>
                 </div>
                 <div className="p-3 rounded-lg bg-[#070709] border border-[#1F222A]">
                   <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Zero Slop</div>
@@ -797,6 +816,87 @@ export default function ArtistPassportPage() {
                     Privacy Policy
                   </Link>
                   .
+                </div>
+              </div>
+
+              {/* 6. Down-Funnel Value Hook: Free Hands-on Mini-Campaign Test Drive */}
+              <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-[#121318] via-[#090A0E] to-[#050507] border border-[#FFB800]/30 shadow-[0_0_35px_rgba(255,184,0,0.08)] space-y-6 relative overflow-hidden">
+                <div className="pointer-events-none absolute -right-12 -top-12 w-48 h-48 bg-[#FFB800]/10 rounded-full blur-3xl" />
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#FFB800]/40 bg-[#FFB800]/10 text-[11px] font-mono text-[#FFB800] uppercase tracking-wider w-fit">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#FFB800] animate-pulse" />
+                    <span>Or Test Drive The Machine First • 100% Free</span>
+                  </div>
+                  <span className="text-[11px] font-mono text-[#8A8F9E]">
+                    Zero Commitment • No Credit Card
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                    Not ready to sign up? Put your music through the engine right now.
+                  </h3>
+                  <p className="text-sm text-[#8A8F9E] leading-relaxed max-w-2xl">
+                    You've seen your business diagnosis — now test what indii does with your actual sound.
+                    Upload 1 finished audio track and 1 visual. The engine will cut a high-impact, unwatermarked
+                    9:16 vertical video teaser and generate promo rollout copy for you in seconds.
+                  </p>
+                </div>
+
+                {/* 4 Feature Badges */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-white/5 space-y-1">
+                    <div className="text-[10px] font-mono text-[#FFB800] uppercase">Input 01</div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Music className="w-3.5 h-3.5 text-[#FFB800]" />
+                      <span>1 Audio Track</span>
+                    </div>
+                    <div className="text-[10px] text-[#8A8F9E]">WAV or MP3 format</div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-white/5 space-y-1">
+                    <div className="text-[10px] font-mono text-[#FFB800] uppercase">Input 02</div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Upload className="w-3.5 h-3.5 text-[#FFB800]" />
+                      <span>1 Visual Asset</span>
+                    </div>
+                    <div className="text-[10px] text-[#8A8F9E]">Cover art or photo</div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-white/5 space-y-1">
+                    <div className="text-[10px] font-mono text-[#00FF66] uppercase">Instant Output</div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#00FF66]" />
+                      <span>9:16 Video Teaser</span>
+                    </div>
+                    <div className="text-[10px] text-[#8A8F9E]">Unwatermarked export</div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-black/60 border border-white/5 space-y-1">
+                    <div className="text-[10px] font-mono text-[#2196F3] uppercase">Your Call</div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#2196F3]" />
+                      <span>Save or Delete</span>
+                    </div>
+                    <div className="text-[10px] text-[#8A8F9E]">Zero persistent lock-in</div>
+                  </div>
+                </div>
+
+                {/* Free Mini-Campaign Direct Action */}
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-4">
+                  <a
+                    href={freeMiniCampaignUrl}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-black text-black bg-[#FFB800] hover:bg-[#FFD700] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_24px_rgba(255,184,0,0.35)]"
+                  >
+                    <span>Put 1 Track Through The Engine Free</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+
+                  <div className="text-xs text-[#8A8F9E] flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#00FF66] shrink-0" />
+                    <span>No credit card • No sign-up required • Instant sandbox test drive</span>
+                  </div>
                 </div>
               </div>
             </motion.div>

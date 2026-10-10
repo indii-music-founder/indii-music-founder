@@ -328,5 +328,24 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
 
     const waitlistLink = screen.getByText(/Join Founding Artist Waitlist/i).closest('a');
     expect(waitlistLink?.getAttribute('href')).toContain('source=founder_dm');
+
+    // Check downstream Free Mini-Campaign engine test drive hook
+    expect(screen.getByText(/Not ready to sign up\? Put your music through the engine right now/i)).toBeDefined();
+    const testDriveLink = screen.getByText(/Put 1 Track Through The Engine Free/i).closest('a');
+    expect(testDriveLink?.getAttribute('href')).toContain('mode=free_demo&module=creative');
+    expect(testDriveLink?.getAttribute('href')).toContain('source=founder_dm');
+  });
+
+  it('renders Step 0 hero with direct test drive hook preserving attribution', () => {
+    render(
+      <MemoryRouter initialEntries={['/passport?source=tiktok_ad']}>
+        <ArtistPassportPage />
+      </MemoryRouter>
+    );
+
+    const heroTestDriveLink = screen.getByText(/Or Test Drive 1 Track Free/i).closest('a');
+    expect(heroTestDriveLink).toBeDefined();
+    expect(heroTestDriveLink?.getAttribute('href')).toContain('mode=free_demo&module=creative');
+    expect(heroTestDriveLink?.getAttribute('href')).toContain('source=tiktok_ad');
   });
 });
