@@ -1,3 +1,21 @@
+# Oneday × Replit Hackathon Stage 1 Closeout & Production CI (2026-10-10 EDT)
+
+Delivered commits `65c763ee8`, `4d99bd6fc`, `be1931446`, and `7217af3c9` directly to `origin/main`.
+Full GitHub Actions CI run [38067206149](https://github.com/indii-music-founder/indii-music-founder/actions/runs/38067206149) passed 100% green across all stages: rules tests, all 20 unit-test shards, studio & landing builds, staging preview, e2e smoke tests, and production deployment (Cloud Functions, Hosting, Firestore & Storage rules).
+
+- **Hackathon Alignment (Issue #411 / Master Project Handoff):**
+  - **Stage 1 Complete:** Seminar kickoff and positioning alignment finished. Stage 2 (1:00 PM – 2:00 PM EDT Replit Build Hour) commencing.
+  - **Architectural Firewall:** Standalone Artist Passport diagnostic built in Replit. Zero proprietary Studio code, agent prompts, or Firebase credentials exported to Replit.
+  - **Multi-Channel Acquisition Wiring (ISSUE-1420 / #411):**
+    - `joinFoundingArtistWaitlist` accepts external campaign slugs (e.g. `?source=replit_passport`).
+    - Landing auth persists `acquisitionSource` to Firestore `users/{uid}`.
+    - Studio URL forwarder preserves `?source=...` into `https://app.indii.music`.
+- **Repository Maintenance & Bug Closures:**
+  - **Issue #403 (Free Mini-Campaign Square Cover & Audio Format):** Implemented HTML Canvas center-crop (`cropVisualToAspectRatio`) ensuring wide visuals export to true 1:1 and 9:16 PNGs; fixed audio clip downloads to use native extensions (`.wav`, `.mp3`) instead of `.png`.
+  - **Vitest Mock Modernization:** Fixed Inngest constructor and `createFunction` mocking across test runners, resolving legacy failures in Firebase test suites.
+  - **Backend Sweeps (ISSUE-1477 – ISSUE-1483):** Exported pending Cloud Function triggers, registered Inngest serve functions, removed test mock CIDs from PinataService, and surfaced real Web3 RPC errors.
+- **Master Documentation:** Committed `docs/hackathon/MASTER_PROJECT_HANDOFF_ARTIST_PASSPORT.md` and updated `docs/business-decisions/`.
+
 # Smart Next Action Banner Real-Data & TypeSafe AI Closeout (2026-10-05 UTC)
 
 Delivered commit `da7466b895efd60ab63fb8789532df4dc6818eff` directly to `main`.
