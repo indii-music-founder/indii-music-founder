@@ -155,12 +155,32 @@ export class ContractPDFService {
         // ── Body: Parse markdown lines ──────────────────────────────
         const lines = options.content.split('\n');
 
-        for (const rawLine of lines) {
+        for (let i = 0; i < lines.length; i++) {
+            const rawLine = lines[i]!;
             const line = rawLine.trimEnd();
 
             // Skip empty lines (but add spacing)
             if (line.trim() === '') {
                 y += 3;
+                continue;
+            }
+
+            // Markdown Table block
+            if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+                const tableLines: string[] = [];
+                while (i < lines.length && lines[i]!.trim().startsWith('|') && lines[i]!.trim().endsWith('|')) {
+                    tableLines.push(lines[i]!.trim());
+                    i++;
+                }
+                i--; // counter-balance loop increment
+
+                ContractPDFService.renderTable(
+                    doc,
+                    tableLines,
+                    checkPageBreak,
+                    () => y,
+                    (newY) => { y = newY; }
+                );
                 continue;
             }
 
@@ -282,6 +302,168 @@ export class ContractPDFService {
         addFooter(doc, pageNum);
 
         return doc;
+    }
+
+    // ── Table Renderer ──────────────────────────────────────────────────
+    private static renderTable(
+        doc: jsPDF,
+        tableLines: string[],
+        checkPageBreak: (neededHeight: number) => void,
+        getY: () => number,
+        setY: (newY: number) => void
+    ): void {
+        if (tableLines.length === 0) return;
+
+        const parseRow = (rowLine: string): string[] => {
+            const trimmed = rowLine.trim().replace(/^\|/, '').replace(/\|$/, '');
+            return trimmed.split('|').map((c) => ContractPDFService.stripMarkdown(c.trim()));
+        };
+
+        const isSeparator = (rowLine: string): boolean => {
+            const cells = rowLine.trim().replace(/^\|/, '').replace(/\|$/, '').split('|');
+            return cells.every((c) => /^[\s\-:]+$/.test(c.trim()));
+        };
+
+        const rawRows = tableLines.filter((l) => l.trim().length > 0);
+        let headerRow: string[] = [];
+        const dataRows: string[][] = [];
+
+        if (rawRows.length > 1 && isSeparator(rawRows[1]!)) {
+            headerRow = parseRow(rawRows[0]!);
+            for (let r = 2; r < rawRows.length; r++) {
+                if (!isSeparator(rawRows[r]!)) {
+                    dataRows.push(parseRow(rawRows[r]!));
+                }
+            }
+        } else {
+            headerRow = parseRow(rawRows[0]!);
+            for (let r = 1; r < rawRows.length; r++) {
+                if (!isSeparator(rawRows[r]!)) {
+                    dataRows.push(parseRow(rawRows[r]!));
+                }
+            }
+        }
+
+        const numCols = Math.max(headerRow.length, ...dataRows.map((r) => r.length));
+        if (numCols === 0) return;
+
+        while (headerRow.length < numCols) headerRow.push('');
+        dataRows.forEach((r) => {
+            while (r.length < numCols) r.push('');
+        });
+
+        // Compute proportional column widths based on content size
+        const colWeights = headerRow.map((h, colIdx) => {
+            let maxLen = h.length;
+            for (const row of dataRows) {
+                const cell = row[colIdx] ?? '';
+                if (cell.length > maxLen) {
+                    maxLen = Math.min(cell.length, 30);
+                }
+            }
+            return Math.max(maxLen, 6);
+        });
+
+        const totalWeight = colWeights.reduce((acc, curr) => acc + curr, 0);
+        const colWidths = colWeights.map((w) => (w / totalWeight) * CONTENT_WIDTH);
+
+        const PADDING_X = 2;
+        const PADDING_Y = 1.8;
+        const LINE_HEIGHT_ROW = 3.6;
+
+        const measureRow = (cells: string[], fontSize: number, isBold: boolean) => {
+            doc.setFontSize(fontSize);
+            doc.setFont(FONT_BODY, isBold ? 'bold' : 'normal');
+            const cellWrappedLines: string[][] = [];
+            let maxLines = 1;
+
+            for (let c = 0; c < numCols; c++) {
+                const text = cells[c] ?? '';
+                const maxW = Math.max(colWidths[c]! - PADDING_X * 2, 4);
+                const wrapped = doc.splitTextToSize(text, maxW);
+                cellWrappedLines.push(wrapped);
+                if (wrapped.length > maxLines) {
+                    maxLines = wrapped.length;
+                }
+            }
+
+            const rowHeight = maxLines * LINE_HEIGHT_ROW + PADDING_Y * 2;
+            return { rowHeight, cellWrappedLines };
+        };
+
+        let currentY = getY();
+
+        // 1. Render Header
+        const headerMeasurement = measureRow(headerRow, 8.5, true);
+        checkPageBreak(headerMeasurement.rowHeight + 4);
+        currentY = getY();
+
+        // Header Background
+        doc.setFillColor(240, 243, 248);
+        doc.rect(MARGIN_LEFT, currentY, CONTENT_WIDTH, headerMeasurement.rowHeight, 'F');
+
+        // Header Border
+        doc.setDrawColor(200, 205, 215);
+        doc.setLineWidth(0.3);
+        doc.line(MARGIN_LEFT, currentY + headerMeasurement.rowHeight, MARGIN_LEFT + CONTENT_WIDTH, currentY + headerMeasurement.rowHeight);
+
+        // Header Text
+        doc.setFontSize(8.5);
+        doc.setFont(FONT_BODY, 'bold');
+        doc.setTextColor(20, 25, 40);
+
+        let colX = MARGIN_LEFT;
+        for (let c = 0; c < numCols; c++) {
+            const lines = headerMeasurement.cellWrappedLines[c]!;
+            lines.forEach((lineText, lIdx) => {
+                doc.text(lineText, colX + PADDING_X, currentY + PADDING_Y + 2.8 + lIdx * LINE_HEIGHT_ROW);
+            });
+            colX += colWidths[c]!;
+        }
+
+        currentY += headerMeasurement.rowHeight;
+
+        // 2. Render Data Rows
+        dataRows.forEach((row, rIdx) => {
+            const rowMeasurement = measureRow(row, 8, false);
+            checkPageBreak(rowMeasurement.rowHeight);
+            currentY = getY();
+
+            // Zebra striping
+            if (rIdx % 2 === 1) {
+                doc.setFillColor(248, 249, 252);
+                doc.rect(MARGIN_LEFT, currentY, CONTENT_WIDTH, rowMeasurement.rowHeight, 'F');
+            }
+
+            // Cell horizontal border
+            doc.setDrawColor(228, 231, 238);
+            doc.setLineWidth(0.15);
+            doc.line(MARGIN_LEFT, currentY + rowMeasurement.rowHeight, MARGIN_LEFT + CONTENT_WIDTH, currentY + rowMeasurement.rowHeight);
+
+            // Row Text
+            doc.setFontSize(8);
+            doc.setFont(FONT_BODY, 'normal');
+            doc.setTextColor(40, 45, 55);
+
+            let rowColX = MARGIN_LEFT;
+            for (let c = 0; c < numCols; c++) {
+                const lines = rowMeasurement.cellWrappedLines[c]!;
+                lines.forEach((lineText, lIdx) => {
+                    doc.text(lineText, rowColX + PADDING_X, currentY + PADDING_Y + 2.6 + lIdx * LINE_HEIGHT_ROW);
+                });
+                rowColX += colWidths[c]!;
+            }
+
+            currentY += rowMeasurement.rowHeight;
+        });
+
+        // Bottom border line for entire table
+        doc.setDrawColor(200, 205, 215);
+        doc.setLineWidth(0.3);
+        doc.line(MARGIN_LEFT, currentY, MARGIN_LEFT + CONTENT_WIDTH, currentY);
+
+        currentY += 5;
+        setY(currentY);
     }
 
     // ── Utility helpers ─────────────────────────────────────────────────

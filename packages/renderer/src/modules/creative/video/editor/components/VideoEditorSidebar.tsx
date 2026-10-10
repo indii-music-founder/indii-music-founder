@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Settings, Layers, Image as ImageIcon, Trash2, Plus, Scissors } from 'lucide-react';
 import { EditorAssetLibrary } from './EditorAssetLibrary'; // Adjust import path as needed
 import { VideoChunkSlicerCard } from './VideoChunkSlicerCard';
-import { VideoProject } from '../../store/videoEditorStore';
+import { VideoProject, useVideoEditorStore } from '../../store/videoEditorStore';
 import { HistoryItem } from '@/core/store/slices/creative';
 
 interface VideoEditorSidebarProps {
@@ -85,11 +85,19 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
 
             {/* Sidebar Content */}
             <div className={`shrink-0 bg-[--card] overflow-y-auto custom-scrollbar transition-all duration-200 ${activeTab === 'chunks' ? 'w-80' : 'w-56'}`}>
-                {activeTab === 'chunks' && (
-                    <div className="h-full p-2">
-                        <VideoChunkSlicerCard />
-                    </div>
-                )}
+                {activeTab === 'chunks' && (() => {
+                    const selectedClipId = useVideoEditorStore.getState().selectedClipId;
+                    const activeVideoClip = project.clips.find((c) => c.id === selectedClipId && c.type === 'video')
+                        || project.clips.find((c) => c.type === 'video');
+                    const videoSrc = activeVideoClip?.src;
+                    const videoDurationSeconds = activeVideoClip ? activeVideoClip.durationInFrames / (project.fps || 30) : undefined;
+
+                    return (
+                        <div className="h-full p-2">
+                            <VideoChunkSlicerCard videoSrc={videoSrc} videoDurationSeconds={videoDurationSeconds} />
+                        </div>
+                    );
+                })()}
 
                 {activeTab === 'assets' && (
                     <EditorAssetLibrary onDragStart={onLibraryDragStart} />

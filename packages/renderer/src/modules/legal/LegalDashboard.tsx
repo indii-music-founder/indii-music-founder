@@ -46,6 +46,7 @@ export default function LegalDashboard() {
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
     const [isSplitSheetOpen, setIsSplitSheetOpen] = useState(false);
     const [isCopyrightModalOpen, setIsCopyrightModalOpen] = useState(false);
+    const [contractsRefreshKey, setContractsRefreshKey] = useState(0);
     const [analysisHistory, setAnalysisHistory] = useState<Array<{ name: string; score: number; date: string }>>([]);
     const [activeTab, setActiveTab] = useState('contracts');
     const toast = useToast();
@@ -156,8 +157,8 @@ Only return valid JSON.
         }
     };
 
-    const handleSwitchToContracts = useCallback(() => {
-        setActiveTab('contracts');
+    const handleNewContract = useCallback(() => {
+        setIsSplitSheetOpen(true);
     }, []);
 
     const handleGenerateNDA = async () => {
@@ -168,6 +169,7 @@ Only return valid JSON.
             const purpose = 'general business discussion and project collaboration';
 
             await LegalService.generateNDA(parties, purpose);
+            setContractsRefreshKey(prev => prev + 1);
             toast.success("NDA generated! View it in My Contracts tab.");
             setActiveTab('contracts');
         } catch (_error: unknown) {
@@ -186,6 +188,7 @@ Only return valid JSON.
             const terms = 'Transfer of all rights, title, and interest in and to the specified creative works.';
 
             await LegalService.draftContract(type, parties, terms);
+            setContractsRefreshKey(prev => prev + 1);
             toast.success("IP Assignment generated! View it in My Contracts tab.");
             setActiveTab('contracts');
         } catch (_error: unknown) {
@@ -232,12 +235,18 @@ Only return valid JSON.
             <SplitSheetGeneratorModal
                 isOpen={isSplitSheetOpen}
                 onClose={() => setIsSplitSheetOpen(false)}
-                onCreated={() => setActiveTab('contracts')}
+                onCreated={() => {
+                    setActiveTab('contracts');
+                    setContractsRefreshKey(prev => prev + 1);
+                }}
             />
             <CopyrightRegistrationModal
                 isOpen={isCopyrightModalOpen}
                 onClose={() => setIsCopyrightModalOpen(false)}
-                onCreated={() => setActiveTab('contracts')}
+                onCreated={() => {
+                    setActiveTab('contracts');
+                    setContractsRefreshKey(prev => prev + 1);
+                }}
             />
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
                 <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0">
@@ -264,7 +273,7 @@ Only return valid JSON.
                 </div>
 
                 <TabsContent value="contracts" className="flex-1 flex flex-col min-h-0 overflow-y-auto m-0">
-                    <MyContracts onNewContract={handleSwitchToContracts} />
+                    <MyContracts onNewContract={handleNewContract} refreshTrigger={contractsRefreshKey} />
                 </TabsContent>
 
                 <TabsContent value="analyzer" className="flex-1 flex flex-col min-h-0 overflow-y-auto p-4 md:p-6">

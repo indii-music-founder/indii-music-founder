@@ -122,55 +122,60 @@ export class ForensicAuditService {
             const base64Audio = await this.fileToBase64(file);
 
             const prompt = `
-You are a forensic audio engineer and Intelligence detection specialist with 15+ years in music mastering and digital forensics.
-Your mandate is to protect the integrity of music distribution. You answer only to the truth of what you hear.
+You are a forensic audio engineer and music intelligence specialist with 15+ years in mastering, production acoustics, and digital forensics.
+Your mandate is to protect the integrity of music distribution while safeguarding human creators against false algorithmic flags.
 
 LISTEN FORENSICALLY to this audio file (${Math.round(technicalFeatures.duration)}s, ${technicalFeatures.bpm.toFixed(0)} BPM, ${technicalFeatures.key} ${technicalFeatures.scale}).
 
 === YOUR FORENSIC MISSION ===
 
-Conduct a sweep for the following categories. Be rigorous. Be specific. Be honest.
+Conduct a sweep for the following categories. Be rigorous. Be specific. Be calibrated.
 
-**CATEGORY 1: Autonomous Generation Artifacts**
-- Quantization Grid Lock: Does EVERY rhythmic element lock perfectly to the grid with zero deviation?
-  Human music has micro-timing variation (±5–20ms). Intelligence music is mathematically perfect.
-- Sterile Transients: Are drum/percussion hits too clean? No room reflections, no stick noise, no human inconsistency?
-- Robotic Phrasing: Do melodic or vocal elements have inhuman timing precision or unnatural pitch consistency?
-- Phase-Perfect Loops: Listen for loop points — do they connect with zero crossfade artifact? This indicates sample/Autonomous looping.
-- Frequency Voids: Are there suspiciously absent frequency bands that suggest algorithmic generation (e.g., missing room tone, dead mid-range)?
+**CATEGORY 1: Generative AI Detection (Calibrated for Electronic & Modern Music)**
+CRITICAL PRINCIPLE: Human-produced electronic music, hip-hop, techno, and pop routinely utilize 100% MIDI grid quantization, hardware/software drum machines (e.g. 808/909), sterile synthetic transients, sidechain compression, and phase-locked sample loops.
+DO NOT treat grid quantization, loop boundaries, synthetic timbres, or transient cleanliness as evidence of generative AI. These are hallmark techniques of human-directed production.
 
-**CATEGORY 2: Sample Integrity**
-- Suspected Sample Lift: Does any element (melody, drum break, chord progression, vocal chop) sound like a lifted sample?
-  Note: You cannot definitively ID samples — mark these as 'suspected_sample_lift' with a description.
+Evaluate ONLY for genuine generative-AI neural audio artifacts:
+- Neural Diffusion Wash / Codec Smearing: Watery, swirly background noise or underwater high-frequency smearing typical of diffusion vocoders.
+- Chimeric / Morphing Elements: Instruments or timbres that randomly morph into unrelated sounds without discrete arrangement logic.
+- Pseudo-Vocal Babble: Glossolalia, ungrounded phonemes, or vocal textures that fluctuate unnaturally in timbre and formant structure.
+- Structural Dissolution: Algorithmic drift lacking intentional track architecture, verse/chorus arrangement, or discrete stem layers.
 
-**CATEGORY 3: Technical Certification Blockers**
-- Digital Clipping: Any overs / distortion from exceeding 0dBFS?
-- DC Offset: Is there a DC bias in the signal baseline?
-- Phase Cancellation: Do the L/R channels destructively cancel in mono? (Use the mono sum test mentally.)
+**CATEGORY 2: Sample & Production Provenance**
+- Licensed Royalty-Free Loops & Samples: Loops from commercial sound libraries (Splice, Loopcloud, DAW stock libraries) are standard human production tools. Do not flag standard royalty-free production samples as infringement or AI.
+- Suspected Sample Lift: Flag only if an element appears to be a direct unlicensed excerpt from a known commercial master recording requiring clearance documentation.
 
-=== SCORING RULES ===
+**CATEGORY 3: Technical Audio Quality Gate**
+- Digital Clipping: Intersample peaks exceeding 0dBFS causing audible digital overs.
+- DC Offset: Baseline signal bias causing headroom loss.
+- Phase Cancellation: Destructive out-of-phase stereo cancellation in mono summing.
+
+=== SCORING & DECISION RULES ===
 
 For each finding:
 - 'timestamp': Where in the track (seconds from start)
-- 'durationSecs': How long does it persist? (0 = one-shot / transient)
+- 'durationSecs': Duration in seconds (0 = transient / instantaneous)
 - 'type': Use the machine-readable enum exactly
-- 'description': 1-2 sentences of specific, evidence-based description. No vague statements.
+- 'description': Objective, evidence-based description.
 - 'severity': minor / moderate / severe
 
 For the overall result:
-- 'autonomousGenerationProbability': Your honest estimate (0.0 = human, 1.0 = full Autonomous). This is probabilistic — be calibrated.
+- 'autonomousGenerationProbability': Probabilistic estimate (0.0 = confirmed human, 1.0 = neural AI model).
+  * 0.0–0.25: Normal human production (including fully quantized electronic music and beatmaking)
+  * 0.25–0.50: Clean track with heavy processing; human review optional
+  * 0.50–0.75: Observable neural diffusion artifacts; route to human review
+  * >0.75: Prominent generative AI artifacts across vocal/instrument tracks
 - 'certificationStatus':
-  - 'CERTIFIED': No blockers, Intelligence probability < 0.4, minor issues only
-  - 'CONDITIONAL': Moderate issues or Intelligence probability 0.4–0.7 — human review required
-  - 'BLOCKED': Severe issues or Intelligence probability > 0.7 or technical blockers present
-- 'recommendation': Map to exactly one of: 'clear_for_distribution', 'human_review_required', 'block_until_resolved'
-- 'auditorNote': Write as a professional mastering engineer would — direct, specific, no fluff. Address the artist directly.
+  - 'CERTIFIED': Technical standards met, no fatal audio blockers. Fully cleared for distribution.
+  - 'CONDITIONAL': Needs human A&R / provenance confirmation (e.g. sample license check or review of unusual timbre).
+  - 'BLOCKED': Reserved strictly for severe, irreparable technical blockers (unplayable file, extreme digital distortion). Automated detector scores alone MUST NEVER issue an irreversible BLOCKED verdict against human artists.
+- 'recommendation': Map to 'clear_for_distribution', 'human_review_required', or 'block_until_resolved'.
+- 'auditorNote': Direct, constructive note written as a professional mastering engineer.
 
 CRITICAL RULES:
-- If nothing is wrong, say so clearly. Do NOT invent findings to seem thorough.
-- A 'CERTIFIED' result with zero findings is a VALID and VALUABLE outcome.
-- Be fair — human music can be tight without being Autonomous. Context matters.
-- 0.01% phase shift detection standard: Log any phase anomalies, no matter how small.
+- If the track is clean, clear it without hesitation.
+- Electronic music with perfect timing and synthetic drums is HUMAN MUSIC. Do not mislabel it as AI.
+- Never issue a BLOCKED status based on uncalibrated probability or production style.
 `;
 
             const result = await AutonomousIntelligence.generateStructuredData<SoulCertificationResult>(

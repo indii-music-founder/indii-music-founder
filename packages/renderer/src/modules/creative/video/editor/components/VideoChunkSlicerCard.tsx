@@ -17,16 +17,23 @@ export interface SlicedChunkItem {
     manuallyIncluded?: boolean;
 }
 
-interface VideoChunkSlicerCardProps {
+export interface VideoChunkSlicerCardProps {
     videoSrc?: string;
     videoDurationSeconds?: number;
     onApplyToTimeline?: (selectedChunks: SlicedChunkItem[]) => void;
+    frameMetrics?: Array<{
+        motionScore: number;
+        brightnessScore: number;
+        hasSubject: boolean;
+        audioRms: number;
+    }>;
 }
 
 export const VideoChunkSlicerCard: React.FC<VideoChunkSlicerCardProps> = ({
-    videoSrc = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    videoDurationSeconds = 30,
-    onApplyToTimeline
+    videoSrc,
+    videoDurationSeconds,
+    onApplyToTimeline,
+    frameMetrics,
 }) => {
     const [chunkDuration, setChunkDuration] = useState<number>(5);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -36,54 +43,81 @@ export const VideoChunkSlicerCard: React.FC<VideoChunkSlicerCardProps> = ({
     const addClip = useVideoEditorStore((state) => state.addClip);
     const project = useVideoEditorStore((state) => state.project);
 
+    const hasFootage = Boolean(videoDurationSeconds && videoDurationSeconds > 0);
+
     const handleRunSlicer = useCallback(async () => {
+        if (!hasFootage || !videoDurationSeconds) {
+            toast.error('No video footage selected. Please select a video clip on your timeline first.');
+            return;
+        }
+
         setIsAnalyzing(true);
         const segmentCount = Math.max(1, Math.floor(videoDurationSeconds / chunkDuration));
         const generatedChunks: SlicedChunkItem[] = [];
 
-        // Simulate motion, brightness, and audio metrics across the long video
         for (let i = 0; i < segmentCount; i++) {
             const start = i * chunkDuration;
             const end = Math.min(videoDurationSeconds, (i + 1) * chunkDuration);
 
-            // Realistic camera variance across long raw takes
-            // Chunks in the beginning/end often have floor/shake artifacts; middle has best takes
-            const isShaky = i === 0 || i === segmentCount - 1 || i % 4 === 3;
-            const isDark = i % 5 === 2;
-            const motion = isShaky ? 78 : 22 + (i % 3) * 8;
-            const brightness = isDark ? 12 : 52 + (i % 2) * 6;
-            const hasSubject = !isShaky && !isDark;
-            const audioRms = hasSubject ? 0.35 : 0.04;
+            const metric = frameMetrics?.[i];
+            if (metric) {
+                const verdict = await judgeVideoChunkQuality({
+                    chunkId: `chunk_${i + 1}`,
+                    startSeconds: start,
+                    endSeconds: end,
+                    averageMotionScore: metric.motionScore,
+                    brightnessScore: metric.brightnessScore,
+                    hasSubjectInFrame: metric.hasSubject,
+                    audioEnergyRms: metric.audioRms,
+                    description: `Footage segment ${start}s-${end}s`,
+                });
 
-            const verdict = await judgeVideoChunkQuality({
-                chunkId: `chunk_${i + 1}`,
-                startSeconds: start,
-                endSeconds: end,
-                averageMotionScore: motion,
-                brightnessScore: brightness,
-                hasSubjectInFrame: hasSubject,
-                audioEnergyRms: audioRms,
-                description: `Raw footage segment ${start}s-${end}s`,
-            });
+                generatedChunks.push({
+                    id: `chunk_${i + 1}`,
+                    startSeconds: start,
+                    endSeconds: end,
+                    motionScore: metric.motionScore,
+                    brightnessScore: metric.brightnessScore,
+                    hasSubject: metric.hasSubject,
+                    audioRms: metric.audioRms,
+                    verdict,
+                    manuallyIncluded: verdict.isKeep,
+                });
+            } else {
+                // When automated vision extraction is unavailable for this source:
+                // Never fabricate fake camera shake, underexposure, or motion scores.
+                // Prepare clean segments ready for timeline editing and manual review.
+                const verdict: VideoChunkVerdict = {
+                    classification: 'KEEP_BROLL',
+                    usableScore: 3,
+                    isKeep: true,
+                    reason: 'Footage segment ready for timeline placement (Manual Review)',
+                };
 
-            generatedChunks.push({
-                id: `chunk_${i + 1}`,
-                startSeconds: start,
-                endSeconds: end,
-                motionScore: motion,
-                brightnessScore: brightness,
-                hasSubject,
-                audioRms,
-                verdict,
-                manuallyIncluded: verdict.isKeep,
-            });
+                generatedChunks.push({
+                    id: `chunk_${i + 1}`,
+                    startSeconds: start,
+                    endSeconds: end,
+                    motionScore: 0,
+                    brightnessScore: 0,
+                    hasSubject: true,
+                    audioRms: 0,
+                    verdict,
+                    manuallyIncluded: true,
+                });
+            }
         }
 
         setChunks(generatedChunks);
         setIsAnalyzing(false);
-        const keptCount = generatedChunks.filter((c) => c.verdict?.isKeep).length;
-        toast.success(`Jev Vision: Analyzed ${generatedChunks.length} chunks. ${keptCount} gold takes identified!`);
-    }, [videoDurationSeconds, chunkDuration]);
+
+        if (frameMetrics && frameMetrics.length > 0) {
+            const keptCount = generatedChunks.filter((c) => c.verdict?.isKeep).length;
+            toast.success(`Jev Vision: Analyzed ${generatedChunks.length} chunks. ${keptCount} gold takes identified!`);
+        } else {
+            toast.success(`Sliced footage into ${generatedChunks.length} segments (${chunkDuration}s each). Ready for timeline placement.`);
+        }
+    }, [hasFootage, videoDurationSeconds, chunkDuration, frameMetrics]);
 
     const toggleChunkInclude = useCallback((chunkId: string) => {
         setChunks((prev) =>
@@ -180,9 +214,10 @@ export const VideoChunkSlicerCard: React.FC<VideoChunkSlicerCardProps> = ({
 
                     <button
                         onClick={handleRunSlicer}
-                        disabled={isAnalyzing}
+                        disabled={isAnalyzing || !hasFootage}
                         data-testid="run-slicer-btn"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-xs font-medium text-white transition-colors"
+                        title={!hasFootage ? 'Select or add video footage to slice' : undefined}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium text-white transition-colors"
                     >
                         <Sparkles className="w-3.5 h-3.5" />
                         {isAnalyzing ? 'Analyzing…' : 'Slice Footage'}
@@ -228,12 +263,22 @@ export const VideoChunkSlicerCard: React.FC<VideoChunkSlicerCardProps> = ({
 
             {/* Chunks List */}
             <div className="flex-1 overflow-y-auto py-2 space-y-2 pr-1">
-                {chunks.length === 0 && !isAnalyzing && (
+                {!hasFootage && !isAnalyzing && (
+                    <div className="flex flex-col items-center justify-center h-48 text-center p-4 border border-dashed border-gray-800 rounded-lg bg-gray-950/40" data-testid="no-footage-state">
+                        <Film className="w-8 h-8 text-amber-500/70 mb-2" />
+                        <p className="text-xs font-semibold text-gray-200">No video footage selected</p>
+                        <p className="text-[11px] text-gray-400 max-w-xs mt-1">
+                            Select a video clip on your timeline or import raw footage to slice into segments.
+                        </p>
+                    </div>
+                )}
+
+                {hasFootage && chunks.length === 0 && !isAnalyzing && (
                     <div className="flex flex-col items-center justify-center h-48 text-center p-4 border border-dashed border-gray-800 rounded-lg">
                         <Film className="w-8 h-8 text-gray-600 mb-2" />
                         <p className="text-xs font-medium text-gray-300">No slices generated yet</p>
                         <p className="text-[11px] text-gray-500 max-w-xs mt-1">
-                            Click &quot;Slice Footage&quot; to auto-detect shaky camera jitter, dark frames, and pull the best takes into your timeline.
+                            Click &quot;Slice Footage&quot; to divide raw footage into segments for quick timeline review.
                         </p>
                     </div>
                 )}

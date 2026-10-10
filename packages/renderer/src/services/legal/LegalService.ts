@@ -49,23 +49,44 @@ async function getLegalTools() {
 export class LegalService {
 
     /**
-     * Save a new contract draft
+     * Resolve the active user ID for legal operations.
+     * Prefers verified userProfile.id (if not 'pending'), then active Firebase Auth identity.
+     * Rejects placeholder 'pending' state and unauthenticated callers.
      */
-    static async saveContract(data: Omit<LegalContract, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> {
-        const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) {
+    static resolveUserId(): string {
+        const store = useStore.getState();
+        if (store.userProfile === null && !store.user) {
             throw new AppException(AppErrorCode.AUTH_ERROR, 'User not authenticated');
         }
 
+        const profileId = store.userProfile?.id;
+        if (profileId && profileId !== 'pending') {
+            return profileId;
+        }
+
+        const authUid = auth.currentUser?.uid || store.user?.uid;
+        if (authUid && authUid !== 'pending') {
+            return authUid;
+        }
+
+        throw new AppException(AppErrorCode.AUTH_ERROR, 'User not authenticated');
+    }
+
+    /**
+     * Save a new contract draft
+     */
+    static async saveContract(data: Omit<LegalContract, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> {
+        const userId = this.resolveUserId();
+
         const contractData = {
             ...data,
-            userId: userProfile.id,
+            userId,
             status: data.status || ContractStatus.DRAFT,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
         };
 
-        const docRef = await addDoc(collection(db, 'users', userProfile.id, 'contracts'), contractData);
+        const docRef = await addDoc(collection(db, 'users', userId, 'contracts'), contractData);
         return docRef.id;
     }
 
@@ -73,12 +94,8 @@ export class LegalService {
      * Update an existing contract
      */
     static async updateContract(id: string, updates: Partial<LegalContract>): Promise<void> {
-        const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) {
-            throw new AppException(AppErrorCode.AUTH_ERROR, 'User not authenticated');
-        }
-
-        const docRef = doc(db, 'users', userProfile.id, 'contracts', id);
+        const userId = this.resolveUserId();
+        const docRef = doc(db, 'users', userId, 'contracts', id);
         await updateDoc(docRef, { ...updates, updatedAt: serverTimestamp() });
     }
 
@@ -87,10 +104,12 @@ export class LegalService {
      */
     static async getContracts(): Promise<LegalContract[]> {
         // The authenticated shell can mount before the presentation profile loads.
-        // Use the Firebase identity, never the profile's initial "pending" ID.
-        const userId = auth.currentUser?.uid;
-        if (!userId) {
-            throw new AppException(AppErrorCode.AUTH_ERROR, 'User not authenticated');
+        // Use the resolved identity, never the profile's initial "pending" ID.
+        let userId: string;
+        try {
+            userId = this.resolveUserId();
+        } catch {
+            return [];
         }
 
         const q = query(
@@ -106,10 +125,14 @@ export class LegalService {
      * Get a single contract by ID
      */
     static async getContractById(id: string): Promise<LegalContract | null> {
-        const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) return null;
+        let userId: string;
+        try {
+            userId = this.resolveUserId();
+        } catch {
+            return null;
+        }
 
-        const snapshot = await getDoc(doc(db, 'users', userProfile.id, 'contracts', id));
+        const snapshot = await getDoc(doc(db, 'users', userId, 'contracts', id));
         return snapshot.exists()
             ? ({ id: snapshot.id, ...snapshot.data() } as unknown as LegalContract)
             : null;
@@ -124,14 +147,16 @@ export class LegalService {
      * Stored under users/{uid}/contract_analyses.
      */
     static async saveAnalysis(analysis: Omit<ContractAnalysis, 'id'>): Promise<string> {
-        const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) {
+        let userId: string;
+        try {
+            userId = this.resolveUserId();
+        } catch {
             // Silently skip if unauthenticated — analysis results are still shown in UI
             return '';
         }
 
         const docRef = await addDoc(
-            collection(db, 'users', userProfile.id, 'contract_analyses'),
+            collection(db, 'users', userId, 'contract_analyses'),
             { ...analysis, savedAt: serverTimestamp() }
         );
         return docRef.id;
@@ -141,11 +166,15 @@ export class LegalService {
      * Fetch the 20 most recent contract analyses for the current user.
      */
     static async getAnalyses(): Promise<ContractAnalysis[]> {
-        const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) return [];
+        let userId: string;
+        try {
+            userId = this.resolveUserId();
+        } catch {
+            return [];
+        }
 
         const q = query(
-            collection(db, 'users', userProfile.id, 'contract_analyses'),
+            collection(db, 'users', userId, 'contract_analyses'),
             orderBy('savedAt', 'desc'),
             limit(20)
         );

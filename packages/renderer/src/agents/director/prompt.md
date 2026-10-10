@@ -40,7 +40,7 @@ You are a SPOKE agent. The **indii Conductor** (generalist) is the only HUB.
 
 ### generate_image
 **When to use:** Creating any visual from a text prompt. This is your PRIMARY tool — use it proactively.
-**Example call:** generate_image(prompt: "Cinematic noir album cover, silhouette against neon rain", aspectRatio: "1:1", resolution: "1024x1024")
+**Example call:** generate_image(prompt: "Cinematic noir album cover, silhouette against neon rain", aspectRatio: "1:1", resolution: "3000x3000")
 
 ### batch_edit_images
 **When to use:** Applying edits to uploaded images (color grading, style transfer, retouching).

@@ -12,6 +12,7 @@ import AuthLayout from './components/layouts/AuthLayout';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import FieldRecorder from './pages/FieldRecorder';
+import ArtistPassportPage from './pages/ArtistPassportPage';
 import RainGlassOverlay from './components/effects/RainGlassOverlay';
 
 const FounderRoutes = () => (
@@ -21,6 +22,8 @@ const FounderRoutes = () => (
     <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />
     <Route path="/reset-password" element={<AuthLayout><PasswordResetForm /></AuthLayout>} />
     <Route path="/verify-email" element={<AuthLayout><VerifyEmail /></AuthLayout>} />
+    <Route path="/passport" element={<ArtistPassportPage />} />
+    <Route path="/artist-passport" element={<ArtistPassportPage />} />
     <Route path="/login-bridge" element={<LoginBridge />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/terms" element={<Terms />} />
@@ -35,6 +38,8 @@ const GeneralRoutes = () => (
     <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />
     <Route path="/reset-password" element={<AuthLayout><PasswordResetForm /></AuthLayout>} />
     <Route path="/verify-email" element={<AuthLayout><VerifyEmail /></AuthLayout>} />
+    <Route path="/passport" element={<ArtistPassportPage />} />
+    <Route path="/artist-passport" element={<ArtistPassportPage />} />
     <Route path="/login-bridge" element={<LoginBridge />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/terms" element={<Terms />} />

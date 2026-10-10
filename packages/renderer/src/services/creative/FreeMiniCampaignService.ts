@@ -174,6 +174,8 @@ export class FreeMiniCampaignService {
         title: string;
         artistName: string;
         visualUrl: string;
+        squareVisualUrl?: string;
+        storyVisualUrl?: string;
         audioUrl: string;
         durationSeconds: number;
         clipStartSeconds?: number;
@@ -195,7 +197,7 @@ export class FreeMiniCampaignService {
                 id: `${packId}_square`,
                 type: 'square_cover',
                 title: `${title} — Square Cover (1:1)`,
-                url: params.visualUrl,
+                url: params.squareVisualUrl || params.visualUrl,
                 aspectRatio: '1:1',
                 storageUri: params.storageUris?.[0],
                 isWatermarked: false,
@@ -204,7 +206,7 @@ export class FreeMiniCampaignService {
                 id: `${packId}_story`,
                 type: 'story_promo',
                 title: `${title} — Story & Reels Promo (9:16)`,
-                url: params.visualUrl,
+                url: params.storyVisualUrl || params.visualUrl,
                 aspectRatio: '9:16',
                 storageUri: params.storageUris?.[1],
                 isWatermarked: false,
@@ -255,7 +257,11 @@ export class FreeMiniCampaignService {
 
         return new Promise<string>((resolve) => {
             const img = new Image();
-            img.crossOrigin = 'anonymous';
+            // Setting crossOrigin on blob: or data: URLs triggers CORS load errors in browsers.
+            // Only set anonymous crossOrigin for external http(s) endpoints.
+            if (!imageUrl.startsWith('blob:') && !imageUrl.startsWith('data:')) {
+                img.crossOrigin = 'anonymous';
+            }
 
             const timeoutId = setTimeout(() => {
                 resolve(imageUrl);
@@ -342,11 +348,20 @@ export class FreeMiniCampaignService {
                 extension = 'mp3';
             }
         } else if (asset.aspectRatio === '1:1' || asset.aspectRatio === '9:16') {
-            extension = 'png';
             try {
                 downloadUrl = await this.cropVisualToAspectRatio(asset.url, asset.aspectRatio);
             } catch {
                 downloadUrl = asset.url;
+            }
+
+            if (downloadUrl.startsWith('data:image/png')) {
+                extension = 'png';
+            } else if (downloadUrl.startsWith('data:image/jpeg') || downloadUrl.includes('.jpg') || downloadUrl.includes('.jpeg')) {
+                extension = 'jpg';
+            } else if (downloadUrl.startsWith('data:image/webp') || downloadUrl.includes('.webp')) {
+                extension = 'webp';
+            } else {
+                extension = 'png';
             }
         } else if (asset.url.includes('.jpg') || asset.url.includes('.jpeg')) {
             extension = 'jpg';

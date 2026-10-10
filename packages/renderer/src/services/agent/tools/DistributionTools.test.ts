@@ -494,4 +494,67 @@ describe('DistributionTools', () => {
             expect(callableNames).not.toContain('processReleaseTakedown');
         });
     });
+
+    describe('validate_metadata', () => {
+        it('should pass validation for clean metadata with valid UPC and ISRC', async () => {
+            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { IdentifierService } = await importWithRetry(() => import('@/services/identity/IdentifierService'));
+            vi.mocked(IdentifierService.validateUPC).mockReturnValue(true);
+            vi.mocked(IdentifierService.validateISRC).mockReturnValue(true);
+
+            const result = await DistributionTools.validate_metadata({
+                title: 'Summer Breeze',
+                artist: 'Jane Doe',
+                upc: '012345678905',
+                isrc: 'USABC2400001',
+                artworkUrl: 'https://example.com/cover.jpg',
+                tracks: [{ title: 'Summer Breeze', isrc: 'USABC2400001', track_number: 1, explicit: false }]
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.valid).toBe(true);
+            expect(result.data.status).toBe('PASS');
+            expect(result.data.errors).toHaveLength(0);
+        });
+
+        it('should fail validation when UPC is invalid in strict mode', async () => {
+            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { IdentifierService } = await importWithRetry(() => import('@/services/identity/IdentifierService'));
+            vi.mocked(IdentifierService.validateUPC).mockReturnValue(false);
+
+            const result = await DistributionTools.validate_metadata({
+                title: 'Summer Breeze',
+                artist: 'Jane Doe',
+                upc: '12345',
+                artworkUrl: 'https://example.com/cover.jpg',
+                strict: true
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.data.valid).toBe(false);
+            expect(result.data.errors.some((e: any) => e.id === 'rel-upc-invalid')).toBe(true);
+        });
+
+        it('should fail validation when duplicate ISRCs exist across tracks', async () => {
+            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+            const { IdentifierService } = await importWithRetry(() => import('@/services/identity/IdentifierService'));
+            vi.mocked(IdentifierService.validateUPC).mockReturnValue(true);
+            vi.mocked(IdentifierService.validateISRC).mockReturnValue(true);
+
+            const result = await DistributionTools.validate_metadata({
+                title: 'Album Title',
+                artist: 'Jane Doe',
+                upc: '012345678905',
+                artworkUrl: 'https://example.com/cover.jpg',
+                tracks: [
+                    { title: 'Track 1', isrc: 'USABC2400001', track_number: 1 },
+                    { title: 'Track 2', isrc: 'USABC2400001', track_number: 2 }
+                ]
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.data.valid).toBe(false);
+            expect(result.data.errors.some((e: any) => e.id === 'track-1-isrc-duplicate')).toBe(true);
+        });
+    });
 });

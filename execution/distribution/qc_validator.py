@@ -95,25 +95,56 @@ class QCValidator:
                  "the 3000x3000px industry standard for Apple/Spotify."
              )
 
-        # 4. UPC Format
+        # 4. UPC Format & Check Digit
         upc = data.get("upc", "").strip()
-        if upc and not re.match(r'^\d{12,13}$', upc):
-            self.errors.append(f"Invalid UPC format: '{upc}'. Must be 12 or 13 digits.")
+        if upc:
+            if not re.match(r'^\d{12,13}$', upc):
+                self.errors.append(f"Invalid UPC format: '{upc}'. Must be 12 or 13 numeric digits.")
+            else:
+                # Modulo 10 GS1 check digit validation
+                if len(upc) == 12:
+                    odd_sum = sum(int(upc[i]) for i in range(0, 11, 2))
+                    even_sum = sum(int(upc[i]) for i in range(1, 11, 2))
+                    total = (odd_sum * 3) + even_sum
+                    expected_check = (10 - (total % 10)) % 10
+                    if int(upc[11]) != expected_check:
+                        self.errors.append(
+                            f"Invalid UPC check digit in '{upc}'. Expected {expected_check}, found {upc[11]}."
+                        )
+                elif len(upc) == 13:
+                    even_sum = sum(int(upc[i]) for i in range(1, 12, 2))
+                    odd_sum = sum(int(upc[i]) for i in range(0, 12, 2))
+                    total = (even_sum * 3) + odd_sum
+                    expected_check = (10 - (total % 10)) % 10
+                    if int(upc[12]) != expected_check:
+                        self.errors.append(
+                            f"Invalid EAN-13 check digit in '{upc}'. Expected {expected_check}, found {upc[12]}."
+                        )
 
         # 5. Track Validation
         tracks = data.get("tracks", [])
         if not tracks:
             self.errors.append("Release must contain at least one track.")
         
+        seen_isrcs = set()
         for i, track in enumerate(tracks, 1):
             track_title = track.get("title", "").strip()
             if not track_title:
                 self.errors.append(f"Track {i} is missing a title.")
             
-            # ISRC Format
+            # ISRC Format & Duplicate Check
             isrc = track.get("isrc", "").strip().upper()
-            if isrc and not re.match(r'^[A-Z]{2}[A-Z0-9]{3}\d{7}$', isrc):
-                self.errors.append(f"Invalid ISRC format in track '{track_title}': '{isrc}'.")
+            if isrc:
+                if not re.match(r'^[A-Z]{2}[A-Z0-9]{3}\d{7}$', isrc):
+                    self.errors.append(
+                        f"Invalid ISRC format in track '{track_title}': '{isrc}'. Must follow standard CC-XXX-YY-NNNNN 12-char format."
+                    )
+                elif isrc in seen_isrcs:
+                    self.errors.append(
+                        f"Duplicate ISRC '{isrc}' detected across tracks in track '{track_title}'. Each recording must have a unique ISRC."
+                    )
+                else:
+                    seen_isrcs.add(isrc)
             
             # Duration check (prevent 0 or negative)
             duration = track.get("duration", 0)

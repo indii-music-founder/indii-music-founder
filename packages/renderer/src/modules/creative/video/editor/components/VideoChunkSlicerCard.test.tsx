@@ -63,22 +63,52 @@ describe('VideoChunkSlicerCard', () => {
         expect(screen.getByText('No slices generated yet')).toBeInTheDocument();
     });
 
-    it('slices footage into chunks and displays keep/discard decisions', async () => {
+    it('renders empty footage state when no video duration is provided and disables slicing', () => {
+        render(<VideoChunkSlicerCard />);
+        expect(screen.getByTestId('no-footage-state')).toBeInTheDocument();
+        expect(screen.getByText('No video footage selected')).toBeInTheDocument();
+        const sliceButton = screen.getByTestId('run-slicer-btn');
+        expect(sliceButton).toBeDisabled();
+    });
+
+    it('slices footage into clean timeline segments when frameMetrics are absent', async () => {
         render(<VideoChunkSlicerCard videoDurationSeconds={15} />);
 
         const sliceButton = screen.getByTestId('run-slicer-btn');
+        expect(sliceButton).not.toBeDisabled();
         fireEvent.click(sliceButton);
 
         await waitFor(() => {
-            expect(screen.getByText(/Gold Takes/)).toBeInTheDocument();
+            expect(screen.getByTestId('apply-gold-takes-btn')).toBeInTheDocument();
         });
 
-        // Check that chunks are rendered
+        // Verifies 3 segments (0-5s, 5-10s, 10-15s) with manual review label
         expect(screen.getByText('0s – 5s')).toBeInTheDocument();
         expect(screen.getByText('5s – 10s')).toBeInTheDocument();
+        expect(screen.getByText('10s – 15s')).toBeInTheDocument();
+        expect(screen.getAllByText(/ready for timeline placement/i).length).toBe(3);
     });
 
-    it('adds approved gold takes to video timeline when clicked', async () => {
+    it('slices footage and processes keep/discard decisions when frameMetrics are provided', async () => {
+        const frameMetrics = [
+            { motionScore: 20, brightnessScore: 85, hasSubject: true, audioRms: 0.4 }, // keep
+            { motionScore: 85, brightnessScore: 30, hasSubject: false, audioRms: 0.1 }, // discard shaky
+        ];
+
+        render(<VideoChunkSlicerCard videoDurationSeconds={10} frameMetrics={frameMetrics} />);
+
+        fireEvent.click(screen.getByTestId('run-slicer-btn'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Lead Performance')).toBeInTheDocument();
+            expect(screen.getByText('Camera Shake')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('Prime performance take')).toBeInTheDocument();
+        expect(screen.getByText('Excessive camera shake')).toBeInTheDocument();
+    });
+
+    it('adds approved takes to video timeline when clicked', async () => {
         render(<VideoChunkSlicerCard videoDurationSeconds={25} />);
 
         // Run slicer

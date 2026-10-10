@@ -13,6 +13,8 @@ import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'fireba
 import { httpsCallable } from 'firebase/functions';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { distributionService } from '@/services/distribution/DistributionService';
+import { MetadataValidationService } from '@/services/distribution/MetadataValidationService';
+import type { IngestionMetadata, IngestionTrack } from '@/types/distribution';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { MusicTools } from './MusicTools';
@@ -337,14 +339,125 @@ const calculate_payout = wrapTool('calculate_payout', async (args: {
 });
 
 /**
- * Run metadata QC using the Brain Layer (Python/Validator).
+ * Validate release metadata against DSP compliance rules (ISRC, UPC, check digits, artwork, tracks).
+ */
+const validate_metadata = wrapTool('validate_metadata', async (args: {
+    releaseId?: string;
+    title?: string;
+    artist?: string;
+    upc?: string;
+    isrc?: string;
+    artworkUrl?: string;
+    strict?: boolean;
+    tracks?: Array<{ title?: string; isrc?: string; track_number?: number; duration?: number; explicit?: boolean }>;
+}) => {
+    const { releaseId, strict = false } = args;
+    let metadataToValidate: IngestionMetadata;
+
+    if (releaseId) {
+        try {
+            let snap = await getDoc(doc(db, 'releases', releaseId));
+            if (!snap.exists()) {
+                snap = await getDoc(doc(db, 'proprietaryIngestionReleases', releaseId));
+            }
+            if (!snap.exists()) {
+                return toolError(`Release ${releaseId} not found in database.`, 'RELEASE_NOT_FOUND');
+            }
+            const data = snap.data();
+            const relMeta = data.metadata || {};
+            metadataToValidate = {
+                releaseId,
+                title: relMeta.title || data.title || args.title || '',
+                artist: relMeta.artist || data.artist || (data.artists?.[0]) || args.artist || '',
+                upc: relMeta.upc || data.upc || args.upc,
+                artwork_url: relMeta.artwork_url || relMeta.artworkUrl || data.artworkUrl || data.coverUrl || args.artworkUrl,
+                tracks: (relMeta.tracks || data.tracks || args.tracks || []).map((t: any, idx: number) => ({
+                    title: t.title || `Track ${idx + 1}`,
+                    track_number: t.track_number ?? t.trackNumber ?? (idx + 1),
+                    isrc: t.isrc || (idx === 0 ? (relMeta.isrc || data.isrc || args.isrc) : undefined),
+                    duration: t.duration,
+                    explicit: t.explicit
+                }))
+            };
+        } catch (err: unknown) {
+            return toolError(err instanceof Error ? err.message : 'Failed to retrieve release from database', 'DB_ERROR');
+        }
+    } else {
+        const tracks: IngestionTrack[] = (args.tracks || []).map((t, idx) => ({
+            title: t.title || `Track ${idx + 1}`,
+            track_number: t.track_number ?? (idx + 1),
+            isrc: t.isrc || (idx === 0 ? args.isrc : undefined),
+            duration: t.duration,
+            explicit: t.explicit
+        }));
+
+        if (tracks.length === 0 && (args.title || args.isrc)) {
+            tracks.push({
+                title: args.title || 'Untitled Track',
+                track_number: 1,
+                isrc: args.isrc
+            });
+        }
+
+        metadataToValidate = {
+            releaseId: args.releaseId || `validation-${Date.now()}`,
+            title: args.title || '',
+            artist: args.artist || '',
+            upc: args.upc,
+            artwork_url: args.artworkUrl,
+            tracks
+        };
+    }
+
+    const validationResult = MetadataValidationService.validateRelease(metadataToValidate, { strict });
+
+    const responseData = {
+        valid: validationResult.valid,
+        status: validationResult.valid ? (validationResult.warnings.length > 0 ? 'WARN' : 'PASS') : 'FAIL',
+        errors: validationResult.errors,
+        warnings: validationResult.warnings,
+        checksPassed: validationResult.checksPassed,
+        totalChecks: validationResult.totalChecks,
+        summary: validationResult.summary,
+        release: {
+            title: metadataToValidate.title,
+            artist: metadataToValidate.artist,
+            upc: metadataToValidate.upc,
+            trackCount: metadataToValidate.tracks?.length || 0
+        }
+    };
+
+    if (!validationResult.valid) {
+        const errorMsgs = validationResult.errors.map(e => e.message).join('; ');
+        return {
+            success: false,
+            error: `Metadata validation failed (${validationResult.errors.length} error(s)): ${errorMsgs}`,
+            message: `Metadata validation failed (${validationResult.errors.length} error(s)): ${errorMsgs}`,
+            data: responseData,
+            metadata: {
+                timestamp: Date.now(),
+                errorCode: 'VALIDATION_FAILED'
+            }
+        };
+    }
+
+    return toolSuccess(
+        responseData,
+        `Metadata validated successfully for "${metadataToValidate.title}": ${validationResult.checksPassed}/${validationResult.totalChecks} checks passed (${validationResult.warnings.length} warning(s)).`
+    );
+});
+
+/**
+ * Run metadata QC using the Brain Layer (Python/Validator) or JS Engine.
  */
 const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
     title: string;
     artist: string;
     artworkUrl?: string;
+    upc?: string;
+    isrc?: string;
 }) => {
-    const { title, artist, artworkUrl } = args;
+    const { title, artist, artworkUrl, upc, isrc } = args;
 
     // 1. Try Brain Layer (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
@@ -353,7 +466,9 @@ const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
                 releaseId: `qc-${Date.now()}`,
                 title,
                 artists: [artist],
-                tracks: [], // Basic validation doesn't always need tracks, but type might require it
+                tracks: isrc ? [{ title, isrc }] : [],
+                upc,
+                artwork_url: artworkUrl,
                 label: 'Indii Records'
             });
 
@@ -388,6 +503,14 @@ const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
 
     if (title && (title.toLowerCase().includes('feat.') || title.toLowerCase().includes('ft.'))) {
         errors.push('Featured artist in title - must be in artist field per DDEX standard');
+    }
+
+    if (upc && !IdentifierService.validateUPC(upc)) {
+        errors.push(`Invalid UPC "${upc}". Must be 12 numeric digits with a valid GTIN check digit.`);
+    }
+
+    if (isrc && !IdentifierService.validateISRC(isrc)) {
+        errors.push(`Invalid ISRC "${isrc}". Must follow standard CC-XXX-YY-NNNNN 12-char format.`);
     }
 
     if (errors.length > 0) {
@@ -782,38 +905,10 @@ export const DistributionTools = {
         }
     }),
 
-    validate_metadata_readiness: wrapTool('validate_metadata_readiness', async (args: { releaseId: string }) => {
-        const { releaseId } = args;
-        const uid = auth.currentUser?.uid;
-        if (!uid) return toolError('User not authenticated');
+    validate_metadata,
 
-        try {
-            const releaseRef = doc(db, 'releases', releaseId);
-            const snap = await getDoc(releaseRef);
-
-            if (!snap.exists()) {
-                return toolError(`Release ${releaseId} not found`, 'RELEASE_NOT_FOUND');
-            }
-
-            const data = snap.data();
-            const metadata = data.metadata || {};
-            
-            const missingFields: string[] = [];
-            if (!metadata.title && !data.title) missingFields.push('title');
-            if (!metadata.artist && !data.artist) missingFields.push('artist');
-            if (!metadata.genre && !data.genre) missingFields.push('genre');
-            if (!metadata.isrc && !data.isrc) missingFields.push('isrc');
-
-            const isReady = missingFields.length === 0;
-
-            return toolSuccess({
-                releaseId,
-                isReady,
-                missingFields
-            }, isReady ? `Metadata for release ${releaseId} is ready for distribution.` : `Metadata for release ${releaseId} is incomplete. Missing fields: ${missingFields.join(', ')}.`);
-        } catch (error: unknown) {
-            return toolError(error instanceof Error ? error.message : 'Failed to validate metadata readiness', 'METADATA_VALIDATION_ERROR');
-        }
+    validate_metadata_readiness: wrapTool('validate_metadata_readiness', async (args: { releaseId: string; strict?: boolean }) => {
+        return validate_metadata({ releaseId: args.releaseId, strict: args.strict ?? false });
     }),
 
     /**

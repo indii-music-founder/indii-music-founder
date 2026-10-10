@@ -125,5 +125,44 @@ describe('LegalTools', () => {
 
             expect(result.success).toBe(true);
         });
+
+        it('supports collaborators array with splitPercentage and trackName aliases', async () => {
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: {
+                    text: () => JSON.stringify({
+                        contractTitle: "Split Sheet",
+                        content: "Terms...",
+                        keyTerms: []
+                    })
+                }
+            } as any);
+
+            const result = await LegalTools.generate_split_sheet!({
+                trackName: 'Collaboration Track',
+                collaborators: [
+                    { name: 'Producer 1', role: 'Producer', splitPercentage: 50 },
+                    { name: 'Singer 1', role: 'Songwriter', splitPercentage: 50 },
+                ],
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.message).toContain('Collaboration Track');
+        });
+    });
+
+    describe('register_copyright', () => {
+        it('sets registration focus on Library of Congress (eCO) and updates store', async () => {
+            const result = await LegalTools.register_copyright!({
+                trackId: 'track-123',
+                trackTitle: 'Original Song',
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data).toMatchObject({
+                module: 'registration',
+                orgId: 'loc',
+                trackId: 'track-123',
+            });
+        });
     });
 });

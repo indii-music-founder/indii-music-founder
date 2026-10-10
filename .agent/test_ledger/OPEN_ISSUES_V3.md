@@ -3987,3 +3987,84 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Expected (acceptance):** Add `default: return <ProfileSection />;` with warning log.
 - **Fix:** Added `default:` fallback arm logging a warning with `logger.warn` and rendering `<ProfileSection />`.
 - **Evidence:** `packages/renderer/src/modules/settings/SettingsPanel.tsx:110-113`.
+
+### ISSUE-1500: Issue #411 [GTM Oct 10] Artist Passport Funnel & Assessment Engine
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/landing/src/pages/ArtistPassportPage.tsx`, `packages/landing/src/lib/passportEvaluator.ts`, `packages/landing/src/App.tsx`
+- **Details:** Artist Passport funnel needed native diagnostic engine and interactive self-service route `/passport` & `/artist-passport` with zero proprietary backend dependency.
+- **Expected (acceptance):** Multi-step audit evaluating PRO affiliation, MLC registration, release timeline, and goals; preserve campaign referral parameters; 100% verified test suite.
+- **Fix:** Built deterministic diagnostic evaluator and interactive 5-step UI with referral preservation to auth/onboarding.
+- **Evidence:** `packages/landing/src/pages/ArtistPassportPage.test.tsx` (11/11 tests green), `packages/landing/src/App.tsx:32-33`.
+
+### ISSUE-1501: Issue #400 Split-Sheet & Contract PDF Table Export
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/services/legal/ContractPDFService.ts`
+- **Details:** Markdown split-sheet tables exported as raw unparsed markdown text inside legal PDFs without vector layout.
+- **Expected (acceptance):** Parse markdown tables into vector grid cells with bold headers, row borders, and automatic column widths.
+- **Fix:** Implemented `parseMarkdownTables` and vector table renderer in `ContractPDFService.ts`.
+- **Evidence:** `packages/renderer/src/services/legal/ContractPDFService.test.ts` (4/4 tests green).
+
+### ISSUE-1502: Issue #405 Smart Slicer Video Selection & Fake Rating Elimination
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/renderer/src/modules/creative/video/editor/components/VideoChunkSlicerCard.tsx`, `VideoEditorSidebar.tsx`
+- **Details:** Smart Slicer bypassed selected video clip duration, fell back to BigBuckBunny sample URL, and generated fake modulo ratings (`i % 4 === 3 ? 9.2 : 8.5`).
+- **Expected (acceptance):** Bind active video clip and duration; require video selection before slicing; remove fabricated ratings and sample video fallbacks.
+- **Fix:** Wired selected clip duration from sidebar; added empty state and disabled action when no video clip selected; removed all synthetic ratings.
+- **Evidence:** `packages/renderer/src/modules/creative/video/editor/components/VideoChunkSlicerCard.test.tsx` (5/5 tests green).
+
+### ISSUE-1503: Issue #403 Free Mini-Campaign Square-Cover & Video Export
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🟠 MAJOR
+- **Location:** `packages/renderer/src/services/creative/FreeMiniCampaignService.ts`, `packages/renderer/src/modules/creative/components/FreeMiniCampaignModal.tsx`
+- **Details:** Free mini-campaign artwork exported non-square assets without aspect ratio enforcement; cross-origin canvas tainted; download extensions misnamed.
+- **Expected (acceptance):** Pre-crop to 1:1 square cover and 9:16 vertical video canvases; handle CORS on external images; export with proper `.png` and audio extensions.
+- **Fix:** Added `cropToAspectRatio` utility in `FreeMiniCampaignService.ts`; preview real cropped assets in `FreeMiniCampaignModal.tsx`.
+- **Evidence:** `FreeMiniCampaignService.test.ts` (13/13 tests green), `FreeMiniCampaignModal.test.tsx` (5/5 tests green).
+
+### ISSUE-1504: Issue #409 Legal > My Contracts Missing Permissions & Blank Screen
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/renderer/src/modules/legal/components/MyContracts.tsx`, `packages/renderer/src/services/legal/LegalService.ts`, `packages/renderer/src/modules/legal/LegalDashboard.tsx`
+- **Details:** `MyContracts` rendered blank screen when user ID resolution drifted; caught permission errors were masked as empty state; `useRef(toast)` created re-render loop.
+- **Expected (acceptance):** Robust `resolveUserId()` fallback; distinct `ContractLoadError` UI with retry button on permission/network failure; live refresh when creating new contracts.
+- **Fix:** Added `resolveUserId()` in `LegalService.ts`; separated error state from empty state in `MyContracts.tsx`; wired refresh key to `SplitSheetGeneratorModal` in `LegalDashboard.tsx`.
+- **Evidence:** `packages/renderer/src/modules/legal/components/MyContracts.test.tsx` (5/5 tests green).
+
+### ISSUE-1505: Issue #367 Missing Legal Automation Tools
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🟠 MAJOR
+- **Location:** `packages/renderer/src/services/agent/tools/LegalTools.ts`, `packages/renderer/src/services/agent/definitions/LegalAgent.ts`
+- **Details:** Legal agent lacked tool exposure for `generate_split_sheet` and `register_copyright`, and parameter aliasing (`contributors` vs `collaborators`) caused runtime failures.
+- **Expected (acceptance):** Expose tools on `LegalAgent`; handle polymorphic parameter shapes gracefully.
+- **Fix:** Normalized parameters in `LegalTools.ts`; mounted tools in `LegalAgent.ts`.
+- **Evidence:** `packages/renderer/src/services/agent/tools/__tests__/LegalTools.test.ts` (7/7 tests green).
+
+### ISSUE-1506: Issue #365 Native Image Generation Resolution Cap
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🟠 MAJOR
+- **Location:** `packages/renderer/src/agents/director/config.ts`, `packages/renderer/src/agents/director/prompt.md`
+- **Details:** Director agent configuration capped cover art at 1080p, failing distributor 3000x3000 requirement.
+- **Expected (acceptance):** Enable `3000x3000`, `2k`, and `4k` resolution options in Director agent configuration and prompts.
+- **Fix:** Updated `config.ts` and `prompt.md` to support high-resolution print and distributor cover art outputs.
+- **Evidence:** `packages/renderer/src/agents/director/config.ts:16-24`.
+
+### ISSUE-1507: Issue #412 Protect Licensed Samples & Electronic Music from False AI Flags
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🟠 MAJOR
+- **Location:** `packages/renderer/src/services/audio/ForensicAuditService.ts`
+- **Details:** Electronic production techniques, quantized MIDI, and licensed loop packs (Splice/Loopcloud) triggered false positive AI-generated flags.
+- **Expected (acceptance):** Differentiate synthesized/quantized human EDM/hip-hop from synthetic AI generation; require human review before rejection.
+- **Fix:** Updated forensic audit system prompt to recognize legitimate human production; forbade automatic rejection on probability alone.
+- **Evidence:** `packages/renderer/src/services/audio/ForensicAuditService.test.ts` (2/2 tests green).
+
+### ISSUE-1508: Issue #366 & #377 Distribution Metadata Validation Tool & Modulo 10 Check Digits
+- **Status:** ✅ FIXED (2026-10-10)
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/renderer/src/services/agent/tools/DistributionTools.ts`, `packages/renderer/src/services/agent/definitions/DistributionAgent.ts`, `execution/distribution/qc_validator.py`
+- **Details:** `validate_metadata` tool missing from Distribution Agent tool registry; UPC/EAN lacked GS1 Modulo 10 check digit verification; duplicate ISRCs across tracks were undetected.
+- **Expected (acceptance):** Full GS1 Modulo 10 check-digit validation; duplicate ISRC checks across tracks; complete tool wiring in `DistributionAgent.ts`.
+- **Fix:** Implemented GS1 Modulo 10 check-digit algorithm in Python (`qc_validator.py`) and TypeScript (`DistributionTools.ts`); mounted `validate_metadata` in `DistributionAgent.ts`.
+- **Evidence:** `DistributionTools.test.ts` (23/23 tests green), `MetadataValidationService.test.ts` (5/5 tests green), Python `test_pipeline_e2e.py` (11/11 tests green).

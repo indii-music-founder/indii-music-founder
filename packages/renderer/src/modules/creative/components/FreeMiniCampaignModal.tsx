@@ -89,7 +89,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
         }
     };
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         if (!audioFile) {
             setError('Please upload an audio track.');
             return;
@@ -103,10 +103,17 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
         setError(null);
 
         try {
+            const [squareVisualUrl, storyVisualUrl] = await Promise.all([
+                FreeMiniCampaignService.cropVisualToAspectRatio(visualUrl, '1:1'),
+                FreeMiniCampaignService.cropVisualToAspectRatio(visualUrl, '9:16'),
+            ]);
+
             const newPack = FreeMiniCampaignService.createMiniCampaignPack({
                 title: trackTitle || 'My Track',
                 artistName: artistName || 'Independent Artist',
                 visualUrl,
+                squareVisualUrl,
+                storyVisualUrl,
                 audioUrl,
                 durationSeconds,
                 clipStartSeconds: 0,
@@ -307,7 +314,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                 <div className="rounded-xl border border-white/10 bg-neutral-900 p-4">
                                     <div className="aspect-square overflow-hidden rounded-lg bg-black">
                                         <img
-                                            src={visualUrl}
+                                            src={pack.assets.find(a => a.type === 'square_cover')?.url || visualUrl}
                                             alt="1:1 Cover"
                                             className="h-full w-full object-cover"
                                         />
@@ -320,7 +327,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                 <div className="rounded-xl border border-white/10 bg-neutral-900 p-4">
                                     <div className="aspect-[9/16] max-h-48 overflow-hidden rounded-lg bg-black">
                                         <img
-                                            src={visualUrl}
+                                            src={pack.assets.find(a => a.type === 'story_promo')?.url || visualUrl}
                                             alt="9:16 Story"
                                             className="h-full w-full object-cover"
                                         />

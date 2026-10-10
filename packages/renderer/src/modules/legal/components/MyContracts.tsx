@@ -19,10 +19,15 @@ import { ContractLoadError } from './ContractLoadError';
 interface MyContractsProps {
     /** Callback when user clicks "New Contract" */
     onNewContract?: () => void;
+    /** Optional trigger counter to force reloading contracts */
+    refreshTrigger?: number;
 }
 
-export function MyContracts({ onNewContract }: MyContractsProps) {
+export function MyContracts({ onNewContract, refreshTrigger }: MyContractsProps) {
     const toast = useToast();
+    const toastRef = useRef(toast);
+    toastRef.current = toast;
+
     const [contracts, setContracts] = useState<LegalContract[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadFailed, setLoadFailed] = useState(false);
@@ -33,7 +38,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
     const emailInputRef = useRef<HTMLInputElement>(null);
     const emailDialogRef = useModalAccessibility(Boolean(emailDialog), () => setEmailDialog(null));
 
-    // Load contracts on mount
+    // Load contracts on mount or when refreshTrigger changes
     const loadContracts = useCallback(async () => {
         setLoading(true);
         setLoadFailed(false);
@@ -43,15 +48,15 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
         } catch (err) {
             setLoadFailed(true);
             logger.error('[MyContracts] Failed to load contracts:', err);
-            toast.error('Failed to load contracts.');
+            toastRef.current.error('Failed to load contracts.');
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, []);
 
     useEffect(() => {
         loadContracts();
-    }, [loadContracts]);
+    }, [loadContracts, refreshTrigger]);
 
     const handleDownloadPDF = async (contract: LegalContract) => {
         setDownloadingId(contract.id);
@@ -233,7 +238,9 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                 const createdDate = contract.createdAt
                     ? (typeof contract.createdAt === 'number'
                         ? new Date(contract.createdAt)
-                        : contract.createdAt.toDate())
+                        : typeof (contract.createdAt as any).toDate === 'function'
+                            ? (contract.createdAt as any).toDate()
+                            : new Date(contract.createdAt as unknown as string | Date))
                     : null;
 
                 return (

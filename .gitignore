@@ -1,9 +1,16 @@
 # Claude Code worktrees (local-only, must never be tracked as submodules)
 .claude/worktrees/
 
+# Antigravity & Agent IDE metadata
+.antigravity/
+
 # Agent QA artifacts — screenshots, generated reports, and implementation snapshots are CI output, not source (ISSUE-1208)
 # Keep: .agent/skills/, .agent/workflows/, .agent/test_ledger/ (these ARE source of truth)
 .agent/artifacts/
+.agent/devtools_reports/
+browser_walkthrough.md
+execution/devtools_audit.cjs
+execution/run_browser_auth_test.cjs
 
 # Logs
 logs
@@ -59,6 +66,7 @@ eslint_output.json
 # Loose QA smoke/verify screenshots (regenerated every test run)
 artifacts/*.png
 artifacts/live-agent-daisy-chain/
+artifacts/dtf-logos/
 
 # Build artifacts
 out/

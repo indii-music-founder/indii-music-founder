@@ -84,11 +84,25 @@ Key Terms: ${args.terms}`;
     }),
 
     generate_split_sheet: wrapTool('generate_split_sheet', async (args: {
-        trackTitle: string;
-        contributors: Array<{ name: string; role: string; percentage: number }>;
+        trackTitle?: string;
+        trackName?: string;
+        contributors?: Array<{ name: string; role: string; percentage?: number; splitPercentage?: number }>;
+        collaborators?: Array<{ name: string; role: string; percentage?: number; splitPercentage?: number }>;
     }) => {
+        const title = args.trackTitle || args.trackName || 'Untitled Track';
+        const rawContributors = args.contributors || args.collaborators || [];
+        const normalizedContributors = rawContributors.map(c => ({
+            name: c.name,
+            role: c.role,
+            percentage: c.percentage ?? c.splitPercentage ?? 0,
+        }));
+
+        if (normalizedContributors.length === 0) {
+            return toolError('At least one contributor is required to generate a split sheet.', 'MISSING_CONTRIBUTORS');
+        }
+
         // Validation
-        const total = args.contributors.reduce((acc, c) => acc + c.percentage, 0);
+        const total = normalizedContributors.reduce((acc, c) => acc + c.percentage, 0);
         // ISSUE-829: an invalid split total must be a tool error, not a
         // toolSuccess() carrying an error string in its data — agent
         // orchestration otherwise treats this as a real generated artifact.
@@ -102,18 +116,18 @@ Key Terms: ${args.terms}`;
             );
         }
 
-        const terms = `Track Title: ${args.trackTitle}\nContributors:\n` + args.contributors.map(c => `- ${c.name} (${c.role}): ${c.percentage}%`).join('\n');
+        const terms = `Track Title: ${title}\nContributors:\n` + normalizedContributors.map(c => `- ${c.name} (${c.role}): ${c.percentage}%`).join('\n');
 
         const result = await LegalTools.draft_contract!({
             type: 'Split Sheet',
-            parties: args.contributors.map(c => c.name),
+            parties: normalizedContributors.map(c => c.name),
             terms: terms
         });
 
         return toolSuccess({
             ...result.data,
-            splitSheetMessage: `Split sheet generated for "${args.trackTitle}"`
-        }, result.message || `Split sheet generated for "${args.trackTitle}"`);
+            splitSheetMessage: `Split sheet generated for "${title}"`
+        }, `Split sheet generated for "${title}"`);
     }),
 
     trigger_digital_signature: wrapTool('trigger_digital_signature', async (args: {

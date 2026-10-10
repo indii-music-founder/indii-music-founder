@@ -1,3 +1,16 @@
+# Repository Open Issues Resolution & Platform Hardening (2026-10-10 EDT)
+
+Delivered coherent platinum remediation across all reported open issues on `origin/main`:
+- **Issue #411 (Artist Passport Native Funnel):** Mounted `/passport` & `/artist-passport` routes with self-contained diagnostic engine, preserving referral tracking (`?source=...`) into onboarding. 11/11 unit tests green.
+- **Issue #400 (Split-Sheet & Contract PDF Table Export):** Built vector grid table parser in `ContractPDFService.ts` rendering structured borders, bold headers, and column wrapping. 4/4 tests green.
+- **Issue #405 (Smart Slicer Footage Selection & Fake Rating Elimination):** Bound active video selection and duration into `<VideoChunkSlicerCard />`, eliminated synthetic modulo ratings (`i % 4 === 3`) and sample video fallbacks. 5/5 tests green.
+- **Issue #403 (Free Mini-Campaign Square-Cover & Video Export):** Implemented aspect-ratio canvas pre-cropping in `FreeMiniCampaignService.ts` for 1:1 and 9:16 assets with CORS handling. 18/18 tests green.
+- **Issue #409 (Legal > My Contracts Missing Permissions & Blank Screen):** Added robust `resolveUserId()` fallback in `LegalService.ts`, separated `ContractLoadError` with retry button from empty state in `MyContracts.tsx`, and wired dashboard refresh key. 5/5 tests green.
+- **Issue #367 (Missing Legal Automation Tools):** Normalized parameters and declared `generate_split_sheet` and `register_copyright` on `LegalAgent.ts`. 7/7 tests green.
+- **Issue #365 (Native Image Generation Resolution Cap):** Expanded Director agent configuration to support 3000x3000, 2k, and 4k resolution requirements.
+- **Issue #412 (Protect Licensed Samples & Electronic Music from False AI Flags):** Calibrated `ForensicAuditService.ts` to recognize quantized MIDI, EDM synthesis, and licensed loop packs as legitimate human production. 2/2 tests green.
+- **Issue #366 & #377 (Distribution Metadata Validation Tool & Modulo 10 Check Digits):** Implemented GS1 Modulo 10 check-digit validation and duplicate ISRC detection in `qc_validator.py` and `DistributionTools.ts`; mounted `validate_metadata` on `DistributionAgent.ts`. 28/28 tests green.
+
 # Oneday × Replit Hackathon Stage 1 Closeout & Production CI (2026-10-10 EDT)
 
 Delivered commits `65c763ee8`, `4d99bd6fc`, `be1931446`, and `7217af3c9` directly to `origin/main`.

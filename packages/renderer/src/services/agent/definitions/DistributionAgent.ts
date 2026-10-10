@@ -43,6 +43,7 @@ export const DistributionAgent: AgentConfig = {
             generate_bwarm: DistributionTools.generate_bwarm,
             check_merlin_status: DistributionTools.check_merlin_status,
             check_dsp_delivery_status: DistributionTools.check_dsp_delivery_status,
+            validate_metadata: DistributionTools.validate_metadata,
             validate_metadata_readiness: DistributionTools.validate_metadata_readiness,
             create_music_metadata: MusicTools.create_music_metadata,
             verify_metadata_golden: MusicTools.verify_metadata_golden,
@@ -60,7 +61,7 @@ export const DistributionAgent: AgentConfig = {
             foundry_normalize_to_graph: FormatFoundryTools.foundry_normalize_to_graph
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'web_extract', 'pro_scraper', 'payment_gate', 'credential_vault', 'draft_dsp_metadata', 'catalog_query_gaps', 'catalog_stage_registration_payload', 'catalog_dispatch_split_invitations', 'foundry_inspect_format', 'foundry_parse_and_validate', 'foundry_normalize_to_graph'],
+    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'web_extract', 'pro_scraper', 'payment_gate', 'credential_vault', 'draft_dsp_metadata', 'catalog_query_gaps', 'catalog_stage_registration_payload', 'catalog_dispatch_split_invitations', 'foundry_inspect_format', 'foundry_parse_and_validate', 'foundry_normalize_to_graph'],
     tools: [{
         functionDeclarations: [
             ...distributionRetrievalDeclarations,
@@ -266,6 +267,34 @@ export const DistributionAgent: AgentConfig = {
                         dspName: { type: "STRING", description: "Optional name of a specific DSP to check (e.g., Spotify, Apple Music)" }
                     },
                     required: ["releaseId"]
+                }
+            },
+            {
+                name: "validate_metadata",
+                description: "Validate music release metadata for DSP compliance, including ISRC/UPC validation, GTIN check-digits, and formatting style guides.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING", description: "Optional release document ID to validate from Firestore" },
+                        title: { type: "STRING", description: "Release title" },
+                        artist: { type: "STRING", description: "Primary artist name" },
+                        upc: { type: "STRING", description: "UPC / EAN barcode (12-13 digits) to validate" },
+                        isrc: { type: "STRING", description: "Primary track ISRC (12 alphanumeric chars)" },
+                        artworkUrl: { type: "STRING", description: "Cover artwork URL" },
+                        strict: { type: "BOOLEAN", description: "Whether to fail on missing optional fields (default: false)" },
+                        tracks: {
+                            type: "ARRAY",
+                            description: "Array of tracks to validate for ISRC formatting and uniqueness",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    title: { type: "STRING" },
+                                    isrc: { type: "STRING" },
+                                    track_number: { type: "NUMBER" }
+                                }
+                            }
+                        }
+                    }
                 }
             },
             {

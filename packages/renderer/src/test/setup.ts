@@ -463,6 +463,8 @@ vi.mock('@/core/store', () => {
             mockState.selectedNoteId = id;
         }),
         loadNotesFromCloud: vi.fn().mockResolvedValue(undefined),
+        setRegistrationFocus: vi.fn((focus: any) => { mockState.registrationFocus = focus; }),
+        setRegistrationIntelligenceMessage: vi.fn((msg: string) => { mockState.registrationIntelligenceMessage = msg; }),
     };
 
     const useStoreMock = Object.assign(

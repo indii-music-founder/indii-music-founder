@@ -64,6 +64,8 @@ export const LegalAgent: AgentConfig = {
             web_extract: UniversalTools.web_extract,
             document_query: UniversalTools.document_query,
             draft_split_sheet: LegalTools.generate_split_sheet,
+            generate_split_sheet: LegalTools.generate_split_sheet,
+            register_copyright: LegalTools.register_copyright,
             summarize_contract_terms: LegalTools.summarize_contract_terms,
             register_split_sheet: McpTools.register_split_sheet,
             draft_cwr_registration: McpTools.draft_cwr_registration,
@@ -76,6 +78,8 @@ export const LegalAgent: AgentConfig = {
         'web_extract',
         'document_query',
         'draft_split_sheet',
+        'generate_split_sheet',
+        'register_copyright',
         'summarize_contract_terms',
         'register_split_sheet',
         'draft_cwr_registration',
@@ -196,6 +200,40 @@ export const LegalAgent: AgentConfig = {
                         }
                     },
                     required: ["trackName", "collaborators"]
+                }
+            },
+            {
+                name: "generate_split_sheet",
+                description: "Generates a legally enforceable split sheet contract for co-writers and producers, verifying that split percentages total 100%, and saves it to My Contracts.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        trackTitle: { type: "STRING", description: "Title of the musical work or song" },
+                        contributors: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    name: { type: "STRING", description: "Full legal name or artist name of contributor" },
+                                    role: { type: "STRING", description: "Role of contributor (e.g. Songwriter, Producer)" },
+                                    percentage: { type: "NUMBER", description: "Percentage share (0-100)" }
+                                },
+                                required: ["name", "role", "percentage"]
+                            }
+                        }
+                    },
+                    required: ["trackTitle", "contributors"]
+                }
+            },
+            {
+                name: "register_copyright",
+                description: "Initiates copyright registration for a musical work with the U.S. Copyright Office (Library of Congress eCO system), pre-filling work title, authorship, and publication status.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        trackId: { type: "STRING", description: "Optional track ID to register" },
+                        trackTitle: { type: "STRING", description: "Title of the song or musical composition" }
+                    }
                 }
             },
             {

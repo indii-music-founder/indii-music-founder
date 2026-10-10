@@ -60,7 +60,7 @@ export const DirectorAgent: AgentConfig = {
                         count: { type: "NUMBER", description: "Number of images (default 1)." },
                         negativePrompt: { type: "STRING", description: "What to avoid." },
                         aspectRatio: { type: "STRING", description: "Aspect ratio (e.g., '16:9', '1:1', '9:16')." },
-                        resolution: { type: "STRING", description: "Resolution (e.g., '1024x1024')." }
+                        resolution: { type: "STRING", description: "Resolution (e.g., '1024x1024', '3000x3000', '2k', '4k')." }
                     },
                     required: ["prompt"]
                 }
