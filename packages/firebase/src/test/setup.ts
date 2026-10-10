@@ -206,12 +206,15 @@ vi.mock('inngest/express', () => ({
 }));
 
 // inngest (main module) is imported for the Inngest client constructor
-vi.mock('inngest', () => ({
-    Inngest: vi.fn(() => ({
-        send: vi.fn().mockResolvedValue({}),
-        createFunction: vi.fn(),
-    })),
-}));
+vi.mock('inngest', () => {
+    class MockInngest {
+        send = vi.fn().mockResolvedValue({});
+        createFunction = vi.fn((_opt: unknown, _trigger: unknown, fn?: unknown) => fn ?? vi.fn());
+    }
+    return {
+        Inngest: MockInngest,
+    };
+});
 
 // cors is imported at the top of index.ts
 vi.mock('cors', () => ({

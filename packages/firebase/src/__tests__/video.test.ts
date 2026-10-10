@@ -101,8 +101,13 @@ vi.mock('google-auth-library', () => ({
 // Mock inngest
 vi.mock('inngest', () => ({
     Inngest: class {
+        send = mocks.inngest.send;
+        createFunction = vi.fn((_opt: unknown, _trigger: unknown, fn?: unknown) => fn ?? vi.fn());
         constructor() {
-            return { send: mocks.inngest.send };
+            return {
+                send: mocks.inngest.send,
+                createFunction: vi.fn((_opt: unknown, _trigger: unknown, fn?: unknown) => fn ?? vi.fn()),
+            };
         }
     }
 }));
