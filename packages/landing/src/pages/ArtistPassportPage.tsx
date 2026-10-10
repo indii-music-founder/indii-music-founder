@@ -171,9 +171,9 @@ export default function ArtistPassportPage() {
               </div>
 
               <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-                How ready is your <br />
+                How ready is your music <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/90 to-white/60">
-                  music business?
+                  for business?
                 </span>
               </h1>
 
