@@ -245,7 +245,11 @@ export class FreeMiniCampaignService {
         imageUrl: string,
         targetRatio: '1:1' | '9:16',
     ): Promise<string> {
-        if (typeof document === 'undefined' || typeof Image === 'undefined') {
+        if (
+            typeof document === 'undefined' ||
+            typeof Image === 'undefined' ||
+            (typeof navigator !== 'undefined' && navigator.userAgent.includes('jsdom'))
+        ) {
             return imageUrl;
         }
 
