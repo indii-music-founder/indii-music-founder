@@ -276,7 +276,7 @@ export default function ArtistPassportPage() {
                   <div className="text-xs font-semibold text-white mt-1">Full System Blueprint</div>
                 </div>
                 <div className="p-3 rounded-lg bg-[#070709] border border-[#1F222A]">
-                  <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Zero Slop</div>
+                  <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Entry Point</div>
                   <div className="text-xs font-semibold text-white mt-1">100% Human Music</div>
                 </div>
               </div>
