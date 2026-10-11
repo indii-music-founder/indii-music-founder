@@ -422,6 +422,7 @@ export class ContractPDFService {
         }
 
         currentY += headerMeasurement.rowHeight;
+        setY(currentY);
 
         // 2. Render Data Rows
         dataRows.forEach((row, rIdx) => {
@@ -455,6 +456,7 @@ export class ContractPDFService {
             }
 
             currentY += rowMeasurement.rowHeight;
+            setY(currentY);
         });
 
         // Bottom border line for entire table

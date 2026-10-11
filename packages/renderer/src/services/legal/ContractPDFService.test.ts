@@ -2,6 +2,30 @@ import { describe, it, expect } from 'vitest';
 import { ContractPDFService } from './ContractPDFService';
 
 describe('ContractPDFService', () => {
+    it('places ownership headers and each collaborator on distinct non-overlapping rows in the actual PDF', () => {
+        const encoded = ContractPDFService.toBase64({
+            title: 'Unsigned layout regression',
+            content: [
+                '| Name | Share |',
+                '| --- | --- |',
+                '| Writer One | 50% |',
+                '| Writer Two | 50% |',
+            ].join('\n'),
+        });
+        const pdf = atob(encoded);
+        const blocks: string[] = Array.from(pdf.matchAll(/BT[\s\S]*?ET/g), (match) => match[0]);
+        const baseline = (label: string) => {
+            const block = blocks.find((candidate) => candidate.includes(`(${label}) Tj`));
+            expect(block).toBeDefined();
+            const coordinates = block!.match(/([\d.-]+) ([\d.-]+) Td/);
+            expect(coordinates).not.toBeNull();
+            return Number(coordinates![2]);
+        };
+        // PDF coordinates increase upward. A full row needs about 20 points here.
+        expect(baseline('Name') - baseline('Writer One')).toBeGreaterThan(18);
+        expect(baseline('Writer One') - baseline('Writer Two')).toBeGreaterThan(18);
+    });
+
     it('generates a valid PDF base64 string from markdown content without throwing', () => {
         const markdown = [
             '# MUSICAL WORK SPLIT SHEET AGREEMENT',
