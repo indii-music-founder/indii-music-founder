@@ -145,6 +145,28 @@ export interface ElectronComputerAPI {
 
 export interface ComputerActionAuthorization { token: string; rendererSessionId: string; agentId: string }
 
+export interface ElectronVideoProbeResult {
+    streams: Array<{
+        codec_type?: 'video' | 'audio' | string;
+        codec_name?: string;
+        width?: number;
+        height?: number;
+        pix_fmt?: string;
+        color_space?: string;
+        avg_frame_rate?: string;
+        r_frame_rate?: string;
+        sample_rate?: string | number;
+        channels?: number;
+        channel_layout?: string;
+        duration?: string | number;
+    }>;
+    frames?: Array<{
+        key_frame?: number;
+        pkt_pts?: string | number;
+        pkt_pts_time?: string | number;
+    }>;
+}
+
 export interface ElectronVideoAPI {
     saveAsset: (url: string, filename: string) => Promise<unknown>;
     openFolder: (filePath?: string) => Promise<unknown>;
@@ -153,6 +175,8 @@ export interface ElectronVideoAPI {
     compilePreview: (project: IndiiVideoProject) => Promise<string>;
     /** Reads a locally rendered artifact as a data URL for cloud upload (relay path). */
     readArtifact?: (filePath: string) => Promise<string>;
+    /** Native pre-flight media probe inspecting streams, CFR/VFR, audio rate, and keyframe PTS. */
+    probeMedia?: (filePath: string) => Promise<ElectronVideoProbeResult>;
 }
 
 export interface ElectronDawAPI {
@@ -351,6 +375,7 @@ export interface ElectronAPI {
     searchApprovedAssets: (dirPath: string, options?: { query?: string; extensions?: string[]; maxResults?: number }) => Promise<ApprovedAssetMetadata[]>;
     getGpuInfo: () => Promise<unknown>;
     showNotification: (title: string, body: string) => void;
+    probeMedia?: (filePath: string) => Promise<ElectronVideoProbeResult>;
 
     // Namespaced APIs
     fs?: ElectronFsAPI;
