@@ -13,3 +13,4 @@ export * from './omniFlashValidator.js';
 export * from './nleTimelineMath.js';
 export * from './nleFFmpegCompiler.js';
 export * from './nleMediaProbe.js';
+export * from './nleProjectBridge.js';
