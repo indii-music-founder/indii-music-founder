@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Layers, Share2, Activity, DollarSign, CheckCircle2, Disc, FileCode, Zap, Monitor, Sliders, Maximize2, X, Film } from 'lucide-react';
+import { Sparkles, Layers, Share2, Activity, DollarSign, CheckCircle2, Disc, FileCode, Zap, Monitor, Sliders, Maximize2, X, Film, ArrowRight } from 'lucide-react';
 
 interface TabItem {
   id: string;
@@ -94,6 +94,18 @@ export default function AppStudioShowcase() {
   const [viewMode, setViewMode] = useState<'screen' | 'workflow' | 'video'>('workflow');
   const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
 
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const isFromPassport = searchParams?.get('from') === 'passport';
+  const source = searchParams?.get('source') || (isFromPassport ? 'passport_skeptical' : 'landing_organic');
+
+  const studioBase =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:4242'
+      : (import.meta.env.VITE_STUDIO_URL || 'https://app.indii.music');
+
+  const freeMiniCampaignUrl = `${studioBase}?mode=free_demo&module=creative&source=${encodeURIComponent(source)}`;
+
   return (
     <section id="studio-preview" data-system-section="studio" className="relative z-20 w-full border-t border-white/10 bg-black py-24 md:py-36">
       {/* Dynamic Department Glow Effects */}
@@ -113,6 +125,13 @@ export default function AppStudioShowcase() {
       <div className="relative mx-auto max-w-[1500px] px-5 md:px-10">
         {/* Section Header */}
         <div className="mx-auto max-w-3xl text-center">
+          {isFromPassport && (
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#FFB800]/50 bg-[#FFB800]/15 px-4 py-1.5 font-mono text-xs text-[#FFB800]">
+              <Sparkles size={13} />
+              <span>Arrived from Artist Passport • Here is your Freebie Test Drive</span>
+            </div>
+          )}
+
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-white/[0.03] px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
             <Zap size={13} />
             Inside the Workspace
@@ -125,16 +144,34 @@ export default function AppStudioShowcase() {
             Bring one finished song and one image—or create a visual inside indii.music. Follow one guided workflow and leave with a mini campaign pack of short
             clips and images.
           </p>
-          <div className="mt-7 flex flex-wrap justify-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/55">
-            {['Verified email required', 'No watermark', 'Keep your exports', 'Choose to save or delete uploads'].map((fact) => (
-              <span key={fact} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">{fact}</span>
+
+          {/* Direct Freebie Test Drive Action */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href={freeMiniCampaignUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-7 py-3.5 text-xs font-black text-black shadow-[0_0_25px_rgba(255,184,0,0.45),0_0_35px_rgba(229,57,53,0.25)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(255,184,0,0.7),0_0_50px_rgba(229,57,53,0.45)]"
+            >
+              <span>Put 1 Track Through The Engine (Free Test Drive)</span>
+              <ArrowRight size={14} />
+            </a>
+            <a
+              href="#waitlist"
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3.5 text-xs font-bold text-white hover:border-white/30 hover:bg-white/[0.08] transition-all"
+            >
+              <span>Join Beta Waitlist</span>
+            </a>
+          </div>
+
+          <div className="mt-5 flex flex-wrap justify-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/55">
+            {['0 Credit Card', 'Zero Watermark', '1 Audio Track + 1 Visual', 'Unwatermarked 9:16 Video', 'Choose to Save or Permanently Delete'].map((fact) => (
+              <span key={fact} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">{fact}</span>
             ))}
           </div>
-          <a href="#waitlist" className="mt-7 inline-flex rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-7 py-3.5 text-xs font-black text-black shadow-[0_0_25px_rgba(255,184,0,0.45),0_0_35px_rgba(229,57,53,0.25)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(255,184,0,0.7),0_0_50px_rgba(229,57,53,0.45)]">
-            See how indii.music works
-          </a>
+
           <p className="mt-5 text-xs text-white/45">
-            The workspace below is an illustrative walkthrough. Real product capture will replace these preview panels during the beta.
+            The workspace below is an interactive walkthrough. Explore each department and inspect verified production captures.
           </p>
         </div>
 

@@ -136,6 +136,21 @@ export default function Home({ founder = true }: { founder?: boolean }) {
     }
   }, [founder, user]);
 
+  // Smooth scroll to target hash on navigation (e.g. #studio-preview)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash;
+    if (!hash) return;
+    const targetId = hash.replace('#', '');
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (!isCompletingFoundingArtistLink()) return;
     const storedEmail = getStoredFoundingArtistEmail();

@@ -326,14 +326,12 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     const ctaLink = screen.getByText(/Claim Your Artist Passport & Enter Studio/i).closest('a');
     expect(ctaLink?.getAttribute('href')).toContain('source=founder_dm');
 
-    const waitlistLink = screen.getByText(/Join Founding Artist Waitlist/i).closest('a');
-    expect(waitlistLink?.getAttribute('href')).toContain('source=founder_dm');
-
-    // Check downstream Free Mini-Campaign engine test drive hook
-    expect(screen.getByText(/Not ready to sign up\? Put your music through the engine right now/i)).toBeDefined();
-    const testDriveLink = screen.getByText(/Put 1 Track Through The Engine Free/i).closest('a');
-    expect(testDriveLink?.getAttribute('href')).toContain('mode=free_demo&module=creative');
-    expect(testDriveLink?.getAttribute('href')).toContain('source=founder_dm');
+    // Check 'Still Not Convinced?' landing page bridge
+    expect(screen.getByText(/Still Not Convinced\? See Full Platform & Free Tools/i)).toBeDefined();
+    const stillNotConvincedLink = screen.getByText(/Still Not Convinced\? See Full Platform & Free Tools/i).closest('a');
+    expect(stillNotConvincedLink?.getAttribute('href')).toContain('from=passport');
+    expect(stillNotConvincedLink?.getAttribute('href')).toContain('source=founder_dm');
+    expect(stillNotConvincedLink?.getAttribute('href')).toContain('#studio-preview');
   });
 
   it('renders Step 0 hero with direct test drive hook preserving attribution', () => {
