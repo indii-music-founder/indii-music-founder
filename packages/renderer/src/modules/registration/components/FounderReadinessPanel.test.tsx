@@ -25,4 +25,19 @@ describe('FounderReadinessPanel (ISSUE-1121)', () => {
     fireEvent.click(saveButton);
     expect(screen.getByText(/Saved!/i)).toBeInTheDocument();
   });
+
+  it('opens RightsCopilotModal when Copilot Assistant button is clicked', () => {
+    render(<FounderReadinessPanel userId="test-user-3" />);
+
+    // Click the first Copilot Assistant button
+    const copilotButtons = screen.getAllByRole('button', { name: /Copilot Assistant/i });
+    expect(copilotButtons.length).toBeGreaterThan(0);
+
+    fireEvent.click(copilotButtons[0]);
+
+    // Modal opens
+    expect(screen.getByText(/Copilot Navigation Plan/i)).toBeInTheDocument();
+    expect(screen.getByText(/indii Privacy Guarantee/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Export Filing Dossier/i })).toBeInTheDocument();
+  });
 });

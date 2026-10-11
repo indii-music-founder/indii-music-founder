@@ -7,9 +7,18 @@
  */
 
 import React, { useState } from 'react';
-import { ExternalLink, ShieldAlert, CheckCircle2, Circle, Building2, Save } from 'lucide-react';
+import { ExternalLink, ShieldAlert, CheckCircle2, Circle, Building2, Save, Sparkles } from 'lucide-react';
 import type { FounderPrerequisite, FounderPrerequisiteId } from '../types';
+import type { PortalTarget } from '@indii/shared';
+import { RightsCopilotModal } from './RightsCopilotModal';
 import { logger } from '@/utils/logger';
+
+const COPILOT_PORTAL_MAP: Partial<Record<FounderPrerequisiteId, PortalTarget>> = {
+  usco_org: 'loc_copyright',
+  mlc_membership: 'the_mlc',
+  pro_affiliation: 'bmi',
+  soundexchange: 'soundexchange',
+};
 
 const PREREQUISITES: FounderPrerequisite[] = [
   {
@@ -106,6 +115,7 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
     return {};
   });
   const [saved, setSaved] = useState(false);
+  const [activeCopilotPortal, setActiveCopilotPortal] = useState<PortalTarget | null>(null);
 
   const handleToggleVerified = (id: FounderPrerequisiteId) => {
     setData((prev) => {
@@ -217,15 +227,28 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
                   <div className="text-[11px] font-mono text-amber-400/80 pl-6">Fee: {item.feeDescription}</div>
                 </div>
 
-                <a
-                  href={item.officialUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-amber-400 font-mono transition-colors shrink-0 self-start md:self-auto"
-                >
-                  Apply at {item.organization}
-                  <ExternalLink size={12} />
-                </a>
+                <div className="flex flex-wrap items-center gap-2 shrink-0 self-start md:self-auto">
+                  {COPILOT_PORTAL_MAP[item.id] && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveCopilotPortal(COPILOT_PORTAL_MAP[item.id]!)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ffb800]/10 hover:bg-[#ffb800]/20 text-[#ffb800] border border-[#ffb800]/30 text-xs font-semibold transition-all shadow-sm"
+                      title={`Launch guided Copilot assistant for ${item.organization}`}
+                    >
+                      <Sparkles size={12} />
+                      <span>Copilot Assistant</span>
+                    </button>
+                  )}
+                  <a
+                    href={item.officialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-amber-400 font-mono transition-colors"
+                  >
+                    Apply at {item.organization}
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
               </div>
 
               {/* Identifier Input */}
@@ -243,6 +266,16 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
           );
         })}
       </div>
+
+      {activeCopilotPortal && (
+        <RightsCopilotModal
+          isOpen={true}
+          onClose={() => setActiveCopilotPortal(null)}
+          portalTarget={activeCopilotPortal}
+          artistLegalName="Independent Artist"
+          workTitle="Catalog Setup"
+        />
+      )}
     </div>
   );
 }
