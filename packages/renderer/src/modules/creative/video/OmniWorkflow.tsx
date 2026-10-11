@@ -288,7 +288,8 @@ export default function OmniWorkflow() {
     // ISSUE-1440: controller secondaries collapsed behind disclosures — the visible
     // spine is mode + resolution + prompt + Generate.
     const [openControllerSection, setOpenControllerSection] = useState<'camera' | 'references' | 'motion' | null>(null);
-    const [refVideoFile, setRefVideoFile] = useState<File | null>(null);
+    const [sourceVideoLabel, setSourceVideoLabel] = useState<string | null>(null);
+    const [failedSourcePreviewUrl, setFailedSourcePreviewUrl] = useState<string | null>(null);
     const [referenceVideoUri, setReferenceVideoUri] = useState<string | null>(null);
     const [referenceMedia, setReferenceMedia] = useState<ReferenceMedia[]>([]);
     const [referenceVideos, setReferenceVideos] = useState<ReferenceMedia[]>([]);
@@ -315,8 +316,8 @@ export default function OmniWorkflow() {
         const handoff = pendingStageHandoff?.omni;
         if (handoff) {
             if (handoff.role === 'source-video' && handoff.item.type === 'video') {
-                // Set both preview URL and gs:// URI for backend
-                setRefVideoFile(null);
+                // Set both preview URL and gs:// URI for backend.
+                setSourceVideoLabel(handoff.item.prompt || 'Selected source video');
                 setReferenceMedia([]);
                 setReferenceVideoUri(handoff.item.storageUri || resolveStorageUri(handoff.item.url) || '');
                 setSourceJobId(handoff.item.id);
@@ -339,7 +340,7 @@ export default function OmniWorkflow() {
                             : [...next, entry].slice(-8);
                     });
                     if (handoff.role === 'first-frame') {
-                        setRefVideoFile(null);
+                        setSourceVideoLabel(null);
                         setReferenceVideoUri(null);
                         setPreviousInteractionId(null);
                         setPreviousJobId(null);
@@ -367,7 +368,7 @@ export default function OmniWorkflow() {
             try {
                 const userId = auth.currentUser?.uid;
                 if (!userId) throw new Error('User must be authenticated to upload reference video.');
-                setRefVideoFile(file);
+                setSourceVideoLabel(file.name);
                 setReferenceMedia([]);
                 const previewUrl = URL.createObjectURL(file);
                 const uploadedUri = await CreativeStorageService.uploadReferenceMedia(userId, file, 'video');
@@ -379,7 +380,7 @@ export default function OmniWorkflow() {
                 setStudioControls({ omniReferenceVideo: previewUrl });
                 toast.success(`Loaded reference performance: ${file.name}`);
             } catch (error) {
-                setRefVideoFile(null);
+                setSourceVideoLabel(null);
                 setReferenceVideoUri(null);
                 toast.error(`Reference upload failed: ${callableErrorMessage(error)}`);
             }
@@ -449,7 +450,7 @@ export default function OmniWorkflow() {
         try {
             if (item?.type === 'video') {
                 const uri = await ensureOmniReferenceUri(item, 'video');
-                setRefVideoFile(null);
+                setSourceVideoLabel(payload.asset.name || item.prompt || 'Selected source video');
                 setReferenceMedia([]);
                 setReferenceVideoUri(uri);
                 setSourceJobId(item.id);
@@ -469,7 +470,7 @@ export default function OmniWorkflow() {
                 });
                 if (referenceMedia.length === 0) {
                     setReferenceVideoUri(null);
-                    setRefVideoFile(null);
+                    setSourceVideoLabel(null);
                     setPreviousInteractionId(null);
                     setPreviousJobId(null);
                     setStudioControls({ omniReferenceVideo: null });
@@ -829,7 +830,7 @@ export default function OmniWorkflow() {
                                 if (studioControls.omniReferenceVideo?.startsWith('blob:')) {
                                     URL.revokeObjectURL(studioControls.omniReferenceVideo);
                                 }
-                                setRefVideoFile(null);
+                                setSourceVideoLabel(null);
                                 setReferenceVideoUri(null);
                                 setSourceJobId(null);
                                 setPreviousInteractionId(null);
@@ -940,10 +941,27 @@ export default function OmniWorkflow() {
                         </div>
                     ) : studioControls.omniReferenceVideo ? (
                         <div className="absolute inset-0 flex flex-col justify-between p-4 z-10">
-                            {/* Overlay Badge */}
-                            <div className="flex items-center gap-2 self-start px-2.5 py-1.5 bg-black/60 rounded-lg border border-white/10 backdrop-blur-md">
+                            <video
+                                key={studioControls.omniReferenceVideo}
+                                src={studioControls.omniReferenceVideo}
+                                aria-label="Omni source video preview"
+                                className="absolute inset-0 w-full h-full object-contain bg-black"
+                                controls
+                                muted
+                                playsInline
+                                preload="metadata"
+                                onError={() => setFailedSourcePreviewUrl(studioControls.omniReferenceVideo)}
+                                onLoadedMetadata={() => setFailedSourcePreviewUrl(null)}
+                            />
+                            {failedSourcePreviewUrl === studioControls.omniReferenceVideo && (
+                                <div role="alert" className="absolute inset-x-4 top-14 z-20 rounded-lg bg-black/90 border border-red-500/30 p-3 text-sm text-red-200">
+                                    Source video preview could not load. Reset the source and select it again.
+                                </div>
+                            )}
+                            {/* Identity badges do not intercept video playback controls. */}
+                            <div className="relative z-20 pointer-events-none flex items-center gap-2 self-start px-2.5 py-1.5 bg-black/60 rounded-lg border border-white/10 backdrop-blur-md">
                                 <Film size={12} className="text-green-400 animate-pulse" />
-                                <span className="text-[10px] font-bold uppercase font-mono tracking-wider">Base Performance Active</span>
+                                <span className="text-[10px] font-bold uppercase font-mono tracking-wider">Source Video</span>
                             </div>
 
                             {/* Dynamic Kinetic Lyric Typography Preview Layer (on base reference) */}
@@ -961,7 +979,7 @@ export default function OmniWorkflow() {
                                 </div>
                             )}
                             
-                            {/* Interactive Character X-ray skeletal mesh overlay */}
+                            {/* User-selected pose guide; this is not a detected source pose. */}
                             {studioControls.characterXRay && (
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                     {/* Skeletal Pose Presets Wireframe Canvas */}
@@ -1004,18 +1022,15 @@ export default function OmniWorkflow() {
                                         transition={{ duration: 3, repeat: Infinity }}
                                         className="text-[10px] font-mono text-emerald-400 uppercase font-bold px-3 py-1.5 bg-black/85 rounded-lg border border-emerald-500/30 flex items-center gap-1.5 shadow-xl shadow-emerald-950/20 z-10 self-center"
                                     >
-                                        <Eye size={12} className="animate-pulse text-emerald-400" /> Pose locked: {studioControls.activePosePreset.replace('_', ' ')}
+                                        <Eye size={12} className="animate-pulse text-emerald-400" /> Pose guide: {studioControls.activePosePreset.replace('_', ' ')}
                                     </motion.div>
                                 </div>
                             )}
 
-                            <div className="w-full h-full flex items-center justify-center opacity-80 pointer-events-none select-none">
-                                <Video size={64} className="text-white/10 animate-pulse" />
-                            </div>
-
-                            <div className="flex items-center justify-between mt-auto z-10">
-                                <span className="text-[10px] font-mono text-gray-500 bg-black/40 px-2 py-1 rounded border border-white/5 truncate max-w-[200px]">{refVideoFile?.name || "base_performance.mp4"}</span>
-                                <span className="text-[9px] font-mono text-green-400 font-bold uppercase tracking-widest">OMNI EDIT SOURCE</span>
+                            <div className="absolute top-4 right-4 z-20 pointer-events-none max-w-[50%]">
+                                <span className="block text-[10px] font-mono text-gray-200 bg-black/70 px-2 py-1 rounded border border-white/10 truncate" title={sourceVideoLabel || 'Selected source video'}>
+                                    {sourceVideoLabel || 'Selected source video'}
+                                </span>
                             </div>
                         </div>
                     ) : (
