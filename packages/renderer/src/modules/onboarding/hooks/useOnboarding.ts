@@ -19,6 +19,7 @@ import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/services/fou
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 import { validateOptions, isSemanticallySimilar, OPENING_GREETINGS } from '../onboardingUtils';
+import { hydrateProfileWithAssessment } from '@/services/onboarding/passportHydrationService';
 import { secureRandomPick } from '@/utils/crypto-random';
 import { logger } from '@/utils/logger';
 
@@ -116,11 +117,29 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
     const shouldTrackAnalytics = options.trackAnalytics ?? true;
     const greetingsToUse = options.greetings ?? OPENING_GREETINGS;
 
+    // Hydrate profile from Artist Passport assessment if arriving from acquisition funnel
+    useEffect(() => {
+        let mounted = true;
+        if (!userProfile?.careerStage || !userProfile?.brandKit?.releaseDetails?.genre) {
+            void hydrateProfileWithAssessment(userProfile).then((hydrated) => {
+                if (mounted && hydrated !== userProfile) {
+                    setUserProfile(hydrated);
+                }
+            });
+        }
+        return () => {
+            mounted = false;
+        };
+    }, [userProfile, setUserProfile]);
+
     // Initial greeting — intentionally only fires once on mount
     useEffect(() => {
         if (history.length === 0) {
-            const randomGreeting = secureRandomPick(greetingsToUse);
-            setHistory([{ role: 'model', parts: [{ text: randomGreeting ?? '' }] }]);
+            const passportGreeting = userProfile?.careerStage
+                ? `Hey — I'm indii. I've loaded your Artist Passport diagnostic (${userProfile.brandKit?.releaseDetails?.genre || 'Artist'} • ${userProfile.careerStage}). Since your business foundations are clear, let's jump straight into your visual DNA and rollout strategy.`
+                : null;
+            const chosenGreeting = passportGreeting || secureRandomPick(greetingsToUse);
+            setHistory([{ role: 'model', parts: [{ text: chosenGreeting ?? '' }] }]);
             if (shouldTrackAnalytics) {
                 onboardingAnalytics.start();
             }

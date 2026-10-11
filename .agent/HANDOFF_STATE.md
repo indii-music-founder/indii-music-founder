@@ -1,3 +1,22 @@
+# Artist Passport Native Funnel Persistence, Auth Handoff & Studio Profile Hydration (2026-10-10 EDT)
+
+Delivered native Artist Passport intake pipeline (Phases 3, 4, 5 of `ARTIST_PASSPORT_NATIVE_BLUEPRINT.md`) on `main`:
+- **Shared Schema & Contract:** Defined `ProspectAssessment` interface in `packages/shared/src/types/passport.ts` and exported via `packages/shared/src/index.ts`.
+- **Firestore Security Invariants (`/prospect_assessments/{assessmentId}`):** Authored strict CEL security rules via `firestore-rules-author` subagent in `packages/firebase/firestore.rules`:
+  - `create`: Unauthenticated visitors can create assessments with verified required fields, types, and max 2 goals; cannot create pre-claimed records.
+  - `list` / `delete`: Hard-blocked (`allow list: if false;`, `allow delete: if false;`) to eliminate enumeration, scanning, or tampering.
+  - `get`: Single-document lookup allowed if unclaimed (`claimedByUid == null`) or owner (`resource.data.claimedByUid == request.auth.uid`).
+  - `update`: Strictly split into Case A (unclaimed contact update: `artistName`, `email`, consent flags) and Case B (single-time claiming by authenticated owner setting `claimedByUid == request.auth.uid`).
+  - 16 new security test cases in `firestore.rules.test.ts` passing; 331/331 emulator security rules tests green.
+- **Landing Persistence & Auth Handoff:**
+  - `passportService.ts`: Real-time Firestore assessment creation on reaching Step 6 diagnostic, contact enrichment on email capture, single-user claiming, and local session-storage caching fallback.
+  - `ArtistPassportPage.tsx`: Integrated `saveProspectAssessment`, passes `assessmentId` query param across signup links (`/signup?assessmentId=...`), waitlist anchors, and studio preview modals.
+  - `auth.ts` & `SignupForm.tsx`: Forward `assessmentId` on email signup, record `assessmentId` on `users/{uid}`, claim assessment document in Firestore, and forward `assessmentId` in `getStudioUrl()` redirect.
+- **Studio Profile Hydration:**
+  - `passportHydrationService.ts`: Idempotent mapping of assessment data (`careerStage`, `genre`, `distributor`, `proAffiliation`, `goals`) to `UserProfile`. Preserves existing profile answers and avoids duplicate fetches.
+  - `useOnboarding.ts`: Pre-populates `UserProfile` on mount, skipping redundant stage and genre questions and personalizing greeting.
+  - 3/3 hydration unit tests passing; 74/74 landing tests green; 0 lint errors; monorepo typecheck clean.
+
 # Landing Page Screenshot Carousel, Ambient Background Refresh & indii.music Branding Alignment (2026-10-10 EDT)
 
 Delivered coherent landing page enhancements and branding scrub on `main`:

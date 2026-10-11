@@ -26,6 +26,11 @@ import {
   INITIAL_ANSWERS,
   evaluatePassport,
 } from '../lib/passportEvaluator';
+import {
+  saveProspectAssessment,
+  updateAssessmentContact,
+  getActiveAssessmentId,
+} from '../lib/passportService';
 
 // --- Main Component ---
 export default function ArtistPassportPage() {
@@ -70,6 +75,13 @@ export default function ArtistPassportPage() {
   const [assessmentConsent, setAssessmentConsent] = useState(true);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [assessmentId, setAssessmentId] = useState<string>(() => {
+    try {
+      return getActiveAssessmentId() || '';
+    } catch {
+      return '';
+    }
+  });
 
   // Sync to session storage
   useEffect(() => {
@@ -80,6 +92,21 @@ export default function ArtistPassportPage() {
       // Storage access blocked or unavailable
     }
   }, [answers, currentStep]);
+
+  // Persist assessment to Firestore when entering Step 6 (diagnostic report)
+  useEffect(() => {
+    if (currentStep === 6 && answers.careerStage && answers.genre) {
+      void saveProspectAssessment(answers, {
+        source: acquisitionSource,
+        artistName: artistName || undefined,
+        email: email || undefined,
+        marketingConsent: marketingOptIn,
+        assessmentConsent,
+      }).then((id) => {
+        if (id) setAssessmentId(id);
+      });
+    }
+  }, [currentStep, answers, acquisitionSource, artistName, email, marketingOptIn, assessmentConsent]);
 
   const handleGoalToggle = (goalId: string) => {
     setAnswers((prev) => {
@@ -101,9 +128,11 @@ export default function ArtistPassportPage() {
     setArtistName('');
     setEmail('');
     setLeadSubmitted(false);
+    setAssessmentId('');
     try {
       sessionStorage.removeItem('indii_passport_draft');
       sessionStorage.removeItem('indii_passport_step');
+      sessionStorage.removeItem('indii_passport_id');
     } catch {
       // Ignore
     }
@@ -718,9 +747,26 @@ export default function ArtistPassportPage() {
                 {/* Optional Email Capture */}
                 {!leadSubmitted ? (
                   <form
-                    onSubmit={(e) => {
+                    onSubmit={async (e) => {
                       e.preventDefault();
                       setLeadSubmitted(true);
+                      if (assessmentId) {
+                        await updateAssessmentContact(assessmentId, {
+                          artistName: artistName || undefined,
+                          email: email || undefined,
+                          marketingConsent: marketingOptIn,
+                          assessmentConsent,
+                        });
+                      } else {
+                        const id = await saveProspectAssessment(answers, {
+                          source: acquisitionSource,
+                          artistName: artistName || undefined,
+                          email: email || undefined,
+                          marketingConsent: marketingOptIn,
+                          assessmentConsent,
+                        });
+                        if (id) setAssessmentId(id);
+                      }
                     }}
                     className="space-y-4 max-w-lg"
                   >
@@ -789,7 +835,7 @@ export default function ArtistPassportPage() {
                 {/* CTAs */}
                 <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-white/10">
                   <Link
-                    to={`/signup${referralQuery}`}
+                    to={`/signup${referralQuery}${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}`}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-black text-black bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_28px_rgba(255,184,0,0.4)]"
                   >
                     <span>Claim Your Artist Passport & Enter Studio</span>
@@ -797,7 +843,7 @@ export default function ArtistPassportPage() {
                   </Link>
 
                   <Link
-                    to={`/#waitlist${referralQuery}`}
+                    to={`/#waitlist${referralQuery}${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}`}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
                   >
                     <span>Join Founding Artist Waitlist</span>
@@ -841,7 +887,7 @@ export default function ArtistPassportPage() {
 
                 <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                   <Link
-                    to={`/${referralQuery}${referralQuery.includes('?') ? '&' : '?'}from=passport#studio-preview`}
+                    to={`/${referralQuery}${referralQuery.includes('?') ? '&' : '?'}from=passport${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}#studio-preview`}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 hover:border-[#FFB800]/50 transition-all group"
                   >
                     <span>Still Not Convinced? See Full Platform & Free Tools</span>

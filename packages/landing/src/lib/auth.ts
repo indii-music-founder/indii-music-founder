@@ -13,6 +13,8 @@ import {
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
+import { claimProspectAssessment } from './passportService';
+
 // Studio app URL for refunds after auth
 const STUDIO_URL = import.meta.env.VITE_STUDIO_URL || (import.meta.env.DEV ? 'http://localhost:4242' : 'https://app.indii.music');
 
@@ -43,6 +45,7 @@ export async function signUpWithEmail(
   password: string,
   displayName: string,
   acquisitionSource?: string,
+  assessmentId?: string,
 ) {
   const firebaseAuth = auth;
   if (!firebaseAuth) throw new Error('Firebase Auth not initialized');
@@ -55,7 +58,16 @@ export async function signUpWithEmail(
   await result.user.getIdToken(true);
 
   // Create user document in Firestore
-  await createUserDocument(result.user, displayName, acquisitionSource);
+  await createUserDocument(result.user, displayName, acquisitionSource, assessmentId);
+
+  // If assessmentId is present, claim the assessment record
+  if (assessmentId) {
+    try {
+      await claimProspectAssessment(assessmentId, result.user.uid);
+    } catch (err) {
+      console.warn('[auth] Deferred claim of prospect assessment:', err);
+    }
+  }
 
   // Send verification email
   await sendEmailVerification(result.user);
@@ -107,7 +119,12 @@ export async function resetPassword(email: string) {
 /**
  * Create user document in Firestore
  */
-async function createUserDocument(user: User, displayName?: string, acquisitionSource?: string) {
+async function createUserDocument(
+  user: User,
+  displayName?: string,
+  acquisitionSource?: string,
+  assessmentId?: string,
+) {
   if (!db) {
     throw new Error('Firestore not initialized');
   }
@@ -122,6 +139,9 @@ async function createUserDocument(user: User, displayName?: string, acquisitionS
   };
   if (acquisitionSource) {
     data.acquisitionSource = acquisitionSource;
+  }
+  if (assessmentId) {
+    data.assessmentId = assessmentId;
   }
   await setDoc(userRef, data);
 }
@@ -141,10 +161,14 @@ async function updateLastLogin(uid: string) {
  * Get redirect URL for studio app.
  * Appends ?source=... when present, or ?source=founder when the visitor is on the founder domain
  * or VITE_FOUNDER_MODE is set, so the app auth screen can show contextual copy and trigger walkthroughs.
+ * Also preserves ?assessmentId=... when the visitor completed their Artist Passport diagnostic.
  */
 export function getStudioUrl() {
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const source = searchParams?.get('source');
+  const assessmentId =
+    searchParams?.get('assessmentId') ||
+    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('indii_passport_id') : null);
   const isFounderDomain =
     typeof window !== 'undefined' &&
     (window.location.hostname.startsWith('founder') ||
@@ -157,13 +181,18 @@ export function getStudioUrl() {
       ? 'http://localhost:4242'
       : STUDIO_URL;
 
+  const params = new URLSearchParams();
   if (source) {
-    return `${baseStudioUrl}?source=${encodeURIComponent(source)}`;
+    params.set('source', source);
+  } else if (isFounderDomain) {
+    params.set('source', 'founder');
   }
-  if (isFounderDomain) {
-    return `${baseStudioUrl}?source=founder`;
+  if (assessmentId) {
+    params.set('assessmentId', assessmentId);
   }
-  return baseStudioUrl;
+
+  const query = params.toString();
+  return query ? `${baseStudioUrl}?${query}` : baseStudioUrl;
 }
 
 /**

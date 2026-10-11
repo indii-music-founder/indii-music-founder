@@ -2884,6 +2884,117 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // =========================================================================
+    // Prospect Assessments (Artist Passport Funnel)
+    // =========================================================================
+    // Temporary staging collection for pre-membership diagnostic assessments
+    // from the Artist Passport funnel (/passport).
+    // Unauthenticated visitors may create an assessment and update contact info
+    // while unclaimed. Newly authenticated users may claim an unclaimed assessment.
+    // Visitor enumeration/listing and deletions are strictly blocked.
+    match /prospect_assessments/{assessmentId} {
+      function isValidProspectAssessment(data) {
+        return data is map &&
+          data.keys().hasOnly([
+            'id',
+            'createdAt',
+            'clientSessionId',
+            'careerStage',
+            'genre',
+            'proAffiliation',
+            'mlcRegistered',
+            'distributor',
+            'releaseStatus',
+            'goals',
+            'claimedByUid',
+            'claimedAt',
+            'source',
+            'artistName',
+            'email',
+            'marketingConsent',
+            'assessmentConsent',
+            'updatedAt'
+          ]) &&
+          data.keys().hasAll([
+            'createdAt',
+            'clientSessionId',
+            'careerStage',
+            'genre',
+            'proAffiliation',
+            'mlcRegistered',
+            'distributor',
+            'releaseStatus',
+            'goals'
+          ]) &&
+          data.createdAt is timestamp &&
+          isValidString(data.clientSessionId, 1, 128) &&
+          isValidString(data.careerStage, 1, 128) &&
+          isValidString(data.genre, 1, 128) &&
+          isValidString(data.proAffiliation, 1, 128) &&
+          isValidString(data.mlcRegistered, 1, 128) &&
+          isValidString(data.distributor, 1, 128) &&
+          isValidString(data.releaseStatus, 1, 128) &&
+          data.goals is list &&
+          data.goals.size() <= 2 &&
+          (data.goals.size() == 0 || (data.goals[0] is string && data.goals[0].size() <= 128)) &&
+          (data.goals.size() <= 1 || (data.goals[1] is string && data.goals[1].size() <= 128)) &&
+          (!('id' in data) || isValidString(data.id, 1, 128)) &&
+          (!('source' in data) || (data.source is string && data.source.size() <= 128)) &&
+          (!('artistName' in data) || (data.artistName is string && data.artistName.size() <= 128)) &&
+          (!('email' in data) || (data.email is string && data.email.size() <= 320)) &&
+          (!('marketingConsent' in data) || data.marketingConsent is bool) &&
+          (!('assessmentConsent' in data) || data.assessmentConsent is bool) &&
+          (!('claimedByUid' in data) || data.claimedByUid == null || isValidString(data.claimedByUid, 1, 128)) &&
+          (!('claimedAt' in data) || data.claimedAt == null || data.claimedAt is timestamp || (data.claimedAt is int && data.claimedAt > 0)) &&
+          (!('updatedAt' in data) || data.updatedAt is timestamp || (data.updatedAt is int && data.updatedAt > 0));
+      }
+
+      function isValidContactUpdate() {
+        return resource.data.get('claimedByUid', null) == null &&
+          request.resource.data.get('claimedByUid', null) == null &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'artistName',
+            'email',
+            'marketingConsent',
+            'assessmentConsent',
+            'updatedAt'
+          ]);
+      }
+
+      function isValidAccountClaim() {
+        return isAuthenticated() &&
+          resource.data.get('claimedByUid', null) == null &&
+          request.resource.data.claimedByUid == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'claimedByUid',
+            'claimedAt',
+            'updatedAt',
+            'artistName',
+            'email',
+            'marketingConsent',
+            'assessmentConsent'
+          ]);
+      }
+
+      // Visitor enumeration and scanning blocked
+      allow list: if false;
+
+      // Single doc read allowed if unclaimed or owned by caller
+      allow get: if resource.data.get('claimedByUid', null) == null ||
+                    (isAuthenticated() && resource.data.get('claimedByUid', null) == request.auth.uid);
+
+      // Unauthenticated prospect creation allowed with strict schema and unclaimed state
+      allow create: if isValidProspectAssessment(request.resource.data) &&
+                       request.resource.data.get('claimedByUid', null) == null;
+
+      // Contact updates allowed on unclaimed docs; account claiming allowed by authenticated user
+      allow update: if isValidProspectAssessment(request.resource.data) &&
+                       (isValidContactUpdate() || isValidAccountClaim());
+
+      // Deletion is hard-blocked
+      allow delete: if false;
+    }
+
     // Canonical Founding Artist records, verified-email indexes, sequence state,
     // and lifecycle events are server-authoritative. Public clients cannot read
     // email addresses or assign their own queue position/status.

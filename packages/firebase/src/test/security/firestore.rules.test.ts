@@ -3810,6 +3810,230 @@ describe('Firestore Security Rules', () => {
             };
             await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'tax_collaborators', 'collab-2'), invalidCollab));
         });
+
+        // ──────────────────────────────────────────────────────────────────
+        // prospect_assessments/{assessmentId} (Artist Passport Funnel)
+        // ──────────────────────────────────────────────────────────────────
+        describe('prospect_assessments/{assessmentId}', () => {
+            const validAssessment = {
+                id: 'assessment-uuid-1',
+                createdAt: Timestamp.now(),
+                clientSessionId: 'session-xyz-123',
+                careerStage: 'Just starting out',
+                genre: 'Hip-Hop / Rap',
+                proAffiliation: 'ASCAP',
+                mlcRegistered: 'Yes',
+                distributor: 'DistroKid',
+                releaseStatus: 'Writing songs',
+                goals: ['Improve royalty registration', 'Grow audience'],
+            };
+
+            it('create: allows unauthenticated visitor to create valid assessment', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                await assertSucceeds(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-1'), validAssessment));
+            });
+
+            it('create: allows authenticated user to create valid assessment', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                await assertSucceeds(setDoc(doc(aliceDb, 'prospect_assessments', 'doc-2'), validAssessment));
+            });
+
+            it('create: rejects creation with pre-claimed claimedByUid', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                await assertFails(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-3'), {
+                    ...validAssessment,
+                    claimedByUid: ALICE_UID,
+                }));
+            });
+
+            it('create: rejects creation missing required fields', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const { careerStage: _, ...missingStage } = validAssessment;
+                await assertFails(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-4'), missingStage));
+            });
+
+            it('create: rejects goals list with more than 2 items', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                await assertFails(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-5'), {
+                    ...validAssessment,
+                    goals: ['Goal 1', 'Goal 2', 'Goal 3'],
+                }));
+            });
+
+            it('create: rejects unexpected unauthorized fields', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                await assertFails(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-6'), {
+                    ...validAssessment,
+                    adminBypass: true,
+                }));
+            });
+
+            it('list: hard-blocked for both unauthenticated and authenticated callers', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-list-1'), validAssessment);
+                });
+
+                await assertFails(getDocs(collection(unauthDb, 'prospect_assessments')));
+                await assertFails(getDocs(collection(aliceDb, 'prospect_assessments')));
+            });
+
+            it('get: allows unauthenticated read on unclaimed assessment by exact id', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-get-1'), validAssessment);
+                });
+
+                await assertSucceeds(getDoc(doc(unauthDb, 'prospect_assessments', 'doc-get-1')));
+            });
+
+            it('get: allows authenticated owner to read claimed assessment, denies cross-user and unauth', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-claimed-1'), {
+                        ...validAssessment,
+                        claimedByUid: ALICE_UID,
+                        claimedAt: Timestamp.now(),
+                    });
+                });
+
+                // Alice (owner) succeeds
+                await assertSucceeds(getDoc(doc(aliceDb, 'prospect_assessments', 'doc-claimed-1')));
+                // Bob (different user) fails
+                await assertFails(getDoc(doc(bobDb, 'prospect_assessments', 'doc-claimed-1')));
+                // Unauthenticated visitor fails
+                await assertFails(getDoc(doc(unauthDb, 'prospect_assessments', 'doc-claimed-1')));
+            });
+
+            it('update Case A: allows unauthenticated contact info updates on unclaimed document', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-update-1'), validAssessment);
+                });
+
+                await assertSucceeds(updateDoc(doc(unauthDb, 'prospect_assessments', 'doc-update-1'), {
+                    artistName: 'Luna Eclipse',
+                    email: 'luna@example.com',
+                    marketingConsent: true,
+                    assessmentConsent: true,
+                    updatedAt: Timestamp.now(),
+                }));
+            });
+
+            it('update Case A: rejects modifying assessment answers or core fields', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-update-2'), validAssessment);
+                });
+
+                // Cannot change careerStage or goals
+                await assertFails(updateDoc(doc(unauthDb, 'prospect_assessments', 'doc-update-2'), {
+                    careerStage: 'Industry veteran',
+                }));
+            });
+
+            it('update Case B: allows newly authenticated user to claim unclaimed assessment with their own uid', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-claim-1'), validAssessment);
+                });
+
+                await assertSucceeds(updateDoc(doc(aliceDb, 'prospect_assessments', 'doc-claim-1'), {
+                    claimedByUid: ALICE_UID,
+                    claimedAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
+                }));
+            });
+
+            it('update Case B: rejects claiming with mismatched user id', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-claim-2'), validAssessment);
+                });
+
+                // Alice cannot claim as Bob
+                await assertFails(updateDoc(doc(aliceDb, 'prospect_assessments', 'doc-claim-2'), {
+                    claimedByUid: BOB_UID,
+                }));
+            });
+
+            it('update Case B: unauthenticated caller cannot claim document', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-claim-3'), validAssessment);
+                });
+
+                await assertFails(updateDoc(doc(unauthDb, 'prospect_assessments', 'doc-claim-3'), {
+                    claimedByUid: ALICE_UID,
+                }));
+            });
+
+            it('update: rejects updates once document has already been claimed', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-already-claimed'), {
+                        ...validAssessment,
+                        claimedByUid: ALICE_UID,
+                        claimedAt: Timestamp.now(),
+                    });
+                });
+
+                // Bob cannot re-claim
+                await assertFails(updateDoc(doc(bobDb, 'prospect_assessments', 'doc-already-claimed'), {
+                    claimedByUid: BOB_UID,
+                }));
+
+                // Alice cannot modify frozen staged assessment
+                await assertFails(updateDoc(doc(aliceDb, 'prospect_assessments', 'doc-already-claimed'), {
+                    artistName: 'Changed Name',
+                }));
+            });
+
+            it('delete: hard-blocked for both unauthenticated visitors and authenticated owners', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-del-1'), validAssessment);
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-del-2'), {
+                        ...validAssessment,
+                        claimedByUid: ALICE_UID,
+                    });
+                });
+
+                await assertFails(deleteDoc(doc(unauthDb, 'prospect_assessments', 'doc-del-1')));
+                await assertFails(deleteDoc(doc(aliceDb, 'prospect_assessments', 'doc-del-2')));
+            });
+        });
     });
 });
 

@@ -43,6 +43,7 @@ export * from './types/social.js';
 export * from './types/ai.dto.js';
 export * from './types/errors.js';
 export * from './types/founderFunnel.js';
+export * from './types/passport.js';
 export * from './types/videoProject.js';
 export * from './types/videoRenderer.js';
 export * from './types/videoRoute.js';

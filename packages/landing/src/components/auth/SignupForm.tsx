@@ -22,6 +22,7 @@ export default function SignupForm() {
     // Detect referral traffic via ?source= query param
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const referralSource = searchParams?.get('source') || (typeof window !== 'undefined' && window.location.hostname.startsWith('founder') ? 'founder' : null);
+    const assessmentId = searchParams?.get('assessmentId') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('indii_passport_id') : null);
     const isFounderSource = referralSource === 'founder';
     const sourceSuffix = referralSource ? `?source=${encodeURIComponent(referralSource)}` : '';
 
@@ -61,7 +62,13 @@ export default function SignupForm() {
                     variant: 'signup',
                 });
             }
-            const user = await signUpWithEmail(email, password, displayName, referralSource || undefined);
+            const user = await signUpWithEmail(
+                email,
+                password,
+                displayName,
+                referralSource || undefined,
+                assessmentId || undefined,
+            );
             if (isFounderSource) {
                 await trackFounderFunnelEvent('founder_auth_completed', {
                     variant: 'signup',
