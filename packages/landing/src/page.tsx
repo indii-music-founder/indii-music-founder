@@ -344,8 +344,9 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       <nav className="fixed inset-x-0 top-0 z-50 border-b border-amber-400/20 bg-[#14100C]/85 shadow-[0_10px_35px_rgba(0,0,0,0.7)] backdrop-blur-2xl" aria-label="Main navigation">
         <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/30 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black shadow-[0_1px_15px_rgba(255,184,0,0.3),0_1px_25px_rgba(229,57,53,0.15)]">
           <span>Founding Artist Beta — working software, still being refined</span>
-          <a href="#waitlist" className="underline decoration-black/40 underline-offset-2 hover:decoration-black">
-            Join the waitlist
+          <span className="opacity-40">•</span>
+          <a href="/passport" className="underline font-extrabold decoration-black/40 underline-offset-2 hover:decoration-black">
+            Take 2-Min Free Business Audit
           </a>
         </div>
         <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-5 md:px-10">
@@ -354,6 +355,9 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           </a>
 
           <div className="hidden items-center gap-7 font-mono text-[9px] uppercase tracking-[0.2em] text-white/50 md:flex">
+            <a href="/passport" className="py-2 text-[#FFB800] hover:text-[#FFB800]/80 font-bold transition-colors">
+              Business Audit
+            </a>
             <a href="#capabilities" className="py-2 transition-colors hover:text-white">
               Release lifecycle
             </a>

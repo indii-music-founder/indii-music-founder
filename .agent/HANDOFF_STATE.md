@@ -7,8 +7,10 @@ Delivered conversion of premature "Test Drive 1 Track Free" studio button into a
   - Updated feature badge from `Free Mini-Campaign` to `Platform Wiki` (`Full System Blueprint`).
 - **Showcase & Workspace Banner Alignment (`packages/landing/src/components/AppStudioShowcase.tsx`):**
   - Extended `isFromPassport` matcher to cover `from=passport_hero` and updated arrival banner to `Arrived from Artist Passport • Platform Guide & Workspace Overview`.
+- **Main Landing Page Bidirectional Navigation (`packages/landing/src/page.tsx`):**
+  - Added `Take 2-Min Free Business Audit` link in the top announcement bar and `Business Audit` in the desktop navbar, ensuring visitors exploring the wiki can launch the diagnostic at any moment.
 - **Validation Evidence:**
-  - 13/13 tests green in `ArtistPassportPage.test.tsx` (all 78 landing package tests green).
+  - 13/13 tests green in `ArtistPassportPage.test.tsx`, 10/10 in `page.preservation.test.tsx` (all 78 landing package tests green).
   - Monorepo typecheck: `npm run typecheck` passed (exit code 0).
   - ESLint: 0 errors, 0 warnings across touched landing files.
 
