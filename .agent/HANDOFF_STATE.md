@@ -1,3 +1,13 @@
+# Artist Passport Hero Badge Copy Alignment to Connected Intelligence© (2026-10-11 EDT)
+
+Aligned Artist Passport hero badge with canonical registered trademark and positioning `Connected Intelligence©` on `main`:
+- **Badge Copy:** Updated the top hero badge in `packages/landing/src/pages/ArtistPassportPage.tsx` to:
+  `People make the music. Connected Intelligence© handles the business.`
+- **Tests & Verification:**
+  - 13/13 tests green in `packages/landing/src/pages/ArtistPassportPage.test.tsx`.
+  - All 78 tests across 13 test files passing in `packages/landing`.
+  - Monorepo typecheck clean; ESLint clean; landing build clean in 1.78s.
+
 # Admin Dashboard Artist Passport Diagnostic Leads & CRM Follow-up Integration (2026-10-11 EDT)
 
 Delivered internal Admin Dashboard surfacing for Artist Passport diagnostic leads (`/prospect_assessments/{assessmentId}`), rights gap analyses, and founder email outreach on `main` (`ab5bcebf2`):
