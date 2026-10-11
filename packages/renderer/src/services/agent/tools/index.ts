@@ -188,8 +188,8 @@ AVAILABLE TOOLS:
 31. update_member_role(userId: string, role: string) - Update a team member's role.
 32. remove_team_member(userId: string) - Remove a member from the organization.
 33. list_team_members() - List all members of the current organization.
-34. list_files(limit?: number, type?: string) - List recently generated files.
-31. search_files(query: string, type?: string) - Search files by name or type.
+34. list_files(limit?: number, type?: string, source?: string) - List stored assets across generated gallery, brand assets, reference images, or recent uploads.
+31. search_files(query: string, type?: string) - Search files across gallery, brand assets, reference images, and uploads.
 32. search_places(query: string, type?: string) - Search for real-world places (venues, hotels) via Google Maps.
 33. get_place_details(place_id: string) - Get address, phone, and reviews for a specific place.
 34. get_distance_matrix(origins: string[], destinations: string[]) - Calculate travel time and distance between locations.

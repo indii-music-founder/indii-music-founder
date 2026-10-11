@@ -96,7 +96,52 @@ describe('StorageTools', () => {
             expect((result.data as any).files[0]).toMatchObject({ id: 'hs-1', description: 'Headshot', category: 'headshot', subject: 'Dave' });
             expect(result.message).toContain('Headshot');
         });
+
+        it('preserves full HistoryItem metadata for uploaded images when source is uploads', async () => {
+            vi.mocked(StorageService.loadHistory).mockResolvedValue([]);
+            vi.mocked(useStore.getState).mockReturnValue({
+                userProfile: { brandKit: { brandAssets: [], referenceImages: [] } },
+                uploadedImages: [
+                    {
+                        id: 'upload-uuid-1',
+                        url: 'https://storage.googleapis.com/test-bucket/shattered-clock.png',
+                        prompt: 'shattered black clock',
+                        description: 'A surreal broken clock with obsidian glass',
+                        tags: ['album-art', 'dark'],
+                        category: 'other',
+                        subject: 'clock',
+                        storageUri: 'gs://test-bucket/shattered-clock.png',
+                        type: 'image',
+                        timestamp: 1712345678,
+                        projectId: 'project-99',
+                        origin: 'uploaded'
+                    }
+                ]
+            } as any);
+
+            const result = await StorageTools.list_files({ source: 'uploads', limit: 10 });
+
+            expect(result.success).toBe(true);
+            expect(result.data.count).toBe(1);
+            const file = (result.data as any).files[0];
+            expect(file).toMatchObject({
+                id: 'upload-uuid-1',
+                aliasId: 'upload-0',
+                prompt: 'shattered black clock',
+                description: 'A surreal broken clock with obsidian glass',
+                tags: ['album-art', 'dark'],
+                category: 'other',
+                subject: 'clock',
+                storageUri: 'gs://test-bucket/shattered-clock.png',
+                type: 'image',
+                uploadedImageIndex: 0,
+                origin: 'uploaded',
+                _source: 'uploads'
+            });
+            expect(result.message).toContain('![shattered black clock](https://storage.googleapis.com/test-bucket/shattered-clock.png)');
+        });
     });
+
     describe('search_files', () => {
         it('should return files matching the query in prompt', async () => {
             vi.mocked(StorageService.loadHistory).mockResolvedValue([
@@ -141,6 +186,68 @@ describe('StorageTools', () => {
             expect(result.success).toBe(true);
             expect(result.data.count).toBe(1);
             expect(result.message).toContain('Headshot');
+        });
+
+        it('finds uploaded images by prompt, description, and tags', async () => {
+            vi.mocked(StorageService.loadHistory).mockResolvedValue([]);
+            vi.mocked(useStore.getState).mockReturnValue({
+                userProfile: { brandKit: { brandAssets: [], referenceImages: [] } },
+                uploadedImages: [
+                    {
+                        id: 'clock-asset-id',
+                        url: 'https://test.com/shattered_clock.png',
+                        prompt: 'shattered black clock',
+                        description: 'Surreal album cover art',
+                        tags: ['clock', 'dark-art'],
+                        type: 'image'
+                    }
+                ]
+            } as any);
+
+            const searchPrompt = await StorageTools.search_files({ query: 'shattered black clock' });
+            expect(searchPrompt.success).toBe(true);
+            expect(searchPrompt.data.count).toBe(1);
+            expect((searchPrompt.data as any).results[0].id).toBe('clock-asset-id');
+            expect(searchPrompt.message).toContain('shattered black clock');
+
+            const searchTag = await StorageTools.search_files({ query: 'dark-art' });
+            expect(searchTag.success).toBe(true);
+            expect(searchTag.data.count).toBe(1);
+
+            const searchAlias = await StorageTools.search_files({ query: 'upload-0' });
+            expect(searchAlias.success).toBe(true);
+            expect(searchAlias.data.count).toBe(1);
+        });
+
+        it('filters search results by type when type parameter is provided', async () => {
+            vi.mocked(StorageService.loadHistory).mockResolvedValue([]);
+            vi.mocked(useStore.getState).mockReturnValue({
+                userProfile: { brandKit: { brandAssets: [], referenceImages: [] } },
+                uploadedImages: [
+                    {
+                        id: 'clock-img',
+                        url: 'https://test.com/clock.png',
+                        prompt: 'clock cover image',
+                        type: 'image'
+                    },
+                    {
+                        id: 'clock-audio',
+                        url: 'https://test.com/clock.wav',
+                        prompt: 'clock ticking master',
+                        type: 'audio'
+                    }
+                ]
+            } as any);
+
+            const imgOnly = await StorageTools.search_files({ query: 'clock', type: 'image' });
+            expect(imgOnly.success).toBe(true);
+            expect(imgOnly.data.count).toBe(1);
+            expect((imgOnly.data as any).results[0].id).toBe('clock-img');
+
+            const audioOnly = await StorageTools.search_files({ query: 'clock', type: 'audio' });
+            expect(audioOnly.success).toBe(true);
+            expect(audioOnly.data.count).toBe(1);
+            expect((audioOnly.data as any).results[0].id).toBe('clock-audio');
         });
 
         it('should return empty list if no matches found', async () => {

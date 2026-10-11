@@ -461,10 +461,15 @@ export class GeneralistAgent extends BaseAgent {
             },
             {
                 name: 'list_files',
-                description: 'List recently generated files.',
+                description: 'List stored assets across generated gallery, brand assets, reference images, or recent uploads.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {
+                        source: {
+                            type: 'STRING',
+                            enum: ['gallery', 'brand_assets', 'reference_images', 'uploads', 'all'],
+                            description: 'Asset source to list (gallery, brand_assets, reference_images, uploads, all). Default is "gallery". Use "uploads" to list user-uploaded files, or "all" to list across all sources.'
+                        },
                         limit: { type: 'NUMBER', description: 'Maximum number of files to return.' },
                         type: { type: 'STRING', description: 'Filter by type (image, video, audio).' }
                     },
@@ -473,7 +478,7 @@ export class GeneralistAgent extends BaseAgent {
             },
             {
                 name: 'search_files',
-                description: 'Search files by name or description.',
+                description: 'Search stored assets by name, description, prompt, or tags across generated gallery, brand assets, reference images, and uploads.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {

@@ -46,9 +46,32 @@ export const StorageTools = {
         }
         if (source === 'uploads' || source === 'all') {
             const uploads = state.uploadedImages || [];
-            allItems = allItems.concat(uploads.map((item, idx) => ({ 
-                id: `upload-${idx}`, url: item.url, type: 'image', _source: 'uploads', uploadedImageIndex: idx 
-            })));
+            allItems = allItems.concat(uploads.map((item, idx) => {
+                const aliasId = `upload-${idx}`;
+                const rawItem = item as Record<string, any>;
+                const effectivePrompt = rawItem.prompt || rawItem.name || rawItem.description || rawItem.meta || aliasId;
+                const effectiveDescription = rawItem.description || rawItem.prompt || rawItem.name || rawItem.meta;
+                return {
+                    ...rawItem,
+                    id: rawItem.id || aliasId,
+                    aliasId,
+                    url: rawItem.url,
+                    thumbnailUrl: rawItem.thumbnailUrl,
+                    storageUri: rawItem.storageUri,
+                    type: rawItem.type || 'image',
+                    _source: 'uploads',
+                    uploadedImageIndex: idx,
+                    prompt: effectivePrompt,
+                    description: effectiveDescription,
+                    category: rawItem.category,
+                    tags: rawItem.tags,
+                    subject: rawItem.subject,
+                    meta: rawItem.meta,
+                    origin: rawItem.origin || 'uploaded',
+                    timestamp: rawItem.timestamp,
+                    projectId: rawItem.projectId,
+                };
+            }));
         }
 
         let filtered = allItems;
@@ -84,7 +107,7 @@ export const StorageTools = {
         }, `Found ${filtered.length} files.${thumbnailMsg}${nonImageMsg}${additionalMsg}`);
     }),
 
-    search_files: wrapTool('search_files', async (args: { query: string }) => {
+    search_files: wrapTool('search_files', async (args: { query: string; type?: string }) => {
         const state = useStore.getState();
         let allItems: any[] = [];
         
@@ -119,21 +142,52 @@ export const StorageTools = {
         })));
         
         const uploads = state.uploadedImages || [];
-        allItems = allItems.concat(uploads.map((item, idx) => ({ 
-            id: `upload-${idx}`, url: item.url, type: 'image', _source: 'uploads', uploadedImageIndex: idx 
-        })));
+        allItems = allItems.concat(uploads.map((item, idx) => {
+            const aliasId = `upload-${idx}`;
+            const rawItem = item as Record<string, any>;
+            const effectivePrompt = rawItem.prompt || rawItem.name || rawItem.description || rawItem.meta || aliasId;
+            const effectiveDescription = rawItem.description || rawItem.prompt || rawItem.name || rawItem.meta;
+            return {
+                ...rawItem,
+                id: rawItem.id || aliasId,
+                aliasId,
+                url: rawItem.url,
+                thumbnailUrl: rawItem.thumbnailUrl,
+                storageUri: rawItem.storageUri,
+                type: rawItem.type || 'image',
+                _source: 'uploads',
+                uploadedImageIndex: idx,
+                prompt: effectivePrompt,
+                description: effectiveDescription,
+                category: rawItem.category,
+                tags: rawItem.tags,
+                subject: rawItem.subject,
+                meta: rawItem.meta,
+                origin: rawItem.origin || 'uploaded',
+                timestamp: rawItem.timestamp,
+                projectId: rawItem.projectId,
+            };
+        }));
 
         const q = args.query.toLowerCase();
 
-        const matches = allItems.filter(item =>
-            (item.prompt && item.prompt.toLowerCase().includes(q)) ||
-            (item.description && item.description.toLowerCase().includes(q)) ||
-            (item.category && item.category.toLowerCase().includes(q)) ||
-            (item.subject && item.subject.toLowerCase().includes(q)) ||
-            (Array.isArray(item.tags) && item.tags.some(t => t.toLowerCase().includes(q))) ||
-            (item.type && item.type.toLowerCase().includes(q)) ||
-            (item._source && item._source.toLowerCase().includes(q))
-        );
+        const matches = allItems.filter(item => {
+            if (args.type && item.type !== args.type) return false;
+            return (
+                (item.id && String(item.id).toLowerCase().includes(q)) ||
+                (item.aliasId && String(item.aliasId).toLowerCase().includes(q)) ||
+                (item.prompt && String(item.prompt).toLowerCase().includes(q)) ||
+                (item.name && String(item.name).toLowerCase().includes(q)) ||
+                (item.description && String(item.description).toLowerCase().includes(q)) ||
+                (item.meta && String(item.meta).toLowerCase().includes(q)) ||
+                (item.category && String(item.category).toLowerCase().includes(q)) ||
+                (item.subject && String(item.subject).toLowerCase().includes(q)) ||
+                (item.storageUri && String(item.storageUri).toLowerCase().includes(q)) ||
+                (Array.isArray(item.tags) && item.tags.some((t: string) => String(t).toLowerCase().includes(q))) ||
+                (item.type && String(item.type).toLowerCase().includes(q)) ||
+                (item._source && String(item._source).toLowerCase().includes(q))
+            );
+        });
 
         if (matches.length === 0) {
             return toolSuccess({ results: [], count: 0 }, `No files found matching query "${args.query}".`);
