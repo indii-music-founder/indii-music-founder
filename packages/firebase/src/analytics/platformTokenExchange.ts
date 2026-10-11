@@ -50,7 +50,6 @@ const pendingInstagramIntentPath = (uid: string, intentId: string) =>
 const PENDING_INSTAGRAM_INTENT_TTL_MS = 10 * 60 * 1000;
 const INSTAGRAM_CONTENT_SCOPES = [
     'instagram_basic',
-    'instagram_manage_insights',
     'instagram_content_publish',
     'pages_show_list',
     'pages_read_engagement',

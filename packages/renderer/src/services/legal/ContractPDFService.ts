@@ -57,10 +57,24 @@ export class ContractPDFService {
         const doc = ContractPDFService.generate(options);
         const blob = doc.output('blob');
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank', 'noopener,noreferrer');
+        let opened = false;
+        try {
+            const win = window.open(url, '_blank', 'noopener,noreferrer');
+            if (win && !win.closed && typeof win.closed !== 'undefined') {
+                opened = true;
+            }
+        } catch (err) {
+            logger.warn('[ContractPDF] Browser blocked new tab preview:', err);
+        }
+
+        if (!opened) {
+            logger.info(`[ContractPDF] Preview blocked by browser security; initiating download fallback for: ${options.title}`);
+            ContractPDFService.download(options);
+        }
+
         // Revoke after 60s to free memory
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
-        logger.info(`[ContractPDF] Preview opened for: ${options.title}`);
+        logger.info(`[ContractPDF] Preview handled for: ${options.title}`);
     }
 
     /**
@@ -209,7 +223,8 @@ export class ContractPDFService {
 
             // H3
             if (line.startsWith('### ')) {
-                checkPageBreak(8);
+                const isSignatureHeading = /signature/i.test(line);
+                checkPageBreak(isSignatureHeading ? 36 : 8);
                 y += 2;
                 doc.setFontSize(FONT_SIZE_H3);
                 doc.setFont(FONT_BODY, 'bold');
@@ -269,6 +284,44 @@ export class ContractPDFService {
                 doc.text(wrappedLines, MARGIN_LEFT + 8, y);
                 y += wrappedLines.length * (FONT_SIZE_BODY * LINE_HEIGHT_MULTIPLIER * 0.352778);
                 y += 1;
+                continue;
+            }
+
+            // Signature line keeping signature block together
+            if (/^(?:Signature|By):\s*_+/i.test(line.trim())) {
+                checkPageBreak(14);
+                doc.setFontSize(FONT_SIZE_BODY);
+                doc.setFont(FONT_BODY, 'normal');
+                doc.setTextColor(40, 40, 40);
+                const cleanText = ContractPDFService.stripMarkdown(line);
+                const wrappedLines = doc.splitTextToSize(cleanText, CONTENT_WIDTH);
+                doc.text(wrappedLines, MARGIN_LEFT, y);
+                y += wrappedLines.length * (FONT_SIZE_BODY * LINE_HEIGHT_MULTIPLIER * 0.352778) + 3;
+                continue;
+            }
+
+            // Bold prefix (e.g. "**Name:** Mara June" or "**Title:** Producer")
+            const boldPrefixMatch = line.trim().match(/^(\*\*.*?\*\*)\s*(.*)/);
+            if (boldPrefixMatch) {
+                const isSignerName = /name|party|signer/i.test(boldPrefixMatch[1]!);
+                checkPageBreak(isSignerName ? 24 : 6);
+                const boldPart = boldPrefixMatch[1]!.replace(/\*\*/g, '');
+                const restPart = boldPrefixMatch[2]!;
+                doc.setFontSize(FONT_SIZE_BODY);
+                doc.setFont(FONT_BODY, 'bold');
+                doc.setTextColor(20, 20, 30);
+                doc.text(boldPart, MARGIN_LEFT, y);
+                const boldWidth = doc.getTextWidth(boldPart + ' ');
+                doc.setFont(FONT_BODY, 'normal');
+                doc.setTextColor(40, 40, 40);
+                const wrappedRest = doc.splitTextToSize(ContractPDFService.stripMarkdown(restPart), CONTENT_WIDTH - boldWidth);
+                if (wrappedRest.length > 0) {
+                    doc.text(wrappedRest[0]!, MARGIN_LEFT + boldWidth, y);
+                    for (let r = 1; r < wrappedRest.length; r++) {
+                        doc.text(wrappedRest[r]!, MARGIN_LEFT, y + r * (FONT_SIZE_BODY * LINE_HEIGHT_MULTIPLIER * 0.352778));
+                    }
+                }
+                y += Math.max(1, wrappedRest.length) * (FONT_SIZE_BODY * LINE_HEIGHT_MULTIPLIER * 0.352778) + 1;
                 continue;
             }
 

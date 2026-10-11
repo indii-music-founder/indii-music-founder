@@ -41,9 +41,10 @@ describe('Instagram content connection persistence contract (structural)', () =>
         const backend = readScopeArray(source.text, 'INSTAGRAM_CONTENT_SCOPES');
         const login = readFileSync(resolve(__dirname, '../../../renderer/src/services/analytics/InstagramAnalyticsService.ts'), 'utf8');
         const card = readFileSync(resolve(__dirname, '../../../renderer/src/modules/social/components/InstagramHealthCard.tsx'), 'utf8');
-        expect(backend).toHaveLength(5);
+        expect(backend).toHaveLength(4);
         expect(backend).toEqual(readScopeArray(login, 'scopes'));
         expect(backend).toEqual(readScopeArray(card, 'requiredScopes'));
+        expect(backend).not.toContain('instagram_manage_insights');
         expect(backend).not.toContain('instagram_manage_messages');
         expect(backend).not.toContain('instagram_manage_comments');
         expect(source.text).toContain('missingPermissions: INSTAGRAM_CONTENT_SCOPES');

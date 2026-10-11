@@ -13,16 +13,21 @@ export async function sendLiveBlenderCommand<T = unknown>(
     params: Record<string, unknown> = {},
     host = '127.0.0.1',
     port = 9876,
-    timeoutMs = 5000
+    timeoutMs?: number
 ): Promise<LiveBlenderResponse<T>> {
+    const isBakeAction = action.toLowerCase().includes('bake')
+        || (typeof params.operation === 'string' && params.operation.toLowerCase().includes('bake'));
+    const resolvedTimeoutMs = timeoutMs
+        ?? (typeof params.timeoutMs === 'number' ? params.timeoutMs : (isBakeAction ? 120_000 : 30_000));
+
     return new Promise((resolve) => {
         const client = new net.Socket();
         let receivedData = '';
 
         const timer = setTimeout(() => {
             client.destroy();
-            resolve({ status: 'error', error: `Connection to Blender live bridge (${host}:${port}) timed out.` });
-        }, timeoutMs);
+            resolve({ status: 'error', error: `Connection to Blender live bridge (${host}:${port}) timed out after ${resolvedTimeoutMs}ms.` });
+        }, resolvedTimeoutMs);
 
         client.connect(port, host, () => {
             const payload = JSON.stringify({ action, params });

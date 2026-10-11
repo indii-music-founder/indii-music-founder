@@ -99,4 +99,44 @@ describe('ContractPDFService', () => {
         expect(typeof base64).toBe('string');
         expect(base64.length).toBeGreaterThan(50);
     });
+
+    it('renders signature blocks and signer labels in distinct PDF text blocks', () => {
+        const markdown = [
+            '### SIGNATURES & EXECUTION',
+            '',
+            '**Name:** Mara June',
+            'Signature: ___________________________   Date: ______________',
+            '',
+            '**Name:** Collaborator Two',
+            'Signature: ___________________________   Date: ______________',
+        ].join('\n');
+
+        const encoded = ContractPDFService.toBase64({
+            title: 'Signature Layout Test',
+            content: markdown,
+        });
+        const pdf = atob(encoded);
+        expect(pdf).toContain('SIGNATURES & EXECUTION');
+        expect(pdf).toContain('Name:');
+        expect(pdf).toContain('Mara June');
+        expect(pdf).toContain('Signature:');
+    });
+
+    it('falls back to download when window.open is blocked by browser security', () => {
+        const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
+        const downloadSpy = vi.spyOn(ContractPDFService, 'download').mockImplementation(() => {});
+
+        ContractPDFService.preview({
+            title: 'Safari Blocked Test',
+            content: '# Agreement\n\n**Terms:** All clear.',
+        });
+
+        expect(openSpy).toHaveBeenCalled();
+        expect(downloadSpy).toHaveBeenCalledWith(expect.objectContaining({
+            title: 'Safari Blocked Test',
+        }));
+
+        openSpy.mockRestore();
+        downloadSpy.mockRestore();
+    });
 });

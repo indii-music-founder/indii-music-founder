@@ -149,7 +149,11 @@ class FrontendBlenderService {
             return { success: false, outputPath: request.outputVideoPath || '', error: 'Blender did not return a verified render result.' };
         } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
-            return { success: false, outputPath: request.outputVideoPath || '', error: msg };
+            const isWebEnv = typeof window !== 'undefined' && !window.electronAPI?.blender;
+            const friendlyError = isWebEnv && (msg.includes('authenticated') || msg.includes('Failed to fetch') || msg.includes('MethodNotFound') || msg.includes('network') || msg.includes('unavailable'))
+                ? 'Blender 3D video generation requires the indii desktop studio app or a running local MCP companion.'
+                : msg;
+            return { success: false, outputPath: request.outputVideoPath || '', error: friendlyError };
         }
     }
 
@@ -161,7 +165,10 @@ class FrontendBlenderService {
             return await window.electronAPI.blender.sendLiveCommand(action, params);
         }
 
-        return await mcpClientService.executeTool('blender_live_command', { action, params });
+        const isBake = action.toLowerCase().includes('bake')
+            || (typeof params.operation === 'string' && params.operation.toLowerCase().includes('bake'));
+        const timeoutMs = typeof params.timeoutMs === 'number' ? params.timeoutMs : (isBake ? 120_000 : 30_000);
+        return await mcpClientService.executeTool('blender_live_command', { action, params, timeoutMs });
     }
 }
 

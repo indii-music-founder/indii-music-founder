@@ -108,4 +108,35 @@ describe('BlenderTools Agent Toolset', () => {
         expect(result.success).toBe(true);
         expect(blenderService.sendLiveCommand).toHaveBeenCalledWith('ping', {});
     });
+
+    it('blender_get_status provides setup instructions when Blender is not installed', async () => {
+        vi.mocked(blenderService.getStatus).mockResolvedValueOnce({
+            installed: false,
+            executablePath: null,
+            version: null,
+            supportedEngines: [],
+            gpuAcceleration: 'None',
+            liveConnected: false,
+            setupInstructions: 'Blender 3D video generation requires the indii desktop studio app or local MCP runner.'
+        });
+
+        const result = (await BlenderTools.blender_get_status!({})) as any;
+        expect(result.success).toBe(true);
+        expect(result.message).toContain('desktop studio app or local MCP runner');
+    });
+
+    it('blender_live_command supports bake operations with custom parameters', async () => {
+        vi.mocked(blenderService.sendLiveCommand).mockResolvedValueOnce({
+            status: 'ok',
+            result: { bakedFrames: 120 }
+        });
+
+        const result = (await BlenderTools.blender_live_command!({
+            action: 'bake_texture',
+            params: { resolution: 2048 }
+        })) as any;
+
+        expect(result.success).toBe(true);
+        expect(blenderService.sendLiveCommand).toHaveBeenCalledWith('bake_texture', { resolution: 2048 });
+    });
 });

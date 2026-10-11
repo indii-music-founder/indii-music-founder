@@ -412,7 +412,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
         try {
             const action = String(args?.action);
             const params = (args?.params as Record<string, unknown>) ?? {};
-            const result = await sendLiveBlenderCommand(action, params);
+            const timeoutMs = typeof args?.timeoutMs === 'number'
+                ? args.timeoutMs
+                : (typeof params.timeoutMs === 'number' ? params.timeoutMs : undefined);
+            const result = await sendLiveBlenderCommand(action, params, '127.0.0.1', 9876, timeoutMs);
             return {
                 content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
                 isError: result.status === 'error'

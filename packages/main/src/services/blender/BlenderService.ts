@@ -145,7 +145,10 @@ export class BlenderService {
     async sendLiveCommand(action: string, params: Record<string, unknown> = {}): Promise<unknown> {
         try {
             await mcpClientService.connectLocal();
-            const result = await mcpClientService.executeTool('blender_live_command', { action, params });
+            const isBake = action.toLowerCase().includes('bake')
+                || (typeof params.operation === 'string' && params.operation.toLowerCase().includes('bake'));
+            const timeoutMs = typeof params.timeoutMs === 'number' ? params.timeoutMs : (isBake ? 120_000 : 30_000);
+            const result = await mcpClientService.executeTool('blender_live_command', { action, params, timeoutMs });
             const text = result?.content?.[0]?.text;
             if (text) {
                 return JSON.parse(text);

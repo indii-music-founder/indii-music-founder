@@ -91,4 +91,14 @@ describe('Blender MCP Module', () => {
             expect(progress).toBeNull();
         });
     });
+
+    describe('Live Bridge Command Timeouts', () => {
+        it('handles connection timeouts gracefully for texture bake', async () => {
+            const { sendLiveBlenderCommand } = await import('../liveBridge.js');
+            // Connect to an unused port to trigger timeout or connection error immediately
+            const res = await sendLiveBlenderCommand('bake_texture', { resolution: 1024 }, '127.0.0.1', 59999, 50);
+            expect(res.status).toBe('error');
+            expect(res.error).toBeDefined();
+        });
+    });
 });

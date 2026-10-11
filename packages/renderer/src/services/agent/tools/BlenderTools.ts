@@ -9,7 +9,7 @@ export const BlenderTools: Record<string, AnyToolFunction> = {
             const status = await blenderService.getStatus();
             return toolSuccess(status, status.installed
                 ? `Blender is available (${status.version ?? 'installed'}, GPU: ${status.gpuAcceleration})`
-                : 'Blender is not detected on this system.');
+                : (status.setupInstructions ?? 'Blender is not detected on this system. Blender 3D video generation requires the indii desktop studio app or local MCP runner.'));
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             return toolError(`Failed to check Blender status: ${message}`);
