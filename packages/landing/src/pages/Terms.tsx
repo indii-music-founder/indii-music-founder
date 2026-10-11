@@ -29,7 +29,7 @@ export default function Terms() {
           <li>Access and use the Service for lawful purposes</li>
           <li>Create, upload, and distribute your creative content</li>
           <li>Collaborate with other artists on the platform</li>
-          <li>Use AI-powered tools to generate content</li>
+          <li>Use connected intelligence tools to assist your workflow</li>
         </ul>
         <p className="text-gray-300 leading-relaxed mt-4">
           This license is subject to the restrictions in these Terms and our Acceptable Use Policy.
@@ -74,9 +74,9 @@ export default function Terms() {
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold text-gray-200 mb-2">AI-Generated Content</h3>
+            <h3 className="text-xl font-semibold text-gray-200 mb-2">Connected Intelligence & Generated Materials</h3>
             <p>
-              Content generated using our AI tools is owned by you. You may use it for commercial or
+              Content generated using our connected intelligence tools is owned by you. You may use it for commercial or
               personal purposes, subject to applicable laws and our terms regarding global distribution.
             </p>
           </div>

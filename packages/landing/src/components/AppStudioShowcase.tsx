@@ -71,7 +71,7 @@ const REAL_SCREENSHOTS: Record<string, { src: string; alt: string; caption: stri
   screenwriter: {
     src: '/screenshots/screenwriter.png',
     alt: 'Cinematic Screenwriter — Video production and scene beats',
-    caption: 'From song lyric to cinematic scene beats, shot lists, and AI prompt orchestration for official music videos.',
+    caption: 'From song lyric to cinematic scene beats, shot lists, and connected intelligence prompt orchestration for official music videos.',
     tag: 'Screenwriter / Scene Beats',
   },
 };

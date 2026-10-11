@@ -3,7 +3,7 @@
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-10-10 (**Opened ISSUE-1510 / GitHub #413** — Technical Specification: Open-Source Non-Linear Editing (NLE) Engine Integration)
+> **Last updated:** 2026-10-11 (**Opened ISSUE-1511 / GitHub #414** — Technical Specification: Assisted Rights Registration Engine — Screen Control & Browser Copilot for Official Music Rights Infrastructure)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V3):** This is the ACTIVE master ledger. It operates with strict discipline:
@@ -4570,4 +4570,73 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   4. `b27a5dc29`: Bidirectional Project Model Bridge (`packages/video-compiler/src/nleProjectBridge.ts`): `projectToTimelineAST` and `timelineASTToProject` synchronizing `IndiiVideoProject` and `TimelineAST` with frame timing and transform preservation. 3/3 unit tests passing.
 - **Validation:** 100% clean typecheck (`npm run typecheck`), zero ESLint errors, zero pre-commit gate violations, all affected test suites passing green.
 - **Still Open:** Electron native ffprobe IPC integration wiring and UI track scrub canvas rendering integration.
+
+---
+
+### ISSUE-1511: Assisted Rights Registration Engine — Screen Control & Browser Copilot for Official Music Rights Infrastructure (US Copyright Office / Library of Congress eCO, The MLC, PROs, SoundExchange, HFA)
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Rights Administration / Browser Automation / Screen Control Copilot / Funnel Bridge
+- **Origin & Funnel Bridge:**
+  Directly bridges findings from the Artist Passport diagnostic intake (`/passport` and `/prospect_assessments`).
+  The diagnostic reliably uncovers that 80%+ of independent artists suffer critical rights gaps:
+  1. No registration with The MLC (losing interactive streaming mechanical royalties).
+  2. Unselected or unregistered PRO affiliations (BMI, ASCAP, SESAC) for public performance royalties.
+  3. Zero official copyright registrations with the US Copyright Office (Library of Congress eCO portal) for sound recordings (Form SR) or musical works (Form PA / GRUW / GRAM).
+  4. Missing SoundExchange featured performer and master copyright owner registrations for non-interactive digital radio streaming royalties.
+  5. Missing Harry Fox Agency (HFA) / Songfile / Music Reports mechanical licensing accounts.
+
+- **The Problem & Psychological Friction:**
+  Artists make the music. Handing them a red warning list of missing registrations causes anxiety, paralysis, and abandoned funnels. The official government and collection society portals (especially the US Copyright Office eCO system) are archaic, labyrinthine web applications requiring obscure legal taxonomy, deposit audio file uploads, work split declarations, and complex multi-step forms. Indie artists cannot afford $500–$1,500 entertainment attorney retainers per release to complete standard administrative filings.
+
+- **Architectural Solution — The Screen Control & Browser Copilot Architecture:**
+  indii delivers a native browser copilot and screen control engine that bridges the artist's studio metadata directly into external government and royalty society portals with real-time visual assistance:
+
+  #### 1. Canonical Rights Registration Manifest (`packages/shared/src/types/rightsRegistration.ts`)
+  Compiles verified artist metadata into a single deterministic filing manifest:
+  - Artist legal name, DBA/stage name, IPI/CAE numbers, ISNI, citizenship/domicile.
+  - Work details: Title, alternative titles, year of creation, publication date, nation of first publication.
+  - Recording details: Master sound recording title, ISRC, ISWC, duration, track audio checksum (SHA-256).
+  - Splits: Writer/composer shares (100% total), publisher shares (100% total), featured performers, master rights owners.
+  - Deposit assets: Local audio file paths (WAV/MP3) for government copyright deposits.
+
+  #### 2. Screen Control & Browser Copilot Harness
+  - Powered by Electron's native `BrowserView` / isolated web session with DevTools Protocol (CDP) or sidecar browser runner (`chrome-devtools` / Playwright runner).
+  - **Interactive Copilot (Artist in the Loop):**
+    The artist watches the session as indii highlights target inputs, fills song titles, pastes codes, matches writer IPIs, and stages deposit audio uploads directly to the Library of Congress eCO file submission interface. Pauses at CAPTCHA, two-factor authentication, and payment card checkout so the user retains complete authority, privacy, and security.
+  - **Autonomous Batch Mode:**
+    Where official collection society APIs or bulk file exchanges exist (e.g. The MLC bulk claiming portal, CWR 2.1 society uploads, DDEX feeds).
+
+  #### 3. Target Portals & Supported Workflows
+  1. **US Copyright Office (Library of Congress / eCO Portal):**
+     - Form PA (Performing Arts / Musical Composition).
+     - Form SR (Sound Recording).
+     - Group Registrations: GRUW (Group of Unpublished Works) and GRAM (Group of Works on an Album of Music).
+     - Automated file attachment / deposit copy upload.
+  2. **The MLC (Mechanical Licensing Collective):**
+     - Portal onboarding and membership verification.
+     - Song catalog work registration & automated writer matching.
+     - Unmatched mechanical royalty search and catalog claim filing.
+  3. **PRO Affiliation & Song Filing (BMI, ASCAP, SESAC):**
+     - Writer & Publisher affiliation guidance.
+     - Work registration submission with verified co-writer split sheets.
+  4. **SoundExchange:**
+     - Featured Artist and Master Copyright Owner enrollment.
+     - ISRC repertoire catalog delivery.
+  5. **Harry Fox Agency (HFA / Songfile / MRI):**
+     - Mechanical licensing setup and catalog claiming.
+
+  #### 4. Provenance & Audit Trail
+  - Every completed submission automatically captures official filing confirmation numbers, service request (SR) tracking IDs, submission timestamps, and PDF receipts.
+  - Stored securely in Firestore `/artists/{uid}/registrations/{registrationId}` and displayed in indii studio's Registration Center and `FounderReadinessPanel.tsx`.
+
+- **Acceptance Benchmarks:**
+  | Metric / Flow | Acceptance Threshold | Verification Vector |
+  |---|---|---|
+  | Manifest Completeness | 100% schema validation passes with zero missing required legal fields | Zod schema validation against `RightsRegistrationManifest` |
+  | eCO Deposit Staging | Deposit audio file checksum matches local master file byte-for-byte | Automated SHA-256 verification before upload |
+  | Credential Isolation | Zero storage of user government passwords or payment credentials on indii servers | Fail-closed security rule audit |
+  | Funnel Handoff | 1-click transition from Artist Passport diagnostic rights gap to active copilot session | Diagnostic result "Resolve Gap with Copilot" action hook |
+
 

@@ -101,7 +101,7 @@ const HERO_SCREENSHOTS: ScreenshotSlide[] = [
     title: 'Cinematic Screenwriter',
     department: 'Video Production',
     badge: 'Visual Storyboard',
-    caption: 'From song lyric to cinematic scene beats, shot lists, and AI prompt orchestration for official music videos.',
+    caption: 'From song lyric to cinematic scene beats, shot lists, and connected intelligence prompt orchestration for official music videos.',
     src: '/screenshots/screenwriter.png',
     tagColor: '#6366F1',
   },

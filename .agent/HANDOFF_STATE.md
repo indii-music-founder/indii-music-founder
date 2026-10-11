@@ -1,3 +1,30 @@
+# Artist Passport Unit Economics, Brand Copy Alignment & Rights Registration Copilot Architecture (2026-10-11 EDT)
+
+Delivered investor-grade Unit Economics & CAC/ROI engine, artist brand copy alignment, and opened ISSUE-1511 specification on `main`:
+- **Artist Brand Copy Alignment ("People make the music, indii makes the business."):**
+  - Updated the top hero badge in `packages/landing/src/pages/ArtistPassportPage.tsx` to:
+    `People make the music, indii makes the business.`
+  - Purged all occurrences of the term "AI" across `packages/landing` (`AppStudioShowcase.tsx`, `HeroScreenshotCarousel.tsx`, `Terms.tsx`), honoring the core principle that artists make the art and indii Connected Intelligence handles the business.
+  - 13/13 tests green in `packages/landing/src/pages/ArtistPassportPage.test.tsx`, all 78 landing tests passing.
+- **Investor Unit Economics & CAC/ROI Engine (`packages/admin-dashboard`):**
+  - Enhanced `server.ts` to compute funnel conversion rates (`emailCaptureRate`, `copyRequestRate`, `accountClaimRate`, `rightsGapRate`) and acquisition channel attribution breakdown (`summary.channelAttribution`).
+  - Implemented interactive Unit Economics & ROI tab in `ProspectsPanel.tsx` with:
+    - Live marketing spend simulator with slider and presets ($250, $500, $1k, $2.5k, $5k).
+    - Real-time unit metrics: Cost per Diagnostic (CPD), Cost per Lead (CPL), Blended CAC (Claimed Account), and Paid CAC (5% upgrade model).
+    - LTV:CAC Multiplier Matrix across indii pricing tiers: Start ($22/mo • $264 ARR), Build ($55/mo • $990 LTV), Scale ($110/mo • $2,640 LTV), and Founding Owner ($2,500 Upfront).
+    - Funnel Drop-off & Conversion Waterfall (1. Funnels -> 2. Leads -> 3. Copies -> 4. Claims -> 5. Rights Gaps).
+    - Channel Attribution performance table.
+    - 1-click "Copy Investor Memo" generating an investor-ready summary.
+  - Created formal investor data-room dossier in `docs/funding/ARTIST_PASSPORT_UNIT_ECONOMICS_AND_ROI.md`.
+  - 14/14 test files, 90/90 tests green in `packages/admin-dashboard`, 37/37 backend server tests green.
+- **Architectural Specification Opened (ISSUE-1511 in `.agent/test_ledger/OPEN_ISSUES_V3.md`):**
+  - Opened **ISSUE-1511: Assisted Rights Registration Engine — Screen Control & Browser Copilot for Official Music Rights Infrastructure (US Copyright Office / Library of Congress eCO, The MLC, PROs, SoundExchange, HFA)**.
+  - Formulates the screen control and browser copilot architecture that directly bridges diagnostic rights gaps into real-world filings with the US Copyright Office, The MLC, PROs, and SoundExchange.
+- **Monorepo Quality Gates:**
+  - 100% clean typecheck (`npm run typecheck`).
+  - ESLint 0 warnings, 0 errors.
+  - Admin dashboard production build clean.
+
 # Artist Passport Hero Badge Copy Alignment to Connected Intelligence© (2026-10-11 EDT)
 
 Aligned Artist Passport hero badge with canonical registered trademark and positioning `Connected Intelligence©` on `main`:

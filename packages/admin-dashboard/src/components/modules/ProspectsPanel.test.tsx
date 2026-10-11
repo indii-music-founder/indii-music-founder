@@ -22,6 +22,21 @@ const mockProspectsData = {
     assessmentCopyRequestedCount: 1,
     claimedAccountCount: 1,
     rightsGapsCount: 2,
+    conversionRates: {
+      emailCaptureRate: 50,
+      copyRequestRate: 50,
+      accountClaimRate: 50,
+      rightsGapRate: 100,
+    },
+    channelAttribution: {
+      passport_organic: {
+        total: 2,
+        emails: 1,
+        copyRequested: 1,
+        claimed: 1,
+        rightsGaps: 2,
+      },
+    },
   },
   prospects: [
     {
@@ -172,8 +187,8 @@ describe('ProspectsPanel', () => {
     });
 
     // Click CRM button for Luna Wave
-    const crmButtons = screen.getAllByRole('button', { name: /CRM/i });
-    fireEvent.click(crmButtons[0]);
+    const crmBtn = screen.getAllByTitle('View diagnostic details & private CRM notes')[0];
+    fireEvent.click(crmBtn);
 
     // Check modal opened with diagnostic profile details
     await waitFor(() => {
@@ -229,5 +244,78 @@ describe('ProspectsPanel', () => {
     expect(bodyInput.value).toContain('Luna Wave');
     expect(bodyInput.value).toContain('Electronic / Dance');
     expect(bodyInput.value).toContain('DistroKid');
+  });
+
+  it('switches to Unit Economics & ROI tab, runs simulator, and displays CAC/LTV multipliers', async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(mockProspectsData));
+    render(<ProspectsPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Luna Wave')).toBeDefined();
+    });
+
+    // Click Unit Economics & ROI tab
+    const unitEconTabBtn = screen.getByRole('button', { name: /Unit Economics & ROI/i });
+    fireEvent.click(unitEconTabBtn);
+
+    // Verify simulator renders
+    await waitFor(() => {
+      expect(screen.getByText(/Customer Acquisition Cost \(CAC\) & Unit Economics Simulator/i)).toBeDefined();
+    });
+
+    // Default spend $500:
+    // CPD = 500 / 2 = $250.00
+    // CPL = 500 / 1 = $500.00
+    // Blended CAC = 500 / 1 = $500.00
+    // Start Tier LTV ratio = 264 / 500 = 0.5x
+    expect(screen.getByText('$250.00')).toBeDefined();
+    expect(screen.getAllByText('$500.00').length).toBeGreaterThanOrEqual(1);
+
+    // Click $250 preset button
+    const preset250 = screen.getByRole('button', { name: '$250' });
+    fireEvent.click(preset250);
+
+    // CPD should now be 250 / 2 = $125.00
+    await waitFor(() => {
+      expect(screen.getByText('$125.00')).toBeDefined();
+    });
+
+    // Verify channel attribution source renders
+    expect(screen.getByText('passport_organic')).toBeDefined();
+
+    // Verify Funnel Waterfall renders
+    expect(screen.getByText(/Funnel Drop-Off & Conversion Waterfall/i)).toBeDefined();
+  });
+
+  it('copies formatted investor memo to clipboard when button clicked', async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse(mockProspectsData));
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextMock,
+      },
+    });
+
+    render(<ProspectsPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Luna Wave')).toBeDefined();
+    });
+
+    // Switch to Unit Economics
+    fireEvent.click(screen.getByRole('button', { name: /Unit Economics & ROI/i }));
+
+    const copyBtn = screen.getByRole('button', { name: /Copy Investor Memo/i });
+    fireEvent.click(copyBtn);
+
+    await waitFor(() => {
+      expect(writeTextMock).toHaveBeenCalled();
+    });
+
+    const memoContent = writeTextMock.mock.calls[0][0] as string;
+    expect(memoContent).toContain('indii.music — Artist Passport Unit Economics & Acquisition ROI');
+    expect(memoContent).toContain('Modeled Marketing Spend: $500');
+    expect(memoContent).toContain('Total Completed Diagnostics: 2');
+    expect(memoContent).toContain('Leads Captured (Emails): 1');
   });
 });

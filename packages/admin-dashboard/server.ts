@@ -522,6 +522,22 @@ app.get('/api/prospects', requireAdminAuth, async (_req, res) => {
     let claimedAccountCount = 0;
     let rightsGapsCount = 0;
 
+    const channelAttribution: Record<string, {
+      total: number;
+      emails: number;
+      copyRequested: number;
+      claimed: number;
+      rightsGaps: number;
+    }> = {};
+
+    const stageBreakdown: Record<string, number> = {};
+    const genreBreakdown: Record<string, number> = {};
+    const rightsGapsBreakdown: Record<string, number> = {
+      'No PRO Affiliation': 0,
+      'Unregistered with The MLC': 0,
+      'No Active Distributor': 0,
+    };
+
     for (const doc of snapshot.docs) {
       const data = doc.data() as Record<string, unknown>;
       const email = typeof data.email === 'string' && data.email.trim() ? data.email.trim().toLowerCase() : null;
@@ -562,6 +578,22 @@ app.get('/api/prospects', requireAdminAuth, async (_req, res) => {
       if (claimedByUid) claimedAccountCount++;
       if (rightsGaps.length > 0) rightsGapsCount++;
 
+      // Track distribution aggregations
+      stageBreakdown[careerStage] = (stageBreakdown[careerStage] || 0) + 1;
+      genreBreakdown[genre] = (genreBreakdown[genre] || 0) + 1;
+      for (const gap of rightsGaps) {
+        rightsGapsBreakdown[gap] = (rightsGapsBreakdown[gap] || 0) + 1;
+      }
+
+      if (!channelAttribution[source]) {
+        channelAttribution[source] = { total: 0, emails: 0, copyRequested: 0, claimed: 0, rightsGaps: 0 };
+      }
+      channelAttribution[source].total++;
+      if (email) channelAttribution[source].emails++;
+      if (assessmentConsent) channelAttribution[source].copyRequested++;
+      if (claimedByUid) channelAttribution[source].claimed++;
+      if (rightsGaps.length > 0) channelAttribution[source].rightsGaps++;
+
       prospects.push({
         id: doc.id,
         createdAt: toIso(data.createdAt),
@@ -597,13 +629,26 @@ app.get('/api/prospects', requireAdminAuth, async (_req, res) => {
       return timeB - timeA;
     });
 
+    const total = prospects.length;
+    const conversionRates = {
+      emailCaptureRate: total > 0 ? Number((emailCapturedCount / total).toFixed(4)) : 0,
+      copyRequestRate: total > 0 ? Number((assessmentCopyRequestedCount / total).toFixed(4)) : 0,
+      accountClaimRate: total > 0 ? Number((claimedAccountCount / total).toFixed(4)) : 0,
+      rightsGapRate: total > 0 ? Number((rightsGapsCount / total).toFixed(4)) : 0,
+    };
+
     res.json({
       summary: {
-        totalAssessments: prospects.length,
+        totalAssessments: total,
         emailCapturedCount,
         assessmentCopyRequestedCount,
         claimedAccountCount,
         rightsGapsCount,
+        conversionRates,
+        channelAttribution,
+        stageBreakdown,
+        genreBreakdown,
+        rightsGapsBreakdown,
       },
       prospects,
     });
