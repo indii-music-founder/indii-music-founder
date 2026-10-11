@@ -471,6 +471,44 @@ describe('OmniWorkflow (legacy structural-only; real generation unverified)', ()
         })));
     });
 
+    it('accepts a dragged project video as Omni edit source with authentic preview and metadata (Issue #414)', async () => {
+        render(<OmniWorkflow />);
+        fireEvent.drop(screen.getByTestId('omni-asset-drop-zone'), {
+            dataTransfer: droppedAssetDataTransfer({
+                id: 'project-video-1',
+                type: 'video',
+                url: 'https://mock-bucket.appspot.com/download/authentic_tour_clip.mp4',
+                storageUri: 'gs://mock-bucket.appspot.com/projects/proj-omni/authentic_tour_clip.mp4',
+                name: 'authentic_tour_clip.mp4',
+                prompt: 'Authentic tour clip prompt',
+                projectId: 'proj-omni',
+            }),
+        });
+
+        await waitFor(() => expect(screen.getByLabelText('Omni generation mode')).toHaveValue('edit'));
+        expect(mockUploadReferenceMedia).not.toHaveBeenCalled();
+
+        // Authentic video element is rendered with the dropped asset source URL
+        const videoElement = screen.getByLabelText('Omni source video preview');
+        expect(videoElement).toBeInTheDocument();
+        expect(videoElement).toHaveAttribute('src', 'https://mock-bucket.appspot.com/download/authentic_tour_clip.mp4');
+
+        // Authentic asset label is displayed
+        expect(screen.getByText('authentic_tour_clip.mp4')).toBeInTheDocument();
+
+        // Fabricated fallback filename and skeleton text must not exist
+        expect(screen.queryByText('base_performance.mp4')).not.toBeInTheDocument();
+        expect(screen.queryByText(/POSE LOCKED/i)).not.toBeInTheDocument();
+
+        // Store was updated with ref video URL and URI
+        expect(mockStoreRef.current.studioControls).toMatchObject({
+            omniReferenceVideo: 'https://mock-bucket.appspot.com/download/authentic_tour_clip.mp4',
+            omniReferenceVideoUri: 'gs://mock-bucket.appspot.com/projects/proj-omni/authentic_tour_clip.mp4',
+            omniSourceVideoLabel: 'authentic_tour_clip.mp4',
+            omniTask: 'edit',
+        });
+    });
+
     it('retains edit video mode and source label across stage navigation (Issue #415)', async () => {
         // Simulate returning to Omni Flash with an existing video source in studioControls
         mockStoreRef.current = createStoreState({
