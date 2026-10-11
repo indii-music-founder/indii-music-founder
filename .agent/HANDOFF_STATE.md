@@ -1,3 +1,29 @@
+# Admin Dashboard Artist Passport Diagnostic Leads & CRM Follow-up Integration (2026-10-11 EDT)
+
+Delivered internal Admin Dashboard surfacing for Artist Passport diagnostic leads (`/prospect_assessments/{assessmentId}`), rights gap analyses, and founder email outreach on `main` (`ab5bcebf2`):
+- **Secure Backend Endpoints (`packages/admin-dashboard/server.ts`):**
+  - `GET /api/prospects`: Protected by `requireAdminAuth` (Firebase ID token verification, enforcing `@indii.music` domain). Fetches all `/prospect_assessments` documents, calculates summary KPIs (`totalAssessments`, `emailCapturedCount`, `assessmentCopyRequestedCount`, `claimedAccountCount`, `rightsGapsCount`), computes rights gaps (`No PRO Affiliation`, `Unregistered with The MLC`, `No Active Distributor`), and orders descending by `createdAt`.
+  - `POST /api/prospects/notes`: Updates founder `notes` and `followUpStatus` (`new`, `needs_review`, `contacted`, `converted`, `archived`) on `/prospect_assessments/{id}`, mirroring to `artist_crm_metadata/{email}`.
+  - Audit logging integration in `recordArtistCommunication`: Outreach sent via `/api/waitlist/send-direct-email` automatically updates the prospect's `contactCount`, `lastContactedAt`, `lastContactSubject`, `lastContactFrom`, and transitions status to `'contacted'`.
+  - 37/37 backend unit tests passing in `packages/admin-dashboard/server.test.ts`.
+- **Frontend Dashboard Module (`packages/admin-dashboard/src/components/modules/ProspectsPanel.tsx`):**
+  - Gold-foil branded header with live refresh and CSV export.
+  - 5 summary KPI cards (Total Assessments, Emails Captured, Copy Requested, Rights Gaps Identified, Claimed Accounts).
+  - Search bar and filtering pills (`All`, `Copy Requested`, `Has Email`, `Rights Gaps`, `Claimed`, plus Follow-Up Status dropdown).
+  - Diagnostic breakdown data table displaying artist profile, release timeline, PRO/MLC/Distributor status flags, copy request consent, and claimed UID badges.
+  - Interactive CRM Notes drawer with communication history timeline and inline note editing.
+  - Direct Email Composer modal equipped with 4 tailored templates (`diagnostic_copy`, `rights_gap`, `beta_invite`, `custom`) sending directly from `founder@indii.music` or `support@indii.music`.
+  - 6/6 frontend unit tests passing in `packages/admin-dashboard/src/components/modules/ProspectsPanel.test.tsx`.
+- **Navigation Wiring:**
+  - Added `Artist Passport` module with `Compass` icon to primary navigation in `packages/admin-dashboard/src/App.tsx`.
+  - Added sub-tab switcher ("Roster & Waitlist" vs "Passport Leads") to `FoundersPortal.tsx` for easy access.
+- **Verification Evidence:**
+  - Monorepo typecheck: `npm run typecheck` passed (exit code 0).
+  - Admin Dashboard Vitest: 14/14 test files, 88/88 unit tests green.
+  - Linter & security boundary checks: `npm run lint` clean (0 errors).
+  - Production build: `npm run build --prefix packages/admin-dashboard` clean in 1.29s.
+  - Mainline Delivery: Committed `ab5bcebf2` directly to `main`, pushed to `origin/main`, CI pipeline running in Run #38146245004.
+
 # Artist Passport Gap Report Automated Email Delivery & Funnel Telemetry (2026-10-10 EDT)
 
 Delivered automated diagnostic delivery and funnel telemetry for Artist Passport on `main`:

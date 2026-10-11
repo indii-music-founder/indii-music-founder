@@ -125,7 +125,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     );
 
     expect(screen.getByText(/How ready is your/i)).toBeDefined();
-    expect(screen.getByText(/AI Manages the Business • Humans Create the Music/i)).toBeDefined();
+    expect(screen.getByText(/Humans create the music\. Trained intelligence manages the business\./i)).toBeDefined();
     expect(screen.getByText(/Start Free Business Audit/i)).toBeDefined();
   });
 

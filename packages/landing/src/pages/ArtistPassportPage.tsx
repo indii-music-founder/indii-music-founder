@@ -238,7 +238,7 @@ export default function ArtistPassportPage() {
           >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#FFB800]/30 bg-[#FFB800]/10 text-xs font-mono tracking-wide text-[#FFB800]">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>AI Manages the Business • Humans Create the Music</span>
+                <span>Humans create the music. Trained intelligence manages the business.</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
