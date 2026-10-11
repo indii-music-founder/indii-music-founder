@@ -1,3 +1,24 @@
+# Artist Passport Gap Report Automated Email Delivery & Funnel Telemetry (2026-10-10 EDT)
+
+Delivered automated diagnostic delivery and funnel telemetry for Artist Passport on `main`:
+- **Automated Gap Report Cloud Function (`sendPassportReportEmail`):**
+  - Built `packages/firebase/src/passport/sendPassportReportEmail.ts` with `onDocumentWritten` trigger on `prospect_assessments/{assessmentId}`.
+  - Automatically renders branded HTML email report breaking down artist profile, PRO/MLC royalty status, and release preparation advice.
+  - Idempotent delivery via Resend (`sendTransactionalEmail` in `packages/firebase/src/lib/notify.ts`), writing `reportEmailSentAt` and `reportEmailMessageId`.
+  - Pinned `memory: '512MiB'` satisfying cold-start floor checks (`check-function-memory.cjs`).
+  - 5/5 unit tests passing in `packages/firebase/src/passport/sendPassportReportEmail.test.ts`.
+- **Public Funnel Telemetry Dispatcher (`passportAnalytics`):**
+  - Created `packages/landing/src/lib/passportAnalytics.ts` dispatching `passport_viewed`, `passport_started`, `passport_step_completed`, `passport_completed`, `lead_submitted`, `signup_clicked`, and `freebie_clicked`.
+  - Multi-channel emission to `window.gtag` (Google Analytics / Google Tag), `window.fbq` (Meta Pixel), and `sessionStorage` audit history.
+  - 3/3 unit tests passing in `packages/landing/src/lib/passportAnalytics.test.ts`.
+- **UI Integration in `ArtistPassportPage.tsx`:**
+  - Wired telemetry on page mount, start button click, stepper next transitions, step 6 arrival, contact form submission, and CTA link clicks.
+- **Verification Evidence:**
+  - Monorepo typecheck: `npm run typecheck` passed (exit code 0).
+  - Landing unit tests: 13/13 test files passed, 77/77 tests green.
+  - Landing lint: 0 errors, 0 warnings.
+  - Landing production build: `npm run build:landing` passed in 1.86s.
+
 # Artist Passport Native Funnel Persistence, Auth Handoff & Studio Profile Hydration (2026-10-10 EDT)
 
 Delivered native Artist Passport intake pipeline (Phases 3, 4, 5 of `ARTIST_PASSPORT_NATIVE_BLUEPRINT.md`) on `main`:

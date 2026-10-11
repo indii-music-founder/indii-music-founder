@@ -31,6 +31,7 @@ import {
   updateAssessmentContact,
   getActiveAssessmentId,
 } from '../lib/passportService';
+import { trackPassportEvent } from '../lib/passportAnalytics';
 
 // --- Main Component ---
 export default function ArtistPassportPage() {
@@ -83,6 +84,14 @@ export default function ArtistPassportPage() {
     }
   });
 
+  // Funnel Telemetry: Track page arrival
+  useEffect(() => {
+    trackPassportEvent('passport_viewed', {
+      source: acquisitionSource,
+      initialStep: currentStep,
+    });
+  }, [acquisitionSource, currentStep]);
+
   // Sync to session storage
   useEffect(() => {
     try {
@@ -96,6 +105,16 @@ export default function ArtistPassportPage() {
   // Persist assessment to Firestore when entering Step 6 (diagnostic report)
   useEffect(() => {
     if (currentStep === 6 && answers.careerStage && answers.genre) {
+      trackPassportEvent('passport_completed', {
+        careerStage: answers.careerStage,
+        genre: answers.genre,
+        proAffiliation: answers.proAffiliation,
+        mlcRegistered: answers.mlcRegistered,
+        distributor: answers.distributor,
+        releaseStatus: answers.releaseStatus,
+        goalsCount: answers.goals.length,
+      }, assessmentId);
+
       void saveProspectAssessment(answers, {
         source: acquisitionSource,
         artistName: artistName || undefined,
@@ -106,7 +125,21 @@ export default function ArtistPassportPage() {
         if (id) setAssessmentId(id);
       });
     }
-  }, [currentStep, answers, acquisitionSource, artistName, email, marketingOptIn, assessmentConsent]);
+  }, [currentStep, answers, acquisitionSource, artistName, email, marketingOptIn, assessmentConsent, assessmentId]);
+
+  const handleStart = () => {
+    trackPassportEvent('passport_started', { source: acquisitionSource });
+    setCurrentStep(1);
+  };
+
+  const handleNextStep = () => {
+    const stepNames = ['hero', 'stage', 'genre', 'rights', 'distribution', 'goals'];
+    trackPassportEvent('passport_step_completed', {
+      stepIndex: currentStep,
+      stepName: stepNames[currentStep] || `step_${currentStep}`,
+    }, assessmentId);
+    setCurrentStep((prev) => prev + 1);
+  };
 
   const handleGoalToggle = (goalId: string) => {
     setAnswers((prev) => {
@@ -223,7 +256,7 @@ export default function ArtistPassportPage() {
               <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(1)}
+                  onClick={handleStart}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-black text-black bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_24px_rgba(255,184,0,0.35)]"
                 >
                   <span>Start Free Business Audit</span>
@@ -750,6 +783,12 @@ export default function ArtistPassportPage() {
                     onSubmit={async (e) => {
                       e.preventDefault();
                       setLeadSubmitted(true);
+                      trackPassportEvent('lead_submitted', {
+                        hasName: Boolean(artistName),
+                        hasEmail: Boolean(email),
+                        marketingOptIn,
+                        assessmentConsent,
+                      }, assessmentId);
                       if (assessmentId) {
                         await updateAssessmentContact(assessmentId, {
                           artistName: artistName || undefined,
@@ -836,6 +875,7 @@ export default function ArtistPassportPage() {
                 <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-white/10">
                   <Link
                     to={`/signup${referralQuery}${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}`}
+                    onClick={() => trackPassportEvent('signup_clicked', { cta: 'claim_passport' }, assessmentId)}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-black text-black bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_28px_rgba(255,184,0,0.4)]"
                   >
                     <span>Claim Your Artist Passport & Enter Studio</span>
@@ -888,6 +928,7 @@ export default function ArtistPassportPage() {
                 <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                   <Link
                     to={`/${referralQuery}${referralQuery.includes('?') ? '&' : '?'}from=passport${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}#studio-preview`}
+                    onClick={() => trackPassportEvent('freebie_clicked', { cta: 'still_not_convinced' }, assessmentId)}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 hover:border-[#FFB800]/50 transition-all group"
                   >
                     <span>Still Not Convinced? See Full Platform & Free Tools</span>
@@ -917,7 +958,7 @@ export default function ArtistPassportPage() {
             <button
               type="button"
               disabled={!isStepValid(currentStep)}
-              onClick={() => setCurrentStep((prev) => prev + 1)}
+              onClick={handleNextStep}
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-mono font-bold text-black bg-[#FFB800] hover:bg-[#FFD700] disabled:opacity-40 disabled:hover:bg-[#FFB800] transition-all shadow-[0_0_15px_rgba(255,184,0,0.25)]"
             >
               <span>{currentStep === 5 ? 'Generate Assessment' : 'Next Step'}</span>

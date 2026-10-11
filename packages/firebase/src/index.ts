@@ -212,6 +212,9 @@ export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email
 // Email Delivery Service (Resend — transactional emails, contract PDFs, notifications)
 export { sendEmail } from './email/sendEmail';
 
+// Artist Passport Funnel — automatic Gap Report email delivery on lead capture
+export { sendPassportReportEmail } from './passport/sendPassportReportEmail';
+
 // Founding Artist Beta — verified, server-authoritative waitlist enrollment.
 export { joinFoundingArtistWaitlist } from './foundingArtist/waitlist';
 export {
