@@ -4641,12 +4641,15 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1511 progress update — 2026-10-11
 
-- **Status:** 🟡 PARTIAL (Foundational Rights Registration Manifest schemas, deposit asset pre-flight validation, deterministic browser copilot action engine, and client RightsCopilotService delivered and tested across monorepo)
+- **Status:** 🟡 PARTIAL (Foundations, client service, and interactive Studio Copilot Assistant modal delivered)
 - **Delivered Capabilities:**
   1. `packages/shared/src/types/rightsRegistration.ts`: Complete data models for `RightsRegistrationManifest`, `PortalTarget`, `ContributorSplit`, `DepositAsset`, `WorkMetadata`, `CopilotAction`, `BrowserCopilotSession`, and `RegistrationFilingRecord`. Includes deterministic `validateRegistrationManifest`, `validateDepositAsset`, and `generateCopilotActionPlan`. (10/10 tests passing in `packages/shared/src/types/rightsRegistration.test.ts`).
   2. `packages/renderer/src/services/rights/RightsCopilotService.ts`: Client orchestration connecting `ProspectAssessment` intakes to manifests, auto-routing detected rights gaps (MLC, PRO, US Copyright Office, SoundExchange), computing SHA-256 binary audio deposit checksums via Web Crypto, and generating printable filing dossiers. (5/5 tests passing in `packages/renderer/src/services/rights/RightsCopilotService.test.ts`).
-- **Validation:** 100% clean typecheck (`npm run typecheck`), zero ESLint errors, all unit tests passing green.
-- **Still Open:** Electron BrowserView interactive overlay UI integration and Playwright/CDP automation runner script generation.
+  3. `packages/renderer/src/modules/registration/components/RightsCopilotModal.tsx`: Interactive Copilot Assistant modal for US Copyright Office eCO, The MLC, PROs, SoundExchange, and HFA with real-time deposit copy SHA-256 calculation, filing dossier export, and privacy-preserving navigation plan. (7/7 tests passing in `RightsCopilotModal.test.tsx`).
+  4. `packages/renderer/src/modules/registration/components/FounderReadinessPanel.tsx`: Wired "Copilot Assistant" launch triggers directly into the founder prerequisite checklist. (3/3 tests passing in `FounderReadinessPanel.test.tsx`).
+- **Validation:** 100% clean monorepo typecheck (`npm run typecheck`), zero ESLint errors, all unit tests passing green.
+- **Still Open:** Electron BrowserView interactive overlay and Playwright/CDP automation script sidecar.
+
 
 
 
