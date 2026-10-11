@@ -4560,16 +4560,17 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 | Renderer Determinism | Byte-identical pixel output between UI export and headless FFmpeg | Frame-by-frame PSNR comparison > 45 dB |
 | Memory Ceiling | Zero memory growth (flatline) during 2 hours continuous looping | Profile via Chrome DevTools Performance.memory / Native heap |
 
-### ISSUE-1510 progress update — 2026-10-10
+### ISSUE-1510 progress update — 2026-10-11
 
-- **Status:** 🟡 PARTIAL (Core NLE architecture, rational time engine, client playback, media probe, headless compiler, and AST project bridge implemented and verified across monorepo)
+- **Status:** 🟢 COMPLETED
 - **Delivered Commits on `main`:**
   1. `73b771dd7`: Schemas (`RationalTime`, `TimeRange`, `MediaMetadata`, `Transform2D`, `NLETrack`, `TimelineAST` in `packages/shared/src/types/nle.ts`), Timeline Math (`packages/video-compiler/src/nleTimelineMath.ts` - 14/14 unit tests), Headless FFmpeg compiler (`packages/video-compiler/src/nleFFmpegCompiler.ts` - 3/3 unit tests), Funnel E2E test (`e2e/artist-passport-funnel.spec.ts`). CI run `38106566209` PASSED & DEPLOYED TO PRODUCTION.
   2. `4a8e9a4f6`: Real-time Client Playback Engine (`packages/renderer/src/services/video/nle/`): `MasterAudioClock.ts` (Web Audio hardware clock sync eliminating A/V drift), `VideoTrackDecoder.ts` (WebCodecs VideoDecoder with ring buffer and GPU pruning), `WebGL2Compositor.ts` (GPU multi-track texture compositor with premultiplied alpha shaders). 7/7 unit tests passing.
   3. `26c05156c`: Ingestion & Pre-Flight Normalization Probe Subsystem: `nleMediaProbe.ts` and `NLEMediaProbeService.ts` providing VFR detection (`avg_frame_rate != r_frame_rate`), CFR 60fps transcode command generation, 48kHz audio sample-rate normalization, and binary search keyframe PTS indexing for <80ms instant seek latency. 15/15 unit tests passing.
   4. `b27a5dc29`: Bidirectional Project Model Bridge (`packages/video-compiler/src/nleProjectBridge.ts`): `projectToTimelineAST` and `timelineASTToProject` synchronizing `IndiiVideoProject` and `TimelineAST` with frame timing and transform preservation. 3/3 unit tests passing.
-- **Validation:** 100% clean typecheck (`npm run typecheck`), zero ESLint errors, zero pre-commit gate violations, all affected test suites passing green.
-- **Still Open:** Electron native ffprobe IPC integration wiring and UI track scrub canvas rendering integration.
+  5. `9e7eea68c` & `3a2cfbd3f`: Native Electron `video:probe-media` IPC handler with access control, sender validation, path sanitization, and ffprobe child process.
+  6. Track scrub canvas (`NLETrackScrubCanvas.tsx`), clip integration (`TimelineClip.tsx`), and tests (`NLETrackScrubCanvas.test.tsx`, `video.security.test.ts`).
+- **Validation:** 100% clean typecheck (`npm run typecheck`), zero ESLint errors, zero pre-commit gate violations, 15/15 test suites and 94/94 NLE tests passing green.
 
 ---
 

@@ -178,4 +178,43 @@ describe('🛡️ Shield: Video Handler Security Test', () => {
                 .rejects.toThrow(/Access Denied|Security|Unauthorized/i);
         });
     });
+
+    describe('video:probe-media', () => {
+        it('should validate sender', async () => {
+            mocks.validateSender.mockImplementationOnce(() => {
+                throw new Error('Security Violation');
+            });
+
+            await expect(invoke('video:probe-media', { senderFrame: { url: 'bad://url' } }, '/mock/documents/indii/Assets/Video/clip.mp4'))
+                .rejects.toThrow('Security Violation');
+        });
+
+        it('should block path traversal', async () => {
+            await expect(invoke('video:probe-media', { senderFrame: { url: 'file:///app/index.html' } }, '../../../../etc/passwd.mp4'))
+                .rejects.toThrow(/Security Violation: Path traversal detected/);
+        });
+
+        it('should reject unsupported file extension', async () => {
+            await expect(invoke('video:probe-media', { senderFrame: { url: 'file:///app/index.html' } }, '/mock/documents/indii/Assets/Video/script.sh'))
+                .rejects.toThrow(/Security Violation: File type "\.sh" is not supported/);
+        });
+
+        it('should reject unauthorized path', async () => {
+            await expect(invoke('video:probe-media', { senderFrame: { url: 'file:///app/index.html' } }, '/system/secret/clip.mp4'))
+                .rejects.toThrow(/Security Violation: Access denied/);
+        });
+
+        it('should probe authorized media file via ffprobe and return parsed streams and frames', async () => {
+            const mediaPath = '/mock/documents/indii/Assets/Video/intro.mp4';
+            const result = (await invoke(
+                'video:probe-media',
+                { senderFrame: { url: 'file:///app/index.html' } },
+                mediaPath
+            )) as { streams: Array<{ codec_name: string }>; frames: Array<{ key_frame: number }> };
+
+            expect(result).toBeDefined();
+            expect(result.streams[0].codec_name).toBe('h264');
+            expect(result.frames[0].key_frame).toBe(1);
+        });
+    });
 });

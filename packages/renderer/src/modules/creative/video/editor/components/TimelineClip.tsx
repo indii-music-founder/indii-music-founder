@@ -2,6 +2,7 @@ import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { AudioWaveform } from './AudioWaveform';
+import { NLETrackScrubCanvas } from './NLETrackScrubCanvas';
 import { getKeyframeColor } from '../utils/keyframeUtils';
 import { PIXELS_PER_FRAME, ANIMATABLE_PROPERTIES } from '../constants';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
@@ -190,7 +191,15 @@ export const TimelineClip = memo(({
             {(clip.type === 'video' || clip.type === 'image') && displayUrl && (
                 <div className="absolute inset-0 z-0 opacity-70 pointer-events-none overflow-hidden rounded bg-black/50">
                     {clip.type === 'video' ? (
-                        <video src={displayUrl} className="w-full h-full object-cover" muted preload="none" />
+                        <NLETrackScrubCanvas
+                            src={displayUrl}
+                            width={clip.durationInFrames * pxPerFrame}
+                            height={64}
+                            durationInFrames={clip.durationInFrames}
+                            fps={fps}
+                            sourceInUs={clip.sourceInUs}
+                            sourceOutUs={clip.sourceOutUs}
+                        />
                     ) : (
                         <img src={displayUrl} className="w-full h-full object-cover" alt="" />
                     )}
