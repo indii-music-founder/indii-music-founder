@@ -13,9 +13,11 @@ import {
   Globe,
   Activity,
   History,
-  BrainCircuit
+  BrainCircuit,
+  Compass
 } from 'lucide-react';
 import { FoundersPortal } from './components/modules/FoundersPortal';
+import { ProspectsPanel } from './components/modules/ProspectsPanel';
 import { TokenUsage } from './components/modules/TokenUsage';
 import { EmailManager } from './components/modules/EmailManager';
 import { GoogleHub } from './components/modules/GoogleHub';
@@ -122,6 +124,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
     { name: 'Token Usage', icon: <BarChart3 className="w-5 h-5" />, color: 'text-[#4bd5ee]' },
     { name: 'AI Providers', icon: <BrainCircuit className="w-5 h-5" />, color: 'text-violet-400' },
     { name: 'Founders Portal', icon: <Users className="w-5 h-5" />, color: 'text-[#ffb800]' },
+    { name: 'Artist Passport', icon: <Compass className="w-5 h-5" />, color: 'text-amber-400' },
     { name: 'Inbox & Messaging', icon: <Mail className="w-5 h-5" />, color: 'text-purple-500' },
     { name: 'Google Workspace Hub', icon: <Globe className="w-5 h-5" />, color: 'text-[#4bd5ee]' },
     { name: 'DDEX Deliveries', icon: <ShieldCheck className="w-5 h-5" />, color: 'text-emerald-400' },
@@ -228,6 +231,8 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
               <AIProviderMonitor />
             ) : activeModule === 'Founders Portal' ? (
               <FoundersPortal />
+            ) : activeModule === 'Artist Passport' ? (
+              <ProspectsPanel />
             ) : activeModule === 'Inbox & Messaging' ? (
               <EmailManager />
             ) : activeModule === 'Google Workspace Hub' ? (

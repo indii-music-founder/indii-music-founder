@@ -554,6 +554,174 @@ describe('admin-dashboard server.ts', () => {
         });
     });
 
+    describe('GET /api/prospects', () => {
+        it('rejects unauthenticated access', async () => {
+            const res = await request('GET', '/api/prospects');
+            expect(res.status).toBe(401);
+        });
+
+        it('rejects non-admin caller', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'outsider@gmail.com' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+
+            const res = await request('GET', '/api/prospects', { headers: { Authorization: 'Bearer some-token' } });
+            expect(res.status).toBe(403);
+        });
+
+        it('returns all prospect assessments and calculated summary metrics', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+
+            const prospectsQuery = makeQuery(makeSnapshot([
+                {
+                    id: 'asmt-1',
+                    data: {
+                        artistName: 'Luna Wave',
+                        email: 'luna@example.com',
+                        careerStage: 'developing',
+                        genre: 'Electronic / Dance',
+                        proAffiliation: 'BMI',
+                        mlcRegistered: 'No',
+                        distributor: 'DistroKid',
+                        releaseStatus: 'Ready in 30 days',
+                        goals: ['Distribute music', 'Collect royalties'],
+                        assessmentConsent: true,
+                        marketingConsent: true,
+                        claimedByUid: 'uid-luna',
+                        createdAt: { toDate: () => new Date('2026-09-01T10:00:00Z') },
+                        source: 'passport_organic',
+                    },
+                },
+                {
+                    id: 'asmt-2',
+                    data: {
+                        careerStage: 'emerging',
+                        genre: 'Hip-Hop / Rap',
+                        proAffiliation: 'None',
+                        mlcRegistered: 'Unsure',
+                        distributor: 'None',
+                        releaseStatus: 'Actively recording',
+                        goals: ['Protect rights'],
+                        assessmentConsent: false,
+                        marketingConsent: false,
+                        createdAt: { toDate: () => new Date('2026-09-02T10:00:00Z') },
+                    },
+                },
+            ]));
+
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn((name: string) => {
+                    if (name === 'prospect_assessments') return prospectsQuery;
+                    return makeQuery(makeSnapshot([]));
+                }),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('GET', '/api/prospects', { headers: { Authorization: 'Bearer good-token' } });
+            expect(res.status).toBe(200);
+            expect(res.body).toMatchObject({
+                summary: {
+                    totalAssessments: 2,
+                    emailCapturedCount: 1,
+                    assessmentCopyRequestedCount: 1,
+                    claimedAccountCount: 1,
+                    rightsGapsCount: 2,
+                },
+                prospects: [
+                    expect.objectContaining({
+                        id: 'asmt-2',
+                        careerStage: 'emerging',
+                        genre: 'Hip-Hop / Rap',
+                        hasEmail: false,
+                        rightsGaps: expect.arrayContaining([
+                            'No PRO Affiliation',
+                            'Unregistered with The MLC',
+                            'No Active Distributor',
+                        ]),
+                    }),
+                    expect.objectContaining({
+                        id: 'asmt-1',
+                        artistName: 'Luna Wave',
+                        email: 'luna@example.com',
+                        hasEmail: true,
+                        assessmentConsent: true,
+                        claimedByUid: 'uid-luna',
+                        rightsGaps: expect.arrayContaining(['Unregistered with The MLC']),
+                    }),
+                ],
+            });
+        });
+    });
+
+    describe('POST /api/prospects/notes', () => {
+        beforeEach(() => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+        });
+
+        it('rejects request without assessmentId', async () => {
+            const res = await request('POST', '/api/prospects/notes', {
+                headers: { Authorization: 'Bearer good-token' },
+                body: { notes: 'hello' },
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it('returns 404 if prospect document does not exist', async () => {
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => ({
+                    doc: vi.fn(() => ({
+                        get: vi.fn().mockResolvedValue({ exists: false }),
+                    })),
+                })),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('POST', '/api/prospects/notes', {
+                headers: { Authorization: 'Bearer good-token' },
+                body: { assessmentId: 'missing-asmt', notes: 'testing' },
+            });
+            expect(res.status).toBe(404);
+        });
+
+        it('updates prospect notes and status successfully', async () => {
+            const setStub = vi.fn().mockResolvedValue(undefined);
+            const docStub = {
+                get: vi.fn().mockResolvedValue({
+                    exists: true,
+                    data: () => ({ email: 'artist@example.com' }),
+                }),
+                set: setStub,
+            };
+
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => ({
+                    doc: vi.fn(() => docStub),
+                })),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('POST', '/api/prospects/notes', {
+                headers: { Authorization: 'Bearer good-token' },
+                body: {
+                    assessmentId: 'asmt-123',
+                    email: 'artist@example.com',
+                    notes: 'Spoke about mechanicals',
+                    followUpStatus: 'in_discussion',
+                },
+            });
+
+            expect(res.status).toBe(200);
+            expect(setStub).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    notes: 'Spoke about mechanicals',
+                    followUpStatus: 'in_discussion',
+                }),
+                { merge: true }
+            );
+        });
+    });
+
     describe('GET /api/usage/summary', () => {
         beforeEach(() => {
             vi.mocked(admin.auth).mockReturnValue({

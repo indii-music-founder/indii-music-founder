@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Crown, Clock, AlertTriangle } from 'lucide-react';
+import { Users, Crown, Clock, AlertTriangle, Compass } from 'lucide-react';
 import { WaitlistPanel } from './WaitlistPanel';
+import { ProspectsPanel } from './ProspectsPanel';
 
 /**
  * Founders Portal.
@@ -38,6 +39,7 @@ export const FoundersPortal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [data, setData] = useState<FoundersResponse | null>(null);
+  const [subTab, setSubTab] = useState<'roster_waitlist' | 'passport_leads'>('roster_waitlist');
 
   useEffect(() => {
     let cancelled = false;
@@ -82,7 +84,7 @@ export const FoundersPortal: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header — framed in the site's 5-color metallic gold foil */}
-      <div className="flex items-center justify-between foil-gold-border p-6 rounded-3xl">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between foil-gold-border p-6 rounded-3xl">
         <div>
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
             <Users className="text-[#ffb800] w-6 h-6" />
@@ -90,9 +92,38 @@ export const FoundersPortal: React.FC = () => {
           </h3>
           <p className="text-sm text-white/40 mt-1">Live founders roster from the activation ledger.</p>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSubTab('roster_waitlist')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              subTab === 'roster_waitlist'
+                ? 'bg-[#ffb800]/20 text-[#ffb800] border border-[#ffb800]/40'
+                : 'bg-white/5 text-white/50 border border-white/5 hover:text-white'
+            }`}
+          >
+            Roster & Waitlist
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubTab('passport_leads')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              subTab === 'passport_leads'
+                ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
+                : 'bg-white/5 text-white/50 border border-white/5 hover:text-white'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5" />
+            Passport Leads
+          </button>
+        </div>
       </div>
 
-      {authRequired ? (
+      {subTab === 'passport_leads' ? (
+        <ProspectsPanel />
+      ) : (
+        <>
+          {authRequired ? (
         <Panel
           icon={<AlertTriangle className="w-6 h-6 text-[#ffb800]" />}
           title="Admin authentication required"
@@ -174,7 +205,9 @@ export const FoundersPortal: React.FC = () => {
         </>
       )}
       <WaitlistPanel />
-    </div>
+    </>
+  )}
+</div>
   );
 };
 

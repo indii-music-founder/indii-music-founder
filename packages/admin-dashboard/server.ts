@@ -328,6 +328,21 @@ app.get('/api/founders', requireAdminAuth, async (_req, res) => {
   }
 });
 
+const toIso = (value: unknown): string | null => {
+  try {
+    const date = typeof value === 'object' && value !== null && 'toDate' in value
+      ? (value as { toDate?: () => Date }).toDate?.()
+      : value instanceof Date
+        ? value
+        : typeof value === 'string'
+          ? new Date(value)
+          : null;
+    return date && !Number.isNaN(date.getTime()) ? date.toISOString() : null;
+  } catch {
+    return null;
+  }
+};
+
 // Serves both the canonical verified Founding Artist queue and the legacy raw
 // landing submissions. Canonical records win during deduplication; raw records
 // remain labelled legacy_unverified until their owner completes email-link auth.
@@ -355,21 +370,6 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
       contactCount?: number;
       notes?: string;
     }>();
-
-    const toIso = (value: unknown): string | null => {
-      try {
-        const date = typeof value === 'object' && value !== null && 'toDate' in value
-          ? (value as { toDate?: () => Date }).toDate?.()
-          : value instanceof Date
-            ? value
-            : typeof value === 'string'
-              ? new Date(value)
-              : null;
-        return date && !Number.isNaN(date.getTime()) ? date.toISOString() : null;
-      } catch {
-        return null;
-      }
-    };
 
     for (const document of verifiedSnapshot.docs) {
       const data = document.data() as {
@@ -473,6 +473,192 @@ app.get('/api/waitlist', requireAdminAuth, async (_req, res) => {
   }
 });
 
+// Surfaces all Artist Passport diagnostic prospect assessments (/prospect_assessments)
+// with diagnostic intake responses, rights gaps analysis, consent preferences, and CRM status.
+app.get('/api/prospects', requireAdminAuth, async (_req, res) => {
+  try {
+    const firestore = admin.firestore();
+    let snapshot: FirebaseFirestore.QuerySnapshot;
+    try {
+      snapshot = await firestore
+        .collection('prospect_assessments')
+        .orderBy('createdAt', 'desc')
+        .limit(1000)
+        .get();
+    } catch {
+      // Fallback if composite or field index on createdAt is still indexing
+      snapshot = await firestore.collection('prospect_assessments').limit(1000).get();
+    }
+
+    const prospects: Array<{
+      id: string;
+      createdAt: string | null;
+      updatedAt: string | null;
+      clientSessionId: string;
+      artistName: string | null;
+      email: string | null;
+      hasEmail: boolean;
+      careerStage: string;
+      genre: string;
+      proAffiliation: string;
+      mlcRegistered: string;
+      distributor: string;
+      releaseStatus: string;
+      goals: string[];
+      marketingConsent: boolean;
+      assessmentConsent: boolean;
+      claimedByUid: string | null;
+      claimedAt: string | null;
+      source: string;
+      rightsGaps: string[];
+      followUpStatus: string;
+      lastContactedAt: string | null;
+      contactCount: number;
+      notes: string;
+    }> = [];
+
+    let emailCapturedCount = 0;
+    let assessmentCopyRequestedCount = 0;
+    let claimedAccountCount = 0;
+    let rightsGapsCount = 0;
+
+    for (const doc of snapshot.docs) {
+      const data = doc.data() as Record<string, unknown>;
+      const email = typeof data.email === 'string' && data.email.trim() ? data.email.trim().toLowerCase() : null;
+      const artistName = typeof data.artistName === 'string' && data.artistName.trim() ? data.artistName.trim() : null;
+      const careerStage = typeof data.careerStage === 'string' ? data.careerStage : 'unknown';
+      const genre = typeof data.genre === 'string' ? data.genre : 'unknown';
+      const proAffiliation = typeof data.proAffiliation === 'string' ? data.proAffiliation : 'None';
+      const mlcRegistered = typeof data.mlcRegistered === 'string' ? data.mlcRegistered : 'Unsure';
+      const distributor = typeof data.distributor === 'string' ? data.distributor : 'None';
+      const releaseStatus = typeof data.releaseStatus === 'string' ? data.releaseStatus : 'unknown';
+      const goals = Array.isArray(data.goals) ? data.goals.filter((g): g is string => typeof g === 'string') : [];
+      const marketingConsent = data.marketingConsent === true;
+      const assessmentConsent = data.assessmentConsent === true;
+      const claimedByUid = typeof data.claimedByUid === 'string' ? data.claimedByUid : null;
+      const claimedAt = toIso(data.claimedAt);
+      const source = typeof data.source === 'string' ? data.source : 'passport_organic';
+      const followUpStatus = typeof data.followUpStatus === 'string' ? data.followUpStatus : 'not_contacted';
+      const lastContactedAt = toIso(data.lastContactedAt);
+      const contactCount = typeof data.contactCount === 'number' ? data.contactCount : 0;
+      const notes = typeof data.notes === 'string' ? data.notes : '';
+
+      // Identify rights gaps
+      const rightsGaps: string[] = [];
+      const proLower = proAffiliation.toLowerCase();
+      if (proLower === 'none' || proLower === 'unsure' || proLower === 'not affiliated') {
+        rightsGaps.push('No PRO Affiliation');
+      }
+      const mlcLower = mlcRegistered.toLowerCase();
+      if (mlcLower === 'no' || mlcLower === 'unsure' || mlcLower === 'not registered') {
+        rightsGaps.push('Unregistered with The MLC');
+      }
+      if (distributor.toLowerCase() === 'none') {
+        rightsGaps.push('No Active Distributor');
+      }
+
+      if (email) emailCapturedCount++;
+      if (assessmentConsent) assessmentCopyRequestedCount++;
+      if (claimedByUid) claimedAccountCount++;
+      if (rightsGaps.length > 0) rightsGapsCount++;
+
+      prospects.push({
+        id: doc.id,
+        createdAt: toIso(data.createdAt),
+        updatedAt: toIso(data.updatedAt),
+        clientSessionId: typeof data.clientSessionId === 'string' ? data.clientSessionId : doc.id,
+        artistName,
+        email,
+        hasEmail: Boolean(email),
+        careerStage,
+        genre,
+        proAffiliation,
+        mlcRegistered,
+        distributor,
+        releaseStatus,
+        goals,
+        marketingConsent,
+        assessmentConsent,
+        claimedByUid,
+        claimedAt,
+        source,
+        rightsGaps,
+        followUpStatus,
+        lastContactedAt,
+        contactCount,
+        notes,
+      });
+    }
+
+    // Sort by createdAt desc if not already sorted
+    prospects.sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    res.json({
+      summary: {
+        totalAssessments: prospects.length,
+        emailCapturedCount,
+        assessmentCopyRequestedCount,
+        claimedAccountCount,
+        rightsGapsCount,
+      },
+      prospects,
+    });
+  } catch (error) {
+    console.error('[Prospects] Failed to load prospect assessments:', error);
+    res.status(500).json({ error: 'Failed to load prospect assessments' });
+  }
+});
+
+// Update founder private notes and CRM follow-up status for an Artist Passport prospect
+app.post('/api/prospects/notes', requireAdminAuth, async (req, res) => {
+  const { assessmentId, email, notes, followUpStatus } = req.body;
+  if (!assessmentId || typeof assessmentId !== 'string') {
+    return res.status(400).json({ error: 'Valid assessmentId is required' });
+  }
+
+  const allowedStatuses = ['not_contacted', 'contacted', 'follow_up_needed', 'in_discussion', 'invited'];
+  const validStatus = typeof followUpStatus === 'string' && allowedStatuses.includes(followUpStatus)
+    ? followUpStatus
+    : undefined;
+
+  try {
+    const firestore = admin.firestore();
+    const docRef = firestore.collection('prospect_assessments').doc(assessmentId.trim());
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({ error: 'Prospect assessment not found' });
+    }
+
+    const nowIso = new Date().toISOString();
+    const updatePayload: Record<string, unknown> = {
+      updatedAt: nowIso,
+    };
+    if (typeof notes === 'string') updatePayload.notes = notes.trim();
+    if (validStatus) updatePayload.followUpStatus = validStatus;
+
+    await docRef.set(updatePayload, { merge: true });
+
+    // Sync to artist_crm_metadata if email exists
+    const targetEmail = typeof email === 'string' && email.includes('@')
+      ? email.trim().toLowerCase()
+      : (docSnap.data()?.email as string | undefined)?.trim()?.toLowerCase();
+
+    if (targetEmail) {
+      await firestore.collection('artist_crm_metadata').doc(targetEmail).set(updatePayload, { merge: true });
+    }
+
+    res.json({ success: true, assessmentId, ...updatePayload });
+  } catch (error) {
+    console.error('[Prospects] Failed to update prospect notes:', error);
+    res.status(500).json({ error: 'Failed to update prospect notes' });
+  }
+});
+
 // Record direct communication across audit, messaging inbox, and waitlist CRM records
 async function recordArtistCommunication(opts: {
   artistEmail: string;
@@ -541,6 +727,27 @@ async function recordArtistCommunication(opts: {
     }
   } catch (e) {
     console.error('[Waitlist] Failed to update foundingArtistWaitlist record:', e);
+  }
+
+  // 3b. Update prospect_assessments documents if matching prospect exists
+  try {
+    const prospectSnap = await firestore
+      .collection('prospect_assessments')
+      .where('email', '==', opts.artistEmail)
+      .limit(10)
+      .get();
+    for (const doc of prospectSnap.docs) {
+      await doc.ref.set({
+        lastContactedAt: nowIso,
+        lastContactSubject: opts.subject,
+        lastContactFrom: opts.fromAddress,
+        contactCount: admin.firestore.FieldValue?.increment ? admin.firestore.FieldValue.increment(1) : 1,
+        followUpStatus: 'contacted',
+        updatedAt: nowIso,
+      }, { merge: true });
+    }
+  } catch (e) {
+    console.error('[Prospects] Failed to update prospect_assessments record on communication:', e);
   }
 
   // 4. Immutable event trail in foundingArtistEvents
