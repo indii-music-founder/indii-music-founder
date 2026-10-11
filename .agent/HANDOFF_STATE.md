@@ -1,3 +1,21 @@
+# Rights Registration Copilot Engine Foundations — ISSUE-1511 (2026-10-11 EDT)
+
+Delivered foundational contracts, validation, and deterministic copilot engine for ISSUE-1511 on `main`:
+- **Shared Schemas & Contracts (`packages/shared/src/types/rightsRegistration.ts`):**
+  - Data models: `RightsRegistrationManifest`, `PortalTarget`, `ContributorSplit`, `DepositAsset`, `WorkMetadata`, `CopilotAction`, `BrowserCopilotSession`, and `RegistrationFilingRecord`.
+  - Deterministic validators: `validateRegistrationManifest` (enforcing legal name, target portals, and 100% writer split integrity) and `validateDepositAsset` (enforcing SHA-256 hex checksums and supported audio MIME types).
+  - Deterministic action generator: `generateCopilotActionPlan` mapping portal workflows for US Copyright Office eCO and The MLC.
+  - 10/10 unit tests passing in `packages/shared/src/types/rightsRegistration.test.ts`.
+- **Client Copilot Service (`packages/renderer/src/services/rights/RightsCopilotService.ts`):**
+  - Auto-translates `ProspectAssessment` diagnostic gaps into target portals (`the_mlc`, `bmi`, `loc_copyright`, `soundexchange`).
+  - Web Crypto SHA-256 checksum computation for audio deposit files.
+  - Generates printable filing dossiers and legal split sheets.
+  - 5/5 unit tests passing in `packages/renderer/src/services/rights/RightsCopilotService.test.ts`.
+- **Validation Evidence:**
+  - Monorepo typecheck: `npm run typecheck` passed (exit code 0).
+  - ESLint: 0 errors, 0 warnings.
+  - `packages/shared` build: Clean.
+
 # Artist Passport Unit Economics, Brand Copy Alignment & Rights Registration Copilot Architecture (2026-10-11 EDT)
 
 Delivered investor-grade Unit Economics & CAC/ROI engine, artist brand copy alignment, and opened ISSUE-1511 specification on `main`:

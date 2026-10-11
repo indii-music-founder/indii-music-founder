@@ -4639,4 +4639,14 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   | Credential Isolation | Zero storage of user government passwords or payment credentials on indii servers | Fail-closed security rule audit |
   | Funnel Handoff | 1-click transition from Artist Passport diagnostic rights gap to active copilot session | Diagnostic result "Resolve Gap with Copilot" action hook |
 
+### ISSUE-1511 progress update — 2026-10-11
+
+- **Status:** 🟡 PARTIAL (Foundational Rights Registration Manifest schemas, deposit asset pre-flight validation, deterministic browser copilot action engine, and client RightsCopilotService delivered and tested across monorepo)
+- **Delivered Capabilities:**
+  1. `packages/shared/src/types/rightsRegistration.ts`: Complete data models for `RightsRegistrationManifest`, `PortalTarget`, `ContributorSplit`, `DepositAsset`, `WorkMetadata`, `CopilotAction`, `BrowserCopilotSession`, and `RegistrationFilingRecord`. Includes deterministic `validateRegistrationManifest`, `validateDepositAsset`, and `generateCopilotActionPlan`. (10/10 tests passing in `packages/shared/src/types/rightsRegistration.test.ts`).
+  2. `packages/renderer/src/services/rights/RightsCopilotService.ts`: Client orchestration connecting `ProspectAssessment` intakes to manifests, auto-routing detected rights gaps (MLC, PRO, US Copyright Office, SoundExchange), computing SHA-256 binary audio deposit checksums via Web Crypto, and generating printable filing dossiers. (5/5 tests passing in `packages/renderer/src/services/rights/RightsCopilotService.test.ts`).
+- **Validation:** 100% clean typecheck (`npm run typecheck`), zero ESLint errors, all unit tests passing green.
+- **Still Open:** Electron BrowserView interactive overlay UI integration and Playwright/CDP automation runner script generation.
+
+
 
