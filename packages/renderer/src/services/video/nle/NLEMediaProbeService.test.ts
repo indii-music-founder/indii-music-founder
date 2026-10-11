@@ -89,4 +89,37 @@ describe('NLEMediaProbeService (Renderer Client Service)', () => {
     expect(result.metadata.audio?.sampleRate).toBe(48000);
     expect(result.isVFR).toBe(false);
   });
+
+  it('probes asset via window.electronAPI.video.probeMedia when available', async () => {
+    const electronProbeSpy = vi.fn().mockResolvedValue({
+      streams: [
+        {
+          codec_type: 'video',
+          codec_name: 'h264',
+          width: 3840,
+          height: 2160,
+          avg_frame_rate: '24/1',
+          r_frame_rate: '24/1',
+        },
+      ],
+      frames: [{ key_frame: 1, pkt_pts: 0 }],
+    });
+
+    (window as unknown as { electronAPI?: { video?: { probeMedia?: typeof electronProbeSpy } } }).electronAPI = {
+      video: {
+        probeMedia: electronProbeSpy,
+      },
+    };
+
+    const result = await NLEMediaProbeService.probeAsset({
+      sourceUri: '/local/4k_clip.mp4',
+      assetId: 'asset-4k',
+    });
+
+    expect(electronProbeSpy).toHaveBeenCalledWith('/local/4k_clip.mp4');
+    expect(result.metadata.video?.width).toBe(3840);
+    expect(result.metadata.video?.height).toBe(2160);
+
+    delete (window as unknown as { electronAPI?: unknown }).electronAPI;
+  });
 });

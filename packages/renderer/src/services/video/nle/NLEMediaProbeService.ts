@@ -39,8 +39,36 @@ export class NLEMediaProbeService {
 
     if (nativeProbeFn) {
       rawProbeData = await nativeProbeFn(sourceUri);
-    } else if (typeof window !== 'undefined' && (window as unknown as { electronAPI?: { probeMedia?: (uri: string) => Promise<unknown> } }).electronAPI?.probeMedia) {
-      rawProbeData = (await (window as unknown as { electronAPI: { probeMedia: (uri: string) => Promise<{ streams: FfprobeRawStream[]; frames?: FfprobeRawFrame[] }> } }).electronAPI.probeMedia(sourceUri));
+    } else if (typeof window !== 'undefined' && window.electronAPI) {
+      const electron = window.electronAPI;
+      if (typeof electron.video?.probeMedia === 'function') {
+        rawProbeData = (await electron.video.probeMedia(sourceUri)) as { streams: FfprobeRawStream[]; frames?: FfprobeRawFrame[] };
+      } else if (typeof electron.probeMedia === 'function') {
+        rawProbeData = (await electron.probeMedia(sourceUri)) as { streams: FfprobeRawStream[]; frames?: FfprobeRawFrame[] };
+      } else {
+        // Browser fallback probe (Standard 60fps CFR default when native ffprobe unavailable)
+        rawProbeData = {
+          streams: [
+            {
+              codec_type: 'video',
+              codec_name: 'h264',
+              width: 1920,
+              height: 1080,
+              avg_frame_rate: '60/1',
+              r_frame_rate: '60/1',
+              duration: 0,
+            },
+            {
+              codec_type: 'audio',
+              codec_name: 'aac',
+              sample_rate: 48000,
+              channels: 2,
+              duration: 0,
+            },
+          ],
+          frames: [{ key_frame: 1, pkt_pts: 0 }],
+        };
+      }
     } else {
       // Browser fallback probe (Standard 60fps CFR default when native ffprobe unavailable)
       rawProbeData = {

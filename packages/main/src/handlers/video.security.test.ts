@@ -12,13 +12,45 @@ const mocks = vi.hoisted(() => ({
     },
     shell: { showItemInFolder: vi.fn() },
     fs: {
-        promises: { mkdir: vi.fn(), writeFile: vi.fn().mockResolvedValue(undefined) },
+        constants: { R_OK: 4 },
+        promises: {
+            mkdir: vi.fn(),
+            writeFile: vi.fn().mockResolvedValue(undefined),
+            access: vi.fn().mockResolvedValue(undefined),
+        },
         createWriteStream: vi.fn(),
         realpathSync: vi.fn((p) => p),
     },
     fetch: vi.fn(),
     validateSender: vi.fn(),
     validateSafeUrlAsync: vi.fn().mockResolvedValue(undefined),
+    spawn: vi.fn(),
+}));
+
+const mockChild = {
+    stdout: {
+        on: vi.fn((event: string, cb: (chunk: Buffer) => void) => {
+            if (event === 'data') {
+                cb(Buffer.from(JSON.stringify({
+                    streams: [{ codec_type: 'video', codec_name: 'h264', avg_frame_rate: '60/1', r_frame_rate: '60/1' }],
+                    frames: [{ key_frame: 1, pkt_pts: 0 }],
+                })));
+            }
+        }),
+    },
+    stderr: { on: vi.fn() },
+    on: vi.fn((event: string, cb: (code: number) => void) => {
+        if (event === 'close') {
+            cb(0);
+        }
+    }),
+    kill: vi.fn(),
+};
+
+mocks.spawn.mockImplementation(() => mockChild);
+
+vi.mock('child_process', () => ({
+    spawn: mocks.spawn,
 }));
 
 // Mock Electron
@@ -36,6 +68,7 @@ vi.mock('electron', () => ({
 // Mock fs
 vi.mock('fs', () => ({
     default: mocks.fs,
+    constants: mocks.fs.constants,
     promises: mocks.fs.promises,
     createWriteStream: mocks.fs.createWriteStream,
     realpathSync: mocks.fs.realpathSync

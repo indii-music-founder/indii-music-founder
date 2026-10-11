@@ -2,6 +2,8 @@ import log from 'electron-log';
 import { ipcMain, app, shell } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import { spawn } from 'child_process';
+import ffprobePath from 'ffprobe-static';
 import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
 import { validateSender } from '../utils/ipc-security';
@@ -12,6 +14,16 @@ import { accessControlService } from '../security/AccessControlService';
 
 /** Cap for video:save-asset downloads (2 GB) — disk-fill protection. */
 const MAX_VIDEO_ASSET_BYTES = 2 * 1024 * 1024 * 1024;
+
+/** Fix for packaging in Electron (files in asar). */
+const getBinaryPath = (binaryPath: string | null | undefined): string => {
+    if (!binaryPath) return '';
+    const fixedPath = binaryPath.replace('app.asar', 'app.asar.unpacked');
+    if (fixedPath !== binaryPath) {
+        log.info(`[VideoHandler] Adjusted binary path from ${binaryPath} to ${fixedPath}`);
+    }
+    return fixedPath;
+};
 
 /**
  * Downloads a file from a URL to a local path.
@@ -268,4 +280,103 @@ export function registerVideoHandlers() {
             throw error;
         }
     });
+
+    const handleProbeMedia = async (event: Electron.IpcMainInvokeEvent, filePath: string) => {
+        try {
+            validateSender(event);
+            if (!filePath || typeof filePath !== 'string') {
+                throw new Error('Invalid file path: path must be a non-empty string');
+            }
+            if (filePath.includes('..')) {
+                throw new Error(`Security Violation: Path traversal detected in "${filePath}"`);
+            }
+
+            const resolvedPath = path.resolve(filePath);
+            const ext = path.extname(resolvedPath).toLowerCase();
+            const ALLOWED_PROBE_EXTENSIONS = [
+                '.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v',
+                '.wav', '.mp3', '.flac', '.aac', '.m4a', '.aiff', '.aif', '.ogg'
+            ];
+            if (!ALLOWED_PROBE_EXTENSIONS.includes(ext)) {
+                throw new Error(`Security Violation: File type "${ext}" is not supported for media probe`);
+            }
+
+            if (!accessControlService.verifyAccess(resolvedPath)) {
+                throw new Error('Security Violation: Access denied to media file');
+            }
+
+            // Verify file exists and is readable
+            await fs.promises.access(resolvedPath, fs.constants.R_OK);
+
+            const rawProbeBin = (ffprobePath as unknown as { path?: string })?.path || 'ffprobe';
+            const ffprobeBin = getBinaryPath(rawProbeBin);
+
+            return await new Promise<{ streams: unknown[]; frames?: unknown[] }>((resolve, reject) => {
+                const child = spawn(
+                    ffprobeBin,
+                    [
+                        '-v', 'error',
+                        '-print_format', 'json',
+                        '-show_streams',
+                        '-show_entries', 'frame=key_frame,pkt_pts,pkt_pts_time',
+                        '-skip_frame', 'nokey',
+                        resolvedPath,
+                    ],
+                    { stdio: ['ignore', 'pipe', 'pipe'] },
+                );
+
+                let stdout = '';
+                let stderr = '';
+                const MAX_STDOUT_BYTES = 20 * 1024 * 1024;
+                const TIMEOUT_MS = 15000;
+
+                const timer = setTimeout(() => {
+                    child.kill('SIGKILL');
+                    reject(new Error(`ffprobe probe timed out after ${TIMEOUT_MS}ms`));
+                }, TIMEOUT_MS);
+
+                child.stdout.on('data', (chunk) => {
+                    stdout += String(chunk);
+                    if (stdout.length > MAX_STDOUT_BYTES) {
+                        child.kill('SIGKILL');
+                        clearTimeout(timer);
+                        reject(new Error(`ffprobe probe output exceeded ${MAX_STDOUT_BYTES / (1024 * 1024)} MB cap`));
+                    }
+                });
+
+                child.stderr.on('data', (chunk) => {
+                    stderr += String(chunk);
+                    if (stderr.length > 8000) stderr = stderr.slice(-4000);
+                });
+
+                child.on('error', (err) => {
+                    clearTimeout(timer);
+                    reject(err);
+                });
+
+                child.on('close', (code) => {
+                    clearTimeout(timer);
+                    if (code !== 0) {
+                        reject(new Error(`ffprobe exited ${code}: ${stderr.trim().slice(-400)}`));
+                        return;
+                    }
+                    try {
+                        const parsed = JSON.parse(stdout);
+                        resolve({
+                            streams: Array.isArray(parsed.streams) ? parsed.streams : [],
+                            frames: Array.isArray(parsed.frames) ? parsed.frames : [],
+                        });
+                    } catch (parseErr) {
+                        reject(new Error(`Failed to parse ffprobe output: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`));
+                    }
+                });
+            });
+        } catch (error) {
+            log.error('[VideoHandler] Media probe failed:', error);
+            throw error;
+        }
+    };
+
+    ipcMain.handle('video:probe-media', handleProbeMedia);
+    ipcMain.handle('probe-media', handleProbeMedia);
 }

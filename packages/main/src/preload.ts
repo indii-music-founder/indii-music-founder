@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     searchApprovedAssets: (dirPath: string, options?: { query?: string, extensions?: string[], maxResults?: number }) => ipcRenderer.invoke('system:search-approved-assets', dirPath, options),
     getGpuInfo: () => ipcRenderer.invoke('system:get-gpu-info'),
     showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', { title, body }),
+    probeMedia: (filePath: string) => ipcRenderer.invoke('video:probe-media', filePath),
 
     // Filesystem (Safe Local IPC Bridge for Inbox Watcher & Agent Tools)
     fs: {
@@ -144,6 +145,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         getDefaultPath: (filename?: string) => ipcRenderer.invoke('video:get-default-path', filename),
         compilePreview: (project: unknown) => ipcRenderer.invoke('video:compile-preview', project),
         readArtifact: (filePath: string) => ipcRenderer.invoke('video:read-artifact', filePath),
+        probeMedia: (filePath: string) => ipcRenderer.invoke('video:probe-media', filePath),
     },
 
 
