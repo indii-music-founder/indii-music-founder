@@ -24,6 +24,21 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
+vi.mock('@/services/upscale/PrintReadyUpscaleService', () => ({
+    printReadyUpscaleService: {
+        upscaleToPrintReady: vi.fn().mockResolvedValue({
+            dataUrl: 'data:image/png;base64,upscaled3000',
+            width: 3000,
+            height: 3000,
+            dpi: 300,
+            format: 'image/png',
+            method: 'tiled-esrgan-web',
+            durationMs: 45,
+            guideDataUrl: undefined,
+        })
+    }
+}));
+
 // Default mock store state
 const createMockStoreState = (overrides = {}) => ({
     studioControls: {
@@ -381,7 +396,7 @@ describe('DirectorTools', () => {
     });
 
     describe('prepare_print_file and get_print_job_status', () => {
-        it('prepare_print_file enqueues job via httpsCallable', async () => {
+        it('prepare_print_file enqueues job via httpsCallable for gs:// URIs', async () => {
             const result = await DirectorTools.prepare_print_file!({
                 imageUri: 'gs://indii-bucket/artwork.png',
                 presetId: 'poster_18x24',
@@ -390,6 +405,53 @@ describe('DirectorTools', () => {
 
             expect(result).toBeDefined();
             expect(result.data).toBeDefined();
+        });
+
+        it('prepare_print_file executes on-device upscale directly for data URLs and saves to history', async () => {
+            const mockAddToHistory = vi.fn();
+            (useStore.getState as any).mockReturnValue(createMockStoreState({
+                addToHistory: mockAddToHistory,
+            }));
+
+            const result = await DirectorTools.prepare_print_file!({
+                imageUri: 'data:image/png;base64,sample1024',
+                presetId: 'cover_art_distributor',
+            });
+
+            expect(result).toBeDefined();
+            expect(result.success).toBe(true);
+            expect(result.data.width).toBe(3000);
+            expect(result.data.height).toBe(3000);
+            expect(result.data.dpi).toBe(300);
+            expect(result.data.assetId).toMatch(/^print-\d+$/);
+            expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+                id: result.data.assetId,
+                url: 'data:image/png;base64,upscaled3000',
+                origin: 'editor',
+                preserveResolution: true,
+            }));
+        });
+
+        it('prepare_print_file resolves upload-0 from uploadedImages state and executes on-device upscale', async () => {
+            const mockAddToHistory = vi.fn();
+            (useStore.getState as any).mockReturnValue(createMockStoreState({
+                addToHistory: mockAddToHistory,
+                uploadedImages: [
+                    { id: 'up-123', url: 'data:image/jpeg;base64,upload0bytes' },
+                ],
+            }));
+
+            const result = await DirectorTools.prepare_print_file!({
+                imageUri: 'upload-0',
+                presetId: 'cover_art_distributor',
+            });
+
+            expect(result).toBeDefined();
+            expect(result.success).toBe(true);
+            expect(result.data.width).toBe(3000);
+            expect(result.data.height).toBe(3000);
+            expect(result.data.assetId).toBeDefined();
+            expect(mockAddToHistory).toHaveBeenCalled();
         });
 
         it('get_print_job_status queries print_jobs document', async () => {

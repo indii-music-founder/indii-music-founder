@@ -824,8 +824,76 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 return toolError(`Unknown print preset "${args.presetId}".`, 'INVALID_PRESET');
             }
 
+            // Resolve asset identifier, reference tag, or upload index if provided instead of a direct URL
+            let resolvedUri = args.imageUri;
+            if (
+                !resolvedUri.startsWith('data:image/') &&
+                !resolvedUri.startsWith('blob:') &&
+                !resolvedUri.startsWith('http://') &&
+                !resolvedUri.startsWith('https://') &&
+                !resolvedUri.startsWith('gs://')
+            ) {
+                const { useStore } = await importWithRetry(() => import('@/core/store'));
+                const state = useStore.getState();
+
+                const uploadMatch = resolvedUri.match(/^upload-(\d+)$/i);
+                if (uploadMatch) {
+                    const idx = parseInt(uploadMatch[1], 10);
+                    if (state.uploadedImages && state.uploadedImages[idx]?.url) {
+                        resolvedUri = state.uploadedImages[idx].url;
+                    }
+                }
+
+                const brandMatch = resolvedUri.match(/^brand-asset-(\d+)$/i);
+                if (brandMatch && resolvedUri === args.imageUri) {
+                    const idx = parseInt(brandMatch[1], 10);
+                    const ba = state.userProfile?.brandKit?.brandAssets?.[idx];
+                    if (ba?.url) {
+                        resolvedUri = ba.url;
+                    }
+                }
+
+                const refMatch = resolvedUri.match(/^ref-image-(\d+)$/i);
+                if (refMatch && resolvedUri === args.imageUri) {
+                    const idx = parseInt(refMatch[1], 10);
+                    const ref = state.userProfile?.brandKit?.referenceImages?.[idx];
+                    if (ref?.url) {
+                        resolvedUri = ref.url;
+                    }
+                }
+
+                if (resolvedUri === args.imageUri) {
+                    const found =
+                        state.uploadedImages?.find((u) => u.id === args.imageUri) ||
+                        state.generatedHistory?.find((h) => h.id === args.imageUri) ||
+                        state.userProfile?.brandKit?.brandAssets?.find((b) => b.id === args.imageUri) ||
+                        state.userProfile?.brandKit?.referenceImages?.find((r) => r.id === args.imageUri);
+                    if (found?.url) {
+                        resolvedUri = found.url;
+                    }
+                }
+
+                if (resolvedUri === args.imageUri) {
+                    try {
+                        const { StorageService } = await import('@/services/StorageService');
+                        const history = await StorageService.loadHistory(50);
+                        const histItem = history.find((h) => h.id === args.imageUri);
+                        if (histItem?.url) {
+                            resolvedUri = histItem.url;
+                        }
+                    } catch {
+                        // Ignore storage lookup error and proceed to cloud fallback
+                    }
+                }
+            }
+
             // If the image is a data URL or accessible locally/client-side, execute local-native upscale directly
-            if (args.imageUri.startsWith('data:image/') || args.imageUri.startsWith('blob:') || args.imageUri.startsWith('http')) {
+            if (
+                resolvedUri.startsWith('data:image/') ||
+                resolvedUri.startsWith('blob:') ||
+                resolvedUri.startsWith('http://') ||
+                resolvedUri.startsWith('https://')
+            ) {
                 const { printReadyUpscaleService } = await import('@/services/upscale/PrintReadyUpscaleService');
                 const bleedPx = Math.round((preset.bleedIn ?? 0) * preset.dpi);
                 const safePx = Math.round((preset.safeIn ?? 0) * preset.dpi);
@@ -833,7 +901,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 const targetH = Math.round(preset.heightIn * preset.dpi);
 
                 const outcome = await printReadyUpscaleService.upscaleToPrintReady({
-                    dataUrl: args.imageUri,
+                    dataUrl: resolvedUri,
                     targetWidth: targetW,
                     targetHeight: targetH,
                     dpi: preset.dpi,
@@ -845,16 +913,37 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     generateGuide: args.generateGuide ?? false,
                 });
 
-                return toolSuccess({
-                    presetId: args.presetId,
-                    width: outcome.width,
-                    height: outcome.height,
-                    dpi: outcome.dpi,
-                    method: outcome.method,
-                    durationMs: outcome.durationMs,
-                    dataUrl: outcome.dataUrl,
-                    guideDataUrl: outcome.guideDataUrl,
-                }, `Print file prepared successfully on-device (${outcome.method}) at ${outcome.width}x${outcome.height}px (${outcome.dpi} DPI in ${outcome.durationMs}ms).`);
+                const { useStore } = await importWithRetry(() => import('@/core/store'));
+                const { addToHistory, currentProjectId } = useStore.getState();
+                const printAssetId = `print-${Date.now()}`;
+                if (typeof addToHistory === 'function') {
+                    addToHistory({
+                        id: printAssetId,
+                        url: outcome.dataUrl,
+                        prompt: `Print-ready ${preset.label} (${outcome.width}x${outcome.height} @ ${outcome.dpi} DPI)`,
+                        type: 'image',
+                        timestamp: Date.now(),
+                        projectId: currentProjectId || 'default',
+                        origin: 'editor',
+                        preserveResolution: true,
+                        meta: `print_${args.presetId}`,
+                    });
+                }
+
+                return toolSuccess(
+                    {
+                        assetId: printAssetId,
+                        presetId: args.presetId,
+                        width: outcome.width,
+                        height: outcome.height,
+                        dpi: outcome.dpi,
+                        method: outcome.method,
+                        durationMs: outcome.durationMs,
+                        dataUrl: outcome.dataUrl,
+                        guideDataUrl: outcome.guideDataUrl,
+                    },
+                    `Print file prepared successfully on-device (${outcome.method}) at ${outcome.width}x${outcome.height}px (${outcome.dpi} DPI in ${outcome.durationMs}ms). Asset ID: ${printAssetId}`
+                );
             }
 
             // Fallback for gs:// storage URIs: enqueue async job
