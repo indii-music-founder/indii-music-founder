@@ -125,7 +125,7 @@ export default function AppStudioShowcase() {
   const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
 
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const isFromPassport = searchParams?.get('from') === 'passport';
+  const isFromPassport = Boolean(searchParams?.get('from')?.startsWith('passport'));
   const source = searchParams?.get('source') || (isFromPassport ? 'passport_skeptical' : 'landing_organic');
 
   const studioBase =
@@ -158,7 +158,7 @@ export default function AppStudioShowcase() {
           {isFromPassport && (
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#FFB800]/50 bg-[#FFB800]/15 px-4 py-1.5 font-mono text-xs text-[#FFB800]">
               <Sparkles size={13} />
-              <span>Arrived from Artist Passport • Here is your Freebie Test Drive</span>
+              <span>Arrived from Artist Passport • Platform Guide & Workspace Overview</span>
             </div>
           )}
 

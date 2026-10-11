@@ -1,3 +1,17 @@
+# Artist Passport Platform Guide & Wiki Conversion (2026-10-11 EDT)
+
+Delivered conversion of premature "Test Drive 1 Track Free" studio button into an attribution-preserving link to the main landing page / platform wiki on `main`:
+- **Artist Passport Hero Secondary CTA (`packages/landing/src/pages/ArtistPassportPage.tsx`):**
+  - Replaced external studio link (`app.indii.music/?mode=free_demo...`) with internal router link to the main landing page (`/${referralQuery}...from=passport_hero`).
+  - Updated button copy to `Explore Platform Guide & Wiki` with telemetry tracking `freebie_clicked` (`cta: 'hero_platform_guide'`).
+  - Updated feature badge from `Free Mini-Campaign` to `Platform Wiki` (`Full System Blueprint`).
+- **Showcase & Workspace Banner Alignment (`packages/landing/src/components/AppStudioShowcase.tsx`):**
+  - Extended `isFromPassport` matcher to cover `from=passport_hero` and updated arrival banner to `Arrived from Artist Passport • Platform Guide & Workspace Overview`.
+- **Validation Evidence:**
+  - 13/13 tests green in `ArtistPassportPage.test.tsx` (all 78 landing package tests green).
+  - Monorepo typecheck: `npm run typecheck` passed (exit code 0).
+  - ESLint: 0 errors, 0 warnings across touched landing files.
+
 # Rights Registration Copilot Studio UI & Assistant Modal — ISSUE-1511 (2026-10-11 EDT)
 
 Delivered interactive Rights Copilot Assistant modal and studio bridge for ISSUE-1511 on `main`:

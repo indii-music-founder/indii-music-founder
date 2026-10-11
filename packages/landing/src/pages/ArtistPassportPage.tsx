@@ -42,15 +42,6 @@ export default function ArtistPassportPage() {
   const acquisitionSource = searchParams.get('source') || 'passport_organic';
   const referralQuery = `?source=${encodeURIComponent(acquisitionSource)}`;
 
-  // Studio destination for free mini-campaign trial
-  const studioBase =
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? 'http://localhost:4242'
-      : (import.meta.env.VITE_STUDIO_URL || 'https://app.indii.music');
-
-  const freeMiniCampaignUrl = `${studioBase}?mode=free_demo&module=creative${acquisitionSource ? `&source=${encodeURIComponent(acquisitionSource)}` : ''}`;
-
   // Step state: 0 = Hero, 1 = Stage, 2 = Genre, 3 = Rights, 4 = Distribution, 5 = Goals, 6 = Results
   const [currentStep, setCurrentStep] = useState<number>(() => {
     try {
@@ -263,13 +254,14 @@ export default function ArtistPassportPage() {
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
-                <a
-                  href={freeMiniCampaignUrl}
+                <Link
+                  to={`/${referralQuery}${referralQuery.includes('?') ? '&' : '?'}from=passport_hero`}
+                  onClick={() => trackPassportEvent('freebie_clicked', { cta: 'hero_platform_guide' })}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#FFB800]/40 transition-all"
                 >
-                  <span>Or Test Drive 1 Track Free</span>
+                  <span>Explore Platform Guide & Wiki</span>
                   <Sparkles className="w-4 h-4 text-[#FFB800]" />
-                </a>
+                </Link>
               </div>
 
               <div className="grid grid-cols-3 gap-3 pt-8 border-t border-[#1F222A] text-left">
@@ -278,8 +270,8 @@ export default function ArtistPassportPage() {
                   <div className="text-xs font-semibold text-white mt-1">2-Minute Diagnostic</div>
                 </div>
                 <div className="p-3 rounded-lg bg-[#070709] border border-[#1F222A]">
-                  <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Value First</div>
-                  <div className="text-xs font-semibold text-white mt-1">Free Mini-Campaign</div>
+                  <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Platform Wiki</div>
+                  <div className="text-xs font-semibold text-white mt-1">Full System Blueprint</div>
                 </div>
                 <div className="p-3 rounded-lg bg-[#070709] border border-[#1F222A]">
                   <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Zero Slop</div>

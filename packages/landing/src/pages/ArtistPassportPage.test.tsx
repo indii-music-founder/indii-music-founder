@@ -335,17 +335,17 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(stillNotConvincedLink?.getAttribute('href')).toContain('#studio-preview');
   });
 
-  it('renders Step 0 hero with direct test drive hook preserving attribution', () => {
+  it('renders Step 0 hero with platform guide and wiki link preserving attribution', () => {
     render(
       <MemoryRouter initialEntries={['/passport?source=tiktok_ad']}>
         <ArtistPassportPage />
       </MemoryRouter>
     );
 
-    const heroTestDriveLink = screen.getByText(/Or Test Drive 1 Track Free/i).closest('a');
-    expect(heroTestDriveLink).toBeDefined();
-    expect(heroTestDriveLink?.getAttribute('href')).toContain('mode=free_demo&module=creative');
-    expect(heroTestDriveLink?.getAttribute('href')).toContain('source=tiktok_ad');
+    const heroWikiLink = screen.getByText(/Explore Platform Guide & Wiki/i).closest('a');
+    expect(heroWikiLink).toBeDefined();
+    expect(heroWikiLink?.getAttribute('href')).toContain('from=passport_hero');
+    expect(heroWikiLink?.getAttribute('href')).toContain('source=tiktok_ad');
   });
 
   it('records funnel telemetry events across full user walkthrough', () => {
