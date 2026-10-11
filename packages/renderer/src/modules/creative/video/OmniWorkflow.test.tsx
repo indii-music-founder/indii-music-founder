@@ -470,4 +470,75 @@ describe('OmniWorkflow (legacy structural-only; real generation unverified)', ()
             firstFrameUri: 'gs://mock-bucket.appspot.com/projects/proj-omni/project-image.jpg',
         })));
     });
+
+    it('retains edit video mode and source label across stage navigation (Issue #415)', async () => {
+        // Simulate returning to Omni Flash with an existing video source in studioControls
+        mockStoreRef.current = createStoreState({
+            studioControls: {
+                omniReferenceVideo: 'https://mock-bucket.appspot.com/download/paper-moon.mp4',
+                omniTask: 'edit',
+                omniReferenceVideoUri: 'gs://mock-bucket.appspot.com/projects/proj-omni/paper-moon.mp4',
+                omniSourceVideoLabel: 'Paper Moon edited.mp4',
+                aspectRatio: '16:9',
+                duration: 6,
+                posePreservation: 0.5,
+                beatPulse: 0.5,
+                characterXRay: false,
+                synthIdEnabled: true,
+                selectedLanguage: 'es',
+                activePosePreset: 'guitar_solo',
+                visualizerColor: '#10B981',
+            },
+        });
+
+        const { unmount } = render(<OmniWorkflow />);
+
+        // Source preview must be rendered
+        const videoElement = screen.getByLabelText('Omni source video preview');
+        expect(videoElement).toBeInTheDocument();
+        expect(videoElement).toHaveAttribute('src', 'https://mock-bucket.appspot.com/download/paper-moon.mp4');
+
+        // Mode must remain 'edit', NOT reset to 'text_to_video'
+        expect(screen.getByLabelText('Omni generation mode')).toHaveValue('edit');
+        expect(screen.getByText('Paper Moon edited.mp4')).toBeInTheDocument();
+
+        // Simulate navigating away (unmount) and returning (remount)
+        unmount();
+        render(<OmniWorkflow />);
+
+        expect(screen.getByLabelText('Omni generation mode')).toHaveValue('edit');
+        expect(screen.getByText('Paper Moon edited.mp4')).toBeInTheDocument();
+        expect(screen.getByLabelText('Omni source video preview')).toBeInTheDocument();
+    });
+
+    it('resets source and returns generation mode to text_to_video when Reset Source is clicked', async () => {
+        mockStoreRef.current = createStoreState({
+            studioControls: {
+                omniReferenceVideo: 'https://mock-bucket.appspot.com/download/source.mp4',
+                omniTask: 'edit',
+                omniSourceVideoLabel: 'Source video.mp4',
+                aspectRatio: '16:9',
+                duration: 6,
+                posePreservation: 0.5,
+                beatPulse: 0.5,
+                characterXRay: false,
+                synthIdEnabled: true,
+                selectedLanguage: 'es',
+                activePosePreset: 'guitar_solo',
+                visualizerColor: '#10B981',
+            },
+        });
+
+        render(<OmniWorkflow />);
+
+        expect(screen.getByLabelText('Omni generation mode')).toHaveValue('edit');
+        const resetButton = screen.getByRole('button', { name: /reset source/i });
+        fireEvent.click(resetButton);
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Omni generation mode')).toHaveValue('text_to_video');
+            expect((mockStoreRef.current.studioControls as any).omniReferenceVideo).toBeNull();
+            expect((mockStoreRef.current.studioControls as any).omniTask).toBe('text_to_video');
+        });
+    });
 });

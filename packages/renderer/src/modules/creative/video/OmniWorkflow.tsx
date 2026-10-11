@@ -280,7 +280,17 @@ export default function OmniWorkflow() {
     const [remixPrompt, setRemixPrompt] = useState('Remix performance into a cyberpunk neon concert stage, dramatic volumetric fog');
     // Launch from the only input required by Omni: a text prompt. Users can
     // opt into image/reference/video editing modes when they add that media.
-    const [omniTask, setOmniTask] = useState<OmniTask>('text_to_video');
+    const [omniTask, setOmniTaskState] = useState<OmniTask>(() => {
+        if (studioControls.omniTask) return studioControls.omniTask;
+        if (studioControls.omniReferenceVideo) return 'edit';
+        return 'text_to_video';
+    });
+
+    const setOmniTask = useCallback((task: OmniTask) => {
+        setOmniTaskState(task);
+        setStudioControls({ omniTask: task });
+    }, [setStudioControls]);
+
     const [omniResolution, setOmniResolution] = useState<OmniResolution>('720p');
     const [cameraDirection, setCameraDirection] = useState('slow dolly in');
     const [lightingDirection, setLightingDirection] = useState('cinematic motivated lighting');
@@ -288,9 +298,48 @@ export default function OmniWorkflow() {
     // ISSUE-1440: controller secondaries collapsed behind disclosures — the visible
     // spine is mode + resolution + prompt + Generate.
     const [openControllerSection, setOpenControllerSection] = useState<'camera' | 'references' | 'motion' | null>(null);
-    const [sourceVideoLabel, setSourceVideoLabel] = useState<string | null>(null);
+    const [sourceVideoLabel, setSourceVideoLabelState] = useState<string | null>(() => {
+        if (studioControls.omniSourceVideoLabel) return studioControls.omniSourceVideoLabel;
+        if (studioControls.omniReferenceVideo) return 'Selected source video';
+        return null;
+    });
+
+    const setSourceVideoLabel = useCallback((label: string | null) => {
+        setSourceVideoLabelState(label);
+        setStudioControls({ omniSourceVideoLabel: label });
+    }, [setStudioControls]);
+
     const [failedSourcePreviewUrl, setFailedSourcePreviewUrl] = useState<string | null>(null);
-    const [referenceVideoUri, setReferenceVideoUri] = useState<string | null>(null);
+    const [referenceVideoUri, setReferenceVideoUriState] = useState<string | null>(() => {
+        if (studioControls.omniReferenceVideoUri) return studioControls.omniReferenceVideoUri;
+        if (studioControls.omniReferenceVideo) {
+            return resolveStorageUri(studioControls.omniReferenceVideo) || studioControls.omniReferenceVideo;
+        }
+        return null;
+    });
+
+    const setReferenceVideoUri = useCallback((uri: string | null) => {
+        setReferenceVideoUriState(uri);
+        setStudioControls({ omniReferenceVideoUri: uri });
+    }, [setStudioControls]);
+
+    useEffect(() => {
+        if (studioControls.omniTask && studioControls.omniTask !== omniTask) {
+            setOmniTaskState(studioControls.omniTask);
+        }
+    }, [studioControls.omniTask, omniTask]);
+
+    useEffect(() => {
+        if (studioControls.omniSourceVideoLabel !== undefined && studioControls.omniSourceVideoLabel !== sourceVideoLabel) {
+            setSourceVideoLabelState(studioControls.omniSourceVideoLabel);
+        }
+    }, [studioControls.omniSourceVideoLabel, sourceVideoLabel]);
+
+    useEffect(() => {
+        if (studioControls.omniReferenceVideoUri !== undefined && studioControls.omniReferenceVideoUri !== referenceVideoUri) {
+            setReferenceVideoUriState(studioControls.omniReferenceVideoUri);
+        }
+    }, [studioControls.omniReferenceVideoUri, referenceVideoUri]);
     const [referenceMedia, setReferenceMedia] = useState<ReferenceMedia[]>([]);
     const [referenceVideos, setReferenceVideos] = useState<ReferenceMedia[]>([]);
     const [activeFrameIndex, setActiveFrameIndex] = useState(0);
@@ -317,14 +366,21 @@ export default function OmniWorkflow() {
         if (handoff) {
             if (handoff.role === 'source-video' && handoff.item.type === 'video') {
                 // Set both preview URL and gs:// URI for backend.
-                setSourceVideoLabel(handoff.item.prompt || 'Selected source video');
+                const label = handoff.item.prompt || 'Selected source video';
+                const uri = handoff.item.storageUri || resolveStorageUri(handoff.item.url) || '';
+                setSourceVideoLabel(label);
                 setReferenceMedia([]);
-                setReferenceVideoUri(handoff.item.storageUri || resolveStorageUri(handoff.item.url) || '');
+                setReferenceVideoUri(uri);
                 setSourceJobId(handoff.item.id);
                 setPreviousInteractionId(null);
                 setPreviousJobId(null);
                 setOmniTask('edit');
-                setStudioControls({ omniReferenceVideo: handoff.item.url });
+                setStudioControls({
+                    omniReferenceVideo: handoff.item.url,
+                    omniTask: 'edit',
+                    omniReferenceVideoUri: uri,
+                    omniSourceVideoLabel: label,
+                });
                 toast.success(`Loaded performance from ${handoff.originStage} stage — ready to remix!`);
             } else if ((handoff.role === 'first-frame' || handoff.role === 'reference-image') && handoff.item.type === 'image') {
                 const referenceUri = handoff.item.storageUri || resolveStorageUri(handoff.item.url);
@@ -344,7 +400,12 @@ export default function OmniWorkflow() {
                         setReferenceVideoUri(null);
                         setPreviousInteractionId(null);
                         setPreviousJobId(null);
-                        setStudioControls({ omniReferenceVideo: null });
+                        setStudioControls({
+                            omniReferenceVideo: null,
+                            omniTask: 'image_to_video',
+                            omniReferenceVideoUri: null,
+                            omniSourceVideoLabel: null,
+                        });
                         setOmniTask('image_to_video');
                         toast.info(`Using image from ${handoff.originStage} as Omni's starting frame.`);
                     } else {
@@ -360,7 +421,7 @@ export default function OmniWorkflow() {
             // Consume the handoff (clear pending)
             consumeStageHandoff('omni');
         }
-    }, [pendingStageHandoff?.omni, consumeStageHandoff, referenceVideoUri, setStudioControls, toast]);
+    }, [pendingStageHandoff?.omni, consumeStageHandoff, referenceVideoUri, setOmniTask, setReferenceVideoUri, setSourceVideoLabel, setStudioControls, toast]);
 
     const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -377,11 +438,22 @@ export default function OmniWorkflow() {
                 setPreviousInteractionId(null);
                 setPreviousJobId(null);
                 setOmniTask('edit');
-                setStudioControls({ omniReferenceVideo: previewUrl });
+                setStudioControls({
+                    omniReferenceVideo: previewUrl,
+                    omniTask: 'edit',
+                    omniReferenceVideoUri: uploadedUri,
+                    omniSourceVideoLabel: file.name,
+                });
                 toast.success(`Loaded reference performance: ${file.name}`);
             } catch (error) {
                 setSourceVideoLabel(null);
                 setReferenceVideoUri(null);
+                setStudioControls({
+                    omniReferenceVideo: null,
+                    omniTask: 'text_to_video',
+                    omniReferenceVideoUri: null,
+                    omniSourceVideoLabel: null,
+                });
                 toast.error(`Reference upload failed: ${callableErrorMessage(error)}`);
             }
         }
@@ -450,14 +522,20 @@ export default function OmniWorkflow() {
         try {
             if (item?.type === 'video') {
                 const uri = await ensureOmniReferenceUri(item, 'video');
-                setSourceVideoLabel(payload.asset.name || item.prompt || 'Selected source video');
+                const label = payload.asset.name || item.prompt || 'Selected source video';
+                setSourceVideoLabel(label);
                 setReferenceMedia([]);
                 setReferenceVideoUri(uri);
                 setSourceJobId(item.id);
                 setPreviousInteractionId(null);
                 setPreviousJobId(null);
                 setOmniTask('edit');
-                setStudioControls({ omniReferenceVideo: item.url });
+                setStudioControls({
+                    omniReferenceVideo: item.url,
+                    omniTask: 'edit',
+                    omniReferenceVideoUri: uri,
+                    omniSourceVideoLabel: label,
+                });
                 toast.success('Dropped video loaded as the Omni edit source.');
                 return;
             }
@@ -473,7 +551,12 @@ export default function OmniWorkflow() {
                     setSourceVideoLabel(null);
                     setPreviousInteractionId(null);
                     setPreviousJobId(null);
-                    setStudioControls({ omniReferenceVideo: null });
+                    setStudioControls({
+                        omniReferenceVideo: null,
+                        omniTask: 'image_to_video',
+                        omniReferenceVideoUri: null,
+                        omniSourceVideoLabel: null,
+                    });
                     setOmniTask('image_to_video');
                     toast.success('Dropped image loaded as Omni’s starting frame.');
                 } else {
@@ -491,7 +574,7 @@ export default function OmniWorkflow() {
         } catch (error) {
             toast.error(`Could not use dropped asset: ${callableErrorMessage(error)}`);
         }
-    }, [ensureOmniReferenceUri, referenceMedia.length, referenceVideoUri, setStudioControls, toast]);
+    }, [ensureOmniReferenceUri, referenceMedia.length, referenceVideoUri, setOmniTask, setReferenceVideoUri, setSourceVideoLabel, setStudioControls, toast]);
 
     const handleStartRemix = async () => {
         const canContinueInteraction = !!previousInteractionId && !!previousJobId;
@@ -835,7 +918,13 @@ export default function OmniWorkflow() {
                                 setSourceJobId(null);
                                 setPreviousInteractionId(null);
                                 setPreviousJobId(null);
-                                setStudioControls({ omniReferenceVideo: null });
+                                setOmniTask('text_to_video');
+                                setStudioControls({
+                                    omniReferenceVideo: null,
+                                    omniTask: 'text_to_video',
+                                    omniReferenceVideoUri: null,
+                                    omniSourceVideoLabel: null,
+                                });
                                 setOutputVideoUrl(null);
                                 toast.info("Reference video cleared");
                             }}

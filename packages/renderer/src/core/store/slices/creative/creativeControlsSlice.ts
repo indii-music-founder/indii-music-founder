@@ -103,6 +103,9 @@ export interface CreativeControlsSlice {
         beatPulse: number;
         characterXRay: boolean;
         omniReferenceVideo: string | null;
+        omniTask?: 'text_to_video' | 'image_to_video' | 'reference_to_video' | 'edit' | 'extend';
+        omniReferenceVideoUri?: string | null;
+        omniSourceVideoLabel?: string | null;
         activePosePreset: string;
         lyricsText: string;
         typographyStyle: 'cyberpunk' | 'kinetic-neon' | 'liquid-gold' | 'minimal-infographic';
@@ -267,6 +270,9 @@ export function buildCreativeControlsState(
             beatPulse: 0.5,
             characterXRay: true,
             omniReferenceVideo: null,
+            omniTask: 'text_to_video',
+            omniReferenceVideoUri: null,
+            omniSourceVideoLabel: null,
             activePosePreset: 'guitar_solo',
             lyricsText: '',
             typographyStyle: 'cyberpunk',
