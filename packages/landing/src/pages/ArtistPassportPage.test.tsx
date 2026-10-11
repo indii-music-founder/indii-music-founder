@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ArtistPassportPage from './ArtistPassportPage';
@@ -182,7 +182,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(nextBtn?.disabled).toBe(false);
   });
 
-  it('enforces maximum 2 selected goals and handles toggling', () => {
+  it('handles multi-goal selection without artificial limits and handles toggling', () => {
     render(
       <MemoryRouter initialEntries={['/passport']}>
         <ArtistPassportPage />
@@ -216,22 +216,61 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(generateBtn?.disabled).toBe(true);
 
     const goal1 = screen.getByText(/Improve royalty registration & collection tracking/i);
-    const goal2 = screen.getByText(/Grow fan base, streaming reach & social engagement/i);
+    const goal2 = screen.getByText(/Grow fan base, streaming reach & direct-to-fan engagement/i);
     const goal3 = screen.getByText(/Package catalog for film, TV & sync licensing opportunities/i);
+    const goal4 = screen.getByText(/Audit sound master for loudness \(-14 LUFS\) & true peak compliance/i);
 
     // Select goal 1
     fireEvent.click(goal1);
     expect(generateBtn?.disabled).toBe(false);
+    expect(screen.getByText(/1 Selected/i)).toBeDefined();
 
     // Select goal 2
     fireEvent.click(goal2);
+    expect(screen.getByText(/2 Selected/i)).toBeDefined();
 
-    // Select goal 3 (replaces second goal due to max 2 limit)
+    // Select goal 3 (persists all, no artificial 2-choice limit)
     fireEvent.click(goal3);
+    expect(screen.getByText(/3 Selected/i)).toBeDefined();
+
+    // Select goal 4
+    fireEvent.click(goal4);
+    expect(screen.getByText(/4 Selected/i)).toBeDefined();
 
     // Toggle off goal 1
     fireEvent.click(goal1);
+    expect(screen.getByText(/3 Selected/i)).toBeDefined();
     expect(generateBtn?.disabled).toBe(false);
+  });
+
+  it('triggers window.print when Download Report (PDF) is clicked', () => {
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
+
+    render(
+      <MemoryRouter initialEntries={['/passport']}>
+        <ArtistPassportPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Building momentum/i));
+    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByText(/Electronic \/ Dance/i));
+    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByText('ASCAP'));
+    fireEvent.click(screen.getByText(/Yes — my compositions are registered with The MLC/i));
+    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByText('DistroKid'));
+    fireEvent.click(screen.getByText(/Audio is in mixing or final mastering stages/i));
+    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByText(/Improve royalty registration & collection tracking/i));
+    fireEvent.click(screen.getByText(/Generate Assessment/i));
+
+    const downloadBtn = screen.getByText(/Download Report \(PDF\)/i);
+    fireEvent.click(downloadBtn);
+
+    expect(printSpy).toHaveBeenCalled();
+    printSpy.mockRestore();
   });
 
   it('handles optional lead capture and restart audit', () => {
@@ -276,7 +315,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     fireEvent.change(nameInput, { target: { value: 'Marcus Rivers' } });
     fireEvent.change(emailInput, { target: { value: 'marcus@example.com' } });
 
-    const sendButton = screen.getByText(/Save Email Copy/i).closest('button');
+    const sendButton = screen.getByText(/Claim Free Video & PDF Dossier/i).closest('button');
     fireEvent.click(sendButton!);
 
     // Should confirm receipt
@@ -330,12 +369,12 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     const ctaLink = screen.getByText(/Claim Your Artist Passport & Enter Studio/i).closest('a');
     expect(ctaLink?.getAttribute('href')).toContain('source=founder_dm');
 
-    // Check 'Still Not Convinced?' landing page bridge
-    expect(screen.getByText(/Still Not Convinced\? See Full Platform & Free Tools/i)).toBeDefined();
-    const stillNotConvincedLink = screen.getByText(/Still Not Convinced\? See Full Platform & Free Tools/i).closest('a');
-    expect(stillNotConvincedLink?.getAttribute('href')).toContain('from=passport');
-    expect(stillNotConvincedLink?.getAttribute('href')).toContain('source=founder_dm');
-    expect(stillNotConvincedLink?.getAttribute('href')).toContain('#studio-preview');
+    // Check Platform Guide & Wiki landing page bridge
+    expect(screen.getByText(/Explore Platform Guide & System Wiki/i)).toBeDefined();
+    const wikiLink = screen.getByText(/Explore Platform Guide & System Wiki/i).closest('a');
+    expect(wikiLink?.getAttribute('href')).toContain('from=passport');
+    expect(wikiLink?.getAttribute('href')).toContain('source=founder_dm');
+    expect(wikiLink?.getAttribute('href')).toContain('#studio-preview');
   });
 
   it('renders Step 0 hero with platform guide and wiki link preserving attribution', () => {

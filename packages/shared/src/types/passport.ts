@@ -30,6 +30,7 @@ export const PASSPORT_FUNNEL_EVENTS = [
   'lead_submitted',
   'signup_clicked',
   'freebie_clicked',
+  'report_downloaded',
 ] as const;
 
 export type PassportFunnelEventName = typeof PASSPORT_FUNNEL_EVENTS[number];

@@ -12,6 +12,7 @@ import {
   Disc3,
   Sparkles,
   RotateCcw,
+  Download,
 } from 'lucide-react';
 import {
   type PassportAnswers,
@@ -138,12 +139,13 @@ export default function ArtistPassportPage() {
       if (current.includes(goalId)) {
         return { ...prev, goals: current.filter((g) => g !== goalId) };
       }
-      if (current.length >= 2) {
-        // Replace second choice or enforce max 2
-        return { ...prev, goals: [current[0], goalId] };
-      }
       return { ...prev, goals: [...current, goalId] };
     });
+  };
+
+  const handleDownloadReport = () => {
+    trackPassportEvent('report_downloaded', { format: 'pdf' }, assessmentId);
+    window.print();
   };
 
   const handleReset = () => {
@@ -188,7 +190,7 @@ export default function ArtistPassportPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_80%,rgba(46,46,254,0.04),transparent_50%)]" />
 
       {/* Header Bar */}
-      <header className="relative z-20 border-b border-[#1F222A] bg-[#000000]/80 backdrop-blur-md px-6 py-4">
+      <header className="relative z-20 border-b border-[#1F222A] bg-[#000000]/80 backdrop-blur-md px-6 py-4 no-print">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="text-xl font-bold tracking-tight text-white hover:text-[#FFB800] transition-colors">
@@ -568,24 +570,24 @@ export default function ArtistPassportPage() {
               transition={{ duration: 0.2 }}
               className="space-y-6"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div>
                   <span className="text-xs font-mono uppercase tracking-widest text-[#FFB800]">
                     Section 05 / Immediate Priorities
                   </span>
                   <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-1">
-                    What are your top 2 priorities right now?
+                    What areas of your music business do you want covered?
                   </h2>
                   <p className="text-sm text-[#8A8F9E] mt-1">
-                    Select up to two areas where you want focused operational support.
+                    Select as many operational and creative targets as you need. Each choice tailors your roadmap and specialist virtual team.
                   </p>
                 </div>
-                <span className="text-xs font-mono px-2.5 py-1 rounded bg-[#070709] border border-[#1F222A] text-[#8A8F9E]">
-                  {answers.goals.length}/2 Selected
+                <span className="text-xs font-mono px-2.5 py-1 rounded bg-[#070709] border border-[#1F222A] text-[#8A8F9E] whitespace-nowrap self-start sm:self-auto">
+                  {answers.goals.length === 0 ? 'Select Any' : `${answers.goals.length} Selected`}
                 </span>
               </div>
 
-              <div className="grid gap-2.5">
+              <div className="grid gap-2.5 sm:grid-cols-2">
                 {GOAL_OPTIONS.map((goal) => {
                   const selected = answers.goals.includes(goal.id);
                   return (
@@ -601,7 +603,7 @@ export default function ArtistPassportPage() {
                     >
                       <span className="text-sm font-semibold">{goal.label}</span>
                       <div
-                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                        className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ml-3 transition-colors ${
                           selected ? 'border-[#FFB800] bg-[#FFB800]' : 'border-white/20'
                         }`}
                       >
@@ -640,14 +642,25 @@ export default function ArtistPassportPage() {
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="inline-flex items-center gap-1.5 text-xs font-mono text-[#8A8F9E] hover:text-white transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Start Over</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleDownloadReport}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono text-white bg-white/10 hover:bg-white/20 border border-white/10 hover:border-[#FFB800]/50 transition-all no-print"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#FFB800]" />
+                    <span>Download Report (PDF)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="inline-flex items-center gap-1.5 text-xs font-mono text-[#8A8F9E] hover:text-white transition-colors no-print"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Start Over</span>
+                  </button>
+                </div>
               </div>
 
               {/* Diagnostic Cards Grid */}
@@ -750,27 +763,70 @@ export default function ArtistPassportPage() {
                 </div>
               </div>
 
-              {/* 4. How indii.music Helps */}
-              <div className="p-6 rounded-2xl bg-[#070709] border border-[#1F222A] space-y-4">
-                <div className="flex items-center justify-between">
+              {/* 4. How indii.music Helps - The Virtual Team */}
+              <div className="p-6 sm:p-8 rounded-2xl bg-[#070709] border border-[#FFB800]/30 shadow-[0_0_30px_rgba(255,184,0,0.06)] space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <span className="text-xs font-mono uppercase tracking-widest text-white/70">
-                      The indii Virtual Team
-                    </span>
-                    <h3 className="text-lg font-bold text-white mt-1">How Your Specialist Team Executes This</h3>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#FFB800]" />
+                      <span className="text-xs font-mono uppercase tracking-widest text-[#FFB800]">
+                        Your Personal Artist Operations Team
+                      </span>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
+                      The indii Virtual Team Assigned To Your Catalog
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#8A8F9E] mt-1 max-w-2xl">
+                      Based on your priorities, indii configures specialist AI agents to autonomously handle the administrative, technical, and marketing tasks major artists delegate to managers and attorneys.
+                    </p>
                   </div>
-                  <span className="text-xs font-mono text-[#FFB800] bg-[#FFB800]/10 px-2.5 py-1 rounded">
-                    23 Domain Specialists
+                  <span className="text-xs font-mono text-[#FFB800] bg-[#FFB800]/10 border border-[#FFB800]/20 px-3 py-1.5 rounded-lg whitespace-nowrap self-start sm:self-auto">
+                    23 Domain Specialists • Matched For You
                   </span>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {diagnosticReport.matchedSpecialists.map((spec) => (
-                    <div key={spec.name} className="p-3.5 rounded-xl bg-black/50 border border-white/5 space-y-1">
-                      <div className="text-xs font-bold text-white" style={{ color: spec.color }}>
-                        {spec.name}
+                    <div
+                      key={spec.name}
+                      className="p-4 rounded-xl bg-black/70 border border-white/10 hover:border-white/20 transition-all flex flex-col justify-between space-y-3"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className="text-[9px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider"
+                            style={{
+                              backgroundColor: `${spec.color}18`,
+                              color: spec.color,
+                              border: `1px solid ${spec.color}35`,
+                            }}
+                          >
+                            {spec.badge || spec.department}
+                          </span>
+                          <span className="text-[10px] font-mono text-[#8A8F9E]">
+                            {spec.department}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                            <span
+                              className="w-2 h-2 rounded-full inline-block"
+                              style={{ backgroundColor: spec.color, boxShadow: `0 0 6px ${spec.color}` }}
+                            />
+                            {spec.name}
+                          </div>
+                          <div className="text-xs text-[#8A8F9E] mt-0.5 font-medium">{spec.role}</div>
+                        </div>
                       </div>
-                      <div className="text-[11px] text-[#8A8F9E]">{spec.role}</div>
+
+                      <div className="pt-2 border-t border-white/5">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-white/50 block mb-1">
+                          Automates for you:
+                        </span>
+                        <p className="text-xs text-white/80 leading-relaxed font-normal">
+                          {spec.automates}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -778,11 +834,16 @@ export default function ArtistPassportPage() {
 
               {/* 5. Lead Capture & Account Creation Handoff */}
               <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-[#0e0e12] to-[#070709] border border-[#FFB800]/30 shadow-[0_0_35px_rgba(255,184,0,0.1)] space-y-6">
-                <div>
-                  <h3 className="text-2xl font-black text-white">Claim Your Artist Passport</h3>
-                  <p className="text-sm text-[#8A8F9E] mt-1">
-                    Your assessment answers are saved in your current session. Continue to indii.music to start running
-                    your music business in one connected studio.
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#00FF66]/30 bg-[#00FF66]/10 text-[11px] font-mono text-[#00FF66] uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-[#00FF66]" />
+                    <span>Instant Artist Bonus • Free 9:16 Video Campaign</span>
+                  </div>
+                  <h3 className="text-2xl font-black text-white">
+                    Claim Your Artist Passport & Free 9:16 Video Campaign
+                  </h3>
+                  <p className="text-sm text-[#8A8F9E] leading-relaxed max-w-2xl">
+                    Your assessment answers and custom roadmap are saved in this session. Enter your email below to instantly receive your official PDF dossier copy and unlock 1 free 9:16 vertical video campaign render in indii Studio — turn your audio into high-converting social cutdowns with zero watermarks.
                   </p>
                 </div>
 
@@ -851,7 +912,7 @@ export default function ArtistPassportPage() {
                           onChange={(e) => setAssessmentConsent(e.target.checked)}
                           className="mt-0.5 rounded border-white/20 text-[#FFB800] focus:ring-[#FFB800]"
                         />
-                        <span>Send me a copy of my Artist Passport assessment.</span>
+                        <span>Send me an official PDF copy of my Artist Passport assessment.</span>
                       </label>
                       <label className="flex items-start gap-2.5 cursor-pointer">
                         <input
@@ -860,28 +921,28 @@ export default function ArtistPassportPage() {
                           onChange={(e) => setMarketingOptIn(e.target.checked)}
                           className="mt-0.5 rounded border-white/20 text-[#FFB800] focus:ring-[#FFB800]"
                         />
-                        <span>Optional: Keep me updated on indii.music platform releases and early access invitations.</span>
+                        <span>Unlock 1 free 9:16 vertical video campaign render & early studio access invitations.</span>
                       </label>
                     </div>
 
                     {email && (
                       <button
                         type="submit"
-                        className="text-xs font-mono px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                        className="text-xs font-mono font-bold px-4 py-2.5 rounded-lg bg-[#FFB800] hover:bg-[#FFD700] text-black transition-all shadow-[0_0_15px_rgba(255,184,0,0.2)]"
                       >
-                        Save Email Copy
+                        Claim Free Video & PDF Dossier
                       </button>
                     )}
                   </form>
                 ) : (
                   <div className="p-4 rounded-xl bg-black/60 border border-[#00FF66]/30 text-xs text-[#00FF66] flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Your assessment copy request is saved for {email}.</span>
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>Your assessment copy request is saved for {email}, and your Free 9:16 Video Campaign test drive is unlocked!</span>
                   </div>
                 )}
 
                 {/* CTAs */}
-                <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-white/10">
+                <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-white/10 no-print">
                   <Link
                     to={`/signup${referralQuery}${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}`}
                     onClick={() => trackPassportEvent('signup_clicked', { cta: 'claim_passport' }, assessmentId)}
@@ -899,7 +960,7 @@ export default function ArtistPassportPage() {
                   </Link>
                 </div>
 
-                <div className="text-[11px] text-[#8A8F9E] leading-relaxed">
+                <div className="text-[11px] text-[#8A8F9E] leading-relaxed no-print">
                   Artist Passport is a pre-membership diagnostic. Official studio membership and tools are governed by the{' '}
                   <Link to="/terms" className="underline hover:text-white">
                     Terms of Service
@@ -912,35 +973,34 @@ export default function ArtistPassportPage() {
                 </div>
               </div>
 
-              {/* 6. Still Not Convinced? Bridge to Landing Page */}
-              <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-[#121318] via-[#090A0E] to-[#050507] border border-white/10 space-y-4">
+              {/* 6. Platform Guide & System Blueprint Bridge */}
+              <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-[#121318] via-[#090A0E] to-[#050507] border border-white/10 space-y-4 no-print">
                 <div className="flex items-center justify-between gap-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#FFB800]" />
-                    <span>Still Not Convinced?</span>
+                    <span>Platform Guide & System Blueprint</span>
                   </div>
                   <span className="text-[11px] font-mono text-[#8A8F9E]">
-                    See The Proof • Free Test Drive
+                    System Architecture • Free Tools
                   </span>
                 </div>
 
                 <div className="space-y-1.5">
                   <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                    Want to see the full platform before creating an account?
+                    Explore the Complete indii.music System Wiki & Architecture
                   </h3>
                   <p className="text-sm text-[#8A8F9E] leading-relaxed max-w-2xl">
-                    Take your time. Explore the complete indii.music workspace, check out our live studio walkthroughs,
-                    our 0% royalty guarantee, and test drive the creative engine with our free mini-campaign on the main site.
+                    Take your time. Read our comprehensive platform documentation, inspect our 0% royalty guarantee, explore the live studio preview, and see how our 23 AI specialist agents coordinate your release operations.
                   </p>
                 </div>
 
                 <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
                   <Link
                     to={`/${referralQuery}${referralQuery.includes('?') ? '&' : '?'}from=passport${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}#studio-preview`}
-                    onClick={() => trackPassportEvent('freebie_clicked', { cta: 'still_not_convinced' }, assessmentId)}
+                    onClick={() => trackPassportEvent('freebie_clicked', { cta: 'platform_wiki_explored' }, assessmentId)}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 hover:border-[#FFB800]/50 transition-all group"
                   >
-                    <span>Still Not Convinced? See Full Platform & Free Tools</span>
+                    <span>Explore Platform Guide & System Wiki</span>
                     <ArrowRight className="w-4 h-4 text-[#FFB800] transition-transform group-hover:translate-x-1" />
                   </Link>
 
@@ -978,7 +1038,7 @@ export default function ArtistPassportPage() {
       </main>
 
       {/* Footer Branding */}
-      <footer className="relative z-20 border-t border-[#1F222A] bg-[#000000] px-6 py-6 text-center text-xs text-[#8A8F9E]">
+      <footer className="relative z-20 border-t border-[#1F222A] bg-[#000000] px-6 py-6 text-center text-xs text-[#8A8F9E] no-print">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-bold text-white">indii.music</span>
@@ -999,6 +1059,21 @@ export default function ArtistPassportPage() {
           </div>
         </div>
       </footer>
+
+      {/* Print styles for PDF report export */}
+      <style>{`
+        @media print {
+          header, footer, nav, button, .no-print {
+            display: none !important;
+          }
+          body, main {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
