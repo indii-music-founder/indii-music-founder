@@ -4,6 +4,7 @@ export interface ProspectAssessment {
   clientSessionId: string; // Anonymized browser session ID
   careerStage: string; // e.g. 'Just starting out'
   genre: string; // e.g. 'Hip-Hop / Rap'
+  customGenre?: string; // Optional custom sound or subgenre description
   proAffiliation: string; // e.g. 'ASCAP' | 'BMI' | 'None'
   mlcRegistered: string; // e.g. 'Yes' | 'No' | 'Not sure'
   distributor: string; // e.g. 'DistroKid' | 'TuneCore'

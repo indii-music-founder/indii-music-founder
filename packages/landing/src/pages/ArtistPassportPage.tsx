@@ -371,6 +371,23 @@ export default function ArtistPassportPage() {
                 })}
               </div>
 
+              {answers.genre === 'Other' && (
+                <div className="space-y-2">
+                  <label htmlFor="passport-custom-genre" className="text-xs font-mono uppercase tracking-wider text-white block">
+                    Describe your sound
+                  </label>
+                  <input
+                    id="passport-custom-genre"
+                    type="text"
+                    maxLength={80}
+                    value={answers.customGenre ?? ''}
+                    onChange={(e) => setAnswers((prev) => ({ ...prev, customGenre: e.target.value }))}
+                    placeholder="e.g. Detroit ghettotech, shoegaze-gospel, bossa nova"
+                    className="w-full px-4 py-3 rounded-xl border border-[#1F222A] bg-[#070709] text-sm text-white placeholder:text-[#8A8F9E]/60 focus:outline-none focus:border-[#FFB800] focus:ring-1 focus:ring-[#FFB800]"
+                  />
+                </div>
+              )}
+
               <p className="text-[11px] text-[#8A8F9E] leading-relaxed italic border-t border-[#1F222A] pt-4">
                 Note: Human-made electronic, dance, and hip-hop music utilizing legitimately licensed samples, loops, and
                 sound libraries is fully recognized and celebrated as human-created music.
@@ -619,7 +636,7 @@ export default function ArtistPassportPage() {
                     Your Artist Business Diagnostic
                   </h2>
                   <p className="text-sm text-[#8A8F9E] mt-0.5">
-                    Profile: {answers.genre} • {answers.careerStage}
+                    Profile: {answers.genre === 'Other' && answers.customGenre?.trim() ? answers.customGenre.trim() : answers.genre} • {answers.careerStage}
                   </p>
                 </div>
 

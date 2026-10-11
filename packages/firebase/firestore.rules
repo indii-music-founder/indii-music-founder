@@ -2901,6 +2901,7 @@ service cloud.firestore {
             'clientSessionId',
             'careerStage',
             'genre',
+            'customGenre',
             'proAffiliation',
             'mlcRegistered',
             'distributor',
@@ -2939,6 +2940,7 @@ service cloud.firestore {
           (data.goals.size() == 0 || (data.goals[0] is string && data.goals[0].size() <= 128)) &&
           (data.goals.size() <= 1 || (data.goals[1] is string && data.goals[1].size() <= 128)) &&
           (!('id' in data) || isValidString(data.id, 1, 128)) &&
+          (!('customGenre' in data) || (data.customGenre is string && data.customGenre.size() <= 80)) &&
           (!('source' in data) || (data.source is string && data.source.size() <= 128)) &&
           (!('artistName' in data) || (data.artistName is string && data.artistName.size() <= 128)) &&
           (!('email' in data) || (data.email is string && data.email.size() <= 320)) &&

@@ -78,6 +78,7 @@ export async function saveProspectAssessment(
         clientSessionId: assessmentId,
         careerStage: answers.careerStage,
         genre: answers.genre,
+        customGenre: (answers.customGenre ?? '').trim().slice(0, 80),
         proAffiliation: answers.proAffiliation,
         mlcRegistered: answers.mlcRegistered,
         distributor: answers.distributor,

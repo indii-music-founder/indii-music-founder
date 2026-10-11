@@ -1,6 +1,7 @@
 export interface PassportAnswers {
   careerStage: string;
   genre: string;
+  customGenre?: string;
   proAffiliation: string;
   mlcRegistered: string;
   distributor: string;
@@ -56,21 +57,38 @@ export const CAREER_STAGES = [
     badge: 'STAGE 03',
   },
   {
-    id: 'Industry veteran',
-    title: 'Industry veteran',
-    desc: 'Substantial back catalog, complex rights, managing multiple collaborators and entities.',
+    id: 'Rebooting / Starting fresh',
+    title: 'Rebooting / Starting fresh',
+    desc: 'Had a past career or releases, took time off for life, and returning now to start anew on my own terms.',
     badge: 'STAGE 04',
+  },
+  {
+    id: 'Producer / Songwriter stepping forward',
+    title: 'Producer / Songwriter stepping forward',
+    desc: 'Seasoned background collaborator, beatmaker, or composer now releasing under my own artist identity.',
+    badge: 'STAGE 05',
+  },
+  {
+    id: 'Industry veteran / Catalog owner',
+    title: 'Industry veteran / Catalog owner',
+    desc: 'Substantial back catalog, complex rights, managing multiple collaborators, masters, and legacy entities.',
+    badge: 'STAGE 06',
   },
 ];
 
 export const GENRES = [
   { id: 'Hip-Hop / Rap', label: 'Hip-Hop / Rap' },
-  { id: 'Electronic / Dance', label: 'Electronic / Dance (House, Techno, Bass)' },
+  { id: 'House & Techno', label: 'House & Techno' },
   { id: 'R&B / Soul', label: 'R&B / Soul' },
+  { id: 'Electronic / Dance', label: 'Electronic / Dance / Bass' },
   { id: 'Indie / Alternative', label: 'Indie / Alternative' },
+  { id: 'Rock / Metal / Punk', label: 'Rock / Metal / Punk' },
   { id: 'Pop', label: 'Pop' },
-  { id: 'Rock', label: 'Rock' },
-  { id: 'Other', label: 'Other Genre' },
+  { id: 'Country / Americana / Folk', label: 'Country / Americana / Folk' },
+  { id: 'Afrobeats / Reggae', label: 'Afrobeats / Reggae / Dancehall' },
+  { id: 'Latin / Reggaeton', label: 'Latin / Reggaeton' },
+  { id: 'Jazz / Classical / Instrumental', label: 'Jazz / Classical / Instrumental' },
+  { id: 'Other', label: 'Other / Custom Sound' },
 ];
 
 export const PRO_OPTIONS = [
@@ -92,11 +110,12 @@ export const MLC_OPTIONS = [
 export const DISTRIBUTOR_OPTIONS = [
   { id: 'DistroKid', label: 'DistroKid' },
   { id: 'TuneCore', label: 'TuneCore' },
-  { id: 'Symphonic', label: 'Symphonic' },
   { id: 'CD Baby', label: 'CD Baby' },
-  { id: 'Another distributor', label: 'Another distributor (e.g. AWAL, UnitedMasters, Amuse)' },
-  { id: 'Self-distribute', label: 'Self-distributing directly' },
-  { id: 'Not distributing yet', label: 'Not distributing yet' },
+  { id: 'Symphonic', label: 'Symphonic' },
+  { id: 'UnitedMasters', label: 'UnitedMasters' },
+  { id: 'AWAL', label: 'AWAL / Downtown' },
+  { id: 'Self-distribute', label: 'Self-distribute directly (Bandcamp, web)' },
+  { id: 'Not distributing yet', label: 'Not distributing yet / Planning first drop' },
 ];
 
 export const RELEASE_STATUS_OPTIONS = [
@@ -119,6 +138,7 @@ export const GOAL_OPTIONS = [
 export const INITIAL_ANSWERS: PassportAnswers = {
   careerStage: '',
   genre: '',
+  customGenre: '',
   proAffiliation: '',
   mlcRegistered: '',
   distributor: '',

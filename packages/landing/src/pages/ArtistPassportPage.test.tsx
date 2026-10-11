@@ -5,6 +5,9 @@ import { MemoryRouter } from 'react-router-dom';
 import ArtistPassportPage from './ArtistPassportPage';
 import {
   evaluatePassport,
+  CAREER_STAGES,
+  GENRES,
+  DISTRIBUTOR_OPTIONS,
   type PassportAnswers,
 } from '../lib/passportEvaluator';
 import { readPassportEventLog } from '../lib/passportAnalytics';
@@ -346,6 +349,31 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(heroWikiLink).toBeDefined();
     expect(heroWikiLink?.getAttribute('href')).toContain('from=passport_hero');
     expect(heroWikiLink?.getAttribute('href')).toContain('source=tiktok_ad');
+  });
+
+  it('offers rebooting stage and balanced even option counts', () => {
+    expect(CAREER_STAGES.some((s) => s.id === 'Rebooting / Starting fresh')).toBe(true);
+    expect(CAREER_STAGES.length % 2).toBe(0);
+    expect(GENRES.length % 2).toBe(0);
+    expect(DISTRIBUTOR_OPTIONS.length % 2).toBe(0);
+    expect(GENRES.some((g) => g.id === 'House & Techno')).toBe(true);
+  });
+
+  it('reveals custom sound input only when Other genre is selected', () => {
+    render(
+      <MemoryRouter initialEntries={['/passport']}>
+        <ArtistPassportPage />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Building momentum/i));
+    fireEvent.click(screen.getByText(/Next Step/i));
+
+    expect(screen.queryByLabelText(/Describe your sound/i)).toBeNull();
+    fireEvent.click(screen.getByText(/Other \/ Custom Sound/i));
+    const input = screen.getByLabelText(/Describe your sound/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Detroit ghettotech' } });
+    expect(input.value).toBe('Detroit ghettotech');
   });
 
   it('records funnel telemetry events across full user walkthrough', () => {

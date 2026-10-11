@@ -3874,6 +3874,32 @@ describe('Firestore Security Rules', () => {
                 }));
             });
 
+            it('create: allows optional customGenre (<= 80 chars, empty allowed)', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                await assertSucceeds(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-cg-1'), {
+                    ...validAssessment,
+                    customGenre: 'x'.repeat(80),
+                }));
+                await assertSucceeds(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-cg-2'), {
+                    ...validAssessment,
+                    customGenre: '',
+                }));
+            });
+
+            it('create: rejects customGenre over 80 chars or non-string', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                await assertFails(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-cg-3'), {
+                    ...validAssessment,
+                    customGenre: 'x'.repeat(81),
+                }));
+                await assertFails(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-cg-4'), {
+                    ...validAssessment,
+                    customGenre: 123,
+                }));
+            });
+
             it('list: hard-blocked for both unauthenticated and authenticated callers', async () => {
                 if (requireEmulator()) return;
                 const unauthDb = unauthCtx().firestore();
