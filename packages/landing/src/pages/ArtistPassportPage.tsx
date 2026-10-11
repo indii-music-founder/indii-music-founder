@@ -12,13 +12,6 @@ import {
   Disc3,
   Sparkles,
   RotateCcw,
-  Music,
-  Upload,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  X,
-  Monitor,
 } from 'lucide-react';
 import {
   type PassportAnswers,
@@ -33,73 +26,6 @@ import {
   INITIAL_ANSWERS,
   evaluatePassport,
 } from '../lib/passportEvaluator';
-
-export interface StudioShowcaseSlide {
-  id: string;
-  tabLabel: string;
-  badge: string;
-  title: string;
-  caption: string;
-  src: string;
-  accentColor: string;
-}
-
-export const STUDIO_SHOWCASE_SLIDES: StudioShowcaseSlide[] = [
-  {
-    id: 'creative',
-    tabLabel: 'Creative Studio',
-    badge: '1080p Video Engine',
-    title: 'Creative Director & Video Timeline',
-    caption: 'Turn 1 audio track into a 14-day visual campaign with unwatermarked 9:16 vertical video cutdown generation.',
-    src: '/screenshots/creative.png',
-    accentColor: '#00FF66',
-  },
-  {
-    id: 'dashboard',
-    tabLabel: 'Command Center',
-    badge: 'Single Pane of Glass',
-    title: 'Unified Studio Command Center',
-    caption: 'Real-time studio dashboard showing catalog, streaming velocity, audio master stems, and pending tasks for Artist Review.',
-    src: '/screenshots/dashboard.png',
-    accentColor: '#FFB800',
-  },
-  {
-    id: 'distribution',
-    tabLabel: 'Distribution',
-    badge: 'DDEX ERN 4.3 XML',
-    title: 'Direct Distribution Engine',
-    caption: 'Direct delivery preparation without middlemen, DDEX ERN 4.3 XML metadata validator, and global DSP store targeting.',
-    src: '/screenshots/distribution.png',
-    accentColor: '#2196F3',
-  },
-  {
-    id: 'workflow',
-    tabLabel: 'Workflow Lab',
-    badge: 'Node Automation',
-    title: 'Visual Workflow Automation Lab',
-    caption: 'Node-based visual automation canvas connecting release milestones to marketing, social, and financial triggers.',
-    src: '/screenshots/workflow.png',
-    accentColor: '#A855F7',
-  },
-  {
-    id: 'finance',
-    tabLabel: 'Financial Command',
-    badge: '0% Platform Royalty Cut',
-    title: 'Financial Command & Split Sheets',
-    caption: 'Transparent ledger accounting, automated collaborator split sheets, and 0% platform fee payout management.',
-    src: '/screenshots/finance.png',
-    accentColor: '#FFC107',
-  },
-  {
-    id: 'analytics',
-    tabLabel: 'Analytics',
-    badge: 'Sonic DNA© Clusters',
-    title: 'Analytics & Audience Clusters',
-    caption: 'Deep DSP performance tracking, streaming cluster analytics, and geographic listener trends across global platforms.',
-    src: '/screenshots/analytics.png',
-    accentColor: '#00BCD4',
-  },
-];
 
 // --- Main Component ---
 export default function ArtistPassportPage() {
@@ -144,36 +70,6 @@ export default function ArtistPassportPage() {
   const [assessmentConsent, setAssessmentConsent] = useState(true);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
-
-  // Studio showcase carousel state (Step 0)
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [isCarouselHovered, setIsCarouselHovered] = useState(false);
-
-  // Auto-advance showcase every 6 seconds if not hovered and on Step 0
-  useEffect(() => {
-    if (currentStep !== 0 || isCarouselHovered || lightboxOpen) return;
-    const interval = setInterval(() => {
-      setActiveSlideIndex((prev) => (prev + 1) % STUDIO_SHOWCASE_SLIDES.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [currentStep, isCarouselHovered, lightboxOpen]);
-
-  // Keyboard navigation for lightbox
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLightboxOpen(false);
-      if (e.key === 'ArrowRight') {
-        setActiveSlideIndex((prev) => (prev + 1) % STUDIO_SHOWCASE_SLIDES.length);
-      }
-      if (e.key === 'ArrowLeft') {
-        setActiveSlideIndex((prev) => (prev - 1 + STUDIO_SHOWCASE_SLIDES.length) % STUDIO_SHOWCASE_SLIDES.length);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxOpen]);
 
   // Sync to session storage
   useEffect(() => {
@@ -231,7 +127,6 @@ export default function ArtistPassportPage() {
   };
 
   const diagnosticReport: DiagnosticReport = evaluatePassport(answers);
-  const currentSlide = STUDIO_SHOWCASE_SLIDES[activeSlideIndex] || STUDIO_SHOWCASE_SLIDES[0];
 
   return (
     <div className="min-h-screen bg-[#000000] text-white selection:bg-[#FFB800] selection:text-black antialiased relative overflow-hidden flex flex-col justify-between">

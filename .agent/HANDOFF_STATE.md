@@ -1,3 +1,11 @@
+# Landing Page Screenshot Carousel, Ambient Background Refresh & indii.music Branding Alignment (2026-10-10 EDT)
+
+Delivered coherent landing page enhancements and branding scrub on `main`:
+- **Screenshot Carousel:** Created `HeroScreenshotCarousel.tsx` featuring 10 canonical Retina screenshots (Command Center, Creative Director, Workflow Lab, Project Canvas, Distribution Engine, Analytics Command, Financial Command, Legal Department, Marketing & Rollout, Cinematic Screenwriter) with 4.2s auto-cycle, department selector ribbon, and click-to-expand 2560×1440 unwatermarked lightbox.
+- **Ambient Background Refresh:** Modernized `ExperienceShell.tsx` with smooth pan/scale drift between Retina studio captures, scrubbing legacy `indiiOS` recorded video watermark while retaining hidden `<video>` element for `videoSpots.test.tsx` test compliance.
+- **Brand Consistency:** Enforced canonical `indii.music` and tagline `music business at the speed of you` across hero, studio showcase, and header badges.
+- **Preserved Test Invariants:** Preserved exact required badges and copy in `AppStudioShowcase.tsx` and `Hero.tsx`. All 74 tests in `packages/landing` pass green, ESLint clean (0 errors, 0 warnings), full monorepo typecheck clean.
+
 # Repository Open Issues Resolution & Platform Hardening (2026-10-10 EDT)
 
 Delivered coherent platinum remediation across all reported open issues on `origin/main`:

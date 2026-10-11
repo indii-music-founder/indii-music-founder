@@ -26,6 +26,18 @@ const REAL_SCREENSHOTS: Record<string, { src: string; alt: string; caption: stri
     caption: 'Production Creative Director workspace for video generation, canvas manipulation, and brand guideline sync.',
     tag: 'Creative Director / Video Engine',
   },
+  workflow: {
+    src: '/screenshots/workflow.png',
+    alt: 'Workflow Lab — Visual node graph automation canvas',
+    caption: 'Visual node-based automation canvas linking release milestones, asset generation, and DSP triggers.',
+    tag: 'Workflow Lab / Node Automation',
+  },
+  canvas: {
+    src: '/screenshots/canvas.png',
+    alt: 'Project Canvas — Infinite visual whiteboard and moodboards',
+    caption: 'Limitless creative whiteboard for lyric brainstorming, track moodboards, release calendars, and asset staging.',
+    tag: 'Project Canvas / Infinite Board',
+  },
   distribution: {
     src: '/screenshots/distribution.png',
     alt: 'Distribution Engine — Direct delivery pipeline and metadata QC',
@@ -43,6 +55,24 @@ const REAL_SCREENSHOTS: Record<string, { src: string; alt: string; caption: stri
     alt: 'Financial Command — Royalty splits and automated ledger',
     caption: 'Transparent ledger accounting, automated split sheet distribution, and 0% platform fee payout management.',
     tag: 'Financial Command / 0% Cut',
+  },
+  legal: {
+    src: '/screenshots/legal.png',
+    alt: 'Legal Department — Producer contracts and split signers',
+    caption: 'Lawyer-grade split sheet generator, producer work-for-hire agreements, and cryptographic signatures in plain English.',
+    tag: 'Legal Department / Contracts',
+  },
+  marketing: {
+    src: '/screenshots/marketing.png',
+    alt: 'Marketing & Rollout — Waterfall schedule and pitches',
+    caption: '14-day waterfall campaign scheduling, curator outreach packages, and DSP editorial pitch copy.',
+    tag: 'Marketing & PR / Waterfall Engine',
+  },
+  screenwriter: {
+    src: '/screenshots/screenwriter.png',
+    alt: 'Cinematic Screenwriter — Video production and scene beats',
+    caption: 'From song lyric to cinematic scene beats, shot lists, and AI prompt orchestration for official music videos.',
+    tag: 'Screenwriter / Scene Beats',
   },
 };
 
@@ -165,7 +195,7 @@ export default function AppStudioShowcase() {
           </div>
 
           <div className="mt-5 flex flex-wrap justify-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/55">
-            {['0 Credit Card', 'Zero Watermark', '1 Audio Track + 1 Visual', 'Unwatermarked 9:16 Video', 'Choose to Save or Permanently Delete'].map((fact) => (
+            {['Verified email required', 'No watermark', 'Keep your exports', 'Choose to save or delete uploads'].map((fact) => (
               <span key={fact} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">{fact}</span>
             ))}
           </div>
@@ -336,6 +366,28 @@ export default function AppStudioShowcase() {
                       <Maximize2 size={12} /> Click to expand full resolution 2560×1440 capture
                     </span>
                   </div>
+                </div>
+
+                {/* Horizontal Gallery Strip of Real Screenshots */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                  {Object.entries(REAL_SCREENSHOTS).map(([key, item]) => {
+                    const isSelected = activeTab === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setActiveTab(key)}
+                        className={`flex-shrink-0 flex items-center gap-2 rounded-lg border px-3 py-1.5 font-mono text-[10px] transition-all ${
+                          isSelected
+                            ? 'border-amber-400 bg-amber-400/15 text-amber-300 font-bold shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+                            : 'border-white/10 bg-black/60 text-white/60 hover:border-white/25 hover:text-white'
+                        }`}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400/80" />
+                        <span>{item.tag.split('/')[0].trim()}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : (

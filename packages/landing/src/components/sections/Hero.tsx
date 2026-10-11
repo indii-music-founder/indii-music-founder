@@ -6,6 +6,7 @@ import { ArrowDown, ArrowRight, Play, X } from 'lucide-react';
 import { emitSystemPulse } from '../../three/signals';
 import { getStudioUrl } from '../../lib/auth';
 import { INDII_BRAND } from '@shared/brand';
+import HeroScreenshotCarousel from '../HeroScreenshotCarousel';
 
 const heroWords = ['Run', 'your', 'music', 'career', 'without', 'giving', 'it', 'away.'];
 
@@ -53,7 +54,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
       />
 
       <div className="flex items-center justify-between border-t border-white/15 pt-4 font-mono text-[9px] uppercase tracking-[0.23em] text-white/60">
-        <span>Independent music / business operating system</span>
+        <span>indii.music / independent music business platform</span>
         <span className="hidden sm:inline">Detroit, Michigan / Founding Artist Beta</span>
       </div>
 
@@ -246,6 +247,9 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
             </div>
           </div>
         </motion.div>
+
+        {/* Live Studio Surface / Hero Screenshot Carousel */}
+        <HeroScreenshotCarousel />
       </div>
 
       <a
@@ -304,7 +308,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-[#0a0a0a] px-5 py-3 text-xs text-white/70">
-                <span>1:18 Overview of the connected music operating system.</span>
+                <span>1:18 Overview of indii.music workspace.</span>
                 <a
                   href="#studio-preview"
                   onClick={() => setIsVideoModalOpen(false)}
