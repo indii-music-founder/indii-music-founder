@@ -15,7 +15,7 @@ Delivered automated diagnostic delivery and funnel telemetry for Artist Passport
   - Wired telemetry on page mount, start button click, stepper next transitions, step 6 arrival, contact form submission, and CTA link clicks.
 - **Verification Evidence:**
   - Monorepo typecheck: `npm run typecheck` passed (exit code 0).
-  - Landing unit tests: 13/13 test files passed, 77/77 tests green.
+  - Landing unit tests: 13/13 test files passed, 78/78 tests green (including telemetry walkthrough test in ArtistPassportPage.test.tsx).
   - Landing lint: 0 errors, 0 warnings.
   - Landing production build: `npm run build:landing` passed in 1.86s.
 

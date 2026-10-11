@@ -7,6 +7,7 @@ import {
   evaluatePassport,
   type PassportAnswers,
 } from '../lib/passportEvaluator';
+import { readPassportEventLog } from '../lib/passportAnalytics';
 
 describe('ArtistPassportPage - Deterministic Evaluation Engine', () => {
   it('correctly flags mechanical royalty leakage when PRO exists but MLC is missing', () => {
@@ -346,4 +347,27 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(heroTestDriveLink?.getAttribute('href')).toContain('mode=free_demo&module=creative');
     expect(heroTestDriveLink?.getAttribute('href')).toContain('source=tiktok_ad');
   });
+
+  it('records funnel telemetry events across full user walkthrough', () => {
+    sessionStorage.clear();
+    render(
+      <MemoryRouter initialEntries={['/passport?source=meta_campaign']}>
+        <ArtistPassportPage />
+      </MemoryRouter>
+    );
+
+    // Step 0 -> Step 1
+    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+
+    // Step 1 -> Step 2
+    fireEvent.click(screen.getByText(/Building momentum/i));
+    fireEvent.click(screen.getByText(/Next Step/i));
+
+    const events = readPassportEventLog();
+    const eventNames = events.map((e) => e.eventName);
+    expect(eventNames).toContain('passport_viewed');
+    expect(eventNames).toContain('passport_started');
+    expect(eventNames).toContain('passport_step_completed');
+  });
 });
+
