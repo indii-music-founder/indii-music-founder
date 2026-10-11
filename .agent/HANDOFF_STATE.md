@@ -2,7 +2,7 @@
 
 Aligned Artist Passport hero badge with canonical registered trademark and positioning `Connected Intelligence©` on `main`:
 - **Badge Copy:** Updated the top hero badge in `packages/landing/src/pages/ArtistPassportPage.tsx` to:
-  `People make the music. Connected Intelligence© handles the business.`
+  `People make the music. indii Connected Intelligence© handles the business.`
 - **Tests & Verification:**
   - 13/13 tests green in `packages/landing/src/pages/ArtistPassportPage.test.tsx`.
   - All 78 tests across 13 test files passing in `packages/landing`.
