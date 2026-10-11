@@ -366,5 +366,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('blender:render-progress', handler);
             return () => ipcRenderer.removeListener('blender:render-progress', handler);
         },
-    }
+    },
+
+    // indii Rights Registration Screen Control & Browser Copilot (ISSUE-1511)
+    rightsCopilot: {
+        launchSession: (req: { portalTarget: string; manifestId: string; targetUrl?: string }) =>
+            ipcRenderer.invoke('rightsCopilot:launch-session', req),
+        closeSession: (req?: { sessionId?: string }) =>
+            ipcRenderer.invoke('rightsCopilot:close-session', req),
+        getSessionStatus: () =>
+            ipcRenderer.invoke('rightsCopilot:get-session-status'),
+        onSessionStatusChanged: (callback: (status: unknown) => void) => {
+            const handler = (_event: unknown, status: unknown) => callback(status);
+            ipcRenderer.on('rightsCopilot:session-status-changed', handler);
+            return () => ipcRenderer.removeListener('rightsCopilot:session-status-changed', handler);
+        },
+    },
 });
+

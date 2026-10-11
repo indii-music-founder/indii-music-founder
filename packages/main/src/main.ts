@@ -114,6 +114,7 @@ import { registerRawHandlers } from './handlers/raw';
 import { registerUpscaleHandlers } from './handlers/upscale';
 import { registerFoundryHandlers } from './handlers/foundry';
 import { registerBlenderHandlers } from './handlers/blender';
+import { registerRightsCopilotHandlers } from './handlers/rightsCopilot';
 import Store from 'electron-store';
 
 let tray: Tray | null = null;
@@ -523,6 +524,7 @@ if (!gotTheLock) {
         registerRawHandlers();
         registerUpscaleHandlers();
         registerFoundryHandlers();
+        registerRightsCopilotHandlers();
 
         // Register Sidecar Handlers (Removed)
 
@@ -566,6 +568,7 @@ if (!gotTheLock) {
             'foundry:grant-session', 'foundry:revoke-grant', 'foundry:read-file', 'foundry:get-metadata',
             'foundry:save-hypothesis', 'foundry:load-hypothesis', 'foundry:list-hypotheses', 'foundry:book-statement',
             'blender:cancel-render', 'blender:get-status', 'blender:list-templates', 'blender:render-music-video', 'blender:live-command',
+            'rightsCopilot:launch-session', 'rightsCopilot:close-session', 'rightsCopilot:get-session-status',
             'dev:heap-snapshot',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
