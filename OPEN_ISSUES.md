@@ -4,7 +4,7 @@ The canonical open-issues ledger lives at:
 
 - `.agent/test_ledger/OPEN_ISSUES_V3.md`
 
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-10
 
 Do not add regular issue entries to this root file. Add product, CI, flowchart,
 beta-launch, verification, and follow-up issues to the detailed ledger in

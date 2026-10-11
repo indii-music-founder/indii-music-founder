@@ -3,7 +3,7 @@
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-09-22 (**Opened ISSUE-1436–1441 from the studio UI/UX architecture audit** — navigation duplicates, phantom modules, wayfinding gaps, control-dense screens, dead UI)
+> **Last updated:** 2026-10-10 (**Opened ISSUE-1510 / GitHub #413** — Technical Specification: Open-Source Non-Linear Editing (NLE) Engine Integration)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V3):** This is the ACTIVE master ledger. It operates with strict discipline:
@@ -4077,3 +4077,486 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Expected (acceptance):** Unskip and verify FinanceService integration tests against production Zod validation and auth boundaries; create unit tests for Python waterfall payout engine.
 - **Fix:** Unskipped `FinanceService.integration.test.ts` (4/4 tests green); created `test_waterfall_payout.py` verifying clean splits, full debt recoupment, and partial recoupment (3/3 tests green).
 - **Evidence:** `packages/renderer/src/services/finance/FinanceService.integration.test.ts` (4/4 passed), `execution/finance/test_waterfall_payout.py` (3/3 passed).
+
+### ISSUE-1510: Issue #413 Technical Specification: Open-Source Non-Linear Editing (NLE) Engine Integration
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Creative Suite / Video Editor (NLE Engine Architecture)
+- **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/413
+- **Summary:** Architecture and technical specification for open-source non-linear editing (NLE) engine integration spanning UI, immutable timeline AST, real-time preview (Web Audio master clock + WebCodecs VideoDecoder + WebGL2 compositor), and headless export (FFmpeg filtergraph compiler).
+- **Expected (acceptance):**
+  - Seek Latency: < 80 ms to visual frame delivery across 60-minute long-GOP H.264 file.
+  - A/V Sync Drift: <= 1 ms over 30 minutes continuous playback.
+  - Scrub Frame Drops: 0 drops on keyframes, smooth visual degradation during 60 fps scrub events.
+  - Renderer Determinism: Byte-identical pixel output between UI export and headless FFmpeg (frame-by-frame PSNR > 45 dB).
+  - Memory Ceiling: Flatline memory profile (zero memory growth) during 2 hours continuous looping.
+- **Specification Details:**
+
+#### 1. System Architecture & Boundary Definitions
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                             CLIENT / UI LAYER                               │
+│  React / Next.js / Electron UI (Track Canvas, Scrub Bar, Inspector, Stems)  │
+└──────────────────────┬───────────────────────────────┬──────────────────────┘
+                       │ Action Dispatches             │ State Selectors
+                       ▼                               ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       STATE ENGINE (Immutable / Zustand)                    │
+│    Timeline AST • Rational Time Calculations • Clip Graph • History / Undo  │
+└───────┬─────────────────────────────────────────────────────────────┬───────┘
+        │ Render Manifest                                             │ IPC / Manifest
+        ▼                                                             ▼
+┌───────────────────────────────────────┐   ┌─────────────────────────────────┐
+│        REAL-TIME PREVIEW ENGINE       │   │    HEADLESS EXPORT ENGINE       │
+│  ┌─────────────────────────────────┐  │   │  ┌───────────────────────────┐  │
+│  │ Audio Engine (Master Clock)     │  │   │  │ FFmpeg Filtergraph        │  │
+│  │ - AudioContext / AudioWorklet   │  │   │  │ Compiler (Native CLI)     │  │
+│  │ - Multitrack PCM Summing        │  │   │  │ OR                        │  │
+│  └────────────────┬────────────────┘  │   │  │ WebCodecs + WebGPU        │  │
+│                   │ Master PTS Sync   │   │  │ Headless Render Worker    │  │
+│  ┌────────────────▼────────────────┐  │   │  └───────────────────────────┘  │
+│  │ Video Pipeline                  │  │   └─────────────────────────────────┘
+│  │ - WASM Demuxer (mp4box / libav) │  │
+│  │ - WebCodecs VideoDecoder        │  │
+│  │ - WebGL2 / WebGPU Compositor    │  │
+│  │ - Ring Buffer Texture Cache     │  │
+│  └─────────────────────────────────┘  │
+└───────────────────────────────────────┘
+```
+
+#### 2. Core Data Schemas & TypeScript Definitions
+```typescript
+// --- Rational Time Primitives ---
+export interface RationalTime {
+  pts: bigint;         // Presentation time stamp as integer
+  timescale: number;   // Standard base: 60000 (allows 23.976, 24, 29.97, 30, 60 fps integer mapping)
+}
+
+export interface TimeRange {
+  start: RationalTime;
+  duration: RationalTime;
+}
+
+// --- Asset Metadata ---
+export interface MediaMetadata {
+  id: string;
+  sourceUri: string;
+  hashSha256: string;
+  format: string;
+  durationUs: number;
+  video?: {
+    width: number;
+    height: number;
+    codec: 'h264' | 'h265' | 'vp9' | 'av1' | 'prores';
+    pixFmt: string;
+    colorSpace: string;
+    isVFR: boolean;
+    frameRate: { num: number; den: number };
+    keyframeIndices: number[]; // Presentation times of IDR/I-frames
+  };
+  audio?: {
+    codec: 'aac' | 'pcm_s16le' | 'pcm_s24le' | 'pcm_f32le' | 'opus';
+    sampleRate: number;
+    channels: number;
+    channelLayout: 'mono' | 'stereo' | '5.1';
+  };
+}
+
+// --- Keyframes & Transforms ---
+export interface Keyframe<T> {
+  time: RationalTime;
+  value: T;
+  interpolation: 'linear' | 'ease-in' | 'ease-out' | 'bezier' | 'hold';
+  bezierHandles?: { cp1: [number, number]; cp2: [number, number] };
+}
+
+export interface Transform2D {
+  position: { x: number; y: number }; // Normalized coordinate space [-1.0, 1.0]
+  scale: { x: number; y: number };
+  rotation: number;                   // Radians
+  opacity: number;                    // 0.0 to 1.0
+  origin: { x: number; y: number };   // Anchor point [0.5, 0.5] default
+}
+
+// --- Timeline AST ---
+export interface BaseClip {
+  id: string;
+  assetId: string;
+  timelineRange: TimeRange;  // Position and length on the timeline
+  sourceRange: TimeRange;    // Trim points within the source media file
+  speed: number;             // Playback rate factor
+}
+
+export interface VideoClip extends BaseClip {
+  type: 'video';
+  transform: Transform2D;
+  transformKeyframes?: Keyframe<Partial<Transform2D>>[];
+  blendMode: 'normal' | 'multiply' | 'screen' | 'overlay' | 'add';
+  filters: FilterNode[];
+}
+
+export interface AudioClip extends BaseClip {
+  type: 'audio';
+  gain: number;              // Linear scalar (1.0 = 0dB)
+  pan: number;               // -1.0 (Left) to +1.0 (Right)
+  gainKeyframes?: Keyframe<number>[];
+  panKeyframes?: Keyframe<number>[];
+  busAssignment: string;     // e.g., 'master' | 'music' | 'sfx' | 'dialogue'
+}
+
+export interface FilterNode {
+  id: string;
+  type: string;
+  params: Record<string, number | string | boolean>;
+}
+
+export interface Track {
+  id: string;
+  type: 'video' | 'audio';
+  index: number;
+  muted: boolean;
+  locked: boolean;
+  clips: (VideoClip | AudioClip)[];
+}
+
+export interface TimelineAST {
+  version: 1;
+  id: string;
+  timebase: number;          // Default 60000
+  dimensions: { width: number; height: number };
+  audioFormat: { sampleRate: 48000; channels: 2 };
+  tracks: Track[];
+}
+```
+
+#### 3. Ingestion & Pre-Flight Validation Subsystem
+Every file added to the workflow passes through an ingestion probe running either via native ffprobe (Electron backend / server) or WASM-compiled demuxer (pure browser):
+* **VFR Detection:**
+  Run probe analysis:
+  ```bash
+  ffprobe -v error -select_streams v:0 -show_entries stream=avg_frame_rate,r_frame_rate -of json input.mp4
+  ```
+
+  If `avg_frame_rate != r_frame_rate`, reject direct timeline injection. Trigger background CFR conversion:
+  ```bash
+  ffmpeg -i input.mp4 -fps_mode cfr -r 60 -c:v libx264 -preset ultrafast -crf 18 -c:a copy input_cfr.mp4
+  ```
+
+* **Audio Stream Normalization:**
+  Inspect incoming sample rate. If not equal to the project clock (48 kHz), normalize or generate a cached PCM WAV asset:
+  ```bash
+  ffmpeg -i input_media.ext -vn -ar 48000 -c:a pcm_s24le cached_audio_48k.wav
+  ```
+
+* **Keyframe Indexing:**
+  Extract and store packet PTS markers for all keyframes (`flags=K`) to allow instant non-linear seeks without sequential decode passes:
+  ```bash
+  ffprobe -v error -select_streams v:0 -show_frames -show_entries frame=pkt_pts,pkt_pts_time,key_frame -of json input.mp4
+  ```
+
+#### 4. Real-Time Playback Engine (Client-Side)
+
+##### 4.1 Master Audio Clock Sync
+The preview engine synchronizes entirely to the Web Audio hardware clock to prevent drift:
+```typescript
+class MasterAudioClock {
+  private audioCtx: AudioContext;
+  private playbackStartTime: number = 0;
+  private timelineStartPts: bigint = 0n;
+  private isRunning: boolean = false;
+  private timescale: number = 60000;
+
+  constructor(audioCtx: AudioContext, timescale = 60000) {
+    this.audioCtx = audioCtx;
+    this.timescale = timescale;
+  }
+
+  public play(fromTimelinePts: bigint): void {
+    this.timelineStartPts = fromTimelinePts;
+    this.playbackStartTime = this.audioCtx.currentTime;
+    this.isRunning = true;
+  }
+
+  public pause(): bigint {
+    const currentPts = this.getCurrentPts();
+    this.isRunning = false;
+    return currentPts;
+  }
+
+  public getCurrentPts(): bigint {
+    if (!this.isRunning) return this.timelineStartPts;
+    const elapsedSeconds = this.audioCtx.currentTime - this.playbackStartTime;
+    const elapsedPts = BigInt(Math.round(elapsedSeconds * this.timescale));
+    return this.timelineStartPts + elapsedPts;
+  }
+}
+```
+
+##### 4.2 WebCodecs Video Decoding Pipeline
+Decode pipelines operate per video track inside dedicated Web Workers:
+```typescript
+class VideoTrackDecoder {
+  private decoder: VideoDecoder;
+  private frameRingBuffer: Map<bigint, VideoFrame> = new Map();
+  private maxBufferedFrames: number = 60;
+
+  constructor() {
+    this.decoder = new VideoDecoder({
+      output: (frame: VideoFrame) => {
+        const pts = BigInt(frame.timestamp); // in microseconds
+        this.frameRingBuffer.set(pts, frame);
+      },
+      error: (e: DOMException) => console.error('WebCodecs Error:', e),
+    });
+
+    this.decoder.configure({
+      codec: 'avc1.640028', // H.264 High Profile Level 4.0
+      hardwareAcceleration: 'prefer-hardware',
+      optimizeForLatency: true,
+    });
+  }
+
+  public getFrameForPts(targetPtsUs: bigint): VideoFrame | null {
+    // Find closest frame within 1/120s tolerance (8333us)
+    for (const [pts, frame] of this.frameRingBuffer.entries()) {
+      if (pts <= targetPtsUs && targetPtsUs - pts < 16666n) {
+        return frame;
+      }
+    }
+    return null;
+  }
+
+  public purgeBefore(cutoffPtsUs: bigint): void {
+    for (const [pts, frame] of this.frameRingBuffer.entries()) {
+      if (pts < cutoffPtsUs) {
+        frame.close(); // Crucial: Explicitly free GPU memory
+        this.frameRingBuffer.delete(pts);
+      }
+    }
+  }
+}
+```
+
+##### 4.3 WebGL2 Compositor Pipeline
+The compositor samples active frames, uploads textures, executes matrix operations, and applies blend equations.
+
+Vertex Shader (Transform & Geometry):
+```glsl
+#version 300 es
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_texCoord;
+
+uniform mat3 u_transformMatrix;
+
+out vec2 v_texCoord;
+
+void main() {
+    vec3 transformed = u_transformMatrix * vec3(a_position, 1.0);
+    gl_Position = vec4(transformed.xy, 0.0, 1.0);
+    v_texCoord = a_texCoord;
+}
+```
+
+Fragment Shader (Texture Sampling & Layer Opacity):
+```glsl
+#version 300 es
+precision highp float;
+
+in vec2 v_texCoord;
+uniform sampler2D u_texture;
+uniform float u_opacity;
+
+out vec4 fragColor;
+
+void main() {
+    vec4 texColor = texture(u_texture, v_texCoord);
+    fragColor = vec4(texColor.rgb, texColor.a * u_opacity);
+}
+```
+
+Compositor Frame Tick Routine:
+```typescript
+function renderTick(
+  gl: WebGL2RenderingContext,
+  activeVideoFrames: { frame: VideoFrame; transform: Float32Array; opacity: number }[]
+) {
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  gl.enable(gl.BLEND);
+  // Standard Premultiplied Alpha
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+  for (const layer of activeVideoFrames) {
+    // Upload VideoFrame directly to texture memory
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      layer.frame
+    );
+
+    gl.uniformMatrix3fv(uTransformMatrixLocation, false, layer.transform);
+    gl.uniform1f(uOpacityLocation, layer.opacity);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // Close frame handle immediately after all references to it are processed
+    layer.frame.close();
+  }
+}
+```
+
+#### 5. Timeline Math Engine
+Floating-point operations cause cumulative desynchronization across multi-track playback. All calculations must use integer arithmetic over rational fractions.
+
+Time Coordinate Conversion:
+Given timeline playhead $T$, determine if clip $C$ intersects.
+
+Compute source file offset timestamp $S_{\text{offset}}$:
+```typescript
+export function getSourceOffsetPts(
+  playheadPts: bigint,
+  clip: VideoClip | AudioClip,
+  timescale: number
+): bigint {
+  const elapsedTimelinePts = playheadPts - clip.timelineRange.start.pts;
+  const scaledElapsed = BigInt(Math.round(Number(elapsedTimelinePts) * clip.speed));
+  return clip.sourceRange.start.pts + scaledElapsed;
+}
+
+export function isClipActive(playheadPts: bigint, clip: BaseClip): boolean {
+  const endPts = clip.timelineRange.start.pts + clip.timelineRange.duration.pts;
+  return playheadPts >= clip.timelineRange.start.pts && playheadPts < endPts;
+}
+```
+
+#### 6. Headless Rendering & Export Pipeline
+For production exports, the system translates the Timeline AST directly into an FFmpeg execution command, allowing headless execution on background workers or native client runtimes.
+
+FFmpeg Filtergraph Generator:
+```typescript
+export function compileFfmpegCommand(ast: TimelineAST, outputFilePath: string): string {
+  const inputs: string[] = [];
+  const filterChains: string[] = [];
+  const videoInputIndices: Map<string, number> = new Map();
+  const audioInputIndices: Map<string, number> = new Map();
+
+  let inputCounter = 0;
+
+  // 1. Collect unique source assets as inputs
+  for (const track of ast.tracks) {
+    for (const clip of track.clips) {
+      if (!videoInputIndices.has(clip.assetId)) {
+        inputs.push(`-i "${clip.assetId}"`);
+        videoInputIndices.set(clip.assetId, inputCounter);
+        audioInputIndices.set(clip.assetId, inputCounter);
+        inputCounter++;
+      }
+    }
+  }
+
+  // 2. Base canvas setup
+  const baseCanvas = `color=c=black:s=${ast.dimensions.width}x${ast.dimensions.height}:r=60:d=1000[base]`;
+  filterChains.push(baseCanvas);
+
+  let currentVideoOutput = 'base';
+  let vOverlayCount = 0;
+
+  // 3. Process Video Tracks
+  const videoTracks = ast.tracks.filter(t => t.type === 'video');
+  for (const track of videoTracks) {
+    for (const clip of track.clips as VideoClip[]) {
+      const inIdx = videoInputIndices.get(clip.assetId)!;
+      const trimStart = Number(clip.sourceRange.start.pts) / ast.timebase;
+      const trimDur = Number(clip.timelineRange.duration.pts) / ast.timebase;
+      const targetStart = Number(clip.timelineRange.start.pts) / ast.timebase;
+
+      const clipLabel = `v_${clip.id}`;
+      const scaledLabel = `scaled_${clip.id}`;
+      const nextOutput = `canvas_pass_${vOverlayCount++}`;
+
+      // Trim -> Scale -> Position
+      filterChains.push(
+        `[${inIdx}:v]trim=start=${trimStart}:duration=${trimDur},setpts=PTS-STARTPTS[${clipLabel}]`
+      );
+      filterChains.push(
+        `[${clipLabel}]scale=${ast.dimensions.width}:-1[${scaledLabel}]`
+      );
+      filterChains.push(
+        `[${currentVideoOutput}][${scaledLabel}]overlay=enable='between(t,${targetStart},${targetStart + trimDur})':x=0:y=0[${nextOutput}]`
+      );
+
+      currentVideoOutput = nextOutput;
+    }
+  }
+
+  // 4. Process Audio Tracks
+  const audioTracks = ast.tracks.filter(t => t.type === 'audio');
+  const audioLabels: string[] = [];
+
+  for (const track of audioTracks) {
+    for (const clip of track.clips as AudioClip[]) {
+      const inIdx = audioInputIndices.get(clip.assetId)!;
+      const trimStart = Number(clip.sourceRange.start.pts) / ast.timebase;
+      const trimDur = Number(clip.timelineRange.duration.pts) / ast.timebase;
+      const delayMs = Math.round((Number(clip.timelineRange.start.pts) / ast.timebase) * 1000);
+      const aLabel = `a_${clip.id}`;
+
+      filterChains.push(
+        `[${inIdx}:a]atrim=start=${trimStart}:duration=${trimDur},asetpts=PTS-STARTPTS,adelay=${delayMs}|${delayMs},aresample=48000,volume=${clip.gain}[${aLabel}]`
+      );
+      audioLabels.push(`[${aLabel}]`);
+    }
+  }
+
+  // Mix all audio streams
+  let finalAudioOutput = 'out_a';
+  if (audioLabels.length > 0) {
+    filterChains.push(
+      `${audioLabels.join('')}amix=inputs=${audioLabels.length}:normalize=0[${finalAudioOutput}]`
+    );
+  } else {
+    filterChains.push(`anullsrc=channel_layout=stereo:sample_rate=48000[${finalAudioOutput}]`);
+  }
+
+  // 5. Final Assembly
+  const filterGraph = filterChains.join('; ');
+  return `ffmpeg -y ${inputs.join(' ')} -filter_complex "${filterGraph}" -map "[${currentVideoOutput}]" -map "[${finalAudioOutput}]" -c:v libx264 -pix_fmt yuv420p -preset medium -crf 18 -c:a aac -b:a 320k "${outputFilePath}"`;
+}
+```
+
+#### 7. Memory Management & Lifecycle Enforcement
+To prevent process crashes due to unmanaged GPU/WASM allocations:
+* **VideoFrame Handle Ownership:**
+  A VideoFrame holds an internal reference to native graphics surfaces. It must be explicitly disposed of:
+  ```typescript
+  function processFrame(frame: VideoFrame, gl: WebGL2RenderingContext) {
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame);
+    } finally {
+      frame.close(); // Frees hardware surface immediately
+    }
+  }
+  ```
+
+* **Dynamic Decoder Pooling:**
+  Never instantiate more than 4 concurrent VideoDecoder hardware instances (typical hardware decoder limit on modern consumer silicon). If a timeline contains >4 simultaneous overlapping tracks:
+  * Prioritize hardware decoders for top visible layers.
+  * Route remaining background/obscured layers to a software WASM decoder (e.g., FFmpeg libavcodec compiled with SIMD).
+* **Decoded Frame Ring-Buffer Caps:**
+  Cap total decoded memory per worker:
+  For 1080p stereo video: $1 \times 30 \times (1920 \times 1080 \times 4) \approx 248\text{ MB}$. Evict immediately once PTS is past the lookback window.
+
+#### 8. Verification & Acceptance Benchmarks
+| Milestone / Metric | Acceptance Threshold | Test Vector |
+|---|---|---|
+| Seek Latency | < 80 ms to visual frame delivery | Random seeks across a 60-minute long-GOP H.264 file |
+| A/V Sync Drift | $\le$ 1 ms over 30 minutes continuous playback | High-frequency clapperboard/flash video test pattern |
+| Scrub Frame Drops | 0 drops on keyframes; smooth visual degradation on rapid scrub | 60 fps scrub input events via mouse drag |
+| Renderer Determinism | Byte-identical pixel output between UI export and headless FFmpeg | Frame-by-frame PSNR comparison > 45 dB |
+| Memory Ceiling | Zero memory growth (flatline) during 2 hours continuous looping | Profile via Chrome DevTools Performance.memory / Native heap |
+
