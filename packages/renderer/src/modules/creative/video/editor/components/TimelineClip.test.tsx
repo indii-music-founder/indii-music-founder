@@ -54,12 +54,16 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
         onMoveKeyframe: mockMoveKeyframe,
     };
 
+    const mockSplitClip = vi.fn();
+
     beforeEach(() => {
         vi.clearAllMocks();
         const mockStoreState = {
             timelineZoom: 1,
             project: { fps: 30 },
+            activeTool: 'select',
             moveKeyframe: mockMoveKeyframe,
+            splitClip: mockSplitClip,
         };
         (useVideoEditorStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
             if (typeof selector === 'function') {
@@ -253,5 +257,126 @@ describe('TimelineClip — Feature 22: Keyframe Diamond Dragging', () => {
             20,
             'easeOut'
         );
+    });
+
+    describe('NLE Interactive Timeline Tools', () => {
+        it('renders razor cutline and badge on hover when activeTool is razor', () => {
+            const mockState = {
+                timelineZoom: 1,
+                project: { fps: 30 },
+                activeTool: 'razor',
+                moveKeyframe: mockMoveKeyframe,
+                splitClip: mockSplitClip,
+            };
+            (useVideoEditorStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => selector(mockState));
+            (useVideoEditorStore.getState as unknown as import('vitest').Mock).mockReturnValue(mockState);
+
+            const { container } = render(<TimelineClip {...defaultProps} />);
+            const clipEl = container.querySelector('.group\\/clip') as HTMLElement;
+            expect(clipEl).toBeTruthy();
+            expect(clipEl.className).toContain('cursor-crosshair');
+
+            // Mock getBoundingClientRect
+            vi.spyOn(clipEl, 'getBoundingClientRect').mockReturnValue({
+                left: 100,
+                top: 0,
+                right: 300,
+                bottom: 64,
+                width: 200,
+                height: 64,
+                x: 100,
+                y: 0,
+                toJSON: () => {},
+            });
+
+            // Hover over middle of clip: clientX = 150 (offset = 50px, pxPerFrame = 2 -> frame = 25)
+            fireEvent.pointerMove(clipEl, { clientX: 150 });
+
+            const cutline = screen.getByTestId('razor-cutline-clip-test-1');
+            const badge = screen.getByTestId('razor-cut-badge-clip-test-1');
+            expect(cutline).toBeInTheDocument();
+            expect(badge).toBeInTheDocument();
+            expect(badge.textContent).toContain('f25');
+        });
+
+        it('splits clip at hover frame when clicked with razor tool active', () => {
+            const mockState = {
+                timelineZoom: 1,
+                project: { fps: 30 },
+                activeTool: 'razor',
+                moveKeyframe: mockMoveKeyframe,
+                splitClip: mockSplitClip,
+            };
+            (useVideoEditorStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => selector(mockState));
+            (useVideoEditorStore.getState as unknown as import('vitest').Mock).mockReturnValue(mockState);
+
+            const { container } = render(<TimelineClip {...defaultProps} />);
+            const clipEl = container.querySelector('.group\\/clip') as HTMLElement;
+
+            vi.spyOn(clipEl, 'getBoundingClientRect').mockReturnValue({
+                left: 100,
+                top: 0,
+                right: 300,
+                bottom: 64,
+                width: 200,
+                height: 64,
+                x: 100,
+                y: 0,
+                toJSON: () => {},
+            });
+
+            // Move to frame 25
+            fireEvent.pointerMove(clipEl, { clientX: 150 });
+            // Click to split
+            fireEvent.pointerDown(clipEl, { clientX: 150 });
+
+            expect(mockSplitClip).toHaveBeenCalledWith('clip-test-1', 25);
+            expect(mockDragStart).not.toHaveBeenCalled();
+        });
+
+        it('initiates slip drag when dragging clip body with slip tool active', () => {
+            const mockState = {
+                timelineZoom: 1,
+                project: { fps: 30 },
+                activeTool: 'slip',
+                moveKeyframe: mockMoveKeyframe,
+                splitClip: mockSplitClip,
+            };
+            (useVideoEditorStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => selector(mockState));
+            (useVideoEditorStore.getState as unknown as import('vitest').Mock).mockReturnValue(mockState);
+
+            const { container } = render(<TimelineClip {...defaultProps} />);
+            const clipEl = container.querySelector('.group\\/clip') as HTMLElement;
+            expect(clipEl.className).toContain('cursor-ew-resize');
+
+            fireEvent.pointerDown(clipEl, { clientX: 120 });
+            expect(mockDragStart).toHaveBeenCalledWith(expect.anything(), mockClip, 'slip');
+        });
+
+        it('initiates ripple trim drags when activeTool is ripple', () => {
+            const mockState = {
+                timelineZoom: 1,
+                project: { fps: 30 },
+                activeTool: 'ripple',
+                moveKeyframe: mockMoveKeyframe,
+                splitClip: mockSplitClip,
+            };
+            (useVideoEditorStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => selector(mockState));
+            (useVideoEditorStore.getState as unknown as import('vitest').Mock).mockReturnValue(mockState);
+
+            render(<TimelineClip {...defaultProps} />);
+
+            const leftTrim = screen.getByTestId('clip-trim-left-clip-test-1');
+            const rightTrim = screen.getByTestId('clip-trim-right-clip-test-1');
+
+            expect(leftTrim.className).toContain('bg-amber-400');
+            expect(rightTrim.className).toContain('bg-amber-400');
+
+            fireEvent.pointerDown(leftTrim, { clientX: 0 });
+            expect(mockDragStart).toHaveBeenCalledWith(expect.anything(), mockClip, 'ripple-left');
+
+            fireEvent.pointerDown(rightTrim, { clientX: 200 });
+            expect(mockDragStart).toHaveBeenCalledWith(expect.anything(), mockClip, 'ripple-right');
+        });
     });
 });

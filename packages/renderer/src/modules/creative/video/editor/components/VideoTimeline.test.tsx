@@ -12,6 +12,7 @@ describe('VideoTimeline', () => {
     const mockAddKeyframe = vi.fn();
     const mockRemoveKeyframe = vi.fn();
     const mockUpdateKeyframe = vi.fn();
+    const mockSetActiveTool = vi.fn();
 
     const mockProject = {
         id: 'p1',
@@ -56,6 +57,8 @@ describe('VideoTimeline', () => {
             addKeyframe: mockAddKeyframe,
             removeKeyframe: mockRemoveKeyframe,
             updateKeyframe: mockUpdateKeyframe,
+            activeTool: 'select',
+            setActiveTool: mockSetActiveTool,
             currentTime: 0,
             timelineZoom: 1,
         };
@@ -205,6 +208,43 @@ describe('VideoTimeline', () => {
             const guide = screen.getByTestId('snap-guide');
             expect(guide).toBeInTheDocument();
             expect(guide).toHaveStyle({ left: '300px' });
+        });
+    });
+
+    describe('NLE Tool Switcher Toolbar', () => {
+        it('renders all four timeline tool buttons with keyboard shortcuts', () => {
+            render(<VideoTimeline {...defaultProps} />);
+
+            const selectBtn = screen.getByTestId('tool-select');
+            const razorBtn = screen.getByTestId('tool-razor');
+            const rippleBtn = screen.getByTestId('tool-ripple');
+            const slipBtn = screen.getByTestId('tool-slip');
+
+            expect(selectBtn).toBeInTheDocument();
+            expect(razorBtn).toBeInTheDocument();
+            expect(rippleBtn).toBeInTheDocument();
+            expect(slipBtn).toBeInTheDocument();
+
+            expect(selectBtn).toHaveAttribute('aria-pressed', 'true');
+            expect(razorBtn).toHaveAttribute('aria-pressed', 'false');
+            expect(rippleBtn).toHaveAttribute('aria-pressed', 'false');
+            expect(slipBtn).toHaveAttribute('aria-pressed', 'false');
+        });
+
+        it('calls setActiveTool when tool buttons are clicked', () => {
+            render(<VideoTimeline {...defaultProps} />);
+
+            fireEvent.click(screen.getByTestId('tool-razor'));
+            expect(mockSetActiveTool).toHaveBeenCalledWith('razor');
+
+            fireEvent.click(screen.getByTestId('tool-ripple'));
+            expect(mockSetActiveTool).toHaveBeenCalledWith('ripple');
+
+            fireEvent.click(screen.getByTestId('tool-slip'));
+            expect(mockSetActiveTool).toHaveBeenCalledWith('slip');
+
+            fireEvent.click(screen.getByTestId('tool-select'));
+            expect(mockSetActiveTool).toHaveBeenCalledWith('select');
         });
     });
 });

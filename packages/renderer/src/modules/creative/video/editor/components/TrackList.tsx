@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { VideoTrack, VideoClip } from '../../store/videoEditorStore';
 import { TimelineTrack } from './TimelineTrack';
+import { ClipDragType } from '../hooks/useTimelineDrag';
 
 export interface TrackListProps {
     tracks: VideoTrack[];
@@ -16,7 +17,7 @@ export interface TrackListProps {
     onMoveTrack?: (id: string, targetIndex: number) => void;
     onToggleExpand: (id: string) => void;
     onRemoveClip: (id: string) => void;
-    onDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize-left' | 'resize-right') => void;
+    onDragStart: (e: React.MouseEvent, clip: VideoClip, type: ClipDragType) => void;
     onAddKeyframe: (e: React.MouseEvent, clip: VideoClip, property: string, defaultValue: number) => void;
     onKeyframeClick: (e: React.MouseEvent, clipId: string, property: string, frame: number, easing?: string) => void;
 }

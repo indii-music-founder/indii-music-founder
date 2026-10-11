@@ -20,6 +20,8 @@ import type {
 
 export type ClipType = IndiiVideoClip['type'];
 
+export type TimelineTool = 'select' | 'razor' | 'ripple' | 'slip';
+
 /** Immutable audio identity sent to the render backend; preview URLs are not authority. */
 /** Canonical render-master reference is owned by @indii/shared. */
 export type CanonicalMasterRenderReference = NonNullable<IndiiVideoClip['canonicalMaster']>;
@@ -37,9 +39,11 @@ interface VideoEditorState {
     currentTime: number;
     isPlaying: boolean;
     selectedClipId: string | null;
+    activeTool: TimelineTool;
 
     // Actions
     setProject: (project: VideoProject) => void;
+    setActiveTool: (tool: TimelineTool) => void;
     updateProjectSettings: (settings: Partial<VideoProject>) => void;
     setCurrentTime: (time: number) => void;
     setIsPlaying: (isPlaying: boolean) => void;
@@ -79,6 +83,14 @@ interface VideoEditorState {
     removeClip: (id: string) => void;
     /** Delete + close the gap: later clips on the same track slide left. */
     rippleDeleteClip: (id: string) => void;
+    /** Ripple trim: adjusts in/out point and slides downstream clips on the same track. */
+    rippleTrimClip: (clipId: string, edge: 'resize-left' | 'resize-right', deltaFrames: number) => void;
+    /** Update ripple trim during active drag without pushing to past undo history. */
+    updateRippleTransient: (clipId: string, edge: 'resize-left' | 'resize-right', deltaFrames: number) => void;
+    /** Commit any multi-clip transient update (such as ripple trim) to undo history. */
+    commitTransientUpdate: () => void;
+    /** Slip tool: adjust media source window (sourceInUs/sourceOutUs) while keeping timeline position/duration constant. */
+    slipClip: (clipId: string, deltaFrames: number) => void;
     /** Razor: cut a clip at a frame; source trims (µs) shift with the split. */
     splitClip: (id: string, atFrame: number) => void;
     /** Copy a clip right after itself on the same track. */
@@ -334,6 +346,8 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         loopRegion: null,
         isPlaying: false,
         selectedClipId: null,
+        activeTool: 'select',
+        setActiveTool: (tool: TimelineTool) => set({ activeTool: tool }),
         past: [],
         future: [],
         undo: () => {
@@ -882,6 +896,157 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                         .sort((a, b) => a.startFrame - b.startFrame),
                 },
                 ...(state.selectedClipId === id ? { selectedClipId: null } : {}),
+            };
+        }),
+
+        rippleTrimClip: (clipId, edge, deltaFrames) => set((state) => {
+            const clip = state.project.clips.find(c => c.id === clipId);
+            if (!clip) return {};
+            const fps = state.project.fps || 30;
+            const rate = clip.playbackRate ?? 1;
+            const usPerFrame = (1_000_000 / fps) * rate;
+
+            if (edge === 'resize-right') {
+                const currentDuration = clip.durationInFrames;
+                const newDuration = Math.max(1, currentDuration + deltaFrames);
+                const effectiveDelta = newDuration - currentDuration;
+                if (effectiveDelta === 0) return {};
+
+                let newSourceOutUs = clip.sourceOutUs;
+                if (clip.sourceInUs !== undefined && clip.sourceOutUs !== undefined) {
+                    newSourceOutUs = Math.max(clip.sourceInUs + 1, clip.sourceInUs + Math.round(newDuration * usPerFrame));
+                }
+
+                const oldEnd = clip.startFrame + currentDuration;
+                const nextClips = state.project.clips.map((c) => {
+                    if (c.id === clipId) {
+                        return {
+                            ...c,
+                            durationInFrames: newDuration,
+                            ...(newSourceOutUs !== undefined ? { sourceOutUs: newSourceOutUs } : {}),
+                        };
+                    }
+                    if (c.trackId === clip.trackId && c.startFrame >= oldEnd) {
+                        return {
+                            ...c,
+                            startFrame: Math.max(0, c.startFrame + effectiveDelta),
+                        };
+                    }
+                    return c;
+                }).sort((a, b) => a.startFrame - b.startFrame);
+
+                const maxClipEnd = nextClips.reduce((max, c) => Math.max(max, c.startFrame + c.durationInFrames), 0);
+                return {
+                    project: {
+                        ...state.project,
+                        clips: nextClips,
+                        durationInFrames: Math.max(state.project.durationInFrames, maxClipEnd),
+                    },
+                };
+            } else {
+                // edge === 'resize-left'
+                const currentDuration = clip.durationInFrames;
+                const newDuration = Math.max(1, currentDuration - deltaFrames);
+                const effectiveShrink = currentDuration - newDuration;
+                if (effectiveShrink === 0) return {};
+
+                let newSourceInUs = clip.sourceInUs;
+                if (clip.sourceInUs !== undefined && clip.sourceOutUs !== undefined) {
+                    const calculatedSourceIn = clip.sourceInUs + Math.round(effectiveShrink * usPerFrame);
+                    newSourceInUs = Math.max(0, Math.min(clip.sourceOutUs - 1, calculatedSourceIn));
+                }
+
+                const oldEnd = clip.startFrame + currentDuration;
+                const nextClips = state.project.clips.map((c) => {
+                    if (c.id === clipId) {
+                        return {
+                            ...c,
+                            durationInFrames: newDuration,
+                            ...(newSourceInUs !== undefined ? { sourceInUs: newSourceInUs } : {}),
+                        };
+                    }
+                    if (c.trackId === clip.trackId && c.startFrame >= oldEnd) {
+                        return {
+                            ...c,
+                            startFrame: Math.max(0, c.startFrame - effectiveShrink),
+                        };
+                    }
+                    return c;
+                }).sort((a, b) => a.startFrame - b.startFrame);
+
+                const maxClipEnd = nextClips.reduce((max, c) => Math.max(max, c.startFrame + c.durationInFrames), 0);
+                return {
+                    project: {
+                        ...state.project,
+                        clips: nextClips,
+                        durationInFrames: Math.max(state.project.durationInFrames, maxClipEnd),
+                    },
+                };
+            }
+        }),
+
+        updateRippleTransient: (clipId, edge, deltaFrames) => {
+            _transient = true;
+            try {
+                if (_dragInitialProject) {
+                    _restoring = true;
+                    try {
+                        set({ project: _dragInitialProject });
+                    } finally {
+                        _restoring = false;
+                    }
+                }
+                get().rippleTrimClip(clipId, edge, deltaFrames);
+            } finally {
+                _transient = false;
+            }
+        },
+
+        commitTransientUpdate: () => {
+            const initial = _dragInitialProject;
+            _dragInitialProject = null;
+            const current = get().project;
+            if (initial && current !== initial) {
+                _restoring = true;
+                try {
+                    set({
+                        project: current,
+                        past: [...get().past, initial].slice(-HISTORY_LIMIT),
+                        future: [],
+                        previewArtifactUrl: null,
+                    });
+                } finally {
+                    _restoring = false;
+                }
+            }
+        },
+
+        slipClip: (clipId, deltaFrames) => set((state) => {
+            const clip = state.project.clips.find(c => c.id === clipId);
+            if (!clip) return {};
+            const fps = state.project.fps || 30;
+            const rate = clip.playbackRate ?? 1;
+            const usPerFrame = (1_000_000 / fps) * rate;
+            const deltaUs = Math.round(deltaFrames * usPerFrame);
+            if (deltaUs === 0) return {};
+
+            const durationUs = Math.round(clip.durationInFrames * usPerFrame);
+            const currentSourceIn = clip.sourceInUs ?? 0;
+            const currentSourceOut = clip.sourceOutUs ?? (currentSourceIn + durationUs);
+            const windowUs = Math.max(1, currentSourceOut - currentSourceIn);
+
+            const newSourceInUs = Math.max(0, currentSourceIn + deltaUs);
+            const newSourceOutUs = newSourceInUs + windowUs;
+
+            return {
+                project: {
+                    ...state.project,
+                    clips: state.project.clips.map(c => c.id === clipId ? {
+                        ...c,
+                        sourceInUs: newSourceInUs,
+                        sourceOutUs: newSourceOutUs,
+                    } : c),
+                },
             };
         }),
 

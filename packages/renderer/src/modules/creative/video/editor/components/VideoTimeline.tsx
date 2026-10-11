@@ -1,5 +1,5 @@
 import React, { useState, useCallback, memo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Plus } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Plus, MousePointer, Scissors, ChevronsLeftRight, MoveHorizontal } from 'lucide-react';
 import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { useShallow } from 'zustand/react/shallow';
 import { TimeRuler } from './TimeRuler';
@@ -8,7 +8,7 @@ import { Playhead } from './Playhead';
 import { TimelineTimecode } from './TimelineTimecode';
 import { PIXELS_PER_FRAME, TOTAL_TRACK_HEADER_OFFSET } from '../constants';
 import { useStableGroupedClips } from '../hooks/useStableGroupedClips';
-import { useSnapIndicatorStore } from '../hooks/useTimelineDrag';
+import { useSnapIndicatorStore, ClipDragType } from '../hooks/useTimelineDrag';
 
 interface VideoTimelineProps {
     project: VideoProject;
@@ -20,7 +20,7 @@ interface VideoTimelineProps {
     handleAddSampleClip: (trackId: string, type: 'text' | 'video' | 'image' | 'audio') => void;
     removeTrack: (id: string) => void;
     removeClip: (id: string) => void;
-    handleDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize-left' | 'resize-right') => void;
+    handleDragStart: (e: React.MouseEvent, clip: VideoClip, type: ClipDragType) => void;
     formatTime: (frame: number) => string;
     snapIndicatorFrame?: number | null;
     onToggleMuteTrack?: (id: string) => void;
@@ -37,9 +37,11 @@ export const VideoTimeline = memo(({
     onToggleMuteTrack, onToggleSoloTrack, onToggleHideTrack, onToggleLockTrack
 }: VideoTimelineProps) => {
 
-    const { isPlaying, addKeyframe, removeKeyframe, updateKeyframe, toggleMuteTrack, toggleSoloTrack, toggleHideTrack, toggleLockTrack } = useVideoEditorStore(
+    const { isPlaying, activeTool, setActiveTool, addKeyframe, removeKeyframe, updateKeyframe, toggleMuteTrack, toggleSoloTrack, toggleHideTrack, toggleLockTrack } = useVideoEditorStore(
         useShallow((state) => ({
             isPlaying: state.isPlaying,
+            activeTool: state.activeTool,
+            setActiveTool: state.setActiveTool,
             addKeyframe: state.addKeyframe,
             removeKeyframe: state.removeKeyframe,
             updateKeyframe: state.updateKeyframe,
@@ -116,6 +118,83 @@ export const VideoTimeline = memo(({
                 </div>
                 <div className="h-4 w-px bg-gray-700 mx-1"></div>
                 <TimelineTimecode />
+                <div className="h-4 w-px bg-gray-700 mx-1"></div>
+
+                {/* NLE Tool Switcher Strip */}
+                <div
+                    role="toolbar"
+                    aria-label="Timeline editing tools"
+                    className="flex items-center gap-1 bg-gray-900 border border-gray-800 rounded-md p-0.5"
+                >
+                    <button
+                        onClick={() => setActiveTool('select')}
+                        data-testid="tool-select"
+                        title="Selection Tool (V)"
+                        aria-label="Selection Tool (V)"
+                        aria-pressed={activeTool === 'select'}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                            activeTool === 'select'
+                                ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                        }`}
+                    >
+                        <MousePointer size={12} />
+                        <span className="hidden sm:inline">Select</span>
+                        <kbd className="text-[9px] opacity-70 ml-0.5 font-mono">V</kbd>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTool('razor')}
+                        data-testid="tool-razor"
+                        title="Razor Tool (C)"
+                        aria-label="Razor Tool (C)"
+                        aria-pressed={activeTool === 'razor'}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                            activeTool === 'razor'
+                                ? 'bg-red-600 text-white shadow-sm ring-1 ring-red-400'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                        }`}
+                    >
+                        <Scissors size={12} />
+                        <span className="hidden sm:inline">Razor</span>
+                        <kbd className="text-[9px] opacity-70 ml-0.5 font-mono">C</kbd>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTool('ripple')}
+                        data-testid="tool-ripple"
+                        title="Ripple Edit Tool (B)"
+                        aria-label="Ripple Edit Tool (B)"
+                        aria-pressed={activeTool === 'ripple'}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                            activeTool === 'ripple'
+                                ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-400'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                        }`}
+                    >
+                        <ChevronsLeftRight size={12} />
+                        <span className="hidden sm:inline">Ripple</span>
+                        <kbd className="text-[9px] opacity-70 ml-0.5 font-mono">B</kbd>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTool('slip')}
+                        data-testid="tool-slip"
+                        title="Slip Tool (Y)"
+                        aria-label="Slip Tool (Y)"
+                        aria-pressed={activeTool === 'slip'}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                            activeTool === 'slip'
+                                ? 'bg-purple-600 text-white shadow-sm ring-1 ring-purple-400'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                        }`}
+                    >
+                        <MoveHorizontal size={12} />
+                        <span className="hidden sm:inline">Slip</span>
+                        <kbd className="text-[9px] opacity-70 ml-0.5 font-mono">Y</kbd>
+                    </button>
+                </div>
+
                 <div className="flex-1"></div>
                 <button onClick={handleAddTrack} data-testid="timeline-add-track-top" className="flex items-center gap-1 text-[10px] bg-gray-800 hover:bg-gray-700 px-1.5 py-0.5 rounded text-gray-300 transition-colors">
                     <Plus size={12} /> Add Track

@@ -6,6 +6,7 @@ import { NLETrackScrubCanvas } from './NLETrackScrubCanvas';
 import { getKeyframeColor } from '../utils/keyframeUtils';
 import { PIXELS_PER_FRAME, ANIMATABLE_PROPERTIES } from '../constants';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
+import { ClipDragType } from '../hooks/useTimelineDrag';
 
 const XIcon = ({ size = 16 }: { size?: number }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -22,7 +23,7 @@ export interface TimelineClipProps {
     isLocked?: boolean;
     onToggleExpand: (id: string) => void;
     onRemove: (id: string) => void;
-    onDragStart: (e: React.MouseEvent, clip: VideoClip, type: 'move' | 'resize-left' | 'resize-right') => void;
+    onDragStart: (e: React.MouseEvent, clip: VideoClip, type: ClipDragType) => void;
     onAddKeyframe: (e: React.MouseEvent, clip: VideoClip, property: string, defaultValue: number) => void;
     onKeyframeClick: (e: React.MouseEvent, clipId: string, property: string, frame: number, easing?: string) => void;
     onMoveKeyframe?: (clipId: string, property: string, oldFrame: number, newFrame: number) => void;
@@ -35,10 +36,60 @@ export const TimelineClip = memo(({
 }: TimelineClipProps) => {
     const zoom = useVideoEditorStore(state => state.timelineZoom);
     const fps = useVideoEditorStore(state => state.project?.fps ?? 30);
+    const activeTool = useVideoEditorStore(state => state.activeTool);
     const pxPerFrame = Math.max(0.1, PIXELS_PER_FRAME * (zoom || 1));
     const urlToResolve = clip.src && !clip.src.startsWith('file://') ? clip.src : null;
     const { url: resolvedUrl } = useResolvedStorageUrl(urlToResolve);
     const displayUrl = resolvedUrl || clip.src;
+
+    const clipContainerRef = useRef<HTMLDivElement>(null);
+    const [hoverCutFrame, setHoverCutFrame] = useState<number | null>(null);
+
+    const handlePointerMoveClip = useCallback((e: React.PointerEvent) => {
+        if (activeTool !== 'razor' || isLocked) {
+            if (hoverCutFrame !== null) setHoverCutFrame(null);
+            return;
+        }
+        const rect = clipContainerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const localX = e.clientX - rect.left;
+        const frameOffset = Math.round(localX / pxPerFrame);
+        const targetFrame = clip.startFrame + frameOffset;
+        if (targetFrame > clip.startFrame && targetFrame < clip.startFrame + clip.durationInFrames) {
+            setHoverCutFrame(targetFrame);
+        } else {
+            setHoverCutFrame(null);
+        }
+    }, [activeTool, isLocked, pxPerFrame, clip.startFrame, clip.durationInFrames, hoverCutFrame]);
+
+    const handlePointerLeaveClip = useCallback(() => {
+        if (hoverCutFrame !== null) setHoverCutFrame(null);
+    }, [hoverCutFrame]);
+
+    const handleClipPointerDown = useCallback((e: React.PointerEvent) => {
+        if (isLocked) return;
+        if (activeTool === 'razor') {
+            e.stopPropagation();
+            e.preventDefault();
+            const rect = clipContainerRef.current?.getBoundingClientRect();
+            let targetFrame = hoverCutFrame;
+            if (targetFrame === null && rect) {
+                const localX = e.clientX - rect.left;
+                const frameOffset = Math.round(localX / pxPerFrame);
+                targetFrame = clip.startFrame + frameOffset;
+            }
+            if (targetFrame !== null && targetFrame > clip.startFrame && targetFrame < clip.startFrame + clip.durationInFrames) {
+                useVideoEditorStore.getState().splitClip(clip.id, targetFrame);
+                setHoverCutFrame(null);
+            }
+            return;
+        }
+        if (activeTool === 'slip') {
+            onDragStart(e as unknown as React.MouseEvent, clip, 'slip');
+            return;
+        }
+        onDragStart(e as unknown as React.MouseEvent, clip, 'move');
+    }, [activeTool, clip, hoverCutFrame, isLocked, onDragStart, pxPerFrame]);
 
     // Feature 22: Keyframe dragging state and refs
     const [draggingKeyframe, setDraggingKeyframe] = useState<{
@@ -130,16 +181,27 @@ export const TimelineClip = memo(({
         window.addEventListener('keydown', handleKeyDown);
     }, [clip.id, clip.durationInFrames, isLocked, onMoveKeyframe, pxPerFrame]);
 
+    const cursorClass = isLocked
+        ? 'cursor-default'
+        : activeTool === 'razor'
+        ? 'cursor-crosshair'
+        : activeTool === 'slip'
+        ? 'cursor-ew-resize'
+        : 'cursor-pointer';
+
     return (
         <div
-            className={`absolute top-2 border rounded cursor-pointer transition-all group/clip ${isSelected ? 'bg-green-600 border-green-400 ring-1 ring-white' : 'bg-green-600/30 border-green-500/50 hover:bg-green-600/50'} ${isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}
+            ref={clipContainerRef}
+            className={`absolute top-2 border rounded transition-all group/clip ${cursorClass} ${isSelected ? 'bg-green-600 border-green-400 ring-1 ring-white' : 'bg-green-600/30 border-green-500/50 hover:bg-green-600/50'} ${isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}
             style={{
                 left: clip.startFrame * pxPerFrame,
                 width: clip.durationInFrames * pxPerFrame,
                 height: isExpanded ? 'auto' : '64px',
                 zIndex: isExpanded ? 20 : 10
             }}
-            onPointerDown={(e) => onDragStart(e, clip, 'move')}
+            onPointerDown={handleClipPointerDown}
+            onPointerMove={handlePointerMoveClip}
+            onPointerLeave={handlePointerLeaveClip}
         >
             {/* Clip Content */}
             <div className="px-2 py-1 flex items-center justify-between h-8 overflow-hidden pointer-events-none relative z-10">
@@ -257,16 +319,49 @@ export const TimelineClip = memo(({
                 </div>
             )}
 
-            {/* Trim handles: both edges, source-aware */}
+            {/* Razor Cutline Visual Indicator (Active during Razor Tool) */}
+            {activeTool === 'razor' && hoverCutFrame !== null && (
+                <div
+                    data-testid={`razor-cutline-${clip.id}`}
+                    className="absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)] z-30 pointer-events-none"
+                    style={{ left: (hoverCutFrame - clip.startFrame) * pxPerFrame }}
+                >
+                    <div
+                        data-testid={`razor-cut-badge-${clip.id}`}
+                        className="absolute -top-6 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-mono font-bold px-1 py-0.5 rounded shadow whitespace-nowrap z-40 pointer-events-none flex items-center gap-0.5"
+                    >
+                        <span>✂</span>
+                        <span>f{hoverCutFrame}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Trim handles: both edges, source-aware (supports ripple and standard trim) */}
             <div
-                className="absolute left-0 top-0 bottom-0 w-2 cursor-w-resize hover:bg-white/50 transition-colors z-20"
-                onPointerDown={(e) => onDragStart(e, clip, 'resize-left')}
+                className={`absolute left-0 top-0 bottom-0 w-2 transition-colors z-20 ${
+                    activeTool === 'ripple'
+                        ? 'cursor-col-resize bg-amber-400/40 hover:bg-amber-300 ring-1 ring-amber-400/80'
+                        : 'cursor-w-resize hover:bg-white/50'
+                }`}
+                onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onDragStart(e, clip, activeTool === 'ripple' ? 'ripple-left' : 'resize-left');
+                }}
                 data-testid={`clip-trim-left-${clip.id}`}
+                title={activeTool === 'ripple' ? 'Ripple Trim Head' : 'Trim In'}
             />
             <div
-                className="absolute right-0 top-0 bottom-0 w-2 cursor-e-resize hover:bg-white/50 transition-colors z-20"
-                onPointerDown={(e) => onDragStart(e, clip, 'resize-right')}
+                className={`absolute right-0 top-0 bottom-0 w-2 transition-colors z-20 ${
+                    activeTool === 'ripple'
+                        ? 'cursor-col-resize bg-amber-400/40 hover:bg-amber-300 ring-1 ring-amber-400/80'
+                        : 'cursor-e-resize hover:bg-white/50'
+                }`}
+                onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onDragStart(e, clip, activeTool === 'ripple' ? 'ripple-right' : 'resize-right');
+                }}
                 data-testid={`clip-trim-right-${clip.id}`}
+                title={activeTool === 'ripple' ? 'Ripple Trim Tail' : 'Trim Out'}
             />
         </div>
     );

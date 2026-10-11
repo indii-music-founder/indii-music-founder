@@ -8,7 +8,12 @@ const PIXELS_PER_FRAME = 2;
 const SNAP_THRESHOLD_PX = 6;
 const US_PER_SECOND = 1_000_000;
 
-export type ClipDragType = 'move' | 'resize-left' | 'resize-right';
+export type ClipDragType = 'move' | 'resize-left' | 'resize-right' | 'slip' | 'ripple-left' | 'ripple-right';
+
+export interface SlipUpdate {
+    sourceInUs: number;
+    sourceOutUs: number;
+}
 
 export interface ClipDragOrigin {
     startFrame: number;
@@ -188,6 +193,29 @@ export const computeTrimUpdate = (
     };
 };
 
+/**
+ * The slip update: shifts sourceInUs and sourceOutUs based on deltaFrames
+ * while keeping the clip's timeline placement and duration constant.
+ * Clamps sourceInUs >= 0 so playback never references negative media time.
+ */
+export const computeSlipUpdate = (ctx: ClipDragContext): SlipUpdate => {
+    const { origin, deltaFrames, fps } = ctx;
+    const usPerFrame = US_PER_SECOND / fps;
+    const deltaUs = Math.round(deltaFrames * usPerFrame);
+    const durationUs = Math.round(origin.durationInFrames * usPerFrame);
+    const currentIn = origin.sourceInUs ?? 0;
+    const currentOut = origin.sourceOutUs ?? (currentIn + durationUs);
+    const windowUs = Math.max(1, currentOut - currentIn);
+
+    const newIn = Math.max(0, currentIn + deltaUs);
+    const newOut = newIn + windowUs;
+
+    return {
+        sourceInUs: newIn,
+        sourceOutUs: newOut,
+    };
+};
+
 /** Detects the target trackId under the cursor point (clientX, clientY). */
 export const findTrackAtPoint = (clientX: number, clientY: number): string | null => {
     if (typeof document === 'undefined') return null;
@@ -237,6 +265,8 @@ interface DragState {
 export function useTimelineDrag() {
     const updateClipTransient = useVideoEditorStore(state => state.updateClipTransient);
     const commitTransientClipUpdate = useVideoEditorStore(state => state.commitTransientClipUpdate);
+    const updateRippleTransient = useVideoEditorStore(state => state.updateRippleTransient);
+    const commitTransientUpdate = useVideoEditorStore(state => state.commitTransientUpdate);
     const abortTransientClipUpdate = useVideoEditorStore(state => state.abortTransientClipUpdate);
     const setSelectedClipId = useVideoEditorStore(state => state.setSelectedClipId);
 
@@ -251,6 +281,12 @@ export function useTimelineDrag() {
 
     const commitTransientClipUpdateRef = useRef(commitTransientClipUpdate);
     useEffect(() => { commitTransientClipUpdateRef.current = commitTransientClipUpdate; }, [commitTransientClipUpdate]);
+
+    const updateRippleTransientRef = useRef(updateRippleTransient);
+    useEffect(() => { updateRippleTransientRef.current = updateRippleTransient; }, [updateRippleTransient]);
+
+    const commitTransientUpdateRef = useRef(commitTransientUpdate);
+    useEffect(() => { commitTransientUpdateRef.current = commitTransientUpdate; }, [commitTransientUpdate]);
 
     const abortTransientClipUpdateRef = useRef(abortTransientClipUpdate);
     useEffect(() => { abortTransientClipUpdateRef.current = abortTransientClipUpdate; }, [abortTransientClipUpdate]);
@@ -318,15 +354,34 @@ export function useTimelineDrag() {
                 targetTrackId,
             };
 
-            const updates = current.type === 'move'
-                ? computeMoveUpdate(ctx)
-                : computeTrimUpdate(ctx, current.type);
+            if (current.type === 'slip') {
+                const updates = computeSlipUpdate(ctx);
+                setSnapIndicatorFrame(null);
+                useSnapIndicatorStore.getState().setSnapIndicatorFrame(null);
+                updateClipTransientRef.current(current.clipId, updates);
+            } else if (current.type === 'ripple-left' || current.type === 'ripple-right') {
+                const edge = current.type === 'ripple-left' ? 'resize-left' : 'resize-right';
+                const endFrame = current.origin.startFrame + current.origin.durationInFrames;
+                const rawTarget = edge === 'resize-right' ? endFrame + deltaFrames : current.origin.startFrame + deltaFrames;
+                const snap = snapFrame(rawTarget, current.candidates, current.pxPerFrame);
+                const effectiveDelta = snap.didSnap
+                    ? (edge === 'resize-right' ? snap.snappedFrame - endFrame : snap.snappedFrame - current.origin.startFrame)
+                    : deltaFrames;
+                const indicator = snap.didSnap ? (snap.snapTarget ?? null) : null;
+                setSnapIndicatorFrame(indicator);
+                useSnapIndicatorStore.getState().setSnapIndicatorFrame(indicator);
+                updateRippleTransientRef.current(current.clipId, edge, effectiveDelta);
+            } else {
+                const updates = current.type === 'move'
+                    ? computeMoveUpdate(ctx)
+                    : computeTrimUpdate(ctx, current.type);
 
-            const indicator = updates.snapIndicatorFrame ?? null;
-            setSnapIndicatorFrame(indicator);
-            useSnapIndicatorStore.getState().setSnapIndicatorFrame(indicator);
+                const indicator = updates.snapIndicatorFrame ?? null;
+                setSnapIndicatorFrame(indicator);
+                useSnapIndicatorStore.getState().setSnapIndicatorFrame(indicator);
 
-            updateClipTransientRef.current(current.clipId, updates);
+                updateClipTransientRef.current(current.clipId, updates);
+            }
         };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- throttle HoF requires any[] constraint
         const handleMouseMove = throttle(_moveCb as (...a: any[]) => any, 16);
@@ -355,10 +410,26 @@ export function useTimelineDrag() {
                     pxPerFrame: current.pxPerFrame,
                     targetTrackId,
                 };
-                const finalUpdates = current.type === 'move'
-                    ? computeMoveUpdate(ctx)
-                    : computeTrimUpdate(ctx, current.type);
-                commitTransientClipUpdateRef.current(current.clipId, finalUpdates);
+
+                if (current.type === 'ripple-left' || current.type === 'ripple-right') {
+                    const edge = current.type === 'ripple-left' ? 'resize-left' : 'resize-right';
+                    const endFrame = current.origin.startFrame + current.origin.durationInFrames;
+                    const rawTarget = edge === 'resize-right' ? endFrame + deltaFrames : current.origin.startFrame + deltaFrames;
+                    const snap = snapFrame(rawTarget, current.candidates, current.pxPerFrame);
+                    const effectiveDelta = snap.didSnap
+                        ? (edge === 'resize-right' ? snap.snappedFrame - endFrame : snap.snappedFrame - current.origin.startFrame)
+                        : deltaFrames;
+                    updateRippleTransientRef.current(current.clipId, edge, effectiveDelta);
+                    commitTransientUpdateRef.current();
+                } else if (current.type === 'slip') {
+                    const finalUpdates = computeSlipUpdate(ctx);
+                    commitTransientClipUpdateRef.current(current.clipId, finalUpdates);
+                } else {
+                    const finalUpdates = current.type === 'move'
+                        ? computeMoveUpdate(ctx)
+                        : computeTrimUpdate(ctx, current.type);
+                    commitTransientClipUpdateRef.current(current.clipId, finalUpdates);
+                }
             }
             setSnapIndicatorFrame(null);
             useSnapIndicatorStore.getState().setSnapIndicatorFrame(null);

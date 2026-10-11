@@ -119,6 +119,30 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     state.setIsPlaying(!state.isPlaying);
                     break;
                 }
+                case 'v':
+                case 'V': {
+                    event.preventDefault();
+                    state.setActiveTool('select');
+                    break;
+                }
+                case 'c':
+                case 'C': {
+                    event.preventDefault();
+                    state.setActiveTool('razor');
+                    break;
+                }
+                case 'b':
+                case 'B': {
+                    event.preventDefault();
+                    state.setActiveTool('ripple');
+                    break;
+                }
+                case 'y':
+                case 'Y': {
+                    event.preventDefault();
+                    state.setActiveTool('slip');
+                    break;
+                }
                 case 's':
                 case 'S': {
                     if (state.selectedClipId) {
