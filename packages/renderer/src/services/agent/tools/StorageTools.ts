@@ -4,6 +4,30 @@ import type { AnyToolFunction } from '../types';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { useStore } from '@/core/store';
 
+const isInlineUrl = (value: unknown): value is string =>
+    typeof value === 'string' && (value.startsWith('data:') || value.startsWith('blob:'));
+
+/**
+ * Uploads are held in the store with their full base64 data URL. Returning
+ * that to the model (as `url` or as a markdown thumbnail) puts megabytes of
+ * base64 into every tool round-trip, which stalls the agent loop (#407).
+ * Replace inline payloads with a compact descriptor; the asset stays
+ * addressable through its id / `upload-N` alias (see prepare_print_file).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toAgentSafeItem = (item: Record<string, any>): Record<string, any> => {
+    const safe = { ...item };
+    if (isInlineUrl(safe.url)) {
+        safe.inlineBytes = safe.url.length;
+        safe.url = undefined;
+        safe.urlNote = `Inline image data omitted from listing. Reference this asset by id "${safe.aliasId || safe.id}".`;
+    }
+    if (isInlineUrl(safe.thumbnailUrl)) {
+        safe.thumbnailUrl = undefined;
+    }
+    return safe;
+};
+
 export const StorageTools = {
     list_files: wrapTool('list_files', async (args: { source?: 'gallery' | 'brand_assets' | 'reference_images' | 'uploads' | 'all', limit?: number, type?: string }) => {
         const count = args.limit || 20;
@@ -85,26 +109,33 @@ export const StorageTools = {
             return toolSuccess({ files: [], count: 0 }, "No files found.");
         }
 
-        // Generate thumbnails
+        // Generate thumbnails (remote URLs only; inline data is listed by id)
         const thumbnailCount = Math.min(filtered.length, 12);
-        const thumbnails = filtered.slice(0, thumbnailCount)
-            .filter(item => item.type === 'image')
+        const shown = filtered.slice(0, thumbnailCount);
+        const thumbnails = shown
+            .filter(item => item.type === 'image' && !isInlineUrl(item.url))
             .map(item => `![${item.prompt || item.description || item.category || item.id}](${item.url})`)
             .join(' ');
-            
-        const nonImageLines = filtered.slice(0, thumbnailCount)
+
+        const inlineLines = shown
+            .filter(item => item.type === 'image' && isInlineUrl(item.url))
+            .map(item => `- [image] id: ${item.aliasId || item.id} (${item.id}) — ${item.prompt || item.description || 'uploaded image'}`)
+            .join('\n');
+
+        const nonImageLines = shown
             .filter(item => item.type !== 'image')
             .map(item => `- [${item.type}] ${item.prompt || item.id}`)
             .join('\n');
 
         const thumbnailMsg = thumbnails ? `\n\n${thumbnails}` : '';
+        const inlineMsg = inlineLines ? `\n\n${inlineLines}` : '';
         const nonImageMsg = nonImageLines ? `\n\n${nonImageLines}` : '';
         const additionalMsg = thumbnailCount < filtered.length ? `\n\n(Plus ${filtered.length - thumbnailCount} more items not shown inline.)` : '';
 
         return toolSuccess({
-            files: filtered,
+            files: filtered.map(toAgentSafeItem),
             count: filtered.length,
-        }, `Found ${filtered.length} files.${thumbnailMsg}${nonImageMsg}${additionalMsg}`);
+        }, `Found ${filtered.length} files.${thumbnailMsg}${inlineMsg}${nonImageMsg}${additionalMsg}`);
     }),
 
     search_files: wrapTool('search_files', async (args: { query: string; type?: string }) => {
@@ -194,24 +225,31 @@ export const StorageTools = {
         }
 
         const thumbnailCount = Math.min(matches.length, 12);
-        const thumbnails = matches.slice(0, thumbnailCount)
-            .filter(item => item.type === 'image')
+        const shown = matches.slice(0, thumbnailCount);
+        const thumbnails = shown
+            .filter(item => item.type === 'image' && !isInlineUrl(item.url))
             .map(item => `![${item.prompt || item.description || item.category || item.id}](${item.url})`)
             .join(' ');
-            
-        const nonImageLines = matches.slice(0, thumbnailCount)
+
+        const inlineLines = shown
+            .filter(item => item.type === 'image' && isInlineUrl(item.url))
+            .map(item => `- [image] id: ${item.aliasId || item.id} (${item.id}) — ${item.prompt || item.description || 'uploaded image'}`)
+            .join('\n');
+
+        const nonImageLines = shown
             .filter(item => item.type !== 'image')
             .map(item => `- [${item.type}] ${item.prompt || item.id}`)
             .join('\n');
 
         const thumbnailMsg = thumbnails ? `\n\n${thumbnails}` : '';
+        const inlineMsg = inlineLines ? `\n\n${inlineLines}` : '';
         const nonImageMsg = nonImageLines ? `\n\n${nonImageLines}` : '';
         const additionalMsg = thumbnailCount < matches.length ? `\n\n(Plus ${matches.length - thumbnailCount} more items not shown inline.)` : '';
 
         return toolSuccess({
-            results: matches,
+            results: matches.map(toAgentSafeItem),
             count: matches.length,
-        }, `Found ${matches.length} files matching "${args.query}".${thumbnailMsg}${nonImageMsg}${additionalMsg}`);
+        }, `Found ${matches.length} files matching "${args.query}".${thumbnailMsg}${inlineMsg}${nonImageMsg}${additionalMsg}`);
     }),
 
     scrub_orphaned_media: wrapTool('scrub_orphaned_media', async (args: { olderThanDays: number; bucketId: string }) => {

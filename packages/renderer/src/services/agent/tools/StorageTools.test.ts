@@ -140,6 +140,50 @@ describe('StorageTools', () => {
             });
             expect(result.message).toContain('![shattered black clock](https://storage.googleapis.com/test-bucket/shattered-clock.png)');
         });
+
+        it('never returns inline base64 upload payloads to the agent (#407 context blowup)', async () => {
+            const hugeDataUrl = `data:image/png;base64,${'A'.repeat(2_000_000)}`;
+            vi.mocked(StorageService.loadHistory).mockResolvedValue([]);
+            vi.mocked(useStore.getState).mockReturnValue({
+                userProfile: { brandKit: { brandAssets: [], referenceImages: [] } },
+                uploadedImages: [
+                    { id: 'clock-uuid', url: hugeDataUrl, prompt: 'shattered-clock.png', type: 'image', origin: 'uploaded' }
+                ]
+            } as any);
+
+            const result = await StorageTools.list_files({ source: 'uploads', limit: 10 });
+            const serialized = JSON.stringify(result);
+
+            expect(result.success).toBe(true);
+            expect(result.data.count).toBe(1);
+            expect(serialized.length).toBeLessThan(5_000);
+            expect(serialized).not.toContain('base64,');
+            const file = (result.data as any).files[0];
+            expect(file.url).toBeUndefined();
+            expect(file.inlineBytes).toBe(hugeDataUrl.length);
+            expect(file.aliasId).toBe('upload-0');
+            expect(result.message).toContain('id: upload-0 (clock-uuid)');
+            expect(result.message).toContain('shattered-clock.png');
+        });
+
+        it('search_files also omits inline base64 payloads', async () => {
+            const hugeDataUrl = `data:image/png;base64,${'B'.repeat(2_000_000)}`;
+            vi.mocked(StorageService.loadHistory).mockResolvedValue([]);
+            vi.mocked(useStore.getState).mockReturnValue({
+                userProfile: { brandKit: { brandAssets: [], referenceImages: [] } },
+                uploadedImages: [
+                    { id: 'clock-uuid', url: hugeDataUrl, prompt: 'shattered-clock.png', type: 'image', origin: 'uploaded' }
+                ]
+            } as any);
+
+            const result = await StorageTools.search_files({ query: 'shattered' });
+            const serialized = JSON.stringify(result);
+
+            expect(result.data.count).toBe(1);
+            expect(serialized.length).toBeLessThan(5_000);
+            expect(serialized).not.toContain('base64,');
+            expect(result.message).toContain('id: upload-0 (clock-uuid)');
+        });
     });
 
     describe('search_files', () => {
