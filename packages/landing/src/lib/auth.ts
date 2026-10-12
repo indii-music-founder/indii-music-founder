@@ -13,6 +13,8 @@ import {
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
+import { trackPassportEvent } from './passportAnalytics';
+import { readCampaignAttribution } from './nowWhatCampaign';
 import { claimProspectAssessment } from './passportService';
 
 // Studio app URL for refunds after auth
@@ -85,6 +87,9 @@ export async function refreshEmailVerification(user?: User): Promise<boolean> {
   if (!currentUser) throw new Error('No authenticated user is available to verify.');
   await currentUser.reload();
   await currentUser.getIdToken(true);
+  if (currentUser.emailVerified) {
+    trackPassportEvent('signup_verified', readCampaignAttribution(typeof window !== 'undefined' ? window.location.search : ''));
+  }
   return currentUser.emailVerified;
 }
 
@@ -143,6 +148,8 @@ async function createUserDocument(
   if (assessmentId) {
     data.assessmentId = assessmentId;
   }
+  const campaign = readCampaignAttribution(typeof window !== 'undefined' ? window.location.search : '');
+  if (Object.keys(campaign).length) data.campaign = campaign;
   await setDoc(userRef, data);
 }
 
@@ -181,7 +188,7 @@ export function getStudioUrl() {
       ? 'http://localhost:4242'
       : STUDIO_URL;
 
-  const params = new URLSearchParams();
+  const params = new URLSearchParams(readCampaignAttribution(typeof window !== 'undefined' ? window.location.search : ''));
   if (source) {
     params.set('source', source);
   } else if (isFounderDomain) {

@@ -4,6 +4,8 @@ import type {
     PassportFunnelEventRecord,
 } from '@indii/shared';
 
+import { readCampaignAttribution } from './nowWhatCampaign';
+
 const PASSPORT_SESSION_KEY = 'indii_passport_session_id';
 const PASSPORT_EVENT_LOG_KEY = 'indii_passport_event_log';
 const MAX_LOCAL_EVENTS = 50;
@@ -69,6 +71,7 @@ export function trackPassportEvent(
     const pathname = typeof window !== 'undefined' ? window.location.pathname : '/passport';
     const href = typeof window !== 'undefined' ? window.location.href : 'https://indii.music/passport';
 
+    details = { ...readCampaignAttribution(typeof window !== 'undefined' ? window.location.search : ''), ...details };
     const record: PassportFunnelEventRecord = {
         eventName,
         path: pathname,

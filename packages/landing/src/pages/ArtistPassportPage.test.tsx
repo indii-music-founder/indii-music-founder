@@ -1,3 +1,4 @@
+// Structural-only component regression coverage; not genuine-user acceptance.
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -66,7 +67,7 @@ describe('ArtistPassportPage - Deterministic Evaluation Engine', () => {
 
     expect(report.rights.status).toBe('good');
     expect(report.rights.title).toContain('Dual-Royalty Foundation Established');
-    expect(report.steps[0].title).toContain('100.00% Collaborator Split');
+    expect(report.steps[0].title).toContain('Document collaborator splits');
     expect(report.steps[0].department).toBe('Legal Counsel');
   });
 
@@ -86,7 +87,7 @@ describe('ArtistPassportPage - Deterministic Evaluation Engine', () => {
     expect(report.rights.status).toBe('notice');
     expect(report.rights.title).toContain('Rights & Territory Registration Overview');
     expect(report.release.status).toBe('info');
-    expect(report.steps[1].department).toBe('Conductor Orchestrator');
+    expect(report.steps[1].department).toBe('Publishing Administrator');
     expect(report.steps[2].department).toBe('Distribution Chief');
   });
 
@@ -106,8 +107,8 @@ describe('ArtistPassportPage - Deterministic Evaluation Engine', () => {
     expect(report.release.status).toBe('ready');
     expect(report.release.guidelines.some((g) => g.includes('3000 × 3000 px'))).toBe(true);
     expect(report.release.guidelines.some((g) => g.includes('-14 LUFS'))).toBe(true);
-    expect(report.steps.some((s) => s.title.includes('Vertical 9:16 Social Cutdowns'))).toBe(true);
-    expect(report.steps.some((s) => s.title.includes('One-Stop Sync Licensing'))).toBe(true);
+    expect(report.steps.some((s) => s.title.includes('promotional assets'))).toBe(true);
+    expect(report.steps.some((s) => s.title.includes('sync pitch package'))).toBe(true);
   });
 });
 
@@ -129,7 +130,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
 
     expect(screen.getByText(/How ready is your/i)).toBeDefined();
     expect(screen.getByText(/People make the music, indii makes the business\./i)).toBeDefined();
-    expect(screen.getByText(/Start Free Business Audit/i)).toBeDefined();
+    expect(screen.getByText(/Find my next steps/i)).toBeDefined();
   });
 
   it('advances to Step 1 and validates career stage selection', () => {
@@ -140,7 +141,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     );
 
     // Click Start
-    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Find my next steps/i));
 
     // Now on Section 1
     expect(screen.getByText(/Section 01 \/ Career Stage/i)).toBeDefined();
@@ -166,7 +167,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     );
 
     // Step 0 -> Step 1
-    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Find my next steps/i));
     fireEvent.click(screen.getByText(/Building momentum/i));
     fireEvent.click(screen.getByText(/Next Step/i));
 
@@ -190,7 +191,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     );
 
     // Move to step 5 (Goals)
-    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Find my next steps/i));
 
     // Step 1: Stage
     fireEvent.click(screen.getByText(/Building momentum/i));
@@ -218,7 +219,6 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     const goal1 = screen.getByText(/Improve royalty registration & collection tracking/i);
     const goal2 = screen.getByText(/Grow fan base, streaming reach & direct-to-fan engagement/i);
     const goal3 = screen.getByText(/Package catalog for film, TV & sync licensing opportunities/i);
-    const goal4 = screen.getByText(/Audit sound master for loudness \(-14 LUFS\) & true peak compliance/i);
 
     // Select goal 1
     fireEvent.click(goal1);
@@ -229,17 +229,13 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     fireEvent.click(goal2);
     expect(screen.getByText(/2 Selected/i)).toBeDefined();
 
-    // Select goal 3 (persists all, no artificial 2-choice limit)
+    // Select goal 3 (clamped to max 2 priority goals per ProspectAssessment schema & firestore rules)
     fireEvent.click(goal3);
-    expect(screen.getByText(/3 Selected/i)).toBeDefined();
-
-    // Select goal 4
-    fireEvent.click(goal4);
-    expect(screen.getByText(/4 Selected/i)).toBeDefined();
+    expect(screen.getByText(/2 Selected/i)).toBeDefined();
 
     // Toggle off goal 1
     fireEvent.click(goal1);
-    expect(screen.getByText(/3 Selected/i)).toBeDefined();
+    expect(screen.getByText(/1 Selected/i)).toBeDefined();
     expect(generateBtn?.disabled).toBe(false);
   });
 
@@ -252,7 +248,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Find my next steps/i));
     fireEvent.click(screen.getByText(/Building momentum/i));
     fireEvent.click(screen.getByText(/Next Step/i));
     fireEvent.click(screen.getByText(/Electronic \/ Dance/i));
@@ -273,7 +269,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     printSpy.mockRestore();
   });
 
-  it('handles optional lead capture and restart audit', () => {
+  it('shows unavailable report delivery without false confirmation and supports restart', async () => {
     render(
       <MemoryRouter initialEntries={['/passport?source=meta_ads']}>
         <ArtistPassportPage />
@@ -281,7 +277,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     );
 
     // Step 0 -> Step 1
-    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Find my next steps/i));
 
     // Step 1: Stage
     fireEvent.click(screen.getByText(/Building momentum/i));
@@ -315,11 +311,13 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     fireEvent.change(nameInput, { target: { value: 'Marcus Rivers' } });
     fireEvent.change(emailInput, { target: { value: 'marcus@example.com' } });
 
-    const sendButton = screen.getByText(/Claim Free Video & PDF Dossier/i).closest('button');
+    const sendButton = screen.getByText(/Request my assessment summary/i).closest('button');
     fireEvent.click(sendButton!);
 
-    // Should confirm receipt
-    expect(screen.getByText(/Your assessment copy request is saved for marcus@example\.com/i)).toBeDefined();
+    // Structural test environment has no database; never fabricate a saved request.
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Your report request could not be saved/i);
+    expect(screen.queryByText(/Your assessment copy request is saved for/i)).toBeNull();
+    expect(screen.getByText(/Request my assessment summary/i)).toBeDefined();
 
     // Restart audit
     const restartBtn = screen.getByText(/Start Over/i);
@@ -337,7 +335,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     );
 
     // Step 0 -> Step 1
-    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Find my next steps/i));
 
     // Step 1: Stage
     fireEvent.click(screen.getByText(/Building momentum/i));
@@ -404,7 +402,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
         <ArtistPassportPage />
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Find my next steps/i));
     fireEvent.click(screen.getByText(/Building momentum/i));
     fireEvent.click(screen.getByText(/Next Step/i));
 
@@ -424,7 +422,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     );
 
     // Step 0 -> Step 1
-    fireEvent.click(screen.getByText(/Start Free Business Audit/i));
+    fireEvent.click(screen.getByText(/Find my next steps/i));
 
     // Step 1 -> Step 2
     fireEvent.click(screen.getByText(/Building momentum/i));

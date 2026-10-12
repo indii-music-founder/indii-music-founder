@@ -1,4 +1,14 @@
+export interface PassportCampaignAttribution {
+  entry?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+}
+
 export interface ProspectAssessment {
+  campaign?: PassportCampaignAttribution;
   id: string; // UUID v4
   createdAt: number; // ms timestamp
   clientSessionId: string; // Anonymized browser session ID
@@ -29,6 +39,7 @@ export const PASSPORT_FUNNEL_EVENTS = [
   'passport_completed',
   'lead_submitted',
   'signup_clicked',
+  'signup_verified',
   'freebie_clicked',
   'report_downloaded',
 ] as const;

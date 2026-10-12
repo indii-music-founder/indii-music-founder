@@ -1,0 +1,12 @@
+{
+  "score": 3,
+  "summary": "Campaign additions are bounded, optional, immutable after creation, and validated on create and update. Client writes cannot forge report-delivery fields. Existing Passport possession-based access remains a separate security concern.",
+  "findings": [
+    {
+      "check": "Field-Level vs. Identity-Level Security",
+      "severity": "moderate",
+      "issue": "Existing unclaimed assessments permit single-document reads and contact edits by a holder of the assessment ID; records may contain contact information. Account claim is likewise possession-based.",
+      "recommendation": "Before broad promotion, review a server-mediated claim/contact capability with separate public and private projections. Do not interpret a UUID as authenticated ownership. This implementation adds no read, contact, or claim permissions."
+    }
+  ]
+}

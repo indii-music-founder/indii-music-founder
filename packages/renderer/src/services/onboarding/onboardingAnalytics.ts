@@ -85,6 +85,12 @@ class OnboardingAnalytics {
     /** Track file uploads during onboarding */
     fileUploaded(fileType: string, category: string): void {
         this.track({
+            event: 'studio_meaningful_action',
+            action: 'onboarding_asset_uploaded',
+            fileType,
+            category,
+        });
+        this.track({
             event: 'onboarding_file_uploaded',
             fileType,
             category,
@@ -127,6 +133,13 @@ class OnboardingAnalytics {
     }
 
     private track(event: OnboardingEvent): void {
+        const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+        const attribution: Record<string, string> = {};
+        for (const key of ['entry', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'source', 'assessmentId']) {
+            const value = params.get(key);
+            if (value) attribution[key] = value.slice(0, 128);
+        }
+        event = { ...attribution, ...event };
         Logger.info('OnboardingAnalytics', `${event.event}`, event);
 
         // Send to Firebase Analytics via gtag if available

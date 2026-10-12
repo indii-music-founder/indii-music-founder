@@ -23,6 +23,8 @@ export interface PassportReportEmailPayload {
     distributor: string;
     releaseStatus: string;
     goals: string[];
+    source?: string;
+    campaign?: Record<string, string>;
 }
 
 export function buildPassportReportContent(
@@ -30,10 +32,16 @@ export function buildPassportReportContent(
     baseUrl: string = 'https://indii.music'
 ): { subject: string; html: string; text: string } {
     const name = escapeHtml(payload.artistName || 'Artist');
-    const claimUrl = `${baseUrl}/signup?assessmentId=${encodeURIComponent(payload.assessmentId)}`;
+    const claimParams = new URLSearchParams({ assessmentId: payload.assessmentId });
+    if (payload.source) claimParams.set('source', payload.source.slice(0, 128));
+    for (const key of ['entry', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+        const value = payload.campaign?.[key];
+        if (typeof value === 'string') claimParams.set(key, value.slice(0, 128));
+    }
+    const claimUrl = `${baseUrl}/signup?${claimParams.toString()}`;
 
     const proGap = payload.proAffiliation === 'None' || !payload.proAffiliation;
-    const mlcGap = payload.mlcRegistered !== 'Yes';
+    const mlcGap = payload.mlcRegistered === 'No' || payload.mlcRegistered === 'Not sure';
     const isMastering = payload.releaseStatus.toLowerCase().includes('mixing') || payload.releaseStatus.toLowerCase().includes('mastering');
 
     const subject = `Your indii.music Artist Passport & Diagnostic Report`;
@@ -77,6 +85,8 @@ export function buildPassportReportContent(
                 <p>Thank you for completing your <strong>Artist Passport Diagnostic</strong>. Here is your music business readiness summary:</p>
 
                 <div class="card">
+                    <div class="card-title">Your selected priorities</div>
+                    <p>${payload.goals.map(escapeHtml).join(', ') || 'Review your initial business setup'}</p>
                     <div class="card-title">Profile & Setup</div>
                     <div class="item"><span class="item-label">Career Stage:</span><span class="item-value">${escapeHtml(payload.careerStage)}</span></div>
                     <div class="item"><span class="item-label">Genre:</span><span class="item-value">${escapeHtml(payload.genre)}</span></div>
@@ -88,17 +98,17 @@ export function buildPassportReportContent(
 
                 ${proGap ? `
                 <div class="alert-box">
-                    <strong>⚠️ Uncollected Performance Royalties:</strong> Without a PRO (ASCAP, BMI, SESAC), radio, streaming, and venue performance royalties remain uncollected.
+                    <strong>⚠️ Uncollected Performance Royalties:</strong> Review whether your performance-rights collection arrangements cover your works and territory. This assessment does not verify your registrations or earnings.
                 </div>` : ''}
 
                 ${mlcGap ? `
                 <div class="alert-box">
-                    <strong>⚠️ Mechanical Royalty Gap:</strong> If you are not registered with The MLC, interactive streaming mechanical royalties in the US are diverted to the black box.
+                    <strong>⚠️ Mechanical Royalty Gap:</strong> Review whether your eligible U.S. streaming mechanicals are covered by your own registrations or an administrator. This assessment does not establish missing royalties.
                 </div>` : ''}
 
                 ${isMastering ? `
                 <div class="alert-box">
-                    <strong>💡 Release Preparation Notice:</strong> Since your project is in mixing/mastering, ensure your master is checked for -14 LUFS streaming normalization and 3000×3000 artwork specifications before final submission.
+                    <strong>💡 Release Preparation Notice:</strong> Since your project is in mixing/mastering, review your distributor’s current audio and artwork delivery specifications before final submission.
                 </div>` : ''}
 
                 <p>Your answers have been securely staged. When you enter indii Studio, your profile is automatically pre-filled—no repetitive forms.</p>
@@ -108,7 +118,7 @@ export function buildPassportReportContent(
                 </div>
             </div>
             <div class="footer">
-                <p>indii.music • AI Manages the Business • Humans Create the Music</p>
+                <p>indii.music • You make the music. We help you figure out what comes next.</p>
                 <p><a href="${claimUrl}">Access Your Passport Online</a></p>
             </div>
         </div>
@@ -120,6 +130,8 @@ export function buildPassportReportContent(
     const text = `Hello ${payload.artistName || 'Artist'},
 
 Thank you for completing your Artist Passport Diagnostic with indii.music.
+
+Your selected priorities: ${payload.goals.join(', ') || 'Review your initial business setup'}
 
 Your Profile & Setup:
 - Career Stage: ${payload.careerStage}
@@ -159,7 +171,10 @@ export const sendPassportReportEmail = onDocumentWritten(
             reportEmailSentAt?: unknown;
             emailSentAt?: unknown;
             id?: string;
+            assessmentConsent?: boolean;
         };
+
+        if (data.assessmentConsent !== true) return;
 
         const email = data.email?.trim().toLowerCase();
         if (!email || !email.includes('@')) {
@@ -183,6 +198,8 @@ export const sendPassportReportEmail = onDocumentWritten(
             distributor: data.distributor || 'None',
             releaseStatus: data.releaseStatus || 'In development',
             goals: Array.isArray(data.goals) ? data.goals : [],
+            source: data.source,
+            campaign: data.campaign,
         };
 
         const { subject, html, text } = buildPassportReportContent(payload);

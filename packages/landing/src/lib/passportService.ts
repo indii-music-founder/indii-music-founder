@@ -1,5 +1,6 @@
 import { doc, setDoc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import type { CampaignAttribution } from './nowWhatCampaign';
 import type { PassportAnswers } from './passportEvaluator';
 
 export const PASSPORT_ID_STORAGE_KEY = 'indii_passport_id';
@@ -36,6 +37,7 @@ export function getActiveAssessmentId(): string | null {
 }
 
 export interface SaveAssessmentOptions {
+  campaign?: CampaignAttribution;
   source?: string;
   artistName?: string;
   email?: string;
@@ -85,6 +87,7 @@ export async function saveProspectAssessment(
         releaseStatus: answers.releaseStatus,
         goals: answers.goals.slice(0, 2),
         source: options.source || 'passport_organic',
+        ...(options.campaign && Object.keys(options.campaign).length ? { campaign: options.campaign } : {}),
         claimedByUid: null,
       };
 
@@ -93,7 +96,8 @@ export async function saveProspectAssessment(
       if (options.marketingConsent !== undefined) data.marketingConsent = Boolean(options.marketingConsent);
       if (options.assessmentConsent !== undefined) data.assessmentConsent = Boolean(options.assessmentConsent);
 
-      await setDoc(docRef, data, { merge: true });
+      const existing = await getDoc(docRef);
+      if (!existing.exists()) await setDoc(docRef, data);
     } catch (err) {
       console.warn('[ArtistPassport] Firestore intake deferred or offline:', err);
     }
@@ -114,7 +118,7 @@ export async function updateAssessmentContact(
     assessmentConsent?: boolean;
   },
 ): Promise<void> {
-  if (!db || !assessmentId) return;
+  if (!db || !assessmentId) throw new Error('Report requests are unavailable. Please try again later.');
 
   try {
     const docRef = doc(db, 'prospect_assessments', assessmentId);
@@ -129,6 +133,7 @@ export async function updateAssessmentContact(
     await updateDoc(docRef, updates);
   } catch (err) {
     console.warn('[ArtistPassport] Contact update deferred:', err);
+    throw new Error('Your report request could not be saved. Please try again.');
   }
 }
 

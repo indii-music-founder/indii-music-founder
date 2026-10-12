@@ -2893,6 +2893,17 @@ service cloud.firestore {
     // while unclaimed. Newly authenticated users may claim an unclaimed assessment.
     // Visitor enumeration/listing and deletions are strictly blocked.
     match /prospect_assessments/{assessmentId} {
+      function isValidCampaign(data) {
+        return data is map &&
+          data.keys().hasOnly(['entry', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) &&
+          (!('entry' in data) || data.entry in ['first-song', 'already-released', 'local-band', 'growing-audience', 'earning-income', 'returning-artist']) &&
+          (!('utm_source' in data) || isValidString(data.utm_source, 1, 128)) &&
+          (!('utm_medium' in data) || isValidString(data.utm_medium, 1, 128)) &&
+          (!('utm_campaign' in data) || isValidString(data.utm_campaign, 1, 128)) &&
+          (!('utm_content' in data) || isValidString(data.utm_content, 1, 128)) &&
+          (!('utm_term' in data) || isValidString(data.utm_term, 1, 128));
+      }
+
       function isValidProspectAssessment(data) {
         return data is map &&
           data.keys().hasOnly([
@@ -2910,6 +2921,9 @@ service cloud.firestore {
             'claimedByUid',
             'claimedAt',
             'source',
+            'campaign',
+            'reportEmailSentAt',
+            'reportEmailMessageId',
             'artistName',
             'email',
             'marketingConsent',
@@ -2941,6 +2955,7 @@ service cloud.firestore {
           (data.goals.size() <= 1 || (data.goals[1] is string && data.goals[1].size() <= 128)) &&
           (!('id' in data) || isValidString(data.id, 1, 128)) &&
           (!('customGenre' in data) || (data.customGenre is string && data.customGenre.size() <= 80)) &&
+          (!('campaign' in data) || isValidCampaign(data.campaign)) &&
           (!('source' in data) || (data.source is string && data.source.size() <= 128)) &&
           (!('artistName' in data) || (data.artistName is string && data.artistName.size() <= 128)) &&
           (!('email' in data) || (data.email is string && data.email.size() <= 320)) &&
@@ -2987,6 +3002,7 @@ service cloud.firestore {
 
       // Unauthenticated prospect creation allowed with strict schema and unclaimed state
       allow create: if isValidProspectAssessment(request.resource.data) &&
+                       !request.resource.data.keys().hasAny(['reportEmailSentAt', 'reportEmailMessageId']) &&
                        request.resource.data.get('claimedByUid', null) == null;
 
       // Contact updates allowed on unclaimed docs; account claiming allowed by authenticated user

@@ -510,6 +510,7 @@ app.get('/api/prospects', requireAdminAuth, async (_req, res) => {
       claimedByUid: string | null;
       claimedAt: string | null;
       source: string;
+      campaign: Record<string, string>;
       rightsGaps: string[];
       followUpStatus: string;
       lastContactedAt: string | null;
@@ -529,6 +530,8 @@ app.get('/api/prospects', requireAdminAuth, async (_req, res) => {
       claimed: number;
       rightsGaps: number;
     }> = {};
+
+    const campaignAttribution: Record<string, { total: number; emails: number; copyRequested: number; claimed: number }> = {};
 
     const stageBreakdown: Record<string, number> = {};
     const genreBreakdown: Record<string, number> = {};
@@ -554,6 +557,14 @@ app.get('/api/prospects', requireAdminAuth, async (_req, res) => {
       const claimedByUid = typeof data.claimedByUid === 'string' ? data.claimedByUid : null;
       const claimedAt = toIso(data.claimedAt);
       const source = typeof data.source === 'string' ? data.source : 'passport_organic';
+      const rawCampaign = data.campaign && typeof data.campaign === 'object' ? data.campaign as Record<string, unknown> : {};
+      const campaign = Object.fromEntries(Object.entries(rawCampaign).filter(([key, value]) => ['entry', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].includes(key) && typeof value === 'string')) as Record<string, string>;
+      const entry = campaign.entry || 'organic';
+      const campaignStats = campaignAttribution[entry] ||= { total: 0, emails: 0, copyRequested: 0, claimed: 0 };
+      campaignStats.total++;
+      if (email) campaignStats.emails++;
+      if (assessmentConsent) campaignStats.copyRequested++;
+      if (claimedByUid) campaignStats.claimed++;
       const followUpStatus = typeof data.followUpStatus === 'string' ? data.followUpStatus : 'not_contacted';
       const lastContactedAt = toIso(data.lastContactedAt);
       const contactCount = typeof data.contactCount === 'number' ? data.contactCount : 0;
@@ -614,6 +625,7 @@ app.get('/api/prospects', requireAdminAuth, async (_req, res) => {
         claimedByUid,
         claimedAt,
         source,
+        campaign,
         rightsGaps,
         followUpStatus,
         lastContactedAt,
@@ -646,6 +658,7 @@ app.get('/api/prospects', requireAdminAuth, async (_req, res) => {
         rightsGapsCount,
         conversionRates,
         channelAttribution,
+        campaignAttribution,
         stageBreakdown,
         genreBreakdown,
         rightsGapsBreakdown,

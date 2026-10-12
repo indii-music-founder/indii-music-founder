@@ -16,6 +16,7 @@ import { flushFounderFunnelQueue, trackFounderFunnelEvent } from './lib/founderF
 import { isFounderPreviewEnabled } from './lib/previewAccess';
 import { emitSystemPulse } from './three/signals';
 import Hero from './components/sections/Hero';
+import NowWhatSection from './components/sections/NowWhatSection';
 import WaitlistSection from './components/sections/WaitlistSection';
 import FooterSection from './components/sections/FooterSection';
 import ExperienceShell from './components/ExperienceShell';
@@ -415,6 +416,8 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           onSubmit={handleWaitlistSubmit}
         />
       )}
+
+      <NowWhatSection />
 
       {founder && (
         <LazySection id="detroit">

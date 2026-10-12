@@ -223,122 +223,41 @@ export function evaluatePassport(answers: PassportAnswers): DiagnosticReport {
     ],
   };
 
-  // 3. Recommended Top 3 Steps tailored to stage & goals
+  // Explicit priorities win, in selection order; observations fill the remaining slot.
+  const recommendations: Record<string, [string, string, string]> = {
+    'Improve royalty registration and tracking': ['Review royalty collection coverage', 'Compare your catalog credits and registration status with the organizations relevant to your territory and rights.', 'Publishing Administrator'],
+    'Grow audience and fan engagement': ['Build direct fan relationships', 'Choose one audience channel, invite listeners to an owned mailing list with consent, and track engagement over your next campaign.', 'Campaign Publicist'],
+    'Plan and market a release': ['Build your release calendar', 'Set a release date and work backward through artwork, credits, distributor requirements, and promotional milestones.', 'Campaign Publicist'],
+    'Organize rights, collaborators, and splits': ['Document collaborator splits', 'Agree writer and master shares with collaborators and record each agreement before release.', 'Legal Counsel'],
+    'Pursue sync licensing opportunities': ['Prepare a sync pitch package', 'Gather clean and instrumental versions, accurate credits, contact details, and evidence of the rights you can license.', 'Sync Licensing Specialist'],
+    'Create promotional content': ['Prepare your promotional assets', 'Choose a song excerpt and make a practical plan for vertical clips, artwork, captions, and posting dates.', 'Creative Director'],
+    'Better understand music-business finances': ['Organize music income and expenses', 'Record distributor receipts, show income, merchandise costs, and collaborator obligations in a monthly ledger.', 'Financial Comptroller'],
+    'Claim uncollected black-box royalties': ['Investigate unmatched royalty records', 'Check whether your works appear in applicable unmatched databases; confirm ownership and eligibility before submitting a claim.', 'Publishing Administrator'],
+    'Establish authoritative metadata registry': ['Organize your recording and work identifiers', 'Record available ISRC, ISWC, and UPC identifiers alongside titles, writers, performers, and release credits.', 'Distribution Chief'],
+    'Audit master audio for streaming compliance': ['Review your master against delivery requirements', 'Check clipping, true peak, file format, and your distributor’s current specifications. Loudness normalization is not a universal acceptance threshold.', 'Sonic Director'],
+    'Automate co-producer split payouts': ['Document the payout calculation', 'Agree shares, costs, recoupment, and payment responsibilities before using a payout workflow; verify actual payment support separately.', 'Financial Comptroller'],
+    'File official copyright registrations': ['Prepare copyright registration materials', 'Gather ownership details and deposit materials, then review the official filing requirements for your jurisdiction.', 'Legal Counsel'],
+    'Build editorial pitch & EPK materials': ['Build your EPK and pitch materials', 'Gather a short biography, press photos, listening links, live footage, and booking contact. Include only verified milestones.', 'Campaign Publicist'],
+    'Clear samples and prevent copyright strikes': ['Document sample permissions', 'Gather licenses and agreements and review permitted uses before release. Documentation cannot guarantee prevention of a takedown.', 'Rights Manager'],
+  };
   const steps: RecommendedStep[] = [];
-
-  if (answers.goals.includes('Organize rights, collaborators, and splits')) {
-    steps.push({
-      stepNumber: 1,
-      title: 'Formalize 100.00% Collaborator Split Agreements',
-      detail:
-        'Document producer, writer, and feature shares in writing before release delivery. Splits must mathematically sum to 100.00% to avoid distributor royalty holds.',
-      department: 'Legal Counsel',
-      departmentColor: '#455A64',
-    });
-  } else if (answers.goals.includes('File official copyright registrations')) {
-    steps.push({
-      stepNumber: 1,
-      title: 'File Official U.S. Copyright Office Registrations',
-      detail:
-        'Register your master sound recording (Form SR) and underlying compositions (Form PA) with the Library of Congress eCO portal to secure statutory legal protections.',
-      department: 'Legal Counsel',
-      departmentColor: '#455A64',
-    });
-  } else if (answers.goals.includes('Claim uncollected black-box royalties')) {
-    steps.push({
-      stepNumber: 1,
-      title: 'Audit & Claim Uncollected Black-Box Mechanical Royalties',
-      detail:
-        'Run matched catalog queries against The MLC historical unmatched database to reclaim streaming mechanicals deposited before your songs were registered.',
-      department: 'Publishing Administrator',
-      departmentColor: '#8BC34A',
-    });
-  } else {
-    steps.push({
-      stepNumber: 1,
-      title: 'Audit Performance & Mechanical Registrations',
-      detail:
-        'Verify composition titles, IPI/CAE numbers, and ISWC codes across collection societies so public performance and streaming mechanical flows remain uninterrupted.',
-      department: 'Publishing Administrator',
-      departmentColor: '#8BC34A',
-    });
+  const addStep = (title: string, detail: string, department: string) => {
+    if (steps.length < 3 && !steps.some(step => step.title === title)) {
+      steps.push({ stepNumber: steps.length + 1, title, detail, department, departmentColor: '#FFB800' });
+    }
+  };
+  for (const goal of answers.goals.slice(0, 2)) {
+    const step = recommendations[goal];
+    if (step) addStep(...step);
   }
-
-  if (answers.goals.includes('Create promotional content')) {
-    steps.push({
-      stepNumber: 2,
-      title: 'Package 16:9 Master Video into Vertical 9:16 Social Cutdowns',
-      detail:
-        'Re-slice your landscape studio footage and visualizers into vertical clips for TikTok and Reels to maintain strong brand consistency without restarting from scratch.',
-      department: 'Creative Director',
-      departmentColor: '#00FF66',
-    });
-  } else if (answers.goals.includes('Audit master audio for streaming compliance')) {
-    steps.push({
-      stepNumber: 2,
-      title: 'Audit Master Audio for True Peak & DSP Streaming Headroom',
-      detail:
-        'Analyze audio stems and stereo master for inter-sample clipping (-1.0 dBTP), dynamic range, and -14 LUFS compliance before distributor delivery.',
-      department: 'Sonic Director',
-      departmentColor: '#FFB800',
-    });
-  } else if (answers.goals.includes('Clear samples and prevent copyright strikes')) {
-    steps.push({
-      stepNumber: 2,
-      title: 'Compile Sample Provenance & Licensing Documentation',
-      detail:
-        'Assemble verified receipts, master licensing contracts, and loop declarations into an exportable DSP dispute packet to prevent automated takedowns.',
-      department: 'Rights Manager',
-      departmentColor: '#00E5FF',
-    });
+  if (rights.status !== 'good') addStep('Review your rights registration status', rights.actionRecommendation, 'Publishing Administrator');
+  if (answers.releaseStatus === 'Already released / managing catalog') {
+    addStep('Review your active catalog', 'Reconcile titles, credits, identifiers, and release links with your distributor records.', 'Distribution Chief');
   } else {
-    steps.push({
-      stepNumber: 2,
-      title: 'Establish Your Living Master Directive',
-      detail:
-        'Define your sound specs, brand color palette, and contractual minimums once so all creative and release materials stay true to your identity.',
-      department: 'Conductor Orchestrator',
-      departmentColor: '#FFB800',
-    });
+    addStep('Prepare the next release milestone', 'Review artwork, credits, splits, dates, and current distributor delivery requirements.', 'Distribution Chief');
   }
-
-  if (answers.goals.includes('Pursue sync licensing opportunities')) {
-    steps.push({
-      stepNumber: 3,
-      title: 'Prepare One-Stop Sync Licensing Packages',
-      detail:
-        'Assemble instrumental, acapella, and clean radio mixes with embedded contact metadata and confirmed 100% master/publishing ownership for rapid sync clearances.',
-      department: 'Sync Licensing Specialist',
-      departmentColor: '#009688',
-    });
-  } else if (answers.goals.includes('Automate co-producer split payouts')) {
-    steps.push({
-      stepNumber: 3,
-      title: 'Automate Royalty Waterfall Split Distributions',
-      detail:
-        'Calculate recoupment thresholds and set up automated net waterfall payouts so co-producers and contributors receive exact percentages on payout day.',
-      department: 'Financial Comptroller',
-      departmentColor: '#FF7043',
-    });
-  } else if (answers.goals.includes('Build editorial pitch & EPK materials')) {
-    steps.push({
-      stepNumber: 3,
-      title: 'Assemble Dynamic Electronic Press Kit & Pitch Materials',
-      detail:
-        'Package high-res press photos, streaming milestones, lyrics, and sonic tags into a live digital press kit for playlist curators and music blogs.',
-      department: 'Campaign Publicist',
-      departmentColor: '#AB47BC',
-    });
-  } else {
-    steps.push({
-      stepNumber: 3,
-      title: 'Align Distributor Metadata with Editorial Deadlines',
-      detail:
-        'Verify ISRC master codes, UPC product barcodes, and lyric credits with your distributor at least 3 weeks before release for playlist pitching.',
-      department: 'Distribution Chief',
-      departmentColor: '#2196F3',
-    });
-  }
+  addStep('Choose one achievable business task', 'Set a task, an owner, and a completion date based on your current priorities.', 'Conductor Orchestrator');
+  addStep('Organize your project records', 'Gather credits, agreements, assets, and release links in one place before starting the next task.', 'Conductor Orchestrator');
 
   // 4. Specialist Team Mapping (Dynamically tailored to chosen goals & career stage)
   const specialistPool: MatchedSpecialist[] = [

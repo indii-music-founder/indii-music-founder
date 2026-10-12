@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -33,6 +33,7 @@ import {
   getActiveAssessmentId,
 } from '../lib/passportService';
 import { trackPassportEvent } from '../lib/passportAnalytics';
+import { NOW_WHAT_CAMPAIGNS, readCampaignAttribution, campaignQuery } from '../lib/nowWhatCampaign';
 
 // --- Main Component ---
 export default function ArtistPassportPage() {
@@ -41,7 +42,9 @@ export default function ArtistPassportPage() {
   // Extract referral source from URL search params (e.g. ?source=founder_dm or ?source=meta_ads)
   const searchParams = new URLSearchParams(location.search);
   const acquisitionSource = searchParams.get('source') || 'passport_organic';
-  const referralQuery = `?source=${encodeURIComponent(acquisitionSource)}`;
+  const campaign = readCampaignAttribution(location.search);
+  const entry = NOW_WHAT_CAMPAIGNS.find(c => c.id === campaign.entry);
+  const referralQuery = campaignQuery(`${location.search}${location.search ? '&' : '?'}source=${encodeURIComponent(acquisitionSource)}`);
 
   // Step state: 0 = Hero, 1 = Stage, 2 = Genre, 3 = Rights, 4 = Distribution, 5 = Goals, 6 = Results
   const [currentStep, setCurrentStep] = useState<number>(() => {
@@ -68,6 +71,8 @@ export default function ArtistPassportPage() {
   const [assessmentConsent, setAssessmentConsent] = useState(true);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [leadError, setLeadError] = useState('');
+  const [leadPending, setLeadPending] = useState(false);
   const [assessmentId, setAssessmentId] = useState<string>(() => {
     try {
       return getActiveAssessmentId() || '';
@@ -76,13 +81,17 @@ export default function ArtistPassportPage() {
     }
   });
 
+  const completionTracked = useRef(false);
+
   // Funnel Telemetry: Track page arrival
   useEffect(() => {
     trackPassportEvent('passport_viewed', {
       source: acquisitionSource,
       initialStep: currentStep,
     });
-  }, [acquisitionSource, currentStep]);
+  // Record arrival once per campaign URL, not every wizard step.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   // Sync to session storage
   useEffect(() => {
@@ -96,7 +105,8 @@ export default function ArtistPassportPage() {
 
   // Persist assessment to Firestore when entering Step 6 (diagnostic report)
   useEffect(() => {
-    if (currentStep === 6 && answers.careerStage && answers.genre) {
+    if (currentStep === 6 && answers.careerStage && answers.genre && !completionTracked.current) {
+      completionTracked.current = true;
       trackPassportEvent('passport_completed', {
         careerStage: answers.careerStage,
         genre: answers.genre,
@@ -109,6 +119,7 @@ export default function ArtistPassportPage() {
 
       void saveProspectAssessment(answers, {
         source: acquisitionSource,
+        campaign: readCampaignAttribution(location.search),
         artistName: artistName || undefined,
         email: email || undefined,
         marketingConsent: marketingOptIn,
@@ -117,7 +128,7 @@ export default function ArtistPassportPage() {
         if (id) setAssessmentId(id);
       });
     }
-  }, [currentStep, answers, acquisitionSource, artistName, email, marketingOptIn, assessmentConsent, assessmentId]);
+  }, [currentStep, answers, acquisitionSource, artistName, email, marketingOptIn, assessmentConsent, assessmentId, location.search]);
 
   const handleStart = () => {
     trackPassportEvent('passport_started', { source: acquisitionSource });
@@ -139,7 +150,7 @@ export default function ArtistPassportPage() {
       if (current.includes(goalId)) {
         return { ...prev, goals: current.filter((g) => g !== goalId) };
       }
-      return { ...prev, goals: [...current, goalId] };
+      return current.length < 2 ? { ...prev, goals: [...current, goalId] } : prev;
     });
   };
 
@@ -149,11 +160,13 @@ export default function ArtistPassportPage() {
   };
 
   const handleReset = () => {
+    completionTracked.current = false;
     setAnswers(INITIAL_ANSWERS);
     setCurrentStep(0);
     setArtistName('');
     setEmail('');
     setLeadSubmitted(false);
+    setLeadError('');
     setAssessmentId('');
     try {
       sessionStorage.removeItem('indii_passport_draft');
@@ -175,7 +188,7 @@ export default function ArtistPassportPage() {
       case 4:
         return Boolean(answers.distributor && answers.releaseStatus);
       case 5:
-        return answers.goals.length > 0;
+        return answers.goals.length > 0 && answers.goals.length <= 2;
       default:
         return true;
     }
@@ -234,6 +247,8 @@ export default function ArtistPassportPage() {
                 <span>People make the music, indii makes the business.</span>
               </div>
 
+              {entry && <div className="rounded-xl border border-[#FFB800]/30 p-4"><h2 className="text-xl font-bold text-[#FFB800]">{entry.hook}</h2><p className="mt-2 text-sm text-white/70">{entry.answer}</p></div>}
+
               <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
                 How ready is your music <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/90 to-white/60">
@@ -252,7 +267,7 @@ export default function ArtistPassportPage() {
                   onClick={handleStart}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-black text-black bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_24px_rgba(255,184,0,0.35)]"
                 >
-                  <span>Start Free Business Audit</span>
+                  <span>Find my next steps</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
@@ -579,11 +594,11 @@ export default function ArtistPassportPage() {
                     What areas of your music business do you want covered?
                   </h2>
                   <p className="text-sm text-[#8A8F9E] mt-1">
-                    Select as many operational and creative targets as you need. Each choice tailors your roadmap and specialist virtual team.
+                    Choose your top two priorities. You can revisit other areas as your music business develops.
                   </p>
                 </div>
                 <span className="text-xs font-mono px-2.5 py-1 rounded bg-[#070709] border border-[#1F222A] text-[#8A8F9E] whitespace-nowrap self-start sm:self-auto">
-                  {answers.goals.length === 0 ? 'Select Any' : `${answers.goals.length} Selected`}
+                  {answers.goals.length === 0 ? 'Select up to 2' : `${answers.goals.length} Selected`}
                 </span>
               </div>
 
@@ -663,6 +678,8 @@ export default function ArtistPassportPage() {
                 </div>
               </div>
 
+              {entry && <aside className="rounded-xl border border-[#FFB800]/30 p-5"><h2 className="font-bold text-[#FFB800]">{entry.hook}</h2><p className="mt-2 text-sm text-white/70">{entry.answer} Your personalized priorities below come from your answers.</p></aside>}
+
               {/* Diagnostic Cards Grid */}
               <div className="grid gap-6 md:grid-cols-2">
                 {/* 1. Rights & Royalties Card */}
@@ -736,7 +753,7 @@ export default function ArtistPassportPage() {
                   </span>
                   <h3 className="text-xl font-bold text-white mt-1">Recommended Next Actions</h3>
                   <p className="text-xs text-[#8A8F9E] mt-0.5">
-                    Tailored to your career stage and selected business goals.
+                    Now what? Start with your selected priorities, then review the next relevant business task.
                   </p>
                 </div>
 
@@ -843,7 +860,7 @@ export default function ArtistPassportPage() {
                     Claim Your Artist Passport & Free 9:16 Video Campaign
                   </h3>
                   <p className="text-sm text-[#8A8F9E] leading-relaxed max-w-2xl">
-                    Your assessment answers and custom roadmap are saved in this session. Enter your email below to instantly receive your official PDF dossier copy and unlock 1 free 9:16 vertical video campaign render in indii Studio — turn your audio into high-converting social cutdowns with zero watermarks.
+                    Your answers are saved in this session. Request an email summary of your assessment, or print this page to save a PDF. Continue into indii.music to explore the relevant workflows; Studio access follows the current beta availability.
                   </p>
                 </div>
 
@@ -852,33 +869,34 @@ export default function ArtistPassportPage() {
                   <form
                     onSubmit={async (e) => {
                       e.preventDefault();
-                      setLeadSubmitted(true);
-                      trackPassportEvent('lead_submitted', {
-                        hasName: Boolean(artistName),
-                        hasEmail: Boolean(email),
-                        marketingOptIn,
-                        assessmentConsent,
-                      }, assessmentId);
-                      if (assessmentId) {
-                        await updateAssessmentContact(assessmentId, {
-                          artistName: artistName || undefined,
-                          email: email || undefined,
-                          marketingConsent: marketingOptIn,
-                          assessmentConsent,
-                        });
-                      } else {
-                        const id = await saveProspectAssessment(answers, {
+                      setLeadError('');
+                      setLeadPending(true);
+                      try {
+                        const id = assessmentId || await saveProspectAssessment(answers, {
                           source: acquisitionSource,
+                          campaign: readCampaignAttribution(location.search),
+                        });
+                        await updateAssessmentContact(id, {
                           artistName: artistName || undefined,
                           email: email || undefined,
                           marketingConsent: marketingOptIn,
                           assessmentConsent,
                         });
-                        if (id) setAssessmentId(id);
+                        setAssessmentId(id);
+                        setLeadSubmitted(true);
+                        trackPassportEvent('lead_submitted', {
+                          hasName: Boolean(artistName), hasEmail: Boolean(email),
+                          marketingOptIn, assessmentConsent,
+                        }, id);
+                      } catch (error) {
+                        setLeadError(error instanceof Error ? error.message : 'Unable to save your request. Please try again.');
+                      } finally {
+                        setLeadPending(false);
                       }
                     }}
                     className="space-y-4 max-w-lg"
                   >
+                    {leadError && <p role="alert" className="text-sm text-red-300">{leadError}</p>}
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
                         <label className="text-[11px] font-mono text-[#8A8F9E] block mb-1">
@@ -912,7 +930,7 @@ export default function ArtistPassportPage() {
                           onChange={(e) => setAssessmentConsent(e.target.checked)}
                           className="mt-0.5 rounded border-white/20 text-[#FFB800] focus:ring-[#FFB800]"
                         />
-                        <span>Send me an official PDF copy of my Artist Passport assessment.</span>
+                        <span>Send me an email summary of my Artist Passport assessment.</span>
                       </label>
                       <label className="flex items-start gap-2.5 cursor-pointer">
                         <input
@@ -928,9 +946,10 @@ export default function ArtistPassportPage() {
                     {email && (
                       <button
                         type="submit"
+                        disabled={leadPending}
                         className="text-xs font-mono font-bold px-4 py-2.5 rounded-lg bg-[#FFB800] hover:bg-[#FFD700] text-black transition-all shadow-[0_0_15px_rgba(255,184,0,0.2)]"
                       >
-                        Claim Free Video & PDF Dossier
+                        {leadPending ? 'Saving request…' : 'Request my assessment summary'}
                       </button>
                     )}
                   </form>
@@ -953,7 +972,7 @@ export default function ArtistPassportPage() {
                   </Link>
 
                   <Link
-                    to={`/#waitlist${referralQuery}${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}`}
+                    to={`/${referralQuery}${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}#waitlist`}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
                   >
                     <span>Join Founding Artist Waitlist</span>

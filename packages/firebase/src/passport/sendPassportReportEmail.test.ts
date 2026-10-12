@@ -1,3 +1,4 @@
+// Structural-only trigger tests using service doubles; not delivery evidence.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { buildPassportReportContent, sendPassportReportEmail } from './sendPassportReportEmail';
 import * as notify from '../lib/notify';
@@ -70,6 +71,7 @@ describe('sendPassportReportEmail', () => {
                     after: {
                         exists: true,
                         data: () => ({
+                        assessmentConsent: true,
                             id: 'doc-999',
                             artistName: 'Elena Rostova',
                             email: 'elena@example.com',
@@ -115,6 +117,7 @@ describe('sendPassportReportEmail', () => {
                     after: {
                         exists: true,
                         data: () => ({
+                        assessmentConsent: true,
                             id: 'doc-already-sent',
                             email: 'elena@example.com',
                             reportEmailSentAt: 1728500000000,
@@ -150,7 +153,8 @@ describe('sendPassportReportEmail', () => {
                 data: {
                     after: {
                         exists: true,
-                        data: () => ({ id: 'doc-no-email' }),
+                        data: () => ({
+                        assessmentConsent: true, id: 'doc-no-email' }),
                         ref: { update: mockUpdate },
                     },
                 },

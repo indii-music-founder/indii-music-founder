@@ -1,5 +1,7 @@
 'use client';
 
+import { campaignQuery } from '../../lib/nowWhatCampaign';
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { signUpWithEmail, getStudioUrl, refreshEmailVerification, resendEmailVerification } from '@/lib/auth';
@@ -24,7 +26,7 @@ export default function SignupForm() {
     const referralSource = searchParams?.get('source') || (typeof window !== 'undefined' && window.location.hostname.startsWith('founder') ? 'founder' : null);
     const assessmentId = searchParams?.get('assessmentId') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('indii_passport_id') : null);
     const isFounderSource = referralSource === 'founder';
-    const sourceSuffix = referralSource ? `?source=${encodeURIComponent(referralSource)}` : '';
+    const sourceSuffix = campaignQuery(typeof window !== 'undefined' ? window.location.search : '');
 
     useEffect(() => {
         flushFounderFunnelQueue();

@@ -20,8 +20,8 @@ test.describe('Artist Passport Acquisition Funnel', () => {
     await page.goto(`${LANDING_URL}/passport`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('h1')).toContainText(/How ready is your music/i);
 
-    // 2. Click Start Free Business Audit
-    const startButton = page.getByRole('button', { name: /Start Free Business Audit/i });
+    // 2. Click Find my next steps
+    const startButton = page.getByRole('button', { name: /Find my next steps/i });
     await expect(startButton).toBeVisible();
     await startButton.click();
 
@@ -48,7 +48,7 @@ test.describe('Artist Passport Acquisition Funnel', () => {
     await page.getByRole('button', { name: /Next Step/i }).click();
 
     // 7. Step 5: Primary Priorities
-    await expect(page.getByText(/What are your top 2 priorities right now/i)).toBeVisible();
+    await expect(page.getByText(/What areas of your music business do you want covered/i)).toBeVisible();
     await page.getByRole('button', { name: /Improve royalty registration & collection tracking/i }).click();
     
     const generateButton = page.getByRole('button', { name: /Generate Assessment/i });
@@ -61,20 +61,9 @@ test.describe('Artist Passport Acquisition Funnel', () => {
     // Verify rights leakage warning detected for ASCAP without MLC
     await expect(page.getByText(/Possible Streaming Mechanical Collection Gap/i)).toBeVisible();
 
-    // 9. Lead Contact Form Submission
-    const nameInput = page.getByPlaceholder(/Your artist or producer name/i);
-    const emailInput = page.getByPlaceholder(/your\.email@example\.com/i);
-
-    if (await nameInput.isVisible()) {
-      await nameInput.fill('Playwright Test Artist');
-      await emailInput.fill('playwright-test@indii.music');
-
-      const sendReportButton = page.getByRole('button', { name: /Save Email Copy/i });
-      await sendReportButton.click();
-
-      // Wait for confirmation message
-      await expect(page.getByText(/Your assessment copy request is saved for/i)).toBeVisible({ timeout: 10_000 });
-    }
+    // Public-path checks only. Report receipt and account claiming require a
+    // genuinely authorized person and are verified separately, never synthetic leads.
+    await expect(page.getByRole('button', { name: /Request my assessment summary/i })).toBeVisible();
 
     // 10. Check "Still Not Convinced? See Full Platform & Free Tools" button
     const skepticalLink = page.getByRole('link', { name: /Still Not Convinced\? See Full Platform & Free Tools/i });

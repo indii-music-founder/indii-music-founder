@@ -3834,6 +3834,43 @@ describe('Firestore Security Rules', () => {
                 await assertSucceeds(setDoc(doc(unauthDb, 'prospect_assessments', 'doc-1'), validAssessment));
             });
 
+            // Structural rule-policy checks only; these do not prove a genuine customer journey.
+            it('campaign attribution: accepts bounded fields and rejects malformed maps', async () => {
+                if (requireEmulator()) return;
+                const db = unauthCtx().firestore();
+                await assertSucceeds(setDoc(doc(db, 'prospect_assessments', 'campaign-valid'), {
+                    ...validAssessment, campaign: { entry: 'local-band', utm_source: 'instagram' },
+                }));
+                for (const [index, campaign] of [
+                    { entry: 'unknown' }, { utm_source: 'x'.repeat(129) },
+                    { utm_source: 42 }, { email: 'private@example.com' },
+                ].entries()) {
+                    await assertFails(setDoc(doc(db, 'prospect_assessments', `campaign-invalid-${index}`), { ...validAssessment, campaign }));
+                }
+                await assertFails(updateDoc(doc(db, 'prospect_assessments', 'campaign-valid'), {
+                    campaign: { entry: 'first-song' },
+                }));
+            });
+
+            it('report delivery metadata: cannot be forged but permits subsequent contact updates', async () => {
+                if (requireEmulator()) return;
+                const db = unauthCtx().firestore();
+                await assertFails(setDoc(doc(db, 'prospect_assessments', 'report-forged'), {
+                    ...validAssessment, reportEmailSentAt: Timestamp.now(),
+                }));
+                await testEnv!.withSecurityRulesDisabled(async ctx => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'report-delivered'), {
+                        ...validAssessment, reportEmailSentAt: Timestamp.now(), reportEmailMessageId: 'server-receipt',
+                    });
+                });
+                await assertSucceeds(updateDoc(doc(db, 'prospect_assessments', 'report-delivered'), {
+                    marketingConsent: false, updatedAt: Timestamp.now(),
+                }));
+                await assertFails(updateDoc(doc(db, 'prospect_assessments', 'report-delivered'), {
+                    reportEmailMessageId: 'forged',
+                }));
+            });
+
             it('create: allows authenticated user to create valid assessment', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();

@@ -1,5 +1,7 @@
 'use client';
 
+import { campaignQuery } from '../../lib/nowWhatCampaign';
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { signInWithEmail, getStudioUrl, refreshEmailVerification, resendEmailVerification } from '@/lib/auth';
@@ -20,7 +22,7 @@ export default function LoginForm() {
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const referralSource = searchParams?.get('source') || (typeof window !== 'undefined' && window.location.hostname.startsWith('founder') ? 'founder' : null);
     const isFounderSource = referralSource === 'founder';
-    const sourceSuffix = referralSource ? `?source=${encodeURIComponent(referralSource)}` : '';
+    const sourceSuffix = campaignQuery(typeof window !== 'undefined' ? window.location.search : '');
 
     useEffect(() => {
         flushFounderFunnelQueue();
