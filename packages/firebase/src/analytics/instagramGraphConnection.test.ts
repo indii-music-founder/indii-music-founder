@@ -33,6 +33,7 @@ describe('exchangeFacebookInstagramConnection', () => {
             expect.stringContaining('graph.facebook.com/v23.0/oauth/access_token'),
             expect.stringContaining('graph.facebook.com/v23.0/oauth/access_token?grant_type=fb_exchange_token'),
             expect.stringContaining('graph.facebook.com/v23.0/me/accounts'),
+            expect.stringContaining('graph.facebook.com/v23.0/me/adaccounts'),
         ]);
     });
 
@@ -81,4 +82,23 @@ describe('exchangeFacebookInstagramConnection', () => {
         await expect(exchangeFacebookInstagramConnection({ ...input, facebookPageId: 'page-1' }, fetcher))
             .rejects.toMatchObject({ code: 'NO_LINKED_INSTAGRAM_BUSINESS_ACCOUNT' } satisfies Partial<MetaInstagramConnectionError>);
     });
+
+    it('resolves and links adAccountId when present from /me/adaccounts', async () => {
+        const fetcher = vi.fn()
+            .mockResolvedValueOnce(okJson({ access_token: 'short-token', expires_in: 3600 }))
+            .mockResolvedValueOnce(okJson({ access_token: 'long-token', expires_in: 5_184_000 }))
+            .mockResolvedValueOnce(okJson({ data: [{ id: 'page-1', name: 'indii', instagram_business_account: { id: 'ig-1', username: 'indii_music' } }] }))
+            .mockResolvedValueOnce(okJson({ data: [{ id: 'act_1234567890', account_id: '1234567890', name: 'indii Ads' }] }));
+
+        const result = await exchangeFacebookInstagramConnection(input, fetcher);
+
+        expect(result).toMatchObject({
+            accessToken: 'long-token',
+            facebookPageId: 'page-1',
+            igUserId: 'ig-1',
+            adAccountId: '1234567890',
+        });
+        expect(fetcher).toHaveBeenCalledWith(expect.stringContaining('/me/adaccounts'));
+    });
 });
+

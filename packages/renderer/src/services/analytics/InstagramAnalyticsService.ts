@@ -131,7 +131,12 @@ export class InstagramAnalyticsService {
      * Initiate Instagram OAuth via Facebook Login.
      * Redirects user to Facebook's OAuth dialog.
      */
-    async initiateOAuth(): Promise<void> {
+    /**
+     * Initiate Instagram OAuth via Facebook Login.
+     * Redirects user to Facebook's OAuth dialog.
+     * Optionally request ad scopes (e.g. ads_management, ads_read) for marketing automation.
+     */
+    async initiateOAuth(options?: { extraScopes?: string[] }): Promise<void> {
         const appId = import.meta.env.VITE_META_APP_ID;
         if (!appId) {
             throw new Error('Instagram connection is temporarily unavailable. Please contact support.');
@@ -147,12 +152,15 @@ export class InstagramAnalyticsService {
             'instagram_content_publish',
             'pages_show_list',
             'pages_read_engagement',
-        ].join(',');
+        ];
+        const allScopes = options?.extraScopes?.length
+            ? Array.from(new Set([...scopes, ...options.extraScopes]))
+            : scopes;
 
         const params = new URLSearchParams({
             client_id:     appId,
             redirect_uri:  this.redirectUri,
-            scope:         scopes,
+            scope:         allScopes.join(','),
             response_type: 'code',
             state,
         });

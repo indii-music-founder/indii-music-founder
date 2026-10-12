@@ -132,7 +132,13 @@ export const analyticsExchangeToken = onCall(
                 throw error;
             }
             if (!facebookPageId && resolution.pages.length > 1) {
-                const intentId = await createPendingInstagramIntent(uid, resolution.accessToken, resolution.expiresIn, resolution.pages);
+                const intentId = await createPendingInstagramIntent(
+                    uid,
+                    resolution.accessToken,
+                    resolution.expiresIn,
+                    resolution.pages,
+                    resolution.adAccountId,
+                );
                 return { ok: true, requiresPageSelection: true, intentId, pages: resolution.pages };
             }
             const selectedPage = facebookPageId
@@ -145,7 +151,7 @@ export const analyticsExchangeToken = onCall(
                     resolution.pages,
                 ));
             }
-            const connection = connectionFromPage(resolution.accessToken, resolution.expiresIn, selectedPage);
+            const connection = connectionFromPage(resolution.accessToken, resolution.expiresIn, selectedPage, resolution.adAccountId);
             await storeInstagramConnection(uid, connection);
             return instagramConnectionResponse(connection);
         }
@@ -168,7 +174,7 @@ export const analyticsFinalizeInstagramConnection = onCall(
         if (!page || !intent.accessToken || !Number.isFinite(intent.tokenExpiresIn)) {
             throw new HttpsError('failed-precondition', 'The selected Facebook Page is not available for this Instagram connection.');
         }
-        const connection = connectionFromPage(intent.accessToken, intent.tokenExpiresIn, page);
+        const connection = connectionFromPage(intent.accessToken, intent.tokenExpiresIn, page, intent.adAccountId);
         await storeInstagramConnection(uid, connection);
         return instagramConnectionResponse(connection);
     });
@@ -207,6 +213,7 @@ export const analyticsGetConnectionStatus = onCall(
             ...(typeof token.igUserId === 'string' ? { igUserId: token.igUserId } : {}),
             ...(typeof token.facebookPageId === 'string' ? { facebookPageId: token.facebookPageId } : {}),
             ...(typeof token.instagramUsername === 'string' ? { instagramUsername: token.instagramUsername } : {}),
+            ...(typeof token.adAccountId === 'string' ? { adAccountId: token.adAccountId } : {}),
         };
     });
 
@@ -444,6 +451,7 @@ interface PendingInstagramIntent {
     accessToken: string;
     tokenExpiresIn: number;
     pages: InstagramPageOption[];
+    adAccountId?: string;
     expiresAt: admin.firestore.Timestamp;
 }
 
@@ -464,6 +472,7 @@ async function createPendingInstagramIntent(
     accessToken: string,
     tokenExpiresIn: number,
     pages: InstagramPageOption[],
+    adAccountId?: string,
 ): Promise<string> {
     const intentId = randomUUID();
     await pendingInstagramIntentPath(uid, intentId).create({
@@ -471,6 +480,7 @@ async function createPendingInstagramIntent(
         accessToken,
         tokenExpiresIn,
         pages,
+        ...(adAccountId ? { adAccountId } : {}),
         expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + PENDING_INSTAGRAM_INTENT_TTL_MS),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -500,6 +510,7 @@ function connectionFromPage(
     accessToken: string,
     expiresIn: number,
     page: InstagramPageOption,
+    adAccountId?: string,
 ): FacebookInstagramConnection {
     return {
         accessToken,
@@ -507,6 +518,7 @@ function connectionFromPage(
         facebookPageId: page.facebookPageId,
         igUserId: page.instagramBusinessAccountId,
         ...(page.instagramUsername ? { instagramUsername: page.instagramUsername } : {}),
+        ...(adAccountId ? { adAccountId } : {}),
     };
 }
 
@@ -520,6 +532,7 @@ async function storeInstagramConnection(uid: string, connection: FacebookInstagr
         igUserId: connection.igUserId,
         facebookPageId: connection.facebookPageId,
         ...(connection.instagramUsername ? { instagramUsername: connection.instagramUsername } : {}),
+        ...(connection.adAccountId ? { adAccountId: connection.adAccountId } : {}),
     });
 }
 
@@ -529,6 +542,7 @@ function instagramConnectionResponse(connection: FacebookInstagramConnection) {
         expiresIn: connection.expiresIn,
         facebookPageId: connection.facebookPageId,
         ...(connection.instagramUsername ? { instagramUsername: connection.instagramUsername } : {}),
+        ...(connection.adAccountId ? { adAccountId: connection.adAccountId } : {}),
     };
 }
 

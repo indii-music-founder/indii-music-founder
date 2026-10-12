@@ -13,12 +13,14 @@ export interface FacebookInstagramConnection {
     facebookPageId: string;
     igUserId: string;
     instagramUsername?: string;
+    adAccountId?: string;
 }
 
 export interface FacebookInstagramResolution {
     accessToken: string;
     expiresIn: number;
     pages: InstagramPageOption[];
+    adAccountId?: string;
 }
 
 export class MetaInstagramConnectionError extends Error {
@@ -109,10 +111,11 @@ export async function exchangeFacebookInstagramConnection(
         facebookPageId: selected.facebookPageId,
         igUserId: selected.instagramBusinessAccountId,
         ...(selected.instagramUsername ? { instagramUsername: selected.instagramUsername } : {}),
+        ...(resolution.adAccountId ? { adAccountId: resolution.adAccountId } : {}),
     };
 }
 
-/** Resolve the token and Page options without exposing the token to a client. */
+/** Resolve the token, Page options, and Ad Account without exposing the token to a client. */
 export async function resolveFacebookInstagramConnection(
     input: { code: string; redirectUri: string; appId: string; appSecret: string },
     fetcher: GraphFetcher = fetch,
@@ -140,9 +143,33 @@ export async function resolveFacebookInstagramConnection(
     if (pages.length === 0) {
         throw new MetaInstagramConnectionError('NO_LINKED_INSTAGRAM_BUSINESS_ACCOUNT', 'No Facebook Page linked to an Instagram professional account was found.');
     }
+
+    let adAccountId: string | undefined;
+    try {
+        const adAccountsResponse = await fetcher(graphUrl('/me/adaccounts', {
+            fields: 'id,account_id,name',
+            access_token: longLived.access_token!,
+        }));
+        if (adAccountsResponse.ok) {
+            const body = await adAccountsResponse.json() as {
+                data?: Array<{ id?: string; account_id?: string; name?: string }>;
+            };
+            const firstAccount = body.data?.[0];
+            if (firstAccount) {
+                const rawId = firstAccount.account_id || (firstAccount.id ? firstAccount.id.replace(/^act_/, '') : '');
+                if (rawId) {
+                    adAccountId = rawId;
+                }
+            }
+        }
+    } catch {
+        // Optional / graceful fallback if user has no ad accounts or permissions
+    }
+
     return {
         accessToken: longLived.access_token!,
         expiresIn: longLived.expires_in ?? 5_184_000,
         pages,
+        ...(adAccountId ? { adAccountId } : {}),
     };
 }
