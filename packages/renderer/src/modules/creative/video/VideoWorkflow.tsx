@@ -922,8 +922,10 @@ export default function VideoWorkflow() {
         const storageUri = `gs://${proxy.bucket}/${proxy.path}`;
         const url = await resolveStorageUrl(storageUri);
         const active = useStore.getState();
+        const projectOrganizationId = active.projects?.find(project => project.id === active.currentProjectId)?.orgId;
+        const sessionOrganizationId = projectOrganizationId || active.currentOrganizationId || 'org-default';
         if (active.user?.uid !== session.ownerUid || active.currentProjectId !== session.projectId
-            || (active.currentOrganizationId || 'org-default') !== session.organizationId) throw new Error('Open this recording from its own account and project.');
+            || sessionOrganizationId !== session.organizationId) throw new Error('Open this recording from its own account and project.');
         const item: HistoryItem = {
             id: session.sessionId,
             url,
