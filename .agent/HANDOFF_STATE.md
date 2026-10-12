@@ -1,3 +1,43 @@
+# Beta Terms & Durable Studio Bug Reporting Delivered (#1425, #031) (2026-10-12 EDT)
+
+Delivered formal Beta Terms Section 15 and server-authoritative bug reporting integration on `main` (`d81fe9a1f`):
+- **Founding Artist Beta Terms (`packages/landing/src/pages/Terms.tsx`):**
+  - Added Section 15 ("Founding Artist Beta & Operations") formalizing beta software operations, invitation-based waitlist entry, expectations of actionable bug reporting without compensation, major development milestone communications, Founding Owner license terms ($2,500 software purchase, non-equity), and no unscheduled deadlines.
+  - Authored `packages/landing/src/pages/Terms.test.tsx` (2/2 tests green).
+- **Durable Bug Reporting in Studio (`packages/renderer/src/modules/debug/BugReportDialog.tsx`):**
+  - Upgraded report submission to invoke server-authoritative `reportBugFn` Cloud Function directly.
+  - Persists durable intake directly to Firestore `/bug_reports/{bugId}` (with GitHub issue sync/dedup).
+  - Returns and displays tracking reference ID (`bugId`) to user.
+  - Decoupled from agent requirement: seamlessly functions even when opened without an active chat agent session.
+  - Authored comprehensive test suite `packages/renderer/src/modules/debug/BugReportDialog.test.tsx` (5/5 tests green).
+- **Verification Evidence:**
+  - 15/15 test files (108/108 tests) green in `packages/landing`.
+  - 5/5 unit tests green in `BugReportDialog.test.tsx`.
+  - 14/14 test files (90/90 tests) green in `packages/admin-dashboard`.
+  - Monorepo typecheck clean (exit code 0 across all 9 workspaces).
+  - ESLint 0 errors, 0 warnings across touched workspaces.
+  - Mainline Delivery: Committed `d81fe9a1f` directly to `main`, pushed to `origin/main`, CI pipeline running in Run #382994.
+
+# NLE Preview Integration & Boardroom/Creative Service Repair Delivered (#413, #407) (2026-10-12 EDT)
+
+Delivered full resolution, verification, and production deployment on `main`:
+- **Issue #407 (`[MAJOR] Service errors block Creative requests and Boardroom self-reporting`):**
+  - Wired `prepare_print_file` on-device execution and asset resolution (`78b152a95`).
+  - Preserved uploaded asset metadata and aligned Conductor `list_files` declaration (`dc5134fb2`).
+  - Omitted inline base64 upload payloads from asset listing results (`98fe262d4`).
+  - GitHub Actions Deploy run `38242341131` completed 100% success and deployed to production. Issue closed with verified evidence.
+- **Issue #413 (`Technical Specification: Open-Source Non-Linear Editing (NLE) Engine Integration`):**
+  - Rational time engine and AST primitives (`73b771dd7`).
+  - Media probe / CFR / sample rate normalization and bidirectional project bridge (`26c05156c`).
+  - Headless FFmpeg compiler and real-time WebGL2 preview engine (`b27a5dc29`).
+  - NLE WebGL2 preview canvas and engine switcher in `VideoPreview.tsx` (`d318752d2`).
+  - GitHub Actions Deploy run `38251335540` completed 100% success on `ba56f1cf3`. Issue closed with verified evidence.
+- **Verification Evidence:**
+  - 15 test files / 90 tests pass 100% green across video-compiler, NLE services, and VideoPreview component.
+  - Full repo test suite: 1,381 test files passed, 9,638 tests passed, 0 failures.
+  - Workspace typecheck: clean (exit code 0).
+  - Open issue count: 0 active defect or feature issues remaining.
+
 # Artist Passport Platform Guide & Wiki Conversion (2026-10-11 EDT)
 
 Delivered conversion of premature "Test Drive 1 Track Free" studio button into an attribution-preserving link to the main landing page / platform wiki on `main`:
