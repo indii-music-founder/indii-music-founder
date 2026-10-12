@@ -84,11 +84,12 @@ The DDEX ERN generators (`ddex-generator.ts`, MCP `draft_dsp_metadata_xml`) now 
 closed instead of emitting a hard-coded/placeholder sender `PartyId` — they require
 `DDEX_SENDER_PARTY_ID` as a Firebase Functions runtime env var.
 
-- [ ] **Resolve a DPID discrepancy found while fixing this**: the repo has TWO different
+- [x] **Resolve a DPID discrepancy found while fixing this**: the repo had TWO different
   values on file for indii's registered sender DPID — `PA-DPIDA-2025122604-E`
   (`distributors.ts`, `DeliveryProfile.ts`) vs `PA-DPIDA-2025122601-E`
-  (`verify-adapters.test.ts`). Verify the real value at dpid.ddex.net and correct
-  whichever file is wrong.
+  (`verify-adapters.test.ts`). Standardized across all files to canonical registered
+  `PA-DPIDA-2025122604-E` and exported `INDII_SENDER_DPID` / `INDII_SENDER_PARTY_ID`
+  (`PADPIDA2025122604E`) in `DeliveryProfile.ts`.
 - [ ] Set `DDEX_SENDER_PARTY_ID` (the confirmed value, digits-only party id form
   e.g. `PADPIDA2025122604E`, matching the format DDEX XML expects — no dashes)
   as a Firebase Functions runtime env var / secret. Until set, DDEX compilation

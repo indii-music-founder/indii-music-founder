@@ -13,6 +13,13 @@ import { type SystemIdentity } from './proprietary-ingestion/types/common';
 
 const isLiveMode = import.meta.env.VITE_DDEX_LIVE_MODE === 'true';
 
+/**
+ * indii.music (New Detroit Music LLC) registered sender DPID and DDEX Party ID.
+ * Canonical resolution for ISSUE-859 / ISSUE-861.
+ */
+export const INDII_SENDER_DPID = 'PA-DPIDA-2025122604-E';
+export const INDII_SENDER_PARTY_ID = 'PADPIDA2025122604E';
+
 export interface AudioSpec {
     format: string[]; // e.g. ['wav', 'flac']
     sampleRateMin: number; // e.g. 44100

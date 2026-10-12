@@ -184,14 +184,16 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
   const handleLaunchRegistration = async () => {
     setSessionActive(true);
     // If Electron IPC is available, request native browser session
-    if (typeof window !== 'undefined' && window.electronAPI && (window.electronAPI as unknown as { rightsCopilot?: { launchSession: (req: unknown) => Promise<{ success: boolean }> } }).rightsCopilot) {
+    if (typeof window !== 'undefined' && window.electronAPI?.rightsCopilot) {
       try {
-        await (window.electronAPI as unknown as { rightsCopilot: { launchSession: (req: unknown) => Promise<{ success: boolean }> } }).rightsCopilot.launchSession({
+        const res = await window.electronAPI.rightsCopilot.launchSession({
           portalTarget,
           manifestId: manifest.manifestId,
           targetUrl: portalInfo.officialUrl,
         });
-        return;
+        if (res.success) {
+          return;
+        }
       } catch (err) {
         console.warn('[RightsCopilot] Electron native copilot session failed, falling back to browser tab', err);
       }

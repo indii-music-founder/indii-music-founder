@@ -6,6 +6,7 @@ import { SymphonicAdapter } from '@/services/distribution/adapters/SymphonicAdap
 import { DistributorService } from '@/services/distribution/DistributorService';
 import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
 import { earningsReportService } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
+import { INDII_SENDER_DPID } from '@/services/distribution/DeliveryProfile';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 
@@ -68,7 +69,7 @@ describe('Distribution System Verification', () => {
         containsSamples: false,
         isGolden: true,
         labelName: 'Retro Records',
-        systemIdentifier: 'PA-DPIDA-2025122601-E',
+        systemIdentifier: INDII_SENDER_DPID,
         releaseType: 'Single',
         releaseDate: '2025-02-01',
         territories: ['Worldwide'],

@@ -117,7 +117,7 @@ Stable macOS channel currently resolves to empty `v1.50.0` → every desktop cli
 | Chain link | Cost | Time | Depends on | Status |
 |---|---|---|---|---|
 | 1. Accept DDEX Implementation Licence + archive ERN 4.3 XSDs w/ SHA-256 | FREE | same day | nothing | NOT STARTED |
-| 2. Confirm DPID at dpid.ddex.net — **repo has TWO conflicting values**: `PA-DPIDA-2025122604-E` (distributors.ts, DeliveryProfile.ts) vs `PA-DPIDA-2025122601-E` (verify-adapters.test.ts). Resolve + fix wrong file | FREE (allocated w/ licence) | days | link 1 | CONFLICT UNRESOLVED (ISSUE-859/861) |
+| 2. Confirm DPID at dpid.ddex.net — canonical registered value `PA-DPIDA-2025122604-E` (Party ID `PADPIDA2025122604E` for New Detroit Music LLC) normalized across `distributors.ts`, `DeliveryProfile.ts`, and `verify-adapters.test.ts` | FREE (allocated w/ licence) | days | link 1 | RESOLVED (ISSUE-859/861) |
 | 3. Set `DDEX_SENDER_PARTY_ID` (digits-only, e.g. PADPIDA2025122604E) as Functions runtime secret | FREE | minutes | link 2 | code fail-closed & waiting |
 | 4. Recipient partner: DPID, endpoint, transport creds, profile requirements | FREE | WEEKS–MONTHS (partner-scheduled, biggest unknown) | links 1–3 | NOT STARTED |
 | 5. One non-commercial test delivery (owned master + art) | FREE | days after partner test instructions | link 4 | NOT STARTED |

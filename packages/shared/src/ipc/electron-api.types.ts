@@ -362,6 +362,13 @@ export interface ElectronRawAPI {
     onProgress: (callback: (progress: unknown) => void) => () => void;
 }
 
+export interface ElectronRightsCopilotAPI {
+    launchSession: (req: { portalTarget: string; manifestId: string; targetUrl?: string }) => Promise<{ success: boolean; sessionId?: string; portalUrl?: string; error?: string }>;
+    closeSession: (req?: { sessionId?: string }) => Promise<{ success: boolean; error?: string }>;
+    getSessionStatus: () => Promise<{ success: boolean; data?: { isActive: boolean; sessionId?: string; portalTarget?: string; manifestId?: string; status?: string }; error?: string }>;
+    onSessionStatusChanged: (callback: (status: unknown) => void) => () => void;
+}
+
 // ── Root ElectronAPI Interface ─────────────────────────────────────────────
 
 export interface ElectronAPI {
@@ -440,6 +447,7 @@ export interface ElectronAPI {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onProgress: (callback: (progress: any) => void) => () => void;
     };
+    rightsCopilot?: ElectronRightsCopilotAPI;
 }
 
 // ── Window Augmentation ───────────────────────────────────────────────────

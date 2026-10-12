@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { ClaimsInboxTab } from './ClaimsInboxTab';
 import type { RightsClaim } from '@indii/shared';
 import { LegalService } from '@/services/legal/LegalService';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 describe('ClaimsInboxTab', () => {
     const mockClaims: RightsClaim[] = [
@@ -164,5 +165,75 @@ describe('ClaimsInboxTab', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Record a dispute' }));
         await waitFor(() => expect(respond).toHaveBeenCalledWith({ claimId: ownedClaim.id, status: 'DISPUTED' }));
         expect(await screen.findByText(/ASSERTED → DISPUTED/)).toBeInTheDocument();
+    });
+
+    it('displays truncation warning when storageTruncated is true', async () => {
+        vi.spyOn(LegalService, 'loadCanonicalClaimsInbox').mockResolvedValueOnce({
+            claims: mockClaims, events: [], evaluatedAt: '2026-10-01T12:00:00.000Z', storageTruncated: true,
+        });
+        render(<ClaimsInboxTab />);
+        expect(await screen.findByText(/The stored inbox exceeds its display limit/)).toBeInTheDocument();
+    });
+
+    it('allows retry when load fails and recovers upon successful retry', async () => {
+        const loadSpy = vi.spyOn(LegalService, 'loadCanonicalClaimsInbox')
+            .mockRejectedValueOnce(new Error('network error'))
+            .mockResolvedValueOnce({
+                claims: [], events: [], evaluatedAt: '2026-10-01T12:00:00.000Z', storageTruncated: false,
+            });
+
+        render(<ClaimsInboxTab />);
+        expect(await screen.findByText('Claims data is unavailable')).toBeInTheDocument();
+
+        const retryBtn = screen.getByRole('button', { name: 'Retry' });
+        fireEvent.click(retryBtn);
+
+        expect(await screen.findByText('No claims are recorded in this indii inbox')).toBeInTheDocument();
+        expect(loadSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('handles withdraw assertion flow respecting confirmation and cancellation', async () => {
+        const ownedClaim: RightsClaim = {
+            ...mockClaims[0]!,
+            provenance: { ...mockClaims[0]!.provenance, sourceId: 'owner-1' },
+        };
+        const withdrawnClaim = { ...ownedClaim, status: 'WITHDRAWN' as const };
+        const event = {
+            schemaVersion: 'music-domain-event.v1' as const,
+            eventId: 'claim-status:event-withdraw',
+            eventType: 'claim.status_changed' as const,
+            subject: { entityId: ownedClaim.id, entityType: 'rights_claim' as const },
+            relatedEntities: [],
+            occurredAt: '2026-10-02T12:00:00.000Z',
+            recordedAt: '2026-10-02T12:00:00.000Z',
+            details: { previousStatus: 'ASSERTED', status: 'WITHDRAWN', intake: 'owner-response' },
+            provenance: { ...ownedClaim.provenance, observedAt: '2026-10-02T12:00:00.000Z', evidence: [] },
+        };
+
+        vi.spyOn(LegalService, 'loadCanonicalClaimsInbox').mockResolvedValue({
+            claims: [ownedClaim], events: [], evaluatedAt: '2026-10-02T12:00:00.000Z', storageTruncated: false,
+        });
+        const confirmSpy = vi.spyOn(ConfirmDialog, 'call');
+        const respondSpy = vi.spyOn(LegalService, 'respondToCanonicalRightsClaim').mockResolvedValue({
+            claim: withdrawnClaim,
+            event,
+        });
+
+        // 1. Cancel withdraw
+        confirmSpy.mockResolvedValueOnce(false);
+        const { unmount } = render(<ClaimsInboxTab />);
+        const item = await screen.findByTestId(`claim-item-${ownedClaim.id}`);
+        fireEvent.click(item.querySelector('div')!);
+
+        fireEvent.click(screen.getByRole('button', { name: /Withdraw assertion/ }));
+        await waitFor(() => expect(confirmSpy).toHaveBeenCalledTimes(1));
+        expect(respondSpy).not.toHaveBeenCalled();
+
+        // 2. Confirm withdraw
+        confirmSpy.mockResolvedValueOnce(true);
+        fireEvent.click(screen.getByRole('button', { name: /Withdraw assertion/ }));
+        await waitFor(() => expect(respondSpy).toHaveBeenCalledWith({ claimId: ownedClaim.id, status: 'WITHDRAWN' }));
+
+        unmount();
     });
 });

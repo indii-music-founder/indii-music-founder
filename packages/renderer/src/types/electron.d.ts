@@ -380,6 +380,13 @@ export interface ElectronAPI {
         sendLiveCommand: (action: string, params?: Record<string, unknown>) => Promise<unknown>;
         onProgress: (callback: (progress: import('../services/blender/types').BlenderRenderProgress) => void) => () => void;
     };
+    // Rights Registration Screen Control & Browser Copilot (ISSUE-1511)
+    rightsCopilot?: {
+        launchSession: (req: { portalTarget: string; manifestId: string; targetUrl?: string }) => Promise<{ success: boolean; sessionId?: string; portalUrl?: string; error?: string }>;
+        closeSession: (req?: { sessionId?: string }) => Promise<{ success: boolean; error?: string }>;
+        getSessionStatus: () => Promise<{ success: boolean; data?: { isActive: boolean; sessionId?: string; portalTarget?: string; manifestId?: string; status?: string }; error?: string }>;
+        onSessionStatusChanged: (callback: (status: unknown) => void) => () => void;
+    };
 }
 
 declare global {

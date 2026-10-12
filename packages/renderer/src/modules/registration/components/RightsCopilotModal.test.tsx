@@ -110,4 +110,41 @@ describe('RightsCopilotModal (ISSUE-1511)', () => {
       expect(screen.getByText(/Verified Deposit/i)).toBeInTheDocument();
     });
   });
+
+  it('invokes native Electron IPC when window.electronAPI.rightsCopilot is available', async () => {
+    const launchSessionMock = vi.fn().mockResolvedValue({ success: true, sessionId: 'copilot_session_123' });
+    const originalElectronAPI = window.electronAPI;
+
+    window.electronAPI = {
+      ...((originalElectronAPI || {}) as any),
+      rightsCopilot: {
+        launchSession: launchSessionMock,
+        closeSession: vi.fn(),
+        getSessionStatus: vi.fn(),
+        onSessionStatusChanged: vi.fn(),
+      },
+    } as any;
+
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    render(<RightsCopilotModal {...defaultProps} />);
+
+    const launchBtn = screen.getByRole('button', { name: /Launch Assisted Registration/i });
+    fireEvent.click(launchBtn);
+
+    await waitFor(() => {
+      expect(launchSessionMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(launchSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        portalTarget: 'loc_copyright',
+        targetUrl: 'https://eco.copyright.gov/ecoms/',
+      })
+    );
+    expect(openSpy).not.toHaveBeenCalled();
+
+    window.electronAPI = originalElectronAPI;
+    openSpy.mockRestore();
+  });
 });
