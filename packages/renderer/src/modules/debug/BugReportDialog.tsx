@@ -76,39 +76,71 @@ export const BugReportDialog: React.FC = () => {
 
         setIsSubmitting(true);
         try {
-            const { agentRegistry } = await import('@/services/agent/registry');
-            const { useStore: useStoreFresh } = await import('@/core/store');
+            // 1. Submit through authoritative reportBugFn Cloud Function
+            let bugId: string | undefined;
+            try {
+                const { httpsCallable } = await import('firebase/functions');
+                const { functions } = await import('@/services/firebase');
+                const reportBugCallable = httpsCallable<{
+                    title: string;
+                    description: string;
+                    stepsToReproduce?: string;
+                    expectedBehavior?: string;
+                    actualBehavior?: string;
+                    severity?: string;
+                    module?: string;
+                    errorMessage?: string;
+                }, {
+                    firestore: 'ok' | 'failed';
+                    github: 'ok' | 'failed' | 'skipped' | 'merged_as_comment';
+                    issueUrl?: string;
+                    message: string;
+                    bugId?: string;
+                }>(functions, 'reportBugFn');
 
-            const state = useStoreFresh.getState();
-            const directAgent = state.directTargetAgentId ? agentRegistry.get(state.directTargetAgentId) : null;
-            const currentAgent = directAgent || agentRegistry.get('coordinator') || agentRegistry.get('generalist');
+                const result = await reportBugCallable({
+                    title: formData.title.trim(),
+                    description: isBug
+                        ? formData.description.trim()
+                        : `[Feature Request - ${formData.priority} - ${formData.category}] ${formData.description.trim()}${formData.useCase ? `\n\nUse Case:\n${formData.useCase.trim()}` : ''}`,
+                    stepsToReproduce: isBug ? formData.stepsToRepro.trim() || undefined : undefined,
+                    expectedBehavior: isBug ? formData.expectedBehavior.trim() || undefined : undefined,
+                    actualBehavior: isBug ? formData.actualBehavior.trim() || undefined : undefined,
+                    severity: isBug ? formData.severity : 'minor',
+                    module: isBug ? (bugReportDialog?.prefilledModule || formData.category) : formData.category,
+                    errorMessage: bugReportDialog?.prefilledError,
+                });
 
-            if (!currentAgent) {
-                setFeedback({ type: 'error', message: 'No agent available. Please open an agent first.' });
-                setIsSubmitting(false);
-                return;
+                bugId = result.data.bugId;
+            } catch (callableError) {
+                logger.warn('[BugReportDialog] Cloud Function reportBugFn call failed, notifying local agent:', callableError);
             }
 
-            // Format message for agent
-            const reportMessage = isBug
-                ? `🐛 **User Bug Report**\n\n**Title:** ${formData.title}\n**Severity:** ${formData.severity}\n\n**Description:** ${formData.description}\n\n**Steps to Reproduce:**\n${formData.stepsToRepro || 'Not provided'}\n\n**Expected Behavior:** ${formData.expectedBehavior || 'Not provided'}\n\n**Actual Behavior:** ${formData.actualBehavior || 'Not provided'}`
-                : `💡 **User Feature Request**\n\n**Title:** ${formData.title}\n**Priority:** ${formData.priority}\n**Category:** ${formData.category}\n\n**Description:** ${formData.description}\n\n**Use Case:** ${formData.useCase || 'Not provided'}`;
+            // 2. Also forward as message to active agent if available
+            try {
+                const { agentRegistry } = await import('@/services/agent/registry');
+                const { useStore: useStoreFresh } = await import('@/core/store');
 
-            logger.info('[BugReportDialog] Sending report to agent', {
-                type: isBug ? 'bug' : 'feature',
-                title: formData.title,
-                agentId: currentAgent.id,
-            });
+                const state = useStoreFresh.getState();
+                const directAgent = state.directTargetAgentId ? agentRegistry.get(state.directTargetAgentId) : null;
+                const currentAgent = directAgent || agentRegistry.get('coordinator') || agentRegistry.get('generalist');
 
-            // Send as message to active agent
-            await agentService.sendMessage(reportMessage, undefined, currentAgent.id);
+                if (currentAgent) {
+                    const reportMessage = isBug
+                        ? `🐛 **User Bug Report**${bugId ? ` (Ref: ${bugId})` : ''}\n\n**Title:** ${formData.title}\n**Severity:** ${formData.severity}\n\n**Description:** ${formData.description}\n\n**Steps to Reproduce:**\n${formData.stepsToRepro || 'Not provided'}\n\n**Expected Behavior:** ${formData.expectedBehavior || 'Not provided'}\n\n**Actual Behavior:** ${formData.actualBehavior || 'Not provided'}`
+                        : `💡 **User Feature Request**${bugId ? ` (Ref: ${bugId})` : ''}\n\n**Title:** ${formData.title}\n**Priority:** ${formData.priority}\n**Category:** ${formData.category}\n\n**Description:** ${formData.description}\n\n**Use Case:** ${formData.useCase || 'Not provided'}`;
 
-            const agentName = (currentAgent as any).displayName || currentAgent.id;
+                    await agentService.sendMessage(reportMessage, undefined, currentAgent.id);
+                }
+            } catch (agentErr) {
+                logger.debug('[BugReportDialog] Agent chat forwarding skipped or unavailable:', agentErr);
+            }
+
             setFeedback({
                 type: 'success',
                 message: isBug
-                    ? `Bug report "${formData.title}" sent to ${agentName}`
-                    : `Feature request "${formData.title}" sent to ${agentName}`,
+                    ? `Bug report "${formData.title}" submitted successfully!${bugId ? ` (Ref: ${bugId})` : ''}`
+                    : `Feature request "${formData.title}" submitted successfully!${bugId ? ` (Ref: ${bugId})` : ''}`,
             });
 
             // Clear form after 2 seconds
@@ -124,7 +156,7 @@ export const BugReportDialog: React.FC = () => {
         } finally {
             setIsSubmitting(false);
         }
-    }, [formData, isBug, handleClose]);
+    }, [formData, isBug, bugReportDialog, handleClose]);
 
     if (!isOpen) return null;
 

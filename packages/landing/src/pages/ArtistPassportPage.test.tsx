@@ -315,7 +315,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     fireEvent.click(sendButton!);
 
     // Structural test environment has no database; never fabricate a saved request.
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Your report request could not be saved/i);
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Your report request could not be saved/i);
     expect(screen.queryByText(/Your assessment copy request is saved for/i)).toBeNull();
     expect(screen.getByText(/Request my assessment summary/i)).toBeDefined();
 

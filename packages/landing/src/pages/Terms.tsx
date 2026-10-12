@@ -187,6 +187,32 @@ export default function Terms() {
       </section>
 
       <section className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4">15. Founding Artist Beta & Operations</h2>
+        <div className="text-gray-300 leading-relaxed space-y-4">
+          <p>
+            The Service is currently made available under the Founding Artist Beta program. By participating in the Beta, you understand and agree that the Service is working software that is actively being refined and may contain defects, performance variations, or bugs.
+          </p>
+          <ul className="list-disc list-inside ml-4 text-gray-300 leading-relaxed space-y-2">
+            <li>
+              <strong>Invitation-Based Entry:</strong> Access to the Founding Artist Beta is invitation-based following entry on the official waitlist, granted on a first-come, first-served basis as capacity permits.
+            </li>
+            <li>
+              <strong>Bug Reporting & Feedback:</strong> Founding Artists participate to evaluate early capabilities and are expected to submit actionable bug reports through the official in-app feedback channels. Beta participation does not constitute employment, contracting, or a promise of monetary compensation.
+            </li>
+            <li>
+              <strong>Milestone Communications:</strong> Waitlisted artists receive major development milestone communications only, in accordance with their consent preferences.
+            </li>
+            <li>
+              <strong>Founding Owner License:</strong> If you purchase a Founding Owner License ($2,500 one-time), you receive permanent top-tier software access and permanent recognition. You expressly acknowledge that the Founding Owner License is a software purchase only—not equity, an investment, a security, profit participation, or any promise of financial return.
+            </li>
+            <li>
+              <strong>No Unscheduled Deadlines:</strong> No deadlines, completion schedules, or expiration dates are promised or enforceable unless officially scheduled and published in writing by the Company.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
         <p className="text-gray-300 leading-relaxed">
           For questions about these Terms, contact us at:
