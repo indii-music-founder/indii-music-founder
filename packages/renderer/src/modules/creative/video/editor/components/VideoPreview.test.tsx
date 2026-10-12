@@ -137,4 +137,41 @@ describe('VideoPreview', () => {
         expect(mockSeek).toHaveBeenCalledTimes(2);
 
     });
+
+    it('renders the NLE WebGL2 canvas when preferredEngine is set to nle', () => {
+        render(<VideoPreview project={project()} artifactUrl={null} preferredEngine="nle" />);
+
+        const canvas = screen.getByTestId('nle-preview-canvas');
+        expect(canvas).toBeInTheDocument();
+        expect(canvas.tagName.toLowerCase()).toBe('canvas');
+        expect(screen.getByText(/NLE Engine \(WebGL2\):/)).toBeInTheDocument();
+        expect(screen.getByTestId('preview-engine-toggle')).toHaveTextContent('NLE Canvas');
+    });
+
+    it('toggles between HyperFrames and NLE WebGL2 canvas using the engine switch button', async () => {
+        render(<VideoPreview project={project()} artifactUrl={null} />);
+
+        // Starts on HyperFrames
+        await screen.findByTestId('hyperframes-preview');
+        const toggleBtn = screen.getByTestId('preview-engine-toggle');
+        expect(toggleBtn).toHaveTextContent('HyperFrames');
+
+        // Click toggle button -> switches to NLE WebGL2
+        act(() => {
+            toggleBtn.click();
+        });
+
+        expect(screen.getByTestId('nle-preview-canvas')).toBeInTheDocument();
+        expect(screen.getByText(/NLE Engine \(WebGL2\):/)).toBeInTheDocument();
+        expect(toggleBtn).toHaveTextContent('NLE Canvas');
+
+        // Click toggle button again -> switches back to HyperFrames
+        act(() => {
+            toggleBtn.click();
+        });
+
+        expect(screen.queryByTestId('nle-preview-canvas')).not.toBeInTheDocument();
+        expect(toggleBtn).toHaveTextContent('HyperFrames');
+    });
 });
+
