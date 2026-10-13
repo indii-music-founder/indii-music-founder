@@ -11,7 +11,7 @@ import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage
 import { imageAnalysisService } from '@/services/image/ImageAnalysisService';
 import { logger } from '@/utils/logger';
 import { buildReferenceRolePrompt, compileCreativeEditManifest, getCreativeSessionId, normalizeCreativeImageSize, summarizeCreativeEditManifest, type CreativeVaultScope } from '../services/creativeManifest';
-import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { creativeSessionService } from '@/services/creative/CreativeSessionService';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { auth } from '@/services/firebase';
@@ -239,7 +239,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         return userId ? buildAssetStorageUri(assetId, userId) : undefined;
     };
     const candidatePersistenceUri = (candidate?: Candidate | null) => candidate?.storageUri || candidate?.url || null;
-    const reserveImageBudget = async (modelId: 'gemini-3-pro-image' | 'gemini-3.1-flash-image') => {
+    const reserveImageBudget = async (modelId: typeof INTELLIGENCE_MODELS.IMAGE.GENERATION | typeof INTELLIGENCE_MODELS.IMAGE.FAST) => {
         const userId = auth.currentUser?.uid;
         if (!userId) {
             throw new Error('Auth required for creative image generation.');
@@ -707,7 +707,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 });
 
                 if (isHighFidelity) {
-                    const isMultiMask = activeKeys.length > 1;
+                    await reserveImageBudget(INTELLIGENCE_MODELS.IMAGE.GENERATION);
+                    const maskKeys = prepared.masks.map(mask => mask.colorId);
+                    const isMultiMask = prepared.masks.length > 1;
 
                     let maskData: string | null = null;
                     let promptPayload = roleAwarePrompt;
@@ -715,19 +717,19 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     let referenceImagesForEdit: { mimeType: string; data: string }[] = [];
 
                     if (isMultiMask) {
-                        await reserveImageBudget('gemini-3-pro-image');
-                        maskData = canvasOps.extractSemanticMask();
+                        maskData = canvasOps.extractSemanticMask(maskKeys);
                         useSemanticMap = true;
                         const maxReferenceImages = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
-                        const visibleReferences = activeReferenceEntries.slice(0, maxReferenceImages);
-                        const droppedReferences = activeReferenceEntries.slice(maxReferenceImages);
+                        const regionReferences = activeReferenceEntries.filter(entry => maskKeys.includes(entry.colorId));
+                        const visibleReferences = regionReferences.slice(0, maxReferenceImages);
+                        const droppedReferences = regionReferences.slice(maxReferenceImages);
 
                         if (droppedReferences.length > 0) {
                             toast.warning(`Dropped ${droppedReferences.map(ref => ref.colorName).join(', ')} because Nano Banana Pro only accepts up to ${maxReferenceImages} reference images.`);
                         }
 
                         const referenceIndexByColor = new Map(visibleReferences.map((entry, index) => [entry.colorId, index + 1] as const));
-                        const legend = activeKeys.map(colorId => {
+                        const legend = maskKeys.map(colorId => {
                             const colorDef = STUDIO_COLORS.find(c => c.id === colorId);
                             const label = colorDef ? colorDef.name.toUpperCase() : 'MARKED';
                             const referenceIndex = referenceIndexByColor.get(colorId);
@@ -736,11 +738,15 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                                 : 'has no reference image';
                             return `- ${label} REGION ${referenceText}: ${finalDefinitions[colorId]}`;
                         }).join('\n');
-                        promptPayload = `Applying multiple edits defined by color mask:\n${legend}\n\n${roleInstructions.length > 0 ? `Reference role guidance:\n${roleInstructions.join('\n')}` : ''}`.trim();
+                        const regionRoles = buildReferenceRolePrompt(finalDefinitions, referenceRoles, maskKeys);
+                        promptPayload = `Applying multiple edits defined by color mask:\n${legend}\n\n${regionRoles.length > 0 ? `Reference role guidance:\n${regionRoles.join('\n')}` : ''}`.trim();
 
                         referenceImagesForEdit = visibleReferences.map(entry => entry.reference);
                     } else {
-                        maskData = canvasOps.extractGeminiMask();
+                        const mask = prepared.masks[0]!;
+                        maskData = mask.data;
+                        promptPayload = [mask.prompt, ...buildReferenceRolePrompt(finalDefinitions, referenceRoles, [mask.colorId])].join('\n\n');
+                        referenceImagesForEdit = mask.referenceImage ? [mask.referenceImage] : [];
                     }
 
                     if (maskData) {
@@ -750,7 +756,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                             referenceImages: referenceImagesForEdit,
                             prompt: promptPayload,
                             forceHighFidelity: true,
-                            model: 'pro',
+                            model: INTELLIGENCE_MODELS.IMAGE.GENERATION,
+                            imageSize: normalizeCreativeImageSize(studioControls.imageSize),
+                            aspectRatio: studioControls.aspectRatio,
                             useSemanticMap,
                             sessionId,
                             routeId: editManifest.route.id,
@@ -777,18 +785,20 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         }
                     }
                 } else if (prepared.masks.length === 1) {
-                    await reserveImageBudget('gemini-3.1-flash-image');
-                        const result = await Editing.editImage({
-                            image: prepared.baseImage,
-                            mask: prepared.masks[0],
-                            referenceImage: prepared.masks[0]?.referenceImage,
-                            prompt: roleAwarePrompt,
-                            forceHighFidelity: false,
-                            model: 'flash',
-                            sessionId,
-                        routeId: editManifest.route.id,
-                        routeLabel: editManifest.route.label,
-                        routeReason: editManifest.route.reason,
+                    await reserveImageBudget(INTELLIGENCE_MODELS.IMAGE.FAST);
+                    const result = await Editing.editImage({
+                        image: prepared.baseImage,
+                        mask: prepared.masks[0],
+                        referenceImage: prepared.masks[0]?.referenceImage,
+                        prompt: [prepared.masks[0]!.prompt, ...buildReferenceRolePrompt(finalDefinitions, referenceRoles, [prepared.masks[0]!.colorId])].join('\n\n'),
+                        forceHighFidelity: false,
+                        model: INTELLIGENCE_MODELS.IMAGE.FAST,
+                        imageSize: normalizeCreativeImageSize(studioControls.imageSize),
+                        aspectRatio: studioControls.aspectRatio,
+                        sessionId,
+                    routeId: editManifest.route.id,
+                    routeLabel: editManifest.route.label,
+                    routeReason: editManifest.route.reason,
                     });
 
                     if (result) {
@@ -809,12 +819,14 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     }
                 } else {
                     setProcessingStatus(isHighFidelity ? "Chaining Edits (Pro)..." : "Chaining Edits (Flash)...");
-                    await reserveImageBudget(isHighFidelity ? 'gemini-3-pro-image' : 'gemini-3.1-flash-image');
+                    await reserveImageBudget(isHighFidelity ? INTELLIGENCE_MODELS.IMAGE.GENERATION : INTELLIGENCE_MODELS.IMAGE.FAST);
                     const results = await Editing.multiMaskEdit({
                         image: prepared.baseImage,
-                        masks: prepared.masks,
+                        masks: prepared.masks.map(mask => ({ ...mask, prompt: [mask.prompt, ...buildReferenceRolePrompt(finalDefinitions, referenceRoles, [mask.colorId])].join('\n\n') })),
                         variationCount: 1,
-                        model: isHighFidelity ? 'pro' : 'flash',
+                        model: isHighFidelity ? INTELLIGENCE_MODELS.IMAGE.GENERATION : INTELLIGENCE_MODELS.IMAGE.FAST,
+                        imageSize: normalizeCreativeImageSize(studioControls.imageSize),
+                        aspectRatio: studioControls.aspectRatio,
                         sessionId,
                         routeId: editManifest.route.id,
                         routeLabel: editManifest.route.label,

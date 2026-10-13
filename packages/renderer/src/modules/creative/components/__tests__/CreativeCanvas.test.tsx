@@ -486,7 +486,8 @@ describe('CreativeCanvas', () => {
         });
     });
 
-    it('passes all semantic-map reference images into the pro edit', async () => {
+    // Structural-only: the prepared-mask double contains Purple only. Live editing remains unverified.
+    it('scopes Pro references to the prepared region, excluding undrawn definitions', async () => {
         mockStoreStateRef.current = createStoreState({
             studioControls: {
                 aspectRatio: '1:1',
@@ -551,10 +552,11 @@ describe('CreativeCanvas', () => {
         });
 
         const args = vi.mocked(Editing.editImage).mock.calls[0]?.[0];
-        expect(args.referenceImages).toHaveLength(2);
-        expect(args.prompt).toContain('PURPLE REGION uses reference image 1');
-        expect(args.prompt).toContain('RED REGION uses reference image 2');
-        expect(args.useSemanticMap).toBe(true);
+        expect(args.referenceImages).toEqual([{ mimeType: 'image/png', data: 'ref-image' }]);
+        expect(args.mask).toEqual({ mimeType: 'image/png', data: 'mask-image' });
+        expect(args.prompt).toContain('purple edit');
+        expect(args.prompt).not.toContain('RED REGION');
+        expect(args.useSemanticMap).toBe(false);
     });
 
     it('uses data-URI blobs for remix edits without fetching', async () => {

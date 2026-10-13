@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import type { GoogleGenAI } from "@google/genai";
 import { FUNCTION_INTELLIGENCE_MODELS, NANO_BANANA_CAPABILITIES, type NanoBananaTier } from "../config/models";
 import {
+    buildImageEditPrompt,
     GenerateImageRequestSchema,
     EditImageRequestSchema,
     type EditImageRequest,
@@ -681,9 +682,7 @@ export class GeminiImageService {
                 }
 
                 // Prompt text
-                const promptText = sourceMask
-                    ? `Edit the masked region of this image according to this instruction: ${data.prompt}`
-                    : data.prompt;
+                const promptText = buildImageEditPrompt(data.prompt, !!sourceMask, !!data.useSemanticMap);
                 newParts.push({ text: promptText });
 
                 // Thought signature (circulate back exactly for continuity)
@@ -743,9 +742,7 @@ export class GeminiImageService {
                 }
 
                 // Prompt text last (after images — consistent with multi-turn ordering)
-                const promptText = sourceMask
-                    ? `Edit the masked region of this image according to this instruction: ${data.prompt}`
-                    : data.prompt;
+                const promptText = buildImageEditPrompt(data.prompt, !!sourceMask, !!data.useSemanticMap);
                 parts.push({ text: promptText });
 
                 // Thought signature

@@ -7,6 +7,7 @@
  */
 
 import { z } from "zod";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 
 // ============================================================================
 // SHARED ENUMS & TYPES
@@ -223,8 +224,19 @@ export const EditImageRequestSchema = z.object({
     /** MIME type of the single reference image */
     refMimeType: z.string().nullish(),
 
-    /** Model ID override (full model string or tier) */
-    model: z.string().nullish(),
+    /** Approved image model ID or tier. Normalize the old canvas "flash" alias. */
+    model: z.preprocess(
+        value => value === "flash" ? "fast" : value,
+        z.enum([
+            "fast", "pro", "legacy",
+            FUNCTION_INTELLIGENCE_MODELS.IMAGE.FAST,
+            FUNCTION_INTELLIGENCE_MODELS.IMAGE.GENERATION,
+            FUNCTION_INTELLIGENCE_MODELS.IMAGE.LEGACY,
+        ]).nullish()
+    ),
+
+    /** A colored region map instead of a white-on-black binary mask. */
+    useSemanticMap: z.boolean().nullish(),
 
     /** Thought signature from previous edit for multi-turn continuity */
     thoughtSignature: z.string().nullish(),
@@ -303,3 +315,12 @@ export type ThinkingLevel = z.infer<typeof ThinkingLevelEnum>;
 export type ResponseFormat = z.infer<typeof ResponseFormatEnum>;
 export type InlineImage = z.infer<typeof InlineImageSchema>;
 export type ConversationTurn = z.infer<typeof ConversationTurnSchema>;
+
+/** Identify the image inputs explicitly so annotation paint is never treated as artwork. */
+export function buildImageEditPrompt(prompt: string, hasMask: boolean, useSemanticMap = false): string {
+    if (!hasMask) return prompt;
+    const maskInstruction = useSemanticMap
+        ? "Image 2 is a color-coded region map aligned with image 1. Apply each color's instruction only inside its corresponding region. Black pixels indicate areas to preserve."
+        : "Image 2 is a binary mask aligned with image 1. Edit only the white region; preserve the black region.";
+    return `Image 1 is the original image to edit. ${maskInstruction} Any images after image 2 are reference images, numbered starting at reference image 1. Preserve the composition and all unmarked areas. Do not render the mask or annotation colors in the result. Return the edited original image.\n\nEdit instructions:\n${prompt}`;
+}

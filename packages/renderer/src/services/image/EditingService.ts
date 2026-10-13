@@ -5,6 +5,7 @@ import { logger } from '@/utils/logger';
 import { ContentPart, Part } from '@/shared/types/ai.dto';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { normalizeEditImageResult } from './editResponse';
+import { resolveEditModel } from './editModel';
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
 
@@ -84,7 +85,9 @@ export class EditingService {
         referenceImages?: { mimeType: string; data: string }[];
         prompt: string;
         forceHighFidelity?: boolean;
-        model?: 'pro' | 'flash' | string;
+        model?: string;
+        imageSize?: string;
+        aspectRatio?: string;
         thoughtSignature?: string;
         useSemanticMap?: boolean;
         sessionId?: string;
@@ -148,7 +151,9 @@ export class EditingService {
                 referenceImageUris,
                 prompt: options.prompt,
                 forceHighFidelity: options.forceHighFidelity || !!options.decoratedImage,
-                model: options.model,
+                model: resolveEditModel(options.model),
+                imageSize: options.imageSize,
+                aspectRatio: options.aspectRatio,
                 thoughtSignature: options.thoughtSignature,
                 useSemanticMap: options.useSemanticMap,
                 sessionId: options.sessionId,
@@ -175,6 +180,8 @@ export class EditingService {
         masks: { mimeType: string; data: string; prompt: string; colorId: string; referenceImage?: { mimeType: string; data: string } }[];
         variationCount?: number;
         model?: string;
+        imageSize?: string;
+        aspectRatio?: string;
         sessionId?: string;
         routeId?: string;
         routeLabel?: string;
@@ -201,6 +208,8 @@ export class EditingService {
                     referenceImage: mask.referenceImage,
                     prompt: variedPrompt,
                     model: options.model,
+                    imageSize: options.imageSize,
+                    aspectRatio: options.aspectRatio,
                     thoughtSignature: currentThoughtSignature, // Circulate through chain
                     sessionId: options.sessionId,
                     routeId: options.routeId,
