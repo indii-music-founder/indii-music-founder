@@ -140,11 +140,65 @@ describe('RightsCopilotModal (ISSUE-1511)', () => {
       expect.objectContaining({
         portalTarget: 'loc_copyright',
         targetUrl: 'https://eco.copyright.gov/ecoms/',
+        workTitle: 'Midnight Echoes',
+        artistLegalName: 'Jane Doe',
       })
     );
     expect(openSpy).not.toHaveBeenCalled();
 
     window.electronAPI = originalElectronAPI;
     openSpy.mockRestore();
+  });
+
+  it('executes autofill step via Electron IPC and records official confirmation receipt', async () => {
+    const executeStepMock = vi.fn().mockResolvedValue({
+      success: true,
+      stepId: 'loc-nav',
+      extractedValue: 'Navigated',
+    });
+    const onFilingRecorded = vi.fn();
+    const originalElectronAPI = window.electronAPI;
+
+    window.electronAPI = {
+      ...((originalElectronAPI || {}) as any),
+      rightsCopilot: {
+        launchSession: vi.fn().mockResolvedValue({ success: true }),
+        executeStep: executeStepMock,
+        closeSession: vi.fn(),
+        getSessionStatus: vi.fn(),
+        onSessionStatusChanged: vi.fn(),
+      },
+    } as any;
+
+    render(<RightsCopilotModal {...defaultProps} onFilingRecorded={onFilingRecorded} />);
+
+    // Click the first "Execute Step 1" button
+    const executeStepBtn = screen.getByRole('button', { name: /Execute Step 1/i });
+    fireEvent.click(executeStepBtn);
+
+    await waitFor(() => {
+      expect(executeStepMock).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/✓ Step Executed/i)).toBeInTheDocument();
+    });
+
+    // Record official confirmation / SR number
+    const confirmInput = screen.getByLabelText(/Official Confirmation or Service Request Number/i);
+    fireEvent.change(confirmInput, { target: { value: '1-9876543210' } });
+
+    const recordBtn = screen.getByRole('button', { name: /Record Official Filing/i });
+    fireEvent.click(recordBtn);
+
+    expect(screen.getByText(/Confirmed Filing • 1-9876543210/i)).toBeInTheDocument();
+    expect(screen.getByText(/Verified Receipt/i)).toBeInTheDocument();
+    expect(onFilingRecorded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        portalTarget: 'loc_copyright',
+        confirmationNumber: '1-9876543210',
+        serviceRequestId: '1-9876543210',
+        status: 'confirmed',
+      }),
+    );
+
+    window.electronAPI = originalElectronAPI;
   });
 });

@@ -211,6 +211,8 @@ export function validateDepositAsset(asset: DepositAsset): {
  */
 export function generateCopilotActionPlan(manifest: RightsRegistrationManifest, target: PortalTarget): CopilotAction[] {
   const actions: CopilotAction[] = [];
+  const primarySplit = manifest.splits[0];
+  const formType = manifest.copyrightFormType || 'Form_SR';
 
   if (target === 'loc_copyright') {
     actions.push({
@@ -225,6 +227,15 @@ export function generateCopilotActionPlan(manifest: RightsRegistrationManifest, 
       type: 'pause_for_user_auth',
       description: 'User enters eCO login credentials and completes CAPTCHA authentication',
       requiresUserAction: true,
+    });
+    actions.push({
+      id: 'loc-form',
+      type: 'select_option',
+      description: `Select Copyright Registration Application Type: ${formType.replace('_', ' ')}`,
+      targetSelector: 'select#typeOfWork',
+      targetFieldKey: 'copyrightFormType',
+      value: formType,
+      requiresUserAction: false,
     });
     actions.push({
       id: 'loc-3',
@@ -311,6 +322,17 @@ export function generateCopilotActionPlan(manifest: RightsRegistrationManifest, 
         requiresUserAction: false,
       });
     }
+    if (primarySplit) {
+      actions.push({
+        id: 'mlc-writer',
+        type: 'autofill_input',
+        description: `Populate Writer Share: ${primarySplit.legalName} (${primarySplit.sharePercentage}%)`,
+        targetSelector: 'input#mlcWriterShare',
+        targetFieldKey: 'splits.0.sharePercentage',
+        value: primarySplit.sharePercentage,
+        requiresUserAction: false,
+      });
+    }
     actions.push({
       id: 'mlc-5',
       type: 'extract_confirmation',
@@ -318,7 +340,226 @@ export function generateCopilotActionPlan(manifest: RightsRegistrationManifest, 
       targetSelector: '#workRegistrationId',
       requiresUserAction: false,
     });
+  } else if (target === 'bmi') {
+    actions.push({
+      id: 'bmi-1',
+      type: 'navigate',
+      description: 'Navigate to BMI Online Services Work Registration Portal',
+      value: 'https://online.bmi.com/',
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'bmi-2',
+      type: 'pause_for_user_auth',
+      description: 'User signs into BMI Online Services account',
+      requiresUserAction: true,
+    });
+    actions.push({
+      id: 'bmi-3',
+      type: 'autofill_input',
+      description: `Populate BMI Work Title: "${manifest.work.title}"`,
+      targetSelector: 'input#bmiWorkTitle',
+      targetFieldKey: 'work.title',
+      value: manifest.work.title,
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'bmi-4',
+      type: 'autofill_input',
+      description: `Populate Writer Legal Name & Share: "${primarySplit?.legalName || manifest.artistLegalName}" (${primarySplit?.sharePercentage ?? 100}%)`,
+      targetSelector: 'input#bmiWriterShare',
+      targetFieldKey: 'splits.0.sharePercentage',
+      value: primarySplit?.sharePercentage ?? 100,
+      requiresUserAction: false,
+    });
+    if (manifest.work.isrc) {
+      actions.push({
+        id: 'bmi-5',
+        type: 'autofill_input',
+        description: `Populate Recording ISRC: ${manifest.work.isrc}`,
+        targetSelector: 'input#bmiIsrc',
+        targetFieldKey: 'work.isrc',
+        value: manifest.work.isrc,
+        requiresUserAction: false,
+      });
+    }
+    actions.push({
+      id: 'bmi-6',
+      type: 'extract_confirmation',
+      description: 'Extract BMI Work Registration Number',
+      targetSelector: '#bmiWorkNumber, .bmi-confirmation-id',
+      requiresUserAction: false,
+    });
+  } else if (target === 'ascap') {
+    actions.push({
+      id: 'ascap-1',
+      type: 'navigate',
+      description: 'Navigate to ASCAP Member Access Portal',
+      value: 'https://members.ascap.com/',
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'ascap-2',
+      type: 'pause_for_user_auth',
+      description: 'User signs into ASCAP Member Access',
+      requiresUserAction: true,
+    });
+    actions.push({
+      id: 'ascap-3',
+      type: 'autofill_input',
+      description: `Populate ASCAP Title of Work: "${manifest.work.title}"`,
+      targetSelector: 'input#ascapWorkTitle',
+      targetFieldKey: 'work.title',
+      value: manifest.work.title,
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'ascap-4',
+      type: 'autofill_input',
+      description: `Populate Writer Share Percentage: ${primarySplit?.sharePercentage ?? 100}%`,
+      targetSelector: 'input#ascapWriterShare',
+      targetFieldKey: 'splits.0.sharePercentage',
+      value: primarySplit?.sharePercentage ?? 100,
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'ascap-5',
+      type: 'extract_confirmation',
+      description: 'Extract ASCAP Work ID Confirmation',
+      targetSelector: '#ascapWorkId, .ascap-work-id',
+      requiresUserAction: false,
+    });
+  } else if (target === 'soundexchange') {
+    actions.push({
+      id: 'sx-1',
+      type: 'navigate',
+      description: 'Navigate to SoundExchange Direct Portal',
+      value: 'https://sportal.soundexchange.com/',
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'sx-2',
+      type: 'pause_for_user_auth',
+      description: 'User signs into SoundExchange Direct account',
+      requiresUserAction: true,
+    });
+    actions.push({
+      id: 'sx-3',
+      type: 'autofill_input',
+      description: `Populate Sound Recording Title: "${manifest.work.title}"`,
+      targetSelector: 'input#sxRecordingTitle',
+      targetFieldKey: 'work.title',
+      value: manifest.work.title,
+      requiresUserAction: false,
+    });
+    if (manifest.work.isrc) {
+      actions.push({
+        id: 'sx-4',
+        type: 'autofill_input',
+        description: `Populate Sound Recording ISRC: ${manifest.work.isrc}`,
+        targetSelector: 'input#sxIsrc',
+        targetFieldKey: 'work.isrc',
+        value: manifest.work.isrc,
+        requiresUserAction: false,
+      });
+    }
+    actions.push({
+      id: 'sx-5',
+      type: 'autofill_input',
+      description: `Populate Featured Artist / Rights Owner Name: "${manifest.artistLegalName}"`,
+      targetSelector: 'input#sxClaimantName',
+      targetFieldKey: 'artistLegalName',
+      value: manifest.artistLegalName,
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'sx-6',
+      type: 'extract_confirmation',
+      description: 'Extract SoundExchange Repertoire Submission ID',
+      targetSelector: '#sxConfirmationId, .sx-submission-id',
+      requiresUserAction: false,
+    });
+  } else if (target === 'hfa') {
+    actions.push({
+      id: 'hfa-1',
+      type: 'navigate',
+      description: 'Navigate to Harry Fox Agency / Songfile Portal',
+      value: 'https://www.songfile.com/',
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'hfa-2',
+      type: 'pause_for_user_auth',
+      description: 'User signs into HFA / Songfile account',
+      requiresUserAction: true,
+    });
+    actions.push({
+      id: 'hfa-3',
+      type: 'autofill_input',
+      description: `Populate Composition Title: "${manifest.work.title}"`,
+      targetSelector: 'input#hfaSongTitle',
+      targetFieldKey: 'work.title',
+      value: manifest.work.title,
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'hfa-4',
+      type: 'autofill_input',
+      description: `Populate Writer / Publisher Claimant: "${manifest.artistLegalName}"`,
+      targetSelector: 'input#hfaWriterName',
+      targetFieldKey: 'artistLegalName',
+      value: manifest.artistLegalName,
+      requiresUserAction: false,
+    });
+    actions.push({
+      id: 'hfa-5',
+      type: 'extract_confirmation',
+      description: 'Extract HFA Song Code Confirmation',
+      targetSelector: '#hfaSongCode, .hfa-confirmation-code',
+      requiresUserAction: false,
+    });
   }
 
   return actions;
 }
+
+/**
+ * Constructs an immutable Provenance & Audit Trail filing record once an official submission
+ * confirmation number or Service Request (SR) ID is captured from the portal.
+ */
+export function createRegistrationFilingRecord(
+  manifest: RightsRegistrationManifest,
+  portalTarget: PortalTarget,
+  confirmation: {
+    confirmationNumber: string;
+    serviceRequestId?: string;
+    filingFeeUsd?: number;
+    officialFilingDate?: string;
+  },
+): RegistrationFilingRecord {
+  const trimmedConfirmation = confirmation.confirmationNumber.trim();
+  if (!trimmedConfirmation) {
+    throw new Error('Official confirmation number is required to record a verified filing receipt');
+  }
+
+  const nowMs = Date.now();
+  const filingDate = confirmation.officialFilingDate || new Date(nowMs).toISOString().split('T')[0];
+
+  return {
+    id: `filing_${portalTarget}_${manifest.manifestId}_${nowMs}`,
+    artistId: manifest.artistId,
+    portalTarget,
+    workTitle: manifest.work.title,
+    isrc: manifest.work.isrc,
+    iswc: manifest.work.iswc,
+    status: 'confirmed',
+    confirmationNumber: trimmedConfirmation,
+    serviceRequestId: confirmation.serviceRequestId?.trim() || undefined,
+    officialFilingDate: filingDate,
+    depositChecksum: manifest.depositAssets[0]?.sha256Checksum,
+    filingFeeUsd: confirmation.filingFeeUsd,
+    createdAtMs: nowMs,
+    updatedAtMs: nowMs,
+  };
+}
+

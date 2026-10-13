@@ -1,3 +1,28 @@
+# Assisted Rights Registration Engine & Browser Copilot Complete — ISSUE-1511 (#414) (2026-10-12 EDT)
+
+Delivered full end-to-end Screen Control & Browser Copilot architecture for ISSUE-1511 on `main`:
+- **6-Portal Deterministic Action Plans & Provenance Audit Record (`packages/shared/src/types/rightsRegistration.ts`):**
+  - Expanded `generateCopilotActionPlan` to cover all 6 official music rights portals: US Copyright Office eCO (`loc_copyright` with Form SR / Form PA / GRUW / GRAM selection, deposit upload staging, and Service Request extraction), The MLC (`the_mlc`), BMI (`bmi`), ASCAP (`ascap`), SoundExchange (`soundexchange`), and Harry Fox Agency / Songfile (`hfa`).
+  - Added `createRegistrationFilingRecord` to construct tamper-evident `RegistrationFilingRecord` provenance entries capturing confirmation IDs, Service Request (SR) tracking numbers, and SHA-256 audio deposit checksums.
+  - 13/13 unit tests passing in `packages/shared/src/types/rightsRegistration.test.ts`.
+- **Electron Browser Copilot HUD & Credential-Isolated Step Executor (`packages/main/src/handlers/rightsCopilot.ts`):**
+  - Added `isSafeCopilotSelector` blocking any interaction with password, 2FA, OTP, CAPTCHA, SSN, tax ID, credit card, CVV, or bank routing selectors.
+  - Added `buildCopilotOverlayScript` injecting the floating `#indii-rights-copilot-hud` interactive status overlay into the isolated portal `BrowserWindow` upon navigation and step updates.
+  - Added `executeActionStep` (`rightsCopilot:execute-step` IPC channel) supporting `navigate`, `autofill_input`, `select_option`, `click_element`, `extract_confirmation`, and user pause checkpoints (`pause_for_user_auth`, `pause_for_user_payment`, `upload_deposit_copy`).
+  - Wired across `packages/main/src/preload.ts`, `packages/main/src/main.ts` (`KNOWN_IPC_CHANNELS`), `packages/shared/src/ipc/electron-api.types.ts`, and `packages/renderer/src/types/electron.d.ts`.
+  - 18/18 unit tests passing in `packages/main/src/handlers/rightsCopilot.test.ts`.
+- **Studio Service & Copilot Modal Provenance Integration (`packages/renderer/src/services/rights/RightsCopilotService.ts`, `RightsCopilotModal.tsx`):**
+  - Added `recordFilingConfirmation` to `RightsCopilotService` (6/6 unit tests passing in `RightsCopilotService.test.ts`).
+  - Added per-step interactive `Run` autofill execution and an official Confirmation / Service Request (SR) receipt recorder (`Record Official Filing`) to `RightsCopilotModal.tsx` (9/9 unit tests passing in `RightsCopilotModal.test.tsx`).
+- **Desktop Release v1.81.0 (Apple Silicon DMG):**
+  - Bumped Electron app version to `1.81.0` (`package.json`, `packages/main/package.json`, `packages/renderer/package.json`).
+  - Configured `build:desktop:mac` and `.github/workflows/release.yml` for unsigned Apple Silicon (`arm64`) `.dmg` builds (`identity: null`, `CSC_IDENTITY_AUTO_DISCOVERY=false`, `notarize: false`, `gatekeeperAssess: false`) without requiring Apple or Windows developer certificates.
+  - Built and verified local `dist-electron/indii.music-1.81.0-arm64.dmg`.
+- **Verification Evidence:**
+  - 46/46 unit tests green across `packages/shared`, `packages/main`, and `packages/renderer`.
+  - Monorepo typecheck clean (`npm run typecheck`, exit code 0).
+  - ESLint 0 errors, 0 warnings across all touched files.
+
 # Beta Terms & Durable Studio Bug Reporting Delivered (#1425, #031) (2026-10-12 EDT)
 
 Delivered formal Beta Terms Section 15 and server-authoritative bug reporting integration on `main` (`d81fe9a1f`):

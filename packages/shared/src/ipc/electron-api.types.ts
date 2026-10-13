@@ -363,7 +363,33 @@ export interface ElectronRawAPI {
 }
 
 export interface ElectronRightsCopilotAPI {
-    launchSession: (req: { portalTarget: string; manifestId: string; targetUrl?: string }) => Promise<{ success: boolean; sessionId?: string; portalUrl?: string; error?: string }>;
+    launchSession: (req: {
+        portalTarget: string;
+        manifestId: string;
+        targetUrl?: string;
+        workTitle?: string;
+        artistLegalName?: string;
+        isrc?: string;
+        depositFilename?: string;
+        depositChecksum?: string;
+    }) => Promise<{ success: boolean; sessionId?: string; portalUrl?: string; error?: string }>;
+    executeStep?: (req: {
+        action: {
+            id: string;
+            type: string;
+            description: string;
+            targetSelector?: string;
+            targetFieldKey?: string;
+            value?: string | number | boolean;
+            requiresUserAction: boolean;
+        };
+    }) => Promise<{
+        success: boolean;
+        status?: string;
+        requiresUserAction?: boolean;
+        extractedValue?: string;
+        error?: string;
+    }>;
     closeSession: (req?: { sessionId?: string }) => Promise<{ success: boolean; error?: string }>;
     getSessionStatus: () => Promise<{ success: boolean; data?: { isActive: boolean; sessionId?: string; portalTarget?: string; manifestId?: string; status?: string }; error?: string }>;
     onSessionStatusChanged: (callback: (status: unknown) => void) => () => void;

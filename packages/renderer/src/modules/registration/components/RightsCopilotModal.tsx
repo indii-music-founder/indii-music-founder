@@ -18,13 +18,17 @@ import {
   FileCheck,
   FileMusic,
   Loader2,
+  Play,
+  ShieldCheck,
   Sparkles,
   Upload,
   X,
 } from 'lucide-react';
 import {
+  type CopilotAction,
   DepositAsset,
   PortalTarget,
+  type RegistrationFilingRecord,
   RightsRegistrationManifest,
 } from '@indii/shared';
 import { rightsCopilotService } from '@/services/rights/RightsCopilotService';
@@ -37,6 +41,7 @@ export interface RightsCopilotModalProps {
   artistLegalName?: string;
   artistStageName?: string;
   workTitle?: string;
+  onFilingRecorded?: (record: RegistrationFilingRecord) => void;
 }
 
 const PORTAL_METADATA: Record<
@@ -101,6 +106,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
   artistLegalName = 'Independent Artist',
   artistStageName,
   workTitle = 'New Release',
+  onFilingRecorded,
 }) => {
   const portalInfo = PORTAL_METADATA[portalTarget] || PORTAL_METADATA.loc_copyright;
 
@@ -120,10 +126,15 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
   const [depositError, setDepositError] = useState<string | null>(null);
   const [copiedDossier, setCopiedDossier] = useState(false);
   const [sessionActive, setSessionActive] = useState(false);
+  const [executedStepIds, setExecutedStepIds] = useState<Record<string, string>>({});
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [confirmationInput, setConfirmationInput] = useState('');
+  const [filingRecord, setFilingRecord] = useState<RegistrationFilingRecord | null>(null);
 
   if (!isOpen) return null;
 
   const actions = rightsCopilotService.getActionPlan(manifest, portalTarget);
+  const hasNativeStepExecutor = typeof window !== 'undefined' && Boolean(window.electronAPI?.rightsCopilot?.executeStep);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -183,6 +194,9 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
 
   const handleLaunchRegistration = async () => {
     setSessionActive(true);
+    setStepError(null);
+    const primaryDeposit = manifest.depositAssets[0];
+
     // If Electron IPC is available, request native browser session
     if (typeof window !== 'undefined' && window.electronAPI?.rightsCopilot) {
       try {
@@ -190,6 +204,11 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
           portalTarget,
           manifestId: manifest.manifestId,
           targetUrl: portalInfo.officialUrl,
+          workTitle: manifest.work.title,
+          artistLegalName: manifest.artistLegalName,
+          isrc: manifest.work.isrc,
+          depositFilename: primaryDeposit?.filename,
+          depositChecksum: primaryDeposit?.sha256Checksum,
         });
         if (res.success) {
           return;
@@ -201,6 +220,36 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
 
     // Web fallback: Open official portal in new secure window
     window.open(portalInfo.officialUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleExecuteStep = async (action: CopilotAction) => {
+    if (typeof window === 'undefined' || !window.electronAPI?.rightsCopilot?.executeStep) {
+      return;
+    }
+    setStepError(null);
+    const result = await window.electronAPI.rightsCopilot.executeStep({ action });
+    if (result.success) {
+      setExecutedStepIds((prev) => ({
+        ...prev,
+        [action.id]: result.extractedValue || 'Executed',
+      }));
+      if (action.type === 'extract_confirmation' && result.extractedValue) {
+        setConfirmationInput(result.extractedValue);
+      }
+    } else {
+      setStepError(result.error || `Failed to execute step: ${action.id}`);
+    }
+  };
+
+  const handleRecordConfirmation = () => {
+    const trimmed = confirmationInput.trim();
+    if (!trimmed) return;
+    const record = rightsCopilotService.recordFilingConfirmation(manifest, portalTarget, {
+      confirmationNumber: trimmed,
+      serviceRequestId: portalTarget === 'loc_copyright' ? trimmed : undefined,
+    });
+    setFilingRecord(record);
+    onFilingRecorded?.(record);
   };
 
   return (
@@ -317,34 +366,111 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
           </div>
 
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-            {actions.map((act, idx) => (
-              <div
-                key={act.id}
-                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-start gap-2.5 text-xs"
-              >
-                <span className="font-mono text-[10px] text-white/30 shrink-0 mt-0.5">
-                  {idx + 1}.
-                </span>
-                <div className="flex-1">
-                  <div className="text-white/90 font-medium">{act.description}</div>
-                  {act.targetSelector && (
-                    <div className="text-[10px] font-mono text-white/30 mt-0.5">
-                      Target: {act.targetSelector}
-                    </div>
-                  )}
+            {actions.map((act, idx) => {
+              const isExecuted = Boolean(executedStepIds[act.id]);
+              return (
+                <div
+                  key={act.id}
+                  className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-start gap-2.5 text-xs"
+                >
+                  <span className="font-mono text-[10px] text-white/30 shrink-0 mt-0.5">
+                    {idx + 1}.
+                  </span>
+                  <div className="flex-1">
+                    <div className="text-white/90 font-medium">{act.description}</div>
+                    {act.targetSelector && (
+                      <div className="text-[10px] font-mono text-white/30 mt-0.5">
+                        Target: {act.targetSelector}
+                      </div>
+                    )}
+                    {isExecuted && (
+                      <div className="text-[10px] font-mono text-emerald-400 mt-0.5">
+                        ✓ Step Executed ({executedStepIds[act.id]})
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {hasNativeStepExecutor && !act.requiresUserAction && (
+                      <button
+                        type="button"
+                        onClick={() => void handleExecuteStep(act)}
+                        aria-label={`Execute Step ${idx + 1}`}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#ffb800]/15 hover:bg-[#ffb800]/25 text-[#ffb800] border border-[#ffb800]/30 text-[10px] font-bold transition-colors"
+                      >
+                        <Play className="w-2.5 h-2.5" />
+                        <span>Run</span>
+                      </button>
+                    )}
+                    {act.requiresUserAction ? (
+                      <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded shrink-0">
+                        User Action
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded shrink-0">
+                        Copilot Autofill
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {act.requiresUserAction ? (
-                  <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded shrink-0">
-                    User Action
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded shrink-0">
-                    Copilot Autofill
-                  </span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
+
+          {stepError && (
+            <div className="text-xs text-rose-400 flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>{stepError}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Official Filing Confirmation & Provenance Ledger */}
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <h4 className="text-xs font-bold text-white">Provenance & Confirmation Receipt</h4>
+            </div>
+            <span className="text-[10px] text-white/40 font-mono">Tamper-Evident Audit Trail</span>
+          </div>
+
+          {!filingRecord ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={confirmationInput}
+                onChange={(e) => setConfirmationInput(e.target.value)}
+                placeholder="Enter Service Request (SR) or Confirmation # (e.g. 1-9876543210)"
+                aria-label="Official Confirmation or Service Request Number"
+                className="flex-1 rounded-xl bg-white/[0.04] border border-white/10 px-3 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-[#ffb800]/50"
+              />
+              <button
+                type="button"
+                onClick={handleRecordConfirmation}
+                disabled={!confirmationInput.trim()}
+                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-40 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors"
+              >
+                Record Official Filing
+              </button>
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-emerald-300">
+                  Confirmed Filing • {filingRecord.confirmationNumber}
+                </div>
+                <div className="text-[10px] text-emerald-400/70 font-mono mt-0.5">
+                  Filing ID: {filingRecord.id}
+                  {filingRecord.depositChecksum
+                    ? ` • SHA-256: ${filingRecord.depositChecksum.slice(0, 12)}...`
+                    : ''}
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded">
+                Verified Receipt
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Security & Credentials Guarantee */}

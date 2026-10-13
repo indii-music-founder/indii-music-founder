@@ -370,8 +370,29 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // indii Rights Registration Screen Control & Browser Copilot (ISSUE-1511)
     rightsCopilot: {
-        launchSession: (req: { portalTarget: string; manifestId: string; targetUrl?: string }) =>
+        launchSession: (req: {
+            portalTarget: string;
+            manifestId: string;
+            targetUrl?: string;
+            workTitle?: string;
+            artistLegalName?: string;
+            isrc?: string;
+            depositFilename?: string;
+            depositChecksum?: string;
+        }) =>
             ipcRenderer.invoke('rightsCopilot:launch-session', req),
+        executeStep: (req: {
+            action: {
+                id: string;
+                type: string;
+                description: string;
+                targetSelector?: string;
+                targetFieldKey?: string;
+                value?: string | number | boolean;
+                requiresUserAction: boolean;
+            };
+        }) =>
+            ipcRenderer.invoke('rightsCopilot:execute-step', req),
         closeSession: (req?: { sessionId?: string }) =>
             ipcRenderer.invoke('rightsCopilot:close-session', req),
         getSessionStatus: () =>

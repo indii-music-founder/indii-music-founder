@@ -164,4 +164,87 @@ describe('RightsCopilotController', () => {
             expect(result.success).toBe(true);
         });
     });
+
+    describe('isSafeCopilotSelector (Credential Isolation Gate)', () => {
+        it('allows legitimate metadata and confirmation selectors', () => {
+            expect(rightsCopilotController.isSafeCopilotSelector('input#workTitle')).toBe(true);
+            expect(rightsCopilotController.isSafeCopilotSelector('select#typeOfWork')).toBe(true);
+            expect(rightsCopilotController.isSafeCopilotSelector('.confirmation-number, #serviceRequestNumber')).toBe(true);
+            expect(rightsCopilotController.isSafeCopilotSelector('input#mlcWorkTitle')).toBe(true);
+        });
+
+        it('rejects password, 2FA, CAPTCHA, SSN, and payment card selectors', () => {
+            expect(rightsCopilotController.isSafeCopilotSelector('input#userPassword')).toBe(false);
+            expect(rightsCopilotController.isSafeCopilotSelector('#totpCode')).toBe(false);
+            expect(rightsCopilotController.isSafeCopilotSelector('#captchaResponse')).toBe(false);
+            expect(rightsCopilotController.isSafeCopilotSelector('input#ssn')).toBe(false);
+            expect(rightsCopilotController.isSafeCopilotSelector('input#creditCardNumber')).toBe(false);
+            expect(rightsCopilotController.isSafeCopilotSelector('input#cvv')).toBe(false);
+            expect(rightsCopilotController.isSafeCopilotSelector('input#routingNumber')).toBe(false);
+        });
+
+        it('rejects selectors containing script injection characters or empty strings', () => {
+            expect(rightsCopilotController.isSafeCopilotSelector('')).toBe(false);
+            expect(rightsCopilotController.isSafeCopilotSelector('   ')).toBe(false);
+            expect(rightsCopilotController.isSafeCopilotSelector('input#workTitle"; alert(1);//')).toBe(false);
+            expect(rightsCopilotController.isSafeCopilotSelector('<script>alert(1)</script>')).toBe(false);
+        });
+    });
+
+    describe('buildCopilotOverlayScript (Interactive HUD)', () => {
+        it('embeds work metadata, truncated SHA-256 deposit checksum, and privacy notice safely', () => {
+            const script = rightsCopilotController.buildCopilotOverlayScript({
+                portalTarget: 'loc_copyright',
+                workTitle: 'Midnight Sun',
+                artistLegalName: 'Jane Doe',
+                isrc: 'USIND2600001',
+                depositFilename: 'midnight_sun.wav',
+                depositChecksum: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+                stepDescription: 'Populate Title of Work: "Midnight Sun"',
+                status: 'filling_fields',
+            });
+
+            expect(script).toContain('indii-rights-copilot-hud');
+            expect(script).toContain('LOC COPYRIGHT');
+            expect(script).toContain('Midnight Sun');
+            expect(script).toContain('Jane Doe');
+            expect(script).toContain('USIND2600001');
+            expect(script).toContain('midnight_sun.wav');
+            expect(script).toContain('e3b0c44298fc...');
+            expect(script).toContain('Zero-Credential Isolation');
+        });
+    });
+
+    describe('executeActionStep', () => {
+        it('fails closed immediately if a step targets a sensitive credential or payment selector', async () => {
+            await expect(
+                rightsCopilotController.executeActionStep(null, {
+                    action: {
+                        id: 'bad-step',
+                        type: 'autofill_input',
+                        description: 'Attempt to touch password',
+                        targetSelector: 'input#userPassword',
+                        value: 'secret',
+                        requiresUserAction: false,
+                    },
+                })
+            ).rejects.toThrow('Refusing to interact with credential, authentication, or payment selector');
+        });
+
+        it('fails closed when no active browser session is running', async () => {
+            await expect(
+                rightsCopilotController.executeActionStep(null, {
+                    action: {
+                        id: 'loc-3',
+                        type: 'autofill_input',
+                        description: 'Populate Title of Work',
+                        targetSelector: 'input#workTitle',
+                        value: 'Midnight Sun',
+                        requiresUserAction: false,
+                    },
+                })
+            ).rejects.toThrow('No active Rights Copilot browser session');
+        });
+    });
 });
+

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createRegistrationFilingRecord,
   DepositAsset,
   generateCopilotActionPlan,
+  PortalTarget,
   RightsRegistrationManifest,
   validateDepositAsset,
   validateRegistrationManifest,
@@ -139,11 +141,13 @@ describe('rightsRegistration - ISSUE-1511 Assisted Rights Registration Engine', 
   describe('generateCopilotActionPlan', () => {
     it('generates a step-by-step action sequence for US Copyright Office eCO', () => {
       const actions = generateCopilotActionPlan(validManifest, 'loc_copyright');
-      expect(actions.length).toBeGreaterThanOrEqual(6);
+      expect(actions.length).toBeGreaterThanOrEqual(7);
 
-      // Verify essential security & compliance steps
       const navAction = actions.find((a) => a.type === 'navigate');
       expect(navAction?.value).toContain('copyright.gov');
+
+      const formAction = actions.find((a) => a.type === 'select_option');
+      expect(formAction?.value).toBe('Form_SR');
 
       const authAction = actions.find((a) => a.type === 'pause_for_user_auth');
       expect(authAction?.requiresUserAction).toBe(true);
@@ -168,5 +172,48 @@ describe('rightsRegistration - ISSUE-1511 Assisted Rights Registration Engine', 
       const titleAction = actions.find((a) => a.targetFieldKey === 'work.title');
       expect(titleAction?.value).toBe('Midnight Sun');
     });
+
+    it('generates non-empty action plans with auth pause and confirmation extraction for all 6 portals', () => {
+      const portals: PortalTarget[] = ['loc_copyright', 'the_mlc', 'bmi', 'ascap', 'soundexchange', 'hfa'];
+
+      for (const portal of portals) {
+        const actions = generateCopilotActionPlan(validManifest, portal);
+        expect(actions.length).toBeGreaterThanOrEqual(5);
+        expect(actions.some((a) => a.type === 'navigate')).toBe(true);
+        expect(actions.some((a) => a.type === 'pause_for_user_auth' && a.requiresUserAction)).toBe(true);
+        expect(actions.some((a) => a.type === 'autofill_input' && a.value === 'Midnight Sun')).toBe(true);
+        expect(actions.some((a) => a.type === 'extract_confirmation')).toBe(true);
+      }
+    });
+  });
+
+  describe('createRegistrationFilingRecord', () => {
+    it('creates a confirmed audit trail record with SHA-256 deposit provenance', () => {
+      const record = createRegistrationFilingRecord(validManifest, 'loc_copyright', {
+        confirmationNumber: '1-14928374651',
+        serviceRequestId: 'SR-2026-09912',
+        filingFeeUsd: 45,
+        officialFilingDate: '2026-10-12',
+      });
+
+      expect(record.portalTarget).toBe('loc_copyright');
+      expect(record.status).toBe('confirmed');
+      expect(record.confirmationNumber).toBe('1-14928374651');
+      expect(record.serviceRequestId).toBe('SR-2026-09912');
+      expect(record.workTitle).toBe('Midnight Sun');
+      expect(record.isrc).toBe('USIND2600001');
+      expect(record.depositChecksum).toBe(validDepositAsset.sha256Checksum);
+      expect(record.filingFeeUsd).toBe(45);
+      expect(record.officialFilingDate).toBe('2026-10-12');
+    });
+
+    it('throws when confirmationNumber is empty', () => {
+      expect(() =>
+        createRegistrationFilingRecord(validManifest, 'the_mlc', {
+          confirmationNumber: '   ',
+        }),
+      ).toThrow('Official confirmation number is required');
+    });
   });
 });
+

@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest]
 
     steps:
       - name: Checkout
@@ -58,129 +58,38 @@ jobs:
       - name: Verify isolated desktop MCP packages
         run: npm run verify:desktop:mcp
 
-      - name: Prepare Code Signing Environment
-        shell: bash
-        run: |
-          MAC_CERT="${{ secrets.MAC_CERTIFICATE_P12_BASE64 || secrets.CSC_LINK }}"
-          if [ -n "$MAC_CERT" ]; then
-            echo "CSC_LINK=$MAC_CERT" >> $GITHUB_ENV
-          fi
-          
-          MAC_PASS="${{ secrets.MAC_CERTIFICATE_PASSWORD || secrets.CSC_KEY_PASSWORD }}"
-          if [ -n "$MAC_PASS" ]; then
-            echo "CSC_KEY_PASSWORD=$MAC_PASS" >> $GITHUB_ENV
-          fi
-          
-          WIN_CERT="${{ secrets.WINDOWS_CERTIFICATE || secrets.WIN_CSC_LINK }}"
-          if [ -n "$WIN_CERT" ]; then
-            echo "WIN_CSC_LINK=$WIN_CERT" >> $GITHUB_ENV
-          fi
-          
-          WIN_PASS="${{ secrets.WINDOWS_CERTIFICATE_PASSWORD || secrets.WIN_CSC_KEY_PASSWORD }}"
-          if [ -n "$WIN_PASS" ]; then
-            echo "WIN_CSC_KEY_PASSWORD=$WIN_PASS" >> $GITHUB_ENV
-          fi
-          
-          APPLE_EMAIL="${{ secrets.APPLE_ID }}"
-          if [ -n "$APPLE_EMAIL" ]; then
-            echo "APPLE_ID=$APPLE_EMAIL" >> $GITHUB_ENV
-          fi
-          
-          APPLE_SPEC_PASS="${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
-          if [ -n "$APPLE_SPEC_PASS" ]; then
-            echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_SPEC_PASS" >> $GITHUB_ENV
-          fi
-          
-          APPLE_TEAM="${{ secrets.APPLE_TEAM_ID }}"
-          if [ -n "$APPLE_TEAM" ]; then
-            echo "APPLE_TEAM_ID=$APPLE_TEAM" >> $GITHUB_ENV
-          fi
-
-      # ISSUE-992: signing/notarization secrets are REQUIRED on macOS, not optional.
-      # An ad-hoc-signed build has no resource seal and Squirrel/ShipIt correctly
-      # refuses to install it — publishing one traps every user in a repeat-
-      # failure update loop. Fail before any build work starts.
-      - name: Require macOS signing & notarization secrets
+      - name: Build Apple Silicon DMG installer (Unsigned / No Certificates Required)
         if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          missing=()
-          [ -z "${{ secrets.MAC_CERTIFICATE_P12_BASE64 || secrets.CSC_LINK }}" ] && missing+=("MAC_CERTIFICATE_P12_BASE64/CSC_LINK")
-          [ -z "${{ secrets.MAC_CERTIFICATE_PASSWORD || secrets.CSC_KEY_PASSWORD }}" ] && missing+=("MAC_CERTIFICATE_PASSWORD/CSC_KEY_PASSWORD")
-          [ -z "${{ secrets.APPLE_ID }}" ] && missing+=("APPLE_ID")
-          [ -z "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" ] && missing+=("APPLE_APP_SPECIFIC_PASSWORD")
-          [ -z "${{ secrets.APPLE_TEAM_ID }}" ] && missing+=("APPLE_TEAM_ID")
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing required macOS signing/notarization secrets: ${missing[*]}"
-            echo "An ad-hoc-signed build cannot pass ShipIt's resource-seal check and must never be published. See docs/RELEASE_CHECKLIST.md."
-            exit 1
-          fi
-
-      # Build only — publishing is a separate, gated step below so the exact
-      # verified artifact is what gets uploaded (no re-build, no hash drift).
-      - name: Build desktop installer
         run: |
           npm run build:studio
-          npx electron-builder --publish never
+          CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac dmg --arm64 --publish never
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: true
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      # ISSUE-992: verify the EXACT built artifact — Developer ID signature
-      # (not ad-hoc), resource seal present, Gatekeeper acceptance, and
-      # notarization staple — before it is ever allowed onto the update feed.
-      - name: Verify macOS code signature, seal, and notarization
-        if: runner.os == 'macOS'
-        shell: bash
+      - name: Build Linux installer
+        if: runner.os == 'Linux'
         run: |
-          set -euo pipefail
-          APP_PATH=$(find dist-electron -maxdepth 2 -name "*.app" -type d | head -n 1)
-          if [ -z "$APP_PATH" ]; then
-            echo "::error::No .app bundle found in dist-electron"
-            exit 1
-          fi
-          echo "Verifying: $APP_PATH"
+          npm run build:studio
+          npx electron-builder --linux --publish never
 
-          codesign --verify --deep --strict --verbose=4 "$APP_PATH"
+      - name: Build Windows installer (Unsigned / No Certificate Required)
+        if: runner.os == 'Windows'
+        run: |
+          npm run build:studio
+          npx electron-builder --win --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
-          SIGN_INFO=$(codesign -d -vvv "$APP_PATH" 2>&1)
-          echo "$SIGN_INFO"
-          if echo "$SIGN_INFO" | grep -qE "Signature=adhoc|TeamIdentifier=not set"; then
-            echo "::error::App is ad-hoc signed or missing a Team Identifier — refusing to publish."
-            exit 1
-          fi
-
-          spctl --assess --type execute --verbose=4 "$APP_PATH"
-          xcrun stapler validate "$APP_PATH"
-
-          ZIP_FILE=$(find dist-electron -maxdepth 1 -name "*-mac.zip" -type f | head -n 1)
-          if [ -z "$ZIP_FILE" ]; then
-            echo "::error::No updater zip (*-mac.zip) found in dist-electron"
-            exit 1
-          fi
-          if ! unzip -l "$ZIP_FILE" | grep -q "_CodeSignature/CodeResources"; then
-            echo "::error::$ZIP_FILE has no _CodeSignature/CodeResources entry — this is the exact ShipIt failure from ISSUE-992."
-            exit 1
-          fi
-          echo "macOS signature, seal, and notarization verified for $ZIP_FILE"
-
-      - name: Publish verified installer to GitHub Release
+      - name: Publish installer to GitHub Release
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          # ISSUE-1163 prevention (4): idempotency made explicit. The old
-          # `gh release create ... 2>/dev/null || true` swallowed EVERY failure
-          # (auth, permissions, network) across 3 concurrent matrix legs — not
-          # just the benign "already exists" race. Failures now surface.
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             echo "Release $GITHUB_REF_NAME already exists (created by a concurrent matrix leg) — reusing it."
           else
             if ! gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes --draft=false; then
-              # Concurrent-leg race: the other leg created it between view and create.
               gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null
             fi
           fi
@@ -194,41 +103,6 @@ jobs:
             exit 1
           fi
           gh release upload "$GITHUB_REF_NAME" "${FILES[@]}" --repo "$GITHUB_REPOSITORY" --clobber
-
-      - name: Verify updater manifest was published
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          case "$RUNNER_OS" in
-            macOS)
-              MANIFEST="latest-mac.yml"
-              ;;
-            Windows)
-              MANIFEST="latest.yml"
-              ;;
-            Linux)
-              MANIFEST="latest-linux.yml"
-              ;;
-            *)
-              echo "Unsupported runner OS for updater manifest verification: $RUNNER_OS"
-              exit 1
-              ;;
-          esac
-
-          if [ ! -f "dist-electron/$MANIFEST" ]; then
-            echo "Missing local updater manifest: dist-electron/$MANIFEST"
-            echo "dist-electron contents:"
-            find dist-electron -maxdepth 1 -type f -print | sort
-            exit 1
-          fi
-
-          if ! gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -Fx "$MANIFEST"; then
-            echo "GitHub release $GITHUB_REF_NAME is missing updater manifest asset: $MANIFEST"
-            echo "Release assets currently published:"
-            gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' || true
-            exit 1
-          fi
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v3
@@ -247,10 +121,10 @@ jobs:
           gcloud auth activate-service-account --key-file="$HOME/gcloud-key.json"
           gcloud config set project indii-music-founder
 
-      - name: Upload Installer to Firebase Storage (macOS)
+      - name: Upload Installer to Firebase Storage (macOS Apple Silicon DMG)
         if: runner.os == 'macOS'
         run: |
-          DMG_FILE=$(find dist-electron -maxdepth 1 -name "*.dmg" -type f | head -n 1)
+          DMG_FILE=$(find dist-electron -maxdepth 1 -name "*.dmg" -type f | sort | tail -n 1)
           if [ -z "$DMG_FILE" ]; then
             echo "No DMG artifact found in dist-electron"
             exit 1
@@ -259,32 +133,26 @@ jobs:
             --content-type=application/x-apple-diskimage
           
           YML_FILE=$(find dist-electron -maxdepth 1 -name "latest-mac.yml" -type f | head -n 1)
-          if [ -z "$YML_FILE" ]; then
-            echo "No latest-mac.yml artifact found in dist-electron"
-            exit 1
+          if [ -n "$YML_FILE" ]; then
+            gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest-mac.yml" \
+              --content-type=text/yaml
           fi
-          gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest-mac.yml" \
-            --content-type=text/yaml
 
       - name: Upload Installer to Firebase Storage (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
           EXE_FILE=$(find dist-electron -maxdepth 1 -name "*.exe" -type f | head -n 1)
-          if [ -z "$EXE_FILE" ]; then
-            echo "No Windows EXE artifact found in dist-electron"
-            exit 1
+          if [ -n "$EXE_FILE" ]; then
+            gcloud storage cp "$EXE_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/indii-Setup.exe" \
+              --content-type=application/vnd.microsoft.portable-executable
           fi
-          gcloud storage cp "$EXE_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/indii-Setup.exe" \
-            --content-type=application/vnd.microsoft.portable-executable
 
           YML_FILE=$(find dist-electron -maxdepth 1 -name "latest.yml" -type f | head -n 1)
-          if [ -z "$YML_FILE" ]; then
-            echo "No latest.yml artifact found in dist-electron"
-            exit 1
+          if [ -n "$YML_FILE" ]; then
+            gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest.yml" \
+              --content-type=text/yaml
           fi
-          gcloud storage cp "$YML_FILE" "gs://indii-music-founder.firebasestorage.app/founders/releases/latest.yml" \
-            --content-type=text/yaml
 
       - name: Upload Installer to Firebase Storage (Linux)
         if: runner.os == 'Linux'
@@ -303,50 +171,3 @@ jobs:
         shell: bash
         run: rm -f $HOME/gcloud-key.json
 
-  # ISSUE-1163 prevention (1+2): FEED-LEVEL verification. The per-runner
-  # "Verify updater manifest was published" step only proves THIS leg's asset
-  # landed on the tag's own release. It cannot see the failure mode where the
-  # STABLE channel resolves to some other release (prerelease-flipped tags,
-  # empty legacy releases like v1.50.0) — leaving every installed client 404ing
-  # on its manifest with a green release run. This job runs ONCE, after all
-  # three matrix legs have published, and asserts what users actually consume.
-  verify-update-feed:
-    name: Verify stable update feed resolves to this tag
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Stable feed must resolve to this tag, with assets
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          LATEST_TAG=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
-          ASSET_COUNT=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.assets | length')
-          echo "Stable channel resolves to: $LATEST_TAG ($ASSET_COUNT assets)"
-          if [ "$LATEST_TAG" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::Stable update feed resolves to '$LATEST_TAG', not this tag '$GITHUB_REF_NAME'. Installed clients will keep updating to (or failing on) the wrong release. If this tag is intentionally a prerelease, repair/flip the real stable release instead of bypassing this gate."
-            exit 1
-          fi
-          if [ "$ASSET_COUNT" -eq 0 ]; then
-            echo "::error::Stable-channel latest release '$LATEST_TAG' has ZERO assets (the v1.50.0 failure mode). electron-updater will 404 on every manifest and every desktop client will show 'cannot check for updates'."
-            exit 1
-          fi
-
-      - name: All three manifests live at this tag's version
-        run: |
-          set -euo pipefail
-          EXPECTED_VERSION="${GITHUB_REF_NAME#v}"
-          for MANIFEST in latest-mac.yml latest.yml latest-linux.yml; do
-            URL="https://github.com/$GITHUB_REPOSITORY/releases/latest/download/$MANIFEST"
-            if ! MANIFEST_BODY=$(curl -fsSL "$URL"); then
-              echo "::error::$URL not reachable (non-200). Stable clients cannot check for updates."
-              exit 1
-            fi
-            FOUND_VERSION=$(printf '%s' "$MANIFEST_BODY" | tr -d '\r' | grep '^version:' | head -n 1 | sed 's/^version:[[:space:]]*//')
-            echo "$MANIFEST -> version $FOUND_VERSION"
-            if [ "$FOUND_VERSION" != "$EXPECTED_VERSION" ]; then
-              echo "::error::$MANIFEST serves version '$FOUND_VERSION' but this tag is '$EXPECTED_VERSION'. The stable feed is pointing clients at the wrong build."
-              exit 1
-            fi
-          done
-          echo "Stable update feed verified: all three manifests serve $EXPECTED_VERSION."

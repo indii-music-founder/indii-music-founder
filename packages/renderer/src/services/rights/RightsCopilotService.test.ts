@@ -87,4 +87,27 @@ describe('RightsCopilotService - ISSUE-1511 Assisted Rights Registration Engine'
     expect(brief).toContain('**Claimant:** Atlas Gray');
     expect(brief).toContain('Target Registration Portals:');
   });
+
+  it('generates action plans for all 6 supported rights portals and records official filing confirmations', () => {
+    const manifest = service.createManifestFromPassport(
+      { artistName: 'Nova Pulse' },
+      { title: 'Starlight Drive', isrc: 'USIND2699901' },
+    );
+
+    const portals = ['loc_copyright', 'the_mlc', 'bmi', 'ascap', 'soundexchange', 'hfa'] as const;
+    for (const portal of portals) {
+      const plan = service.getActionPlan(manifest, portal);
+      expect(plan.length).toBeGreaterThanOrEqual(4);
+    }
+
+    const record = service.recordFilingConfirmation(manifest, 'loc_copyright', {
+      serviceRequestId: '1-9876543210',
+      confirmationNumber: 'SR-2026-000999',
+    });
+
+    expect(record.status).toBe('confirmed');
+    expect(record.serviceRequestId).toBe('1-9876543210');
+    expect(record.confirmationNumber).toBe('SR-2026-000999');
+    expect(record.portalTarget).toBe('loc_copyright');
+  });
 });
