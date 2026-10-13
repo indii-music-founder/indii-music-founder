@@ -226,6 +226,14 @@ export interface AgentContext {
     ragCorpus?: string;
     activeModule?: string;
     conversationMode?: 'direct' | 'department' | 'boardroom';
+    /** Runtime-enforced observation mode; models cannot opt themselves out. */
+    isReadOnly?: boolean;
+    /** Application-owned assignment of the user's Boardroom request. */
+    boardroomExecution?: { requestId: string; stepId: string; ownerAgentId: string };
+    /** Frozen source references for tools; inline pixels never enter model prompts. */
+    assetReferences?: ReadonlyArray<{ id: string; alias: string; url: string }>;
+    /** Cancellation propagated to long-running tools as well as model calls. */
+    signal?: AbortSignal;
     seatedAgents?: string[];
     readonly boardroomTask?: Readonly<BoardroomDispatchTask>;
     userProfile?: UserProfile;

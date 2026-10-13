@@ -6,6 +6,22 @@ import type { PrintPlan } from '@/services/print/PrintSpec';
 
 // Structural component checks only; production acceptance uses the signed-in browser.
 describe('PrintSpecDialog callable Root (ISSUE-321)', () => {
+    it('requires explicit confirmation for a locked poster crop, including a reachable 4× trim with mirrored bleed', async () => {
+        const user = userEvent.setup();
+        render(<PrintSpecDialog />);
+        let response!: Promise<PrintPlan | null>;
+        await act(async () => {
+            response = PrintSpecDialog.call({ srcWidth: 1350, srcHeight: 2400, initialPresetId: 'poster_18x24', confirmationOnly: true });
+        });
+        expect(await screen.findByRole('dialog', { name: 'Confirm Poster / Artwork Crop' })).toBeInTheDocument();
+        expect(screen.getByTestId('printspec-preset-select')).toBeDisabled();
+        expect(screen.getByTestId('printspec-verdict')).toHaveTextContent('Upscale needed');
+        expect(screen.getByTestId('printspec-summary')).toHaveTextContent('5400 × 7200');
+        expect(screen.getByRole('button', { name: 'Confirm crop & prepare' })).toBeEnabled();
+        await user.click(screen.getByRole('button', { name: 'Close' }));
+        await expect(response).resolves.toBeNull();
+    });
+
     it('opens for a call, shows the pre-flight verdict, and resolves the plan', async () => {
         const user = userEvent.setup();
         render(<PrintSpecDialog />);

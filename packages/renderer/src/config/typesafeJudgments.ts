@@ -529,6 +529,34 @@ export const ORCHESTRATION_COMPLEXITY_QUESTION = {
 
 export const ORCHESTRATION_PATH_MIN_CONFIDENCE = 0.70;
 
+export type BoardroomIntent = 'discussion' | 'capability' | 'action';
+export const BOARDROOM_INTENT_QUESTION = {
+    type: 'choice' as const,
+    instructions: 'Classify the current user utterance using recent conversation only to resolve references. ' +
+        'Choose action only when the user is asking to perform work now, including polite can-you requests. ' +
+        'Capability questions ask what is possible or whether a feature exists, without requesting execution. ' +
+        'Discussion includes planning-only requests, advice, brainstorming, and explicit instructions not to execute.',
+    criteria: {
+        discussion: 'Conversation, advice, or planning without executing an action.',
+        capability: 'Question about supported tools or functionality, without asking to execute.',
+        action: 'User instruction to execute concrete work now.',
+    },
+};
+export const BOARDROOM_INTENT_MIN_CONFIDENCE = 0.80;
+
+export async function judgeBoardroomIntent(query: string, recentConversation: string): Promise<BoardroomIntent | null> {
+    if (!judgmentsAvailable() || !query.trim()) return null;
+    try {
+        const result = await httpsCallable<{ state: Record<string, unknown>; questions: Record<string, unknown> }, { answers: Record<string, unknown> }>(
+            getFunctions(), 'typesafeJudge',
+        )({ state: { query: query.slice(0, 6000), recentConversation: recentConversation.slice(-6000) }, questions: { intent: BOARDROOM_INTENT_QUESTION } });
+        const answer = result.data.answers.intent as { choice?: string; confidence?: number } | undefined;
+        if (!answer?.choice || !['discussion', 'capability', 'action'].includes(answer.choice) ||
+            typeof answer.confidence !== 'number' || answer.confidence < BOARDROOM_INTENT_MIN_CONFIDENCE) return null;
+        return answer.choice as BoardroomIntent;
+    } catch (error) { noteJudgmentFailure(error, 'Boardroom intent'); return null; }
+}
+
 /**
  * Choice-judge whether a user request requires simple routing, parallel fan-out,
  * or complex graph decomposition.

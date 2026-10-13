@@ -816,7 +816,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         focusX?: number;
         focusY?: number;
         generateGuide?: boolean;
-    }) => {
+    }, context) => {
         try {
             const { getPrintPreset } = await import('@indii/shared');
             const preset = getPrintPreset(args.presetId);
@@ -825,7 +825,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
 
             // Resolve asset identifier, reference tag, or upload index if provided instead of a direct URL
-            let resolvedUri = args.imageUri;
+            let resolvedUri = context?.assetReferences?.find(asset => asset.id === args.imageUri || asset.alias === args.imageUri)?.url || args.imageUri;
             if (
                 !resolvedUri.startsWith('data:image/') &&
                 !resolvedUri.startsWith('blob:') &&
@@ -887,6 +887,14 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 }
             }
 
+            // Storage originals use the same pixel enhancement and crop review
+            // as uploads. Preserve the bucket instead of resolving an adjacent path.
+            if (resolvedUri.startsWith('gs://')) {
+                const { storage } = await import('@/services/firebase');
+                const { ref, getDownloadURL } = await import('firebase/storage');
+                resolvedUri = await getDownloadURL(ref(storage, resolvedUri));
+            }
+
             // If the image is a data URL or accessible locally/client-side, execute local-native upscale directly
             if (
                 resolvedUri.startsWith('data:image/') ||
@@ -905,29 +913,62 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     targetWidth: targetW,
                     targetHeight: targetH,
                     dpi: preset.dpi,
+                    format: 'image/png',
                     bleedPx,
                     safePx,
                     bleedMode: args.bleedMode ?? 'extend',
                     focusX: args.focusX ?? 0.5,
                     focusY: args.focusY ?? 0.5,
                     generateGuide: args.generateGuide ?? false,
+                    cropConfirmationPresetId: args.presetId,
+                    signal: context?.signal,
                 });
 
                 const { useStore } = await importWithRetry(() => import('@/core/store'));
                 const { addToHistory, currentProjectId } = useStore.getState();
                 const printAssetId = `print-${Date.now()}`;
-                if (typeof addToHistory === 'function') {
-                    addToHistory({
-                        id: printAssetId,
-                        url: outcome.dataUrl,
-                        prompt: `Print-ready ${preset.label} (${outcome.width}x${outcome.height} @ ${outcome.dpi} DPI)`,
-                        type: 'image',
-                        timestamp: Date.now(),
-                        projectId: currentProjectId || 'default',
-                        origin: 'editor',
-                        preserveResolution: true,
-                        meta: `print_${args.presetId}`,
-                    });
+                const printItem: HistoryItem = {
+                    id: printAssetId,
+                    url: outcome.dataUrl,
+                    prompt: `Print-ready ${preset.label} (${outcome.width}x${outcome.height} @ ${outcome.dpi} DPI)`,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: context?.projectId || currentProjectId || 'default',
+                    origin: 'editor',
+                    preserveResolution: true,
+                    meta: `print_${args.presetId}`,
+                };
+                context?.signal?.throwIfAborted();
+                let gallerySaved = false;
+                let versionRecorded = false;
+                let savedUrl: string | undefined;
+                const warnings: string[] = [];
+                try {
+                    const { StorageService } = await import('@/services/StorageService');
+                    const saved = await StorageService.saveItem(printItem);
+                    if (!saved?.url) throw new Error('Gallery storage returned no saved asset URL.');
+                    savedUrl = saved.url;
+                    printItem.url = saved.url;
+                    printItem.storageUri = saved.storageUri;
+                    gallerySaved = true;
+                } catch (error) {
+                    logger.warn('[prepare_print_file] Print file created; gallery persistence failed:', error);
+                    warnings.push('The print file was created, but saving it to your gallery failed. Download the local copy before leaving this session.');
+                }
+                if (typeof addToHistory === 'function') addToHistory(printItem);
+                if (gallerySaved && savedUrl) {
+                    try {
+                        const { AssetVersionService } = await import('@/services/assets/AssetVersionService');
+                        await AssetVersionService.recordVersion({
+                            assetId: printAssetId, parentVersionId: null, url: savedUrl, source: 'canvas-export',
+                            provenance: { note: `Print preparation from ${args.imageUri.startsWith('data:') ? 'uploaded artwork' : args.imageUri}`, provider: outcome.method },
+                            tags: ['print', args.presetId],
+                        });
+                        versionRecorded = true;
+                    } catch (error) {
+                        logger.warn('[prepare_print_file] Gallery saved; version recording failed:', error);
+                        warnings.push('The print file is saved to your gallery, but its version record could not be saved.');
+                    }
                 }
 
                 return toolSuccess(
@@ -939,33 +980,17 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                         dpi: outcome.dpi,
                         method: outcome.method,
                         durationMs: outcome.durationMs,
-                        dataUrl: outcome.dataUrl,
-                        guideDataUrl: outcome.guideDataUrl,
+                        url: savedUrl,
+                        fileCreated: true,
+                        gallerySaved,
+                        versionRecorded,
+                        warnings,
                     },
-                    `Print file prepared successfully on-device (${outcome.method}) at ${outcome.width}x${outcome.height}px (${outcome.dpi} DPI in ${outcome.durationMs}ms). Asset ID: ${printAssetId}`
+                    `Print file created on-device (${outcome.method}) at ${outcome.width}x${outcome.height}px with ${outcome.dpi} DPI metadata. Asset ID: ${printAssetId}. ${warnings.length ? warnings.join(' ') : 'Saved to your gallery with its version record.'}`
                 );
             }
 
-            // Fallback for gs:// storage URIs: enqueue async job
-            const { functions } = await import('@/services/firebase');
-            const { httpsCallable } = await import('firebase/functions');
-            const enqueueFn = httpsCallable<typeof args, {
-                jobId: string;
-                status: string;
-                estimatedDurationSec: number;
-                plan: Record<string, unknown>;
-            }>(functions, 'enqueuePrintJob');
-
-            const result = await enqueueFn({
-                imageUri: args.imageUri,
-                presetId: args.presetId,
-                bleedMode: args.bleedMode || 'extend',
-                focusX: args.focusX ?? 0.5,
-                focusY: args.focusY ?? 0.5,
-                generateGuide: args.generateGuide ?? false,
-            });
-
-            return toolSuccess(result.data, `Print preparation job ${result.data.jobId} enqueued successfully. Status: ${result.data.status}. Estimated processing time: ~${result.data.estimatedDurationSec} seconds.`);
+            return toolError('The source image could not be found. Select an existing image or attach the original artwork before preparing a print file.', 'SOURCE_NOT_FOUND');
         } catch (err: unknown) {
             return handleGenerationError(err, 'prepare_print_file');
         }

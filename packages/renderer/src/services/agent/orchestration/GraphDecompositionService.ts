@@ -80,6 +80,7 @@ export class GraphDecompositionService {
         - Maximum 6 nodes for complexity management.
         - Ensure logical flow (e.g., brand analysis must happen before content generation).
         - If the request is simple, return a single-node graph.
+        ${context.conversationMode === 'boardroom' ? '- This is a user-owned Boardroom action: assign each step once to a department head. Use all-parent dependencies, no conditional edges or inputMapping; reference {{nodeId}} or {{nodeId.data.field}} directly. Preserve the original assets and constraints. Do not make every seated agent execute the whole request.' : ''}
         `;
 
         try {
@@ -130,7 +131,8 @@ export class GraphDecompositionService {
             agentId: VALID_AGENT_IDS.includes(n.agentId as ValidAgentId) ? (n.agentId as ValidAgentId) : 'generalist',
             taskTemplate: String(n.taskTemplate),
             waitCondition: (n.waitCondition === 'any' ? 'any' : 'all') as 'all' | 'any',
-            contextOverrides: n.contextOverrides || {}
+            contextOverrides: n.contextOverrides || {},
+            requiresApproval: n.requiresApproval === true,
         })).slice(0, 10); // Hard limit
     }
 

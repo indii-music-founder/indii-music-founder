@@ -8,6 +8,7 @@ import {
     type PrintVerdict,
 } from '@/services/print/PrintSpec';
 import { Modal } from './Modal';
+import { calculateCoverBox } from '@indii/shared';
 
 interface PrintSpecProps {
     srcWidth: number;
@@ -15,6 +16,9 @@ interface PrintSpecProps {
     initialPresetId?: string;
     /** Injectable export sink (tests). Default: no export — callers holding the master deliver the file. */
     sourceUrl?: string;
+    confirmationOnly?: boolean;
+    focusX?: number;
+    focusY?: number;
     exporter?: (plan: PrintPlan, progress: (fraction: number) => void) => Promise<void | { href: string; filename: string }>;
 }
 
@@ -38,6 +42,9 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
     initialPresetId = 'vinyl_sleeve',
     exporter,
     sourceUrl,
+    confirmationOnly = false,
+    focusX = 0.5,
+    focusY = 0.5,
 }) => {
     const [presetId, setPresetId] = useState(initialPresetId);
     const preset = getPrintPreset(presetId)!;
@@ -51,12 +58,21 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
         () => planPrintOutput({ srcWidth, srcHeight, presetId, dpi }),
         [srcWidth, srcHeight, presetId, dpi],
     );
-    const style = VERDICT_STYLES[plan.verdict];
+    const previewWidth = confirmationOnly ? preset.widthIn * dpi : plan.required.width;
+    const previewHeight = confirmationOnly ? preset.heightIn * dpi : plan.required.height;
+    // Mirrored bleed does not require additional source pixels. At exactly
+    // 4×, a valid trim must not be rejected because of its synthetic margins.
+    const sourceFactor = confirmationOnly ? Math.max(previewWidth / srcWidth, previewHeight / srcHeight) : plan.requiredUpscaleFactor;
+    const verdict: PrintVerdict = confirmationOnly ? sourceFactor <= 1 ? 'sufficient' : sourceFactor <= 4 ? 'upscale' : 'insufficient' : plan.verdict;
+    const style = VERDICT_STYLES[verdict];
+    const warnings = confirmationOnly && verdict !== 'insufficient' && plan.verdict === 'insufficient' ? plan.warnings.slice(0, -1) : plan.warnings;
+    const crop = calculateCoverBox(srcWidth, srcHeight, previewWidth, previewHeight, focusX, focusY);
+    const cropPosition = `${srcWidth > crop.width ? 100 * crop.x0 / (srcWidth - crop.width) : 50}% ${srcHeight > crop.height ? 100 * crop.y0 / (srcHeight - crop.height) : 50}%`;
 
     return (
-        <Modal isOpen={true} onClose={() => { if (!exporting) call.end(download ? plan : null); }} titleId="printspec-dialog-title" maxWidth="max-w-lg">
+        <Modal isOpen={true} onClose={() => { if (!exporting) call.end(download ? plan : null); }} titleId="printspec-dialog-title" maxWidth="max-w-lg" portal overlayZIndex={100000}>
             <div className="p-6" data-testid="printspec-dialog">
-                <h2 id="printspec-dialog-title" className="text-xl font-bold text-white mb-1">Print Size Check</h2>
+                <h2 id="printspec-dialog-title" className="text-xl font-bold text-white mb-1">{confirmationOnly ? 'Confirm Poster / Artwork Crop' : 'Print Size Check'}</h2>
                 <p className="text-xs text-gray-500 mb-4">Source {srcWidth} × {srcHeight} px</p>
 
                 <label className="block text-xs text-gray-400 mb-1" htmlFor="printspec-preset">Print target</label>
@@ -64,7 +80,7 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
                     id="printspec-preset"
                     data-testid="printspec-preset-select"
                     value={presetId}
-                    disabled={exporting}
+                    disabled={exporting || confirmationOnly}
                     onChange={(e) => { setPresetId(e.target.value); setDpi(getPrintPreset(e.target.value)!.dpi); setDownload(null); setExportError(null); }}
                     className="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-sm text-white mb-4 focus:outline-none focus:ring-1 focus:ring-purple-500"
                 >
@@ -73,40 +89,41 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
                     ))}
                 </select>
 
-                {preset.minDpi < preset.dpi && <label className="block text-xs text-gray-300 mb-3">Resolution
+                {!confirmationOnly && preset.minDpi < preset.dpi && <label className="block text-xs text-gray-300 mb-3">Resolution
                     <select aria-label="Print resolution" value={dpi} disabled={exporting} onChange={e => { setDpi(Number(e.target.value)); setDownload(null); }} className="ml-2 bg-gray-900 rounded p-1">
                         <option value={preset.dpi}>{preset.dpi} DPI (preferred)</option>
                         <option value={preset.minDpi}>{preset.minDpi} DPI (confirm with printer)</option>
                     </select>
                 </label>}
                 {sourceUrl && <figure className="mb-3">
-                    <div className="relative mx-auto max-h-36 overflow-hidden bg-gray-900" style={{ width: Math.min(250, 144 * plan.required.width / plan.required.height), aspectRatio: `${plan.required.width} / ${plan.required.height}` }}>
-                        <img src={sourceUrl} alt="Centered crop preview of the print artwork" className="w-full h-full object-cover" />
+                    <div className="relative mx-auto max-h-36 overflow-hidden bg-gray-900" style={{ width: Math.min(250, 144 * previewWidth / previewHeight), aspectRatio: `${previewWidth} / ${previewHeight}` }}>
+                        <img src={sourceUrl} alt="Crop preview of the print artwork" className="w-full h-full object-cover" style={{ objectPosition: cropPosition }} />
                         {plan.foldsIn?.map(fold => <div key={fold} aria-label={`Fold at ${fold} inches`} className="absolute top-0 bottom-0 border-l border-dashed border-amber-300 pointer-events-none" style={{ left: `${100 * (plan.bleedIn + fold) / plan.exportMeta.widthIn}%` }} />)}
-                        {plan.bleedIn > 0 && <>
+                        {plan.bleedIn > 0 && !confirmationOnly && <>
                             <div className="absolute border border-red-400 pointer-events-none" style={{ left: `${100 * plan.bleedIn / plan.exportMeta.widthIn}%`, right: `${100 * plan.bleedIn / plan.exportMeta.widthIn}%`, top: `${100 * plan.bleedIn / plan.exportMeta.heightIn}%`, bottom: `${100 * plan.bleedIn / plan.exportMeta.heightIn}%` }} />
                             <div className="absolute border border-dashed border-green-300 pointer-events-none" style={{ left: `${100 * (plan.bleedIn + plan.safeIn) / plan.exportMeta.widthIn}%`, right: `${100 * (plan.bleedIn + plan.safeIn) / plan.exportMeta.widthIn}%`, top: `${100 * (plan.bleedIn + plan.safeIn) / plan.exportMeta.heightIn}%`, bottom: `${100 * (plan.bleedIn + plan.safeIn) / plan.exportMeta.heightIn}%` }} />
                         </>}
                     </div>
-                    <figcaption className="text-xs text-gray-400 text-center mt-1">Centered crop · red: trim · green: safe area · amber: folds. Review text and logos before ordering.</figcaption>
+                    <figcaption className="text-xs text-gray-400 text-center mt-1">{confirmationOnly ? 'Proposed finished crop. Bleed is added beyond these edges. Review text and logos before continuing.' : 'Proposed crop · red: trim · green: safe area · amber: folds. Review text and logos before continuing.'}</figcaption>
                 </figure>}
                 <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm font-semibold mb-3 ${style.badge}`} data-testid="printspec-verdict">
                     {style.label}
                 </div>
 
-                <p className="text-white font-mono text-sm mb-1" data-testid="printspec-summary">{plan.summary}</p>
+                <p className="text-white font-mono text-sm mb-1" data-testid="printspec-summary">{confirmationOnly
+                    ? `${Math.round(previewWidth)} × ${Math.round(previewHeight)} px finished trim at ${dpi} DPI; bleed extends beyond trim.` : plan.summary}</p>
                 {plan.bleedIn > 0 && (
                     <p className="text-xs text-gray-300 mb-1">Bleed: {plan.bleedIn}″ each edge · keep important content {plan.safeIn}″ inside trim.</p>
                 )}
                 {plan.handoff && <p className="text-xs text-amber-200 mb-3">{plan.handoff}</p>}
                 <p className="text-xs text-gray-400 mb-4">
-                    Source covers {plan.requiredUpscaleFactor <= 1 ? 'fully' : `${plan.requiredUpscaleFactor}× short of`} this target
+                    Source covers {sourceFactor <= 1 ? 'fully' : `${Math.round(sourceFactor * 100) / 100}× short of`} this target
 
                 </p>
 
-                {plan.warnings.length > 0 && (
+                {warnings.length > 0 && (
                     <ul className="space-y-1.5 mb-4" data-testid="printspec-warnings">
-                        {plan.warnings.map(w => (
+                        {warnings.map(w => (
                             <li key={w} className="text-xs text-amber-300 bg-amber-900/20 border border-amber-700/30 rounded px-2.5 py-1.5">
                                 ⚠ {w}
                             </li>
@@ -129,7 +146,7 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
                     {download ? <a href={download.href} download={download.filename} data-testid="printspec-download" className="px-4 py-2 text-sm rounded-md bg-purple-600 text-white">Download print files</a> : <button
                         className="px-4 py-2 text-sm font-medium rounded-md bg-purple-600 hover:bg-purple-500 text-white transition-colors disabled:opacity-60"
                         data-testid="printspec-use-plan"
-                        disabled={exporting || plan.verdict === 'insufficient'}
+                        disabled={exporting || verdict === 'insufficient'}
                         onClick={async () => {
                             setExporting(true);
                             setExportError(null);
@@ -144,7 +161,7 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
                             }
                         }}
                     >
-                        {exporting ? 'Preparing…' : plan.verdict === 'upscale' ? 'Upscale & export' : plan.verdict === 'insufficient' ? 'Target unavailable' : 'Export print file'}
+                        {exporting ? 'Preparing…' : confirmationOnly ? 'Confirm crop & prepare' : verdict === 'upscale' ? 'Upscale & export' : verdict === 'insufficient' ? 'Target unavailable' : 'Export print file'}
                     </button>}
                 </div>
             </div>

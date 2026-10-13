@@ -66,7 +66,8 @@ const createMockStoreState = (overrides = {}) => ({
     ...overrides
 });
 
-describe('DirectorTools', () => {
+// Legacy service doubles check wiring only, not customer execution or saving.
+describe('DirectorTools (structural only)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(useStore.getState).mockReturnValue(createMockStoreState() as unknown as ReturnType<typeof useStore.getState>);
@@ -396,7 +397,7 @@ describe('DirectorTools', () => {
     });
 
     describe('prepare_print_file and get_print_job_status', () => {
-        it('prepare_print_file enqueues job via httpsCallable for gs:// URIs', async () => {
+        it('prepare_print_file resolves gs:// originals through the local print path', async () => {
             const result = await DirectorTools.prepare_print_file!({
                 imageUri: 'gs://indii-bucket/artwork.png',
                 presetId: 'poster_18x24',

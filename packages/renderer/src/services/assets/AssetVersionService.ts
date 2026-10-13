@@ -16,6 +16,7 @@
 import { auth, db } from '@/services/firebase';
 import { collection, doc, setDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { assetVersionDocument } from './assetVersionDocument';
 
 export type VersionSource =
     | 'generation'
@@ -103,7 +104,7 @@ class AssetVersionServiceImpl {
             compliance: input.compliance,
             tags: input.tags ?? []
         };
-        await setDoc(doc(this.getVersionsRef(input.assetId), version.versionId), { ...version });
+        await setDoc(doc(this.getVersionsRef(input.assetId), version.versionId), assetVersionDocument(version));
         logger.info('[AssetVersionService]', `Recorded ${version.source} version ${version.versionId} for asset ${input.assetId}${input.parentVersionId ? ` (parent ${input.parentVersionId})` : ' (root)'}`);
         return version;
     }

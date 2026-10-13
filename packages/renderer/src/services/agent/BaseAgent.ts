@@ -863,7 +863,7 @@ export class BaseAgent implements SpecializedAgent {
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
         // KEEPER: Prevent Context Duplication
-        const { chatHistoryString, chatHistory, memoryContext, boardroomTask: _boardroomTask, ...leanContext } = (context || {}) as Record<string, unknown>;
+        const { chatHistoryString, chatHistory, memoryContext, boardroomTask: _boardroomTask, assetReferences: _assetReferences, signal: _signal, ...leanContext } = (context || {}) as Record<string, unknown>;
 
         const enrichedContext: AgentContext & { agentIdentity: AgentIdentityCard; [key: string]: unknown } = sanitizeObjectForPrompt({
             ...leanContext,
@@ -873,6 +873,8 @@ export class BaseAgent implements SpecializedAgent {
             // GEAP: Inject agent identity into context for provenance tracking
             agentIdentity: this.identityCard,
         });
+        enrichedContext.signal = signal;
+        enrichedContext.assetReferences = context?.assetReferences;
 
         // Agent Canvas Context Injection: If agent canvas has active panels, inject lightweight overview
         try {
@@ -1054,7 +1056,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
             {
                 agentId: this.id,
                 moduleContext: activeModule,
-                isReadOnly: false, // Reserved for future strict read-only execution modes
+                isReadOnly: context?.isReadOnly === true,
                 conversationMode: context?.conversationMode,
             }
         );
@@ -1489,6 +1491,12 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             declaredToolNames.length > 0 ? declaredToolNames : undefined
                         );
                         const universalTrashTools = new Set(['list_trash', 'move_to_trash', 'restore_from_trash']);
+                        if (context?.isReadOnly && TOOL_RISK_REGISTRY[name]?.riskTier !== 'read') {
+                            const blockedResult = toolError('This response is for discussion only. No action was executed.', 'READ_ONLY_EXECUTION');
+                            toolCalls.push({ name, args, result: blockedResult });
+                            fullPrompt += `\n[Tool ${name} blocked: this is a read-only discussion.]\n`;
+                            continue;
+                        }
                         if (authorizedTools !== undefined && !authorizedTools.includes(name) && !universalTrashTools.has(name)) {
                             logger.warn(`[BaseAgent] SECURITY: Agent '${this.id}' attempted unauthorized tool call: '${name}'`);
                             const blockedResult: ToolFunctionResult = {

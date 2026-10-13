@@ -18,6 +18,7 @@
  * ```
  */
 import { AnimatePresence, motion } from 'motion/react';
+import { createPortal } from 'react-dom';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
@@ -31,9 +32,12 @@ interface ModalProps {
     maxWidth?: string;
     /** Additional class names for the inner panel */
     className?: string;
+    /** Stable callable dialogs must remain visible above full-screen workspaces. */
+    portal?: boolean;
+    overlayZIndex?: number;
 }
 
-export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2xl', className = '' }: ModalProps) {
+export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2xl', className = '', portal = false, overlayZIndex }: ModalProps) {
     const trapRef = useFocusTrap(isOpen);
 
     // Escape key closes modal
@@ -44,7 +48,7 @@ export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2x
         handler: () => onClose()
     }, [onClose], isOpen);
 
-    return (
+    const content = (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
@@ -55,6 +59,7 @@ export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2x
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 bg-black/70 backdrop-blur-sm overscroll-contain sm:items-center"
+                    style={overlayZIndex === undefined ? undefined : { zIndex: overlayZIndex }}
                     onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
                 >
                     <motion.div
@@ -71,4 +76,5 @@ export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2x
             )}
         </AnimatePresence>
     );
+    return portal && typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 }

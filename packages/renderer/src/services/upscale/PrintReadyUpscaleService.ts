@@ -35,6 +35,8 @@ export interface PrintReadyUpscaleOptions {
     prompt?: string;
     onProgress?: (progress: number, stage: string) => void;
     signal?: AbortSignal;
+    /** Human reviews the actual crop before any enhancement or export starts. */
+    cropConfirmationPresetId?: string;
 }
 
 export interface PrintReadyUpscaleResult {
@@ -100,6 +102,23 @@ export class PrintReadyUpscaleService {
         if (!Number.isInteger(bleedPx) || bleedPx < 0 || !Number.isInteger(safePx) || safePx < 0 ||
             !Number.isFinite(dpi) || dpi <= 0 || fullWidth * fullHeight > 80_000_000) {
             throw new Error('Print density, margins, or output size is invalid.');
+        }
+        if (options.cropConfirmationPresetId &&
+            Math.abs(sourceImg.naturalWidth / sourceImg.naturalHeight - trimWidth / trimHeight) > 0.001) {
+            options.onProgress?.(0.15, 'Waiting for crop confirmation...');
+            const { PrintSpecDialog } = await import('@/components/ui/PrintSpecDialog');
+            const confirmation = PrintSpecDialog.call({
+                srcWidth: sourceImg.naturalWidth, srcHeight: sourceImg.naturalHeight,
+                initialPresetId: options.cropConfirmationPresetId, sourceUrl: sourceDataUrl,
+                confirmationOnly: true, focusX, focusY,
+            });
+            const cancel = () => PrintSpecDialog.end(confirmation, null);
+            options.signal?.addEventListener('abort', cancel, { once: true });
+            try {
+                options.signal?.throwIfAborted();
+                if (!await confirmation) throw new Error('Print crop was not approved. No print file was produced.');
+            } finally { options.signal?.removeEventListener('abort', cancel); }
+            options.signal?.throwIfAborted();
         }
         let intermediateDataUrl = sourceDataUrl;
         let method: PrintUpscaleMethod = 'resize-only';

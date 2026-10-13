@@ -12,7 +12,7 @@ interface ConfirmProps {
 
 export const ConfirmDialog = createCallable<ConfirmProps, boolean>(({ call, title = 'Confirm', message, confirmText = 'Confirm', cancelText = 'Cancel', variant = 'default' }) => {
     return (
-        <Modal isOpen={true} onClose={() => call.end(false)} titleId="confirm-dialog-title" maxWidth="max-w-md">
+        <Modal isOpen={true} onClose={() => call.end(false)} titleId="confirm-dialog-title" maxWidth="max-w-md" portal overlayZIndex={100000}>
             <div className="p-6">
                 <h2 id="confirm-dialog-title" className="text-xl font-bold text-white mb-4">{title}</h2>
                 <div className="text-gray-300 mb-6">{message}</div>

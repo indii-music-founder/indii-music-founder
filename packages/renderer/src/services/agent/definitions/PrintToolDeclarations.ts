@@ -5,11 +5,11 @@ import type { FunctionDeclaration } from '../types';
 export const PRINT_TOOL_DECLARATIONS: FunctionDeclaration[] = [
     {
         name: 'prepare_print_file',
-        description: 'Prepare album artwork or merchandise graphics for high-resolution physical printing or DSP submission with exact bleed, DPI, and dimensions. Runs on-device immediately without cloud GPU costs for local assets, uploads, and URLs.',
+        description: 'Reuse existing artwork and enlarge its pixels to exact print/DSP dimensions, encode PNG, and embed DPI metadata. Uses on-device AI when enlargement is needed (maximum 4×); it is not metadata-only. Aspect-ratio changes require a crop preview confirmation. Returns separate file creation, gallery saving, and version recording results.',
         parameters: {
             type: 'OBJECT',
             properties: {
-                imageUri: { type: 'STRING', description: 'Asset ID (e.g. upload-0, brand-asset-0, gallery ID) or image URL/Cloud Storage URI of source artwork.' },
+                imageUri: { type: 'STRING', description: 'Asset reference (attachment-0 for the current Boardroom attachment, upload-0 for an earlier upload, boardroom-asset-0, brand-asset-0, gallery ID) or image URL/Cloud Storage URI of source artwork.' },
                 presetId: { type: 'STRING', enum: PRINT_MEDIA_PRESETS.map(preset => preset.id), description: 'Use cover_art_distributor for a separate 3000 × 3000 PNG at 300 DPI without physical bleed. Choose a physical preset only for that print target.' },
                 bleedMode: { type: 'STRING', enum: ['fill', 'extend'], description: 'Bleed mode: fill (crops border for bleed) or extend (mirrors edges outward).' },
                 focusX: { type: 'NUMBER', description: 'Normalized focal crop center X (0.0 to 1.0, default 0.5).' },
