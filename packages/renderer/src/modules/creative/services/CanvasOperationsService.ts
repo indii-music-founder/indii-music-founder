@@ -30,6 +30,13 @@ export interface PreparedMasks {
     masks: MaskData[];
 }
 
+export interface CanvasTextProperties {
+    text: string;
+    fontFamily: string;
+    fontSize: number;
+    fill: string;
+}
+
 export interface LayerInfo {
     id: string;
     name: string;
@@ -193,7 +200,8 @@ export class CanvasOperationsService {
         canvasElement: HTMLCanvasElement,
         imageUrl?: string,
         onReady?: () => void | Promise<void>,
-        onChange?: () => void
+        onChange?: () => void,
+        onTextSelection?: (properties: CanvasTextProperties | null) => void
     ): fabric.Canvas {
         // ISSUE-1391: re-initializing while a canvas is already live wraps the
         // element a second time (fabric replaceChild's a new container over the
@@ -216,16 +224,18 @@ export class CanvasOperationsService {
             backgroundColor: '#1a1a1a',
         });
 
+        const initializedCanvas = this.canvas;
         if (imageUrl) {
             this.loadImageSafe(imageUrl)
                 .then((img: fabric.Image) => {
-                    if (!this.canvas) return;
+                    if (this.canvas !== initializedCanvas) return;
                     this.placeImageOnCanvas(img, maxWidth, maxHeight);
                     void Promise.resolve(onReady?.()).catch((err: unknown) => {
                         logger.error('[CanvasOps] Canvas ready callback failed:', err);
                     });
                 })
                 .catch((err: unknown) => {
+                    if (this.canvas !== initializedCanvas) return;
                     logger.error('[CanvasOps] All image load strategies failed:', err);
                     // Still call onReady so UI doesn't hang, but canvas will be empty
                     void Promise.resolve(onReady?.()).catch((readyErr: unknown) => {
@@ -238,6 +248,23 @@ export class CanvasOperationsService {
             });
         }
 
+        if (onTextSelection) {
+            const syncTextSelection = () => {
+                const selected = this.canvas?.getActiveObject();
+                onTextSelection(selected instanceof fabric.IText ? {
+                    text: selected.text,
+                    fontFamily: selected.fontFamily,
+                    fontSize: selected.fontSize,
+                    fill: typeof selected.fill === 'string' ? selected.fill : '#000000',
+                } : null);
+            };
+            this.canvas.on('selection:created', syncTextSelection);
+            this.canvas.on('selection:updated', syncTextSelection);
+            this.canvas.on('selection:cleared', syncTextSelection);
+            this.canvas.on('object:modified', syncTextSelection);
+            this.canvas.on('text:changed', syncTextSelection);
+        }
+
         if (onChange) {
             const wrappedChange = () => {
                 if (!this._isUndoingRedoing) {
@@ -246,6 +273,7 @@ export class CanvasOperationsService {
                 onChange();
             };
             this.canvas.on('object:modified', wrappedChange);
+            this.canvas.on('text:changed', wrappedChange);
             this.canvas.on('object:added', wrappedChange);
             this.canvas.on('object:removed', wrappedChange);
             this.canvas.on('path:created', wrappedChange);
@@ -455,7 +483,9 @@ export class CanvasOperationsService {
     async ensureBaseImage(imageUrl?: string): Promise<boolean> {
         if (!this.canvas || !imageUrl || this.hasBaseImage()) return false;
 
+        const recoveringCanvas = this.canvas;
         const img = await this.loadImageSafe(imageUrl);
+        if (this.canvas !== recoveringCanvas) return false;
         img.set('data', { isBaseImage: true });
         scaleImageToCanvas(img, this.canvas);
         this.canvas.add(img);
@@ -823,7 +853,8 @@ export class CanvasOperationsService {
      * Load canvas from JSON string
      */
     async loadFromJSON(json: string): Promise<void> {
-        if (!this.canvas) return;
+        const restoringCanvas = this.canvas;
+        if (!restoringCanvas) return;
         try {
             const parsed = JSON.parse(json);
             // CRITICAL (ISSUE-478): Fabric's loadFromJSON reloads images straight from
@@ -831,8 +862,9 @@ export class CanvasOperationsService {
             // the bucket lacks CORS — every later toDataURL() then throws. Swap remote
             // image sources to same-origin blob URLs BEFORE handing the JSON to Fabric.
             await this._sanitizeRemoteImageSources(parsed);
-            await this.canvas.loadFromJSON(parsed);
-            this.canvas.renderAll();
+            if (this.canvas !== restoringCanvas) return;
+            await restoringCanvas.loadFromJSON(parsed);
+            if (this.canvas === restoringCanvas) restoringCanvas.renderAll();
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
             logger.error(`Failed to load canvas from JSON: ${message}`);
@@ -921,9 +953,21 @@ export class CanvasOperationsService {
             top: 300,
             fill: fill,
             fontSize: 24,
+            fontFamily: 'Arial',
         });
         this.canvas.add(text);
+        this.canvas.setActiveObject(text);
         this.canvas.renderAll();
+    }
+
+    /** Apply typography only to the currently selected editable text layer. */
+    updateSelectedText(properties: Partial<CanvasTextProperties>): void {
+        const selected = this.canvas?.getActiveObject();
+        if (!this.canvas || !(selected instanceof fabric.IText)) return;
+        selected.set(properties);
+        selected.setCoords();
+        this.canvas.renderAll();
+        this.canvas.fire('object:modified', { target: selected });
     }
 
     /**
@@ -1166,8 +1210,8 @@ export class CanvasOperationsService {
 
         if (tool === 'select') {
             this.canvas.getObjects().forEach(obj => {
-                obj.selectable = true;
-                obj.evented = true;
+                obj.selectable = !this.isLayerLocked(obj);
+                obj.evented = !this.isLayerLocked(obj);
             });
         } else {
             this.canvas.getObjects().forEach(obj => {
@@ -1177,11 +1221,8 @@ export class CanvasOperationsService {
         }
 
         if (tool === 'text') {
-            this.addText('New Text', color?.hex || '#ffffff');
-            // We stay in text tool if the user wants to add more? 
-            // The request says "text input directly on the canvas".
-            // Typically after adding one, you might want to edit it.
             this.setTool('select', color);
+            this.addText('New Text', color?.hex || '#ffffff');
         }
 
         this.canvas.renderAll();
@@ -1575,6 +1616,11 @@ export class CanvasOperationsService {
      * about the scene, not artwork the user composes with, so they don't
      * belong in the layer list. Use clearDetections() to remove them.
      */
+    private isLayerLocked(obj: fabric.FabricObject): boolean {
+        const objData = (obj as unknown as { data?: Record<string, unknown> }).data;
+        return objData?.isLocked === true || Boolean(obj.lockMovementX && obj.lockMovementY);
+    }
+
     getLayers(): LayerInfo[] {
         if (!this.canvas) return [];
         return this.canvas.getObjects()
@@ -1589,7 +1635,7 @@ export class CanvasOperationsService {
                 name: this.describeLayerName(obj, data),
                 type: obj.type ?? 'object',
                 visible: obj.visible !== false,
-                locked: obj.selectable === false,
+                locked: this.isLayerLocked(obj),
                 isBaseImage: !!data.isBaseImage,
                 isAnnotation: this.isAnnotation(obj),
             }))
@@ -1602,7 +1648,7 @@ export class CanvasOperationsService {
     selectLayer(id: string): void {
         if (!this.canvas) return;
         const obj = this.findLayerObject(id);
-        if (!obj || obj.selectable === false) return;
+        if (!obj || this.isLayerLocked(obj)) return;
         this.canvas.setActiveObject(obj);
         this.canvas.renderAll();
     }
@@ -1626,13 +1672,15 @@ export class CanvasOperationsService {
         if (!this.canvas) return;
         const obj = this.findLayerObject(id);
         if (!obj) return;
-        const nextLocked = obj.selectable !== false;
+        const nextLocked = !this.isLayerLocked(obj);
+        const objData = (obj as unknown as { data?: Record<string, unknown> }).data || {};
         obj.set({
-            selectable: !nextLocked,
-            evented: !nextLocked,
+            data: { ...objData, isLocked: nextLocked },
+            selectable: !nextLocked && this._activeTool === 'select',
+            evented: !nextLocked && this._activeTool === 'select',
             lockMovementX: nextLocked,
             lockMovementY: nextLocked,
-        });
+        } as Partial<fabric.FabricObjectProps>);
         if (nextLocked && this.canvas.getActiveObject() === obj) {
             this.canvas.discardActiveObject();
         }

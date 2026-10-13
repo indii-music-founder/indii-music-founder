@@ -193,8 +193,10 @@ export class EditingService {
         for (let i = 0; i < count; i++) {
             let currentImageData = options.image;
             const compositePromptParts: string[] = [];
-            let currentThoughtSignature: string | undefined;
 
+            // Each region is a new single-turn request using the previous pixels.
+            // A thought signature belongs to its original model response part;
+            // sending it alone in a new user turn makes Gemini reject step two.
             // Sequential Pipeline: Base -> Mask 1 -> Result 1 -> Mask 2 -> ... -> Final
             for (const mask of options.masks) {
                 // Add variation hint to prompt for diversity
@@ -210,7 +212,6 @@ export class EditingService {
                     model: options.model,
                     imageSize: options.imageSize,
                     aspectRatio: options.aspectRatio,
-                    thoughtSignature: currentThoughtSignature, // Circulate through chain
                     sessionId: options.sessionId,
                     routeId: options.routeId,
                     routeLabel: options.routeLabel,
@@ -223,8 +224,6 @@ export class EditingService {
                     if (match) {
                         currentImageData = { mimeType: match[1]!, data: match[2]! };
                         compositePromptParts.push(mask.prompt);
-                        // Carry thought signature forward through the chain
-                        currentThoughtSignature = result.thoughtSignature;
                     } else {
                         throw new Error("Failed to parse intermediate result data URI");
                     }

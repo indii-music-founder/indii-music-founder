@@ -1,3 +1,4 @@
+// Structural-only legacy suite: test doubles do not verify the production customer path.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, within, act } from '@testing-library/react';
 import CreativeCanvas from '../CreativeCanvas';
@@ -147,7 +148,7 @@ vi.mock('../../services/CanvasOperationsService', () => ({
         }),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),
-        setMagicFillMode: vi.fn(),
+        setTool: vi.fn(),
         canUndo: vi.fn().mockReturnValue(false),
         canRedo: vi.fn().mockReturnValue(false),
         hasContent: vi.fn().mockReturnValue(true),
@@ -255,6 +256,7 @@ describe('CreativeCanvas', () => {
                 // ISSUE-1395: the fresh-path onReady resets the dirty baseline
                 // after the base image is placed — no longer undefined.
                 expect.any(Function),
+                expect.any(Function),
                 expect.any(Function)
             );
         });
@@ -272,7 +274,7 @@ describe('CreativeCanvas', () => {
 
     it('should show close button', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
-        expect(screen.getByTestId('canvas-close-btn')).toBeInTheDocument();
+        expect(screen.getByTestId('canvas-header-close')).toBeInTheDocument();
     });
 
     // ISSUE-1395: the header "Canvas" button is the primary path for moving

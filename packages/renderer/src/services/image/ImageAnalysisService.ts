@@ -2,6 +2,7 @@ import { logger } from '@/utils/logger';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { withServiceError } from '@/lib/errors';
+import { CloudStorageService } from '@/services/CloudStorageService';
 import type { Part, Schema } from '@/shared/types/ai.dto';
 
 export interface Box2D {
@@ -21,6 +22,17 @@ export interface ImageAnalysisResult {
 }
 
 export class ImageAnalysisService {
+    /** Vision analysis needs a preview, not the full PNG artwork payload. */
+    private async prepareAnalysisImage(imageBase64: string): Promise<{ mimeType: string; data: string }> {
+        const source = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
+        const { dataUri } = await CloudStorageService.compressImage(source, {
+            maxWidth: 1024, maxHeight: 1024, quality: 0.8, format: 'jpeg',
+        });
+        const data = dataUri.split(',')[1];
+        if (!data) throw new Error('Could not prepare this image for object analysis.');
+        return { mimeType: 'image/jpeg', data };
+    }
+
     /**
      * Detect objects in an image using Gemini's vision capabilities.
      * Returns a list of objects with labels and normalized box_2d coordinates [0..1000].
@@ -32,8 +44,7 @@ export class ImageAnalysisService {
         return withServiceError('ImageAnalysisService', 'detectObjects', async () => {
             logger.info('Analyzing image for object detection...');
             
-            const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-            const mimeType = imageBase64.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/png';
+            const analysisImage = await this.prepareAnalysisImage(imageBase64);
             
             const schema: Schema = {
                 type: 'array',
@@ -62,7 +73,7 @@ export class ImageAnalysisService {
             
             const parts: Part[] = [
                 { text: prompt },
-                { inlineData: { mimeType, data: cleanBase64 } }
+                { inlineData: analysisImage }
             ];
             
             const results = await AutonomousIntelligence.generateStructuredData<DetectedObject[]>(
@@ -88,8 +99,7 @@ export class ImageAnalysisService {
         return withServiceError('ImageAnalysisService', 'extractSegmentationMask', async () => {
             logger.info(`Extracting segmentation mask for label: ${targetLabel}`);
             
-            const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-            const mimeType = imageBase64.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/png';
+            const analysisImage = await this.prepareAnalysisImage(imageBase64);
             
             // We use thinkingBudget: 0 for fast base64 extractions if that is a valid parameter format in the config.
             // The prompt directly instructs the model to return a pure base64 representation of the mask.
@@ -111,7 +121,7 @@ Return ONLY valid JSON containing a single field "maskBase64" which is a base64-
             
             const parts: Part[] = [
                 { text: prompt },
-                { inlineData: { mimeType, data: cleanBase64 } }
+                { inlineData: analysisImage }
             ];
 
             const result = await AutonomousIntelligence.generateStructuredData<{ maskBase64: string }>(

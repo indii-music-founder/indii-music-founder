@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { HistoryItem, useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 import { CanvasHeader } from './CanvasHeader';
@@ -33,6 +33,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         isLayersPanelOpen,
         layers,
         selectedLayerId,
+        selectedText,
+        updateSelectedText,
         hasDetections,
         activeColor,
         definitions,
@@ -87,6 +89,24 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleAddSketchLayer,
         handleSendToCanvas,
     } = useCreativeCanvas({ item, onClose, onRefine });
+
+    const [contextPanelWidth, setContextPanelWidth] = useState(0);
+    useLayoutEffect(() => {
+        const panel = document.querySelector<HTMLElement>('[aria-label="Context panel"]');
+        if (!panel) return;
+        const measure = () => setContextPanelWidth(panel.getBoundingClientRect().width);
+        measure();
+        const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+        observer?.observe(panel);
+        window.addEventListener('resize', measure);
+        return () => { observer?.disconnect(); window.removeEventListener('resize', measure); };
+    }, []);
+
+    const openAssets = () => {
+        const state = useStore.getState();
+        state.setRightPanelTab('assets');
+        if (!state.isRightPanelOpen) state.toggleRightPanel();
+    };
 
     const [isUpscaling, setIsUpscaling] = useState(false);
     const [upscaleStatus, setUpscaleStatus] = useState({ stage: '', progress: 0, saving: false });
@@ -174,7 +194,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 onClose();
                 return;
             }
-            if (e.key === 'Tab' && containerRef.current) {
+            if (e.key === 'Tab' && contextPanelWidth === 0 && containerRef.current) {
                 const focusable = containerRef.current.querySelectorAll<HTMLElement>(
                     'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
                 );
@@ -193,7 +213,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         };
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [onClose]);
+    }, [onClose, contextPanelWidth]);
 
     if (!item) return null;
 
@@ -203,8 +223,9 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             <motion.div
                 ref={containerRef}
                 role="dialog"
-                aria-modal="true"
+                aria-modal={contextPanelWidth === 0}
                 aria-label="Creative Canvas Editor"
+                style={{ right: contextPanelWidth }}
                 tabIndex={-1}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -227,6 +248,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     grounding={editManifest.settings.grounding}
                     imageSize={editManifest.settings.imageSize}
                     onClose={onClose}
+                    onOpenAssets={openAssets}
                     // ISSUE-1395: the canvas board is image-only — a video
                     // item falls back to plain close instead of staging an
                     // unrenderable video URL on the board.
@@ -242,8 +264,9 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             tool/annotation rail is hidden (video preview has
                             its own controls). */}
                         {item.type === 'image' && (
-                            <aside className="z-30 hidden min-h-0 flex-col items-center justify-center border-r border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl md:flex">
+                            <aside aria-label="Edit Bar" className="z-30 hidden min-h-0 flex-col items-center justify-center border-r border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl md:flex">
                                 <div className="max-h-full overflow-y-auto rounded-2xl border border-white/10 bg-[#050608]/82 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                    <p className="mb-2 text-center text-[9px] font-semibold text-gray-400">Edit Bar</p>
                                     <CanvasToolbar
                                         addRectangle={handleAddRectangle}
                                         addCircle={handleAddCircle}
@@ -316,6 +339,23 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             />
                         </div>
                     </div>
+
+                    {selectedText && !isMagicFillMode && (
+                        <div role="toolbar" aria-label="Text formatting" className="absolute left-1/2 top-4 z-30 flex max-w-[calc(100%_-_32px)] md:max-w-[calc(100%_-_160px)] -translate-x-1/2 flex-wrap items-center gap-3 rounded-xl border border-white/15 bg-[#0b0d10]/95 p-3 text-xs text-white shadow-xl">
+                            <label className="flex items-center gap-2">Text
+                                <input aria-label="Text content" value={selectedText.text} onChange={e => updateSelectedText({ text: e.target.value })} className="w-28 rounded border border-white/20 bg-black px-2 py-1" />
+                            </label>
+                            <label className="flex items-center gap-2">Font
+                                <select aria-label="Text font" value={selectedText.fontFamily} onChange={e => updateSelectedText({ fontFamily: e.target.value })} className="rounded border border-white/20 bg-black px-2 py-1">
+                                    {['Arial', 'Georgia', 'Courier New'].map(font => <option key={font} value={font}>{font}</option>)}
+                                    {!['Arial', 'Georgia', 'Courier New'].includes(selectedText.fontFamily) && <option value={selectedText.fontFamily}>{selectedText.fontFamily}</option>}
+                                </select>
+                            </label>
+                            <label className="flex items-center gap-2">Size
+                                <input aria-label="Text size" type="number" min="8" max="300" value={selectedText.fontSize} onChange={e => { const size = Number(e.target.value); if (size >= 8 && size <= 300) updateSelectedText({ fontSize: size }); }} className="w-16 rounded border border-white/20 bg-black px-2 py-1" />
+                            </label>
+                        </div>
+                    )}
 
                     {isUpscaling && (
                         <div className="absolute inset-x-4 top-4 z-40 mx-auto max-w-sm rounded-xl border border-amber-500/30 bg-[#050608]/95 p-4 shadow-xl">

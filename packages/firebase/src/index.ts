@@ -172,6 +172,7 @@ export {
 
 // Rights Functions (ISSUE-655: provider registration queued server-side; renderer never touches provider credentials)
 export { queueRightsRegistration } from './functions/rights/queueRightsRegistration';
+export { rightsRegistration } from './functions/rights/rightsRegistration';
 
 // Legal Functions (Item 412: Split Sheet PDF Export)
 export { exportSplitSheet } from './legal/exportSplitSheet';

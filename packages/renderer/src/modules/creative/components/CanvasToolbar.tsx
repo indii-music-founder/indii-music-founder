@@ -49,7 +49,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className={`flex ${isVertical ? 'flex-col' : 'items-center'} gap-1.5 ${isVertical ? 'py-1' : 'px-2'}`}>
+            <div role="toolbar" aria-label="Edit Bar tools" className={`flex ${isVertical ? 'flex-col' : 'items-center'} gap-1.5 ${isVertical ? 'py-1' : 'px-2'}`}>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button onClick={() => setTool('select')} className={getActiveButtonClass('select')} aria-label="Select Tool">

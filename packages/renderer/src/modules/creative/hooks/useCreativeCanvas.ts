@@ -4,7 +4,7 @@ import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
-import { canvasOps } from '../services/CanvasOperationsService';
+import { canvasOps, type CanvasTextProperties } from '../services/CanvasOperationsService';
 import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
@@ -27,12 +27,14 @@ import type { Candidate } from '../components/CandidateReview';
 function debounce<T extends (...args: any[]) => any>(
     func: T,
     wait: number
-): (...args: Parameters<T>) => void {
+): ((...args: Parameters<T>) => void) & { cancel: () => void } {
     let timeout: ReturnType<typeof setTimeout> | null = null;
-    return function (...args: Parameters<T>) {
+    const debounced = (...args: Parameters<T>) => {
         if (timeout) clearTimeout(timeout);
         timeout = setTimeout(() => func(...args), wait);
     };
+    debounced.cancel = () => { if (timeout) clearTimeout(timeout); };
+    return debounced;
 }
 
 async function resolveEditableImageUrl(item: HistoryItem): Promise<string> {
@@ -113,14 +115,14 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     // UI State
     const [isProcessing, setIsProcessing] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string>('');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [isMagicFillMode, setIsMagicFillMode] = useState(false);
     const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
     const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
     const [isLayersPanelOpen, setIsLayersPanelOpen] = useState(false);
     const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
     const [hasDetections, setHasDetections] = useState(false);
     const [activeTool, setActiveTool] = useState<'select' | 'line' | 'polygon' | 'text' | 'brush'>('brush');
+    const isMagicFillMode = activeTool === 'brush';
+    const [selectedText, setSelectedText] = useState<CanvasTextProperties | null>(null);
      
     const [historyTrigger, setHistoryTrigger] = useState(0); // Used to force UI update for canUndo/canRedo
     const [isSavingCanvas, setIsSavingCanvas] = useState(false);
@@ -128,6 +130,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     // Data State
     const [prompt, setPrompt] = useState('');
     const [activeColor, setActiveColor] = useState<CreativeColor>(STUDIO_COLORS[0]!);
+    const toolRef = useRef(activeTool);
+    const colorRef = useRef(activeColor);
+    useLayoutEffect(() => {
+        toolRef.current = activeTool;
+        colorRef.current = activeColor;
+    }, [activeTool, activeColor]);
+
     const [definitions, setDefinitions] = useState<Record<string, string>>({});
     const [referenceImages, setReferenceImages] = useState<Record<string, { mimeType: string, data: string } | null>>({});
     const [referenceRoles, setReferenceRoles] = useState<Record<string, CreativeVaultScope>>({});
@@ -211,6 +220,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         studioControls.resolution,
         studioControls.useGrounding
     ]);
+    const manifestRef = useRef(editManifest);
+    useLayoutEffect(() => { manifestRef.current = editManifest; }, [editManifest]);
     const editSummary = useMemo(() => summarizeCreativeEditManifest(editManifest), [editManifest]);
     const uploadSessionMedia = async (
         mediaByColor: Record<string, { mimeType: string; data: string } | null>,
@@ -295,6 +306,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     // container first (fabric's cleanupDOM restores the original parent).
     useLayoutEffect(() => {
         let isMounted = true;
+        let cancelPendingSave: (() => void) | undefined;
 
         async function setupCanvas() {
             if (!canvasEl.current || !item || item.type !== 'image') return;
@@ -309,17 +321,14 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 return;
             }
 
-            const debouncedSave = debounce(async () => {
-                if (typeof canvasOps?.isInitialized !== 'function' || !canvasOps.isInitialized()) return;
+            const debouncedSave = debounce(async (snapshot: string) => {
                 try {
-                    const json = await canvasOps.toJSON();
-                    if (json) {
-                        await saveCanvasStateToStorage(item.id, JSON.stringify(json));
-                    }
+                    await saveCanvasStateToStorage(item.id, snapshot);
                 } catch (err: unknown) {
                     logger.warn('[CreativeStudio] Auto-save failed', err);
                 }
             }, 1000);
+            cancelPendingSave = debouncedSave.cancel;
 
             // Fire on every canvas mutation. Bump historyTrigger IMMEDIATELY so the
             // Undo/Redo buttons re-evaluate canUndo()/canRedo() right after a draw
@@ -328,7 +337,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             const handleCanvasChange = () => {
                 dirtyRef.current = true;
                 setHistoryTrigger(prev => prev + 1);
-                debouncedSave();
+                // Capture this canvas now; a delayed save must never read the
+                // next image after the user switches through Project Assets.
+                void canvasOps.toJSON().then(json => {
+                    if (json && isMounted) debouncedSave(JSON.stringify(json));
+                }).catch(err => logger.warn('[CreativeStudio] Canvas snapshot failed', err));
             };
 
             // Try to load any previous edits/annotations FIRST
@@ -352,17 +365,19 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         // beyond the plain base image is remembered so it can
                         // travel to the board on the first send.
                         dirtyRef.current = false;
+                        if (isMounted) canvasOps.setTool(toolRef.current, colorRef.current);
                         baselineJsonRef.current = serializeCanvasObjects(await canvasOps.toJSON());
                         restoredContentRef.current = restoredStateHasContent(savedState);
-                    }, handleCanvasChange);
+                    }, handleCanvasChange, setSelectedText);
                 } else if (isMounted) {
                     // Initialize WITH base image URL
                     canvasOps.initialize(canvasEl.current, editableImageUrl, async () => {
                         // The base image placement fires object:added before
                         // onReady — that is the baseline, not a user edit.
                         dirtyRef.current = false;
+                        if (isMounted) canvasOps.setTool(toolRef.current, colorRef.current);
                         baselineJsonRef.current = serializeCanvasObjects(await canvasOps.toJSON());
-                    }, handleCanvasChange);
+                    }, handleCanvasChange, setSelectedText);
                 }
 
                 try {
@@ -401,8 +416,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     // Fallback to fresh canvas with resolved URL
                     canvasOps.initialize(canvasEl.current, await resolveEditableImageUrl(item), async () => {
                         dirtyRef.current = false;
+                        if (isMounted) canvasOps.setTool(toolRef.current, colorRef.current);
                         baselineJsonRef.current = serializeCanvasObjects(await canvasOps.toJSON());
-                    }, handleCanvasChange);
+                    }, handleCanvasChange, setSelectedText);
                 }
             }
         }
@@ -411,6 +427,16 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
         return () => {
             isMounted = false;
+            cancelPendingSave?.();
+            if (item?.type === 'image' && dirtyRef.current) {
+                void canvasOps.toJSON().then(json => {
+                    if (json) return saveCanvasStateToStorage(item.id, JSON.stringify(json));
+                }).catch(err => logger.warn('[CreativeStudio] Canvas switch save failed', err));
+            }
+            if (item?.type === 'image') {
+                void creativeSessionService.upsertFromManifest(manifestRef.current, { lastAction: 'leave_editor' })
+                    .catch(err => logger.warn('[CreativeStudio] Edit definitions save failed', err));
+            }
             canvasOps.dispose();
         };
     }, [item]);
@@ -448,7 +474,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     };
 
     const handleSetTool = (tool: 'select' | 'line' | 'polygon' | 'text' | 'brush') => {
-        setActiveTool(tool);
+        setActiveTool(tool === 'text' ? 'select' : tool);
         canvasOps.setTool(tool, activeColor);
         if (tool === 'brush') {
             setMagicFillPrompt(definitions[activeColor.id] || '');
@@ -464,7 +490,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         setHistoryTrigger(prev => prev + 1);
     };
     const handleAddText = () => {
-        canvasOps.addText('New Text', activeColor.hex);
+        handleSetTool('text');
         setHistoryTrigger(prev => prev + 1);
     };
     const handleAddSketchLayer = () => {
@@ -496,6 +522,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     const handleSelectLayer = (id: string) => {
         setSelectedLayerId(id);
+        handleSetTool('select');
         canvasOps.selectLayer(id);
     };
 
@@ -1265,7 +1292,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         // State
         isProcessing,
         processingStatus,
-        isMagicFillMode: activeTool === 'brush',
+        isMagicFillMode,
+        selectedText,
+        updateSelectedText: (properties: Partial<CanvasTextProperties>) => canvasOps.updateSelectedText(properties),
         isSelectingEndFrame,
         isDefinitionsOpen,
         isLayersPanelOpen,

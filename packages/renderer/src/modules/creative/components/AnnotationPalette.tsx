@@ -21,8 +21,8 @@ export default function AnnotationPalette({
     const isVertical = orientation === 'vertical';
 
     return (
-        <div className={`flex ${isVertical ? 'flex-col' : 'flex-row'} gap-2 items-center bg-transparent border-0 h-auto w-auto`}>
-            <div className={`flex ${isVertical ? 'flex-col' : 'flex-row'} gap-2 items-center`}>
+        <div className={`flex ${isVertical ? 'flex-col' : 'flex-row'} gap-1 items-center bg-transparent border-0 h-auto w-auto`}>
+            <div className={`flex ${isVertical ? 'flex-col' : 'flex-row'} gap-1 items-center`}>
                 {STUDIO_COLORS.map((color) => {
                     const hasDefinition = !!colorDefinitions[color.id];
                     const isActive = activeColor.id === color.id;
@@ -32,23 +32,21 @@ export default function AnnotationPalette({
                             <button
                                 onClick={() => onColorSelect(color)}
                                 data-testid={`color-btn-${color.id}`}
-                                className={`w-8 h-8 rounded-full border-2 transition-all shadow-sm relative flex items-center justify-center
-                                    ${isActive
-                                        ? 'border-white scale-110 shadow-md ring-2 ring-white/20'
-                                        : 'border-transparent hover:scale-105 hover:border-gray-500'
-                                    }`}
-                                style={{ backgroundColor: color.hex }}
+                                aria-label={`${color.name}${hasDefinition ? ': ' + colorDefinitions[color.id] : ''}`}
+                                aria-pressed={isActive}
+                                className={`w-8 h-7 rounded transition-all relative flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${isActive ? 'bg-white/10 ring-2 ring-white/50' : 'hover:bg-white/10'}`}
                                 title={`${color.name}${hasDefinition ? ': ' + colorDefinitions[color.id] : ''}`}
                             >
-                                {isActive && (
-                                    <div className="w-2 h-2 bg-white rounded-full shadow-sm" />
-                                )}
+                                <svg width="20" height="18" viewBox="0 0 20 18" aria-hidden="true">
+                                    <path d="M10 1 L19 17 H1 Z" fill={color.hex} stroke={isActive ? '#ffffff' : 'transparent'} strokeWidth="1.5" />
+                                    {isActive && <path d="M7 12 L9 14 L13 9" fill="none" stroke="#ffffff" strokeWidth="2" />}
+                                </svg>
                             </button>
 
                             {/* Definition Indicator Dot */}
                             {hasDefinition && !isActive && (
-                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#111] rounded-full flex items-center justify-center">
-                                    <div className="w-2 h-2 bg-white rounded-full" />
+                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#111] rounded-full flex items-center justify-center">
+                                    <div className="w-1 h-1 bg-white rounded-full" />
                                 </div>
                             )}
 

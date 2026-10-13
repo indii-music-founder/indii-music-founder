@@ -1,0 +1,6 @@
+{
+  "name": "@indii/rights-session-broker", "version": "0.0.1", "private": true, "type": "module",
+  "scripts": { "build": "tsc -p tsconfig.json", "start": "node dist/index.js", "typecheck": "tsc --noEmit" },
+  "dependencies": { "@indii/shared": "*", "firebase-admin": "13.10.0", "google-auth-library": "10.5.0", "ws": "8.21.0" },
+  "devDependencies": { "@types/ws": "^8.18.1", "typescript": "5.8.2" }
+}

@@ -1,3 +1,4 @@
+// Structural-only: callback routing does not verify generation or persistence.
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -38,7 +39,7 @@ describe('CanvasActionRail', () => {
         vi.clearAllMocks();
     });
 
-    it('routes save, export, flatten, video, animation, and close actions', () => {
+    it('routes save, export, flatten, video, animation, actions', () => {
         const saveCanvas = vi.fn();
         const batchExportDimensions = vi.fn();
         const flattenCanvas = vi.fn();
@@ -60,14 +61,15 @@ describe('CanvasActionRail', () => {
         fireEvent.click(screen.getByTestId('send-to-video-btn'));
         fireEvent.click(screen.getByTestId('save-canvas-btn'));
         fireEvent.click(screen.getByTestId('animate-btn'));
-        fireEvent.click(screen.getByTestId('canvas-close-btn'));
+        expect(screen.getByRole('complementary', { name: 'Transformative' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Close canvas' })).not.toBeInTheDocument();
 
         expect(batchExportDimensions).toHaveBeenCalledOnce();
         expect(flattenCanvas).toHaveBeenCalledOnce();
         expect(onSendToWorkflow).toHaveBeenCalledWith('firstFrame', mockItem);
         expect(saveCanvas).toHaveBeenCalledOnce();
         expect(handleAnimate).toHaveBeenCalledOnce();
-        expect(onClose).toHaveBeenCalledOnce();
+        expect(onClose).not.toHaveBeenCalled();
     });
 
     it('uses the configured last-frame handler before falling back to selector mode', () => {

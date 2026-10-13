@@ -46,7 +46,6 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
     setEndFrameItem,
     setIsSelectingEndFrame,
     handleAnimate,
-    onClose,
     onSendToWorkflow,
     onCreateLastFrame,
     isProcessing,
@@ -60,8 +59,6 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
     isSavingCanvas,
 }) => {
     const actionButtonClass = "w-11 h-11 rounded-xl border border-white/10 bg-[#0b0d10]/90 text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed";
-    const primaryButtonClass = "w-11 h-11 rounded-xl border border-dept-creative/30 bg-dept-creative text-white shadow-[0_0_22px_rgba(0,255,136,0.25)] hover:bg-dept-creative/80 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/60 disabled:opacity-50 disabled:cursor-not-allowed";
-    const closeButtonClass = "w-11 h-11 rounded-xl border border-red-500/10 bg-red-950/10 text-gray-400 hover:text-red-300 hover:bg-red-950/40 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50";
     // ISSUE-1395: export/flatten/save are image-only operations. A video item
     // has no fabric canvas (canvasOps is never initialized for videos), so
     // those actions only produced error toasts. Video items keep just the
@@ -78,7 +75,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                         icon: Maximize2,
                         onClick: () => void onUpscaleToPrint(),
                         disabled: isProcessing || isUpscaling,
-                        className: `${actionButtonClass} text-amber-400 hover:text-amber-300 border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 hover:bg-amber-500/20`,
+                        className: actionButtonClass,
                         testId: 'upscale-3000-btn',
                         spin: isUpscaling,
                     }]
@@ -130,7 +127,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                     icon: Save,
                     onClick: saveCanvas,
                     disabled: isProcessing || isSavingCanvas,
-                    className: primaryButtonClass,
+                    className: actionButtonClass,
                     testId: 'save-canvas-btn',
                     spin: isSavingCanvas,
                 },
@@ -146,7 +143,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                         icon: isProcessing && processingStatus ? Wand2 : Sparkles,
                         onClick: onCreateLastFrame || (() => setIsSelectingEndFrame(true)),
                         disabled: isProcessing,
-                        className: primaryButtonClass,
+                        className: actionButtonClass,
                         testId: 'create-last-frame-inline-btn',
                         spin: isProcessing && !!processingStatus,
                     },
@@ -155,7 +152,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                         label: 'Animate',
                         icon: Play,
                         onClick: handleAnimate,
-                        className: "w-11 h-11 rounded-xl border border-dept-marketing/40 bg-dept-marketing text-white hover:bg-dept-marketing/80 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-marketing/60",
+                        className: actionButtonClass,
                         testId: 'animate-btn',
                     },
                 ]
@@ -167,8 +164,9 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
         <TooltipProvider delayDuration={200}>
             <aside
                 className="pointer-events-auto flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-[#050608]/82 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.48)] backdrop-blur-2xl"
-                aria-label="Canvas actions"
+                aria-label="Transformative"
             >
+                <p className="text-[9px] font-semibold text-gray-400">Transformative</p>
                 {capabilityGroups.map((group, index) => (
                     <div key={group.id} className="flex flex-col items-center gap-2">
                         {index > 0 && <div className="h-px w-8 bg-white/10 my-1" />}
@@ -215,21 +213,6 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                     </div>
                 ))}
 
-                <div className="h-px w-8 bg-white/10 my-1" />
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button
-                            onClick={onClose}
-                            data-testid="canvas-close-btn"
-                            aria-label="Close canvas"
-                            className={closeButtonClass}
-                        >
-                            <X size={16} />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">Close Canvas</TooltipContent>
-                </Tooltip>
             </aside>
         </TooltipProvider>
     );

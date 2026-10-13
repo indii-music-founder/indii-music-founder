@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Lock, MonitorUp, Sparkles, Star, Wand2, Shield, X } from 'lucide-react';
+import { ArrowLeft, Lock, MonitorUp, Sparkles, Star, Wand2, Shield, X, Folder } from 'lucide-react';
 import { auth } from '@/services/firebase';
 
 interface CanvasHeaderProps {
@@ -21,6 +21,7 @@ interface CanvasHeaderProps {
     // close button, which is desktop-only (`hidden md:flex`) — on mobile and
     // narrow windows there was no way out of the creative editor.
     onClose?: () => void;
+    onOpenAssets?: () => void;
     // ISSUE-1395: the upper-left "Canvas" control is the user's primary path
     // for moving the asset being edited onto the creative canvas (the gray
     // work board). When the editor can stage the asset — save, place it on
@@ -45,6 +46,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     grounding,
     imageSize,
     onClose,
+    onOpenAssets,
     onSendToCanvas,
 }) => {
     const isAuthenticated = !!auth.currentUser;
@@ -153,14 +155,15 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                 </div>
             </div>
 
-            <div className="min-w-0 flex items-center justify-end">
+            <div className="min-w-0 flex items-center justify-end gap-2">
+                {onOpenAssets && <button onClick={onOpenAssets} aria-label="Open editor assets" className="hidden lg:flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-gray-300 hover:bg-white/10"><Folder size={14} />Assets</button>}
                 {onClose && (
                     <button
                         onClick={onClose}
                         title="Close editor (Esc)"
                         aria-label="Close editor"
                         data-testid="canvas-header-close"
-                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg border border-red-400/30 bg-red-500/10 text-red-300 hover:text-red-200 hover:bg-red-500/20 transition-colors"
                     >
                         <X size={15} />
                     </button>

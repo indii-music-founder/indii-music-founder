@@ -692,6 +692,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {/* Legacy Editor Modal Overlay — only renders when explicitly in editor or canvas mode */}
                         {Boolean(selectedItem) && (viewMode === 'editor' || viewMode === 'canvas') && (
                             <CreativeCanvas
+                                key={selectedItem?.id}
                                 item={selectedItem}
                                 onClose={() => {
                                     setSelectedItem(null);

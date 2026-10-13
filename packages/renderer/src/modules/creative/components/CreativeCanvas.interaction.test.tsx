@@ -1,3 +1,4 @@
+// Structural-only legacy suite: test doubles do not verify the production customer path.
 import { render, screen, fireEvent } from '@/test/utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreativeCanvas from './CreativeCanvas';
@@ -55,7 +56,7 @@ vi.mock('../services/CanvasOperationsService', () => ({
         initialize: vi.fn(),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),
-        setMagicFillMode: vi.fn(),
+        setTool: vi.fn(),
         canUndo: vi.fn().mockReturnValue(false),
         canRedo: vi.fn().mockReturnValue(false),
         toJSON: vi.fn().mockResolvedValue({}),
@@ -90,7 +91,7 @@ describe('🖱️ Click: Creative Studio Daisychain', () => {
         expect(magicInput).toBeInTheDocument();
 
         // Close button works
-        const closeBtn = screen.getByTestId('canvas-close-btn');
+        const closeBtn = screen.getByTestId('canvas-header-close');
         fireEvent.click(closeBtn);
         expect(onClose).toHaveBeenCalled();
     });
