@@ -33,6 +33,7 @@ import { ExecutionContextFactory } from './context/AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
 import { toolError } from './utils/ToolUtils';
 import { getDurableReportReceipt } from './utils/durableReportReceipt';
+import { completedBoardroomToolResult } from './orchestration/BoardroomActionPlan';
 import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
 import { AgentEventBus } from './governance/AgentEventBus';
 import { getFineTunedModel } from './fine-tuned-models';
@@ -1574,6 +1575,15 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         }
 
                         const argsStr = elideBase64Payloads(JSON.stringify(args));
+                        const previousResult = context?.boardroomExecution && TOOL_RISK_REGISTRY[name]?.riskTier !== 'read'
+                            ? completedBoardroomToolResult(name, args, toolCalls) : null;
+                        if (previousResult) {
+                            lastToolResult = previousResult;
+                            toolCalls.push({ name, args, result: previousResult });
+                            fullPrompt += `\n[Tool ${name}: this identical action already completed in this step. Reusing its actual receipt; do not execute it again.] ${elideBase64Payloads(JSON.stringify(previousResult))}\n`;
+                            onProgress?.({ type: 'tool_result', toolName: name, content: 'Reused the completed action receipt. No duplicate action was executed.' });
+                            continue;
+                        }
                         onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
 
                         // EVENT: Tool Execution Start

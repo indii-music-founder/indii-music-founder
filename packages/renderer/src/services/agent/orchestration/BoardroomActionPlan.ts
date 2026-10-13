@@ -63,6 +63,27 @@ function toolResult(value: ToolFunctionResult | string): ToolFunctionResult | nu
     catch { return null; }
 }
 
+function canonicalToolArgs(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(canonicalToolArgs);
+    if (value && typeof value === 'object') return Object.fromEntries(
+        Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, canonicalToolArgs(item)]),
+    );
+    return value;
+}
+
+/** Reuse only a completed identical action in this execution, never a queued or partial receipt. */
+export function completedBoardroomToolResult(name: string, args: unknown, calls: NonNullable<AgentResponse['toolCalls']>): ToolFunctionResult | null {
+    const key = JSON.stringify(canonicalToolArgs(args));
+    for (const call of [...calls].reverse()) {
+        if (call.name !== name || JSON.stringify(canonicalToolArgs(call.args)) !== key) continue;
+        const result = toolResult(call.result);
+        if (!result?.success || /awaiting|pending|queued|running|processing|enqueued/i.test(String(result.status ?? result.data?.status ?? '')) ||
+            result.data?.gallerySaved === false || result.data?.versionRecorded === false) continue;
+        return result;
+    }
+    return null;
+}
+
 /** Tool data remains addressable after the specialist's prose is summarized. */
 export function boardroomDependencyField(response: AgentResponse, path?: string): unknown {
     const lastResult = [...(response.toolCalls ?? [])].reverse().map(call => toolResult(call.result))

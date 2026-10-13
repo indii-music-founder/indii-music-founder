@@ -232,6 +232,8 @@ export interface AgentContext {
     boardroomExecution?: { requestId: string; stepId: string; ownerAgentId: string };
     /** Frozen source references for tools; inline pixels never enter model prompts. */
     assetReferences?: ReadonlyArray<{ id: string; alias: string; url: string }>;
+    /** Frozen source labels/IDs for planning, without private media URLs or bytes. */
+    boardroomSourceManifest?: string;
     /** Cancellation propagated to long-running tools as well as model calls. */
     signal?: AbortSignal;
     seatedAgents?: string[];
