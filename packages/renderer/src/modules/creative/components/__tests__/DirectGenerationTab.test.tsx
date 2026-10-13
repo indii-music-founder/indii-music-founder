@@ -138,7 +138,8 @@ vi.mock('@/services/intelligence/generators/DirectImageGenerator', () => ({
     generateImageDirectly: vi.fn()
 }));
 
-describe('DirectGenerationTab', () => {
+// Structural-only: legacy service and session doubles do not prove a customer generation path.
+describe('DirectGenerationTab structural regressions', () => {
     beforeEach(() => {
         vi.useRealTimers();
         vi.clearAllMocks();
@@ -459,7 +460,9 @@ describe('DirectGenerationTab', () => {
             await vi.advanceTimersByTimeAsync(3010);
         });
 
-        // Results grid should show the video
+        // The compact result does not mount a video player until preview is requested.
+        expect(document.querySelector('video')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Preview latest asset' }));
         const video = document.querySelector('video');
         expect(video).toBeTruthy();
     });

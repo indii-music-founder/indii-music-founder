@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { 
     Loader2, Image as ImageIcon, Video, Send, Settings2, Download, 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ChevronDown, ChevronUp, Film, Sparkles, Cpu, Wand2, Globe, Shield, RefreshCw, Layers, Compass, Pin
+    ChevronDown, ChevronUp, Film, MoreHorizontal, Cpu, Wand2, Globe, Shield, RefreshCw, Layers, Compass, Pin
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -29,7 +29,6 @@ export default function DirectGenerationTab() {
     const toast = useToast();
     const workspaceMode = useOptionalAdaptiveWorkspace()?.mode ?? 'wide';
     const { 
-        setGenerationMode, 
         isPromptBuilderOpen, 
         togglePromptBuilder, 
         whiskState,
@@ -38,7 +37,6 @@ export default function DirectGenerationTab() {
         setStudioControls,
         pinToClipboard
     } = useStore(useShallow(state => ({
-        setGenerationMode: state.setGenerationMode,
         isPromptBuilderOpen: state.isPromptBuilderOpen,
         togglePromptBuilder: state.togglePromptBuilder,
         whiskState: state.whiskState,
@@ -66,6 +64,9 @@ export default function DirectGenerationTab() {
     } = useDirectGeneration();
 
     const [activeSection, setActiveSection] = useState<'basics' | 'advanced'>('basics');
+    const [previewedAssetId, setPreviewedAssetId] = useState<string | null>(null);
+    const latestItem = results.find(item => item.type === mode);
+    const isAssetPreviewOpen = !!latestItem && previewedAssetId === latestItem.id;
 
     const videoClipCount = results.filter(r => r.type === 'video').length;
 
@@ -766,7 +767,7 @@ export default function DirectGenerationTab() {
             </div>
 
             {/* Live Generation Results & Active Jobs */}
-            <div data-testid="direct-generation-results" className="min-w-0 w-full max-w-5xl mx-auto px-6 mb-6">
+            <div data-testid="direct-generation-results" className="min-w-0 w-full max-w-6xl mx-auto px-6 pb-3">
                 {activeJobs.length > 0 && (
                     <div className="flex flex-col gap-3 mb-4">
                         <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 flex items-center gap-1.5">
@@ -780,165 +781,104 @@ export default function DirectGenerationTab() {
                         </div>
                     </div>
                 )}
-                {results.length > 0 && (
-                    <div className="flex flex-col gap-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-[10px] uppercase font-bold tracking-widest text-white/80 flex items-center gap-1.5">
-                                <Sparkles size={12} className="text-dept-creative" />
-                                Latest Generated Asset
-                            </span>
+                {latestItem && (
+                    <section aria-label="Latest asset" className="rounded-xl border border-white/8 bg-white/[0.02] overflow-hidden" data-testid={`direct-result-${latestItem.id}`}>
+                        <div className="flex flex-wrap items-center gap-2 p-2">
                             <button
-                                onClick={async () => {
-                                    const { useStore } = await import('@/core/store');
-                                    useStore.getState().setRightPanelTab('assets');
-                                }}
-                                className="text-[10px] text-dept-creative hover:underline flex items-center gap-1 font-bold uppercase tracking-wider"
+                                type="button"
+                                onClick={() => setPreviewedAssetId(isAssetPreviewOpen ? null : latestItem.id)}
+                                aria-label={isAssetPreviewOpen ? 'Hide asset preview' : 'Preview latest asset'}
+                                aria-expanded={isAssetPreviewOpen}
+                                aria-controls={`asset-preview-${latestItem.id}`}
+                                className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-black/40 border border-white/10 hover:border-dept-creative/50 focus-visible:ring-2 focus-visible:ring-dept-creative"
                             >
-                                View in Project Assets →
+                                {latestItem.type === 'image' ? (
+                                    <img src={latestItem.thumbnailUrl || latestItem.url} alt="" className="h-full w-full object-cover" />
+                                ) : <Film size={18} className="m-auto text-gray-400" />}
                             </button>
-                        </div>
-                        {(() => {
-                            const latestItem = results[0];
-                            if (!latestItem) return null;
-                            return (
-                                <div 
-                                    className="group relative rounded-2xl bg-white/2 border border-white/10 p-4 flex flex-col md:flex-row items-center gap-4 hover:border-white/20 transition-all cursor-pointer"
+                            <div className="min-w-[80px] flex-1">
+                                <div className="text-[10px] font-semibold text-gray-500">Latest {latestItem.type}</div>
+                                <p className="truncate text-xs text-gray-300" title={latestItem.prompt}>{latestItem.prompt || 'Untitled asset'}</p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    aria-label={latestItem.type === 'image' ? 'Open in Canvas Editor' : 'Edit latest video'}
                                     onClick={() => {
                                         setSelectedItem(latestItem);
                                         setViewMode('editor');
                                     }}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            setSelectedItem(latestItem);
-                                            setViewMode('editor');
-                                        }
-                                    }}
-                                    data-testid={`direct-result-${latestItem.id}`}
+                                    className="flex items-center gap-1.5 rounded-lg bg-dept-creative/15 px-3 py-2 text-[10px] font-semibold text-dept-creative hover:bg-dept-creative/25"
                                 >
-                                    <div className="w-32 h-32 rounded-xl overflow-hidden bg-black/40 shrink-0 relative border border-white/5">
-                                        {latestItem.type === 'video' ? (
-                                            <CreativeVideoPlayer 
-                                                jobId={latestItem.url ? undefined : latestItem.id} 
-                                                url={latestItem.url || undefined} 
-                                                autoPlay={false}
-                                                className="w-full h-full border-none rounded-none"
-                                            />
-                                        ) : (
-                                            <img src={latestItem.url} alt={latestItem.prompt} className="w-full h-full object-cover" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1 flex flex-col justify-between h-full gap-2">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-white font-mono">
-                                                    {latestItem.type}
-                                                </span>
-                                                <span className="text-[10px] text-gray-500">Ready for editing</span>
-                                            </div>
-                                            <p className="text-white text-xs font-medium line-clamp-2">{latestItem.prompt}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedItem(latestItem);
-                                                    setViewMode('editor');
-                                                }}
-                                                className="px-3 py-1.5 rounded-lg bg-dept-creative/20 hover:bg-dept-creative/30 text-dept-creative text-[10px] font-bold uppercase tracking-wider border border-dept-creative/30 transition-all flex items-center gap-1.5"
-                                            >
-                                                <Settings2 size={12} />
-                                                Open in Canvas Editor
-                                            </button>
-                                            <button 
-                                                aria-label="Pin to visual clipboard" 
-                                                className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-violet-400 hover:text-white hover:bg-violet-600/35 transition-colors" 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    pinToClipboard({
-                                                        id: latestItem.id,
-                                                        url: latestItem.url,
-                                                        prompt: latestItem.prompt || 'Direct Asset',
-                                                        type: latestItem.type as 'image' | 'video',
-                                                        timestamp: Date.now()
-                                                    });
-                                                    toast.success("Pinned to Creative Clipboard!");
-                                                }}
-                                            >
-                                                <Pin size={12} />
-                                            </button>
-                                            <button 
-                                                aria-label="Download asset" 
-                                                className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors" 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    void (async () => {
-                                                        const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
-                                                        const { downloadAsset } = await import('@/utils/download');
-                                                        const resolvedUrl = await resolveStorageUrl(latestItem.url);
-                                                        const ext = latestItem.type === 'video' ? 'mp4' : 'png';
-                                                        await downloadAsset(resolvedUrl, `${latestItem.type}_${latestItem.id}.${ext}`);
-                                                    })();
-                                                }}
-                                            >
-                                                <Download size={12} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-                    </div>
+                                    <Settings2 size={12} /> Edit
+                                </button>
+                                {mode === 'video' && videoClipCount >= 2 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewMode('video_production')}
+                                        className="flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-2 text-[10px] text-gray-300 hover:bg-white/10"
+                                    >
+                                        <Film size={12} /> Timeline
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    aria-label="Open Project Assets"
+                                    title="Project Assets"
+                                    onClick={async () => {
+                                        const { useStore } = await import('@/core/store');
+                                        useStore.getState().setRightPanelTab('assets');
+                                    }}
+                                    className="flex items-center gap-1.5 rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white"
+                                >
+                                    <Layers size={14} /><span className="hidden sm:inline text-[10px]">Assets</span>
+                                </button>
+                                <DropdownMenu>
+                                    <DropdownMenuTriggerButton aria-label="More asset actions" className="p-2">
+                                        <MoreHorizontal size={14} />
+                                    </DropdownMenuTriggerButton>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem onSelect={() => {
+                                            pinToClipboard({
+                                                id: latestItem.id,
+                                                url: latestItem.url,
+                                                prompt: latestItem.prompt || 'Direct Asset',
+                                                type: latestItem.type as 'image' | 'video',
+                                                timestamp: Date.now(),
+                                            });
+                                            toast.success('Pinned to Creative Clipboard!');
+                                        }}>
+                                            <Pin size={12} /> Pin to visual clipboard
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => {
+                                            void (async () => {
+                                                const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                                                const { downloadAsset } = await import('@/utils/download');
+                                                const resolvedUrl = await resolveStorageUrl(latestItem.url);
+                                                const ext = latestItem.type === 'video' ? 'mp4' : 'png';
+                                                await downloadAsset(resolvedUrl, `${latestItem.type}_${latestItem.id}.${ext}`);
+                                            })();
+                                        }}>
+                                            <Download size={12} /> Download asset
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </div>
+                        {isAssetPreviewOpen && (
+                            <div id={`asset-preview-${latestItem.id}`} className="border-t border-white/5 bg-black/30 p-3">
+                                {latestItem.type === 'video' ? (
+                                    <CreativeVideoPlayer jobId={latestItem.url ? undefined : latestItem.id} url={latestItem.url || undefined} autoPlay={false} className="max-h-64 mx-auto" />
+                                ) : (
+                                    <img src={latestItem.url} alt={latestItem.prompt || 'Latest generated image'} className="mx-auto max-h-64 max-w-full rounded-lg object-contain" />
+                                )}
+                            </div>
+                        )}
+                    </section>
                 )}
             </div>
 
-            {/* Bottom sticky Premium Action Overlay */}
-            <AnimatePresence>
-                {results.length > 0 && (
-                    <motion.div
-                        initial={{ y: 100, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 100, opacity: 0 }}
-                        className="fixed bottom-6 right-6 border border-white/6 bg-[#0c0b0e]/90 backdrop-blur-xl p-4 flex justify-between items-center gap-6 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] z-50 select-none max-w-sm border-l-dept-creative border-l-2"
-                    >
-                        <div className="flex flex-col gap-0.5">
-                            <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">Ready to Proceed?</h3>
-                            <p className="text-[10px] text-gray-400 leading-normal">
-                                {videoClipCount >= 2 
-                                    ? `Mix your ${videoClipCount} generated clips in the production workflow.` 
-                                    : "Edit and refine your asset in the Creative Canvas."}
-                            </p>
-                        </div>
-                        <button
-                            data-testid="bottom-action-btn"
-                            onClick={() => {
-                                if (videoClipCount >= 2) {
-                                    setGenerationMode('video');
-                                    setViewMode('video_production');
-                                } else {
-                                    setSelectedItem(results[0] || null);
-                                    setViewMode('editor');
-                                }
-                            }}
-                            className="px-4 py-2 bg-white text-black font-extrabold text-[10px] uppercase tracking-wider rounded-xl hover:bg-gray-200 transition-colors shadow-lg flex items-center gap-1.5 shrink-0 active:scale-95 duration-200"
-                        >
-                            {videoClipCount >= 2 ? (
-                                <>
-                                    <Film size={12} />
-                                    Produce
-                                </>
-                            ) : (
-                                <>
-                                    <Settings2 size={12} />
-                                    Edit
-                                </>
-                            )}
-                        </button>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+
         </div>
     );
 }
