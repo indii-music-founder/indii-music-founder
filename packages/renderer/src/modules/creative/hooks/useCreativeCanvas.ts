@@ -1014,7 +1014,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             }
 
             // 2. Upload blob to Firebase Storage as a persistent asset
-            const blob = await canvasOps.getBlob();
+            const blob = await canvasOps.getBlob(dataUrl);
             let storageUri: string | undefined;
             if (blob) {
                 const assetId = await saveAssetToStorage(blob);
@@ -1061,7 +1061,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 toast.warning('Canvas state saved, but export to gallery failed.');
             }
             return { url: dataUrl || item.url, storageUri };
-        } catch {
+        } catch (error: unknown) {
+            logger.error('[CreativeStudio] Canvas save failed', error);
             // ISSUE-917: No disk save actually happened in catch path
             toast.error('Canvas save failed. Changes are not persistent.');
             return null;

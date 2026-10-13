@@ -15,6 +15,7 @@ import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { logger } from '@/utils/logger';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { annotationColor } from './annotationColor';
+import { imageDataUrlToBlob } from '@/lib/imageDataUrl';
 
 export interface MaskData {
     mimeType: string;
@@ -1065,14 +1066,12 @@ export class CanvasOperationsService {
     /**
      * Get canvas as Blob for uploading (annotations excluded from output)
      */
-    async getBlob(): Promise<Blob | null> {
+    async getBlob(exportedDataUrl?: string): Promise<Blob | null> {
         if (!this.canvas) return null;
 
-        const dataUrl = this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: 2 });
-
         try {
-            const res = await fetch(dataUrl);
-            return await res.blob();
+            const dataUrl = exportedDataUrl ?? this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: 2 });
+            return imageDataUrlToBlob(dataUrl);
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
             logger.error(`Failed to create blob from canvas: ${message}`);
