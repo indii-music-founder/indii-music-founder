@@ -68,3 +68,15 @@ within its own Boardroom step (different args, failed/queued/partial receipts
 remain distinct), and Boardroom timeout notices no longer infer success from
 global gallery counts. Named-source routing and duplicate prevention still need
 post-follow-up live verification. A 9:16 poster remains unverified.
+
+October 14: 8f82918a0 passed exact-SHA deployment run 38482290737. A fresh
+Studio session reached through the production Log in link reused the same
+existing Founding Member account. The visible 9:16 gallery source measures
+1080×1920. Requesting it by name for poster_11x17 with crop confirmation still
+failed before execution: the generated graph was conditional/mapped. The
+decomposer's example schema contradicted its Boardroom rules by advertising
+condition, inputMapping and waitCondition "any". The follow-up removes those
+fields from the Boardroom example, explains that the tool owns crop approval,
+and validates before returning a graph with one feedback-based replan. It never
+strips conditions to force execution. Poster completion remains unverified until
+the follow-up deployment is exercised in the real UI.
