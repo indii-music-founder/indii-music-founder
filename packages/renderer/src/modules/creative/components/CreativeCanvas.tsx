@@ -88,8 +88,11 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleAddText,
         handleAddSketchLayer,
         handleSendToCanvas,
+        prepareArtworkForAction,
     } = useCreativeCanvas({ item, onClose, onRefine });
 
+    const [textSizeDraft, setTextSizeDraft] = useState('');
+    useEffect(() => { setTextSizeDraft(selectedText ? String(selectedText.fontSize) : ''); }, [selectedText]);
     const [contextPanelWidth, setContextPanelWidth] = useState(0);
     useLayoutEffect(() => {
         const panel = document.querySelector<HTMLElement>('[aria-label="Context panel"]');
@@ -105,7 +108,6 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
     const openAssets = () => {
         const state = useStore.getState();
         state.setRightPanelTab('assets');
-        if (!state.isRightPanelOpen) state.toggleRightPanel();
     };
 
     const [isUpscaling, setIsUpscaling] = useState(false);
@@ -122,11 +124,13 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         const run = { controller: new AbortController(), saving: false };
         printRun.current = run;
         setIsUpscaling(true);
-        setUpscaleStatus({ stage: 'Reading the original artwork...', progress: 0, saving: false });
+        setUpscaleStatus({ stage: 'Preparing artwork...', progress: 0, saving: false });
         try {
             toast.info("Upscaling to 3000x3000px @ 300 DPI print standard...");
+            const artwork = await prepareArtworkForAction();
+            if (!artwork) return;
             const result = await printReadyUpscaleService.upscaleToPrintReady({
-                dataUrl: item.url,
+                dataUrl: artwork.url,
                 prompt: item.prompt,
                 signal: run.controller.signal,
                 onProgress: (progress, stage) => setUpscaleStatus({ stage, progress, saving: false }),
@@ -323,7 +327,14 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 setIsSelectingEndFrame={setIsSelectingEndFrame}
                                 handleAnimate={handleAnimate}
                                 onClose={onClose}
-                                onSendToWorkflow={onSendToWorkflow}
+                                onSendToWorkflow={onSendToWorkflow ? async (type) => {
+                                    try {
+                                        const artwork = await prepareArtworkForAction();
+                                        if (artwork) await onSendToWorkflow(type, artwork);
+                                    } catch (error) {
+                                        toast.error(error instanceof Error ? error.message : 'Could not prepare the edited artwork.');
+                                    }
+                                } : undefined}
                                 onCreateLastFrame={handleCreateLastFrame}
                                 isProcessing={isProcessing}
                                 processingStatus={processingStatus}
@@ -352,7 +363,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 </select>
                             </label>
                             <label className="flex items-center gap-2">Size
-                                <input aria-label="Text size" type="number" min="8" max="300" value={selectedText.fontSize} onChange={e => { const size = Number(e.target.value); if (size >= 8 && size <= 300) updateSelectedText({ fontSize: size }); }} className="w-16 rounded border border-white/20 bg-black px-2 py-1" />
+                                <input aria-label="Text size" type="number" min="8" max="300" value={textSizeDraft} onChange={e => { setTextSizeDraft(e.target.value); const size = Number(e.target.value); if (size >= 8 && size <= 300) updateSelectedText({ fontSize: size }); }} onBlur={() => setTextSizeDraft(String(selectedText.fontSize))} className="w-16 rounded border border-white/20 bg-black px-2 py-1" />
                             </label>
                         </div>
                     )}

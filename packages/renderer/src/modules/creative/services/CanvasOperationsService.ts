@@ -56,6 +56,7 @@ export class CanvasOperationsService {
     private _activeColorId: string = '';
     /** Track blob URLs so we can revoke them on dispose to prevent memory leaks */
     private _activeBlobUrls: string[] = [];
+    private _persistentImageSources = new Map<string, string>();
     private _historyStack: string[] = [];
     private _redoStack: string[] = [];
     private _isUndoingRedoing: boolean = false;
@@ -136,6 +137,7 @@ export class CanvasOperationsService {
                 const { blob } = await safeStorageFetch(playableUrl);
                 const blobUrl = URL.createObjectURL(blob);
                 this._activeBlobUrls.push(blobUrl);
+                this._persistentImageSources.set(blobUrl, playableUrl);
 
                 const img = await loadOffThread(blobUrl);
                 logger.info('[CanvasOps] Image loaded via blob URL (preferred for storage assets)');
@@ -158,6 +160,7 @@ export class CanvasOperationsService {
             const { blob } = await safeStorageFetch(playableUrl);
             const blobUrl = URL.createObjectURL(blob);
             this._activeBlobUrls.push(blobUrl);
+            this._persistentImageSources.set(blobUrl, playableUrl);
 
             const img = await loadOffThread(blobUrl);
             logger.info('[CanvasOps] Image loaded via blob URL fallback');
@@ -370,7 +373,7 @@ export class CanvasOperationsService {
 
     private saveHistoryState(): void {
         if (!this.canvas) return;
-        const json = JSON.stringify(this.canvas.toJSON(['data', 'id']));
+        const json = JSON.stringify(this.canvas.toObject(['data', 'id']));
         
         // Only push if it's different from the top of the stack
         if (this._historyStack.length === 0 || this._historyStack[this._historyStack.length - 1] !== json) {
@@ -536,6 +539,7 @@ export class CanvasOperationsService {
             try { URL.revokeObjectURL(url); } catch { /* ignore */ }
         });
         this._activeBlobUrls = [];
+        this._persistentImageSources.clear();
         this._activeColorId = '';
     }
 
@@ -643,8 +647,10 @@ export class CanvasOperationsService {
                 fill: '#00ff00',
                 backgroundColor: 'rgba(0,0,0,0.7)',
                 selectable: false,
+                evented: true,
                 data: { isBoundingBox: true }
             });
+            if (onSelect) text.on('mousedown', () => onSelect(obj.label));
             this.canvas?.add(text);
         });
         
@@ -671,12 +677,14 @@ export class CanvasOperationsService {
      * Loads a base64 PNG mask, tints it to the active color, and applies it as a non-interactive canvas object overlay
      */
     async addSegmentationMask(base64Png: string, colorDef: CreativeColor): Promise<void> {
-        if (!this.canvas) return;
+        const selectionCanvas = this.canvas;
+        if (!selectionCanvas) return;
 
         try {
             const dataUrl = `data:image/png;base64,${base64Png}`;
             const img = await fabric.Image.fromURL(dataUrl, { crossOrigin: 'anonymous' });
 
+            if (this.canvas !== selectionCanvas) return;
             if (!img) {
                 throw new Error('Failed to load segmentation mask image');
             }
@@ -711,7 +719,7 @@ export class CanvasOperationsService {
                 alpha: 1.0
             });
 
-            img.filters = [filter];
+            img.filters = [new fabric.filters.RemoveColor({ color: '#000000', distance: 0.02 }), filter];
             img.applyFilters();
             
             this.canvas?.add(img);
@@ -732,11 +740,12 @@ export class CanvasOperationsService {
         instagram: string; // 1:1
         youtube: string;   // 16:9
     } | null> {
-        if (!this.canvas) return null;
+        const exportCanvas = this.canvas;
+        if (!exportCanvas) return null;
 
         const originalWidth = this.canvas.getWidth();
         const originalHeight = this.canvas.getHeight();
-        const jsonState = JSON.stringify(this.canvas.toJSON([...CANVAS_SERIALIZATION_PROPERTIES]));
+        const jsonState = JSON.stringify(this.canvas.toObject([...CANVAS_SERIALIZATION_PROPERTIES]));
 
         const exportForDimensions = async (targetWidth: number, targetHeight: number): Promise<string> => {
             this.canvas!.setDimensions({ width: targetWidth, height: targetHeight });
@@ -806,11 +815,14 @@ export class CanvasOperationsService {
             const tiktok = await exportForDimensions(1080, 1920);
 
             // Instagram Feed / Carousel (4:5)
+            if (this.canvas !== exportCanvas) return null;
             const instagram = await exportForDimensions(1080, 1350);
 
             // YouTube Wide (16:9)
+            if (this.canvas !== exportCanvas) return null;
             const youtube = await exportForDimensions(1920, 1080);
 
+            if (this.canvas !== exportCanvas) return null;
             // Restore canvas
             this.canvas.setDimensions({ width: originalWidth, height: originalHeight });
             this.canvas.renderAll();
@@ -818,9 +830,11 @@ export class CanvasOperationsService {
             return { tiktok, instagram, youtube };
         } catch (error: unknown) {
             logger.error('[CanvasBatching] Failed to export batch dimensions:', error);
+            if (this.canvas !== exportCanvas) return null;
             this._isUndoingRedoing = true;
             try {
                 await this.loadFromJSON(jsonState);
+                if (this.canvas !== exportCanvas) return null;
                 this.canvas.setDimensions({ width: originalWidth, height: originalHeight });
                 this.canvas.renderAll();
             } finally {
@@ -842,11 +856,21 @@ export class CanvasOperationsService {
      */
     async toJSON(): Promise<unknown> {
         if (!this.canvas) return null;
-        const json = this.canvas.toJSON(['data', 'id']) as { objects?: Array<{ data?: Record<string, unknown> }> };
+        const json = this.canvas.toObject(['data', 'id']) as { objects?: Array<{ data?: Record<string, unknown> }> };
         if (json && Array.isArray(json.objects)) {
             json.objects = json.objects.filter(obj => !obj?.data?.isBoundingBox);
+            this.restorePersistentImageSources(json);
         }
         return json;
+    }
+
+    private restorePersistentImageSources(node: unknown): void {
+        if (!node || typeof node !== 'object') return;
+        const object = node as { src?: string; objects?: unknown[] };
+        if (object.src && this._persistentImageSources.has(object.src)) {
+            object.src = this._persistentImageSources.get(object.src)!;
+        }
+        object.objects?.forEach(child => this.restorePersistentImageSources(child));
     }
 
     /**
@@ -857,6 +881,15 @@ export class CanvasOperationsService {
         if (!restoringCanvas) return;
         try {
             const parsed = JSON.parse(json);
+            // Old autosaves can contain blob URLs revoked when the previous
+            // editor closed. Drop those unrecoverable images so ensureBaseImage
+            // can restore the selected gallery artwork instead of staying blank.
+            const removeExpiredSources = (node: { objects?: Array<{ src?: string; objects?: unknown[] }> }) => {
+                if (!Array.isArray(node.objects)) return;
+                node.objects = node.objects.filter(object => !object.src?.startsWith('blob:') || this._persistentImageSources.has(object.src));
+                node.objects.forEach(object => removeExpiredSources(object as typeof node));
+            };
+            removeExpiredSources(parsed);
             // CRITICAL (ISSUE-478): Fabric's loadFromJSON reloads images straight from
             // their stored http `src` with no crossOrigin, which TAINTS the canvas when
             // the bucket lacks CORS — every later toDataURL() then throws. Swap remote
@@ -886,6 +919,7 @@ export class CanvasOperationsService {
                 const { blob } = await safeStorageFetch(obj.src);
                 const blobUrl = URL.createObjectURL(blob);
                 this._activeBlobUrls.push(blobUrl);
+                this._persistentImageSources.set(blobUrl, obj.src);
                 obj.src = blobUrl;
                 obj.crossOrigin = 'anonymous';
             } catch (e: unknown) {
@@ -1010,7 +1044,7 @@ export class CanvasOperationsService {
      * (drawing paths, bounding boxes, segmentation masks) temporarily hidden.
      * This ensures saved/exported images contain only the actual artwork.
      */
-    private getFlattenedDataURL(options?: { format?: string; quality?: number; multiplier?: number; excludeAnnotations?: boolean }): string {
+    getFlattenedDataURL(options?: { format?: string; quality?: number; multiplier?: number; excludeAnnotations?: boolean }): string {
         if (!this.canvas) return '';
 
         const allObjects = this.canvas.getObjects();
@@ -1060,7 +1094,8 @@ export class CanvasOperationsService {
      * This effectively "bakes" all current edits into the base.
      */
     async flattenCanvas(): Promise<boolean> {
-        if (!this.canvas) return false;
+        const flatteningCanvas = this.canvas;
+        if (!flatteningCanvas) return false;
 
         logger.info('[CanvasOps] Flattening canvas layers...');
         
@@ -1076,6 +1111,7 @@ export class CanvasOperationsService {
         try {
             // 2. Load the new flattened image
             const newBaseImg = await this.loadImageSafe(flattenedDataUrl);
+            if (this.canvas !== flatteningCanvas) return false;
             
             // 3. Clear canvas and add new flattened image
             const width = this.canvas.getWidth();
@@ -1404,9 +1440,11 @@ export class CanvasOperationsService {
         magicFillEnabled: boolean,
         activeColor: CreativeColor
     ): Promise<void> {
-        if (!this.canvas) return;
+        const candidateCanvas = this.canvas;
+        if (!candidateCanvas) return;
 
         const img = await this.loadImageSafe(candidateUrl);
+        if (this.canvas !== candidateCanvas) return;
 
         // Ensure standard dimensions
         img.scaleToWidth(this.canvas.width!);

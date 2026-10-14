@@ -23,7 +23,7 @@ vi.mock('fabric', () => {
         renderAll = vi.fn();
         setDimensions = vi.fn(({ width, height }: { width: number; height: number }) => { this.width = width; this.height = height; });
         set = vi.fn();
-        toJSON = vi.fn(() => ({ objects: this.objects.map((obj) => ({ id: obj.id, data: obj.data, type: obj.type })) }));
+        toObject = vi.fn(() => ({ objects: this.objects.map((obj) => ({ id: obj.id, data: obj.data, type: obj.type })) }));
         toDataURL = vi.fn(() => 'data:image/png;base64,export');
         loadFromJSON = vi.fn();
         getObjects = vi.fn(() => this.objects);
@@ -121,6 +121,6 @@ describe('CanvasOperationsService blank sketch layers', () => {
 
         expect(result?.instagram).toContain('data:image/png');
         expect(mockCanvasInstance.setDimensions).toHaveBeenCalledWith({ width: 1080, height: 1350 });
-        expect(mockCanvasInstance.toJSON).toHaveBeenCalledWith(['data', 'id']);
+        expect(mockCanvasInstance.toObject).toHaveBeenCalledWith(['data', 'id']);
     });
 });

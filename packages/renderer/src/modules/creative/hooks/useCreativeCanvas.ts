@@ -354,7 +354,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         if (!isMounted) return;
 
                         await canvasOps.loadFromJSON(savedState);
+                        if (!isMounted) return;
                         const recoveredBase = await canvasOps.ensureBaseImage(editableImageUrl);
+                        if (!isMounted) return;
                         if (recoveredBase) {
                             logger.warn('[CreativeStudio] Restored missing base image from selected asset URL', {
                                 itemId: item.id,
@@ -475,7 +477,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     const handleSetTool = (tool: 'select' | 'line' | 'polygon' | 'text' | 'brush') => {
         setActiveTool(tool === 'text' ? 'select' : tool);
-        canvasOps.setTool(tool, activeColor);
+        canvasOps.setTool(tool, colorRef.current);
         if (tool === 'brush') {
             setMagicFillPrompt(definitions[activeColor.id] || '');
         }
@@ -602,6 +604,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     const handleDetectObjects = async () => {
         if (!item || !canvasOps.isInitialized()) return;
+        const detectedCanvas = canvasEl.current;
         
         try {
             setIsProcessing(true);
@@ -612,8 +615,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             if (!base64) throw new Error('Could not extract base image.');
 
             const objects = await imageAnalysisService.detectObjects(base64);
+            if (canvasEl.current !== detectedCanvas) return;
             if (objects && objects.length > 0) {
+                handleSetTool('select');
                 canvasOps.addBoundingBoxes(objects, async (label: string) => {
+                    if (canvasEl.current !== detectedCanvas) return;
                     try {
                         setIsProcessing(true);
                         setProcessingStatus(`Extracting mask for: ${label}...`);
@@ -623,7 +629,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         if (!currentBase64) return;
                         
                         const maskBase64 = await imageAnalysisService.extractSegmentationMask(currentBase64, label);
-                        await canvasOps.addSegmentationMask(maskBase64, activeColor);
+                        if (canvasEl.current !== detectedCanvas) return;
+                        await canvasOps.addSegmentationMask(maskBase64, colorRef.current);
+                        handleSetTool('brush');
                         toast.success(`Successfully selected ${label}.`);
                     } catch (err: any) {
                         logger.error('[CreativeStudio] Segmentation failed', err);
@@ -733,7 +741,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     status: 'active',
                 });
 
-                if (isHighFidelity) {
+                // A dense seven-color semantic guide was reproduced in the
+                // generated artwork. Keep small joint edits, but isolate larger
+                // sets with one binary mask per step so guide colors never enter
+                // the model input as possible artwork colors.
+                if (isHighFidelity && prepared.masks.length <= 2) {
                     await reserveImageBudget(INTELLIGENCE_MODELS.IMAGE.GENERATION);
                     const maskKeys = prepared.masks.map(mask => mask.colorId);
                     const isMultiMask = prepared.masks.length > 1;
@@ -881,9 +893,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 } else {
                     setProcessingStatus("Remixing Visuals...");
                     const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-                    const blob = item.url.startsWith('data:')
-                        ? await CloudStorageService.dataURItoBlob(item.url)
-                        : await (await fetch(item.url)).blob();
+                    const sourceUrl = canvasOps.getFlattenedDataURL({ format: 'png', multiplier: 1 }) || item.url;
+                    const blob = sourceUrl.startsWith('data:')
+                        ? await CloudStorageService.dataURItoBlob(sourceUrl)
+                        : await (await fetch(sourceUrl)).blob();
                 const mimeType = blob.type || 'image/png';
                 const base64data = await new Promise<string>((resolve) => {
                     const reader = new FileReader();
@@ -923,14 +936,18 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     };
 
     const handleAnimate = async () => {
-        if (!item) return;
+        if (!item || isProcessing) return;
+        setIsProcessing(true);
+        setProcessingStatus('Starting animation...');
         const { aspectRatio, coercedFrom } = normalizeVideoAspectRatio(studioControls.aspectRatio);
         if (coercedFrom && coercedFrom !== aspectRatio) {
             toast.info(`Animating ${coercedFrom} art as ${aspectRatio} video.`);
         }
         toast.info('Starting video generation...');
         try {
-            const result = await VideoDirector.triggerAnimation(item, {
+            const artwork = await prepareArtworkForAction();
+            if (!artwork) return;
+            const result = await VideoDirector.triggerAnimation(artwork, {
                 aspectRatio,
             });
             if (!result.success) {
@@ -966,6 +983,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             toast.success('Video generation started in background!');
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : 'Animation failed');
+        } finally {
+            setIsProcessing(false);
+            setProcessingStatus('');
         }
     };
 
@@ -1098,6 +1118,23 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         }
     };
 
+    const prepareArtworkForAction = async (): Promise<HistoryItem | null> => {
+        if (!item || item.type !== 'image') return item;
+        const sourceCanvas = canvasEl.current;
+        const currentJson = serializeCanvasObjects(await canvasOps.toJSON());
+        const changed = dirtyRef.current && currentJson !== baselineJsonRef.current;
+        let saved = lastExportRef.current;
+        if (changed || restoredContentRef.current) {
+            saved = await saveCanvas();
+            if (!saved?.storageUri) throw new Error('Save the current canvas before sending this artwork.');
+            if (canvasEl.current !== sourceCanvas) return null;
+            lastExportRef.current = saved;
+            baselineJsonRef.current = currentJson;
+            restoredContentRef.current = false;
+        }
+        return saved ? { ...item, url: saved.url, storageUri: saved.storageUri, parentId: item.id, origin: 'canvas-export' } : item;
+    };
+
     /**
      * ISSUE-1391 (founder-requested flow): one-click handoff of the asset
      * being edited straight onto the canvas — the "more direct way of getting
@@ -1205,8 +1242,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         try {
             const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
             const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
-            const { mimeType, base64 } = await fetchAsBase64(item.url);
-            const climaxDescription = await ImageGeneration.captionImage({ mimeType, data: base64 }, 'subject');
+            const artwork = await prepareArtworkForAction();
+            if (!artwork) return;
+            const { mimeType, base64 } = await fetchAsBase64(artwork.url);
+            const preview = await CloudStorageService.compressImage(`data:${mimeType};base64,${base64}`, { maxWidth: 1024, maxHeight: 1024, quality: 0.8, format: 'jpeg' });
+            const previewData = preview.dataUri.split(',')[1]!;
+            const climaxDescription = await ImageGeneration.captionImage({ mimeType: 'image/jpeg', data: previewData }, 'subject');
 
             setProcessingStatus("Synthesizing...");
             const refinedPrompt = `${climaxDescription}, cinematic climax, dramatic lighting.`;
@@ -1346,6 +1387,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleCreateLastFrame,
         batchExportDimensions,
         handleSendToCanvas,
+        prepareArtworkForAction,
         handleUndo,
         handleRedo,
         canUndo: canvasOps.canUndo(),

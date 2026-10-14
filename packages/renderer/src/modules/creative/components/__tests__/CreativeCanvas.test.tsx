@@ -153,6 +153,7 @@ vi.mock('../../services/CanvasOperationsService', () => ({
         canRedo: vi.fn().mockReturnValue(false),
         hasContent: vi.fn().mockReturnValue(true),
         saveCanvas: vi.fn().mockReturnValue('data:image/png;base64,mock'),
+        getFlattenedDataURL: vi.fn().mockReturnValue('data:image/png;base64,current-canvas'),
         getBlob: vi.fn().mockResolvedValue(new Blob(['mock'], { type: 'image/png' })),
         toJSON: vi.fn().mockResolvedValue({}),
         ensureBaseImage: vi.fn().mockResolvedValue(false),
@@ -561,7 +562,7 @@ describe('CreativeCanvas', () => {
         expect(args.useSemanticMap).toBe(false);
     });
 
-    it('uses data-URI blobs for remix edits without fetching', async () => {
+    it('uses current canvas pixels as data-URI blobs for remix edits', async () => {
         const { CloudStorageService } = await import('@/services/CloudStorageService');
         const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
 
@@ -585,7 +586,8 @@ describe('CreativeCanvas', () => {
         fireEvent.click(screen.getByTestId('magic-generate-btn'));
 
         await waitFor(() => {
-            expect(CloudStorageService.dataURItoBlob).toHaveBeenCalledWith('data:image/png;base64,source-image');
+            expect(canvasOps.getFlattenedDataURL).toHaveBeenCalledWith({ format: 'png', multiplier: 1 });
+            expect(CloudStorageService.dataURItoBlob).toHaveBeenCalledWith('data:image/png;base64,current-canvas');
             expect(ImageGeneration.remixImage).toHaveBeenCalledOnce();
         }, { timeout: 3000 });
     });

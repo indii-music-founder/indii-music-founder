@@ -152,6 +152,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                         label: 'Animate',
                         icon: Play,
                         onClick: handleAnimate,
+                        disabled: isProcessing || isSavingCanvas || isUpscaling,
                         className: actionButtonClass,
                         testId: 'animate-btn',
                     },

@@ -112,6 +112,7 @@ describe('CanvasActionRail', () => {
         expect(screen.getByRole('button', { name: 'Flatten Canvas' })).toBeDisabled();
         expect(screen.getByTestId('send-to-video-btn')).toBeDisabled();
         expect(screen.getByTestId('create-last-frame-inline-btn')).toBeDisabled();
+        expect(screen.getByTestId('animate-btn')).toBeDisabled();
     });
 
     it('triggers upscale to 3000px when onUpscaleToPrint is provided', () => {
@@ -129,6 +130,7 @@ describe('CanvasActionRail', () => {
 
         const saveBtn = screen.getByTestId('save-canvas-btn');
         expect(saveBtn).toBeDisabled();
+        expect(screen.getByTestId('animate-btn')).toBeDisabled();
         expect(saveBtn).toHaveAttribute('aria-label', 'Saving Canvas...');
     });
 });
