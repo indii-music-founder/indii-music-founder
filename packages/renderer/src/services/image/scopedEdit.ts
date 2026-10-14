@@ -30,12 +30,21 @@ export async function prepareScopedEdit(image: InlineImage, mask: InlineImage) {
         const maskPixels = selected.context.getImageData(0, 0, source.width, source.height);
         const crop = maskContextCrop(maskPixels.data, source.width, source.height);
         const width = crop.size || source.width, height = crop.size || source.height;
-        const input = surface(width, height), guide = surface(width, height);
-        input.context.drawImage(base.canvas, crop.left, crop.top, width, height, 0, 0, width, height);
-        guide.context.drawImage(selected.canvas, crop.left, crop.top, width, height, 0, 0, width, height);
+        // Tiny detail crops otherwise invite the model to reconstruct/reframe
+        // the photograph. Present the detail and its aligned mask at a useful
+        // resolution; the returned pixels still map to the original region.
+        const inputWidth = crop.size ? Math.max(1024, width) : width;
+        const inputHeight = crop.size ? inputWidth : height;
+        const input = surface(inputWidth, inputHeight), guide = surface(inputWidth, inputHeight);
+        input.context.drawImage(base.canvas, crop.left, crop.top, width, height, 0, 0, inputWidth, inputHeight);
+        guide.context.imageSmoothingEnabled = false;
+        guide.context.drawImage(selected.canvas, crop.left, crop.top, width, height, 0, 0, inputWidth, inputHeight);
         return {
             image: inlineImage(input.canvas), mask: inlineImage(guide.canvas),
             aspectRatio: crop.size ? '1:1' : undefined,
+            framingInstruction: crop.size
+                ? 'The supplied image is an enlarged square DETAIL CROP from a larger canvas. Return this exact detail crop with the same framing, scale, and pixel locations. Do not reconstruct the full photograph, zoom out, recenter, or move content. References to other parts of the photograph mean leave them untouched, not draw them into this crop. Place the requested change inside the white region of the aligned mask.'
+                : '',
             async composite(result: InlineImage): Promise<InlineImage> {
                 const generated = await bitmap(result);
                 try {

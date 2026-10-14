@@ -210,7 +210,7 @@ export class EditingService {
                     image: scoped.image,
                     mask: scoped.mask,
                     referenceImage: mask.referenceImage,
-                    prompt: variedPrompt,
+                    prompt: [scoped.framingInstruction, variedPrompt].filter(Boolean).join('\n\n'),
                     model: options.model,
                     imageSize: options.imageSize,
                     aspectRatio: scoped.aspectRatio || options.aspectRatio,
