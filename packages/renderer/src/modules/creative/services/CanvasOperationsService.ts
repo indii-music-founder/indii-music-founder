@@ -611,7 +611,10 @@ export class CanvasOperationsService {
         const existingBoxes = this.canvas.getObjects().filter(obj => (obj as fabric.Object & { data?: { isBoundingBox?: boolean } }).data?.isBoundingBox);
         existingBoxes.forEach(obj => this.canvas?.remove(obj));
 
-        objects.forEach(obj => {
+        // Smaller objects must remain clickable inside larger detected frames.
+        const area = (object: typeof objects[number]) =>
+            (object.box.xmax - object.box.xmin) * (object.box.ymax - object.box.ymin);
+        [...objects].sort((a, b) => area(b) - area(a)).forEach(obj => {
             const left = (obj.box.xmin / 1000) * width;
             const top = (obj.box.ymin / 1000) * height;
             const boxWidth = ((obj.box.xmax - obj.box.xmin) / 1000) * width;
@@ -620,6 +623,8 @@ export class CanvasOperationsService {
             const rect = new fabric.Rect({
                 left,
                 top,
+                originX: 'left',
+                originY: 'top',
                 width: boxWidth,
                 height: boxHeight,
                 fill: 'rgba(0, 255, 0, 0.1)',
@@ -644,6 +649,8 @@ export class CanvasOperationsService {
             const text = new fabric.Text(obj.label, {
                 left,
                 top: top - 20,
+                originX: 'left',
+                originY: 'top',
                 fontSize: 16,
                 fill: '#00ff00',
                 backgroundColor: 'rgba(0,0,0,0.7)',

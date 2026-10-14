@@ -6,6 +6,7 @@ import { ContentPart, Part } from '@/shared/types/ai.dto';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { normalizeEditImageResult } from './editResponse';
 import { resolveEditModel } from './editModel';
+import { prepareScopedEdit } from './scopedEdit';
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
 
@@ -199,19 +200,20 @@ export class EditingService {
             // sending it alone in a new user turn makes Gemini reject step two.
             // Sequential Pipeline: Base -> Mask 1 -> Result 1 -> Mask 2 -> ... -> Final
             for (const mask of options.masks) {
+                const scoped = await prepareScopedEdit(currentImageData, mask);
                 // Add variation hint to prompt for diversity
                 const variedPrompt = count > 1
                     ? `${mask.prompt} (variation ${i + 1} of ${count})`
                     : mask.prompt;
 
                 const result = await this.editImage({
-                    image: currentImageData,
-                    mask: { mimeType: mask.mimeType, data: mask.data },
+                    image: scoped.image,
+                    mask: scoped.mask,
                     referenceImage: mask.referenceImage,
                     prompt: variedPrompt,
                     model: options.model,
                     imageSize: options.imageSize,
-                    aspectRatio: options.aspectRatio,
+                    aspectRatio: scoped.aspectRatio || options.aspectRatio,
                     sessionId: options.sessionId,
                     routeId: options.routeId,
                     routeLabel: options.routeLabel,
@@ -222,7 +224,7 @@ export class EditingService {
                     // Extract data for next step using strict regex
                     const match = result.url.match(DATA_URI_REGEX);
                     if (match) {
-                        currentImageData = { mimeType: match[1]!, data: match[2]! };
+                        currentImageData = await scoped.composite({ mimeType: match[1]!, data: match[2]! });
                         compositePromptParts.push(mask.prompt);
                     } else {
                         throw new Error("Failed to parse intermediate result data URI");
