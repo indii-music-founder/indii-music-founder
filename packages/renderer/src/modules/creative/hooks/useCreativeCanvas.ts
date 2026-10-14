@@ -277,8 +277,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const persistSession = async (manifest = editManifest, extras: Record<string, unknown> = {}) => {
         try {
             await creativeSessionService.upsertFromManifest(manifest, extras as Parameters<typeof creativeSessionService.upsertFromManifest>[1]);
+            return true;
         } catch (error) {
             logger.warn('[CreativeStudio] Creative session persistence skipped', error);
+            return false;
         }
     };
     const updateSession = async (updates: Record<string, unknown>) => {
@@ -1053,6 +1055,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
         setIsSavingCanvas(true);
         try {
+            // Capture the editable objects before uploads or gallery updates can
+            // replace this canvas while the save is in flight.
+            const json = await canvasOps.toJSON();
             // 1. Get the data URL (inside try: throws/returns '' if canvas is tainted — ISSUE-482)
             const dataUrl = canvasOps.saveCanvas();
             if (!dataUrl) {
@@ -1063,8 +1068,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             // 2. Upload blob to Firebase Storage as a persistent asset
             const blob = await canvasOps.getBlob(dataUrl);
             let storageUri: string | undefined;
+            let exportedAssetId: string | undefined;
             if (blob) {
                 const assetId = await saveAssetToStorage(blob);
+                exportedAssetId = assetId;
                 storageUri = currentUserStorageUri(assetId);
 
                 // 3. Create or update HistoryItem so the export appears in the gallery
@@ -1093,17 +1100,33 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             }
 
             // 4. Persist canvas state (annotations / layers) for reload
-            const json = await canvasOps.toJSON();
-            if (json) await saveCanvasStateToStorage(item.id, JSON.stringify(json));
-            await persistSession(editManifest, {
+            let draftSynced = true;
+            if (json) {
+                const snapshot = JSON.stringify(json);
+                const draftIds = new Set([item.id, ...(exportedAssetId ? [exportedAssetId] : [])]);
+                const saves = await Promise.allSettled([...draftIds].map(id => saveCanvasStateToStorage(id, snapshot)));
+                draftSynced = saves.every(save => save.status === 'fulfilled');
+            }
+            const sessionSynced = await persistSession(editManifest, {
                 lastAction: 'save_canvas',
                 status: 'completed',
                 selectedCandidateUri: candidatePersistenceUri(generatedCandidates[0]),
                 outputUri: storageUri ?? item.url,
             });
+            let exportSessionSynced = true;
+            if (exportedAssetId && exportedAssetId !== item.id) {
+                exportSessionSynced = await persistSession({
+                    ...editManifest,
+                    sessionId: getCreativeSessionId(exportedAssetId, currentProjectId),
+                    source: { ...editManifest.source, selectedItemId: exportedAssetId },
+                }, { lastAction: 'save_canvas', status: 'completed', outputUri: storageUri });
+            }
+            draftSynced = draftSynced && sessionSynced && exportSessionSynced;
             // ISSUE-917: Only show success if storage actually succeeded
-            if (storageUri) {
+            if (storageUri && draftSynced) {
                 toast.success('Saved to gallery & cloud!');
+            } else if (storageUri) {
+                toast.warning('Image saved to gallery. Editable layers are saved on this device, but cloud sync failed.');
             } else {
                 toast.warning('Canvas state saved, but export to gallery failed.');
             }
@@ -1247,13 +1270,16 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             const { mimeType, base64 } = await fetchAsBase64(artwork.url);
             const preview = await CloudStorageService.compressImage(`data:${mimeType};base64,${base64}`, { maxWidth: 1024, maxHeight: 1024, quality: 0.8, format: 'jpeg' });
             const previewData = preview.dataUri.split(',')[1]!;
+            // Print masters can exceed the edit payload limit when sent twice
+            // as content and style. Reuse the bounded artwork preview for both.
+            const synthesisImage = { mimeType: 'image/jpeg', data: previewData };
             const climaxDescription = await ImageGeneration.captionImage({ mimeType: 'image/jpeg', data: previewData }, 'subject');
 
             setProcessingStatus("Synthesizing...");
             const refinedPrompt = `${climaxDescription}, cinematic climax, dramatic lighting.`;
             const synthResults = await ImageGeneration.remixImage({
-                contentImage: { mimeType, data: base64 },
-                styleImage: { mimeType, data: base64 },
+                contentImage: synthesisImage,
+                styleImage: synthesisImage,
                 prompt: refinedPrompt
             });
 

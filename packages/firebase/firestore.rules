@@ -471,6 +471,22 @@ service cloud.firestore {
     // User Profiles
     // =========================================================================
     match /users/{userId} {
+      // Editable canvas drafts are private working data, not execution receipts.
+      match /canvas_states/{canvasId} {
+        function validCanvasDraft() {
+          let data = request.resource.data;
+          return data.keys().hasAll(['id', 'json', 'updatedAt']) &&
+            data.keys().hasOnly(['id', 'json', 'updatedAt']) &&
+            data.id is string && data.id == canvasId && data.id.size() <= 256 &&
+            data.json is string && data.json.size() > 0 && data.json.size() <= 900000 &&
+            data.updatedAt is string &&
+            data.updatedAt.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[.][0-9]{3}Z');
+        }
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validCanvasDraft();
+        allow delete: if false;
+      }
+
       // This document contains private identity and billing-adjacent fields,
       // including email. Public artist discovery must use a separately shaped
       // public projection; client-side redaction cannot protect fields already

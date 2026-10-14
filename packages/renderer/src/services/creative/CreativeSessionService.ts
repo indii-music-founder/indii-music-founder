@@ -41,8 +41,20 @@ class CreativeSessionServiceImpl extends FirestoreService<CreativeSessionRecord>
   async upsertFromManifest(manifest: CreativeEditManifest, extras: Partial<CreativeSessionRecord> = {}): Promise<CreativeSessionRecord> {
     const userId = this.assertAuthenticated();
     const orgId = 'personal';
-    const existing = await this.get(manifest.sessionId);
+    let existing: CreativeSessionRecord | null = null;
+    try {
+      existing = await this.get(manifest.sessionId);
+    } catch (error) {
+      // Owner-by-field rules cannot authorize a read of a nonexistent record.
+      // Attempt the already-authorized create below; owner update rules still
+      // reject an ID that belongs to another account. Other failures propagate.
+      if ((error as { code?: string }).code !== 'permission-denied') throw error;
+    }
     const now = Date.now();
+    const storedCreatedAt = existing?.createdAt as number | Timestamp | undefined;
+    const createdAt = typeof storedCreatedAt === 'number'
+      ? storedCreatedAt
+      : storedCreatedAt instanceof Timestamp ? storedCreatedAt.toMillis() : now;
     const record: CreativeSessionRecord = {
       ...manifest,
       ...extras,
@@ -50,7 +62,7 @@ class CreativeSessionServiceImpl extends FirestoreService<CreativeSessionRecord>
       userId,
       orgId,
       status: extras.status || existing?.status || 'active',
-      createdAt: existing?.createdAt ?? now,
+      createdAt,
       updatedAt: now,
       selectedCandidateUri: extras.selectedCandidateUri ?? existing?.selectedCandidateUri ?? null,
       outputUri: extras.outputUri ?? existing?.outputUri ?? null,
