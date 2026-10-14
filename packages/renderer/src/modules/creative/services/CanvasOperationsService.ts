@@ -1,3 +1,4 @@
+import { canvasStateDimensions } from './canvasStateDimensions';
 import * as fabric from 'fabric';
 
 declare module 'fabric' {
@@ -373,7 +374,7 @@ export class CanvasOperationsService {
 
     private saveHistoryState(): void {
         if (!this.canvas) return;
-        const json = JSON.stringify(this.canvas.toObject(['data', 'id']));
+        const json = JSON.stringify(this.serializeCanvasState());
         
         // Only push if it's different from the top of the stack
         if (this._historyStack.length === 0 || this._historyStack[this._historyStack.length - 1] !== json) {
@@ -745,7 +746,7 @@ export class CanvasOperationsService {
 
         const originalWidth = this.canvas.getWidth();
         const originalHeight = this.canvas.getHeight();
-        const jsonState = JSON.stringify(this.canvas.toObject([...CANVAS_SERIALIZATION_PROPERTIES]));
+        const jsonState = JSON.stringify(this.serializeCanvasState());
 
         const exportForDimensions = async (targetWidth: number, targetHeight: number): Promise<string> => {
             this.canvas!.setDimensions({ width: targetWidth, height: targetHeight });
@@ -844,6 +845,16 @@ export class CanvasOperationsService {
         }
     }
 
+    /** Snapshot the stage with its objects for undo and reopening. */
+    private serializeCanvasState(): Record<string, unknown> {
+        if (!this.canvas) return {};
+        return {
+            ...this.canvas.toObject([...CANVAS_SERIALIZATION_PROPERTIES]),
+            width: this.canvas.getWidth(),
+            height: this.canvas.getHeight(),
+        };
+    }
+
     /**
      * Export canvas to JSON string.
      *
@@ -856,7 +867,7 @@ export class CanvasOperationsService {
      */
     async toJSON(): Promise<unknown> {
         if (!this.canvas) return null;
-        const json = this.canvas.toObject(['data', 'id']) as { objects?: Array<{ data?: Record<string, unknown> }> };
+        const json = this.serializeCanvasState() as { objects?: Array<{ data?: Record<string, unknown> }> };
         if (json && Array.isArray(json.objects)) {
             json.objects = json.objects.filter(obj => !obj?.data?.isBoundingBox);
             this.restorePersistentImageSources(json);
@@ -897,7 +908,13 @@ export class CanvasOperationsService {
             await this._sanitizeRemoteImageSources(parsed);
             if (this.canvas !== restoringCanvas) return;
             await restoringCanvas.loadFromJSON(parsed);
-            if (this.canvas === restoringCanvas) restoringCanvas.renderAll();
+            if (this.canvas !== restoringCanvas) return;
+            const base = restoringCanvas.getObjects().find(obj =>
+                obj.type?.toLowerCase() === 'image' &&
+                (obj as fabric.Object & { data?: { isBaseImage?: boolean } }).data?.isBaseImage);
+            const dimensions = canvasStateDimensions(parsed, base?.getBoundingRect());
+            if (dimensions) restoringCanvas.setDimensions(dimensions);
+            restoringCanvas.renderAll();
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
             logger.error(`Failed to load canvas from JSON: ${message}`);

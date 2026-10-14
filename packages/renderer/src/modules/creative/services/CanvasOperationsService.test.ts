@@ -107,6 +107,15 @@ describe('CanvasOperationsService blank sketch layers', () => {
         expect(CANVAS_SERIALIZATION_PROPERTIES).toEqual(['data', 'id']);
     });
 
+    it('restores saved portrait dimensions instead of keeping the wider viewport', async () => {
+        const service = new CanvasOperationsService();
+        service.initialize(document.createElement('canvas'));
+        await service.loadFromJSON(JSON.stringify({ width: 388, height: 690, objects: [] }));
+        expect(mockCanvasInstance.setDimensions).toHaveBeenCalledWith({ width: 388, height: 690 });
+        expect(mockCanvasInstance.getWidth()).toBe(388);
+        expect(mockCanvasInstance.getHeight()).toBe(690);
+    });
+
     it('exports a 4:5 Instagram derivative and preserves identity in every restore snapshot', async () => {
         const service = new CanvasOperationsService();
         const wrapper = document.createElement('div');

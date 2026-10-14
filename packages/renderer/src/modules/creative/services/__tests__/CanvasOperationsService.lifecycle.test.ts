@@ -15,6 +15,8 @@ vi.mock('fabric', () => {
         off = vi.fn();
         dispose = vi.fn();
         toObject = vi.fn(() => ({}));
+        getWidth = vi.fn(() => 400);
+        getHeight = vi.fn(() => 600);
         getObjects = vi.fn(() => []);
         getElement = vi.fn(() => {
             const el = document.createElement('canvas');
@@ -89,7 +91,7 @@ describe('CanvasOperationsService lifecycle guards (ISSUE-1391)', () => {
             { type: 'image', src: 'blob:editor-only', data: { isBaseImage: true } },
             { type: 'group', objects: [{ type: 'image', src: 'blob:editor-only' }] },
         ] });
-        expect(await service.toJSON()).toEqual({ objects: [
+        expect(await service.toJSON()).toEqual({ width: 400, height: 600, objects: [
             { type: 'image', src: durableSource, data: { isBaseImage: true } },
             { type: 'group', objects: [{ type: 'image', src: durableSource }] },
         ] });
