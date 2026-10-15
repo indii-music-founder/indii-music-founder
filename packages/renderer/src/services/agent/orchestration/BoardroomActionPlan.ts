@@ -2,6 +2,24 @@ import type { AgentGraph, AgentResponse, ToolFunctionResult } from '../types';
 import { isHead } from '../departments';
 import { isCapabilityQuestion } from '../capabilityTruth';
 
+/** Exact IDs win; the longest unique label avoids confusing a variant with its parent. */
+export function boardroomRequestedSourceId(query: string, sources: ReadonlyArray<{ id: string; alias?: string; name?: string }>): string | undefined {
+    const normalize = (value: string) => value.normalize('NFKC').toLowerCase();
+    const text = normalize(query);
+    const references = new Set(text.split(/[^a-z0-9_-]+/));
+    const explicit = sources.filter(source => references.has(normalize(source.id)) ||
+        Boolean(source.alias && references.has(normalize(source.alias))));
+    if (explicit.length) {
+        const ids = [...new Set(explicit.map(source => source.id))];
+        return ids.length === 1 ? ids[0] : undefined;
+    }
+    const named = sources.filter(source => source.name && source.name.length >= 8 && text.includes(normalize(source.name)));
+    const longest = Math.max(0, ...named.map(source => source.name!.length));
+    const matches = named.filter(source => source.name!.length === longest);
+    const ids = [...new Set(matches.map(source => source.id))];
+    return ids.length === 1 ? ids[0] : undefined;
+}
+
 /** Polite execution requests must not become read-only capability reports. */
 export function isBoardroomCapabilityOnly(query: string): boolean {
     return isCapabilityQuestion(query) &&

@@ -16,6 +16,7 @@
 
 import { upscalerService } from '@/services/upscale/UpscalerService';
 import { dataUrlWithDpi } from '@/services/print/dpiMetadata';
+import { PrintCropCancelledError } from './PrintPreparationControl';
 import { calculateCoverBox, drawBleedMirror, drawGuideOverlay } from '@indii/shared';
 import { planPrintUpscale, type PrintUpscaleMethod } from './printUpscalePlan';
 import { runPrintStage } from './runPrintStage';
@@ -116,7 +117,7 @@ export class PrintReadyUpscaleService {
             options.signal?.addEventListener('abort', cancel, { once: true });
             try {
                 options.signal?.throwIfAborted();
-                if (!await confirmation) throw new Error('Print crop was not approved. No print file was produced.');
+                if (!await confirmation) throw new PrintCropCancelledError();
             } finally { options.signal?.removeEventListener('abort', cancel); }
             options.signal?.throwIfAborted();
         }

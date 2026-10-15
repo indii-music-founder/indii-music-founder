@@ -80,3 +80,20 @@ fields from the Boardroom example, explains that the tool owns crop approval,
 and validates before returning a graph with one feedback-based replan. It never
 strips conditions to force execution. Poster completion remains unverified until
 the follow-up deployment is exercised in the real UI.
+
+October 14 resumed check: production was entered through the official Log in
+link on the existing wiil@indii.music account. Account & Security shows active
+indii Founder lifetime access; no account or entitlement was created/modified.
+The named 9:16 poster request reached one Creative step and prepare_print_file,
+but its crop preview used a 3000×3000 square source. The preview was declined;
+the real receipt states no print file was produced. Creative repeated the
+declined preparation, including after Stop, until a normal reload ended the
+request. An exact-ID retry hit the 4× enlargement guard repeatedly.
+
+The bounded follow-up binds a unique explicitly requested ID or longest exact
+gallery label, rejects source substitution, and reads the saved gallery master
+through StorageService.get instead of accepting cached preview pixels. Crop
+decline now has a typed CANCELLED receipt that terminates the agent invocation.
+Pure source-selection and terminal-receipt checks cover parent/variant overlap,
+alias token boundaries, duplicate references, ambiguity and retryable failures.
+The saved-original lookup and completed poster still require deployed UI proof.

@@ -34,6 +34,7 @@ import { ToolExecutionContext } from './ToolExecutionContext';
 import { toolError } from './utils/ToolUtils';
 import { getDurableReportReceipt } from './utils/durableReportReceipt';
 import { completedBoardroomToolResult } from './orchestration/BoardroomActionPlan';
+import { cancelledPrintResponse } from '@/services/upscale/PrintPreparationControl';
 import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
 import { AgentEventBus } from './governance/AgentEventBus';
 import { getFineTunedModel } from './fine-tuned-models';
@@ -1714,6 +1715,11 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         });
 
                         // Phase 2: DNA Infusion - Planning Mode Halting
+                        const cancellation = cancelledPrintResponse(name, result, toolCalls);
+                        if (cancellation) {
+                            await executionContext.rollback();
+                            return cancellation;
+                        }
                         const resultStatus = result && typeof result === 'object'
                             ? (result as { status?: unknown }).status
                             : undefined;

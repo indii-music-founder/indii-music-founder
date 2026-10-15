@@ -229,7 +229,7 @@ export interface AgentContext {
     /** Runtime-enforced observation mode; models cannot opt themselves out. */
     isReadOnly?: boolean;
     /** Application-owned assignment of the user's Boardroom request. */
-    boardroomExecution?: { requestId: string; stepId: string; ownerAgentId: string };
+    boardroomExecution?: { requestId: string; stepId: string; ownerAgentId: string; sourceId?: string };
     /** Frozen source references for tools; inline pixels never enter model prompts. */
     assetReferences?: ReadonlyArray<{ id: string; alias: string; url: string }>;
     /** Frozen source labels/IDs for planning, without private media URLs or bytes. */
