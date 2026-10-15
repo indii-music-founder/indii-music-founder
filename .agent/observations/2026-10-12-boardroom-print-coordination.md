@@ -97,3 +97,30 @@ decline now has a typed CANCELLED receipt that terminates the agent invocation.
 Pure source-selection and terminal-receipt checks cover parent/variant overlap,
 alias token boundaries, duplicate references, ambiguity and retryable failures.
 The saved-original lookup and completed poster still require deployed UI proof.
+
+October 15 production follow-up: d02f0a5e3 passed exact release 38738171214;
+actual deployment logs confirmed Hosting, staging checks and Cloud Functions.
+The existing indii Founder account was entered through the official public Log
+in link; no account, plan or entitlement was created or changed. The named 9:16
+variant still hit the 4× guard. The larger original (1792×2400) reached the real
+11×17 crop preview: 3300×5100 trim at 300 DPI with 0.125-inch bleed. Declining
+ended the invocation with PRINT_CROP_CANCELLED and no reopened approval.
+
+Approving a fresh request produced print-1792088328687 through browser ESRGAN:
+3376×5176 including bleed. The real tool receipt reports gallerySaved and
+versionRecorded true. A normal reload restored the poster in Project Assets,
+and its already-loaded image decoded to 3376×5176. No computer download was
+requested. Poster DPI remains receipt-supported until independent inspection;
+the prior saved 3000×3000 cover was independently read as 299.9994 nominal DPI.
+Evidence: /tmp/indii-saved-poster-editor.png and
+/tmp/indii-poster-cancellation-receipt.png.
+
+The agent attempted another preparation after that successful save; the second
+approval was declined. The next bounded change ends a Boardroom print attempt
+when pixels have been created, reporting actual persistence flags even when
+bookkeeping failed, instead of allowing another preparation. Separate requested
+print outputs receive separate Creative steps. The same change exposes measured
+original-file metadata in Project Assets and the Creative Canvas, and makes
+platform exports await full-resolution gallery storage with computer ZIP
+Downloads opt-in. Pure byte/protocol checks and legacy structural checks do not
+prove these new UI or platform-export paths; deployed acceptance remains pending.

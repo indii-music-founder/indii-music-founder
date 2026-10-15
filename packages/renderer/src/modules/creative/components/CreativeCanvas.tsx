@@ -238,6 +238,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 data-testid="creative-canvas-container"
             >
                 <CanvasHeader
+                    item={item}
                     isMagicFillMode={isMagicFillMode}
                     magicFillPrompt={magicFillPrompt}
                     setMagicFillPrompt={setMagicFillPrompt}

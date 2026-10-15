@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AssetsPanel from './AssetsPanel';
@@ -12,21 +12,8 @@ vi.mock('@/core/store', () => {
     return { useStore: mockUseStore };
 });
 
-// Mock motion/react to avoid animation issues in JSDOM
-vi.mock('motion/react', () => ({
-    motion: {
-        button: ({ children, ...props }: any) => {
-            const cleanProps = { ...props };
-            delete cleanProps.initial;
-            delete cleanProps.animate;
-            delete cleanProps.exit;
-            delete cleanProps.transition;
-            return <button {...cleanProps}>{children}</button>;
-        }
-    },
-    AnimatePresence: ({ children }: any) => <>{children}</>,
-}));
-
+// Structural-only rendering checks. Use the actual animation components;
+// the remaining store doubles do not verify persisted customer behavior.
 describe('AssetsPanel', () => {
     const mockToggleRightPanel = vi.fn();
     const mockSetSelectedItem = vi.fn();
@@ -190,7 +177,7 @@ describe('AssetsPanel', () => {
         expect(mockToggleRightPanel).toHaveBeenCalled();
     });
 
-    it('searches and filters assets by query input', () => {
+    it('searches and filters assets by query input', async () => {
         render(<AssetsPanel toggleRightPanel={mockToggleRightPanel} />);
 
         const searchInput = screen.getByPlaceholderText('Search assets...');
@@ -199,10 +186,10 @@ describe('AssetsPanel', () => {
         // 'sunset' should match 'beautiful neon city sunset'
         expect(screen.getByText('beautiful neon city sunset')).toBeInTheDocument();
         // others should be hidden
-        expect(screen.queryByText('guitar performance vertical close-up')).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.queryByText('guitar performance vertical close-up')).not.toBeInTheDocument());
     });
 
-    it('filters assets by category button clicks', () => {
+    it('filters assets by category button clicks', async () => {
         render(<AssetsPanel toggleRightPanel={mockToggleRightPanel} />);
 
         // Click Images filter
@@ -213,21 +200,21 @@ describe('AssetsPanel', () => {
         expect(screen.getByText('beautiful neon city sunset')).toBeInTheDocument();
         expect(screen.getByText('uploaded album art cover mockup')).toBeInTheDocument();
         // Videos and Audio should be hidden
-        expect(screen.queryByText('guitar performance vertical close-up')).not.toBeInTheDocument();
-        expect(screen.queryByText('synthesized bass stem hook')).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.queryByText('guitar performance vertical close-up')).not.toBeInTheDocument());
+        await waitFor(() => expect(screen.queryByText('synthesized bass stem hook')).not.toBeInTheDocument());
 
         // Click Videos filter
         const videosFilterBtn = screen.getByText('Videos');
         fireEvent.click(videosFilterBtn);
         expect(screen.getByText('guitar performance vertical close-up')).toBeInTheDocument();
-        expect(screen.queryByText('beautiful neon city sunset')).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.queryByText('beautiful neon city sunset')).not.toBeInTheDocument());
     });
 
     it('triggers selection callbacks on asset click', () => {
         render(<AssetsPanel toggleRightPanel={mockToggleRightPanel} />);
 
         // Click the first asset (generated image)
-        const imageAsset = screen.getByText('beautiful neon city sunset').closest('button');
+        const imageAsset = screen.getByRole('button', { name: 'Edit in Studio: beautiful neon city sunset' });
         expect(imageAsset).toBeInTheDocument();
         fireEvent.click(imageAsset!);
 

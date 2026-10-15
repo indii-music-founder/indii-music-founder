@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cancelledPrintResponse, printGalleryReference } from './PrintPreparationControl';
+import { cancelledPrintResponse, finishedPrintResponse, printGalleryReference } from './PrintPreparationControl';
 import { boardroomRequestedSourceId } from '@/services/agent/orchestration/BoardroomActionPlan';
 
 // Pure request binding and terminal-receipt policy; no service or account doubles.
@@ -49,4 +49,29 @@ describe('Print request control', () => {
         ]) expect(cancelledPrintResponse('prepare_print_file', result, [])).toBeNull();
         expect(cancelledPrintResponse('list_files', { success: false, status: 'CANCELLED', metadata: { errorCode: 'PRINT_CROP_CANCELLED' } }, [])).toBeNull();
     });
+    it('ends a completed print step with its saved receipt before another model iteration', () => {
+        const data = { fileCreated: true, gallerySaved: true, versionRecorded: true, assetId: 'saved-id', url: 'saved-original' };
+        const result = { success: true, message: 'Print master saved.', data };
+        const calls = [{ name: 'prepare_print_file', args: {}, result }];
+        expect(finishedPrintResponse('prepare_print_file', result, calls)).toEqual({ text: result.message, data, toolCalls: calls });
+        for (const patch of [{ fileCreated: false }, { url: '' }, { assetId: '' }]) {
+            expect(finishedPrintResponse('prepare_print_file', { ...result, data: { ...data, ...patch } }, calls)).toBeNull();
+        }
+        expect(finishedPrintResponse('prepare_print_file', { ...result, status: 'EXECUTING' }, calls)).toBeNull();
+        expect(finishedPrintResponse('prepare_print_file', { ...result, data: { ...data, status: 'QUEUED' } }, calls)).toBeNull();
+        expect(finishedPrintResponse('prepare_print_file', { ...result, success: false }, calls)).toBeNull();
+        expect(finishedPrintResponse('list_files', result, calls)).toBeNull();
+    });
+
+    it('reports a created file with failed persistence without another preparation', () => {
+        for (const data of [
+            { fileCreated: true, gallerySaved: true, versionRecorded: false, assetId: 'saved-id', url: 'saved-original' },
+            { fileCreated: true, gallerySaved: false, versionRecorded: false, assetId: 'unsaved-id' },
+        ]) {
+            const result = { success: true, message: 'Print file created; persistence incomplete.', data };
+            const calls = [{ name: 'prepare_print_file', args: {}, result }];
+            expect(finishedPrintResponse('prepare_print_file', result, calls)).toEqual({ text: result.message, data, toolCalls: calls });
+        }
+    });
+
 });

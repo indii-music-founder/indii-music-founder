@@ -34,7 +34,7 @@ import { ToolExecutionContext } from './ToolExecutionContext';
 import { toolError } from './utils/ToolUtils';
 import { getDurableReportReceipt } from './utils/durableReportReceipt';
 import { completedBoardroomToolResult } from './orchestration/BoardroomActionPlan';
-import { cancelledPrintResponse } from '@/services/upscale/PrintPreparationControl';
+import { cancelledPrintResponse, finishedPrintResponse } from '@/services/upscale/PrintPreparationControl';
 import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
 import { AgentEventBus } from './governance/AgentEventBus';
 import { getFineTunedModel } from './fine-tuned-models';
@@ -1719,6 +1719,11 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         if (cancellation) {
                             await executionContext.rollback();
                             return cancellation;
+                        }
+                        const finishedPrint = context?.boardroomExecution && finishedPrintResponse(name, result, toolCalls);
+                        if (finishedPrint) {
+                            if (executionContext.hasUncommittedChanges()) await executionContext.commit();
+                            return finishedPrint;
                         }
                         const resultStatus = result && typeof result === 'object'
                             ? (result as { status?: unknown }).status

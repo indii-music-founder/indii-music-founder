@@ -555,7 +555,7 @@ export const CreativeAgent: AgentConfig = {
                         masterUrl: { type: 'STRING', description: 'Data URI or hosted image of the master artwork.' },
                         platforms: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Target platform IDs (default: full matrix).' },
                         fit: { type: 'STRING', enum: ['cover', 'contain-blur-pad'], description: 'Framing fit mode.' },
-                        download: { type: 'BOOLEAN', description: 'Whether to package downloadable zip (default true).' }
+                        download: { type: 'BOOLEAN', description: 'Download a ZIP to the computer only when the user explicitly requests a download. Default false; originals are always saved to the gallery.' }
                     },
                     required: ['masterUrl']
                 }

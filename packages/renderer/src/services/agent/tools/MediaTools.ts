@@ -1,4 +1,5 @@
 
+import type { HistoryItem } from '@/core/types/history';
 import { Editing } from '@/services/image/EditingService';
 import { PLATFORM_DIMENSIONS } from '@/services/image/CanvasBatchService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
@@ -143,41 +144,56 @@ export const MediaTools = {
                 () => import('@/services/assets/AssetVersionService')
             );
 
+            const { StorageService } = await import('@/services/StorageService');
+            const savedAssets: Array<{ assetId: string; platformId: string; url: string; width: number; height: number }> = [];
+            const warnings: string[] = [];
             for (const r of results) {
                 const historyId = `export_${r.platformId}_${Date.now()}`;
-                store.addToHistory({
-                    id: historyId,
-                    url: r.url,
+                const item: HistoryItem = {
+                    id: historyId, url: r.url,
                     prompt: `Platform export: ${r.platformId} (${r.width}x${r.height}, ${r.fit})`,
-                    type: 'image',
-                    timestamp: Date.now(),
-                    projectId: store.currentProjectId,
+                    type: 'image', timestamp: Date.now(), projectId: store.currentProjectId,
+                    preserveResolution: true,
                     meta: JSON.stringify({ source: 'platform-export', platformId: r.platformId, fit: r.fit }),
-                    tags: ['platform-export', r.platformId],
-                    origin: 'canvas-export'
-                });
+                    tags: ['platform-export', r.platformId], origin: 'canvas-export'
+                };
+                let savedUrl: string;
+                try {
+                    const saved = await StorageService.saveItem(item);
+                    if (!saved.url) throw new Error('No saved asset URL');
+                    savedUrl = saved.url;
+                    store.addToHistory({ ...item, url: saved.url, storageUri: saved.storageUri, thumbnailUrl: saved.thumbnailUrl });
+                    savedAssets.push({ assetId: historyId, platformId: r.platformId, url: saved.url, width: r.width, height: r.height });
+                } catch (saveError) {
+                    logger.warn('[MediaTools] Platform master persistence failed:', saveError);
+                    warnings.push(`${r.platformId}: could not save the original to your gallery.`);
+                    continue;
+                }
                 try {
                     await AssetVersionService.recordVersion({
-                        assetId: historyId,
-                        parentVersionId: null,
-                        url: r.url,
-                        source: 'export-bundle',
+                        assetId: historyId, parentVersionId: null, url: savedUrl, source: 'export-bundle',
                         provenance: { note: `Platform export ${r.platformId} ${r.width}x${r.height} (${r.fit})` },
                         tags: ['platform-export', r.platformId]
                     });
                 } catch (versionError) {
-                    logger.warn('[MediaTools] Version record failed for export; export result is unaffected:', versionError);
+                    logger.warn('[MediaTools] Version record failed for saved export:', versionError);
+                    warnings.push(`${r.platformId}: original saved, version record unavailable.`);
                 }
             }
+            if (savedAssets.length !== results.length) return {
+                ...toolError('Some platform images could not be saved. Saved originals remain in your gallery.', 'EXPORT_PERSISTENCE_FAILED'),
+                status: 'PARTIAL', data: { savedAssets, warnings, gallerySaved: false },
+            };
 
             let zipName: string | undefined;
-            if (args.download !== false) {
+            if (args.download === true) {
                 zipName = `platform_assets_${Date.now()}`;
                 await downloadAsZip(results, zipName);
             }
 
             return toolSuccess({
                 count: results.length,
+                savedAssets, gallerySaved: true, warnings,
                 assets: results.map(r => ({
                     platformId: r.platformId,
                     width: r.width,
@@ -186,7 +202,7 @@ export const MediaTools = {
                     fit: r.fit
                 })),
                 zipName
-            }, `Exported ${results.length} platform assets${zipName ? ` and bundled zip "${zipName}.zip"` : ''}. These are deterministic resizes of the master — no generative outpainting was applied.`);
+            }, `Exported ${results.length} platform assets${zipName ? ` and bundled zip "${zipName}.zip"` : ''}. Originals saved to your gallery. ${warnings.join(' ')} These are deterministic resizes of the master — no generative outpainting was applied.`);
         } catch (error: unknown) {
             const err = error as Error;
             logger.error('[MediaTools] export_platform_assets failed:', err);
