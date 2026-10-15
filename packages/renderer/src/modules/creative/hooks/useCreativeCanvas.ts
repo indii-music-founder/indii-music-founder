@@ -38,7 +38,7 @@ function debounce<T extends (...args: any[]) => any>(
 }
 
 async function resolveEditableImageUrl(item: HistoryItem): Promise<string> {
-    const candidates = [item.url, item.thumbnailUrl].filter((url): url is string => Boolean(url?.trim()));
+    const candidates = [item.storageUri, item.url, item.thumbnailUrl].filter((url): url is string => Boolean(url?.trim()));
     let unresolvedStorageUri: string | null = null;
 
     for (const candidate of candidates) {
@@ -336,7 +336,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             // Undo/Redo buttons re-evaluate canUndo()/canRedo() right after a draw
             // (ISSUE-480 — they were stuck disabled until an unrelated re-render),
             // then debounce the heavier state persistence.
-            const handleCanvasChange = () => {
+            const handleCanvasChange = (reason?: 'restore') => {
+                if (!isMounted) return;
+                if (reason === 'restore') {
+                    setHistoryTrigger(prev => prev + 1);
+                    return;
+                }
                 dirtyRef.current = true;
                 setHistoryTrigger(prev => prev + 1);
                 // Capture this canvas now; a delayed save must never read the
@@ -348,7 +353,35 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
             // Try to load any previous edits/annotations FIRST
             try {
-                const savedState = await getCanvasStateFromStorage(item.id);
+                let savedState = await getCanvasStateFromStorage(item.id);
+                if (savedState && item.origin === 'canvas-export') {
+                    // Older saves rewrote the mutable JPEG preview under this
+                    // history ID. The original export also has an immutable,
+                    // extensionless asset with that ID. Recover that source
+                    // only for base images explicitly pointing at this preview.
+                    const originalUri = currentUserStorageUri(item.id);
+                    if (originalUri) {
+                        try {
+                            type SavedImageNode = { src?: string; data?: { isBaseImage?: boolean }; objects?: SavedImageNode[] };
+                            const parsed = JSON.parse(savedState) as SavedImageNode;
+                            const affected: SavedImageNode[] = [];
+                            const findMutableBase = (node: SavedImageNode) => {
+                                if (node.data?.isBaseImage && resolveStorageUri(node.src) === `${originalUri}.jpg`) affected.push(node);
+                                node.objects?.forEach(findMutableBase);
+                            };
+                            findMutableBase(parsed);
+                            if (affected.length) {
+                                const originalUrl = await resolveStorageUrl(originalUri);
+                                if (!originalUrl.startsWith('gs://')) {
+                                    affected.forEach(node => { node.src = originalUrl; });
+                                    savedState = JSON.stringify(parsed);
+                                }
+                            }
+                        } catch (error) {
+                            logger.warn('[CreativeStudio] Original canvas source recovery was unavailable', error);
+                        }
+                    }
+                }
                 if (savedState && isMounted) {
                     // Initialize from saved layers, then repair stale/blank states
                     // that do not contain the selected asset as a base image.
@@ -1069,24 +1102,29 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             const blob = await canvasOps.getBlob(dataUrl);
             let storageUri: string | undefined;
             let exportedAssetId: string | undefined;
+            let exportedUrl: string | undefined;
             if (blob) {
                 const assetId = await saveAssetToStorage(blob);
                 exportedAssetId = assetId;
                 storageUri = currentUserStorageUri(assetId);
+                exportedUrl = storageUri ? await resolveStorageUrl(storageUri) : dataUrl;
+                if (exportedUrl.startsWith('gs://')) throw new Error('The uploaded artwork could not be resolved for the gallery.');
 
                 // 3. Create or update HistoryItem so the export appears in the gallery
                 const { addToHistory, updateHistoryItem } = useStore.getState();
                 
                 if (item.origin === 'canvas-export') {
                     updateHistoryItem(item.id, {
-                        url: dataUrl || item.url,
+                        url: exportedUrl,
+                        thumbnailUrl: exportedUrl,
                         storageUri,
                         timestamp: Date.now()
                     });
                 } else {
                     const canvasAsset: HistoryItem = {
                         id: assetId,
-                        url: dataUrl || item.url,
+                        url: exportedUrl,
+                        thumbnailUrl: exportedUrl,
                         storageUri,
                         prompt: `Canvas edit of: ${item.prompt || 'untitled'}`,
                         type: 'image',
@@ -1130,7 +1168,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             } else {
                 toast.warning('Canvas state saved, but export to gallery failed.');
             }
-            return { url: dataUrl || item.url, storageUri };
+            return { url: exportedUrl || dataUrl || item.url, storageUri };
         } catch (error: unknown) {
             logger.error('[CreativeStudio] Canvas save failed', error);
             // ISSUE-917: No disk save actually happened in catch path
@@ -1184,11 +1222,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         const canvasChanged = dirtyRef.current && currentJson !== baselineJsonRef.current;
         if (canvasChanged || restoredContentRef.current) {
             const saved = await saveCanvas();
-            if (saved) {
-                lastExportRef.current = saved;
-                sourceUrl = saved.storageUri || saved.url;
-                restoredContentRef.current = false;
-            }
+            // Saving failed: keep the editor and edits in place. Never stage
+            // the original image while claiming the edited handoff succeeded.
+            if (!saved?.storageUri) return;
+            lastExportRef.current = saved;
+            sourceUrl = saved.storageUri;
+            restoredContentRef.current = false;
         } else if (lastExportRef.current) {
             // Repeat sends of an unchanged canvas keep staging the same
             // exported artifact instead of reverting to the original.

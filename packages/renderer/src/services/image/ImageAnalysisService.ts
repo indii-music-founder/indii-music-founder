@@ -96,14 +96,21 @@ export class ImageAnalysisService {
             const analysisImage = await this.prepareAnalysisImage(imageBase64);
             
             const prompt = `Give the segmentation contour for the object labelled "${targetLabel}".
-Return JSON with a single "mask" polygon of [x,y] coordinate pairs normalized to 0-1000 relative to the ENTIRE provided image, including any frame or padding. Trace the visible object boundary tightly. Return coordinates, not encoded image bytes.`;
+Return JSON with a single "mask" polygon of objects with explicit "x" and "y" properties, normalized to 0-1000 relative to the ENTIRE provided image, including any frame or padding. x is horizontal (left to right); y is vertical (top to bottom). Trace the visible object boundary tightly. Return coordinates, not encoded image bytes or ambiguous coordinate pairs.`;
             const schema: Schema = {
                 type: 'object', nullable: false,
                 properties: {
                     mask: {
                         type: 'array', nullable: false,
-                        description: 'Visible object contour: pairs of x,y coordinates normalized to the entire image, 0-1000.',
-                        items: { type: 'array', nullable: false, items: { type: 'number', nullable: false } },
+                        description: 'Visible object contour with named horizontal x and vertical y coordinates, 0-1000.',
+                        items: {
+                            type: 'object', nullable: false,
+                            properties: {
+                                x: { type: 'number', nullable: false, description: 'Horizontal position from left, 0-1000.' },
+                                y: { type: 'number', nullable: false, description: 'Vertical position from top, 0-1000.' },
+                            },
+                            required: ['x', 'y'],
+                        },
                     },
                 },
                 required: ['mask'],
@@ -114,7 +121,7 @@ Return JSON with a single "mask" polygon of [x,y] coordinate pairs normalized to
                 { inlineData: analysisImage }
             ];
 
-            const result = await AutonomousIntelligence.generateStructuredData<{ mask: number[][] }>(
+            const result = await AutonomousIntelligence.generateStructuredData<{ mask: Array<{ x: number; y: number }> }>(
                 parts, schema, undefined, undefined, INTELLIGENCE_MODELS.TEXT.FAST
             );
             const source = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;

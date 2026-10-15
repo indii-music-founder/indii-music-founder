@@ -370,9 +370,10 @@ describe('CreativeCanvas', () => {
         }
     });
 
-    // ISSUE-1395: only a canvas the user actually changed gets persisted —
-    // and in that case the EDITED output (not the original) lands on the board.
-    it('persists and stages the edited output when the canvas was changed', async () => {
+    // Structural-only: this legacy resolver leaves Storage URIs unresolved.
+    // An upload receipt alone must not claim a displayable gallery/board asset.
+    // Successful durable export and reopen require the genuine production check.
+    it('rejects an unresolved edited export before gallery or board handoff', async () => {
         const FakeImage = class {
             naturalWidth = 800;
             naturalHeight = 600;
@@ -395,22 +396,17 @@ describe('CreativeCanvas', () => {
                 objects: [{ id: 'base' }, { id: 'annotation' }],
             } as any);
             act(() => canvasOnChangeRef.current!());
-            fireEvent.click(screen.getByTestId('send-to-canvas-btn'));
-
-            await waitFor(() => {
-                expect(saveAssetToStorage).toHaveBeenCalledOnce();
-                expect(mockStoreStateRef.current.addToHistory).toHaveBeenCalledOnce();
-                expect(mockStoreStateRef.current.addCanvasImage).toHaveBeenCalledWith(expect.objectContaining({
-                    parentId: mockItem.id,
-                    // The EDITED export (persisted storage URI), not the
-                    // original item URL.
-                    base64: 'gs://mock-bucket/users/test-user-id/assets/asset-123',
-                    width: 800,
-                    height: 600,
-                }));
-                expect(mockStoreStateRef.current.setViewMode).toHaveBeenCalledWith('canvas');
+            await act(async () => {
+                fireEvent.click(screen.getByTestId('send-to-canvas-btn'));
             });
-            expect(mockOnClose).toHaveBeenCalled();
+
+            expect(saveAssetToStorage).toHaveBeenCalledOnce();
+            expect(resolveStorageUrl).toHaveBeenCalledWith('gs://mock-bucket/users/test-user-id/assets/asset-123');
+            expect(mockStoreStateRef.current.addToHistory).not.toHaveBeenCalled();
+            expect(mockStoreStateRef.current.addCanvasImage).not.toHaveBeenCalled();
+            expect(mockStoreStateRef.current.setViewMode).not.toHaveBeenCalled();
+            expect(mockOnClose).not.toHaveBeenCalled();
+            expect(screen.getByTestId('save-canvas-btn')).toBeEnabled();
         } finally {
             (globalThis as { Image: unknown }).Image = originalImage;
         }

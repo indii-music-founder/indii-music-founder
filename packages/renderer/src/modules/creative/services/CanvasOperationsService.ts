@@ -61,6 +61,7 @@ export class CanvasOperationsService {
     private _historyStack: string[] = [];
     private _redoStack: string[] = [];
     private _isUndoingRedoing: boolean = false;
+    private _initializingCanvases = new WeakSet<fabric.Canvas>();
     private _maxHistory: number = 50;
 
     // Advanced Tools State
@@ -204,7 +205,7 @@ export class CanvasOperationsService {
         canvasElement: HTMLCanvasElement,
         imageUrl?: string,
         onReady?: () => void | Promise<void>,
-        onChange?: () => void,
+        onChange?: (reason?: 'restore') => void,
         onTextSelection?: (properties: CanvasTextProperties | null) => void
     ): fabric.Canvas {
         // ISSUE-1391: re-initializing while a canvas is already live wraps the
@@ -229,27 +230,40 @@ export class CanvasOperationsService {
         });
 
         const initializedCanvas = this.canvas;
+        this._initializingCanvases.add(initializedCanvas);
+        const establishBaseline = () => {
+            this._initializingCanvases.delete(initializedCanvas);
+            if (this.canvas !== initializedCanvas) return;
+            this._historyStack = [];
+            this._redoStack = [];
+            this.saveHistoryState();
+            onChange?.('restore');
+        };
+        const notifyReady = () => {
+            if (!onReady) {
+                establishBaseline();
+                return;
+            }
+            void Promise.resolve(onReady()).then(establishBaseline).catch((err: unknown) => {
+                establishBaseline();
+                logger.error('[CanvasOps] Canvas ready callback failed:', err);
+            });
+        };
         if (imageUrl) {
             this.loadImageSafe(imageUrl)
                 .then((img: fabric.Image) => {
                     if (this.canvas !== initializedCanvas) return;
                     this.placeImageOnCanvas(img, maxWidth, maxHeight);
-                    void Promise.resolve(onReady?.()).catch((err: unknown) => {
-                        logger.error('[CanvasOps] Canvas ready callback failed:', err);
-                    });
+                    notifyReady();
                 })
                 .catch((err: unknown) => {
                     if (this.canvas !== initializedCanvas) return;
                     logger.error('[CanvasOps] All image load strategies failed:', err);
                     // Still call onReady so UI doesn't hang, but canvas will be empty
-                    void Promise.resolve(onReady?.()).catch((readyErr: unknown) => {
-                        logger.error('[CanvasOps] Canvas ready callback failed after image load error:', readyErr);
-                    });
+                    notifyReady();
                 });
         } else {
-            void Promise.resolve(onReady?.()).catch((err: unknown) => {
-                logger.error('[CanvasOps] Canvas ready callback failed:', err);
-            });
+            notifyReady();
         }
 
         if (onTextSelection) {
@@ -271,6 +285,7 @@ export class CanvasOperationsService {
 
         if (onChange) {
             const wrappedChange = () => {
+                if (this._initializingCanvases.has(initializedCanvas)) return;
                 if (!this._isUndoingRedoing) {
                     this.saveHistoryState();
                 }
@@ -919,7 +934,9 @@ export class CanvasOperationsService {
             const base = restoringCanvas.getObjects().find(obj =>
                 obj.type?.toLowerCase() === 'image' &&
                 (obj as fabric.Object & { data?: { isBaseImage?: boolean } }).data?.isBaseImage);
-            const dimensions = canvasStateDimensions(parsed, base?.getBoundingRect());
+            const dimensions = canvasStateDimensions(parsed, base?.getBoundingRect(), restoringCanvas.getObjects()
+                .filter(obj => !(obj as fabric.Object & { data?: { isBoundingBox?: boolean } }).data?.isBoundingBox)
+                .map(obj => obj.getBoundingRect()));
             if (dimensions) restoringCanvas.setDimensions(dimensions);
             restoringCanvas.renderAll();
         } catch (e: unknown) {

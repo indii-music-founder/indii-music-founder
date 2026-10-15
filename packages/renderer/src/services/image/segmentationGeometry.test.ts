@@ -4,22 +4,25 @@ import { segmentationContour, detectionBox } from './segmentationGeometry';
 // Pure geometry checks: no account, media history, or provider responses are simulated.
 describe('segmentation contour geometry', () => {
     it('maps x and y independently for a portrait image', () => {
-        expect(segmentationContour([[100, 200], [900, 200], [500, 800]], 600, 800)).toEqual([
+        expect(segmentationContour([{ x: 100, y: 200 }, { x: 900, y: 200 }, { x: 500, y: 800 }], 600, 800)).toEqual([
             { x: 60, y: 160 }, { x: 540, y: 160 }, { x: 300, y: 640 },
         ]);
     });
     it('accepts a closed contour without changing its placement', () => {
-        expect(segmentationContour([[0, 0], [1000, 0], [1000, 1000], [0, 0]], 400, 200)[2]).toEqual({ x: 400, y: 200 });
+        expect(segmentationContour([{ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 1000, y: 1000 }, { x: 0, y: 0 }], 400, 200)[2]).toEqual({ x: 400, y: 200 });
     });
     it.each([
         [], [[0, 0], [1000, 1000]], [[0, 0], [500, 500], [1000, 1000]],
         [[0, 0], [1001, 0], [500, 1000]], [[0, 0], [-1, 0], [500, 1000]],
         [[0, 0], [NaN, 0], [500, 1000]], [[0, 0], ['100', 0], [500, 1000]],
-    ].map(points => ({ points })))('rejects an invalid contour $points', ({ points }) => {
+    ].map(points => ({ points: points.map(point => ({ x: point[0], y: point[1] })) })))('rejects an invalid contour $points', ({ points }) => {
         expect(() => segmentationContour(points, 600, 800)).toThrow();
     });
     it('rejects an image without dimensions', () => {
-        expect(() => segmentationContour([[0, 0], [1000, 0], [1000, 1000]], 0, 800)).toThrow();
+        expect(() => segmentationContour([{ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 1000, y: 1000 }], 0, 800)).toThrow();
+    });
+    it('rejects unnamed pairs instead of guessing the provider coordinate order', () => {
+        expect(() => segmentationContour([[300, 508], [304, 526], [314, 547]], 600, 800)).toThrow('ambiguous');
     });
 });
 

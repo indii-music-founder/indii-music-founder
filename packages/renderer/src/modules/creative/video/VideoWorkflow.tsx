@@ -535,8 +535,19 @@ export default function VideoWorkflow() {
         }
     }, [selectedItem, generatedHistory, activeVideo, currentProjectId]);
 
+    // A canvas handoff sets inputs before this workspace mounts. Restoring
+    // the previous clip's metadata must not discard those incoming frames.
+    const preserveIncomingFrames = useRef(Boolean(videoInputs.firstFrame || videoInputs.lastFrame));
+    const restoredAnchorVideoId = useRef<string | null>(null);
+
     useEffect(() => {
         if (!activeVideo || activeVideo.type !== 'video') return;
+        if (restoredAnchorVideoId.current === activeVideo.id) return;
+        restoredAnchorVideoId.current = activeVideo.id;
+        if (preserveIncomingFrames.current) {
+            preserveIncomingFrames.current = false;
+            return;
+        }
 
         if (!activeVideo.meta) {
             setVideoInputs({ firstFrame: null, lastFrame: null });
@@ -544,6 +555,7 @@ export default function VideoWorkflow() {
         }
 
         let cancelled = false;
+        let restorationFinished = false;
 
         const restoreAnchors = async () => {
             try {
@@ -585,6 +597,8 @@ export default function VideoWorkflow() {
                 }
             } catch (error) {
                 logger.debug('[VideoWorkflow] No stored keyframe anchors to restore', error);
+            } finally {
+                restorationFinished = true;
             }
         };
 
@@ -592,6 +606,9 @@ export default function VideoWorkflow() {
 
         return () => {
             cancelled = true;
+            if (!restorationFinished && restoredAnchorVideoId.current === activeVideo.id) {
+                restoredAnchorVideoId.current = null;
+            }
         };
     }, [activeVideo, setVideoInputs]);
 

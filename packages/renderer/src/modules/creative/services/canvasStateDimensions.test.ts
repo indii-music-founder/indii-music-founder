@@ -25,4 +25,16 @@ describe('saved canvas dimensions', () => {
     it('does not infer dimensions from cropped or displaced base bounds', () => {
         expect(canvasStateDimensions({}, { left: -10, top: 25, width: 360, height: 640 })).toBeNull();
     });
+    it('repairs a transient viewport snapshot when the complete portrait layout still fits', () => {
+        const base = { left: 14, top: 25, width: 360, height: 640 };
+        expect(canvasStateDimensions({ width: 1336, height: 690 }, base, [base, { left: 100, top: 180, width: 130, height: 24 }])).toEqual({ width: 388, height: 690 });
+    });
+    it('keeps the wide artboard if any content needs that space', () => {
+        const base = { left: 14, top: 25, width: 360, height: 640 };
+        expect(canvasStateDimensions({ width: 1336, height: 690 }, base, [base, { left: 600, top: 180, width: 130, height: 24 }])).toEqual({ width: 1336, height: 690 });
+    });
+    it('does not reinterpret a deliberately off-center base as a smaller artboard', () => {
+        const base = { left: 10, top: 10, width: 360, height: 640 };
+        expect(canvasStateDimensions({ width: 800, height: 600 }, base, [base])).toEqual({ width: 800, height: 600 });
+    });
 });
