@@ -535,6 +535,181 @@ export const MarketingTools = {
             profitable: roiPercentage > 0,
             summary: `Campaign ${args.campaignId} yielded a ${roiPercentage.toFixed(2)}% ROI.`
         }, `ROI analyzed for campaign ${args.campaignId}.`);
+    }),
+
+    dispatch_multi_platform_campaign: wrapTool('dispatch_multi_platform_campaign', async (args: {
+        directiveId?: string;
+        ledgerAccountId: string;
+        objective: 'DSP_STREAM_CONVERSION' | 'PRE_SAVE_INTAKE' | 'WAITLIST_INTAKE' | 'MERCH_CONVERSION' | 'EVENT_TICKETING';
+        platforms: Array<'META' | 'TIKTOK' | 'GOOGLE_ADS'>;
+        totalBudgetCents: number;
+        dailyBudgetCents: number;
+        currency?: string;
+        platformSplitPercentages: Partial<Record<'META' | 'TIKTOK' | 'GOOGLE_ADS', number>>;
+        releaseId: string;
+        isrc: string;
+        upc?: string;
+        smartlinkId: string;
+        smartlinkUrl: string;
+        videoAssetIds: string[];
+        imageAssetIds: string[];
+        tiktokSparkAuthCodes?: string[];
+        youtubeVideoIds?: string[];
+        geoLocations: string[];
+        genreTaxonomyTags: string[];
+        similarArtistEntityIds?: string[];
+        startTimeIso?: string;
+        endTimeIso?: string;
+    }) => {
+        try {
+            const { auth, functions } = await importWithRetry(() => import('@/services/firebase'));
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError(
+                    'No user is signed in. Multi-platform campaign execution requires an authenticated artist.',
+                    'AUTH_REQUIRED',
+                );
+            }
+
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
+            const executeCallable = httpsCallable<
+                Record<string, unknown>,
+                { ok: boolean; result: Record<string, unknown> }
+            >(functions, 'executeUnifiedCampaignDirective');
+
+            const directivePayload = {
+                directiveId: args.directiveId || `dir_${Date.now()}`,
+                triggeredBy: 'MARKETING_AGENT' as const,
+                artistId: uid,
+                ledgerAccountId: args.ledgerAccountId,
+                objective: args.objective,
+                platforms: args.platforms,
+                budgetAllocation: {
+                    currency: (args.currency || 'USD').toUpperCase(),
+                    totalBudgetCents: args.totalBudgetCents,
+                    dailyBudgetCents: args.dailyBudgetCents,
+                    platformSplitPercentages: args.platformSplitPercentages,
+                },
+                schedule: {
+                    startTimeIso: args.startTimeIso || new Date().toISOString(),
+                    ...(args.endTimeIso ? { endTimeIso: args.endTimeIso } : {}),
+                },
+                assets: {
+                    releaseId: args.releaseId,
+                    isrc: args.isrc,
+                    ...(args.upc ? { upc: args.upc } : {}),
+                    smartlinkId: args.smartlinkId,
+                    smartlinkUrl: args.smartlinkUrl,
+                    videoAssetIds: args.videoAssetIds,
+                    imageAssetIds: args.imageAssetIds,
+                    ...(args.tiktokSparkAuthCodes ? { tiktokSparkAuthCodes: args.tiktokSparkAuthCodes } : {}),
+                    ...(args.youtubeVideoIds ? { youtubeVideoIds: args.youtubeVideoIds } : {}),
+                },
+                targeting: {
+                    geoLocations: args.geoLocations,
+                    genreTaxonomyTags: args.genreTaxonomyTags,
+                    similarArtistEntityIds: args.similarArtistEntityIds || [],
+                },
+            };
+
+            const response = await executeCallable(directivePayload);
+            const result = response.data.result;
+            const receipts = Array.isArray(result.receipts) ? result.receipts : [];
+            const committedCents = typeof result.totalCommittedBudgetCents === 'number'
+                ? result.totalCommittedBudgetCents
+                : 0;
+
+            return toolSuccess(
+                result,
+                `Multi-platform campaign directive ${directivePayload.directiveId} executed across ${receipts.length} platform(s) (${args.platforms.join(', ')}). Committed ${committedCents} cents from recoupment ledger ${args.ledgerAccountId}.`,
+            );
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            logger.warn('[MarketingTools] dispatch_multi_platform_campaign failed:', error);
+            return toolError(
+                `Multi-platform campaign execution did not complete: ${msg}`,
+                'CAMPAIGN_EXECUTION_FAILED',
+            );
+        }
+    }),
+
+    record_attribution_conversion: wrapTool('record_attribution_conversion', async (args: {
+        eventId?: string;
+        eventName: 'SmartlinkView' | 'DSPOutboundClick' | 'PreSaveComplete' | 'WaitlistSignup' | 'MerchPurchase';
+        releaseId: string;
+        isrc: string;
+        smartlinkId: string;
+        targetDsp?: 'SPOTIFY' | 'APPLE_MUSIC' | 'TIDAL' | 'AMAZON_MUSIC' | 'YOUTUBE_MUSIC' | 'BANDCAMP';
+        fbclid?: string;
+        ttclid?: string;
+        gclid?: string;
+        clientIpAddress: string;
+        clientUserAgent: string;
+        emailSha256?: string;
+        phoneSha256?: string;
+        currency?: string;
+        valueCents?: number;
+    }) => {
+        try {
+            const { auth, functions } = await importWithRetry(() => import('@/services/firebase'));
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError(
+                    'No user is signed in. Server-side attribution dispatch requires an authenticated artist.',
+                    'AUTH_REQUIRED',
+                );
+            }
+
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
+            const ingestCallable = httpsCallable<
+                Record<string, unknown>,
+                { ok: boolean; receipt: Record<string, unknown> }
+            >(functions, 'ingestUnifiedAttributionEvent');
+
+            const eventPayload = {
+                eventId: args.eventId || `evt_${Date.now()}`,
+                eventTimestampUnix: Math.floor(Date.now() / 1000),
+                eventName: args.eventName,
+                releaseId: args.releaseId,
+                isrc: args.isrc,
+                smartlinkId: args.smartlinkId,
+                ...(args.targetDsp ? { targetDsp: args.targetDsp } : {}),
+                clickIdentifiers: {
+                    ...(args.fbclid ? { fbclid: args.fbclid } : {}),
+                    ...(args.ttclid ? { ttclid: args.ttclid } : {}),
+                    ...(args.gclid ? { gclid: args.gclid } : {}),
+                },
+                userData: {
+                    clientIpAddress: args.clientIpAddress,
+                    clientUserAgent: args.clientUserAgent,
+                    ...(args.emailSha256 ? { emailSha256: args.emailSha256 } : {}),
+                    ...(args.phoneSha256 ? { phoneSha256: args.phoneSha256 } : {}),
+                },
+                ...(typeof args.valueCents === 'number'
+                    ? {
+                        valueMetadata: {
+                            currency: (args.currency || 'USD').toUpperCase(),
+                            valueCents: args.valueCents,
+                        },
+                    }
+                    : {}),
+            };
+
+            const response = await ingestCallable(eventPayload);
+            const receipt = response.data.receipt;
+
+            return toolSuccess(
+                receipt,
+                `Attribution event ${eventPayload.eventId} (${args.eventName}) dispatched through server-side AttributionBus.`,
+            );
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            logger.warn('[MarketingTools] record_attribution_conversion failed:', error);
+            return toolError(
+                `Attribution conversion dispatch did not complete: ${msg}`,
+                'ATTRIBUTION_DISPATCH_FAILED',
+            );
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -550,5 +725,7 @@ export const {
     tier_superfans,
     track_post_release_momentum,
     generate_ad_copy,
-    analyze_campaign_roi
+    analyze_campaign_roi,
+    dispatch_multi_platform_campaign,
+    record_attribution_conversion
 } = MarketingTools;

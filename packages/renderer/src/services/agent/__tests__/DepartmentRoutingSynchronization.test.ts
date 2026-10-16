@@ -57,11 +57,16 @@ describe('DepartmentRoutingSynchronization & Capability Truth Architectural Guar
         expect(report).not.toMatch(/All \d+ departments .* fully implemented and operational/i);
     });
 
-    it('keeps all-green department overclaims out of every agent-facing prompt source (#317)', () => {
-        // The exact overclaim issue #317 describes was injected from static
+    it('keeps all-green department overclaims out of every agent-facing prompt source (#317, #417)', () => {
+        // The exact overclaim issue #317/#417 describes was injected from static
         // prompt sources. Guard every file the agent runtime reads so the
         // claim cannot return silently.
-        const sources = ['agents/conductor/prompt.md', 'packages/renderer/src/services/agent/BaseAgent.ts'].map(relative => {
+        const sources = [
+            'agents/conductor/prompt.md',
+            'packages/renderer/src/services/agent/BaseAgent.ts',
+            'packages/renderer/src/services/agent/definitions/DevOpsAgent.ts',
+            'packages/firebase/src/relay/agentPrompts.ts',
+        ].map(relative => {
             const candidates = [
                 path.resolve(process.cwd(), relative),
                 path.resolve(process.cwd(), `../../${relative}`),

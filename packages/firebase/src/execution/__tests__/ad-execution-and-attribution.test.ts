@@ -39,6 +39,10 @@ import {
     heuristicCampaignJudgment,
 } from '../../orchestration/marketing/campaign-judgments';
 import type { TypesafeClient } from '../../functions/intelligence/typesafeClient';
+import {
+    handleExecuteUnifiedCampaignDirective,
+    handleIngestUnifiedAttributionEvent,
+} from '../../functions/marketing/adCampaignCallables';
 
 function sha256(value: string): string {
     return createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
@@ -879,5 +883,136 @@ describe('Jev System One Campaign Judgments & Orchestrator Integration', () => {
         );
         expect(extremeRefined['TIKTOK']).toBeGreaterThanOrEqual(10);
         expect((extremeRefined['META'] ?? 0) + (extremeRefined['TIKTOK'] ?? 0)).toBe(100);
+    });
+});
+
+describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
+    it('rejects cross-artist directive execution when directive.artistId does not match authenticatedUid', async () => {
+        const directive = buildMockDirective({
+            artistId: 'artist_detroit_01',
+        });
+
+        await expect(
+            handleExecuteUnifiedCampaignDirective('attacker_uid_999', directive),
+        ).rejects.toThrow(/Directive artistId must match the authenticated user/i);
+    });
+
+    it('executes handleExecuteUnifiedCampaignDirective and handleIngestUnifiedAttributionEvent end-to-end', async () => {
+        const persistedResults: unknown[] = [];
+        const accounts = new Map<string, Record<string, unknown>>([
+            ['ledger_recoup_01', { availableBalanceCents: 200_000 }],
+        ]);
+        const reservations = new Map<string, Record<string, unknown>>();
+
+        const makeDocRef = (map: Map<string, Record<string, unknown>>, docId: string) => ({
+            id: docId,
+            async get() {
+                const data = map.get(docId);
+                return { exists: data !== undefined, data: () => data };
+            },
+            async set(data: Record<string, unknown>, options?: { merge?: boolean }) {
+                if (options?.merge && map.has(docId)) {
+                    map.set(docId, { ...map.get(docId), ...data });
+                } else {
+                    map.set(docId, { ...data });
+                }
+            },
+        });
+
+        const ledgerDb: TransactionalFirestoreDb = {
+            collection(name: string) {
+                const targetMap = name.toLowerCase().includes('reservation') ? reservations : accounts;
+                return { doc: (docId: string) => makeDocRef(targetMap, docId) };
+            },
+            async runTransaction<T>(fn: (tx: {
+                get(ref: ReturnType<typeof makeDocRef>): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>;
+                set(ref: ReturnType<typeof makeDocRef>, data: Record<string, unknown>, options?: { merge?: boolean }): void;
+            }) => Promise<T>): Promise<T> {
+                return fn({
+                    get: (ref) => ref.get(),
+                    set: (ref, data, options) => { void ref.set(data, options); },
+                });
+            },
+        };
+
+        const metaAdapter = new MetaAdAdapter(
+            {
+                adAccountId: '1',
+                accessToken: 'MOCK_KEY_DO_NOT_USE',
+                facebookPageId: 'p1',
+                pixelId: 'px1',
+            },
+            vi.fn(async () => jsonResponse({ id: 'm_callable_1', events_received: 1, fbtrace_id: 'fb_call_trace' })),
+        );
+
+        const directive = buildMockDirective({
+            platforms: ['META'],
+            budgetAllocation: {
+                currency: 'USD',
+                totalBudgetCents: 50_000,
+                dailyBudgetCents: 10_000,
+                platformSplitPercentages: { META: 100 },
+            },
+        });
+
+        const execResult = await handleExecuteUnifiedCampaignDirective(
+            'artist_detroit_01',
+            directive,
+            {
+                adapters: [metaAdapter],
+                ledger: new FirestoreFinanceRecoupmentLedger({ db: ledgerDb }),
+                allocationJudge: async (dir) => heuristicCampaignJudgment(dir),
+                onReceiptPersist: async (res) => {
+                    persistedResults.push(res);
+                },
+            },
+        );
+
+        expect(execResult.totalCommittedBudgetCents).toBe(50_000);
+        expect(execResult.receipts).toHaveLength(1);
+        expect(persistedResults).toHaveLength(1);
+
+        const dedupMap = new Map<string, Record<string, unknown>>();
+        const dedupDb: FirestoreLikeDb = {
+            collection() {
+                return {
+                    doc(id: string) {
+                        return {
+                            async get() {
+                                return { exists: dedupMap.has(id), data: () => dedupMap.get(id) };
+                            },
+                            async set(data: Record<string, unknown>) {
+                                dedupMap.set(id, data);
+                            },
+                        };
+                    },
+                };
+            },
+        };
+
+        const receipt = await handleIngestUnifiedAttributionEvent(
+            'artist_detroit_01',
+            {
+                eventId: 'evt_callable_01',
+                eventTimestampUnix: 1792108800,
+                eventName: 'PreSaveComplete',
+                releaseId: 'rel_midnight_express',
+                isrc: 'US-S1Z-26-00412',
+                smartlinkId: 'sl_midnight_01',
+                clickIdentifiers: { fbclid: 'fb_click_callable_1' },
+                userData: {
+                    clientIpAddress: '198.51.100.10',
+                    clientUserAgent: 'Mozilla/5.0',
+                    emailSha256: sha256('listener@indii.music'),
+                },
+            },
+            {
+                adapters: [metaAdapter],
+                dedupStore: new FirestoreAttributionDeduplicationStore({ db: dedupDb }),
+            },
+        );
+
+        expect(receipt.deduplicated).toBe(false);
+        expect(receipt.results['META']?.success).toBe(true);
     });
 });

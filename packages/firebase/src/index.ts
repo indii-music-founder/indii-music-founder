@@ -235,6 +235,10 @@ export { syncPlatformStats } from './functions/social-stats-sync';
 
 // Growth Intelligence Engine — Autonomous Marketing Swarm (ClickHouse read path)
 export { marketingGetCampaignMetrics } from './marketing/campaignMetricsCallable';
+export {
+    executeUnifiedCampaignDirective,
+    ingestUnifiedAttributionEvent,
+} from './functions/marketing/adCampaignCallables';
 
 // Attribution spine — smart-link redirect, conversion outbox flusher, presave registration, and webhooks
 export { smartLinkRedirect } from './marketing/smartLink';

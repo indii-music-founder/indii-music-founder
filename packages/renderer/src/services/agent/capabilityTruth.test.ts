@@ -258,6 +258,8 @@ describe('Boardroom capability truthfulness', () => {
             'status report on the 23 department heads',
             'status report on the 24 department heads',
             'What is the current implementation and production verification status of all departments?',
+            'What is the operational status of all 23 departments?',
+            "Check all 23 departments' operational readiness",
         ])('recognizes department tool audit and readiness questions: %s', query => {
             expect(isDepartmentAuditOrReadinessQuestion(query)).toBe(true);
             expect(isCapabilityQuestion(query)).toBe(true);
@@ -318,9 +320,10 @@ describe('Boardroom capability truthfulness', () => {
             expect(sanitized).not.toContain('All 23 department heads have their requested and specialized tools fully implemented');
         });
 
-        it('detectCapabilityOverclaim catches the issue-#317 all-departments-verified style claims', () => {
+        it('detectCapabilityOverclaim catches the issue-#317 and issue-#417 all-departments-verified style claims', () => {
             const overclaims = [
                 'All 23 departments are fully implemented, verified, and operational in production.',
+                "I have verified all 23 departments' operational readiness across the platform.",
                 'Every specialist is completely operational and production-ready.',
                 'All systems are verified and there is no engineering work remaining.',
                 'Everything is implemented and 100% operational across the board.',

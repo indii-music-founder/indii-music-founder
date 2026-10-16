@@ -126,36 +126,67 @@ export class PrintReadyUpscaleService {
 
         // 1. Try Desktop Real-ESRGAN engine first (if running in Electron)
         const isDesktop = typeof window !== 'undefined' && Boolean(window.electronAPI?.upscale);
-        if (plan.scale !== 1) {
+        if (plan.passes.length > 0) {
+            const totalPasses = plan.passes.length;
             if (isDesktop) {
                 options.onProgress?.(0.3, 'Enhancing details with local AI upscaler...');
-                const outcome = await upscalerService.upscale({
-                    dataUrl: sourceDataUrl,
-                    scale: plan.scale,
-                    prompt: options.prompt,
-                    signal: options.signal,
-                    onProgress: (frac) => {
-                        options.onProgress?.(0.3 + frac * 0.4, 'Upscaling image...');
-                    },
-                });
-                intermediateDataUrl = outcome.outputDataUrl;
+                let currentDataUrl = sourceDataUrl;
+                for (let i = 0; i < totalPasses; i++) {
+                    const passScale = plan.passes[i]!;
+                    const passLabel = totalPasses > 1 ? `Upscaling image (pass ${i + 1} of ${totalPasses})...` : 'Upscaling image...';
+                    const outcome = await upscalerService.upscale({
+                        dataUrl: currentDataUrl,
+                        scale: passScale,
+                        prompt: options.prompt,
+                        signal: options.signal,
+                        onProgress: (frac) => {
+                            const overallFrac = (i + frac) / totalPasses;
+                            options.onProgress?.(0.3 + overallFrac * 0.4, passLabel);
+                        },
+                    });
+                    currentDataUrl = outcome.outputDataUrl;
+                }
+                intermediateDataUrl = currentDataUrl;
                 method = 'desktop-realesrgan';
             } else {
                 options.onProgress?.(0.3, 'Enhancing details with on-device browser AI...');
                 const { browserUpscale } = await runPrintStage('Loading browser enhancement', 120_000,
                     () => import('./BrowserUpscale'), options.signal);
-                let browserFraction = 0;
-                const outcome = await browserUpscale({
-                    dataUrl: sourceDataUrl,
-                    required: { width: plan.width, height: plan.height },
-                    signal: options.signal,
-                    onProgress: fraction => {
-                        browserFraction = fraction;
-                        options.onProgress?.(0.3 + fraction * 0.4, 'Enhancing image details...');
-                    },
-                    onStage: stage => options.onProgress?.(0.3 + browserFraction * 0.4, stage),
-                });
-                intermediateDataUrl = outcome.url;
+                let currentDataUrl = sourceDataUrl;
+                let currentWidth = sourceImg.naturalWidth;
+                let currentHeight = sourceImg.naturalHeight;
+                for (let i = 0; i < totalPasses; i++) {
+                    const passScale = plan.passes[i]!;
+                    const isFinalPass = i === totalPasses - 1;
+                    // On intermediate passes, scale the full image by passScale (while staying <= 80MP);
+                    // on the final pass, target the planned output dimensions.
+                    const passTargetWidth = isFinalPass ? Math.min(plan.width, Math.max(trimWidth, currentWidth * passScale)) : currentWidth * passScale;
+                    const passTargetHeight = isFinalPass ? Math.min(plan.height, Math.max(trimHeight, currentHeight * passScale)) : currentHeight * passScale;
+                    let browserFraction = 0;
+                    const outcome = await browserUpscale({
+                        dataUrl: currentDataUrl,
+                        required: { width: passTargetWidth, height: passTargetHeight },
+                        signal: options.signal,
+                        onProgress: fraction => {
+                            browserFraction = fraction;
+                            const overallFrac = (i + fraction) / totalPasses;
+                            options.onProgress?.(
+                                0.3 + overallFrac * 0.4,
+                                totalPasses > 1
+                                    ? `Enhancing image details (pass ${i + 1} of ${totalPasses})...`
+                                    : 'Enhancing image details...',
+                            );
+                        },
+                        onStage: stage => {
+                            const overallFrac = (i + browserFraction) / totalPasses;
+                            options.onProgress?.(0.3 + overallFrac * 0.4, stage);
+                        },
+                    });
+                    currentDataUrl = outcome.url;
+                    currentWidth = outcome.width;
+                    currentHeight = outcome.height;
+                }
+                intermediateDataUrl = currentDataUrl;
                 method = 'browser-esrgan';
             }
         }
