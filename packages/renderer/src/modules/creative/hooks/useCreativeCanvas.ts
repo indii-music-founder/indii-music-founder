@@ -7,6 +7,7 @@ import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { canvasOps, type CanvasTextProperties } from '../services/CanvasOperationsService';
 import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
+import { maskedTextCandidates } from '@/services/image/maskedTextEdit';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { imageAnalysisService } from '@/services/image/ImageAnalysisService';
 import { logger } from '@/utils/logger';
@@ -540,6 +541,15 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         toast.info(`Blank sketch layer added. Draw on the canvas to create a sketch.`);
     };
 
+    const handleFitArtboardToArtwork = () => {
+        if (canvasOps.fitArtboardToArtwork()) {
+            setHistoryTrigger(previous => previous + 1);
+            toast.success('Artboard fitted to artwork. Undo restores the previous margins.');
+        } else {
+            toast.info('The artboard already fits the artwork.');
+        }
+    };
+
     const handleUndo = async () => {
         await canvasOps.undo();
         setHistoryTrigger(prev => prev + 1);
@@ -780,7 +790,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 // generated artwork. Keep small joint edits, but isolate larger
                 // sets with one binary mask per step so guide colors never enter
                 // the model input as possible artwork colors.
-                if (isHighFidelity && prepared.masks.length <= 2) {
+                // Literal lettering is rendered with real fonts per region;
+                // the image model still handles other visual instructions.
+                const hasLiteralText = prepared.masks.some(mask => !mask.referenceImage && maskedTextCandidates(mask.prompt).length > 0);
+                if (isHighFidelity && prepared.masks.length <= 2 && !hasLiteralText) {
                     await reserveImageBudget(INTELLIGENCE_MODELS.IMAGE.GENERATION);
                     const maskKeys = prepared.masks.map(mask => mask.colorId);
                     const isMultiMask = prepared.masks.length > 1;
@@ -858,7 +871,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                             toast.success(`High-Fidelity Edit Complete!`);
                         }
                     }
-                } else if (prepared.masks.length === 1) {
+                } else if (prepared.masks.length === 1 && !isHighFidelity) {
                     await reserveImageBudget(INTELLIGENCE_MODELS.IMAGE.FAST);
                     const result = await Editing.editImage({
                         image: prepared.baseImage,
@@ -1448,6 +1461,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         saveCanvas,
         isSavingCanvas,
         handleFlattenCanvas,
+        handleFitArtboardToArtwork,
         handleRefine: onRefine || handleRefineInternal,
         handleCreateLastFrame,
         batchExportDimensions,

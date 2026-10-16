@@ -7,6 +7,9 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 import { normalizeEditImageResult } from './editResponse';
 import { resolveEditModel } from './editModel';
 import { prepareScopedEdit } from './scopedEdit';
+import { maskedTextCandidates } from './maskedTextEdit';
+import { renderMaskedText } from './maskedTextRenderer';
+import { judgeCanvasTextCandidates } from '@/config/typesafeJudgments';
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
 
@@ -91,11 +94,23 @@ export class EditingService {
         aspectRatio?: string;
         thoughtSignature?: string;
         useSemanticMap?: boolean;
+        /** Internal: a multi-region batch already checked the literal-text route. */
+        nativeTextChecked?: boolean;
         sessionId?: string;
         routeId?: string;
         routeLabel?: string;
         routeReason?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
+        if (options.mask && !options.useSemanticMap && !options.referenceImage && !options.referenceImages?.length && !options.nativeTextChecked) {
+            const candidates = maskedTextCandidates(options.prompt);
+            const approved = await judgeCanvasTextCandidates([{ id: 'region', prompt: options.prompt, candidates }]);
+            const plan = approved.region === undefined ? undefined : candidates[approved.region];
+            if (plan) {
+                const rendered = await renderMaskedText(options.image, options.mask, plan);
+                logger.info('[EditingService] Rendered approved literal text within its mask');
+                return { id: crypto.randomUUID(), url: `data:${rendered.mimeType};base64,${rendered.data}`, prompt: options.prompt };
+            }
+        }
         logger.info('[EditingService] editImage called — using secured backend path', {
             hasMask: !!options.mask,
             hasReference: !!options.referenceImage || !!options.referenceImages?.length,
@@ -190,6 +205,11 @@ export class EditingService {
     }): Promise<{ id: string; url: string; prompt: string }[]> {
         const results: { id: string; url: string; prompt: string }[] = [];
         const count = options.variationCount || 4;
+        const textRegions = options.masks.map((mask, index) => ({
+            id: `region_${index}`, prompt: mask.prompt,
+            candidates: mask.referenceImage ? [] : maskedTextCandidates(mask.prompt),
+        }));
+        const textChoices = await judgeCanvasTextCandidates(textRegions);
 
         for (let i = 0; i < count; i++) {
             let currentImageData = options.image;
@@ -199,7 +219,15 @@ export class EditingService {
             // A thought signature belongs to its original model response part;
             // sending it alone in a new user turn makes Gemini reject step two.
             // Sequential Pipeline: Base -> Mask 1 -> Result 1 -> Mask 2 -> ... -> Final
-            for (const mask of options.masks) {
+            for (const [maskIndex, mask] of options.masks.entries()) {
+                const region = textRegions[maskIndex]!;
+                const choice = textChoices[region.id];
+                const textPlan = choice === undefined ? undefined : region.candidates[choice];
+                if (textPlan) {
+                    currentImageData = await renderMaskedText(currentImageData, mask, textPlan);
+                    compositePromptParts.push(mask.prompt);
+                    continue;
+                }
                 const scoped = await prepareScopedEdit(currentImageData, mask);
                 // Add variation hint to prompt for diversity
                 const variedPrompt = count > 1
@@ -209,6 +237,7 @@ export class EditingService {
                 const result = await this.editImage({
                     image: scoped.image,
                     mask: scoped.mask,
+                    nativeTextChecked: true,
                     referenceImage: mask.referenceImage,
                     prompt: [scoped.framingInstruction, variedPrompt].filter(Boolean).join('\n\n'),
                     model: options.model,

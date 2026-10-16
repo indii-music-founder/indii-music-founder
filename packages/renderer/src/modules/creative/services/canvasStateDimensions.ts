@@ -36,3 +36,24 @@ export function canvasStateDimensions(state: unknown, baseBounds?: CanvasBaseBou
     // retains the original symmetric margins in its world-space bounding box.
     return inferred;
 }
+
+/** Explicit recovery only: retain every layer and their relative placement. */
+export function artworkArtboardBounds(bounds: CanvasBaseBounds[], padding = 20): CanvasBaseBounds | null {
+    if (!bounds.length || !Number.isFinite(padding) || padding < 0) return null;
+    if (bounds.some(box => ![box.left, box.top, box.width, box.height].every(Number.isFinite) || box.width < 0 || box.height < 0)) return null;
+    const left = Math.floor(Math.min(...bounds.map(box => box.left)) - padding);
+    const top = Math.floor(Math.min(...bounds.map(box => box.top)) - padding);
+    const right = Math.ceil(Math.max(...bounds.map(box => box.left + box.width)) + padding);
+    const bottom = Math.ceil(Math.max(...bounds.map(box => box.top + box.height)) + padding);
+    const width = right - left;
+    const height = bottom - top;
+    if (width < 1 || height < 1 || width > 16384 || height > 16384) return null;
+    return { left, top, width, height };
+}
+
+/** Display size only; logical artboard pixels and object geometry stay unchanged. */
+export function canvasViewportSize(artboard: CanvasStateDimensions, viewport: CanvasStateDimensions): CanvasStateDimensions | null {
+    if (![artboard.width, artboard.height, viewport.width, viewport.height].every(value => Number.isFinite(value) && value > 0)) return null;
+    const scale = Math.min(viewport.width / artboard.width, viewport.height / artboard.height);
+    return { width: artboard.width * scale, height: artboard.height * scale };
+}

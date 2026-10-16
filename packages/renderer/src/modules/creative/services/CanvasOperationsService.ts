@@ -1,4 +1,4 @@
-import { canvasStateDimensions } from './canvasStateDimensions';
+import { artworkArtboardBounds, canvasStateDimensions, canvasViewportSize } from './canvasStateDimensions';
 import * as fabric from 'fabric';
 
 declare module 'fabric' {
@@ -63,6 +63,20 @@ export class CanvasOperationsService {
     private _isUndoingRedoing: boolean = false;
     private _initializingCanvases = new WeakSet<fabric.Canvas>();
     private _maxHistory: number = 50;
+    private _viewportContainer: HTMLElement | null = null;
+    private _viewportObserver: ResizeObserver | null = null;
+    private _exportingDimensions = false;
+
+    private fitCanvasToViewport(): void {
+        const canvas = this.canvas;
+        const container = this._viewportContainer;
+        if (!canvas || !container || this._exportingDimensions || this._initializingCanvases.has(canvas)) return;
+        const size = canvasViewportSize(
+            { width: canvas.getWidth(), height: canvas.getHeight() },
+            { width: Math.max(0, container.clientWidth - 24), height: Math.max(0, container.clientHeight - 24) },
+        );
+        if (size) canvas.setDimensions(size, { cssOnly: true });
+    }
 
     // Advanced Tools State
     private _activeTool: 'select' | 'line' | 'polygon' | 'text' | 'brush' = 'select';
@@ -220,6 +234,7 @@ export class CanvasOperationsService {
 
         // Dynamic sizing: read container dimensions instead of hardcoded 800x600
         const container = canvasElement.parentElement;
+        this._viewportContainer = container;
         const maxWidth = container ? Math.max(container.clientWidth - 24, 400) : 800;
         const maxHeight = container ? Math.max(container.clientHeight - 24, 300) : 600;
 
@@ -229,6 +244,11 @@ export class CanvasOperationsService {
             backgroundColor: '#1a1a1a',
         });
 
+        if (container && typeof ResizeObserver !== 'undefined') {
+            this._viewportObserver = new ResizeObserver(() => this.fitCanvasToViewport());
+            this._viewportObserver.observe(container);
+        }
+
         const initializedCanvas = this.canvas;
         this._initializingCanvases.add(initializedCanvas);
         const establishBaseline = () => {
@@ -237,6 +257,7 @@ export class CanvasOperationsService {
             this._historyStack = [];
             this._redoStack = [];
             this.saveHistoryState();
+            this.fitCanvasToViewport();
             onChange?.('restore');
         };
         const notifyReady = () => {
@@ -402,6 +423,34 @@ export class CanvasOperationsService {
         }
     }
 
+    /** Explicit, undoable recovery for legacy artboards with excessive margins.
+     * Includes hidden artwork so making a layer visible later cannot clip it.
+     * No pixel resampling, raster replacement, or automatic legacy inference.
+     */
+    fitArtboardToArtwork(): boolean {
+        if (!this.canvas) return false;
+        const objects = this.canvas.getObjects();
+        const artwork = objects.filter(obj => !this.isAnnotation(obj));
+        const bounds = artworkArtboardBounds(artwork.map(obj => obj.getBoundingRect()));
+        if (!bounds) return false;
+        if (bounds.left === 0 && bounds.top === 0 &&
+            bounds.width === this.canvas.getWidth() && bounds.height === this.canvas.getHeight()) return false;
+        this.saveHistoryState();
+        this.canvas.discardActiveObject();
+        objects.forEach(obj => {
+            obj.set({ left: (obj.left ?? 0) - bounds.left, top: (obj.top ?? 0) - bounds.top });
+            obj.setCoords();
+        });
+        this.canvas.setDimensions({ width: bounds.width, height: bounds.height });
+        this.canvas.renderAll();
+        this.saveHistoryState();
+        // Fabric setters do not emit a mutation. Notify the regular dirty /
+        // autosave path only once the complete translated artboard is ready.
+        this.fitCanvasToViewport();
+        this.canvas.fire('object:modified', { target: artwork[0] });
+        return true;
+    }
+
     async undo(): Promise<void> {
         if (!this.canvas || this._historyStack.length <= 1) return;
 
@@ -526,6 +575,9 @@ export class CanvasOperationsService {
      * unmount and surfaces as a raw DOM error to the user.
      */
     dispose(): void {
+        this._viewportObserver?.disconnect();
+        this._viewportObserver = null;
+        this._viewportContainer = null;
         const canvas = this.canvas;
         this.canvas = null;
         if (canvas) {
@@ -769,6 +821,7 @@ export class CanvasOperationsService {
         const originalWidth = this.canvas.getWidth();
         const originalHeight = this.canvas.getHeight();
         const jsonState = JSON.stringify(this.serializeCanvasState());
+        this._exportingDimensions = true;
 
         const exportForDimensions = async (targetWidth: number, targetHeight: number): Promise<string> => {
             this.canvas!.setDimensions({ width: targetWidth, height: targetHeight });
@@ -864,6 +917,9 @@ export class CanvasOperationsService {
                 this._isUndoingRedoing = false;
             }
             return null;
+        } finally {
+            this._exportingDimensions = false;
+            this.fitCanvasToViewport();
         }
     }
 
@@ -938,6 +994,7 @@ export class CanvasOperationsService {
                 .filter(obj => !(obj as fabric.Object & { data?: { isBoundingBox?: boolean } }).data?.isBoundingBox)
                 .map(obj => obj.getBoundingRect()));
             if (dimensions) restoringCanvas.setDimensions(dimensions);
+            this.fitCanvasToViewport();
             restoringCanvas.renderAll();
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
@@ -1168,6 +1225,7 @@ export class CanvasOperationsService {
             
             this.canvas.renderAll();
             
+            this.fitCanvasToViewport();
             logger.info('[CanvasOps] Canvas flattened successfully');
             return true;
         } catch (err) {

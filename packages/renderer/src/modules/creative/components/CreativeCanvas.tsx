@@ -76,6 +76,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         saveCanvas,
         handleCreateLastFrame,
         handleFlattenCanvas,
+        handleFitArtboardToArtwork,
         batchExportDimensions,
         handleUndo,
         handleRedo,
@@ -343,6 +344,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 isSavingCanvas={isSavingCanvas}
                                 batchExportDimensions={batchExportDimensions}
                                 flattenCanvas={handleFlattenCanvas}
+                                fitArtboardToArtwork={handleFitArtboardToArtwork}
                                 // ISSUE-1395: the canvas board is image-only —
                                 // hide the rail send action for video items.
                                 onSendToCanvas={item.type === 'image' ? handleSendToCanvas : undefined}

@@ -12,6 +12,7 @@
 import { httpsCallable, getFunctions } from 'firebase/functions';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 import { logger } from '@/utils/logger';
+import type { MaskedTextCandidate } from '@/services/image/maskedTextEdit';
 
 // ---------------------------------------------------------------------------
 // Judgment 2: skill intent routing (consumer: ProductSkillRegistry)
@@ -8731,3 +8732,53 @@ export async function judgeCatalogCollisionRisk(
     }
 }
 
+
+// ---------------------------------------------------------------------------
+// Literal text in a painted image region (consumer: EditingService)
+// ---------------------------------------------------------------------------
+
+const MASKED_TEXT_MIN_CONFIDENCE = 0.95;
+
+export interface CanvasTextRegion {
+    id: string;
+    prompt: string;
+    candidates: MaskedTextCandidate[];
+}
+
+/** Select an exact source span only when native lettering satisfies the whole edit. */
+export async function judgeCanvasTextCandidates(regions: CanvasTextRegion[]): Promise<Record<string, number>> {
+    const eligible = regions.filter(region => region.candidates.length > 0 && region.prompt.length <= 4000).slice(0, 8);
+    if (!judgmentsAvailable() || !eligible.length) return {};
+    const state = { regions: Object.fromEntries(eligible.map(region => [region.id, { prompt: region.prompt, candidates: region.candidates }])) };
+    if (JSON.stringify(state).length > 60_000) return {};
+    const questions = Object.fromEntries(eligible.map(region => [region.id, {
+        type: 'choice',
+        instructions: `For state.regions[${JSON.stringify(region.id)}], choose the ONE candidate rendering that fulfills the ENTIRE requested change in the marked region. The renderer only adds the exact literal characters, using the listed font, color and style, centered and fitted inside that region. It can optionally fill that region with the candidate's solid background color. Preserve instructions concerning other regions do not require drawing those things. Choose image if any requested change is missing, the text is only mentioned for preservation, or the request needs object/scene changes, replacing or removing existing lettering, an exact point size, another placement, curved lettering, perspective, textures, logos or effects. Do not ignore requested styling or substitute different characters.`,
+        criteria: {
+            image: 'Use the existing image edit path: none of the plain, centered candidate text renderings completely satisfies this request, or the interpretation is uncertain.',
+            ...Object.fromEntries(region.candidates.map((candidate, index) => [`candidate_${index}`, {
+                ...candidate, foreground: candidate.fill === 'auto' ? 'Readable black or white chosen against the selected background' : candidate.fill, placement: 'Centered inside the painted region', sizing: 'Fit to region',
+                background: candidate.background || 'Preserve existing background',
+            }])),
+        },
+    }]));
+    try {
+        const judge = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+        const result = await judge({ state, questions });
+        const approved: Record<string, number> = {};
+        for (const region of eligible) {
+            const answer = result.data.answers?.[region.id] as { type?: unknown; choice?: unknown; confidence?: unknown } | undefined;
+            if (answer?.type !== 'choice' || typeof answer.confidence !== 'number' || !Number.isFinite(answer.confidence) || answer.confidence > 1 || answer.confidence < MASKED_TEXT_MIN_CONFIDENCE ||
+                typeof answer.choice !== 'string' || !/^candidate_\d+$/.test(answer.choice)) continue;
+            const index = Number(answer.choice.slice('candidate_'.length));
+            if (Number.isInteger(index) && index >= 0 && index < region.candidates.length) approved[region.id] = index;
+        }
+        return approved;
+    } catch (error: unknown) {
+        noteJudgmentFailure(error, 'masked literal text routing');
+        return {};
+    }
+}
