@@ -75,6 +75,8 @@ export const CreativeAgent: AgentConfig = {
             canvas_add_layer: CanvasTools.canvas_add_layer,
             canvas_set_adjustments: CanvasTools.canvas_set_adjustments,
             canvas_export: CanvasTools.canvas_export,
+            composite_image_typography: CanvasTools.composite_image_typography,
+            export_social_derivatives: CanvasTools.export_social_derivatives,
             animate_still: VideoTools.animate_still,
             export_platform_assets: DirectorTools.export_platform_assets,
             scan_brand_compliance: DirectorTools.scan_brand_compliance,
@@ -118,6 +120,8 @@ export const CreativeAgent: AgentConfig = {
         'canvas_add_layer',
         'canvas_set_adjustments',
         'canvas_export',
+        'composite_image_typography',
+        'export_social_derivatives',
         'animate_still',
         'export_platform_assets',
         'scan_brand_compliance',
@@ -529,6 +533,33 @@ export const CreativeAgent: AgentConfig = {
                         format: { type: 'STRING', enum: ['png', 'jpeg'], description: 'Export format.' },
                         scale: { type: 'NUMBER', description: 'Export scale factor.' }
                     }
+                }
+            },
+            {
+                name: 'composite_image_typography',
+                description: 'Headlessly composite text, captions, lyrics, or branding onto an image without requiring an active DOM window.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        imageUrl: { type: 'STRING', description: 'Data URL or hosted URL of base image.' },
+                        text: { type: 'STRING', description: 'Text, saying, lyric, or quote to burn onto the image.' },
+                        position: { type: 'STRING', enum: ['bottom', 'top', 'center'], description: 'Vertical placement of text.' },
+                        style: { type: 'STRING', enum: ['bold', 'subtle', 'pill'], description: 'Styling appearance of typography overlay.' },
+                        fontSize: { type: 'NUMBER', description: 'Base font size in px (default 48).' }
+                    },
+                    required: ['imageUrl', 'text']
+                }
+            },
+            {
+                name: 'export_social_derivatives',
+                description: 'Headlessly batch crop and scale a master image into all standard social formats (9:16 Story, 1:1 Square, 4:5 Portrait, 16:9 Landscape).',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        imageUrl: { type: 'STRING', description: 'Data URL or hosted URL of master image.' },
+                        formats: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Formats to export (e.g. story, square, portrait, landscape).' }
+                    },
+                    required: ['imageUrl']
                 }
             },
             {

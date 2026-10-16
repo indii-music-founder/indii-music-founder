@@ -41,6 +41,155 @@ export function isValidCoordinate(lat: unknown, lng: unknown): boolean {
         typeof lng === 'number' && Number.isFinite(lng) && lng >= -180 && lng <= 180;
 }
 
+export interface ResolvedCommandAttachment {
+    url?: string;
+    mimeType: string;
+    name?: string;
+    base64: string;
+    dataUrl?: string;
+}
+
+function readBlobAsDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        if (typeof FileReader !== 'undefined') {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                if (typeof reader.result === 'string') {
+                    resolve(reader.result);
+                } else {
+                    reject(new Error('FileReader produced empty result'));
+                }
+            };
+            reader.onerror = () => reject(reader.error || new Error('FileReader error'));
+            reader.readAsDataURL(blob);
+            return;
+        }
+        blob.arrayBuffer()
+            .then(buf => {
+                const b64 = Buffer.from(buf).toString('base64');
+                resolve(`data:${blob.type || 'application/octet-stream'};base64,${b64}`);
+            })
+            .catch(reject);
+    });
+}
+
+/**
+ * Resolves remote media attachments into base64/dataUrl payloads for agent consumption
+ * and registers image URLs into the store's uploadedImages collection.
+ */
+export async function resolveCommandAttachments(
+    input:
+        | import('@/services/agent/RemoteRelayService').RemoteCommand
+        | import('@/services/agent/RemoteRelayService').RemoteCommandAttachment[]
+        | undefined
+): Promise<ResolvedCommandAttachment[]> {
+    const rawAttachments: import('@/services/agent/RemoteRelayService').RemoteCommandAttachment[] | undefined =
+        Array.isArray(input)
+            ? input
+            : ((input?.attachments || input?.metadata?.attachments) as
+                | import('@/services/agent/RemoteRelayService').RemoteCommandAttachment[]
+                | undefined);
+
+    if (!rawAttachments || rawAttachments.length === 0) return [];
+
+    const resolved: ResolvedCommandAttachment[] = [];
+    const storeState = useStore.getState();
+    const currentImages = storeState.uploadedImages || [];
+    const updatedImages = [...currentImages];
+    let storeUpdated = false;
+
+    for (const att of rawAttachments) {
+        const mimeType = att.mimeType || 'application/octet-stream';
+        const isImage = mimeType.startsWith('image/');
+
+        if (
+            att.url &&
+            isImage &&
+            !updatedImages.some(item => (typeof item === 'string' ? item === att.url : item.url === att.url))
+        ) {
+            updatedImages.push({
+                id: `remote_upload_${Date.now()}_${updatedImages.length}`,
+                type: 'image',
+                url: att.url,
+                prompt: att.name || 'Remote attachment',
+                timestamp: Date.now(),
+                projectId: storeState.currentProjectId || 'default',
+                origin: 'uploaded',
+            });
+            storeUpdated = true;
+        }
+
+        if (att.base64) {
+            const clean = att.base64.replace(/^data:[^;]+;base64,/, '');
+            const dataUrl = att.base64.startsWith('data:')
+                ? att.base64
+                : `data:${mimeType};base64,${clean}`;
+            resolved.push({
+                url: att.url,
+                mimeType,
+                name: att.name,
+                base64: clean,
+                dataUrl,
+            });
+        } else if (att.url && isImage) {
+            try {
+                const res = await fetch(att.url);
+                if (typeof res?.blob === 'function') {
+                    const blob = await res.blob();
+                    const dataUrl = await readBlobAsDataUrl(blob);
+                    const clean = dataUrl.replace(/^data:[^;]+;base64,/, '');
+                    resolved.push({
+                        url: att.url,
+                        mimeType,
+                        name: att.name,
+                        base64: clean,
+                        dataUrl,
+                    });
+                } else if (res?.ok && typeof res.arrayBuffer === 'function') {
+                    const buf = await res.arrayBuffer();
+                    const clean = Buffer.from(buf).toString('base64');
+                    const dataUrl = `data:${mimeType};base64,${clean}`;
+                    resolved.push({
+                        url: att.url,
+                        mimeType,
+                        name: att.name,
+                        base64: clean,
+                        dataUrl,
+                    });
+                } else {
+                    resolved.push({
+                        url: att.url,
+                        mimeType,
+                        name: att.name,
+                        base64: '',
+                    });
+                }
+            } catch (err) {
+                logger.warn('[RemoteAdapter] Failed to fetch command attachment for agent dispatch:', err);
+                resolved.push({
+                    url: att.url,
+                    mimeType,
+                    name: att.name,
+                    base64: '',
+                });
+            }
+        } else {
+            resolved.push({
+                url: att.url,
+                mimeType,
+                name: att.name,
+                base64: '',
+            });
+        }
+    }
+
+    if (storeUpdated) {
+        useStore.setState({ uploadedImages: updatedImages });
+    }
+
+    return resolved;
+}
+
 /**
  * ISSUE-983: for capture types where the correct Notes action is unambiguous
  * (a plain image/video/audio attachment, no text needing summarization or
@@ -355,9 +504,13 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
                     };
                 }
 
+                const resolvedAttachments = await resolveCommandAttachments(command);
+                const agentAttachments = resolvedAttachments
+                    .filter(att => Boolean(att.base64))
+                    .map(att => ({ mimeType: att.mimeType, base64: att.base64 }));
                 const sendDisposition = await agentService.sendMessage(
                     text,
-                    undefined,
+                    agentAttachments.length > 0 ? agentAttachments : undefined,
                     command.targetAgentId,
                     {
                         source: 'mobile-remote',

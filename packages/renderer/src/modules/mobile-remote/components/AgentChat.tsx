@@ -58,6 +58,8 @@ interface ChatMessage {
 interface AgentChatProps {
     onSendCommand: (command: { type: string; payload: unknown }) => void;
     isPaired: boolean;
+    initialAttachment?: { url: string; mimeType: string; name: string } | null;
+    onClearInitialAttachment?: () => void;
 }
 
 const MessageRating = memo(({ 
@@ -116,14 +118,30 @@ MessageRating.displayName = 'MessageRating';
 // spinner death.
 const RESPONSE_TIMEOUT_MS = 120_000;
 
-export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: AgentChatProps) {
+export default function AgentChat({
+    onSendCommand: _onSendCommand,
+    isPaired,
+    initialAttachment,
+    onClearInitialAttachment,
+}: AgentChatProps) {
     const [input, setInput] = useState('');
+    const [stagedAttachments, setStagedAttachments] = useState<Array<{ url: string; mimeType: string; name: string }>>([]);
     const [rawCommands, setRawCommands] = useState<RemoteCommand[]>([]);
     const [rawResponses, setRawResponses] = useState<RemoteResponse[]>([]);
     const [isWaiting, setIsWaiting] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
     const isStudioOnline = isFreshStudioState(desktopState);
+
+    useEffect(() => {
+        if (initialAttachment) {
+            setStagedAttachments(prev => {
+                if (prev.some(a => a.url === initialAttachment.url)) return prev;
+                return [...prev, initialAttachment];
+            });
+            onClearInitialAttachment?.();
+        }
+    }, [initialAttachment, onClearInitialAttachment]);
     
     // Mode and targeting state for mobile remote
     const [selectedMode, setSelectedMode] = useState<ConversationMode>('boardroom');
@@ -246,11 +264,16 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         rawCommands.forEach(cmd => {
             const ts = toMillisSafe(cmd.timestamp);
 
+            const userImageUrls = cmd.attachments
+                ?.filter(a => a.url && (a.mimeType?.startsWith('image/') || a.url.match(/\.(jpg|jpeg|png|webp|gif)/i)))
+                .map(a => a.url as string);
+
             all.push({
                 id: cmd.id || `cmd-${ts}`,
                 commandId: cmd.id,
                 role: 'user',
                 text: cmd.text,
+                ...(userImageUrls && userImageUrls.length > 0 ? { imageUrls: userImageUrls } : {}),
                 timestamp: ts,
             });
         });
@@ -291,10 +314,13 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     }, [messages.length, messages[messages.length - 1]?.text]);
 
     const handleSend = useCallback(async () => {
-        if (!input.trim() || isWaiting || !isAuthenticated || !isPaired) return;
+        const hasContent = input.trim() || stagedAttachments.length > 0;
+        if (!hasContent || isWaiting || !isAuthenticated || !isPaired) return;
         if (isListening) toggleListening(); // stop dictation before sending
         const userText = input.trim();
+        const currentAttachments = [...stagedAttachments];
         setInput('');
+        setStagedAttachments([]);
         setIsWaiting(true);
         if (textareaRef.current && typeof window !== 'undefined' && window.innerWidth < 768) {
             textareaRef.current.blur();
@@ -308,9 +334,9 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 targetAgentId = selectedAgent;
             }
 
-            const entryCommand = resolveEntryCommand(userText);
+            const entryCommand = userText ? resolveEntryCommand(userText) : null;
             const commandId = await remoteRelayService.sendCommand(
-                userText,
+                userText || 'Analyze attached media',
                 targetAgentId,
                 {
                     // The desktop must route by what THIS surface selected
@@ -318,8 +344,10 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                     // the desktop Studio last had open.
                     conversationMode: selectedMode,
                     ...(entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : {}),
+                    ...(currentAttachments.length > 0 ? { attachments: currentAttachments } : {}),
                 },
-                'studio'
+                'studio',
+                currentAttachments.length > 0 ? currentAttachments : undefined
             );
             if (!commandId) throw new Error('Failed to send command');
 
@@ -376,8 +404,33 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             teardownResponseWatch();
             setIsWaiting(false);
             setInput(userText); // Restore input on failure
+            setStagedAttachments(currentAttachments); // Restore attachments on failure
         }
-    }, [input, isWaiting, isAuthenticated, isPaired, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
+    }, [input, stagedAttachments, isWaiting, isAuthenticated, isPaired, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
+
+    const handleAddAttachmentFile = async (file: File) => {
+        try {
+            const { auth: firebaseAuth } = await import('@/services/firebase');
+            const userId = firebaseAuth.currentUser?.uid;
+            if (!userId) throw new Error('User not authenticated');
+
+            const { StorageService } = await import('@/services/StorageService');
+            const filename = `chat_attachment_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
+            const path = `users/${userId}/assets/boardroom_attachments/${filename}`;
+            const downloadUrl = await StorageService.uploadFile(file, path);
+
+            setStagedAttachments(prev => [
+                ...prev,
+                {
+                    url: downloadUrl,
+                    mimeType: file.type || 'image/jpeg',
+                    name: file.name || filename,
+                }
+            ]);
+        } catch (err) {
+            logger.error('[AgentChat] Failed to upload chat attachment:', err);
+        }
+    };
 
     if (!isAuthenticated) {
         return (
@@ -591,6 +644,9 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                         <UserIcon className="w-5 h-5 text-amber-400" />
                     }
                     submitLabel="Send"
+                    attachments={stagedAttachments}
+                    onRemoveAttachment={(idx) => setStagedAttachments(prev => prev.filter((_, i) => i !== idx))}
+                    onAddAttachmentFile={handleAddAttachmentFile}
                 />
             </div>
         </div>

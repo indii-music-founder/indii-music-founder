@@ -1,3 +1,54 @@
+# Multi-Platform Programmatic Ad Adapters, Attribution Engine & Mobile Remote Studio Bridge (ISSUE-1528) — Delivered (2026-10-15 EDT)
+
+Delivered end-to-end Multi-Platform Programmatic Ad Adapters (`META`, `TIKTOK`, `GOOGLE_ADS`), Unified Server-Side Attribution Engine (`AttributionBus`), Cross-Department Campaign Orchestrator (`CampaignOrchestrator`), and Mobile Remote Studio Bridge (`ISSUE-1528`) on `main`:
+- **Core Contracts & Zod Schemas (`packages/shared/src/types/ad-execution.types.ts`, `packages/firebase/src/types/ad-execution.types.ts`):**
+  - Defined `SupportedAdPlatform`, `CampaignObjective`, `VerifiedReleaseAssets`, `AudienceTargetingSpec`, `UnifiedCampaignDirective`, `PlatformCampaignReceipt`, `UnifiedAttributionEvent`, `PlatformTelemetrySnapshot`, and `IAdPlatformAdapter`.
+  - Enforced runtime Zod validation (`UnifiedCampaignDirectiveSchema`, `UnifiedAttributionEventSchema`, `PlatformCampaignReceiptSchema`, `PlatformTelemetrySnapshotSchema`) with ISO 39012 ISRC regex validation and SHA-256 hex digest verification for first-party PII.
+- **Layer 3 Ad Platform Adapters (`packages/firebase/src/execution/ad-adapters/`):**
+  - `base.adapter.ts`: `BaseAdPlatformAdapter` with budget floor checks, tracked Smartlink UTM/ISRC tagging, and deterministic cost-per-outcome math.
+  - `meta.adapter.ts`: `MetaAdAdapter` wrapping Meta Graph API campaign/adset/creative/ad provisioning, status/budget mutations, normalized insights telemetry, and Meta Conversions API (`CAPI`) server-side dispatch.
+  - `tiktok.adapter.ts`: `TikTokAdAdapter` implementing TikTok Marketing API v1.3 campaign/adgroup/ad provisioning, Spark Ads (`tiktokSparkAuthCodes` / `AUTH_CODE`) native post amplification, budget/status updates, `report/integrated/get` telemetry, and TikTok Events API v1.3 conversion dispatch.
+  - `google-ads.adapter.ts`: `GoogleAdsAdapter` implementing Google Ads REST API (v17+) Video Action & Performance Max (`PERFORMANCE_MAX`) provisioning bound to `youtubeVideoIds`, budget/status mutations, GAQL `googleAds:search` telemetry, and Google Enhanced Conversions (`uploadClickConversions`).
+- **Layer 3 Unified Server-Side Attribution Bus (`packages/firebase/src/execution/attribution/attribution-bus.ts`):**
+  - `AttributionBus` with Zod validation, deterministic `eventId` deduplication (`AttributionDeduplicationStore`), click-identifier routing (`fbclid`/`fbp`/`fbc`, `ttclid`/`ttp`, `gclid`/`gbraid`/`wbraid`), and cross-network view-through fan-out for pre-hashed first-party contact data (`emailSha256`, `phoneSha256`).
+- **Layer 2 Cross-Department Campaign Orchestrator (`packages/firebase/src/orchestration/marketing/campaign-orchestrator.ts`):**
+  - `CampaignOrchestrator` linking Growth Intelligence directives, post-mastering release/ISRC verification, Finance Department recoupment ledger budget reservation/commitment (`IFinanceRecoupmentLedgerPort`), deterministic cent split allocation across platforms, and multi-platform telemetry sync.
+- **Mobile Remote Studio Bridge — ISSUE-1528 (`packages/renderer/src/modules/mobile-remote/`, `rendererExecutionAdapter.ts`, `CanvasTools.ts`):**
+  - Front/rear camera lens switcher (`facingMode: 'user' | 'environment'`), "Send to Boardroom" review bridge, chat attachment staging tray (`AgentChat.tsx`, `VoiceTextViewingStage.tsx`), remote attachment resolution & `uploadedImages` store hydration (`resolveCommandAttachments`), and headless typography/social derivative tools (`composite_image_typography`, `export_social_derivatives`).
+- **Verification Evidence:**
+  - 14/14 unit tests green across `ad-execution-and-attribution.test.ts` (7/7), `remoteMediaAttachmentBridge.test.ts` (3/3), and `CreativeAgent.test.ts` (4/4).
+  - Full monorepo `npm run typecheck` passed (0 errors across all workspaces + firebase tests).
+  - ESLint 0 errors across all touched files.
+
+# Hosted Rights Contracts, CWR Batch Generation & Creative Studio Polish — Delivered (2026-10-13 EDT)
+
+Delivered full end-to-end hosted rights contracts, CWR batch generation, session broker, and creative canvas typography polish on `main` (`e603dc42b`):
+- **Hosted Rights Contracts & Deterministic Validation (`packages/shared/src/rights/contracts.ts`):**
+  - Authored Zod schemas for Copyright registration cases (`RightsCaseSchema`, `CopyrightWorkSchema`, `RightsDepositSchema`), deterministic case validation (`validateCopyrightCase`) covering Standard single/combined claims, Group of Unpublished Works (GRUW 2–10 works), and Group of Published Album Works (GRAM 2–20 works).
+  - Session fencing (`acceptHumanInput`), canonical JSON generation (`canonicalRightsJson`), and evidence state mapping (`filingStateForEvidence`).
+  - Authored comprehensive test suite `packages/shared/src/rights/contracts.test.ts` (13/13 unit tests green).
+- **CISAC CWR 2.2 Batch Generator & Acknowledgment Parser (`packages/shared/src/rights/cwr.ts`):**
+  - Pinned to CISAC CWR19-1070:2.2 rev2 with backward compatibility for 2.1 profiles.
+  - Generates full transmission batches (`HDR`, `GRH`, `NWR`/`REV`, `SPU`/`OPU`, `SPT`/`OPT`, `SWR`/`OWR`, `SWT`/`OWT`, `PWR`, `GRT`, `TRL`) for The MLC (`the_mlc`) and MusicMark (`musicmark`).
+  - Validates writer/publisher 10,000 units ownership and territorial collection share constraints.
+  - Implemented robust `parseCwrAcknowledgments` for ACK and MSG responses.
+  - Authored comprehensive test suite `packages/shared/src/rights/cwr.test.ts` (5/5 unit tests green).
+- **Server Callable & Session Broker Service (`packages/firebase`, `packages/rights-session-broker`):**
+  - Added `rightsRegistration` Cloud Function supporting `save_case`, `prepare_deposit` (with FLAC to PCM_S16LE WAV audio conversion via `ffmpeg-static`), `record_evidence`, `build_cwr`, and session coordination.
+  - Added `@indii/rights-session-broker` WebSocket session pairing and cookie vault service.
+- **Creative Canvas Typography & Tooling Polish (`packages/renderer/src/modules/creative/`):**
+  - Added editable text typography properties (`fontFamily`, `fontSize`, `fill`), `updateSelectedText`, and canvas text selection sync.
+  - Updated `AnnotationPalette.tsx` to modern triangle swatch SVG rendering with active ring highlights, checkmarks, and accessible `aria-pressed` state.
+  - Polished `CanvasHeader.tsx`, `CanvasToolbar.tsx`, and `CanvasActionRail.tsx`.
+  - All Creative Canvas tests green (18/18 unit tests, 1/1 interaction test, 2/2 AnnotationPalette interaction tests).
+- **Image Pipeline Refinements:**
+  - `EditingService.ts`: Clears single-turn thought signatures across sequential multi-mask edit iterations to avoid Gemini API rejection.
+  - `ImageAnalysisService.ts`: Automatically downsamples large artwork to preview size before object detection and mask segmentation to avoid payload bloat.
+- **Mainline Delivery & CI:**
+  - Prior commit `ee686d771` deployment (Run `38399349595`) completed 100% successfully and is deployed live to production.
+  - Committed `e603dc42b` directly to `main` and pushed to `origin/main`.
+  - CI workflow run `38405702657` active on exact commit SHA `e603dc42b`.
+
 # Assisted Rights Registration Engine & Browser Copilot Complete — ISSUE-1511 (#414) (2026-10-12 EDT)
 
 Delivered full end-to-end Screen Control & Browser Copilot architecture for ISSUE-1511 on `main`:

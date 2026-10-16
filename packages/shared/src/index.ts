@@ -91,3 +91,4 @@ export * from './schemas/creditWallet.js';
 export * from './print/PrintSpec.js';
 export * from './print/canvasBleed.js';
 export * from './schemas/printJob.js';
+export * from './types/ad-execution.types.js';

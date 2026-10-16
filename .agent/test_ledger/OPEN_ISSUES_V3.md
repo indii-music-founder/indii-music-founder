@@ -3,7 +3,7 @@
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-10-12 (**Closed ISSUE-1511 / GitHub #414** — Completed Assisted Rights Registration Engine across all 6 portals with Electron Browser Copilot HUD, credential-isolated DOM step executor, and provenance confirmation ledger)
+> **Last updated:** 2026-10-13 (Logged ISSUE-1528–1536 — Mobile Remote full architecture plan: media bridge, Cloud Vault streaming, human-in-the-loop approvals, tactile command pad, capture intelligence, road networking, in-app camera viewfinder, and lock screen integration)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V3):** This is the ACTIVE master ledger. It operates with strict discipline:
@@ -4870,7 +4870,6 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Fix:** Remove completed migrations from ordinary deployment; inspect exact generation/trigger metadata and perform bounded explicitly authorized migrations with recovery where necessary. Preserve deployment safeguards.
 - **Acceptance:** Ordinary redeploy regression invokes no active-function deletions; migration fixtures verify prerequisites and recovery. Exact-SHA CI/deployment metadata confirms expected endpoints. Destructive live migration requires separate authorization; customer/event continuity remains separate acceptance.
 
-
 ---
 
 ### 2026-10-14 daily competitive-intelligence routing — evidence-first delta
@@ -4925,3 +4924,205 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 **Ordered worklist:** (1) `ISSUE-1526`/1525 Passport privacy, consent, authorized claim and real signup/reload; (2) `ISSUE-1527` destructive deployment prevention, current-head CI and live endpoint continuity; (3) #417 Boardroom evidence-grounded capability status and #418 print-prep 11×17 user-path/guard decision with reproducible tests; (4) rights official-portal/ACK live acceptance (`ISSUE-1520`/1511/1450/1452) and desktop release verification; (5) YouTube metadata policy mapping **research first**; (6) Phono V proposal monitoring; (7) `ISSUE-1524` ledger-integrity controls protect all records. No speculative direct-commerce build.
 
 **Investor competition dossier:** October 14 YouTube official listener-facing AI provenance rollout and supported ERN 4.3.2+/CSV metadata (first-party); October 14 DSP/publisher mechanical-rate policy disagreement (proposals, not adopted rates); October 14 indii current-head successful Firebase CI/deploy, plus explicit unresolved security, truthful-agent, print and external-rights acceptance gaps. Preserve distinction between advertised platform capabilities and authenticated end-to-end proof.
+
+---
+
+### ISSUE-1528: Mobile Remote capture cannot bridge media attachments to Boardroom, headless Creative Canvas, or automated social/story workflows
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🔴 HIGH
+- **Module:** Mobile Remote / Cloud Relay / Boardroom / Creative Canvas / Video Pipeline / Social Tools
+- **Classification:** Structural integration gap across mobile capture, remote relay serialization, desktop execution adapter, and headless agent tool orchestration. Genuine customer mobile-to-boardroom creative loop is broken.
+- **Evidence:** Tested end-to-end user story: an artist away from their studio takes a mobile selfie via the Mobile Remote app, reviews/approves it, attempts to attach it to the Boardroom to burn a specific saying onto the picture, generate a 9:16 story/video, adapt across all social aspect ratios, and use the Creative Canvas to composite brand sunglasses (e.g. Ray-Ban Wayfarer). Ten mechanical failure points prevent execution:
+  1. **Selfie Capture Forced to Rear Camera:** `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:667` hardcodes `<input type="file" accept="image/*" capture="environment" />`. The HTML Media Capture `environment` attribute strictly forces the rear camera on mobile operating systems (iOS/Android), preventing direct front-facing selfie capture without user OS overrides or camera switching.
+  2. **Captured Media Review Card Lacks Boardroom Bridge:** In `QuickCaptureView.tsx:749-839`, after a user takes and reviews an image, the action buttons only provide `media_capture` ("Save to Notes"), `editor_import` ("Open in Studio Video Editor"), "Download", and "Retake". There is no action to "Send to Boardroom", "Attach to Agent", or route the captured asset into active agent conversations.
+  3. **Mobile Remote Chat Missing Attachment / Media Picker:** In `packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx` and `VoiceTextViewingStage.tsx:1-180`, the chat interface only exposes a text textarea and voice mic toggle. There is no file upload button, camera roll picker, or thumbnail staging tray for attaching images or captured assets to messages.
+  4. **Remote Relay Drops Message Attachments:** In `packages/renderer/src/services/agent/RemoteRelayService.ts:435`, `sendCommand` accepts only `{ type: 'chat', text: string, metadata?: any }`. In `packages/renderer/src/services/remote/rendererExecutionAdapter.ts:358-362`, the desktop execution handler calls `agentService.sendMessage(agentId, text, conversationId, undefined)`. The 4th argument (`attachments`) is hardcoded to `undefined`, permanently stripping any media payload before desktop agent dispatch.
+  5. **Capture Storage Path Disconnected from Agent Workspace:** `QuickCaptureView.tsx` uploads captures to GCS/Firebase Storage under `users/${uid}/assets/captured_media/...` and stores an encounter record. However, captures are never injected into `useStore.getState().uploadedImages` or indexed into the Boardroom's session file context. An agent executing `StorageTools.list_files` (`packages/renderer/src/services/agent/tools/StorageTools.ts:32`) has no reference or path pointer to the captured selfie.
+  6. **Creative Canvas Inoperable in Headless / Minimized Mode:** The user requested "use the creative canvas to put some sunglasses on me". `packages/renderer/src/modules/creative/CreativeStudio.tsx:693` only renders the Fabric.js `CreativeCanvas` when `selectedItem` is truthy and `viewMode === 'editor'`. Furthermore, `CanvasTools.draw_shape`, `CanvasTools.add_text`, and `CanvasTools.export_canvas` (`packages/renderer/src/services/agent/tools/CanvasTools.ts:290-294`) call `CanvasService.getCanvas()`, which throws `CANVAS_NOT_ACTIVE` whenever the studio desktop window is minimized, locked, running in the background, or navigated to Boardroom/Settings.
+  7. **No Headless Typography Compositor Tool:** There is no agent tool for compositing custom typography, quotes, or brand sayings onto an image outside of the interactive canvas or video editor timeline. The Boardroom has no server-side or OffscreenCanvas tool (e.g. `composite_image_text`) to overlay styled text onto an image asset headlessly.
+  8. **No Facial Landmark Detection for Automated Eyewear Inpainting:** While `EditImageWithAnnotationsTool.ts` supports generative image inpainting via Gemini Imagen, it requires explicit bounding coordinates `(cx, cy, r)` or pre-drawn binary masks. The agent swarm lacks a facial landmark / face-mesh tool (e.g. MediaPipe or canvas face detector) to locate eye/bridge coordinates on an arbitrary selfie to accurately position specific brand sunglasses (e.g., Ray-Ban Wayfarer) without manual human coordinate input.
+  9. **Missing Multi-Platform Aspect Ratio Batch Cropper:** While `SocialTools.ts` handles schedule dates and copy drafting, there is no tool to take an input master photo and automatically crop/reframe it into standard multi-platform social deliverables (1:1 Square, 4:5 Instagram Portrait, 9:16 Stories/Reels/TikTok, 16:9 X/YouTube).
+  10. **Video / Story Pipeline Disconnected from Remote Trigger:** While `VideoTools.generate_video` (`packages/renderer/src/services/agent/tools/VideoTools.ts:45`) supports Veo 3.1 with `firstFrame` image inputs and 9:16 aspect ratios, and `editor_import` can add assets to the timeline, the Boardroom agent cannot initiate the 9:16 story/video workflow because the initial selfie asset pointer never successfully reaches the agent context.
+- **Impact:** An artist on the go cannot use the mobile remote app to capture quick content (selfies, backstage moments), pass it to the Boardroom agent swarm, have typography/sayings burned in, have brand assets (eyewear/wardrobe) composited, or receive multi-platform social assets and a 9:16 story video. The mobile remote remains an isolated viewfinder and plain text chat rather than an executive mobile command bridge.
+- **Fix:**
+  1. Add a selfie/front-camera switch in `QuickCaptureView.tsx` by toggling `capture="user"` vs `capture="environment"`, or removing the attribute to open the OS camera picker.
+  2. Add an explicit "Send to Boardroom" action button on the `QuickCaptureView` media review card (`action: 'boardroom_attach'`) that pre-loads the image as an active message attachment in `AgentChat.tsx`.
+  3. Add an image/media attachment picker button to `AgentChat.tsx` and `VoiceTextViewingStage.tsx`.
+  4. Update `RemoteRelayService.sendCommand` payload schema and `rendererExecutionAdapter.ts` to transmit `attachments: Array<{ url: string, mimeType: string, name: string, path?: string }>` and pass them directly to `agentService.sendMessage(...)`.
+  5. Add a headless server/worker or OffscreenCanvas typography tool (`composite_image_text` or `render_text_overlay`) that burns text with font, size, fill, and position onto an image without requiring an active Fabric DOM canvas.
+  6. Add a headless canvas abstraction or decouple `CanvasTools` so image manipulation, shape drawing, and image generation can execute against an offscreen canvas or node-canvas/Sharp worker when the UI is headless or in Boardroom view.
+  7. Add a face landmark detection tool or landmark estimation step in the creative pipeline to calculate eye/temple anchor points for brand eyewear inpainting/compositing.
+  8. Add a multi-aspect ratio export tool (`render_social_derivatives`) in `SocialTools` or `ImageTools` that outputs 1:1, 4:5, 9:16, and 16:9 crops from a single source asset.
+  9. Wire the Boardroom prompt execution plan to orchestrate `composite_image_text` -> `render_social_derivatives` -> `VideoTools.generate_video(prompt, firstFrame, aspectRatio: '9:16')` in sequence.
+- **Acceptance:** Real mobile remote test proves:
+  1. Front-facing camera captures selfie; review screen displays "Send to Boardroom".
+  2. Boardroom chat receives the image attachment with valid storage URL and hydrates into agent context.
+  3. Boardroom successfully executes text overlay without `CANVAS_NOT_ACTIVE` error.
+  4. Agent successfully applies sunglasses via landmark-informed inpainting or compositing.
+  5. 1:1, 4:5, 9:16 image deliverables and a 9:16 video generation task are dispatched and verifiable in project assets.
+
+### ISSUE-1529: Remote Cloud Music Vault (StreamView) unreachable from navigation and lacks desktop Now Playing sync / Car Test player
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🔴 HIGH
+- **Module:** Mobile Remote / Audio Streaming / TransportBar / DesktopState Sync
+- **Classification:** Structural UX omission and state-sync gap between desktop playback engine and mobile remote.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:67-73` defines bottom navigation `TABS` with only `['home', 'studio', 'encounters', 'road', 'settings']`. `case 'stream'` is implemented in `renderTabContent()` (`MobileRemote.tsx:566-571`) to render `<StreamView />`, but because `'stream'` is omitted from `TABS`, mobile users cannot access their Cloud Music Vault without manual URL manipulation.
+  2. `packages/renderer/src/services/agent/RemoteRelayService.ts:110-130` (`DesktopState`) defines telemetry fields for `activeTrackTitle`, `activeTrackArtist`, `isPlaying`, `nowPlayingDurationSec`, and `nowPlayingPositionSec`. However, `MobileRemote.tsx` has no persistent Mini-Player bar or floating playback controller. When desktop Studio is playing a master mix at home or in rehearsal, the phone has zero visibility into playback status, track position, or transport controls.
+  3. `packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx` supports scrubbing, volume, play/pause, and next track, but operates only against local mobile audio playback without a 1-tap "Mirror Desktop Playback" / "Car Test Stream" bridge.
+- **Impact:** Artists leaving the studio to do the canonical "Car Test" or headphone check cannot open their Cloud Vault from the mobile remote bottom bar, view what's playing on desktop, or control studio playback remotely.
+- **Fix:**
+  1. Update `TABS` in `MobileRemote.tsx` to include `Vault` (`id: 'stream'`, icon: `Music` or `Cloud`, label: `Vault`).
+  2. Add a persistent, floating `NowPlayingBar` above the bottom `TABS` in `MobileRemote.tsx` when `desktopState?.isPlaying` or `desktopState?.activeTrackTitle` is truthy, exposing track title, artist, playback progress, play/pause, and skip controls.
+  3. Connect `TransportBar` DAW commands to send `daw_control: toggle_playback` to desktop Studio via `RemoteRelayService.sendCommand`.
+  4. Add a "Stream to Phone" toggle in `StreamView` allowing the phone to fetch the active master WAV/MP3 from Firebase Storage for mobile-local playback.
+- **Acceptance:** Real mobile remote test proves:
+  1. Bottom navigation bar renders `Vault` tab; tapping it renders `StreamView` with unreleased track catalog.
+  2. Starting playback on desktop Studio immediately surfaces persistent Mini-Player on mobile remote with track metadata and synchronized play/pause state.
+  3. Tapping pause on mobile remote pauses playback on desktop Studio.
+
+### ISSUE-1530: Remote human-in-the-loop authorization (ApprovalQueue) is orphaned and disconnected from Cloud Relay state
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🔴 HIGH
+- **Module:** Mobile Remote / Agent Guardrails / Approval Queue / Cloud Relay
+- **Classification:** Architectural isolation defect. Component built to satisfy safety and authorization guardrails is unmounted and severed from remote relay protocol.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/ApprovalQueue.tsx` implements a 163-line interactive authorization card with timer countdown, haptic pulses, approve/reject actions, and shield badges. However, it has 0 import references across `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` and all child components. It is completely unmounted.
+  2. In `ApprovalQueue.tsx:22-28`, approval state is read via `const { pendingApproval, resolveApproval } = useStore(...)`. In a remote architecture where the phone runs in a mobile browser away from the desktop, the mobile client's Zustand store does not share in-memory state with the desktop. `RemoteRelayService.ts` does not synchronize `pendingApproval` across Firestore documents or WebSocket events. As a result, even if mounted, `pendingApproval` on the phone remains perpetually `null`.
+  3. In `ApprovalQueue.tsx:44-57`, `handleApprove` and `handleReject` invoke `onSendCommand({ type: 'agent_action', payload: { action: 'approve' | 'reject', approvalId } })`. In `rendererExecutionAdapter.ts:298-317`, `case 'agent_action'` only recognizes `action === 'open_chat'`; it has no handler to call `resolveApproval(true/false)` on the desktop studio's Zustand store.
+- **Impact:** An artist away from their studio cannot approve or reject high-consequence agent actions (credit expenditures, public social postings, live release submissions, contract generation). The desktop agent stalls indefinitely or fails the approval timeout.
+- **Fix:**
+  1. Add `pendingApproval` object schema to `DesktopState` / `remoteRelayService` state broadcast (`approvalId`, `title`, `description`, `type`, `costCredits`, `timestamp`, `expiresAt`).
+  2. Mount `ApprovalQueue` as a high-visibility, haptic-enabled banner or slide-up modal in `MobileRemote.tsx` whenever `desktopState.pendingApproval` is populated.
+  3. Add handler in `rendererExecutionAdapter.ts` under `case 'agent_action'` for `action === 'approve'` and `action === 'reject'` to call `useStore.getState().resolveApproval(action === 'approve', payload.approvalId)`.
+- **Acceptance:** Real test proves:
+  1. Desktop agent executing a guarded tool triggers `requestApproval(...)`.
+  2. Mobile remote receives real-time broadcast and displays `ApprovalQueue` modal with haptic alert.
+  3. Artist taps "Authorize" on phone; desktop resolves approval promise and proceeds with tool execution.
+
+### ISSUE-1531: Tactile action grid (CommandPad) and visual generation presets (GenerationMonitor) are orphaned from mobile studio UI
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / CommandPad / GenerationMonitor / StudioWorkView
+- **Classification:** Structural UX degradation. High-utility tactile controls and generation style presets exist in tree but were bypassed by barebones text inputs.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/CommandPad.tsx` (429 lines) implements one-tap studio shortcuts (Visual Gen, Show Me, Brainstorm Hooks, transport controls, and direct 10-hub studio navigation) compliant with 44x44px touch targets. It is never imported or rendered in `MobileRemote.tsx` or `StudioWorkView.tsx`.
+  2. `packages/renderer/src/modules/mobile-remote/components/GenerationMonitor.tsx` (524 lines) implements style presets (`Cinematic`, `Album Art`, `Streetwear`, `Neon`, `Minimal`, `Vintage`), multi-aspect ratio selection (`1:1`, `16:9`, `9:16`, `4:3`), live generation monitoring, and command cancellation. `StudioWorkView.tsx:5` only imports the gallery helper `buildGeneratedImagesGallery`, while discarding the entire interactive UI in favor of an unstyled text input (`StudioWorkView.tsx:154-172`) that hardcodes `aspectRatio: '4:5'` (`StudioWorkView.tsx:81`).
+- **Impact:** Mobile users in the `Studio` tab are restricted to a single text prompt input without style presets, aspect-ratio controls, progress feedback, or quick-action studio shortcuts.
+- **Fix:**
+  1. Integrate `CommandPad` into `StudioWorkView.tsx` as a collapsible "Quick Actions" tray or dedicated sub-segment.
+  2. Re-embed style preset chips and aspect ratio selectors from `GenerationMonitor.tsx` into the flyer/visual generation card in `StudioWorkView.tsx`.
+  3. Display active generation spinner and cancellation button when `remoteRelayService` reports a pending `generate_image` or `generate_video` command.
+- **Acceptance:** Real mobile test proves:
+  1. `Studio` tab renders style preset chips and aspect ratio selector.
+  2. Selecting "Streetwear" and "9:16" sends properly formatted generation metadata to desktop.
+  3. Quick Actions pad triggers "Show Me" and returns latest visual asset in gallery.
+
+### ISSUE-1532: Mobile capture ingestion bypasses AI agent swarm — voice memos lack auto-transcription and receipts lack OCR expense parsing
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🔴 HIGH
+- **Module:** Mobile Remote / Capture Ingestion / Notes / Finance Agent / Speech-to-Text
+- **Classification:** Functional bypass in task dispatch. Captured media is shunted into static storage notes instead of activating specialist agents.
+- **Evidence:**
+  1. In `packages/renderer/src/services/remote/rendererExecutionAdapter.ts:452-456`, `executeDispatchTask` calls `saveCaptureNoteDirectly(task)`. If `payload.commandText || payload.transcription` is empty (the default for audio, photo, and receipt button captures in `QuickCaptureView.tsx`), `saveCaptureNoteDirectly:54-75` saves a plain text Note with the raw file URL and immediately returns.
+  2. The AI agent swarm is completely bypassed. A voice memo recorded on the phone is saved as `"Voice memo"` with an un-transcribed audio URL. No speech-to-text (Whisper / Gemini multimodal audio) is executed to extract lyrics, song concepts, or melody notes.
+  3. A receipt photographed on the road via `capturedImageBlob.type === 'receipt'` is saved as `"Receipt"` with an image URL. No Finance Agent OCR is executed to extract the vendor, date, total amount, tax, or expense category.
+  4. `MobileMileageModal.tsx` (travel and mileage expense logger) is trapped inside `StatusDashboard.tsx`, which is unmounted in `MobileRemote.tsx`.
+- **Impact:** Mobile capture acts as dumb cloud storage rather than an AI-native music business copilot. Voice memos are lost in a sea of raw audio files, and road expenses are not parsed or tracked.
+- **Fix:**
+  1. In `rendererExecutionAdapter.ts`, when handling `task.type === 'voice_memo'`, invoke Gemini 3 multimodal audio / speech transcription to produce an automatic transcript, summary, and suggested tags before saving to Notes or Music ideas.
+  2. When handling `task.type === 'receipt_log'`, invoke the Finance Agent with OCR tool to extract `{ vendor, date, amount, currency, category, tax }` and write directly to the user's touring/expense ledger.
+  3. Mount `MobileMileageModal` in `MobileRemote.tsx` under the `Road` tab (`RoadMode.tsx`) for fast mileage and travel expense entry.
+- **Acceptance:** Real test proves:
+  1. Recording a voice memo on mobile produces a transcribed note with detected musical tags in desktop Studio.
+  2. Photographing an expense receipt on mobile automatically extracts amount and vendor in the financial ledger.
+
+### ISSUE-1533: Road networking lacks digital contact sharing (QR code / Artist Passport card) and business card camera OCR
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / Contacts / EncounterFeedView / QuickContactModal / Artist Passport
+- **Classification:** Feature gap in mobile artist CRM and on-the-road networking workflows.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/EncounterFeedView.tsx` and `QuickContactModal.tsx` allow artists to log people they meet (A&Rs, producers, promoters, fans), but require manual keyboard entry of name, role, organization, email, phone, and Instagram handle.
+  2. There is no "Share My Card" feature. In a noisy venue, green room, or conference, the artist cannot display a full-screen dynamic QR code pointing to their public Artist Passport / EPK / contact vCard for instant phone-to-phone contact exchange.
+  3. There is no camera OCR mode in `QuickContactModal.tsx` to snap a photo of a physical business card or festival badge and auto-fill contact fields.
+- **Impact:** Friction during real-world networking leads to incomplete or abandoned contact logging while on tour or at music events.
+- **Fix:**
+  1. Add a "Share My Card" modal in `EncounterFeedView.tsx` displaying an SVG QR code linking to `https://indii.app/p/{artistSlug}` (Artist Passport) or custom vCard download.
+  2. Add a "Scan Card" button in `QuickContactModal.tsx` using mobile camera capture and Gemini OCR to extract contact fields (Name, Phone, Email, Company, Social).
+- **Acceptance:** Real mobile test proves:
+  1. Artist can tap "Share QR" in Contacts tab to display full-screen scannable QR code.
+  2. Scanning a business card auto-fills name, email, and company in the encounter modal.
+
+### ISSUE-1534: Mobile Remote lacks background push notifications for completed renders and agent approval requests
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / Push Notifications / FCM / Service Worker
+- **Classification:** Background communication deficit. Mobile client loses connection when backgrounded without push wakeup.
+- **Evidence:**
+  1. `MobileRemote.tsx:218-222` explicitly notes that when the page is backgrounded (`document.visibilityState === 'hidden'`), Firestore timers and presence subscriptions are throttled by mobile browsers (Safari iOS / Chrome Android).
+  2. If the artist kicks off a Veo 3.1 video render, a multi-track mastering export, or a distribution delivery on desktop Studio and locks their phone, there is no Web Push Notification (`Notification` API or Firebase Cloud Messaging) to alert them when the job completes or when agent approval is waiting.
+- **Impact:** Artists have to repeatedly unlock their phone and stare at the remote screen to check if long-running studio tasks have finished.
+- **Fix:**
+  1. Register a lightweight Service Worker for the Mobile Remote web app supporting the Web Push / FCM API.
+  2. Add Cloud Functions trigger on `remoteResponses` and `pendingApproval` creation to send FCM push notification to the user's paired mobile devices (`"Your 9:16 story video is ready to download"`, `"Agent authorization needed: Spend 5 credits?"`).
+  3. Tapping the push notification opens the Mobile Remote directly to the relevant tab (`Studio` or `ApprovalQueue`).
+- **Acceptance:** Real test proves:
+  1. With mobile browser backgrounded/locked, desktop video render completion triggers OS push notification.
+  2. Tapping notification opens Mobile Remote directly to the generated video download preview.
+
+### ISSUE-1535: In-App Camera Viewfinder with Hardware Controls and Creator Composition Overlays
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / QuickCaptureView / In-App Camera / WebRTC MediaStream
+- **Classification:** Capability gap. Relying solely on HTML file inputs hands control to OS camera, preventing in-app adjustments for stage lighting, zoom, lens switching, or composition framing.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:667-679` executes photo and video capture via `<input type="file" accept="image/*" capture="environment" />` and `<input type="file" accept="video/*" capture="environment" />`.
+  2. Because the app delegates to the native OS file picker, the remote app has zero access to the camera stream. The artist cannot toggle between front selfie camera (`facingMode: 'user'`) and rear camera (`facingMode: 'environment'`), cannot trigger a continuous torch/flash for dark backstage rooms, cannot zoom, and cannot adjust exposure for blown-out concert/stage spotlights.
+  3. No composition guides exist on mobile capture. The artist cannot preview social aspect ratio crops (9:16 Story, 1:1 Feed, 4:5 Portrait), rule-of-thirds alignment, or level horizon before snapping the shot.
+- **Impact:** Capturing photos or backstage clips away from the studio produces un-framed, poorly lit, or accidentally rear-facing shots that cannot be calibrated to social deliverables or live concert environments.
+- **Fix:**
+  1. Build an in-app live camera component (`CameraViewfinderModal.tsx` or inline in `QuickCaptureView.tsx`) using `navigator.mediaDevices.getUserMedia({ video: { facingMode, width, height } })` rendering to a `<video playsInline autoPlay muted />` surface with canvas capture via `ImageCapture.takePhoto()` or `<canvas>` snapshot.
+  2. Implement hardware controls utilizing `MediaStreamTrack.applyConstraints()` and `getCapabilities()`:
+     - 1-tap lens toggle (Front Selfie 🤳 vs Rear 📷).
+     - Torch / Stage Flash toggle (`advanced: [{ torch: true }]`) for dark venues.
+     - Zoom slider / pinch-to-zoom (`advanced: [{ zoom: number }]`).
+     - Exposure compensation slider (`advanced: [{ exposureCompensation: number }]`) to calibrate stage lights.
+  3. Add creator HUD overlays:
+     - Aspect ratio crop masks (9:16, 1:1, 4:5, 16:9).
+     - Rule-of-thirds grid overlay.
+     - Gyroscope horizon leveler (`DeviceOrientationEvent`).
+     - Real-time audio VU meter during video recording to avoid concert clipping.
+  4. Retain `<input type="file">` as a fallback when WebRTC camera permissions are denied.
+- **Acceptance:** Real mobile test proves:
+  1. Tapping photo capture opens in-app live viewfinder with front/back camera switch.
+  2. Tapping torch turns on device LED flashlight; adjusting exposure slider alters live preview brightness.
+  3. Selecting 9:16 aspect ratio displays guidelines; capturing photo yields framed high-res output ready for Boardroom.
+
+### ISSUE-1536: Lock Screen MediaSession Playback Control and Quick-Capture Deep-Links
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / TransportBar / StreamView / MediaSession / Deep Linking
+- **Classification:** Mobile operating system integration gap. The web app does not leverage the native Lock Screen playback widget or lock screen launcher shortcuts.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx` and `StreamView.tsx` play audio tracks through standard HTML5 `<audio>` elements, but do not configure `navigator.mediaSession.metadata` or media action handlers (`play`, `pause`, `seekto`, `previoustrack`, `nexttrack`).
+  2. When an artist locks their phone or places it in a car dock while testing an unreleased master, the iOS and Android lock screen media player does not display track metadata, album artwork, or allow scrubbing without unlocking the phone.
+  3. `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` lacks URL query parameter actions (e.g. `?action=quick_photo`, `?action=quick_voice`, `?action=stream`) preventing iOS 18 Lock Screen controls, Apple Shortcuts, and the iPhone Action Button from launching directly into specific capture or listening modes with 1 tap.
+- **Impact:** Artists testing music on the road must repeatedly unlock their device to pause, scrub, or skip unreleased tracks. Capturing a spontaneous moment requires unlocking, navigating to browser, and tapping through tabs rather than launching directly from the lock screen.
+- **Fix:**
+  1. Implement `setupMediaSessionHandlers` in `TransportBar.tsx` to bind `navigator.mediaSession` with `MediaMetadata` (title, artist: 'indii Vault', album, artwork array) and wire `play`, `pause`, `seekto`, `previoustrack`, and `nexttrack` actions to the active track state.
+  2. Add deep-link action parser in `MobileRemote.tsx` to handle `?action=photo` (opens camera), `?action=voice` (opens mic), and `?action=vault` (opens StreamView).
+  3. Provide an "Add Lock Screen Shortcut" help guide in `SettingsView.tsx` explaining how to map iOS 18 Lock Screen Controls or iPhone Action Button to indii remote deep links.
+- **Acceptance:** Real mobile test proves:
+  1. Playing a track in `StreamView` renders the native lock screen media card with title, artwork, and scrub bar on locked iOS and Android devices.
+  2. Tapping play/pause/scrub on the locked device controls audio playback without unlocking.
+  3. Opening `https://indii.app/remote?action=photo` immediately launches the camera viewfinder.

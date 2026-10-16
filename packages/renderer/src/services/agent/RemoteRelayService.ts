@@ -48,11 +48,20 @@ import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 // Types
 // ---------------------------------------------------------------------------
 
+export interface RemoteCommandAttachment {
+    url?: string;
+    mimeType: string;
+    name?: string;
+    base64?: string;
+}
+
 export interface RemoteCommand {
     id?: string;
     text: string;
     targetAgentId?: string;
     metadata?: Record<string, unknown>;
+    /** Optional media attachments (photos, videos, audio) sent with the command */
+    attachments?: RemoteCommandAttachment[];
     /**
      * The sole executor allowed to claim this command. Keeping this on the
      * durable command record prevents the Studio listener and Cloud Function
@@ -436,7 +445,8 @@ class RemoteRelayService {
         text: string,
         targetAgentId?: string,
         metadata?: Record<string, unknown>,
-        executionTarget?: RemoteExecutionTarget
+        executionTarget?: RemoteExecutionTarget,
+        attachments?: Array<{ url?: string; mimeType: string; name?: string; base64?: string }>
     ): Promise<string | null> {
         const resolvedExecutionTarget = executionTarget ?? resolveRemoteCommandExecutionTarget({ text });
 
@@ -446,6 +456,8 @@ class RemoteRelayService {
             return null;
         }
 
+        const rawAttachments = attachments || (metadata?.attachments as Array<{ url?: string; mimeType: string; name?: string; base64?: string }> | undefined);
+
         const command: RemoteCommand = {
             text,
             timestamp: serverTimestamp(),
@@ -453,11 +465,12 @@ class RemoteRelayService {
             createdAt: serverTimestamp(),
             ...(targetAgentId ? { targetAgentId } : {}),
             ...(metadata ? { metadata } : {}),
+            ...(rawAttachments && rawAttachments.length > 0 ? { attachments: rawAttachments } : {}),
             executionTarget: resolvedExecutionTarget,
         };
 
         const docRef = await addDoc(ref, command);
-        logger.info(`[RemoteRelay] 📱 Command sent: ${docRef.id} → agent: ${targetAgentId || 'auto'}`);
+        logger.info(`[RemoteRelay] 📱 Command sent: ${docRef.id} → agent: ${targetAgentId || 'auto'}${rawAttachments?.length ? ` with ${rawAttachments.length} attachments` : ''}`);
         return docRef.id;
     }
 
