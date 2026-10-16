@@ -22,6 +22,9 @@ Delivered end-to-end Multi-Platform Programmatic Ad Adapters (`META`, `TIKTOK`, 
   - `capabilityTruth.ts`, `DevOpsAgent.ts` & `agentPrompts.ts`: Hardened `DEVOPS_PROMPT` and `DevOpsAgent` with explicit `Capability & Status Grounding` protocols and broadened `isDepartmentAuditOrReadinessQuestion` to intercept possessive/fleet-wide operational status queries (`"all 23 departments' operational"`).
 - **Mobile Remote Studio Bridge — ISSUE-1528 (`packages/renderer/src/modules/mobile-remote/`, `rendererExecutionAdapter.ts`, `CanvasTools.ts`):**
   - Front/rear camera lens switcher (`facingMode: 'user' | 'environment'`), "Send to Boardroom" review bridge, chat attachment staging tray (`AgentChat.tsx`, `VoiceTextViewingStage.tsx`), remote attachment resolution & `uploadedImages` store hydration (`resolveCommandAttachments`), and headless typography/social derivative tools (`composite_image_typography`, `export_social_derivatives`).
+- **Desktop Release v1.82.0 (Apple Silicon DMG):**
+  - Updated `electron-builder.json` with `identity: null`, `notarize: false`, `hardenedRuntime: false` for unsigned Apple Silicon DMG packaging without developer certificates.
+  - Built and verified local `dist-electron/indii.music-1.82.0-arm64.dmg` (519 MB) and `.blockmap`.
 - **Verification Evidence:**
   - 97/97 unit tests green across `ad-execution-and-attribution.test.ts` (14/14), `MarketingTools.test.ts` (8/8), `PrintReadyUpscaleService.test.ts` (12/12), `capabilityTruth.test.ts` (58/58), and `DepartmentRoutingSynchronization.test.ts` (5/5).
   - Full monorepo `npm run typecheck` passed (0 errors across all workspaces + firebase tests).
