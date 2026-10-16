@@ -21,9 +21,24 @@ import {
     InMemoryAttributionDeduplicationStore,
 } from '../attribution/attribution-bus';
 import {
+    FirestoreAttributionDeduplicationStore,
+    type FirestoreLikeDb,
+} from '../attribution/firestore-attribution-store';
+import {
     CampaignOrchestrator,
     InMemoryFinanceRecoupmentLedger,
 } from '../../orchestration/marketing/campaign-orchestrator';
+import {
+    FirestoreFinanceRecoupmentLedger,
+    type TransactionalFirestoreDb,
+} from '../../orchestration/marketing/firestore-recoupment-ledger';
+import {
+    __resetCampaignJudgmentCooldownForTests,
+    computeBoundedSplitRefinement,
+    evaluateCampaignAllocationWithJev,
+    heuristicCampaignJudgment,
+} from '../../orchestration/marketing/campaign-judgments';
+import type { TypesafeClient } from '../../functions/intelligence/typesafeClient';
 
 function sha256(value: string): string {
     return createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
@@ -522,5 +537,347 @@ describe('CampaignOrchestrator (Cross-Department Finance Recoupment & Execution)
         const ledgerEntry = financeLedger.getEntry(result.ledgerReservationId);
         expect(ledgerEntry?.status).toBe('COMMITTED');
         expect(ledgerEntry?.committedCents).toBe(100_000);
+    });
+});
+
+describe('FirestoreAttributionDeduplicationStore', () => {
+    function createMockDb(): {
+        db: FirestoreLikeDb;
+        store: Map<string, Record<string, unknown>>;
+    } {
+        const store = new Map<string, Record<string, unknown>>();
+        const db: FirestoreLikeDb = {
+            collection() {
+                return {
+                    doc(docId: string) {
+                        return {
+                            async get() {
+                                const existing = store.get(docId);
+                                return {
+                                    exists: existing !== undefined,
+                                    data: () => existing,
+                                };
+                            },
+                            async set(data: Record<string, unknown>, options?: { merge?: boolean }) {
+                                if (options?.merge && store.has(docId)) {
+                                    store.set(docId, { ...store.get(docId), ...data });
+                                } else {
+                                    store.set(docId, { ...data });
+                                }
+                            },
+                            async create(data: Record<string, unknown>) {
+                                if (store.has(docId)) {
+                                    const err = new Error('Document already exists') as Error & { code?: number };
+                                    err.code = 6; // gRPC ALREADY_EXISTS
+                                    throw err;
+                                }
+                                store.set(docId, { ...data });
+                            },
+                        };
+                    },
+                };
+            },
+        };
+        return { db, store };
+    }
+
+    it('persists processed eventIds in Firestore and prevents duplicate AttributionBus replay across instances', async () => {
+        const { db, store } = createMockDb();
+        const dedupStoreA = new FirestoreAttributionDeduplicationStore({ db });
+        const dedupStoreB = new FirestoreAttributionDeduplicationStore({ db });
+
+        const metaAdapter = new MetaAdAdapter(
+            {
+                adAccountId: '1',
+                accessToken: 'MOCK_KEY_DO_NOT_USE',
+                facebookPageId: 'p1',
+                pixelId: 'px1',
+            },
+            vi.fn(async () => jsonResponse({ events_received: 1, fbtrace_id: 'fb_trace_fs_1' })),
+        );
+
+        const busInstance1 = new AttributionBus([metaAdapter], dedupStoreA);
+        const busInstance2 = new AttributionBus([metaAdapter], dedupStoreB);
+
+        const event: UnifiedAttributionEvent = {
+            eventId: 'evt_fs_durable_01',
+            eventTimestampUnix: 1792108800,
+            eventName: 'DSPOutboundClick',
+            releaseId: 'rel_midnight_express',
+            isrc: 'US-S1Z-26-00412',
+            smartlinkId: 'sl_midnight_01',
+            targetDsp: 'SPOTIFY',
+            clickIdentifiers: {
+                fbclid: 'fb_click_fs_01',
+            },
+            userData: {
+                clientIpAddress: '203.0.113.42',
+                clientUserAgent: 'Mozilla/5.0',
+                emailSha256: sha256('fan@indii.music'),
+            },
+        };
+
+        const firstDispatch = await busInstance1.dispatch(event);
+        expect(firstDispatch.deduplicated).toBe(false);
+        expect(firstDispatch.results['META']?.success).toBe(true);
+        expect(store.has('evt_fs_durable_01')).toBe(true);
+
+        // Second dispatch on a separate AttributionBus instance backed by the same Firestore collection
+        const secondDispatch = await busInstance2.dispatch(event);
+        expect(secondDispatch.deduplicated).toBe(true);
+        expect(secondDispatch.results['META']?.skippedReason).toBe('DUPLICATE_EVENT');
+    });
+});
+
+describe('FirestoreFinanceRecoupmentLedger', () => {
+    function createMockRecoupmentFirestore(initialBalances: Record<string, number>): {
+        db: TransactionalFirestoreDb;
+        accounts: Map<string, Record<string, unknown>>;
+        reservations: Map<string, Record<string, unknown>>;
+    } {
+        const accounts = new Map<string, Record<string, unknown>>();
+        for (const [id, balance] of Object.entries(initialBalances)) {
+            accounts.set(id, { availableBalanceCents: balance });
+        }
+        const reservations = new Map<string, Record<string, unknown>>();
+
+        const makeDocRef = (map: Map<string, Record<string, unknown>>, docId: string) => ({
+            id: docId,
+            async get() {
+                const data = map.get(docId);
+                return {
+                    exists: data !== undefined,
+                    data: () => data,
+                };
+            },
+            async set(data: Record<string, unknown>, options?: { merge?: boolean }) {
+                if (options?.merge && map.has(docId)) {
+                    map.set(docId, { ...map.get(docId), ...data });
+                } else {
+                    map.set(docId, { ...data });
+                }
+            },
+        });
+
+        const db: TransactionalFirestoreDb = {
+            collection(name: string) {
+                const targetMap = name.toLowerCase().includes('reservation') ? reservations : accounts;
+                return {
+                    doc(docId: string) {
+                        return makeDocRef(targetMap, docId);
+                    },
+                };
+            },
+            async runTransaction<T>(updateFunction: (tx: {
+                get(ref: ReturnType<typeof makeDocRef>): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>;
+                set(ref: ReturnType<typeof makeDocRef>, data: Record<string, unknown>, options?: { merge?: boolean }): void;
+            }) => Promise<T>): Promise<T> {
+                const tx = {
+                    async get(ref: ReturnType<typeof makeDocRef>) {
+                        return ref.get();
+                    },
+                    set(ref: ReturnType<typeof makeDocRef>, data: Record<string, unknown>, options?: { merge?: boolean }) {
+                        void ref.set(data, options);
+                    },
+                };
+                return updateFunction(tx);
+            },
+        };
+
+        return { db, accounts, reservations };
+    }
+
+    it('atomically reserves, commits with partial refund, and releases recoupment budget in Firestore', async () => {
+        const { db, accounts, reservations } = createMockRecoupmentFirestore({
+            ledger_fs_01: 200_000, // $2,000.00
+        });
+        const ledger = new FirestoreFinanceRecoupmentLedger({ db });
+
+        const entry = await ledger.reserveCampaignBudget({
+            ledgerAccountId: 'ledger_fs_01',
+            directiveId: 'dir_fs_001',
+            artistId: 'artist_detroit_01',
+            releaseId: 'rel_midnight_express',
+            isrc: 'US-S1Z-26-00412',
+            amountCents: 100_000,
+            currency: 'USD',
+        });
+
+        expect(accounts.get('ledger_fs_01')?.availableBalanceCents).toBe(100_000);
+        expect(reservations.get(entry.reservationId)?.status).toBe('RESERVED');
+
+        // Commit only $800.00 -> $200.00 refunded to available balance
+        await ledger.commitCampaignBudget(entry.reservationId, 80_000, [
+            {
+                platform: 'META',
+                externalCampaignId: 'm_camp_1',
+                externalAdSetOrGroupId: 'm_adset_1',
+                externalAdIds: ['m_ad_1'],
+                status: 'PAUSED',
+                committedBudgetCents: 80_000,
+                timestampIso: '2026-10-15T00:00:00.000Z',
+            },
+        ]);
+        expect(accounts.get('ledger_fs_01')?.availableBalanceCents).toBe(120_000);
+        expect(reservations.get(entry.reservationId)?.status).toBe('COMMITTED');
+        expect(reservations.get(entry.reservationId)?.committedCents).toBe(80_000);
+
+        // Reserve another $500.00 and release it on failure
+        const secondEntry = await ledger.reserveCampaignBudget({
+            ledgerAccountId: 'ledger_fs_01',
+            directiveId: 'dir_fs_002',
+            artistId: 'artist_detroit_01',
+            releaseId: 'rel_midnight_express',
+            isrc: 'US-S1Z-26-00412',
+            amountCents: 50_000,
+            currency: 'USD',
+        });
+        expect(accounts.get('ledger_fs_01')?.availableBalanceCents).toBe(70_000);
+
+        await ledger.releaseCampaignBudget(secondEntry.reservationId, 'Simulated adapter outage');
+        expect(accounts.get('ledger_fs_01')?.availableBalanceCents).toBe(120_000);
+        expect(reservations.get(secondEntry.reservationId)?.status).toBe('RELEASED');
+    });
+});
+
+describe('Jev System One Campaign Judgments & Orchestrator Integration', () => {
+    it('refines platform split percentages toward Jev dominant platform while enforcing 10% floor and 100% sum', async () => {
+        __resetCampaignJudgmentCooldownForTests();
+        const directive = buildMockDirective();
+
+        const mockTypesafeClient = {
+            judge: vi.fn(async () => ({
+                requestId: 'req_mock_jev_01',
+                model: 'jev-1.13.0',
+                usage: { inputTokens: 410, outputTokens: 18 },
+                answers: {
+                    dominant_platform: {
+                        type: 'choice' as const,
+                        choice: 'TIKTOK',
+                        confidence: 0.92,
+                        probabilities: { TIKTOK: 0.92, META: 0.05, GOOGLE_ADS: 0.03 },
+                    },
+                    creative_fit_score: {
+                        type: 'score' as const,
+                        answer: 5,
+                        score: 4.78,
+                        distribution: { 1: 0.0, 2: 0.0, 3: 0.02, 4: 0.18, 5: 0.8 },
+                    },
+                    creative_readiness_confirmed: {
+                        type: 'noul' as const,
+                        noul: 0.96,
+                    },
+                },
+            })),
+        } as unknown as TypesafeClient;
+
+        const judgment = await evaluateCampaignAllocationWithJev(
+            directive,
+            [
+                {
+                    platform: 'TIKTOK',
+                    externalCampaignId: 'tt_prev_1',
+                    spendCents: 20_000,
+                    impressions: 95_000,
+                    clicks: 3_200,
+                    outboundDspClicks: 2_100,
+                    conversions: 640,
+                    costPerOutboundClickCents: 10,
+                    costPerConversionCents: 31,
+                    syncedAtIso: '2026-10-15T00:00:00.000Z',
+                },
+            ],
+            { client: mockTypesafeClient },
+        );
+
+        expect(judgment.source).toBe('jev');
+        expect(judgment.dominantPlatform).toBe('TIKTOK');
+        expect(judgment.confidence).toBeCloseTo(0.92, 2);
+        expect(judgment.creativeFitScore).toBeCloseTo(4.78, 2);
+        expect(judgment.creativeReadinessConfirmed).toBe(true);
+        // Original split was META: 50, TIKTOK: 30, GOOGLE_ADS: 20.
+        // With TIKTOK dominant and creativeFitScore >= 4 (+10% boost), TIKTOK increases to 40%.
+        expect(judgment.refinedSplitPercentages['TIKTOK']).toBe(40);
+        const totalPct =
+            (judgment.refinedSplitPercentages['META'] ?? 0) +
+            (judgment.refinedSplitPercentages['TIKTOK'] ?? 0) +
+            (judgment.refinedSplitPercentages['GOOGLE_ADS'] ?? 0);
+        expect(totalPct).toBe(100);
+    });
+
+    it('blocks CampaignOrchestrator execution before reserving finance funds when Jev creativeReadinessConfirmed is false', async () => {
+        const financeLedger = new InMemoryFinanceRecoupmentLedger({
+            ledger_recoup_01: 250_000,
+        });
+
+        const metaAdapter = new MetaAdAdapter(
+            {
+                adAccountId: '1',
+                accessToken: 'MOCK_KEY_DO_NOT_USE',
+                facebookPageId: 'p1',
+                pixelId: 'px1',
+            },
+            vi.fn(async () => jsonResponse({ id: 'm_1' })),
+        );
+
+        const orchestrator = new CampaignOrchestrator({
+            adapters: [metaAdapter],
+            financeLedger,
+            campaignJudge: vi.fn(async (dir) => ({
+                ...heuristicCampaignJudgment(dir),
+                creativeReadinessConfirmed: false,
+                source: 'jev' as const,
+            })),
+        });
+
+        const directive = buildMockDirective({
+            platforms: ['META'],
+            budgetAllocation: {
+                currency: 'USD',
+                totalBudgetCents: 50_000,
+                dailyBudgetCents: 10_000,
+                platformSplitPercentages: { META: 100 },
+            },
+        });
+
+        await expect(orchestrator.executeDirective(directive)).rejects.toThrow(
+            /creative readiness check rejected campaign execution/i,
+        );
+
+        // Balance must remain untouched
+        expect(financeLedger.getAccountBalance('ledger_recoup_01')).toBe(250_000);
+    });
+
+    it('falls back cleanly to heuristic judgment when TypesafeClient throws', async () => {
+        __resetCampaignJudgmentCooldownForTests();
+        const directive = buildMockDirective();
+        const failingClient = {
+            judge: vi.fn(async () => {
+                throw new Error('Simulated Jev network timeout');
+            }),
+        } as unknown as TypesafeClient;
+
+        const judgment = await evaluateCampaignAllocationWithJev(
+            directive,
+            [],
+            { client: failingClient },
+        );
+        expect(judgment.source).toBe('heuristic');
+        expect(judgment.creativeReadinessConfirmed).toBe(true);
+        expect(judgment.refinedSplitPercentages).toEqual({
+            META: 50,
+            TIKTOK: 30,
+            GOOGLE_ADS: 20,
+        });
+
+        // Verify computeBoundedSplitRefinement preserves 10% floor on extreme shift
+        const extremeRefined = computeBoundedSplitRefinement(
+            ['META', 'TIKTOK'],
+            { META: 85, TIKTOK: 15 },
+            'META',
+            5,
+        );
+        expect(extremeRefined['TIKTOK']).toBeGreaterThanOrEqual(10);
+        expect((extremeRefined['META'] ?? 0) + (extremeRefined['TIKTOK'] ?? 0)).toBe(100);
     });
 });

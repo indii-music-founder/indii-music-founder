@@ -24,6 +24,14 @@ import {
     type VerifiedReleaseAssets,
     UnifiedCampaignDirectiveSchema,
 } from '../../types/ad-execution.types';
+import {
+    type CampaignAllocationJudgment,
+} from './campaign-judgments';
+
+export type ICampaignAllocationJudgePort = (
+    directive: UnifiedCampaignDirective,
+    priorTelemetry?: ReadonlyArray<PlatformTelemetrySnapshot>,
+) => Promise<CampaignAllocationJudgment>;
 
 export interface FinanceRecoupmentLedgerEntry {
     reservationId: string;
@@ -80,6 +88,7 @@ export interface OrchestratedCampaignExecutionResult {
         allocatedBudgetCents: number;
         errorMessage: string;
     }>;
+    allocationJudgment?: CampaignAllocationJudgment;
     executedAtIso: string;
 }
 
@@ -202,17 +211,20 @@ export class CampaignOrchestrator {
     private readonly adapters = new Map<SupportedAdPlatform, IAdPlatformAdapter>();
     private readonly financeLedger: IFinanceRecoupmentLedgerPort;
     private readonly assetVerifier: IPostMasteringAssetVerifierPort;
+    private readonly campaignJudge?: ICampaignAllocationJudgePort;
 
     constructor(options: {
         adapters: ReadonlyArray<IAdPlatformAdapter>;
         financeLedger: IFinanceRecoupmentLedgerPort;
         assetVerifier?: IPostMasteringAssetVerifierPort;
+        campaignJudge?: ICampaignAllocationJudgePort;
     }) {
         for (const adapter of options.adapters) {
             this.adapters.set(adapter.platform, adapter);
         }
         this.financeLedger = options.financeLedger;
         this.assetVerifier = options.assetVerifier ?? new DefaultPostMasteringAssetVerifier();
+        this.campaignJudge = options.campaignJudge;
     }
 
     /**
@@ -266,13 +278,14 @@ export class CampaignOrchestrator {
 
     /**
      * Executes a `UnifiedCampaignDirective` end-to-end across asset verification,
-     * Finance recoupment ledger reservation, multi-platform campaign provisioning,
-     * and final ledger commitment.
+     * optional Jev System One allocation refinement, Finance recoupment ledger
+     * reservation, multi-platform campaign provisioning, and final ledger commitment.
      */
     async executeDirective(
         rawDirective: UnifiedCampaignDirective,
+        options?: { priorTelemetry?: ReadonlyArray<PlatformTelemetrySnapshot> },
     ): Promise<OrchestratedCampaignExecutionResult> {
-        const directive = UnifiedCampaignDirectiveSchema.parse(rawDirective);
+        let directive = UnifiedCampaignDirectiveSchema.parse(rawDirective);
 
         // 1. Verify all requested platform adapters are registered
         for (const platform of directive.platforms) {
@@ -294,10 +307,28 @@ export class CampaignOrchestrator {
             );
         }
 
-        // 3. Calculate exact cent allocations per platform
+        // 3. Optional Jev System One allocation refinement (for automated / agent directives)
+        let allocationJudgment: CampaignAllocationJudgment | undefined;
+        if (this.campaignJudge && directive.triggeredBy !== 'MANUAL_OVERRIDE') {
+            allocationJudgment = await this.campaignJudge(directive, options?.priorTelemetry);
+            if (!allocationJudgment.creativeReadinessConfirmed) {
+                throw new Error(
+                    'Jev System One creative readiness check rejected campaign execution due to insufficient platform-native assets.',
+                );
+            }
+            directive = {
+                ...directive,
+                budgetAllocation: {
+                    ...directive.budgetAllocation,
+                    platformSplitPercentages: allocationJudgment.refinedSplitPercentages,
+                },
+            };
+        }
+
+        // 4. Calculate exact cent allocations per platform
         const allocations = CampaignOrchestrator.computePlatformAllocationsCents(directive);
 
-        // 4. Reserve budget in Finance Department Recoupment Ledger
+        // 5. Reserve budget in Finance Department Recoupment Ledger
         const reservation = await this.financeLedger.reserveCampaignBudget({
             directiveId: directive.directiveId,
             artistId: directive.artistId,
@@ -311,7 +342,7 @@ export class CampaignOrchestrator {
         const receipts: PlatformCampaignReceipt[] = [];
         const failures: OrchestratedCampaignExecutionResult['failures'] = [];
 
-        // 5. Provision campaigns across each target platform adapter
+        // 6. Provision campaigns across each target platform adapter
         for (const platform of directive.platforms) {
             const adapter = this.adapters.get(platform)!;
             const platformBudgetCents = allocations[platform];
@@ -333,7 +364,7 @@ export class CampaignOrchestrator {
             0,
         );
 
-        // 6. Commit actual provisioned budget to Finance ledger (auto-releasing any unspent portion)
+        // 7. Commit actual provisioned budget to Finance ledger (auto-releasing any unspent portion)
         if (totalCommittedBudgetCents > 0) {
             await this.financeLedger.commitCampaignBudget(
                 reservation.reservationId,
@@ -356,6 +387,7 @@ export class CampaignOrchestrator {
             totalCommittedBudgetCents,
             receipts,
             failures,
+            ...(allocationJudgment ? { allocationJudgment } : {}),
             executedAtIso: new Date().toISOString(),
         };
     }
