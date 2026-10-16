@@ -335,20 +335,28 @@ export default function AgentChat({
             }
 
             const entryCommand = userText ? resolveEntryCommand(userText) : null;
-            const commandId = await remoteRelayService.sendCommand(
-                userText || 'Analyze attached media',
-                targetAgentId,
-                {
-                    // The desktop must route by what THIS surface selected
-                    // (Boardroom / Department / Direct), not by whatever mode
-                    // the desktop Studio last had open.
-                    conversationMode: selectedMode,
-                    ...(entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : {}),
-                    ...(currentAttachments.length > 0 ? { attachments: currentAttachments } : {}),
-                },
-                'studio',
-                currentAttachments.length > 0 ? currentAttachments : undefined
-            );
+            const commandMetadata = {
+                // The desktop must route by what THIS surface selected
+                // (Boardroom / Department / Direct), not by whatever mode
+                // the desktop Studio last had open.
+                conversationMode: selectedMode,
+                ...(entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : {}),
+                ...(currentAttachments.length > 0 ? { attachments: currentAttachments } : {}),
+            };
+            const commandId = currentAttachments.length > 0
+                ? await remoteRelayService.sendCommand(
+                    userText || 'Analyze attached media',
+                    targetAgentId,
+                    commandMetadata,
+                    'studio',
+                    currentAttachments
+                )
+                : await remoteRelayService.sendCommand(
+                    userText || 'Analyze attached media',
+                    targetAgentId,
+                    commandMetadata,
+                    'studio'
+                );
             if (!commandId) throw new Error('Failed to send command');
 
             logger.info(`[AgentChat] 📱 Sent command ${commandId}`);
