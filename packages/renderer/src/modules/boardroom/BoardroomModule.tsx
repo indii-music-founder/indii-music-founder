@@ -174,6 +174,7 @@ export function BoardroomModule() {
                                 <BoardroomTable
                                     messages={boardroomMessages}
                                     activeCount={activeCount}
+                                    onOpenLivingPlans={() => setIsTrackerOpen(true)}
                                 />
                                 <ParticipantSelector />
                             </div>

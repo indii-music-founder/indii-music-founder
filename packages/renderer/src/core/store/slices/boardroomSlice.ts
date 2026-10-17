@@ -56,6 +56,11 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     a2aMessages: [],
 
     toggleAgent: (agentId) => set((state) => {
+        if (agentId === 'generalist') {
+            return state.activeAgents.includes('generalist')
+                ? state
+                : { activeAgents: ['generalist', ...state.activeAgents] };
+        }
         const isActive = state.activeAgents.includes(agentId);
         if (isActive) {
             return { activeAgents: state.activeAgents.filter(id => id !== agentId) };
@@ -71,9 +76,14 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
         return state;
     }),
 
-    removeActiveAgent: (agentId) => set((state) => ({
-        activeAgents: state.activeAgents.filter(id => id !== agentId)
-    })),
+    removeActiveAgent: (agentId) => set((state) => {
+        if (agentId === 'generalist') {
+            return state;
+        }
+        return {
+            activeAgents: state.activeAgents.filter(id => id !== agentId),
+        };
+    }),
 
     seatAllDepartmentHeads: () => {
         const headIds = listHeadIds();

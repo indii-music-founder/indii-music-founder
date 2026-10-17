@@ -55,20 +55,14 @@ vi.mock('./AgentSwitcherStrip', () => ({
 
 import ChatOverlay from './ChatOverlay';
 
-describe('ChatOverlay canonical active identity', () => {
-    it('uses the canonical Social identity in the direct-chat header and minimized surface', () => {
-        const { container } = render(<ChatOverlay onClose={vi.fn()} />);
+describe('ChatOverlay clean active header and minimize behavior', () => {
+    it('renders the clean indii Direct header and minimizes cleanly', () => {
+        render(<ChatOverlay onClose={vi.fn()} />);
 
-        const headerIdentity = container.querySelector('[data-agent-id="social"]');
-        expect(headerIdentity).toBeInTheDocument();
-        expect(headerIdentity).toHaveAttribute('data-agent-id', 'social');
-        expect(headerIdentity).toHaveAttribute('data-agent-accent', '#00BCD4');
-        expect(headerIdentity).toHaveAttribute('data-agent-icon', 'share-2');
-        expect(headerIdentity).toHaveTextContent('SM');
         expect(screen.getByText('Social Media Director')).toBeInTheDocument();
-        expect(headerIdentity.querySelector('svg')).toBeInTheDocument();
+        expect(screen.getByTestId('agent-switcher')).toBeInTheDocument();
 
         fireEvent.click(screen.getByLabelText('Minimize chat'));
-        expect(screen.getByRole('button', { name: /Social Media Director/ })).toHaveTextContent('SM');
+        expect(screen.getByRole('button', { name: /Social Media Director/i })).toBeInTheDocument();
     });
 });

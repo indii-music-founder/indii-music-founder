@@ -426,9 +426,6 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                     }`}
                 style={msg.role === 'model' ? {
                     ...agentIdentity.cssProperties,
-                    backgroundColor: agentIdentity.surface,
-                    borderColor: agentIdentity.border,
-                    color: agentIdentity.foreground,
                 } as React.CSSProperties : undefined}
             >
 
