@@ -117,7 +117,7 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
 
     // Phase 20 canonical wallet update
     let balanceAfter = credits;
-    if (!walletSnap.exists) {
+    if (walletSnap && !walletSnap.exists) {
       t.set(walletRef, {
         userId,
         balanceCredits: credits,
@@ -127,7 +127,7 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
         createdAt: now,
         updatedAt: now,
       });
-    } else {
+    } else if (walletSnap?.exists) {
       const currentBal = walletSnap.data()?.balanceCredits;
       const validBal = typeof currentBal === 'number' ? currentBal : 0;
       balanceAfter = validBal + credits;
@@ -1119,7 +1119,7 @@ async function handleCreditPackRefund(
     }
 
     let walletBalanceAfter = 0;
-    if (walletSnap.exists) {
+    if (walletSnap?.exists) {
       const currentWalletBal = walletSnap.data()?.balanceCredits;
       const validWalletBal = typeof currentWalletBal === 'number' ? currentWalletBal : 0;
       walletBalanceAfter = Math.max(0, validWalletBal - credits);
