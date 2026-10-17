@@ -31,6 +31,9 @@ export const typesafeJudge = onCall(
     {
         region: 'us-central1',
         cors: true,
+        // Browser preflights cannot satisfy Cloud Run IAM authentication.
+        // The callable still requires App Check and a verified Firebase user.
+        invoker: 'public',
         enforceAppCheck: true,
         memory: '512MiB',
         cpu: 'gcf_gen1',
