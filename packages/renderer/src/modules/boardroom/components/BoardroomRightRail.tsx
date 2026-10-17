@@ -28,19 +28,11 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed }: Board
     const [isOpen, setIsOpen] = React.useState(false);
     const [activeTab, setActiveTab] = React.useState<RailTab>('resources');
 
-    const {
-        activeAgents,
-        soloAgent,
-        toggleAgent,
-        referencedAssets,
-        clearReferencedAssets,
-    } = useStore(state => ({
-        activeAgents: state.activeAgents || [],
-        soloAgent: state.soloAgent,
-        toggleAgent: state.toggleAgent,
-        referencedAssets: state.referencedAssets || [],
-        clearReferencedAssets: state.clearReferencedAssets,
-    }));
+    const activeAgents = useStore(state => state.activeAgents) || [];
+    const soloAgent = useStore(state => state.soloAgent);
+    const toggleAgent = useStore(state => state.toggleAgent);
+    const referencedAssets = useStore(state => state.referencedAssets) || [];
+    const clearReferencedAssets = useStore(state => state.clearReferencedAssets);
 
     const handleSeatAll = () => {
         useStore.setState({
