@@ -612,6 +612,7 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                     });
                 });
             }
+            throw error;
         }
     }
 );

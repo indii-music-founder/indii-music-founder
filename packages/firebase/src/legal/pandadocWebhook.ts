@@ -78,9 +78,12 @@ export const pandadocWebhook = onRequest(
             res.status(401).send("Unauthorized");
             return;
         }
+        const rawPayload = (req as { rawBody?: Buffer }).rawBody
+            ? (req as { rawBody?: Buffer }).rawBody!.toString('utf8')
+            : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
         const expected = crypto
             .createHmac('sha256', secret)
-            .update(JSON.stringify(req.body))
+            .update(rawPayload)
             .digest('hex');
         const signatureBuf = Buffer.from(signature);
         const expectedBuf = Buffer.from(expected);
@@ -166,33 +169,6 @@ export const pandadocWebhook = onRequest(
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 };
 
-                // Write to career_events collection
-                await db.collection('career_events').add(careerEvent);
-
-                // Write to user's event timeline
-                await db.collection('users').doc(userId).collection('career_timeline').add({
-                    ...careerEvent,
-                    summary: `Contract signed: ${event.name}`,
-                });
-
-                console.log(`[PandaDoc Webhook] Career event recorded for user ${userId}: ${event.name}`);
-
-                // ──────────────────────────────────────────────
-                // AUTO-PIPELINE TRIGGERS (ISSUE-864)
-                //
-                // Trust boundary: an HMAC-verified webhook proves the event came
-                // from PandaDoc, NOT that a document with "distribution" or
-                // "publishing" in its filename is an approved automation trigger.
-                // Automation requires:
-                //   1. An exact, allow-listed documentType tag (set server-side at
-                //      creation in pandadocCreateDocument/PandaDocService — never
-                //      inferred from the free-text document name).
-                //   2. At least one recipient actually completed signing.
-                //   3. For distribution: the releaseId must be owned by userId.
-                //   4. Idempotent per (document, status) — PandaDoc retries must
-                //      not queue duplicate pipeline jobs.
-                // ──────────────────────────────────────────────
-
                 const documentType = event.metadata?.documentType || tokens['document_type'] || '';
                 const hasCompletedSigner = (event.recipients || []).some(r => r.has_completed);
                 if (!hasCompletedSigner) {
@@ -212,6 +188,17 @@ export const pandadocWebhook = onRequest(
                     console.log(`[PandaDoc Webhook] Automation already processed for ${idempotencyKey}. Skipping duplicate.`);
                     continue;
                 }
+
+                // Write to career_events collection
+                await db.collection('career_events').add(careerEvent);
+
+                // Write to user's event timeline
+                await db.collection('users').doc(userId).collection('career_timeline').add({
+                    ...careerEvent,
+                    summary: `Contract signed: ${event.name}`,
+                });
+
+                console.log(`[PandaDoc Webhook] Career event recorded for user ${userId}: ${event.name}`);
 
                 // TRIGGER 1: Publishing Agreement → Queue ISWC Mapping.
                 // Exact documentType match only — no document-name inference.
@@ -308,11 +295,16 @@ function extractWritersFromTokens(tokens: Record<string, string>) {
 
     // Fallback: single writer from generic tokens
     if (writers.length === 0 && tokens['artist_legal_name']) {
+        const pubShare = parseFloat(tokens['publisher_share'] || '0');
+        const writerShare = Number.isFinite(pubShare) && pubShare > 0 && pubShare < 100
+            ? Math.round((100 - pubShare) * 100) / 100
+            : 100;
+
         writers.push({
             legalName: tokens['artist_legal_name'],
             ipiNumber: tokens['artist_ipi'] || undefined,
             pro: tokens['artist_pro'] || undefined,
-            share: 100,
+            share: writerShare,
             role: 'CA',
         });
     }

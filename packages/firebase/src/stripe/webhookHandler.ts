@@ -68,10 +68,10 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
     });
     lineItems = liveSession.line_items?.data ?? [];
   } catch (error: unknown) {
-    logger.error(`[handleMicroTransaction] Failed to re-retrieve session ${session.id} from Stripe — refusing to credit`, {
+    logger.error(`[handleMicroTransaction] Failed to re-retrieve session ${session.id} from Stripe — rethrowing for retry`, {
       error: error instanceof Error ? error.message : String(error),
     });
-    return;
+    throw error;
   }
   const singleLineItem = lineItems.length === 1 ? lineItems[0] : undefined;
   if (!singleLineItem || singleLineItem.price?.id !== expectedPriceId || singleLineItem.quantity !== credits) {
@@ -99,6 +99,8 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
     }
     const now = Date.now();
     const doc = await t.get(creditsRef);
+    const walletSnap = await t.get(walletRef);
+
     if (!doc.exists) {
       t.set(creditsRef, { balance: credits, updatedAt: now });
     } else {
@@ -114,7 +116,6 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
     });
 
     // Phase 20 canonical wallet update
-    const walletSnap = await t.get(walletRef);
     let balanceAfter = credits;
     if (!walletSnap.exists) {
       t.set(walletRef, {
@@ -503,30 +504,55 @@ async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   // Route micro-transactions separately.
   if (session.metadata?.type === 'micro_transaction') {
     await handleMicroTransactionCheckoutCompleted(session);
+    try {
+      await emitSaleConversion(session);
+    } catch (err) {
+      logger.warn('[handleCheckoutCompleted] Sale conversion emission failed for micro_transaction', { error: err });
+    }
     return;
   }
 
   // Route marketplace purchases separately.
   if (session.metadata?.type === 'marketplace_purchase') {
     await handleMarketplacePurchaseCompleted(session);
+    try {
+      await emitSaleConversion(session);
+    } catch (err) {
+      logger.warn('[handleCheckoutCompleted] Sale conversion emission failed for marketplace_purchase', { error: err });
+    }
     return;
   }
 
   // Route licensing purchases separately.
   if (session.metadata?.type === 'licensing_purchase') {
     await handleLicensingCheckoutCompleted(session);
+    try {
+      await emitSaleConversion(session);
+    } catch (err) {
+      logger.warn('[handleCheckoutCompleted] Sale conversion emission failed for licensing_purchase', { error: err });
+    }
     return;
   }
 
   // Route founder seat purchases separately (ISSUE-866).
   if (session.metadata?.type === 'founder_seat') {
     await handleFounderSeatCheckoutCompleted(session);
+    try {
+      await emitSaleConversion(session);
+    } catch (err) {
+      logger.warn('[handleCheckoutCompleted] Sale conversion emission failed for founder_seat', { error: err });
+    }
     return;
   }
 
   // Route POD (Printful) order payment — the ISSUE-1407 paid gate.
   if (session.metadata?.type === 'pod_order') {
     await handlePodOrderPaid(session);
+    try {
+      await emitSaleConversion(session);
+    } catch (err) {
+      logger.warn('[handleCheckoutCompleted] Sale conversion emission failed for pod_order', { error: err });
+    }
     return;
   }
 
@@ -1072,6 +1098,8 @@ async function handleCreditPackRefund(
 
   const db = getFirestore();
   const creditsRef = db.collection('user_credits').doc(userId);
+  const walletRef = db.collection('users').doc(userId).collection('wallet').doc('current');
+  const creditTxRef = db.collection('users').doc(userId).collection('credit_transactions').doc(`refund_${charge.id}`);
   // Deterministic per-charge refund log → idempotent across Stripe retries.
   const refundLogRef = creditsRef.collection('transactions').doc(`refund_${charge.id}`);
 
@@ -1082,11 +1110,25 @@ async function handleCreditPackRefund(
       return;
     }
     const doc = await t.get(creditsRef);
+    const walletSnap = await t.get(walletRef);
+
     const current = doc.exists ? (doc.data()?.balance || 0) : 0;
     const applied = Math.max(0, Math.min(current, credits));
     if (applied > 0) {
       t.update(creditsRef, { balance: current - applied, updatedAt: Date.now() });
     }
+
+    let walletBalanceAfter = 0;
+    if (walletSnap.exists) {
+      const currentWalletBal = walletSnap.data()?.balanceCredits;
+      const validWalletBal = typeof currentWalletBal === 'number' ? currentWalletBal : 0;
+      walletBalanceAfter = Math.max(0, validWalletBal - credits);
+      t.update(walletRef, {
+        balanceCredits: walletBalanceAfter,
+        updatedAt: Date.now(),
+      });
+    }
+
     t.set(refundLogRef, {
       amount: -credits,
       applied,
@@ -1095,6 +1137,17 @@ async function handleCreditPackRefund(
       chargeId: charge.id,
       sessionId: session!.id,
       timestamp: Date.now()
+    });
+
+    t.set(creditTxRef, {
+      id: `refund_${charge.id}`,
+      userId,
+      type: 'REFUND',
+      amountCredits: -credits,
+      balanceAfter: walletBalanceAfter,
+      reason: 'Credit Pack Refund',
+      referenceId: session.id,
+      createdAt: Date.now(),
     });
   });
 
@@ -1331,16 +1384,22 @@ export const stripeWebhook = onRequest({
         return;
     }
 
-    // Mark delivery complete (best-effort)
-    deliveryRef.update({ status: 'processed', processedAt: FieldValue.serverTimestamp() })
-      .catch((err: unknown) => { logger.warn('[stripeWebhook] Best-effort status update failed (processed):', err); });
+    // Mark delivery complete
+    try {
+      await deliveryRef.update({ status: 'processed', processedAt: FieldValue.serverTimestamp() });
+    } catch (err: unknown) {
+      logger.warn('[stripeWebhook] Status update failed (processed):', err);
+    }
 
     res.json({ received: true });
   } catch (error) {
     logger.error('[stripeWebhook] Handler error:', error);
     // Mark failed so the next retry is not skipped
-    deliveryRef.update({ status: 'failed', error: String(error) })
-      .catch((err: unknown) => { logger.warn('[stripeWebhook] Best-effort status update failed (failed):', err); });
+    try {
+      await deliveryRef.update({ status: 'failed', error: String(error) });
+    } catch (err: unknown) {
+      logger.warn('[stripeWebhook] Status update failed (failed):', err);
+    }
     res.status(500).json({ error: 'Webhook handler failed' });
   }
 });
