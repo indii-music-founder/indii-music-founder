@@ -4,10 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
 const toggleAgent = vi.fn();
+const soloAgent = vi.fn();
+const setFocusedHeadId = vi.fn();
+
 const storeState = {
     activeAgents: ['generalist', 'social', 'finance'],
     activeGraphExecution: null,
+    focusedHeadId: null,
     toggleAgent,
+    soloAgent,
+    setFocusedHeadId,
 };
 
 vi.mock('@/core/store', () => ({
@@ -60,10 +66,12 @@ function minimumSeatDistance(layout: ParticipantSeatLayout): number {
 describe('ParticipantSelector primary department head pills', () => {
     beforeEach(() => {
         toggleAgent.mockClear();
+        soloAgent.mockClear();
+        setFocusedHeadId.mockClear();
     });
 
-    it('renders the 9 core department head pills on the boardroom table without worker sub-agent clutter', () => {
-        const { container } = render(<ParticipantSelector />);
+    it('renders the 9 core department head pills on the boardroom table', () => {
+        render(<ParticipantSelector />);
 
         expect(BOARDROOM_PRIMARY_HEAD_IDS).toEqual([
             'marketing',
@@ -80,9 +88,6 @@ describe('ParticipantSelector primary department head pills', () => {
         for (const headId of BOARDROOM_PRIMARY_HEAD_IDS) {
             expect(screen.getByTestId(`boardroom-seat-${headId}`)).toBeInTheDocument();
         }
-
-        // Sub-agents / worker agents must not clutter the boardroom table graphic
-        expect(container.querySelector('[data-agent-role="worker"]')).toBeNull();
     });
 
     it.each([
@@ -116,11 +121,27 @@ describe('ParticipantSelector primary department head pills', () => {
         expect(social).toHaveAttribute('data-agent-icon', 'share-2');
         expect(social).toHaveAttribute('data-seat-ring', '0');
         expect(social).toHaveAttribute('aria-pressed', 'true');
-        expect(social.tagName).toBe('BUTTON');
+        expect(social).toHaveAttribute('role', 'button');
         expect(social).toHaveTextContent('Social');
         expect(social.querySelector('svg')).toBeInTheDocument();
 
         fireEvent.click(social);
         expect(toggleAgent).toHaveBeenCalledWith('social');
+    });
+
+    it('solos an agent when clicking their console Solo button', () => {
+        render(<ParticipantSelector />);
+
+        const soloFinanceBtn = screen.getByLabelText('Solo Finance');
+        fireEvent.click(soloFinanceBtn);
+        expect(soloAgent).toHaveBeenCalledWith('finance');
+    });
+
+    it('expands satellite hierarchy branch for departments with sub-agents', () => {
+        render(<ParticipantSelector />);
+
+        const expandFinanceBtn = screen.getByLabelText('Expand Finance sub-agents');
+        fireEvent.click(expandFinanceBtn);
+        expect(setFocusedHeadId).toHaveBeenCalledWith('finance');
     });
 });

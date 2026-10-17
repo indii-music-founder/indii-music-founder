@@ -110,4 +110,25 @@ describe('Boardroom canonical department-head seating', () => {
         });
         expect(store.getState()).toBe(before);
     });
+
+    it('supports console solo mode and toggling agents cleanly', () => {
+        const store = createBoardroomStore();
+        expect(store.getState().activeAgents).toEqual(['generalist']);
+
+        // Solo finance
+        store.getState().soloAgent('finance');
+        expect(store.getState().activeAgents).toEqual(['finance']);
+
+        // Unsolo finance (restores Conductor + finance)
+        store.getState().soloAgent('finance');
+        expect(store.getState().activeAgents).toEqual(['generalist', 'finance']);
+
+        // Solo generalist
+        store.getState().soloAgent('generalist');
+        expect(store.getState().activeAgents).toEqual(['generalist']);
+
+        // Toggle generalist off for specialist-only direct session
+        store.getState().toggleAgent('generalist');
+        expect(store.getState().activeAgents).toEqual([]);
+    });
 });

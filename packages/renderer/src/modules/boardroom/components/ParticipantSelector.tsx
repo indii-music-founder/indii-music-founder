@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, PanInfo } from 'motion/react';
+import { motion, PanInfo, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -12,11 +12,14 @@ import {
     Share2,
     Library,
     Headphones,
+    ChevronRight,
+    Headphones as MusicIcon,
     type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
+import { DEPARTMENTS, getDepartmentOf } from '@/services/agent/departments';
 
 export interface AgentOrbitalConfig {
     readonly id: string;
@@ -33,7 +36,7 @@ export interface AgentOrbitalConfig {
 /**
  * Core executive Department Heads seated around the Boardroom table.
  * Sub-agents and worker specialists remain in the department hierarchy
- * (departments.ts / AgentModePicker) without cluttering the table perimeter.
+ * and expand outward via the satellite popout when a head is inspected.
  */
 export const BOARDROOM_PRIMARY_HEAD_IDS = [
     'marketing',
@@ -168,25 +171,17 @@ export interface ParticipantSeatLayout {
     readonly seats: readonly ParticipantSeatPosition[];
 }
 
-const COMPACT_BREAKPOINT = 760;
-const COMPACT_HEIGHT_BREAKPOINT = 540;
-
-/**
- * Deterministic, bounded geometry calculator preserved for layout contract tests.
- */
-// eslint-disable-next-line react-refresh/only-export-components -- exported for deterministic geometry contract tests
 export function calculateParticipantSeatLayout(
-    count: number,
-    requestedWidth: number,
-    requestedHeight: number,
+    totalHeads: number,
+    viewportWidth: number,
+    viewportHeight: number,
 ): ParticipantSeatLayout {
-    const width = Math.max(320, Math.round(requestedWidth));
-    const height = Math.max(280, Math.round(requestedHeight));
-    const mode: ParticipantLayoutMode =
-        width < COMPACT_BREAKPOINT || height < COMPACT_HEIGHT_BREAKPOINT
-            ? 'compact'
-            : 'wide';
+    const width = Math.max(320, viewportWidth);
+    const height = Math.max(240, viewportHeight);
+    const mode: ParticipantLayoutMode = width >= 860 && height >= 560 ? 'wide' : 'compact';
     const seatDiameter = mode === 'compact' ? 34 : 44;
+    const count = Math.max(1, totalHeads);
+
     const ringCapacities = count <= 9 ? [count] : mode === 'compact' ? [6, 8, 9] : [9, 14];
     const ringScales = ringCapacities.length === 1 ? [1] : mode === 'compact' ? [0.5, 0.74, 1] : [0.64, 1];
     const ringCounts: number[] = [];
@@ -247,10 +242,20 @@ export function calculateParticipantSeatLayout(
 
 export default function ParticipantSelector() {
     const containerRef = React.useRef<HTMLDivElement>(null);
-    const { activeAgents, toggleAgent, activeGraphExecution } = useStore(
+    const {
+        activeAgents,
+        toggleAgent,
+        soloAgent,
+        focusedHeadId,
+        setFocusedHeadId,
+        activeGraphExecution,
+    } = useStore(
         useShallow(state => ({
             activeAgents: state.activeAgents,
             toggleAgent: state.toggleAgent,
+            soloAgent: state.soloAgent,
+            focusedHeadId: state.focusedHeadId,
+            setFocusedHeadId: state.setFocusedHeadId,
             activeGraphExecution: state.activeGraphExecution,
         }))
     );
@@ -279,7 +284,7 @@ export default function ParticipantSelector() {
         );
     }, [executingAgentIds]);
 
-    const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo, agentId: string, isActive: boolean) => {
+    const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo, agentId: string, isActive: boolean) => {
         let cx = window.innerWidth / 2;
         let cy = window.innerHeight / 2;
         let threshold = 350;
@@ -300,16 +305,28 @@ export default function ParticipantSelector() {
         }
     };
 
+    const handleBadgeClick = (e: React.MouseEvent, agentId: string) => {
+        // Option/Alt click triggers instant solo mode
+        if (e.altKey) {
+            e.stopPropagation();
+            soloAgent(agentId);
+            return;
+        }
+        toggleAgent(agentId);
+    };
+
     return (
         <div
             ref={containerRef}
             className="absolute inset-0 pointer-events-none"
             data-layout-rings="1"
+            onClick={() => focusedHeadId && setFocusedHeadId(null)}
         >
             <TooltipProvider delayDuration={50}>
                 {AVAILABLE_AGENTS.map((agent, index) => {
                     const isActive = activeAgents.includes(agent.id);
                     const isExecuting = isAgentExecuting(agent.id);
+                    const isSoloed = activeAgents.length === 1 && activeAgents[0] === agent.id;
                     const identity = resolveAgentVisualIdentity(agent.id);
                     const total = AVAILABLE_AGENTS.length;
                     const angle = (index / total) * Math.PI * 2;
@@ -322,99 +339,223 @@ export default function ParticipantSelector() {
                     const top = 50 + radiusY * Math.sin(angle);
 
                     const IconComponent = agent.icon;
+                    const department = DEPARTMENTS[agent.id];
+                    const workerIds = department?.workerIds || [];
+                    const isFocused = focusedHeadId === agent.id;
 
                     return (
-                        <Tooltip key={agent.id}>
-                            <TooltipTrigger asChild>
-                                <motion.button
-                                    data-testid={`boardroom-seat-${agent.id}`}
-                                    data-agent-id={agent.id}
-                                    data-agent-role={identity.role}
-                                    data-agent-accent={identity.accent}
-                                    data-agent-icon={identity.iconKey}
-                                    data-seat-ring="0"
-                                    aria-label={`${agent.fullName}, ${isExecuting ? 'executing workflow' : isActive ? 'active' : 'inactive'}`}
-                                    aria-pressed={isActive}
-                                    type="button"
-                                    onClick={() => toggleAgent(agent.id)}
-                                    drag
-                                    dragSnapToOrigin
-                                    onDragEnd={(e, info) => handleDragEnd(e, info, agent.id, isActive)}
-                                    initial={{ left: `${left}%`, top: `${top}%` }}
-                                    animate={{ left: `${left}%`, top: `${top}%` }}
-                                    transition={{ type: 'spring', stiffness: 150, damping: 20 }}
-                                    className={cn(
-                                        // Pill-shaped container with clear readable title
-                                        "absolute -translate-x-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-full flex items-center gap-2 border transition-all duration-300 pointer-events-auto cursor-grab active:cursor-grabbing backdrop-blur-md select-none",
-                                        isExecuting
-                                            ? "animate-pulse border-emerald-400/80 shadow-[0_0_30px_rgba(52,211,153,0.75)] scale-105 bg-emerald-500/25 z-20"
-                                            : isActive
-                                                ? `${agent.brightBg} ${agent.brightBorder} ${agent.brightGlow} z-20`
-                                                : "bg-[#12161f]/90 border-white/10 opacity-75 hover:opacity-100 hover:scale-105 z-10 shadow-md"
-                                    )}
-                                    whileHover={{ scale: isExecuting ? 1.06 : isActive ? 1.06 : 1.12 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    {/* Department Icon */}
-                                    <IconComponent
-                                        size={15}
-                                        aria-hidden="true"
+                        <React.Fragment key={agent.id}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <motion.div
+                                        data-testid={`boardroom-seat-${agent.id}`}
+                                        data-agent-id={agent.id}
+                                        data-agent-role={identity.role}
+                                        data-agent-accent={identity.accent}
+                                        data-agent-icon={identity.iconKey}
+                                        data-seat-ring="0"
+                                        aria-label={`${agent.fullName}, ${isExecuting ? 'executing workflow' : isActive ? 'active' : 'inactive'}`}
+                                        aria-pressed={isActive}
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={(e) => handleBadgeClick(e, agent.id)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                toggleAgent(agent.id);
+                                            }
+                                        }}
+                                        drag
+                                        dragSnapToOrigin
+                                        onDragEnd={(e, info) => handleDragEnd(e, info, agent.id, isActive)}
+                                        initial={{ left: `${left}%`, top: `${top}%` }}
+                                        animate={{ left: `${left}%`, top: `${top}%` }}
+                                        transition={{ type: 'spring', stiffness: 150, damping: 20 }}
                                         className={cn(
-                                            "shrink-0 transition-colors duration-300",
+                                            // Pill-shaped container with clear readable title
+                                            "absolute -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full flex items-center gap-1.5 border transition-all duration-300 pointer-events-auto cursor-grab active:cursor-grabbing backdrop-blur-md select-none group",
+                                            // High-Visibility Active Studio Strobe / Pulse Beacon
                                             isExecuting
-                                                ? "text-emerald-400"
+                                                ? "animate-pulse border-emerald-300 shadow-[0_0_40px_rgba(52,211,153,0.9),0_0_80px_rgba(52,211,153,0.5)] scale-110 bg-emerald-500/40 z-30 ring-2 ring-emerald-400 ring-offset-2 ring-offset-black"
                                                 : isActive
-                                                    ? agent.brightText
-                                                    : "text-white/60"
+                                                    ? `${agent.brightBg} ${agent.brightBorder} ${agent.brightGlow} z-20 shadow-lg`
+                                                    : "bg-[#12161f]/90 border-white/10 opacity-75 hover:opacity-100 hover:scale-105 z-10 shadow-md",
+                                            isSoloed && "ring-2 ring-amber-400 ring-offset-1 ring-offset-black"
                                         )}
-                                    />
-
-                                    {/* Clear, readable shortened title */}
-                                    <span
-                                        className={cn(
-                                            "text-xs font-semibold tracking-wide whitespace-nowrap",
-                                            isExecuting
-                                                ? "text-emerald-300 font-bold"
-                                                : isActive
-                                                    ? "text-white font-bold"
-                                                    : "text-white/80"
-                                        )}
+                                        whileHover={{ scale: isExecuting ? 1.08 : isActive ? 1.06 : 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
                                     >
-                                        {agent.shortTitle}
-                                    </span>
+                                        {/* High-visibility executing ripple halo rings */}
+                                        {isExecuting && (
+                                            <>
+                                                <span className="absolute -inset-2 rounded-full border border-emerald-400 animate-ping opacity-60 pointer-events-none" />
+                                                <span className="absolute -inset-4 rounded-full border border-emerald-400/40 animate-pulse pointer-events-none" />
+                                            </>
+                                        )}
 
-                                    {/* Active / Executing pulse dot */}
-                                    {(isActive || isExecuting) && (
-                                        <span className="relative flex h-2 w-2 shrink-0">
-                                            <span
-                                                className={cn(
-                                                    "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-                                                    isExecuting ? "bg-emerald-400" : agent.dotColor
-                                                )}
-                                            />
-                                            <span
-                                                className={cn(
-                                                    "relative inline-flex rounded-full h-2 w-2",
-                                                    isExecuting ? "bg-emerald-400" : agent.dotColor
-                                                )}
-                                            />
+                                        {/* Department Icon */}
+                                        <IconComponent
+                                            size={14}
+                                            aria-hidden="true"
+                                            className={cn(
+                                                "shrink-0 transition-colors duration-300",
+                                                isExecuting
+                                                    ? "text-emerald-300 animate-bounce"
+                                                    : isActive
+                                                        ? agent.brightText
+                                                        : "text-white/60"
+                                            )}
+                                        />
+
+                                        {/* Clear, readable shortened title */}
+                                        <span
+                                            className={cn(
+                                                "text-xs font-semibold tracking-wide whitespace-nowrap",
+                                                isExecuting
+                                                    ? "text-emerald-200 font-black tracking-wider"
+                                                    : isActive
+                                                        ? "text-white font-bold"
+                                                        : "text-white/80"
+                                            )}
+                                        >
+                                            {agent.shortTitle}
                                         </span>
+
+                                        {/* Mixing Console Solo Toggle Button */}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                soloAgent(agent.id);
+                                            }}
+                                            className={cn(
+                                                "text-[9px] font-black uppercase px-1 rounded transition-all ml-0.5",
+                                                isSoloed
+                                                    ? "bg-amber-400 text-black font-extrabold shadow-xs"
+                                                    : "bg-white/10 text-white/50 hover:bg-amber-400 hover:text-black opacity-0 group-hover:opacity-100"
+                                            )}
+                                            title={`Solo ${agent.shortTitle} (mutes others)`}
+                                            aria-label={`Solo ${agent.shortTitle}`}
+                                        >
+                                            S
+                                        </button>
+
+                                        {/* Satellite Hierarchy expander trigger (if department has workers) */}
+                                        {workerIds.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setFocusedHeadId(isFocused ? null : agent.id);
+                                                }}
+                                                className={cn(
+                                                    "p-0.5 rounded-full hover:bg-white/20 transition-transform",
+                                                    isFocused && "rotate-90 text-white"
+                                                )}
+                                                title={`View ${agent.shortTitle} worker hierarchy`}
+                                                aria-label={`Expand ${agent.shortTitle} sub-agents`}
+                                            >
+                                                <ChevronRight size={11} className={isFocused ? "text-white" : "text-white/40"} />
+                                            </button>
+                                        )}
+
+                                        {/* Active / Executing pulse dot beacon */}
+                                        {(isActive || isExecuting) && (
+                                            <span className="relative flex h-2 w-2 shrink-0">
+                                                <span
+                                                    className={cn(
+                                                        "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
+                                                        isExecuting ? "bg-emerald-400" : agent.dotColor
+                                                    )}
+                                                />
+                                                <span
+                                                    className={cn(
+                                                        "relative inline-flex rounded-full h-2 w-2",
+                                                        isExecuting ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : agent.dotColor
+                                                    )}
+                                                />
+                                            </span>
+                                        )}
+                                    </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="bg-[#1a1a1a] text-white border border-white/10 px-3 py-2 font-medium tracking-wide z-[100]">
+                                    <p className="text-white text-xs">
+                                        <span className="font-bold">{agent.fullName}</span>
+                                        <span className="opacity-70 ml-1.5">
+                                            {isExecuting
+                                                ? "(Executing workflow...)"
+                                                : isSoloed
+                                                    ? "(Solo Mode • Active)"
+                                                    : isActive
+                                                        ? "(Active • Click to remove)"
+                                                        : "(Click to seat • Option+Click to Solo)"}
+                                        </span>
+                                    </p>
+                                    {workerIds.length > 0 && (
+                                        <p className="text-[10px] text-white/40 mt-0.5">
+                                            Sub-agents: {workerIds.map(w => resolveAgentVisualIdentity(w).displayName).join(', ')}
+                                        </p>
                                     )}
-                                </motion.button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="bg-[#1a1a1a] text-white border border-white/10 px-3 py-2 font-medium tracking-wide z-[100]">
-                                <p className="text-white text-xs">
-                                    <span className="font-bold">{agent.fullName}</span>
-                                    <span className="opacity-70 ml-1.5">
-                                        {isExecuting
-                                            ? "(Executing workflow...)"
-                                            : isActive
-                                                ? "(Active • Click to remove)"
-                                                : "(Click or drag to seat)"}
-                                    </span>
-                                </p>
-                            </TooltipContent>
-                        </Tooltip>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            {/* Concept 1: Satellite Hierarchy Branch Popout */}
+                            <AnimatePresence>
+                                {isFocused && workerIds.length > 0 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                                        className="absolute z-40 flex flex-col gap-1.5 p-2 rounded-xl bg-black/80 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto min-w-[140px]"
+                                        style={{
+                                            left: `${Math.min(85, Math.max(15, left + (left > 50 ? 6 : -6)))}%`,
+                                            top: `${Math.min(85, Math.max(15, top + (top > 50 ? 5 : -5)))}%`,
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="flex items-center justify-between pb-1 border-b border-white/10 px-1">
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-white/50">
+                                                {agent.shortTitle} Hierarchy
+                                            </span>
+                                            <span className="text-[9px] font-mono text-white/30">
+                                                {workerIds.length} sub-agents
+                                            </span>
+                                        </div>
+
+                                        {workerIds.map((workerId) => {
+                                            const workerIdentity = resolveAgentVisualIdentity(workerId);
+                                            const isWorkerActive = activeAgents.includes(workerId);
+                                            const isWorkerExecuting = executingAgentIds.includes(workerId);
+
+                                            return (
+                                                <button
+                                                    key={workerId}
+                                                    type="button"
+                                                    onClick={() => toggleAgent(workerId)}
+                                                    className={cn(
+                                                        "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition-all border",
+                                                        isWorkerExecuting
+                                                            ? "bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold animate-pulse"
+                                                            : isWorkerActive
+                                                                ? "bg-white/15 border-white/30 text-white font-semibold"
+                                                                : "bg-white/5 border-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+                                                    )}
+                                                >
+                                                    <span className="truncate pr-2">
+                                                        {workerIdentity.displayName}
+                                                    </span>
+                                                    <span className={cn(
+                                                        "w-1.5 h-1.5 rounded-full shrink-0",
+                                                        isWorkerActive ? "bg-emerald-400" : "bg-white/20"
+                                                    )} />
+                                                </button>
+                                            );
+                                        })}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </React.Fragment>
                     );
                 })}
             </TooltipProvider>
