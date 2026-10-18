@@ -2,7 +2,7 @@ import log from 'electron-log';
 import { BrowserWindow, ipcMain, type IpcMainInvokeEvent, shell } from 'electron';
 import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
-import type { PortalTarget, BrowserCopilotSessionStatus } from '@indii/shared';
+import { generateCopilotActionPlan, validateRegistrationManifest, type RightsRegistrationManifest, type CopilotAction, type PortalTarget, type BrowserCopilotSessionStatus } from '@indii/shared';
 
 // Domain allowlist mapping each official music rights portal to its valid hostnames
 export const PORTAL_ALLOWED_DOMAINS: Record<PortalTarget, string[]> = {
@@ -26,6 +26,7 @@ export const PORTAL_DEFAULT_URLS: Record<PortalTarget, string> = {
 const LaunchSessionSchema = z.object({
     portalTarget: z.enum(['loc_copyright', 'the_mlc', 'bmi', 'ascap', 'soundexchange', 'hfa']),
     manifestId: z.string().min(1).max(256),
+    manifest: z.unknown().optional(),
     targetUrl: z.string().url().optional(),
     workTitle: z.string().max(512).optional(),
     artistLegalName: z.string().max(512).optional(),
@@ -35,9 +36,11 @@ const LaunchSessionSchema = z.object({
 }).strict();
 
 const ExecuteStepSchema = z.object({
+    sessionId: z.string().optional(),
     action: z.object({
         id: z.string().min(1).max(128),
         type: z.enum([
+            'resume_after_user_review',
             'navigate',
             'highlight_element',
             'autofill_input',
@@ -78,6 +81,9 @@ export interface ActiveCopilotState {
     status: BrowserCopilotSessionStatus;
     window: BrowserWindow | null;
     createdAtMs: number;
+    senderId: number;
+    actions: CopilotAction[];
+    awaitingUser: boolean;
     overlayContext: CopilotOverlayContext;
 }
 
@@ -224,7 +230,7 @@ class RightsCopilotController {
             parent: parentWindow || undefined,
             modal: false,
             webPreferences: {
-                partition: `persist:rights-copilot-${portalTarget}`,
+                partition: `rights-copilot-${sessionId}`,
                 contextIsolation: true,
                 nodeIntegration: false,
                 sandbox: true,
@@ -249,6 +255,9 @@ class RightsCopilotController {
             status: 'navigating',
             window: copilotWindow,
             createdAtMs: Date.now(),
+            senderId: event.sender.id,
+            actions: input.manifest && validateRegistrationManifest(input.manifest as RightsRegistrationManifest).isValid ? generateCopilotActionPlan(input.manifest as RightsRegistrationManifest, portalTarget) : [],
+            awaitingUser: true,
             overlayContext,
         };
 
@@ -322,7 +331,8 @@ class RightsCopilotController {
         requiresUserAction?: boolean;
         extractedValue?: string;
     }> {
-        const { action } = ExecuteStepSchema.parse(rawInput);
+        const parsedStep = ExecuteStepSchema.parse(rawInput);
+        let { action } = parsedStep;
 
         if (action.targetSelector && !this.isSafeCopilotSelector(action.targetSelector)) {
             throw new Error(
@@ -334,6 +344,15 @@ class RightsCopilotController {
             throw new Error('No active Rights Copilot browser session');
         }
 
+        if (!event || parsedStep.sessionId !== this.activeSession.sessionId || event.sender.id !== this.activeSession.senderId) throw new Error('Copilot session binding failed');
+        if (action.type === 'resume_after_user_review') {
+            this.activeSession.awaitingUser = false;
+            return { success: true, status: 'filling_fields' };
+        }
+        const expected = this.activeSession.actions.find(step => step.id === action.id);
+        if (!expected) throw new Error('Action is not in the reviewed manifest plan');
+        action = expected;
+        if (this.activeSession.awaitingUser && !['navigate', 'pause_for_user_auth', 'pause_for_user_payment'].includes(action.type)) throw new Error('Resume after user review before running another step');
         const { window: copilotWindow, sessionId, portalTarget } = this.activeSession;
 
         const notifyStatus = (status: BrowserCopilotSessionStatus, extra?: Record<string, unknown>) => {
@@ -359,18 +378,20 @@ class RightsCopilotController {
         };
 
         if (action.type === 'pause_for_user_auth') {
+            this.activeSession.awaitingUser = true;
             notifyStatus('awaiting_user_auth');
             return { success: true, status: 'awaiting_user_auth', requiresUserAction: true };
         }
 
         if (action.type === 'pause_for_user_payment') {
+            this.activeSession.awaitingUser = true;
             notifyStatus('awaiting_user_payment');
             return { success: true, status: 'awaiting_user_payment', requiresUserAction: true };
         }
 
         if (action.type === 'stage_deposit_upload') {
             notifyStatus('deposit_uploading');
-            return { success: true, status: 'deposit_uploading' };
+            return { success: true, status: 'deposit_uploading', requiresUserAction: true };
         }
 
         if (action.type === 'navigate' && typeof action.value === 'string') {
@@ -399,7 +420,7 @@ class RightsCopilotController {
                 if (!el) return { found: false };
                 const inputType = (el.getAttribute('type') || '').toLowerCase();
                 const autoComplete = (el.getAttribute('autocomplete') || '').toLowerCase();
-                if (inputType === 'password' || autoComplete.startsWith('cc-')) {
+                if (document.querySelector('input[type=password]') || inputType === 'password' || autoComplete.startsWith('cc-')) {
                     return { found: false, blockedCredentialField: true };
                 }
                 el.style.outline = '2px solid #ffb800';
@@ -416,7 +437,9 @@ class RightsCopilotController {
                 return { found: true, currentValue: el.value || el.textContent || '' };
             })();`;
 
-            await copilotWindow.webContents.executeJavaScript(domScript, true);
+            const outcome = await copilotWindow.webContents.executeJavaScript(domScript, true);
+            if (!outcome?.found || outcome.blockedCredentialField) throw new Error('Metadata field was not verified');
+            if ((action.type === 'autofill_input' || action.type === 'verify_dom_field') && outcome.currentValue !== String(action.value ?? '')) throw new Error('Field value does not match the reviewed manifest');
             return { success: true, status: 'filling_fields' };
         }
 

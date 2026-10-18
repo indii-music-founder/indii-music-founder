@@ -1,0 +1,13 @@
+{
+  "score": 4,
+  "summary": "Prototype projection rules passed five local-emulator structural authorization tests. Owners can read their projections; all client writes, cross-account reads, filing evidence writes, session writes, and ticket writes were denied. This is not production acceptance or an audit of every repository rule.",
+  "scope": "registrations/{userId}/tracks/{trackId}/orgs/{orgId}/filings/{filingId}",
+  "findings": [
+    {
+      "check": "Business Logic vs. Rules",
+      "severity": "minor",
+      "issue": "Admin SDK projection and recovery paths bypass client rules; their deployed IAM, delivery ordering, and genuine lifecycle behavior remain unverified.",
+      "recommendation": "Keep hosted features disabled until deployed-service ownership and lifecycle acceptance checks pass. Preserve server-only writes."
+    }
+  ]
+}

@@ -93,9 +93,22 @@ service firebase.storage {
                               request.auth.uid == userId &&
                               topLevel != 'trash' &&
                               topLevel != 'tmp' &&
+                              topLevel != 'rights' &&
                               isUnderSizeLimit(500) &&
                               isAllowedMediaType();
       allow delete: if false; // Direct deletion blocked; must route through Trash
+    }
+
+    match /users/{userId}/rights/deposits/{fileName} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && request.auth.uid == userId
+        && resource == null && request.resource.size <= 500 * 1024 * 1024
+        && request.resource.contentType in ['audio/wav', 'audio/mpeg', 'audio/mp4', 'audio/aiff', 'audio/flac', 'application/pdf'];
+      allow update, delete: if false;
+    }
+    match /users/{userId}/rights/{category}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if false;
     }
 
     // Content-addressed source masters: the authenticated owner can create a

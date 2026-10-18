@@ -1,0 +1,122 @@
+# Rights registration branch status
+
+This branch is reviewable implementation work, not release acceptance evidence.
+No society deliveries, copyright payments, filings, deployments, or genuine
+customer acceptance journeys were performed for this change.
+
+## Implemented surfaces
+
+- Versioned filing contracts, explicit legal metadata, manifest hashes, owner-scoped
+  persistence, immutable filing snapshots, and separate user-reported evidence.
+- Fixed-width CWR 2.1/2.2 export and CWR acknowledgment parsing/correlation, exact
+  batch approval, and a gated SFTP delivery adapter requiring approved submitter
+  configuration and receiver onboarding evidence.
+- SoundExchange bulk serialization from operator-reviewed official template profiles.
+- Dedicated browser worker and session broker packages, owner-bound single-use
+  tickets, execution claims, control generations, bounded frames, network filtering,
+  human control, and consent-based encrypted authentication-state storage.
+- Registration Center preparation UI and legacy desktop safeguards against missing
+  targets, unbound sessions, invented metadata, and unverified confirmation claims.
+
+## Required work before enablement
+
+Keep `RIGHTS_HOSTED_ENABLED`, `RIGHTS_PAYMENT_ENABLED`, and
+`RIGHTS_CWR_DELIVERY_ENABLED` disabled. Operator configuration alone is not proof
+that an integration works.
+
+Hosted browser adapters currently expose limited verified preparation actions;
+complete Standard, GRUW, and separate GRAM application journeys,
+trusted official receipt capture, and durable provider outcome reconciliation
+still require completion and genuine checks. Canonical identity linkage and per-track
+compatibility projections are implemented in the current working changes. Session
+expiry/worker-loss recovery now revokes control and retains capacity until shutdown
+is confirmed; its cloud cancellation and deployment lifecycle need genuine
+verification. Docker images have not been validated by a deployment.
+
+SESAC export remains blocked pending its required recipient-specific record layout
+and validation. MusicMark and MLC require receiver onboarding, approved submission
+identity and credentials, real transmission testing, and official acknowledgment
+reconciliation. Imported acknowledgments retain user-import provenance and do not
+independently establish an official provider outcome. SoundExchange requires an
+approved official template; delivery remains manual.
+
+Remembered authentication requires reviewed cookie classification, KMS/GCS IAM,
+retention lifecycle configuration, and revocation/expiry verification. Hosted payment
+requires its own sensitive-data assessment and controls before enabling. Human
+control does not eliminate credential or payment-data processing scope.
+
+Local pure tests and legacy structural regressions verify code properties only.
+They do not establish customer-path readiness or permission to deploy or transmit.
+
+## Continued implementation evidence
+
+- Pure recovery, canonical identity, pairing, and deposit-selection tests cover
+  local contract behavior. Local emulator rules tests cover owner reads and
+  denial of cross-account access and forged projection/evidence/session writes.
+- Deposits now require explicit artist selection for the current portal picker;
+  stale control/navigation and foreign work references are rejected.
+- Projection documents preserve a single filing identity across group tracks.
+  Legacy success records without authoritative filing evidence remain unverified.
+- Session cleanup never retries filing or launch actions. Missing execution
+  provenance retains capacity for operator reconciliation rather than assuming
+  the browser was stopped.
+
+JEV assessment: `jev-1.13.0`, read-only code/status review, 11,389 input and 242
+output tokens. It classified copyright completion as both engineering and external
+work (0.99 choice probability), catalog linkage as an engineering gap (0.70), and
+whole-plan completion as unsupported (0.03 probability of completion). Recovery
+classification was uncertain (0.51 confidence); source inspection, rather than
+that classification, established the concrete recovery fixes. This was not a
+live product judgment, benchmark agreement score, or external acceptance test.
+No key material or renderer-side JEV calls were added.
+
+Real portal inspection on 2026-10-18 confirmed the official entry redirects to
+`https://eservice.eco.loc.gov/eService_enu/?SWECmd=Start`. The origin policy now
+permits that exact host. Inspection stopped at genuine User Login; no credentials
+were entered, applications created, deposits transmitted, or fees paid. Remembering
+login also requires an explicitly reviewed `RIGHTS_AUTH_COOKIE_HOST`.
+
+Subsequent genuine signed-in inspection confirmed Standard Application and GRUW
+have distinct overview screens; both GRAM kinds enter through “Register Certain
+Groups of Published Works.” The worker now verifies the actual overview after
+navigation, rather than treating a successful click as a completed action. The
+home page mentions deposit accounts as an informational link; sensitive-phase
+checks now inspect active credential/certification/payment controls instead of
+rejecting all pages containing those words.
+
+Artist-visible browser dialogs are now relayed through the session contract and
+answered with fenced human input. Notice/prompt messages and answers remain in
+memory/WebSockets; they are not written to Firestore. No notices are automatically
+accepted by the worker. Signed-in inspection stopped before “Start Registration”;
+no new external claim was created or filed during inspection.
+
+The artist confirmed that no original work is currently available for a genuine
+filing check. No fictional work or blank claim was created as a substitute. This
+limits real filing acceptance; it does not turn the limited field adapters into
+complete automation. Full Standard/GRUW/GRAM field mapping, trusted official
+receipt capture, and provider outcome reconciliation remain engineering work.
+
+Additional bounded fixes pin exported CWR bytes to a storage generation, prevent
+approval from resetting claimed/transmitted/uncertain transfers, and retain a
+stable evidence ID and timestamp when a reported receipt save is retried.
+
+## Local validation of this continuation
+
+- 108 focused rights and legacy structural tests passed across 16 files.
+- Five local Firestore emulator authorization tests passed. These use isolated
+  structural fixtures, not customer acceptance evidence.
+- Repository typechecking and dedicated broker/browser-worker builds passed.
+- Scoped ESLint completed with zero errors and seven existing-style warnings.
+- The stale Founder Readiness modal assertion now checks its actual official
+  portal behavior with opener isolation; it does not claim live navigation.
+- Firebase CLI reauthorization completed through the artist-supplied official
+  flow. No deployment, society transmission, or copyright filing was performed.
+- The complete local `npm run ci` run finished with 9,769 passing tests and
+  one unrelated landing-page assertion failure at
+  `packages/landing/src/pages/ArtistPassportPage.test.tsx:318`: it expects
+  “Your report request could not be saved,” while the unchanged implementation
+  returns “Report requests are unavailable. Please try again later.” No landing
+  files were changed. The full repository gate is therefore not green.
+- The remote task branch advanced to `5cbb08ff7` during validation through an
+  external merge from main. This local continuation must be integrated with that
+  remote update before it can be published without overwriting other work.

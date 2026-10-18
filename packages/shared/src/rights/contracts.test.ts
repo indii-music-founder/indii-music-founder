@@ -78,6 +78,7 @@ describe('contracts - Rights and Copyright Validation', () => {
           },
           {
             entityId: 'work-rec-001',
+            embodiedWorkId: 'work-comp-001',
             trackIds: ['track-001'],
             kind: 'sound_recording',
             title: 'Dawn Anthem (Master)',
@@ -94,6 +95,26 @@ describe('contracts - Rights and Copyright Validation', () => {
 
       const errors = validateCopyrightCase(combinedCase);
       expect(errors).toEqual([]);
+    });
+
+    it('rejects unrelated recordings and duplicate GRUW pairing', () => {
+      const composition = baseStandardCase.works[0];
+      const recording = { ...composition, entityId: 'rec-1', kind: 'sound_recording' as const, embodiedWorkId: composition.entityId, trackIds: ['other-track'] };
+      expect(validateCopyrightCase({ ...baseStandardCase, claimScope: 'combined', works: [composition, recording] })).toContain('A combined standard claim needs one composition and its recording with the same claimants.');
+      const other = { ...composition, entityId: 'comp-2' };
+      expect(validateCopyrightCase({ ...baseStandardCase, applicationKind: 'gruw', claimScope: 'combined', works: [composition, other, { ...recording, trackIds: composition.trackIds }, { ...recording, entityId: 'rec-2', trackIds: composition.trackIds }] })).toContain('Combined GRUW requires explicit corresponding composition/recording links.');
+    });
+
+    it('rejects mismatched claim scopes and impossible publication dates', () => {
+      expect(validateCopyrightCase({ ...baseStandardCase, applicationKind: 'gruw', claimScope: 'recording', works: [baseStandardCase.works[0], { ...baseStandardCase.works[0], entityId: 'second' }] })).toContain('Every work must match the selected claim scope.');
+      const work = { ...baseStandardCase.works[0], publication: { status: 'published' as const, date: '2099-01-01', country: 'Canada' } };
+      expect(validateCopyrightCase({ ...baseStandardCase, works: [work] })).toContain('Dawn Anthem: publication dates cannot be in the future.');
+    });
+
+    it('does not grant author or claimant authority merely because a party is in the directory', () => {
+      const value = { ...baseStandardCase, parties: [authorParty, claimantParty], certifierPartyId: claimantParty.entityId };
+      expect(validateCopyrightCase(value)).toContain('The certifying author must be an author of every claimed work, or document agency authority.');
+      expect(validateCopyrightCase({ ...value, authority: 'claimant' })).toContain('The certifying claimant must be a claimant for every claimed work, or document agency authority.');
     });
 
     it('requires transfer basis when claimant is not an author', () => {

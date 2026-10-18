@@ -51,7 +51,7 @@ export interface RightsRegistrationManifest {
     createdAtMs: number;
     updatedAtMs: number;
 }
-export type CopilotActionType = 'navigate' | 'highlight_element' | 'autofill_input' | 'select_option' | 'stage_deposit_upload' | 'pause_for_user_auth' | 'pause_for_user_payment' | 'verify_dom_field' | 'extract_confirmation';
+export type CopilotActionType = 'resume_after_user_review' | 'navigate' | 'highlight_element' | 'autofill_input' | 'select_option' | 'stage_deposit_upload' | 'pause_for_user_auth' | 'pause_for_user_payment' | 'verify_dom_field' | 'extract_confirmation';
 export interface CopilotAction {
     id: string;
     type: CopilotActionType;
@@ -83,7 +83,8 @@ export interface RegistrationFilingRecord {
     workTitle: string;
     isrc?: string;
     iswc?: string;
-    status: 'draft' | 'in_progress' | 'submitted' | 'confirmed' | 'rejected';
+    status: 'draft' | 'in_progress' | 'submitted' | 'confirmed' | 'rejected' | 'outcome_unknown';
+    evidenceSource?: 'user_report' | 'official_receipt' | 'legacy_unverified';
     confirmationNumber?: string;
     serviceRequestId?: string;
     officialFilingDate?: string;

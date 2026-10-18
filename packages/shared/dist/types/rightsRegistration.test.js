@@ -151,7 +151,7 @@ describe('rightsRegistration - ISSUE-1511 Assisted Rights Registration Engine', 
         });
     });
     describe('createRegistrationFilingRecord', () => {
-        it('creates a confirmed audit trail record with SHA-256 deposit provenance', () => {
+        it('creates a user-reported receipt record with SHA-256 deposit provenance', () => {
             const record = createRegistrationFilingRecord(validManifest, 'loc_copyright', {
                 confirmationNumber: '1-14928374651',
                 serviceRequestId: 'SR-2026-09912',
@@ -159,7 +159,8 @@ describe('rightsRegistration - ISSUE-1511 Assisted Rights Registration Engine', 
                 officialFilingDate: '2026-10-12',
             });
             expect(record.portalTarget).toBe('loc_copyright');
-            expect(record.status).toBe('confirmed');
+            expect(record.status).toBe('outcome_unknown');
+            expect(record.evidenceSource).toBe('user_report');
             expect(record.confirmationNumber).toBe('1-14928374651');
             expect(record.serviceRequestId).toBe('SR-2026-09912');
             expect(record.workTitle).toBe('Midnight Sun');

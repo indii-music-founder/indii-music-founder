@@ -629,6 +629,7 @@ export interface ElectronRightsCopilotAPI {
     launchSession: (req: {
         portalTarget: string;
         manifestId: string;
+        manifest?: unknown;
         targetUrl?: string;
         workTitle?: string;
         artistLegalName?: string;
@@ -642,6 +643,7 @@ export interface ElectronRightsCopilotAPI {
         error?: string;
     }>;
     executeStep?: (req: {
+        sessionId?: string;
         action: {
             id: string;
             type: string;

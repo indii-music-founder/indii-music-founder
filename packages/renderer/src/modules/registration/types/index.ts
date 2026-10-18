@@ -8,6 +8,14 @@ export type OrgCategory = 'copyright' | 'pro' | 'digital' | 'mechanical';
 
 export type RegistrationStatus =
   | 'not_started'
+  | 'draft'
+  | 'needs_information'
+  | 'ready'
+  | 'outcome_unknown'
+  | 'accepted'
+  | 'rejected'
+  | 'registered'
+  | 'legacy_unverified'
   | 'in_progress'
   | 'submitted'
   | 'confirmed'
@@ -88,6 +96,9 @@ export interface OrgRegistrationRecord {
   errorMessage?: string;
   lastUpdated: Date;
   // ISSUE-567: Approval freshness tracking
+  filingIds?: string[];
+  legacyStatus?: string;
+  evidenceSource?: string;
   approvalRunId?: string;                    // HarnessRun ID that was approved
   approvalPassportHash?: string;             // SHA-256 of Song Passport at approval time
   approvalGrantedAt?: Date;                  // when user approved this filing

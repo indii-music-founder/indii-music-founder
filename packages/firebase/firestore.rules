@@ -997,6 +997,25 @@ service cloud.firestore {
       // match /projects/{projId} { allow read, write: if isOwner(userId); }
       match /assets/{assetId} { allow read, write: if isOwner(userId); }
       match /tracks/{trackId} { allow read, write: if isOwner(userId); }
+      // Rights outcomes, worker leases, approvals and proof are server-authoritative.
+      match /rightsCases/{id} { allow read: if isOwner(userId); allow write: if false; }
+      match /rightsAssets/{id} { allow read: if isOwner(userId); allow write: if false; }
+      match /rightsFilings/{id} {
+        allow read: if isOwner(userId); allow write: if false;
+        match /evidence/{evidenceId} { allow read: if isOwner(userId); allow write: if false; }
+      }
+      match /rightsSessions/{id} {
+        // Execution secret hashes and operation identifiers are not client-readable.
+        allow read, write: if false;
+        match /commands/{commandId} { allow read, write: if false; }
+      }
+      match /rightsPortalConsents/{id} { allow read: if isOwner(userId); allow write: if false; }
+      match /rightsCwrBatches/{id} {
+        allow read: if isOwner(userId); allow write: if false;
+        match /acknowledgments/{ackId} { allow read: if isOwner(userId); allow write: if false; }
+        match /transactions/{transactionId} { allow read: if isOwner(userId); allow write: if false; }
+        match /decisions/{decisionId} { allow read: if isOwner(userId); allow write: if false; }
+      }
 
       // ── Owner-scoped subcollections (2026-05-28: latent 403 fixes — see docs/architecture/FIRESTORE_RULES_403_AUDIT.md) ──
       match /agent_audit/{auditId} { allow read, write: if isOwner(userId); }
@@ -1761,7 +1780,16 @@ service cloud.firestore {
     // Registration Center stores per-user, per-track org status under:
     // /registrations/{userId}/tracks/{trackId}/orgs/{orgId}
     match /registrations/{userId}/tracks/{trackId}/orgs/{orgId} {
-      allow read, create, update: if isOwner(userId);
+      match /filings/{filingId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+      allow read: if isOwner(userId);
+      // Legacy clients may save preparations, but never assert external success.
+      allow create, update: if isOwner(userId)
+        && request.resource.data.status == 'in_progress'
+        && request.resource.data.get('confirmationNumber', null) == null
+        && (resource == null || resource.data.status == 'in_progress');
       allow delete: if false;
     }
 

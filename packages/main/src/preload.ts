@@ -373,6 +373,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         launchSession: (req: {
             portalTarget: string;
             manifestId: string;
+        manifest?: unknown;
             targetUrl?: string;
             workTitle?: string;
             artistLegalName?: string;
@@ -382,6 +383,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         }) =>
             ipcRenderer.invoke('rightsCopilot:launch-session', req),
         executeStep: (req: {
+        sessionId?: string;
             action: {
                 id: string;
                 type: string;

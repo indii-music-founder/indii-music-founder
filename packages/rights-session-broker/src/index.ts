@@ -5,7 +5,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { OAuth2Client } from 'google-auth-library';
 import { WebSocket, WebSocketServer } from 'ws';
-import { RightsId, SessionInputSchema, RIGHTS_LIMITS, type RightsCase } from '@indii/shared';
+import { RightsId, SessionInputSchema, RIGHTS_LIMITS, isRightsSessionClosed, RightsDepositSelectionSchema, RightsBrowserDialogSchema, RightsBrowserExecutionSchema, mayClaimRightsBrowserExecution, type RightsBrowserExecution, type RightsCase } from '@indii/shared';
 import { rememberCookies, restoreCookies } from './vault.js';
 
 if (!getApps().length) initializeApp();
@@ -17,19 +17,25 @@ const oauth = new OAuth2Client();
 const pairs = new Map<string, { uid: string; worker?: WebSocket; client?: WebSocket; stop: () => void }>();
 let draining = false;
 let leaderGeneration = 0;
-const send = (socket: WebSocket | undefined, value: unknown) => { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(value)); };
+let leaseUntilMs = 0;
+const send = (socket: WebSocket | undefined, value: unknown) => { if (!draining && Date.now() < leaseUntilMs && socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(value)); };
 
 async function becomeLeader(): Promise<boolean> {
   if (draining) return false;
-  return db.runTransaction(async tx => {
+  const lease = await db.runTransaction(async tx => {
     const current = (await tx.get(leaderRef)).data();
-    if (current?.instanceId !== instanceId && current?.expiresAtMs > Date.now()) return false;
-    leaderGeneration = current?.instanceId === instanceId ? current.generation : (current?.generation ?? 0) + 1;
-    tx.set(leaderRef, { instanceId, generation: leaderGeneration, expiresAtMs: Date.now() + 15_000 });
-    return true;
+    if (current?.instanceId !== instanceId && current?.expiresAtMs > Date.now()) return undefined;
+    const generation = current?.instanceId === instanceId ? current.generation : (current?.generation ?? 0) + 1;
+    const expiresAtMs = Date.now() + 15_000;
+    tx.set(leaderRef, { instanceId, generation, expiresAtMs });
+    return { generation, expiresAtMs };
   });
+  // An uncommitted transaction callback is not a lease grant.
+  leaseUntilMs = lease?.expiresAtMs ?? 0;
+  if (lease) leaderGeneration = lease.generation;
+  return Boolean(lease);
 }
-const heartbeat = setInterval(() => { void becomeLeader().then(ok => { if (!ok) for (const pair of pairs.values()) { pair.worker?.close(1012); pair.client?.close(1012); } }).catch(() => { for (const pair of pairs.values()) { pair.worker?.close(1012); pair.client?.close(1012); } }); }, 5000);
+const heartbeat = setInterval(() => { void becomeLeader().then(ok => { if (!ok) for (const pair of pairs.values()) { pair.worker?.close(1012); pair.client?.close(1012); } }).catch(() => { leaseUntilMs = 0; for (const pair of pairs.values()) { pair.worker?.close(1012); pair.client?.close(1012); } }); }, 5000);
 
 const server = createServer((req, res) => {
   if (req.url === '/healthz') { res.writeHead(draining ? 503 : 200); res.end('ok'); }
@@ -51,6 +57,7 @@ ws.on('connection', socket => {
       const sessionId = RightsId.parse(packet.sessionId);
       if (!await becomeLeader()) throw new Error('Broker is draining');
       let uid: string;
+      let execution: RightsBrowserExecution | undefined;
       if (packet.kind === 'client') {
         if (typeof packet.ticket !== 'string' || packet.ticket.length > 100) throw new Error('Ticket required');
         uid = await db.runTransaction(async tx => {
@@ -64,19 +71,22 @@ ws.on('connection', socket => {
         uid = RightsId.parse(packet.ownerUid);
         const identity = await oauth.verifyIdToken({ idToken: packet.identityToken, audience: process.env.RIGHTS_BROKER_URL });
         if (!process.env.RIGHTS_WORKER_SERVICE_ACCOUNT || identity.getPayload()?.email !== process.env.RIGHTS_WORKER_SERVICE_ACCOUNT || !identity.getPayload()?.email_verified) throw new Error('Worker identity rejected');
+        execution = RightsBrowserExecutionSchema.parse({ executionId: packet.executionId, cloudExecutionId: packet.cloudExecutionId, taskAttempt: packet.taskAttempt });
         if (typeof packet.executionSecret !== 'string' || packet.executionSecret.length > 100 || typeof packet.executionId !== 'string') throw new Error('Worker scope required');
       } else throw new Error('Unknown client');
       const ref = db.doc(`users/${uid}/rightsSessions/${sessionId}`);
       const session = (await ref.get()).data();
-      if (!session || session.ownerUid !== uid || session.expiresAtMs <= Date.now() || ['ended', 'failed'].includes(session.state)) throw new Error('Session unavailable');
+      if (!session || session.ownerUid !== uid || session.expiresAtMs <= Date.now() || isRightsSessionClosed(session.state)) throw new Error('Session unavailable');
       if (packet.kind === 'worker') {
         const secretHash = Buffer.from(hash(packet.executionSecret));
         const expected = Buffer.from(session.executionSecretHash ?? '');
         if (secretHash.length !== expected.length || !timingSafeEqual(secretHash, expected)) throw new Error('Worker scope rejected');
         await db.runTransaction(async tx => {
           const live = (await tx.get(ref)).data();
-          if (!live || (live.executionId && live.executionId !== packet.executionId)) throw new Error('Another browser execution owns this session');
-          tx.update(ref, { executionId: packet.executionId, brokerGeneration: leaderGeneration, state: 'connected', control: 'none', controlGeneration: live.controlGeneration + 1 });
+          const leader = (await tx.get(leaderRef)).data();
+          if (leader?.instanceId !== instanceId || leader.expiresAtMs <= Date.now()) throw new Error('Broker lease expired');
+          if (!live || isRightsSessionClosed(live.state) || live.expiresAtMs <= Date.now() || !mayClaimRightsBrowserExecution(live, execution!)) throw new Error('Another browser execution owns this session');
+          tx.update(ref, { executionId: execution!.executionId, cloudExecutionId: execution!.cloudExecutionId, brokerGeneration: leaderGeneration, state: 'connected', workerHeartbeatAtMs: Date.now(), control: 'none', controlGeneration: live.controlGeneration + 1 });
         });
       }
       clearTimeout(authTimeout);
@@ -98,7 +108,7 @@ ws.on('connection', socket => {
       if (packet.kind === 'worker') {
         if (pair.worker?.readyState === WebSocket.OPEN) throw new Error('Worker already attached');
         pair.worker = socket;
-        const caseData = (await db.doc(`users/${uid}/rightsCases/${session.caseId}`).get()).data();
+        const caseData = (await db.doc(`users/${uid}/rightsFilings/${session.filingId}`).get()).data();
         if (!caseData || caseData.manifestHash !== session.manifestHash) throw new Error('Manifest revision changed');
         const manifest = caseData.manifest as RightsCase;
         const deposits = await Promise.all(manifest.works.map(async work => ({ ...work.deposit, url: (await getStorage().bucket(work.deposit.bucket).file(work.deposit.path).getSignedUrl({ action: 'read', expires: Date.now() + RIGHTS_LIMITS.sessionMs, queryParams: { generation: work.deposit.generation } }))[0] })));
@@ -113,7 +123,7 @@ ws.on('connection', socket => {
       socket.on('message', (bytes, binary) => {
         void (async () => {
           const active = pairs.get(sessionId);
-          if (!active || draining) return;
+          if (!active || draining || Date.now() >= leaseUntilMs || (packet.kind === 'client' ? active.client !== socket : active.worker !== socket)) return;
           if (packet.kind === 'client') {
             const size = Buffer.isBuffer(bytes) ? bytes.length : Array.isArray(bytes) ? bytes.reduce((sum, b) => sum + b.length, 0) : (bytes as ArrayBuffer).byteLength;
             if (size > 8192 || binary) throw new Error('Invalid input');
@@ -125,17 +135,45 @@ ws.on('connection', socket => {
             if (active.client?.readyState === WebSocket.OPEN && active.client.bufferedAmount < 512 * 1024) active.client.send(bytes, { binary: true });
           } else {
             const event = JSON.parse(bytes.toString());
-            if (event.type === 'control_ack') await ref.update({ control: event.control, requestedControl: FieldValue.delete(), state: 'connected' });
+            const liveSession = (await ref.get()).data();
+            if (!liveSession || liveSession.executionId !== packet.executionId || (event.type !== 'ended' && isRightsSessionClosed(liveSession.state))) return;
+            if (event.type === 'control_ack') await db.runTransaction(async tx => {
+              const live = (await tx.get(ref)).data();
+              if (!live || isRightsSessionClosed(live.state) || live.expiresAtMs <= Date.now() || live.executionId !== packet.executionId || event.generation !== live.controlGeneration || !['human', 'agent', 'none'].includes(event.control)) return;
+              if (event.control !== 'none' && event.control !== live.requestedControl) return;
+              tx.update(ref, { control: event.control, ...(event.control !== 'none' ? { requestedControl: FieldValue.delete() } : {}), state: 'connected' });
+            });
+            else if (event.type === 'browser_dialog') send(active.client, RightsBrowserDialogSchema.parse(event));
+            else if (event.type === 'browser_dialog_closed') send(active.client, { type: 'browser_dialog_closed', requestId: RightsId.parse(event.requestId) });
+            else if (event.type === 'deposit_request') {
+              const selection = RightsDepositSelectionSchema.parse(event);
+              if (liveSession.control === 'human') send(active.client, selection);
+            }
             else if (event.type === 'navigation') send(active.client, event);
-            else if (event.type === 'activity') await ref.update({ lastActivityAtMs: Date.now() });
+            else if (event.type === 'heartbeat' || event.type === 'activity') await db.runTransaction(async tx => {
+              const live = (await tx.get(ref)).data();
+              if (!live || isRightsSessionClosed(live.state) || live.executionId !== packet.executionId) return;
+              tx.update(ref, { workerHeartbeatAtMs: Date.now(), ...(event.type === 'activity' ? { lastActivityAtMs: Date.now() } : {}) });
+            });
             else if (event.type === 'cookies') await rememberCookies(uid, event.cookies);
             else if (event.type === 'action_result') {
               const commandId = RightsId.parse(event.commandId);
               await ref.collection('commands').doc(commandId).update({ state: event.success === true ? 'completed' : 'failed', errorCode: event.success === true ? null : 'TARGET_NOT_VERIFIED' });
               send(active.client, { type: 'action_result', success: event.success === true });
             } else if (event.type === 'ended') {
-              await ref.update({ state: 'ended', control: 'none' });
-              await db.doc(`users/${uid}/rightsFilings/${session.filingId}`).update({ state: 'outcome_unknown' });
+              await db.runTransaction(async tx => {
+                const capacityRef = db.doc('rightsInfrastructure/capacity');
+                const capacity = (await tx.get(capacityRef)).data() ?? {};
+                const filingRef = db.doc(`users/${uid}/rightsFilings/${session.filingId}`);
+                const filing = (await tx.get(filingRef)).data();
+                const active = { ...(capacity.active ?? {}) }; delete active[sessionId];
+                const live = (await tx.get(ref)).data();
+                if (!live || live.executionId !== packet.executionId || live.state === 'ended') return;
+                tx.update(ref, { state: 'ended', control: 'none', requestedControl: FieldValue.delete(), controlGeneration: live.controlGeneration + 1, endedAt: FieldValue.serverTimestamp(), terminationProof: 'worker_closed' });
+                tx.create(ref.collection('events').doc(), { type: 'worker_closed', at: FieldValue.serverTimestamp() });
+                tx.set(capacityRef, { active });
+                if (filing?.state === 'in_progress') tx.update(filingRef, { state: 'outcome_unknown' });
+              });
               active.stop(); active.client?.close(1000); pairs.delete(sessionId);
             }
           }
@@ -147,7 +185,11 @@ ws.on('connection', socket => {
         if (packet.kind === 'client' && active.client === socket) { active.client = undefined; send(active.worker, { type: 'client_presence', connected: false }); }
         if (packet.kind === 'worker' && active.worker === socket) {
           active.worker = undefined;
-          void ref.update({ control: 'none', state: 'reconnecting' }).catch(() => {});
+          void db.runTransaction(async tx => {
+            const live = (await tx.get(ref)).data();
+            if (!live || isRightsSessionClosed(live.state) || live.executionId !== packet.executionId) return;
+            tx.update(ref, { control: 'none', requestedControl: FieldValue.delete(), state: 'reconnecting', controlGeneration: live.controlGeneration + 1 });
+          }).catch(() => {});
         }
       });
       socket.on('error', () => socket.close());
