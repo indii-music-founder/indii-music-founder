@@ -736,6 +736,11 @@ service cloud.firestore {
       // Single document at 'current', written by BrandTools.save_brand_kit via
       // setDoc(..., {merge: true}). Owner-only; no server-owned fields to protect.
       match /brandKit/{docId} {
+        match /items/{fontId} {
+          allow read, delete: if isOwner(userId) && docId == 'fonts';
+          allow create, update: if isOwner(userId) && docId == 'fonts' &&
+            request.resource.data.id == fontId && request.resource.data.storageRef is string;
+        }
         function isValidBrandKit() {
           return docId == 'current' &&
             request.resource.data.get('name', '') is string &&
@@ -1042,6 +1047,21 @@ service cloud.firestore {
       match /encounters/{encounterId} { allow read, write: if isOwner(userId); }
       match /fineTuningDataset/{exampleId} { allow read, write: if isOwner(userId); }
       match /licensingDeals/{dealId} { allow read, write: if isOwner(userId); }
+      // Non-destructive artwork and immutable pre-migration recovery copy.
+      match /canvasDocs/{canvasId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) &&
+          request.resource.data.id == canvasId &&
+          request.resource.data.projectId is string &&
+          request.resource.data.layers is list &&
+          request.resource.data.layers.size() <= 100;
+        match /migrationBackups/{versionId} {
+          allow read: if isOwner(userId);
+          allow create: if isOwner(userId) && versionId == 'v1' &&
+            request.resource.data.id == canvasId;
+          allow update, delete: if false;
+        }
+      }
       match /likeness/{likenessId} { allow read, write: if isOwner(userId); }
       match /notifications/{notificationId} { allow read, write: if isOwner(userId); }
       match /pod_orders/{orderId} { allow read, write: if isOwner(userId); }

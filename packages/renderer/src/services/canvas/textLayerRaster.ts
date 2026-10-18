@@ -7,6 +7,7 @@
  * image model never draws brand letters.
  */
 
+import { isBundledArtworkFont, renderBundledArtworkText } from './BundledArtworkFonts';
 import { FontLibrary } from '@/services/typography/FontLibrary';
 import { renderTextPath, rasterizeVectorText } from '@/services/typography/TextVectorRenderer';
 import type { TextLayer } from './CanvasDoc';
@@ -24,6 +25,7 @@ export async function rasterizeTextLayer(
     scale = 1,
 ): Promise<{ dataUrl: string; width: number; height: number }> {
     const t = layer.typography;
+    if (isBundledArtworkFont(t.fontId)) return renderBundledArtworkText(t, scale);
     const font = await FontLibrary.loadOpenTypeFont(t.fontId);
     const vector = renderTextPath(t.text, font, {
         fontSize: t.fontSize,
@@ -33,6 +35,10 @@ export async function rasterizeTextLayer(
         kerning: t.kerning,
         align: 'left',
     });
+    const width = Math.ceil(vector.width * scale), height = Math.ceil(vector.height * scale);
+    if (!Number.isFinite(scale) || scale <= 0 || width > 16384 || height > 16384 || width * height > 24_000_000) {
+        throw new Error('Text is too large to render. Reduce the text size or layer scale.');
+    }
     return rasterizeVectorText(vector, t.fill, scale);
 }
 
