@@ -1,0 +1,93 @@
+{
+  "mode": "read-only development review, not product judgment or receiver acceptance",
+  "scope": "PRO/MLC export preparation and onboarding; landing regression; saved preparation recovery",
+  "reviews": [
+    {
+      "sourceFingerprint": "7a87de79f76a9629e74bc71e6e5924516680f5de6a8b2b47ad832bffa3dcb5d5",
+      "result": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "landing_integrity": {
+            "type": "noul",
+            "noul": 0.82
+          },
+          "scope_boundary": {
+            "type": "choice",
+            "choice": "preparation_only",
+            "confidence": 1.0,
+            "probabilities": {
+              "preparation_only": 1.0,
+              "production_ready": 0.0,
+              "not_implemented": 0.0,
+              "insufficient": 0.0
+            }
+          },
+          "authority_leak": {
+            "type": "noul",
+            "noul": 0.07
+          },
+          "invented_shares": {
+            "type": "noul",
+            "noul": 0.08
+          },
+          "routing_correct": {
+            "type": "noul",
+            "noul": 0.96
+          },
+          "review_priority": {
+            "type": "choice",
+            "choice": "ui_state",
+            "confidence": 0.18,
+            "probabilities": {
+              "catalog_ownership": 0.22,
+              "share_arithmetic": 0.06,
+              "ack_provenance": 0.11,
+              "unintended_delivery": 0.05,
+              "ui_state": 0.3,
+              "no_identified_issue": 0.22,
+              "insufficient": 0.04
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 27079,
+          "output_tokens": 220
+        }
+      }
+    },
+    {
+      "sourceFingerprint": "38d6ac7097af6d67348e302a0bc615e8d362ff99270887c3e903b79930195134",
+      "result": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "recovery_supported": {
+            "type": "noul",
+            "noul": 0.92
+          },
+          "changes_original": {
+            "type": "noul",
+            "noul": 0.06
+          },
+          "remaining_scope": {
+            "type": "choice",
+            "choice": "preparation_only",
+            "confidence": 1.0,
+            "probabilities": {
+              "preparation_only": 1.0,
+              "production_accepted": 0.0,
+              "insufficient": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 9382,
+          "output_tokens": 87
+        }
+      }
+    }
+  ],
+  "totalUsage": {
+    "input_tokens": 36461,
+    "output_tokens": 307
+  }
+}

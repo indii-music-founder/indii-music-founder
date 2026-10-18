@@ -21,7 +21,7 @@ import { validateAppCheckV2 } from '../../middleware/appCheck';
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const db = () => getFirestore();
 const root = (uid: string) => db().collection('users').doc(uid);
-const Request = z.object({ action: z.enum(['capabilities', 'list_sessions', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
+const Request = z.object({ action: z.enum(['capabilities', 'prepare_society_work', 'get_cwr_export', 'list_sessions', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
 const CaseId = z.object({ caseId: RightsId }).passthrough();
 const SessionId = z.object({ sessionId: RightsId }).passthrough();
 const gc = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
@@ -85,6 +85,33 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
   try {
     const { action, payload } = Request.parse(request.data);
     if (action === 'capabilities') return { hostedEnabled: process.env.RIGHTS_HOSTED_ENABLED === 'true', paymentEnabled: process.env.RIGHTS_PAYMENT_ENABLED === 'true', rememberEnabled: Boolean(process.env.RIGHTS_VAULT_BUCKET && process.env.RIGHTS_KMS_KEY && process.env.RIGHTS_AUTH_COOKIE_NAMES && COPYRIGHT_PORTAL_HOSTS.includes(process.env.RIGHTS_AUTH_COOKIE_HOST ?? '')) };
+    if (action === 'prepare_society_work') {
+      const { entityId } = z.object({ entityId: RightsEntityId }).strict().parse(payload);
+      const entity = CanonicalMusicEntitySchema.parse((await root(uid).collection('musicCatalogEntities').doc(entityId).get()).data());
+      if (entity.entityType !== 'musical_work') throw new HttpsError('failed-precondition', 'Choose a canonical composition, not a recording or ISRC.');
+      const workId = 'W' + digest(`${uid}/${entityId}`).slice(0, 13).toUpperCase();
+      const ref = root(uid).collection('rightsCwrWorkCodes').doc(workId);
+      await db().runTransaction(async tx => {
+        const prior = (await tx.get(ref)).data();
+        if (prior && prior.entityId !== entityId) throw new HttpsError('already-exists', 'Composition code collision requires administrator review.');
+        if (!prior) tx.create(ref, { entityId, workId, createdAt: FieldValue.serverTimestamp() });
+      });
+      return { entityId, workId, title: entity.title };
+    }
+    if (action === 'get_cwr_export') {
+      const { batchId } = z.object({ batchId: RightsId }).strict().parse(payload);
+      const batch = (await root(uid).collection('rightsCwrBatches').doc(batchId).get()).data();
+      if (!batch?.generation) throw new HttpsError('failed-precondition', 'This export has no pinned object generation.');
+      const [bytes] = await SAFE_BUCKET().file(batch.path, { generation: batch.generation }).download();
+      if (digest(bytes) !== batch.checksum) throw new HttpsError('failed-precondition', 'Export checksum does not match the saved batch.');
+      let preparation: unknown;
+      if (batch.manifestPath && batch.manifestGeneration) {
+        const [manifestBytes] = await SAFE_BUCKET().file(batch.manifestPath, { generation: batch.manifestGeneration }).download();
+        if (digest(manifestBytes) !== batch.manifestHash) throw new HttpsError('failed-precondition', 'Saved preparation checksum does not match the batch.');
+        preparation = CwrBatchInputSchema.parse(JSON.parse(manifestBytes.toString('utf8')));
+      }
+      return { batchId, filename: batch.filename, text: bytes.toString('ascii'), checksum: batch.checksum, recipient: batch.input.recipient, ...(preparation ? { preparation } : {}) };
+    }
     if (action === 'list_sessions') {
       z.object({}).strict().parse(payload);
       const active = (await db().doc('rightsInfrastructure/capacity').get()).data()?.active ?? {};
@@ -175,6 +202,11 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
     }
     if (action === 'build_cwr') {
       const input = CwrBatchInputSchema.parse(payload);
+      for (const link of input.catalogLinks ?? []) {
+        const entity = (await root(uid).collection('musicCatalogEntities').doc(link.entityId).get()).data();
+        const code = (await root(uid).collection('rightsCwrWorkCodes').doc(link.workId).get()).data();
+        if (entity?.entityType !== 'musical_work' || code?.entityId !== link.entityId) throw new HttpsError('permission-denied', 'Export composition codes must belong to your canonical catalog.');
+      }
       const result = buildCwrBatch(input);
       const checksum = digest(result.text);
       const manifestHash = digest(canonicalRightsJson(input));
@@ -187,16 +219,29 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       const generation = String(objectMetadata.generation);
       const [persistedBytes] = await SAFE_BUCKET().file(path, { generation }).download();
       if (digest(persistedBytes) !== checksum) throw new HttpsError('failed-precondition', 'Stored batch bytes do not match the export.');
+      const manifestPath = `users/${uid}/rights/cwr/${batchId}/manifest.json`;
+      const manifestObject = SAFE_BUCKET().file(manifestPath);
+      try { await manifestObject.save(canonicalRightsJson(input), { contentType: 'application/json', resumable: false, preconditionOpts: { ifGenerationMatch: 0 } }); }
+      catch (error) { if ((error as { code?: number }).code !== 412) throw error; }
+      const [manifestMetadata] = await manifestObject.getMetadata();
+      const manifestGeneration = String(manifestMetadata.generation);
+      const [manifestBytes] = await SAFE_BUCKET().file(manifestPath, { generation: manifestGeneration }).download();
+      if (digest(manifestBytes) !== manifestHash) throw new HttpsError('failed-precondition', 'Stored preparation does not match the approved manifest.');
       const batchRef = root(uid).collection('rightsCwrBatches').doc(batchId);
       await db().runTransaction(async tx => {
         const filenameRef = root(uid).collection('rightsCwrFilenames').doc(result.filename);
         const filenameClaim = (await tx.get(filenameRef)).data();
         const existing = await tx.get(batchRef);
-        if (existing.exists) return;
+        if (existing.exists) {
+          const saved = existing.data()!;
+          if (saved.manifestHash !== manifestHash || saved.checksum !== checksum) throw new HttpsError('failed-precondition', 'Saved batch identity does not match this preparation.');
+          if (!saved.manifestPath || !saved.manifestGeneration) tx.update(batchRef, { manifestPath, manifestGeneration });
+          return;
+        }
         if (filenameClaim && filenameClaim.batchId !== batchId) throw new HttpsError('already-exists', 'Use a new file sequence; this recipient filename already identifies another batch.');
-        const { works: _works, ...header } = input;
+        const { works: _works, catalogLinks: _catalogLinks, ...header } = input;
         tx.set(filenameRef, { batchId, checksum });
-        tx.create(batchRef, { input: header, manifestHash, checksum, path, generation, filename: result.filename, profileVersion: result.profileVersion, state: 'exported', createdAt: FieldValue.serverTimestamp() });
+        tx.create(batchRef, { input: header, manifestHash, manifestPath, manifestGeneration, checksum, path, generation, filename: result.filename, profileVersion: result.profileVersion, state: 'exported', createdAt: FieldValue.serverTimestamp() });
       });
       const writer = db().bulkWriter();
       for (const item of result.transactions) writer.set(batchRef.collection('transactions').doc(`${item.group}_${item.transaction}`), item);

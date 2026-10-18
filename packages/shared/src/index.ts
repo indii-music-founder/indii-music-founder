@@ -59,6 +59,7 @@ export * from './rights/portalOrigins.js';
 export * from './rights/copyrightRoutes.js';
 export * from './rights/cwrLifecycle.js';
 export * from './rights/cwr.js';
+export * from './rights/societyPreparation.js';
 export * from './rights/soundExchange.js';
 // types/videoRendererSuite.js is deliberately NOT exported here — it is a
 // vitest-backed compliance harness and must never enter production bundles

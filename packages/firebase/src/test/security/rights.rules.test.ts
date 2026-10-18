@@ -26,7 +26,7 @@ describe('rights server-authoritative security boundaries', () => {
     await assertFails(updateDoc(doc(owner(), projection), { filingState: 'registered' }));
   });
   it('keeps filing evidence, session secrets and one-use tickets server-only for writes', async () => {
-    for (const path of ['users/rights-owner/rightsFilings/filing-1', 'users/rights-owner/rightsFilings/filing-1/evidence/receipt-1', 'users/rights-owner/rightsSessions/session-1', 'rightsConnectionTickets/ticket-1']) {
+    for (const path of ['users/rights-owner/rightsFilings/filing-1', 'users/rights-owner/rightsFilings/filing-1/evidence/receipt-1', 'users/rights-owner/rightsSessions/session-1', 'rightsConnectionTickets/ticket-1', 'users/rights-owner/rightsCwrWorkCodes/work-1', 'users/rights-owner/rightsCwrBatches/batch-1', 'users/rights-owner/rightsCwrBatches/batch-1/transactions/transaction-1', 'users/rights-owner/rightsCwrBatches/batch-1/decisions/decision-1']) {
       await assertFails(setDoc(doc(owner(), path), { ownerUid: 'rights-owner', state: 'registered' }));
     }
   });

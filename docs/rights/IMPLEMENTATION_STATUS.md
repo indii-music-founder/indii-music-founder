@@ -151,3 +151,63 @@ and three pre-existing `any` warnings. The complete local CI gauntlet finished
 with 9,896 passing tests and the same unrelated landing-page wording assertion
 failure at `ArtistPassportPage.test.tsx:318`. The repository-wide gate is not green.
 No landing files were modified, and no live filing acceptance is claimed.
+
+## PRO/MLC preparation and landing regression
+
+The landing report-request test expected a write-failure message while its
+structural environment has no configured database. It now asserts the exact
+unavailable-service message and retains the assertions that no request was
+falsely confirmed and the form can be restarted. Product failure handling was
+not replaced by fabricated persistence or a success response.
+
+Registration Center now includes a PRO/MLC export workspace: explicit sender
+identity and file sequence; canonical composition selection/creation; stable,
+owner-scoped composition codes with collision claims; writer/publisher roles and
+relationships; separate ownership, collection and territory entry; saved exact
+CWR downloads; checksum-bound export review; onboarding checklists; and imported
+per-work ACK decisions labelled as user-imported evidence. The screen has no
+transmit action. Share inputs use exact integer arithmetic, require explicit
+values, and do not assume an artist's ownership or society affiliations.
+
+MusicMark covers ASCAP/BMI/SOCAN. SESAC is separate and remains export-blocked
+pending its required receiver-specific fields and validation. The MLC onboarding
+requires a test file and approval before production credentials. Its published
+guide describes FTP; the existing gated SFTP adapter must not be assumed to match
+an assigned MLC channel without receiver confirmation. Public Search API access
+is not registration access.
+
+Official sources reviewed on 2026-10-18:
+- https://www.musicmark.com/documents/MusicMark_getting_started.pdf
+- https://www.themlc.com/hubfs/CWR%20User%20Guide_May%202024_FINAL.pdf
+- https://www.themlc.com/faqs/categories/play-your-part
+
+The artist requested exports/onboarding now, with real PRO/MLC acceptance tests
+later when genuine users and approved receiver accounts are available. No
+credentials were requested, transmissions attempted, or acceptance results
+fabricated. Copyright Office automation is a planning assumption requested by
+the artist; prior unverified acceptance gaps remain unverified.
+
+JEV was used for read-only development review on this unit (`jev-1.13.0`). Its
+first review selected preparation-only scope (1.00 choice probability), supported
+correct receiver routing (0.96 Noul), and weakly prioritized UI state (0.30 choice
+probability, 0.18 confidence). Independent source inspection then confirmed the
+missing editable-preparation persistence. The fix pins full preparation JSON to
+an owner-scoped GCS object generation and manifest checksum; saved exports can be
+copied into the editor with exact share values and canonical composition links.
+The copy requires a new file sequence and does not change the original batch.
+Legacy exports without recoverable canonical links are not reconstructed by title
+or recording ISRC. JEV's follow-up recovery support was 0.92 Noul; it continued to
+select preparation-only scope. Results are retained in `SOCIETY_JEV_REVIEW.json`.
+
+The two successful reviews used 36,461 input and 307 output tokens. These are
+review judgments, not measured customer agreement or live acceptance evidence.
+No model call was added to the registration runtime or renderer, and no key
+material entered the diff. All 139 focused tests passed after the recovery fix,
+including exact share-unit round trips and independent saved-copy boundaries.
+
+Final local verification for this unit: all 139 focused tests passed across
+19 files; the complete repository CI gauntlet passed with 9,904 passing tests.
+This supersedes the earlier landing-page failure recorded above. Repository
+TypeScript checks, full ESLint (zero errors, 235 existing warnings), both worker
+builds, and five local authorization emulator tests passed. No production UI or
+receiver acceptance claim is made from these structural/local checks.

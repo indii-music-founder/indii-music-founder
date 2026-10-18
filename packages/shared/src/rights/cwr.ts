@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RightsEntityId } from './contracts.js';
 
 /** Layouts pinned to CISAC CWR19-1070, 2.2 rev2 (2.1 rev7 compatible fields).
  * Original titles/names stay in catalog; exports require explicit ASCII text.
@@ -28,6 +29,7 @@ export const CwrBatchInputSchema = z.object({
   sender: z.object({ name: A(45), ipi: z.string().regex(/^\d{9,11}$/), code: z.string().regex(/^[A-Z0-9]{2,3}$/) }).strict(),
   fileSequence: z.number().int().min(1).max(9999), createdAt: z.string().datetime(),
   works: z.array(CwrWorkSchema).min(1).max(10000),
+  catalogLinks: z.array(z.object({ workId: A(14), entityId: RightsEntityId }).strict()).min(1).max(10000).optional(),
 }).strict();
 export type CwrBatchInput = z.infer<typeof CwrBatchInputSchema>;
 export const CWR_PROFILES = Object.freeze({
@@ -52,6 +54,7 @@ const prefix = (transaction: number, sequence: number): Field[] => [n(4, 8, tran
 
 export function buildCwrBatch(raw: CwrBatchInput): { text: string; filename: string; transactions: Array<{ group: number; transaction: number; workId: string; revision: number }>; profileVersion: string } {
   const input = CwrBatchInputSchema.parse(raw);
+  if (input.catalogLinks && (input.catalogLinks.length !== input.works.length || new Set(input.catalogLinks.map(link => link.entityId)).size !== input.works.length || new Set(input.catalogLinks.map(link => link.workId)).size !== input.works.length || input.works.some(work => !input.catalogLinks!.some(link => link.workId === work.workId)))) throw new Error('Every composition must have one unique canonical catalog link.');
   if (new Set(input.works.map(w => w.workId)).size !== input.works.length) throw new Error('Submitter work IDs must be unique.');
   if (input.recipient === 'sesac') throw new Error('SESAC export requires recording/performance fields and receiver validation; this profile is not enabled.');
   const profile = CWR_PROFILES[input.recipient];

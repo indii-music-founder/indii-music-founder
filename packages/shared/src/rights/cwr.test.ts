@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { societyPreparationCopy } from './societyPreparation.js';
 import {
   buildCwrBatch,
   CwrBatchInput,
@@ -95,6 +96,22 @@ describe('cwr - Common Works Registration Batch and Ack Engine', () => {
   };
 
   describe('buildCwrBatch', () => {
+    it('restores an independent preparation copy while rejecting guessed composition identities', () => {
+      const input = { ...sampleBatchInput, catalogLinks: [{ workId: sampleBatchInput.works[0].workId, entityId: 'composition:one' }] };
+      const copy = societyPreparationCopy(input);
+      expect(copy).toEqual(input);
+      copy.works[0].writers[0].ownership.performance = 0;
+      expect(input.works[0].writers[0].ownership.performance).toBe(5000);
+      expect(() => societyPreparationCopy(sampleBatchInput)).toThrow('canonical composition linkage');
+      expect(() => societyPreparationCopy({ ...input, catalogLinks: [{ workId: 'FOREIGN', entityId: 'composition:one' }] })).toThrow('canonical composition linkage');
+    });
+    it('keeps canonical composition linkage without changing fixed-width bytes', () => {
+      const linked = { ...sampleBatchInput, catalogLinks: [{ entityId: 'composition:one', workId: sampleBatchInput.works[0].workId }] };
+      expect(buildCwrBatch(linked).text).toBe(buildCwrBatch(sampleBatchInput).text);
+      expect(() => buildCwrBatch({ ...linked, catalogLinks: [{ entityId: 'composition:one', workId: 'FOREIGN' }] })).toThrow('canonical catalog link');
+      expect(() => buildCwrBatch({ ...linked, catalogLinks: [...linked.catalogLinks, ...linked.catalogLinks] })).toThrow('canonical catalog link');
+    });
+
     it('generates fixed-width CWR records and control counts (structural only)', () => {
       const result = buildCwrBatch(sampleBatchInput);
 

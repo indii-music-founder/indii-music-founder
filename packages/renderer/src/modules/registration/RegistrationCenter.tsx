@@ -10,6 +10,7 @@ import {
 } from './components/CanonicalCatalogIntelligenceSummary';
 import { RegistrationSheet } from './components/RegistrationSheet';
 import { RegistrationAutonomousRail } from './components/RegistrationAutonomousRail';
+import { SocietyRegistrationWorkspace } from './components/SocietyRegistrationWorkspace';
 import { RightsFilingWorkspace } from './components/RightsFilingWorkspace';
 import { FounderReadinessPanel } from './components/FounderReadinessPanel';
 import { CatalogVisibilityPanel } from './components/CatalogVisibilityPanel';
@@ -123,7 +124,7 @@ export default function RegistrationCenter() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [canonicalIntelligenceReport, setCanonicalIntelligenceReport] = useState<CatalogIntelligenceReport | null>(null);
   const [canonicalIntelligenceStatus, setCanonicalIntelligenceStatus] = useState<CanonicalCatalogIntelligenceStatus>('loading');
-  const [activeTab, setActiveTab] = useState<'tracks' | 'founder' | 'visibility' | 'filing'>('tracks');
+  const [activeTab, setActiveTab] = useState<'tracks' | 'founder' | 'visibility' | 'filing' | 'society'>('tracks');
 
   const selectedTrack = registrationFocus.trackId
     ? (tracks.find(t => t.id === registrationFocus.trackId) ?? tracks[0] ?? null)
@@ -294,6 +295,7 @@ export default function RegistrationCenter() {
               Founder
             </button>
           </div>
+          <button onClick={() => setActiveTab('society')} className="w-full py-2 text-xs rounded text-amber-300">PRO and MLC exports</button>
           <button onClick={() => setActiveTab('filing')} className="w-full py-2 text-xs rounded text-amber-300">Copyright filing workspace</button>
           <button onClick={() => setActiveTab('visibility')} className={`w-full py-2 text-xs rounded ${activeTab === 'visibility' ? 'bg-white/10 text-white' : 'text-neutral-400'}`}>Catalog visibility</button>
         </div>
@@ -309,9 +311,11 @@ export default function RegistrationCenter() {
           />
         ) : (
           <div className="p-4 text-xs text-neutral-400 space-y-3">
-            <div className="font-semibold text-white">{activeTab === 'visibility' ? 'Publication controls' : 'Prerequisites Scope'}</div>
+            <div className="font-semibold text-white">{activeTab === 'society' ? 'Receiver onboarding' : activeTab === 'visibility' ? 'Publication controls' : 'Prerequisites Scope'}</div>
             <p className="leading-relaxed text-[11px]">
-              {activeTab === 'visibility'
+              {activeTab === 'society'
+                ? 'Prepare composition registrations for your PRO and The MLC. Keep sender authority, receiver testing, and production approval separate from file preparation.'
+                : activeTab === 'visibility'
                 ? 'Manage public catalog metadata for administratively locked masters. Publication requires the server to verify the receipt and rights prerequisites.'
                 : 'Organization credentials apply across all catalog releases. Once verified with the US ISRC Agency and GS1, prefixes are permanently owned by your company.'}
             </p>
@@ -321,7 +325,9 @@ export default function RegistrationCenter() {
 
       {/* Center: Content View */}
       <div className="flex-1 min-w-0 border-r border-white/[0.05] flex flex-col overflow-hidden">
-        {activeTab === 'filing' && user?.uid ? (
+        {activeTab === 'society' && user?.uid ? (
+          <SocietyRegistrationWorkspace key={user.uid} userId={user.uid} />
+        ) : activeTab === 'filing' && user?.uid ? (
           <RightsFilingWorkspace key={user.uid} userId={user.uid} tracks={tracks} />
         ) : activeTab === 'visibility' ? (
           <CatalogVisibilityPanel key={user?.uid ?? 'signed-out'} userId={user?.uid ?? ''} />
