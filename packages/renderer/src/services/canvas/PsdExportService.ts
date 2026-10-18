@@ -10,6 +10,8 @@
  * `rasterizeVectorText` and need the brand font).
  */
 
+import { artworkExportDimensions } from './ArtworkGeometry';
+import { renderPositionedArtworkLayer, renderArtworkDocument } from './ArtworkRenderService';
 import { readPsd, writePsd, type BlendMode, type Layer, type Psd } from 'ag-psd';
 import * as fabric from 'fabric';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
@@ -90,31 +92,44 @@ export async function canvasDocToPsd(doc: CanvasDoc, options: PsdExportOptions =
     const scale = options.scale ?? 1;
     const renderRaster = options.renderRaster ?? renderRasterLayer;
     const renderText = options.renderText ?? rasterizeTextLayerToRaster;
-    const width = Math.max(1, Math.round(doc.width * scale));
-    const height = Math.max(1, Math.round(doc.height * scale));
+    const { width, height } = artworkExportDimensions(doc, scale);
 
     const children: Layer[] = [];
     for (const layer of [...doc.layers].reverse()) {
-        const rendered: RenderedRaster = layer.kind === 'raster'
+        const rendered = layer.kind === 'raster' && options.renderRaster
             ? await renderRaster(layer, scale)
-            : await renderText(layer, scale);
+            : layer.kind === 'text' && options.renderText
+                ? await renderText(layer, scale)
+                : await renderPositionedArtworkLayer(layer, doc, scale);
         children.push({
             name: layer.name,
-            left: Math.round(layer.x * scale),
-            top: Math.round(layer.y * scale),
+            left: 'left' in rendered ? rendered.left as number : Math.round(layer.x * scale),
+            top: 'top' in rendered ? rendered.top as number : Math.round(layer.y * scale),
             opacity: layer.opacity,
             hidden: !layer.visible,
-            blendMode: blendModeToPsd(layer.blendMode),
+            blendMode: blendModeToPsd(doc.renderVersion === 1 ? 'normal' : layer.blendMode),
             imageData: { data: rendered.data, width: rendered.width, height: rendered.height },
         });
     }
 
+    if (doc.background !== 'transparent') {
+        const [red, green, blue, alpha] = new fabric.Color(doc.background).getSource();
+        const data = new Uint8ClampedArray(width * height * 4);
+        for (let i = 0; i < data.length; i += 4) {
+            data[i] = red; data[i + 1] = green; data[i + 2] = blue; data[i + 3] = Math.round(alpha * 255);
+        }
+        children.push({ name: 'Cover background', left: 0, top: 0, imageData: { width, height, data } });
+    }
     const psd: Psd = {
         width,
         height,
         children,
     };
 
+    if (!options.renderRaster && !options.renderText) {
+        const composite = await renderArtworkDocument(doc, scale);
+        psd.canvas = composite;
+    }
     return writePsd(psd, { generateThumbnail: false });
 }
 

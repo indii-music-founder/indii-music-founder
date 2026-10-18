@@ -1,68 +1,32 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createDocFromImage } from '../CanvasDoc';
+import { readCanvasDocument, summarizeArtwork, newestArtworkFirst } from '../CanvasDocValidation';
 
-const backingStore = new Map<string, unknown>();
-
-vi.mock('@/services/firebase', () => ({
-    auth: { currentUser: { uid: 'u1' } },
-    db: { __mocked: true },
-}));
-
-vi.mock('firebase/firestore', () => {
-    const docRef = (id: string) => ({ __path: id });
-    return {
-        collection: vi.fn(() => ({ __coll: true })),
-        doc: vi.fn((_coll: unknown, id: string) => docRef(id)),
-        setDoc: vi.fn(async (ref: { __path: string }, data: unknown) => {
-            backingStore.set(ref.__path, data);
-        }),
-        getDoc: vi.fn(async (ref: { __path: string }) => {
-            const data = backingStore.get(ref.__path);
-            return data === undefined
-                ? { exists: () => false }
-                : { exists: () => true, data: () => data };
-        }),
-        getDocs: vi.fn(async () => ({
-            docs: [...backingStore.values()].map((data) => ({ data: () => data })),
-        })),
-        query: vi.fn((coll: unknown) => coll),
-        where: vi.fn(() => ({ __where: true })),
-    };
-});
-
-import { CanvasDocumentService } from '../CanvasDocumentService';
-
-describe('CanvasDocumentService (C1.5 autosave round-trip)', () => {
-    beforeEach(() => {
-        backingStore.clear();
+// Replaces the former fake-user/in-memory-Firestore checks with pure boundary checks.
+// Real save/load/list behavior is covered by the authenticated artwork acceptance workflow.
+describe('artwork document boundary (structural only)', () => {
+    it('round-trips canonical JSON without losing document identity or editable layers', () => {
+        const document = createDocFromImage('unit-image.png', 'unit-fixture');
+        const loaded = readCanvasDocument(JSON.parse(JSON.stringify(document)), document.id)!;
+        expect(loaded.id).toBe(document.id);
+        expect(loaded.projectId).toBe(document.projectId);
+        expect(loaded.layers).toHaveLength(1);
+        expect(loaded.layers[0]).toMatchObject({ kind: 'raster', src: 'unit-image.png', name: 'Background' });
+        expect(loaded).not.toBe(document);
     });
-
-    it('round-trips a doc through storage and back', async () => {
-        const doc = createDocFromImage('data:image/png;base64,AAA', 'proj_1');
-        await CanvasDocumentService.saveDoc(doc);
-
-        const loaded = await CanvasDocumentService.loadDoc(doc.id);
-
-        expect(loaded).not.toBeNull();
-        expect(loaded!.id).toBe(doc.id);
-        expect(loaded!.projectId).toBe('proj_1');
-        expect(loaded!.layers).toHaveLength(1);
-        expect(loaded!.layers[0]).toMatchObject({ kind: 'raster', src: 'data:image/png;base64,AAA', name: 'Background' });
+    it('distinguishes absence from malformed or mismatched input', () => {
+        expect(readCanvasDocument(null, 'unit-missing')).toBeNull();
+        expect(() => readCanvasDocument({}, 'unit-invalid')).toThrow();
+        const document = createDocFromImage('unit-image.png', 'unit-fixture');
+        expect(() => readCanvasDocument(document, 'another-unit-id')).toThrow(/saved location/);
     });
-
-    it('returns null for a missing document', async () => {
-        const loaded = await CanvasDocumentService.loadDoc('doc_does_not_exist');
-        expect(loaded).toBeNull();
-    });
-
-    it('lists project docs newest-first', async () => {
-        // Seed the backing store directly so `updatedAt` is deterministic
-        // (saveDoc stamps Date.now(), which cannot drive a stable sort order).
-        backingStore.set('doc_old', { id: 'doc_old', projectId: 'proj_1', updatedAt: 100, layers: [] });
-        backingStore.set('doc_new', { id: 'doc_new', projectId: 'proj_1', updatedAt: 200, layers: [] });
-
-        const docs = await CanvasDocumentService.listDocs('proj_1');
-
-        expect(docs.map((d) => d.id)).toEqual(['doc_new', 'doc_old']);
+    it('orders literal versions without mutating the input and keeps newer-schema metadata visible', () => {
+        const earlier = summarizeArtwork('unit-first', 'unit-fixture', { name: 'First literal value', updatedAt: 100, schemaVersion: 2 });
+        const later = summarizeArtwork('unit-second', 'unit-fixture', { name: 'Second literal value', updatedAt: 200, schemaVersion: 99 });
+        const input = [earlier, later];
+        expect(newestArtworkFirst(input).map(item => item.id)).toEqual(['unit-second', 'unit-first']);
+        expect(input).toEqual([earlier, later]);
+        expect(later.unsupportedVersion).toBe(true);
+        expect(later.name).toBe('Second literal value');
     });
 });

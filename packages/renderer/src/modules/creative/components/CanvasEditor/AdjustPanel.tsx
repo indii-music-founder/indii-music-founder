@@ -23,6 +23,9 @@ const SLIDERS: SliderSpec[] = [
 interface AdjustPanelProps {
     adjustments: AdjustmentStack;
     onChange: (patch: Partial<AdjustmentStack>) => void;
+    onGestureStart?: () => void;
+    onGestureEnd?: () => void;
+    exposureRange?: number;
 }
 
 /**
@@ -30,7 +33,7 @@ interface AdjustPanelProps {
  * partial `setAdjustments` patch; the store merges it over NEUTRAL_ADJUSTMENTS
  * and the doc (not the slider DOM) is the source of truth.
  */
-export const AdjustPanel: React.FC<AdjustPanelProps> = ({ adjustments, onChange }) => {
+export const AdjustPanel: React.FC<AdjustPanelProps> = ({ adjustments, onChange, onGestureStart, onGestureEnd, exposureRange = 1 }) => {
     return (
         <div className="flex flex-col gap-2.5 px-3 py-2" data-testid="adjust-panel" aria-label="Adjustments">
             <div className="text-[10px] font-bold uppercase tracking-wider text-white/40">Adjustments</div>
@@ -38,15 +41,21 @@ export const AdjustPanel: React.FC<AdjustPanelProps> = ({ adjustments, onChange 
                 <label key={key} className="flex flex-col gap-1 text-[11px] text-white/60">
                     <span className="flex justify-between">
                         <span>{label}</span>
-                        <span className="font-mono text-white/40">{adjustments[key].toFixed(2)}</span>
+                        <span className="font-mono text-white/40">{key === 'exposure' ? `${adjustments[key].toFixed(2)} stops` : key === 'hue' ? `${adjustments[key].toFixed(0)}°` : Math.round(adjustments[key] * 100)}</span>
                     </span>
                     <input
                         type="range"
-                        min={min}
-                        max={max}
-                        step={step}
-                        value={adjustments[key]}
-                        onChange={(e) => onChange({ [key]: Number(e.target.value) })}
+                        min={key === 'exposure' ? -exposureRange : min * (key === 'hue' ? 1 : 100)}
+                        max={key === 'exposure' ? exposureRange : max * (key === 'hue' ? 1 : 100)}
+                        step={step * (key === 'exposure' || key === 'hue' ? 1 : 100)}
+                        value={adjustments[key] * (key === 'exposure' || key === 'hue' ? 1 : 100)}
+                        onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); onGestureStart?.(); }}
+                        onPointerUp={onGestureEnd}
+                        onPointerCancel={onGestureEnd}
+                        onKeyDown={onGestureStart}
+                        onKeyUp={onGestureEnd}
+                        onBlur={onGestureEnd}
+                        onChange={(e) => onChange({ [key]: Number(e.target.value) / (key === 'exposure' || key === 'hue' ? 1 : 100) })}
                         data-testid={`adjust-${key}`}
                         aria-label={label}
                         className="h-1.5 cursor-pointer accent-dept-creative"

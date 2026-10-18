@@ -1,3 +1,4 @@
+import { SavedArtworkPanel } from './components/CanvasEditor/SavedArtworkPanel';
 import React, { useEffect, lazy, Suspense } from 'react';
 import { Sparkles } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -729,10 +730,11 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             />
                         )}
 
+                        {!currentDoc && <SavedArtworkPanel key={creativeScope} projectId={currentProjectId ?? 'project_default'} />}
                         {/* Layer Editor overlay (C1.3) — opens whenever a CanvasDoc is active. */}
                         {Boolean(currentDoc) && (
                             <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
-                                <CanvasEditor />
+                                <CanvasEditor key={`${creativeScope}/${currentDoc?.id}`} />
                             </div>
                         )}
                     </div>
