@@ -33,6 +33,8 @@ import { ExecutionContextFactory } from './context/AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
 import { toolError } from './utils/ToolUtils';
 import { getDurableReportReceipt } from './utils/durableReportReceipt';
+import { completedBoardroomToolResult } from './orchestration/BoardroomActionPlan';
+import { cancelledPrintResponse, finishedPrintResponse } from '@/services/upscale/PrintPreparationControl';
 import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
 import { AgentEventBus } from './governance/AgentEventBus';
 import { getFineTunedModel } from './fine-tuned-models';
@@ -1574,6 +1576,15 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         }
 
                         const argsStr = elideBase64Payloads(JSON.stringify(args));
+                        const previousResult = context?.boardroomExecution && TOOL_RISK_REGISTRY[name]?.riskTier !== 'read'
+                            ? completedBoardroomToolResult(name, args, toolCalls) : null;
+                        if (previousResult) {
+                            lastToolResult = previousResult;
+                            toolCalls.push({ name, args, result: previousResult });
+                            fullPrompt += `\n[Tool ${name}: this identical action already completed in this step. Reusing its actual receipt; do not execute it again.] ${elideBase64Payloads(JSON.stringify(previousResult))}\n`;
+                            onProgress?.({ type: 'tool_result', toolName: name, content: 'Reused the completed action receipt. No duplicate action was executed.' });
+                            continue;
+                        }
                         onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
 
                         // EVENT: Tool Execution Start
@@ -1704,6 +1715,16 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         });
 
                         // Phase 2: DNA Infusion - Planning Mode Halting
+                        const cancellation = cancelledPrintResponse(name, result, toolCalls);
+                        if (cancellation) {
+                            await executionContext.rollback();
+                            return cancellation;
+                        }
+                        const finishedPrint = context?.boardroomExecution && finishedPrintResponse(name, result, toolCalls);
+                        if (finishedPrint) {
+                            if (executionContext.hasUncommittedChanges()) await executionContext.commit();
+                            return finishedPrint;
+                        }
                         const resultStatus = result && typeof result === 'object'
                             ? (result as { status?: unknown }).status
                             : undefined;

@@ -171,6 +171,8 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     generate_social_post: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     schedule_content: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     create_campaign_brief: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+    dispatch_multi_platform_campaign: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Reserves recoupment ledger budget and provisions programmatic ad campaigns across Meta, TikTok, and Google Ads' },
+    record_attribution_conversion: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Dispatches deduplicated server-side attribution conversion event across CAPI / Events API / Enhanced Conversions' },
     compile_release_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Compile and optionally save a release strategy draft' },
     generate_release_identifiers: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Generate ISRC, UPC, catalog identifiers, and ISWC work drafts without store delivery' },
     create_timeline_from_harness: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create a draft timeline from harness output' },

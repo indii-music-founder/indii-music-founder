@@ -1,5 +1,5 @@
 import React from 'react';
-import { Film, Image as ImageIcon, Layers, Play, Save, Sparkles, Wand2, X, MonitorUp, Maximize2 } from 'lucide-react';
+import { Film, Image as ImageIcon, Layers, Play, Save, Sparkles, Wand2, X, MonitorUp, Maximize2, Crop } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -12,6 +12,7 @@ type CapabilityAction = {
     disabled?: boolean;
     testId?: string;
     spin?: boolean;
+    description?: string;
 };
 
 type CapabilityGroup = {
@@ -33,6 +34,7 @@ interface CanvasActionRailProps {
     saveCanvas: () => void;
     batchExportDimensions?: () => void;
     flattenCanvas?: () => void;
+    fitArtboardToArtwork?: () => void;
     // ISSUE-1391: direct handoff of the edited asset onto the canvas.
     onSendToCanvas?: () => void | Promise<void>;
     onUpscaleToPrint?: () => void | Promise<void>;
@@ -53,6 +55,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
     saveCanvas,
     batchExportDimensions,
     flattenCanvas,
+    fitArtboardToArtwork,
     onSendToCanvas,
     onUpscaleToPrint,
     isUpscaling,
@@ -108,6 +111,15 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                         testId: 'send-to-canvas-btn',
                     }]
                     : []),
+                ...(fitArtboardToArtwork ? [{
+                    id: 'fit-artboard',
+                    label: 'Fit artboard to artwork',
+                    description: 'Trim empty outside area while keeping layers in place. Undo restores the previous artboard.',
+                    icon: Crop,
+                    onClick: fitArtboardToArtwork,
+                    disabled: isProcessing,
+                    className: actionButtonClass,
+                }] : []),
                 {
                     id: 'flatten',
                     label: 'Flatten Canvas',
@@ -152,6 +164,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                         label: 'Animate',
                         icon: Play,
                         onClick: handleAnimate,
+                        disabled: isProcessing || isSavingCanvas || isUpscaling,
                         className: actionButtonClass,
                         testId: 'animate-btn',
                     },
@@ -205,7 +218,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                                                     <Icon size={16} className={action.spin ? 'animate-spin' : undefined} />
                                                 </button>
                                             </TooltipTrigger>
-                                            <TooltipContent side="left">{action.label}</TooltipContent>
+                                            <TooltipContent side="left">{action.description || action.label}</TooltipContent>
                                         </Tooltip>
                                     </div>
                                 );

@@ -65,6 +65,9 @@ export const VideoStage = React.memo<VideoStageProps>(({
     const frameItem = firstFrame || lastFrame;
     const [resolvedFrameUrl, setResolvedFrameUrl] = React.useState<string | null>(null);
     const [frameImageFailed, setFrameImageFailed] = React.useState(false);
+    const [previewInputFrame, setPreviewInputFrame] = React.useState(false);
+
+    React.useEffect(() => setPreviewInputFrame(false), [activeVideo?.id]);
 
     React.useEffect(() => {
         let cancelled = false;
@@ -277,6 +280,17 @@ export const VideoStage = React.memo<VideoStageProps>(({
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
             <div className="relative w-full h-full bg-[#0a0a0a] rounded-xl overflow-hidden shadow-2xl border border-white/5 ring-1 ring-white/10 group flex items-center justify-center">
+                {activeVideo && frameItem && resolvedFrameUrl && !frameImageFailed && (
+                    <button
+                        type="button"
+                        onClick={() => setPreviewInputFrame(value => !value)}
+                        className={`absolute ${previewInputFrame ? 'bottom-3 left-3' : 'top-3 left-3'} z-10 flex items-center gap-2 rounded-lg border border-white/15 bg-black/80 p-2 text-xs text-white`}
+                        aria-label={previewInputFrame ? 'View previous video' : `Preview ${firstFrame ? 'start' : 'end'} frame`}
+                    >
+                        {!previewInputFrame && <img src={resolvedFrameUrl} alt={firstFrame ? 'Start frame' : 'End frame'} className="h-12 w-12 object-contain" />}
+                        {previewInputFrame ? 'View previous video' : `View ${firstFrame ? 'start' : 'end'} frame`}
+                    </button>
+                )}
                 {jobStatus === 'processing' || jobStatus === 'queued' || jobStatus === 'stitching' ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-20">
                         <div className="w-24 h-24 relative mb-4">
@@ -321,7 +335,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         <h3 className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Preview Unavailable</h3>
                         <p className="text-gray-600 text-[10px] text-center max-w-xs">{videoError}</p>
                     </div>
-                ) : activeVideo ? (
+                ) : activeVideo && !previewInputFrame ? (
                     <div className="relative w-full h-full flex items-center justify-center group/stage">
                         {extractionState.active && (
                             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/70 backdrop-blur-md">

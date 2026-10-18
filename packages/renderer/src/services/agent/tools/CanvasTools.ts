@@ -502,5 +502,212 @@ export const CanvasTools = {
             logger.error('[CanvasTools] canvas_export error:', error);
             return toolError(error instanceof Error ? error.message : String(error), 'CANVAS_EXPORT_ERROR');
         }
+    }),
+
+    /**
+     * Headless typography overlay — burns custom sayings, lyrics, or titles onto an
+     * image without requiring an active DOM Fabric.js canvas. Perfect for remote
+     * Boardroom commands requesting text overlays.
+     */
+    composite_image_typography: wrapTool('composite_image_typography', async (args: {
+        imageUrl: string;
+        text: string;
+        position?: 'top' | 'center' | 'bottom';
+        fontFamily?: string;
+        fontSize?: number;
+        color?: string;
+        badgeStyle?: 'shadow' | 'pill' | 'banner' | 'none';
+    }) => {
+        try {
+            const { imageUrl, text, position = 'bottom', fontFamily = 'Impact, sans-serif', fontSize, color = '#ffffff', badgeStyle = 'shadow' } = args;
+            if (!imageUrl) return toolError('imageUrl is required', 'MISSING_IMAGE_URL');
+            if (!text || !text.trim()) return toolError('text is required', 'MISSING_TEXT');
+
+            const { safeStorageFetch } = await importWithRetry(() => import('@/services/storage/safeStorageFetch'));
+            const { blob } = await safeStorageFetch(imageUrl);
+            const objectUrl = URL.createObjectURL(blob);
+
+            const img = new Image();
+            img.src = objectUrl;
+            await img.decode().catch(() => {});
+            URL.revokeObjectURL(objectUrl);
+
+            if (img.width === 0 || img.height === 0) {
+                return toolError('Could not decode master image dimensions', 'IMAGE_DECODE_FAILED');
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return toolError('Could not allocate 2D canvas context', 'CANVAS_CONTEXT_FAILED');
+
+            // Draw base image
+            ctx.drawImage(img, 0, 0);
+
+            // Compute font size relative to image resolution (default ~6% of canvas height, min 28px)
+            const resolvedFontSize = fontSize || Math.max(28, Math.round(canvas.height * 0.055));
+            ctx.font = `bold ${resolvedFontSize}px ${fontFamily}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Split into wrapped lines fitting within 85% of canvas width
+            const maxWidth = canvas.width * 0.85;
+            const words = text.trim().split(/\s+/);
+            const lines: string[] = [];
+            let currentLine = '';
+
+            for (const word of words) {
+                const testLine = currentLine ? `${currentLine} ${word}` : word;
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            if (currentLine) lines.push(currentLine);
+
+            const lineHeight = resolvedFontSize * 1.25;
+            const totalTextHeight = lines.length * lineHeight;
+
+            // Compute Y position
+            let startY = canvas.height * 0.85 - (totalTextHeight / 2);
+            if (position === 'top') {
+                startY = canvas.height * 0.15 + (totalTextHeight / 2);
+            } else if (position === 'center') {
+                startY = (canvas.height / 2) - (totalTextHeight / 2);
+            }
+
+            // Draw optional pill / banner backing
+            if (badgeStyle === 'pill' || badgeStyle === 'banner') {
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                const padX = resolvedFontSize * 0.8;
+                const padY = resolvedFontSize * 0.4;
+                const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+                const boxW = badgeStyle === 'banner' ? canvas.width : Math.min(canvas.width * 0.95, maxLineWidth + (padX * 2));
+                const boxH = totalTextHeight + (padY * 2);
+                const boxX = badgeStyle === 'banner' ? 0 : (canvas.width - boxW) / 2;
+                const boxY = startY - (resolvedFontSize / 2) - padY;
+
+                if (badgeStyle === 'pill') {
+                    const radius = Math.min(24, resolvedFontSize * 0.5);
+                    ctx.beginPath();
+                    ctx.roundRect(boxX, boxY, boxW, boxH, radius);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(boxX, boxY, boxW, boxH);
+                }
+                ctx.restore();
+            }
+
+            // Draw text with shadow/stroke
+            lines.forEach((line, idx) => {
+                const y = startY + (idx * lineHeight);
+                ctx.save();
+                if (badgeStyle === 'shadow') {
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                    ctx.shadowBlur = Math.max(8, resolvedFontSize * 0.2);
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = Math.max(3, resolvedFontSize * 0.08);
+
+                    // Also stroke text for crisp separation
+                    ctx.lineWidth = Math.max(2, resolvedFontSize * 0.08);
+                    ctx.strokeStyle = '#000000';
+                    ctx.strokeText(line, canvas.width / 2, y);
+                }
+                ctx.fillStyle = color;
+                ctx.fillText(line, canvas.width / 2, y);
+                ctx.restore();
+            });
+
+            // Export to data URL and save to store/history
+            const outputUrl = canvas.toDataURL('image/jpeg', 0.92);
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const store = useStore.getState();
+            const currentUploads = store.uploadedImages || [];
+            const typographyItem: import('@/core/types/history').HistoryItem = {
+                id: `typography_${Date.now()}`,
+                url: outputUrl,
+                prompt: `Typography: "${text}"`,
+                type: 'image',
+                timestamp: Date.now(),
+                projectId: store.currentProjectId || 'default',
+                tags: ['typography_composite', 'saying_overlay'],
+                origin: 'canvas-export',
+            };
+            useStore.setState({ uploadedImages: [...currentUploads, typographyItem] });
+            store.addToHistory?.(typographyItem);
+
+            return toolSuccess(
+                { outputUrl, width: canvas.width, height: canvas.height, text, linesCount: lines.length },
+                `Successfully burned saying onto image (${canvas.width}×${canvas.height}).`
+            );
+        } catch (error) {
+            logger.error('[CanvasTools] composite_image_typography error:', error);
+            return toolError(error instanceof Error ? error.message : String(error), 'COMPOSITE_TYPOGRAPHY_ERROR');
+        }
+    }),
+
+    /**
+     * Batch social derivatives exporter — crops or fits master image into
+     * standard deliverable aspect ratios (9:16 Stories/TikTok, 1:1 Feed, 4:5 Portrait, 16:9 Landscape)
+     * using SmartCrop and offscreen canvas.
+     */
+    export_social_derivatives: wrapTool('export_social_derivatives', async (args: {
+        imageUrl: string;
+        platformIds?: string[];
+        quality?: number;
+    }) => {
+        try {
+            const { imageUrl, platformIds = ['instagram_story', 'instagram_square', 'instagram_portrait', 'youtube_thumbnail'], quality = 0.9 } = args;
+            if (!imageUrl) return toolError('imageUrl is required', 'MISSING_IMAGE_URL');
+
+            const { exportMasterAsset } = await importWithRetry(() => import('@/services/export/AssetExporter'));
+            const presets = platformIds.map(dimensionId => ({
+                dimensionId,
+                fit: 'cover' as const,
+            }));
+
+            const results = await exportMasterAsset({
+                masterUrl: imageUrl,
+                presets,
+                quality,
+                format: 'image/jpeg',
+            });
+
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const store = useStore.getState();
+            const currentUploads = store.uploadedImages || [];
+            const newHistoryItems: import('@/core/types/history').HistoryItem[] = results.map((r, idx) => ({
+                id: `derivative_${r.platformId}_${Date.now()}_${idx}`,
+                url: r.url,
+                prompt: `Social derivative (${r.platformId})`,
+                type: 'image',
+                timestamp: Date.now(),
+                projectId: store.currentProjectId || 'default',
+                origin: 'canvas-export',
+                tags: ['social_derivative', r.platformId],
+            }));
+            useStore.setState({ uploadedImages: [...currentUploads, ...newHistoryItems] });
+
+            return toolSuccess(
+                {
+                    count: results.length,
+                    derivatives: results.map(r => ({
+                        platformId: r.platformId,
+                        width: r.width,
+                        height: r.height,
+                        url: r.url,
+                    })),
+                },
+                `Successfully exported ${results.length} social derivatives (Story 9:16, Square 1:1, Portrait 4:5, Landscape 16:9).`
+            );
+        } catch (error) {
+            logger.error('[CanvasTools] export_social_derivatives error:', error);
+            return toolError(error instanceof Error ? error.message : String(error), 'EXPORT_SOCIAL_DERIVATIVES_ERROR');
+        }
     })
 } satisfies Record<string, AnyToolFunction>;

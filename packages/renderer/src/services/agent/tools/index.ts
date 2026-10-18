@@ -310,4 +310,7 @@ AVAILABLE TOOLS:
 272. read_emails(provider: string, forceSync?: boolean, maxResults?: number) - Read recent emails from a connected provider (e.g. 'gmail').
 273. send_email(accountId: string, to: string, subject: string, body: string) - Send an email from a connected account.
 274. reply_to_email(accountId: string, to: string, subject: string, body: string, threadId: string, inReplyTo: string) - Reply to an existing email thread.
+--- HEADLESS CREATIVE & SOCIAL DERIVATIVES ---
+275. composite_image_typography(imageUrl: string, text: string, position?: string, style?: string, fontSize?: number) - Headlessly composite text, captions, sayings, or branding onto an image without requiring an active DOM window.
+276. export_social_derivatives(imageUrl: string, formats?: string[]) - Headlessly batch crop and scale a master image into all standard social formats (9:16 Story, 1:1 Square, 4:5 Portrait, 16:9 Landscape).
 `;

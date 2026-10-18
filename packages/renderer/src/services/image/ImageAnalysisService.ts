@@ -3,6 +3,7 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { withServiceError } from '@/lib/errors';
 import { CloudStorageService } from '@/services/CloudStorageService';
+import { segmentationContour, detectionBox } from './segmentationGeometry';
 import type { Part, Schema } from '@/shared/types/ai.dto';
 
 export interface Box2D {
@@ -54,29 +55,22 @@ export class ImageAnalysisService {
                     nullable: false,
                     properties: {
                         label: { type: 'string', description: 'A descriptive label for the object detected', nullable: false },
-                        box: {
-                            type: 'object',
-                            description: 'Bounding box coordinates normalized from 0 to 1000',
-                            nullable: false,
-                            properties: {
-                                ymin: { type: 'number', nullable: false },
-                                xmin: { type: 'number', nullable: false },
-                                ymax: { type: 'number', nullable: false },
-                                xmax: { type: 'number', nullable: false }
-                            },
-                            required: ['ymin', 'xmin', 'ymax', 'xmax']
+                        box_2d: {
+                            type: 'array', nullable: false,
+                            description: '[ymin, xmin, ymax, xmax], each normalized 0-1000 relative to the entire image, including any frame and padding.',
+                            items: { type: 'number', nullable: false },
                         }
                     },
-                    required: ['label', 'box']
+                    required: ['label', 'box_2d']
                 }
             };
             
             const parts: Part[] = [
-                { text: prompt },
+                { text: `${prompt} Use the key box_2d for [ymin, xmin, ymax, xmax], normalized to the entire image including its frame and padding.` },
                 { inlineData: analysisImage }
             ];
             
-            const results = await AutonomousIntelligence.generateStructuredData<DetectedObject[]>(
+            const results = await AutonomousIntelligence.generateStructuredData<Array<{ label: string; box_2d: number[] }>>(
                 parts,
                 schema,
                 undefined,
@@ -85,7 +79,7 @@ export class ImageAnalysisService {
             );
             
             logger.info(`Detected ${results?.length || 0} objects.`);
-            return results || [];
+            return (results || []).map(object => ({ label: object.label, box: detectionBox(object.box_2d) }));
         });
     }
 
@@ -101,42 +95,54 @@ export class ImageAnalysisService {
             
             const analysisImage = await this.prepareAnalysisImage(imageBase64);
             
-            // We use thinkingBudget: 0 for fast base64 extractions if that is a valid parameter format in the config.
-            // The prompt directly instructs the model to return a pure base64 representation of the mask.
-            const prompt = `You are a computer vision model. Generate a pixel-accurate segmentation mask for "${targetLabel}" in the provided image.
-Return ONLY valid JSON containing a single field "maskBase64" which is a base64-encoded PNG image of the mask (white for the object, black for the background).`;
-
+            const prompt = `Give the segmentation contour for the object labelled "${targetLabel}".
+Return JSON with a single "mask" polygon of objects with explicit "x" and "y" properties, normalized to 0-1000 relative to the ENTIRE provided image, including any frame or padding. x is horizontal (left to right); y is vertical (top to bottom). Trace the visible object boundary tightly. Return coordinates, not encoded image bytes or ambiguous coordinate pairs.`;
             const schema: Schema = {
-                type: 'object',
-                nullable: false,
+                type: 'object', nullable: false,
                 properties: {
-                    maskBase64: { 
-                        type: 'string', 
-                        description: 'A pure base64-encoded PNG string (without data URI prefix) containing the binary mask',
-                        nullable: false
-                    }
+                    mask: {
+                        type: 'array', nullable: false,
+                        description: 'Visible object contour with named horizontal x and vertical y coordinates, 0-1000.',
+                        items: {
+                            type: 'object', nullable: false,
+                            properties: {
+                                x: { type: 'number', nullable: false, description: 'Horizontal position from left, 0-1000.' },
+                                y: { type: 'number', nullable: false, description: 'Vertical position from top, 0-1000.' },
+                            },
+                            required: ['x', 'y'],
+                        },
+                    },
                 },
-                required: ['maskBase64']
+                required: ['mask'],
             };
-            
+
             const parts: Part[] = [
                 { text: prompt },
                 { inlineData: analysisImage }
             ];
 
-            const result = await AutonomousIntelligence.generateStructuredData<{ maskBase64: string }>(
-                parts,
-                schema,
-                { thinkingBudget: 0, includeThoughts: false }, // config with thinking budget
-                undefined, // system instructions
-                INTELLIGENCE_MODELS.TEXT.FAST
+            const result = await AutonomousIntelligence.generateStructuredData<{ mask: Array<{ x: number; y: number }> }>(
+                parts, schema, undefined, undefined, INTELLIGENCE_MODELS.TEXT.FAST
             );
+            const source = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
+            const image = new Image();
+            image.src = source;
+            await image.decode();
+            const contour = segmentationContour(result?.mask, image.naturalWidth, image.naturalHeight);
+            const maskCanvas = document.createElement('canvas');
+            maskCanvas.width = image.naturalWidth;
+            maskCanvas.height = image.naturalHeight;
+            const context = maskCanvas.getContext('2d');
+            if (!context) throw new Error('Could not render the object selection.');
+            context.fillStyle = '#000000';
+            context.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+            context.fillStyle = '#ffffff';
+            context.beginPath();
+            contour.forEach((point, index) => index === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y));
+            context.closePath();
+            context.fill();
+            return maskCanvas.toDataURL('image/png').split(',')[1]!;
 
-            if (!result || !result.maskBase64) {
-                throw new Error('Failed to extract a valid segmentation mask from the Intelligence response.');
-            }
-
-            return result.maskBase64;
         });
     }
 }

@@ -34,11 +34,14 @@ export interface BoardroomSlice {
     activeAgents: string[];
     referencedAssets: ReferencedAsset[];
     a2aMessages: A2AMessage[];
+    focusedHeadId: string | null;
 
     toggleAgent: (agentId: string) => void;
+    soloAgent: (agentId: string) => void;
     addActiveAgent: (agentId: string) => void;
     removeActiveAgent: (agentId: string) => void;
     seatAllDepartmentHeads: () => SeatAllDepartmentHeadsResult;
+    setFocusedHeadId: (headId: string | null) => void;
 
     addReferencedAsset: (asset: ReferencedAsset) => void;
     removeReferencedAsset: (assetId: string) => void;
@@ -54,6 +57,7 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     activeAgents: ['generalist'], // indii Conductor (hub agent) always present initially
     referencedAssets: [],
     a2aMessages: [],
+    focusedHeadId: null,
 
     toggleAgent: (agentId) => set((state) => {
         const isActive = state.activeAgents.includes(agentId);
@@ -64,6 +68,16 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
         }
     }),
 
+    soloAgent: (agentId) => set((state) => {
+        // If clicking solo on the currently soloed agent, restore the Conductor + that agent
+        if (state.activeAgents.length === 1 && state.activeAgents[0] === agentId) {
+            return { activeAgents: agentId === 'generalist' ? ['generalist'] : ['generalist', agentId] };
+        }
+        return { activeAgents: [agentId] };
+    }),
+
+    setFocusedHeadId: (headId) => set({ focusedHeadId: headId }),
+
     addActiveAgent: (agentId) => set((state) => {
         if (!state.activeAgents.includes(agentId)) {
             return { activeAgents: [...state.activeAgents, agentId] };
@@ -72,7 +86,7 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     }),
 
     removeActiveAgent: (agentId) => set((state) => ({
-        activeAgents: state.activeAgents.filter(id => id !== agentId)
+        activeAgents: state.activeAgents.filter(id => id !== agentId),
     })),
 
     seatAllDepartmentHeads: () => {

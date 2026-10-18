@@ -30,18 +30,20 @@ const RESULTS = [
     { platformId: 'ig_story', url: 'data:image/png;base64,BBB', width: 1080, height: 1920, bytes: 2345, fit: 'contain-blur-pad' }
 ];
 
-describe('export_platform_assets tool (G1.5)', () => {
+// Structural-only routing and failure guards. The existing service doubles cannot
+// prove durable storage; positive save/version/download proof requires the genuine UI.
+describe('export_platform_assets tool (structural only)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         exportMasterAsset.mockResolvedValue(RESULTS);
     });
 
-    it('exports the default core matrix when no platforms are given', async () => {
+    it('plans the default matrix but reports unavailable storage honestly', async () => {
         const res = await (MediaTools as unknown as {
-            export_platform_assets: (args: { masterUrl: string }) => Promise<{ success: boolean; data: { count: number }; message: string }>;
+            export_platform_assets: (args: { masterUrl: string }) => Promise<{ success: boolean; data: { savedAssets: unknown[]; gallerySaved: boolean }; message: string }>;
         }).export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD' });
 
-        expect(res.success).toBe(true);
+        expect(res.success).toBe(false);
         expect(exportMasterAsset).toHaveBeenCalledWith({
             masterUrl: 'data:image/png;base64,QUJD',
             presets: expect.arrayContaining([
@@ -49,8 +51,9 @@ describe('export_platform_assets tool (G1.5)', () => {
                 expect.objectContaining({ dimensionId: 'facebook_og' })
             ])
         });
-        expect(res.data.count).toBe(2);
-        expect(res.message).toContain('no generative outpainting');
+        expect(res.data.savedAssets).toEqual([]);
+        expect(res.data.gallerySaved).toBe(false);
+        expect(res.message).toContain('could not be saved');
     });
 
     it('maps requested platforms to presets and respects the fit override', async () => {
@@ -64,21 +67,13 @@ describe('export_platform_assets tool (G1.5)', () => {
         });
     });
 
-    it('records each export as a history item and bundles a zip by default', async () => {
-        const res = await (MediaTools as unknown as {
-            export_platform_assets: (args: { masterUrl: string }) => Promise<{ success: boolean; data: { zipName?: string } }>;
-        }).export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD' });
-
-        const { addToHistory } = useStore.getState() as unknown as { addToHistory: ReturnType<typeof vi.fn> };
-        expect(addToHistory).toHaveBeenCalledTimes(2);
-        expect(addToHistory).toHaveBeenCalledWith(expect.objectContaining({
-            type: 'image',
-            projectId: 'proj_test',
-            meta: expect.stringContaining('platform-export'),
-            tags: ['platform-export', 'spotify_cover']
-        }));
-        expect(downloadAsZip).toHaveBeenCalledTimes(1);
-        expect(res.data.zipName).toBeTruthy();
+    it('does not publish volatile exports to history or download by default when storage is unavailable', async () => {
+        const res = await MediaTools.export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD' });
+        expect(res.success).toBe(false);
+        expect(res.status).toBe('PARTIAL');
+        expect(res.metadata?.errorCode).toBe('EXPORT_PERSISTENCE_FAILED');
+        expect(useStore.getState().addToHistory).not.toHaveBeenCalled();
+        expect(downloadAsZip).not.toHaveBeenCalled();
     });
 
     it('can skip the zip bundle when download is false', async () => {
@@ -88,26 +83,19 @@ describe('export_platform_assets tool (G1.5)', () => {
         expect(downloadAsZip).not.toHaveBeenCalled();
     });
 
-    it('records an append-only export-bundle version per asset (H1.2)', async () => {
-        await (MediaTools as unknown as {
-            export_platform_assets: (args: { masterUrl: string; download: boolean }) => Promise<unknown>;
-        }).export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD', download: false });
-
-        expect(AssetVersionService.recordVersion).toHaveBeenCalledTimes(2);
-        expect(AssetVersionService.recordVersion).toHaveBeenCalledWith(expect.objectContaining({
-            parentVersionId: null,
-            source: 'export-bundle',
-            url: 'data:image/png;base64,AAA'
-        }));
+    it('does not record a version with a volatile data URL when original persistence failed', async () => {
+        const res = await MediaTools.export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD', download: false });
+        expect(res.success).toBe(false);
+        expect(AssetVersionService.recordVersion).not.toHaveBeenCalled();
+        expect(useStore.getState().addToHistory).not.toHaveBeenCalled();
     });
 
-    it('still succeeds when version recording fails (bookkeeping is fail-open)', async () => {
-        (AssetVersionService.recordVersion as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('offline'));
-        const res = await (MediaTools as unknown as {
-            export_platform_assets: (args: { masterUrl: string; download: boolean }) => Promise<{ success: boolean; data: { count: number } }>;
-        }).export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD', download: false });
-        expect(res.success).toBe(true);
-        expect(res.data.count).toBe(2);
+    it('does not hide failed persistence behind an explicitly requested ZIP', async () => {
+        const res = await MediaTools.export_platform_assets({ masterUrl: 'data:image/png;base64,QUJD', download: true });
+        expect(res.success).toBe(false);
+        expect(res.status).toBe('PARTIAL');
+        expect(downloadAsZip).not.toHaveBeenCalled();
+        expect(AssetVersionService.recordVersion).not.toHaveBeenCalled();
     });
 
     it('fails closed on a missing masterUrl', async () => {

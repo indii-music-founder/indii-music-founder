@@ -23,7 +23,7 @@ vi.mock('fabric', () => {
         renderAll = vi.fn();
         setDimensions = vi.fn(({ width, height }: { width: number; height: number }) => { this.width = width; this.height = height; });
         set = vi.fn();
-        toJSON = vi.fn(() => ({ objects: this.objects.map((obj) => ({ id: obj.id, data: obj.data, type: obj.type })) }));
+        toObject = vi.fn(() => ({ objects: this.objects.map((obj) => ({ id: obj.id, data: obj.data, type: obj.type })) }));
         toDataURL = vi.fn(() => 'data:image/png;base64,export');
         loadFromJSON = vi.fn();
         getObjects = vi.fn(() => this.objects);
@@ -107,6 +107,15 @@ describe('CanvasOperationsService blank sketch layers', () => {
         expect(CANVAS_SERIALIZATION_PROPERTIES).toEqual(['data', 'id']);
     });
 
+    it('restores saved portrait dimensions instead of keeping the wider viewport', async () => {
+        const service = new CanvasOperationsService();
+        service.initialize(document.createElement('canvas'));
+        await service.loadFromJSON(JSON.stringify({ width: 388, height: 690, objects: [] }));
+        expect(mockCanvasInstance.setDimensions).toHaveBeenCalledWith({ width: 388, height: 690 });
+        expect(mockCanvasInstance.getWidth()).toBe(388);
+        expect(mockCanvasInstance.getHeight()).toBe(690);
+    });
+
     it('exports a 4:5 Instagram derivative and preserves identity in every restore snapshot', async () => {
         const service = new CanvasOperationsService();
         const wrapper = document.createElement('div');
@@ -121,6 +130,6 @@ describe('CanvasOperationsService blank sketch layers', () => {
 
         expect(result?.instagram).toContain('data:image/png');
         expect(mockCanvasInstance.setDimensions).toHaveBeenCalledWith({ width: 1080, height: 1350 });
-        expect(mockCanvasInstance.toJSON).toHaveBeenCalledWith(['data', 'id']);
+        expect(mockCanvasInstance.toObject).toHaveBeenCalledWith(['data', 'id']);
     });
 });

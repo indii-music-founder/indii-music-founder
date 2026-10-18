@@ -2,6 +2,8 @@
   "name": "indii.music",
   "version": "1.81.0",
   "description": "The Operating System for Independent Music \u2014 npm Workspace Monorepo",
+  "version": "1.82.0",
+  "description": "The Operating System for Independent Music — npm Workspace Monorepo",
   "author": "New Detroit Music LLC <info@indii.music>",
   "type": "module",
   "private": true,

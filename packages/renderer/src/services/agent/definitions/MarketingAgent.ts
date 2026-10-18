@@ -41,9 +41,11 @@ export const MarketingAgent: AgentConfig = {
             generate_influencer_bounty: MarketingTools.generate_influencer_bounty,
             generate_ad_copy: MarketingTools.generate_ad_copy,
             analyze_campaign_roi: MarketingTools.analyze_campaign_roi,
+            dispatch_multi_platform_campaign: MarketingTools.dispatch_multi_platform_campaign,
+            record_attribution_conversion: MarketingTools.record_attribution_conversion,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'web_extract', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi'],
+    authorizedTools: ['list_domain_records', 'create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'web_extract', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi', 'dispatch_multi_platform_campaign', 'record_attribution_conversion'],
     tools: [{
         functionDeclarations: [
             ...marketingRetrievalDeclarations,
@@ -265,6 +267,88 @@ export const MarketingAgent: AgentConfig = {
                         totalRevenue: { type: "NUMBER", description: "Total revenue generated from the campaign." }
                     },
                     required: ["campaignId", "totalSpend", "totalRevenue"]
+                }
+            },
+            {
+                name: "dispatch_multi_platform_campaign",
+                description: "Executes a verified post-mastering multi-platform programmatic ad directive across Meta, TikTok (Spark Ads), and Google Ads (YouTube Video Action / PMax) with Finance recoupment ledger reservation and Jev allocation refinement.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        ledgerAccountId: { type: "STRING", description: "Finance recoupment ledger account ID." },
+                        objective: {
+                            type: "STRING",
+                            enum: ["DSP_STREAM_CONVERSION", "PRE_SAVE_INTAKE", "WAITLIST_INTAKE", "MERCH_CONVERSION", "EVENT_TICKETING"],
+                            description: "Primary campaign objective."
+                        },
+                        platforms: {
+                            type: "ARRAY",
+                            items: { type: "STRING" },
+                            description: "Target ad networks: META, TIKTOK, GOOGLE_ADS."
+                        },
+                        totalBudgetCents: { type: "NUMBER", description: "Total campaign budget in integer cents." },
+                        dailyBudgetCents: { type: "NUMBER", description: "Daily campaign budget in integer cents." },
+                        platformSplitPercentages: {
+                            type: "OBJECT",
+                            description: "Platform percentage splits summing to 100 (e.g., { META: 50, TIKTOK: 30, GOOGLE_ADS: 20 })."
+                        },
+                        releaseId: { type: "STRING", description: "Verified post-mastering release ID." },
+                        isrc: { type: "STRING", description: "12-character uppercase ISRC." },
+                        smartlinkId: { type: "STRING", description: "Verified smartlink ID." },
+                        smartlinkUrl: { type: "STRING", description: "Verified HTTPS smartlink destination URL." },
+                        videoAssetIds: { type: "ARRAY", items: { type: "STRING" }, description: "Verified video teaser asset IDs." },
+                        imageAssetIds: { type: "ARRAY", items: { type: "STRING" }, description: "Verified cover/artwork asset IDs." },
+                        tiktokSparkAuthCodes: { type: "ARRAY", items: { type: "STRING" }, description: "Optional TikTok Spark Ads auth codes." },
+                        youtubeVideoIds: { type: "ARRAY", items: { type: "STRING" }, description: "Optional 11-char YouTube video IDs for Google Ads." },
+                        geoLocations: { type: "ARRAY", items: { type: "STRING" }, description: "ISO country/region codes (e.g., ['US', 'GB'])." },
+                        genreTaxonomyTags: { type: "ARRAY", items: { type: "STRING" }, description: "Genre taxonomy tags." }
+                    },
+                    required: [
+                        "ledgerAccountId",
+                        "objective",
+                        "platforms",
+                        "totalBudgetCents",
+                        "dailyBudgetCents",
+                        "platformSplitPercentages",
+                        "releaseId",
+                        "isrc",
+                        "smartlinkId",
+                        "smartlinkUrl",
+                        "videoAssetIds",
+                        "imageAssetIds",
+                        "geoLocations",
+                        "genreTaxonomyTags"
+                    ]
+                }
+            },
+            {
+                name: "record_attribution_conversion",
+                description: "Dispatches a deduplicated server-side conversion event (SmartlinkView, DSPOutboundClick, PreSaveComplete, WaitlistSignup, MerchPurchase) through AttributionBus to Meta CAPI, TikTok Events API, and Google Ads Enhanced Conversions.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        eventName: {
+                            type: "STRING",
+                            enum: ["SmartlinkView", "DSPOutboundClick", "PreSaveComplete", "WaitlistSignup", "MerchPurchase"],
+                            description: "Normalized conversion event name."
+                        },
+                        releaseId: { type: "STRING", description: "Verified release ID." },
+                        isrc: { type: "STRING", description: "12-character ISRC." },
+                        smartlinkId: { type: "STRING", description: "Smartlink identifier." },
+                        targetDsp: {
+                            type: "STRING",
+                            enum: ["SPOTIFY", "APPLE_MUSIC", "TIDAL", "AMAZON_MUSIC", "YOUTUBE_MUSIC", "BANDCAMP"],
+                            description: "Optional destination DSP for outbound clicks."
+                        },
+                        fbclid: { type: "STRING", description: "Optional Meta click identifier." },
+                        ttclid: { type: "STRING", description: "Optional TikTok click identifier." },
+                        gclid: { type: "STRING", description: "Optional Google Ads click identifier." },
+                        clientIpAddress: { type: "STRING", description: "Client IP address for CAPI matching." },
+                        clientUserAgent: { type: "STRING", description: "Client User-Agent string." },
+                        emailSha256: { type: "STRING", description: "Optional 64-char lowercase hex SHA-256 of fan email." },
+                        valueCents: { type: "NUMBER", description: "Optional conversion value in integer cents." }
+                    },
+                    required: ["eventName", "releaseId", "isrc", "smartlinkId", "clientIpAddress", "clientUserAgent"]
                 }
             }
         ]

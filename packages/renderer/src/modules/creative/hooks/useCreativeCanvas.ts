@@ -7,6 +7,7 @@ import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { canvasOps, type CanvasTextProperties } from '../services/CanvasOperationsService';
 import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
+import { maskedTextCandidates } from '@/services/image/maskedTextEdit';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { imageAnalysisService } from '@/services/image/ImageAnalysisService';
 import { logger } from '@/utils/logger';
@@ -38,7 +39,7 @@ function debounce<T extends (...args: any[]) => any>(
 }
 
 async function resolveEditableImageUrl(item: HistoryItem): Promise<string> {
-    const candidates = [item.url, item.thumbnailUrl].filter((url): url is string => Boolean(url?.trim()));
+    const candidates = [item.storageUri, item.url, item.thumbnailUrl].filter((url): url is string => Boolean(url?.trim()));
     let unresolvedStorageUri: string | null = null;
 
     for (const candidate of candidates) {
@@ -277,8 +278,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const persistSession = async (manifest = editManifest, extras: Record<string, unknown> = {}) => {
         try {
             await creativeSessionService.upsertFromManifest(manifest, extras as Parameters<typeof creativeSessionService.upsertFromManifest>[1]);
+            return true;
         } catch (error) {
             logger.warn('[CreativeStudio] Creative session persistence skipped', error);
+            return false;
         }
     };
     const updateSession = async (updates: Record<string, unknown>) => {
@@ -334,7 +337,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             // Undo/Redo buttons re-evaluate canUndo()/canRedo() right after a draw
             // (ISSUE-480 — they were stuck disabled until an unrelated re-render),
             // then debounce the heavier state persistence.
-            const handleCanvasChange = () => {
+            const handleCanvasChange = (reason?: 'restore') => {
+                if (!isMounted) return;
+                if (reason === 'restore') {
+                    setHistoryTrigger(prev => prev + 1);
+                    return;
+                }
                 dirtyRef.current = true;
                 setHistoryTrigger(prev => prev + 1);
                 // Capture this canvas now; a delayed save must never read the
@@ -346,7 +354,35 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
             // Try to load any previous edits/annotations FIRST
             try {
-                const savedState = await getCanvasStateFromStorage(item.id);
+                let savedState = await getCanvasStateFromStorage(item.id);
+                if (savedState && item.origin === 'canvas-export') {
+                    // Older saves rewrote the mutable JPEG preview under this
+                    // history ID. The original export also has an immutable,
+                    // extensionless asset with that ID. Recover that source
+                    // only for base images explicitly pointing at this preview.
+                    const originalUri = currentUserStorageUri(item.id);
+                    if (originalUri) {
+                        try {
+                            type SavedImageNode = { src?: string; data?: { isBaseImage?: boolean }; objects?: SavedImageNode[] };
+                            const parsed = JSON.parse(savedState) as SavedImageNode;
+                            const affected: SavedImageNode[] = [];
+                            const findMutableBase = (node: SavedImageNode) => {
+                                if (node.data?.isBaseImage && resolveStorageUri(node.src) === `${originalUri}.jpg`) affected.push(node);
+                                node.objects?.forEach(findMutableBase);
+                            };
+                            findMutableBase(parsed);
+                            if (affected.length) {
+                                const originalUrl = await resolveStorageUrl(originalUri);
+                                if (!originalUrl.startsWith('gs://')) {
+                                    affected.forEach(node => { node.src = originalUrl; });
+                                    savedState = JSON.stringify(parsed);
+                                }
+                            }
+                        } catch (error) {
+                            logger.warn('[CreativeStudio] Original canvas source recovery was unavailable', error);
+                        }
+                    }
+                }
                 if (savedState && isMounted) {
                     // Initialize from saved layers, then repair stale/blank states
                     // that do not contain the selected asset as a base image.
@@ -354,7 +390,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         if (!isMounted) return;
 
                         await canvasOps.loadFromJSON(savedState);
+                        if (!isMounted) return;
                         const recoveredBase = await canvasOps.ensureBaseImage(editableImageUrl);
+                        if (!isMounted) return;
                         if (recoveredBase) {
                             logger.warn('[CreativeStudio] Restored missing base image from selected asset URL', {
                                 itemId: item.id,
@@ -475,7 +513,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     const handleSetTool = (tool: 'select' | 'line' | 'polygon' | 'text' | 'brush') => {
         setActiveTool(tool === 'text' ? 'select' : tool);
-        canvasOps.setTool(tool, activeColor);
+        canvasOps.setTool(tool, colorRef.current);
         if (tool === 'brush') {
             setMagicFillPrompt(definitions[activeColor.id] || '');
         }
@@ -501,6 +539,15 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleSetTool('brush');
         setIsLayersPanelOpen(true);
         toast.info(`Blank sketch layer added. Draw on the canvas to create a sketch.`);
+    };
+
+    const handleFitArtboardToArtwork = () => {
+        if (canvasOps.fitArtboardToArtwork()) {
+            setHistoryTrigger(previous => previous + 1);
+            toast.success('Artboard fitted to artwork. Undo restores the previous margins.');
+        } else {
+            toast.info('The artboard already fits the artwork.');
+        }
     };
 
     const handleUndo = async () => {
@@ -602,6 +649,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     const handleDetectObjects = async () => {
         if (!item || !canvasOps.isInitialized()) return;
+        const detectedCanvas = canvasEl.current;
         
         try {
             setIsProcessing(true);
@@ -612,8 +660,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             if (!base64) throw new Error('Could not extract base image.');
 
             const objects = await imageAnalysisService.detectObjects(base64);
+            if (canvasEl.current !== detectedCanvas) return;
             if (objects && objects.length > 0) {
+                handleSetTool('select');
                 canvasOps.addBoundingBoxes(objects, async (label: string) => {
+                    if (canvasEl.current !== detectedCanvas) return;
                     try {
                         setIsProcessing(true);
                         setProcessingStatus(`Extracting mask for: ${label}...`);
@@ -623,7 +674,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         if (!currentBase64) return;
                         
                         const maskBase64 = await imageAnalysisService.extractSegmentationMask(currentBase64, label);
-                        await canvasOps.addSegmentationMask(maskBase64, activeColor);
+                        if (canvasEl.current !== detectedCanvas) return;
+                        await canvasOps.addSegmentationMask(maskBase64, colorRef.current);
+                        handleSetTool('brush');
                         toast.success(`Successfully selected ${label}.`);
                     } catch (err: any) {
                         logger.error('[CreativeStudio] Segmentation failed', err);
@@ -733,7 +786,14 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     status: 'active',
                 });
 
-                if (isHighFidelity) {
+                // A dense seven-color semantic guide was reproduced in the
+                // generated artwork. Keep small joint edits, but isolate larger
+                // sets with one binary mask per step so guide colors never enter
+                // the model input as possible artwork colors.
+                // Literal lettering is rendered with real fonts per region;
+                // the image model still handles other visual instructions.
+                const hasLiteralText = prepared.masks.some(mask => !mask.referenceImage && maskedTextCandidates(mask.prompt).length > 0);
+                if (isHighFidelity && prepared.masks.length <= 2 && !hasLiteralText) {
                     await reserveImageBudget(INTELLIGENCE_MODELS.IMAGE.GENERATION);
                     const maskKeys = prepared.masks.map(mask => mask.colorId);
                     const isMultiMask = prepared.masks.length > 1;
@@ -811,7 +871,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                             toast.success(`High-Fidelity Edit Complete!`);
                         }
                     }
-                } else if (prepared.masks.length === 1) {
+                } else if (prepared.masks.length === 1 && !isHighFidelity) {
                     await reserveImageBudget(INTELLIGENCE_MODELS.IMAGE.FAST);
                     const result = await Editing.editImage({
                         image: prepared.baseImage,
@@ -881,9 +941,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 } else {
                     setProcessingStatus("Remixing Visuals...");
                     const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-                    const blob = item.url.startsWith('data:')
-                        ? await CloudStorageService.dataURItoBlob(item.url)
-                        : await (await fetch(item.url)).blob();
+                    const sourceUrl = canvasOps.getFlattenedDataURL({ format: 'png', multiplier: 1 }) || item.url;
+                    const blob = sourceUrl.startsWith('data:')
+                        ? await CloudStorageService.dataURItoBlob(sourceUrl)
+                        : await (await fetch(sourceUrl)).blob();
                 const mimeType = blob.type || 'image/png';
                 const base64data = await new Promise<string>((resolve) => {
                     const reader = new FileReader();
@@ -923,14 +984,18 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     };
 
     const handleAnimate = async () => {
-        if (!item) return;
+        if (!item || isProcessing) return;
+        setIsProcessing(true);
+        setProcessingStatus('Starting animation...');
         const { aspectRatio, coercedFrom } = normalizeVideoAspectRatio(studioControls.aspectRatio);
         if (coercedFrom && coercedFrom !== aspectRatio) {
             toast.info(`Animating ${coercedFrom} art as ${aspectRatio} video.`);
         }
         toast.info('Starting video generation...');
         try {
-            const result = await VideoDirector.triggerAnimation(item, {
+            const artwork = await prepareArtworkForAction();
+            if (!artwork) return;
+            const result = await VideoDirector.triggerAnimation(artwork, {
                 aspectRatio,
             });
             if (!result.success) {
@@ -966,6 +1031,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             toast.success('Video generation started in background!');
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : 'Animation failed');
+        } finally {
+            setIsProcessing(false);
+            setProcessingStatus('');
         }
     };
 
@@ -1033,6 +1101,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
         setIsSavingCanvas(true);
         try {
+            // Capture the editable objects before uploads or gallery updates can
+            // replace this canvas while the save is in flight.
+            const json = await canvasOps.toJSON();
             // 1. Get the data URL (inside try: throws/returns '' if canvas is tainted — ISSUE-482)
             const dataUrl = canvasOps.saveCanvas();
             if (!dataUrl) {
@@ -1043,23 +1114,30 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             // 2. Upload blob to Firebase Storage as a persistent asset
             const blob = await canvasOps.getBlob(dataUrl);
             let storageUri: string | undefined;
+            let exportedAssetId: string | undefined;
+            let exportedUrl: string | undefined;
             if (blob) {
                 const assetId = await saveAssetToStorage(blob);
+                exportedAssetId = assetId;
                 storageUri = currentUserStorageUri(assetId);
+                exportedUrl = storageUri ? await resolveStorageUrl(storageUri) : dataUrl;
+                if (exportedUrl.startsWith('gs://')) throw new Error('The uploaded artwork could not be resolved for the gallery.');
 
                 // 3. Create or update HistoryItem so the export appears in the gallery
                 const { addToHistory, updateHistoryItem } = useStore.getState();
                 
                 if (item.origin === 'canvas-export') {
                     updateHistoryItem(item.id, {
-                        url: dataUrl || item.url,
+                        url: exportedUrl,
+                        thumbnailUrl: exportedUrl,
                         storageUri,
                         timestamp: Date.now()
                     });
                 } else {
                     const canvasAsset: HistoryItem = {
                         id: assetId,
-                        url: dataUrl || item.url,
+                        url: exportedUrl,
+                        thumbnailUrl: exportedUrl,
                         storageUri,
                         prompt: `Canvas edit of: ${item.prompt || 'untitled'}`,
                         type: 'image',
@@ -1073,21 +1151,37 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             }
 
             // 4. Persist canvas state (annotations / layers) for reload
-            const json = await canvasOps.toJSON();
-            if (json) await saveCanvasStateToStorage(item.id, JSON.stringify(json));
-            await persistSession(editManifest, {
+            let draftSynced = true;
+            if (json) {
+                const snapshot = JSON.stringify(json);
+                const draftIds = new Set([item.id, ...(exportedAssetId ? [exportedAssetId] : [])]);
+                const saves = await Promise.allSettled([...draftIds].map(id => saveCanvasStateToStorage(id, snapshot)));
+                draftSynced = saves.every(save => save.status === 'fulfilled');
+            }
+            const sessionSynced = await persistSession(editManifest, {
                 lastAction: 'save_canvas',
                 status: 'completed',
                 selectedCandidateUri: candidatePersistenceUri(generatedCandidates[0]),
                 outputUri: storageUri ?? item.url,
             });
+            let exportSessionSynced = true;
+            if (exportedAssetId && exportedAssetId !== item.id) {
+                exportSessionSynced = await persistSession({
+                    ...editManifest,
+                    sessionId: getCreativeSessionId(exportedAssetId, currentProjectId),
+                    source: { ...editManifest.source, selectedItemId: exportedAssetId },
+                }, { lastAction: 'save_canvas', status: 'completed', outputUri: storageUri });
+            }
+            draftSynced = draftSynced && sessionSynced && exportSessionSynced;
             // ISSUE-917: Only show success if storage actually succeeded
-            if (storageUri) {
+            if (storageUri && draftSynced) {
                 toast.success('Saved to gallery & cloud!');
+            } else if (storageUri) {
+                toast.warning('Image saved to gallery. Editable layers are saved on this device, but cloud sync failed.');
             } else {
                 toast.warning('Canvas state saved, but export to gallery failed.');
             }
-            return { url: dataUrl || item.url, storageUri };
+            return { url: exportedUrl || dataUrl || item.url, storageUri };
         } catch (error: unknown) {
             logger.error('[CreativeStudio] Canvas save failed', error);
             // ISSUE-917: No disk save actually happened in catch path
@@ -1096,6 +1190,23 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         } finally {
             setIsSavingCanvas(false);
         }
+    };
+
+    const prepareArtworkForAction = async (): Promise<HistoryItem | null> => {
+        if (!item || item.type !== 'image') return item;
+        const sourceCanvas = canvasEl.current;
+        const currentJson = serializeCanvasObjects(await canvasOps.toJSON());
+        const changed = dirtyRef.current && currentJson !== baselineJsonRef.current;
+        let saved = lastExportRef.current;
+        if (changed || restoredContentRef.current) {
+            saved = await saveCanvas();
+            if (!saved?.storageUri) throw new Error('Save the current canvas before sending this artwork.');
+            if (canvasEl.current !== sourceCanvas) return null;
+            lastExportRef.current = saved;
+            baselineJsonRef.current = currentJson;
+            restoredContentRef.current = false;
+        }
+        return saved ? { ...item, url: saved.url, storageUri: saved.storageUri, parentId: item.id, origin: 'canvas-export' } : item;
     };
 
     /**
@@ -1124,11 +1235,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         const canvasChanged = dirtyRef.current && currentJson !== baselineJsonRef.current;
         if (canvasChanged || restoredContentRef.current) {
             const saved = await saveCanvas();
-            if (saved) {
-                lastExportRef.current = saved;
-                sourceUrl = saved.storageUri || saved.url;
-                restoredContentRef.current = false;
-            }
+            // Saving failed: keep the editor and edits in place. Never stage
+            // the original image while claiming the edited handoff succeeded.
+            if (!saved?.storageUri) return;
+            lastExportRef.current = saved;
+            sourceUrl = saved.storageUri;
+            restoredContentRef.current = false;
         } else if (lastExportRef.current) {
             // Repeat sends of an unchanged canvas keep staging the same
             // exported artifact instead of reverting to the original.
@@ -1205,14 +1317,21 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         try {
             const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
             const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
-            const { mimeType, base64 } = await fetchAsBase64(item.url);
-            const climaxDescription = await ImageGeneration.captionImage({ mimeType, data: base64 }, 'subject');
+            const artwork = await prepareArtworkForAction();
+            if (!artwork) return;
+            const { mimeType, base64 } = await fetchAsBase64(artwork.url);
+            const preview = await CloudStorageService.compressImage(`data:${mimeType};base64,${base64}`, { maxWidth: 1024, maxHeight: 1024, quality: 0.8, format: 'jpeg' });
+            const previewData = preview.dataUri.split(',')[1]!;
+            // Print masters can exceed the edit payload limit when sent twice
+            // as content and style. Reuse the bounded artwork preview for both.
+            const synthesisImage = { mimeType: 'image/jpeg', data: previewData };
+            const climaxDescription = await ImageGeneration.captionImage({ mimeType: 'image/jpeg', data: previewData }, 'subject');
 
             setProcessingStatus("Synthesizing...");
             const refinedPrompt = `${climaxDescription}, cinematic climax, dramatic lighting.`;
             const synthResults = await ImageGeneration.remixImage({
-                contentImage: { mimeType, data: base64 },
-                styleImage: { mimeType, data: base64 },
+                contentImage: synthesisImage,
+                styleImage: synthesisImage,
                 prompt: refinedPrompt
             });
 
@@ -1342,10 +1461,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         saveCanvas,
         isSavingCanvas,
         handleFlattenCanvas,
+        handleFitArtboardToArtwork,
         handleRefine: onRefine || handleRefineInternal,
         handleCreateLastFrame,
         batchExportDimensions,
         handleSendToCanvas,
+        prepareArtworkForAction,
         handleUndo,
         handleRedo,
         canUndo: canvasOps.canUndo(),

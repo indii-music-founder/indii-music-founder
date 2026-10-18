@@ -104,9 +104,15 @@ export default function MobileRemote() {
     remoteRelayService.isAuthenticated() ? 'pairing' : 'idle'
   );
   const [activeTab, setActiveTab] = useState<TabId>('home');
+  const [pendingChatAttachment, setPendingChatAttachment] = useState<{ url: string; mimeType: string; name: string } | null>(null);
   const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
   const [handoffError, setHandoffError] = useState<string | null>(null);
   const controllerBuild = (import.meta.env.VITE_BUILD_SHA || 'development').slice(0, 9);
+
+  const handleNavigateToChat = useCallback((attachment: { url: string; mimeType: string; name: string }) => {
+    setPendingChatAttachment(attachment);
+    setActiveTab('studio');
+  }, []);
 
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -541,14 +547,19 @@ export default function MobileRemote() {
       case 'home':
         return (
           <Suspense fallback={<TabFallback />}>
-            <QuickCaptureView isPaired={isPaired} />
+            <QuickCaptureView isPaired={isPaired} onNavigateToChat={handleNavigateToChat} />
           </Suspense>
         );
       case 'studio':
       case 'boardroom':
         return (
           <Suspense fallback={<TabFallback />}>
-            <StudioWorkView isPaired={isPaired} onSendCommand={sendCommand} />
+            <StudioWorkView
+              isPaired={isPaired}
+              onSendCommand={sendCommand}
+              pendingChatAttachment={pendingChatAttachment}
+              onClearPendingAttachment={() => setPendingChatAttachment(null)}
+            />
           </Suspense>
         );
       case 'encounters':

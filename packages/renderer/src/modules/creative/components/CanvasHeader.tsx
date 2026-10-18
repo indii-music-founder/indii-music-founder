@@ -1,8 +1,11 @@
 import React from 'react';
 import { ArrowLeft, Lock, MonitorUp, Sparkles, Star, Wand2, Shield, X, Folder } from 'lucide-react';
+import { MediaFileDetails } from '@/core/components/MediaFileDetails';
+import type { HistoryItem } from '@/core/types/history';
 import { auth } from '@/services/firebase';
 
 interface CanvasHeaderProps {
+    item?: HistoryItem | null;
     isMagicFillMode: boolean;
     magicFillPrompt: string;
     setMagicFillPrompt: (prompt: string) => void;
@@ -32,6 +35,7 @@ interface CanvasHeaderProps {
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
+    item,
     isMagicFillMode,
     magicFillPrompt,
     setMagicFillPrompt,
@@ -136,6 +140,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                     </div>
                 </div>
 
+                {item && <div className="mt-2 w-full max-w-[560px]"><MediaFileDetails key={item.id + (item.storageUri || item.url)} item={item} expanded /></div>}
                 <div className="mt-2 flex w-full max-w-[560px] flex-wrap items-center justify-center gap-1.5 text-[10px] text-gray-400">
                     <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1 text-gray-300">
                         {isHighFidelity ? 'High Fidelity' : 'Rapid Edit'}

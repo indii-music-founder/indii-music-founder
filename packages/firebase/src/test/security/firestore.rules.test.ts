@@ -232,6 +232,70 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    // Structural authorization-policy checks only. Editable draft persistence
+    // is verified separately through the real production browser account.
+    describe('users/{userId}/canvas_states', () => {
+        const draft = { id: 'canvas-policy-input', json: '{"objects":[]}', updatedAt: '2026-10-14T12:00:00.000Z' };
+        const path = ['users', ALICE_UID, 'canvas_states', draft.id] as const;
+
+        it('allows the owner to create, read and update a bounded draft', async () => {
+            if (requireEmulator()) return;
+            const reference = doc(verifiedCtx(ALICE_UID).firestore(), ...path);
+            await assertSucceeds(setDoc(reference, draft));
+            await assertSucceeds(getDoc(reference));
+            await assertSucceeds(updateDoc(reference, { json: '{"objects":[],"width":388,"height":690}' }));
+        });
+        it('denies reads and writes from another account', async () => {
+            if (requireEmulator()) return;
+            await setDoc(doc(verifiedCtx(ALICE_UID).firestore(), ...path), draft);
+            const reference = doc(verifiedCtx(BOB_UID).firestore(), ...path);
+            await assertFails(getDoc(reference));
+            await assertFails(setDoc(reference, draft));
+        });
+        it('denies unauthenticated and anonymous access', async () => {
+            if (requireEmulator()) return;
+            for (const context of [unauthCtx(), anonCtx()]) {
+                const reference = doc(context.firestore(), ...path);
+                await assertFails(getDoc(reference));
+                await assertFails(setDoc(reference, draft));
+            }
+        });
+        it('rejects a mismatched document identity and extra authority fields', async () => {
+            if (requireEmulator()) return;
+            const reference = doc(verifiedCtx(ALICE_UID).firestore(), ...path);
+            await assertFails(setDoc(reference, { ...draft, id: 'different' }));
+            await assertFails(setDoc(reference, { ...draft, isAdmin: true }));
+        });
+        it('enforces the same schema restrictions on updates', async () => {
+            if (requireEmulator()) return;
+            const reference = doc(verifiedCtx(ALICE_UID).firestore(), ...path);
+            await setDoc(reference, draft);
+            await assertFails(updateDoc(reference, { id: 'different' }));
+            await assertFails(updateDoc(reference, { isAdmin: true }));
+            await assertFails(updateDoc(reference, { json: ['invalid-type'] }));
+        });
+        it('rejects empty and oversized draft strings on create and update', async () => {
+            if (requireEmulator()) return;
+            const reference = doc(verifiedCtx(ALICE_UID).firestore(), ...path);
+            await assertFails(setDoc(reference, { ...draft, json: '' }));
+            await assertFails(setDoc(reference, { ...draft, json: 'x'.repeat(900001) }));
+            await setDoc(reference, draft);
+            await assertFails(updateDoc(reference, { json: 'x'.repeat(900001) }));
+        });
+        it('requires a timestamp string in the repository format', async () => {
+            if (requireEmulator()) return;
+            const reference = doc(verifiedCtx(ALICE_UID).firestore(), ...path);
+            await assertFails(setDoc(reference, { ...draft, updatedAt: Timestamp.now() }));
+            await assertFails(setDoc(reference, { ...draft, updatedAt: 'invalid-date' }));
+        });
+        it('does not allow a client to permanently delete cloud drafts', async () => {
+            if (requireEmulator()) return;
+            const reference = doc(verifiedCtx(ALICE_UID).firestore(), ...path);
+            await setDoc(reference, draft);
+            await assertFails(deleteDoc(reference));
+        });
+    });
+
     describe('users/{userId}/entitlements and entitlementAudit', () => {
         const entitlement = {
             schemaVersion: 'account-entitlement.v1',

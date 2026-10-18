@@ -41,17 +41,19 @@
   },
   "mac": {
     "category": "public.app-category.productivity",
-    "entitlements": "build/entitlements.mac.plist",
-    "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+    "identity": null,
     "gatekeeperAssess": false,
-    "hardenedRuntime": true,
+    "hardenedRuntime": false,
     "icon": "build/icon.icns",
     "target": [
-      "dmg",
-      "zip"
+      {
+        "target": "dmg",
+        "arch": [
+          "arm64"
+        ]
+      }
     ],
-
-    "notarize": true
+    "notarize": false
   },
   "productName": "indii.music",
   "protocols": [

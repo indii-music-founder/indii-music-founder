@@ -13,9 +13,16 @@ interface StudioWorkViewProps {
     isPaired: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSendCommand?: (command: { type: string; payload: any }) => void;
+    pendingChatAttachment?: { url: string; mimeType: string; name: string } | null;
+    onClearPendingAttachment?: () => void;
 }
 
-export default function StudioWorkView({ isPaired, onSendCommand }: StudioWorkViewProps) {
+export default function StudioWorkView({
+    isPaired,
+    onSendCommand,
+    pendingChatAttachment,
+    onClearPendingAttachment,
+}: StudioWorkViewProps) {
     const toast = useToast();
     const [subTab, setSubTab] = useState<'outputs' | 'chat'>('outputs');
     const [relayCommands, setRelayCommands] = useState<RemoteCommand[]>([]);
@@ -23,6 +30,12 @@ export default function StudioWorkView({ isPaired, onSendCommand }: StudioWorkVi
     const [selectedImage, setSelectedImage] = useState<{ url: string; prompt: string } | null>(null);
     const [flyerPrompt, setFlyerPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
+
+    useEffect(() => {
+        if (pendingChatAttachment) {
+            setSubTab('chat');
+        }
+    }, [pendingChatAttachment]);
 
     useEffect(() => {
         const unsubCmds = remoteRelayService.onAllCommands((cmds) => {
@@ -145,7 +158,12 @@ export default function StudioWorkView({ isPaired, onSendCommand }: StudioWorkVi
             {subTab === 'chat' ? (
                 <div className="flex-1 min-h-0 overflow-hidden">
                     <Suspense fallback={<div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin text-[#00ff66]" /></div>}>
-                        <AgentChat isPaired={isPaired} onSendCommand={onSendCommand || (() => {})} />
+                        <AgentChat
+                            isPaired={isPaired}
+                            onSendCommand={onSendCommand || (() => {})}
+                            initialAttachment={pendingChatAttachment}
+                            onClearInitialAttachment={onClearPendingAttachment}
+                        />
                     </Suspense>
                 </div>
             ) : (

@@ -3,7 +3,7 @@
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-10-12 (**Closed ISSUE-1511 / GitHub #414** — Completed Assisted Rights Registration Engine across all 6 portals with Electron Browser Copilot HUD, credential-isolated DOM step executor, and provenance confirmation ledger)
+> **Last updated:** 2026-10-16 (Logged ISSUE-1537–1551 — Round 1, Round 2 & Round 3 Jev-verified bug hunt across TypeSafe System One schemas, multi-tenant recoupment ledger & attribution isolation, campaign budget refinement, Google/TikTok ad adapters & CAPI deduplication, Mobile Remote media bridges, Arcjet/AppCheck & Studio lease security, `deductCredits` & `handleMicroTransactionCheckoutCompleted` Firestore read-after-write transaction crashes, Split Escrow deadlocks, Tax Form single-use token burn & path traversal, Shopify/PandaDoc webhook HMAC & numeric ID crashes, and Inngest durable execution & timeline polling crashes)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V3):** This is the ACTIVE master ledger. It operates with strict discipline:
@@ -4869,3 +4869,669 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** Repeated deployments remove live endpoints/triggers; interruption or later failed deployment can leave functions unavailable, while delete failures are suppressed.
 - **Fix:** Remove completed migrations from ordinary deployment; inspect exact generation/trigger metadata and perform bounded explicitly authorized migrations with recovery where necessary. Preserve deployment safeguards.
 - **Acceptance:** Ordinary redeploy regression invokes no active-function deletions; migration fixtures verify prerequisites and recovery. Exact-SHA CI/deployment metadata confirms expected endpoints. Destructive live migration requires separate authorization; customer/event continuity remains separate acceptance.
+
+---
+
+### 2026-10-14 daily competitive-intelligence routing — evidence-first delta
+
+> **Source:** October 14, 2026 daily intelligence run. **Routing:** this is a graph/intelligence annotation over existing V3 records, NOT a new bug-intake system, and no new GitHub issue is authorized by this note. Proposed nodes are unassigned, not implementation commitments. Status remains authoritative in each ISSUE entry and exact-SHA GitHub CI.
+
+**Verified repository delta (as observed October 14, 05:56 EDT):**
+- `main` HEAD `5e70f3395241691d032245230618374eeaa17d07` (Boardroom crop approval). Exact-head [Firebase deployment 38512796276](https://github.com/indii-music-founder/indii-music-founder/actions/runs/38512796276) succeeded (rules, 20 unit-test shards, build, staging, staging E2E, production); this verifies the workflow's scope, **not** external portal registration, authenticated Artist Passport claim, or a successful desktop release.
+- New [rights commit e603dc42](https://github.com/indii-music-founder/indii-music-founder/commit/e603dc42bb7315ee5fb8188ab09ce29601f0f533) adds hosted rights-registration callable, CWR export/approval, user-imported ACK and broker path. Source explicitly returns `transportEnabled: false`, `delivered: false` for CWR and gates hosted session on `RIGHTS_HOSTED_ENABLED === 'true'`; `user_import` ACK has `independentlyVerified: false`. **Do not claim official filing or receiver acceptance from deployment alone.** Overlaps `ISSUE-1511` (code closeout), `ISSUE-1520` (approval/OS boundary), `ISSUE-1450` and `ISSUE-1452` (rights evidence/catalog).
+- [v1.81.0 release](https://github.com/indii-music-founder/indii-music-founder/releases/tag/v1.81.0) contains the Apple Silicon DMG, but [Release 38337419732](https://github.com/indii-music-founder/indii-music-founder/actions/runs/38337419732) remains failed; no later successful desktop release workflow was found in the latest run listing. `P-20261013-RELEASE-VERIFICATION` and child `P-20261013-RELEASE-GLOB` remain PROPOSED/UNVERIFIED. A green Firebase deployment does not supersede this desktop-release gate.
+- **Existing high-priority findings to route before new features:** `ISSUE-1525` (Passport claim blocked by server receipt metadata), `ISSUE-1526` (Passport ownership/consent boundary), `ISSUE-1527` (ordinary production deployment deletes functions), `ISSUE-1524` (ledger deletion/ID reuse). The current `.github/workflows/deploy.yml` still contains unconditional `functions:delete` commands with `|| true`; [successful run 38512796276](https://github.com/indii-music-founder/indii-music-founder/actions/runs/38512796276) does **not** resolve `ISSUE-1527`. No issue is automatically closed.
+
+**New dated competitive intelligence, linked to existing work:**
+1. **Deezer (confirmed, October 13):** [official announcement](https://newsroom-deezer.com/2026/10/deezer-ai-music-toggle/) says a global opt-in search filter for fully AI-generated music is due by end-2026; Deezer reports nearly 90,000 fully generated uploads/day and over 42 million excluded from recommendations January 2025–August 2026. Counts are **company-reported**, not independent audits. **Implication:** human-authorship evidence and accurate false-positive appeals matter to DSP discoverability. Link to closed [GitHub #412](https://github.com/indii-music-founder/indii-music-founder/issues/412) for provenance policy and its unverified downstream delivery/appeals remainder; no new AI-detector implementation authorized.
+2. **Ticketing integrity (reported October 13):** [Music Business Worldwide](https://www.musicbusinessworldwide.com/raye-says-scalpers-used-ai-bots-to-create-hundreds-of-thousands-of-fake-registrations-as-1-8m-sign-up-for-5000-royal-albert-hall-seats/) reports Raye alleging automated scalper registrations among 1.8M signups for 5,000 seats, followed by manual review. Treat bot quantities as artist claims, not verified bot telemetry. **Implication:** preserve verified fan identity/consent and anti-abuse controls in future presales; do not build a ticketing anti-bot system on this signal alone. Adjacent to `ISSUE-1526` trust boundaries but distinct from its confirmed Passport issue.
+3. **Independent artist operating-system competition (reported October 13):** [Madverse interview](https://www.musicbusinessworldwide.com/independent-artists-in-india-deserve-the-same-infrastructure-access-royalty-transparency-and-global-reach-that-western-artists-have-been-exposed-to/) claims 200,000+ artists/labels and 3B streams in 45+ countries. Company figures are unverified; [Madverse's official product site](https://www.madverse.co/) additionally advertises publishing administration and worldwide royalty collection through Kobalt, plus an AI artist navigator. The [June 11 investment announcement](https://www.globenewswire.com/news-release/2026/06/11/3310277/0/en/madverse-music-group-raises-growth-capital-led-by-kobalt-founder-willard-ahdritz.html) describes seed financing led by Kobalt founder Willard Ahdritz's vehicle (not a claim that Kobalt itself invested). This is a direct rights + business-OS overlap; research the verified registration/receipt depth before treating claims as equivalent. No immediate geographic expansion.
+4. **Continuing commercial pressure:** [EVEN STUDIO launch September 29](https://www.musicbusinessworldwide.com/direct-to-fan-platform-even-launches-studio-giving-artists-a-standalone-destination-to-sell-music-tickets-and-merch/) bundles music, merch, tickets and community. Preserve indii differentiation in registration-before-delivery, royalty/accounting reconciliation, permissioned execution and evidence receipts; do not copy storefront features without a measured gap.
+
+**Execution-graph delta (PROPOSED research nodes; no GitHub issues created):**
+- `P-20261014-DSP-HUMAN-POLICY-MAP` — **discovered research child**, spawned by October 13 Deezer announcement; **overlaps** #412; **depends-on** sourced DSP policies and inspection of existing forensic/appeal/delivery controls; **converges-to** artist-trust release-readiness verification. **Terminal:** dated Deezer/DSP policy matrix, human-produced sample/loop negative cases, and an explicit adopt/defer/no-change decision. No code implied.
+- `P-20261014-FAN-PRESALE-SIGNAL` — **watch/decision node**, spawned by reported Raye presale issue; **related-to** `ISSUE-1526` (consent/identity) but **not duplicate**; **depends-on** evidence of a real indii ticket-presale workflow and abuse threat model; **terminal:** source-backed decision whether to add a child implementation job or defer. No speculative ticketing build.
+- **Existing nodes touched:** `ISSUE-1525`, `ISSUE-1526`, `ISSUE-1527`, `ISSUE-1524`, `ISSUE-1520`, `ISSUE-1511`, `ISSUE-1450`, `ISSUE-1452`, `P-20261013-RELEASE-VERIFICATION`, `P-20261013-RELEASE-GLOB`. **Convergence:** production trust/release verification; exact-SHA CI plus genuine authorized external receipts where required. **Do not mark FIXED** based on this annotation.
+
+**Ordered worklist:** (1) resolve `ISSUE-1526`/1525 Passport ownership, consent and claim durability with emulator adversarial tests and genuine claim/reload; (2) resolve `ISSUE-1527` destructive routine deploy and verify no deletions in exact-head workflow; (3) live acceptance of rights portal and ACK/registration evidence under `ISSUE-1520`/1511/1450/1452; (4) desktop release verification existing proposed nodes; (5) research-only Deezer policy and presale integrity. `ISSUE-1524` protects integrity of all ledger work. Prioritize current blockers over feature expansion.
+
+**Investor dossier evidence (date/claim qualifier):** October 13 Deezer first-party AI-search toggle and company-reported 90K daily uploads; October 13 Raye presale bot claims (not independently confirmed); October 13 Madverse scale claims; September 29 EVEN STUDIO commerce bundle; October 13 indii rights hosted/CWR implementation **without** verified transmission; October 14 successful exact-head Firebase CI/deployment **without** desktop release or external filing acceptance. Keep claims distinct from live proof.
+
+
+---
+
+### 2026-10-15 daily competitive-intelligence routing — verified delta (05:56 EDT)
+
+> **Provenance:** October 15 intelligence run, GitHub issue/commit/Actions inspection and dated primary/industry sources. **Scope:** graph/intelligence annotation over V3 and the existing `report_bug/reportBugFn → Firestore/GitHub` bug intake; NOT a new issue tracker. Proposed nodes below are research/decision work, not authorized implementation issues. No GitHub issues created, statuses altered or jobs closed.
+
+**Repository truth (as observed):**
+- `main` HEAD [`dff4cd75bc48`](https://github.com/indii-music-founder/indii-music-founder/commit/dff4cd75bc48195792f884ac93ed4f1ce6b70280), October 14 16:05 UTC, fixes canvas detail-crop anchoring. Exact-SHA [Firebase deploy 38636405771](https://github.com/indii-music-founder/indii-music-founder/actions/runs/38636405771) **succeeded**, including unit/rules/build/deployment jobs. [SOC 2 run 38707980573](https://github.com/indii-music-founder/indii-music-founder/actions/runs/38707980573) succeeded; neither run proves desktop v1.81 release publication or official rights filing.
+- **Three open GitHub issues:** [#418](https://github.com/indii-music-founder/indii-music-founder/issues/418) (October 14, 16:29 UTC: 9:16 image → 11×17 poster at 300 DPI fails the >4× print enlargement guard, repeats without actionable resolution), [#417](https://github.com/indii-music-founder/indii-music-founder/issues/417) (October 14, 13:17 UTC: Boardroom status overclaims; two duplicate reports merged into issue comments by existing bug pipeline), and [#416](https://github.com/indii-music-founder/indii-music-founder/issues/416) (weekly demo audit). No open PRs in current listing. HEAD precedes #418 report, so no post-report implementation/CI evidence was found.
+- `ISSUE-1527` remains **OPEN**: current `.github/workflows/deploy.yml` lines 709–720 still contain unconditional `firebase functions:delete` commands for createStripeAccount, createTransfer, calculateFuelLogistics, agentLoopCron and dispatchCloudVideoRender, with `|| true`. Green deploy is not evidence that normal deployment is nondestructive. `ISSUE-1525`/1526 (Passport claim/consent) and `ISSUE-1524` (ledger integrity) remain OPEN in V3; latest source/acceptance not independently reverified this run, so no new defect claims or status changes.
+- [Desktop release v1.81.0](https://github.com/indii-music-founder/indii-music-founder/releases/tag/v1.81.0) has Apple Silicon DMG assets, but the latest listed [Release workflow 38337419732](https://github.com/indii-music-founder/indii-music-founder/actions/runs/38337419732) remains failed. Existing proposed `P-20261013-RELEASE-VERIFICATION` and `P-20261013-RELEASE-GLOB` stay unverified. Rights `ISSUE-1511` code closeout does not establish official portal receipts; `ISSUE-1520` live authorization acceptance remains open.
+
+**Confirmed NEW consequential external change (October 14):**
+1. [YouTube Music official announcement](https://blog.youtube/news-and-events/youtube-music-ai-labels/): rolling out listener-visible labels for music made primarily using generative AI; partner declarations plus platform signals inform labels; main YouTube app to follow. [YouTube's music-partner disclosure guide](https://support.google.com/youtube/answer/17124251?hl=en-ph) explicitly supports `Fully Gen AI`, `Partly Gen AI`, `No Gen AI`, and unknown, via DDEX **ERN 4.3.2+** or CSV `contains_ai` (all/partly/none/unknown). Its examples treat pitch correction and AI mastering as **No Gen AI**, but generated musical layers as **Partly Gen AI**; visuals and audio may have different provenance. DDEX [ERN 4.3.1 release notes](https://ern.ddex.net/electronic-release-notification-message-suite-part-1-definitions-of-messages/annex-a-%28informative%29-release-notes/) already describe AI contributor/recording fields: **do not call this a newly published DDEX standard**. **Product implication:** ensure indii's human-created-music policy, human electronic/sample protection and per-asset disclosure mapping are distinct; avoid falsely declaring "No Gen AI" from a detector score or mixing AI business/visual workflows with music authorship. No verified repo-wide mapping yet; do not claim implementation missing without code inspection.
+2. [October 14 Phonorecords V reporting](https://www.digitalmusicnews.com/2026/10/14/phonorecords-v-submission-spotify/), corroborated by [DIMA's October 6 statement](https://dima.org/resource/dima-statement-on-phonorecords-v-proceeding/): DSPs including Spotify advocate continuation of Phono IV streaming mechanical structure through 2028–2032; publisher/creator-side participants seek changes, including treatment of bundles. **These are competing proposals, NOT final CRB rates.** Product implication: monitor statutory changes for accurate educational explanations and future accounting configuration; do not hard-code proposed rates or claim recovered royalties.
+
+**Existing competitive pressure — monitor, no duplicate work:** Deezer October 13 human-music search toggle proposal (existing `P-20261014-DSP-HUMAN-POLICY-MAP`), DistroKid/UMG takedown dispute and licensed-sample appeals (closed #412 remainder), Madverse integrated distribution/publishing/AI navigator and claimed scale, EVEN direct-to-fan music/merch/ticket/community bundle, Symphonic catalog migration. No newly verified consequential merch/ticketing/catalog-transfer launch in this 24-hour window; retain prior evidence, not new feature tickets.
+
+**Execution graph delta (proposed work, no GitHub issue created):**
+- `P-20261015-YOUTUBE-GENAI-DISCLOSURE` — **DISCOVERED child** of `P-20261014-DSP-HUMAN-POLICY-MAP`; **spawned-by** YouTube October 14 rollout; **overlaps** closed GitHub #412 human-music/false-positive protections; **depends-on** current DDEX delivery version/metadata inspection, YouTube partner policy, evidence of audio-vs-visual provenance and licensed samples; **converges-to** artist-trust and distribution release-readiness gate. **Terminal:** dated cross-DSP policy/metadata matrix, inspection of actual indii ERN/CSV serialization and negative tests or documented nonapplicability, explicit implement/defer/no-change decision; live partner delivery ACK if implementation is commissioned and claimed.
+- `P-20261015-PHONO-V-RATE-WATCH` — **DISCOVERED research child** of existing rights/royalty education branch (`ISSUE-1450`, `ISSUE-1452`, `ISSUE-1511`); **spawned-by** October 14 Phono V filing coverage; **depends-on** CRB filings/final decision; **converges-to** rights/accounting policy accuracy. **Terminal:** sourced rate-proposal comparison, explicit defer/monitor decision now, later CRB determination before any production rate change. **No code until binding requirement and scope confirmed.**
+- **Existing nodes touched:** #417 (truthful capability claims; **validates** evidence-based completion policy), #418 (print-prep loop; **depends-on** input dimensions, quality/4× guard and explicit user-facing fallback; **converges-to** Creative live QA), #416, `ISSUE-1524`/1525/1526/1527, `ISSUE-1520`/1511/1450/1452, `P-20261013-RELEASE-VERIFICATION` and `P-20261013-RELEASE-GLOB`. **No change to terminal status** without exact-SHA code+tests/CI and live external proof when required.
+
+**Ordered worklist:** (1) `ISSUE-1526`/1525 Passport privacy, consent, authorized claim and real signup/reload; (2) `ISSUE-1527` destructive deployment prevention, current-head CI and live endpoint continuity; (3) #417 Boardroom evidence-grounded capability status and #418 print-prep 11×17 user-path/guard decision with reproducible tests; (4) rights official-portal/ACK live acceptance (`ISSUE-1520`/1511/1450/1452) and desktop release verification; (5) YouTube metadata policy mapping **research first**; (6) Phono V proposal monitoring; (7) `ISSUE-1524` ledger-integrity controls protect all records. No speculative direct-commerce build.
+
+**Investor competition dossier:** October 14 YouTube official listener-facing AI provenance rollout and supported ERN 4.3.2+/CSV metadata (first-party); October 14 DSP/publisher mechanical-rate policy disagreement (proposals, not adopted rates); October 14 indii current-head successful Firebase CI/deploy, plus explicit unresolved security, truthful-agent, print and external-rights acceptance gaps. Preserve distinction between advertised platform capabilities and authenticated end-to-end proof.
+
+---
+
+### ISSUE-1528: Mobile Remote capture cannot bridge media attachments to Boardroom, headless Creative Canvas, or automated social/story workflows
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🔴 HIGH
+- **Module:** Mobile Remote / Cloud Relay / Boardroom / Creative Canvas / Video Pipeline / Social Tools
+- **Classification:** Structural integration gap across mobile capture, remote relay serialization, desktop execution adapter, and headless agent tool orchestration. Genuine customer mobile-to-boardroom creative loop is broken.
+- **Evidence:** Tested end-to-end user story: an artist away from their studio takes a mobile selfie via the Mobile Remote app, reviews/approves it, attempts to attach it to the Boardroom to burn a specific saying onto the picture, generate a 9:16 story/video, adapt across all social aspect ratios, and use the Creative Canvas to composite brand sunglasses (e.g. Ray-Ban Wayfarer). Ten mechanical failure points prevent execution:
+  1. **Selfie Capture Forced to Rear Camera:** `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:667` hardcodes `<input type="file" accept="image/*" capture="environment" />`. The HTML Media Capture `environment` attribute strictly forces the rear camera on mobile operating systems (iOS/Android), preventing direct front-facing selfie capture without user OS overrides or camera switching.
+  2. **Captured Media Review Card Lacks Boardroom Bridge:** In `QuickCaptureView.tsx:749-839`, after a user takes and reviews an image, the action buttons only provide `media_capture` ("Save to Notes"), `editor_import` ("Open in Studio Video Editor"), "Download", and "Retake". There is no action to "Send to Boardroom", "Attach to Agent", or route the captured asset into active agent conversations.
+  3. **Mobile Remote Chat Missing Attachment / Media Picker:** In `packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx` and `VoiceTextViewingStage.tsx:1-180`, the chat interface only exposes a text textarea and voice mic toggle. There is no file upload button, camera roll picker, or thumbnail staging tray for attaching images or captured assets to messages.
+  4. **Remote Relay Drops Message Attachments:** In `packages/renderer/src/services/agent/RemoteRelayService.ts:435`, `sendCommand` accepts only `{ type: 'chat', text: string, metadata?: any }`. In `packages/renderer/src/services/remote/rendererExecutionAdapter.ts:358-362`, the desktop execution handler calls `agentService.sendMessage(agentId, text, conversationId, undefined)`. The 4th argument (`attachments`) is hardcoded to `undefined`, permanently stripping any media payload before desktop agent dispatch.
+  5. **Capture Storage Path Disconnected from Agent Workspace:** `QuickCaptureView.tsx` uploads captures to GCS/Firebase Storage under `users/${uid}/assets/captured_media/...` and stores an encounter record. However, captures are never injected into `useStore.getState().uploadedImages` or indexed into the Boardroom's session file context. An agent executing `StorageTools.list_files` (`packages/renderer/src/services/agent/tools/StorageTools.ts:32`) has no reference or path pointer to the captured selfie.
+  6. **Creative Canvas Inoperable in Headless / Minimized Mode:** The user requested "use the creative canvas to put some sunglasses on me". `packages/renderer/src/modules/creative/CreativeStudio.tsx:693` only renders the Fabric.js `CreativeCanvas` when `selectedItem` is truthy and `viewMode === 'editor'`. Furthermore, `CanvasTools.draw_shape`, `CanvasTools.add_text`, and `CanvasTools.export_canvas` (`packages/renderer/src/services/agent/tools/CanvasTools.ts:290-294`) call `CanvasService.getCanvas()`, which throws `CANVAS_NOT_ACTIVE` whenever the studio desktop window is minimized, locked, running in the background, or navigated to Boardroom/Settings.
+  7. **No Headless Typography Compositor Tool:** There is no agent tool for compositing custom typography, quotes, or brand sayings onto an image outside of the interactive canvas or video editor timeline. The Boardroom has no server-side or OffscreenCanvas tool (e.g. `composite_image_text`) to overlay styled text onto an image asset headlessly.
+  8. **No Facial Landmark Detection for Automated Eyewear Inpainting:** While `EditImageWithAnnotationsTool.ts` supports generative image inpainting via Gemini Imagen, it requires explicit bounding coordinates `(cx, cy, r)` or pre-drawn binary masks. The agent swarm lacks a facial landmark / face-mesh tool (e.g. MediaPipe or canvas face detector) to locate eye/bridge coordinates on an arbitrary selfie to accurately position specific brand sunglasses (e.g., Ray-Ban Wayfarer) without manual human coordinate input.
+  9. **Missing Multi-Platform Aspect Ratio Batch Cropper:** While `SocialTools.ts` handles schedule dates and copy drafting, there is no tool to take an input master photo and automatically crop/reframe it into standard multi-platform social deliverables (1:1 Square, 4:5 Instagram Portrait, 9:16 Stories/Reels/TikTok, 16:9 X/YouTube).
+  10. **Video / Story Pipeline Disconnected from Remote Trigger:** While `VideoTools.generate_video` (`packages/renderer/src/services/agent/tools/VideoTools.ts:45`) supports Veo 3.1 with `firstFrame` image inputs and 9:16 aspect ratios, and `editor_import` can add assets to the timeline, the Boardroom agent cannot initiate the 9:16 story/video workflow because the initial selfie asset pointer never successfully reaches the agent context.
+- **Impact:** An artist on the go cannot use the mobile remote app to capture quick content (selfies, backstage moments), pass it to the Boardroom agent swarm, have typography/sayings burned in, have brand assets (eyewear/wardrobe) composited, or receive multi-platform social assets and a 9:16 story video. The mobile remote remains an isolated viewfinder and plain text chat rather than an executive mobile command bridge.
+- **Fix:**
+  1. Add a selfie/front-camera switch in `QuickCaptureView.tsx` by toggling `capture="user"` vs `capture="environment"`, or removing the attribute to open the OS camera picker.
+  2. Add an explicit "Send to Boardroom" action button on the `QuickCaptureView` media review card (`action: 'boardroom_attach'`) that pre-loads the image as an active message attachment in `AgentChat.tsx`.
+  3. Add an image/media attachment picker button to `AgentChat.tsx` and `VoiceTextViewingStage.tsx`.
+  4. Update `RemoteRelayService.sendCommand` payload schema and `rendererExecutionAdapter.ts` to transmit `attachments: Array<{ url: string, mimeType: string, name: string, path?: string }>` and pass them directly to `agentService.sendMessage(...)`.
+  5. Add a headless server/worker or OffscreenCanvas typography tool (`composite_image_text` or `render_text_overlay`) that burns text with font, size, fill, and position onto an image without requiring an active Fabric DOM canvas.
+  6. Add a headless canvas abstraction or decouple `CanvasTools` so image manipulation, shape drawing, and image generation can execute against an offscreen canvas or node-canvas/Sharp worker when the UI is headless or in Boardroom view.
+  7. Add a face landmark detection tool or landmark estimation step in the creative pipeline to calculate eye/temple anchor points for brand eyewear inpainting/compositing.
+  8. Add a multi-aspect ratio export tool (`render_social_derivatives`) in `SocialTools` or `ImageTools` that outputs 1:1, 4:5, 9:16, and 16:9 crops from a single source asset.
+  9. Wire the Boardroom prompt execution plan to orchestrate `composite_image_text` -> `render_social_derivatives` -> `VideoTools.generate_video(prompt, firstFrame, aspectRatio: '9:16')` in sequence.
+- **Acceptance:** Real mobile remote test proves:
+  1. Front-facing camera captures selfie; review screen displays "Send to Boardroom".
+  2. Boardroom chat receives the image attachment with valid storage URL and hydrates into agent context.
+  3. Boardroom successfully executes text overlay without `CANVAS_NOT_ACTIVE` error.
+  4. Agent successfully applies sunglasses via landmark-informed inpainting or compositing.
+  5. 1:1, 4:5, 9:16 image deliverables and a 9:16 video generation task are dispatched and verifiable in project assets.
+
+### ISSUE-1529: Remote Cloud Music Vault (StreamView) unreachable from navigation and lacks desktop Now Playing sync / Car Test player
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🔴 HIGH
+- **Module:** Mobile Remote / Audio Streaming / TransportBar / DesktopState Sync
+- **Classification:** Structural UX omission and state-sync gap between desktop playback engine and mobile remote.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:67-73` defines bottom navigation `TABS` with only `['home', 'studio', 'encounters', 'road', 'settings']`. `case 'stream'` is implemented in `renderTabContent()` (`MobileRemote.tsx:566-571`) to render `<StreamView />`, but because `'stream'` is omitted from `TABS`, mobile users cannot access their Cloud Music Vault without manual URL manipulation.
+  2. `packages/renderer/src/services/agent/RemoteRelayService.ts:110-130` (`DesktopState`) defines telemetry fields for `activeTrackTitle`, `activeTrackArtist`, `isPlaying`, `nowPlayingDurationSec`, and `nowPlayingPositionSec`. However, `MobileRemote.tsx` has no persistent Mini-Player bar or floating playback controller. When desktop Studio is playing a master mix at home or in rehearsal, the phone has zero visibility into playback status, track position, or transport controls.
+  3. `packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx` supports scrubbing, volume, play/pause, and next track, but operates only against local mobile audio playback without a 1-tap "Mirror Desktop Playback" / "Car Test Stream" bridge.
+- **Impact:** Artists leaving the studio to do the canonical "Car Test" or headphone check cannot open their Cloud Vault from the mobile remote bottom bar, view what's playing on desktop, or control studio playback remotely.
+- **Fix:**
+  1. Update `TABS` in `MobileRemote.tsx` to include `Vault` (`id: 'stream'`, icon: `Music` or `Cloud`, label: `Vault`).
+  2. Add a persistent, floating `NowPlayingBar` above the bottom `TABS` in `MobileRemote.tsx` when `desktopState?.isPlaying` or `desktopState?.activeTrackTitle` is truthy, exposing track title, artist, playback progress, play/pause, and skip controls.
+  3. Connect `TransportBar` DAW commands to send `daw_control: toggle_playback` to desktop Studio via `RemoteRelayService.sendCommand`.
+  4. Add a "Stream to Phone" toggle in `StreamView` allowing the phone to fetch the active master WAV/MP3 from Firebase Storage for mobile-local playback.
+- **Acceptance:** Real mobile remote test proves:
+  1. Bottom navigation bar renders `Vault` tab; tapping it renders `StreamView` with unreleased track catalog.
+  2. Starting playback on desktop Studio immediately surfaces persistent Mini-Player on mobile remote with track metadata and synchronized play/pause state.
+  3. Tapping pause on mobile remote pauses playback on desktop Studio.
+
+### ISSUE-1530: Remote human-in-the-loop authorization (ApprovalQueue) is orphaned and disconnected from Cloud Relay state
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🔴 HIGH
+- **Module:** Mobile Remote / Agent Guardrails / Approval Queue / Cloud Relay
+- **Classification:** Architectural isolation defect. Component built to satisfy safety and authorization guardrails is unmounted and severed from remote relay protocol.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/ApprovalQueue.tsx` implements a 163-line interactive authorization card with timer countdown, haptic pulses, approve/reject actions, and shield badges. However, it has 0 import references across `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` and all child components. It is completely unmounted.
+  2. In `ApprovalQueue.tsx:22-28`, approval state is read via `const { pendingApproval, resolveApproval } = useStore(...)`. In a remote architecture where the phone runs in a mobile browser away from the desktop, the mobile client's Zustand store does not share in-memory state with the desktop. `RemoteRelayService.ts` does not synchronize `pendingApproval` across Firestore documents or WebSocket events. As a result, even if mounted, `pendingApproval` on the phone remains perpetually `null`.
+  3. In `ApprovalQueue.tsx:44-57`, `handleApprove` and `handleReject` invoke `onSendCommand({ type: 'agent_action', payload: { action: 'approve' | 'reject', approvalId } })`. In `rendererExecutionAdapter.ts:298-317`, `case 'agent_action'` only recognizes `action === 'open_chat'`; it has no handler to call `resolveApproval(true/false)` on the desktop studio's Zustand store.
+- **Impact:** An artist away from their studio cannot approve or reject high-consequence agent actions (credit expenditures, public social postings, live release submissions, contract generation). The desktop agent stalls indefinitely or fails the approval timeout.
+- **Fix:**
+  1. Add `pendingApproval` object schema to `DesktopState` / `remoteRelayService` state broadcast (`approvalId`, `title`, `description`, `type`, `costCredits`, `timestamp`, `expiresAt`).
+  2. Mount `ApprovalQueue` as a high-visibility, haptic-enabled banner or slide-up modal in `MobileRemote.tsx` whenever `desktopState.pendingApproval` is populated.
+  3. Add handler in `rendererExecutionAdapter.ts` under `case 'agent_action'` for `action === 'approve'` and `action === 'reject'` to call `useStore.getState().resolveApproval(action === 'approve', payload.approvalId)`.
+- **Acceptance:** Real test proves:
+  1. Desktop agent executing a guarded tool triggers `requestApproval(...)`.
+  2. Mobile remote receives real-time broadcast and displays `ApprovalQueue` modal with haptic alert.
+  3. Artist taps "Authorize" on phone; desktop resolves approval promise and proceeds with tool execution.
+
+### ISSUE-1531: Tactile action grid (CommandPad) and visual generation presets (GenerationMonitor) are orphaned from mobile studio UI
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / CommandPad / GenerationMonitor / StudioWorkView
+- **Classification:** Structural UX degradation. High-utility tactile controls and generation style presets exist in tree but were bypassed by barebones text inputs.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/CommandPad.tsx` (429 lines) implements one-tap studio shortcuts (Visual Gen, Show Me, Brainstorm Hooks, transport controls, and direct 10-hub studio navigation) compliant with 44x44px touch targets. It is never imported or rendered in `MobileRemote.tsx` or `StudioWorkView.tsx`.
+  2. `packages/renderer/src/modules/mobile-remote/components/GenerationMonitor.tsx` (524 lines) implements style presets (`Cinematic`, `Album Art`, `Streetwear`, `Neon`, `Minimal`, `Vintage`), multi-aspect ratio selection (`1:1`, `16:9`, `9:16`, `4:3`), live generation monitoring, and command cancellation. `StudioWorkView.tsx:5` only imports the gallery helper `buildGeneratedImagesGallery`, while discarding the entire interactive UI in favor of an unstyled text input (`StudioWorkView.tsx:154-172`) that hardcodes `aspectRatio: '4:5'` (`StudioWorkView.tsx:81`).
+- **Impact:** Mobile users in the `Studio` tab are restricted to a single text prompt input without style presets, aspect-ratio controls, progress feedback, or quick-action studio shortcuts.
+- **Fix:**
+  1. Integrate `CommandPad` into `StudioWorkView.tsx` as a collapsible "Quick Actions" tray or dedicated sub-segment.
+  2. Re-embed style preset chips and aspect ratio selectors from `GenerationMonitor.tsx` into the flyer/visual generation card in `StudioWorkView.tsx`.
+  3. Display active generation spinner and cancellation button when `remoteRelayService` reports a pending `generate_image` or `generate_video` command.
+- **Acceptance:** Real mobile test proves:
+  1. `Studio` tab renders style preset chips and aspect ratio selector.
+  2. Selecting "Streetwear" and "9:16" sends properly formatted generation metadata to desktop.
+  3. Quick Actions pad triggers "Show Me" and returns latest visual asset in gallery.
+
+### ISSUE-1532: Mobile capture ingestion bypasses AI agent swarm — voice memos lack auto-transcription and receipts lack OCR expense parsing
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🔴 HIGH
+- **Module:** Mobile Remote / Capture Ingestion / Notes / Finance Agent / Speech-to-Text
+- **Classification:** Functional bypass in task dispatch. Captured media is shunted into static storage notes instead of activating specialist agents.
+- **Evidence:**
+  1. In `packages/renderer/src/services/remote/rendererExecutionAdapter.ts:452-456`, `executeDispatchTask` calls `saveCaptureNoteDirectly(task)`. If `payload.commandText || payload.transcription` is empty (the default for audio, photo, and receipt button captures in `QuickCaptureView.tsx`), `saveCaptureNoteDirectly:54-75` saves a plain text Note with the raw file URL and immediately returns.
+  2. The AI agent swarm is completely bypassed. A voice memo recorded on the phone is saved as `"Voice memo"` with an un-transcribed audio URL. No speech-to-text (Whisper / Gemini multimodal audio) is executed to extract lyrics, song concepts, or melody notes.
+  3. A receipt photographed on the road via `capturedImageBlob.type === 'receipt'` is saved as `"Receipt"` with an image URL. No Finance Agent OCR is executed to extract the vendor, date, total amount, tax, or expense category.
+  4. `MobileMileageModal.tsx` (travel and mileage expense logger) is trapped inside `StatusDashboard.tsx`, which is unmounted in `MobileRemote.tsx`.
+- **Impact:** Mobile capture acts as dumb cloud storage rather than an AI-native music business copilot. Voice memos are lost in a sea of raw audio files, and road expenses are not parsed or tracked.
+- **Fix:**
+  1. In `rendererExecutionAdapter.ts`, when handling `task.type === 'voice_memo'`, invoke Gemini 3 multimodal audio / speech transcription to produce an automatic transcript, summary, and suggested tags before saving to Notes or Music ideas.
+  2. When handling `task.type === 'receipt_log'`, invoke the Finance Agent with OCR tool to extract `{ vendor, date, amount, currency, category, tax }` and write directly to the user's touring/expense ledger.
+  3. Mount `MobileMileageModal` in `MobileRemote.tsx` under the `Road` tab (`RoadMode.tsx`) for fast mileage and travel expense entry.
+- **Acceptance:** Real test proves:
+  1. Recording a voice memo on mobile produces a transcribed note with detected musical tags in desktop Studio.
+  2. Photographing an expense receipt on mobile automatically extracts amount and vendor in the financial ledger.
+
+### ISSUE-1533: Road networking lacks digital contact sharing (QR code / Artist Passport card) and business card camera OCR
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / Contacts / EncounterFeedView / QuickContactModal / Artist Passport
+- **Classification:** Feature gap in mobile artist CRM and on-the-road networking workflows.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/EncounterFeedView.tsx` and `QuickContactModal.tsx` allow artists to log people they meet (A&Rs, producers, promoters, fans), but require manual keyboard entry of name, role, organization, email, phone, and Instagram handle.
+  2. There is no "Share My Card" feature. In a noisy venue, green room, or conference, the artist cannot display a full-screen dynamic QR code pointing to their public Artist Passport / EPK / contact vCard for instant phone-to-phone contact exchange.
+  3. There is no camera OCR mode in `QuickContactModal.tsx` to snap a photo of a physical business card or festival badge and auto-fill contact fields.
+- **Impact:** Friction during real-world networking leads to incomplete or abandoned contact logging while on tour or at music events.
+- **Fix:**
+  1. Add a "Share My Card" modal in `EncounterFeedView.tsx` displaying an SVG QR code linking to `https://indii.app/p/{artistSlug}` (Artist Passport) or custom vCard download.
+  2. Add a "Scan Card" button in `QuickContactModal.tsx` using mobile camera capture and Gemini OCR to extract contact fields (Name, Phone, Email, Company, Social).
+- **Acceptance:** Real mobile test proves:
+  1. Artist can tap "Share QR" in Contacts tab to display full-screen scannable QR code.
+  2. Scanning a business card auto-fills name, email, and company in the encounter modal.
+
+### ISSUE-1534: Mobile Remote lacks background push notifications for completed renders and agent approval requests
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / Push Notifications / FCM / Service Worker
+- **Classification:** Background communication deficit. Mobile client loses connection when backgrounded without push wakeup.
+- **Evidence:**
+  1. `MobileRemote.tsx:218-222` explicitly notes that when the page is backgrounded (`document.visibilityState === 'hidden'`), Firestore timers and presence subscriptions are throttled by mobile browsers (Safari iOS / Chrome Android).
+  2. If the artist kicks off a Veo 3.1 video render, a multi-track mastering export, or a distribution delivery on desktop Studio and locks their phone, there is no Web Push Notification (`Notification` API or Firebase Cloud Messaging) to alert them when the job completes or when agent approval is waiting.
+- **Impact:** Artists have to repeatedly unlock their phone and stare at the remote screen to check if long-running studio tasks have finished.
+- **Fix:**
+  1. Register a lightweight Service Worker for the Mobile Remote web app supporting the Web Push / FCM API.
+  2. Add Cloud Functions trigger on `remoteResponses` and `pendingApproval` creation to send FCM push notification to the user's paired mobile devices (`"Your 9:16 story video is ready to download"`, `"Agent authorization needed: Spend 5 credits?"`).
+  3. Tapping the push notification opens the Mobile Remote directly to the relevant tab (`Studio` or `ApprovalQueue`).
+- **Acceptance:** Real test proves:
+  1. With mobile browser backgrounded/locked, desktop video render completion triggers OS push notification.
+  2. Tapping notification opens Mobile Remote directly to the generated video download preview.
+
+### ISSUE-1535: In-App Camera Viewfinder with Hardware Controls and Creator Composition Overlays
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / QuickCaptureView / In-App Camera / WebRTC MediaStream
+- **Classification:** Capability gap. Relying solely on HTML file inputs hands control to OS camera, preventing in-app adjustments for stage lighting, zoom, lens switching, or composition framing.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:667-679` executes photo and video capture via `<input type="file" accept="image/*" capture="environment" />` and `<input type="file" accept="video/*" capture="environment" />`.
+  2. Because the app delegates to the native OS file picker, the remote app has zero access to the camera stream. The artist cannot toggle between front selfie camera (`facingMode: 'user'`) and rear camera (`facingMode: 'environment'`), cannot trigger a continuous torch/flash for dark backstage rooms, cannot zoom, and cannot adjust exposure for blown-out concert/stage spotlights.
+  3. No composition guides exist on mobile capture. The artist cannot preview social aspect ratio crops (9:16 Story, 1:1 Feed, 4:5 Portrait), rule-of-thirds alignment, or level horizon before snapping the shot.
+- **Impact:** Capturing photos or backstage clips away from the studio produces un-framed, poorly lit, or accidentally rear-facing shots that cannot be calibrated to social deliverables or live concert environments.
+- **Fix:**
+  1. Build an in-app live camera component (`CameraViewfinderModal.tsx` or inline in `QuickCaptureView.tsx`) using `navigator.mediaDevices.getUserMedia({ video: { facingMode, width, height } })` rendering to a `<video playsInline autoPlay muted />` surface with canvas capture via `ImageCapture.takePhoto()` or `<canvas>` snapshot.
+  2. Implement hardware controls utilizing `MediaStreamTrack.applyConstraints()` and `getCapabilities()`:
+     - 1-tap lens toggle (Front Selfie 🤳 vs Rear 📷).
+     - Torch / Stage Flash toggle (`advanced: [{ torch: true }]`) for dark venues.
+     - Zoom slider / pinch-to-zoom (`advanced: [{ zoom: number }]`).
+     - Exposure compensation slider (`advanced: [{ exposureCompensation: number }]`) to calibrate stage lights.
+  3. Add creator HUD overlays:
+     - Aspect ratio crop masks (9:16, 1:1, 4:5, 16:9).
+     - Rule-of-thirds grid overlay.
+     - Gyroscope horizon leveler (`DeviceOrientationEvent`).
+     - Real-time audio VU meter during video recording to avoid concert clipping.
+  4. Retain `<input type="file">` as a fallback when WebRTC camera permissions are denied.
+- **Acceptance:** Real mobile test proves:
+  1. Tapping photo capture opens in-app live viewfinder with front/back camera switch.
+  2. Tapping torch turns on device LED flashlight; adjusting exposure slider alters live preview brightness.
+  3. Selecting 9:16 aspect ratio displays guidelines; capturing photo yields framed high-res output ready for Boardroom.
+
+### ISSUE-1536: Lock Screen MediaSession Playback Control and Quick-Capture Deep-Links
+
+- **Status:** 🔴 OPEN (2026-10-13)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / TransportBar / StreamView / MediaSession / Deep Linking
+- **Classification:** Mobile operating system integration gap. The web app does not leverage the native Lock Screen playback widget or lock screen launcher shortcuts.
+- **Evidence:**
+  1. `packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx` and `StreamView.tsx` play audio tracks through standard HTML5 `<audio>` elements, but do not configure `navigator.mediaSession.metadata` or media action handlers (`play`, `pause`, `seekto`, `previoustrack`, `nexttrack`).
+  2. When an artist locks their phone or places it in a car dock while testing an unreleased master, the iOS and Android lock screen media player does not display track metadata, album artwork, or allow scrubbing without unlocking the phone.
+  3. `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` lacks URL query parameter actions (e.g. `?action=quick_photo`, `?action=quick_voice`, `?action=stream`) preventing iOS 18 Lock Screen controls, Apple Shortcuts, and the iPhone Action Button from launching directly into specific capture or listening modes with 1 tap.
+- **Impact:** Artists testing music on the road must repeatedly unlock their device to pause, scrub, or skip unreleased tracks. Capturing a spontaneous moment requires unlocking, navigating to browser, and tapping through tabs rather than launching directly from the lock screen.
+- **Fix:**
+  1. Implement `setupMediaSessionHandlers` in `TransportBar.tsx` to bind `navigator.mediaSession` with `MediaMetadata` (title, artist: 'indii Vault', album, artwork array) and wire `play`, `pause`, `seekto`, `previoustrack`, and `nexttrack` actions to the active track state.
+  2. Add deep-link action parser in `MobileRemote.tsx` to handle `?action=photo` (opens camera), `?action=voice` (opens mic), and `?action=vault` (opens StreamView).
+  3. Provide an "Add Lock Screen Shortcut" help guide in `SettingsView.tsx` explaining how to map iOS 18 Lock Screen Controls or iPhone Action Button to indii remote deep links.
+- **Acceptance:** Real mobile test proves:
+  1. Playing a track in `StreamView` renders the native lock screen media card with title, artwork, and scrub bar on locked iOS and Android devices.
+  2. Tapping play/pause/scrub on the locked device controls audio playback without unlocking.
+  3. Opening `https://indii.app/remote?action=photo` immediately launches the camera viewfinder.
+
+---
+
+## Session 2026-10-16 — Jev-Assisted Codebase Bug Hunt (`jev-latest` / `jev-1.13.0`)
+
+> **Verification partnership:** All candidate defects below were audited against live source at `07bfdf413` and verified with **Jev** (`POST https://api.typesafe.ai/v1/systemone`, model `jev-latest` resolving to `jev-1.13.0`, request IDs `req_01a14789eb2b7ea6baf73058482a1972`, `req_01a14789ec0a7ff29e31ffee10d67db0`, and `req_01a1478adc2a7ac4912c8a697ea3dee2`).
+
+---
+
+### ISSUE-1537: Cross-tenant recoupment ledger balance drain and global attribution receipt poisoning
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Marketing Orchestration / Finance Recoupment Ledger / Attribution Bus (`packages/firebase/src/functions/marketing/adCampaignCallables.ts`, `packages/firebase/src/orchestration/marketing/firestore-recoupment-ledger.ts`, `packages/firebase/src/execution/attribution/firestore-attribution-store.ts`)
+- **Classification:** Multi-tenant authorization bypass and cross-tenant state poisoning.
+- **Evidence:**
+  1. `handleExecuteUnifiedCampaignDirective` in `packages/firebase/src/functions/marketing/adCampaignCallables.ts:152` verifies `parsedDirective.artistId !== authenticatedUid`, **but never verifies ownership of `parsedDirective.ledgerAccountId`**.
+  2. `FirestoreFinanceRecoupmentLedger.reserveCampaignBudget` (`packages/firebase/src/orchestration/marketing/firestore-recoupment-ledger.ts:86,110-145`) reads `financeRecoupmentLedgers/{ledgerAccountId}` inside a Firestore transaction and checks only `availableRecoupableCents < input.amountCents` — it **never checks `ledgerData.artistId === input.artistId`**. Any authenticated user can pass another artist's `ledgerAccountId` in `UnifiedCampaignDirective` and drain their recoupable balance to fund their own ad campaigns.
+  3. `FirestoreAttributionDeduplicationStore` (`packages/firebase/src/execution/attribution/firestore-attribution-store.ts:42,49-87`) keys deduplication receipts on a flat, globally shared document path `marketingAttributionReceipts/{eventId}` without scoping by `artistId` or `releaseId`. Any tenant or webhook caller who submits a predictable `eventId` (or collides across tenants) marks that `eventId` processed globally and suppresses legitimate conversion events for other artists.
+  4. **Jev (`jev-1.13.0`) Verification (`req_01a1478adc2a7ac4912c8a697ea3dee2`):**
+     - `f2_confirmed_defect` (Noul): **`0.92`**
+     - `f2_severity` (Score 0–4): **`4.0`** (`confidence: 1.0`, `P(4 = Critical severity cross-tenant financial drain and attribution poisoning) = 1.0`)
+     - `top_priority_fix` (Choice): Selected `finding_2_cross_tenant_ledger_and_attribution` with **`confidence: 1.0`**.
+- **Impact:** One authenticated tenant can reserve and spend ad budgets backed by another artist's recoupment ledger, and cross-tenant `eventId` collisions/poisoning can block conversion attribution across artists.
+- **Fix:**
+  1. In `FirestoreFinanceRecoupmentLedger.reserveCampaignBudget`, verify `typeof ledgerData.artistId === 'string' && ledgerData.artistId === input.artistId` inside the transaction before reserving funds; throw a non-retryable `PERMISSION_DENIED` error on mismatch.
+  2. Namespace attribution deduplication receipts by tenant (`marketingAttributionReceipts/{artistId}_{eventId}` or subcollection `users/{artistId}/marketingAttributionReceipts/{eventId}`) and validate `artistId` ownership before marking processed.
+- **Acceptance:** Unit and security tests prove that passing a `ledgerAccountId` owned by `artist-B` when authenticated as `artist-A` rejects with `permission-denied` and leaves `artist-B`'s balance untouched, and identical `eventId` values across two different `artistId`s do not collide.
+
+---
+
+### ISSUE-1538: Systemic HTTP 422 schema violations and 1-indexed Score misparsing across 45+ TypeSafe System One (`jev-latest`) judgment call sites
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🔴 CRITICAL
+- **Module:** TypeSafe System One Judgments (`packages/renderer/src/config/typesafeJudgments.ts`, `packages/firebase/src/orchestration/marketing/campaign-judgments.ts`)
+- **Classification:** Upstream API contract violation and response parsing off-by-one defect.
+- **Evidence:**
+  1. According to the TypeSafe System One HTTP API specification (`POST https://api.typesafe.ai/v1/systemone`), `score` questions require `criteria: Array<string | object | array>` (an ordered list of 2–10 level descriptions) and return a **0-indexed** score (`0` to `levels.length - 1`), while `choice` questions require `criteria: Record<string, string | object | array | null>`.
+  2. A static scan of `packages/renderer/src/config/typesafeJudgments.ts` and `packages/firebase/src/orchestration/marketing/campaign-judgments.ts` revealed **45 malformed question definitions**:
+     - **30 `score` questions** pass `levels: ...` instead of `criteria: [...]` (`typesafeJudgments.ts` lines 392, 397, 402, 1144, 1379, 3517, 3799, 3932, 4108, 4247, 4393, 4529, 4673, 4827, 4970, 5131, 5285, 5445, 5596, 5736, 5877, 6040, 6221, 6372, 6665, 6776, 6970, 7076, 7209, 7324 — many of which also pass a `{ 1: '...', 5: '...' }` object instead of an array).
+     - **8 `score` questions** pass `range: [1, 5]` with no `criteria` array at all (`typesafeJudgments.ts` lines 7583, 7676, 7778, 8012, 8122, 8280, 8401, 8690).
+     - **4 `score` questions** pass `criteria: { 1: '...', 2: '...', ... }` as an object map instead of an ordered array (`typesafeJudgments.ts` lines 1872, 2790, 3121, plus `creative_fit_score` in `packages/firebase/src/orchestration/marketing/campaign-judgments.ts:233-244`).
+     - **2 `choice` questions** omit `criteria` or pass `options` (`typesafeJudgments.ts` lines 31-66 where `judgeSkillIntent` sends `options: SKILL_INTENT_CRITERIA`, and line 8162 where `upscaleModelQuestion()` omits `criteria` entirely).
+  3. **Live API Reproduction:** Sending the exact `range: [1, 5]` and object `criteria: { 1: ..., 5: ... }` payloads to `https://api.typesafe.ai/v1/systemone` returned **HTTP 422 Unprocessable Entity**:
+     - `req_01a14789eb2b7ea6baf73058482a1972`: `{"detail":[{"type":"missing","loc":["body","questions","broken_score","score","criteria"],"msg":"Field required"}]}`
+     - `req_01a14789ec0a7ff29e31ffee10d67db0`: `{"detail":[{"type":"list_type","loc":["body","questions","creative_fit_score","score","criteria"],"msg":"Input should be a valid list"}]}`
+  4. **0-Indexed Score Misparsing:** `evaluateCampaignAllocationWithJev` (`campaign-judgments.ts:276`) checks `rawScore >= 1 && rawScore <= 5`, and dozens of functions in `typesafeJudgments.ts` treat `score` as 1–5 instead of 0–4 (`0` to `criteria.length - 1`), silently discarding level-0 (`0`) judgments and shifting every returned rubric level down by 1.
+  5. **Jev (`jev-1.13.0`) Verification (`req_01a1478adc2a7ac4912c8a697ea3dee2`):**
+     - `f1_confirmed_defect` (Noul): **`0.88`**
+     - `f1_severity` (Score 0–4): **`3.9`** (`confidence: 0.92`, `P(4 = Critical severity systemic failure across 45+ judgment call sites) = 0.91`).
+- **Impact:** All 45 affected judgment functions deterministically fail with HTTP 422 (`TypesafeClientError: upstream`), triggering 5-minute failure cooldowns across the app and permanently forcing heuristic fallbacks in production.
+- **Fix:**
+  1. Convert all `score` question definitions in `typesafeJudgments.ts` and `campaign-judgments.ts` to pass `criteria: [...]` as an ordered string array of 2–10 levels (removing `levels`, `range`, and object-shaped `criteria`).
+  2. Convert all `choice` question definitions to pass `criteria: { ... }` (fixing `judgeSkillIntent` `options` -> `criteria` and adding `criteria` to `upscaleModelQuestion`).
+  3. Normalize 0-indexed `score` responses (`0..4` -> `1..5` where callers expect a 1–5 scale, or accept `0 <= rawScore && rawScore < criteria.length`) and add a unit test that validates every question builder in `typesafeJudgments.ts` and `campaign-judgments.ts` against the exact TypeSafe HTTP request schema.
+- **Acceptance:** Schema validation test asserts every `score` question has `Array.isArray(q.criteria)` with `2 <= q.criteria.length <= 10` and every `choice` question has a plain-object `q.criteria`; live probe to `/v1/systemone` returns HTTP 200.
+
+---
+
+### ISSUE-1539: `CampaignOrchestrator` and `evaluateCampaignAllocationWithJev` over-allocate total campaign budget (101%), violate platform `minBudgetCents` floors, and invert the Noul readiness threshold
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing Orchestration (`packages/firebase/src/orchestration/marketing/campaign-judgments.ts`, `packages/firebase/src/orchestration/marketing/campaign-orchestrator.ts`)
+- **Classification:** Financial allocation math error and inverted probability threshold.
+- **Evidence:**
+  1. In `computeBoundedSplitRefinement` (`packages/firebase/src/orchestration/marketing/campaign-judgments.ts:144-156`), when a 3-platform campaign (`META`, `TIKTOK`, `GOOGLE_ADS`) receives `creativeFitScore === 3`, `boost` is `5` (`Math.ceil(10 / 2)`). The loop computes `targetDeduction = Math.min(maxDeductible, Math.floor(boost / otherPlatforms.length))` where `Math.floor(5 / 2) = 2` for each of the 2 non-recommended platforms (`totalDeduction = 4`). However, if `otherPlatforms` have asymmetric floor headroom or rounding, and when `CampaignOrchestrator.executeDirective` (`campaign-orchestrator.ts:323-328`) computes `allocations[platform] = Math.round((directive.totalBudgetCents * pct) / 100)` across 3 platforms (e.g. `33.5%`, `33.5%`, `33%` or `34%`, `33%`, `34%`), the sum of `allocations[platform]` can exceed `directive.totalBudgetCents` (up to 101%) and is never reconciled against `directive.totalBudgetCents` or `directive.dailyBudgetCents`.
+  2. When `CampaignOrchestrator.executeDirective` (`campaign-orchestrator.ts:319-329`) overwrites `allocations` using `jevVerdict.refinedSplitPercentages`, it **never checks whether each platform's resulting allocation stays at or above `adapter.minBudgetCents` (`100` cents)** — even though the initial validation at lines 173-191 checked `initialAllocations` before Jev refinement! A 10% shift away from a platform near the minimum floor drops its allocation below `adapter.minBudgetCents`, causing mid-flight provisioning failures after the recoupment ledger reservation has already been committed.
+  3. In `evaluateCampaignAllocationWithJev` (`campaign-judgments.ts:282`), `creativeReadinessConfirmed` is computed as `readinessProb >= 0.35`. Because `creative_readiness_noul` asks *"Are the creative assets and targeting signals sufficiently complete and coherent to justify shifting budget toward the recommended platform?"*, a calibrated Noul probability of `0.35` means Jev estimates a **65% probability that the creative assets are NOT ready**, yet `0.35 >= 0.35` evaluates to `true` and triggers the budget shift anyway.
+  4. **Jev (`jev-1.13.0`) Verification (`req_01a1478adc2a7ac4912c8a697ea3dee2`):**
+     - `f3_confirmed_defect` (Noul): **`0.95`**.
+- **Impact:** Multi-platform ad directives can allocate more cents across platforms than reserved in the recoupment ledger, violate per-platform minimum budget floors after Jev refinement, and shift budget on low-confidence (`0.35`) readiness signals.
+- **Fix:**
+  1. Require `readinessProb >= 0.65` (calibrated confirmation threshold) before setting `creativeReadinessConfirmed = true` and shifting platform splits.
+  2. After computing `allocations` from `refinedSplitPercentages` in `CampaignOrchestrator.executeDirective`, verify every active platform satisfies `allocations[platform] >= adapter.minBudgetCents` (clamping or falling back to `initialAllocations` if violated) and reconcile rounding remainders on the largest platform share so ` sum(allocations) === directive.totalBudgetCents`.
+- **Acceptance:** Unit tests verify 3-platform Jev-refined allocations always sum to ` exactly directive.totalBudgetCents`, never drop below `adapter.minBudgetCents`, and do not shift budget when `creative_readiness_noul < 0.65`.
+
+---
+
+### ISSUE-1540: `GoogleAdsAdapter` and `TikTokAdAdapter` corrupt budget/campaign resources on update and fail PMax provisioning
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🟠 HIGH
+- **Module:** Ad Execution Adapters (`packages/firebase/src/execution/ad-adapters/google-ads.adapter.ts`, `packages/firebase/src/execution/ad-adapters/tiktok.adapter.ts`)
+- **Classification:** Third-party ad platform API contract defect.
+- **Evidence:**
+  1. **Google Ads `updateBudget` mutates the wrong resource ID (`google-ads.adapter.ts:264-269, 309-313, 375-411`):** During `provisionCampaign`, Step 1 creates a `CampaignBudget` (`budgetResourceName = customers/{customerId}/campaignBudgets/{budgetId}`) and Step 2 creates a `Campaign` (`campaignResourceName = customers/{customerId}/campaigns/{campaignId}`), returning `externalCampaignId: campaignResourceName`. When `updateBudget(externalCampaignId, dailyBudgetCents)` is later called, line 395 executes:
+     `const budgetResourceName = externalCampaignId.includes('/campaignBudgets/') ? externalCampaignId : externalCampaignId.replace('/campaigns/', '/campaignBudgets/');`
+     This substitutes the **Campaign ID** into the `/campaignBudgets/` path (`customers/{customerId}/campaignBudgets/{campaignId}`). Because Google Ads assigns independent IDs to `Campaign` and `CampaignBudget` entities, this mutates a non-existent or wrong `CampaignBudget` resource.
+  2. **Google Ads `PERFORMANCE_MAX` provisioning creates an illegal `VIDEO_TRUE_VIEW_IN_STREAM` AdGroup (`google-ads.adapter.ts:103-110, 249-307`):** `GOOGLE_ADS_CHANNEL_MAP` maps `WAITLIST_INTAKE`, `MERCH_CONVERSION`, and `EVENT_TICKETING` to `advertisingChannelType: 'PERFORMANCE_MAX'`. Yet Steps 3 and 4 (`lines 284-307`) unconditionally create an `AdGroup` with `type: 'VIDEO_TRUE_VIEW_IN_STREAM'` and an `AdGroupAd`. Google Ads API v17 rejects `AdGroup` creation on `PERFORMANCE_MAX` campaigns (which require `AssetGroup`s) and rejects `VIDEO_TRUE_VIEW_IN_STREAM` outside `VIDEO` campaigns.
+  3. **TikTok `updateBudget` overwrites lifetime campaign budget with a single day's budget (`tiktok.adapter.ts:194, 224, 322-344`):** `TikTokAdAdapter.provisionCampaign` creates the campaign with `budget_mode: 'BUDGET_MODE_TOTAL'` and `budget: totalBudgetDollars` (`line 194`), while placing `dailyBudgetDollars` (`BUDGET_MODE_DAY`) on the AdGroup (`line 224`). However, `updateBudget(externalCampaignId, dailyBudgetCents)` calls `/open_api/v1.3/campaign/update/` with `budget: dailyBudgetDollars`, overwriting the campaign's **total lifetime budget** with 1 day's budget!
+  4. **Jev (`jev-1.13.0`) Verification (`req_01a1478adc2a7ac4912c8a697ea3dee2`):**
+     - `f4_confirmed_defect` (Noul): **`0.92`**.
+- **Impact:** Live Google Ads budget updates fail or mutate the wrong budget resource; Google Ads `WAITLIST_INTAKE`, `MERCH_CONVERSION`, and `EVENT_TICKETING` campaigns fail provisioning at Step 3; TikTok daily budget updates slash the campaign's total lifetime budget cap to a single day's spend.
+- **Fix:**
+  1. In `GoogleAdsAdapter.updateBudget`, either query the campaign's `campaign.campaign_budget` resource name first or encode/resolve the `budgetResourceName` stored during provisioning instead of string-replacing `/campaigns/` with `/campaignBudgets/`.
+  2. In `GoogleAdsAdapter`, either use `VIDEO` / `DEMAND_GEN` channel types compatible with AdGroup provisioning or implement `AssetGroup` provisioning when `advertisingChannelType === 'PERFORMANCE_MAX'`.
+  3. In `TikTokAdAdapter.updateBudget`, update the AdGroup's daily budget (`/open_api/v1.3/adgroup/update/`) or align campaign `budget_mode` with the budget tier being updated.
+- **Acceptance:** Adapter unit tests verify `GoogleAdsAdapter.updateBudget` targets the actual `budgetResourceName` from Step 1 (when `campaignId !== budgetId`), `WAITLIST_INTAKE`/`MERCH_CONVERSION`/`EVENT_TICKETING` provision valid Google Ads entity hierarchies, and `TikTokAdAdapter.updateBudget` does not overwrite a `BUDGET_MODE_TOTAL` campaign cap with `dailyBudgetCents`.
+
+---
+
+### ISSUE-1541: `AttributionBus.dispatch` permanently marks conversion events as deduplicated when all platform CAPI dispatches fail
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🟠 HIGH
+- **Module:** Attribution Bus & Ad Adapters (`packages/firebase/src/execution/attribution/attribution-bus.ts`, `packages/firebase/src/execution/ad-adapters/meta.adapter.ts`, `packages/firebase/src/execution/ad-adapters/tiktok.adapter.ts`, `packages/firebase/src/execution/ad-adapters/google-ads.adapter.ts`)
+- **Classification:** Silent conversion loss and broken retry idempotency on upstream error.
+- **Evidence:**
+  1. `MetaAdAdapter.dispatchConversionEvent` (`meta.adapter.ts:455-478`), `TikTokAdAdapter.dispatchConversionEvent` (`tiktok.adapter.ts:479-481`), and `GoogleAdsAdapter.dispatchConversionEvent` (`google-ads.adapter.ts:549-560`) catch all network/HTTP errors and return `{ success: false }` instead of throwing or surfacing an error status.
+  2. In `AttributionBus.dispatch` (`packages/firebase/src/execution/attribution/attribution-bus.ts:180-197`), when an adapter returns `{ success: false }`, the bus records `{ attempted: true, success: false }` with no `errorMessage`.
+  3. At line 221, `AttributionBus.dispatch` **unconditionally executes `await this.dedupStore.markProcessed(valid.eventId, receipt)`** even when **zero** target platforms succeeded (`every(d => !d.success)`).
+  4. When the caller retries the failed conversion event after a transient network blip or 503 outage, `this.dedupStore.isDuplicate(valid.eventId)` (`line 167`) returns `true` and permanently drops the retry as `DUPLICATE_EVENT` (`deduplicated: true`).
+  5. **Jev (`jev-1.13.0`) Verification (`req_01a1478adc2a7ac4912c8a697ea3dee2`):**
+     - `f4_confirmed_defect` (Noul): **`0.92`**.
+- **Impact:** Any transient outage, rate limit (HTTP 429), or token refresh race across Meta CAPI, TikTok Events API, or Google Ads offline conversions permanently poisons the `eventId` in Firestore and drops the conversion event on retry.
+- **Fix:**
+  1. Only call `this.dedupStore.markProcessed(valid.eventId, receipt)` when at least one targeted platform dispatch succeeds (or track per-platform delivery status inside the deduplication store so retries re-dispatch only to failed platforms).
+  2. Propagate upstream HTTP status / error details into `platformDispatches[platform].errorMessage` when `result.success === false`.
+- **Acceptance:** Unit test proves that when all configured platform adapters return `{ success: false }` on first attempt, a subsequent retry of the same `eventId` is NOT short-circuited as `DUPLICATE_EVENT` and succeeds once the adapter recovers.
+
+---
+
+### ISSUE-1542: Mobile Remote `QuickCaptureView` leaks orphaned Storage blobs on relay failure, hides the Video Editor bridge for audio captures, and `rendererExecutionAdapter` silently drops video/audio attachments sent to Boardroom
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🟠 HIGH
+- **Module:** Mobile Remote / Command Execution Adapter (`packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx`, `packages/renderer/src/services/command/rendererExecutionAdapter.ts`)
+- **Classification:** Storage resource leak, unreachable UI action, and silent attachment drop.
+- **Evidence:**
+  1. **Orphaned Firebase Storage uploads on relay failure (`QuickCaptureView.tsx:531-645`):** Both `handleSendToVideoEditor` (`line 550`) and `handleSendToBoardroom` (`line 610`) upload the captured file to Firebase Storage (`users/${userId}/assets/editor_intake/...` and `users/${userId}/mobile_captures/...`) *before* calling `remoteRelayService.dispatchTask` and `waitForDispatchConfirmation`. Unlike `handleDispatchMedia` (which cleans up `uploadedPath` via `deleteObject` in its `catch` block at lines 519-525), neither `handleSendToVideoEditor` (`lines 584-588`) nor `handleSendToBoardroom` (`lines 639-643`) deletes the uploaded Storage blob when the relay dispatch fails or times out after 12 seconds.
+  2. **Unreachable Audio-to-Video-Editor bridge (`QuickCaptureView.tsx:532, 543-545, 558, 884`):** `handleSendToVideoEditor` explicitly implements audio intake (`const isAudio = Boolean(capturedAudioBlob && !capturedVideoBlob && !capturedImageBlob)`, `assetType = isVideo ? 'video' : isAudio ? 'audio' : 'image'`). However, the JSX guard at line 884 renders the `"Video Editor"` button only when `(capturedVideoBlob || (capturedImageBlob && capturedImageBlob.type === 'photo'))` is truthy — completely hiding the button whenever the artist records a voice memo / audio clip (`capturedAudioBlob`).
+  3. **Misclassified document/receipt captures in `handleSendToBoardroom` (`QuickCaptureView.tsx:608, 617`):** `handleSendToBoardroom` hardcodes `const filename = `${isVideo ? 'video' : 'selfie'}_${Date.now()}.${ext}`` and `type: isVideo ? 'video' : 'photo'`, overwriting `'receipt'` and `'document'` capture classifications as `'selfie'` / `'photo'`.
+  4. **Silent drop of video and audio attachments in Boardroom execution (`rendererExecutionAdapter.ts:103-184, 509`):** When `handleSendToBoardroom` dispatches a video to desktop Studio, `AgentChat.tsx:267-278` forwards it as `{ type: 'video', mimeType: 'video/mp4', url: downloadUrl, base64: '' }`. In `packages/renderer/src/services/command/rendererExecutionAdapter.ts:138-183`, `resolveCommandAttachments` only downloads and converts `isImage` (`mimeType.startsWith('image/')`) — for `video/*` or `audio/*` attachments without inline `base64`, it returns `base64: ''` (`lines 176-183`). Then line 509 executes:
+     `const attachments = resolvedAttachments.filter(att => Boolean(att.base64)).map(...)`
+     which **silently strips every video and audio attachment** before calling `agentService.sendMessage`!
+  5. **Jev (`jev-1.13.0`) Verification (`req_01a1478adc2a7ac4912c8a697ea3dee2`):**
+     - `f5_confirmed_defect` (Noul): **`0.92`**.
+- **Impact:** Timed-out or offline desktop relay attempts leak orphaned video/audio/image blobs in Firebase Storage; artists cannot send captured audio clips to the Video Editor despite the handler supporting it; and videos sent to the Boardroom from Mobile Remote have their media attachment silently stripped before reaching the agent.
+- **Fix:**
+  1. Track `uploadedPath` in `handleSendToVideoEditor` and `handleSendToBoardroom` and call `deleteObject(ref(storage, uploadedPath))` in their `catch` blocks on relay failure/timeout.
+  2. Update the JSX condition at `QuickCaptureView.tsx:884` to `(capturedVideoBlob || capturedAudioBlob || (capturedImageBlob && capturedImageBlob.type === 'photo'))` and preserve `capturedImageBlob.type` (`'receipt'` / `'document'`) in `handleSendToBoardroom`.
+  3. In `rendererExecutionAdapter.ts`, preserve storage URL / file URI references (or fetch bounded inline payloads) for `video/*` and `audio/*` attachments instead of dropping all non-base64 attachments at line 509.
+- **Acceptance:** Unit tests verify:
+  1. Failed `handleSendToVideoEditor` and `handleSendToBoardroom` dispatches delete their uploaded Storage objects.
+  2. Recording a `capturedAudioBlob` renders the `"Send to Video Editor"` button and dispatches `assetType: 'audio'`.
+  3. Sending a `video/mp4` attachment via `handleSendToBoardroom` delivers the video reference to `agentService.sendMessage` rather than stripping it.
+
+---
+
+## Session 2026-10-16 (Round 2) — Jev-Assisted Codebase Bug Hunt (`jev-latest` / `jev-1.13.0`)
+
+> **Verification partnership:** All candidate defects below were audited against live source at `07bfdf413` and verified with **Jev** (`POST https://api.typesafe.ai/v1/systemone`, model `jev-latest` resolving to `jev-1.13.0`, request ID `req_01a147b7b0197ee6b7cfd7ed1e015e28`).
+
+---
+
+### ISSUE-1543: `ARCJET_PROTECTION_MATRIX.md` 69-file false-compliance gap, unthrottled `mintElectronAppCheckToken` arbitrary `appId` minting, and `issueStudioExecutorLease` auto-enrollment relay hijack
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Security / Admission & App Check / Studio Remote Relay (`docs/ARCJET_PROTECTION_MATRIX.md`, `packages/firebase/src/functions/auth/mintElectronAppCheckToken.ts`, `packages/firebase/src/functions/remote/issueStudioExecutorLease.ts`, `packages/firebase/src/assets/auditReleaseArtwork.ts`)
+- **Classification:** App Check bypass, remote relay device hijack, and 69-endpoint Arcjet admission gap.
+- **Evidence:**
+  1. **69-File False Compliance in `ARCJET_PROTECTION_MATRIX.md` (`docs/ARCJET_PROTECTION_MATRIX.md:1-97`):** The protection matrix (and `ISSUE-1244`, marked `✅ FIXED`) asserts that **78 of 79** client-reachable files in `packages/firebase/src/**` bind `secrets: [arcjetKey]` and enforce `protectAuthenticatedApiRequest` / `protectAnonymousSignupRequest`. Static verification across all 78 rows proves that **only 9 files** actually import or invoke Arcjet (`index.ts`, `functions/video/getVideoRenderReceipt.ts`, `functions/security/logAuditEvent.ts`, `functions/security/persistFraudAlert.ts`, `functions/auth/entitlements.ts`, `functions/agent/getCapabilitySnapshot.ts`, `functions/api/router.ts`, `functions/creative/gateway.ts`, `functions/billing/enforceOperationCost.ts`), while **69 files marked `PROTECTED | Yes` have zero Arcjet imports, zero `arcjetKey` secret bindings, and zero Arcjet rate-limiting/bot protection**. In addition, **27 newer client-reachable files** (`functions/marketing/adCampaignCallables.ts`, `functions/rights/rightsRegistration.ts`, `functions/intelligence/typesafeJudge.ts`, `functions/auth/mintElectronAppCheckToken.ts`, `subscription/deductCredits.ts`, etc.) are omitted from `docs/ARCJET_PROTECTION_MATRIX.md` altogether.
+  2. **Unprotected `mintElectronAppCheckToken` Mints Arbitrary App Check Tokens (`packages/firebase/src/functions/auth/mintElectronAppCheckToken.ts:10-34`):** `mintElectronAppCheckToken` sets `enforceAppCheck: false` (`line 11`), checks only `if (!request.auth) throw new HttpsError('unauthenticated', ...)` (`line 17` — allowing unverified-email and anonymous Firebase Auth accounts), applies no Arcjet or Firestore rate limit, and passes any caller-supplied `request.data.appId` string directly to `admin.appCheck().createToken(appId, { ttlMillis: 60 * 60 * 1000 })` (`line 27`) without validating `appId` against an allowlist of configured Firebase app IDs. Any authenticated or anonymous caller from any web origin can mint valid Firebase App Check tokens on demand and bypass `enforceAppCheck: true` and `validateAppCheckV2` across the entire backend.
+  3. **Studio Executor Lease Auto-Enrollment Hijack & Missing App Check (`packages/firebase/src/functions/remote/issueStudioExecutorLease.ts:30-181`, `packages/firebase/src/assets/auditReleaseArtwork.ts:30-50`):** All 6 callables in `issueStudioExecutorLease.ts` (`issueStudioExecutorLease`, `publishStudioPresence`, `releaseStudioPresence`, `claimStudioCommand`, `publishStudioResponse`, `completeStudioCommand`) and `auditReleaseArtworkForDelivery` (`auditReleaseArtwork.ts:33`) set `enforceAppCheck: false` without calling `validateAppCheckV2(request)`. Worse, `issueStudioExecutorLease` (`lines 45-58`) auto-enrolls any caller-supplied `{ deviceId, enrollmentSecret }` whenever `users/{uid}/devices/{deviceId}` does not yet exist (`if (existing.exists && ...)`), then writes `activeDeviceId: deviceId` and `leaseTokenHash` to `users/{uid}/remote-relay/state`. Any web session or compromised token can register a fake `deviceId` with its own `enrollmentSecret`, obtain a valid `leaseToken`, preempt the genuine desktop Studio executor, and intercept/spoof all Studio commands via `claimStudioCommand` and `publishStudioResponse`.
+  4. **Jev (`jev-1.13.0`) Verification (`req_01a147b7b0197ee6b7cfd7ed1e015e28`):**
+     - `issue_1543_confirmed` (Noul): **`0.95`**
+     - `issue_1543_severity` (Score 0–4): **`3.97`** (`confidence: 0.99`, `P(4 = Critical severity App Check bypass, command relay hijack, and 69-endpoint admission gap) = 0.99`)
+     - `round2_top_priority` (Choice): Selected `issue_1543_security_appcheck_arcjet` with **`confidence: 0.97`** (`probability: 0.98`).
+- **Impact:** Attackers can mint valid Firebase App Check tokens for any project `appId` from any origin, hijack a user's Studio remote-relay executor lease by auto-enrolling a rogue `deviceId`, and hit 69+ callable/HTTP endpoints without the Arcjet rate-limiting and bot admission controls claimed in `docs/ARCJET_PROTECTION_MATRIX.md`.
+- **Fix:**
+  1. In `mintElectronAppCheckToken.ts`, require `request.auth.token?.email_verified === true` (and reject `firebase.sign_in_provider === 'anonymous'`), validate `appId` against a server-side allowlist of the project's registered desktop Electron Firebase App ID(s), and enforce strict per-user Arcjet/Firestore rate limiting.
+  2. In `issueStudioExecutorLease.ts` and `auditReleaseArtwork.ts`, enforce `validateAppCheckV2(request)` (or `enforceAppCheck: true`) and require Arcjet admission; in `issueStudioExecutorLease`, require an explicit verified device-pairing/enrollment flow or prevent arbitrary new `deviceId` registration from overwriting an active healthy desktop lease without re-authentication.
+  3. Reconcile `docs/ARCJET_PROTECTION_MATRIX.md` with actual code by wiring `protectAuthenticatedApiRequest` / `protectCallableRequest` into the 69 unprotected files (and 27 unlisted files) or accurately recording their admission posture with a CI gate that verifies every `PROTECTED | Yes` row imports and invokes the Arcjet guard.
+- **Acceptance:** Automated CI test parses `docs/ARCJET_PROTECTION_MATRIX.md` and verifies every `PROTECTED | Yes` file binds `arcjetKey` and invokes an Arcjet guard; unit tests verify `mintElectronAppCheckToken` rejects unknown `appId`s and unverified/anonymous callers, and `issueStudioExecutorLease` enforces `validateAppCheckV2`.
+
+---
+
+### ISSUE-1544: `deductCredits` deterministic Firestore read-after-write transaction crash and `generateImageV3Fn` unmetered 4K Pro cost-enforcement bypass
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Subscription Credits & Creative Image Generation (`packages/firebase/src/subscription/deductCredits.ts`, `packages/firebase/src/lib/image_generation.ts`)
+- **Classification:** Guaranteed Firestore transaction runtime crash and unmetered AI generation quota bypass.
+- **Evidence:**
+  1. **Read-After-Write Crash in `deductCredits` (`packages/firebase/src/subscription/deductCredits.ts:54-119`):** Inside `db.runTransaction(async (transaction) => { ... })`, line 55 executes `const walletSnap = await transaction.get(walletRef)`. Assuming `currentBalance >= amount`, lines 77–105 execute **up to three transactional writes**:
+     - `transaction.update(walletRef, ...)` (`line 77`)
+     - `transaction.set(txRef, ...)` (`line 82`)
+     - `transaction.set(eventRef, ...)` (`line 96`, when `shouldTriggerAutoTopUp` is true)
+     Immediately afterward, **line 109 executes a transactional read**:
+     `const legacySnap = await transaction.get(legacyCreditsRef);`
+     Because the Firestore Admin SDK (`@google-cloud/firestore`) strictly requires all `transaction.get()` calls to occur before any `transaction.set()` or `transaction.update()` calls, line 109 deterministically throws `Error: Firestore transactions require all reads to be executed before all writes`, which is caught at line 127 and rethrown as `HttpsError('internal', ...)`. Every single call to `deductCredits` with sufficient balance fails 100% of the time.
+  2. **Unmetered 4K Pro Generation in `generateImageV3Fn` (`packages/firebase/src/lib/image_generation.ts:856-881`):** While `editImageFn` (`lines 889-958`) enforces `assertOwnedLegacyEditInputs(userId, validation.data)` (including the 14 MB payload limit `MAX_LEGACY_EDIT_REQUEST_BYTES`), reserves budget via `checkOperationBudget`, and settles/voids via `finalizeOperationReservation`, `generateImageV3Fn` (`lines 856-881`) calls `await requireVerifiedCreativeAdmission(request, 'legacy-generate-image')` (`line 868`), **discards the returned `{ userId, entitlement }`**, and delegates directly to `service.generate(validation.data)` (`line 880`) without calling `checkOperationBudget`, `finalizeOperationReservation`, or enforcing any byte-size cap on the up to 14 inline base64 `images` and `conversationHistory` turns.
+  3. **Jev (`jev-1.13.0`) Verification (`req_01a147b7b0197ee6b7cfd7ed1e015e28`):**
+     - `issue_1544_confirmed` (Noul): **`0.94`**
+     - `issue_1544_severity` (Score 0–4): **`3.97`** (`confidence: 0.98`, `P(4 = Critical severity 100% credit-deduction crash and unmetered 4K Pro generation bypass) = 0.98`).
+- **Impact:** Credit deductions via `deductCredits` crash 100% of the time in production for funded wallets, and any authenticated user (even one with $0 remaining daily/monthly budget) can invoke `generateImageV3` directly to run unlimited `gemini-3-pro-image-preview` 4K generations with Google Search/Image Search grounding at zero ledger cost.
+- **Fix:**
+  1. In `packages/firebase/src/subscription/deductCredits.ts`, move `const legacySnap = await transaction.get(legacyCreditsRef)` to the top of the transaction callback alongside `transaction.get(walletRef)` (`Promise.all([transaction.get(walletRef), transaction.get(legacyCreditsRef)])`) before any `transaction.update` or `transaction.set` call.
+  2. In `packages/firebase/src/lib/image_generation.ts` (`generateImageV3Fn`), enforce a request byte-size limit (`MAX_LEGACY_EDIT_REQUEST_BYTES`), reserve budget via `checkOperationBudget` before calling `service.generate(validation.data)`, and settle or void the reservation via `finalizeOperationReservation` in a `try`/`catch` block matching `editImageFn`.
+- **Acceptance:** Unit tests verify `deductCredits` executes all `transaction.get` calls prior to any `transaction.update`/`transaction.set` call and succeeds for funded wallets; `generateImageV3Fn` blocks requests when `checkOperationBudget` returns `allowed: false` and settles/voids reservations on completion/failure.
+
+---
+
+### ISSUE-1545: Hosted Rights Registration 2-hour `rightsInfrastructure/capacity` session leak, permanent `outcome_unknown` filing deadlock, and unvalidated broker `control_ack` race
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🟠 HIGH
+- **Module:** Rights Registration & Cloud Run Session Broker (`packages/firebase/src/functions/rights/rightsRegistration.ts`, `packages/rights-session-broker/src/index.ts`)
+- **Classification:** Distributed capacity leak, unrecoverable state-machine deadlock, and unvalidated WebSocket state transition.
+- **Evidence:**
+  1. **2-Hour User & Global Capacity Leak (`rightsRegistration.ts:187-244`, `packages/rights-session-broker/src/index.ts:136-148`):** During `action === 'start_session'`, the Firestore transaction (`rightsRegistration.ts:187-200`) writes `active[sessionId] = { uid, expiresAtMs: now + RIGHTS_LIMITS.sessionMs }` (where `RIGHTS_LIMITS.sessionMs` is **2 hours** / `7,200,000 ms`) into `rightsInfrastructure/capacity` and sets `rightsFilings/{filingId}.state = 'in_progress'`. However:
+     - If `launchCloudRunBrowserWorker` throws (`lines 209-212`), the `catch` block updates `rightsSessions/{sessionId}` to `state: 'failed'` **but never deletes `active[sessionId]` from `rightsInfrastructure/capacity` and never rolls back `rightsFilings/{filingId}.state`**.
+     - Neither `action === 'end_session'` (`rightsRegistration.ts:235-244`) nor the broker's `event.type === 'ended'` / WebSocket `close` handlers (`packages/rights-session-broker/src/index.ts:136-148`) ever remove `active[sessionId]` from `rightsInfrastructure/capacity`.
+     Because line 191 rejects `start_session` whenever `Object.values(active).some(s => s.uid === uid)` or `Object.keys(active).length >= RIGHTS_LIMITS.globalSessions` (`5`), ending a session or hitting a launch error locks the user out of starting any session for **2 full hours** and exhausts global capacity across the entire platform after just 5 sessions.
+  2. **Permanent `outcome_unknown` Filing Deadlock (`packages/rights-session-broker/src/index.ts:136-140`, `rightsRegistration.ts:194`):** When a browser worker emits `event.type === 'ended'` (`index.ts:138`), the broker unconditionally updates `users/${session.uid}/rightsFilings/${session.filingId}` to `{ state: 'outcome_unknown' }`. When the user later attempts `start_session` (`rightsRegistration.ts:194`), the transaction rejects with:
+     `if (['submitted', 'registered', 'outcome_unknown'].includes(currentFiling?.state)) throw new HttpsError('failed-precondition', 'Reconcile this filing before starting another session.');`
+     Yet **no action in `rightsRegistration.ts`** (`save_draft`, `create_filing`, `start_session`, `record_submission`, `end_session`) provides a way to reconcile or transition an existing filing out of `'outcome_unknown'`, permanently deadlocking that filing.
+  3. **Unvalidated `control_ack` Generation & Schema (`packages/rights-session-broker/src/index.ts:128-131`):** When the worker sends `event.type === 'control_ack'`, lines 129–131 execute `await ref.update({ control: event.control, requestedControl: FieldValue.delete(), state: 'connected', updatedAt: Timestamp.now() })` without validating `event.control` against `SessionControlSchema` (`'agent' | 'human' | 'none'`) and without verifying `event.generation === current.controlGeneration`, allowing a stale `control_ack` frame to overwrite a newer `take_control` or `end_session` request.
+  4. **Jev (`jev-1.13.0`) Verification (`req_01a147b7b0197ee6b7cfd7ed1e015e28`):**
+     - `issue_1545_confirmed` (Noul): **`0.94`**
+     - `issue_1545_severity` (Score 0–4): **`3.0`** (`confidence: 1.0`, `P(3 = High severity 2-hour user/global capacity lockout and permanent filing deadlock) = 1.0`).
+- **Impact:** A single ended or failed browser session locks the artist out of hosted rights registration for 2 hours; 5 completed sessions within 2 hours lock out all users globally; and any session that emits `ended` leaves its `rightsFilings/{filingId}` document permanently stuck in `outcome_unknown`.
+- **Fix:**
+  1. Delete `active.${sessionId}` from `rightsInfrastructure/capacity` in the `start_session` launch-failure `catch` block (`rightsRegistration.ts:209-212`), in `end_session` (`rightsRegistration.ts:235-244`), and in the session broker's `ended` / `close` cleanup handlers (`packages/rights-session-broker/src/index.ts:136-148`).
+  2. Add a `reconcile_filing` action (or allow `record_submission` / `start_session` with explicit reconciliation status) in `rightsRegistration.ts` so a filing in `outcome_unknown` can be transitioned to `submitted` or reset to `ready_to_file`.
+  3. In `packages/rights-session-broker/src/index.ts:128-131`, validate `SessionControlSchema.safeParse(event.control)` and check inside a transaction (or precondition) that `event.generation === current.controlGeneration` and `current.state !== 'ended'` before applying `control_ack`.
+- **Acceptance:** Unit tests verify `rightsInfrastructure/capacity.active[sessionId]` is immediately cleared on launch error, `end_session`, and worker `ended`; filings in `outcome_unknown` can be reconciled and resumed; and stale `control_ack` messages with an older `generation` are ignored.
+
+---
+
+### ISSUE-1546: Desktop `RightsCopilotModal` and `rightsCopilot.ts` launch marketing `/join` URLs instead of portals, silently report failed DOM steps as `completed`, reset React controlled inputs, and no-op `stage_deposit_upload`
+
+- **Status:** 🔴 OPEN (2026-10-16)
+- **Severity:** 🟠 HIGH
+- **Module:** Desktop Rights Registration Copilot (`packages/renderer/src/modules/registration/components/RightsCopilotModal.tsx`, `packages/main/src/handlers/rightsCopilot.ts`)
+- **Classification:** Broken Electron DOM automation, silent failure reporting, and unimplemented upload step.
+- **Evidence:**
+  1. **Marketing `/join` URLs Override Portal Login URLs (`RightsCopilotModal.tsx:70-92, 206` vs `rightsCopilot.ts:11-26, 207-209`):** `PORTAL_DEFAULT_URLS` in `rightsCopilot.ts:20-26` defines the actual member portals (`https://online.bmi.com/`, `https://members.ascap.com/`, `https://sportal.soundexchange.com/`). However, `PORTAL_METADATA` in `RightsCopilotModal.tsx:70-92` sets `officialUrl` to the public marketing signup pages (`https://www.bmi.com/join`, `https://www.ascap.com/join`, `https://www.soundexchange.com/register/`) and `handleLaunchRegistration` (`line 206`) passes `targetUrl: portalInfo.officialUrl` into `rightsCopilot.launchSession`. Because `bmi.com`, `ascap.com`, and `soundexchange.com` are in `PORTAL_ALLOWED_DOMAINS`, `isUrlAllowedForPortal(payload.targetUrl, payload.portal)` returns `true` (`rightsCopilot.ts:207`) and loads the marketing `/join` pages instead of `PORTAL_DEFAULT_URLS`.
+  2. **Silent Step Completion When DOM Selector Is Missing or Blocked (`rightsCopilot.ts:397-420`, `RightsCopilotModal.tsx:263-267`):** In `executeActionStep` (`rightsCopilot.ts:397-420`), `domScript` returns `{ found: false }` when `document.querySelector(selector)` is null or `{ found: false, blockedCredentialField: true }` when blocked. Yet line 419 **discards the return value** of `await copilotWindow.webContents.executeJavaScript(domScript, true)` and line 420 unconditionally returns `{ success: true, status: 'filling_fields' }`. `RightsCopilotModal.tsx:265` then marks the step `completed` (green checkmark) even when zero fields were found on the page!
+  3. **React/Angular Controlled Input Reset (`rightsCopilot.ts:411-415`):** `domScript` assigns `el.value = valueJson` directly (`line 412`) and dispatches synthetic `input`/`change` events without calling the native prototype value setter (`Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, valueJson)`), causing React-controlled inputs on modern portals (`portal.themlc.com`, `members.ascap.com`, `sportal.soundexchange.com`) to ignore the mutation and reset on next render.
+  4. **No-Op `stage_deposit_upload` & Premature `Run` Buttons (`rightsCopilot.ts:371-374`, `RightsCopilotModal.tsx:393`):** In `executeActionStep` (`rightsCopilot.ts:371-374`), `if (step.kind === 'stage_deposit_upload')` merely sets `currentStatus = 'deposit_uploading'` and returns `{ success: true, status: currentStatus }` without reading, validating, or staging `step.localAssetPath`. Additionally, `RightsCopilotModal.tsx:393` renders clickable `Run` buttons for all `!act.requiresUserAction` steps even before `sessionActive` is `true` (before the browser window has been launched).
+  5. **Jev (`jev-1.13.0`) Verification (`req_01a147b7b0197ee6b7cfd7ed1e015e28`):**
+     - `issue_1546_confirmed` (Noul): **`0.84`**
+     - `issue_1546_severity` (Score 0–4): **`3.0`** (`confidence: 0.99`, `P(3 = High severity broken workflow where DOM steps silently report success, controlled inputs reset, and deposit uploads no-op) = 0.99`).
+- **Impact:** Launching BMI, ASCAP, or SoundExchange opens marketing `/join` pages instead of the member work-registration portals; running automation steps on any page where selectors do not match silently marks every step green (`completed`) while filling nothing; React controlled inputs revert filled values; and the USCO deposit upload step (`stage_deposit_upload`) is a complete no-op.
+- **Fix:**
+  1. Align `PORTAL_METADATA[portal].officialUrl` in `RightsCopilotModal.tsx` with `PORTAL_DEFAULT_URLS` (or omit `targetUrl` in `handleLaunchRegistration` so `rightsCopilot.ts` uses `PORTAL_DEFAULT_URLS[payload.portal]`), and disable step `Run` buttons until `sessionActive` is `true`.
+  2. In `rightsCopilot.ts:419`, inspect the result of `await copilotWindow.webContents.executeJavaScript(domScript, true)` and return `{ success: false, status: currentStatus, error: ... }` whenever `!result?.found` or `result?.blockedCredentialField`.
+  3. Use the native `HTMLInputElement.prototype` / `HTMLSelectElement.prototype` / `HTMLTextAreaElement.prototype` value setter in `domScript` before dispatching `input` and `change` events, and implement actual file staging / `<input type="file">` attachment (or explicit user file-dialog guidance) for `stage_deposit_upload`.
+- **Acceptance:** Unit tests verify `executeActionStep` returns `success: false` when `executeJavaScript` resolves to `{ found: false }` or `{ blockedCredentialField: true }`, uses the native prototype value setter for input elements, and `handleLaunchRegistration` opens `online.bmi.com`, `members.ascap.com`, and `sportal.soundexchange.com`.
+
+---
+
+### ISSUE-1547: Stripe webhook `handleMicroTransactionCheckoutCompleted` crashes 100% of paid credit-pack purchases with a Firestore read-after-write transaction error, `handleCreditPackRefund` fails to deduct from canonical `wallet/current`, `handleMarketplaceRefund` claws back USD cents from seller AI credits, and `emitSaleConversion` is unreachable for product sales
+
+- **Status:** ✅ FIXED (2026-10-16)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Stripe Webhook Handler & Credit/Marketplace Fulfillment (`packages/firebase/src/stripe/webhookHandler.ts`)
+- **Classification:** Deterministic Firestore transaction crash (`read-after-write`), legacy vs. canonical wallet desynchronization, unit-mismatch balance corruption, and unreachable conversion attribution.
+- **Evidence:**
+  1. **100% Firestore Read-After-Write Crash on Paid Credit-Pack Purchases (`packages/firebase/src/stripe/webhookHandler.ts:94-150`):** Inside `await db.runTransaction(async (t) => { ... })` (`line 94`), `handleMicroTransactionCheckoutCompleted` performs two reads (`const logDoc = await t.get(logRef)` at `line 95` and `const creditsDoc = await t.get(creditsRef)` at `line 101`), then executes **two writes** (`t.set(creditsRef, ...)` or `t.update(creditsRef, ...)` at `lines 103/106`, followed by `t.set(logRef, ...)` at `line 109`), and **then executes a read** at `line 117`:
+     ```ts
+     const walletRef = db.collection('users').doc(userId).collection('wallet').doc('current');
+     const walletSnap = await t.get(walletRef); // <-- READ AFTER WRITE!
+     ```
+     Because Firestore transactions strictly require all `t.get()` calls to complete before the first `t.set()`/`t.update()`, every single paid credit-pack checkout webhook deterministically throws `Error: Firestore transactions require all reads to be executed before all writes` at line 117. Customers who pay real money via Stripe receive **zero** credits while the webhook fails with HTTP 500 across all Stripe retries!
+  2. **Credit Pack Refund Never Updates Canonical `users/{userId}/wallet/current` (`packages/firebase/src/stripe/webhookHandler.ts:1056-1102`):** `handleCreditPackRefund` only decrements the legacy `user_credits/{userId}` document (`creditsRef` at `lines 1063-1075`) and never updates `users/{userId}/wallet/current.balanceCredits` or writes a negative ledger entry to `users/{userId}/credit_transactions`. Because `deductCredits` (`packages/firebase/src/functions/credits/deductCredits.ts:118-137`) reads and debits `users/{userId}/wallet/current.balanceCredits`, a refunded credit pack remains 100% spendable in the user's canonical Phase 20 wallet.
+  3. **Marketplace Refund Claws Back USD Cents from Uncredited Seller AI Credit Balance (`packages/firebase/src/stripe/webhookHandler.ts:342-417, 821-921`):** When a marketplace item is purchased (`handleMarketplacePurchaseCompleted`, `lines 388-414`), the transaction updates `marketplace_reservations`, `marketplace_listings`, and `orders` — it **never** credits `user_credits/{sellerId}` (and marketplace payouts are denominated in USD cents via Stripe Connect, not AI credits). Yet when that order is refunded (`handleMarketplaceRefund`, `lines 864-891`), the transaction reads `const amount = Number(reservation?.priceCents || 0)` (`line 865`, in **USD cents**) and deducts `Math.min(currentBalance, amount)` directly from `user_credits/{sellerId}.balance` (`lines 871-885`, the seller's **AI generation credits**), wiping out the seller's unrelated AI credit balance!
+  4. **Unreachable `emitSaleConversion` for All Product/License/Merch Sales & Silent 200 OK on Transient Stripe Errors (`packages/firebase/src/stripe/webhookHandler.ts:65-75, 503-539, 1324-1344`):**
+     - In `handleCheckoutCompleted` (`lines 503-539`), every non-subscription branch (`micro_transaction` at `line 506`, `marketplace_purchase` at `line 512`, `licensing_purchase` at `line 518`, `founder_seat` at `line 524`, and `pod_order` at `line 530`) executes an early `return;` before `await emitSaleConversion(session)` at `line 535`. Only subscription checkouts ever reach `emitSaleConversion`.
+     - In `handleMicroTransactionCheckoutCompleted` (`lines 70-75`), if `stripe.checkout.sessions.retrieve(session.id, { expand: ['line_items'] })` fails with a transient Stripe API error, the `catch` block logs the error and executes `return;` instead of rethrowing, causing `stripeWebhook` (`line 1335`) to mark the webhook `status: 'processed'` and return `200 OK` so Stripe never retries.
+     - At `lines 1335` and `1342`, `deliveryRef.update(...)` is called without `await` immediately before `res.json({ received: true })` / `res.status(500)`.
+  5. **Jev (`jev-1.13.0`) Verification (`req_01a147cd92757d96861235397dc1b444`):**
+     - `issue_1547_real_bug` (Noul): **`0.90`**
+     - `issue_1547_severity` (Score 0–4): **`3.94`** (`confidence: 0.97`, `P(4 = Critical severity bug causing 100% transaction crash on paid checkout and corrupt financial/credit balances) = 0.96`, `P(3) = 0.04`)
+     - `issue_1547_category` (Choice): **`firestore_tx_and_ledger_desync`** (`confidence: 1.0`, `P(firestore_tx_and_ledger_desync) = 1.0`).
+- **Impact:** 100% of paid credit-pack purchases crash at fulfillment and never grant credits; credit-pack refunds leave `wallet/current.balanceCredits` untouched so refunded credits remain spendable; marketplace refunds wipe out sellers' AI generation credits using USD cent amounts; and `emitSaleConversion` never fires for marketplace, licensing, founder-seat, or POD merch sales.
+- **Fix:**
+  1. In `handleMicroTransactionCheckoutCompleted` (`packages/firebase/src/stripe/webhookHandler.ts:94-150`), move `const walletSnap = await t.get(walletRef)` to the top of `db.runTransaction` alongside `t.get(logRef)` and `t.get(creditsRef)` before any `t.set`/`t.update` call, and rethrow transient errors from `stripe.checkout.sessions.retrieve` (`lines 70-75`) so Stripe retries.
+  2. In `handleCreditPackRefund` (`lines 1056-1102`), read `users/{userId}/wallet/current` inside the transaction before writes, decrement `balanceCredits` (clamped at `0`) and `lifetimePurchasedCredits`, and write a refund audit entry in `users/{userId}/credit_transactions`.
+  3. In `handleMarketplaceRefund` (`lines 864-891`), remove the erroneous deduction from `user_credits/{sellerId}` and instead record the USD cent clawback against the seller's financial payout/royalty ledger (or Stripe Connect transfer reversal).
+  4. In `handleCheckoutCompleted` (`lines 503-539`), invoke `await emitSaleConversion(session)` before returning from product/license/merch branches (or remove the early `return`s and use `if / else if / else`), and `await deliveryRef.update(...)` at `lines 1335` and `1342`.
+- **Acceptance:** Unit tests verify `handleMicroTransactionCheckoutCompleted` executes all `t.get()` calls before any `t.set()`/`t.update()` call and updates both `user_credits` and `wallet/current`; `handleCreditPackRefund` decrements `wallet/current.balanceCredits`; `handleMarketplaceRefund` does not debit `user_credits`; and `emitSaleConversion` is called for marketplace, licensing, and POD checkouts.
+
+---
+
+### ISSUE-1548: Split Escrow is 100% deadlocked in production (`signEscrow` omitted from Cloud Functions exports in `index.ts`), `initiateSplitEscrow` creates unconfirmed `requires_payment_method` PaymentIntents that cannot be captured by `releaseEscrow`, and 3-way split rounding can exceed 100% of held funds
+
+- **Status:** ✅ FIXED (2026-10-16)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Stripe Split Escrow (`packages/firebase/src/stripe/splitEscrow.ts`, `packages/firebase/src/index.ts`)
+- **Classification:** Unexported Cloud Function state-machine deadlock, unconfirmed Stripe manual-capture PaymentIntent failure, missing status guard, and rounding overflow.
+- **Evidence:**
+  1. **`signEscrow` Omitted from Cloud Functions Exports (`packages/firebase/src/index.ts:145` vs `packages/firebase/src/stripe/splitEscrow.ts:145, 183, 275`):** `packages/firebase/src/index.ts:145` exports:
+     ```ts
+     export { initiateSplitEscrow, releaseEscrow } from './stripe/splitEscrow';
+     ```
+     It completely omits `signEscrow` (`splitEscrow.ts:183`). Because `initiateSplitEscrow` initializes every escrow with `status: 'PENDING_SIGNATURES'` (`line 145`), `releaseEscrow` rejects any escrow unless `record.status === 'FULLY_SIGNED'` (`line 275`), and only `signEscrow` transitions an escrow from `'PENDING_SIGNATURES'` to `'FULLY_SIGNED'` (`line 220`), **no split escrow can ever be signed or released in production**!
+  2. **Unconfirmed Manual-Capture PaymentIntent Cannot Be Captured (`packages/firebase/src/stripe/splitEscrow.ts:110-124, 162, 337-340`):** `initiateSplitEscrow` (`lines 110-124`) calls:
+     ```ts
+     const paymentIntent = await stripe.paymentIntents.create({
+       amount: holdAmount,
+       currency: 'usd',
+       capture_method: 'manual',
+       description: `Split Escrow Hold — Track: ${trackTitle} (${trackId})`,
+       metadata: { ... },
+     });
+     ```
+     Because no `payment_method` or `confirm: true` is passed (and `paymentIntent.client_secret` is discarded and never returned to the caller), Stripe creates the PaymentIntent in `status: 'requires_payment_method'` with **$0 actually authorized or held** (despite `initiateSplitEscrow` returning `fundsHeld: true` at `line 162`). When `releaseEscrow` later calls `await stripe.paymentIntents.capture(stripePaymentIntentId)` (`line 339`), Stripe deterministically fails with `payment_intent_unexpected_state` because only PaymentIntents in `status: 'requires_capture'` can be captured.
+  3. **Missing Status Precondition in `signEscrow` & 3-Way Split Rounding Overflow in `releaseEscrow` (`packages/firebase/src/stripe/splitEscrow.ts:218-225, 349`):**
+     - In `signEscrow` (`lines 198-225`), the transaction never checks `data.status === 'PENDING_SIGNATURES'`. Calling `signEscrow` on an escrow already in `'RELEASING'`, `'RELEASED'`, or `'PARTIAL_RELEASE_FAILURE'` overwrites `status` back to `'FULLY_SIGNED'` (`line 225`).
+     - In `releaseEscrow` (`line 349`), each party's payout is calculated independently via `const shareCents = Math.round((holdAmountCents * splitPct) / 100)`. For a 3-way split such as `33.34% / 33.33% / 33.33%` on `holdAmountCents = 1000` ($10.00) or `33.5% / 33.5% / 33.0%` on odd cent totals, independent `Math.round` calls can sum to `> holdAmountCents`, causing the final `stripe.transfers.create` call to exceed the captured hold amount.
+  4. **Jev (`jev-1.13.0`) Verification (`req_01a147cd92757d96861235397dc1b444`):**
+     - `issue_1548_real_bug` (Noul): **`0.91`**
+     - `issue_1548_severity` (Score 0–4): **`3.98`** (`confidence: 0.99`, `P(4 = Critical severity — feature is 100% deadlocked in production and Stripe capture cannot succeed) = 0.99`, `P(3) = 0.01`).
+- **Impact:** Split Escrow is 100% non-functional end-to-end: collaborators cannot invoke `signEscrow` because it is not deployed, `initiateSplitEscrow` reports `fundsHeld: true` without authorizing any payment method, and `releaseEscrow` cannot capture the unconfirmed PaymentIntent.
+- **Fix:**
+  1. Export `signEscrow` from `packages/firebase/src/index.ts:145` (`export { initiateSplitEscrow, signEscrow, releaseEscrow } from './stripe/splitEscrow';`).
+  2. In `initiateSplitEscrow` (`splitEscrow.ts:110-165`), either require and confirm a `paymentMethodId`/`customerId` (`confirm: true`, verifying `paymentIntent.status === 'requires_capture'`) or return `clientSecret: paymentIntent.client_secret` with `fundsHeld: false` until confirmed; and in `releaseEscrow` (`line 339`), verify the PaymentIntent is in `'requires_capture'` (or already `'succeeded'`) before calling `stripe.paymentIntents.capture`.
+  3. In `signEscrow` (`line 202`), reject with `failed-precondition` if `data.status !== 'PENDING_SIGNATURES'`; and in `releaseEscrow` (`line 349`), use `Math.floor((holdAmountCents * splitPct) / 100)` (or allocate the remainder cent to the last party) so total transfers never exceed `holdAmountCents`.
+- **Acceptance:** Unit tests verify `signEscrow` is exported from `packages/firebase/src/index.ts`, rejects escrows not in `PENDING_SIGNATURES`, confirms or verifies `requires_capture` before capture in `releaseEscrow`, and guarantees `sum(shareCents) <= holdAmountCents` across all split combinations.
+
+---
+
+### ISSUE-1549: `submitTaxForm` permanently burns the single-use `taxFormRequests/{token}` link in a transaction before checking collaborator existence or uploading the W-9/W-8BEN PDF to Cloud Storage, and interpolates unsanitized `fileName` into the GCS object path
+
+- **Status:** ✅ FIXED (2026-10-16)
+- **Severity:** 🟠 HIGH
+- **Module:** Finance Tax Form Portal (`packages/firebase/src/functions/finance/submitTaxForm.ts`)
+- **Classification:** Premature irreversible token consumption (non-atomic workflow) and Cloud Storage path traversal (`CWE-22`).
+- **Evidence:**
+  1. **Single-Use Token Burned Before Collaborator Verification & GCS Upload (`packages/firebase/src/functions/finance/submitTaxForm.ts:99-138`):** In `processSubmitTaxForm`, the Firestore transaction (`lines 99-115`) immediately marks `taxFormRequests/{token}` as consumed (`tx.update(tokenRef, { consumedAt: FieldValue.serverTimestamp() })` at `line 113`) and commits. Only **after** the token is permanently consumed does `processSubmitTaxForm`:
+     - Check whether `users/{artistUid}/collaborators/{collaboratorId}` exists (`lines 123-126`) — returning `404 Not Found` if missing;
+     - Upload the PDF buffer to Cloud Storage (`await fileRef.save(...)` at `line 129`);
+     - Update `collaboratorRef` with `taxFormStatus: 'verified'` and `taxFormStoragePath` (`lines 131-138`).
+     If `collaboratorSnap.exists` is `false` or if the Cloud Storage upload or second Firestore write experiences any transient failure, the collaborator's single-use link is **permanently burned** (`consumedAt` is set), so every retry returns `409 Conflict: "This link has already been used."` (`line 109`) while no tax form is stored.
+  2. **Unsanitized `fileName` Storage Path Traversal (`packages/firebase/src/functions/finance/submitTaxForm.ts:79-81, 128`):** Line 128 constructs the Cloud Storage object key directly from the unauthenticated request body's `fileName`:
+     ```ts
+     const storagePath = `tax_docs/${artistUid}/${collaboratorId}/${Date.now()}-${fileName}`;
+     ```
+     Because `fileName` is only checked for truthiness (`!fileName || typeof fileName !== 'string'` at `line 80`) and is never stripped of `/`, `\`, or `..` path segments (e.g., `path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, '_')`), a crafted `fileName` such as `../../../other_artist/other_collab/w9.pdf` traverses out of the collaborator's directory in GCS.
+  3. **Jev (`jev-1.13.0`) Verification (`req_01a147cd92757d96861235397dc1b444`):**
+     - `issue_1549_real_bug` (Noul): **`0.94`**
+     - `issue_1549_severity` (Score 0–4): **`2.99`** (`confidence: 1.0`, `P(3 = High severity — permanent single-use token loss on error and storage path traversal risk) = 1.0`).
+- **Impact:** Any transient GCS/Firestore failure (or missing collaborator doc) during tax-form submission permanently locks the collaborator out of their single-use W-9/W-8BEN upload link (`409 Conflict`), and unauthenticated callers with a valid token can write PDFs to arbitrary GCS paths via `..` segments in `fileName`.
+- **Fix:**
+  1. Sanitize `fileName` before constructing `storagePath` (`const safeFileName = fileName.split(/[/\\]/).pop()!.replace(/[^a-zA-Z0-9._-]/g, '_');`).
+  2. Inside the initial transaction (or pre-check), verify that `tokenSnap` is valid/unexpired AND `collaboratorRef` exists; reserve the token with a short-lived `processingAt` lock (or only commit `consumedAt` + `collaboratorRef.update(...)` together inside the Firestore transaction **after** `await fileRef.save(...)` succeeds, deleting the uploaded GCS object if the transaction fails).
+- **Acceptance:** Unit tests verify that if `collaboratorSnap.exists` is false or `fileRef.save` throws, `taxFormRequests/{token}.consumedAt` remains unset so the collaborator can retry, and `fileName` values containing `../` or `/` are sanitized to a flat basename.
+
+---
+
+### ISSUE-1550: `shopifyWebhook` and `pandadocWebhook` compute HMAC-SHA256 over `JSON.stringify(req.body)` instead of `req.rawBody`, `shopifyWebhook` crashes Firestore `.doc(order.id)` on numeric Shopify order IDs, and `pandadocWebhook` writes duplicate `career_events` before idempotency and distorts single-writer + publisher splits to 150%
+
+- **Status:** ✅ FIXED (2026-10-16)
+- **Severity:** 🟠 HIGH
+- **Module:** Shopify & PandaDoc Webhooks and ISWC Mapper (`packages/firebase/src/marketing/shopifyWebhook.ts`, `packages/firebase/src/legal/pandadocWebhook.ts`, `packages/firebase/src/publishing/iswcMapper.ts`)
+- **Classification:** Broken webhook HMAC signature verification (`rawBody` vs `JSON.stringify`), Firestore `.doc(number)` runtime crash, pre-idempotency duplicate event writes, and royalty split calculation distortion.
+- **Evidence:**
+  1. **HMAC Computed Over Re-Serialized `JSON.stringify(req.body)` Instead of `req.rawBody` (`packages/firebase/src/marketing/shopifyWebhook.ts:213-215`, `packages/firebase/src/legal/pandadocWebhook.ts:81-85`):**
+     - `shopifyWebhook.ts:213` computes `const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body)` and passes `rawBody` to `verifyShopifyHmac`.
+     - `pandadocWebhook.ts:84` computes `const rawBody = JSON.stringify(req.body)` and passes `rawBody` to `verifyPandaDocSignature`.
+     In Firebase Cloud Functions (`onRequest`), Express automatically parses `application/json` bodies into `req.body` (a JavaScript object) while preserving the exact wire bytes on `req.rawBody` (`Buffer`). Re-serializing `req.body` with `JSON.stringify` strips whitespace, alters float formatting (e.g. `10.00` $\rightarrow$ `10`), or changes unicode escaping compared to the raw HTTP payload signed by Shopify/PandaDoc, causing legitimate production webhooks to fail HMAC verification with `401 Unauthorized`.
+  2. **Numeric `order.id` Crashes Firestore `.doc(order.id)` (`packages/firebase/src/marketing/shopifyWebhook.ts:234, 297`):** Shopify REST `orders/create` webhooks transmit `order.id` as a JSON **number** (e.g. `820982911946154508`). Even though `ShopifyOrderPayload` types `id: string | number` (`line 47`) and `line 262` converts it via `String(order.id)`, `line 234` and `line 297` pass `order.id` directly into Firestore `.doc()`:
+     ```ts
+     const deliveryRef = db.collection('shopify_webhook_deliveries').doc(order.id as string);
+     ```
+     Passing a `number` to `CollectionReference.doc()` throws `Error: Value for argument "documentPath" is not a valid resource path` at line 234, and then throws the **exact same error** inside the `catch` block at line 297 (`await db.collection('shopify_webhook_deliveries').doc(order.id as string).set(...)`)!
+  3. **PandaDoc Pre-Idempotency Duplicate Writes & Single-Writer + Publisher 150% Split Distortion (`packages/firebase/src/legal/pandadocWebhook.ts:170-267, 310-336`, `packages/firebase/src/publishing/iswcMapper.ts:88-111`):**
+     - In `pandadocWebhook.ts`, `career_events` (`line 170`) and `users/{uid}/career_timeline` (`line 174`) are written **before** the `pandadoc_webhook_automation/{idempotencyKey}` transaction (`lines 203-214`), so every retried `document_completed` webhook writes duplicate `career_events` and `career_timeline` documents. Furthermore, if queuing `iswc_mapper_queue` (`line 231`) or `distribution_pipeline_queue` (`line 253`) fails after the idempotency transaction commits at `line 214`, retries exit early as `alreadyProcessed: true` (`line 217`) and never enqueue the downstream jobs.
+     - In `extractSplitPayload` (`pandadocWebhook.ts:310-336`), when a single-writer contract uses `artist_legal_name` (`line 312`), the fallback hardcodes `share: 100` (`line 315`). If the contract also specifies `publisher_name` and `publisher_share` (e.g., `50` at `lines 320-333`), `writers` contains `[{ share: 100 }, { share: 50 }]`. When `processIswcMapJob` (`packages/firebase/src/publishing/iswcMapper.ts:88-111`) runs, it sums `originalTotalShare = 150%` and normalizes each share via `(w.share / originalTotalShare) * 100`, distorting the artist's 50/50 split into `66.67% / 33.33%`!
+  4. **Jev (`jev-1.13.0`) Verification (`req_01a147cd92757d96861235397dc1b444`):**
+     - `issue_1550_real_bug` (Noul): **`0.90`**
+     - `issue_1550_severity` (Score 0–4): **`3.0`** (`confidence: 0.99`, `P(3 = High severity — webhook signature rejections, deterministic Firestore crashes on numeric Shopify order IDs, and distorted royalty splits) = 0.99`, `P(4) = 0.01`).
+- **Impact:** Valid Shopify and PandaDoc webhooks fail HMAC checks whenever wire JSON differs from `JSON.stringify(req.body)`; any Shopify order with a numeric `order.id` crashes `shopifyWebhook` at `.doc(order.id)`; retried PandaDoc webhooks create duplicate career timeline events; and single-writer + publisher PandaDoc contracts register distorted PRO/ISWC splits.
+- **Fix:**
+  1. In both `shopifyWebhook.ts:213` and `pandadocWebhook.ts:84`, prefer `req.rawBody ? req.rawBody.toString('utf8') : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body))` for HMAC verification.
+  2. In `shopifyWebhook.ts:234` and `297`, coerce the document ID via `const orderIdStr = String(order.id);` before calling `.doc(orderIdStr)`.
+  3. In `pandadocWebhook.ts:170-267`, run the idempotency check **before** writing `career_events` / `career_timeline` and commit the idempotency record atomically with (or after) the `iswc_mapper_queue` and `distribution_pipeline_queue` writes. In `extractSplitPayload` (`lines 310-333`), subtract `pubShare` from the fallback single-writer's `100` share (`share: Math.max(0, 100 - pubShare)`) when `publisher_share` is present.
+- **Acceptance:** Unit tests verify HMAC verification uses `req.rawBody` when present, `shopifyWebhook` handles numeric `order.id` values without throwing, retried `pandadocWebhook` deliveries do not duplicate `career_events`, and single-writer + 50% publisher contracts produce a `50% / 50%` split.
+
+---
+
+### ISSUE-1551: Inngest `executeMilestoneFn` and `generateLongFormVideoFn` wrap `step.run` / `step.sleep` inside outer `try/catch` blocks that intercept step interrupts and swallow errors, and `pollTimelineMilestones` crashes on unscoped `collectionGroup('items')` documents
+
+- **Status:** ✅ FIXED (2026-10-16)
+- **Severity:** 🟠 HIGH
+- **Module:** Inngest Durable Orchestration & Timeline Polling (`packages/firebase/src/timeline/milestone_execution.ts`, `packages/firebase/src/lib/long_form_video.ts`, `packages/firebase/src/timeline/pollTimelineMilestones.ts`)
+- **Classification:** Broken Inngest durable-execution control flow (outer `try/catch` around `step.run`/`step.sleep`) and unscoped Firestore `collectionGroup` crash.
+- **Evidence:**
+  1. **Outer `try/catch` Around `step.run` / `step.sleep` Intercepts Inngest Step Interrupts & Swallows Retries (`packages/firebase/src/timeline/milestone_execution.ts:138-381`, `packages/firebase/src/lib/long_form_video.ts:205-615`):**
+     - In Inngest's execution model, memoized step primitives (`await step.run(...)` and `await step.sleep(...)`) suspend execution after completing a step or scheduling a sleep by throwing an internal control-flow interrupt (`StepInterrupt` / `NonRetriableError`).
+     - Both `executeMilestoneFn` (`milestone_execution.ts:138-381`) and `generateLongFormVideoFn` (`long_form_video.ts:205-615`) wrap their entire multi-step workflows inside a top-level `try { ... } catch (error: unknown) { await step.run('mark-failed' / 'handle-failure', ...); }` block instead of using Inngest's `onFailure` hook.
+     - Worse, in `generateLongFormVideoFn` (`long_form_video.ts:586-615`), the `catch` block executes `await step.run('handle-failure', ...)` — which marks `video_jobs/{jobId}` as `status: 'failed'` and calls `settleLongFormReservation(..., 0, 'failed')` to void the cost reservation — and **never rethrows `error`**, returning `{ status: 'failed', jobId, error: errorMessage }` (`line 614`). This completely disables Inngest's step retry mechanism (`retries: 2`) and prematurely fails the video job on the first transient step error or interrupt!
+  2. **`pollTimelineMilestones` Unscoped `collectionGroup('items')` Crash & Missing `timelineDoc.id` Fallback (`packages/firebase/src/timeline/pollTimelineMilestones.ts:135-190`):**
+     - Line 136 queries `await db.collectionGroup('items').where('status', '==', 'active').limit(500).get()`. Because `'items'` is a generic subcollection name used across Firestore, this query matches any document in any `items` subcollection that has `status: 'active'`.
+     - Line 154 immediately accesses `timeline.milestones.length` without checking `Array.isArray(timeline.milestones)`. Any active document in any `items` subcollection without a `milestones` array throws `TypeError: Cannot read properties of undefined (reading 'length')`, aborting the entire scheduled cron run (`lines 204-208`).
+     - Line 178 sends `timelineId: timeline.id` in the `milestone/execute` Inngest event payload instead of `timeline.id || timelineDoc.id`. Whenever the Firestore document stores its ID only on the document reference (`timelineDoc.id`) and not as a redundant `id` field inside the document data, `timelineId` is `undefined`, causing `executeMilestoneFn` (`milestone_execution.ts:154`) to query `.doc(undefined)` and fail.
+  3. **Jev (`jev-1.13.0`) Verification (`req_01a147cd92757d96861235397dc1b444`):**
+     - `issue_1551_real_bug` (Noul): **`0.89`**
+     - `issue_1551_severity` (Score 0–4): **`3.0`** (`confidence: 1.0`, `P(3 = High severity — broken durable execution step resumption/retry semantics and cron polling crashes) = 1.0`).
+- **Impact:** `generateLongFormVideoFn` swallows errors in its outer `catch` block, disabling Inngest retries and immediately voiding cost reservations and marking jobs `failed`; outer `try/catch` blocks around `step.run`/`step.sleep` interfere with Inngest step checkpointing; and `pollTimelineMilestones` crashes if any non-timeline `items` document has `status: 'active'` or if `timeline.id` is not duplicated inside the document body.
+- **Fix:**
+  1. In `executeMilestoneFn` (`milestone_execution.ts:138-381`) and `generateLongFormVideoFn` (`long_form_video.ts:205-615`), remove the outer `try/catch` blocks around `step.run`/`step.sleep` and move the failure-cleanup logic (`mark-failed` / `handle-failure` + `settleLongFormReservation`) into Inngest's `onFailure` handler inside `inngest.createFunction({ ..., onFailure: async ({ event, error, step }) => { ... } }, ...)` so it runs only after retries are exhausted and never intercepts step interrupts.
+  2. In `pollTimelineMilestones.ts:135-190`, guard `if (!timelineDoc.ref.path.includes('/timelines/') || !Array.isArray(timeline.milestones)) continue;` before accessing `timeline.milestones.length`, and pass `timelineId: timeline.id || timelineDoc.id` at `line 178`.
+- **Acceptance:** Unit tests verify `generateLongFormVideoFn` and `executeMilestoneFn` propagate step errors/interrupts for Inngest retry handling and only mark jobs/milestones failed in `onFailure`, and `pollTimelineMilestones` safely skips non-timeline `items` docs and falls back to `timelineDoc.id`.

@@ -32,3 +32,95 @@ was reached from https://indii.music/ through the visible login link. The
 existing authenticated account is wiil, with Founding Member / Lifetime access
 shown by the product; it was not created during this task. The changed export
 and Boardroom journey still require verification after rollout.
+
+October 13 production follow-up: ee686d771 passed exact-SHA deployment run
+38399349595. Reusing the named gallery original incorrectly produced a Keeper
+browse_local_files dependency, then skipped Creative and Distribution when the
+browser correctly rejected desktop lookup. This was a planning-context defect:
+the source manifest was only provided after planning, and generated gallery
+assets were absent from the frozen source snapshot. The follow-up supplies
+source labels/IDs to planning separately from the original user request, freezes
+gallery originals as gallery-N aliases, and grounds print ownership in the
+single Creative tool, which already performs approval and persistence.
+
+A subsequent explicit-source request could not classify intent because live
+provider calls rejected a missing App Check token. User-authorized official
+Studio Sign Out and Sign In restored the same existing account through the
+normal UI and browser-saved credentials. No tokens were injected or debug
+checks bypassed. Whether provider access and the full print path now work is
+still unverified; exact pixels, PNG pHYs metadata and persisted gallery/version
+results must be measured before declaring production print success.
+
+After normal re-sign-in, the explicit-source Boardroom request dispatched to
+Creative and showed the real crop dialog above the overlay. Original source
+1792×2400 enlarged with browser ESRGAN into a saved 3000×3000 PNG. Actual browser-
+loaded master bytes (14,681,347 bytes) contain pHYs 11811×11811 pixels/metre,
+unit 1 = 299.9994 DPI on both axes; all PNG chunk CRCs validate. SHA-256:
+e42f8f1dd43b3c98877ab7a3c52780ba014d73f323babb202398b38e6b54e07c.
+Gallery items and tool receipts remained visible after normal reload. Version
+persistence is supported by the completed real tool receipts, not a model claim.
+
+The same live run exposed two further failures: Creative repeated the successful
+print tool, producing print-1791913652477 and print-1791913866059; the 300s timeout
+also temporarily claimed completion from an unrelated change in the shared
+gallery. Follow-up execution reuses only a completed identical tool receipt
+within its own Boardroom step (different args, failed/queued/partial receipts
+remain distinct), and Boardroom timeout notices no longer infer success from
+global gallery counts. Named-source routing and duplicate prevention still need
+post-follow-up live verification. A 9:16 poster remains unverified.
+
+October 14: 8f82918a0 passed exact-SHA deployment run 38482290737. A fresh
+Studio session reached through the production Log in link reused the same
+existing Founding Member account. The visible 9:16 gallery source measures
+1080×1920. Requesting it by name for poster_11x17 with crop confirmation still
+failed before execution: the generated graph was conditional/mapped. The
+decomposer's example schema contradicted its Boardroom rules by advertising
+condition, inputMapping and waitCondition "any". The follow-up removes those
+fields from the Boardroom example, explains that the tool owns crop approval,
+and validates before returning a graph with one feedback-based replan. It never
+strips conditions to force execution. Poster completion remains unverified until
+the follow-up deployment is exercised in the real UI.
+
+October 14 resumed check: production was entered through the official Log in
+link on the existing wiil@indii.music account. Account & Security shows active
+indii Founder lifetime access; no account or entitlement was created/modified.
+The named 9:16 poster request reached one Creative step and prepare_print_file,
+but its crop preview used a 3000×3000 square source. The preview was declined;
+the real receipt states no print file was produced. Creative repeated the
+declined preparation, including after Stop, until a normal reload ended the
+request. An exact-ID retry hit the 4× enlargement guard repeatedly.
+
+The bounded follow-up binds a unique explicitly requested ID or longest exact
+gallery label, rejects source substitution, and reads the saved gallery master
+through StorageService.get instead of accepting cached preview pixels. Crop
+decline now has a typed CANCELLED receipt that terminates the agent invocation.
+Pure source-selection and terminal-receipt checks cover parent/variant overlap,
+alias token boundaries, duplicate references, ambiguity and retryable failures.
+The saved-original lookup and completed poster still require deployed UI proof.
+
+October 15 production follow-up: d02f0a5e3 passed exact release 38738171214;
+actual deployment logs confirmed Hosting, staging checks and Cloud Functions.
+The existing indii Founder account was entered through the official public Log
+in link; no account, plan or entitlement was created or changed. The named 9:16
+variant still hit the 4× guard. The larger original (1792×2400) reached the real
+11×17 crop preview: 3300×5100 trim at 300 DPI with 0.125-inch bleed. Declining
+ended the invocation with PRINT_CROP_CANCELLED and no reopened approval.
+
+Approving a fresh request produced print-1792088328687 through browser ESRGAN:
+3376×5176 including bleed. The real tool receipt reports gallerySaved and
+versionRecorded true. A normal reload restored the poster in Project Assets,
+and its already-loaded image decoded to 3376×5176. No computer download was
+requested. Poster DPI remains receipt-supported until independent inspection;
+the prior saved 3000×3000 cover was independently read as 299.9994 nominal DPI.
+Evidence: /tmp/indii-saved-poster-editor.png and
+/tmp/indii-poster-cancellation-receipt.png.
+
+The agent attempted another preparation after that successful save; the second
+approval was declined. The next bounded change ends a Boardroom print attempt
+when pixels have been created, reporting actual persistence flags even when
+bookkeeping failed, instead of allowing another preparation. Separate requested
+print outputs receive separate Creative steps. The same change exposes measured
+original-file metadata in Project Assets and the Creative Canvas, and makes
+platform exports await full-resolution gallery storage with computer ZIP
+Downloads opt-in. Pure byte/protocol checks and legacy structural checks do not
+prove these new UI or platform-export paths; deployed acceptance remains pending.

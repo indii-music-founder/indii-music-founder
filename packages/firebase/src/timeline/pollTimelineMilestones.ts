@@ -139,6 +139,11 @@ export const pollTimelineMilestones = onSchedule(
             console.log(`[pollTimelineMilestones] Found ${activeTimelinesSnap.size} active timelines across the platform.`);
 
             for (const timelineDoc of activeTimelinesSnap.docs) {
+                // Ensure doc is under timelines/{userId}/items/{timelineId}
+                if (!timelineDoc.ref.path.startsWith('timelines/')) {
+                    continue;
+                }
+
                 // The parent doc id is the userId in our structure: timelines/{userId}/items/{timelineId}
                 const userId = timelineDoc.ref.parent.parent?.id;
                 if (!userId) {
@@ -147,42 +152,46 @@ export const pollTimelineMilestones = onSchedule(
                 }
 
                 const timeline = timelineDoc.data() as Timeline;
+                if (!Array.isArray(timeline?.milestones)) {
+                    continue;
+                }
 
-                    let updated = false;
+                const resolvedTimelineId = timeline.id || timelineDoc.id;
+                let updated = false;
 
-                    // Find due milestones
-                    for (let i = 0; i < timeline.milestones.length; i++) {
-                        const milestone = timeline.milestones[i];
+                // Find due milestones
+                for (let i = 0; i < timeline.milestones.length; i++) {
+                    const milestone = timeline.milestones[i];
 
-                        if (milestone.status === 'pending' && milestone.scheduledAt <= now) {
-                            totalDue++;
+                    if (milestone.status === 'pending' && milestone.scheduledAt <= now) {
+                        totalDue++;
 
-                            // Mark milestone as dispatched (prevents double-fire on next poll)
-                            timeline.milestones[i] = {
-                                ...milestone,
-                                status: 'executing',
-                            };
-                            updated = true;
+                        // Mark milestone as dispatched (prevents double-fire on next poll)
+                        timeline.milestones[i] = {
+                            ...milestone,
+                            status: 'executing',
+                        };
+                        updated = true;
 
-                            console.log(
-                                `[pollTimelineMilestones] Dispatching milestone: "${milestone.instruction.slice(0, 80)}..." ` +
-                                `(timeline: ${timeline.title}, phase: ${milestone.phaseName}, agent: ${milestone.agentId})`
-                            );
+                        console.log(
+                            `[pollTimelineMilestones] Dispatching milestone: "${milestone.instruction.slice(0, 80)}..." ` +
+                            `(timeline: ${timeline.title}, phase: ${milestone.phaseName}, agent: ${milestone.agentId})`
+                        );
 
-                            // Dispatch to Inngest for autonomous server-side execution
-                            try {
-                                await inngest.send({
-                                    name: 'timeline/milestone.due',
-                                    data: {
-                                        userId,
-                                        timelineId: timeline.id,
-                                        milestoneId: milestone.id,
-                                        agentId: milestone.agentId,
-                                        instruction: milestone.instruction,
-                                        assetStrategy: milestone.assetStrategy,
-                                        phaseName: milestone.phaseName,
-                                        type: milestone.type,
-                                        platform: milestone.platform ?? null,
+                        // Dispatch to Inngest for autonomous server-side execution
+                        try {
+                            await inngest.send({
+                                name: 'timeline/milestone.due',
+                                data: {
+                                    userId,
+                                    timelineId: resolvedTimelineId,
+                                    milestoneId: milestone.id,
+                                    agentId: milestone.agentId,
+                                    instruction: milestone.instruction,
+                                    assetStrategy: milestone.assetStrategy,
+                                    phaseName: milestone.phaseName,
+                                    type: milestone.type,
+                                    platform: milestone.platform ?? null,
                                         goal: timeline.goal,
                                         title: timeline.title,
                                         domain: timeline.domain,
