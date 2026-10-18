@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "6b43f5ecccbad74793403b3cf49ff89e925cde1e25c61bfd6bfea19ffe7952de",
+  "sourceDigest": "ad43da3979a167fc893e39a1869b92571e8da14573b367ec2f4a800b3569bc01",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -2554,9 +2554,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "tsc -b packages/shared && tsc -b packages/video-compiler && tsc -b packages/main && tsc -b packages/renderer && tsc -b packages/firebase && tsc -b packages/render-worker && tsc -b packages/sdk && tsc -b packages/admin-dashboard && npm run typecheck:firebase-tests",
-      "descriptionHash": "bfc2f1ccde050bb63a462b54dac7da5fc73f9992f8952ed3c1bd3748d9073016",
-      "contentHash": "9f044f4053031563b80c912a5310a6fd0c1600324bafed5e9692c24aa489a24e",
+      "description": "tsc -b packages/shared && tsc -b packages/video-compiler && tsc -b packages/main && tsc -b packages/renderer && tsc -b packages/firebase && tsc -b packages/render-worker && tsc -b packages/sdk && tsc -b packages/admin-dashboard && npm run typecheck:firebase-tests && npm run typecheck -w packages/rights-session-broker && npm run typecheck -w packages/rights-browser-worker",
+      "descriptionHash": "66c9c3d271d434590823b0101d1f49b3f5b205ad50e288ffff8055eb8cfc1f12",
+      "contentHash": "1d1062ff748eb59d79918535586aaeef9367ea25f7136ddec0a4af480ae31884",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [

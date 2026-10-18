@@ -53,7 +53,9 @@ export function validateDepositAsset(asset) {
     if (!asset.sha256Checksum || !/^[a-f0-9]{64}$/i.test(asset.sha256Checksum)) {
         errors.push('Deposit asset requires a valid 64-character SHA-256 hexadecimal checksum');
     }
-    const validMimes = ['audio/wav', 'audio/mpeg', 'audio/flac', 'application/pdf'];
+    const validMimes = ['audio/wav', 'audio/mpeg', 'application/pdf'];
+    if (asset.fileSizeBytes > 500 * 1024 * 1024)
+        errors.push('Deposit exceeds the 500 MB per-file limit');
     if (!validMimes.includes(asset.mimeType)) {
         errors.push(`Unsupported deposit MIME type: ${asset.mimeType}`);
     }
@@ -397,7 +399,8 @@ export function createRegistrationFilingRecord(manifest, portalTarget, confirmat
         workTitle: manifest.work.title,
         isrc: manifest.work.isrc,
         iswc: manifest.work.iswc,
-        status: 'confirmed',
+        status: 'outcome_unknown',
+        evidenceSource: 'user_report',
         confirmationNumber: trimmedConfirmation,
         serviceRequestId: confirmation.serviceRequestId?.trim() || undefined,
         officialFilingDate: filingDate,
