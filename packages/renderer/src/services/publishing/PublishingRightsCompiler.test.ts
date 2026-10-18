@@ -142,7 +142,8 @@ describe('PublishingRightsCompiler', () => {
     const run = compiler.compile(input, ctx);
 
     expect(run.output.registrationReady).toBe(false);
-    expect(run.output.blockers).toContain('Not registered with a PRO.');
+    expect(run.output.blockers).not.toContain('Not registered with a PRO.');
+    expect(run.output.blockers).toContain('Missing writer IPI/CAE: Writer One');
     expect(run.output.needsMlc).toBe(true);
 
     const proFinding = run.findings.find(f => f.id === 'pro_unregistered');

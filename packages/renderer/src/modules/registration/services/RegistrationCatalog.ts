@@ -56,11 +56,11 @@ export async function loadRegistrationCatalog(userId: string): Promise<CatalogTr
       musicalKey: typeof (data.key ?? data.musicalKey) === 'string'
         ? String(data.key ?? data.musicalKey)
         : undefined,
-      isPublished: data.isPublished === true || data.status === 'live' || data.distributionStatus === 'live',
-      yearOfCreation: String(data.yearOfCreation ?? data.pLineYear ?? new Date().getFullYear()),
+      isPublished: data.isPublished === true,
+      yearOfCreation: String(data.yearOfCreation ?? data.pLineYear ?? ''),
       copyrightClaimant: String(data.copyrightClaimant ?? data.artistName ?? data.artist ?? ''),
       workForHire: data.workForHire === true,
-      countryOfFirstPublication: String(data.countryOfFirstPublication ?? 'United States'),
+      countryOfFirstPublication: String(data.countryOfFirstPublication ?? ''),
       publisherName: typeof data.publisherName === 'string' ? data.publisherName : undefined,
       publisherNumber: typeof data.publisherNumber === 'string' ? data.publisherNumber : undefined,
     }));

@@ -69,6 +69,7 @@ export interface RightsRegistrationManifest {
 }
 
 export type CopilotActionType =
+  | 'resume_after_user_review'
   | 'navigate'               // Navigate to portal URL
   | 'highlight_element'      // Visually focus an input for user awareness
   | 'autofill_input'         // Populate form field with verified manifest data
@@ -122,7 +123,8 @@ export interface RegistrationFilingRecord {
   workTitle: string;
   isrc?: string;
   iswc?: string;
-  status: 'draft' | 'in_progress' | 'submitted' | 'confirmed' | 'rejected';
+  status: 'draft' | 'in_progress' | 'submitted' | 'confirmed' | 'rejected' | 'outcome_unknown';
+  evidenceSource?: 'user_report' | 'official_receipt' | 'legacy_unverified';
   confirmationNumber?: string;
   serviceRequestId?: string;
   officialFilingDate?: string;
@@ -195,7 +197,8 @@ export function validateDepositAsset(asset: DepositAsset): {
     errors.push('Deposit asset requires a valid 64-character SHA-256 hexadecimal checksum');
   }
 
-  const validMimes = ['audio/wav', 'audio/mpeg', 'audio/flac', 'application/pdf'];
+  const validMimes = ['audio/wav', 'audio/mpeg', 'application/pdf'];
+  if (asset.fileSizeBytes > 500 * 1024 * 1024) errors.push('Deposit exceeds the 500 MB per-file limit');
   if (!validMimes.includes(asset.mimeType)) {
     errors.push(`Unsupported deposit MIME type: ${asset.mimeType}`);
   }
@@ -552,7 +555,8 @@ export function createRegistrationFilingRecord(
     workTitle: manifest.work.title,
     isrc: manifest.work.isrc,
     iswc: manifest.work.iswc,
-    status: 'confirmed',
+    status: 'outcome_unknown',
+    evidenceSource: 'user_report',
     confirmationNumber: trimmedConfirmation,
     serviceRequestId: confirmation.serviceRequestId?.trim() || undefined,
     officialFilingDate: filingDate,

@@ -18,6 +18,7 @@ export const RightsDepositSchema = z.object({
 }).strict();
 export const CopyrightWorkSchema = z.object({
   entityId: RightsId, trackIds: z.array(RightsId).min(1).max(100), kind: z.enum(['musical_work', 'sound_recording']),
+  embodiedWorkId: RightsId.optional(),
   title: Text, authorIds: z.array(RightsId).min(1).max(100), claimantIds: z.array(RightsId).min(1).max(100),
   yearOfCreation: z.number().int().min(1900).max(2200), workForHire: z.boolean(),
   publication: z.discriminatedUnion('status', [
@@ -65,7 +66,7 @@ export function validateCopyrightCase(input: RightsCase): string[] {
     if (count < 2 || count > 10) errors.push('GRUW requires 2–10 eligible unpublished works.');
     if (works.some(w => w.publication.status !== 'unpublished')) errors.push('GRUW cannot include published works.');
     if (!same(works.map(w => w.authorIds)) || !same(works.map(w => w.claimantIds)) || works.some(w => !same([w.authorIds, w.claimantIds]))) errors.push('GRUW requires the same authors and author-claimants for every work.');
-    if (input.claimScope === 'combined' && (works.length !== count * 2 || !same(works.map(w => w.trackIds)))) errors.push('Combined GRUW requires explicit corresponding composition/recording links.');
+    if (input.claimScope === 'combined' && (works.length !== count * 2 || works.filter(w => w.kind === 'sound_recording').some(w => !works.some(c => c.kind === 'musical_work' && c.entityId === w.embodiedWorkId)))) errors.push('Combined GRUW requires explicit corresponding composition/recording links.');
   } else {
     if (works.length < 2 || works.length > 20) errors.push('GRAM requires 2–20 works.');
     const expected = kind === 'gram_composition' ? 'musical_work' : 'sound_recording';

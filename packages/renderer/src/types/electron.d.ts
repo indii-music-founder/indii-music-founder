@@ -385,6 +385,7 @@ export interface ElectronAPI {
         launchSession: (req: {
             portalTarget: string;
             manifestId: string;
+        manifest?: unknown;
             targetUrl?: string;
             workTitle?: string;
             artistLegalName?: string;
@@ -393,6 +394,7 @@ export interface ElectronAPI {
             depositChecksum?: string;
         }) => Promise<{ success: boolean; sessionId?: string; portalUrl?: string; error?: string }>;
         executeStep?: (req: {
+        sessionId?: string;
             action: {
                 id: string;
                 type: string;

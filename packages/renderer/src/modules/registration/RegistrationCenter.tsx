@@ -9,6 +9,7 @@ import {
 } from './components/CanonicalCatalogIntelligenceSummary';
 import { RegistrationSheet } from './components/RegistrationSheet';
 import { RegistrationAutonomousRail } from './components/RegistrationAutonomousRail';
+import { RightsFilingWorkspace } from './components/RightsFilingWorkspace';
 import { FounderReadinessPanel } from './components/FounderReadinessPanel';
 import { CatalogVisibilityPanel } from './components/CatalogVisibilityPanel';
 import { Building2, Music } from 'lucide-react';
@@ -103,7 +104,7 @@ export default function RegistrationCenter() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [canonicalIntelligenceReport, setCanonicalIntelligenceReport] = useState<CatalogIntelligenceReport | null>(null);
   const [canonicalIntelligenceStatus, setCanonicalIntelligenceStatus] = useState<CanonicalCatalogIntelligenceStatus>('loading');
-  const [activeTab, setActiveTab] = useState<'tracks' | 'founder' | 'visibility'>('tracks');
+  const [activeTab, setActiveTab] = useState<'tracks' | 'founder' | 'visibility' | 'filing'>('tracks');
 
   const selectedTrack = registrationFocus.trackId
     ? (tracks.find(t => t.id === registrationFocus.trackId) ?? tracks[0] ?? null)
@@ -274,6 +275,7 @@ export default function RegistrationCenter() {
               Founder
             </button>
           </div>
+          <button onClick={() => setActiveTab('filing')} className="w-full py-2 text-xs rounded text-amber-300">Copyright filing workspace</button>
           <button onClick={() => setActiveTab('visibility')} className={`w-full py-2 text-xs rounded ${activeTab === 'visibility' ? 'bg-white/10 text-white' : 'text-neutral-400'}`}>Catalog visibility</button>
         </div>
         {activeTab === 'tracks' ? (
@@ -300,7 +302,9 @@ export default function RegistrationCenter() {
 
       {/* Center: Content View */}
       <div className="flex-1 min-w-0 border-r border-white/[0.05] flex flex-col overflow-hidden">
-        {activeTab === 'visibility' ? (
+        {activeTab === 'filing' && user?.uid ? (
+          <RightsFilingWorkspace userId={user.uid} tracks={tracks} />
+        ) : activeTab === 'visibility' ? (
           <CatalogVisibilityPanel key={user?.uid ?? 'signed-out'} userId={user?.uid ?? ''} />
         ) : activeTab === 'founder' ? (
           <FounderReadinessPanel userId={user?.uid ?? ''} />
@@ -318,7 +322,7 @@ export default function RegistrationCenter() {
       </div>
 
       {/* Right: Intelligence Co-Pilot Rail */}
-      {activeTab !== 'visibility' && <div className="w-72 flex-shrink-0">
+      {activeTab !== 'visibility' && activeTab !== 'filing' && <div className="w-72 flex-shrink-0">
         <RegistrationAutonomousRail
           focusedAdapter={focusedAdapter}
           track={selectedTrack}

@@ -46,9 +46,9 @@ export class RightsCopilotService {
     assessment: Partial<ProspectAssessment>,
     options?: ManifestCreationOptions,
   ): RightsRegistrationManifest {
-    const artistLegalName = options?.artistLegalName || assessment.artistName || 'Independent Artist';
+    const artistLegalName = options?.artistLegalName || '';
     const artistStageName = options?.artistStageName || assessment.artistName;
-    const workTitle = options?.title || 'Untitled Work';
+    const workTitle = options?.title || '';
     const currentYear = new Date().getFullYear();
     const creationYear = options?.yearOfCreation || currentYear;
 
@@ -70,20 +70,14 @@ export class RightsCopilotService {
     // Add SoundExchange for master performance rights
     targetPortals.push('soundexchange');
 
-    const splits = options?.splits || [
-      {
-        legalName: artistLegalName,
-        role: 'writer_composer' as const,
-        sharePercentage: 100,
-      },
-    ];
+    const splits = options?.splits || [];
 
     const manifest: RightsRegistrationManifest = {
       manifestId: `reg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       artistId: assessment.id || 'unassigned',
       artistLegalName,
       artistStageName,
-      citizenshipOrDomicile: 'United States',
+      citizenshipOrDomicile: '',
       targetPortals,
       copyrightFormType: 'Form_SR',
       work: {
@@ -113,7 +107,7 @@ export class RightsCopilotService {
    * Computes SHA-256 hexadecimal checksum for a deposit audio file buffer using Web Crypto API.
    */
   async computeAudioChecksum(buffer: ArrayBuffer | Uint8Array): Promise<string> {
-    const rawBuffer: ArrayBuffer = buffer instanceof Uint8Array ? (buffer.buffer as ArrayBuffer) : buffer;
+    const rawBuffer: ArrayBuffer = buffer instanceof Uint8Array ? (buffer.slice().buffer as ArrayBuffer) : buffer;
     const hashBuffer = await crypto.subtle.digest('SHA-256', rawBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');

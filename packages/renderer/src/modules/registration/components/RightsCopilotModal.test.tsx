@@ -188,14 +188,14 @@ describe('RightsCopilotModal (ISSUE-1511)', () => {
     const recordBtn = screen.getByRole('button', { name: /Record Official Filing/i });
     fireEvent.click(recordBtn);
 
-    expect(screen.getByText(/Confirmed Filing • 1-9876543210/i)).toBeInTheDocument();
-    expect(screen.getByText(/Verified Receipt/i)).toBeInTheDocument();
+    expect(screen.getByText(/Reported Filing • 1-9876543210/i)).toBeInTheDocument();
+    expect(screen.getByText(/User report — not independently verified/i)).toBeInTheDocument();
     expect(onFilingRecorded).toHaveBeenCalledWith(
       expect.objectContaining({
         portalTarget: 'loc_copyright',
         confirmationNumber: '1-9876543210',
         serviceRequestId: '1-9876543210',
-        status: 'confirmed',
+        status: 'outcome_unknown',
       }),
     );
 

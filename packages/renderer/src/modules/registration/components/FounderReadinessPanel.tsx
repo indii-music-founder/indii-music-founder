@@ -10,7 +10,6 @@ import React, { useState } from 'react';
 import { ExternalLink, ShieldAlert, CheckCircle2, Circle, Building2, Save, Sparkles } from 'lucide-react';
 import type { FounderPrerequisite, FounderPrerequisiteId } from '../types';
 import type { PortalTarget } from '@indii/shared';
-import { RightsCopilotModal } from './RightsCopilotModal';
 import { logger } from '@/utils/logger';
 
 const COPILOT_PORTAL_MAP: Partial<Record<FounderPrerequisiteId, PortalTarget>> = {
@@ -115,7 +114,6 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
     return {};
   });
   const [saved, setSaved] = useState(false);
-  const [activeCopilotPortal, setActiveCopilotPortal] = useState<PortalTarget | null>(null);
 
   const handleToggleVerified = (id: FounderPrerequisiteId) => {
     setData((prev) => {
@@ -231,12 +229,12 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
                   {COPILOT_PORTAL_MAP[item.id] && (
                     <button
                       type="button"
-                      onClick={() => setActiveCopilotPortal(COPILOT_PORTAL_MAP[item.id]!)}
+                      onClick={() => window.open(item.officialUrl, '_blank', 'noopener,noreferrer')}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ffb800]/10 hover:bg-[#ffb800]/20 text-[#ffb800] border border-[#ffb800]/30 text-xs font-semibold transition-all shadow-sm"
                       title={`Launch guided Copilot assistant for ${item.organization}`}
                     >
                       <Sparkles size={12} />
-                      <span>Copilot Assistant</span>
+                      <span>Open official portal</span>
                     </button>
                   )}
                   <a
@@ -267,15 +265,7 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
         })}
       </div>
 
-      {activeCopilotPortal && (
-        <RightsCopilotModal
-          isOpen={true}
-          onClose={() => setActiveCopilotPortal(null)}
-          portalTarget={activeCopilotPortal}
-          artistLegalName="Independent Artist"
-          workTitle="Catalog Setup"
-        />
-      )}
+
     </div>
   );
 }

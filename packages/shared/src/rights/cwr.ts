@@ -79,8 +79,15 @@ export function buildCwrBatch(raw: CwrBatchInput): { text: string; filename: str
         const total = parties.reduce((sum, p) => sum + p.ownership[right], 0);
         if (total !== 0 && total !== 10000) throw new Error(`${work.workId}: ${right} ownership must account for 10000 units or be explicitly zero.`);
       }
+      const territoryCodes = parties.flatMap(p => p.territories.filter(t => t.included).map(t => t.code));
+      if (territoryCodes.some(code => !['0840', '0124', '2136'].includes(code)) || (territoryCodes.includes('2136') && territoryCodes.some(code => code !== '2136'))) throw new Error('This receiver profile supports disjoint US/Canada or worldwide territories; other territorial combinations require a reviewed profile.');
+      if (input.recipient === 'musicmark') for (const p of work.publishers) {
+        const original = work.publishers.find(o => o.chain === p.chain);
+        if (original && p.role !== 'E' && ((original.societies.performance === '010' && ['021', '071'].includes(p.societies.performance)) || (['021', '071'].includes(original.societies.performance) && p.societies.performance === '010'))) throw new Error('Publisher chain violates MusicMark US affiliation rules.');
+      }
       for (const p of parties) {
         if (!p.controlled && p.territories.length && input.version === '2.1') throw new Error('Non-controlled collection records require CWR 2.2.');
+        if (new Set(p.territories.map(t => t.code)).size !== p.territories.length) throw new Error('Duplicate territories require review.');
         for (const t of p.territories) {
           const total = t.collection.performance + t.collection.mechanical + t.collection.synchronization;
           if ((!t.included && total !== 0) || (t.included && total === 0)) throw new Error('Territory inclusion and collection shares disagree.');
@@ -132,6 +139,18 @@ export function parseCwrAcknowledgments(text: string): { sender: string; acknowl
   if (text.length > 20_000_000 || /[^\x20-\x7e\r\n]/.test(text)) throw new Error('ACK file size or encoding is unsupported.');
   const lines = text.split(/\r?\n/).filter(Boolean);
   if (!lines[0]?.startsWith('HDR') || !lines.at(-1)?.startsWith('TRL')) throw new Error('ACK requires a complete CWR envelope.');
+  if (lines[0].length < 86 || !/^\d{9}$/.test(lines[0].slice(5, 14)) || lines[0].slice(59, 64) !== '01.10') throw new Error('ACK header is malformed.');
+  let groupStart = -1, groupCount = 0, transactionCount = 0, groupTransactions = 0;
+  for (const [index, line] of lines.entries()) {
+    if (line.startsWith('GRH')) { if (groupStart !== -1) throw new Error('ACK group was not closed.'); groupStart = index; groupCount++; groupTransactions = 0; }
+    if (line.startsWith('ACK')) { if (groupStart < 0) throw new Error('ACK is outside a group.'); transactionCount++; groupTransactions++; }
+    if (line.startsWith('GRT')) {
+      if (groupStart < 0 || Number(line.slice(8, 16)) !== groupTransactions || Number(line.slice(16, 24)) !== index - groupStart + 1) throw new Error('ACK group control counts disagree.');
+      groupStart = -1;
+    }
+  }
+  const trailer = lines.at(-1)!;
+  if (groupStart !== -1 || Number(trailer.slice(3, 8)) !== groupCount || Number(trailer.slice(8, 16)) !== transactionCount || Number(trailer.slice(16, 24)) !== lines.length) throw new Error('ACK transmission control counts disagree.');
   const sender = lines[0].slice(5, 14).trim();
   const acknowledgments: CwrAcknowledgment[] = [];
   let current: CwrAcknowledgment | undefined;

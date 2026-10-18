@@ -12,12 +12,14 @@ import { GoogleAuth } from 'google-auth-library';
 import { z } from 'zod';
 import { RightsId, RightsCaseSchema, RightsEvidenceSchema, CwrBatchInputSchema, buildCwrBatch, parseCwrAcknowledgments,
   canonicalRightsJson, validateCopyrightCase, RIGHTS_LIMITS, type RightsCase } from '@indii/shared';
+import { deliverApprovedCwr } from './deliverCwr';
+import { prepareSoundExchangeBulk } from '@indii/shared';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const db = () => getFirestore();
 const root = (uid: string) => db().collection('users').doc(uid);
-const Request = z.object({ action: z.enum(['save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
+const Request = z.object({ action: z.enum(['capabilities', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
 const CaseId = z.object({ caseId: RightsId }).passthrough();
 const SessionId = z.object({ sessionId: RightsId }).passthrough();
 const gc = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
@@ -80,6 +82,7 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
   const uid = request.auth.uid;
   try {
     const { action, payload } = Request.parse(request.data);
+    if (action === 'capabilities') return { hostedEnabled: process.env.RIGHTS_HOSTED_ENABLED === 'true', paymentEnabled: process.env.RIGHTS_PAYMENT_ENABLED === 'true', rememberEnabled: Boolean(process.env.RIGHTS_VAULT_BUCKET && process.env.RIGHTS_KMS_KEY && process.env.RIGHTS_AUTH_COOKIE_NAMES) };
     if (action === 'prepare_deposit') return await prepareDeposit(uid, payload);
     if (action === 'save_case') {
       const manifest = RightsCaseSchema.parse(payload);
@@ -103,15 +106,16 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
         if (manifest.revision !== (data?.manifest?.revision ?? 0) + 1) throw new HttpsError('aborted', 'Reload the latest case revision before saving.');
         tx.set(ref, { ownerUid: uid, manifest, manifestHash, filingId, errors, updatedAt: FieldValue.serverTimestamp() });
         tx.create(root(uid).collection('rightsFilings').doc(filingId), { ownerUid: uid, caseId: manifest.caseId, revision: manifest.revision,
-          manifestHash, state: errors.length ? 'needs_information' : 'ready', evidenceSource: 'none', provider: 'loc_copyright', createdAt: FieldValue.serverTimestamp() });
+          manifestHash, manifest, state: errors.length ? 'needs_information' : 'ready', evidenceSource: 'none', provider: 'loc_copyright', createdAt: FieldValue.serverTimestamp() });
       });
       return { caseId: manifest.caseId, filingId, manifestHash, errors };
     }
     if (action === 'record_evidence') {
-      const input = z.object({ caseId: RightsId, evidence: RightsEvidenceSchema }).strict().parse(payload);
+      const input = z.object({ caseId: RightsId, filingId: RightsId.optional(), evidence: RightsEvidenceSchema }).strict().parse(payload);
       const filing = await ownedCase(uid, input.caseId);
       // Client assertions cannot promote submission, acceptance, or registration.
-      const ref = root(uid).collection('rightsFilings').doc(filing.filingId);
+      const ref = root(uid).collection('rightsFilings').doc(input.filingId ?? filing.filingId);
+      if ((await ref.get()).data()?.caseId !== input.caseId) throw new HttpsError('permission-denied', 'Receipt does not belong to this case.');
       await db().runTransaction(async tx => {
         const existing = await tx.get(ref.collection('evidence').doc(input.evidence.evidenceId));
         if (existing.exists) {
@@ -124,14 +128,35 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       });
       return { filingId: filing.filingId, saved: true, source: 'user_report' };
     }
+    if (action === 'deliver_cwr') return deliverApprovedCwr(uid, RightsId.parse(payload.batchId));
+    if (action === 'prepare_soundexchange') {
+      const templateId = RightsId.parse(payload.templateId);
+      const profile = (await db().doc(`rightsInfrastructure/soundexchange/templates/${templateId}`).get()).data();
+      if (!profile) throw new HttpsError('failed-precondition', 'An authenticated official SoundExchange template must be reviewed before bulk export.');
+      return { ...prepareSoundExchangeBulk(profile.template, payload.recordings), delivered: false };
+    }
     if (action === 'build_cwr') {
       const input = CwrBatchInputSchema.parse(payload);
       const result = buildCwrBatch(input);
       const checksum = digest(result.text);
-      const batchId = `cwr_${checksum}`;
+      const manifestHash = digest(canonicalRightsJson(input));
+      const batchId = `cwr_${checksum.slice(0, 32)}_${manifestHash.slice(0, 24)}`;
       const path = `users/${uid}/rights/cwr/${batchId}/${result.filename}`;
       await SAFE_BUCKET().file(path).save(result.text, { contentType: 'text/plain', resumable: false });
-      await root(uid).collection('rightsCwrBatches').doc(batchId).set({ input, manifestHash: digest(canonicalRightsJson(input)), checksum, path, filename: result.filename, transactions: result.transactions, profileVersion: result.profileVersion, state: 'exported', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      const batchRef = root(uid).collection('rightsCwrBatches').doc(batchId);
+      await db().runTransaction(async tx => {
+        const filenameRef = root(uid).collection('rightsCwrFilenames').doc(result.filename);
+        const filenameClaim = (await tx.get(filenameRef)).data();
+        const existing = await tx.get(batchRef);
+        if (existing.exists) return;
+        if (filenameClaim && filenameClaim.batchId !== batchId) throw new HttpsError('already-exists', 'Use a new file sequence; this recipient filename already identifies another batch.');
+        const { works: _works, ...header } = input;
+        tx.set(filenameRef, { batchId, checksum });
+        tx.create(batchRef, { input: header, manifestHash, checksum, path, filename: result.filename, profileVersion: result.profileVersion, state: 'exported', createdAt: FieldValue.serverTimestamp() });
+      });
+      const writer = db().bulkWriter();
+      for (const item of result.transactions) writer.set(batchRef.collection('transactions').doc(`${item.group}_${item.transaction}`), item);
+      await writer.close();
       return { batchId, ...result, checksum, state: 'exported', transportEnabled: false };
     }
     if (action === 'approve_cwr') {
@@ -152,8 +177,8 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       const parsed = parseCwrAcknowledgments(input.text);
       const created = batch.input.createdAt as string;
       for (const ack of parsed.acknowledgments) {
-        const match = (batch.transactions as Array<{ group: number; transaction: number; workId: string }>).filter(t => t.group === ack.group && t.transaction === ack.transaction && t.workId === ack.workId);
-        if (match.length !== 1 || ack.originalDate !== created.slice(0, 10).replace(/-/g, '') || ack.originalTime !== created.slice(11, 19).replace(/:/g, '')) throw new HttpsError('failed-precondition', 'ACK cannot be unambiguously correlated to this batch.');
+        const match = (await ref.collection('transactions').doc(`${ack.group}_${ack.transaction}`).get()).data();
+        if (!match || match.workId !== ack.workId || match.type && match.type !== ack.type || ack.originalDate !== created.slice(0, 10).replace(/-/g, '') || ack.originalTime !== created.slice(11, 19).replace(/:/g, '')) throw new HttpsError('failed-precondition', 'ACK cannot be unambiguously correlated to this batch.');
       }
       const hash = digest(input.text);
       const path = `users/${uid}/rights/cwr/${input.batchId}/ack-${hash}.txt`;
@@ -161,8 +186,11 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       await db().runTransaction(async tx => {
         const ackRef = ref.collection('acknowledgments').doc(hash);
         if ((await tx.get(ackRef)).exists) return;
-        tx.create(ackRef, { ...parsed, path, hash, source: 'user_import', independentlyVerified: false, importedAt: FieldValue.serverTimestamp() });
+        tx.create(ackRef, { sender: parsed.sender, transactionCount: parsed.acknowledgments.length, path, hash, source: 'user_import', independentlyVerified: false, importedAt: FieldValue.serverTimestamp() });
       });
+      const writer = db().bulkWriter();
+      for (const ack of parsed.acknowledgments) writer.set(ref.collection('decisions').doc(`${hash}_${ack.group}_${ack.transaction}`), { ...ack, source: 'user_import', independentlyVerified: false, batchId: input.batchId });
+      await writer.close();
       return { hash, ...parsed, source: 'user_import' };
     }
     if (action === 'remember_login' || action === 'forget_login') {
@@ -179,6 +207,7 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       const { caseId } = CaseId.parse(payload);
       if (process.env.RIGHTS_HOSTED_ENABLED !== 'true') throw new HttpsError('failed-precondition', 'Hosted filing is awaiting deployment and genuine acceptance verification.');
       const filing = await ownedCase(uid, caseId);
+      if (payload.manifestHash !== filing.manifestHash) throw new HttpsError('failed-precondition', 'Review and save the current manifest before launching.');
       const errors = validateCopyrightCase(filing.manifest);
       if (errors.length) throw new HttpsError('failed-precondition', errors.join(' '));
       const sessionId = randomUUID();
@@ -191,7 +220,7 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
         if (Object.values(active).some(s => s.uid === uid) || Object.keys(active).length >= RIGHTS_LIMITS.globalSessions) throw new HttpsError('resource-exhausted', 'Browser capacity is occupied. End your active session or try again later.');
         const filingRef = root(uid).collection('rightsFilings').doc(filing.filingId);
         const currentFiling = (await tx.get(filingRef)).data();
-        if (['submitted', 'registered', 'outcome_unknown'].includes(currentFiling?.state)) throw new HttpsError('failed-precondition', 'Reconcile this filing before starting another session.');
+        if (['in_progress', 'submitted', 'accepted', 'registered', 'outcome_unknown'].includes(currentFiling?.state)) throw new HttpsError('failed-precondition', 'Reconcile this filing before starting another session.');
         const expiresAtMs = Date.now() + RIGHTS_LIMITS.sessionMs;
         tx.set(capacityRef, { active: { ...active, [sessionId]: { uid, expiresAtMs } } });
         tx.create(ref, { ownerUid: uid, caseId, filingId: filing.filingId, manifestHash: filing.manifestHash, state: 'queued', control: 'none', controlGeneration: 0,

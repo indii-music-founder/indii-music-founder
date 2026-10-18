@@ -95,7 +95,7 @@ describe('cwr - Common Works Registration Batch and Ack Engine', () => {
   };
 
   describe('buildCwrBatch', () => {
-    it('generates a compliant CWR 2.2 file string and filename', () => {
+    it('generates fixed-width CWR records and control counts (structural only)', () => {
       const result = buildCwrBatch(sampleBatchInput);
 
       expect(result.filename).toBe('CW260042IND_034.V22');
@@ -168,29 +168,29 @@ describe('cwr - Common Works Registration Batch and Ack Engine', () => {
     const ackLine = ackPrefix + ackDateGroup + ackType + ackPadding + ackWorkId + ackRecipientId + ackProcDate + ackStatus;
 
     const msgPrefix = 'MSG' + '00000000' + '00000002';
-    const msgCode = 'SUCCESS'.padEnd(16, ' ');
+    const msgCode = 'F00000001NWRF001';
     const msgText = 'Work registration accepted and indexed in musical works database'.padEnd(150, ' ');
     const msgLine = msgPrefix + msgCode + msgText;
 
     const validAckText = [
-      'HDR  00123456789INDII PUBLISHING                                01.102026101214300020261012',
-      'GRH  NWR0000102.20',
+      'HDRSO000000034' + 'THE MLC'.padEnd(45, ' ') + '01.102026101214300020261012' + ' '.repeat(15),
+      'GRHACK0000102.20' + ' '.repeat(12),
       ackLine,
       msgLine,
-      'GRT  000010000000100000005',
-      'TRL  000010000000100000007',
+      'GRT000010000000100000004',
+      'TRL000010000000100000006',
     ].join('\r\n') + '\r\n';
 
     it('parses valid CWR acknowledgment files with status and messages', () => {
       const parsed = parseCwrAcknowledgments(validAckText);
-      expect(parsed.sender).toBe('001234567');
+      expect(parsed.sender).toBe('000000034');
       expect(parsed.acknowledgments).toHaveLength(1);
 
       const ack = parsed.acknowledgments[0];
       expect(ack.workId).toBe('INDII-WRK-001');
       expect(ack.recipientWorkId).toBe('MLC-WRK-998822');
       expect(ack.status).toBe('RA');
-      expect(ack.messages[0]).toContain('SUCCESS: Work registration accepted');
+      expect(ack.messages[0]).toContain('F00000001NWRF001: Work registration accepted');
     });
 
     it('throws if file lacks HDR or TRL boundaries', () => {

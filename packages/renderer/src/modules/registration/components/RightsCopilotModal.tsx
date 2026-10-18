@@ -103,9 +103,9 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
   onClose,
   portalTarget,
   initialManifest,
-  artistLegalName = 'Independent Artist',
+  artistLegalName = '',
   artistStageName,
-  workTitle = 'New Release',
+  workTitle = '',
   onFilingRecorded,
 }) => {
   const portalInfo = PORTAL_METADATA[portalTarget] || PORTAL_METADATA.loc_copyright;
@@ -126,6 +126,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
   const [depositError, setDepositError] = useState<string | null>(null);
   const [copiedDossier, setCopiedDossier] = useState(false);
   const [sessionActive, setSessionActive] = useState(false);
+  const [nativeSessionId, setNativeSessionId] = useState('');
   const [executedStepIds, setExecutedStepIds] = useState<Record<string, string>>({});
   const [stepError, setStepError] = useState<string | null>(null);
   const [confirmationInput, setConfirmationInput] = useState('');
@@ -203,6 +204,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
         const res = await window.electronAPI.rightsCopilot.launchSession({
           portalTarget,
           manifestId: manifest.manifestId,
+          manifest,
           targetUrl: portalInfo.officialUrl,
           workTitle: manifest.work.title,
           artistLegalName: manifest.artistLegalName,
@@ -210,7 +212,8 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
           depositFilename: primaryDeposit?.filename,
           depositChecksum: primaryDeposit?.sha256Checksum,
         });
-        if (res.success) {
+        if (res.success && res.sessionId) {
+          setNativeSessionId(res.sessionId);
           return;
         }
       } catch (err) {
@@ -227,7 +230,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
       return;
     }
     setStepError(null);
-    const result = await window.electronAPI.rightsCopilot.executeStep({ action });
+    const result = await window.electronAPI.rightsCopilot.executeStep({ sessionId: nativeSessionId, action });
     if (result.success) {
       setExecutedStepIds((prev) => ({
         ...prev,
@@ -304,7 +307,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
                 <FileMusic className="w-4 h-4 text-[#ffb800]" />
                 <h4 className="text-xs font-bold text-white">Deposit Copy Staging (Library of Congress)</h4>
               </div>
-              <span className="text-[10px] text-white/40 font-mono">WAV / MP3 / FLAC</span>
+              <span className="text-[10px] text-white/40 font-mono">WAV / MP3 / PDF</span>
             </div>
 
             {manifest.depositAssets.length === 0 ? (
@@ -314,7 +317,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
                 <span className="text-[10px] text-white/30 mt-0.5">Calculates deterministic SHA-256 for eCO filing verification</span>
                 <input
                   type="file"
-                  accept="audio/wav,audio/mpeg,audio/flac"
+                  accept="audio/wav,audio/mpeg,application/pdf"
                   onChange={handleFileUpload}
                   className="hidden"
                   disabled={isHashing}
@@ -416,6 +419,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
             })}
           </div>
 
+          {nativeSessionId && <button type="button" onClick={() => void handleExecuteStep({ id: 'local-resume', type: 'resume_after_user_review' as CopilotAction['type'], description: 'Resume after user review', requiresUserAction: false })} className="text-xs text-amber-300">Resume assistant after my review</button>}
           {stepError && (
             <div className="text-xs text-rose-400 flex items-center gap-1.5">
               <AlertCircle className="w-3.5 h-3.5" />
@@ -431,7 +435,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               <h4 className="text-xs font-bold text-white">Provenance & Confirmation Receipt</h4>
             </div>
-            <span className="text-[10px] text-white/40 font-mono">Tamper-Evident Audit Trail</span>
+            <span className="text-[10px] text-white/40 font-mono">Artist-reported filing evidence</span>
           </div>
 
           {!filingRecord ? (
@@ -457,7 +461,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
               <div>
                 <div className="text-xs font-bold text-emerald-300">
-                  Confirmed Filing • {filingRecord.confirmationNumber}
+                  Reported Filing • {filingRecord.confirmationNumber}
                 </div>
                 <div className="text-[10px] text-emerald-400/70 font-mono mt-0.5">
                   Filing ID: {filingRecord.id}
@@ -467,7 +471,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
                 </div>
               </div>
               <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded">
-                Verified Receipt
+                User report — not independently verified
               </span>
             </div>
           )}
@@ -476,7 +480,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
         {/* Security & Credentials Guarantee */}
         <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-white/60 leading-relaxed">
           <span className="font-semibold text-white">indii Privacy Guarantee: </span>
-          Government and society passwords, CAPTCHAs, and payment card inputs remain strictly in your local browser session. indii never stores or intercepts your login credentials.
+          This local helper uses a temporary browser session. You control authentication, certification, and payment. Hosted filing has separate session-custody settings in the copyright workspace.
         </div>
 
         {/* Footer Actions */}

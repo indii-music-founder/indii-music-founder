@@ -20,7 +20,8 @@ describe('RightsCopilotService - ISSUE-1511 Assisted Rights Registration Engine'
       isrc: 'USIND2600042',
     });
 
-    expect(manifest.artistLegalName).toBe('Maya Echo');
+    expect(manifest.artistLegalName).toBe('');
+    expect(manifest.citizenshipOrDomicile).toBe('');
     expect(manifest.work.title).toBe('Golden Hour');
     expect(manifest.work.isrc).toBe('USIND2600042');
 
@@ -30,9 +31,8 @@ describe('RightsCopilotService - ISSUE-1511 Assisted Rights Registration Engine'
     expect(manifest.targetPortals).toContain('loc_copyright');
     expect(manifest.targetPortals).toContain('soundexchange');
 
-    // Default 100% split to claimant
-    expect(manifest.splits[0].sharePercentage).toBe(100);
-    expect(manifest.splits[0].role).toBe('writer_composer');
+    // Ownership is collected explicitly, never inferred from a stage name.
+    expect(manifest.splits).toEqual([]);
   });
 
   it('generates actionable browser copilot steps for Library of Congress eCO and The MLC', () => {
@@ -79,7 +79,7 @@ describe('RightsCopilotService - ISSUE-1511 Assisted Rights Registration Engine'
   });
 
   it('generates formatted filing brief with splits and deposit details', () => {
-    const manifest = service.createManifestFromPassport({ artistName: 'Atlas Gray' }, { title: 'Neon Highway' });
+    const manifest = service.createManifestFromPassport({ artistName: 'Atlas Gray' }, { title: 'Neon Highway', artistLegalName: 'Atlas Gray' });
 
     const brief = service.generateFilingBrief(manifest);
     expect(brief).toContain('# indii Rights Registration Dossier');
@@ -105,7 +105,7 @@ describe('RightsCopilotService - ISSUE-1511 Assisted Rights Registration Engine'
       confirmationNumber: 'SR-2026-000999',
     });
 
-    expect(record.status).toBe('confirmed');
+    expect(record.status).toBe('outcome_unknown');
     expect(record.serviceRequestId).toBe('1-9876543210');
     expect(record.confirmationNumber).toBe('SR-2026-000999');
     expect(record.portalTarget).toBe('loc_copyright');

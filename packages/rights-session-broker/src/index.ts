@@ -17,15 +17,17 @@ const oauth = new OAuth2Client();
 const pairs = new Map<string, { uid: string; worker?: WebSocket; client?: WebSocket; stop: () => void }>();
 let draining = false;
 let leaderGeneration = 0;
-const send = (socket: WebSocket | undefined, value: unknown) => { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(value)); };
+let leaseUntilMs = 0;
+const send = (socket: WebSocket | undefined, value: unknown) => { if (!draining && Date.now() < leaseUntilMs && socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(value)); };
 
 async function becomeLeader(): Promise<boolean> {
   if (draining) return false;
   return db.runTransaction(async tx => {
     const current = (await tx.get(leaderRef)).data();
-    if (current?.instanceId !== instanceId && current?.expiresAtMs > Date.now()) return false;
+    if (current?.instanceId !== instanceId && current?.expiresAtMs > Date.now()) { leaseUntilMs = 0; return false; }
     leaderGeneration = current?.instanceId === instanceId ? current.generation : (current?.generation ?? 0) + 1;
-    tx.set(leaderRef, { instanceId, generation: leaderGeneration, expiresAtMs: Date.now() + 15_000 });
+    leaseUntilMs = Date.now() + 15_000;
+    tx.set(leaderRef, { instanceId, generation: leaderGeneration, expiresAtMs: leaseUntilMs });
     return true;
   });
 }
@@ -98,7 +100,7 @@ ws.on('connection', socket => {
       if (packet.kind === 'worker') {
         if (pair.worker?.readyState === WebSocket.OPEN) throw new Error('Worker already attached');
         pair.worker = socket;
-        const caseData = (await db.doc(`users/${uid}/rightsCases/${session.caseId}`).get()).data();
+        const caseData = (await db.doc(`users/${uid}/rightsFilings/${session.filingId}`).get()).data();
         if (!caseData || caseData.manifestHash !== session.manifestHash) throw new Error('Manifest revision changed');
         const manifest = caseData.manifest as RightsCase;
         const deposits = await Promise.all(manifest.works.map(async work => ({ ...work.deposit, url: (await getStorage().bucket(work.deposit.bucket).file(work.deposit.path).getSignedUrl({ action: 'read', expires: Date.now() + RIGHTS_LIMITS.sessionMs, queryParams: { generation: work.deposit.generation } }))[0] })));
@@ -113,7 +115,7 @@ ws.on('connection', socket => {
       socket.on('message', (bytes, binary) => {
         void (async () => {
           const active = pairs.get(sessionId);
-          if (!active || draining) return;
+          if (!active || draining || Date.now() >= leaseUntilMs) return;
           if (packet.kind === 'client') {
             const size = Buffer.isBuffer(bytes) ? bytes.length : Array.isArray(bytes) ? bytes.reduce((sum, b) => sum + b.length, 0) : (bytes as ArrayBuffer).byteLength;
             if (size > 8192 || binary) throw new Error('Invalid input');
@@ -125,7 +127,12 @@ ws.on('connection', socket => {
             if (active.client?.readyState === WebSocket.OPEN && active.client.bufferedAmount < 512 * 1024) active.client.send(bytes, { binary: true });
           } else {
             const event = JSON.parse(bytes.toString());
-            if (event.type === 'control_ack') await ref.update({ control: event.control, requestedControl: FieldValue.delete(), state: 'connected' });
+            if (event.type === 'control_ack') await db.runTransaction(async tx => {
+              const live = (await tx.get(ref)).data();
+              if (!live || event.generation !== live.controlGeneration || !['human', 'agent', 'none'].includes(event.control)) return;
+              if (event.control !== 'none' && event.control !== live.requestedControl) return;
+              tx.update(ref, { control: event.control, ...(event.control !== 'none' ? { requestedControl: FieldValue.delete() } : {}), state: 'connected' });
+            });
             else if (event.type === 'navigation') send(active.client, event);
             else if (event.type === 'activity') await ref.update({ lastActivityAtMs: Date.now() });
             else if (event.type === 'cookies') await rememberCookies(uid, event.cookies);
@@ -134,8 +141,16 @@ ws.on('connection', socket => {
               await ref.collection('commands').doc(commandId).update({ state: event.success === true ? 'completed' : 'failed', errorCode: event.success === true ? null : 'TARGET_NOT_VERIFIED' });
               send(active.client, { type: 'action_result', success: event.success === true });
             } else if (event.type === 'ended') {
-              await ref.update({ state: 'ended', control: 'none' });
-              await db.doc(`users/${uid}/rightsFilings/${session.filingId}`).update({ state: 'outcome_unknown' });
+              await db.runTransaction(async tx => {
+                const capacityRef = db.doc('rightsInfrastructure/capacity');
+                const capacity = (await tx.get(capacityRef)).data() ?? {};
+                const filingRef = db.doc(`users/${uid}/rightsFilings/${session.filingId}`);
+                const filing = (await tx.get(filingRef)).data();
+                const active = { ...(capacity.active ?? {}) }; delete active[sessionId];
+                tx.update(ref, { state: 'ended', control: 'none' });
+                tx.set(capacityRef, { active });
+                if (filing?.state === 'in_progress') tx.update(filingRef, { state: 'outcome_unknown' });
+              });
               active.stop(); active.client?.close(1000); pairs.delete(sessionId);
             }
           }

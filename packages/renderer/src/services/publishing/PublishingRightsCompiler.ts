@@ -172,7 +172,6 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
 
     // PRO & MLC Status
     if (input.proRegistrationStatus === 'unregistered') {
-      blockers.push('Not registered with a PRO.');
       findings.push({
         id: 'pro_unregistered',
         domain: this.domain,
@@ -186,7 +185,6 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
     let needsMlc = false;
     if (input.mlcRegistrationStatus === 'unregistered') {
       needsMlc = true;
-      blockers.push('MLC registration missing — required for mechanical royalty collection.');
       findings.push({
         id: 'mlc_unregistered',
         domain: this.domain,
@@ -215,7 +213,6 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
     // collection but does not block delivery/registration (see the medium
     // 'missing_iswc' finding above). Counting it here contradicted that finding.
     const hasCriticalBlockers = blockers.length > 0 ||
-                                 input.mlcRegistrationStatus === 'unregistered' ||
                                  missingIpis.length > 0;
     
     // registrationReady means: ready to file splits/works with proper identifiers

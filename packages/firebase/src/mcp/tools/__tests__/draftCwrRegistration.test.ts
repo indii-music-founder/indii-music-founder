@@ -49,53 +49,14 @@ describe('draftCwrRegistration MCP tool', () => {
         releaseGetMock.mockReset().mockResolvedValue({ exists: true, data: () => ({ title: 'Test Track' }) });
     });
 
-    it('generates CWR with all record types and stores to GCS', async () => {
-        const result = await draftCwrRegistration.handler(
-            {
-                releaseId: 'release-1',
-                writers: [
-                    { name: 'John Composer', ipi: '123456789' },
-                    { name: 'Jane Writer' },
-                ],
-            },
-            context('user-1'),
-        );
+    it('rejects legacy names-only arguments without writing an invalid CWR artifact (structural-only)', async () => {
+        const result = await draftCwrRegistration.handler({ releaseId: 'release-1', writers: [{ name: 'John Composer', ipi: '123456789' }] }, context('user-1'));
         const payload = JSON.parse((result.content[0] as { text: string }).text);
-
-        expect(result.isError).toBeUndefined();
-        expect(payload.status).toBe('succeeded');
-        expect(payload.resource.type).toBe('cwr_draft');
-
-        // CWR contains all required record types
-        const cwrDraft = payload.data.cwrDraft as string;
-        expect(cwrDraft).toContain('HDR|');
-        expect(cwrDraft).toContain('GRH|');
-        expect(cwrDraft).toContain('NWR|');
-        expect(cwrDraft).toContain('SWR|');
-        expect(cwrDraft).toContain('SPT|');
-        expect(cwrDraft).toContain('GRT|');
-        expect(cwrDraft).toContain('TRL|');
-
-        // Storage: CWR saved to uid-scoped path
-        const storagePath = payload.data.storagePath as string;
-        expect(storagePath).toMatch(/^users\/user-1\/cwr\//);
-        expect(storagePath).toMatch(/.V21$/);
-        expect(fileMock).toHaveBeenCalledWith(storagePath);
-
-        // Firestore: metadata document created
-        expect(setMock).toHaveBeenCalledTimes(1);
-        const written = setMock.mock.calls[0][0];
-        expect(written.releaseId).toBe('release-1');
-        expect(written.status).toBe('draft_unsubmitted');
-        expect(written.writerCount).toBe(2);
-
-        // Evidence entry references storage artifact
-        expect(payload.evidence).toEqual([{ type: 'storage_object', reference: storagePath }]);
-
-        // Honest warnings: DRAFT, not submitted
-        const warnings = (payload.warnings || []) as string[];
-        expect(warnings.join(' ')).toContain('DRAFT');
-        expect(warnings.join(' ')).toContain('has NOT been submitted');
+        expect(result.isError).toBe(true);
+        expect(payload.error.code).toBe('INVALID_ARGUMENT');
+        expect(payload.error.message).toContain('reviewed sender, publisher, writer and territorial shares');
+        expect(saveMock).not.toHaveBeenCalled();
+        expect(setMock).not.toHaveBeenCalled();
     });
 
     it('fails closed with INVALID_ARGUMENT when writers array is empty', async () => {
