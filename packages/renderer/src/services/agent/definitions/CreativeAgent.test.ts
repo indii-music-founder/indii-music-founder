@@ -41,6 +41,8 @@ vi.mock('../tools/CanvasTools', () => ({
         canvas_set_adjustments: vi.fn(),
         canvas_export: vi.fn(),
         canvas_push: vi.fn(),
+        composite_image_typography: vi.fn(),
+        export_social_derivatives: vi.fn(),
     }
 }));
 

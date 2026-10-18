@@ -14,7 +14,9 @@ vi.mock('fabric', () => {
         on = vi.fn();
         off = vi.fn();
         dispose = vi.fn();
-        toJSON = vi.fn(() => ({}));
+        toObject = vi.fn(() => ({}));
+        getWidth = vi.fn(() => 400);
+        getHeight = vi.fn(() => 600);
         getObjects = vi.fn(() => []);
         getElement = vi.fn(() => {
             const el = document.createElement('canvas');
@@ -74,6 +76,26 @@ describe('CanvasOperationsService lifecycle guards (ISSUE-1391)', () => {
         expect(logger.warn).toHaveBeenCalled();
         // The instance is cleared regardless — no stale canvas reference.
         expect((service as unknown as { canvas: unknown }).canvas).toBeNull();
+    });
+
+    it('serializes the durable source instead of an editor-only blob URL', async () => {
+        const service = new CanvasOperationsService();
+        service.initialize(mountCanvasElement());
+        const internals = service as unknown as {
+            canvas: { toObject: ReturnType<typeof vi.fn> };
+            _persistentImageSources: Map<string, string>;
+        };
+        const durableSource = 'https://example.invalid/artwork.png';
+        internals._persistentImageSources.set('blob:editor-only', durableSource);
+        internals.canvas.toObject.mockReturnValue({ objects: [
+            { type: 'image', src: 'blob:editor-only', data: { isBaseImage: true } },
+            { type: 'group', objects: [{ type: 'image', src: 'blob:editor-only' }] },
+        ] });
+        expect(await service.toJSON()).toEqual({ width: 400, height: 600, objects: [
+            { type: 'image', src: durableSource, data: { isBaseImage: true } },
+            { type: 'group', objects: [{ type: 'image', src: durableSource }] },
+        ] });
+        expect(internals.canvas.toObject).toHaveBeenCalledWith(['data', 'id']);
     });
 
     it('is idempotent: calling dispose twice is a no-op', () => {

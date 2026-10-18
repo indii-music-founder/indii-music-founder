@@ -96,7 +96,10 @@ export async function processSubmitTaxForm(input: SubmitTaxFormInput): Promise<S
     const db = admin.firestore();
     const requestRef = db.collection('taxFormRequests').doc(token);
 
-    const consumeResult = await db.runTransaction(async (tx) => {
+    // Sanitize fileName to prevent storage path traversal
+    const safeFileName = fileName.split(/[/\\]/).pop()?.replace(/[^a-zA-Z0-9._-]/g, '_') || 'tax_form.pdf';
+
+    const checkResult = await db.runTransaction(async (tx) => {
         const snap = await tx.get(requestRef);
         if (!snap.exists) {
             return { status: 404 as const, message: 'Invalid or expired link.' };
@@ -110,30 +113,42 @@ export async function processSubmitTaxForm(input: SubmitTaxFormInput): Promise<S
             tx.delete(requestRef);
             return { status: 404 as const, message: 'This link has expired.' };
         }
-        tx.update(requestRef, { consumedAt: admin.firestore.FieldValue.serverTimestamp() });
-        return { status: 200 as const, artistUid: data.artistUid as string, collaboratorId: data.collaboratorId as string };
+
+        const artistUid = data.artistUid as string;
+        const collaboratorId = data.collaboratorId as string;
+        const collaboratorRef = db.doc(`users/${artistUid}/tax_collaborators/${collaboratorId}`);
+        const collaboratorSnap = await tx.get(collaboratorRef);
+        if (!collaboratorSnap.exists) {
+            return { status: 404 as const, message: 'Collaborator record no longer exists.' };
+        }
+
+        return { status: 200 as const, artistUid, collaboratorId };
     });
 
-    if (consumeResult.status !== 200) {
-        return { status: consumeResult.status, body: consumeResult.message };
+    if (checkResult.status !== 200) {
+        return { status: checkResult.status, body: checkResult.message };
     }
 
-    const { artistUid, collaboratorId } = consumeResult;
+    const { artistUid, collaboratorId } = checkResult;
     const collaboratorRef = db.doc(`users/${artistUid}/tax_collaborators/${collaboratorId}`);
     const collaboratorSnap = await collaboratorRef.get();
     if (!collaboratorSnap.exists) {
         return { status: 404, body: 'Collaborator record no longer exists.' };
     }
 
-    const storagePath = `tax_docs/${artistUid}/${collaboratorId}/${Date.now()}-${fileName}`;
+    const storagePath = `tax_docs/${artistUid}/${collaboratorId}/${Date.now()}-${safeFileName}`;
     await admin.storage().bucket().file(storagePath).save(buffer, { contentType });
 
     await collaboratorRef.update({
         status: 'on_file',
         storagePath,
-        fileName,
+        fileName: safeFileName,
         sizeBytes: buffer.length,
         uploadedAt: Date.now(),
+    });
+
+    await db.runTransaction(async (tx) => {
+        tx.update(requestRef, { consumedAt: admin.firestore.FieldValue.serverTimestamp() });
     });
 
     return { status: 200, body: { success: true } };

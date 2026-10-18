@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateBoardroomSteps, readyBoardroomSteps, receiptForBoardroomStep, formatBoardroomReceipt, isBoardroomCapabilityOnly, boardroomDependencyField, type BoardroomActionStep } from './BoardroomActionPlan';
+import { validateBoardroomSteps, readyBoardroomSteps, receiptForBoardroomStep, formatBoardroomReceipt, isBoardroomCapabilityOnly, boardroomDependencyField, completedBoardroomToolResult, type BoardroomActionStep } from './BoardroomActionPlan';
 
 // Pure scheduling and receipt interpretation; no accounts, provider mocks,
 // persisted product data, or claims that a real customer action succeeded.
@@ -7,6 +7,17 @@ const first: BoardroomActionStep = { id: 'artwork', agentId: 'creative', task: '
 const next: BoardroomActionStep = { id: 'merch', agentId: 'merchandise', task: 'Use artwork', dependencies: ['artwork'] };
 
 describe('Boardroom action ownership and evidence (structural only)', () => {
+    it('reuses identical completed tool evidence across argument key ordering, while preserving distinct actions and retries', () => {
+        const args = { presetId: 'cover_art_distributor', imageUri: 'attachment-0', focusX: 0.5 };
+        const result = { success: true, data: { gallerySaved: true, versionRecorded: true } };
+        const calls = [{ name: 'prepare_print_file', args, result }];
+        expect(completedBoardroomToolResult('prepare_print_file', { focusX: 0.5, imageUri: 'attachment-0', presetId: 'cover_art_distributor' }, calls)).toBe(result);
+        expect(completedBoardroomToolResult('prepare_print_file', { ...args, presetId: 'poster_11x17' }, calls)).toBeNull();
+        for (const incomplete of [{ success: false }, { success: true, data: { status: 'queued' } }, { success: true, data: { versionRecorded: false } }]) {
+            expect(completedBoardroomToolResult('prepare_print_file', args, [{ name: 'prepare_print_file', args, result: incomplete }])).toBeNull();
+        }
+        expect(completedBoardroomToolResult('prepare_print_file', args, [])).toBeNull();
+    });
     it('keeps polite creation requests on the intent-routing path', () => {
         expect(isBoardroomCapabilityOnly('Can you make an image?')).toBe(false);
         expect(isBoardroomCapabilityOnly('Could you create a video?')).toBe(false);

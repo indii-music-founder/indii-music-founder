@@ -1,8 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Send, Loader2, Sparkles, X, Edit3, ChevronDown, ChevronUp } from 'lucide-react';
+import { Mic, MicOff, Send, Loader2, Sparkles, X, Edit3, ChevronDown, ChevronUp, Paperclip } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
+
+export interface StageAttachment {
+    url?: string;
+    mimeType?: string;
+    name?: string;
+    base64?: string;
+    size?: number;
+}
 
 export interface VoiceTextViewingStageProps {
     /** The current draft text value */
@@ -33,6 +41,12 @@ export interface VoiceTextViewingStageProps {
     submitLabel?: string;
     /** Additional CSS classes for root container */
     className?: string;
+    /** Staged media attachments */
+    attachments?: StageAttachment[];
+    /** Remove attachment callback */
+    onRemoveAttachment?: (index: number) => void;
+    /** Add attachment file callback */
+    onAddAttachmentFile?: (file: File) => void;
 }
 
 export default function VoiceTextViewingStage({
@@ -50,9 +64,13 @@ export default function VoiceTextViewingStage({
     targetIcon,
     submitLabel = 'Send',
     className,
+    attachments,
+    onRemoveAttachment,
+    onAddAttachmentFile,
 }: VoiceTextViewingStageProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const viewingTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [isEditingInViewingStage, setIsEditingInViewingStage] = useState(false);
     const [isManualExpanded, setIsManualExpanded] = useState(false);
 
@@ -67,7 +85,8 @@ export default function VoiceTextViewingStage({
     }, [isEditingInViewingStage]);
 
     const handleSend = () => {
-        if (!value.trim() || isWaiting || !isPaired) return;
+        const hasContent = value.trim() || (attachments && attachments.length > 0);
+        if (!hasContent || isWaiting || !isPaired) return;
         triggerHaptic(40);
         setIsEditingInViewingStage(false);
         setIsManualExpanded(false);
@@ -230,10 +249,10 @@ export default function VoiceTextViewingStage({
                                     type="button"
                                     whileTap={{ scale: 0.96 }}
                                     onClick={handleSend}
-                                    disabled={!value.trim() || isWaiting || !isPaired}
+                                    disabled={(!value.trim() && (!attachments || attachments.length === 0)) || isWaiting || !isPaired}
                                     className={cn(
                                         'flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg',
-                                        value.trim() && !isWaiting && isPaired
+                                        (value.trim() || (attachments && attachments.length > 0)) && !isWaiting && isPaired
                                             ? 'bg-[#00ff66] text-[#061806] shadow-[#00ff66]/20 hover:bg-[#36D96F]'
                                             : 'bg-white/5 text-stone-500 cursor-not-allowed border border-white/5'
                                     )}
@@ -257,81 +276,143 @@ export default function VoiceTextViewingStage({
             </AnimatePresence>
 
             {/* ─── Docked Input Bar ────────────────────────────────────────────── */}
-            <div className="flex items-end gap-2.5 p-2 rounded-[26px] bg-[#1a1512]/90 border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-                {/* Target Mode / Agent Selector Button */}
-                {onTargetClick && (
-                    <motion.button
-                        type="button"
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => {
-                            triggerHaptic(30);
-                            onTargetClick();
-                        }}
-                        className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/[0.04] border border-white/10 text-stone-300 hover:text-white hover:bg-white/10 transition-all shrink-0 cursor-pointer"
-                        aria-label={`Target: ${targetLabel}`}
-                        style={{ minWidth: '44px', minHeight: '44px' }}
-                    >
-                        {targetIcon || <Sparkles className="w-5 h-5 text-[#00ff66]" />}
-                    </motion.button>
+            <div className="flex flex-col p-2 rounded-[26px] bg-[#1a1512]/90 border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                {/* Staged Attachment Chips */}
+                {attachments && attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 px-2 pt-1 pb-2 border-b border-white/5 mb-1.5">
+                        {attachments.map((att, idx) => (
+                            <div
+                                key={idx}
+                                className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-xl bg-white/10 border border-white/10 text-xs text-stone-200"
+                            >
+                                {att.url && (att.mimeType?.startsWith('image/') || att.url.match(/\.(jpg|jpeg|png|webp|gif)/i)) ? (
+                                    <img src={att.url} alt={att.name || 'Attachment'} className="w-5 h-5 rounded-md object-cover" />
+                                ) : (
+                                    <Paperclip className="w-3.5 h-3.5 text-stone-400" />
+                                )}
+                                <span className="max-w-[120px] truncate font-mono text-[11px]">{att.name || 'Attachment'}</span>
+                                {onRemoveAttachment && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            triggerHaptic(20);
+                                            onRemoveAttachment(idx);
+                                        }}
+                                        className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-white/20 text-stone-400 hover:text-white transition-colors cursor-pointer"
+                                        aria-label="Remove attachment"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 )}
 
-                {/* Text Area Entry */}
-                <div className="flex-1 min-h-[44px] flex items-center px-1">
-                    <textarea
-                        ref={textareaRef}
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        rows={Math.min(3, Math.max(1, value.split('\n').length))}
-                        placeholder={isListening ? 'Listening… speak now' : placeholder}
-                        disabled={isWaiting || !isPaired}
-                        className="w-full bg-transparent border-none p-2 text-sm text-stone-100 placeholder:text-stone-500 focus:ring-0 focus:outline-none resize-none max-h-28 custom-scrollbar leading-snug"
-                    />
-                </div>
-
-                {/* Action Buttons: Dictate & Send */}
-                <div className="flex items-center gap-1.5 shrink-0 pb-0.5 pr-0.5">
-                    {voiceSupported && onToggleListening && (
+                <div className="flex items-end gap-2.5">
+                    {/* Target Mode / Agent Selector Button */}
+                    {onTargetClick && (
                         <motion.button
                             type="button"
-                            whileTap={{ scale: 0.9 }}
+                            whileTap={{ scale: 0.92 }}
                             onClick={() => {
-                                triggerHaptic(40);
-                                onToggleListening();
+                                triggerHaptic(30);
+                                onTargetClick();
                             }}
-                            aria-label={isListening ? 'Stop dictation' : 'Start voice dictation'}
-                            className={cn(
-                                'w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer',
-                                isListening
-                                    ? 'bg-red-500/20 text-red-400 border border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.4)] animate-pulse'
-                                    : 'text-stone-400 hover:text-stone-200 bg-white/[0.03] hover:bg-white/[0.07] border border-white/5'
-                            )}
-                            style={{ minWidth: '40px', minHeight: '40px' }}
+                            className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/[0.04] border border-white/10 text-stone-300 hover:text-white hover:bg-white/10 transition-all shrink-0 cursor-pointer"
+                            aria-label={`Target: ${targetLabel}`}
+                            style={{ minWidth: '44px', minHeight: '44px' }}
                         >
-                            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                            {targetIcon || <Sparkles className="w-5 h-5 text-[#00ff66]" />}
                         </motion.button>
                     )}
 
-                    <motion.button
-                        type="button"
-                        whileTap={{ scale: 0.9 }}
-                        onClick={handleSend}
-                        disabled={!value.trim() || isWaiting || !isPaired}
-                        aria-label="Send message"
-                        className={cn(
-                            'w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md cursor-pointer',
-                            value.trim() && !isWaiting && isPaired
-                                ? 'bg-[#00ff66] text-[#061806] shadow-[#00ff66]/25 hover:bg-[#36D96F]'
-                                : 'bg-white/5 text-stone-600 border border-white/5 cursor-not-allowed'
+                    {/* Text Area Entry */}
+                    <div className="flex-1 min-h-[44px] flex items-center px-1">
+                        <textarea
+                            ref={textareaRef}
+                            value={value}
+                            onChange={(e) => onChange(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            rows={Math.min(3, Math.max(1, value.split('\n').length))}
+                            placeholder={isListening ? 'Listening… speak now' : placeholder}
+                            disabled={isWaiting || !isPaired}
+                            className="w-full bg-transparent border-none p-2 text-sm text-stone-100 placeholder:text-stone-500 focus:ring-0 focus:outline-none resize-none max-h-28 custom-scrollbar leading-snug"
+                        />
+                    </div>
+
+                    {/* Action Buttons: Dictate, Attach & Send */}
+                    <div className="flex items-center gap-1.5 shrink-0 pb-0.5 pr-0.5">
+                        {onAddAttachmentFile && (
+                            <>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            onAddAttachmentFile(e.target.files[0]);
+                                            e.target.value = '';
+                                        }
+                                    }}
+                                />
+                                <motion.button
+                                    type="button"
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    aria-label="Attach image"
+                                    disabled={isWaiting || !isPaired}
+                                    className="w-10 h-10 rounded-xl flex items-center justify-center text-stone-400 hover:text-stone-200 bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 transition-all cursor-pointer"
+                                    style={{ minWidth: '40px', minHeight: '40px' }}
+                                >
+                                    <Paperclip className="w-4 h-4" />
+                                </motion.button>
+                            </>
                         )}
-                        style={{ minWidth: '40px', minHeight: '40px' }}
-                    >
-                        {isWaiting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <Send className="w-4 h-4" />
+
+                        {voiceSupported && onToggleListening && (
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => {
+                                    triggerHaptic(40);
+                                    onToggleListening();
+                                }}
+                                aria-label={isListening ? 'Stop dictation' : 'Start voice dictation'}
+                                className={cn(
+                                    'w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer',
+                                    isListening
+                                        ? 'bg-red-500/20 text-red-400 border border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.4)] animate-pulse'
+                                        : 'text-stone-400 hover:text-stone-200 bg-white/[0.03] hover:bg-white/[0.07] border border-white/5'
+                                )}
+                                style={{ minWidth: '40px', minHeight: '40px' }}
+                            >
+                                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                            </motion.button>
                         )}
-                    </motion.button>
+
+                        <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleSend}
+                            disabled={(!value.trim() && (!attachments || attachments.length === 0)) || isWaiting || !isPaired}
+                            aria-label="Send message"
+                            className={cn(
+                                'w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md cursor-pointer',
+                                (value.trim() || (attachments && attachments.length > 0)) && !isWaiting && isPaired
+                                    ? 'bg-[#00ff66] text-[#061806] shadow-[#00ff66]/25 hover:bg-[#36D96F]'
+                                    : 'bg-white/5 text-stone-600 border border-white/5 cursor-not-allowed'
+                            )}
+                            style={{ minWidth: '40px', minHeight: '40px' }}
+                        >
+                            {isWaiting ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Send className="w-4 h-4" />
+                            )}
+                        </motion.button>
+                    </div>
                 </div>
             </div>
         </div>

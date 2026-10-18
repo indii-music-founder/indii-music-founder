@@ -58,7 +58,7 @@ export default function LayersPanel({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="absolute top-0 right-0 bottom-0 w-80 bg-[#1a1a1a] border-l border-gray-800 shadow-2xl z-40 flex flex-col"
+            className="absolute top-0 right-0 bottom-20 w-80 max-w-full bg-[#1a1a1a] border-l border-gray-800 shadow-2xl z-40 flex flex-col md:right-[72px] md:bottom-0"
             data-testid="layers-panel"
         >
             <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#111]">

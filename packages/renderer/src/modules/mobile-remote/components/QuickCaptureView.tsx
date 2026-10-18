@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard, Download, Receipt, UserPlus, Film } from 'lucide-react';
+import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard, Download, Receipt, UserPlus, Film, Smile, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { remoteRelayService, waitForDispatchConfirmation } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
@@ -11,6 +11,12 @@ import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
 import { EncounterService } from '@/services/encounters/EncounterService';
 import QuickContactModal from './QuickContactModal';
+
+export interface QuickCaptureAttachment {
+    url: string;
+    mimeType: string;
+    name: string;
+}
 
 /**
  * ISSUE-987: candidates in priority order — WebKit/Safari commonly can't
@@ -62,7 +68,13 @@ export function downloadCapturedMedia(source: Blob, filename: string): void {
 
 const MIN_RECORDING_DURATION_MS = 300;
 
-export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
+export default function QuickCaptureView({
+    isPaired,
+    onNavigateToChat,
+}: {
+    isPaired: boolean;
+    onNavigateToChat?: (attachment: QuickCaptureAttachment) => void;
+}) {
     const toast = useToast();
     const [isRecording, setIsRecording] = useState(false);
     const locationRequestId = useRef(0);
@@ -83,6 +95,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const [showContactModal, setShowContactModal] = useState(false);
     
     const photoInputRef = useRef<HTMLInputElement>(null);
+    const selfieInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
     const receiptInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -521,7 +534,6 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
         setIsDispatching(true);
         triggerHaptic([40, 80]);
-        let uploadedPath: string | null = null;
 
         try {
             const { auth } = await import('@/services/firebase');
@@ -536,7 +548,6 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             const path = `users/${userId}/assets/editor_intake/${filename}`;
 
             const downloadUrl = await StorageService.uploadFile(sourceFile, path);
-            uploadedPath = path;
 
             if (isPaired) {
                 const taskId = await remoteRelayService.dispatchTask({
@@ -579,10 +590,66 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         }
     };
 
+    const handleSendToBoardroom = async () => {
+        const sourceFile = capturedImageBlob?.file || capturedVideoBlob;
+        if (!sourceFile) return;
+
+        setIsDispatching(true);
+        triggerHaptic([40, 80]);
+        let uploadedPath: string | null = null;
+
+        try {
+            const { auth } = await import('@/services/firebase');
+            const userId = auth.currentUser?.uid;
+            if (!userId) throw new Error('User not authenticated');
+
+            const isVideo = !!capturedVideoBlob;
+            const ext = (sourceFile as File).name?.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
+            const filename = `${isVideo ? 'video' : 'selfie'}_${Date.now()}.${ext}`;
+            const path = `users/${userId}/assets/boardroom_attachments/${filename}`;
+
+            const downloadUrl = await StorageService.uploadFile(sourceFile, path);
+            uploadedPath = path;
+
+            // Durable Encounter doc for cloud synchronization
+            await EncounterService.createEncounter({
+                assets: [{
+                    type: isVideo ? 'video' : 'photo',
+                    storagePath: uploadedPath || '',
+                    downloadUrl: downloadUrl,
+                    mimeType: (sourceFile as File).type || (isVideo ? 'video/mp4' : 'image/jpeg'),
+                    filename: filename,
+                }],
+                clientContext: momentText.trim() || 'Mobile media attached to Boardroom AI',
+            }).catch((err) => {
+                logger.warn('[QuickCapture] Non-blocking encounter doc creation notice:', err);
+            });
+
+            toast.success('Attached to Boardroom AI!');
+            clearCapture();
+
+            if (onNavigateToChat) {
+                onNavigateToChat({
+                    url: downloadUrl,
+                    mimeType: (sourceFile as File).type || (isVideo ? 'video/mp4' : 'image/jpeg'),
+                    name: filename,
+                });
+            }
+        } catch (error) {
+            logger.error('[QuickCapture] Failed to send media to Boardroom:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to attach to Boardroom');
+            triggerHaptic([100, 200, 100]);
+        } finally {
+            setIsDispatching(false);
+        }
+    };
+
     const clearCapture = () => {
         clearMediaState();
         if (photoInputRef.current) photoInputRef.current.value = '';
+        if (selfieInputRef.current) selfieInputRef.current.value = '';
         if (docInputRef.current) docInputRef.current.value = '';
+        if (receiptInputRef.current) receiptInputRef.current.value = '';
         if (videoInputRef.current) videoInputRef.current.value = '';
     };
 
@@ -627,7 +694,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 </div>
 
                 {/* Secondary Actions Grid */}
-                <div className="grid grid-cols-6 gap-1.5 w-full max-w-sm font-sans">
+                <div className="grid grid-cols-7 gap-1 w-full max-w-sm font-sans">
                     <button
                         type="button"
                         onClick={() => {
@@ -635,7 +702,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                             setShowContactModal(true);
                         }}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-1 p-1.5 min-h-[54px] min-w-[40px] rounded-2xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1 p-1 min-h-[54px] min-w-[38px] rounded-2xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-colors disabled:opacity-50 cursor-pointer"
                         title="Add Contact"
                     >
                         <UserPlus className="w-4 h-4 text-emerald-400" />
@@ -646,7 +713,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                         type="button"
                         onClick={() => docInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-1 p-1.5 min-h-[54px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1 p-1 min-h-[54px] min-w-[38px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                         title="Scan Document"
                     >
                         <FileText className="w-4 h-4 text-stone-300" />
@@ -658,7 +725,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                         type="button"
                         onClick={() => photoInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-1 p-1.5 min-h-[54px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1 p-1 min-h-[54px] min-w-[38px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                         title="Take Photo"
                     >
                         <ImageIcon className="w-4 h-4 text-cyan-400" />
@@ -668,9 +735,21 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         type="button"
+                        onClick={() => selfieInputRef.current?.click()}
+                        disabled={isDispatching || isRecording || isFinalizingRecording}
+                        className="flex flex-col items-center justify-center gap-1 p-1 min-h-[54px] min-w-[38px] rounded-2xl border border-[#D936D9]/30 bg-[#D936D9]/10 text-[#D936D9] hover:text-white hover:bg-[#D936D9]/20 transition-colors disabled:opacity-50 cursor-pointer"
+                        title="Take Selfie"
+                    >
+                        <Smile className="w-4 h-4 text-[#D936D9]" />
+                        <span className="text-[8px] font-bold uppercase tracking-wider font-mono">Selfie</span>
+                    </button>
+                    <input type="file" accept="image/*" capture="user" className="hidden" ref={selfieInputRef} onChange={(e) => handleImageCapture(e, 'photo')} />
+
+                    <button
+                        type="button"
                         onClick={() => videoInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-1 p-1.5 min-h-[54px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1 p-1 min-h-[54px] min-w-[38px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                         title="Record Video"
                     >
                         <Video className="w-4 h-4 text-purple-400" />
@@ -682,7 +761,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                         type="button"
                         onClick={() => receiptInputRef.current?.click()}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
-                        className="flex flex-col items-center justify-center gap-1 p-1.5 min-h-[54px] min-w-[40px] rounded-2xl border border-[#FFC107]/25 bg-[#FFC107]/10 text-[#FFC107] hover:text-white hover:bg-[#FFC107]/20 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1 p-1 min-h-[54px] min-w-[38px] rounded-2xl border border-[#FFC107]/25 bg-[#FFC107]/10 text-[#FFC107] hover:text-white hover:bg-[#FFC107]/20 transition-colors disabled:opacity-50 cursor-pointer"
                         title="Scan Expense Receipt"
                     >
                         <Receipt className="w-4 h-4" />
@@ -694,7 +773,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                         type="button"
                         onClick={handlePinDrop}
                         disabled={isDispatching || isRecording || isFinalizingRecording || !hasGeolocation}
-                        className="flex flex-col items-center justify-center gap-1 p-1.5 min-h-[54px] min-w-[40px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1 p-1 min-h-[54px] min-w-[38px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                         title="Drop Pin"
                     >
                         <MapPin className="w-4 h-4 text-emerald-400" />
@@ -789,12 +868,24 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                                 )}
                             </div>
 
+                            {/* Direct Attach to Boardroom Action for Media */}
+                            {(capturedImageBlob || capturedVideoBlob) && (
+                                <button
+                                    onClick={handleSendToBoardroom}
+                                    disabled={isDispatching}
+                                    className="mt-3 w-full py-2.5 px-3 rounded-xl bg-linear-to-r from-emerald-500/20 via-teal-500/20 to-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:text-white hover:bg-emerald-500/30 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                                >
+                                    <Sparkles className="w-4 h-4 text-[#00ff66]" />
+                                    <span>Attach to Boardroom AI</span>
+                                </button>
+                            )}
+
                             {/* Direct Video Editor Pipeline Action for Media */}
                             {(capturedVideoBlob || (capturedImageBlob && capturedImageBlob.type === 'photo')) && (
                                 <button
                                     onClick={handleSendToVideoEditor}
                                     disabled={isDispatching}
-                                    className="mt-3 w-full py-2.5 px-3 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-200 hover:text-white hover:bg-purple-600/30 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                                    className="mt-2 w-full py-2.5 px-3 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-200 hover:text-white hover:bg-purple-600/30 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
                                 >
                                     <Film className="w-4 h-4 text-purple-400" />
                                     <span>Open &amp; Edit in Studio Video Editor</span>

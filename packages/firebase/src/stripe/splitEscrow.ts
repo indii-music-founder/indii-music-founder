@@ -205,6 +205,12 @@ export const signEscrow = onCall(
             }
 
             const data = snap.data()!;
+            if (data.status !== 'PENDING_SIGNATURES') {
+                throw new HttpsError(
+                    'failed-precondition',
+                    `Escrow cannot be signed in status ${data.status}.`
+                );
+            }
             if (!data.parties.includes(uid)) {
                 throw new HttpsError(
                     'permission-denied',
@@ -335,19 +341,39 @@ export const releaseEscrow = onCall(
             // Idempotent: a prior release attempt may have captured but failed on
             // transfers — capturing an already-captured intent throws, so check first.
             const intent = await stripe.paymentIntents.retrieve(stripePaymentIntentId);
-            if (intent.status !== 'succeeded') {
+            if (intent.status === 'requires_capture') {
                 await stripe.paymentIntents.capture(stripePaymentIntentId);
+            } else if (intent.status !== 'succeeded') {
+                throw new HttpsError(
+                    'failed-precondition',
+                    `Cannot release escrow: Stripe payment intent is in status '${intent.status}'. Expected 'requires_capture' or 'succeeded'.`
+                );
             }
 
             // 2. Create Transfers (payout plan already validated in the transaction)
             const transfers = [];
-            for (const party of parties) {
+            let allocatedCents = 0;
+            const activeParties = parties.filter((p: string) => (splits?.[p] || 0) > 0);
+
+            for (let i = 0; i < activeParties.length; i++) {
+                const party = activeParties[i];
                 const splitPct = splits?.[party] || 0;
-                if (splitPct <= 0) continue;
+                const isLast = i === activeParties.length - 1;
 
                 const accountId = stripeAccountIds[party];
-                const transferAmount = Math.round((holdAmountCents * splitPct) / 100);
+                // Floor the intermediate splits and ensure total does not exceed holdAmountCents
+                let transferAmount = Math.floor((holdAmountCents * splitPct) / 100);
+                if (isLast && (allocatedCents + transferAmount) < holdAmountCents) {
+                    // Give remaining rounding pennies up to the exact hold amount if splits sum to 100%
+                    const remaining = holdAmountCents - allocatedCents;
+                    if (remaining <= Math.ceil((holdAmountCents * splitPct) / 100)) {
+                        transferAmount = remaining;
+                    }
+                }
+                transferAmount = Math.min(transferAmount, holdAmountCents - allocatedCents);
+
                 if (transferAmount > 0) {
+                    allocatedCents += transferAmount;
                     transfers.push(stripe.transfers.create({
                         amount: transferAmount,
                         currency: 'usd',

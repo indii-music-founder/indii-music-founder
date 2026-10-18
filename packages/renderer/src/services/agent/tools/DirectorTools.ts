@@ -12,6 +12,7 @@ import { CanvasTools } from './CanvasTools';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { logger } from '@/utils/logger';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
+import { PrintCropCancelledError, printGalleryReference } from '@/services/upscale/PrintPreparationControl';
 
 /**
  * Extracts a specific frame from a 2x2 grid image using Canvas API.
@@ -825,7 +826,27 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
 
             // Resolve asset identifier, reference tag, or upload index if provided instead of a direct URL
-            let resolvedUri = context?.assetReferences?.find(asset => asset.id === args.imageUri || asset.alias === args.imageUri)?.url || args.imageUri;
+            const suppliedSource = context?.assetReferences?.find(asset => asset.id === args.imageUri || asset.alias === args.imageUri || asset.url === args.imageUri);
+            const requiredSource = context?.assetReferences?.find(asset => asset.id === context.boardroomExecution?.sourceId);
+            if (requiredSource && suppliedSource && suppliedSource.id !== requiredSource.id) {
+                return toolError(`This request selected image ${requiredSource.id}. Use that image ID; do not substitute another asset. No print file was produced.`, 'SOURCE_SELECTION_MISMATCH');
+            }
+            const source = suppliedSource || requiredSource;
+            let resolvedUri = source?.url || args.imageUri;
+            const permittedSourceUris = [resolvedUri];
+            const gallerySource = printGalleryReference(source?.id, context?.assetReferences);
+            if (gallerySource) {
+                // Cached workspace URLs can be thumbnails. Read the saved master
+                // for this exact gallery ID through the authenticated product path.
+                const { StorageService } = await import('@/services/StorageService');
+                const original = await StorageService.get(gallerySource.id);
+                if (!original || original.isTrashed) return toolError('The saved original is unavailable. Select the original artwork again.', 'SOURCE_NOT_FOUND');
+                resolvedUri = original.storageUri || original.url;
+                permittedSourceUris.push(resolvedUri, original.url);
+            }
+            if (requiredSource && !suppliedSource && !permittedSourceUris.includes(args.imageUri)) {
+                return toolError(`This request selected image ${requiredSource.id}. Use that image ID; do not substitute another asset. No print file was produced.`, 'SOURCE_SELECTION_MISMATCH');
+            }
             if (
                 !resolvedUri.startsWith('data:image/') &&
                 !resolvedUri.startsWith('blob:') &&
@@ -992,6 +1013,9 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
 
             return toolError('The source image could not be found. Select an existing image or attach the original artwork before preparing a print file.', 'SOURCE_NOT_FOUND');
         } catch (err: unknown) {
+            if (err instanceof PrintCropCancelledError) return {
+                ...toolError(err.message, 'PRINT_CROP_CANCELLED'), status: 'CANCELLED',
+            };
             return handleGenerationError(err, 'prepare_print_file');
         }
     }),

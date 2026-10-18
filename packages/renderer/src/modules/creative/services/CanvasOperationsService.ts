@@ -1,3 +1,4 @@
+import { artworkArtboardBounds, canvasStateDimensions, canvasViewportSize } from './canvasStateDimensions';
 import * as fabric from 'fabric';
 
 declare module 'fabric' {
@@ -56,10 +57,26 @@ export class CanvasOperationsService {
     private _activeColorId: string = '';
     /** Track blob URLs so we can revoke them on dispose to prevent memory leaks */
     private _activeBlobUrls: string[] = [];
+    private _persistentImageSources = new Map<string, string>();
     private _historyStack: string[] = [];
     private _redoStack: string[] = [];
     private _isUndoingRedoing: boolean = false;
+    private _initializingCanvases = new WeakSet<fabric.Canvas>();
     private _maxHistory: number = 50;
+    private _viewportContainer: HTMLElement | null = null;
+    private _viewportObserver: ResizeObserver | null = null;
+    private _exportingDimensions = false;
+
+    private fitCanvasToViewport(): void {
+        const canvas = this.canvas;
+        const container = this._viewportContainer;
+        if (!canvas || !container || this._exportingDimensions || this._initializingCanvases.has(canvas)) return;
+        const size = canvasViewportSize(
+            { width: canvas.getWidth(), height: canvas.getHeight() },
+            { width: Math.max(0, container.clientWidth - 24), height: Math.max(0, container.clientHeight - 24) },
+        );
+        if (size) canvas.setDimensions(size, { cssOnly: true });
+    }
 
     // Advanced Tools State
     private _activeTool: 'select' | 'line' | 'polygon' | 'text' | 'brush' = 'select';
@@ -136,6 +153,7 @@ export class CanvasOperationsService {
                 const { blob } = await safeStorageFetch(playableUrl);
                 const blobUrl = URL.createObjectURL(blob);
                 this._activeBlobUrls.push(blobUrl);
+                this._persistentImageSources.set(blobUrl, playableUrl);
 
                 const img = await loadOffThread(blobUrl);
                 logger.info('[CanvasOps] Image loaded via blob URL (preferred for storage assets)');
@@ -158,6 +176,7 @@ export class CanvasOperationsService {
             const { blob } = await safeStorageFetch(playableUrl);
             const blobUrl = URL.createObjectURL(blob);
             this._activeBlobUrls.push(blobUrl);
+            this._persistentImageSources.set(blobUrl, playableUrl);
 
             const img = await loadOffThread(blobUrl);
             logger.info('[CanvasOps] Image loaded via blob URL fallback');
@@ -200,7 +219,7 @@ export class CanvasOperationsService {
         canvasElement: HTMLCanvasElement,
         imageUrl?: string,
         onReady?: () => void | Promise<void>,
-        onChange?: () => void,
+        onChange?: (reason?: 'restore') => void,
         onTextSelection?: (properties: CanvasTextProperties | null) => void
     ): fabric.Canvas {
         // ISSUE-1391: re-initializing while a canvas is already live wraps the
@@ -215,6 +234,7 @@ export class CanvasOperationsService {
 
         // Dynamic sizing: read container dimensions instead of hardcoded 800x600
         const container = canvasElement.parentElement;
+        this._viewportContainer = container;
         const maxWidth = container ? Math.max(container.clientWidth - 24, 400) : 800;
         const maxHeight = container ? Math.max(container.clientHeight - 24, 300) : 600;
 
@@ -224,28 +244,47 @@ export class CanvasOperationsService {
             backgroundColor: '#1a1a1a',
         });
 
+        if (container && typeof ResizeObserver !== 'undefined') {
+            this._viewportObserver = new ResizeObserver(() => this.fitCanvasToViewport());
+            this._viewportObserver.observe(container);
+        }
+
         const initializedCanvas = this.canvas;
+        this._initializingCanvases.add(initializedCanvas);
+        const establishBaseline = () => {
+            this._initializingCanvases.delete(initializedCanvas);
+            if (this.canvas !== initializedCanvas) return;
+            this._historyStack = [];
+            this._redoStack = [];
+            this.saveHistoryState();
+            this.fitCanvasToViewport();
+            onChange?.('restore');
+        };
+        const notifyReady = () => {
+            if (!onReady) {
+                establishBaseline();
+                return;
+            }
+            void Promise.resolve(onReady()).then(establishBaseline).catch((err: unknown) => {
+                establishBaseline();
+                logger.error('[CanvasOps] Canvas ready callback failed:', err);
+            });
+        };
         if (imageUrl) {
             this.loadImageSafe(imageUrl)
                 .then((img: fabric.Image) => {
                     if (this.canvas !== initializedCanvas) return;
                     this.placeImageOnCanvas(img, maxWidth, maxHeight);
-                    void Promise.resolve(onReady?.()).catch((err: unknown) => {
-                        logger.error('[CanvasOps] Canvas ready callback failed:', err);
-                    });
+                    notifyReady();
                 })
                 .catch((err: unknown) => {
                     if (this.canvas !== initializedCanvas) return;
                     logger.error('[CanvasOps] All image load strategies failed:', err);
                     // Still call onReady so UI doesn't hang, but canvas will be empty
-                    void Promise.resolve(onReady?.()).catch((readyErr: unknown) => {
-                        logger.error('[CanvasOps] Canvas ready callback failed after image load error:', readyErr);
-                    });
+                    notifyReady();
                 });
         } else {
-            void Promise.resolve(onReady?.()).catch((err: unknown) => {
-                logger.error('[CanvasOps] Canvas ready callback failed:', err);
-            });
+            notifyReady();
         }
 
         if (onTextSelection) {
@@ -267,6 +306,7 @@ export class CanvasOperationsService {
 
         if (onChange) {
             const wrappedChange = () => {
+                if (this._initializingCanvases.has(initializedCanvas)) return;
                 if (!this._isUndoingRedoing) {
                     this.saveHistoryState();
                 }
@@ -370,7 +410,7 @@ export class CanvasOperationsService {
 
     private saveHistoryState(): void {
         if (!this.canvas) return;
-        const json = JSON.stringify(this.canvas.toJSON(['data', 'id']));
+        const json = JSON.stringify(this.serializeCanvasState());
         
         // Only push if it's different from the top of the stack
         if (this._historyStack.length === 0 || this._historyStack[this._historyStack.length - 1] !== json) {
@@ -381,6 +421,34 @@ export class CanvasOperationsService {
             // Clear redo stack on new action
             this._redoStack = [];
         }
+    }
+
+    /** Explicit, undoable recovery for legacy artboards with excessive margins.
+     * Includes hidden artwork so making a layer visible later cannot clip it.
+     * No pixel resampling, raster replacement, or automatic legacy inference.
+     */
+    fitArtboardToArtwork(): boolean {
+        if (!this.canvas) return false;
+        const objects = this.canvas.getObjects();
+        const artwork = objects.filter(obj => !this.isAnnotation(obj));
+        const bounds = artworkArtboardBounds(artwork.map(obj => obj.getBoundingRect()));
+        if (!bounds) return false;
+        if (bounds.left === 0 && bounds.top === 0 &&
+            bounds.width === this.canvas.getWidth() && bounds.height === this.canvas.getHeight()) return false;
+        this.saveHistoryState();
+        this.canvas.discardActiveObject();
+        objects.forEach(obj => {
+            obj.set({ left: (obj.left ?? 0) - bounds.left, top: (obj.top ?? 0) - bounds.top });
+            obj.setCoords();
+        });
+        this.canvas.setDimensions({ width: bounds.width, height: bounds.height });
+        this.canvas.renderAll();
+        this.saveHistoryState();
+        // Fabric setters do not emit a mutation. Notify the regular dirty /
+        // autosave path only once the complete translated artboard is ready.
+        this.fitCanvasToViewport();
+        this.canvas.fire('object:modified', { target: artwork[0] });
+        return true;
     }
 
     async undo(): Promise<void> {
@@ -507,6 +575,9 @@ export class CanvasOperationsService {
      * unmount and surfaces as a raw DOM error to the user.
      */
     dispose(): void {
+        this._viewportObserver?.disconnect();
+        this._viewportObserver = null;
+        this._viewportContainer = null;
         const canvas = this.canvas;
         this.canvas = null;
         if (canvas) {
@@ -536,6 +607,7 @@ export class CanvasOperationsService {
             try { URL.revokeObjectURL(url); } catch { /* ignore */ }
         });
         this._activeBlobUrls = [];
+        this._persistentImageSources.clear();
         this._activeColorId = '';
     }
 
@@ -606,7 +678,10 @@ export class CanvasOperationsService {
         const existingBoxes = this.canvas.getObjects().filter(obj => (obj as fabric.Object & { data?: { isBoundingBox?: boolean } }).data?.isBoundingBox);
         existingBoxes.forEach(obj => this.canvas?.remove(obj));
 
-        objects.forEach(obj => {
+        // Smaller objects must remain clickable inside larger detected frames.
+        const area = (object: typeof objects[number]) =>
+            (object.box.xmax - object.box.xmin) * (object.box.ymax - object.box.ymin);
+        [...objects].sort((a, b) => area(b) - area(a)).forEach(obj => {
             const left = (obj.box.xmin / 1000) * width;
             const top = (obj.box.ymin / 1000) * height;
             const boxWidth = ((obj.box.xmax - obj.box.xmin) / 1000) * width;
@@ -615,6 +690,8 @@ export class CanvasOperationsService {
             const rect = new fabric.Rect({
                 left,
                 top,
+                originX: 'left',
+                originY: 'top',
                 width: boxWidth,
                 height: boxHeight,
                 fill: 'rgba(0, 255, 0, 0.1)',
@@ -639,12 +716,16 @@ export class CanvasOperationsService {
             const text = new fabric.Text(obj.label, {
                 left,
                 top: top - 20,
+                originX: 'left',
+                originY: 'top',
                 fontSize: 16,
                 fill: '#00ff00',
                 backgroundColor: 'rgba(0,0,0,0.7)',
                 selectable: false,
+                evented: true,
                 data: { isBoundingBox: true }
             });
+            if (onSelect) text.on('mousedown', () => onSelect(obj.label));
             this.canvas?.add(text);
         });
         
@@ -671,12 +752,14 @@ export class CanvasOperationsService {
      * Loads a base64 PNG mask, tints it to the active color, and applies it as a non-interactive canvas object overlay
      */
     async addSegmentationMask(base64Png: string, colorDef: CreativeColor): Promise<void> {
-        if (!this.canvas) return;
+        const selectionCanvas = this.canvas;
+        if (!selectionCanvas) return;
 
         try {
             const dataUrl = `data:image/png;base64,${base64Png}`;
             const img = await fabric.Image.fromURL(dataUrl, { crossOrigin: 'anonymous' });
 
+            if (this.canvas !== selectionCanvas) return;
             if (!img) {
                 throw new Error('Failed to load segmentation mask image');
             }
@@ -711,7 +794,7 @@ export class CanvasOperationsService {
                 alpha: 1.0
             });
 
-            img.filters = [filter];
+            img.filters = [new fabric.filters.RemoveColor({ color: '#000000', distance: 0.02 }), filter];
             img.applyFilters();
             
             this.canvas?.add(img);
@@ -732,11 +815,13 @@ export class CanvasOperationsService {
         instagram: string; // 1:1
         youtube: string;   // 16:9
     } | null> {
-        if (!this.canvas) return null;
+        const exportCanvas = this.canvas;
+        if (!exportCanvas) return null;
 
         const originalWidth = this.canvas.getWidth();
         const originalHeight = this.canvas.getHeight();
-        const jsonState = JSON.stringify(this.canvas.toJSON([...CANVAS_SERIALIZATION_PROPERTIES]));
+        const jsonState = JSON.stringify(this.serializeCanvasState());
+        this._exportingDimensions = true;
 
         const exportForDimensions = async (targetWidth: number, targetHeight: number): Promise<string> => {
             this.canvas!.setDimensions({ width: targetWidth, height: targetHeight });
@@ -806,11 +891,14 @@ export class CanvasOperationsService {
             const tiktok = await exportForDimensions(1080, 1920);
 
             // Instagram Feed / Carousel (4:5)
+            if (this.canvas !== exportCanvas) return null;
             const instagram = await exportForDimensions(1080, 1350);
 
             // YouTube Wide (16:9)
+            if (this.canvas !== exportCanvas) return null;
             const youtube = await exportForDimensions(1920, 1080);
 
+            if (this.canvas !== exportCanvas) return null;
             // Restore canvas
             this.canvas.setDimensions({ width: originalWidth, height: originalHeight });
             this.canvas.renderAll();
@@ -818,16 +906,31 @@ export class CanvasOperationsService {
             return { tiktok, instagram, youtube };
         } catch (error: unknown) {
             logger.error('[CanvasBatching] Failed to export batch dimensions:', error);
+            if (this.canvas !== exportCanvas) return null;
             this._isUndoingRedoing = true;
             try {
                 await this.loadFromJSON(jsonState);
+                if (this.canvas !== exportCanvas) return null;
                 this.canvas.setDimensions({ width: originalWidth, height: originalHeight });
                 this.canvas.renderAll();
             } finally {
                 this._isUndoingRedoing = false;
             }
             return null;
+        } finally {
+            this._exportingDimensions = false;
+            this.fitCanvasToViewport();
         }
+    }
+
+    /** Snapshot the stage with its objects for undo and reopening. */
+    private serializeCanvasState(): Record<string, unknown> {
+        if (!this.canvas) return {};
+        return {
+            ...this.canvas.toObject([...CANVAS_SERIALIZATION_PROPERTIES]),
+            width: this.canvas.getWidth(),
+            height: this.canvas.getHeight(),
+        };
     }
 
     /**
@@ -842,11 +945,21 @@ export class CanvasOperationsService {
      */
     async toJSON(): Promise<unknown> {
         if (!this.canvas) return null;
-        const json = this.canvas.toJSON(['data', 'id']) as { objects?: Array<{ data?: Record<string, unknown> }> };
+        const json = this.serializeCanvasState() as { objects?: Array<{ data?: Record<string, unknown> }> };
         if (json && Array.isArray(json.objects)) {
             json.objects = json.objects.filter(obj => !obj?.data?.isBoundingBox);
+            this.restorePersistentImageSources(json);
         }
         return json;
+    }
+
+    private restorePersistentImageSources(node: unknown): void {
+        if (!node || typeof node !== 'object') return;
+        const object = node as { src?: string; objects?: unknown[] };
+        if (object.src && this._persistentImageSources.has(object.src)) {
+            object.src = this._persistentImageSources.get(object.src)!;
+        }
+        object.objects?.forEach(child => this.restorePersistentImageSources(child));
     }
 
     /**
@@ -857,6 +970,15 @@ export class CanvasOperationsService {
         if (!restoringCanvas) return;
         try {
             const parsed = JSON.parse(json);
+            // Old autosaves can contain blob URLs revoked when the previous
+            // editor closed. Drop those unrecoverable images so ensureBaseImage
+            // can restore the selected gallery artwork instead of staying blank.
+            const removeExpiredSources = (node: { objects?: Array<{ src?: string; objects?: unknown[] }> }) => {
+                if (!Array.isArray(node.objects)) return;
+                node.objects = node.objects.filter(object => !object.src?.startsWith('blob:') || this._persistentImageSources.has(object.src));
+                node.objects.forEach(object => removeExpiredSources(object as typeof node));
+            };
+            removeExpiredSources(parsed);
             // CRITICAL (ISSUE-478): Fabric's loadFromJSON reloads images straight from
             // their stored http `src` with no crossOrigin, which TAINTS the canvas when
             // the bucket lacks CORS — every later toDataURL() then throws. Swap remote
@@ -864,7 +986,16 @@ export class CanvasOperationsService {
             await this._sanitizeRemoteImageSources(parsed);
             if (this.canvas !== restoringCanvas) return;
             await restoringCanvas.loadFromJSON(parsed);
-            if (this.canvas === restoringCanvas) restoringCanvas.renderAll();
+            if (this.canvas !== restoringCanvas) return;
+            const base = restoringCanvas.getObjects().find(obj =>
+                obj.type?.toLowerCase() === 'image' &&
+                (obj as fabric.Object & { data?: { isBaseImage?: boolean } }).data?.isBaseImage);
+            const dimensions = canvasStateDimensions(parsed, base?.getBoundingRect(), restoringCanvas.getObjects()
+                .filter(obj => !(obj as fabric.Object & { data?: { isBoundingBox?: boolean } }).data?.isBoundingBox)
+                .map(obj => obj.getBoundingRect()));
+            if (dimensions) restoringCanvas.setDimensions(dimensions);
+            this.fitCanvasToViewport();
+            restoringCanvas.renderAll();
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
             logger.error(`Failed to load canvas from JSON: ${message}`);
@@ -886,6 +1017,7 @@ export class CanvasOperationsService {
                 const { blob } = await safeStorageFetch(obj.src);
                 const blobUrl = URL.createObjectURL(blob);
                 this._activeBlobUrls.push(blobUrl);
+                this._persistentImageSources.set(blobUrl, obj.src);
                 obj.src = blobUrl;
                 obj.crossOrigin = 'anonymous';
             } catch (e: unknown) {
@@ -1010,7 +1142,7 @@ export class CanvasOperationsService {
      * (drawing paths, bounding boxes, segmentation masks) temporarily hidden.
      * This ensures saved/exported images contain only the actual artwork.
      */
-    private getFlattenedDataURL(options?: { format?: string; quality?: number; multiplier?: number; excludeAnnotations?: boolean }): string {
+    getFlattenedDataURL(options?: { format?: string; quality?: number; multiplier?: number; excludeAnnotations?: boolean }): string {
         if (!this.canvas) return '';
 
         const allObjects = this.canvas.getObjects();
@@ -1060,7 +1192,8 @@ export class CanvasOperationsService {
      * This effectively "bakes" all current edits into the base.
      */
     async flattenCanvas(): Promise<boolean> {
-        if (!this.canvas) return false;
+        const flatteningCanvas = this.canvas;
+        if (!flatteningCanvas) return false;
 
         logger.info('[CanvasOps] Flattening canvas layers...');
         
@@ -1076,6 +1209,7 @@ export class CanvasOperationsService {
         try {
             // 2. Load the new flattened image
             const newBaseImg = await this.loadImageSafe(flattenedDataUrl);
+            if (this.canvas !== flatteningCanvas) return false;
             
             // 3. Clear canvas and add new flattened image
             const width = this.canvas.getWidth();
@@ -1091,6 +1225,7 @@ export class CanvasOperationsService {
             
             this.canvas.renderAll();
             
+            this.fitCanvasToViewport();
             logger.info('[CanvasOps] Canvas flattened successfully');
             return true;
         } catch (err) {
@@ -1404,9 +1539,11 @@ export class CanvasOperationsService {
         magicFillEnabled: boolean,
         activeColor: CreativeColor
     ): Promise<void> {
-        if (!this.canvas) return;
+        const candidateCanvas = this.canvas;
+        if (!candidateCanvas) return;
 
         const img = await this.loadImageSafe(candidateUrl);
+        if (this.canvas !== candidateCanvas) return;
 
         // Ensure standard dimensions
         img.scaleToWidth(this.canvas.width!);

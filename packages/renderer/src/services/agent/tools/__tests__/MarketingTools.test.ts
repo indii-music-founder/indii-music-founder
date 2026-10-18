@@ -161,4 +161,99 @@ describe('MarketingTools', () => {
             expect(result.message).toContain('no purchase records found');
         });
     });
+
+    describe('Multi-Platform Programmatic Ad & Attribution Tools', () => {
+        it('dispatch_multi_platform_campaign returns AUTH_REQUIRED when no user is signed in', async () => {
+            const { auth } = await import('@/services/firebase');
+            const originalUser = auth.currentUser;
+            (auth as { currentUser: unknown }).currentUser = null;
+
+            try {
+                const res = await MarketingTools.dispatch_multi_platform_campaign({
+                    ledgerAccountId: 'ledger_01',
+                    objective: 'DSP_STREAM_CONVERSION',
+                    platforms: ['META', 'TIKTOK'],
+                    totalBudgetCents: 50_000,
+                    dailyBudgetCents: 10_000,
+                    platformSplitPercentages: { META: 60, TIKTOK: 40 },
+                    releaseId: 'rel_01',
+                    isrc: 'US-S1Z-26-00412',
+                    smartlinkId: 'sl_01',
+                    smartlinkUrl: 'https://indii.link/midnight',
+                    videoAssetIds: ['vid_01'],
+                    imageAssetIds: ['img_01'],
+                    geoLocations: ['US'],
+                    genreTaxonomyTags: ['electronic'],
+                });
+
+                expect(res.success).toBe(false);
+                expect(res.metadata?.errorCode).toBe('AUTH_REQUIRED');
+            } finally {
+                (auth as { currentUser: unknown }).currentUser = originalUser;
+            }
+        });
+
+        it('dispatch_multi_platform_campaign and record_attribution_conversion invoke Cloud Functions when authenticated', async () => {
+            const { httpsCallable } = await import('firebase/functions');
+            vi.mocked(httpsCallable).mockImplementation((_fns, name) => {
+                if (name === 'executeUnifiedCampaignDirective') {
+                    return (async () => ({
+                        data: {
+                            ok: true,
+                            result: {
+                                directiveId: 'dir_test_01',
+                                totalCommittedBudgetCents: 50_000,
+                                receipts: [{ platform: 'META', externalCampaignId: 'm_1' }],
+                            },
+                        },
+                    })) as unknown as ReturnType<typeof httpsCallable>;
+                }
+                return (async () => ({
+                    data: {
+                        ok: true,
+                        receipt: {
+                            eventId: 'evt_test_01',
+                            deduplicated: false,
+                        },
+                    },
+                })) as unknown as ReturnType<typeof httpsCallable>;
+            });
+
+            const campaignRes = await MarketingTools.dispatch_multi_platform_campaign({
+                directiveId: 'dir_test_01',
+                ledgerAccountId: 'ledger_01',
+                objective: 'DSP_STREAM_CONVERSION',
+                platforms: ['META'],
+                totalBudgetCents: 50_000,
+                dailyBudgetCents: 10_000,
+                platformSplitPercentages: { META: 100 },
+                releaseId: 'rel_01',
+                isrc: 'US-S1Z-26-00412',
+                smartlinkId: 'sl_01',
+                smartlinkUrl: 'https://indii.link/midnight',
+                videoAssetIds: ['vid_01'],
+                imageAssetIds: ['img_01'],
+                geoLocations: ['US'],
+                genreTaxonomyTags: ['electronic'],
+            });
+
+            expect(campaignRes.success).toBe(true);
+            expect(campaignRes.message).toContain('Committed 50000 cents');
+
+            const attrRes = await MarketingTools.record_attribution_conversion({
+                eventId: 'evt_test_01',
+                eventName: 'DSPOutboundClick',
+                releaseId: 'rel_01',
+                isrc: 'US-S1Z-26-00412',
+                smartlinkId: 'sl_01',
+                targetDsp: 'SPOTIFY',
+                fbclid: 'fb_123',
+                clientIpAddress: '203.0.113.10',
+                clientUserAgent: 'Mozilla/5.0',
+            });
+
+            expect(attrRes.success).toBe(true);
+            expect(attrRes.message).toContain('AttributionBus');
+        });
+    });
 });

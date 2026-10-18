@@ -17,6 +17,7 @@ import { getColorForModule } from '@/core/theme/moduleColors';
 
 import { useToast } from '@/core/context/ToastContext';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
+import { BoardroomRightRail } from './components/BoardroomRightRail';
 
 /**
  * BoardroomModule — The virtual multi-agent boardroom.
@@ -174,6 +175,7 @@ export function BoardroomModule() {
                                 <BoardroomTable
                                     messages={boardroomMessages}
                                     activeCount={activeCount}
+                                    onOpenLivingPlans={() => setIsTrackerOpen(true)}
                                 />
                                 <ParticipantSelector />
                             </div>
@@ -190,6 +192,14 @@ export function BoardroomModule() {
                         <HarnessDecisionDigest />
                         <BoardroomConversationPanel messages={boardroomMessages} />
                     </motion.div>
+
+                    {/* Dedicated Boardroom Right Vertical Rail */}
+                    {!isAnyPhone && (
+                        <BoardroomRightRail
+                            onOpenLivingPlans={() => setIsTrackerOpen(true)}
+                            onOpenSwarmFeed={() => setIsSwarmFeedOpen(true)}
+                        />
+                    )}
                 </div>
 
                 <LivingPlansTracker isOpen={isTrackerOpen} onClose={() => setIsTrackerOpen(false)} />

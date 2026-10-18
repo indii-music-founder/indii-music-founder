@@ -1,3 +1,4 @@
+import { MediaFileDetails } from '@/core/components/MediaFileDetails';
 import React, { useState, useMemo } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -365,7 +366,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                     <div className="grid grid-cols-3 gap-1.5">
                         <AnimatePresence>
                             {filteredAssets.map((asset) => (
-                                <motion.button
+                                <motion.div
                                     key={asset.id}
                                     draggable={!!asset.url}
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -375,9 +376,10 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
-                                    onClick={() => handleAssetClick(asset)}
-                                    className="group relative aspect-square bg-white/[0.03] rounded-lg overflow-hidden border border-white/[0.06] hover:border-white/[0.15] transition-all cursor-pointer"
+                                    className="group relative hover:z-40 focus-within:z-40 aspect-square bg-white/[0.03] rounded-lg overflow-hidden border border-white/[0.06] hover:border-white/[0.15] transition-all cursor-pointer"
                                 >
+                                    <button type="button" className="absolute inset-0 z-[2]" aria-label={`Edit in Studio: ${asset.prompt || 'Untitled'}`} onClick={() => handleAssetClick(asset)} />
+                                    <div className="absolute bottom-1 right-1 z-30"><MediaFileDetails item={asset} compact /></div>
                                     {/* Thumbnail */}
                                     {asset.type === 'video' ? (
                                         <VideoThumb
@@ -414,7 +416,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     </div>
 
                                     {/* Hover overlay */}
-                                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 flex flex-col justify-end p-1.5">
+                                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none flex flex-col justify-end p-1.5">
                                         {(asset.type === 'image' || asset.type === 'video') && (
                                             <div className="flex items-center gap-1 mb-1 text-green-400">
                                                 <Sparkles size={8} />
@@ -425,7 +427,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                             {asset.prompt || 'Untitled'}
                                         </p>
                                     </div>
-                                </motion.button>
+                                </motion.div>
                             ))}
                         </AnimatePresence>
                     </div>
@@ -433,7 +435,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                     <div className="flex flex-col gap-1">
                         <AnimatePresence>
                             {filteredAssets.map((asset) => (
-                                <motion.button
+                                <motion.div
                                     key={asset.id}
                                     draggable={!!asset.url}
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -443,9 +445,9 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -10 }}
-                                    onClick={() => handleAssetClick(asset)}
-                                    className="flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08] transition-all cursor-pointer group text-left"
+                                    className="relative flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08] transition-all cursor-pointer group text-left"
                                 >
+                                    <button type="button" className="absolute inset-0 z-[2]" aria-label={`Edit in Studio: ${asset.prompt || 'Untitled'}`} onClick={() => handleAssetClick(asset)} />
                                     {/* Mini thumbnail */}
                                     <div className="w-10 h-10 rounded-md overflow-hidden bg-white/[0.04] flex-shrink-0 flex items-center justify-center">
                                         {asset.type === 'image' && asset.url ? (
@@ -463,9 +465,8 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
 
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-[11px] text-gray-300 font-medium truncate">
-                                            {asset.prompt || 'Untitled'}
-                                        </p>
+                                        <p className="block max-w-full text-[11px] text-gray-300 font-medium truncate">{asset.prompt || 'Untitled'}</p>
+                                        <MediaFileDetails item={asset} />
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <span className={cn("text-[8px] font-bold uppercase tracking-wider", getTypeColor(asset.type).split(' ')[0])}>
                                                 {asset.type}
@@ -482,7 +483,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     </div>
 
                                     {/* Actions */}
-                                    <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity ml-auto pl-2 flex-shrink-0">
+                                    <div className="relative z-40 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity ml-auto pl-2 flex-shrink-0">
                                         <Eye size={12} className="text-gray-400 hover:text-gray-200 transition-colors" />
                                         <button 
                                             onClick={(e) => handleDeleteAsset(e, asset)}
@@ -492,7 +493,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                             <X size={12} />
                                         </button>
                                     </div>
-                                </motion.button>
+                                </motion.div>
                             ))}
                         </AnimatePresence>
                     </div>

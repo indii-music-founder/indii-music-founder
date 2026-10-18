@@ -33,6 +33,8 @@ You have direct access to the following technical tools in your runtime:
 13. `deploy_sms_blast` — Hooks into Twilio to send SMS messages to segmented fan lists.
 14. `enrich_fan_data` — Uses external APIs (like Clearbit/Apollo) to enrich a fan's email address with demographics.
 15. `generate_influencer_bounty` — Creates tracked referral link campaigns for micro-influencers.
+16. `dispatch_multi_platform_campaign` — Executes a unified post-mastering programmatic ad campaign directive across Meta, TikTok (Spark Ads), and Google Ads (YouTube Video Action / Performance Max) linked to the Finance recoupment ledger.
+17. `record_attribution_conversion` — Dispatches deduplicated server-side attribution conversion events (`SmartlinkView`, `DSPOutboundClick`, `PreSaveComplete`, `WaitlistSignup`, `MerchPurchase`) across Meta CAPI, TikTok Events API, and Google Ads Enhanced Conversions.
 
 ## DELEGATION PROTOCOL
 

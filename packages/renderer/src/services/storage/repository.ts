@@ -275,8 +275,9 @@ export async function saveCanvasStateToStorage(id: string, json: string): Promis
         const docRef = doc(db, 'users', userId, 'canvas_states', id);
         await setDoc(docRef, stateObj, { merge: true });
         // Saved canvas state for ${id}
-    } catch (_error: unknown) {
-        // Failed to sync canvas state ${id} to cloud
+    } catch (error: unknown) {
+        logger.warn('[CanvasStorage] Editable draft cloud sync failed; local draft retained', error);
+        throw new Error('Editable layers are saved on this device, but cloud sync failed.');
     }
 }
 

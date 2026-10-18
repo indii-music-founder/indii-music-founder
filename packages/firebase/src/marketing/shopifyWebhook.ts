@@ -210,9 +210,11 @@ export const shopifyWebhook = onRequest(
     })();
 
     const signature = req.headers['x-shopify-hmac-sha256'] as string | undefined;
-    const payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    const rawPayload = (req as { rawBody?: Buffer }).rawBody
+      ? (req as { rawBody?: Buffer }).rawBody!.toString('utf8')
+      : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
 
-    if (!signature || !verifyShopifyWebhook(payload, signature, secret)) {
+    if (!signature || !verifyShopifyWebhook(rawPayload, signature, secret)) {
       logger.warn('[shopifyWebhook] Rejected request: invalid or missing HMAC signature');
       res.status(401).send('Unauthorized');
       return;
@@ -231,7 +233,8 @@ export const shopifyWebhook = onRequest(
 
       // Idempotency guard: atomic check-and-set via transaction
       const db = getFirestore();
-      const deliveryRef = db.collection('shopify_webhook_deliveries').doc(order.id);
+      const orderIdStr = String(order.id);
+      const deliveryRef = db.collection('shopify_webhook_deliveries').doc(orderIdStr);
 
       const alreadyProcessed = await db.runTransaction(async (tx) => {
         const snap = await tx.get(deliveryRef);
@@ -255,7 +258,7 @@ export const shopifyWebhook = onRequest(
         }
         // Atomically mark as in-flight
         tx.set(deliveryRef, {
-          orderId: order.id,
+          orderId: orderIdStr,
           receivedAt: new Date(),
           status: 'processing',
           retryCount: 0,
@@ -264,7 +267,7 @@ export const shopifyWebhook = onRequest(
       });
 
       if (alreadyProcessed) {
-        logger.info('[shopifyWebhook] Duplicate delivery skipped', { orderId: order.id });
+        logger.info('[shopifyWebhook] Duplicate delivery skipped', { orderId: orderIdStr });
         res.json({ received: true, duplicate: true });
         return;
       }
@@ -289,12 +292,13 @@ export const shopifyWebhook = onRequest(
       });
       // Mark as failed so next retry is not skipped
       const db = getFirestore();
-      const orderId = typeof req.body === 'string'
+      const rawOrderId = typeof req.body === 'string'
         ? JSON.parse(req.body).id
         : req.body?.id;
-      if (orderId) {
+      if (rawOrderId) {
+        const orderIdStr = String(rawOrderId);
         db.collection('shopify_webhook_deliveries')
-          .doc(orderId)
+          .doc(orderIdStr)
           .update({ status: 'failed', error: String(err) })
           .catch((e) => {
             logger.warn('[shopifyWebhook] Failed to mark delivery as failed', { error: e });

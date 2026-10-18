@@ -54,10 +54,11 @@ export function isDepartmentAuditOrReadinessQuestion(task: string): boolean {
     const targets = String.raw`(?:(?:the )?(?:other )?(?:\d+ )?(?:agents?|departments?|specialists?|department heads?)|(?:all|any)(?: of the)? (?:\d+ )?(?:agents?|departments?|specialists?|department heads?)|(?:all )?(?:\d+ )?departments?|all \d+ department heads?|(?:the )?other \d+|\ball \d+\b)`;
 
     return [
-        /\b(?:implementation|production|verification|readiness)\s+(?:(?:and|production|verification)\s+)*status\s+of\s+(?:all\s+|the\s+)?departments?\b/i,
+        /\b(?:implementation|production|verification|readiness|operational)\s+(?:(?:and|production|verification|operational)\s+)*status\s+of\s+(?:all\s+|the\s+)?(?:\d+\s+)?(?:departments?|department heads?|specialists?|agents?)\b/i,
+        new RegExp(String.raw`\b${targets}(?:'s|')\s+(?:operational|implementation|production|readiness|verification)(?:\s+(?:status|readiness))?\b`, 'i'),
         new RegExp(String.raw`\bdid ${targets}(?: (?:the )?other \d+)? (?:get|have|receive) (?:their )?(?:requested )?tools?\b`, 'i'),
         new RegExp(String.raw`\bhave ${targets}(?: (?:the )?other \d+)? (?:gotten|received|got|acquired) (?:their )?(?:requested )?tools?\b`, 'i'),
-        new RegExp(String.raw`\bare (?:the )?(?:tools? (?:for|of) )?${targets}(?:'s)? (?:tools? )?(?:ready|deployed|implemented|operational|available|working|built)(?: right now| now)?\b`, 'i'),
+        new RegExp(String.raw`\bare (?:the )?(?:tools? (?:for|of) )?${targets}(?:'s|')? (?:tools? )?(?:ready|deployed|implemented|operational|available|working|built)(?: right now| now)?\b`, 'i'),
         new RegExp(String.raw`\b(?:what|which) tools? (?:do|can) ${targets} (?:have|use|access)\b`, 'i'),
         new RegExp(String.raw`\b(?:do|can) ${targets} have (?:their )?(?:requested )?tools?\b`, 'i'),
         new RegExp(String.raw`\b(?:board-wide|department|fleet|agent|system-wide) audit\b`, 'i'),
