@@ -120,3 +120,34 @@ stable evidence ID and timestamp when a reported receipt save is retried.
 - The remote task branch advanced to `5cbb08ff7` during validation through an
   external merge from main. This local continuation must be integrated with that
   remote update before it can be published without overwriting other work.
+
+## Reload and persistence recovery continuation
+
+The earlier branch integration was published as `a347a87b0`; its exact-SHA rights
+CI passed. This continuation adds owner-authenticated, sanitized discovery of
+reserved sessions and an explicit reconnect to the same claimed process. Session
+secrets remain server-only. Expired, ending, unclaimed, and lost browsers cannot
+be offered as reconnectable; refresh/end remain available without launching a Job.
+
+Saved cases now restore their actual filing ID, revision, and manifest hash.
+Historical filing revisions can be selected for confirmation reporting. Edits use
+the loaded revision as their concurrency baseline, rather than silently using a
+newer snapshot revision. Switching authenticated accounts remounts the workspace.
+
+Downloaded user-reported confirmation reports carry a versioned envelope and can
+be restored for the exact filing/hash. Their evidence ID and original timestamp
+survive a persistence retry, so reporting never repeats an external application.
+Reports cannot promote themselves to official evidence or registration status.
+
+These recovery contracts have local structural tests. No original work is
+available for a genuine filing journey, and no customer-path or official outcome
+acceptance is claimed. Full portal field coverage and trusted provider receipt
+reconciliation remain incomplete; hosted/payment/delivery switches stay disabled.
+
+Validation of this recovery unit: 116 focused tests passed across 17 files;
+repository typechecking and both dedicated worker builds passed. Full ESLint
+completed with zero errors (235 repository warnings); scoped lint had zero errors
+and three pre-existing `any` warnings. The complete local CI gauntlet finished
+with 9,896 passing tests and the same unrelated landing-page wording assertion
+failure at `ArtistPassportPage.test.tsx:318`. The repository-wide gate is not green.
+No landing files were modified, and no live filing acceptance is claimed.

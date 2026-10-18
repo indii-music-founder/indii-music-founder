@@ -322,7 +322,7 @@ export default function RegistrationCenter() {
       {/* Center: Content View */}
       <div className="flex-1 min-w-0 border-r border-white/[0.05] flex flex-col overflow-hidden">
         {activeTab === 'filing' && user?.uid ? (
-          <RightsFilingWorkspace userId={user.uid} tracks={tracks} />
+          <RightsFilingWorkspace key={user.uid} userId={user.uid} tracks={tracks} />
         ) : activeTab === 'visibility' ? (
           <CatalogVisibilityPanel key={user?.uid ?? 'signed-out'} userId={user?.uid ?? ''} />
         ) : activeTab === 'founder' ? (

@@ -15,13 +15,13 @@ import { RightsId, RightsCaseSchema, RightsEvidenceSchema, CwrBatchInputSchema, 
 import { deliverApprovedCwr } from './deliverCwr';
 import { prepareSoundExchangeBulk } from '@indii/shared';
 import { createCanonicalMusicCatalogStore } from '../music/canonicalMusicCatalogStore';
-import { validateRightsEntityReferences, CanonicalMusicEntitySchema, RightsEntityId, COPYRIGHT_PORTAL_HOSTS, canApproveCwrExport } from '@indii/shared';
+import { validateRightsEntityReferences, CanonicalMusicEntitySchema, RightsEntityId, COPYRIGHT_PORTAL_HOSTS, canApproveCwrExport, publicRightsSession } from '@indii/shared';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const db = () => getFirestore();
 const root = (uid: string) => db().collection('users').doc(uid);
-const Request = z.object({ action: z.enum(['capabilities', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
+const Request = z.object({ action: z.enum(['capabilities', 'list_sessions', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
 const CaseId = z.object({ caseId: RightsId }).passthrough();
 const SessionId = z.object({ sessionId: RightsId }).passthrough();
 const gc = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
@@ -85,6 +85,17 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
   try {
     const { action, payload } = Request.parse(request.data);
     if (action === 'capabilities') return { hostedEnabled: process.env.RIGHTS_HOSTED_ENABLED === 'true', paymentEnabled: process.env.RIGHTS_PAYMENT_ENABLED === 'true', rememberEnabled: Boolean(process.env.RIGHTS_VAULT_BUCKET && process.env.RIGHTS_KMS_KEY && process.env.RIGHTS_AUTH_COOKIE_NAMES && COPYRIGHT_PORTAL_HOSTS.includes(process.env.RIGHTS_AUTH_COOKIE_HOST ?? '')) };
+    if (action === 'list_sessions') {
+      z.object({}).strict().parse(payload);
+      const active = (await db().doc('rightsInfrastructure/capacity').get()).data()?.active ?? {};
+      const ids = Object.entries(active).filter(([id, value]) => RightsId.safeParse(id).success && (value as { uid?: unknown })?.uid === uid).map(([id]) => id);
+      if (!ids.length) return { sessions: [] };
+      const snapshots = await db().getAll(...ids.map(id => root(uid).collection('rightsSessions').doc(id)));
+      return { sessions: snapshots.flatMap(snapshot => {
+        const session = publicRightsSession(uid, snapshot.id, snapshot.data() ?? {}, Date.now());
+        return session ? [session] : [];
+      }) };
+    }
     if (action === 'catalog_entities') {
       const input = z.object({ after: z.string().min(1).max(160).optional() }).strict().parse(payload);
       let query = root(uid).collection('musicCatalogEntities').orderBy('__name__').limit(200);
