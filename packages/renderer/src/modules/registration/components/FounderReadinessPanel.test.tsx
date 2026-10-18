@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FounderReadinessPanel } from './FounderReadinessPanel';
 
@@ -26,18 +26,19 @@ describe('FounderReadinessPanel (ISSUE-1121)', () => {
     expect(screen.getByText(/Saved!/i)).toBeInTheDocument();
   });
 
-  it('opens RightsCopilotModal when Copilot Assistant button is clicked', () => {
-    render(<FounderReadinessPanel userId="test-user-3" />);
-
-    // Click the first Copilot Assistant button
-    const copilotButtons = screen.getAllByRole('button', { name: /Copilot Assistant/i });
-    expect(copilotButtons.length).toBeGreaterThan(0);
-
-    fireEvent.click(copilotButtons[0]);
-
-    // Modal opens
-    expect(screen.getByText(/Copilot Navigation Plan/i)).toBeInTheDocument();
-    expect(screen.getByText(/indii Privacy Guarantee/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Export Filing Dossier/i })).toBeInTheDocument();
+  it('opens the selected official portal with opener isolation', () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      render(<FounderReadinessPanel userId="test-user-3" />);
+      const buttons = screen.getAllByRole('button', { name: /Open official portal/i });
+      fireEvent.click(buttons[0]);
+      expect(open).toHaveBeenCalledWith(
+        'https://www.cisac.org/services/information-services/ipi',
+        '_blank',
+        'noopener,noreferrer',
+      );
+    } finally {
+      open.mockRestore();
+    }
   });
 });

@@ -11,15 +11,17 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { GoogleAuth } from 'google-auth-library';
 import { z } from 'zod';
 import { RightsId, RightsCaseSchema, RightsEvidenceSchema, CwrBatchInputSchema, buildCwrBatch, parseCwrAcknowledgments,
-  canonicalRightsJson, validateCopyrightCase, RIGHTS_LIMITS, type RightsCase } from '@indii/shared';
+  canonicalRightsJson, validateCopyrightCase, RIGHTS_LIMITS, isRightsSessionClosed, type RightsCase } from '@indii/shared';
 import { deliverApprovedCwr } from './deliverCwr';
 import { prepareSoundExchangeBulk } from '@indii/shared';
+import { createCanonicalMusicCatalogStore } from '../music/canonicalMusicCatalogStore';
+import { validateRightsEntityReferences, CanonicalMusicEntitySchema, RightsEntityId, COPYRIGHT_PORTAL_HOSTS, canApproveCwrExport } from '@indii/shared';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const db = () => getFirestore();
 const root = (uid: string) => db().collection('users').doc(uid);
-const Request = z.object({ action: z.enum(['capabilities', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
+const Request = z.object({ action: z.enum(['capabilities', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
 const CaseId = z.object({ caseId: RightsId }).passthrough();
 const SessionId = z.object({ sessionId: RightsId }).passthrough();
 const gc = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
@@ -82,7 +84,24 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
   const uid = request.auth.uid;
   try {
     const { action, payload } = Request.parse(request.data);
-    if (action === 'capabilities') return { hostedEnabled: process.env.RIGHTS_HOSTED_ENABLED === 'true', paymentEnabled: process.env.RIGHTS_PAYMENT_ENABLED === 'true', rememberEnabled: Boolean(process.env.RIGHTS_VAULT_BUCKET && process.env.RIGHTS_KMS_KEY && process.env.RIGHTS_AUTH_COOKIE_NAMES) };
+    if (action === 'capabilities') return { hostedEnabled: process.env.RIGHTS_HOSTED_ENABLED === 'true', paymentEnabled: process.env.RIGHTS_PAYMENT_ENABLED === 'true', rememberEnabled: Boolean(process.env.RIGHTS_VAULT_BUCKET && process.env.RIGHTS_KMS_KEY && process.env.RIGHTS_AUTH_COOKIE_NAMES && COPYRIGHT_PORTAL_HOSTS.includes(process.env.RIGHTS_AUTH_COOKIE_HOST ?? '')) };
+    if (action === 'catalog_entities') {
+      const input = z.object({ after: z.string().min(1).max(160).optional() }).strict().parse(payload);
+      let query = root(uid).collection('musicCatalogEntities').orderBy('__name__').limit(200);
+      if (input.after) query = query.startAfter(input.after);
+      const page = await query.get();
+      return { entities: page.docs.map(doc => CanonicalMusicEntitySchema.parse(doc.data())).filter(entity => ['person', 'organization', 'musical_work', 'sound_recording'].includes(entity.entityType)), next: page.size === 200 ? page.docs.at(-1)!.id : null };
+    }
+    if (action === 'create_entity') {
+      const input = z.object({ entityType: z.enum(['person', 'organization', 'musical_work', 'sound_recording']), name: z.string().trim().min(1).max(500) }).strict().parse(payload);
+      const now = new Date().toISOString();
+      return createCanonicalMusicCatalogStore().appendEntity(uid, { kind: 'user', id: uid }, {
+        schemaVersion: 'canonical-music-entity.v1', id: randomUUID(), entityType: input.entityType,
+        createdAt: now, updatedAt: now,
+        ...(input.entityType === 'person' ? { displayName: input.name, legalName: input.name } : input.entityType === 'organization' ? { name: input.name } : { title: input.name }),
+        provenance: { state: 'USER_DECLARED', sourceType: 'USER', sourceId: uid, evidence: [], observedAt: now, note: 'Explicitly created during rights preparation; identity does not establish ownership or filing authority.' },
+      });
+    }
     if (action === 'prepare_deposit') return await prepareDeposit(uid, payload);
     if (action === 'save_case') {
       const manifest = RightsCaseSchema.parse(payload);
@@ -95,6 +114,14 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
         if (!stored || work.deposit.path !== stored.path || work.deposit.generation !== stored.generation || work.deposit.bucket !== stored.bucket || work.deposit.byteSize !== stored.byteSize) throw new HttpsError('failed-precondition', 'Prepare and verify each uploaded deposit first.');
       }
       if (manifest.works.reduce((sum, w) => sum + w.deposit.byteSize, 0) > 1024 ** 3) throw new HttpsError('invalid-argument', 'The filing deposit bundle exceeds 1 GB.');
+      const entityRefs = [...new Set([...manifest.parties.map(p => p.entityId), ...manifest.works.map(w => w.entityId)])];
+      const entities = await Promise.all(entityRefs.map(async id => {
+        const snapshot = await root(uid).collection('musicCatalogEntities').doc(id).get();
+        if (!snapshot.exists) throw new HttpsError('failed-precondition', 'Link each party and work to your canonical catalog identity before saving.');
+        return CanonicalMusicEntitySchema.parse(snapshot.data());
+      }));
+      const identityErrors = validateRightsEntityReferences(manifest, entities);
+      if (identityErrors.length) throw new HttpsError('failed-precondition', identityErrors.join(' '));
       const errors = validateCopyrightCase(manifest);
       const manifestHash = digest(canonicalRightsJson(manifest));
       const filingId = `${manifest.caseId}_r${manifest.revision}`;
@@ -126,7 +153,7 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
         tx.create(ref.collection('evidence').doc(input.evidence.evidenceId), { evidence: input.evidence, hash: digest(canonicalRightsJson(input.evidence)), source: 'user_report', createdAt: FieldValue.serverTimestamp() });
         if (!['submitted', 'accepted', 'registered', 'rejected'].includes(current.data()?.state)) tx.update(ref, { state: 'outcome_unknown', evidenceSource: 'user_report', reportedExternalId: input.evidence.externalId });
       });
-      return { filingId: filing.filingId, saved: true, source: 'user_report' };
+      return { filingId: input.filingId ?? filing.filingId, saved: true, source: 'user_report' };
     }
     if (action === 'deliver_cwr') return deliverApprovedCwr(uid, RightsId.parse(payload.batchId));
     if (action === 'prepare_soundexchange') {
@@ -142,7 +169,13 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       const manifestHash = digest(canonicalRightsJson(input));
       const batchId = `cwr_${checksum.slice(0, 32)}_${manifestHash.slice(0, 24)}`;
       const path = `users/${uid}/rights/cwr/${batchId}/${result.filename}`;
-      await SAFE_BUCKET().file(path).save(result.text, { contentType: 'text/plain', resumable: false });
+      const object = SAFE_BUCKET().file(path);
+      try { await object.save(result.text, { contentType: 'text/plain', resumable: false, preconditionOpts: { ifGenerationMatch: 0 } }); }
+      catch (error) { if ((error as { code?: number }).code !== 412) throw error; }
+      const [objectMetadata] = await object.getMetadata();
+      const generation = String(objectMetadata.generation);
+      const [persistedBytes] = await SAFE_BUCKET().file(path, { generation }).download();
+      if (digest(persistedBytes) !== checksum) throw new HttpsError('failed-precondition', 'Stored batch bytes do not match the export.');
       const batchRef = root(uid).collection('rightsCwrBatches').doc(batchId);
       await db().runTransaction(async tx => {
         const filenameRef = root(uid).collection('rightsCwrFilenames').doc(result.filename);
@@ -152,7 +185,7 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
         if (filenameClaim && filenameClaim.batchId !== batchId) throw new HttpsError('already-exists', 'Use a new file sequence; this recipient filename already identifies another batch.');
         const { works: _works, ...header } = input;
         tx.set(filenameRef, { batchId, checksum });
-        tx.create(batchRef, { input: header, manifestHash, checksum, path, filename: result.filename, profileVersion: result.profileVersion, state: 'exported', createdAt: FieldValue.serverTimestamp() });
+        tx.create(batchRef, { input: header, manifestHash, checksum, path, generation, filename: result.filename, profileVersion: result.profileVersion, state: 'exported', createdAt: FieldValue.serverTimestamp() });
       });
       const writer = db().bulkWriter();
       for (const item of result.transactions) writer.set(batchRef.collection('transactions').doc(`${item.group}_${item.transaction}`), item);
@@ -164,7 +197,7 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       const ref = root(uid).collection('rightsCwrBatches').doc(input.batchId);
       await db().runTransaction(async tx => {
         const batch = (await tx.get(ref)).data();
-        if (!batch || batch.checksum !== input.checksum) throw new HttpsError('failed-precondition', 'Approve the exact current batch.');
+        if (!batch || batch.checksum !== input.checksum || !canApproveCwrExport(batch.state)) throw new HttpsError('failed-precondition', 'Approve the exact current export. Claimed or transmitted files require reconciliation.');
         tx.update(ref, { approval: { approverUid: uid, checksum: input.checksum, manifestHash: batch.manifestHash, approvedAt: FieldValue.serverTimestamp() }, state: 'approved_export' });
       });
       return { state: 'approved_export', delivered: false, reason: 'Receiver-approved submitter transport is not configured. Download this approved file for official delivery.' };
@@ -210,13 +243,18 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       if (payload.manifestHash !== filing.manifestHash) throw new HttpsError('failed-precondition', 'Review and save the current manifest before launching.');
       const errors = validateCopyrightCase(filing.manifest);
       if (errors.length) throw new HttpsError('failed-precondition', errors.join(' '));
+      const project = process.env.GCLOUD_PROJECT;
+      const job = process.env.RIGHTS_BROWSER_JOB;
+      const brokerUrl = process.env.RIGHTS_BROKER_URL;
+      if (!project || !job || !brokerUrl) throw new HttpsError('failed-precondition', 'Hosted browser infrastructure is not configured.');
       const sessionId = randomUUID();
       const workerSecret = randomBytes(32).toString('base64url');
       const ref = root(uid).collection('rightsSessions').doc(sessionId);
       await db().runTransaction(async tx => {
         const capacityRef = db().doc('rightsInfrastructure/capacity');
         const capacity = (await tx.get(capacityRef)).data() ?? {};
-        const active = Object.fromEntries(Object.entries(capacity.active ?? {}).filter(([, v]) => (v as { expiresAtMs: number }).expiresAtMs > Date.now())) as Record<string, { uid: string; expiresAtMs: number }>;
+        // Expired reservations remain occupied until shutdown is confirmed by recovery.
+        const active = (capacity.active ?? {}) as Record<string, { uid: string; expiresAtMs: number }>;
         if (Object.values(active).some(s => s.uid === uid) || Object.keys(active).length >= RIGHTS_LIMITS.globalSessions) throw new HttpsError('resource-exhausted', 'Browser capacity is occupied. End your active session or try again later.');
         const filingRef = root(uid).collection('rightsFilings').doc(filing.filingId);
         const currentFiling = (await tx.get(filingRef)).data();
@@ -224,19 +262,25 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
         const expiresAtMs = Date.now() + RIGHTS_LIMITS.sessionMs;
         tx.set(capacityRef, { active: { ...active, [sessionId]: { uid, expiresAtMs } } });
         tx.create(ref, { ownerUid: uid, caseId, filingId: filing.filingId, manifestHash: filing.manifestHash, state: 'queued', control: 'none', controlGeneration: 0,
-          executionSecretHash: digest(workerSecret), expiresAtMs, lastActivityAtMs: Date.now(), paymentEnabled: process.env.RIGHTS_PAYMENT_ENABLED === 'true', createdAt: FieldValue.serverTimestamp() });
+          executionSecretHash: digest(workerSecret), createdAtMs: Date.now(), jobResource: `projects/${project}/locations/us-central1/jobs/${job}`, expiresAtMs, lastActivityAtMs: Date.now(), paymentEnabled: process.env.RIGHTS_PAYMENT_ENABLED === 'true', createdAt: FieldValue.serverTimestamp() });
         tx.update(filingRef, { state: 'in_progress' });
       });
       try {
-        const project = process.env.GCLOUD_PROJECT;
-        const job = process.env.RIGHTS_BROWSER_JOB;
-        const brokerUrl = process.env.RIGHTS_BROKER_URL;
-        if (!project || !job || !brokerUrl) throw new Error('Worker not configured');
-        const response = await gc.request<{ name?: string }>({ method: 'POST', url: `https://run.googleapis.com/v2/projects/${project}/locations/us-central1/jobs/${job}:run`,
+        const response = await gc.request<{ name?: string }>({ method: 'POST', retry: false, url: `https://run.googleapis.com/v2/projects/${project}/locations/us-central1/jobs/${job}:run`,
           data: { overrides: { containerOverrides: [{ env: [{ name: 'RIGHTS_SESSION_ID', value: sessionId }, { name: 'RIGHTS_OWNER_UID', value: uid }, { name: 'RIGHTS_EXECUTION_SECRET', value: workerSecret }, { name: 'RIGHTS_BROKER_URL', value: brokerUrl }] }], taskCount: 1, timeout: '7500s' } } });
-        await ref.update({ operationName: response.data.name ?? null, state: 'starting' });
+        await db().runTransaction(async tx => {
+          const live = (await tx.get(ref)).data();
+          if (live) tx.update(ref, { operationName: response.data.name ?? null, ...(live.state === 'queued' ? { state: 'starting' } : {}) });
+        });
       } catch {
-        await ref.update({ state: 'failed', control: 'none', errorCode: 'DISPATCH_UNCONFIRMED' });
+        await db().runTransaction(async tx => {
+          const live = (await tx.get(ref)).data();
+          const filingRef = root(uid).collection('rightsFilings').doc(filing.filingId);
+          const current = (await tx.get(filingRef)).data();
+          if (!live || ['ended', 'failed'].includes(live.state)) return;
+          tx.update(ref, { state: 'termination_pending', requestedControl: 'end', control: 'none', controlGeneration: live.controlGeneration + 1, stopReason: 'launch_unconfirmed', errorCode: 'DISPATCH_UNCONFIRMED' });
+          if (current?.state === 'in_progress') tx.update(filingRef, { state: 'outcome_unknown' });
+        });
         throw new HttpsError('unavailable', 'Browser launch could not be confirmed. Do not retry until this session is reconciled.');
       }
       return { sessionId, brokerUrl: process.env.RIGHTS_BROKER_URL };
@@ -247,10 +291,22 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       const ticket = randomBytes(32).toString('base64url');
       await db().runTransaction(async tx => {
         const session = (await tx.get(ref)).data();
-        if (!session || session.expiresAtMs <= Date.now() || ['ended', 'failed'].includes(session.state)) throw new HttpsError('failed-precondition', 'Session has ended.');
+        if (!session || session.expiresAtMs <= Date.now() || isRightsSessionClosed(session.state)) throw new HttpsError('failed-precondition', 'Session has ended.');
         tx.create(db().collection('rightsConnectionTickets').doc(digest(ticket)), { ownerUid: uid, sessionId, expiresAtMs: Date.now() + RIGHTS_LIMITS.ticketMs });
       });
       return { ticket, brokerUrl: process.env.RIGHTS_BROKER_URL };
+    }
+    if (action === 'select_deposits') {
+      const input = z.object({ sessionId: RightsId, requestId: RightsId, workIds: z.array(RightsEntityId).min(1).max(40) }).strict().parse(payload);
+      await db().runTransaction(async tx => {
+        const session = (await tx.get(ref)).data();
+        if (!session || session.control !== 'human' || session.state !== 'connected' || session.expiresAtMs <= Date.now()) throw new HttpsError('failed-precondition', 'Take control before selecting deposits.');
+        const filing = (await tx.get(root(uid).collection('rightsFilings').doc(session.filingId))).data();
+        const manifest = RightsCaseSchema.parse(filing?.manifest);
+        if (new Set(input.workIds).size !== input.workIds.length || input.workIds.some(id => !manifest.works.some(w => w.entityId === id))) throw new HttpsError('invalid-argument', 'Select deposits from this filing only.');
+        tx.create(ref.collection('commands').doc(randomUUID()), { actionId: 'select_deposits', requestId: input.requestId, workIds: input.workIds, generation: session.controlGeneration, state: 'pending', createdAtMs: Date.now() });
+      });
+      return { requested: true };
     }
     if (action === 'execute_action') {
       const actionId = z.enum(['open_application', 'fill_title', 'fill_year']).parse(payload.actionId);
@@ -265,8 +321,8 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       await db().runTransaction(async tx => {
         const snap = await tx.get(ref);
         const session = snap.data();
-        if (!session || session.expiresAtMs <= Date.now() || ['ended', 'failed'].includes(session.state)) throw new HttpsError('failed-precondition', 'Session has ended.');
-        tx.update(ref, { requestedControl: action === 'take_control' ? 'human' : action === 'return_control' ? 'agent' : 'end',
+        if (!session || ['ended', 'failed'].includes(session.state) || (action !== 'end_session' && (session.expiresAtMs <= Date.now() || isRightsSessionClosed(session.state)))) throw new HttpsError('failed-precondition', 'Session has ended.');
+        tx.update(ref, { ...(action === 'end_session' ? { state: 'termination_pending', stopReason: 'artist_requested' } : {}), requestedControl: action === 'take_control' ? 'human' : action === 'return_control' ? 'agent' : 'end',
           control: 'none', controlGeneration: session.controlGeneration + 1, lastActivityAtMs: Date.now() });
       });
       return { requested: true };

@@ -1764,6 +1764,10 @@ service cloud.firestore {
     // Registration Center stores per-user, per-track org status under:
     // /registrations/{userId}/tracks/{trackId}/orgs/{orgId}
     match /registrations/{userId}/tracks/{trackId}/orgs/{orgId} {
+      match /filings/{filingId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
       allow read: if isOwner(userId);
       // Legacy clients may save preparations, but never assert external success.
       allow create, update: if isOwner(userId)

@@ -26,11 +26,11 @@ export async function deliverApprovedCwr(uid: string, batchId: string) {
   if (profile.senderIpi.padStart(11, '0') !== batch.input.sender.ipi.padStart(11, '0')) throw new HttpsError('permission-denied', 'This approved submitter does not match the file sender.');
   const addresses = await lookup(profile.host, { all: true, family: 4 });
   if (!addresses.length || addresses.some(({ address }) => /^(?:0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(address))) throw new HttpsError('failed-precondition', 'Recipient host is not a public approved endpoint.');
-  const [bytes] = await getStorage().bucket().file(batch.path).download();
+  const [bytes] = await getStorage().bucket().file(batch.path, batch.generation ? { generation: batch.generation } : undefined).download();
   if (hash(bytes) !== batch.checksum || batch.approval?.checksum !== batch.checksum || batch.approval?.manifestHash !== batch.manifestHash) throw new HttpsError('failed-precondition', 'The exact file and manifest must be approved.');
   await db.runTransaction(async tx => {
     const latest = (await tx.get(ref)).data();
-    if (latest?.state !== 'approved_export') throw new HttpsError('failed-precondition', 'This transfer is already claimed or requires reconciliation.');
+    if (latest?.state !== 'approved_export' || latest.checksum !== batch.checksum || latest.manifestHash !== batch.manifestHash || latest.approval?.checksum !== batch.checksum || latest.approval?.manifestHash !== batch.manifestHash) throw new HttpsError('failed-precondition', 'This transfer is already claimed or requires reconciliation.');
     tx.update(ref, { state: 'delivery_claimed', claimedAt: FieldValue.serverTimestamp(), authorityReceiptId: profile.authorityReceiptId, onboardingReceiptId: profile.onboardingReceiptId });
   });
   const client = new SftpClient();

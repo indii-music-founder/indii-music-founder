@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { RightsCaseSchema, validateCopyrightCase, type RightsCase, type CopyrightWork } from '@indii/shared';
+import React, { useEffect, useRef, useState } from 'react';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
+import { RightsCaseSchema, validateCopyrightCase, type RightsCase, type CopyrightWork, type CanonicalMusicEntity } from '@indii/shared';
 import { db } from '@/services/firebase';
 import { downloadRightsFile, rightsOperation, saveRightsCase, uploadRightsDeposit } from '@/services/rights/HostedRightsService';
 import { HostedRightsViewport } from './HostedRightsViewport';
@@ -25,6 +25,8 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
   const [authorityEvidence, setAuthorityEvidence] = useState('');
   const [cases, setCases] = useState<Array<Record<string, any>>>([]);
   const [filings, setFilings] = useState<Array<Record<string, any>>>([]);
+  const [entities, setEntities] = useState<CanonicalMusicEntity[]>([]);
+  const [partyKinds, setPartyKinds] = useState<Record<string, 'person' | 'organization'>>({});
   const [savedFilingId, setSavedFilingId] = useState('');
   const [savedHash, setSavedHash] = useState('');
   const [sessionId, setSessionId] = useState('');
@@ -33,13 +35,43 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState('');
+  const receiptReport = useRef<{ key: string; evidence: { evidenceId: string; kind: 'user_report'; externalId: string; observedAt: string } }>();
+  const reportedEvidence = () => {
+    const key = JSON.stringify([caseId, savedFilingId, receipt]);
+    if (receiptReport.current?.key !== key) receiptReport.current = { key, evidence: { evidenceId: uid(), kind: 'user_report', externalId: receipt, observedAt: new Date().toISOString() } };
+    return receiptReport.current.evidence;
+  };
   useEffect(() => {
     const a = onSnapshot(collection(db, 'users', userId, 'rightsCases'), snap => setCases(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))), () => setMessage('Saved filing cases could not be loaded.'));
     const b = onSnapshot(collection(db, 'users', userId, 'rightsFilings'), snap => setFilings(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))), () => setMessage('Filing evidence could not be loaded.'));
+    let consentExpiry: ReturnType<typeof setTimeout> | undefined;
+    setRemember(false);
+    const consent = onSnapshot(doc(db, 'users', userId, 'rightsPortalConsents', 'loc_copyright'), snapshot => {
+      clearTimeout(consentExpiry);
+      const value = snapshot.data();
+      const remaining = Number(value?.expiresAtMs ?? 0) - Date.now();
+      setRemember(value?.enabled === true && remaining > 0);
+      if (value?.enabled === true && remaining > 0) consentExpiry = setTimeout(() => setRemember(false), Math.min(remaining, 7 * 86400_000));
+    }, () => { setRemember(false); setMessage('Remembered-login consent could not be loaded.'); });
+    let cancelled = false;
+    void (async () => {
+      let after: string | undefined; const all: CanonicalMusicEntity[] = [];
+      do { const page = await rightsOperation<{ entities: CanonicalMusicEntity[]; next: string | null }>('catalog_entities', after ? { after } : {}); all.push(...page.entities); after = page.next ?? undefined; } while (after && !cancelled);
+      if (!cancelled) setEntities(all);
+    })().catch(() => setMessage('Canonical catalog identities could not be loaded.'));
     void rightsOperation<typeof capabilities>('capabilities').then(setCapabilities).catch(() => {});
-    return () => { a(); b(); };
+    return () => { cancelled = true; clearTimeout(consentExpiry); consent(); a(); b(); };
   }, [userId]);
   const changeWork = (id: string, update: Partial<DraftWork>) => { setSavedHash(''); setWorks(prev => prev.map(w => w.entityId === id ? { ...w, ...update } : w)); };
+  const linkWork = (oldId: string, nextId: string) => {
+    if (!nextId || works.some(w => w.entityId === nextId && w.entityId !== oldId)) return;
+    setSavedHash('');
+    setWorks(prev => prev.map(w => ({ ...w, ...(w.entityId === oldId ? { entityId: nextId } : {}), ...(w.embodiedWorkId === oldId ? { embodiedWorkId: nextId } : {}) })));
+  };
+  const createIdentity = async (entityType: 'person' | 'organization' | CopyrightWork['kind'], name: string) => {
+    const entity = await rightsOperation<CanonicalMusicEntity>('create_entity', { entityType, name });
+    setEntities(prev => [...prev, entity]); return entity.id;
+  };
   const selectTrack = (track: CatalogTrack) => {
     setSavedHash('');
     const add = (workKind: CopyrightWork['kind']): DraftWork => ({
@@ -86,15 +118,20 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
     </div>
     <section className="space-y-3"><h3 className="font-semibold">Authors and claimants</h3>
       {parties.map(p => <div key={p.entityId} className="grid md:grid-cols-3 gap-2">
+        <label>Catalog identity<select className={inputStyle} value={entities.some(e => e.id === p.entityId) ? p.entityId : ''} onChange={e => { const id = e.target.value; if (!id || parties.some(item => item.entityId === id)) return; const oldId = p.entityId; setSavedHash(''); setParties(prev => prev.map(item => item.entityId === oldId ? { ...item, entityId: id } : item)); setWorks(prev => prev.map(w => ({ ...w, authorIds: w.authorIds.map(a => a === oldId ? id : a), claimantIds: w.claimantIds.map(a => a === oldId ? id : a) }))); if (certifier === oldId) setCertifier(id); }}><option value="">Select existing person or organization</option>{entities.filter(e => e.entityType === 'person' || e.entityType === 'organization').map(e => <option key={e.id} value={e.id}>{e.entityType === 'person' ? e.legalName ?? e.displayName : e.entityType === 'organization' ? e.name : ''}</option>)}</select></label>
+        {!entities.some(e => e.id === p.entityId) && <><label>New identity type<select className={inputStyle} value={partyKinds[p.entityId] ?? 'person'} onChange={e => setPartyKinds(prev => ({ ...prev, [p.entityId]: e.target.value as 'person' | 'organization' }))}><option value="person">Person</option><option value="organization">Organization</option></select></label><button type="button" disabled={busy || !p.legalName.trim()} onClick={() => void run(async () => { const oldId = p.entityId; const id = await createIdentity(partyKinds[oldId] ?? 'person', p.legalName); setParties(prev => prev.map(item => item.entityId === oldId ? { ...item, entityId: id } : item)); setWorks(prev => prev.map(w => ({ ...w, authorIds: w.authorIds.map(a => a === oldId ? id : a), claimantIds: w.claimantIds.map(a => a === oldId ? id : a) }))); if (certifier === oldId) setCertifier(id); setSavedHash(''); })}>Create named catalog identity</button></>}
+
         <Field label="Legal name" value={p.legalName} onChange={legalName => { setSavedHash(''); setParties(prev => prev.map(item => item.entityId === p.entityId ? { ...item, legalName } : item)); }} />
         <Field label="Postal address" value={p.address} onChange={address => { setSavedHash(''); setParties(prev => prev.map(item => item.entityId === p.entityId ? { ...item, address } : item)); }} />
         <Field label="Citizenship or domicile" value={p.citizenshipOrDomicile} onChange={citizenshipOrDomicile => { setSavedHash(''); setParties(prev => prev.map(item => item.entityId === p.entityId ? { ...item, citizenshipOrDomicile } : item)); }} />
       </div>)}
-      <button type="button" onClick={() => setParties(prev => [...prev, { entityId: uid(), legalName: '', address: '', citizenshipOrDomicile: '' }])}>Add author or claimant</button>
+      <button type="button" onClick={() => { setSavedHash(''); setParties(prev => [...prev, { entityId: uid(), legalName: '', address: '', citizenshipOrDomicile: '' }]); }}>Add author or claimant</button>
     </section>
     <section><h3 className="font-semibold">Choose catalog works</h3><div className="flex flex-wrap gap-2">{tracks.filter(t => !works.some(w => w.trackIds.includes(t.id))).map(t => <button key={t.id} type="button" onClick={() => selectTrack(t)} className="border border-white/20 rounded px-3 py-2">{t.title}</button>)}</div></section>
     {works.map(w => <section key={w.entityId} className="border border-white/15 rounded-lg p-4 space-y-3">
       <div className="flex justify-between"><h3>{w.title} · {w.kind === 'musical_work' ? 'Composition' : 'Sound recording'}</h3><button onClick={() => { setWorks(prev => prev.filter(item => item.entityId !== w.entityId)); setSavedHash(''); }}>Remove</button></div>
+      <label>Canonical catalog identity<select className={inputStyle} value={entities.some(e => e.id === w.entityId && e.entityType === w.kind) ? w.entityId : ''} onChange={e => linkWork(w.entityId, e.target.value)}><option value="">Select existing {w.kind === 'musical_work' ? 'composition' : 'recording'}</option>{entities.filter(e => e.entityType === w.kind).map(e => <option key={e.id} value={e.id}>{'title' in e ? e.title : e.id}</option>)}</select></label>
+      {!entities.some(e => e.id === w.entityId && e.entityType === w.kind) && <button type="button" disabled={busy || !w.title.trim()} onClick={() => void run(async () => linkWork(w.entityId, await createIdentity(w.kind, w.title)))}>Create identity for this {w.kind === 'musical_work' ? 'composition' : 'recording'}</button>}
       <div className="grid md:grid-cols-2 gap-3"><Field label="Title" value={w.title} onChange={title => changeWork(w.entityId, { title })} /><Field label="Year of creation" value={w.yearOfCreation ? String(w.yearOfCreation) : ''} onChange={year => changeWork(w.entityId, { yearOfCreation: Number(year) })} /></div>
       {(['authorIds', 'claimantIds'] as const).map(field => <fieldset key={field}><legend>{field === 'authorIds' ? 'Authors of this work' : 'Copyright claimants'}</legend><div className="flex gap-3 flex-wrap">{parties.map(p => <label key={p.entityId}><input type="checkbox" checked={w[field].includes(p.entityId)} onChange={e => changeWork(w.entityId, { [field]: e.target.checked ? [...w[field], p.entityId] : w[field].filter(id => id !== p.entityId) })} /> {p.legalName || 'Enter legal name above'}</label>)}</div></fieldset>)}
       <Field label="Transfer basis, when a claimant is not an author" value={w.transferBasis ?? ''} onChange={transferBasis => changeWork(w.entityId, { transferBasis: transferBasis || undefined })} />
@@ -121,8 +158,8 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
     <label className="block"><input type="checkbox" checked={remember} disabled={!capabilities.rememberEnabled || busy} onChange={e => { const enabled = e.target.checked; void run(async () => { await rightsOperation(enabled ? 'remember_login' : 'forget_login'); setRemember(enabled); }); }} /> Remember approved portal login for seven days. You can revoke it here.</label>
     {sessionId && <HostedRightsViewport sessionId={sessionId} />}
     <section className="space-y-2"><h3>Report an official confirmation</h3><Field label="Service Request or confirmation number" value={receipt} onChange={setReceipt} />
-      <button disabled={!receipt || !savedHash || busy} onClick={() => void run(async () => { await rightsOperation('record_evidence', { caseId, filingId: savedFilingId, evidence: { evidenceId: uid(), kind: 'user_report', externalId: receipt, observedAt: new Date().toISOString() } }); setMessage('Your report is saved. Official filing outcome still requires reconciliation.'); })}>Save reported confirmation</button>
-      <button disabled={!receipt} onClick={() => downloadRightsFile('copyright-receipt.json', JSON.stringify({ caseId, revision, externalId: receipt, source: 'user_report' }, null, 2), 'application/json')}>Download receipt report</button>
+      <button disabled={!receipt || !savedHash || busy} onClick={() => void run(async () => { await rightsOperation('record_evidence', { caseId, filingId: savedFilingId, evidence: reportedEvidence() }); setMessage('Your report is saved. Official filing outcome still requires reconciliation.'); })}>Save reported confirmation</button>
+      <button disabled={!receipt} onClick={() => downloadRightsFile('copyright-receipt.json', JSON.stringify({ caseId, filingId: savedFilingId, revision, manifestHash: savedHash, evidence: reportedEvidence(), source: 'user_report' }, null, 2), 'application/json')}>Download receipt report</button>
     </section>
     <section><h3>Filing history</h3>{filings.map(f => <p key={f.id} className="text-sm">{f.id} · {String(f.state).replaceAll('_', ' ')} · {f.evidenceSource ?? 'legacy evidence not verified'}</p>)}</section>
     {message && <p role="status" className="text-sm text-amber-200">{message}</p>}

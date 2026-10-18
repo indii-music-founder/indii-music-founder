@@ -1,3 +1,4 @@
+import { COPYRIGHT_PORTAL_HOSTS } from '@indii/shared';
 import { randomBytes, createCipheriv, createDecipheriv } from 'node:crypto';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
@@ -7,7 +8,7 @@ const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-pl
 interface AuthCookie { name: string; value: string; domain: string; path: string; expires: number; httpOnly: boolean; secure: boolean; sameSite: 'Strict' | 'Lax' | 'None' }
 const consentRef = (uid: string) => getFirestore().doc(`users/${uid}/rightsPortalConsents/loc_copyright`);
 const aad = (uid: string, version: number) => Buffer.from(JSON.stringify({ uid, portal: 'loc_copyright', version }));
-const vaultReady = () => Boolean(process.env.RIGHTS_VAULT_BUCKET && process.env.RIGHTS_KMS_KEY && process.env.RIGHTS_AUTH_COOKIE_NAMES);
+const vaultReady = () => Boolean(process.env.RIGHTS_VAULT_BUCKET && process.env.RIGHTS_KMS_KEY && process.env.RIGHTS_AUTH_COOKIE_NAMES && COPYRIGHT_PORTAL_HOSTS.includes(process.env.RIGHTS_AUTH_COOKIE_HOST ?? ''));
 
 /** No general storageState blobs: only reviewed eCO authentication cookies. */
 export async function rememberCookies(uid: string, raw: unknown): Promise<void> {
@@ -16,10 +17,11 @@ export async function rememberCookies(uid: string, raw: unknown): Promise<void> 
   if (!before?.enabled || before.expiresAtMs <= Date.now()) return;
   const allow = new Set(process.env.RIGHTS_AUTH_COOKIE_NAMES!.split(',').map(s => s.trim()));
   const cookies: AuthCookie[] = raw.filter(c => c && typeof c === 'object' && allow.has(c.name)
-    && c.domain.replace(/^\./, '') === 'eco.copyright.gov' && c.secure && c.httpOnly && typeof c.value === 'string' && c.value.length <= 4096)
+    && typeof c.domain === 'string' && c.domain.replace(/^\./, '') === process.env.RIGHTS_AUTH_COOKIE_HOST && c.secure && c.httpOnly && typeof c.value === 'string' && c.value.length <= 4096)
     .map(c => ({ name: c.name, value: c.value, domain: c.domain, path: c.path, expires: c.expires, httpOnly: c.httpOnly, secure: c.secure, sameSite: c.sameSite }));
   if (!cookies.length || cookies.length > 20) return;
   const key = randomBytes(32), iv = randomBytes(12);
+  try {
   const cipher = createCipheriv('aes-256-gcm', key, iv);
   cipher.setAAD(aad(uid, before.version));
   const ciphertext = Buffer.concat([cipher.update(JSON.stringify({ cookies, origins: [] })), cipher.final()]);
@@ -30,7 +32,7 @@ export async function rememberCookies(uid: string, raw: unknown): Promise<void> 
   await file.save(JSON.stringify({ version: before.version, expiresAtMs: before.expiresAtMs, ciphertext: ciphertext.toString('base64'), iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64'), wrappedKey: wrapped.data.ciphertext }), { resumable: false, metadata: { contentType: 'application/json', cacheControl: 'no-store' } });
   const after = (await consentRef(uid).get()).data();
   if (!after?.enabled || after.version !== before.version) await file.delete({ ignoreNotFound: true });
-  key.fill(0);
+  } finally { key.fill(0); }
 }
 
 export async function restoreCookies(uid: string): Promise<unknown | undefined> {

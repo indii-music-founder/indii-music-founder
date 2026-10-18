@@ -51,6 +51,12 @@ export * from './types/frameChain.js';
 export * from './types/nle.js';
 export * from './types/rightsRegistration.js';
 export * from './rights/contracts.js';
+export * from './rights/sessionLifecycle.js';
+export * from './rights/entityReferences.js';
+export * from './rights/depositSelection.js';
+export * from './rights/portalOrigins.js';
+export * from './rights/copyrightRoutes.js';
+export * from './rights/cwrLifecycle.js';
 export * from './rights/cwr.js';
 export * from './rights/soundExchange.js';
 // types/videoRendererSuite.js is deliberately NOT exported here — it is a

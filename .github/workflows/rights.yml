@@ -29,5 +29,11 @@ jobs:
       - run: node node_modules/electron/install.js
       - run: npm run typecheck
       - name: Rights contracts and legacy structural regressions
-        run: npx vitest run packages/shared/src/rights packages/shared/src/types/rightsRegistration.test.ts packages/renderer/src/services/rights/RightsCopilotService.test.ts packages/renderer/src/services/publishing/PublishingRightsCompiler.test.ts packages/main/src/handlers/rightsCopilot.test.ts packages/firebase/src/mcp/tools/__tests__/draftCwrRegistration.test.ts packages/renderer/src/modules/registration/components/RightsCopilotModal.test.tsx packages/renderer/src/modules/registration/services/RegistrationCatalog.test.ts
+        run: npx vitest run packages/shared/src/rights packages/shared/src/types/rightsRegistration.test.ts packages/renderer/src/services/rights/RightsCopilotService.test.ts packages/renderer/src/services/publishing/PublishingRightsCompiler.test.ts packages/main/src/handlers/rightsCopilot.test.ts packages/firebase/src/mcp/tools/__tests__/draftCwrRegistration.test.ts packages/renderer/src/modules/registration/components/RightsCopilotModal.test.tsx packages/renderer/src/modules/registration/services/RegistrationCatalog.test.ts packages/renderer/src/modules/registration/components/FounderReadinessPanel.test.tsx
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Rights authorization rules (local emulator only)
+        run: npx firebase emulators:exec --project demo-rights-rules --only firestore 'npx vitest run --config vitest.rules.config.ts packages/firebase/src/test/security/rights.rules.test.ts'
       - run: npm run build -w packages/rights-session-broker && npm run build -w packages/rights-browser-worker

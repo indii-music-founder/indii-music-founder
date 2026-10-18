@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
+import { FilingStateSchema } from '@indii/shared';
 import type { CatalogIntelligenceReport } from '@indii/shared';
 import { CatalogRail } from './components/CatalogRail';
 import {
@@ -38,13 +39,13 @@ async function loadRegistrationStates(
   const results = await Promise.all(
     trackIds.map(trackId =>
       getDocs(collection(db, `registrations/${userId}/tracks/${trackId}/orgs`))
-        .then(snap => ({ trackId, snap }))
+        .then(async snap => ({ trackId, snap, projections: await getDocs(collection(db, `registrations/${userId}/tracks/${trackId}/orgs/loc/filings`)) }))
     )
   );
 
   const states: Record<string, TrackRegistrationState> = {};
-  for (const { trackId, snap } of results) {
-    if (snap.empty) continue;
+  for (const { trackId, snap, projections } of results) {
+    if (snap.empty && projections.empty) continue;
     const orgs: TrackRegistrationState['orgs'] = {};
     let confirmed = 0;
     snap.docs.forEach(doc => {
@@ -52,7 +53,8 @@ async function loadRegistrationStates(
       const orgId = doc.id as OrgId;
       orgs[orgId] = {
         orgId,
-        status: d.status,
+        status: ['submitted', 'confirmed'].includes(d.status) ? 'legacy_unverified' : d.status,
+        ...(!d.evidenceSource ? { legacyStatus: d.status, evidenceSource: 'legacy_unverified' } : { evidenceSource: d.evidenceSource }),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         submittedAt: (d.submittedAt && typeof (d.submittedAt as any).toDate === 'function') ? (d.submittedAt as any).toDate() : (d.submittedAt ? new Date(d.submittedAt as any) : undefined),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,12 +65,29 @@ async function loadRegistrationStates(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         lastUpdated: (d.lastUpdated && typeof (d.lastUpdated as any).toDate === 'function') ? (d.lastUpdated as any).toDate() : (d.lastUpdated ? new Date(d.lastUpdated as any) : new Date()),
       };
-      if (d.status === 'confirmed') confirmed++;
+      if (d.status === 'confirmed' && d.evidenceSource === 'external_verified') confirmed++;
     });
+    if (!projections.empty) {
+      const current = new Map<string, { filingId: string; revision: number; state: ReturnType<typeof FilingStateSchema.parse>; evidenceSource: string; at: Date }>();
+      for (const row of projections.docs) {
+        const data = row.data();
+        const parsed = FilingStateSchema.safeParse(data.filingState);
+        if (!parsed.success || typeof data.caseId !== 'string' || !Number.isInteger(data.revision)) continue;
+        if ((current.get(data.caseId)?.revision ?? 0) < data.revision) current.set(data.caseId, { filingId: row.id, revision: data.revision, state: parsed.data, evidenceSource: String(data.evidenceSource ?? 'none'), at: data.projectedAt?.toDate?.() ?? new Date(0) });
+      }
+      const filings = [...current.values()];
+      const order = ['outcome_unknown', 'rejected', 'needs_information', 'draft', 'ready', 'in_progress', 'submitted', 'accepted', 'registered'] as const;
+      const state = order.find(value => filings.some(f => f.state === value));
+      if (state) {
+        orgs.loc = { orgId: 'loc', status: state, filingIds: filings.map(f => f.filingId), evidenceSource: 'server_filing', lastUpdated: new Date(Math.max(...filings.map(f => f.at.getTime()))) };
+
+      }
+    }
+    confirmed = Object.values(orgs).filter(record => record?.status === 'registered' || (record?.status === 'confirmed' && record.evidenceSource === 'external_verified')).length;
     states[trackId] = {
       trackId,
       orgs,
-      completenessScore: Math.round((confirmed / snap.docs.length) * 100),
+      completenessScore: Math.round((confirmed / Math.max(1, Object.keys(orgs).length)) * 100),
     };
   }
   return states;

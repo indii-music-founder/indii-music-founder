@@ -2328,3 +2328,7 @@ export { queryKnowledgeBase } from './functions/knowledge/query';
 export { createPurgeIntent, purgeTrashItems } from './functions/trash/trashFunctions';
 export { preparePrintHandoff } from './functions/print/preparePrintHandoff';
 export { enqueuePrintJob } from './functions/print/enqueuePrintJob';
+
+export { reconcileRightsSessionsScheduled } from './functions/rights/reconcileRightsSessions';
+
+export { projectRightsFiling } from './functions/rights/projectRightsFiling';

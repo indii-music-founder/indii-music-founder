@@ -19,6 +19,14 @@ const STATUS_CONFIG: Record<RegistrationStatus, {
   color: string;
   dot: string;
 }> = {
+  draft: { icon: Circle, label: 'Draft', color: 'text-gray-400', dot: 'bg-gray-500' },
+  needs_information: { icon: AlertCircle, label: 'Needs information', color: 'text-amber-400', dot: 'bg-amber-400' },
+  ready: { icon: Circle, label: 'Ready to file', color: 'text-blue-400', dot: 'bg-blue-400' },
+  outcome_unknown: { icon: AlertCircle, label: 'Outcome needs review', color: 'text-amber-400', dot: 'bg-amber-400' },
+  accepted: { icon: Clock, label: 'Accepted — awaiting registration', color: 'text-blue-400', dot: 'bg-blue-400' },
+  rejected: { icon: AlertCircle, label: 'Rejected', color: 'text-red-400', dot: 'bg-red-400' },
+  registered: { icon: CheckCircle2, label: 'Registered', color: 'text-green-400', dot: 'bg-green-400' },
+  legacy_unverified: { icon: AlertCircle, label: 'Prior record — provenance missing', color: 'text-amber-400', dot: 'bg-amber-400' },
   not_started: { icon: Circle, label: 'Not started', color: 'text-gray-500', dot: 'bg-gray-600' },
   in_progress: { icon: Clock, label: 'In progress', color: 'text-yellow-400', dot: 'bg-yellow-400' },
   submitted: { icon: Clock, label: 'Submitted', color: 'text-blue-400', dot: 'bg-blue-400' },
@@ -32,7 +40,7 @@ const STATUS_CONFIG: Record<RegistrationStatus, {
 
 
 export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected, onSelect }: OrgStatusCardProps) {
-  const cfg = STATUS_CONFIG[status];
+  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.legacy_unverified;
   const StatusIcon = cfg.icon;
 
   return (
