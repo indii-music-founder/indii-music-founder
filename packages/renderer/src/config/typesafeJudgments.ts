@@ -8737,7 +8737,23 @@ export async function judgeCatalogCollisionRisk(
 // Literal text in a painted image region (consumer: EditingService)
 // ---------------------------------------------------------------------------
 
-const MASKED_TEXT_MIN_CONFIDENCE = 0.95;
+// Choice confidence measures distribution concentration, not winner probability.
+// The live A–G requests returned 0.92–0.94 candidate probability / 0.84–0.88
+// confidence. Require both signals rather than rejecting those clear choices.
+const MASKED_TEXT_MIN_CONFIDENCE = 0.8;
+const MASKED_TEXT_MIN_PROBABILITY = 0.9;
+
+/** Decode a bounded model choice without changing the source text or drawing. */
+export function canvasTextCandidateIndex(value: unknown, candidateCount: number): number | undefined {
+    if (!value || typeof value !== 'object') return undefined;
+    const answer = value as { type?: unknown; choice?: unknown; confidence?: unknown; probabilities?: Record<string, unknown> };
+    if (answer.type !== 'choice' || typeof answer.confidence !== 'number' || !Number.isFinite(answer.confidence) || answer.confidence > 1 || answer.confidence < MASKED_TEXT_MIN_CONFIDENCE ||
+        typeof answer.choice !== 'string' || !/^candidate_\d+$/.test(answer.choice)) return undefined;
+    const probability = answer.probabilities?.[answer.choice];
+    if (typeof probability !== 'number' || !Number.isFinite(probability) || probability > 1 || probability < MASKED_TEXT_MIN_PROBABILITY) return undefined;
+    const index = Number(answer.choice.slice('candidate_'.length));
+    return Number.isInteger(index) && index >= 0 && index < candidateCount ? index : undefined;
+}
 
 export interface CanvasTextRegion {
     id: string;
@@ -8770,11 +8786,8 @@ export async function judgeCanvasTextCandidates(regions: CanvasTextRegion[]): Pr
         const result = await judge({ state, questions });
         const approved: Record<string, number> = {};
         for (const region of eligible) {
-            const answer = result.data.answers?.[region.id] as { type?: unknown; choice?: unknown; confidence?: unknown } | undefined;
-            if (answer?.type !== 'choice' || typeof answer.confidence !== 'number' || !Number.isFinite(answer.confidence) || answer.confidence > 1 || answer.confidence < MASKED_TEXT_MIN_CONFIDENCE ||
-                typeof answer.choice !== 'string' || !/^candidate_\d+$/.test(answer.choice)) continue;
-            const index = Number(answer.choice.slice('candidate_'.length));
-            if (Number.isInteger(index) && index >= 0 && index < region.candidates.length) approved[region.id] = index;
+            const index = canvasTextCandidateIndex(result.data.answers?.[region.id], region.candidates.length);
+            if (index !== undefined) approved[region.id] = index;
         }
         return approved;
     } catch (error: unknown) {
