@@ -7,6 +7,9 @@ interface ExportBarProps {
     onExport: (format: ExportFormat, scale: number) => void;
     onUpscaleToPrint?: () => void | Promise<void>;
     isUpscaling?: boolean;
+    width?: number;
+    height?: number;
+    disabled?: boolean;
 }
 
 /**
@@ -14,9 +17,9 @@ interface ExportBarProps {
  * width×height×scale happens in the caller (C1.4 export path); this panel is
  * only the control surface.
  */
-export const ExportBar: React.FC<ExportBarProps> = ({ onExport, onUpscaleToPrint, isUpscaling }) => {
+export const ExportBar: React.FC<ExportBarProps> = ({ onExport, onUpscaleToPrint, isUpscaling, width, height, disabled }) => {
     const [format, setFormat] = useState<ExportFormat>('png');
-    const [scale, setScale] = useState(2);
+    const [scale, setScale] = useState(1);
 
     return (
         <div className="flex flex-col gap-2 px-3 py-2 border-t border-white/5" data-testid="export-bar" aria-label="Export">
@@ -44,6 +47,7 @@ export const ExportBar: React.FC<ExportBarProps> = ({ onExport, onUpscaleToPrint
                     <option value={2}>2×</option>
                 </select>
                 <button
+                    disabled={disabled}
                     onClick={() => onExport(format, scale)}
                     data-testid="canvas-export"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-dept-creative/20 hover:bg-dept-creative/30 text-white border border-dept-creative/40 text-[11px] font-bold uppercase tracking-wider transition-colors"
@@ -52,10 +56,11 @@ export const ExportBar: React.FC<ExportBarProps> = ({ onExport, onUpscaleToPrint
                     Export
                 </button>
             </div>
+            {width && height && <p>{Math.round(width * scale)} × {Math.round(height * scale)} pixels</p>}
             {onUpscaleToPrint && (
                 <button
                     onClick={() => void onUpscaleToPrint()}
-                    disabled={isUpscaling}
+                    disabled={isUpscaling || disabled}
                     data-testid="canvas-upscale-3000"
                     className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >

@@ -31,7 +31,7 @@ export const LayerList: React.FC<LayerListProps> = ({
             <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white/40 border-b border-white/5">
                 Layers
             </div>
-            {layers.map((layer) => {
+            {[...layers].reverse().map((layer) => {
                 const selected = layer.id === selectedLayerId;
                 return (
                     <div

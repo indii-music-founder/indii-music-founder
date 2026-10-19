@@ -1,81 +1,79 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useCanvasAutosave } from '../useCanvasAutosave';
-import { createDocFromImage } from '@/services/canvas/CanvasDoc';
+// Pure scheduling replaces the former mocked store/Firebase hook journey.
+// Actual UI autosave and close/reopen require the genuine-account acceptance test.
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ArtworkWriteQueue, type ArtworkSaveStatus } from '@/services/canvas/ArtworkWriteQueue';
 
-const { mockStateRef, mockSaveDoc } = vi.hoisted(() => ({
-    mockStateRef: { current: { currentDoc: null as unknown } },
-    mockSaveDoc: vi.fn(),
-}));
-
-vi.mock('@/core/store', () => ({
-    useStore: (selector: (state: unknown) => unknown) => selector(mockStateRef.current),
-}));
-
-vi.mock('@/services/canvas/CanvasDocumentService', () => ({
-    CanvasDocumentService: { saveDoc: mockSaveDoc },
-}));
-
-describe('useCanvasAutosave (C1.5)', () => {
-    beforeEach(() => {
+// Scheduling checks use plain numbers and actual callbacks, not customer/service fixtures.
+describe('latest-value write scheduling', () => {
+    afterEach(() => vi.useRealTimers());
+    it('does not write when no value has been supplied', async () => {
+        const values: number[] = [];
+        const queue = new ArtworkWriteQueue<number>(async value => { values.push(value); });
+        await queue.flush();
+        expect(values).toEqual([]);
+    });
+    it('debounces updates and never repeats an acknowledged version', async () => {
         vi.useFakeTimers();
-        mockSaveDoc.mockReset().mockResolvedValue(undefined);
-        mockStateRef.current = { currentDoc: null };
+        const values: number[] = [], statuses: ArtworkSaveStatus[] = [];
+        const queue = new ArtworkWriteQueue<number>(async value => { values.push(value); }, state => statuses.push(state));
+        queue.update(10, 1); await vi.advanceTimersByTimeAsync(1500);
+        queue.update(20, 2); await vi.advanceTimersByTimeAsync(1999);
+        expect(values).toEqual([]);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(values).toEqual([20]); expect(statuses.at(-1)).toBe('saved');
+        queue.update(20, 2); await vi.advanceTimersByTimeAsync(3000);
+        expect(values).toEqual([20]);
     });
-
-    afterEach(() => {
-        vi.useRealTimers();
+    it('an explicit flush waits for changes made while a write is in flight', async () => {
+        const values: number[] = [];
+        let release!: () => void;
+        const gate = new Promise<void>(resolve => { release = resolve; });
+        const queue = new ArtworkWriteQueue<number>(async value => { values.push(value); if (value === 10) await gate; });
+        queue.update(10, 1);
+        const flush = queue.flush(); await Promise.resolve();
+        queue.update(20, 2);
+        expect(queue.flush()).toBe(flush);
+        release(); await flush;
+        expect(values).toEqual([10, 20]);
+        queue.cancelTimer();
     });
-
-    it('does not save when no document is open', () => {
-        renderHook(() => useCanvasAutosave());
-        act(() => {
-            vi.advanceTimersByTime(3000);
-        });
-        expect(mockSaveDoc).not.toHaveBeenCalled();
+    it('keeps the debounce for updates during automatic writes', async () => {
+        vi.useFakeTimers();
+        const values: number[] = [];
+        let release!: () => void;
+        const gate = new Promise<void>(resolve => { release = resolve; });
+        const queue = new ArtworkWriteQueue<number>(async value => { values.push(value); if (value === 1) await gate; });
+        queue.update(1, 1); await vi.advanceTimersByTimeAsync(2000);
+        queue.update(2, 2); release(); await vi.advanceTimersByTimeAsync(1000);
+        expect(values).toEqual([1]);
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(values).toEqual([1, 2]);
     });
-
-    it('persists the current doc after the debounce window', () => {
-        const doc = createDocFromImage('data:image/png;base64,AAA', 'proj_1');
-        const { rerender } = renderHook(() => useCanvasAutosave());
-
-        act(() => {
-            mockStateRef.current = { currentDoc: doc };
-        });
-        rerender();
-        act(() => {
-            vi.advanceTimersByTime(2100);
-        });
-
-        expect(mockSaveDoc).toHaveBeenCalledWith(doc);
+    it('does not lose an automatic update that becomes due during a slow write', async () => {
+        vi.useFakeTimers();
+        const values: number[] = [];
+        let release!: () => void;
+        const gate = new Promise<void>(resolve => { release = resolve; });
+        const queue = new ArtworkWriteQueue<number>(async value => { values.push(value); if (value === 1) await gate; });
+        queue.update(1, 1); await vi.advanceTimersByTimeAsync(2000);
+        queue.update(2, 2); await vi.advanceTimersByTimeAsync(2000);
+        expect(values).toEqual([1]);
+        release(); await vi.advanceTimersByTimeAsync(0);
+        expect(values).toEqual([1, 2]);
     });
-
-    it('debounces rapid changes into a single save of the latest doc', () => {
-        const doc = createDocFromImage('data:image/png;base64,AAA', 'proj_1');
-        const doc2 = { ...doc, updatedAt: doc.updatedAt + 1 };
-        const { rerender } = renderHook(() => useCanvasAutosave());
-
-        act(() => {
-            mockStateRef.current = { currentDoc: doc };
-        });
-        rerender();
-        act(() => {
-            vi.advanceTimersByTime(1000);
-        });
-
-        act(() => {
-            mockStateRef.current = { currentDoc: doc2 };
-        });
-        rerender();
-        act(() => {
-            vi.advanceTimersByTime(1000);
-        });
-        expect(mockSaveDoc).not.toHaveBeenCalled(); // still inside the 2s debounce
-
-        act(() => {
-            vi.advanceTimersByTime(1100);
-        });
-        expect(mockSaveDoc).toHaveBeenCalledTimes(1);
-        expect(mockSaveDoc).toHaveBeenCalledWith(doc2);
+    it('reports failures and retries the latest value without losing it', async () => {
+        vi.useFakeTimers();
+        let fail = true;
+        const values: number[] = [], statuses: ArtworkSaveStatus[] = [];
+        const queue = new ArtworkWriteQueue<number>(async value => {
+            if (fail) throw new Error('Controlled arithmetic callback failure');
+            values.push(value);
+        }, state => statuses.push(state));
+        queue.update(5, 1);
+        await expect(queue.flush()).rejects.toThrow(/callback failure/);
+        expect(statuses.at(-1)).toBe('error');
+        fail = false; queue.update(6, 2); await queue.flush();
+        expect(values).toEqual([6]); expect(statuses.at(-1)).toBe('saved');
+        queue.cancelTimer();
     });
 });

@@ -54,13 +54,21 @@ export interface BaseLayer {
     scaleX: number;
     scaleY: number;
     rotation: number;
+    transformAnchor?: 'center' | 'top-left';
 }
 
 export interface RasterLayer extends BaseLayer {
     kind: 'raster';
     src: string;
+    originalSrc?: string;
     adjustments: AdjustmentStack;
     subjectIsolated?: boolean;
+    adjustmentVersion?: 1 | 2;
+    framing?: 'fit' | 'fill';
+    maskSrc?: string;
+    maskFeather?: number;
+    look?: { id: 'original' | 'warm-film' | 'cool-night' | 'mono'; strength: number; version: 1 };
+    grain?: { amount: number; seed: number };
 }
 
 export interface TypographyLayer {
@@ -83,6 +91,7 @@ export interface TypographyLayer {
 
 export interface TextLayer extends BaseLayer {
     kind: 'text';
+    rasterScale?: number;
     typography: TypographyLayer;
 }
 
@@ -96,6 +105,10 @@ export interface CanvasDoc {
     background: string;
     layers: CanvasLayer[];
     updatedAt: number;
+    schemaVersion?: 1 | 2;
+    renderVersion?: 1 | 2;
+    revision?: number;
+    name?: string;
 }
 
 export function createDocFromImage(src: string, projectId: string): CanvasDoc {
@@ -116,16 +129,23 @@ export function createDocFromImage(src: string, projectId: string): CanvasDoc {
         scaleY: 1,
         rotation: 0,
         kind: 'raster',
+        transformAnchor: 'top-left',
         src,
         adjustments: { ...NEUTRAL_ADJUSTMENTS },
-        subjectIsolated: false
+        subjectIsolated: false,
+        adjustmentVersion: 2,
+        framing: 'fill',
     };
 
     return {
         id,
         projectId,
-        width: 1080,
-        height: 1080,
+        schemaVersion: 2,
+        renderVersion: 2,
+        revision: 0,
+        name: 'Untitled cover',
+        width: 3000,
+        height: 3000,
         background: '#000000',
         layers: [layer],
         updatedAt: Date.now()

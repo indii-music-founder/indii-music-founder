@@ -1,3 +1,4 @@
+// Codec-only pixel fixtures; these do not establish real photo/text rendering or a customer workflow.
 import { describe, it, expect } from 'vitest';
 import {
     blendModeToPsd,
@@ -46,6 +47,12 @@ describe('blendModeToPsd (C3)', () => {
 });
 
 describe('canvasDocToPsd (C3.1/C3.2)', () => {
+    it('rejects oversized PSDs before resolving any photo or allocating the background', async () => {
+        const doc = createDocFromImage('unresolved-source.png', 'literal');
+        doc.width = 6000; doc.height = 6000;
+        await expect(canvasDocToPsd(doc, { scale: 2 })).rejects.toThrow(/36-megapixel/);
+        await expect(canvasDocToPsd(doc, { scale: NaN })).rejects.toThrow(/invalid/);
+    });
     it('writes a PSD whose dimensions, layers, and metadata round-trip', async () => {
         const doc = makeTwoRasterLayerDoc();
         const buffer = await canvasDocToPsd(doc, {
@@ -63,7 +70,7 @@ describe('canvasDocToPsd (C3.1/C3.2)', () => {
 
         expect(psd.width).toBe(16);
         expect(psd.height).toBe(16);
-        expect(psd.children).toHaveLength(2);
+        expect(psd.children).toHaveLength(3);
 
         // children are top-to-bottom, so the Foreground (topmost) is first.
         const [top, bottom] = psd.children!;
@@ -76,6 +83,7 @@ describe('canvasDocToPsd (C3.1/C3.2)', () => {
         expect(bottom!.opacity).toBeCloseTo(1);
         expect(bottom!.hidden).toBe(false);
         expect(bottom!.blendMode).toBe('normal');
+        expect(psd.children![2]!.name).toBe('Cover background');
     });
 
     it('applies the export scale to document dimensions', async () => {
@@ -134,7 +142,7 @@ describe('canvasDocToPsd (C3.1/C3.2)', () => {
         });
 
         const psd = readPsd(buffer, { skipLayerImageData: true, skipCompositeImageData: true });
-        expect(psd.children).toHaveLength(2);
+        expect(psd.children).toHaveLength(3);
         expect(psd.children![0]!.name).toBe('Wordmark');
         expect(psd.children![0]!.left).toBe(4);
         expect(psd.children![0]!.top).toBe(4);

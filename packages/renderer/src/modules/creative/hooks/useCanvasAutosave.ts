@@ -1,45 +1,72 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import { CanvasDocumentService } from '@/services/canvas/CanvasDocumentService';
+import { ArtworkDraftService } from '@/services/canvas/ArtworkDraftService';
+import { ArtworkWriteQueue, type ArtworkSaveStatus } from '@/services/canvas/ArtworkWriteQueue';
+import type { CanvasDoc } from '@/services/canvas/CanvasDoc';
 import { logger } from '@/utils/logger';
+export type { ArtworkSaveStatus } from '@/services/canvas/ArtworkWriteQueue';
 
-const DEBOUNCE_MS = 2000;
-
-/**
- * useCanvasAutosave — persists the open CanvasDoc to storage a short debounce
- * after the last change. The doc (not Fabric state) is the single source of
- * truth (DEC-4), so we save the serialized doc directly; `updatedAt` is the
- * dirty signal that gates a re-save of an already-persisted revision.
- */
-export function useCanvasAutosave(enabled = true): void {
-    const currentDoc = useStore((state) => state.currentDoc);
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastSavedUpdatedAtRef = useRef<number | null>(null);
+/** Serialized/debounced cloud writes; local drafts cover abrupt termination. */
+export function useCanvasAutosave(enabled = true) {
+    const currentDoc = useStore(state => state.currentDoc);
+    const uid = useStore(state => state.user?.uid);
+    const documentId = currentDoc?.id ?? null;
+    const contextKey = JSON.stringify([uid, documentId]);
+    const activeKey = useRef(contextKey), mounted = useRef(true);
+    const [status, setStatus] = useState<ArtworkSaveStatus>('unsaved');
+    const [error, setError] = useState<string | null>(null);
+    const [recoveryError, setRecoveryError] = useState<string | null>(null);
+    const writer = useMemo(() => {
+        if (!uid || !documentId) return null;
+        return new ArtworkWriteQueue<CanvasDoc>(document => CanvasDocumentService.saveDoc(document, uid));
+    }, [uid, documentId]);
 
     useEffect(() => {
-        if (timerRef.current) {
-            clearTimeout(timerRef.current);
-            timerRef.current = null;
-        }
-        if (!enabled || !currentDoc) return;
-
-        timerRef.current = setTimeout(() => {
-            const snapshot = currentDoc;
-            if (lastSavedUpdatedAtRef.current === snapshot.updatedAt) return;
-            void CanvasDocumentService.saveDoc(snapshot)
-                .then(() => {
-                    lastSavedUpdatedAtRef.current = snapshot.updatedAt;
-                })
-                .catch((err: unknown) => {
-                    logger.error('[CanvasEditor] autosave failed:', err);
-                });
-        }, DEBOUNCE_MS);
-
+        mounted.current = true;
         return () => {
-            if (timerRef.current) {
-                clearTimeout(timerRef.current);
-                timerRef.current = null;
-            }
+            mounted.current = false;
+            writer?.cancelTimer();
+            if (enabled) void writer?.flush().catch(failure => logger.error('[CanvasEditor] final save failed', failure));
         };
-    }, [currentDoc, enabled]);
+    }, [writer, enabled]);
+
+    useEffect(() => {
+        if (!writer) return;
+        writer.setObserver((state, failure) => {
+            if (!mounted.current || activeKey.current !== contextKey) return;
+            setStatus(state);
+            setError(state === 'error' ? failure instanceof Error ? failure.message : 'Artwork could not be saved' : null);
+        });
+        return () => writer.setObserver(() => undefined);
+    }, [writer, contextKey]);
+
+    useEffect(() => {
+        activeKey.current = contextKey;
+        if (!enabled || !currentDoc) return;
+        if (!uid || !writer) { setStatus('error'); setError('Sign in to save your artwork'); return; }
+        void ArtworkDraftService.save(uid, currentDoc).then(() => {
+            if (mounted.current && activeKey.current === contextKey) setRecoveryError(null);
+        }).catch(failure => {
+            if (mounted.current && activeKey.current === contextKey) setRecoveryError(failure instanceof Error ? failure.message : 'Local recovery unavailable');
+        });
+        writer.update(currentDoc, currentDoc.updatedAt);
+    }, [currentDoc, uid, contextKey, enabled, writer]);
+
+
+    const flush = useCallback(async () => {
+        if (!writer) throw new Error('Sign in to save your artwork');
+        for (;;) {
+            const state = useStore.getState();
+            if (state.user?.uid !== uid) throw new Error('The signed-in account changed');
+            const document = state.currentDoc;
+            if (!document || document.id !== documentId) return;
+            writer.update(document, document.updatedAt);
+            await writer.flush();
+            const latest = useStore.getState();
+            if (latest.user?.uid !== uid) throw new Error('The signed-in account changed');
+            if (latest.currentDoc?.id !== documentId || latest.currentDoc.updatedAt === document.updatedAt) return;
+        }
+    }, [writer, uid, documentId]);
+    return { status, error, recoveryError, flush };
 }

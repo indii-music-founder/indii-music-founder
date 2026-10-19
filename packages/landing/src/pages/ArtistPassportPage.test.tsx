@@ -12,6 +12,7 @@ import {
   type PassportAnswers,
 } from '../lib/passportEvaluator';
 import { readPassportEventLog } from '../lib/passportAnalytics';
+import { db } from '../lib/firebase';
 
 describe('ArtistPassportPage - Deterministic Evaluation Engine', () => {
   it('correctly flags mechanical royalty leakage when PRO exists but MLC is missing', () => {
@@ -316,6 +317,10 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
 
     // Structural test environment has no database; never fabricate a saved request.
     expect((await screen.findByRole('alert')).textContent).toBe('Report requests are unavailable. Please try again later.');
+    // Assert the exact failure for this runtime; neither path may fabricate a saved request.
+    expect((await screen.findByRole('alert')).textContent).toBe(db
+      ? 'Your report request could not be saved. Please try again.'
+      : 'Report requests are unavailable. Please try again later.');
     expect(screen.queryByText(/Your assessment copy request is saved for/i)).toBeNull();
     expect(screen.getByText(/Request my assessment summary/i)).toBeDefined();
 

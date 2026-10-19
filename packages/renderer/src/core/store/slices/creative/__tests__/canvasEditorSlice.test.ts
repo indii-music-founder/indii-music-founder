@@ -46,6 +46,21 @@ describe('canvasEditorSlice (C1.1)', () => {
         expect(added).toMatchObject({ x: 10, y: 20, rotation: 0, opacity: 1, visible: true });
     });
 
+    it("adds centered cover text as one undoable action while preserving other callers' origins", () => {
+        store.getState().openImage('literal.png', 'literal');
+        const typography = { fontId: 'builtin:montserrat', text: 'Artist name', fontSize: 180, letterSpacing: 0, kerning: true,
+            fill: '#ffffff', x: 1500, y: 2340, rotation: 0, opacity: 1, visible: true };
+        const id = store.getState().addTextLayer(typography, 'center');
+        expect(store.getState().currentDoc!.layers.find(layer => layer.id === id)).toMatchObject({ transformAnchor: 'center', x: 1500, y: 2340 });
+        expect(store.getState().canvasPast).toHaveLength(1);
+        store.getState().undoCanvas();
+        expect(store.getState().currentDoc!.layers).toHaveLength(1);
+        store.getState().redoCanvas();
+        expect(store.getState().currentDoc!.layers.find(layer => layer.id === id)?.transformAnchor).toBe('center');
+        const other = store.getState().addTextLayer(typography);
+        expect(store.getState().currentDoc!.layers.find(layer => layer.id === other)?.transformAnchor).toBe('top-left');
+    });
+
     it('setAdjustments merges immutably', () => {
         store.getState().openImage('a.png', 'p');
         const id = store.getState().currentDoc!.layers[0]!.id;
@@ -96,5 +111,74 @@ describe('canvasEditorSlice (C1.1)', () => {
         store.getState().closeDoc();
         expect(store.getState().currentDoc).toBeNull();
         expect(store.getState().selectedLayerId).toBeNull();
+    });
+});
+
+describe('artwork revision history', () => {
+    it('groups a slider gesture and preserves redo when a later gesture is cancelled', () => {
+        const store = buildStore();
+        store.getState().openImage('portrait.png', 'release');
+        const id = store.getState().selectedLayerId!;
+        store.getState().beginCanvasGesture();
+        for (const contrast of [0.1, 0.2, 0.3]) store.getState().setAdjustments(id, { contrast });
+        store.getState().commitCanvasGesture();
+        expect(store.getState().canvasPast).toHaveLength(1);
+        store.getState().undoCanvas();
+        expect((store.getState().currentDoc!.layers[0] as RasterLayer).adjustments.contrast).toBe(0);
+        const undoneTimestamp = store.getState().currentDoc!.updatedAt;
+        store.getState().beginCanvasGesture();
+        store.getState().updateLayer(id, { x: 120 });
+        store.getState().cancelCanvasGesture();
+        expect(store.getState().currentDoc!.layers[0]!.x).toBe(0);
+        store.getState().redoCanvas();
+        expect((store.getState().currentDoc!.layers[0] as RasterLayer).adjustments.contrast).toBe(0.3);
+        expect(store.getState().currentDoc!.updatedAt).toBeGreaterThan(undoneTimestamp);
+    });
+
+    it('restores deleted layers and drops redo only after a substantive new edit', () => {
+        const store = buildStore();
+        store.getState().openImage('portrait.png', 'release');
+        const second = store.getState().addRasterLayer('background.png')!;
+        store.getState().removeLayer(second);
+        store.getState().undoCanvas();
+        expect(store.getState().currentDoc!.layers.map(l => l.id)).toContain(second);
+        store.getState().selectLayer(second);
+        store.getState().updateLayer(second, { x: 0 });
+        expect(store.getState().canvasFuture).toHaveLength(1);
+        store.getState().updateLayer(second, { x: 90 });
+        expect(store.getState().canvasFuture).toHaveLength(0);
+        store.getState().redoCanvas();
+        expect(store.getState().currentDoc!.layers.find(l => l.id === second)!.x).toBe(90);
+    });
+
+    it('bounds retained revisions and isolates documents', () => {
+        const store = buildStore();
+        store.getState().openImage('portrait.png', 'release');
+        const id = store.getState().selectedLayerId!;
+        for (let x = 1; x <= 80; x++) store.getState().updateLayer(id, { x });
+        expect(store.getState().canvasPast).toHaveLength(50);
+        for (let i = 0; i < 60; i++) store.getState().undoCanvas();
+        expect(store.getState().currentDoc!.layers[0]!.x).toBe(30);
+        store.getState().openImage('new-photo.png', 'next-release');
+        store.getState().undoCanvas();
+        store.getState().redoCanvas();
+        expect(store.getState().currentDoc!.projectId).toBe('next-release');
+        expect(store.getState().canvasPast).toHaveLength(0);
+        expect(store.getState().canvasFuture).toHaveLength(0);
+    });
+});
+
+describe('square-cover framing', () => {
+    it('crops a rectangular document uniformly without stretching its photo', () => {
+        const store = buildStore();
+        store.getState().openImage('geometry-fixture.png', 'unit-fixture');
+        const original = store.getState().currentDoc!;
+        store.getState().openDoc({ ...original, width: 1200, height: 800, layers: original.layers.map(layer => ({ ...layer, framing: undefined, x: 100, y: 50, scaleX: 1.4, scaleY: 1.4 })) });
+        store.getState().resizeArtwork(3000);
+        const doc = store.getState().currentDoc!;
+        expect([doc.width, doc.height]).toEqual([3000, 3000]);
+        expect(doc.layers[0]).toMatchObject({ x: -375, y: 187.5, scaleX: 5.25, scaleY: 5.25 });
+        store.getState().undoCanvas();
+        expect(store.getState().currentDoc).toMatchObject({ width: 1200, height: 800 });
     });
 });

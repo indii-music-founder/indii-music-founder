@@ -16,12 +16,14 @@ import { deliverApprovedCwr } from './deliverCwr';
 import { prepareSoundExchangeBulk } from '@indii/shared';
 import { createCanonicalMusicCatalogStore } from '../music/canonicalMusicCatalogStore';
 import { validateRightsEntityReferences, CanonicalMusicEntitySchema, RightsEntityId, COPYRIGHT_PORTAL_HOSTS, canApproveCwrExport, publicRightsSession } from '@indii/shared';
+import { validateRightsEntityReferences, CanonicalMusicEntitySchema, RightsEntityId, COPYRIGHT_PORTAL_HOSTS, canApproveCwrExport } from '@indii/shared';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const db = () => getFirestore();
 const root = (uid: string) => db().collection('users').doc(uid);
 const Request = z.object({ action: z.enum(['capabilities', 'prepare_society_work', 'get_cwr_export', 'list_sessions', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
+const Request = z.object({ action: z.enum(['capabilities', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
 const CaseId = z.object({ caseId: RightsId }).passthrough();
 const SessionId = z.object({ sessionId: RightsId }).passthrough();
 const gc = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
@@ -242,6 +244,11 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
         const { works: _works, catalogLinks: _catalogLinks, ...header } = input;
         tx.set(filenameRef, { batchId, checksum });
         tx.create(batchRef, { input: header, manifestHash, manifestPath, manifestGeneration, checksum, path, generation, filename: result.filename, profileVersion: result.profileVersion, state: 'exported', createdAt: FieldValue.serverTimestamp() });
+        if (existing.exists) return;
+        if (filenameClaim && filenameClaim.batchId !== batchId) throw new HttpsError('already-exists', 'Use a new file sequence; this recipient filename already identifies another batch.');
+        const { works: _works, ...header } = input;
+        tx.set(filenameRef, { batchId, checksum });
+        tx.create(batchRef, { input: header, manifestHash, checksum, path, generation, filename: result.filename, profileVersion: result.profileVersion, state: 'exported', createdAt: FieldValue.serverTimestamp() });
       });
       const writer = db().bulkWriter();
       for (const item of result.transactions) writer.set(batchRef.collection('transactions').doc(`${item.group}_${item.transaction}`), item);

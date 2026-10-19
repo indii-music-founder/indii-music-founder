@@ -7,7 +7,7 @@
  *
  * Persistence mirrors the LikenessService pattern:
  * - Storage:  `users/{uid}/brandKit/fonts/{id}.{format}`
- * - Firestore: `users/{uid}/brandKit/fonts/{id}` (metadata)
+ * - Firestore: `users/{uid}/brandKit/fonts/items/{id}` (metadata)
  *
  * Honest limits:
  *  - `.woff2` rejected with "convert to .ttf/.otf" (parsing not supported).
@@ -42,6 +42,7 @@ function detectFormat(filename: string): { format: 'ttf' | 'otf' | 'woff' } {
 }
 
 class FontLibraryImpl {
+    private parsedFonts = new Map<string, Promise<opentype.Font>>();
     private getUid(): string | null {
         return auth.currentUser?.uid ?? null;
     }
@@ -53,7 +54,7 @@ class FontLibraryImpl {
     }
 
     private metadataCollection() {
-        return collection(db, 'users', this.requireUid(), 'brandKit', 'fonts');
+        return collection(db, 'users', this.requireUid(), 'brandKit', 'fonts', 'items');
     }
 
     /**
@@ -101,7 +102,7 @@ class FontLibraryImpl {
             return snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<RegisteredFont, 'id'>) }));
         } catch (err) {
             logger.error('[FontLibrary] listFonts failed', err);
-            return [];
+            throw err;
         }
     }
 
@@ -109,19 +110,26 @@ class FontLibraryImpl {
      * Load a parsed opentype.Font by id, from the persisted binary URL.
      */
     async loadOpenTypeFont(id: string): Promise<opentype.Font> {
+        const key = `${this.requireUid()}/${id}`;
+        const cached = this.parsedFonts.get(key);
+        if (cached) return cached;
+        const pending = this.fetchOpenTypeFont(id);
+        this.parsedFonts.set(key, pending);
+        if (this.parsedFonts.size > 8) this.parsedFonts.delete(this.parsedFonts.keys().next().value!);
+        void pending.catch(() => { if (this.parsedFonts.get(key) === pending) this.parsedFonts.delete(key); });
+        return pending;
+    }
+
+    private async fetchOpenTypeFont(id: string): Promise<opentype.Font> {
         const uid = this.requireUid();
         let downloadUrl: string | undefined;
         let storagePath: string | undefined;
 
-        try {
-            const metaDoc = await getDoc(doc(this.metadataCollection(), id));
-            if (metaDoc.exists()) {
-                const data = metaDoc.data() as Partial<RegisteredFont> & { downloadUrl?: string };
-                downloadUrl = data.downloadUrl;
-                storagePath = data.storageRef;
-            }
-        } catch (err) {
-            logger.warn('[FontLibrary] loadOpenTypeFont metadata lookup failed, attempting storage path', err);
+        const metaDoc = await getDoc(doc(this.metadataCollection(), id));
+        if (metaDoc.exists()) {
+            const data = metaDoc.data() as Partial<RegisteredFont> & { downloadUrl?: string };
+            downloadUrl = data.downloadUrl;
+            storagePath = data.storageRef;
         }
 
         if (!downloadUrl) {
@@ -133,11 +141,13 @@ class FontLibraryImpl {
         const res = await fetch(downloadUrl);
         if (!res.ok) throw new Error(`Failed to fetch font bytes (HTTP ${res.status})`);
         const buf = await res.arrayBuffer();
+        if (this.getUid() !== uid) throw new Error('Sign in again to load this artwork font');
         return opentype.parse(buf);
     }
 
     async deleteFont(id: string): Promise<void> {
         const uid = this.requireUid();
+        this.parsedFonts.delete(`${uid}/${id}`);
         let storagePath: string | undefined;
 
         try {
@@ -171,7 +181,7 @@ class FontLibraryImpl {
         for (let i = 0; i < bytes.length; i += CHUNK) {
             binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
         }
-        const mime = file.type || 'font/ttf';
+        const mime = { ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff' }[detectFormat(file.name).format];
         return `data:${mime};base64,${btoa(binary)}`;
     }
 }

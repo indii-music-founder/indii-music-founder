@@ -1,21 +1,29 @@
+import { getViewportProxy, artworkEnlargement, artworkExportDimensions } from '@/services/canvas/ArtworkGeometry';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as fabric from 'fabric';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
-import { adjustmentsToFilters, type RasterLayer } from '@/services/canvas/CanvasDoc';
-import { descriptorsToFabricFilters } from '@/services/canvas/fabricFilters';
-import { rasterizeTextLayer } from '@/services/canvas/textLayerRaster';
+import { type RasterLayer } from '@/services/canvas/CanvasDoc';
+import { TextPanel } from './TextPanel';
+import { CutoutPanel } from './CutoutPanel';
+import { PicturePanel } from './PicturePanel';
+import { SavedArtworkPanel } from './SavedArtworkPanel';
+import { StorageService } from '@/services/StorageService';
 import { LayerList } from './LayerList';
 import { AdjustPanel } from './AdjustPanel';
 import { ExportBar, type ExportFormat } from './ExportBar';
 import { useCanvasAutosave } from '../../hooks/useCanvasAutosave';
-import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { canvasDocToPsd } from '@/services/canvas/PsdExportService';
 import { printReadyUpscaleService } from '@/services/upscale/PrintReadyUpscaleService';
 import { printUpscaleMethodLabel } from '@/services/upscale/printUpscalePlan';
+import { renderArtworkSource, renderArtworkDocument, artworkSourceDensity } from '@/services/canvas/ArtworkRenderService';
+import { CanvasDocumentService } from '@/services/canvas/CanvasDocumentService';
+import { ArtworkDraftService } from '@/services/canvas/ArtworkDraftService';
+import { ArtworkCanvasSession, createArtworkCanvasObject, readArtworkCanvasTransform } from '@/services/canvas/ArtworkCanvasSession';
+import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
 
-type LayerIdCarrier = fabric.FabricObject & { layerId?: string };
+type LayerIdCarrier = fabric.FabricObject & { layerId?: string; rasterDensity?: number };
 
 /**
  * Viewport proxy constraint (Part I.2):
@@ -24,18 +32,6 @@ type LayerIdCarrier = fabric.FabricObject & { layerId?: string };
  * This avoids UI main-thread blocking during live filter manipulation while keeping
  * the master CanvasDoc non-destructive.
  */
-export const MAX_VIEWPORT_PROXY = 1024;
-
-export function getViewportProxy(width: number, height: number): { proxyWidth: number; proxyHeight: number; proxyScale: number } {
-    const maxDim = Math.max(width, height);
-    const proxyScale = maxDim > MAX_VIEWPORT_PROXY ? MAX_VIEWPORT_PROXY / maxDim : 1;
-    return {
-        proxyWidth: Math.round(width * proxyScale),
-        proxyHeight: Math.round(height * proxyScale),
-        proxyScale
-    };
-}
-
 /**
  * CanvasEditor — the non-destructive layer editor (Workstream C1.3).
  *
@@ -55,30 +51,70 @@ export const CanvasEditor: React.FC = () => {
             closeDoc: state.closeDoc,
         })),
     );
+    const undoCanvas = useStore(state => state.undoCanvas);
+    const redoCanvas = useStore(state => state.redoCanvas);
+    const canUndo = useStore(state => state.canvasPast.length > 0 || Boolean(state.canvasGesture));
+    const canRedo = useStore(state => state.canvasFuture.length > 0 && !state.canvasGesture);
+    const beginGesture = useStore(state => state.beginCanvasGesture);
+    const commitGesture = useStore(state => state.commitCanvasGesture);
+    const updateArtwork = useStore(state => state.updateArtwork);
+    const resizeArtwork = useStore(state => state.resizeArtwork);
+    const reorderLayer = useStore(state => state.reorderLayer);
+    const removeLayer = useStore(state => state.removeLayer);
+    const duplicateLayer = useStore(state => state.duplicateArtworkLayer);
+    const addPhoto = useStore(state => state.addRasterLayer);
+    const [frameOwner, setFrameOwner] = useState<{ documentId: string; layerId: string; mode: 'frame' | 'adjustments' } | null>(null);
+    const framingLayerId = frameOwner?.documentId === currentDoc?.id && currentDoc?.layers.some(layer => layer.id === frameOwner?.layerId) ? frameOwner!.layerId : null;
     const toast = useToast();
+
+    useEffect(() => {
+        const handleKey = (event: KeyboardEvent) => {
+            const element = event.target as HTMLElement | null;
+            if (framingLayerId) return;
+            if (element?.closest('input, textarea, [contenteditable="true"]')) return;
+            if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+            if (event.key.toLowerCase() === 'z') {
+                event.preventDefault();
+                if (event.shiftKey) redoCanvas(); else undoCanvas();
+            } else if (event.ctrlKey && event.key.toLowerCase() === 'y') {
+                event.preventDefault();
+                redoCanvas();
+            }
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [undoCanvas, redoCanvas, framingLayerId]);
 
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const fabricRef = useRef<fabric.Canvas | null>(null);
     const syncGeneration = useRef(0);
+    const [canvasSession] = useState(() => new ArtworkCanvasSession());
+    const [canvasEpoch, setCanvasEpoch] = useState(0);
+    const hasDocument = Boolean(currentDoc);
 
     // Persist doc changes to storage (C1.5).
-    useCanvasAutosave();
+    const autosave = useCanvasAutosave(!framingLayerId);
+    const [renderError, setRenderError] = useState<string | null>(null);
+    const [isRendering, setIsRendering] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
-    // Initialize the Fabric canvas once.
     useEffect(() => {
-        if (!canvasElRef.current || fabricRef.current) return;
-        const canvas = new fabric.Canvas(canvasElRef.current, {
-            width: 1080,
-            height: 1080,
-            preserveObjectStacking: true,
-            selection: true,
+        const element = canvasElRef.current;
+        if (!hasDocument || !element) return;
+        let active = true;
+        void canvasSession.open(element).then(canvas => {
+            if (!active || !canvas) return;
+            fabricRef.current = canvas;
+            setCanvasEpoch(epoch => epoch + 1);
+        }).catch(failure => {
+            if (active) setRenderError(failure instanceof Error ? failure.message : 'Editor canvas could not be initialized');
         });
-        fabricRef.current = canvas;
         return () => {
-            canvas.dispose();
+            active = false;
             fabricRef.current = null;
+            void canvasSession.close().catch(failure => logger.error('[CanvasEditor] canvas cleanup failed', failure));
         };
-    }, []);
+    }, [hasDocument, canvasSession]);
 
     // Rebuild layer objects from the doc (single source of truth). A generation
     // guard drops stale async image loads when a newer rebuild has started.
@@ -87,49 +123,59 @@ export const CanvasEditor: React.FC = () => {
         const canvas = fabricRef.current;
         if (!canvas || !currentDoc) return;
         const generation = ++syncGeneration.current;
+        const rendering = new AbortController();
+        setIsRendering(true);
+        setRenderError(null);
 
         const { proxyWidth, proxyHeight, proxyScale } = getViewportProxy(currentDoc.width, currentDoc.height);
-        canvas.setDimensions({ width: proxyWidth, height: proxyHeight });
-        canvas.clear();
-
         void (async () => {
+            const objects: fabric.FabricImage[] = [];
             for (const layer of currentDoc.layers) {
+                if (!layer.visible) continue;
                 try {
-                    let img: fabric.Image;
-                    if (layer.kind === 'text') {
-                        // Text layers bake via the deterministic B1 vector path.
-                        const { dataUrl } = await rasterizeTextLayer(layer, proxyScale);
-                        img = await fabric.Image.fromURL(dataUrl, { crossOrigin: 'anonymous' });
-                    } else {
-                        // gs:// sources must resolve to an https URL before Fabric
-                        // can load them; https/data sources pass through unchanged.
-                        const src = await resolveStorageUrl(layer.src);
-                        img = await fabric.Image.fromURL(src, { crossOrigin: 'anonymous' });
-                    }
-                    if (generation !== syncGeneration.current) return; // stale load
-                    (img as LayerIdCarrier).layerId = layer.id;
-                    img.set({
-                        left: layer.x * proxyScale,
-                        top: layer.y * proxyScale,
-                        scaleX: layer.scaleX * proxyScale,
-                        scaleY: layer.scaleY * proxyScale,
-                        angle: layer.rotation,
-                        opacity: layer.opacity,
-                        visible: layer.visible,
-                        locked: layer.locked,
-                    });
-                    if (layer.kind === 'raster') {
-                        img.filters = descriptorsToFabricFilters(adjustmentsToFilters(layer.adjustments));
-                        img.applyFilters();
-                    }
-                    canvas.add(img);
-                    canvas.renderAll();
-                } catch {
-                    // A layer whose source fails to load is skipped, never fatal.
+                    const source = await renderArtworkSource(layer, rendering.signal);
+                    const density = artworkSourceDensity(source);
+                    if (generation !== syncGeneration.current) return;
+                    const img = createArtworkCanvasObject(source, layer, currentDoc, proxyScale, density, !framingLayerId || layer.id === framingLayerId);
+                    objects.push(img);
+                } catch (failure) {
+                    if (generation !== syncGeneration.current) return;
+                    setRenderError(`${layer.name}: ${failure instanceof Error ? failure.message : 'Layer could not load'}`);
+                    setIsRendering(false);
+                    return;
                 }
             }
+            if (generation === syncGeneration.current) {
+                canvas.setDimensions({ width: proxyWidth, height: proxyHeight });
+                canvas.clear();
+                canvas.backgroundColor = currentDoc.background === 'transparent' ? '' : currentDoc.background;
+                for (const object of objects) canvas.add(object);
+                const selected = canvas.getObjects().find(object => (object as LayerIdCarrier).layerId === useStore.getState().selectedLayerId);
+                if (selected) canvas.setActiveObject(selected);
+                canvas.requestRenderAll();
+                setIsRendering(false);
+            }
         })();
-    }, [currentDoc]);
+        return () => { rendering.abort(); if (syncGeneration.current === generation) syncGeneration.current = generation + 1; };
+    }, [currentDoc, framingLayerId, canvasEpoch]);
+
+    useEffect(() => {
+        const canvas = fabricRef.current;
+        if (!canvas) return;
+        const selection = (event: { selected?: fabric.FabricObject[] }) => {
+            const id = (event.selected?.[0] as LayerIdCarrier | undefined)?.layerId;
+            if (id) selectLayer(id);
+        };
+        canvas.on('selection:created', selection);
+        canvas.on('selection:updated', selection);
+        return () => { canvas.off('selection:created', selection); canvas.off('selection:updated', selection); };
+    }, [selectLayer, canvasEpoch]);
+
+    useEffect(() => {
+        const canvas = fabricRef.current;
+        const selected = canvas?.getObjects().find(object => (object as LayerIdCarrier).layerId === selectedLayerId);
+        if (canvas && selected) { canvas.setActiveObject(selected); canvas.requestRenderAll(); }
+    }, [selectedLayerId, canvasEpoch]);
 
     // Sync Fabric transforms back to the doc on object:modified (C2.2).
     useEffect(() => {
@@ -140,18 +186,15 @@ export const CanvasEditor: React.FC = () => {
             if (!target.layerId || !currentDoc) return;
             const { proxyScale } = getViewportProxy(currentDoc.width, currentDoc.height);
             updateLayer(target.layerId, {
-                x: (target.left ?? 0) / proxyScale,
-                y: (target.top ?? 0) / proxyScale,
-                scaleX: (target.scaleX ?? 1) / proxyScale,
-                scaleY: (target.scaleY ?? 1) / proxyScale,
-                rotation: target.angle ?? 0,
+                ...readArtworkCanvasTransform(target, proxyScale),
+                ...((currentDoc.layers.find(l => l.id === target.layerId)?.kind === 'raster') ? { framing: undefined } : {}),
             });
         };
         canvas.on('object:modified', handler);
         return () => {
             canvas.off('object:modified', handler);
         };
-    }, [currentDoc, updateLayer]);
+    }, [currentDoc, updateLayer, canvasEpoch]);
 
     const toggleVisible = useCallback(
         (id: string) => {
@@ -172,7 +215,15 @@ export const CanvasEditor: React.FC = () => {
     const handleExport = useCallback(
         async (format: ExportFormat, scale: number) => {
             if (!currentDoc) return;
-            const stem = `canvas-${currentDoc.id.slice(0, 8)}`;
+            artworkExportDimensions(currentDoc, scale);
+            const enlarged: string[] = [];
+            for (const layer of currentDoc.layers) {
+                if (layer.kind !== 'raster' || !layer.visible || layer.opacity === 0) continue;
+                const source = await renderArtworkSource(layer);
+                if (artworkEnlargement(layer, source.width, source.height, currentDoc, scale) > 1.01) enlarged.push(layer.name);
+            }
+            if (enlarged.length) toast.warning(`This export enlarges ${enlarged.length === 1 ? `“${enlarged[0]}”` : `${enlarged.length} photos`} beyond its source resolution. It may look soft.`);
+            const stem = `canvas-${currentDoc.id.slice(0, 8)}-r${currentDoc.revision ?? 0}`;
 
             // PSD: write the document (adjustments baked) and download the blob.
             if (format === 'psd') {
@@ -189,18 +240,12 @@ export const CanvasEditor: React.FC = () => {
                 return;
             }
 
-            const canvas = fabricRef.current;
-            if (!canvas) return;
-            const { proxyScale } = getViewportProxy(currentDoc.width, currentDoc.height);
-            // Viewport proxy normalization (Part I.2):
-            // Multiplier must scale relative to the proxy canvas so raster output
-            // is generated at master doc resolution (currentDoc.width * scale, currentDoc.height * scale).
-            const exportMultiplier = scale / proxyScale;
-            const dataUrl = canvas.toDataURL({ format, multiplier: exportMultiplier });
+            const output = await renderArtworkDocument(currentDoc, scale, format === 'jpeg');
+            const dataUrl = output.toDataURL(`image/${format}`, 0.95);
             const { downloadAsset } = await import('@/utils/download');
             await downloadAsset(dataUrl, `${stem}.${format}`);
         },
-        [currentDoc],
+        [currentDoc, toast],
     );
 
     const [isUpscaling, setIsUpscaling] = useState(false);
@@ -211,9 +256,8 @@ export const CanvasEditor: React.FC = () => {
         setIsUpscaling(true);
         try {
             toast.info("Upscaling canvas to 3000x3000px @ 300 DPI print standard...");
-            const { proxyScale } = getViewportProxy(currentDoc.width, currentDoc.height);
-            const exportMultiplier = 1 / proxyScale;
-            const dataUrl = canvas.toDataURL({ format: 'png', multiplier: exportMultiplier });
+            const output = await renderArtworkDocument(currentDoc);
+            const dataUrl = output.toDataURL('image/png');
             const result = await printReadyUpscaleService.upscaleToPrintReady({
                 dataUrl,
                 prompt: currentDoc.id,
@@ -244,8 +288,8 @@ export const CanvasEditor: React.FC = () => {
     const selectedRaster: RasterLayer | null = selectedLayer?.kind === 'raster' ? selectedLayer : null;
 
     return (
-        <div className="flex h-full min-h-0" data-testid="canvas-editor">
-            <div className="flex-1 flex items-center justify-center bg-black/50 p-6 min-w-0">
+        <div className="flex h-full min-h-0" data-testid="canvas-editor" data-document-id={currentDoc.id} data-project-id={currentDoc.projectId}>
+            <div aria-busy={isRendering} style={{ pointerEvents: isRendering || (framingLayerId && frameOwner?.mode === 'adjustments') ? 'none' : undefined }} className="flex-1 flex items-center justify-center bg-black/50 p-6 min-w-0">
                 <canvas
                     ref={canvasElRef}
                     data-testid="canvas-editor-canvas"
@@ -256,7 +300,8 @@ export const CanvasEditor: React.FC = () => {
                 <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
                     <span className="text-xs font-bold uppercase tracking-wider text-white/70">Layer Editor</span>
                     <button
-                        onClick={closeDoc}
+                        disabled={Boolean(framingLayerId)}
+                        onClick={() => { void autosave.flush().then(() => { if (useStore.getState().currentDoc?.id === currentDoc.id) closeDoc(); }).catch(failure => toast.error(failure instanceof Error ? failure.message : 'Save failed')); }}
                         data-testid="canvas-editor-close"
                         aria-label="Close editor"
                         className="ml-auto text-xs text-white/40 hover:text-white px-2 py-1 rounded hover:bg-white/10"
@@ -264,6 +309,65 @@ export const CanvasEditor: React.FC = () => {
                         Close
                     </button>
                 </div>
+                <div className="px-3 py-2 text-xs text-white/60" role="status">
+                    {autosave.status === 'saved' ? 'Saved' : autosave.status === 'saving' ? 'Saving…' : autosave.status === 'error' ? 'Save failed' : 'Unsaved changes'}
+                    <button disabled={Boolean(framingLayerId)} className="ml-2 underline" onClick={() => { void autosave.flush().catch(failure => toast.error(failure instanceof Error ? failure.message : 'Save failed')); }}>{autosave.status === 'error' ? 'Retry' : 'Save'}</button>
+                    {autosave.status === 'error' && !framingLayerId && <button className="block mt-2 underline" onClick={() => {
+                        const uid = useStore.getState().user?.uid;
+                        if (!uid) { toast.error('Sign in to keep this artwork draft'); return; }
+                        void (async () => {
+                            for (;;) {
+                                const state = useStore.getState(), document = state.currentDoc;
+                                if (state.user?.uid !== uid || document?.id !== currentDoc.id) return;
+                                await ArtworkDraftService.save(uid, document);
+                                const latest = useStore.getState();
+                                if (latest.user?.uid !== uid || latest.currentDoc?.id !== document.id) return;
+                                if (latest.currentDoc.updatedAt !== document.updatedAt) continue;
+                                closeDoc(); return;
+                            }
+                        })().catch(failure => toast.error(failure instanceof Error ? failure.message : 'Local recovery is unavailable; keep this editor open'));
+                    }}>Keep draft and close</button>}
+                    {autosave.status === 'error' && !framingLayerId && <button className="block mt-2 underline" onClick={() => {
+                        const uid = useStore.getState().user?.uid;
+                        if (!uid) { toast.error('Sign in to save a copy'); return; }
+                        const copy = { ...currentDoc, id: `doc_${crypto.randomUUID()}`, revision: 0, name: `${currentDoc.name ?? 'Cover'} copy`, updatedAt: Date.now() };
+                        void CanvasDocumentService.saveDoc(copy, uid).then(() => {
+                            const state = useStore.getState();
+                            if (state.user?.uid !== uid) return;
+                            if (state.currentDoc?.id === currentDoc.id && state.currentDoc.updatedAt === currentDoc.updatedAt) state.openDoc(copy);
+                            toast.success('Saved a new artwork copy');
+                        }).catch(failure => toast.error(failure instanceof Error ? failure.message : 'The copy could not be saved'));
+                    }}>Save as new artwork</button>}
+                    {autosave.error && <p className="text-red-300">{autosave.error}</p>}
+                    {autosave.recoveryError && <p className="text-amber-300">{autosave.recoveryError}</p>}
+                    {isRendering && <p>Preparing artwork…</p>}
+                    {renderError && <p className="text-red-300" role="alert">{renderError}</p>}
+                </div>
+                {!framingLayerId && <div className="flex gap-2 px-3 py-2">
+                    <button onClick={undoCanvas} disabled={!canUndo} className="text-xs text-white disabled:opacity-30" aria-label="Undo">Undo</button>
+                    <button onClick={redoCanvas} disabled={!canRedo} className="text-xs text-white disabled:opacity-30" aria-label="Redo">Redo</button>
+                </div>}
+                {!framingLayerId && <div className="flex flex-col gap-2 px-3 py-2 text-xs text-white/70">
+                    <label>Artwork name<input aria-label="Artwork name" value={currentDoc.name ?? 'Untitled cover'} onFocus={beginGesture} onBlur={commitGesture} onChange={event => updateArtwork({ name: event.target.value })} className="block w-full bg-black/40 p-1" /></label>
+                    <label>Square size<select aria-label="Square size" value={currentDoc.width === currentDoc.height ? currentDoc.width : ''} onChange={event => resizeArtwork(Number(event.target.value))} className="ml-2 bg-black/40">
+                        <option value="" disabled>Choose square size</option>
+                        {[...new Set([1080, 3000, ...(currentDoc.width === currentDoc.height ? [currentDoc.width] : [])])].sort((a,b) => a-b).map(size => <option key={size} value={size}>{size} × {size}</option>)}
+                    </select></label>
+                    <label>Background<select aria-label="Cover background" value={currentDoc.background} onChange={event => updateArtwork({ background: event.target.value })} className="ml-2 bg-black/40">
+                        <option value="#000000">Black</option><option value="#ffffff">White</option><option value="transparent">Transparent</option>
+                        {!['#000000', '#ffffff', 'transparent'].includes(currentDoc.background) && <option value={currentDoc.background}>Saved color</option>}
+                    </select></label>
+                    <label>Add photo<input aria-label="Add photo" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => {
+                        const file = event.target.files?.[0]; event.target.value = '';
+                        const uid = useStore.getState().user?.uid;
+                        if (!file || !uid) { if (file) toast.error('Sign in to add a photo'); return; }
+                        const documentId = currentDoc.id;
+                        void StorageService.uploadFile(file, `users/${uid}/artwork/${documentId}/${crypto.randomUUID()}`).then(src => {
+                            if (useStore.getState().currentDoc?.id === documentId && useStore.getState().user?.uid === uid) addPhoto(src, file.name);
+                        }).catch(failure => toast.error(String(failure)));
+                    }} className="block max-w-full" /></label>
+                </div>}
+                {!framingLayerId && <><SavedArtworkPanel projectId={currentDoc.projectId} beforeOpen={autosave.flush} />
                 <LayerList
                     layers={currentDoc.layers}
                     selectedLayerId={selectedLayerId}
@@ -271,15 +375,35 @@ export const CanvasEditor: React.FC = () => {
                     onToggleVisible={toggleVisible}
                     onToggleLock={toggleLock}
                 />
-                {selectedRaster && (
+                {selectedLayer && <div className="flex gap-2 px-3 py-2 text-xs text-white/70">
+                    <button onClick={() => duplicateLayer(selectedLayer.id)}>Duplicate</button>
+                    <button onClick={() => removeLayer(selectedLayer.id)}>Delete</button>
+                    <button onClick={() => reorderLayer(selectedLayer.id, currentDoc.layers.findIndex(layer => layer.id === selectedLayer.id) + 1)}>Forward</button>
+                    <button onClick={() => reorderLayer(selectedLayer.id, currentDoc.layers.findIndex(layer => layer.id === selectedLayer.id) - 1)}>Backward</button>
+                </div>}
+                </>}
+                {!framingLayerId && <TextPanel key={currentDoc.id} layer={selectedLayer?.kind === 'text' ? selectedLayer : undefined} />}
+                {!framingLayerId && selectedRaster && <CutoutPanel key={`${currentDoc.id}/${selectedRaster.id}/${selectedRaster.src}`} layer={selectedRaster} />}
+                {selectedRaster && <PicturePanel key={`${currentDoc.id}/${selectedRaster.id}/${selectedRaster.src}`} layer={selectedRaster} onFrameChange={(active, mode = 'frame') => setFrameOwner(active ? { documentId: currentDoc.id, layerId: selectedRaster.id, mode } : null)} />}
+                {!framingLayerId && selectedRaster && (
                     <AdjustPanel
                         adjustments={selectedRaster.adjustments}
+                        exposureRange={selectedRaster.adjustmentVersion === 2 ? 2 : 1}
+                        onGestureStart={beginGesture}
+                        onGestureEnd={commitGesture}
                         onChange={(patch) => setAdjustments(selectedRaster.id, patch)}
                     />
                 )}
                 <div className="mt-auto">
                     <ExportBar
-                        onExport={(f, s) => void handleExport(f, s)}
+                        width={currentDoc.width}
+                        height={currentDoc.height}
+                        disabled={isRendering || Boolean(renderError) || isExporting || Boolean(framingLayerId)}
+                        onExport={(f, s) => {
+                            if (isRendering || renderError || isExporting) { toast.error('Wait for the artwork to finish loading before exporting'); return; }
+                            setIsExporting(true);
+                            void handleExport(f, s).catch(failure => toast.error(failure instanceof Error ? failure.message : 'Export failed')).finally(() => setIsExporting(false));
+                        }}
                         onUpscaleToPrint={handleUpscalePrintReady}
                         isUpscaling={isUpscaling}
                     />
