@@ -1,6 +1,6 @@
 {
   "mode": "read-only development review, not product judgment or receiver acceptance",
-  "scope": "PRO/MLC export preparation and onboarding; landing regression; saved preparation recovery",
+  "scope": "Society export preparation, delivery controls, ACK reconciliation, and development source review; no provider acceptance",
   "reviews": [
     {
       "sourceFingerprint": "7a87de79f76a9629e74bc71e6e5924516680f5de6a8b2b47ad832bffa3dcb5d5",
@@ -84,10 +84,36 @@
           "output_tokens": 87
         }
       }
+    },
+    {
+      "sourceCommit": "692fb7af178645666cd035fbed82d6b4cab3268c",
+      "sourceFingerprint": "ef011680490400b52f69f4ceca996a7ea2ed888e65a2420f94be1f365732f435",
+      "mode": "read-only source review, not provider acceptance",
+      "result": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "status_progression": {
+            "type": "noul",
+            "noul": 0.86
+          },
+          "evidence_truth": {
+            "type": "noul",
+            "noul": 0.9
+          },
+          "automatic_resend": {
+            "type": "noul",
+            "noul": 0.1
+          }
+        },
+        "usage": {
+          "input_tokens": 6794,
+          "output_tokens": 60
+        }
+      }
     }
   ],
   "totalUsage": {
-    "input_tokens": 36461,
-    "output_tokens": 307
+    "input_tokens": 43255,
+    "output_tokens": 367
   }
 }

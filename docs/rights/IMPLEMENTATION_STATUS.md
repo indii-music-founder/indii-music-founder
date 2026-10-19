@@ -1,4 +1,56 @@
-# Rights registration branch status
+# Rights registration implementation status
+
+## Current society implementation — 2026-10-19
+
+The society completion work was published in `41b32e210` and merged through
+[PR #421](https://github.com/indii-music-founder/indii-music-founder/pull/421).
+The historical milestones below describe earlier stages and are superseded by
+this section for PRO/MLC/SESAC engineering status.
+
+- SESAC-addressed CWR preparation now supports factual REC metadata in pinned
+  2.1/2.2 layouts. It is no longer an onboarding-only screen. No obsolete CWR 2.0
+  flag columns are invented; receiver testing must resolve the inconsistency in
+  the published SESAC rule.
+- Registration Center supports owner onboarding requests, operator-approved
+  receiver configuration, immediate revocation, exact-batch approval, explicit
+  transmission, uncertain-transfer reconciliation, bounded receiver ACK retrieval,
+  manual ACK import, and generation-pinned evidence downloads.
+- Private SFTP profiles are bound to recipient, sender, version, owner-scoped
+  Secret Manager credentials, and configuration revision. Profile changes require
+  fresh batch approval. Public/private endpoint checks and exclusive creation
+  protect the transfer boundary. No write is automatically replayed. Operators can
+  record receiver-confirmed outcomes with audited evidence and renewed artist
+  approval where needed.
+- ACK reconciliation separates MusicMark routing receipt, intermediate RA,
+  AS/AC acceptance, rejection, duplicate, and conflict. Raw statuses and provenance
+  remain available. Canonical work revisions fence late replies; original export
+  bytes and manifests recover immutable transaction identities. Receiver retrieval
+  and user-imported evidence remain distinct. No CWR result claims an issued
+  copyright registration.
+
+The MLC’s published guide describes FTP. The implemented transport is SFTP;
+production use requires the receiver to assign a compatible secure channel.
+Plaintext FTP, an assumed registration API, and invented credentials are not
+substitutes. Export/manual completion remains available while that is established.
+No receiver onboarding, production transmission, or genuine acceptance test was
+performed by this task. These operational checks will use real authorized users,
+as requested. Hosted copyright and payment acceptance limitations below are
+unchanged.
+
+Verification of the merged result: 93 focused shared/UI structural tests passed.
+The original completion unit also passed six local Firestore authorization tests.
+Full local validation covered 9,966 passing assertions across four shards, plus
+TypeScript and ESLint (zero errors, 234 existing warnings). The initial fourth
+shard exited with Vitest `EnvironmentTeardownError: Closing rpc while
+"onUserConsoleLog" was pending`, attributed to `RouterContext.test.tsx`; its two
+isolated tests and an exact fourth-shard retry (2,643 tests) passed cleanly.
+This runner retry is recorded separately from society acceptance evidence.
+JEV `jev-1.13.0` reviewed merged source: status progression 0.86 Noul, evidence
+truth 0.90, automatic resend risk 0.10; usage 6,794 input / 60 output tokens.
+These are source-review judgments, not test or receiver-acceptance probabilities.
+Raw results and the reviewed commit/fingerprint are in `SOCIETY_JEV_REVIEW.json`.
+
+## Historical implementation milestones
 
 This branch is reviewable implementation work, not release acceptance evidence.
 No society deliveries, copyright payments, filings, deployments, or genuine
