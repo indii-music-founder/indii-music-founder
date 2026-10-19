@@ -17,6 +17,7 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import DirectGenerationTab from './components/DirectGenerationTab';
 import ShowroomUI from './components/ShowroomUI';
 import { CanvasEditor } from './components/CanvasEditor/CanvasEditor';
+import { CanvasEditorPortal } from './components/CanvasEditorPortal';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 import { awaitCompletedPlpVideoVariant } from './plpVideoVariant';
@@ -733,9 +734,11 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {!currentDoc && <SavedArtworkPanel key={creativeScope} projectId={currentProjectId ?? 'project_default'} />}
                         {/* Layer Editor overlay (C1.3) — opens whenever a CanvasDoc is active. */}
                         {Boolean(currentDoc) && (
-                            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
-                                <CanvasEditor key={`${creativeScope}/${currentDoc?.id}`} />
-                            </div>
+                            <CanvasEditorPortal>
+                                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
+                                    <CanvasEditor key={`${creativeScope}/${currentDoc?.id}`} />
+                                </div>
+                            </CanvasEditorPortal>
                         )}
                     </div>
                     </AdaptiveWorkspace>
