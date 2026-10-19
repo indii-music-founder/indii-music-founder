@@ -101,3 +101,5 @@ export * from './print/PrintSpec.js';
 export * from './print/canvasBleed.js';
 export * from './schemas/printJob.js';
 export * from './types/ad-execution.types.js';
+export * from './rights/cwrReconciliation.js';
+export * from './rights/societyDelivery.js';

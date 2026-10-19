@@ -15,9 +15,9 @@ export const SOCIETY_ONBOARDING = Object.freeze({
     steps: ['Create the correct publisher or self-administered Member account and confirm administration authority.', 'Ask The MLC to become a CWR submitter and provide the requested test file.', 'Wait for test-file approval and receiver-issued production credentials.', 'Confirm the assigned transport and ACK pickup configuration with The MLC; public search API access does not register works.'],
   },
   sesac: {
-    label: 'SESAC', exportSupported: false,
+    label: 'SESAC', exportSupported: true,
     guide: 'https://www.sesac.com/', contact: 'https://www.sesac.com/',
-    steps: ['Confirm affiliation and authorized publisher or administrator status with SESAC.', 'Obtain the current recipient-specific registration requirements and onboarding instructions directly from SESAC.', 'Export is blocked until required receiver fields and validation have been implemented and accepted. MusicMark does not route to SESAC.'],
+    steps: ['Confirm affiliation and authorized publisher or administrator status with SESAC.', 'Obtain the current recipient-specific registration requirements and onboarding instructions directly from SESAC.', 'Prepare a CWR file with factual recording format and technique. Confirm the current SESAC implementation during onboarding: published specifications still reference obsolete pre-2.1 flags. MusicMark does not route to SESAC.'],
   },
 });
 export type SocietyRecipient = keyof typeof SOCIETY_ONBOARDING;

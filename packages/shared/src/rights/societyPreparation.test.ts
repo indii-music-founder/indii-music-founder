@@ -18,7 +18,7 @@ describe('society preparation', () => {
   });
   it('keeps MusicMark routing separate from SESAC', () => {
     expect(SOCIETY_ONBOARDING.musicmark.label).toBe('ASCAP / BMI / SOCAN through MusicMark');
-    expect(SOCIETY_ONBOARDING.sesac.exportSupported).toBe(false);
+    expect(SOCIETY_ONBOARDING.sesac.exportSupported).toBe(true);
     expect(societyOnboardingChecklist('sesac')).toContain('MusicMark does not route to SESAC');
   });
   it('never represents a checklist or public API as production registration access', () => {
