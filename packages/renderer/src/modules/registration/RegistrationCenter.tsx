@@ -125,7 +125,6 @@ export default function RegistrationCenter() {
   const [canonicalIntelligenceReport, setCanonicalIntelligenceReport] = useState<CatalogIntelligenceReport | null>(null);
   const [canonicalIntelligenceStatus, setCanonicalIntelligenceStatus] = useState<CanonicalCatalogIntelligenceStatus>('loading');
   const [activeTab, setActiveTab] = useState<'tracks' | 'founder' | 'visibility' | 'filing' | 'society'>('tracks');
-  const [activeTab, setActiveTab] = useState<'tracks' | 'founder' | 'visibility' | 'filing'>('tracks');
 
   const selectedTrack = registrationFocus.trackId
     ? (tracks.find(t => t.id === registrationFocus.trackId) ?? tracks[0] ?? null)
@@ -330,8 +329,6 @@ export default function RegistrationCenter() {
           <SocietyRegistrationWorkspace key={user.uid} userId={user.uid} />
         ) : activeTab === 'filing' && user?.uid ? (
           <RightsFilingWorkspace key={user.uid} userId={user.uid} tracks={tracks} />
-        {activeTab === 'filing' && user?.uid ? (
-          <RightsFilingWorkspace userId={user.uid} tracks={tracks} />
         ) : activeTab === 'visibility' ? (
           <CatalogVisibilityPanel key={user?.uid ?? 'signed-out'} userId={user?.uid ?? ''} />
         ) : activeTab === 'founder' ? (
