@@ -30,7 +30,6 @@ jobs:
       - run: npm run typecheck
       - name: Rights contracts and legacy structural regressions
         run: npx vitest run packages/landing/src/pages/ArtistPassportPage.test.tsx packages/shared/src/rights packages/shared/src/types/rightsRegistration.test.ts packages/renderer/src/services/rights/RightsCopilotService.test.ts packages/renderer/src/services/publishing/PublishingRightsCompiler.test.ts packages/main/src/handlers/rightsCopilot.test.ts packages/firebase/src/mcp/tools/__tests__/draftCwrRegistration.test.ts packages/renderer/src/modules/registration/components/RightsCopilotModal.test.tsx packages/renderer/src/modules/registration/services/RegistrationCatalog.test.ts packages/renderer/src/modules/registration/components/FounderReadinessPanel.test.tsx
-        run: npx vitest run packages/shared/src/rights packages/shared/src/types/rightsRegistration.test.ts packages/renderer/src/services/rights/RightsCopilotService.test.ts packages/renderer/src/services/publishing/PublishingRightsCompiler.test.ts packages/main/src/handlers/rightsCopilot.test.ts packages/firebase/src/mcp/tools/__tests__/draftCwrRegistration.test.ts packages/renderer/src/modules/registration/components/RightsCopilotModal.test.tsx packages/renderer/src/modules/registration/services/RegistrationCatalog.test.ts packages/renderer/src/modules/registration/components/FounderReadinessPanel.test.tsx
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
