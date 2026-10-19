@@ -197,7 +197,7 @@ export default function DirectGenerationTab() {
                                                 const dataUrl = event.target?.result as string;
                                                 const newId = `upload_${Date.now()}`;
                                                 const { useStore } = await import('@/core/store');
-                                                const { addUploadedImage, currentProjectId, setSelectedItem, setViewMode, setRightPanelTab } = useStore.getState();
+                                                const { addUploadedImage, currentProjectId, openImage, setRightPanelTab } = useStore.getState();
                                                 
                                                 const uploadedItem = {
                                                     id: newId,
@@ -210,8 +210,7 @@ export default function DirectGenerationTab() {
                                                 };
                                                 
                                                 setRightPanelTab('assets');
-                                                setSelectedItem(uploadedItem);
-                                                setViewMode('editor');
+                                                openImage(dataUrl, currentProjectId ?? 'project_default');
 
                                                 addUploadedImage(uploadedItem).then((success) => {
                                                     if (success) {
@@ -805,8 +804,17 @@ export default function DirectGenerationTab() {
                                     type="button"
                                     aria-label={latestItem.type === 'image' ? 'Open in Canvas Editor' : 'Edit latest video'}
                                     onClick={() => {
-                                        setSelectedItem(latestItem);
-                                        setViewMode('editor');
+                                        if (latestItem.type === 'video') {
+                                            setSelectedItem(latestItem);
+                                            setViewMode('editor');
+                                            return;
+                                        }
+                                        void import('@/services/storage/resolveStorageUrl').then(async ({ resolveStorageUrl }) => {
+                                            const src = await resolveStorageUrl(latestItem.url);
+                                            if (src.startsWith('gs://')) throw new Error('The image could not be opened from storage');
+                                            const { currentProjectId, openImage } = useStore.getState();
+                                            openImage(src, currentProjectId ?? 'project_default');
+                                        }).catch(failure => toast.error(failure instanceof Error ? failure.message : 'The image could not be opened'));
                                     }}
                                     className="flex items-center gap-1.5 rounded-lg bg-dept-creative/15 px-3 py-2 text-[10px] font-semibold text-dept-creative hover:bg-dept-creative/25"
                                 >
