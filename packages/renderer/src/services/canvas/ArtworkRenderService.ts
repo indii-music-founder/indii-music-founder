@@ -6,7 +6,7 @@ import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { adjustmentsToFilters, type CanvasDoc, type CanvasLayer, type RasterLayer } from './CanvasDoc';
 import { descriptorsToFabricFilters } from './fabricFilters';
 import { rasterizeTextLayer } from './textLayerRaster';
-import { effectiveAdjustments } from './ArtworkPixels';
+import { adjustArtworkPixels, applyArtworkMask, effectiveAdjustments, finishArtworkPixels } from './ArtworkPixels';
 
 function surface(width: number, height: number): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
@@ -27,24 +27,40 @@ async function pixelPass(canvas: HTMLCanvasElement, layer: RasterLayer, phase: '
     signal.throwIfAborted();
     const ctx = context(canvas);
     const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const result = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const worker = new Worker(new URL('./ArtworkPixelWorker.ts', import.meta.url), { type: 'module' });
-        const timer = setTimeout(() => { worker.terminate(); reject(new Error('Photo processing timed out')); }, 30_000);
+    const result = await new Promise<ArrayBuffer | null>((resolve, reject) => {
+        let worker: Worker;
+        try { worker = new Worker(new URL('./ArtworkPixelWorker.ts', import.meta.url), { type: 'module' }); }
+        catch { resolve(null); return; }
+        const timer = setTimeout(() => { finish(); resolve(null); }, 30_000);
         const finish = () => { clearTimeout(timer); worker.terminate(); signal.removeEventListener('abort', cancel); };
         const cancel = () => { finish(); reject(new DOMException('Photo processing cancelled', 'AbortError')); };
         signal.addEventListener('abort', cancel, { once: true });
-        worker.onerror = () => { finish(); reject(new Error('Photo processing failed')); };
+        worker.onerror = () => { finish(); resolve(null); };
         worker.onmessage = (event: MessageEvent<{ buffer?: ArrayBuffer; error?: string }>) => {
             finish();
             if (event.data.buffer) resolve(event.data.buffer);
             else reject(new Error(event.data.error ?? 'Photo processing failed'));
         };
-        const transfer = [image.data.buffer as ArrayBuffer];
-        if (maskData) transfer.push(maskData.buffer as ArrayBuffer);
-        if (originalAlpha) transfer.push(originalAlpha.buffer as ArrayBuffer);
-        worker.postMessage({ buffer: image.data.buffer, maskBuffer: maskData?.buffer, originalAlphaBuffer: originalAlpha?.buffer, width: canvas.width, height: canvas.height, layer, phase }, transfer);
+        try {
+            worker.postMessage({ buffer: image.data.buffer, maskBuffer: maskData?.buffer, originalAlphaBuffer: originalAlpha?.buffer, width: canvas.width, height: canvas.height, layer, phase }, [image.data.buffer as ArrayBuffer]);
+        } catch {
+            finish(); resolve(null);
+        }
     });
-    ctx.putImageData(new ImageData(new Uint8ClampedArray(result), canvas.width, canvas.height), 0, 0);
+    signal.throwIfAborted();
+    if (result) {
+        ctx.putImageData(new ImageData(new Uint8ClampedArray(result), canvas.width, canvas.height), 0, 0);
+        return;
+    }
+    // Some browsers reject module workers despite serving the script. Process the same
+    // pixels on the main thread so the cover remains editable and exportable.
+    const fallback = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    if (phase === 'mask') {
+        if (!maskData) throw new Error('Cutout mask pixels are missing');
+        applyArtworkMask(fallback.data, maskData, originalAlpha);
+    } else if (phase === 'color') adjustArtworkPixels(fallback.data, layer);
+    else finishArtworkPixels(fallback.data, canvas.width, canvas.height, layer);
+    ctx.putImageData(fallback, 0, 0);
 }
 
 interface RenderEntry { promise: Promise<HTMLCanvasElement>; controller: AbortController; consumers: Set<symbol>; settled: boolean }
@@ -127,7 +143,10 @@ export async function renderArtworkSource(layer: CanvasLayer, signal?: AbortSign
                 await applyMask(originalAlpha);
             } else {
                 await applyMask();
-                await pixelPass(canvas, layer, 'color', controller.signal);
+                const adjustments = effectiveAdjustments(layer);
+                if (adjustments.brightness || adjustments.contrast || adjustments.saturation || adjustments.hue || adjustments.temperature || adjustments.exposure) {
+                    await pixelPass(canvas, layer, 'color', controller.signal);
+                }
                 const blur = effectiveAdjustments(layer).blur * 20;
                 if (blur) {
                     const blurred = surface(width, height), blurCtx = context(blurred);
