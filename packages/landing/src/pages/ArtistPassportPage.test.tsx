@@ -315,8 +315,6 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     const sendButton = screen.getByText(/Request my assessment summary/i).closest('button');
     fireEvent.click(sendButton!);
 
-    // Structural test environment has no database; never fabricate a saved request.
-    expect((await screen.findByRole('alert')).textContent).toBe('Report requests are unavailable. Please try again later.');
     // Assert the exact failure for this runtime; neither path may fabricate a saved request.
     expect((await screen.findByRole('alert')).textContent).toBe(db
       ? 'Your report request could not be saved. Please try again.'
