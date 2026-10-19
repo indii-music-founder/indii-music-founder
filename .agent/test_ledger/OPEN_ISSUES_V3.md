@@ -5535,3 +5535,51 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   1. In `executeMilestoneFn` (`milestone_execution.ts:138-381`) and `generateLongFormVideoFn` (`long_form_video.ts:205-615`), remove the outer `try/catch` blocks around `step.run`/`step.sleep` and move the failure-cleanup logic (`mark-failed` / `handle-failure` + `settleLongFormReservation`) into Inngest's `onFailure` handler inside `inngest.createFunction({ ..., onFailure: async ({ event, error, step }) => { ... } }, ...)` so it runs only after retries are exhausted and never intercepts step interrupts.
   2. In `pollTimelineMilestones.ts:135-190`, guard `if (!timelineDoc.ref.path.includes('/timelines/') || !Array.isArray(timeline.milestones)) continue;` before accessing `timeline.milestones.length`, and pass `timelineId: timeline.id || timelineDoc.id` at `line 178`.
 - **Acceptance:** Unit tests verify `generateLongFormVideoFn` and `executeMilestoneFn` propagate step errors/interrupts for Inngest retry handling and only mark jobs/milestones failed in `onFailure`, and `pollTimelineMilestones` safely skips non-timeline `items` docs and falls back to `timelineDoc.id`.
+
+
+---
+
+## 2026-10-19 — Competitive-intelligence execution-graph follow-up (proposed; not verified complete)
+
+> Source: October 19 indii.music daily competitive-intelligence brief; PR #421 rights-registration implementation. These are **work proposals and verification gates**, not independently confirmed new defects. Reconcile against existing issues before opening GitHub tickets. Existing report_bug/reportBugFn → Firestore/GitHub remains the authoritative bug-intake route. Do not close from plans, semantic similarity, or local-only mocks.
+
+### CI-V3-20261019-01 — Verify exact-main CI and rights merge acceptance [P0, PROPOSED]
+- **Spawned by:** PR #421 merged rights-registration implementation; October 19 brief.
+- **Depends on:** Current main SHA, test/CI run records, rights implementation changes.
+- **Overlaps:** Existing CI/deploy guard work; check before issuing separate task.
+- **Acceptance:** Exact current-main commit linked to successful typecheck, lint, relevant tests, and required CI; identify missing or failing checks. PR merge or local reported test counts alone are insufficient.
+- **Converges to:** Rights-registration release acceptance.
+
+### CI-V3-20261019-02 — Reconcile hosted registration lifecycle [P1, PROPOSED]
+- **Spawned by:** PR #421; October 19 brief.
+- **Overlaps:** ISSUE-1545, ISSUE-1546; do not duplicate these existing findings.
+- **Depends on:** CI-V3-20261019-01 and hosted-session implementation.
+- **Acceptance:** Tests for session cleanup, timeout/recovery, owner authorization, portal navigation, and truthful terminal states; live authorized portal verification where external operation is claimed. Keep unverified filing/payment/society-delivery switches disabled.
+- **Converges to:** Rights-registration release acceptance.
+
+### CI-V3-20261019-03 — Verify CWR/PRO/MLC export, transmission and ACK evidence [P1, PROPOSED]
+- **Spawned by:** PR #421; October 19 brief.
+- **Overlaps:** #377 distribution ingestion and rights-registration work.
+- **Depends on:** CI-V3-20261019-01; receiver access and approval for any live transmission.
+- **Acceptance:** Golden-file CWR 2.1/2.2 tests, split/ownership validation, immutable provenance, idempotent ACK reconciliation, explicit distinct states prepared/exported/submitted/acknowledged/registered; receiver-confirmed evidence before claiming live delivery or registration.
+- **Converges to:** Rights-registration release acceptance.
+
+### CI-V3-20261019-04 — Beta security convergence [P0, PROPOSED]
+- **Spawned by:** October 19 brief; existing security findings.
+- **Depends on / overlaps:** ISSUE-1537 financial tenant isolation, ISSUE-1543 remote enrollment/admission, ISSUE-1544 credits and metering, GitHub #411 Artist Passport ownership verification.
+- **Acceptance:** Relevant cross-tenant, device admission, Firestore transaction, metering, and assessment-claim security tests plus passing CI and any required production verification. Do not treat closed parent issues as proof of these separate acceptance checks.
+- **Converges to:** Beta-release verification gate.
+
+### CI-V3-20261019-05 — Mechanical royalty policy monitoring [P2, PROPOSED RESEARCH]
+- **Spawned by:** Phonorecords V (2028–2032) proposals discussed in October 19 brief.
+- **Depends on:** Primary Copyright Royalty Board filings and verified current statutory rate sources.
+- **Acceptance:** Source-backed distinction between effective rates and competing proposals; explicit decision on whether forecasting or educational copy requires adjustment. No unapproved rates presented as enacted.
+- **Converges to:** Royalty-accounting product decision and investor evidence dossier.
+
+### CI-V3-20261019-06 — Human-authorship provenance and consent policy check [P2, PROPOSED RESEARCH]
+- **Spawned by:** AI licensing/provenance developments and competing distributor AI-content policies discussed October 19.
+- **Overlaps:** GitHub #412 human-created music/sample protections; avoid reopening solely on semantic overlap.
+- **Acceptance:** Documented policy decision and representative electronic/sample-based human-music test cases; consent records must distinguish distribution rights from AI-training permission. No AI-generated music distribution through indii.music.
+- **Converges to:** Provenance policy acceptance and investor positioning.
+
+**Graph relationships:** CI-V3-20261019-01 validates PR #421 and blocks 02/03; 02 + 03 converge to rights release acceptance; ISSUE-1537/1543/1544 + #411 converge through 04 to beta security acceptance; 05/06 are research branches requiring explicit decisions. **No work is marked complete by this entry.**
