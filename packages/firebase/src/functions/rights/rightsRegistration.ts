@@ -10,18 +10,21 @@ import { getStorage } from 'firebase-admin/storage';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { GoogleAuth } from 'google-auth-library';
 import { z } from 'zod';
-import { RightsId, RightsCaseSchema, RightsEvidenceSchema, CwrBatchInputSchema, buildCwrBatch, parseCwrAcknowledgments,
+import { RightsId, RightsCaseSchema, RightsEvidenceSchema, CwrBatchInputSchema, buildCwrBatch,
   canonicalRightsJson, validateCopyrightCase, RIGHTS_LIMITS, isRightsSessionClosed, type RightsCase } from '@indii/shared';
-import { deliverApprovedCwr } from './deliverCwr';
+import { deliverApprovedCwr, reconcileCwrTransfer, fetchCwrAck } from './deliverCwr';
+import { ingestCwrAck } from './ingestCwrAck';
+import { resolveCwrTransfer } from './resolveCwrTransfer';
+import { societyOnboarding } from './societyOnboarding';
 import { prepareSoundExchangeBulk } from '@indii/shared';
 import { createCanonicalMusicCatalogStore } from '../music/canonicalMusicCatalogStore';
-import { validateRightsEntityReferences, CanonicalMusicEntitySchema, RightsEntityId, COPYRIGHT_PORTAL_HOSTS, canApproveCwrExport } from '@indii/shared';
+import { validateRightsEntityReferences, CanonicalMusicEntitySchema, RightsEntityId, COPYRIGHT_PORTAL_HOSTS, canApproveCwrExport, publicRightsSession } from '@indii/shared';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const db = () => getFirestore();
 const root = (uid: string) => db().collection('users').doc(uid);
-const Request = z.object({ action: z.enum(['capabilities', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
+const Request = z.object({ action: z.enum(['capabilities', 'resolve_cwr_transfer', 'society_delivery_status', 'save_society_onboarding', 'configure_society_transport', 'revoke_society_transport', 'reconcile_cwr_transfer', 'fetch_cwr_ack', 'prepare_society_work', 'get_cwr_export', 'get_cwr_ack', 'list_sessions', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
 const CaseId = z.object({ caseId: RightsId }).passthrough();
 const SessionId = z.object({ sessionId: RightsId }).passthrough();
 const gc = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
@@ -85,6 +88,44 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
   try {
     const { action, payload } = Request.parse(request.data);
     if (action === 'capabilities') return { hostedEnabled: process.env.RIGHTS_HOSTED_ENABLED === 'true', paymentEnabled: process.env.RIGHTS_PAYMENT_ENABLED === 'true', rememberEnabled: Boolean(process.env.RIGHTS_VAULT_BUCKET && process.env.RIGHTS_KMS_KEY && process.env.RIGHTS_AUTH_COOKIE_NAMES && COPYRIGHT_PORTAL_HOSTS.includes(process.env.RIGHTS_AUTH_COOKIE_HOST ?? '')) };
+    if (action === 'prepare_society_work') {
+      const { entityId } = z.object({ entityId: RightsEntityId }).strict().parse(payload);
+      const entity = CanonicalMusicEntitySchema.parse((await root(uid).collection('musicCatalogEntities').doc(entityId).get()).data());
+      if (entity.entityType !== 'musical_work') throw new HttpsError('failed-precondition', 'Choose a canonical composition, not a recording or ISRC.');
+      const workId = 'W' + digest(`${uid}/${entityId}`).slice(0, 13).toUpperCase();
+      const ref = root(uid).collection('rightsCwrWorkCodes').doc(workId);
+      await db().runTransaction(async tx => {
+        const prior = (await tx.get(ref)).data();
+        if (prior && prior.entityId !== entityId) throw new HttpsError('already-exists', 'Composition code collision requires administrator review.');
+        if (!prior) tx.create(ref, { entityId, workId, createdAt: FieldValue.serverTimestamp() });
+      });
+      return { entityId, workId, title: entity.title };
+    }
+    if (action === 'get_cwr_export') {
+      const { batchId } = z.object({ batchId: RightsId }).strict().parse(payload);
+      const batch = (await root(uid).collection('rightsCwrBatches').doc(batchId).get()).data();
+      if (!batch?.generation) throw new HttpsError('failed-precondition', 'This export has no pinned object generation.');
+      const [bytes] = await SAFE_BUCKET().file(batch.path, { generation: batch.generation }).download();
+      if (digest(bytes) !== batch.checksum) throw new HttpsError('failed-precondition', 'Export checksum does not match the saved batch.');
+      let preparation: unknown;
+      if (batch.manifestPath && batch.manifestGeneration) {
+        const [manifestBytes] = await SAFE_BUCKET().file(batch.manifestPath, { generation: batch.manifestGeneration }).download();
+        if (digest(manifestBytes) !== batch.manifestHash) throw new HttpsError('failed-precondition', 'Saved preparation checksum does not match the batch.');
+        preparation = CwrBatchInputSchema.parse(JSON.parse(manifestBytes.toString('utf8')));
+      }
+      return { batchId, filename: batch.filename, text: bytes.toString('ascii'), checksum: batch.checksum, recipient: batch.input.recipient, ...(preparation ? { preparation } : {}) };
+    }
+    if (action === 'list_sessions') {
+      z.object({}).strict().parse(payload);
+      const active = (await db().doc('rightsInfrastructure/capacity').get()).data()?.active ?? {};
+      const ids = Object.entries(active).filter(([id, value]) => RightsId.safeParse(id).success && (value as { uid?: unknown })?.uid === uid).map(([id]) => id);
+      if (!ids.length) return { sessions: [] };
+      const snapshots = await db().getAll(...ids.map(id => root(uid).collection('rightsSessions').doc(id)));
+      return { sessions: snapshots.flatMap(snapshot => {
+        const session = publicRightsSession(uid, snapshot.id, snapshot.data() ?? {}, Date.now());
+        return session ? [session] : [];
+      }) };
+    }
     if (action === 'catalog_entities') {
       const input = z.object({ after: z.string().min(1).max(160).optional() }).strict().parse(payload);
       let query = root(uid).collection('musicCatalogEntities').orderBy('__name__').limit(200);
@@ -155,6 +196,18 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       });
       return { filingId: input.filingId ?? filing.filingId, saved: true, source: 'user_report' };
     }
+    if (action === 'resolve_cwr_transfer') return resolveCwrTransfer(uid, request.auth.token.admin === true, payload);
+    if (['society_delivery_status', 'save_society_onboarding', 'configure_society_transport', 'revoke_society_transport'].includes(action)) return societyOnboarding(uid, request.auth.token.admin === true, action, payload);
+    if (action === 'reconcile_cwr_transfer') return reconcileCwrTransfer(uid, RightsId.parse(payload.batchId));
+    if (action === 'fetch_cwr_ack') return fetchCwrAck(uid, RightsId.parse(payload.batchId), z.string().min(1).max(200).parse(payload.filename));
+    if (action === 'get_cwr_ack') {
+      const input = z.object({ batchId: RightsId, evidenceId: z.string().regex(/^(?:user_import|receiver_transport)_[a-f0-9]{64}$/) }).strict().parse(payload);
+      const evidence = (await root(uid).collection('rightsCwrBatches').doc(input.batchId).collection('acknowledgments').doc(input.evidenceId).get()).data();
+      if (!evidence?.path || !evidence.generation) throw new HttpsError('failed-precondition', 'This legacy ACK has no generation-pinned download. Reimport its original file to preserve provenance.');
+      const [bytes] = await SAFE_BUCKET().file(evidence.path, { generation: evidence.generation }).download();
+      if (digest(bytes) !== evidence.hash) throw new HttpsError('failed-precondition', 'ACK checksum mismatch.');
+      return { filename: `ACK-${evidence.hash}.txt`, text: bytes.toString('ascii'), checksum: evidence.hash, source: evidence.source };
+    }
     if (action === 'deliver_cwr') return deliverApprovedCwr(uid, RightsId.parse(payload.batchId));
     if (action === 'prepare_soundexchange') {
       const templateId = RightsId.parse(payload.templateId);
@@ -164,6 +217,12 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
     }
     if (action === 'build_cwr') {
       const input = CwrBatchInputSchema.parse(payload);
+      if (!input.catalogLinks || input.catalogLinks.length !== input.works.length) throw new HttpsError('failed-precondition', 'Link every exported composition to your canonical catalog.');
+      for (const link of input.catalogLinks ?? []) {
+        const entity = (await root(uid).collection('musicCatalogEntities').doc(link.entityId).get()).data();
+        const code = (await root(uid).collection('rightsCwrWorkCodes').doc(link.workId).get()).data();
+        if (entity?.entityType !== 'musical_work' || code?.entityId !== link.entityId) throw new HttpsError('permission-denied', 'Export composition codes must belong to your canonical catalog.');
+      }
       const result = buildCwrBatch(input);
       const checksum = digest(result.text);
       const manifestHash = digest(canonicalRightsJson(input));
@@ -176,20 +235,45 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       const generation = String(objectMetadata.generation);
       const [persistedBytes] = await SAFE_BUCKET().file(path, { generation }).download();
       if (digest(persistedBytes) !== checksum) throw new HttpsError('failed-precondition', 'Stored batch bytes do not match the export.');
+      const manifestPath = `users/${uid}/rights/cwr/${batchId}/manifest.json`;
+      const manifestObject = SAFE_BUCKET().file(manifestPath);
+      try { await manifestObject.save(canonicalRightsJson(input), { contentType: 'application/json', resumable: false, preconditionOpts: { ifGenerationMatch: 0 } }); }
+      catch (error) { if ((error as { code?: number }).code !== 412) throw error; }
+      const [manifestMetadata] = await manifestObject.getMetadata();
+      const manifestGeneration = String(manifestMetadata.generation);
+      const [manifestBytes] = await SAFE_BUCKET().file(manifestPath, { generation: manifestGeneration }).download();
+      if (digest(manifestBytes) !== manifestHash) throw new HttpsError('failed-precondition', 'Stored preparation does not match the approved manifest.');
       const batchRef = root(uid).collection('rightsCwrBatches').doc(batchId);
       await db().runTransaction(async tx => {
         const filenameRef = root(uid).collection('rightsCwrFilenames').doc(result.filename);
         const filenameClaim = (await tx.get(filenameRef)).data();
         const existing = await tx.get(batchRef);
-        if (existing.exists) return;
+        if (existing.exists) {
+          const saved = existing.data()!;
+          if (saved.manifestHash !== manifestHash || saved.checksum !== checksum) throw new HttpsError('failed-precondition', 'Saved batch identity does not match this preparation.');
+          if (!saved.manifestPath || !saved.manifestGeneration) tx.update(batchRef, { manifestPath, manifestGeneration });
+          return;
+        }
         if (filenameClaim && filenameClaim.batchId !== batchId) throw new HttpsError('already-exists', 'Use a new file sequence; this recipient filename already identifies another batch.');
-        const { works: _works, ...header } = input;
+        const { works: _works, catalogLinks: _catalogLinks, ...header } = input;
         tx.set(filenameRef, { batchId, checksum });
-        tx.create(batchRef, { input: header, manifestHash, checksum, path, generation, filename: result.filename, profileVersion: result.profileVersion, state: 'exported', createdAt: FieldValue.serverTimestamp() });
+        tx.create(batchRef, { input: header, manifestHash, manifestPath, manifestGeneration, checksum, path, generation, filename: result.filename, profileVersion: result.profileVersion, state: 'exported', createdAt: FieldValue.serverTimestamp() });
       });
-      const writer = db().bulkWriter();
-      for (const item of result.transactions) writer.set(batchRef.collection('transactions').doc(`${item.group}_${item.transaction}`), item);
-      await writer.close();
+      for (const item of result.transactions) {
+        const revisionRef = root(uid).collection('rightsCwrWorkRevisions').doc(digest(`${input.recipient}/${item.workId}`));
+        const workHash = digest(canonicalRightsJson(input.works.find(work => work.workId === item.workId)));
+        await db().runTransaction(async tx => {
+          const ackIdentityRef = root(uid).collection('rightsCwrAckIdentities').doc(digest(`${input.recipient}/${input.sender.ipi.padStart(11, '0')}/${input.createdAt.slice(0, 19)}/${item.group}/${item.transaction}/${item.type}/${item.workId}`));
+          const [previousSnap, identitySnap] = await Promise.all([tx.get(revisionRef), tx.get(ackIdentityRef)]);
+          const previous = previousSnap.data();
+          if (identitySnap.exists && identitySnap.data()?.batchId !== batchId) throw new HttpsError('already-exists', 'Another file has the same ACK correlation identity. Edit the file sequence and save again to create a new preparation timestamp.');
+          if (previous && (previous.revision > item.revision || previous.revision === item.revision && previous.workHash !== workHash)) throw new HttpsError('failed-precondition', 'Composition content changed or revision is stale. Use a newer revision before saving this export.');
+          tx.set(ackIdentityRef, { batchId, manifestHash });
+          tx.set(revisionRef, { workId: item.workId, revision: item.revision, workHash, recipient: input.recipient, ...(item.entityId ? { entityId: item.entityId } : {}), updatedAt: FieldValue.serverTimestamp() });
+          tx.set(batchRef.collection('transactions').doc(`${item.group}_${item.transaction}`), item);
+        });
+      }
+      await batchRef.update({ transactionsReady: true, transactionCount: result.transactions.length });
       return { batchId, ...result, checksum, state: 'exported', transportEnabled: false };
     }
     if (action === 'approve_cwr') {
@@ -197,34 +281,15 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
       const ref = root(uid).collection('rightsCwrBatches').doc(input.batchId);
       await db().runTransaction(async tx => {
         const batch = (await tx.get(ref)).data();
-        if (!batch || batch.checksum !== input.checksum || !canApproveCwrExport(batch.state)) throw new HttpsError('failed-precondition', 'Approve the exact current export. Claimed or transmitted files require reconciliation.');
-        tx.update(ref, { approval: { approverUid: uid, checksum: input.checksum, manifestHash: batch.manifestHash, approvedAt: FieldValue.serverTimestamp() }, state: 'approved_export' });
+        if (!batch || batch.transactionsReady !== true || batch.checksum !== input.checksum || !canApproveCwrExport(batch.state)) throw new HttpsError('failed-precondition', 'Approve the exact current export. Claimed or transmitted files require reconciliation.');
+        const submitterProfile = (await tx.get(root(uid).collection('rightsSubmitterProfiles').doc(batch.input.recipient))).data();
+        tx.update(ref, { approval: { ...(submitterProfile?.approved === true ? { profileRevision: submitterProfile.revision } : {}), approverUid: uid, checksum: input.checksum, manifestHash: batch.manifestHash, approvedAt: FieldValue.serverTimestamp() }, state: 'approved_export' });
       });
-      return { state: 'approved_export', delivered: false, reason: 'Receiver-approved submitter transport is not configured. Download this approved file for official delivery.' };
+      return { state: 'approved_export', delivered: false, reason: 'Exact batch approved. Check receiver transport status before transmission, or download for manual completion.' };
     }
     if (action === 'import_ack') {
       const input = z.object({ batchId: RightsId, text: z.string().max(20_000_000) }).strict().parse(payload);
-      const ref = root(uid).collection('rightsCwrBatches').doc(input.batchId);
-      const batch = (await ref.get()).data();
-      if (!batch) throw new HttpsError('not-found', 'Batch not found.');
-      const parsed = parseCwrAcknowledgments(input.text);
-      const created = batch.input.createdAt as string;
-      for (const ack of parsed.acknowledgments) {
-        const match = (await ref.collection('transactions').doc(`${ack.group}_${ack.transaction}`).get()).data();
-        if (!match || match.workId !== ack.workId || match.type && match.type !== ack.type || ack.originalDate !== created.slice(0, 10).replace(/-/g, '') || ack.originalTime !== created.slice(11, 19).replace(/:/g, '')) throw new HttpsError('failed-precondition', 'ACK cannot be unambiguously correlated to this batch.');
-      }
-      const hash = digest(input.text);
-      const path = `users/${uid}/rights/cwr/${input.batchId}/ack-${hash}.txt`;
-      await SAFE_BUCKET().file(path).save(input.text, { resumable: false, contentType: 'text/plain' });
-      await db().runTransaction(async tx => {
-        const ackRef = ref.collection('acknowledgments').doc(hash);
-        if ((await tx.get(ackRef)).exists) return;
-        tx.create(ackRef, { sender: parsed.sender, transactionCount: parsed.acknowledgments.length, path, hash, source: 'user_import', independentlyVerified: false, importedAt: FieldValue.serverTimestamp() });
-      });
-      const writer = db().bulkWriter();
-      for (const ack of parsed.acknowledgments) writer.set(ref.collection('decisions').doc(`${hash}_${ack.group}_${ack.transaction}`), { ...ack, source: 'user_import', independentlyVerified: false, batchId: input.batchId });
-      await writer.close();
-      return { hash, ...parsed, source: 'user_import' };
+      return ingestCwrAck(uid, input.batchId, input.text, 'user_import');
     }
     if (action === 'remember_login' || action === 'forget_login') {
       const enabled = action === 'remember_login';

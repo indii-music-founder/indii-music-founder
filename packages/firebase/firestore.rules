@@ -1015,6 +1015,7 @@ service cloud.firestore {
         match /commands/{commandId} { allow read, write: if false; }
       }
       match /rightsPortalConsents/{id} { allow read: if isOwner(userId); allow write: if false; }
+      match /rightsSocietyOutcomes/{id} { allow read: if isOwner(userId); allow write: if false; }
       match /rightsCwrBatches/{id} {
         allow read: if isOwner(userId); allow write: if false;
         match /acknowledgments/{ackId} { allow read: if isOwner(userId); allow write: if false; }

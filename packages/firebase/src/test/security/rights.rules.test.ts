@@ -26,9 +26,14 @@ describe('rights server-authoritative security boundaries', () => {
     await assertFails(updateDoc(doc(owner(), projection), { filingState: 'registered' }));
   });
   it('keeps filing evidence, session secrets and one-use tickets server-only for writes', async () => {
-    for (const path of ['users/rights-owner/rightsFilings/filing-1', 'users/rights-owner/rightsFilings/filing-1/evidence/receipt-1', 'users/rights-owner/rightsSessions/session-1', 'rightsConnectionTickets/ticket-1']) {
+    for (const path of ['users/rights-owner/rightsFilings/filing-1', 'users/rights-owner/rightsFilings/filing-1/evidence/receipt-1', 'users/rights-owner/rightsSessions/session-1', 'rightsConnectionTickets/ticket-1', 'users/rights-owner/rightsCwrWorkCodes/work-1', 'users/rights-owner/rightsSocietyOutcomes/outcome-1', 'users/rights-owner/rightsSubmitterProfiles/the_mlc', 'users/rights-owner/rightsSocietyOnboarding/the_mlc', 'users/rights-owner/rightsCwrBatches/batch-1', 'users/rights-owner/rightsCwrBatches/batch-1/transactions/transaction-1', 'users/rights-owner/rightsCwrBatches/batch-1/decisions/decision-1']) {
       await assertFails(setDoc(doc(owner(), path), { ownerUid: 'rights-owner', state: 'registered' }));
     }
+  });
+  it('keeps private receiver credentials unreadable and outcomes owner-only', async () => {
+    await assertFails(getDoc(doc(owner(), 'users/rights-owner/rightsSubmitterProfiles/the_mlc')));
+    await assertSucceeds(getDoc(doc(owner(), 'users/rights-owner/rightsSocietyOutcomes/outcome-1')));
+    await assertFails(getDoc(doc(environment.authenticatedContext('other-owner').firestore(), 'users/rights-owner/rightsSocietyOutcomes/outcome-1')));
   });
   it('keeps saved cases owner-readable and immutable to clients', async () => {
     await assertSucceeds(getDoc(doc(owner(), 'users/rights-owner/rightsCases/case-1')));

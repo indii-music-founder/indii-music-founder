@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
-import { RightsCaseSchema, validateCopyrightCase, type RightsCase, type CopyrightWork, type CanonicalMusicEntity } from '@indii/shared';
+import { RightsCaseSchema, validateCopyrightCase, type RightsCase, type CopyrightWork, type CanonicalMusicEntity, restoreRightsCase, restoreRightsReceiptReport, RightsReceiptReportSchema, type PublicRightsSession } from '@indii/shared';
 import { db } from '@/services/firebase';
 import { downloadRightsFile, rightsOperation, saveRightsCase, uploadRightsDeposit } from '@/services/rights/HostedRightsService';
 import { HostedRightsViewport } from './HostedRightsViewport';
@@ -30,6 +30,8 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
   const [savedFilingId, setSavedFilingId] = useState('');
   const [savedHash, setSavedHash] = useState('');
   const [sessionId, setSessionId] = useState('');
+  const [connectionVersion, setConnectionVersion] = useState(0);
+  const [sessions, setSessions] = useState<PublicRightsSession[]>([]);
   const [capabilities, setCapabilities] = useState({ hostedEnabled: false, rememberEnabled: false, paymentEnabled: false });
   const [remember, setRemember] = useState(false);
   const [message, setMessage] = useState('');
@@ -59,6 +61,7 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
       do { const page = await rightsOperation<{ entities: CanonicalMusicEntity[]; next: string | null }>('catalog_entities', after ? { after } : {}); all.push(...page.entities); after = page.next ?? undefined; } while (after && !cancelled);
       if (!cancelled) setEntities(all);
     })().catch(() => setMessage('Canonical catalog identities could not be loaded.'));
+    void rightsOperation<{ sessions: PublicRightsSession[] }>('list_sessions').then(value => { if (!cancelled) setSessions(value.sessions); }).catch(() => setMessage('Running sessions could not be loaded. Refresh before starting another browser.'));
     void rightsOperation<typeof capabilities>('capabilities').then(setCapabilities).catch(() => {});
     return () => { cancelled = true; clearTimeout(consentExpiry); consent(); a(); b(); };
   }, [userId]);
@@ -91,6 +94,8 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
   };
   const save = async () => {
     const value = manifest();
+    // Use the revision actually loaded, never silently overwrite a newer snapshot.
+    if (savedFilingId) value.revision = revision + 1;
     const prior = cases.find(c => c.id === caseId);
     if (prior) value.revision = prior.manifest.revision + 1;
     const errors = validateCopyrightCase(value);
@@ -99,15 +104,17 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
     setRevision(value.revision); setSavedFilingId(result.filingId); setSavedHash(result.manifestHash); setMessage('Filing preparation saved. No application has been submitted.');
   };
   const loadCase = (record: Record<string, any>) => {
-    const value = RightsCaseSchema.parse(record.manifest);
-    setCaseId(value.caseId); setRevision(value.revision + 1); setKind(value.applicationKind); setScope(value.claimScope);
+    const restored = restoreRightsCase(record, userId);
+    const value = restored.manifest;
+    setSessionId(''); setReceipt(''); receiptReport.current = undefined;
+    setCaseId(value.caseId); setRevision(value.revision); setKind(value.applicationKind); setScope(value.claimScope);
     setParties(value.parties); setWorks(value.works); setCertifier(value.certifierPartyId); setAuthority(value.authority);
-    setAuthorityEvidence(value.authorityEvidence ?? ''); setSavedHash('');
+    setAuthorityEvidence(value.authorityEvidence ?? ''); setSavedFilingId(restored.filingId); setSavedHash(restored.manifestHash);
   };
   return <div className="p-6 space-y-6 overflow-y-auto text-white">
     <h2 className="text-xl font-semibold">Copyright filing workspace</h2>
     <p className="text-sm text-gray-400">Prepare single or group claims, verify deposits, and complete the official application with your own review and certification.</p>
-    {cases.length > 0 && <section><h3>Saved cases</h3><div className="flex flex-wrap gap-2">{cases.map(c => <button key={c.id} onClick={() => loadCase(c)} className="border border-white/20 rounded px-3 py-2">{c.manifest?.works?.[0]?.title ?? c.id} · revision {c.manifest?.revision}</button>)}</div></section>}
+    {cases.length > 0 && <section><h3>Saved cases</h3><div className="flex flex-wrap gap-2">{cases.map(c => <button key={c.id} disabled={busy} onClick={() => void run(async () => loadCase(c))} className="border border-white/20 rounded px-3 py-2">{c.manifest?.works?.[0]?.title ?? c.id} · revision {c.manifest?.revision}</button>)}</div></section>}
     <div className="grid md:grid-cols-2 gap-3">
       <label>Application<select className={inputStyle} value={kind} onChange={e => { const k = e.target.value as typeof kind; setKind(k); setSavedHash(''); if (k.startsWith('gram')) { setScope(k === 'gram_composition' ? 'composition' : 'recording'); setWorks([]); } }}>
         <option value="standard">Standard — single work</option><option value="gruw">Group of unpublished works</option><option value="gram_composition">Album musical works</option><option value="gram_recording">Album sound recordings</option>
@@ -156,12 +163,34 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
     </div>
     {!capabilities.hostedEnabled && <p className="text-sm text-amber-300">Hosted filing is awaiting deployment and genuine acceptance checks. Saved preparation and the official portal remain available.</p>}
     <label className="block"><input type="checkbox" checked={remember} disabled={!capabilities.rememberEnabled || busy} onChange={e => { const enabled = e.target.checked; void run(async () => { await rightsOperation(enabled ? 'remember_login' : 'forget_login'); setRemember(enabled); }); }} /> Remember approved portal login for seven days. You can revoke it here.</label>
-    {sessionId && <HostedRightsViewport sessionId={sessionId} />}
+    <section aria-label="Running copyright sessions" className="space-y-2"><h3>Running sessions</h3>
+      <button disabled={busy} onClick={() => void run(async () => { const result = await rightsOperation<{ sessions: PublicRightsSession[] }>('list_sessions'); setSessions(result.sessions); })}>Refresh running sessions</button>
+      {sessions.map(session => <div key={session.sessionId} className="border border-white/15 rounded p-3">
+        <p>{session.filingId} · {session.state.replaceAll('_', ' ')} · Ends {new Date(session.expiresAtMs).toLocaleTimeString()}</p>
+        <button disabled={busy || !session.canReconnect} onClick={() => void run(async () => {
+          const filing = filings.find(record => record.id === session.filingId);
+          if (!filing || filing.manifestHash !== session.manifestHash) throw new Error('The saved session filing could not be verified. Refresh filing history.');
+          loadCase({ ...filing, filingId: session.filingId }); setConnectionVersion(previous => previous + 1); setSessionId(session.sessionId);
+        })}>Reconnect to existing browser</button>
+        <button disabled={busy} onClick={() => void run(async () => { await rightsOperation('end_session', { sessionId: session.sessionId }); setSessions(previous => previous.map(item => item.sessionId === session.sessionId ? { ...item, state: 'termination_pending', canReconnect: false } : item)); })}>End this session</button>
+        {!session.canReconnect && <p className="text-xs text-amber-300">This browser cannot currently reconnect. Refresh its status; ending it does not confirm a filing outcome.</p>}
+      </div>)}
+    </section>
+    {sessionId && <HostedRightsViewport key={`${sessionId}:${connectionVersion}`} sessionId={sessionId} />}
     <section className="space-y-2"><h3>Report an official confirmation</h3><Field label="Service Request or confirmation number" value={receipt} onChange={setReceipt} />
       <button disabled={!receipt || !savedHash || busy} onClick={() => void run(async () => { await rightsOperation('record_evidence', { caseId, filingId: savedFilingId, evidence: reportedEvidence() }); setMessage('Your report is saved. Official filing outcome still requires reconciliation.'); })}>Save reported confirmation</button>
-      <button disabled={!receipt} onClick={() => downloadRightsFile('copyright-receipt.json', JSON.stringify({ caseId, filingId: savedFilingId, revision, manifestHash: savedHash, evidence: reportedEvidence(), source: 'user_report' }, null, 2), 'application/json')}>Download receipt report</button>
+      <button disabled={busy || !receipt || !savedHash} onClick={() => void run(async () => downloadRightsFile('copyright-receipt.json', JSON.stringify(RightsReceiptReportSchema.parse({ schemaVersion: 1, caseId, filingId: savedFilingId, revision, manifestHash: savedHash, evidence: reportedEvidence(), source: 'user_report' }), null, 2), 'application/json'))}>Download receipt report</button>
+      <label className="block">Restore a downloaded confirmation report<input type="file" accept=".json,application/json" disabled={busy || !savedHash} onChange={event => {
+        const file = event.target.files?.[0]; event.target.value = '';
+        if (file) void run(async () => {
+          if (file.size > 32_768) throw new Error('Confirmation reports must be smaller than 32 KB.');
+          const report = restoreRightsReceiptReport(JSON.parse(await file.text()), { caseId, filingId: savedFilingId, revision, manifestHash: savedHash });
+          setReceipt(report.evidence.externalId); receiptReport.current = { key: JSON.stringify([caseId, savedFilingId, report.evidence.externalId]), evidence: report.evidence };
+          setMessage('Reported confirmation restored for this exact filing. Save to retry persistence; no external filing will be repeated.');
+        });
+      }} /></label>
     </section>
-    <section><h3>Filing history</h3>{filings.map(f => <p key={f.id} className="text-sm">{f.id} · {String(f.state).replaceAll('_', ' ')} · {f.evidenceSource ?? 'legacy evidence not verified'}</p>)}</section>
+    <section><h3>Filing history</h3>{filings.map(f => <p key={f.id} className="text-sm">{f.id} · {String(f.state).replaceAll('_', ' ')} · {f.evidenceSource ?? 'legacy evidence not verified'} <button disabled={busy} onClick={() => void run(async () => loadCase({ ...f, filingId: f.id }))}>Open filing revision</button></p>)}</section>
     {message && <p role="status" className="text-sm text-amber-200">{message}</p>}
   </div>;
 }
