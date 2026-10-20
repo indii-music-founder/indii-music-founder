@@ -22,6 +22,7 @@ import { ArtworkDraftService } from '@/services/canvas/ArtworkDraftService';
 import { ArtworkCanvasSession, createArtworkCanvasObject, readArtworkCanvasTransform } from '@/services/canvas/ArtworkCanvasSession';
 import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
+import { downloadAsset, downloadBlob } from '@/utils/download';
 
 type LayerIdCarrier = fabric.FabricObject & { layerId?: string; rasterDensity?: number };
 
@@ -51,8 +52,8 @@ export const CanvasEditor: React.FC = () => {
             closeDoc: state.closeDoc,
         })),
     );
-    const undoCanvas = useStore(state => state.undoCanvas);
-    const redoCanvas = useStore(state => state.redoCanvas);
+    const undoArtwork = useStore(state => state.undoArtwork);
+    const redoArtwork = useStore(state => state.redoArtwork);
     const canUndo = useStore(state => state.canvasPast.length > 0 || Boolean(state.canvasGesture));
     const canRedo = useStore(state => state.canvasFuture.length > 0 && !state.canvasGesture);
     const beginGesture = useStore(state => state.beginCanvasGesture);
@@ -75,15 +76,15 @@ export const CanvasEditor: React.FC = () => {
             if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
             if (event.key.toLowerCase() === 'z') {
                 event.preventDefault();
-                if (event.shiftKey) redoCanvas(); else undoCanvas();
+                if (event.shiftKey) redoArtwork(); else undoArtwork();
             } else if (event.ctrlKey && event.key.toLowerCase() === 'y') {
                 event.preventDefault();
-                redoCanvas();
+                redoArtwork();
             }
         };
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, [undoCanvas, redoCanvas, framingLayerId]);
+    }, [undoArtwork, redoArtwork, framingLayerId]);
 
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const fabricRef = useRef<fabric.Canvas | null>(null);
@@ -241,9 +242,20 @@ export const CanvasEditor: React.FC = () => {
             }
 
             const output = await renderArtworkDocument(currentDoc, scale, format === 'jpeg');
-            const dataUrl = output.toDataURL(`image/${format}`, 0.95);
-            const { downloadAsset } = await import('@/utils/download');
-            await downloadAsset(dataUrl, `${stem}.${format}`);
+            if (window.electronAPI?.video?.saveAsset) {
+                const saved = await downloadAsset(output.toDataURL(`image/${format}`, 0.95), `${stem}.${format}`);
+                if (!saved) throw new Error('Export could not be saved');
+            } else {
+                const blob = await new Promise<Blob>((resolve, reject) => {
+                    const timeout = setTimeout(() => reject(new Error('Export encoding took too long')), 60_000);
+                    output.toBlob(value => {
+                        clearTimeout(timeout);
+                        if (value) resolve(value);
+                        else reject(new Error('Export could not be encoded'));
+                    }, `image/${format}`, 0.95);
+                });
+                await downloadBlob(blob, `${stem}.${format}`);
+            }
         },
         [currentDoc, toast],
     );
@@ -344,8 +356,8 @@ export const CanvasEditor: React.FC = () => {
                     {renderError && <p className="text-red-300" role="alert">{renderError}</p>}
                 </div>
                 {!framingLayerId && <div className="flex gap-2 px-3 py-2">
-                    <button onClick={undoCanvas} disabled={!canUndo} className="text-xs text-white disabled:opacity-30" aria-label="Undo">Undo</button>
-                    <button onClick={redoCanvas} disabled={!canRedo} className="text-xs text-white disabled:opacity-30" aria-label="Redo">Redo</button>
+                    <button onClick={undoArtwork} disabled={!canUndo} className="text-xs text-white disabled:opacity-30" aria-label="Undo">Undo</button>
+                    <button onClick={redoArtwork} disabled={!canRedo} className="text-xs text-white disabled:opacity-30" aria-label="Redo">Redo</button>
                 </div>}
                 {!framingLayerId && <div className="flex flex-col gap-2 px-3 py-2 text-xs text-white/70">
                     <label>Artwork name<input aria-label="Artwork name" value={currentDoc.name ?? 'Untitled cover'} onFocus={beginGesture} onBlur={commitGesture} onChange={event => updateArtwork({ name: event.target.value })} className="block w-full bg-black/40 p-1" /></label>

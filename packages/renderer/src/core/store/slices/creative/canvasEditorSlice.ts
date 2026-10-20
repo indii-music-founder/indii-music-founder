@@ -19,8 +19,8 @@ export interface CanvasEditorSlice {
     beginCanvasGesture: () => void;
     commitCanvasGesture: () => void;
     cancelCanvasGesture: () => void;
-    undoCanvas: () => void;
-    redoCanvas: () => void;
+    undoArtwork: () => void;
+    redoArtwork: () => void;
     selectedLayerId: string | null;
     openDoc: (doc: CanvasDoc) => void;
     openImage: (src: string, projectId: string) => void;
@@ -85,14 +85,14 @@ export const createCanvasEditorSlice: StateCreator<StoreState, [], [], CanvasEdi
             else set({ ...restore(original), canvasGesture: null });
         }
     },
-    undoCanvas: () => {
+    undoArtwork: () => {
         get().commitCanvasGesture();
         const { currentDoc, canvasPast, canvasFuture } = get();
         const previous = canvasPast.at(-1);
         if (!currentDoc || !previous) return;
         set({ ...restore(previous), canvasPast: canvasPast.slice(0, -1), canvasFuture: [currentDoc, ...canvasFuture].slice(0, HISTORY_LIMIT) });
     },
-    redoCanvas: () => {
+    redoArtwork: () => {
         get().commitCanvasGesture();
         const { currentDoc, canvasPast, canvasFuture } = get();
         const next = canvasFuture[0];
