@@ -12,6 +12,8 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     const [rectangle, setRectangle] = useState<CutoutRectangle | null>(null);
     const [strokes, setStrokes] = useState<CutoutStroke[]>([]);
     const [mask, setMask] = useState<Uint8Array | null>(null);
+    const [baseMask, setBaseMask] = useState<Uint8Array | null>(null);
+    const previousMask = useRef<{ src?: string; feather?: number; uid?: string }>({});
     const [error, setError] = useState<string | null>(null), [progress, setProgress] = useState(0);
     const [radius, setRadius] = useState(30), [softness, setSoftness] = useState(layer.maskFeather ?? 1);
     const canvas = useRef<HTMLCanvasElement>(null), image = useRef<CanvasImageSource | null>(null);
@@ -20,15 +22,35 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     const update = useStore(state => state.updateLayer);
     useEffect(() => { active.current = true; return () => { active.current = false; controller.current?.abort(); }; }, []);
     const begin = async () => {
-        const session = ++generation.current;
-        setOpen(true); setBusy(true); setError(null); setMask(null); setRectangle(null); setStrokes([]); setMode('box');
+        const session = ++generation.current, uid = useStore.getState().user?.uid;
+        controller.current?.abort();
+        const abort = new AbortController(); controller.current = abort;
+        image.current = null; start.current = null; drawing.current = false; setDimensions(null);
+        setOpen(true); setBusy(true); setError(null); setMask(null); setBaseMask(null); setRectangle(null); setStrokes([]);
+        setMode(layer.maskSrc ? 'keep' : 'box'); setSoftness(layer.maskFeather ?? 1);
+        previousMask.current = { src: layer.maskSrc, feather: layer.maskFeather, uid };
         try {
-            const photo = await loadArtworkImage(layer.src);
-            if (!active.current || generation.current !== session) return;
+            const photo = await loadArtworkImage(layer.src, abort.signal);
+            if (!active.current || generation.current !== session || useStore.getState().user?.uid !== uid) return;
             if (photo.width * photo.height > 24_000_000) throw new Error('Resize this photo below 24 megapixels before making a cutout');
             image.current = photo.getElement(); setDimensions({ width: photo.width, height: photo.height });
-        } catch (failure) { if (active.current && generation.current === session) setError(String(failure)); }
-        finally { if (active.current && generation.current === session) setBusy(false); }
+            if (layer.maskSrc) {
+                const saved = await loadArtworkImage(layer.maskSrc, abort.signal);
+                if (!active.current || generation.current !== session || useStore.getState().user?.uid !== uid) return;
+                if (saved.width !== photo.width || saved.height !== photo.height) throw new Error('Saved cutout dimensions do not match the photo');
+                const full = document.createElement('canvas'); full.width = photo.width; full.height = photo.height;
+                try {
+                    const ctx = full.getContext('2d'); if (!ctx) throw new Error('Saved cutout pixels could not be read');
+                    ctx.drawImage(saved.getElement(), 0, 0);
+                    const pixels = ctx.getImageData(0, 0, full.width, full.height).data;
+                    const existing = new Uint8Array(full.width * full.height);
+                    for (let i = 0; i < existing.length; i++) existing[i] = Math.round(pixels[i * 4]! * pixels[i * 4 + 3]! / 255);
+                    setBaseMask(existing); setMask(existing);
+                    setRectangle({ x: 0, y: 0, width: full.width, height: full.height });
+                } finally { full.width = 0; full.height = 0; }
+            }
+        } catch (failure) { if (active.current && generation.current === session && useStore.getState().user?.uid === uid) setError(String(failure)); }
+        finally { if (active.current && generation.current === session && useStore.getState().user?.uid === uid) setBusy(false); }
     };
     useEffect(() => {
         const el = canvas.current, source = image.current;
@@ -37,18 +59,19 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
         el.width = Math.max(1, Math.round(dimensions.width * scale)); el.height = Math.max(1, Math.round(dimensions.height * scale));
         const ctx = el.getContext('2d'); if (!ctx) return;
         ctx.drawImage(source, 0, 0, el.width, el.height);
-        if (mask) {
+        const shownMask = mask ?? baseMask;
+        if (shownMask) {
             const overlay = ctx.createImageData(el.width, el.height);
             for (let y = 0; y < el.height; y++) for (let x = 0; x < el.width; x++) {
                 const sourceX = Math.min(dimensions.width - 1, Math.floor(x / scale)), sourceY = Math.min(dimensions.height - 1, Math.floor(y / scale));
                 const i = (y * el.width + x) * 4;
                 overlay.data[i] = 30; overlay.data[i + 1] = 220; overlay.data[i + 2] = 140;
-                overlay.data[i + 3] = mask[sourceY * dimensions.width + sourceX] ? 90 : 0;
+                overlay.data[i + 3] = Math.round(shownMask[sourceY * dimensions.width + sourceX]! * 90 / 255);
             }
             const temporary = document.createElement('canvas'); temporary.width = el.width; temporary.height = el.height;
             temporary.getContext('2d')?.putImageData(overlay, 0, 0); ctx.drawImage(temporary, 0, 0);
         }
-        if (rectangle) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.strokeRect(rectangle.x * scale, rectangle.y * scale, rectangle.width * scale, rectangle.height * scale); }
+        if (rectangle && !baseMask) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.strokeRect(rectangle.x * scale, rectangle.y * scale, rectangle.width * scale, rectangle.height * scale); }
         for (const stroke of strokes) {
             ctx.strokeStyle = stroke.label === 'keep' ? '#22ee88' : '#ff5566'; ctx.fillStyle = ctx.strokeStyle;
             ctx.lineWidth = stroke.radius * 2 * scale; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
@@ -56,7 +79,7 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
             ctx.stroke();
             const point = stroke.points[0]; if (point) { ctx.beginPath(); ctx.arc(point.x * scale, point.y * scale, stroke.radius * scale, 0, Math.PI * 2); ctx.fill(); }
         }
-    }, [open, dimensions, rectangle, strokes, mask]);
+    }, [open, dimensions, rectangle, strokes, mask, baseMask]);
     const point = (event: React.PointerEvent<HTMLCanvasElement>): CutoutPoint => {
         const bounds = event.currentTarget.getBoundingClientRect();
         return { x: Math.max(0, Math.min(dimensions!.width, (event.clientX - bounds.left) / bounds.width * dimensions!.width)),
@@ -76,7 +99,7 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
                 return pixels;
             };
             const pixels = readPixels();
-            const result = await generateArtworkMask({ ...dimensions, pixels, rectangle, strokes }, abort.signal, value => {
+            const result = await generateArtworkMask({ ...dimensions, pixels, rectangle, strokes, baseMask: baseMask ?? undefined }, abort.signal, value => {
                 if (active.current && generation.current === session) setProgress(value);
             }, readPixels);
             if (active.current && generation.current === session) setMask(result);
@@ -87,25 +110,30 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     const apply = async () => {
         const doc = useStore.getState().currentDoc, uid = useStore.getState().user?.uid;
         if (!doc || !dimensions || !mask) return;
+        const baseline = previousMask.current;
+        const selected = doc.layers.find(item => item.id === layer.id);
+        if (uid !== baseline.uid || selected?.kind !== 'raster' || selected.locked || selected.src !== layer.src || selected.maskSrc !== baseline.src || selected.maskFeather !== baseline.feather) {
+            setError('This cutout changed while editing. Close and reopen it to refine the latest version.'); return;
+        }
         const session = ++generation.current;
         setBusy(true); setError(null);
         try {
             const src = await persistArtworkMask(mask, dimensions.width, dimensions.height, doc.id);
             const current = useStore.getState().currentDoc, photo = current?.layers.find(item => item.id === layer.id);
-            if (!active.current || session !== generation.current || current?.id !== doc.id || useStore.getState().user?.uid !== uid || photo?.kind !== 'raster' || photo.src !== layer.src || photo.maskSrc !== layer.maskSrc) return;
+            if (!active.current || session !== generation.current || current?.id !== doc.id || useStore.getState().user?.uid !== uid || photo?.kind !== 'raster' || photo.locked || photo.src !== layer.src || photo.maskSrc !== baseline.src || photo.maskFeather !== baseline.feather) return;
             update(layer.id, { maskSrc: src, maskFeather: softness, subjectIsolated: true });
-            setOpen(false); setMask(null);
+            setOpen(false); setMask(null); setBaseMask(null);
         } catch (failure) { if (active.current && generation.current === session) setError(failure instanceof Error ? failure.message : 'Cutout could not be saved'); }
         finally { if (active.current && generation.current === session) setBusy(false); }
     };
-    const cancel = () => { generation.current++; controller.current?.abort(); setOpen(false); setBusy(false); setMask(null); image.current = null; };
+    const cancel = () => { generation.current++; controller.current?.abort(); setOpen(false); setBusy(false); setMask(null); setBaseMask(null); image.current = null; };
     return <div className="flex flex-col gap-2 p-3 text-xs text-white/70" aria-label="Artist cutout">
         {!open ? <>
-            <button disabled={layer.locked} onClick={() => void begin()}>Remove background</button>
+            <button disabled={layer.locked} onClick={() => void begin()}>{layer.maskSrc ? 'Refine cutout' : 'Remove background'}</button>
             {layer.maskSrc && <button onClick={() => update(layer.id, { maskSrc: undefined, maskFeather: undefined, subjectIsolated: false })}>Reset cutout</button>}
         </> : <>
-            <p>Draw a box around the artist. Mark areas to keep or remove, then preview the cutout. Green shows what will stay.</p>
-            <div className="flex gap-2">{(['box', 'keep', 'remove'] as const).map(value => <button key={value} disabled={busy} aria-pressed={mode === value} onClick={() => setMode(value)}>{value === 'box' ? 'Draw box' : value === 'keep' ? 'Keep' : 'Remove'}</button>)}</div>
+            <p>{baseMask ? 'Paint areas to keep or remove from the current cutout, then preview. Untouched areas are preserved.' : 'Draw a box around the artist. Mark areas to keep or remove, then preview the cutout. Green shows what will stay.'}</p>
+            <div className="flex gap-2">{(['box', 'keep', 'remove'] as const).filter(value => !baseMask || value !== 'box').map(value => <button key={value} disabled={busy} aria-pressed={mode === value} onClick={() => setMode(value)}>{value === 'box' ? 'Draw box' : value === 'keep' ? 'Keep' : 'Remove'}</button>)}</div>
             <canvas ref={canvas} className="max-w-full touch-none border border-white/20" aria-label="Draw artist selection" onPointerDown={event => {
                 if (busy || !dimensions) return;
                 event.currentTarget.setPointerCapture(event.pointerId); drawing.current = true; const p = point(event); start.current = p; setMask(null);
