@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { downloadAsset } from './download';
+import { downloadAsset, downloadBlob } from './download';
 
 vi.mock('@/utils/logger', () => ({
     logger: {
@@ -75,5 +75,23 @@ describe('downloadAsset', () => {
 
         vi.advanceTimersByTime(60_000);
         expect(revokeObjectURL).toHaveBeenCalledWith('blob:data-img');
+    });
+
+    it('downloads an encoded canvas Blob without fetching a large data URL', async () => {
+        const blob = new Blob(['png-bytes'], { type: 'image/png' });
+        const fetchSpy = vi.fn();
+        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+        const createObjectURL = vi.fn().mockReturnValue('blob:cover');
+        const revokeObjectURL = vi.fn();
+        vi.stubGlobal('fetch', fetchSpy);
+        vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
+
+        await downloadBlob(blob, 'cover.png');
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(createObjectURL).toHaveBeenCalledWith(blob);
+        expect(clickSpy).toHaveBeenCalledTimes(1);
+        expect(revokeObjectURL).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(60_000);
+        expect(revokeObjectURL).toHaveBeenCalledWith('blob:cover');
     });
 });

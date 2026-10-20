@@ -9,6 +9,25 @@ async function filenameForBlob(filename: string, blob: Blob): Promise<string> {
     return imageDownloadFilename(filename, blob.type, header);
 }
 
+/** Download an already encoded browser asset without round-tripping through a data URL. */
+export async function downloadBlob(blob: Blob, filename: string): Promise<void> {
+    const safeFilename = await filenameForBlob(filename, blob);
+    const blobUrl = URL.createObjectURL(blob);
+    try {
+        const anchor = document.createElement('a');
+        anchor.href = blobUrl;
+        anchor.download = safeFilename;
+        document.body.appendChild(anchor);
+        try { anchor.click(); }
+        finally { anchor.remove(); }
+    } catch (failure) {
+        URL.revokeObjectURL(blobUrl);
+        throw failure;
+    }
+    // The browser's download manager can still be reading the object URL after click.
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+}
+
 export async function downloadAsset(url: string, defaultFilename: string = 'download') {
     try {
         if (typeof window !== 'undefined' && window.electronAPI?.video?.saveAsset) {

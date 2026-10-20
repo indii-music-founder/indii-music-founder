@@ -22,6 +22,7 @@ import { ArtworkDraftService } from '@/services/canvas/ArtworkDraftService';
 import { ArtworkCanvasSession, createArtworkCanvasObject, readArtworkCanvasTransform } from '@/services/canvas/ArtworkCanvasSession';
 import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
+import { downloadAsset, downloadBlob } from '@/utils/download';
 
 type LayerIdCarrier = fabric.FabricObject & { layerId?: string; rasterDensity?: number };
 
@@ -182,6 +183,9 @@ export const CanvasEditor: React.FC = () => {
         const canvas = fabricRef.current;
         if (!canvas) return;
         const handler = (e: fabric.ModifiedEvent) => {
+            // Only a completed user transform belongs in document history. Fabric
+            // can also emit modification events while objects are rebuilt.
+            if (!e.transform) return;
             const target = e.target as LayerIdCarrier;
             if (!target.layerId || !currentDoc) return;
             const { proxyScale } = getViewportProxy(currentDoc.width, currentDoc.height);
@@ -241,9 +245,20 @@ export const CanvasEditor: React.FC = () => {
             }
 
             const output = await renderArtworkDocument(currentDoc, scale, format === 'jpeg');
-            const dataUrl = output.toDataURL(`image/${format}`, 0.95);
-            const { downloadAsset } = await import('@/utils/download');
-            await downloadAsset(dataUrl, `${stem}.${format}`);
+            if (window.electronAPI?.video?.saveAsset) {
+                const saved = await downloadAsset(output.toDataURL(`image/${format}`, 0.95), `${stem}.${format}`);
+                if (!saved) throw new Error('Export could not be saved');
+            } else {
+                const blob = await new Promise<Blob>((resolve, reject) => {
+                    const timeout = setTimeout(() => reject(new Error('Export encoding took too long')), 60_000);
+                    output.toBlob(value => {
+                        clearTimeout(timeout);
+                        if (value) resolve(value);
+                        else reject(new Error('Export could not be encoded'));
+                    }, `image/${format}`, 0.95);
+                });
+                await downloadBlob(blob, `${stem}.${format}`);
+            }
         },
         [currentDoc, toast],
     );
