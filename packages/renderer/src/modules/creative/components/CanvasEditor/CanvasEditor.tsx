@@ -52,8 +52,8 @@ export const CanvasEditor: React.FC = () => {
             closeDoc: state.closeDoc,
         })),
     );
-    const undoCanvas = useStore(state => state.undoCanvas);
-    const redoCanvas = useStore(state => state.redoCanvas);
+    const undoArtwork = useStore(state => state.undoArtwork);
+    const redoArtwork = useStore(state => state.redoArtwork);
     const canUndo = useStore(state => state.canvasPast.length > 0 || Boolean(state.canvasGesture));
     const canRedo = useStore(state => state.canvasFuture.length > 0 && !state.canvasGesture);
     const beginGesture = useStore(state => state.beginCanvasGesture);
@@ -76,15 +76,15 @@ export const CanvasEditor: React.FC = () => {
             if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
             if (event.key.toLowerCase() === 'z') {
                 event.preventDefault();
-                if (event.shiftKey) redoCanvas(); else undoCanvas();
+                if (event.shiftKey) redoArtwork(); else undoArtwork();
             } else if (event.ctrlKey && event.key.toLowerCase() === 'y') {
                 event.preventDefault();
-                redoCanvas();
+                redoArtwork();
             }
         };
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, [undoCanvas, redoCanvas, framingLayerId]);
+    }, [undoArtwork, redoArtwork, framingLayerId]);
 
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const fabricRef = useRef<fabric.Canvas | null>(null);
@@ -183,9 +183,6 @@ export const CanvasEditor: React.FC = () => {
         const canvas = fabricRef.current;
         if (!canvas) return;
         const handler = (e: fabric.ModifiedEvent) => {
-            // Only a completed user transform belongs in document history. Fabric
-            // can also emit modification events while objects are rebuilt.
-            if (!e.transform) return;
             const target = e.target as LayerIdCarrier;
             if (!target.layerId || !currentDoc) return;
             const { proxyScale } = getViewportProxy(currentDoc.width, currentDoc.height);
@@ -359,8 +356,8 @@ export const CanvasEditor: React.FC = () => {
                     {renderError && <p className="text-red-300" role="alert">{renderError}</p>}
                 </div>
                 {!framingLayerId && <div className="flex gap-2 px-3 py-2">
-                    <button onClick={undoCanvas} disabled={!canUndo} className="text-xs text-white disabled:opacity-30" aria-label="Undo">Undo</button>
-                    <button onClick={redoCanvas} disabled={!canRedo} className="text-xs text-white disabled:opacity-30" aria-label="Redo">Redo</button>
+                    <button onClick={undoArtwork} disabled={!canUndo} className="text-xs text-white disabled:opacity-30" aria-label="Undo">Undo</button>
+                    <button onClick={redoArtwork} disabled={!canRedo} className="text-xs text-white disabled:opacity-30" aria-label="Redo">Redo</button>
                 </div>}
                 {!framingLayerId && <div className="flex flex-col gap-2 px-3 py-2 text-xs text-white/70">
                     <label>Artwork name<input aria-label="Artwork name" value={currentDoc.name ?? 'Untitled cover'} onFocus={beginGesture} onBlur={commitGesture} onChange={event => updateArtwork({ name: event.target.value })} className="block w-full bg-black/40 p-1" /></label>
