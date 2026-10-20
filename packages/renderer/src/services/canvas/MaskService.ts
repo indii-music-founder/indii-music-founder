@@ -2,21 +2,39 @@ import { auth } from '@/services/firebase';
 import { StorageService } from '@/services/StorageService';
 import type { CutoutInput } from './segmentation/GrabCut';
 
-export function generateArtworkMask(input: CutoutInput, signal: AbortSignal, onProgress: (value: number) => void): Promise<Uint8Array> {
-    return new Promise((resolve, reject) => {
-        if (signal.aborted) { reject(new DOMException('Cutout cancelled', 'AbortError')); return; }
-        const worker = new Worker(new URL('./segmentation/CutoutWorker.ts', import.meta.url), { type: 'module' });
-        const finish = () => { worker.terminate(); clearTimeout(timer); signal.removeEventListener('abort', cancel); };
-        const cancel = () => { finish(); reject(new DOMException('Cutout cancelled', 'AbortError')); };
-        const timer = setTimeout(() => { finish(); reject(new Error('Cutout took too long. Use a tighter box around the artist and retry.')); }, 60_000);
-        signal.addEventListener('abort', cancel, { once: true });
-        worker.onerror = () => { finish(); reject(new Error('Cutout worker could not process this photo')); };
-        worker.onmessage = (event: MessageEvent<{ kind: 'progress' | 'result' | 'error'; progress: number; mask: Uint8Array; message: string }>) => {
-            if (event.data.kind === 'progress') onProgress(event.data.progress);
-            else { finish(); if (event.data.kind === 'result') resolve(event.data.mask); else reject(new Error(event.data.message)); }
-        };
-        worker.postMessage(input, [input.pixels.buffer as ArrayBuffer]);
-    });
+class CutoutWorkerUnavailable extends Error {}
+
+/** Keep the original photo available for recovery after transferring its pixels to the worker. */
+export async function generateArtworkMask(input: CutoutInput, signal: AbortSignal, onProgress: (value: number) => void, rereadPixels: () => Uint8ClampedArray): Promise<Uint8Array> {
+    try {
+        return await new Promise<Uint8Array>((resolve, reject) => {
+            if (signal.aborted) { reject(new DOMException('Cutout cancelled', 'AbortError')); return; }
+            let worker: Worker;
+            try { worker = new Worker(new URL('./segmentation/CutoutWorker.ts', import.meta.url), { type: 'module' }); }
+            catch (failure) { reject(new CutoutWorkerUnavailable('Cutout worker could not start', { cause: failure })); return; }
+            const finish = () => { worker.terminate(); clearTimeout(timer); signal.removeEventListener('abort', cancel); };
+            const cancel = () => { finish(); reject(new DOMException('Cutout cancelled', 'AbortError')); };
+            const timer = setTimeout(() => { finish(); reject(new Error('Cutout took too long. Use a tighter box around the artist and retry.')); }, 60_000);
+            signal.addEventListener('abort', cancel, { once: true });
+            worker.onerror = event => { finish(); reject(new CutoutWorkerUnavailable(event.message || 'Cutout worker could not process this photo')); };
+            worker.onmessage = (event: MessageEvent<{ kind: 'progress' | 'result' | 'error'; progress: number; mask: Uint8Array; message: string }>) => {
+                if (event.data.kind === 'progress') onProgress(event.data.progress);
+                else { finish(); if (event.data.kind === 'result') resolve(event.data.mask); else reject(new Error(event.data.message)); }
+            };
+            try { worker.postMessage(input, [input.pixels.buffer as ArrayBuffer]); }
+            catch (failure) { finish(); reject(new CutoutWorkerUnavailable('Cutout worker could not receive the photo', { cause: failure })); }
+        });
+    } catch (failure) {
+        if (!(failure instanceof CutoutWorkerUnavailable)) throw failure;
+        signal.throwIfAborted();
+        // Let React show progress before the synchronous, full-resolution recovery pass.
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
+        signal.throwIfAborted();
+        const { extractCutout } = await import('./segmentation/GrabCut');
+        const mask = extractCutout({ ...input, pixels: rereadPixels() }, onProgress);
+        signal.throwIfAborted();
+        return mask;
+    }
 }
 
 export async function persistArtworkMask(mask: Uint8Array, width: number, height: number, documentId: string): Promise<string> {

@@ -67,14 +67,18 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
         const session = ++generation.current, abort = new AbortController(); controller.current = abort;
         setBusy(true); setError(null); setProgress(0); setMask(null);
         try {
-            const full = document.createElement('canvas'); full.width = dimensions.width; full.height = dimensions.height;
-            const ctx = full.getContext('2d'); if (!ctx) throw new Error('Photo pixels could not be read');
-            ctx.drawImage(image.current, 0, 0);
-            const pixels = ctx.getImageData(0, 0, full.width, full.height).data;
-            full.width = 0; full.height = 0;
+            const readPixels = () => {
+                const full = document.createElement('canvas'); full.width = dimensions.width; full.height = dimensions.height;
+                const ctx = full.getContext('2d'); if (!ctx || !image.current) throw new Error('Photo pixels could not be read');
+                ctx.drawImage(image.current, 0, 0);
+                const pixels = ctx.getImageData(0, 0, full.width, full.height).data;
+                full.width = 0; full.height = 0;
+                return pixels;
+            };
+            const pixels = readPixels();
             const result = await generateArtworkMask({ ...dimensions, pixels, rectangle, strokes }, abort.signal, value => {
                 if (active.current && generation.current === session) setProgress(value);
-            });
+            }, readPixels);
             if (active.current && generation.current === session) setMask(result);
         } catch (failure) {
             if (active.current && generation.current === session && !(failure instanceof DOMException && failure.name === 'AbortError')) setError(failure instanceof Error ? failure.message : 'Cutout failed');
