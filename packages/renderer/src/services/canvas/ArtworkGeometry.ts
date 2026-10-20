@@ -28,10 +28,30 @@ export function artworkEnlargement(layer: CanvasLayer, sourceWidth: number, sour
     const t = artworkTransform(layer, sourceWidth, sourceHeight, doc);
     return Math.max(Math.abs(t.scaleX), Math.abs(t.scaleY)) * exportScale;
 }
-/** Position the transformed photo's center at the center of the cover. */
-export function centeredArtworkPosition(width: number, height: number, scaleX: number, scaleY: number, rotation: number, doc: Pick<CanvasDoc, 'width' | 'height'>) {
+export interface ArtworkBounds { x: number; y: number; width: number; height: number }
+
+/** Source-pixel bounds of visible content; transparent padding is excluded. */
+export function artworkAlphaBounds(pixels: Uint8ClampedArray, width: number, height: number): ArtworkBounds | null {
+    if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 1 || height < 1 || pixels.length !== width * height * 4) {
+        throw new Error('Photo pixel dimensions are invalid');
+    }
+    let left = width, top = height, right = -1, bottom = -1;
+    for (let y = 0; y < height; y++) {
+        let first = 0;
+        while (first < width && !pixels[(y * width + first) * 4 + 3]) first++;
+        if (first === width) continue;
+        let last = width - 1;
+        while (last > first && !pixels[(y * width + last) * 4 + 3]) last--;
+        left = Math.min(left, first); right = Math.max(right, last);
+        top = Math.min(top, y); bottom = y;
+    }
+    return right < 0 ? null : { x: left, y: top, width: right - left + 1, height: bottom - top + 1 };
+}
+
+/** Position the visible photo bounds at the center of the cover. */
+export function centeredArtworkPosition(width: number, height: number, scaleX: number, scaleY: number, rotation: number, doc: Pick<CanvasDoc, 'width' | 'height'>, bounds: ArtworkBounds = { x: 0, y: 0, width, height }) {
     const angle = rotation * Math.PI / 180;
-    const dx = width * scaleX / 2, dy = height * scaleY / 2;
+    const dx = (bounds.x + bounds.width / 2) * scaleX, dy = (bounds.y + bounds.height / 2) * scaleY;
     return { x: doc.width / 2 - dx * Math.cos(angle) + dy * Math.sin(angle), y: doc.height / 2 - dx * Math.sin(angle) - dy * Math.cos(angle) };
 }
 /** Align visible transformed bounds horizontally without moving the vertical origin. */
