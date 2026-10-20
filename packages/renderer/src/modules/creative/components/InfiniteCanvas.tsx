@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import type { CanvasImage } from '@/core/store/slices/creative/creativeHistorySlice';
 import { useShallow } from 'zustand/react/shallow';
@@ -72,6 +72,22 @@ export default function InfiniteCanvas() {
     const selectionStart = useRef<{ x: number, y: number } | null>(null);
     const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
     const rafId = useRef<number | null>(null);
+    const drawRef = useRef<() => void>(() => {});
+
+    // Native wheel/resize listeners and image-load callbacks outlive the render
+    // that created them. Resolve the scene when the frame runs so those paths
+    // cannot clear the canvas using an obsolete image list.
+    const requestDraw = useCallback(() => {
+        if (rafId.current !== null) cancelAnimationFrame(rafId.current);
+        rafId.current = requestAnimationFrame(() => {
+            rafId.current = null;
+            drawRef.current();
+        });
+    }, []);
+
+    useEffect(() => () => {
+        if (rafId.current !== null) cancelAnimationFrame(rafId.current);
+    }, []);
 
     // Keep the drawing surface aligned to the actual Studio workspace. Window
     // dimensions are larger than this panel whenever navigation or context rails
@@ -104,19 +120,12 @@ export default function InfiniteCanvas() {
             window.removeEventListener('resize', resize);
             observer?.disconnect();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [requestDraw]);
 
     // Draw Loop - only for Store/Tool changes
     useEffect(() => {
         requestDraw();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canvasImages, detectedObjects, selectedCanvasImageId, tool]);
-
-    const requestDraw = () => {
-        if (rafId.current) cancelAnimationFrame(rafId.current);
-        rafId.current = requestAnimationFrame(draw);
-    };
+    }, [canvasImages, detectedObjects, selectedCanvasImageId, tool, requestDraw]);
 
     const draw = () => {
         const canvas = canvasRef.current;
@@ -310,6 +319,10 @@ export default function InfiniteCanvas() {
             ctx.setLineDash([]);
         }
     };
+
+    useLayoutEffect(() => {
+        drawRef.current = draw;
+    });
 
     const drawGrid = (ctx: CanvasRenderingContext2D, w: number, h: number, scale: number, offset: { x: number, y: number }) => {
         const gridSize = 100;
@@ -556,7 +569,7 @@ export default function InfiniteCanvas() {
         return () => {
             canvas.removeEventListener('wheel', onWheel);
         };
-    }, []);
+    }, [requestDraw]);
 
     /**
      * Draws the canvas content cleanly (no selection box, no selection borders, no tool overlays).
