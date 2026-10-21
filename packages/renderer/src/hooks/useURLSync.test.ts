@@ -47,6 +47,7 @@ vi.mock('@/core/constants', () => ({
     isValidModule: (m: string) => ['dashboard', 'creative', 'finance', 'legal', 'knowledge', 'distribution'].includes(m)
 }));
 
+// These isolated hook tests are structural-only; deployed navigation requires real-user verification.
 describe('useURLSync', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -56,6 +57,9 @@ describe('useURLSync', () => {
         mocks.currentModule.value = 'dashboard';
         mocks.distributionTab.value = 'releases';
         mocks.financeTab.value = 'overview';
+        // Structural hook fixture: Zustand setters publish synchronously.
+        mocks.setFinanceTab.mockImplementation((tab: string) => { mocks.financeTab.value = tab; });
+        mocks.setDistributionTab.mockImplementation((tab: string) => { mocks.distributionTab.value = tab; });
     });
 
     it('updates store when URL changes (Deep Link)', () => {
@@ -105,9 +109,9 @@ describe('useURLSync', () => {
     it('mirrors a same-module tab switch into ?tab= with replace (ISSUE-1439)', () => {
         mocks.location.pathname = '/finance';
         mocks.currentModule.value = 'finance';
+        const { rerender } = renderHook(() => useURLSync());
         mocks.financeTab.value = 'royalties';
-
-        renderHook(() => useURLSync());
+        rerender();
 
         expect(mocks.navigate).toHaveBeenCalledWith('/finance?tab=royalties', { replace: true });
     });
@@ -121,6 +125,20 @@ describe('useURLSync', () => {
 
         expect(mocks.setFinanceTab).toHaveBeenCalledWith('royalties');
         expect(mocks.setModule).not.toHaveBeenCalled();
+        expect(mocks.navigate).not.toHaveBeenCalled();
+    });
+
+    it('restores the default tab when Back removes the tab parameter', () => {
+        mocks.location.pathname = '/finance';
+        mocks.location.search = '?tab=royalties';
+        mocks.currentModule.value = 'finance';
+        mocks.financeTab.value = 'royalties';
+        const { rerender } = renderHook(() => useURLSync());
+
+        mocks.location.search = '';
+        rerender();
+        expect(mocks.setFinanceTab).toHaveBeenCalledWith('overview');
+        expect(mocks.navigate).not.toHaveBeenCalled();
     });
 
     it('deep-links a module and its tab in one navigation (ISSUE-1439)', () => {
@@ -130,6 +148,20 @@ describe('useURLSync', () => {
         renderHook(() => useURLSync());
 
         expect(mocks.setModule).toHaveBeenCalledWith('finance', { tab: 'royalties' });
+    });
+
+    it('preserves the addressed tab while module navigation applies it asynchronously', () => {
+        mocks.location.pathname = '/finance';
+        mocks.location.search = '?tab=royalties';
+        const { rerender } = renderHook(() => useURLSync());
+
+        mocks.currentModule.value = 'finance';
+        rerender();
+        expect(mocks.navigate).not.toHaveBeenCalled();
+
+        mocks.financeTab.value = 'royalties';
+        rerender();
+        expect(mocks.navigate).not.toHaveBeenCalled();
     });
 
     it('an explicit ?tab= wins over the legacy alias tab (ISSUE-1439)', () => {

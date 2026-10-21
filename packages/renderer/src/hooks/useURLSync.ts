@@ -98,6 +98,7 @@ export function useURLSync(options: URLSyncOptions = {}) {
     // store's previously-saved module (e.g. 'creative') on first render.
     const hasInitializedFromURL = useRef(false);
     const pendingPathModule = useRef<string | null>(null);
+    const pendingPathTab = useRef<string | undefined>(undefined);
 
     // 1. URL -> Store (Deep Link / Back Button)
     // GUARD: Do not sync URL -> store until auth has fully resolved.
@@ -122,6 +123,7 @@ export function useURLSync(options: URLSyncOptions = {}) {
 
         if (targetModule !== currentModule && isValidModule(targetModule)) {
             pendingPathModule.current = targetModule;
+            pendingPathTab.current = TAB_STATE[targetModule] ? effectiveTab : undefined;
             if (effectiveTab) {
                 setModule(targetModule, { tab: effectiveTab });
             } else {
@@ -129,16 +131,18 @@ export function useURLSync(options: URLSyncOptions = {}) {
             }
         } else {
             pendingPathModule.current = null;
+            pendingPathTab.current = undefined;
             // Same-module navigation (Back/Forward or manual URL edit): apply the
             // addressed tab, but only when it actually differs to avoid set loops.
             const config = TAB_STATE[targetModule];
-            if (effectiveTab && config) {
+            if (config) {
+                const addressedTab = effectiveTab ?? config.defaultTab;
                 const store = useStore.getState() as unknown as Record<string, unknown> & {
                     setDistributionTab: (tab: string) => void;
                     setFinanceTab: (tab: string) => void;
                 };
-                if (store[config.field] !== effectiveTab) {
-                    config.apply(store, effectiveTab);
+                if (store[config.field] !== addressedTab) {
+                    config.apply(store, addressedTab);
                 }
             }
         }
@@ -152,8 +156,16 @@ export function useURLSync(options: URLSyncOptions = {}) {
     // This direction is safe — it only fires when user intentionally changes module via UI.
     // GUARD: Skip until URL→Store has run at least once, to prevent overriding deep links.
     useEffect(() => {
-        if (options.disabled) return;
+        if (options.disabled || authLoading) return;
         if (!hasInitializedFromURL.current) return;
+
+        // URL → Store can synchronously update Zustand in the preceding effect.
+        // This effect still holds the previous render's values; never publish
+        // that stale snapshot back over the incoming deep link.
+        const liveStore = useStore.getState();
+        if (liveStore.currentModule !== currentModule) return;
+        const liveTabConfig = TAB_STATE[currentModule as string];
+        if (liveTabConfig && liveTabConfig.read(liveStore) !== activeTab) return;
 
         const pathSegments = location.pathname.split('/').filter(Boolean);
         if (PUBLIC_ROUTE_SEGMENTS.has(pathSegments[0] || '')) return;
@@ -168,7 +180,11 @@ export function useURLSync(options: URLSyncOptions = {}) {
             && currentModule !== currentPathModule
         ) return;
         if (pendingPathModule.current === currentModule) {
+            // setModule applies its addressed tab after a dynamic import. Keep
+            // the incoming URL intact while that asynchronous update settles.
+            if (pendingPathTab.current && activeTab !== pendingPathTab.current) return;
             pendingPathModule.current = null;
+            pendingPathTab.current = undefined;
         }
 
         // Preserve legacy video deep links while converging on one canonical
@@ -202,5 +218,5 @@ export function useURLSync(options: URLSyncOptions = {}) {
             navigate(buildUrl(location.pathname, location.search, null), { replace: true });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentModule, activeTab, navigate, options.disabled]);
+    }, [currentModule, activeTab, navigate, authLoading, options.disabled]);
 }
