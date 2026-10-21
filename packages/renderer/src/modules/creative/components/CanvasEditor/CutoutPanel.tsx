@@ -19,7 +19,7 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     const [radius, setRadius] = useState(30), [softness, setSoftness] = useState(layer.maskFeather ?? 1);
     const canvas = useRef<HTMLCanvasElement>(null), image = useRef<CanvasImageSource | null>(null);
     const viewport = useRef<HTMLDivElement>(null);
-    const pendingView = useRef<{ left: number; top: number; width: number; height: number; zoom: number } | null>(null);
+    const pendingView = useRef<{ left: number; top: number; width: number; height: number; contentWidth: number; contentHeight: number } | null>(null);
     const [previewZoom, setPreviewZoom] = useState(1);
     const start = useRef<CutoutPoint | null>(null), drawing = useRef(false);
     const controller = useRef<AbortController | null>(null), generation = useRef(0), active = useRef(true);
@@ -86,16 +86,21 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
         }
     }, [open, dimensions, rectangle, strokes, mask, baseMask, previewZoom]);
     useLayoutEffect(() => {
-        const view = viewport.current, previous = pendingView.current;
+        const view = viewport.current, previous = pendingView.current, content = canvas.current;
         pendingView.current = null;
-        if (view && previous) {
-            view.scrollLeft = cutoutZoomOffset(previous.left, previous.width, view.clientWidth, previous.zoom, previewZoom);
-            view.scrollTop = cutoutZoomOffset(previous.top, previous.height, view.clientHeight, previous.zoom, previewZoom);
+        if (view && previous && content) {
+            // Scrollbars change the available CSS width, so nominal zoom alone is insufficient.
+            const bounds = content.getBoundingClientRect();
+            view.scrollLeft = cutoutZoomOffset(previous.left, previous.width, view.clientWidth, previous.contentWidth, bounds.width);
+            view.scrollTop = cutoutZoomOffset(previous.top, previous.height, view.clientHeight, previous.contentHeight, bounds.height);
         }
     }, [previewZoom]);
     const changePreviewZoom = (zoom: number) => {
-        const view = viewport.current;
-        if (view) pendingView.current = { left: view.scrollLeft, top: view.scrollTop, width: view.clientWidth, height: view.clientHeight, zoom: previewZoom };
+        const view = viewport.current, content = canvas.current;
+        if (view && content) {
+            const bounds = content.getBoundingClientRect();
+            pendingView.current = { left: view.scrollLeft, top: view.scrollTop, width: view.clientWidth, height: view.clientHeight, contentWidth: bounds.width, contentHeight: bounds.height };
+        }
         setPreviewZoom(zoom);
     };
     const point = (event: React.PointerEvent<HTMLCanvasElement>): CutoutPoint => {
@@ -158,7 +163,7 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
                 <button disabled={busy || previewZoom === 1} onClick={() => changePreviewZoom(1)}>Fit preview</button>
             </div>
             <div ref={viewport} className="max-h-[340px] overflow-auto border border-white/20" role="region" aria-label="Cutout preview" tabIndex={0}>
-            <canvas ref={canvas} className="block touch-none max-w-none" style={{ width: `${previewZoom * 100}%` }} aria-label="Draw artist selection" onPointerDown={event => {
+            <canvas ref={canvas} className="block touch-none max-w-none" style={{ width: `${previewZoom * 100}%`, aspectRatio: dimensions ? `${dimensions.width} / ${dimensions.height}` : undefined }} aria-label="Draw artist selection" onPointerDown={event => {
                 if (busy || !dimensions) return;
                 event.currentTarget.setPointerCapture(event.pointerId); drawing.current = true; const p = point(event); start.current = p; setMask(null);
                 if (mode === 'box') setRectangle({ x: p.x, y: p.y, width: 0, height: 0 });
