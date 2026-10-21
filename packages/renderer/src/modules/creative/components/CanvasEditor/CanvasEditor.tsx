@@ -395,8 +395,9 @@ export const CanvasEditor: React.FC = () => {
                 </div>}
                 </>}
                 {!framingLayerId && <TextPanel key={currentDoc.id} layer={selectedLayer?.kind === 'text' ? selectedLayer : undefined} />}
-                {!framingLayerId && selectedRaster && <CutoutPanel key={`${currentDoc.id}/${selectedRaster.id}/${selectedRaster.src}`} layer={selectedRaster} />}
-                {selectedRaster && <PicturePanel key={`${currentDoc.id}/${selectedRaster.id}/${selectedRaster.src}`} layer={selectedRaster} onFrameChange={(active, mode = 'frame') => setFrameOwner(active ? { documentId: currentDoc.id, layerId: selectedRaster.id, mode } : null)} />}
+                {/* Framing unmounts only the cutout inspector; sibling panel identities must remain distinct. */}
+                {!framingLayerId && selectedRaster && <CutoutPanel key={`cutout/${currentDoc.id}/${selectedRaster.id}/${selectedRaster.src}`} layer={selectedRaster} />}
+                {selectedRaster && <PicturePanel key={`picture/${currentDoc.id}/${selectedRaster.id}/${selectedRaster.src}`} layer={selectedRaster} onFrameChange={(active, mode = 'frame') => setFrameOwner(active ? { documentId: currentDoc.id, layerId: selectedRaster.id, mode } : null)} />}
                 {!framingLayerId && selectedRaster && (
                     <AdjustPanel
                         adjustments={selectedRaster.adjustments}
