@@ -5583,3 +5583,43 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Converges to:** Provenance policy acceptance and investor positioning.
 
 **Graph relationships:** CI-V3-20261019-01 validates PR #421 and blocks 02/03; 02 + 03 converge to rights release acceptance; ISSUE-1537/1543/1544 + #411 converge through 04 to beta security acceptance; 05/06 are research branches requiring explicit decisions. **No work is marked complete by this entry.**
+
+
+---
+
+## 2026-10-21 — Competitive-intelligence graph delta: rights matching, royalty accounting, AI consent (PROPOSED)
+
+> **Provenance:** Oct 20 Spotify announcements (https://newsroom.spotify.com/2026-10-20/prioritizing-human-artistry/ and https://newsroom.spotify.com/2026-10-20/believe-spotify-licensing-agreement-fan-made-covers-remixes/); Oct 19 Musixmatch/Music Reports acquisition (https://www.musicbusinessworldwide.com/musixmatch-acquires-songdex-owner-music-reports-as-it-looks-to-become-a-full-stack-rights-and-royalties-platform/); Royalti.io published product/pricing (https://royalti.io/ and https://royalti.io/roy); founder's explicit policy: **no AI training on user music unless the artist/rightsholders and indii.music are paid under an agreed, explicit license**. This is a proposed worklist, not newly reproduced bugs. Do not create duplicate GitHub issues; preserve report_bug/reportBugFn -> Firestore/GitHub intake. Do not treat JEV classification or plans as completion evidence.
+
+### CI-V3-20261021-01 — Paid, explicit, scoped AI-training permission gate [P0 POLICY + IMPLEMENTATION PROPOSAL]
+- **Parent:** Rights/provenance governance; spawned by founder directive and Spotify/Believe consent-and-compensation licensing signal.
+- **Overlaps/depends on:** CI-V3-20261019-06, GitHub #412 (human authorship/sample protections), legal agent and rights-ownership records.
+- **Requirement:** Default **NO AI training** on uploaded audio, stems, lyrics, artwork, metadata, or other user-controlled creative assets. Never infer training rights from upload, processing, distribution, remix, or subscription consent. Any exceptional training use requires a separate specific affirmative opt-in by all required rightsholders, negotiated scope/term/model/data usage, compensation to participating artist/rightsholders **and indii.music** as contractually agreed, audit trail, revocation/expiry handling and enforceable vendor terms. AI-powered business analysis is distinct from model training; prohibit training reuse by processors unless expressly licensed. No AI-generated music distribution.
+- **Acceptance:** Counsel-approved terms; permission schema and server-side deny-by-default checks; tests proving no opt-in/no agreed compensation/expired or revoked permission blocks training export; processor contract verification; immutable consent and payment evidence. **Not complete** until verified.
+- **Converges to:** Provenance and licensing policy release gate.
+
+### CI-V3-20261021-02 — Royalti.io royalty-operations teardown against actual indii implementation [P1 RESEARCH]
+- **Parent:** Financial operations acceptance; spawned by founder's requested reverse engineering and competitor public capabilities.
+- **Overlaps/depends on:** GitHub #216 (closed idempotent ingestion defect), #394 (closed malformed Quantity), #372 (closed finance readiness report), ISSUE-1537 (open tenant isolation), CI-V3-20261019-04.
+- **Research scope:** Statement formats/normalization, mapping, catalog/ISRC/ISWC matching, contract splits, recoupment, multi-currency, payout ledger, corrections/reversals, Roy assistant permissions, audit receipts, import idempotency, DDEX/CWR integration. Compare to actual current code; note RoyaltyService is now a compatibility facade calling server-owned calculateRoyaltyAllocations, not the old client-side allocation described in #216.
+- **Acceptance:** Evidence-linked feature/architecture comparison with implemented/partial/missing/live-unverified classification; explicit build-vs-defer decision and prioritized smallest acceptance test; no proprietary code copying.
+- **Converges to:** Finance/royalty release readiness and competitive dossier.
+
+### CI-V3-20261021-03 — Recording-to-work rights matching and unmatched-income exceptions [P1 RESEARCH + PROPOSED IMPLEMENTATION]
+- **Parent:** Rights-registration operational acceptance; spawned by Musixmatch acquisition of Music Reports (Songdex + Blokur) and its agentic rights-reconciliation strategy.
+- **Overlaps/depends on:** PR #421; CI-V3-20261019-02/03; GitHub #377; catalog migration work. Do not duplicate CWR/ACK or distribution issues.
+- **Acceptance:** Current-code truth matrix for ISRC↔ISWC↔ownership/split matching, conflicts, unclaimed/unmatched royalty identification, correction receipts, and provenance; explicit implementation decision. External match/registration completion requires authorized receiver evidence, not a generated file.
+- **Converges to:** Rights-registration release acceptance and royalty reconciliation.
+
+### CI-V3-20261021-04 — DSP human-authorship and opt-in licensing controls [P1 POLICY VERIFICATION]
+- **Parent:** CI-V3-20261021-01; spawned by Oct 20 Spotify human-artistry report and Believe licensed fan-remix announcement.
+- **Overlaps/depends on:** GitHub #412; CI-V3-20261019-06; distribution metadata/validation work.
+- **Acceptance:** Test separate states for human-authorship review, AI-assistance disclosures, third-party remix license consent, and model-training permission. Protect legitimate DAW/MIDI/sample-based tracks from automated false rejection; require rights-holder opt-in and compensation terms for any licensed AI use. Distinguish 50M tracks removed from **recommendations** from 75M removed from the **platform**; do not misstate the figures.
+- **Converges to:** DSP metadata and provenance release gate.
+
+### Existing GitHub #424 — Boardroom capability-truth overclaim [OPEN, existing bug; no new issue]
+- **Spawned by:** App report_bug pipeline, Oct 20. Overlaps closed #417 but is a new recorded incident.
+- **Acceptance:** Reproduce against current code, verify evidence-bound status language and regression tests, and link passing CI/deployment evidence before closure. Do not claim live registrations or production readiness from the Oct 19 demo-only GO audit (#422, closed).
+- **Converges to:** Beta release verification and truthful agent reporting.
+
+**Graph:** 01 blocks any training-licensed data export; 04 validates 01 and #412; 02 depends on financial tenant isolation and converges with 03 on royalty reconciliation; 03 depends on PR #421 rights verification; #424 validates truthful release status. All CI-V3-20261021-* nodes are **PROPOSED, NOT COMPLETED**. No new GitHub issue created by this ledger update.
