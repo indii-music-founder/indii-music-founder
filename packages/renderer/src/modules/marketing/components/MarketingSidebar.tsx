@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard,
     Megaphone,
@@ -18,7 +18,8 @@ import {
     Star,
     TrendingUp,
     Share2,
-    Activity
+    Activity,
+    ChevronDown
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -31,8 +32,8 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [collapsed] = useState(false);
 
-    // ISSUE-1436: 14 flat tabs grouped into 5 scannable sections. Tab ids are
-    // unchanged — CampaignDashboard maps them exactly as before.
+    // ISSUE-1436: show five groups and only the expanded group’s destinations.
+    // Tab ids remain compatible with existing campaign workspace navigation.
     const navSections: { title: string; items: { id: string; label: string; icon: typeof LayoutDashboard }[] }[] = [
         {
             title: 'Overview',
@@ -75,6 +76,12 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
         },
     ];
 
+    const activeSection = navSections.find(section => section.items.some(item => item.id === activeTab))?.title ?? 'Overview';
+    const [expandedSection, setExpandedSection] = useState<string | null>(activeSection);
+    useEffect(() => {
+        setExpandedSection(activeSection);
+    }, [activeSection]);
+
     const secondaryNav = [
         { id: 'calendar', label: 'Calendar', icon: Calendar, available: false, reason: 'Not connected yet' },
         { id: 'analytics', label: 'Analytics', icon: BarChart, available: false, reason: 'Not connected yet' },
@@ -97,13 +104,23 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
             <div className="flex-1 overflow-y-auto py-6 px-3 space-y-8 custom-scrollbar">
                 {navSections.map((section) => (
                     <div key={section.title}>
-                        <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            {section.title}
+                        <h3>
+                            <button
+                                type="button"
+                                aria-expanded={expandedSection === section.title}
+                                aria-controls={`marketing-group-${section.items[0]!.id}`}
+                                onClick={() => setExpandedSection(expandedSection === section.title ? null : section.title)}
+                                className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider rounded-lg hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-dept-marketing"
+                            >
+                                {section.title}
+                                <ChevronDown size={14} aria-hidden="true" className={expandedSection === section.title ? 'rotate-180' : ''} />
+                            </button>
                         </h3>
-                        <div className="space-y-1">
+                        <div hidden={expandedSection !== section.title} id={`marketing-group-${section.items[0]!.id}`} className="space-y-1 mt-2" role="group" aria-label={`${section.title} destinations`}>
                             {section.items.map((item) => (
                                 <button
                                     key={item.id}
+                                    aria-current={activeTab === item.id ? 'page' : undefined}
                                     onClick={() => onTabChange(item.id)}
                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${activeTab === item.id
                                         ? 'bg-dept-marketing/10 text-dept-marketing font-medium'
