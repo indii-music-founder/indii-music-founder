@@ -9,7 +9,12 @@ import { ColorMixture } from './Gmm';
 export interface CutoutPoint { x: number; y: number }
 export interface CutoutStroke { label: 'keep' | 'remove'; radius: number; points: CutoutPoint[] }
 export interface CutoutRectangle { x: number; y: number; width: number; height: number }
-export interface CutoutInput { width: number; height: number; pixels: Uint8ClampedArray; rectangle: CutoutRectangle; strokes: CutoutStroke[] }
+export interface CutoutInput {
+    width: number; height: number; pixels: Uint8ClampedArray;
+    rectangle: CutoutRectangle; strokes: CutoutStroke[];
+    /** Existing grayscale mask: preserve unpainted values during brush refinement. */
+    baseMask?: Uint8Array;
+}
 interface Grid { width: number; height: number; colors: Float32Array; labels: Uint8Array; opaque?: Uint8Array }
 const BG = 0, FG = 1, PROBABLE_BG = 2, PROBABLE_FG = 3;
 const foreground = (label: number) => label === FG || label === PROBABLE_FG;
@@ -80,12 +85,26 @@ function cut(grid: Grid, fg: ColorMixture, bg: ColorMixture, graph: CutGraph): U
     return Uint8Array.from(labels, (_, node) => graph.inSource(node) ? 1 : 0);
 }
 
-/** Model-free rectangle + trimap extraction, refined in bounded native-resolution tiles. */
+/** Create a guided cutout or refine a saved mask with source-resolution brush strokes. */
 export function extractCutout(input: CutoutInput, progress: (fraction: number) => void = () => undefined): Uint8Array {
     const { width, height, pixels, rectangle, strokes } = input;
     if (!Number.isInteger(width) || !Number.isInteger(height) || width < 2 || height < 2 || width * height > 24_000_000 || pixels.length !== width * height * 4) throw new Error('Cutout photo dimensions are invalid or exceed 24 megapixels');
     if (![rectangle.x, rectangle.y, rectangle.width, rectangle.height].every(Number.isFinite) || rectangle.width < 2 || rectangle.height < 2) throw new Error('Draw a box around the artist first');
     if (strokes.length > 1000 || strokes.some(stroke => stroke.points.length > 10_000 || !Number.isFinite(stroke.radius) || stroke.radius < 1 || stroke.radius > 1000 || stroke.points.some(point => !Number.isFinite(point.x) || !Number.isFinite(point.y)))) throw new Error('Cutout refinement strokes exceed the supported limits');
+    if (input.baseMask) {
+        if (input.baseMask.length !== width * height) throw new Error('Saved cutout mask dimensions do not match the photo');
+        // Refinement is a native-resolution brush edit, preserving all unpainted
+        // mask values rather than re-segmenting an already approved subject.
+        const mask = input.baseMask.slice();
+        const painted = new Uint8Array(width * height).fill(PROBABLE_BG);
+        paint(painted, width, height, 1, strokes);
+        for (let i = 0; i < mask.length; i++) {
+            if (!pixels[i * 4 + 3] || painted[i] === BG) mask[i] = 0;
+            else if (painted[i] === FG) mask[i] = 255;
+        }
+        progress(1);
+        return mask;
+    }
     let step = Math.max(1, Math.ceil(Math.sqrt(width * height / 200_000)));
     while (Math.ceil(width / step) * Math.ceil(height / step) > 200_000) step++;
     const lowW = Math.ceil(width / step), lowH = Math.ceil(height / step);
