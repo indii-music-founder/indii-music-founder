@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import type { RasterLayer } from '@/services/canvas/CanvasDoc';
 import type { CutoutPoint, CutoutRectangle, CutoutStroke } from '@/services/canvas/segmentation/GrabCut';
 import { loadArtworkImage } from '@/services/canvas/ArtworkRenderService';
 import { generateArtworkMask, persistArtworkMask } from '@/services/canvas/MaskService';
+import { cutoutSourcePoint, cutoutZoomOffset } from '@/services/canvas/CutoutPreviewGeometry';
 
 export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
@@ -17,6 +18,9 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     const [error, setError] = useState<string | null>(null), [progress, setProgress] = useState(0);
     const [radius, setRadius] = useState(30), [softness, setSoftness] = useState(layer.maskFeather ?? 1);
     const canvas = useRef<HTMLCanvasElement>(null), image = useRef<CanvasImageSource | null>(null);
+    const viewport = useRef<HTMLDivElement>(null);
+    const pendingView = useRef<{ left: number; top: number; width: number; height: number; zoom: number } | null>(null);
+    const [previewZoom, setPreviewZoom] = useState(1);
     const start = useRef<CutoutPoint | null>(null), drawing = useRef(false);
     const controller = useRef<AbortController | null>(null), generation = useRef(0), active = useRef(true);
     const update = useStore(state => state.updateLayer);
@@ -26,6 +30,7 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
         controller.current?.abort();
         const abort = new AbortController(); controller.current = abort;
         image.current = null; start.current = null; drawing.current = false; setDimensions(null);
+        setPreviewZoom(1); pendingView.current = null;
         setOpen(true); setBusy(true); setError(null); setMask(null); setBaseMask(null); setRectangle(null); setStrokes([]);
         setMode(layer.maskSrc ? 'keep' : 'box'); setSoftness(layer.maskFeather ?? 1);
         previousMask.current = { src: layer.maskSrc, feather: layer.maskFeather, uid };
@@ -55,7 +60,7 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     useEffect(() => {
         const el = canvas.current, source = image.current;
         if (!open || !el || !source || !dimensions) return;
-        const scale = Math.min(280 / dimensions.width, 340 / dimensions.height);
+        const scale = Math.min(280 / dimensions.width, 340 / dimensions.height) * previewZoom;
         el.width = Math.max(1, Math.round(dimensions.width * scale)); el.height = Math.max(1, Math.round(dimensions.height * scale));
         const ctx = el.getContext('2d'); if (!ctx) return;
         ctx.drawImage(source, 0, 0, el.width, el.height);
@@ -79,11 +84,23 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
             ctx.stroke();
             const point = stroke.points[0]; if (point) { ctx.beginPath(); ctx.arc(point.x * scale, point.y * scale, stroke.radius * scale, 0, Math.PI * 2); ctx.fill(); }
         }
-    }, [open, dimensions, rectangle, strokes, mask, baseMask]);
+    }, [open, dimensions, rectangle, strokes, mask, baseMask, previewZoom]);
+    useLayoutEffect(() => {
+        const view = viewport.current, previous = pendingView.current;
+        pendingView.current = null;
+        if (view && previous) {
+            view.scrollLeft = cutoutZoomOffset(previous.left, previous.width, view.clientWidth, previous.zoom, previewZoom);
+            view.scrollTop = cutoutZoomOffset(previous.top, previous.height, view.clientHeight, previous.zoom, previewZoom);
+        }
+    }, [previewZoom]);
+    const changePreviewZoom = (zoom: number) => {
+        const view = viewport.current;
+        if (view) pendingView.current = { left: view.scrollLeft, top: view.scrollTop, width: view.clientWidth, height: view.clientHeight, zoom: previewZoom };
+        setPreviewZoom(zoom);
+    };
     const point = (event: React.PointerEvent<HTMLCanvasElement>): CutoutPoint => {
         const bounds = event.currentTarget.getBoundingClientRect();
-        return { x: Math.max(0, Math.min(dimensions!.width, (event.clientX - bounds.left) / bounds.width * dimensions!.width)),
-            y: Math.max(0, Math.min(dimensions!.height, (event.clientY - bounds.top) / bounds.height * dimensions!.height)) };
+        return cutoutSourcePoint({ x: event.clientX, y: event.clientY }, bounds, dimensions!);
     };
     const process = async () => {
         if (!dimensions || !rectangle || !image.current) return;
@@ -134,7 +151,14 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
         </> : <>
             <p>{baseMask ? 'Paint areas to keep or remove from the current cutout, then preview. Untouched areas are preserved.' : 'Draw a box around the artist. Mark areas to keep or remove, then preview the cutout. Green shows what will stay.'}</p>
             <div className="flex gap-2">{(['box', 'keep', 'remove'] as const).filter(value => !baseMask || value !== 'box').map(value => <button key={value} disabled={busy} aria-pressed={mode === value} onClick={() => setMode(value)}>{value === 'box' ? 'Draw box' : value === 'keep' ? 'Keep' : 'Remove'}</button>)}</div>
-            <canvas ref={canvas} className="max-w-full touch-none border border-white/20" aria-label="Draw artist selection" onPointerDown={event => {
+            <div className="flex items-center gap-2" role="group" aria-label="Cutout preview zoom">
+                <button disabled={busy || !dimensions || previewZoom <= 1} aria-label="Zoom out cutout preview" onClick={() => changePreviewZoom(Math.max(1, previewZoom / 2))}>−</button>
+                <output aria-label="Cutout preview magnification">{previewZoom}×</output>
+                <button disabled={busy || !dimensions || previewZoom >= 4} aria-label="Zoom in cutout preview" onClick={() => changePreviewZoom(Math.min(4, previewZoom * 2))}>+</button>
+                <button disabled={busy || previewZoom === 1} onClick={() => changePreviewZoom(1)}>Fit preview</button>
+            </div>
+            <div ref={viewport} className="max-h-[340px] overflow-auto border border-white/20" role="region" aria-label="Cutout preview" tabIndex={0}>
+            <canvas ref={canvas} className="block touch-none max-w-none" style={{ width: `${previewZoom * 100}%` }} aria-label="Draw artist selection" onPointerDown={event => {
                 if (busy || !dimensions) return;
                 event.currentTarget.setPointerCapture(event.pointerId); drawing.current = true; const p = point(event); start.current = p; setMask(null);
                 if (mode === 'box') setRectangle({ x: p.x, y: p.y, width: 0, height: 0 });
@@ -145,7 +169,9 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
                 if (mode === 'box' && start.current) setRectangle({ x: Math.min(start.current.x, p.x), y: Math.min(start.current.y, p.y), width: Math.abs(p.x - start.current.x), height: Math.abs(p.y - start.current.y) });
                 else setStrokes(previous => previous.map((stroke, index) => index === previous.length - 1 ? { ...stroke, points: [...stroke.points, p] } : stroke));
             }} onPointerUp={() => { drawing.current = false; }} onPointerCancel={() => { drawing.current = false; }} />
-            <label>Brush size<input type="range" min={1} max={200} value={radius} disabled={busy} onChange={event => setRadius(Number(event.target.value))} aria-label="Cutout brush size" /></label>
+            </div>
+            <p>Zoom in for edges. Scroll the preview to reach other areas.</p>
+            <label>Brush radius: {radius}px<input type="range" min={1} max={200} value={radius} disabled={busy} onChange={event => setRadius(Number(event.target.value))} aria-label="Cutout brush radius" /></label>
             <label>Edge softness<input type="range" min={0} max={8} step={0.25} value={softness} onChange={event => setSoftness(Number(event.target.value))} aria-label="Cutout edge softness" /></label>
             <button disabled={busy || !rectangle || rectangle.width < 2 || rectangle.height < 2} onClick={() => void process()}>Preview cutout</button>
             <button disabled={busy || !mask} onClick={() => void apply()}>Apply cutout</button>
