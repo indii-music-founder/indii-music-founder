@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { artworkTransform, getViewportProxy, artworkEnlargement, centeredArtworkPosition, alignedArtworkPosition, artworkExportDimensions } from '../ArtworkGeometry';
+import { artworkTransform, getViewportProxy, artworkAlphaBounds, artworkEnlargement, centeredArtworkPosition, alignedArtworkPosition, artworkExportDimensions } from '../ArtworkGeometry';
 import { createDocFromImage, type RasterLayer } from '../CanvasDoc';
 
 describe('cover geometry and legacy origins', () => {
@@ -26,6 +26,32 @@ describe('cover geometry and legacy origins', () => {
         expect(center.x).toBeCloseTo(1460); expect(center.y).toBeCloseTo(1400);
         expect(centeredArtworkPosition(100, 80, 2, 1, 0, { width: 3000, height: 3000 })).toEqual({ x: 1400, y: 1460 });
     });
+    it('measures visible alpha without counting RGB in transparent pixels or mutating the photo', () => {
+        const width = 8, height = 6, pixels = new Uint8ClampedArray(width * height * 4).fill(255);
+        for (let i = 3; i < pixels.length; i += 4) pixels[i] = 0;
+        pixels[(2 * width + 5) * 4 + 3] = 255;
+        pixels[(4 * width + 6) * 4 + 3] = 1; // Include soft cutout edges.
+        const original = pixels.slice();
+        expect(artworkAlphaBounds(pixels, width, height)).toEqual({ x: 5, y: 2, width: 2, height: 3 });
+        expect(pixels).toEqual(original);
+        expect(artworkAlphaBounds(new Uint8ClampedArray(16).fill(255), 2, 2)).toEqual({ x: 0, y: 0, width: 2, height: 2 });
+    });
+    it('reports an empty cutout and rejects mismatched pixel dimensions', () => {
+        expect(artworkAlphaBounds(new Uint8ClampedArray(16), 2, 2)).toBeNull();
+        expect(() => artworkAlphaBounds(new Uint8ClampedArray(16), 2, 3)).toThrow(/dimensions/);
+        expect(() => artworkAlphaBounds(new Uint8ClampedArray(), 0, 0)).toThrow(/dimensions/);
+    });
+
+    it('centers the cutout bounds instead of the removed photo background', () => {
+        const subject = { x: 700, y: 100, width: 100, height: 200 };
+        const doc = { width: 3000, height: 3000 };
+        const centered = centeredArtworkPosition(1000, 800, 2, 1, 0, doc, subject);
+        expect(centered).toEqual({ x: 0, y: 1300 });
+        const rotated = centeredArtworkPosition(1000, 800, -2, 1, 90, doc, subject);
+        expect(rotated.x).toBeCloseTo(1700);
+        expect(rotated.y).toBeCloseTo(3000);
+    });
+
     it('aligns rotated and reflected bounds and preserves a center-anchored vertical placement', () => {
         const doc = createDocFromImage('literal.png', 'literal');
         const text = { ...doc.layers[0], framing: undefined, transformAnchor: 'center', x: 300, y: 400, scaleX: -2, scaleY: 1, rotation: 90 } as RasterLayer;
