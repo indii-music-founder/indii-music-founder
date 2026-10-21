@@ -12,6 +12,7 @@
  */
 
 import { auth, db } from '@/services/firebase';
+import { safeStorageFetch } from '@/services/storage/safeStorageFetch';
 import { collection, doc, getDoc, getDocs, query, runTransaction, where } from 'firebase/firestore';
 import type { CanvasDoc } from './CanvasDoc';
 import { normalizeCanvasDoc, readCanvasDocument, summarizeArtwork, newestArtworkFirst, type SavedArtworkSummary } from './CanvasDocValidation';
@@ -43,8 +44,8 @@ class CanvasDocumentServiceImpl {
 
     private async persistentAsset(source: string, uid: string): Promise<string> {
         if (!source.startsWith('data:')) return source;
-        const response = await fetch(source);
-        const blob = await response.blob();
+        // Decode inline uploads locally: production connect-src excludes data URLs.
+        const { blob } = await safeStorageFetch(source);
         if (!blob.type.startsWith('image/')) throw new Error('Artwork assets must be images');
         const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer())), byte => byte.toString(16).padStart(2, '0')).join('');
         const key = `${uid}/${blob.type}/${hash}`;
