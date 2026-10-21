@@ -156,6 +156,63 @@ describe('InfiniteCanvas Culling', () => {
         expect(visibleCalls.length).toBeGreaterThan(0);
     });
 
+    it.each(['zoom in', 'zoom out', 'resize'])('keeps newly added images visible after %s without panning', (trigger) => {
+        let canvasImages: Array<Record<string, unknown>> = [];
+        mockUseStore.mockImplementation((selector: any) => selector({
+            canvasImages,
+            addCanvasImage: vi.fn(),
+            updateCanvasImage: vi.fn(),
+            removeCanvasImage: vi.fn(),
+            selectedCanvasImageId: null,
+            selectCanvasImage: vi.fn(),
+            currentProjectId: 'p1',
+            generatedHistory: [],
+            uploadedImages: [],
+            failedVariationBatch: null,
+            setFailedVariationBatch: vi.fn(),
+        }));
+
+        const view = render(<InfiniteCanvas />);
+        canvasImages = [{
+            id: 'added-after-mount', base64: 'data:image/png;base64,1',
+            x: 100, y: 100, width: 100, height: 100, aspect: 1, projectId: 'p1',
+        }];
+        view.rerender(<InfiniteCanvas />);
+        expect(mockContext.drawImage).toHaveBeenCalled();
+        mockContext.drawImage.mockClear();
+
+        const canvas = view.container.querySelector('canvas')!;
+        if (trigger !== 'resize') {
+            const deltaY = trigger === 'zoom in' ? -100 : 100;
+            fireEvent.wheel(canvas, { deltaY, clientX: 200, clientY: 200 });
+            const scale = Math.exp(deltaY * -0.001);
+            expect(mockContext.scale).toHaveBeenLastCalledWith(scale, scale);
+        } else {
+            // Resizing clears the canvas bitmap, so the replacement frame must
+            // include the current scene even without a subsequent pointer move.
+            canvas.width = 500;
+            fireEvent(window, new Event('resize'));
+        }
+
+        expect(mockContext.drawImage).toHaveBeenCalledWith(expect.anything(), 100, 100, 100, 100);
+    });
+
+    it('cancels pending redraws when the canvas unmounts', () => {
+        let pendingFrame: FrameRequestCallback | undefined;
+        vi.mocked(window.requestAnimationFrame).mockImplementation((callback) => {
+            pendingFrame = callback;
+            return 42;
+        });
+        const cancelFrame = vi.spyOn(window, 'cancelAnimationFrame');
+        const view = render(<InfiniteCanvas />);
+        expect(pendingFrame).toBeDefined();
+        cancelFrame.mockClear();
+
+        view.unmount();
+
+        expect(cancelFrame).toHaveBeenCalledWith(42);
+    });
+
     it('should NOT draw off-screen images', async () => {
         const visibleImage = {
             id: 'visible',
