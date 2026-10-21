@@ -13,6 +13,6 @@ export function cutoutSourcePoint(
 }
 
 /** Keep the viewed source region centered when changing magnification. */
-export function cutoutZoomOffset(offset: number, previousViewportSize: number, nextViewportSize: number, previousZoom: number, nextZoom: number): number {
-    return Math.max(0, (offset + previousViewportSize / 2) * nextZoom / previousZoom - nextViewportSize / 2);
+export function cutoutZoomOffset(offset: number, previousViewportSize: number, nextViewportSize: number, previousContentSize: number, nextContentSize: number): number {
+    return Math.max(0, (offset + previousViewportSize / 2) * nextContentSize / previousContentSize - nextViewportSize / 2);
 }

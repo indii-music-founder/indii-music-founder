@@ -24,4 +24,15 @@ describe('cutout preview geometry (pure coordinates)', () => {
         expect(cutoutZoomOffset(85, 340, 255, 2, 1)).toBe(0);
         expect(cutoutZoomOffset(0, 340, 255, 4, 1)).toBe(0);
     });
+
+    it('preserves the source center when scrollbars reduce the CSS content width', () => {
+        // Measured production geometry: the nominal 4x image is 924px, not 984px.
+        expect(cutoutZoomOffset(0, 246, 231, 246, 924)).toBe(346.5);
+        expect(cutoutZoomOffset(346.5, 231, 246, 924, 246)).toBe(0);
+    });
+
+    it('preserves a scrolled detail when the scrollbar disappears during zoom out', () => {
+        const offset = cutoutZoomOffset(420, 231, 246, 924, 492);
+        expect((offset + 123) / 492).toBeCloseTo((420 + 115.5) / 924, 12);
+    });
 });
