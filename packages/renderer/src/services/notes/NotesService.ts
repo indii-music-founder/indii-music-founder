@@ -51,9 +51,10 @@ function deserializeNote(document: { id: string; data(): unknown }): Note {
 }
 
 class NotesServiceImpl {
-    async pushNote(note: Note): Promise<void> {
+    async pushNote(note: Note, expectedUid?: string): Promise<void> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('Sign in is required to sync notes.');
+        if (expectedUid && userId !== expectedUid) throw new Error('The signed-in account changed. Sign in again before saving this note.');
 
         try {
             await setDoc(doc(db, 'users', userId, 'notes', note.id), {

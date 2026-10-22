@@ -20,6 +20,7 @@
  * Works cross-network: cellular, different WiFi, anywhere with internet.
  */
 
+import { serializeDispatchPayload } from '@/services/remote/dispatchPayload';
 import {
     collection,
     doc,
@@ -497,6 +498,7 @@ class RemoteRelayService {
 
         const dispatchDoc: AgentDispatchTask = {
             ...task,
+            payload: serializeDispatchPayload(task.payload),
             status: 'pending',
             createdAt: serverTimestamp(),
         };
@@ -854,11 +856,12 @@ class RemoteRelayService {
      */
     onDispatchTaskUpdate(
         taskId: string,
-        callback: (task: AgentDispatchTask & { id: string }) => void
+        callback: (task: AgentDispatchTask & { id: string }) => void,
+        onError?: (error: Error) => void
     ): Unsubscribe {
         if (isFirebaseE2EMockEnabled()) return () => {};
         const uid = getUserId();
-        if (!uid) return () => {};
+        if (!uid) throw new Error('Sign in again to check the desktop result.');
 
         return onSnapshot(
             doc(db, 'users', uid, 'agent_dispatch_queue', taskId),
@@ -868,6 +871,7 @@ class RemoteRelayService {
             },
             (error) => {
                 logger.error('[RemoteRelay] Dispatch task update listener error:', error);
+                onError?.(error);
             }
         );
     }
@@ -980,21 +984,37 @@ export function waitForDispatchConfirmation(
 ): Promise<{ status: 'completed' | 'failed'; error?: AgentDispatchTask['error']; result?: AgentDispatchTask['result'] }> {
     return new Promise((resolve) => {
         let settled = false;
+        let unsubscribe: Unsubscribe = () => {};
 
         const timeout = setTimeout(() => {
             if (settled) return;
             settled = true;
             unsubscribe();
-            resolve({ status: 'failed', error: { code: 'TIMEOUT', message: 'Saving timed out. Check desktop studio.' } });
+            resolve({ status: 'failed', error: { code: 'TIMEOUT', message: 'The desktop result is not confirmed. Check Studio before retrying; the task may still finish.' } });
         }, DISPATCH_CONFIRMATION_TIMEOUT_MS);
 
-        const unsubscribe = remoteRelayService.onDispatchTaskUpdate(taskId, (task) => {
+        const subscribe = () => remoteRelayService.onDispatchTaskUpdate(taskId, (task) => {
             if (task.status !== 'completed' && task.status !== 'failed') return;
             if (settled) return;
             settled = true;
             clearTimeout(timeout);
             unsubscribe();
             resolve({ status: task.status, error: task.error, result: task.result });
+        }, error => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            unsubscribe();
+            resolve({ status: 'failed', error: { code: 'RECEIPT_UNAVAILABLE', message: error.message || 'Cannot confirm the desktop result. Check your connection and sign-in.' } });
         });
+        try {
+            unsubscribe = subscribe();
+            if (settled) unsubscribe();
+        } catch (error) {
+            settled = true;
+            clearTimeout(timeout);
+            unsubscribe();
+            resolve({ status: 'failed', error: { code: 'RECEIPT_UNAVAILABLE', message: error instanceof Error ? error.message : 'Cannot confirm the desktop result.' } });
+        }
     });
 }

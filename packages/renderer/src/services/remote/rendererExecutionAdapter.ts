@@ -21,6 +21,7 @@ import type { HistoryItem } from '@/core/types/history';
 import { auth } from '@/services/firebase';
 import { loadVideoProject } from '@/modules/creative/video/services/VideoProjectPersistenceService';
 import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
+import { persistRemoteNote } from './persistRemoteNote';
 import {
     MAX_REMOTE_AGENT_RESPONSES,
     type RelayRespond,
@@ -576,6 +577,8 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
     };
 
     const executeDispatchTask: StudioExecutionAdapter['executeDispatchTask'] = async ({ task }) => {
+        const captureUid = auth.currentUser?.uid;
+        if (!captureUid) throw new Error('Sign in on the computer to receive remote tasks.');
         // ISSUE-983 contract: sendMessage queues silently when busy; marking a
         // capture 'completed' in that state cleared the phone's only copy.
         const assertDesktopIsFree = () => {
@@ -595,6 +598,7 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
             case 'agent_command': {
                 if (task.type === 'live_moment' && task.payload.noteText) {
                     const noteId = useStore.getState().addNote(buildLiveMomentNote(task.payload.noteText));
+                    await persistRemoteNote(noteId, captureUid);
                     await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed', undefined, { noteId });
                     return;
                 }
@@ -604,6 +608,7 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
 
                 const directResult = await saveCaptureNoteDirectly(task);
                 if (directResult) {
+                    await persistRemoteNote(directResult.noteId, captureUid, directResult.assetUrl);
                     await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed', undefined, directResult);
                     return;
                 }
