@@ -10,6 +10,8 @@ import { downloadCapturedMedia } from './QuickCaptureView';
 const AgentChat = lazy(() => import('./AgentChat'));
 
 interface StudioWorkViewProps {
+    pendingChatCommandId?: string | null;
+    onClearPendingCommand?: () => void;
     isPaired: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSendCommand?: (command: { type: string; payload: any }) => void;
@@ -21,6 +23,8 @@ export default function StudioWorkView({
     isPaired,
     onSendCommand,
     pendingChatAttachment,
+    pendingChatCommandId,
+    onClearPendingCommand,
     onClearPendingAttachment,
 }: StudioWorkViewProps) {
     const toast = useToast();
@@ -32,10 +36,10 @@ export default function StudioWorkView({
     const [isGenerating, setIsGenerating] = useState(false);
 
     useEffect(() => {
-        if (pendingChatAttachment) {
+        if (pendingChatAttachment || pendingChatCommandId) {
             setSubTab('chat');
         }
-    }, [pendingChatAttachment]);
+    }, [pendingChatAttachment, pendingChatCommandId]);
 
     useEffect(() => {
         const unsubCmds = remoteRelayService.onAllCommands((cmds) => {
@@ -161,6 +165,8 @@ export default function StudioWorkView({
                         <AgentChat
                             isPaired={isPaired}
                             onSendCommand={onSendCommand || (() => {})}
+                            initialCommandId={pendingChatCommandId}
+                            onClearInitialCommand={onClearPendingCommand}
                             initialAttachment={pendingChatAttachment}
                             onClearInitialAttachment={onClearPendingAttachment}
                         />

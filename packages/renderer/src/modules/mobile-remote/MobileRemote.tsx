@@ -104,6 +104,7 @@ export default function MobileRemote() {
     remoteRelayService.isAuthenticated() ? 'pairing' : 'idle'
   );
   const [activeTab, setActiveTab] = useState<TabId>('home');
+  const [pendingChatCommandId, setPendingChatCommandId] = useState<string | null>(null);
   const [pendingChatAttachment, setPendingChatAttachment] = useState<{ url: string; mimeType: string; name: string } | null>(null);
   const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
   const [handoffError, setHandoffError] = useState<string | null>(null);
@@ -113,6 +114,16 @@ export default function MobileRemote() {
     setPendingChatAttachment(attachment);
     setActiveTab('studio');
   }, []);
+
+  const handleRoadRequest = useCallback(async (prompt: string) => {
+    if (!isPaired) throw new Error('Reconnect Studio before sending a Road request.');
+    const commandId = await remoteRelayService.sendCommand(prompt, 'road', {
+      source: 'mobile-remote', conversationMode: 'department',
+    }, 'studio');
+    if (!commandId) throw new Error('The Road request was not accepted. Please retry.');
+    setPendingChatCommandId(commandId);
+    setActiveTab('studio');
+  }, [isPaired]);
 
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -557,6 +568,8 @@ export default function MobileRemote() {
             <StudioWorkView
               isPaired={isPaired}
               onSendCommand={sendCommand}
+              pendingChatCommandId={pendingChatCommandId}
+              onClearPendingCommand={() => setPendingChatCommandId(null)}
               pendingChatAttachment={pendingChatAttachment}
               onClearPendingAttachment={() => setPendingChatAttachment(null)}
             />
@@ -571,7 +584,7 @@ export default function MobileRemote() {
       case 'road':
         return (
           <Suspense fallback={<TabFallback />}>
-            <RoadMode />
+            <RoadMode onSubmitPrompt={handleRoadRequest} />
           </Suspense>
         );
       case 'stream':

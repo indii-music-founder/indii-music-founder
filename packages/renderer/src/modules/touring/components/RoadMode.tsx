@@ -223,12 +223,15 @@ function NearbyResultsView({ results, action, onClose, onNavigate }: NearbyResul
 // RoadMode Main Component
 // ============================================================================
 
-export const RoadMode: React.FC = () => {
+export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<void> }> = ({ onSubmitPrompt }) => {
     const { t } = useTranslation();
     const { isListening, toggleListening, transcript } = useVoice();
     const { currentItinerary: itinerary } = useTouring();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const submittingRef = useRef(false);
+    const submittedTranscriptRef = useRef<string | null>(null);
+    const roadVoiceSession = useRef({ owned: false, wasListening: false });
     const [lastAction, setLastAction] = useState<string | null>(null);
     const [manualInput, setManualInput] = useState('');
     const [showInput, setShowInput] = useState(false);
@@ -267,9 +270,11 @@ export const RoadMode: React.FC = () => {
 
     // Submit a prompt to the agent — forces native orchestrator mode for tool access
     const handleSubmitPrompt = useCallback(async (prompt: string) => {
-        if (!prompt.trim() || isSubmitting) return;
+        if (!prompt.trim() || submittingRef.current) return false;
 
+        submittingRef.current = true;
         setIsSubmitting(true);
+        setSearchError(null);
         try {
             // Add location context to the prompt
             const locationContext = currentLocationText
@@ -277,6 +282,10 @@ export const RoadMode: React.FC = () => {
                 : '';
 
             const fullPrompt = prompt + locationContext;
+            if (onSubmitPrompt) {
+                await onSubmitPrompt(fullPrompt);
+                return true;
+            }
 
             // Force native agent provider so quick actions use full orchestration
             // (not Direct LLM which has no tool access)
@@ -298,12 +307,16 @@ export const RoadMode: React.FC = () => {
             if (previousProvider === 'direct') {
                 useStore.setState({ activeAgentProvider: previousProvider });
             }
+            return true;
         } catch (error: unknown) {
             logger.error('[RoadMode] Failed to submit prompt:', error);
+            setSearchError(error instanceof Error ? error.message : 'Unable to send this road request. Please retry.');
+            return false;
         } finally {
+            submittingRef.current = false;
             setIsSubmitting(false);
         }
-    }, [currentLocationText, isSubmitting]);
+    }, [currentLocationText, onSubmitPrompt]);
 
     // Handle quick action tap — either Places API or Agent
     const handleQuickAction = async (action: QuickAction) => {
@@ -325,17 +338,17 @@ export const RoadMode: React.FC = () => {
                 logger.error('[RoadMode] Places search failed:', error);
                 setSearchError(error instanceof Error ? error.message : 'Search failed');
                 // Fallback to agent if Places API fails
-                handleSubmitPrompt(action.prompt);
+                await handleSubmitPrompt(action.prompt);
             } finally {
                 setIsSubmitting(false);
             }
         } else if (action.usePlacesAPI && !currentLocation) {
             // No GPS — fall back to agent with a note
             setSearchError('GPS unavailable — using agent instead');
-            handleSubmitPrompt(action.prompt);
+            await handleSubmitPrompt(action.prompt);
         } else {
             // Conversational action (e.g., reroute) — use the agent
-            handleSubmitPrompt(action.prompt);
+            await handleSubmitPrompt(action.prompt);
         }
     };
 
@@ -353,16 +366,29 @@ export const RoadMode: React.FC = () => {
 
     // Handle voice transcript submission
     useEffect(() => {
-        if (transcript && !isListening && transcript.length > 5) {
-            handleSubmitPrompt(transcript);
+        if (isListening && roadVoiceSession.current.owned) roadVoiceSession.current.wasListening = true;
+        // The shared voice context may contain dictation from another room. Only
+        // submit a recording started here, once, after this room observed it listening.
+        if (roadVoiceSession.current.owned && roadVoiceSession.current.wasListening && transcript && !isListening && transcript.length > 5 && submittedTranscriptRef.current !== transcript) {
+            roadVoiceSession.current.owned = false;
+            submittedTranscriptRef.current = transcript;
+            void handleSubmitPrompt(transcript);
         }
     }, [transcript, isListening, handleSubmitPrompt]);
 
+    const toggleRoadListening = () => {
+        if (!isListening) {
+            roadVoiceSession.current = { owned: true, wasListening: false };
+            submittedTranscriptRef.current = null;
+        }
+        toggleListening();
+    };
+
     // Handle manual text submission
-    const handleManualSubmit = () => {
-        if (manualInput.trim()) {
-            handleSubmitPrompt(manualInput);
-            setManualInput('');
+    const handleManualSubmit = async () => {
+        const submitted = manualInput;
+        if (submitted.trim() && await handleSubmitPrompt(submitted)) {
+            setManualInput(current => current === submitted ? '' : current);
             setShowInput(false);
         }
     };
@@ -545,7 +571,7 @@ export const RoadMode: React.FC = () => {
                     {/* Main mic button */}
                     <motion.button
                         whileTap={{ scale: 0.95 }}
-                        onClick={toggleListening}
+                        onClick={toggleRoadListening}
                         className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold font-display text-sm transition-all cursor-pointer ${isListening
                             ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
                             : 'bg-[#00ff66] text-black shadow-lg shadow-[#00ff66]/20 hover:brightness-105 active:scale-[0.98]'
