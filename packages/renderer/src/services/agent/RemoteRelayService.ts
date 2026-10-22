@@ -976,7 +976,7 @@ const DISPATCH_CONFIRMATION_TIMEOUT_MS = 90000;
  */
 export function waitForDispatchConfirmation(
     taskId: string
-): Promise<{ status: 'completed' | 'failed'; error?: AgentDispatchTask['error'] }> {
+): Promise<{ status: 'completed' | 'failed'; error?: AgentDispatchTask['error']; result?: AgentDispatchTask['result'] }> {
     return new Promise((resolve) => {
         let settled = false;
         let unsubscribe: Unsubscribe = () => {};
@@ -988,21 +988,22 @@ export function waitForDispatchConfirmation(
             resolve({ status: 'failed', error: { code: 'TIMEOUT', message: 'The desktop result is not confirmed. Check Studio before retrying; the task may still finish.' } });
         }, DISPATCH_CONFIRMATION_TIMEOUT_MS);
 
+        const subscribe = () => remoteRelayService.onDispatchTaskUpdate(taskId, (task) => {
+            if (task.status !== 'completed' && task.status !== 'failed') return;
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            unsubscribe();
+            resolve({ status: task.status, error: task.error, result: task.result });
+        }, error => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            unsubscribe();
+            resolve({ status: 'failed', error: { code: 'RECEIPT_UNAVAILABLE', message: error.message || 'Cannot confirm the desktop result. Check your connection and sign-in.' } });
+        });
         try {
-            unsubscribe = remoteRelayService.onDispatchTaskUpdate(taskId, (task) => {
-                if (task.status !== 'completed' && task.status !== 'failed') return;
-                if (settled) return;
-                settled = true;
-                clearTimeout(timeout);
-                unsubscribe();
-                resolve({ status: task.status, error: task.error });
-            }, error => {
-                if (settled) return;
-                settled = true;
-                clearTimeout(timeout);
-                unsubscribe();
-                resolve({ status: 'failed', error: { code: 'RECEIPT_UNAVAILABLE', message: error.message || 'Cannot confirm the desktop result. Check your connection and sign-in.' } });
-            });
+            unsubscribe = subscribe();
             if (settled) unsubscribe();
         } catch (error) {
             settled = true;
