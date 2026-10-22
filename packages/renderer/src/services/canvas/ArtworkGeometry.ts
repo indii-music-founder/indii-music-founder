@@ -2,6 +2,21 @@ import type { CanvasDoc, CanvasLayer } from './CanvasDoc';
 
 export const MAX_VIEWPORT_PROXY = 1024;
 
+/** Reframe around the artwork center, preserving proportions and editable layers. */
+export function resizeArtworkDocument(doc: CanvasDoc, width: number, height = width): CanvasDoc {
+    if (![width, height].every(value => Number.isInteger(value) && value >= 64 && value <= 6000) || width * height > 36_000_000) {
+        throw new Error('Choose artwork dimensions between 64 and 6000 pixels.');
+    }
+    const ratio = Math.max(width / doc.width, height / doc.height);
+    return { ...doc, width, height, layers: doc.layers.map(layer => ({
+        ...layer,
+        x: (layer.x - doc.width / 2) * ratio + width / 2,
+        y: (layer.y - doc.height / 2) * ratio + height / 2,
+        scaleX: layer.scaleX * ratio,
+        scaleY: layer.scaleY * ratio,
+    })) };
+}
+
 export function getViewportProxy(width: number, height: number): { proxyWidth: number; proxyHeight: number; proxyScale: number } {
     const maxDim = Math.max(width, height);
     const proxyScale = maxDim > MAX_VIEWPORT_PROXY ? MAX_VIEWPORT_PROXY / maxDim : 1;

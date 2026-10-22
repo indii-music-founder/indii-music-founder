@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import { normalizeCanvasDoc } from '@/services/canvas/CanvasDocValidation';
+import { resizeArtworkDocument } from '@/services/canvas/ArtworkGeometry';
 import type { StoreState } from '@/core/store/types';
 import {
     createDocFromImage,
@@ -33,7 +34,7 @@ export interface CanvasEditorSlice {
     selectLayer: (id: string | null) => void;
     closeDoc: () => void;
     updateArtwork: (patch: Partial<Pick<CanvasDoc, 'name' | 'background'>>) => void;
-    resizeArtwork: (size: number) => void;
+    resizeArtwork: (width: number, height?: number) => void;
     duplicateArtworkLayer: (id: string) => void;
 }
 
@@ -201,15 +202,10 @@ export const createCanvasEditorSlice: StateCreator<StoreState, [], [], CanvasEdi
         const doc = get().currentDoc;
         if (doc) edit({ ...doc, ...patch });
     },
-    resizeArtwork: (size) => {
+    resizeArtwork: (width, height = width) => {
         const doc = get().currentDoc;
-        if (!doc || !Number.isInteger(size) || size < 64 || size > 6000) return;
-        const ratio = size / Math.min(doc.width, doc.height);
-        const layers = doc.layers.map(layer => {
-            const base = { ...layer, x: (layer.x - doc.width / 2) * ratio + size / 2, y: (layer.y - doc.height / 2) * ratio + size / 2, scaleX: layer.scaleX * ratio, scaleY: layer.scaleY * ratio };
-            return base as CanvasLayer;
-        });
-        edit({ ...doc, width: size, height: size, layers });
+        if (!doc || ![width, height].every(value => Number.isInteger(value) && value >= 64 && value <= 6000)) return;
+        edit(resizeArtworkDocument(doc, width, height));
     },
     duplicateArtworkLayer: (id) => {
         const doc = get().currentDoc;

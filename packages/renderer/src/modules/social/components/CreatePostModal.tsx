@@ -28,9 +28,10 @@ interface CreatePostModalProps {
     onClose: () => void;
     onSave: (post: ScheduledPost) => Promise<boolean>;
     initialScheduledDate?: string;
+    initialImage?: ImageAsset;
 }
 
-export default function CreatePostModal({ onClose, onSave, initialScheduledDate }: CreatePostModalProps) {
+export default function CreatePostModal({ onClose, onSave, initialScheduledDate, initialImage }: CreatePostModalProps) {
     const dialogRef = useModalAccessibility(true, onClose);
     const { t } = useTranslation();
     const toast = useToast();
@@ -41,10 +42,10 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
         return `${hours}:${minutes}`;
     };
 
-    const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>('Twitter');
+    const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>(initialImage ? 'Instagram' : 'Twitter');
     const [copy, setCopy] = useState('');
     const [hashtagInput, setHashtagInput] = useState('');
-    const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(null);
+    const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(initialImage ?? null);
     const [imageUrlInput, setImageUrlInput] = useState('');
     const [showUrlInput, setShowUrlInput] = useState(false);
     const [scheduledDate, setScheduledDate] = useState<string>(initialScheduledDate || new Date().toLocaleDateString('sv-SE'));
@@ -105,6 +106,10 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
     };
 
     const handleSave = async () => {
+        if (selectedImage && platform === 'Twitter') {
+            toast.error('Image publishing is currently available through Instagram. Twitter delivery supports text only.');
+            return;
+        }
         if (isOverLimit) {
             toast.error(`Post exceeds character limit for ${platform}`);
             return;
@@ -219,6 +224,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
                                 </button>
                             ))}
                         </div>
+                        {selectedImage && platform === 'Twitter' && <p className="mt-2 text-sm text-amber-300" role="alert">Twitter delivery supports text only. Choose Instagram to publish this image.</p>}
                     </div>
 
                     {platform === 'Instagram' && (
