@@ -565,7 +565,7 @@ export default function MobileRemote() {
       case 'encounters':
         return (
           <Suspense fallback={<TabFallback />}>
-            <EncounterFeedView />
+            <EncounterFeedView isPaired={isPaired} />
           </Suspense>
         );
       case 'road':

@@ -389,7 +389,10 @@ export default function QuickCaptureView({
         triggerHaptic(50);
         try {
             if (isPaired) {
-                await remoteRelayService.dispatchTask({ type: 'live_moment', payload: { noteText } });
+                const taskId = await remoteRelayService.dispatchTask({ type: 'live_moment', payload: { noteText } });
+                const outcome = await waitForDispatchConfirmation(taskId);
+                if (outcome.status === 'failed') throw new Error(outcome.error?.message || 'Unable to save the note on the computer.');
+                toast.success('Live moment saved to Notes on the computer.');
             } else {
                 useStore.getState().addNote({
                     title: `Live moment — ${new Date().toLocaleString()}`,
@@ -403,6 +406,7 @@ export default function QuickCaptureView({
             triggerHaptic([50, 50, 50]);
         } catch (error) {
             logger.error('[QuickCapture] Failed to dispatch text:', error);
+            toast.error(error instanceof Error ? error.message : 'Unable to save this note.');
             triggerHaptic([100, 200, 100]);
         } finally {
             setIsDispatching(false);
@@ -528,7 +532,7 @@ export default function QuickCaptureView({
         }
     };
 
-    const handleSendToVideoEditor = async () => {
+    const handleSendToEditor = async (destination: 'photo' | 'video') => {
         const sourceFile = capturedVideoBlob || capturedImageBlob?.file || capturedAudioBlob;
         if (!sourceFile) return;
 
@@ -557,6 +561,7 @@ export default function QuickCaptureView({
                         imageUrl: mediaKind === 'image' ? downloadUrl : undefined,
                         audioUrl: mediaKind === 'audio' ? downloadUrl : undefined,
                         mediaType: mediaKind,
+                        editorDestination: destination,
                         title: `Field ${mediaKind === 'video' ? 'Footage' : mediaKind === 'image' ? 'Photo' : 'Audio Memo'}`,
                     },
                 });
@@ -565,25 +570,25 @@ export default function QuickCaptureView({
                 if (outcome.status === 'failed') {
                     throw new Error(outcome.error?.message || 'Failed to import into Studio Editor');
                 }
-                toast.success('Opened footage directly in Studio Timeline Editor!');
+                toast.success(destination === 'photo' ? 'Photo saved and opened in Studio Photo Editor.' : 'Opened in Studio Timeline Editor.');
             } else {
-                // If not paired, import directly into local videoEditorStore if running in browser studio
-                const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
-                useVideoEditorStore.getState().importMediaUrlAsClip(
-                    downloadUrl,
-                    mediaKind,
-                    `Mobile Field ${mediaKind === 'video' ? 'Video' : mediaKind === 'image' ? 'Photo' : 'Audio'}`
-                );
-                useStore.getState().setModule('creative');
-                useStore.getState().setViewMode('video_production');
-                toast.success('Mounted to Timeline Editor!');
+                const { openRemoteMedia } = await import('@/services/remote/openRemoteMedia');
+                await openRemoteMedia({
+                    videoUrl: mediaKind === 'video' ? downloadUrl : undefined,
+                    imageUrl: mediaKind === 'image' ? downloadUrl : undefined,
+                    audioUrl: mediaKind === 'audio' ? downloadUrl : undefined,
+                    mediaType: mediaKind,
+                    editorDestination: destination,
+                    title: `Mobile Field ${mediaKind}`,
+                });
+                toast.success(destination === 'photo' ? 'Photo saved and opened in Photo Editor.' : 'Opened in Timeline Editor.');
             }
 
             clearCapture();
             triggerHaptic([50, 100, 50]);
         } catch (error) {
-            logger.error('[QuickCapture] Failed to send media to Video Editor:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to send to Video Editor');
+            logger.error('[QuickCapture] Failed to open media in editor:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to open in editor');
             triggerHaptic([100, 200, 100]);
         } finally {
             setIsDispatching(false);
@@ -880,10 +885,21 @@ export default function QuickCaptureView({
                                 </button>
                             )}
 
+                            {capturedImageBlob?.type === 'photo' && (
+                                <button
+                                    onClick={() => void handleSendToEditor('photo')}
+                                    disabled={isDispatching}
+                                    className="mt-2 w-full py-2.5 px-3 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 flex items-center justify-center gap-2 text-xs font-bold cursor-pointer disabled:opacity-50"
+                                >
+                                    <ImageIcon className="w-4 h-4" />
+                                    <span>Open in Studio Photo Editor</span>
+                                </button>
+                            )}
+
                             {/* Direct Video Editor Pipeline Action for Media */}
                             {(capturedVideoBlob || (capturedImageBlob && capturedImageBlob.type === 'photo')) && (
                                 <button
-                                    onClick={handleSendToVideoEditor}
+                                    onClick={() => void handleSendToEditor('video')}
                                     disabled={isDispatching}
                                     className="mt-2 w-full py-2.5 px-3 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-200 hover:text-white hover:bg-purple-600/30 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
                                 >

@@ -213,6 +213,8 @@ export interface AgentDispatchTask {
         transcription?: string;
         imageUrl?: string;
         mediaType?: 'video' | 'image' | 'audio';
+        /** Explicit intent: photos can also be used deliberately in a video timeline. */
+        editorDestination?: 'photo' | 'video';
         title?: string;
         amount?: number;
         commandText?: string;
@@ -255,6 +257,7 @@ export interface AgentDispatchTask {
         assetUrl?: string;
         renderId?: string;
         projectId?: string;
+        artworkId?: string;
     };
 }
 
@@ -974,7 +977,7 @@ const DISPATCH_CONFIRMATION_TIMEOUT_MS = 90000;
  */
 export function waitForDispatchConfirmation(
     taskId: string
-): Promise<{ status: 'completed' | 'failed'; error?: AgentDispatchTask['error'] }> {
+): Promise<{ status: 'completed' | 'failed'; error?: AgentDispatchTask['error']; result?: AgentDispatchTask['result'] }> {
     return new Promise((resolve) => {
         let settled = false;
 
@@ -991,7 +994,7 @@ export function waitForDispatchConfirmation(
             settled = true;
             clearTimeout(timeout);
             unsubscribe();
-            resolve({ status: task.status, error: task.error });
+            resolve({ status: task.status, error: task.error, result: task.result });
         });
     });
 }
