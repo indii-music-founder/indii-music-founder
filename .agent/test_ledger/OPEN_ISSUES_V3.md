@@ -5627,3 +5627,34 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Converges to:** Beta release verification and truthful agent reporting.
 
 **Graph:** 01 blocks any training-licensed data export; 04 validates 01 and #412; 02 depends on financial tenant isolation and converges with 03 on royalty reconciliation; 03 depends on PR #421 rights verification; #424 validates truthful release status. All CI-V3-20261021-* nodes are **PROPOSED, NOT COMPLETED**. No new GitHub issue created by this ledger update.
+
+
+---
+
+## 2026-10-22 — Daily intelligence follow-up: agent-control integrity and DDEX compatibility (PROPOSED)
+
+> Source: October 22 indii.music competitive-intelligence brief. These are proposed verification/research children of existing durable work, **not newly reproduced defects**. Preserve the existing report_bug/reportBugFn → Firestore/GitHub intake. JEV similarity is advisory only. Do not mark complete from plans or vendor documentation.
+
+### P-AGENT-20261022-01 — Mandatory agent monitoring and audit integrity [P0, PROPOSED]
+- **Provenance:** October 22 brief, October 21 reports concerning coding-agent interference with monitoring controls.
+- **Parent:** CI-V3-20261019-04 beta security convergence.
+- **Overlaps/depends on:** Existing GitHub #424 Boardroom truth-reporting; ISSUE-1537 financial isolation; ISSUE-1543 remote authorization; existing security/agent approval infrastructure.
+- **Discovered children:** Only create on confirmed implementation-specific failures, linked to this parent and routed through the authoritative bug intake.
+- **Acceptance / terminal evidence:** Inventory non-bypassable audit, monitoring, authorization, and approval boundaries; tests showing bounded agents cannot disable or silently modify mandatory controls or suppress audit evidence; demonstrate denied attempts are recorded; link exact commit, passing CI, and deployment evidence if required.
+- **Converges to:** Beta security and truthful-execution release gate. **Status: proposed, unverified.**
+
+### P-DDEX-20261022-01 — ERN 4.3.2 and AI metadata compatibility assessment [P1, PROPOSED]
+- **Provenance:** October 22 brief; published DDEX ERN 4.3.2 specification and earlier ERN 4.3.1 generative-AI contribution metadata.
+- **Parent:** CI-V3-20261021-04 DSP provenance / distribution acceptance.
+- **Overlaps/depends on:** Existing GitHub #377 distribution ingestion; PR #421 rights integration; CI-V3-20261019-03 export/ACK verification; CI-V3-20261021-01 training-consent controls.
+- **Discovered children:** Branch only if a specific schema, metadata, or receiver incompatibility is confirmed; do not initiate a wholesale ERN rewrite by assumption.
+- **Acceptance / terminal evidence:** Compare actual outbound payloads and schemas to official 4.3.2 specification and receiver profiles; representative schema tests and receiver validation where live acceptance is required; preserve human-created electronic/sample-based music classification; distinguish distribution AI metadata from explicit training consent; document upgrade/no-upgrade decision with sources.
+- **Converges to:** Distribution/provenance release gate. **Status: proposed, unverified.**
+
+### Child research: AI copyright litigation and paid-training consent [P2, PROPOSED]
+- **Provenance:** October 21 publisher–AI developer lyrics copyright hearing reported in October 22 brief.
+- **Parent:** CI-V3-20261021-01; overlaps CI-V3-20261019-06. **Do not create a duplicate engineering issue.**
+- **Acceptance / terminal evidence:** Dated primary court filings/orders and counsel-reviewed or explicitly qualified legal interpretation; record a decision about whether the existing deny-by-default, rights-holder opt-in and negotiated compensation requirements need any revision. A hearing is not a final ruling; training on lyrics and sound recordings are not interchangeable legal claims.
+- **Converges to:** AI-training licensing policy and investor dossier. **Status: proposed research, unverified.**
+
+**Execution graph delta:** P-AGENT-20261022-01 spawned-by Oct 22 brief, depends-on beta security and overlaps #424, converges-to beta gate; P-DDEX-20261022-01 spawned-by DDEX compatibility signal, depends-on existing provenance/distribution verification, converges-to distribution gate; litigation research is a child of CI-V3-20261021-01. Existing October 21 work remains authoritative. **No tasks closed, no separate GitHub issues created.**
