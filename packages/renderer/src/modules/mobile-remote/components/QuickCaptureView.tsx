@@ -535,6 +535,10 @@ export default function QuickCaptureView({
     const handleSendToEditor = async (destination: 'photo' | 'video') => {
         const sourceFile = capturedVideoBlob || capturedImageBlob?.file || capturedAudioBlob;
         if (!sourceFile) return;
+        if (!isPaired) {
+            toast.error('Reconnect Studio to open this capture on the computer. Your capture has been kept.');
+            return;
+        }
 
         setIsDispatching(true);
         triggerHaptic([40, 80]);
@@ -553,36 +557,24 @@ export default function QuickCaptureView({
 
             const downloadUrl = await StorageService.uploadFile(sourceFile, path);
 
-            if (isPaired) {
-                const taskId = await remoteRelayService.dispatchTask({
-                    type: 'editor_import',
-                    payload: {
-                        videoUrl: mediaKind === 'video' ? downloadUrl : undefined,
-                        imageUrl: mediaKind === 'image' ? downloadUrl : undefined,
-                        audioUrl: mediaKind === 'audio' ? downloadUrl : undefined,
-                        mediaType: mediaKind,
-                        editorDestination: destination,
-                        title: `Field ${mediaKind === 'video' ? 'Footage' : mediaKind === 'image' ? 'Photo' : 'Audio Memo'}`,
-                    },
-                });
-
-                const outcome = await waitForDispatchConfirmation(taskId);
-                if (outcome.status === 'failed') {
-                    throw new Error(outcome.error?.message || 'Failed to import into Studio Editor');
-                }
-                toast.success(destination === 'photo' ? 'Photo saved and opened in Studio Photo Editor.' : 'Opened in Studio Timeline Editor.');
-            } else {
-                const { openRemoteMedia } = await import('@/services/remote/openRemoteMedia');
-                await openRemoteMedia({
+            const taskId = await remoteRelayService.dispatchTask({
+                type: 'editor_import',
+                payload: {
                     videoUrl: mediaKind === 'video' ? downloadUrl : undefined,
                     imageUrl: mediaKind === 'image' ? downloadUrl : undefined,
                     audioUrl: mediaKind === 'audio' ? downloadUrl : undefined,
                     mediaType: mediaKind,
                     editorDestination: destination,
-                    title: `Mobile Field ${mediaKind}`,
-                });
-                toast.success(destination === 'photo' ? 'Photo saved and opened in Photo Editor.' : 'Opened in Timeline Editor.');
+                    title: `Field ${mediaKind === 'video' ? 'Footage' : mediaKind === 'image' ? 'Photo' : 'Audio Memo'}`,
+                },
+            });
+
+            const outcome = await waitForDispatchConfirmation(taskId);
+            if (outcome.status === 'failed') {
+                throw new Error(outcome.error?.message || 'Failed to import into Studio Editor');
             }
+            toast.success(destination === 'photo' ? 'Photo saved and opened in Studio Photo Editor.' : 'Opened in Studio Timeline Editor.');
+
 
             clearCapture();
             triggerHaptic([50, 100, 50]);

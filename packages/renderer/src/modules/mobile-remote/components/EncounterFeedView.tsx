@@ -68,6 +68,10 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
 
     const openInEditor = async (encounter: FieldEncounter, mediaUrl: string, mediaType: 'image' | 'video') => {
         if (openingId) return;
+        if (!isPaired) {
+            toast.error('Reconnect Studio to open this capture on the computer.');
+            return;
+        }
         setOpeningId(encounter.id);
         triggerHaptic([40, 80]);
         const payload = {
@@ -78,15 +82,11 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
             title: encounter.title || `Field ${mediaType === 'image' ? 'Photo' : 'Video'}`,
         };
         try {
-            if (isPaired) {
-                const { remoteRelayService, waitForDispatchConfirmation } = await import('@/services/agent/RemoteRelayService');
-                const taskId = await remoteRelayService.dispatchTask({ type: 'editor_import', payload });
-                const outcome = await waitForDispatchConfirmation(taskId);
-                if (outcome.status === 'failed') throw new Error(outcome.error?.message || 'Unable to open capture on the computer.');
-            } else {
-                const { openRemoteMedia } = await import('@/services/remote/openRemoteMedia');
-                await openRemoteMedia(payload);
-            }
+            const { remoteRelayService, waitForDispatchConfirmation } = await import('@/services/agent/RemoteRelayService');
+            const taskId = await remoteRelayService.dispatchTask({ type: 'editor_import', payload });
+            const outcome = await waitForDispatchConfirmation(taskId);
+            if (outcome.status === 'failed') throw new Error(outcome.error?.message || 'Unable to open capture on the computer.');
+
             toast.success(mediaType === 'image' ? 'Photo saved and opened in Studio Photo Editor.' : 'Opened in Studio Timeline Editor.');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Unable to open capture.');

@@ -5,7 +5,7 @@ import { CanvasDocumentService } from '@/services/canvas/CanvasDocumentService';
 import { createDocFromImage } from '@/services/canvas/CanvasDoc';
 import { editorImportPlan } from './editorImportPlan';
 
-/** Shared by the local capture surface and the paired desktop executor. */
+/** Open an uploaded capture in the paired desktop executor, never on the controller. */
 export async function openRemoteMedia(payload: AgentDispatchTask['payload'], taskId?: string): Promise<NonNullable<AgentDispatchTask['result']>> {
     const plan = editorImportPlan(payload);
     const uid = auth.currentUser?.uid;
