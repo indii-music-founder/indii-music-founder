@@ -20,6 +20,7 @@
  * Works cross-network: cellular, different WiFi, anywhere with internet.
  */
 
+import { serializeDispatchPayload } from '@/services/remote/dispatchPayload';
 import {
     collection,
     doc,
@@ -494,6 +495,7 @@ class RemoteRelayService {
 
         const dispatchDoc: AgentDispatchTask = {
             ...task,
+            payload: serializeDispatchPayload(task.payload),
             status: 'pending',
             createdAt: serverTimestamp(),
         };
