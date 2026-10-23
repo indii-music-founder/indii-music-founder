@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { cutoutSourcePoint, cutoutZoomOffset } from '../CutoutPreviewGeometry';
+import { cutoutRetainedFraction, cutoutSourcePoint, cutoutZoomOffset } from '../CutoutPreviewGeometry';
 
 describe('cutout preview geometry (pure coordinates)', () => {
+    it('spots a mask that retained only fragments of the selected artist', () => {
+        const mask = new Uint8Array(100 * 100);
+        for (let y = 42; y < 47; y++) for (let x = 46; x < 51; x++) mask[y * 100 + x] = 255;
+        expect(cutoutRetainedFraction(mask, 100, 100, { x: 20, y: 10, width: 60, height: 80 })).toBeLessThan(0.02);
+        for (let y = 20; y < 70; y++) for (let x = 35; x < 65; x++) mask[y * 100 + x] = 255;
+        expect(cutoutRetainedFraction(mask, 100, 100, { x: 20, y: 10, width: 60, height: 80 })).toBeGreaterThan(0.02);
+    });
+
     it('paints the same source pixel at fit and after zooming and scrolling', () => {
         const source = { width: 1024, height: 1024 };
         const pointer = { x: 228, y: 178 };
