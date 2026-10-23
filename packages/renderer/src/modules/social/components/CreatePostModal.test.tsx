@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import CreatePostModal from './CreatePostModal';
+import { SOCIAL_TOOLS } from '../tools';
 
 // Extend expect with jest-axe matchers
 expect.extend(toHaveNoViolations);
@@ -30,6 +31,13 @@ vi.mock('../../creative/components/BrandAssetsDrawer', () => ({
 
 vi.mock('@/services/storage/resolveStorageUrl', () => ({
     resolveStorageUrl: vi.fn(async () => 'https://cdn.example.test/feed.png'),
+}));
+
+vi.mock('../tools', () => ({
+    SOCIAL_TOOLS: {
+        write_social_copy: vi.fn(),
+        suggest_instagram_hashtags: vi.fn(),
+    },
 }));
 
 describe('CreatePostModal Accessibility', () => {
@@ -64,6 +72,21 @@ describe('CreatePostModal Accessibility', () => {
 
         // This will likely fail initially
         expect(getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('uses the artist post idea for AI copy and offers reviewed Instagram hashtags', async () => {
+        vi.mocked(SOCIAL_TOOLS.write_social_copy).mockResolvedValue('A new song is on the way.');
+        vi.mocked(SOCIAL_TOOLS.suggest_instagram_hashtags).mockResolvedValue(['detroitindie', 'synthpopartist', 'newsingle']);
+        render(<CreatePostModal onClose={mockOnClose} onSave={mockOnSave} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Instagram' }));
+        fireEvent.change(screen.getByLabelText('What is this post about?'), { target: { value: 'My new single' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Generate with AI' }));
+        await waitFor(() => expect(screen.getByLabelText('Post Copy')).toHaveValue('A new song is on the way.'));
+        expect(SOCIAL_TOOLS.write_social_copy).toHaveBeenCalledWith(expect.objectContaining({
+            platform: 'Instagram', brief: 'My new single',
+        }));
+        fireEvent.click(screen.getByRole('button', { name: 'Suggest hashtags' }));
+        await waitFor(() => expect(screen.getByLabelText(/Feed hashtags/)).toHaveValue('#detroitindie #synthpopartist #newsingle'));
     });
 
     it('schedules only after a project asset resolves to a verified 4:5 publishing payload', async () => {
