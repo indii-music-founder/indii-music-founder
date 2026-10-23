@@ -169,6 +169,22 @@ describe('artwork revision history', () => {
 });
 
 describe('square-cover framing', () => {
+    it('keeps portrait resizing as one undoable edit without losing layers', () => {
+        const store = buildStore();
+        store.getState().openImage('literal-source.png', 'pure-layout');
+        store.getState().addRasterLayer('literal-background.png', 'Replacement background');
+        const original = store.getState().currentDoc!;
+        store.getState().resizeArtwork(1080, 1350);
+        const portrait = store.getState().currentDoc!;
+        expect(portrait).toMatchObject({ width: 1080, height: 1350 });
+        expect(portrait.layers.map(layer => layer.id)).toEqual(original.layers.map(layer => layer.id));
+        store.getState().undoArtwork();
+        expect(store.getState().currentDoc?.layers).toEqual(original.layers);
+        expect(store.getState().currentDoc).toMatchObject({ width: 3000, height: 3000 });
+        store.getState().redoArtwork();
+        expect(store.getState().currentDoc?.layers).toEqual(portrait.layers);
+        expect(store.getState().currentDoc).toMatchObject({ width: 1080, height: 1350 });
+    });
     it('crops a rectangular document uniformly without stretching its photo', () => {
         const store = buildStore();
         store.getState().openImage('geometry-fixture.png', 'unit-fixture');

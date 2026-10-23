@@ -23,6 +23,10 @@ import { ArtworkCanvasSession, createArtworkCanvasObject, readArtworkCanvasTrans
 import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
 import { downloadAsset, downloadBlob } from '@/utils/download';
+import { auth } from '@/services/firebase';
+import { ARTWORK_SOCIAL_SIZE, requireSocialArtworkSize } from '@/services/canvas/ArtworkSocial';
+import CreatePostModal from '@/modules/social/components/CreatePostModal';
+import type { ImageAsset } from '@/modules/social/types';
 
 type LayerIdCarrier = fabric.FabricObject & { layerId?: string; rasterDensity?: number };
 
@@ -98,6 +102,37 @@ export const CanvasEditor: React.FC = () => {
     const [renderError, setRenderError] = useState<string | null>(null);
     const [isRendering, setIsRendering] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [socialImage, setSocialImage] = useState<{ uid: string; image: ImageAsset } | null>(null);
+
+    const prepareSocialPost = async () => {
+        const snapshot = useStore.getState().currentDoc;
+        const uid = auth.currentUser?.uid;
+        if (!snapshot || !uid) throw new Error('Sign in to prepare a post.');
+        requireSocialArtworkSize(snapshot);
+        const ensureCurrent = () => {
+            const latest = useStore.getState().currentDoc;
+            if (auth.currentUser?.uid !== uid) throw new Error('Sign in again to prepare this post.');
+            if (latest?.id !== snapshot.id || latest.updatedAt !== snapshot.updatedAt) throw new Error('Artwork changed. Prepare the post again to include your latest edits.');
+        };
+        await autosave.flush();
+        ensureCurrent();
+        // The same full-resolution compositor used by export bakes text, masks and adjustments.
+        const output = await renderArtworkDocument(snapshot, 1, true);
+        const blob = await new Promise<Blob>((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Image encoding timed out. Please retry.')), 60_000);
+            output.toBlob(value => {
+                clearTimeout(timeout);
+                if (value) resolve(value); else reject(new Error('Unable to encode the post image.'));
+            }, 'image/jpeg', 0.95);
+        });
+        ensureCurrent();
+        const imageUrl = await StorageService.uploadFile(blob, `users/${uid}/artwork/${snapshot.id}/social/${crypto.randomUUID()}.jpg`);
+        ensureCurrent();
+        setSocialImage({ uid, image: {
+            assetType: 'image', title: snapshot.name || 'Artwork', imageUrl, caption: '',
+            width: output.width, height: output.height,
+        } });
+    };
 
     useEffect(() => {
         const element = canvasElRef.current;
@@ -361,9 +396,10 @@ export const CanvasEditor: React.FC = () => {
                 </div>}
                 {!framingLayerId && <div className="flex flex-col gap-2 px-3 py-2 text-xs text-white/70">
                     <label>Artwork name<input aria-label="Artwork name" value={currentDoc.name ?? 'Untitled cover'} onFocus={beginGesture} onBlur={commitGesture} onChange={event => updateArtwork({ name: event.target.value })} className="block w-full bg-black/40 p-1" /></label>
-                    <label>Square size<select aria-label="Square size" value={currentDoc.width === currentDoc.height ? currentDoc.width : ''} onChange={event => resizeArtwork(Number(event.target.value))} className="ml-2 bg-black/40">
-                        <option value="" disabled>Choose square size</option>
+                    <label>Artwork size<select aria-label="Artwork size" value={currentDoc.width === currentDoc.height ? currentDoc.width : currentDoc.width === ARTWORK_SOCIAL_SIZE.width && currentDoc.height === ARTWORK_SOCIAL_SIZE.height ? 'social' : ''} onChange={event => event.target.value === 'social' ? resizeArtwork(ARTWORK_SOCIAL_SIZE.width, ARTWORK_SOCIAL_SIZE.height) : resizeArtwork(Number(event.target.value))} className="ml-2 bg-black/40">
+                        <option value="" disabled>Choose artwork size</option>
                         {[...new Set([1080, 3000, ...(currentDoc.width === currentDoc.height ? [currentDoc.width] : [])])].sort((a,b) => a-b).map(size => <option key={size} value={size}>{size} × {size}</option>)}
+                        <option value="social">Social feed (1080 × 1350)</option>
                     </select></label>
                     <label>Background<select aria-label="Cover background" value={currentDoc.background} onChange={event => updateArtwork({ background: event.target.value })} className="ml-2 bg-black/40">
                         <option value="#000000">Black</option><option value="#ffffff">White</option><option value="transparent">Transparent</option>
@@ -408,6 +444,14 @@ export const CanvasEditor: React.FC = () => {
                     />
                 )}
                 <div className="mt-auto">
+                    <button
+                        className="m-3 px-3 py-2 rounded bg-emerald-700 text-white text-xs disabled:opacity-40"
+                        disabled={isRendering || Boolean(renderError) || isExporting || Boolean(framingLayerId)}
+                        onClick={() => {
+                            setIsExporting(true);
+                            void prepareSocialPost().catch(failure => toast.error(failure instanceof Error ? failure.message : 'Unable to prepare post')).finally(() => setIsExporting(false));
+                        }}
+                    >{isExporting ? 'Preparing…' : 'Prepare Instagram post'}</button>
                     <ExportBar
                         width={currentDoc.width}
                         height={currentDoc.height}
@@ -417,11 +461,31 @@ export const CanvasEditor: React.FC = () => {
                             setIsExporting(true);
                             void handleExport(f, s).catch(failure => toast.error(failure instanceof Error ? failure.message : 'Export failed')).finally(() => setIsExporting(false));
                         }}
-                        onUpscaleToPrint={handleUpscalePrintReady}
+                        onUpscaleToPrint={currentDoc.width === currentDoc.height ? handleUpscalePrintReady : undefined}
                         isUpscaling={isUpscaling}
                     />
                 </div>
             </aside>
+            {socialImage && auth.currentUser?.uid === socialImage.uid && <CreatePostModal
+                initialImage={socialImage.image}
+                onClose={() => setSocialImage(null)}
+                onSave={async post => {
+                    try {
+                        if (auth.currentUser?.uid !== socialImage.uid) throw new Error('Sign in again before scheduling.');
+                        const { SocialService } = await import('@/services/social/SocialService');
+                        await SocialService.schedulePost({
+                            platform: post.platform, copy: post.copy, imageAsset: post.imageAsset,
+                            day: post.day, instagramPayload: post.instagramPayload,
+                            scheduledTime: post.scheduledTime instanceof Date ? post.scheduledTime.getTime() : post.scheduledTime,
+                        });
+                        toast.success('Post scheduled. Review its delivery status in Social.');
+                        return true;
+                    } catch (failure) {
+                        toast.error(failure instanceof Error ? failure.message : 'Unable to schedule post.');
+                        return false;
+                    }
+                }}
+            />}
         </div>
     );
 };
