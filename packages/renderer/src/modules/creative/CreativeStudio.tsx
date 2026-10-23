@@ -731,7 +731,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             />
                         )}
 
-                        {!currentDoc && <SavedArtworkPanel key={creativeScope} projectId={currentProjectId ?? 'project_default'} />}
+                        {!currentDoc && !hasModeOverlay && <SavedArtworkPanel key={creativeScope} projectId={currentProjectId ?? 'project_default'} />}
                         {/* Layer Editor overlay (C1.3) — opens whenever a CanvasDoc is active. */}
                         {Boolean(currentDoc) && (
                             <CanvasEditorPortal>

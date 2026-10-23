@@ -16,6 +16,7 @@ import { VideoGenerationProgress } from './veo/VideoGenerationProgress';
 import { WhiskService } from '@/services/WhiskService';
 import { useToast } from '@/core/context/ToastContext';
 import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
+import { SavedArtworkPanel } from './CanvasEditor/SavedArtworkPanel';
 
 // ISSUE-788: the backend only special-cases '9:16' for a Veo video request
 // and silently coerces every other aspect ratio to '16:9'
@@ -28,6 +29,7 @@ import { DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContent, DropdownM
 export default function DirectGenerationTab() {
     const toast = useToast();
     const workspaceMode = useOptionalAdaptiveWorkspace()?.mode ?? 'wide';
+    const currentProjectId = useStore(state => state.currentProjectId);
     const { 
         isPromptBuilderOpen, 
         togglePromptBuilder, 
@@ -245,6 +247,10 @@ export default function DirectGenerationTab() {
                             </button>
                         </div>
                     </div>
+
+                    {mode === 'image' && <div className="rounded-xl border border-white/10 bg-white/[0.02]">
+                        <SavedArtworkPanel key={currentProjectId ?? 'project_default'} projectId={currentProjectId ?? 'project_default'} />
+                    </div>}
 
                     {/* Mode Toggle Tabs */}
                     <div className="flex bg-white/4 rounded-xl p-1 border border-white/5 shadow-inner max-w-md mx-auto w-full">

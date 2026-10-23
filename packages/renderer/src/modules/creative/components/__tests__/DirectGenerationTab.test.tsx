@@ -583,4 +583,9 @@ describe('DirectGenerationTab structural regressions', () => {
         expect(screen.getByText('Upload Photo')).toBeInTheDocument();
         expect(screen.getByText('Project Assets')).toBeInTheDocument();
     });
+
+    it('places saved artwork inside the visible image workspace so a closed document can reopen', () => {
+        render(<DirectGenerationTab />);
+        expect(screen.getByTestId('direct-generation-workspace')).toContainElement(screen.getByText('Saved artwork'));
+    });
 });
