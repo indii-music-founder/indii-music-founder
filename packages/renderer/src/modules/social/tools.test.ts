@@ -16,6 +16,39 @@ describe('SOCIAL_TOOLS', () => {
         vi.clearAllMocks();
     });
 
+    it('grounds copy in artist context instead of a generic product launch', async () => {
+        (AI.generateContent as import('vitest').Mock).mockResolvedValue({ response: { text: () => 'My new single is here.' } });
+        const result = await SOCIAL_TOOLS.write_social_copy({
+            platform: 'Instagram', brief: 'Announce my single', artistName: 'Nia', releaseTitle: 'Night Drive', genre: 'synthpop',
+        });
+        expect(result).toBe('My new single is here.');
+        const prompt = (AI.generateContent as import('vitest').Mock).mock.calls[0][0][0].parts[0].text;
+        expect(prompt).toContain('Night Drive');
+        expect(prompt).toContain('Nia');
+        expect(prompt).not.toContain('New product launch');
+        expect(prompt).toContain('Do not invent release dates');
+    });
+
+    it('requires a real subject before generating copy', async () => {
+        await expect(SOCIAL_TOOLS.write_social_copy({ platform: 'Instagram', brief: '', artworkTitle: 'Artwork' }))
+            .rejects.toThrow('Add a post idea');
+        expect(AI.generateContent).not.toHaveBeenCalled();
+    });
+
+    it('accepts specific Instagram hashtag suggestions and rejects reach bait', async () => {
+        (AI.generateStructuredData as import('vitest').Mock).mockResolvedValueOnce({
+            hashtags: ['#niamusic', '#nightdrive', '#synthpopartist', '#detroitindie', '#indieelectronic'],
+        });
+        const context = { platform: 'Instagram', brief: 'Announce my single', artistName: 'Nia', releaseTitle: 'Night Drive' };
+        await expect(SOCIAL_TOOLS.suggest_instagram_hashtags(context)).resolves.toEqual([
+            'niamusic', 'nightdrive', 'synthpopartist', 'detroitindie', 'indieelectronic',
+        ]);
+        (AI.generateStructuredData as import('vitest').Mock).mockResolvedValueOnce({
+            hashtags: ['#viral', '#music', '#trending', '#explore', '#fyp'],
+        });
+        await expect(SOCIAL_TOOLS.suggest_instagram_hashtags(context)).rejects.toThrow('specific hashtags');
+    });
+
     describe('generate_social_identity', () => {
         it('should call AI.generateStructuredData with correct parameters', async () => {
             const mockResponse = {
