@@ -214,6 +214,8 @@ export interface AgentDispatchTask {
         transcription?: string;
         imageUrl?: string;
         mediaType?: 'video' | 'image' | 'audio';
+        /** Explicit intent: photos can also be used deliberately in a video timeline. */
+        editorDestination?: 'photo' | 'video';
         title?: string;
         amount?: number;
         commandText?: string;
@@ -256,6 +258,7 @@ export interface AgentDispatchTask {
         assetUrl?: string;
         renderId?: string;
         projectId?: string;
+        artworkId?: string;
     };
 }
 

@@ -9,7 +9,8 @@ import { useToast } from '@/core/context/ToastContext';
 import { triggerHaptic } from '../haptics';
 import { Timestamp } from 'firebase/firestore';
 
-export default function EncounterFeedView() {
+export default function EncounterFeedView({ isPaired = false }: { isPaired?: boolean }) {
+    const [openingId, setOpeningId] = useState<string | null>(null);
     const [encounters, setEncounters] = useState<FieldEncounter[]>([]);
     const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
     const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
@@ -62,6 +63,35 @@ export default function EncounterFeedView() {
             nextAudio.play();
             setAudioElement(nextAudio);
             setPlayingAudioId(assetId);
+        }
+    };
+
+    const openInEditor = async (encounter: FieldEncounter, mediaUrl: string, mediaType: 'image' | 'video') => {
+        if (openingId) return;
+        if (!isPaired) {
+            toast.error('Reconnect Studio to open this capture on the computer.');
+            return;
+        }
+        setOpeningId(encounter.id);
+        triggerHaptic([40, 80]);
+        const payload = {
+            imageUrl: mediaType === 'image' ? mediaUrl : undefined,
+            videoUrl: mediaType === 'video' ? mediaUrl : undefined,
+            mediaType,
+            editorDestination: mediaType === 'image' ? 'photo' as const : 'video' as const,
+            title: encounter.title || `Field ${mediaType === 'image' ? 'Photo' : 'Video'}`,
+        };
+        try {
+            const { remoteRelayService, waitForDispatchConfirmation } = await import('@/services/agent/RemoteRelayService');
+            const taskId = await remoteRelayService.dispatchTask({ type: 'editor_import', payload });
+            const outcome = await waitForDispatchConfirmation(taskId);
+            if (outcome.status === 'failed') throw new Error(outcome.error?.message || 'Unable to open capture on the computer.');
+
+            toast.success(mediaType === 'image' ? 'Photo saved and opened in Studio Photo Editor.' : 'Opened in Studio Timeline Editor.');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Unable to open capture.');
+        } finally {
+            setOpeningId(null);
         }
     };
 
@@ -244,32 +274,11 @@ export default function EncounterFeedView() {
                                     <div className="p-2 bg-stone-900/90 flex justify-end">
                                         <button
                                             type="button"
-                                            onClick={async () => {
-                                                triggerHaptic([40, 80]);
-                                                try {
-                                                    const { remoteRelayService } = await import('@/services/agent/RemoteRelayService');
-                                                    await remoteRelayService.dispatchTask({
-                                                        type: 'editor_import',
-                                                        payload: {
-                                                            videoUrl: videoAsset.downloadUrl,
-                                                            mediaType: 'video',
-                                                            title: enc.title || 'Field Video Encounter',
-                                                        },
-                                                    });
-                                                    toast.success('Sent video to Studio Timeline Editor!');
-                                                } catch {
-                                                    // Fallback to local store if web studio
-                                                    const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
-                                                    const { useStore } = await import('@/core/store');
-                                                    useVideoEditorStore.getState().importMediaUrlAsClip(videoAsset.downloadUrl, 'video', enc.title || 'Field Video');
-                                                    useStore.getState().setModule('creative');
-                                                    useStore.getState().setViewMode('video_production');
-                                                    toast.success('Opened in Studio Timeline Editor!');
-                                                }
-                                            }}
+                                            disabled={openingId !== null}
+                                            onClick={() => void openInEditor(enc, videoAsset.downloadUrl, 'video')}
                                             className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 hover:text-white text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                                         >
-                                            <span>Open in Video Editor</span>
+                                            <span>{openingId === enc.id ? 'Opening…' : 'Open in Video Editor'}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -280,31 +289,11 @@ export default function EncounterFeedView() {
                                 <div className="mt-2 flex justify-end">
                                     <button
                                         type="button"
-                                        onClick={async () => {
-                                            triggerHaptic([40, 80]);
-                                            try {
-                                                const { remoteRelayService } = await import('@/services/agent/RemoteRelayService');
-                                                await remoteRelayService.dispatchTask({
-                                                    type: 'editor_import',
-                                                    payload: {
-                                                        imageUrl: photoAsset.downloadUrl,
-                                                        mediaType: 'image',
-                                                        title: enc.title || 'Field Photo Encounter',
-                                                    },
-                                                });
-                                                toast.success('Sent photo to Studio Timeline Editor!');
-                                            } catch {
-                                                const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
-                                                const { useStore } = await import('@/core/store');
-                                                useVideoEditorStore.getState().importMediaUrlAsClip(photoAsset.downloadUrl, 'image', enc.title || 'Field Photo');
-                                                useStore.getState().setModule('creative');
-                                                useStore.getState().setViewMode('video_production');
-                                                toast.success('Opened in Studio Timeline Editor!');
-                                            }
-                                        }}
+                                        disabled={openingId !== null}
+                                        onClick={() => void openInEditor(enc, photoAsset.downloadUrl, 'image')}
                                         className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-stone-300 hover:text-white text-[10px] font-medium flex items-center gap-1 transition-colors cursor-pointer"
                                     >
-                                        <span>Edit in Studio Editor</span>
+                                        <span>{openingId === enc.id ? 'Opening…' : 'Open in Photo Editor'}</span>
                                     </button>
                                 </div>
                             )}
