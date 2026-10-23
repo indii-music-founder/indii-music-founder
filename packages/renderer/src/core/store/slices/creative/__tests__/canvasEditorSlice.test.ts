@@ -32,6 +32,24 @@ describe('canvasEditorSlice (C1.1)', () => {
         expect(added).toMatchObject({ visible: true, blendMode: 'normal' });
     });
 
+    it('adds a replacement photo behind the cutout and text as one undoable edit', () => {
+        store.getState().openImage('portrait.png', 'social');
+        const portraitId = store.getState().selectedLayerId!;
+        store.getState().updateLayer(portraitId, { maskSrc: 'artist-mask.png', subjectIsolated: true });
+        const textId = store.getState().addTextLayer({ fontId: 'font_1', text: 'ARTIST', fontSize: 48,
+            letterSpacing: 0, kerning: true, fill: '#ffffff', x: 10, y: 20, rotation: 0, opacity: 1, visible: true })!;
+        const before = store.getState().currentDoc!;
+        const backgroundId = store.getState().addRasterLayer('new-scene.png', 'New scene', 'background')!;
+        const doc = store.getState().currentDoc!;
+        expect(doc.layers.map(layer => layer.id)).toEqual([backgroundId, portraitId, textId]);
+        expect(doc.layers[0]).toMatchObject({ kind: 'raster', framing: 'fill', src: 'new-scene.png' });
+        expect(doc.layers[1]).toMatchObject({ maskSrc: 'artist-mask.png', subjectIsolated: true });
+        store.getState().undoArtwork();
+        expect(store.getState().currentDoc?.layers).toEqual(before.layers);
+        store.getState().redoArtwork();
+        expect(store.getState().currentDoc?.layers.map(layer => layer.id)).toEqual([backgroundId, portraitId, textId]);
+    });
+
     it('addTextLayer appends a text layer and selects it', () => {
         store.getState().openImage('a.png', 'p');
         const before = store.getState().currentDoc!.layers.length;
