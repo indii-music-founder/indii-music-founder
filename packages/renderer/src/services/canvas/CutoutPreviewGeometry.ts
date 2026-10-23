@@ -1,4 +1,16 @@
-import type { CutoutPoint } from './segmentation/GrabCut';
+import type { CutoutPoint, CutoutRectangle } from './segmentation/GrabCut';
+
+/** Detect a collapsed initial selection before it replaces the artist photo. */
+export function cutoutRetainedFraction(mask: Uint8Array, width: number, height: number, rectangle: CutoutRectangle): number {
+    const left = Math.max(0, Math.floor(rectangle.x)), top = Math.max(0, Math.floor(rectangle.y));
+    const right = Math.min(width, Math.ceil(rectangle.x + rectangle.width));
+    const bottom = Math.min(height, Math.ceil(rectangle.y + rectangle.height));
+    const area = Math.max(0, right - left) * Math.max(0, bottom - top);
+    if (!area || mask.length !== width * height) return 0;
+    let retained = 0;
+    for (let y = top; y < bottom; y++) for (let x = left; x < right; x++) if (mask[y * width + x]! > 0) retained++;
+    return retained / area;
+}
 
 /** CSS bounds include the current zoom and scroll position. Strokes stay in source pixels. */
 export function cutoutSourcePoint(

@@ -4,7 +4,7 @@ import type { RasterLayer } from '@/services/canvas/CanvasDoc';
 import type { CutoutPoint, CutoutRectangle, CutoutStroke } from '@/services/canvas/segmentation/GrabCut';
 import { loadArtworkImage } from '@/services/canvas/ArtworkRenderService';
 import { generateArtworkMask, persistArtworkMask } from '@/services/canvas/MaskService';
-import { cutoutSourcePoint, cutoutZoomOffset } from '@/services/canvas/CutoutPreviewGeometry';
+import { cutoutRetainedFraction, cutoutSourcePoint, cutoutZoomOffset } from '@/services/canvas/CutoutPreviewGeometry';
 
 export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
@@ -13,6 +13,7 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     const [rectangle, setRectangle] = useState<CutoutRectangle | null>(null);
     const [strokes, setStrokes] = useState<CutoutStroke[]>([]);
     const [mask, setMask] = useState<Uint8Array | null>(null);
+    const [retainedFraction, setRetainedFraction] = useState<number | null>(null);
     const [baseMask, setBaseMask] = useState<Uint8Array | null>(null);
     const previousMask = useRef<{ src?: string; feather?: number; uid?: string }>({});
     const [error, setError] = useState<string | null>(null), [progress, setProgress] = useState(0);
@@ -31,7 +32,7 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
         const abort = new AbortController(); controller.current = abort;
         image.current = null; start.current = null; drawing.current = false; setDimensions(null);
         setPreviewZoom(1); pendingView.current = null;
-        setOpen(true); setBusy(true); setError(null); setMask(null); setBaseMask(null); setRectangle(null); setStrokes([]);
+        setOpen(true); setBusy(true); setError(null); setMask(null); setRetainedFraction(null); setBaseMask(null); setRectangle(null); setStrokes([]);
         setMode(layer.maskSrc ? 'keep' : 'box'); setSoftness(layer.maskFeather ?? 1);
         previousMask.current = { src: layer.maskSrc, feather: layer.maskFeather, uid };
         try {
@@ -63,19 +64,27 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
         const scale = Math.min(280 / dimensions.width, 340 / dimensions.height) * previewZoom;
         el.width = Math.max(1, Math.round(dimensions.width * scale)); el.height = Math.max(1, Math.round(dimensions.height * scale));
         const ctx = el.getContext('2d'); if (!ctx) return;
-        ctx.drawImage(source, 0, 0, el.width, el.height);
         const shownMask = mask ?? baseMask;
         if (shownMask) {
-            const overlay = ctx.createImageData(el.width, el.height);
+            // Show the actual result against transparency, not a tint over the
+            // untouched photo: a collapsed mask must be obvious before saving.
+            const tile = 12;
+            for (let y = 0; y < el.height; y += tile) for (let x = 0; x < el.width; x += tile) {
+                ctx.fillStyle = ((x / tile + y / tile) % 2) ? '#d7d7d7' : '#f3f3f3';
+                ctx.fillRect(x, y, tile, tile);
+            }
+            const preview = document.createElement('canvas'); preview.width = el.width; preview.height = el.height;
+            const previewCtx = preview.getContext('2d');
+            if (!previewCtx) return;
+            previewCtx.drawImage(source, 0, 0, el.width, el.height);
+            const pixels = previewCtx.getImageData(0, 0, el.width, el.height);
             for (let y = 0; y < el.height; y++) for (let x = 0; x < el.width; x++) {
                 const sourceX = Math.min(dimensions.width - 1, Math.floor(x / scale)), sourceY = Math.min(dimensions.height - 1, Math.floor(y / scale));
-                const i = (y * el.width + x) * 4;
-                overlay.data[i] = 30; overlay.data[i + 1] = 220; overlay.data[i + 2] = 140;
-                overlay.data[i + 3] = Math.round(shownMask[sourceY * dimensions.width + sourceX]! * 90 / 255);
+                const alpha = (y * el.width + x) * 4 + 3;
+                pixels.data[alpha] = Math.round(pixels.data[alpha]! * shownMask[sourceY * dimensions.width + sourceX]! / 255);
             }
-            const temporary = document.createElement('canvas'); temporary.width = el.width; temporary.height = el.height;
-            temporary.getContext('2d')?.putImageData(overlay, 0, 0); ctx.drawImage(temporary, 0, 0);
-        }
+            previewCtx.putImageData(pixels, 0, 0); ctx.drawImage(preview, 0, 0);
+        } else ctx.drawImage(source, 0, 0, el.width, el.height);
         if (rectangle && !baseMask) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.strokeRect(rectangle.x * scale, rectangle.y * scale, rectangle.width * scale, rectangle.height * scale); }
         for (const stroke of strokes) {
             ctx.strokeStyle = stroke.label === 'keep' ? '#22ee88' : '#ff5566'; ctx.fillStyle = ctx.strokeStyle;
@@ -110,7 +119,7 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
     const process = async () => {
         if (!dimensions || !rectangle || !image.current) return;
         const session = ++generation.current, abort = new AbortController(); controller.current = abort;
-        setBusy(true); setError(null); setProgress(0); setMask(null);
+        setBusy(true); setError(null); setProgress(0); setMask(null); setRetainedFraction(null);
         try {
             const readPixels = () => {
                 const full = document.createElement('canvas'); full.width = dimensions.width; full.height = dimensions.height;
@@ -124,14 +133,17 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
             const result = await generateArtworkMask({ ...dimensions, pixels, rectangle, strokes, baseMask: baseMask ?? undefined }, abort.signal, value => {
                 if (active.current && generation.current === session) setProgress(value);
             }, readPixels);
-            if (active.current && generation.current === session) setMask(result);
+            if (active.current && generation.current === session) {
+                setMask(result);
+                setRetainedFraction(baseMask ? null : cutoutRetainedFraction(result, dimensions.width, dimensions.height, rectangle));
+            }
         } catch (failure) {
             if (active.current && generation.current === session && !(failure instanceof DOMException && failure.name === 'AbortError')) setError(failure instanceof Error ? failure.message : 'Cutout failed');
         } finally { if (active.current && generation.current === session) setBusy(false); }
     };
     const apply = async () => {
         const doc = useStore.getState().currentDoc, uid = useStore.getState().user?.uid;
-        if (!doc || !dimensions || !mask) return;
+        if (!doc || !dimensions || !mask || (!baseMask && retainedFraction !== null && retainedFraction < 0.02)) return;
         const baseline = previousMask.current;
         const selected = doc.layers.find(item => item.id === layer.id);
         if (uid !== baseline.uid || selected?.kind !== 'raster' || selected.locked || selected.src !== layer.src || selected.maskSrc !== baseline.src || selected.maskFeather !== baseline.feather) {
@@ -144,17 +156,17 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
             const current = useStore.getState().currentDoc, photo = current?.layers.find(item => item.id === layer.id);
             if (!active.current || session !== generation.current || current?.id !== doc.id || useStore.getState().user?.uid !== uid || photo?.kind !== 'raster' || photo.locked || photo.src !== layer.src || photo.maskSrc !== baseline.src || photo.maskFeather !== baseline.feather) return;
             update(layer.id, { maskSrc: src, maskFeather: softness, subjectIsolated: true });
-            setOpen(false); setMask(null); setBaseMask(null);
+        setOpen(false); setMask(null); setRetainedFraction(null); setBaseMask(null);
         } catch (failure) { if (active.current && generation.current === session) setError(failure instanceof Error ? failure.message : 'Cutout could not be saved'); }
         finally { if (active.current && generation.current === session) setBusy(false); }
     };
-    const cancel = () => { generation.current++; controller.current?.abort(); setOpen(false); setBusy(false); setMask(null); setBaseMask(null); image.current = null; };
+    const cancel = () => { generation.current++; controller.current?.abort(); setOpen(false); setBusy(false); setMask(null); setRetainedFraction(null); setBaseMask(null); image.current = null; };
     return <div className="flex flex-col gap-2 p-3 text-xs text-white/70" aria-label="Artist cutout">
         {!open ? <>
             <button disabled={layer.locked} onClick={() => void begin()}>{layer.maskSrc ? 'Refine cutout' : 'Remove background'}</button>
             {layer.maskSrc && <button onClick={() => update(layer.id, { maskSrc: undefined, maskFeather: undefined, subjectIsolated: false })}>Reset cutout</button>}
         </> : <>
-            <p>{baseMask ? 'Paint areas to keep or remove from the current cutout, then preview. Untouched areas are preserved.' : 'Draw a box around the artist. Mark areas to keep or remove, then preview the cutout. Green shows what will stay.'}</p>
+            <p>{baseMask ? 'Paint areas to keep or remove from the current cutout, then preview. Untouched areas are preserved.' : 'Draw a box around the artist. Mark areas to keep or remove, then preview the cutout. The checkerboard shows what will be transparent.'}</p>
             <div className="flex gap-2">{(['box', 'keep', 'remove'] as const).filter(value => !baseMask || value !== 'box').map(value => <button key={value} disabled={busy} aria-pressed={mode === value} onClick={() => setMode(value)}>{value === 'box' ? 'Draw box' : value === 'keep' ? 'Keep' : 'Remove'}</button>)}</div>
             <div className="flex items-center gap-2" role="group" aria-label="Cutout preview zoom">
                 <button disabled={busy || !dimensions || previewZoom <= 1} aria-label="Zoom out cutout preview" onClick={() => changePreviewZoom(Math.max(1, previewZoom / 2))}>−</button>
@@ -179,7 +191,8 @@ export const CutoutPanel: React.FC<{ layer: RasterLayer }> = ({ layer }) => {
             <label>Brush radius: {radius}px<input type="range" min={1} max={200} value={radius} disabled={busy} onChange={event => setRadius(Number(event.target.value))} aria-label="Cutout brush radius" /></label>
             <label>Edge softness<input type="range" min={0} max={8} step={0.25} value={softness} onChange={event => setSoftness(Number(event.target.value))} aria-label="Cutout edge softness" /></label>
             <button disabled={busy || !rectangle || rectangle.width < 2 || rectangle.height < 2} onClick={() => void process()}>Preview cutout</button>
-            <button disabled={busy || !mask} onClick={() => void apply()}>Apply cutout</button>
+            {retainedFraction !== null && retainedFraction < 0.02 && <p role="alert" className="text-amber-300">This cutout removed almost the entire selection. Paint over the artist with Keep, then preview again.</p>}
+            <button disabled={busy || !mask || (retainedFraction !== null && retainedFraction < 0.02)} onClick={() => void apply()}>Apply cutout</button>
             <button onClick={cancel}>Cancel</button>
             {busy && <p role="status">Preparing cutout… {Math.round(progress * 100)}%</p>}
             {error && <p role="alert" className="text-red-300">{error}</p>}
