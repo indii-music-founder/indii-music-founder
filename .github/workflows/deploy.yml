@@ -309,6 +309,9 @@ jobs:
         run: |
           ls -la packages/landing/dist/index.html
           ls -la dist/renderer/index.html
+          # Nested OAuth routes must load the same root-hosted entry assets.
+          grep -q 'src="/bootstrap.js"' dist/renderer/index.html
+          grep -Eq 'src="/assets/[^\"]+\.js"' dist/renderer/index.html
 
       - name: Bundle size check
         run: |

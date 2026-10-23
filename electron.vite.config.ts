@@ -184,6 +184,9 @@ export default defineConfig({
     // ── Renderer Process (DOM / React) ──────────────────────────────────────
     renderer: {
         root: resolve(__dirname, 'packages/renderer'),
+        // Hosting serves the SPA at nested OAuth callback URLs. Absolute asset
+        // paths keep those callbacks bootable; Electron still needs file-relative paths.
+        base: process.env.VITE_APP_TARGET === 'web' ? '/' : './',
         define: {
             'import.meta.env.VITE_BUILD_SHA': JSON.stringify(
                 process.env.GITHUB_SHA || process.env.VITE_BUILD_SHA || 'development',

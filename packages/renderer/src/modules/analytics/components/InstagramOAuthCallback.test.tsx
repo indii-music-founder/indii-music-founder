@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InstagramOAuthCallback } from './InstagramOAuthCallback';
 
@@ -26,6 +26,7 @@ function renderCallback(url = '/auth/instagram/callback?code=oauth-code&state=cs
 
 describe('InstagramOAuthCallback', () => {
     beforeEach(() => vi.clearAllMocks());
+    afterEach(() => vi.useRealTimers());
 
     it('shows server-provided Page choices and finalizes the selected opaque intent', async () => {
         service.beginCallback.mockResolvedValue({
@@ -52,5 +53,17 @@ describe('InstagramOAuthCallback', () => {
         renderCallback('/auth/instagram/callback?state=csrf-state');
         expect(await screen.findByRole('alert')).toHaveTextContent('complete authorization response');
         expect(service.beginCallback).not.toHaveBeenCalled();
+    });
+
+    it('offers a way back to Analytics when the connection exchange never settles', async () => {
+        vi.useFakeTimers();
+        service.beginCallback.mockReturnValue(new Promise(() => {}));
+        renderCallback();
+
+        expect(screen.getByText(/Securely finishing your Instagram connection/)).toBeInTheDocument();
+        await act(async () => { vi.advanceTimersByTime(45_000); });
+        expect(screen.getByRole('alert')).toHaveTextContent('taking too long');
+        fireEvent.click(screen.getByRole('button', { name: 'Return to Analytics' }));
+        expect(screen.getByText('Analytics destination')).toBeInTheDocument();
     });
 });
