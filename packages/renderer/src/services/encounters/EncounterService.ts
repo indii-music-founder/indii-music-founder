@@ -3,6 +3,7 @@ import {
     doc,
     setDoc,
     runTransaction,
+    writeBatch,
     query,
     orderBy,
     limit,
@@ -15,8 +16,38 @@ import { StorageService } from '@/services/StorageService';
 import type { FieldEncounter, CreateEncounterInput, EncounterAsset } from '@/types/encounter';
 import { logger } from '@/utils/logger';
 import type { FieldContactRole } from '@/types/contacts';
+import { manualContactRecord, type ManualContactFields } from './manualContact';
 
 export class EncounterService {
+    /** Save both sides of the manual capture atomically, without scheduling AI analysis. */
+    static async saveManualContact(fields: ManualContactFields, assets: CreateEncounterInput['assets'] = [], expectedUid?: string): Promise<string> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('Sign in to save this contact.');
+        if (expectedUid && userId !== expectedUid) throw new Error('The signed-in account changed. Sign in again before saving.');
+        const record = manualContactRecord(fields);
+        const encounterId = `enc_${crypto.randomUUID()}`;
+        const contactId = `contact_encounter_${encounterId}`;
+        const timestamp = serverTimestamp();
+        const encounterAssets = assets.map((asset, index) => ({ ...asset, id: `asset_${index}_${encounterId}`, createdAt: new Date().toISOString() }));
+        const batch = writeBatch(db);
+        batch.set(doc(this.getCollection(userId), encounterId), {
+            id: encounterId, userId, status: record.status,
+            title: record.fields.name, summary: record.fields.notes,
+            assets: encounterAssets, extractedContact: record.fields,
+            contactId, contactReviewStatus: record.reviewStatus,
+            analysisCoverage: record.analysisCoverage,
+            createdAt: timestamp, updatedAt: timestamp,
+        });
+        batch.set(doc(db, 'users', userId, 'fieldContacts', contactId), {
+            ...record.fields, source: record.source, encounterId,
+            reviewStatus: record.reviewStatus, reviewedAt: timestamp, capturedAt: timestamp,
+            photoUrl: encounterAssets.find(asset => asset.type === 'photo')?.downloadUrl || null,
+        });
+        await batch.commit();
+        if (auth.currentUser?.uid !== userId) throw new Error('The contact was saved to the original account. Sign in again to view it.');
+        return contactId;
+    }
+
     private static getCollection(userId: string) {
         return collection(db, 'users', userId, 'encounters');
     }
@@ -52,9 +83,10 @@ export class EncounterService {
     /**
      * Create a new FieldEncounter in Firestore with assets and trigger the cloud pipeline.
      */
-    static async createEncounter(input: CreateEncounterInput): Promise<string> {
+    static async createEncounter(input: CreateEncounterInput, expectedUid?: string): Promise<string> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('User must be authenticated to create an encounter.');
+        if (expectedUid && userId !== expectedUid) throw new Error('The signed-in account changed. Sign in again before saving.');
 
         const encounterId = `enc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         const docRef = doc(this.getCollection(userId), encounterId);

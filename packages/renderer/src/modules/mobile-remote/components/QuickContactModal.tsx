@@ -9,6 +9,9 @@ import type { FieldContactRole } from '@/types/contacts';
 import { StorageService } from '@/services/StorageService';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { safeStorageFetch } from '@/services/storage/safeStorageFetch';
+import type { CreateEncounterInput } from '@/types/encounter';
+import { manualContactRecord } from '@/services/encounters/manualContact';
 
 interface QuickContactModalProps {
     isOpen: boolean;
@@ -75,11 +78,16 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     // Photo/Avatar state
     const [cardPhoto, setCardPhoto] = useState<File | null>(null);
     const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+    const audioUrlRef = useRef<string | null>(null);
+    const photoUrlRef = useRef<string | null>(null);
+    const mediaSessionRef = useRef(0);
+    const avatarRequestRef = useRef(0);
     const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState<string | null>(null);
     const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Manual form state (fallback for loud environments)
+    const manualSavingRef = useRef(false);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
@@ -91,6 +99,16 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
 
     // Cleanup URLs & streams on close/unmount
     const cleanupMedia = useCallback(() => {
+        mediaSessionRef.current++;
+        avatarRequestRef.current++;
+        audioChunksRef.current = [];
+        const recorder = mediaRecorderRef.current;
+        if (recorder) {
+            recorder.ondataavailable = null;
+            recorder.onstop = null;
+            if (recorder.state !== 'inactive') recorder.stop();
+            mediaRecorderRef.current = null;
+        }
         if (streamRef.current) {
             streamRef.current.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
@@ -103,14 +121,12 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             audioElementRef.current.pause();
             audioElementRef.current = null;
         }
-        if (audioUrl) {
-            URL.revokeObjectURL(audioUrl);
-            setAudioUrl(null);
-        }
-        if (photoPreviewUrl) {
-            URL.revokeObjectURL(photoPreviewUrl);
-            setPhotoPreviewUrl(null);
-        }
+        if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+        if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current);
+        audioUrlRef.current = null;
+        photoUrlRef.current = null;
+        setAudioUrl(null);
+        setPhotoPreviewUrl(null);
         setGeneratedAvatarUrl(null);
         setIsGeneratingAvatar(false);
         setCapturedAudioBlob(null);
@@ -118,13 +134,14 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
         setIsRecording(false);
         setRecordingDuration(0);
         setIsPlayingAudio(false);
-    }, [audioUrl, photoPreviewUrl]);
+    }, []);
 
     useEffect(() => {
+        if (!isOpen) cleanupMedia();
         return () => {
             cleanupMedia();
         };
-    }, [cleanupMedia]);
+    }, [isOpen, cleanupMedia]);
 
     const handleClose = () => {
         cleanupMedia();
@@ -144,11 +161,13 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     // ── Voice Recording Controls ──────────────────────────────────────────────
 
     const startRecording = async () => {
+        const session = ++mediaSessionRef.current;
         triggerHaptic(50);
         (document.activeElement as HTMLElement)?.blur();
 
-        if (audioUrl) {
-            URL.revokeObjectURL(audioUrl);
+        if (audioUrlRef.current) {
+            URL.revokeObjectURL(audioUrlRef.current);
+            audioUrlRef.current = null;
             setAudioUrl(null);
         }
         setCapturedAudioBlob(null);
@@ -156,30 +175,45 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (session !== mediaSessionRef.current) {
+                stream.getTracks().forEach(track => track.stop());
+                return;
+            }
             streamRef.current = stream;
 
             const mimeType = pickSupportedAudioMimeType();
             const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
             mediaRecorderRef.current = recorder;
-            audioChunksRef.current = [];
+            const chunks: Blob[] = [];
+            audioChunksRef.current = chunks;
 
             recorder.ondataavailable = (e) => {
-                if (e.data && e.data.size > 0) {
-                    audioChunksRef.current.push(e.data);
+                if (session === mediaSessionRef.current && e.data && e.data.size > 0) {
+                    chunks.push(e.data);
                 }
             };
 
             recorder.onstop = () => {
+                if (session !== mediaSessionRef.current) return;
+                stream.getTracks().forEach(track => track.stop());
+                if (streamRef.current === stream) streamRef.current = null;
+                setIsRecording(false);
+                if (timerRef.current) {
+                    window.clearInterval(timerRef.current);
+                    timerRef.current = null;
+                }
+                if (!chunks.some(chunk => chunk.size > 0)) {
+                    toast.error('No audio was recorded. Please try recording again.');
+                    return;
+                }
                 const effectiveMimeType = recorder.mimeType || mimeType || 'audio/webm';
-                const audioBlob = new Blob(audioChunksRef.current, { type: effectiveMimeType });
+                const audioBlob = new Blob(chunks, { type: effectiveMimeType });
                 setCapturedAudioBlob(audioBlob);
                 const nextUrl = URL.createObjectURL(audioBlob);
+                if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+                audioUrlRef.current = nextUrl;
                 setAudioUrl(nextUrl);
 
-                if (streamRef.current) {
-                    streamRef.current.getTracks().forEach((track) => track.stop());
-                    streamRef.current = null;
-                }
             };
 
             recorder.start(100);
@@ -190,6 +224,10 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                 setRecordingDuration((prev) => prev + 1);
             }, 1000);
         } catch (error) {
+            if (session !== mediaSessionRef.current) return;
+            streamRef.current?.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+            setIsRecording(false);
             logger.error('[VoiceContactModal] Failed to access mic:', error);
             toast.error('Unable to access microphone. Please check browser permissions.');
         }
@@ -205,6 +243,15 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             mediaRecorderRef.current.stop();
         }
         setIsRecording(false);
+    };
+
+    const switchToManual = () => {
+        // Cancel pending microphone permission as well as an active recording.
+        mediaSessionRef.current++;
+        stopRecording();
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+        setMode('manual');
     };
 
     const togglePlayAudio = () => {
@@ -230,16 +277,22 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+            avatarRequestRef.current++;
+            setIsGeneratingAvatar(false);
+            if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current);
             setCardPhoto(file);
-            setPhotoPreviewUrl(URL.createObjectURL(file));
+            photoUrlRef.current = URL.createObjectURL(file);
+            setPhotoPreviewUrl(photoUrlRef.current);
             setGeneratedAvatarUrl(null);
             triggerHaptic(30);
         }
     };
 
     const removePhoto = () => {
-        if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+        avatarRequestRef.current++;
+        setIsGeneratingAvatar(false);
+        if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current);
+        photoUrlRef.current = null;
         setCardPhoto(null);
         setPhotoPreviewUrl(null);
         setGeneratedAvatarUrl(null);
@@ -247,40 +300,37 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     };
 
     const handleGenerateAvatar = async () => {
-        if (!cardPhoto && !photoPreviewUrl) return;
+        const photo = cardPhoto;
+        if (!photo) { toast.error('Choose a portrait before generating an avatar.'); return; }
+        const requestId = ++avatarRequestRef.current;
 
         setIsGeneratingAvatar(true);
         triggerHaptic([30, 60]);
 
         try {
             const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-            // Convert file to base64 for vision/image generation reference
+            // Send the chosen portrait itself; missing/empty media is an error, never a placeholder image.
+            if (!photo.size || !photo.type.startsWith('image/')) throw new Error('Choose a readable portrait before generating an avatar.');
             let base64Data: string;
-            const mimeType = cardPhoto?.type || 'image/jpeg';
-
-            if (cardPhoto) {
-                if (typeof cardPhoto.arrayBuffer === 'function') {
-                    const arrayBuf = await cardPhoto.arrayBuffer();
-                    const uint8 = new Uint8Array(arrayBuf);
-                    base64Data = uint8.length > 0
-                        ? btoa(uint8.reduce((data, byte) => data + String.fromCharCode(byte), ''))
-                        : 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-                } else {
-                    base64Data = await new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            const res = reader.result as string;
-                            resolve(res.split(',')[1] || res);
-                        };
-                        reader.onerror = reject;
-                        reader.readAsDataURL(cardPhoto);
-                    });
-                }
+            const mimeType = photo.type;
+            if (typeof photo.arrayBuffer === 'function') {
+                const bytes = new Uint8Array(await photo.arrayBuffer());
+                if (!bytes.length) throw new Error('The portrait is empty. Choose the photo again.');
+                base64Data = btoa(bytes.reduce((data, byte) => data + String.fromCharCode(byte), ''));
             } else {
-                base64Data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+                base64Data = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const value = typeof reader.result === 'string' ? reader.result.split(',')[1] : '';
+                        if (value) resolve(value); else reject(new Error('The portrait could not be read.'));
+                    };
+                    reader.onerror = () => reject(new Error('The portrait could not be read.'));
+                    reader.readAsDataURL(photo);
+                });
             }
 
             const prompt = 'Stylized high-definition music industry artist avatar portrait, cinematic lighting, ultra-detailed professional studio headshot, vibrant background';
+            if (requestId !== avatarRequestRef.current) return;
             const results = await ImageGeneration.generateImages({
                 prompt,
                 aspectRatio: '1:1',
@@ -292,6 +342,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                 }],
             });
 
+            if (requestId !== avatarRequestRef.current) return;
             if (results && results.length > 0 && results[0]?.url) {
                 setGeneratedAvatarUrl(results[0].url);
                 triggerHaptic([40, 80, 40]);
@@ -300,11 +351,24 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                 throw new Error('Image generation completed without a valid result URL');
             }
         } catch (error) {
+            if (requestId !== avatarRequestRef.current) return;
             logger.error('[QuickContactModal] Failed to generate avatar:', error);
             toast.error(error instanceof Error ? error.message : 'Failed to generate avatar');
         } finally {
-            setIsGeneratingAvatar(false);
+            if (requestId === avatarRequestRef.current) setIsGeneratingAvatar(false);
         }
+    };
+
+    const uploadContactPhoto = async (userId: string): Promise<CreateEncounterInput['assets'][number] | null> => {
+        if (auth.currentUser?.uid !== userId) throw new Error('Sign in again before saving this contact.');
+        const photo = generatedAvatarUrl ? (await safeStorageFetch(generatedAvatarUrl)).blob : cardPhoto;
+        if (!photo) return null;
+        if (!photo.type.startsWith('image/')) throw new Error('Choose a readable image for this contact.');
+        if (auth.currentUser?.uid !== userId) throw new Error('Sign in again before saving this contact.');
+        const filename = `contact_${crypto.randomUUID()}`;
+        const path = `users/${userId}/assets/captured_contacts/${filename}`;
+        const downloadUrl = await StorageService.uploadFile(photo, path);
+        return { type: 'photo', storagePath: path, downloadUrl, mimeType: photo.type, sizeBytes: photo.size, filename };
     };
 
     // ── Submit Handlers ───────────────────────────────────────────────────────
@@ -328,18 +392,8 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             const audioPath = `users/${userId}/voice_memos/${audioFilename}`;
             const audioDownloadUrl = await StorageService.uploadFile(capturedAudioBlob, audioPath);
 
-            // 2. Upload optional photo/avatar
-            let photoDownloadUrl: string | undefined;
-            let photoStoragePath: string | undefined;
-            if (generatedAvatarUrl) {
-                photoDownloadUrl = generatedAvatarUrl;
-                photoStoragePath = `users/${userId}/assets/captured_contacts/generated_avatar_${Date.now()}.png`;
-            } else if (cardPhoto) {
-                const photoExt = cardPhoto.name.split('.').pop() || 'jpg';
-                const photoFilename = `contact_avatar_${Date.now()}.${photoExt}`;
-                photoStoragePath = `users/${userId}/assets/captured_contacts/${photoFilename}`;
-                photoDownloadUrl = await StorageService.uploadFile(cardPhoto, photoStoragePath);
-            }
+            // The source descriptor must name the actual uploaded object, including generated avatars.
+            const photoAsset = await uploadContactPhoto(userId);
 
             // 3. Create Encounter in Firestore (triggers Gemini 3 Flash multimodal extraction pipeline)
             await EncounterService.createEncounter({
@@ -350,15 +404,10 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                         downloadUrl: audioDownloadUrl,
                         mimeType: capturedAudioBlob.type || 'audio/webm',
                     },
-                    ...(photoDownloadUrl && photoStoragePath ? [{
-                        type: 'photo' as const,
-                        storagePath: photoStoragePath,
-                        downloadUrl: photoDownloadUrl,
-                        mimeType: generatedAvatarUrl ? 'image/png' : cardPhoto?.type || 'image/jpeg',
-                    }] : []),
+                    ...(photoAsset ? [photoAsset] : []),
                 ],
                 clientContext: 'Contact Intake: Extract contact information (name, phone, email, organization, role, notes)',
-            });
+            }, userId);
 
             // 4. Notify paired desktop relay if active
             try {
@@ -366,7 +415,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                     type: 'quick_contact',
                     payload: {
                         audioUrl: audioDownloadUrl,
-                        imageUrl: photoDownloadUrl,
+                        imageUrl: photoAsset?.downloadUrl,
                         transcription: 'Voice contact intake: AI extraction pending',
                     },
                 });
@@ -388,47 +437,24 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
 
     const handleManualSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSaving || manualSavingRef.current) return;
         const trimmedName = name.trim();
         if (!trimmedName) {
             toast.error('Contact name is required.');
             return;
         }
 
+        manualSavingRef.current = true;
         setIsSaving(true);
         triggerHaptic([40, 80]);
 
         try {
             const userId = auth.currentUser?.uid;
-            let photoUrl: string | undefined;
-
-            if (generatedAvatarUrl) {
-                photoUrl = generatedAvatarUrl;
-            } else if (cardPhoto && userId) {
-                const filename = `contact_card_${Date.now()}.${cardPhoto.name.split('.').pop() || 'jpg'}`;
-                const path = `users/${userId}/assets/captured_contacts/${filename}`;
-                photoUrl = await StorageService.uploadFile(cardPhoto, path);
-            }
-
-            // Create encounter with pre-extracted contact details so it is immediately confirmed
-            const encounterId = await EncounterService.createEncounter({
-                assets: photoUrl ? [{
-                    type: 'photo',
-                    storagePath: `users/${userId}/assets/captured_contacts/`,
-                    downloadUrl: photoUrl,
-                    mimeType: generatedAvatarUrl ? 'image/png' : cardPhoto?.type || 'image/jpeg',
-                }] : [],
-                clientContext: `Direct field contact: ${trimmedName}${organization ? ` (${organization})` : ''}`,
-            });
-
-            // Review & confirm contact in Firestore immediately
-            await EncounterService.reviewContact(encounterId, {
-                name: trimmedName,
-                phone: phone.trim(),
-                email: email.trim(),
-                organization: organization.trim(),
-                notes: notes.trim(),
-                role,
-            });
+            if (!userId) throw new Error('Sign in to save this contact.');
+            const fields = manualContactRecord({ name, phone, email, organization, notes, role }).fields;
+            const photoAsset = await uploadContactPhoto(userId);
+            const assets = photoAsset ? [photoAsset] : [];
+            await EncounterService.saveManualContact(fields, assets, userId);
 
             triggerHaptic([50, 100, 50]);
             toast.success(`Saved contact: ${trimmedName}`);
@@ -438,6 +464,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             triggerHaptic([100, 150]);
             toast.error(error instanceof Error ? error.message : 'Failed to save contact.');
         } finally {
+            manualSavingRef.current = false;
             setIsSaving(false);
         }
     };
@@ -489,6 +516,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                             <div className="flex items-center p-0.5 bg-white/5 border border-white/10 rounded-xl">
                                 <button
                                     type="button"
+                                    disabled={isSaving}
                                     onClick={() => {
                                         triggerHaptic(20);
                                         (document.activeElement as HTMLElement)?.blur();
@@ -502,9 +530,10 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                 </button>
                                 <button
                                     type="button"
+                                    disabled={isSaving}
                                     onClick={() => {
                                         triggerHaptic(20);
-                                        setMode('manual');
+                                        switchToManual();
                                     }}
                                     className={`px-2 py-1 rounded-lg text-[10px] font-mono font-medium transition-all ${
                                         mode === 'manual' ? 'bg-[#00ff66] text-[#061806] font-bold' : 'text-stone-400 hover:text-white'
@@ -725,7 +754,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
 
                             <button
                                 type="button"
-                                onClick={() => setMode('manual')}
+                                onClick={switchToManual}
                                 className="text-xs text-stone-400 hover:text-stone-300 font-sans cursor-pointer underline underline-offset-4"
                             >
                                 In a loud venue? Enter details manually
@@ -734,6 +763,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                     ) : (
                         /* MANUAL FORM FALLBACK */
                         <form onSubmit={handleManualSubmit} className="p-5 overflow-y-auto space-y-4 custom-scrollbar">
+                            <fieldset disabled={isSaving} className="min-w-0 space-y-4">
                             {/* Name */}
                             <div>
                                 <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 font-mono mb-1.5">
@@ -861,6 +891,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                     </>
                                 )}
                             </button>
+                            </fieldset>
                         </form>
                     )}
                 </motion.div>

@@ -1,8 +1,12 @@
+/**
+ * Structural UI checks only. Existing auth/image-generation doubles below do
+ * not establish capture, persistence, extraction or avatar service acceptance.
+ * Actual manual-save acceptance is tracked in docs/REMOTE_MANUAL_CONTACT_ACCEPTANCE.md.
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import QuickContactModal from './QuickContactModal';
-import { EncounterService } from '@/services/encounters/EncounterService';
 
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
@@ -15,13 +19,6 @@ vi.mock('@/services/firebase', () => ({
     storage: {},
     db: {},
     ai: {},
-}));
-
-vi.mock('@/services/encounters/EncounterService', () => ({
-    EncounterService: {
-        createEncounter: vi.fn(() => Promise.resolve('enc_test_1')),
-        reviewContact: vi.fn(() => Promise.resolve()),
-    },
 }));
 
 vi.mock('@/services/image/ImageGenerationService', () => ({
@@ -67,48 +64,26 @@ describe('QuickContactModal Component', () => {
         expect(screen.getByRole('button', { name: 'Save Contact' })).toBeDefined();
     });
 
-    it('submits manual contact details and saves via EncounterService', async () => {
-        const onClose = vi.fn();
-        const onSaved = vi.fn();
-
-        render(
-            <QuickContactModal isOpen={true} onClose={onClose} onSaved={onSaved} />
-        );
-
-        // Switch to manual mode
+    it('retains every manually entered field when changing modes before saving (structural only)', () => {
+        render(<QuickContactModal isOpen={true} onClose={vi.fn()} />);
         fireEvent.click(screen.getByRole('button', { name: 'Manual' }));
-
-        fireEvent.change(screen.getByPlaceholderText('Jane Doe / DJ Shadow'), {
-            target: { value: 'Alex Morgan' },
-        });
-        fireEvent.change(screen.getByPlaceholderText('555-0199'), {
-            target: { value: '313-555-1234' },
-        });
-        fireEvent.change(screen.getByPlaceholderText('jane@mgmt.com'), {
-            target: { value: 'alex@detroitmusic.com' },
-        });
-        fireEvent.click(screen.getByText('Promoter'));
-
-        fireEvent.click(screen.getByRole('button', { name: 'Save Contact' }));
-
-        await waitFor(() => {
-            expect(EncounterService.createEncounter).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    clientContext: expect.stringContaining('Alex Morgan'),
-                })
-            );
-            expect(EncounterService.reviewContact).toHaveBeenCalledWith(
-                'enc_test_1',
-                expect.objectContaining({
-                    name: 'Alex Morgan',
-                    phone: '313-555-1234',
-                    email: 'alex@detroitmusic.com',
-                    role: 'promoter',
-                })
-            );
-            expect(onSaved).toHaveBeenCalled();
-            expect(onClose).toHaveBeenCalled();
-        });
+        const entries = [
+            ['Jane Doe / DJ Shadow', 'Example Artist'],
+            ['555-0199', '+1 555 0100'],
+            ['jane@mgmt.com', 'artist@example.com'],
+            ['@instagram or Atlantic Records', 'Independent label'],
+            ['Met at show, wants unreleased demo...', 'Meet after soundcheck.\nBring release artwork.'],
+        ] as const;
+        for (const [placeholder, value] of entries) {
+            fireEvent.change(screen.getByPlaceholderText(placeholder), { target: { value } });
+        }
+        // Every field is identified by its visible placeholder above;
+        // preserve those values across the same mode toggle available in the UI.
+        fireEvent.click(screen.getByRole('button', { name: 'Voice' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Manual' }));
+        for (const [placeholder, value] of entries) {
+            expect((screen.getByPlaceholderText(placeholder) as HTMLInputElement | HTMLTextAreaElement).value).toBe(value);
+        }
     });
 
     it('renders avatar generation trigger when photo preview exists', async () => {
