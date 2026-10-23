@@ -11,6 +11,8 @@ type CallbackState =
     | { phase: 'select_page'; intentId: string; pages: InstagramPageChoice[] }
     | { phase: 'error'; message: string };
 
+const CONNECTION_TIMEOUT_MS = 45_000;
+
 export function InstagramOAuthCallback() {
     const [params] = useSearchParams();
     const navigate = useNavigate();
@@ -34,8 +36,15 @@ export function InstagramOAuthCallback() {
             setState({ phase: 'error', message: 'Instagram did not return a complete authorization response. Reconnect and try again.' });
             return;
         }
+        let active = true;
+        let timedOut = false;
+        const timeout = window.setTimeout(() => {
+            timedOut = true;
+            setState({ phase: 'error', message: 'Instagram is taking too long to respond. Check Analytics to see whether the account connected; if it did not, start a new connection there.' });
+        }, CONNECTION_TIMEOUT_MS);
         void instagramAnalyticsService.beginCallback(code, oauthState)
             .then(result => {
+                if (!active || timedOut) return;
                 if (result.kind === 'connected') {
                     navigate('/analytics', { replace: true });
                     return;
@@ -43,10 +52,18 @@ export function InstagramOAuthCallback() {
                 setSelectedPageId(result.pages[0]?.facebookPageId ?? '');
                 setState({ phase: 'select_page', intentId: result.intentId, pages: result.pages });
             })
-            .catch(error => setState({
-                phase: 'error',
-                message: error instanceof Error ? error.message : 'Instagram connection failed. Reconnect and try again.',
-            }));
+            .catch(error => {
+                if (!active || timedOut) return;
+                setState({
+                    phase: 'error',
+                    message: error instanceof Error ? error.message : 'Instagram connection failed. Reconnect and try again.',
+                });
+            })
+            .finally(() => window.clearTimeout(timeout));
+        return () => {
+            active = false;
+            window.clearTimeout(timeout);
+        };
     }, [code, navigate, oauthState, providerError]);
 
     async function finalizeSelection() {
