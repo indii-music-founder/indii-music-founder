@@ -9,6 +9,8 @@ import { ScheduledPostSchema } from '../schemas';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { buildInstagramFeedPayload, instagramCaptionLength, isPublishableMediaUrl } from '../instagramComposer';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
+import { useStore } from '@/core/store';
+import type { ArtistPostContext } from '../tools';
 
 const PLATFORM_LIMITS = {
     Twitter: 280,
@@ -35,6 +37,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
     const dialogRef = useModalAccessibility(true, onClose);
     const { t } = useTranslation();
     const toast = useToast();
+    const userProfile = useStore(state => state.userProfile);
     const defaultFutureTime = () => {
         const d = new Date(Date.now() + 60 * 60 * 1000);
         const hours = String(d.getHours()).padStart(2, '0');
@@ -44,6 +47,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
 
     const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>(initialImage ? 'Instagram' : 'Twitter');
     const [copy, setCopy] = useState('');
+    const [postIdea, setPostIdea] = useState('');
     const [hashtagInput, setHashtagInput] = useState('');
     const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(initialImage ?? null);
     const [imageUrlInput, setImageUrlInput] = useState('');
@@ -52,6 +56,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
     const [scheduledTime, setScheduledTime] = useState<string>(defaultFutureTime);
 
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isSuggestingHashtags, setIsSuggestingHashtags] = useState(false);
     const [isAssetDrawerOpen, setIsAssetDrawerOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -68,20 +73,42 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
     const isOverLimit = currentLength > charLimit;
     const isApproachingLimit = currentLength > charLimit * 0.9;
 
+    const generationContext = (): ArtistPostContext => ({
+        platform,
+        brief: postIdea.trim(),
+        draft: copy.trim(),
+        artistName: userProfile.displayName?.trim() || undefined,
+        releaseTitle: userProfile.brandKit?.releaseDetails?.title?.trim() || undefined,
+        releaseType: userProfile.brandKit?.releaseDetails?.type?.trim() || undefined,
+        genre: userProfile.brandKit?.releaseDetails?.genre?.trim() || undefined,
+        mood: userProfile.brandKit?.releaseDetails?.mood?.trim() || undefined,
+        location: userProfile.location?.trim() || undefined,
+        artworkTitle: selectedImage?.title?.trim() || undefined,
+    });
+
     const handleGenerateCopy = async () => {
         setIsGenerating(true);
         try {
-            const generatedCopy = await SOCIAL_TOOLS.write_social_copy({
-                platform,
-                topic: copy || "New product launch", // Fallback topic if empty
-                tone: "Professional yet exciting"
-            });
+            const generatedCopy = await SOCIAL_TOOLS.write_social_copy(generationContext());
             setCopy(generatedCopy);
             toast.success("Copy generated!");
-        } catch (_error: unknown) {
-            toast.error("Failed to generate copy");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Failed to generate copy');
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleSuggestHashtags = async () => {
+        setIsSuggestingHashtags(true);
+        try {
+            const tags = await SOCIAL_TOOLS.suggest_instagram_hashtags(generationContext());
+            setHashtagInput(tags.map(tag => `#${tag}`).join(' '));
+            toast.success('Hashtags suggested. Review them before posting.');
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Could not suggest hashtags');
+        } finally {
+            setIsSuggestingHashtags(false);
         }
     };
 
@@ -229,9 +256,16 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
 
                     {platform === 'Instagram' && (
                         <div className="space-y-2">
-                            <label htmlFor="instagram-hashtags" className="block text-sm font-medium text-gray-400">
-                                Feed hashtags <span className="text-amber-400 font-normal text-xs">(3–5 specific tags)</span>
-                            </label>
+                            <div className="flex items-center justify-between gap-3">
+                                <label htmlFor="instagram-hashtags" className="block text-sm font-medium text-gray-400">
+                                    Feed hashtags <span className="text-amber-400 font-normal text-xs">(3–5 specific tags)</span>
+                                </label>
+                                <button type="button" onClick={handleSuggestHashtags} disabled={isSuggestingHashtags}
+                                    className="text-xs flex items-center gap-1.5 text-green-400 hover:text-green-300 disabled:opacity-50">
+                                    {isSuggestingHashtags ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Wand2 size={12} aria-hidden="true" />}
+                                    {isSuggestingHashtags ? 'Suggesting...' : 'Suggest hashtags'}
+                                </button>
+                            </div>
                             <input
                                 id="instagram-hashtags"
                                 value={hashtagInput}
@@ -245,6 +279,11 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
 
                     {/* Copy Section */}
                     <div className="space-y-2">
+                        <label htmlFor="post-idea" className="block text-sm font-medium text-gray-400">What is this post about?</label>
+                        <input id="post-idea" value={postIdea} onChange={event => setPostIdea(event.target.value)}
+                            placeholder="New single, show announcement, studio moment…"
+                            className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500" />
+                        <p className="text-xs text-gray-500">Give AI a real topic, or use saved release details. Your draft can also guide it.</p>
                         <div className="flex justify-between items-center">
                             <label htmlFor={copyInputId} className="block text-sm font-medium text-gray-400">Post Copy</label>
                             <button

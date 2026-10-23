@@ -312,6 +312,9 @@ jobs:
           # Nested OAuth routes must load the same root-hosted entry assets.
           grep -q 'src="/bootstrap.js"' dist/renderer/index.html
           grep -Eq 'src="/assets/[^\"]+\.js"' dist/renderer/index.html
+          # Electron Vite can emit relative paths even with a web base override.
+          # Normalize the hosted entry so nested OAuth callbacks load the bundles.
+          node scripts/normalize-hosted-entry-assets.mjs dist/renderer/index.html
 
       - name: Bundle size check
         run: |

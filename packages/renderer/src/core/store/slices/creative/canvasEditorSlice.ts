@@ -25,7 +25,7 @@ export interface CanvasEditorSlice {
     selectedLayerId: string | null;
     openDoc: (doc: CanvasDoc) => void;
     openImage: (src: string, projectId: string) => void;
-    addRasterLayer: (src: string, name?: string) => string | null;
+    addRasterLayer: (src: string, name?: string, placement?: 'top' | 'background') => string | null;
     addTextLayer: (typography: Omit<TypographyLayer, 'id' | 'kind'>, anchor?: 'center' | 'top-left') => string | null;
     updateLayer: (id: string, patch: Partial<CanvasLayer>) => void;
     setAdjustments: (layerId: string, patch: Partial<AdjustmentStack>) => void;
@@ -111,7 +111,7 @@ export const createCanvasEditorSlice: StateCreator<StoreState, [], [], CanvasEdi
         set({ currentDoc: doc, selectedLayerId: doc.layers[0]?.id ?? null, canvasPast: [], canvasFuture: [], canvasGesture: null });
     },
 
-    addRasterLayer: (src, name) => {
+    addRasterLayer: (src, name, placement = 'top') => {
         const doc = get().currentDoc;
         if (!doc || doc.layers.length >= 100) return null;
         const id = `layer_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -130,11 +130,11 @@ export const createCanvasEditorSlice: StateCreator<StoreState, [], [], CanvasEdi
             kind: 'raster',
             transformAnchor: 'top-left',
             adjustmentVersion: 2,
-            framing: 'fit',
+            framing: placement === 'background' ? 'fill' : 'fit',
             src,
             adjustments: { brightness: 0, contrast: 0, saturation: 0, hue: 0, temperature: 0, exposure: 0, blur: 0, vignette: 0 }
         };
-        edit({ ...doc, layers: [...doc.layers, layer] }, id);
+        edit({ ...doc, layers: placement === 'background' ? [layer, ...doc.layers] : [...doc.layers, layer] }, id);
         return id;
     },
 
