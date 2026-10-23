@@ -72,6 +72,16 @@ export const CanvasEditor: React.FC = () => {
     const framingLayerId = frameOwner?.documentId === currentDoc?.id && currentDoc?.layers.some(layer => layer.id === frameOwner?.layerId) ? frameOwner!.layerId : null;
     const toast = useToast();
 
+    const uploadPhoto = (file: File | undefined, placement: 'top' | 'background') => {
+        const uid = useStore.getState().user?.uid;
+        if (!file || !uid) { if (file) toast.error('Sign in to add a photo'); return; }
+        const documentId = currentDoc?.id;
+        if (!documentId) return;
+        void StorageService.uploadFile(file, `users/${uid}/artwork/${documentId}/${crypto.randomUUID()}`).then(src => {
+            if (useStore.getState().currentDoc?.id === documentId && useStore.getState().user?.uid === uid) addPhoto(src, file.name, placement);
+        }).catch(failure => toast.error(String(failure)));
+    };
+
     useEffect(() => {
         const handleKey = (event: KeyboardEvent) => {
             const element = event.target as HTMLElement | null;
@@ -407,12 +417,11 @@ export const CanvasEditor: React.FC = () => {
                     </select></label>
                     <label>Add photo<input aria-label="Add photo" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => {
                         const file = event.target.files?.[0]; event.target.value = '';
-                        const uid = useStore.getState().user?.uid;
-                        if (!file || !uid) { if (file) toast.error('Sign in to add a photo'); return; }
-                        const documentId = currentDoc.id;
-                        void StorageService.uploadFile(file, `users/${uid}/artwork/${documentId}/${crypto.randomUUID()}`).then(src => {
-                            if (useStore.getState().currentDoc?.id === documentId && useStore.getState().user?.uid === uid) addPhoto(src, file.name);
-                        }).catch(failure => toast.error(String(failure)));
+                        uploadPhoto(file, 'top');
+                    }} className="block max-w-full" /></label>
+                    <label>Add background photo<input aria-label="Add background photo" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => {
+                        const file = event.target.files?.[0]; event.target.value = '';
+                        uploadPhoto(file, 'background');
                     }} className="block max-w-full" /></label>
                 </div>}
                 {!framingLayerId && <><SavedArtworkPanel projectId={currentDoc.projectId} beforeOpen={autosave.flush} />
