@@ -56,6 +56,8 @@ interface ChatMessage {
 }
 
 interface AgentChatProps {
+    initialCommandId?: string | null;
+    onClearInitialCommand?: () => void;
     onSendCommand: (command: { type: string; payload: unknown }) => void;
     isPaired: boolean;
     initialAttachment?: { url: string; mimeType: string; name: string } | null;
@@ -123,6 +125,8 @@ export default function AgentChat({
     isPaired,
     initialAttachment,
     onClearInitialAttachment,
+    initialCommandId,
+    onClearInitialCommand,
 }: AgentChatProps) {
     const [input, setInput] = useState('');
     const [stagedAttachments, setStagedAttachments] = useState<Array<{ url: string; mimeType: string; name: string }>>([]);
@@ -184,6 +188,70 @@ export default function AgentChat({
             responseTimeoutRef.current = null;
         }
     }, []);
+
+    const watchCommandResponse = useCallback((commandId: string) => {
+        setIsWaiting(true);
+        // Clear any previous in-flight watcher before starting a new one.
+        teardownResponseWatch();
+
+        // Listen for THIS command's response directly (no polling, no stale
+        // closures). The global feed subscription still renders the message;
+        // this listener only governs the spinner + timeout for this send.
+        responseUnsubRef.current = remoteRelayService.onResponse(commandId, (response: RemoteResponse) => {
+            // Ignore the interim "processing" streaming placeholder — wait
+            // for a final (non-streaming) response before clearing the spinner.
+            if (response.isStreaming) return;
+
+            teardownResponseWatch();
+            setIsWaiting(false);
+        });
+
+        // Explicit, user-visible timeout instead of a silent spinner death.
+        responseTimeoutRef.current = setTimeout(() => {
+            teardownResponseWatch();
+            setIsWaiting(false);
+            void remoteRelayService.cancelCommand(commandId).then((cancelled) => {
+                setSystemNotices(prev => [
+                    ...prev,
+                    {
+                        id: `notice-${commandId}-timeout`,
+                        commandId,
+                        role: 'model',
+                        text: cancelled
+                            ? "Your studio did not claim this request, so it was cancelled. Reconnect the desktop studio before trying again."
+                            : "Your studio started this request but did not return a final response. Check the desktop studio before retrying.",
+                        timestamp: Date.now(),
+                    },
+                ]);
+            }).catch(() => {
+                setSystemNotices(prev => [
+                    ...prev,
+                    {
+                        id: `notice-${commandId}-timeout`,
+                        commandId,
+                        role: 'model',
+                        text: "Your studio did not return a final response. Check the desktop studio before retrying.",
+                        timestamp: Date.now(),
+                    },
+                ]);
+            });
+        }, RESPONSE_TIMEOUT_MS);
+    }, [teardownResponseWatch]);
+
+    useEffect(() => {
+        if (!initialCommandId) return;
+        try {
+            watchCommandResponse(initialCommandId);
+        } catch {
+            teardownResponseWatch();
+            setIsWaiting(false);
+            setSystemNotices(previous => [...previous, {
+                id: `notice-${initialCommandId}-watch`, commandId: initialCommandId,
+                role: 'model', text: 'Request sent. Reconnect or check Studio to confirm its result.', timestamp: Date.now(),
+            }]);
+        }
+        onClearInitialCommand?.();
+    }, [initialCommandId, onClearInitialCommand, watchCommandResponse, teardownResponseWatch]);
 
     // Clean up the listener/timeout when the component unmounts.
     useEffect(() => {
@@ -361,51 +429,7 @@ export default function AgentChat({
 
             logger.info(`[AgentChat] 📱 Sent command ${commandId}`);
 
-            // Clear any previous in-flight watcher before starting a new one.
-            teardownResponseWatch();
-
-            // Listen for THIS command's response directly (no polling, no stale
-            // closures). The global feed subscription still renders the message;
-            // this listener only governs the spinner + timeout for this send.
-            responseUnsubRef.current = remoteRelayService.onResponse(commandId, (response: RemoteResponse) => {
-                // Ignore the interim "processing" streaming placeholder — wait
-                // for a final (non-streaming) response before clearing the spinner.
-                if (response.isStreaming) return;
-
-                teardownResponseWatch();
-                setIsWaiting(false);
-            });
-
-            // Explicit, user-visible timeout instead of a silent spinner death.
-            responseTimeoutRef.current = setTimeout(() => {
-                teardownResponseWatch();
-                setIsWaiting(false);
-                void remoteRelayService.cancelCommand(commandId).then((cancelled) => {
-                    setSystemNotices(prev => [
-                        ...prev,
-                        {
-                            id: `notice-${commandId}-timeout`,
-                            commandId,
-                            role: 'model',
-                            text: cancelled
-                                ? "Your studio did not claim this request, so it was cancelled. Reconnect the desktop studio before trying again."
-                                : "Your studio started this request but did not return a final response. Check the desktop studio before retrying.",
-                            timestamp: Date.now(),
-                        },
-                    ]);
-                }).catch(() => {
-                    setSystemNotices(prev => [
-                        ...prev,
-                        {
-                            id: `notice-${commandId}-timeout`,
-                            commandId,
-                            role: 'model',
-                            text: "Your studio did not return a final response. Check the desktop studio before retrying.",
-                            timestamp: Date.now(),
-                        },
-                    ]);
-                });
-            }, RESPONSE_TIMEOUT_MS);
+            watchCommandResponse(commandId);
 
         } catch (error: unknown) {
             logger.error('[AgentChat] Failed to send command:', error);
@@ -414,7 +438,7 @@ export default function AgentChat({
             setInput(userText); // Restore input on failure
             setStagedAttachments(currentAttachments); // Restore attachments on failure
         }
-    }, [input, stagedAttachments, isWaiting, isAuthenticated, isPaired, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
+    }, [input, stagedAttachments, isWaiting, isAuthenticated, isPaired, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, watchCommandResponse, isListening, toggleListening]);
 
     const handleAddAttachmentFile = async (file: File) => {
         try {
