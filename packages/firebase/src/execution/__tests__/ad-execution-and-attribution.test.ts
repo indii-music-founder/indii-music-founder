@@ -7,6 +7,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import {
+    type IAdPlatformAdapter,
     type UnifiedAttributionEvent,
     type UnifiedCampaignDirective,
     UnifiedAttributionEventSchema,
@@ -846,6 +847,67 @@ describe('FirestoreFinanceRecoupmentLedger', () => {
 });
 
 describe('Jev System One Campaign Judgments & Orchestrator Integration', () => {
+    it('does not treat a 0.64 readiness probability as confirmation', async () => {
+        __resetCampaignJudgmentCooldownForTests();
+        const client = {
+            judge: vi.fn(async () => ({
+                requestId: 'req_low_readiness',
+                answers: {
+                    dominant_platform: { type: 'choice', choice: 'TIKTOK', confidence: 0.9 },
+                    creative_fit_score: { type: 'score', score: 4 },
+                    creative_readiness_confirmed: { type: 'noul', noul: 0.64 },
+                },
+            })),
+        } as unknown as TypesafeClient;
+        const judgment = await evaluateCampaignAllocationWithJev(buildMockDirective(), [], { client });
+        expect(judgment.creativeReadinessConfirmed).toBe(false);
+    });
+
+    it('keeps exact cents and falls back when a Jev split violates the provider minimum', async () => {
+        const directive = buildMockDirective({
+            budgetAllocation: {
+                currency: 'USD',
+                totalBudgetCents: 1_001,
+                dailyBudgetCents: 500,
+                platformSplitPercentages: { META: 34, TIKTOK: 33, GOOGLE_ADS: 33 },
+            },
+        });
+        const original = CampaignOrchestrator.computePlatformAllocationsCents(directive);
+        expect(Object.values(original).reduce((sum, cents) => sum + cents, 0)).toBe(1_001);
+
+        const provision = vi.fn(async (_directive: UnifiedCampaignDirective, cents: number) => ({
+            platform: 'META' as const,
+            externalCampaignId: 'campaign',
+            externalAdSetOrGroupId: 'group',
+            externalAdIds: ['ad'],
+            status: 'ACTIVE' as const,
+            committedBudgetCents: cents,
+            timestampIso: '2026-10-24T00:00:00.000Z',
+        }));
+        const adapters = directive.platforms.map(platform => ({
+            platform,
+            provisionCampaign: provision,
+        })) as unknown as IAdPlatformAdapter[];
+        const ledger = new InMemoryFinanceRecoupmentLedger({ ledger_recoup_01: 2_000 });
+        const orchestrator = new CampaignOrchestrator({
+            adapters,
+            financeLedger: ledger,
+            campaignJudge: vi.fn(async () => ({
+                dominantPlatform: 'META' as const,
+                refinedSplitPercentages: { META: 90, TIKTOK: 5, GOOGLE_ADS: 5 },
+                creativeFitScore: 5,
+                creativeReadinessConfirmed: true,
+                source: 'jev' as const,
+            })),
+        });
+
+        const result = await orchestrator.executeDirective(directive);
+        expect(result.allocatedPlatformBudgetsCents).toEqual(original);
+        expect(Object.values(result.allocatedPlatformBudgetsCents).reduce((sum, cents) => sum + cents, 0)).toBe(1_001);
+        expect(Math.min(...Object.values(result.allocatedPlatformBudgetsCents))).toBeGreaterThanOrEqual(100);
+        expect(result.allocationJudgment?.refinedSplitPercentages).toEqual(directive.budgetAllocation.platformSplitPercentages);
+    });
+
     it('refines platform split percentages toward Jev dominant platform while enforcing 10% floor and 100% sum', async () => {
         __resetCampaignJudgmentCooldownForTests();
         const directive = buildMockDirective();

@@ -27,6 +27,7 @@ import {
 import {
     type CampaignAllocationJudgment,
 } from './campaign-judgments';
+import { MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS } from '../../execution/ad-adapters/base.adapter';
 
 export type ICampaignAllocationJudgePort = (
     directive: UnifiedCampaignDirective,
@@ -307,6 +308,14 @@ export class CampaignOrchestrator {
             );
         }
 
+        const originalSplitPercentages = directive.budgetAllocation.platformSplitPercentages;
+        const originalAllocations = CampaignOrchestrator.computePlatformAllocationsCents(directive);
+        for (const platform of directive.platforms) {
+            if (originalAllocations[platform] < MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS) {
+                throw new Error(`Initial ${platform} allocation is below the ${MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS}-cent platform minimum.`);
+            }
+        }
+
         // 3. Optional Jev System One allocation refinement (for automated / agent directives)
         let allocationJudgment: CampaignAllocationJudgment | undefined;
         if (this.campaignJudge && directive.triggeredBy !== 'MANUAL_OVERRIDE') {
@@ -326,7 +335,26 @@ export class CampaignOrchestrator {
         }
 
         // 4. Calculate exact cent allocations per platform
-        const allocations = CampaignOrchestrator.computePlatformAllocationsCents(directive);
+        let allocations = CampaignOrchestrator.computePlatformAllocationsCents(directive);
+        if (directive.platforms.some(platform => allocations[platform] < MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS)) {
+            // An AI-refined percentage may satisfy the 10% percentage floor but
+            // still violate a provider's absolute minimum on small budgets.
+            directive = {
+                ...directive,
+                budgetAllocation: {
+                    ...directive.budgetAllocation,
+                    platformSplitPercentages: originalSplitPercentages,
+                },
+            };
+            allocations = originalAllocations;
+            if (allocationJudgment) {
+                allocationJudgment = {
+                    ...allocationJudgment,
+                    refinedSplitPercentages: directive.budgetAllocation.platformSplitPercentages,
+                    source: 'heuristic',
+                };
+            }
+        }
 
         // 5. Reserve budget in Finance Department Recoupment Ledger
         const reservation = await this.financeLedger.reserveCampaignBudget({
