@@ -223,6 +223,38 @@ describe('MetaAdAdapter (Graph API & CAPI)', () => {
 });
 
 describe('TikTokAdAdapter (Marketing API v1.3, Spark Ads & Events API)', () => {
+    it('updates its daily ad-group budget without changing the campaign lifetime cap', async () => {
+        const requests: Array<{ url: string; payload: Record<string, unknown> }> = [];
+        const fetcher: AdapterFetch = vi.fn(async (url, init) => {
+            const payload = init.body ? JSON.parse(init.body as string) as Record<string, unknown> : {};
+            requests.push({ url, payload });
+            if (url.includes('/adgroup/get/')) {
+                expect(new URL(url).searchParams.get('filtering')).toContain('tt_campaign_1');
+                return jsonResponse({ code: 0, data: { list: [{ adgroup_id: 'tt_group_2', campaign_id: 'tt_campaign_1', budget_mode: 'BUDGET_MODE_DAY' }] } });
+            }
+            return jsonResponse({ code: 0, data: {} });
+        });
+        const adapter = new TikTokAdAdapter({ advertiserId: 'adv_1', accessToken: 'MOCK_KEY_DO_NOT_USE', pixelCode: 'pixel_1' }, fetcher);
+
+        await adapter.updateBudget('tt_campaign_1', 3_000);
+
+        expect(requests.find(request => request.url.endsWith('/adgroup/update/'))?.payload).toMatchObject({
+            advertiser_id: 'adv_1', adgroup_id: 'tt_group_2', budget: 30,
+        });
+        expect(requests.some(request => request.url.endsWith('/campaign/update/'))).toBe(false);
+    });
+
+    it('does not guess which ad group to mutate when lookup is ambiguous', async () => {
+        const fetcher: AdapterFetch = vi.fn(async () => jsonResponse({ code: 0, data: { list: [
+            { adgroup_id: 'one', campaign_id: 'tt_campaign_1', budget_mode: 'BUDGET_MODE_DAY' },
+            { adgroup_id: 'two', campaign_id: 'tt_campaign_1', budget_mode: 'BUDGET_MODE_DAY' },
+        ] } }));
+        const adapter = new TikTokAdAdapter({ advertiserId: 'adv_1', accessToken: 'MOCK_KEY_DO_NOT_USE', pixelCode: 'pixel_1' }, fetcher);
+
+        await expect(adapter.updateBudget('tt_campaign_1', 3_000)).rejects.toThrow('Expected one daily-budget ad group');
+        expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
     it('provisions Spark Ads using tiktokSparkAuthCodes and dispatches TikTok Events API conversions', async () => {
         const requests: Array<{ url: string; payload: Record<string, unknown> }> = [];
         const mockFetcher: AdapterFetch = vi.fn(async (url, init) => {
@@ -289,8 +321,41 @@ describe('TikTokAdAdapter (Marketing API v1.3, Spark Ads & Events API)', () => {
 });
 
 describe('GoogleAdsAdapter (REST v17 Video Action / PMax & Enhanced Conversions)', () => {
+    it('resolves the campaign budget resource rather than substituting the campaign ID', async () => {
+        const requests: Array<{ url: string; payload: Record<string, unknown> }> = [];
+        const fetcher: AdapterFetch = vi.fn(async (url, init) => {
+            const payload = JSON.parse(init.body as string) as Record<string, unknown>;
+            requests.push({ url, payload });
+            if (url.includes('googleAds:search')) return jsonResponse({ results: [{ campaign: {
+                resourceName: 'customers/1234567890/campaigns/9902',
+                campaignBudget: 'customers/1234567890/campaignBudgets/9901',
+            } }] });
+            return jsonResponse({ results: [{}] });
+        });
+        const adapter = new GoogleAdsAdapter({ customerId: '123-456-7890', developerToken: 'MOCK_KEY_DO_NOT_USE', accessToken: 'MOCK_KEY_DO_NOT_USE', conversionActionId: '777' }, fetcher);
+
+        await adapter.updateBudget('customers/1234567890/campaigns/9902', 4_000);
+
+        expect(requests[0]?.payload.query).toContain('campaign.campaign_budget');
+        expect(requests[1]?.payload).toMatchObject({ operations: [{ update: {
+            resourceName: 'customers/1234567890/campaignBudgets/9901', amountMicros: '40000000',
+        } }] });
+    });
+
+    it.each(['WAITLIST_INTAKE', 'MERCH_CONVERSION', 'EVENT_TICKETING'] as const)(
+        'rejects unsupported %s Performance Max provisioning before creating remote resources', async objective => {
+            const fetcher: AdapterFetch = vi.fn(async () => jsonResponse({}));
+            const adapter = new GoogleAdsAdapter({ customerId: '1234567890', developerToken: 'MOCK_KEY_DO_NOT_USE', accessToken: 'MOCK_KEY_DO_NOT_USE', conversionActionId: '777' }, fetcher);
+
+            await expect(adapter.provisionCampaign(buildMockDirective({ objective }), 20_000)).rejects.toThrow('Performance Max requires a verified AssetGroup');
+            expect(fetcher).not.toHaveBeenCalled();
+        },
+    );
+
     it('provisions CampaignBudget, Campaign, AdGroup, and VideoResponsiveAd bound to youtubeVideoIds', async () => {
-        const mockFetcher: AdapterFetch = vi.fn(async (url) => {
+        const requests: Array<{ url: string; payload: Record<string, unknown> }> = [];
+        const mockFetcher: AdapterFetch = vi.fn(async (url, init) => {
+            requests.push({ url, payload: JSON.parse(init.body as string) as Record<string, unknown> });
             if (url.includes('campaignBudgets:mutate')) {
                 return jsonResponse({
                     results: [{ resourceName: 'customers/1234567890/campaignBudgets/9901' }],
@@ -350,6 +415,12 @@ describe('GoogleAdsAdapter (REST v17 Video Action / PMax & Enhanced Conversions)
         expect(receipt.externalCampaignId).toBe('customers/1234567890/campaigns/9902');
         expect(receipt.externalAdSetOrGroupId).toBe('customers/1234567890/adGroups/9903');
         expect(receipt.externalAdIds).toEqual(['customers/1234567890/adGroupAds/9903~9904']);
+        expect(requests.find(request => request.url.includes('campaigns:mutate'))?.payload).toMatchObject({
+            operations: [{ create: { advertisingChannelType: 'VIDEO', advertisingChannelSubType: 'VIDEO_ACTION' } }],
+        });
+        expect(requests.find(request => request.url.includes('adGroups:mutate'))?.payload).toMatchObject({
+            operations: [{ create: { type: 'VIDEO_RESPONSIVE' } }],
+        });
 
         const telemetry = await adapter.fetchTelemetry(receipt.externalCampaignId, {
             start: '2026-10-16',
