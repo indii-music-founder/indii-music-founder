@@ -866,11 +866,28 @@ export default function DirectGenerationTab() {
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onSelect={() => {
                                             void (async () => {
-                                                const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
-                                                const { downloadAsset } = await import('@/utils/download');
-                                                const resolvedUrl = await resolveStorageUrl(latestItem.url);
-                                                const ext = latestItem.type === 'video' ? 'mp4' : 'png';
-                                                await downloadAsset(resolvedUrl, `${latestItem.type}_${latestItem.id}.${ext}`);
+                                                try {
+                                                    if (!latestItem.url) {
+                                                        toast.error('This asset is not ready to download yet.');
+                                                        return;
+                                                    }
+                                                    const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                                                    const { downloadAsset } = await import('@/utils/download');
+                                                    const resolvedUrl = await resolveStorageUrl(latestItem.url);
+                                                    if (!resolvedUrl) {
+                                                        toast.error('This asset is not ready to download yet.');
+                                                        return;
+                                                    }
+                                                    const ext = latestItem.type === 'video' ? 'mp4' : 'png';
+                                                    const started = await downloadAsset(resolvedUrl, `${latestItem.type}_${latestItem.id}.${ext}`);
+                                                    if (!started) {
+                                                        toast.error('Could not start the download. Try again.');
+                                                        return;
+                                                    }
+                                                    toast.info('Download started. Check your browser downloads.');
+                                                } catch {
+                                                    toast.error('Could not start the download. Try again.');
+                                                }
                                             })();
                                         }}>
                                             <Download size={12} /> Download asset
