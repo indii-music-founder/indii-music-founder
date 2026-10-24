@@ -49,6 +49,14 @@ describe('SOCIAL_TOOLS', () => {
         await expect(SOCIAL_TOOLS.suggest_instagram_hashtags(context)).rejects.toThrow('specific hashtags');
     });
 
+    it('keeps 3–5 specific tags when the model repeats a suggestion', async () => {
+        (AI.generateStructuredData as import('vitest').Mock).mockResolvedValue({
+            hashtags: ['#detroitindie', '#synthpopartist', '#studiosessions', '#detroitindie', '#indiielectronic'],
+        });
+        await expect(SOCIAL_TOOLS.suggest_instagram_hashtags({ platform: 'Instagram', brief: 'Detroit synthpop studio photo' }))
+            .resolves.toEqual(['detroitindie', 'synthpopartist', 'studiosessions', 'indiielectronic']);
+    });
+
     describe('generate_social_identity', () => {
         it('should call AI.generateStructuredData with correct parameters', async () => {
             const mockResponse = {

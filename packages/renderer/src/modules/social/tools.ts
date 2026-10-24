@@ -92,9 +92,6 @@ export const SOCIAL_TOOLS = {
             throw new Error('Could not generate valid hashtags.');
         }
         const hashtags = normalizeInstagramHashtags(result.hashtags);
-        if (hashtags.length !== result.hashtags.length) {
-            throw new Error('Could not generate 3–5 unique, valid hashtags. Please try again or enter your own.');
-        }
         const policy = validateInstagramPublishingPayload({
             surface: 'feed', width: 1080, height: 1350, caption: '', hashtags,
         });
