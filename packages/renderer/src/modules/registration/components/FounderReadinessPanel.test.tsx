@@ -21,6 +21,12 @@ describe('FounderReadinessPanel (ISSUE-1121)', () => {
     fireEvent.change(isrcInput, { target: { value: 'QZ-123' } });
     expect(isrcInput).toHaveValue('QZ-123');
 
+    const isrcToggle = screen.getByRole('button', { name: 'Mark verified: US ISRC Rights Owner Prefix' });
+    expect(isrcToggle).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(isrcToggle);
+    expect(screen.getByRole('button', { name: 'Mark pending: US ISRC Rights Owner Prefix' }))
+      .toHaveAttribute('aria-pressed', 'true');
+
     const saveButton = screen.getByText(/Save Progress/i);
     fireEvent.click(saveButton);
     expect(screen.getByText(/Saved!/i)).toBeInTheDocument();

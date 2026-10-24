@@ -114,10 +114,10 @@ describe('Deploy workflow staging gate contract', () => {
   it('fails closed on Firebase Functions errors and verifies the cloud render dispatcher', () => {
     const workflow = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8');
 
-    // MIG-010: dispatchCloudVideoRender was partially deployed as HTTPS; Gen2
-    // cannot change trigger type in place. Delete pre-step is required so the
-    // background-triggered version can deploy fresh.
-    expect(workflow).toContain('firebase functions:delete dispatchCloudVideoRender');
+    // A trigger or generation migration must fail closed during routine deploys.
+    // It must never silently delete an active endpoint before verification.
+    expect(workflow).not.toContain('firebase functions:delete dispatchCloudVideoRender');
+    expect(workflow).toContain('Stop routine deployment and perform a separately reviewed migration.');
     expect(workflow).toContain('deploy_status=${PIPESTATUS[0]}');
     expect(workflow).toContain('[ "$deploy_status" -eq 0 ]');
     expect(workflow).toContain("--format='value(eventTrigger.eventType)'");

@@ -3594,6 +3594,8 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Fix:** Provided specific accessible names on gallery cards and drawer buttons, separated empty catalog from no search matches with clear action, and added interactive setup/upload triggers for empty likeness and brand compliance states.
 - **Acceptance:** Structural tests cover labels and prerequisite controls. Genuine keyboard/screen-reader navigation and owner setup acceptance remain unverified.
 - **2026-10-24 follow-up (drop wizard):** Named the close control and drop-name field. The zero-product step now states that product creation is unavailable in this workspace, rather than directing artists to a nonexistent add-product action; Next remains disabled. Component tests pass. Genuine product setup and keyboard/screen-reader acceptance remain open.
+- **Version History follow-up (2026-10-23):** The Merchandise Version History surface now exposes a named modal dialog, a named close button, focus trap/return and Escape handling through the shared modal hook, and expanded state on date groups. Genuine screen-reader and owner workflow acceptance remain outstanding.
+- **Additional code progress (2026-10-23):** Merchandise Keyboard Shortcuts now exposes a named modal dialog and close control, traps/restores keyboard focus through the shared modal hook, and no longer spreads a React key through props. Founder Registration's seven prerequisite toggles now announce the specific prerequisite and pressed state. Focused semantic interaction tests pass; a genuine screen-reader pass and owner setup remain outstanding, so this issue stays PARTIAL.
 
 ### Investigation notes — not confirmed defects / not completed acceptance
 
@@ -4874,6 +4876,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** Repeated deployments remove live endpoints/triggers; interruption or later failed deployment can leave functions unavailable, while delete failures are suppressed.
 - **Fix:** Remove completed migrations from ordinary deployment; inspect exact generation/trigger metadata and perform bounded explicitly authorized migrations with recovery where necessary. Preserve deployment safeguards.
 - **Acceptance:** Ordinary redeploy regression invokes no active-function deletions; migration fixtures verify prerequisites and recovery. Exact-SHA CI/deployment metadata confirms expected endpoints. Destructive live migration requires separate authorization; customer/event continuity remains separate acceptance.
+- **2026-10-24 follow-up:** Removed five unconditional forced deletions and the automatic Gen1 deletion path from ordinary deployment. An existing endpoint not confirmed as Gen2 now fails the deployment with an explicit migration error before the Firebase deploy command. A deploy-guard check rejects future direct function-delete commands in this workflow and runs in lint. Exact-SHA CI, live function inventory, and endpoint continuity remain pending; no migration was performed.
 
 ---
 
