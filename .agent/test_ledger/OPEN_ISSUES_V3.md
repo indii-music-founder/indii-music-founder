@@ -3593,6 +3593,7 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Impact:** Artists and assistive tech identify individual asset actions, dismiss controls, recover from filtered queries, and access prerequisites via actionable setup links.
 - **Fix:** Provided specific accessible names on gallery cards and drawer buttons, separated empty catalog from no search matches with clear action, and added interactive setup/upload triggers for empty likeness and brand compliance states.
 - **Acceptance:** Structural tests cover labels and prerequisite controls. Genuine keyboard/screen-reader navigation and owner setup acceptance remain unverified.
+- **2026-10-24 follow-up (drop wizard):** Named the close control and drop-name field. The zero-product step now states that product creation is unavailable in this workspace, rather than directing artists to a nonexistent add-product action; Next remains disabled. Component tests pass. Genuine product setup and keyboard/screen-reader acceptance remain open.
 
 ### Investigation notes — not confirmed defects / not completed acceptance
 
