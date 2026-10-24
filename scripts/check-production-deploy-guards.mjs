@@ -28,4 +28,9 @@ if (missing.length) {
   throw new Error(`Missing canonical guards: ${missing.map(({ manifest, name }) => `${manifest}:${name}`).join(', ')}`);
 }
 
+const productionWorkflow = readFileSync(join(root, '.github/workflows/deploy.yml'), 'utf8');
+if (/\b(?:firebase\s+functions:delete|gcloud\s+functions\s+delete)\b/.test(productionWorkflow)) {
+  throw new Error('Ordinary production deployment must not delete Cloud Functions; use a separately reviewed migration.');
+}
+
 console.log(`Verified canonical-repository guards on ${deployScripts.length} production deploy scripts across ${manifests.length} manifests.`);

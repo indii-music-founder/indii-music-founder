@@ -4873,6 +4873,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** Repeated deployments remove live endpoints/triggers; interruption or later failed deployment can leave functions unavailable, while delete failures are suppressed.
 - **Fix:** Remove completed migrations from ordinary deployment; inspect exact generation/trigger metadata and perform bounded explicitly authorized migrations with recovery where necessary. Preserve deployment safeguards.
 - **Acceptance:** Ordinary redeploy regression invokes no active-function deletions; migration fixtures verify prerequisites and recovery. Exact-SHA CI/deployment metadata confirms expected endpoints. Destructive live migration requires separate authorization; customer/event continuity remains separate acceptance.
+- **2026-10-24 follow-up:** Removed five unconditional forced deletions and the automatic Gen1 deletion path from ordinary deployment. An existing endpoint not confirmed as Gen2 now fails the deployment with an explicit migration error before the Firebase deploy command. A deploy-guard check rejects future direct function-delete commands in this workflow and runs in lint. Exact-SHA CI, live function inventory, and endpoint continuity remain pending; no migration was performed.
 
 ---
 
