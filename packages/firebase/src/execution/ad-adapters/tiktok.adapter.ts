@@ -64,6 +64,10 @@ interface TikTokAdGroupCreateData {
     adgroup_id?: string;
 }
 
+interface TikTokAdGroupLookupData {
+    list?: Array<{ adgroup_id?: string; campaign_id?: string; budget_mode?: string }>;
+}
+
 interface TikTokAdCreateData {
     ad_ids?: string[];
 }
@@ -336,9 +340,24 @@ export class TikTokAdAdapter extends BaseAdPlatformAdapter {
             );
         }
 
-        await this.requestTikTok('campaign/update/', 'POST', {
+        const groups = await this.requestTikTok<TikTokAdGroupLookupData>('adgroup/get/', 'GET', {
             advertiser_id: this.config.advertiserId,
-            campaign_id: externalCampaignId,
+            filtering: { campaign_ids: [externalCampaignId], primary_status: 'STATUS_NOT_DELETE' },
+            page: 1,
+            page_size: 2,
+        });
+        const matchingGroups = (groups.data.list ?? []).filter(group => group.campaign_id === externalCampaignId);
+        if (matchingGroups.length !== 1 || !matchingGroups[0]?.adgroup_id || matchingGroups[0].budget_mode !== 'BUDGET_MODE_DAY') {
+            throw new AdPlatformAdapterError(
+                this.platform,
+                'API_EXECUTION_FAILED',
+                'Expected one daily-budget ad group for this TikTok campaign; lifetime campaign budget was not changed.',
+            );
+        }
+
+        await this.requestTikTok('adgroup/update/', 'POST', {
+            advertiser_id: this.config.advertiserId,
+            adgroup_id: matchingGroups[0].adgroup_id,
             budget: Number((dailyBudgetCents / 100).toFixed(2)),
         });
     }

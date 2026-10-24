@@ -5214,6 +5214,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1540: `GoogleAdsAdapter` and `TikTokAdAdapter` corrupt budget/campaign resources on update and fail PMax provisioning
 
 - **Status:** 🔴 OPEN (2026-10-16)
+- **2026-10-24 progress:** The `codex/issue-1540-ad-adapter-resources` branch resolves Google Ads budget ownership through `campaign.campaign_budget` before mutation, updates TikTok's single daily-budget ad group rather than its lifetime campaign cap, and rejects ambiguous ad-group matches. Google Video Action now uses the `VIDEO_ACTION` subtype and `VIDEO_RESPONSIVE` ad-group type. PMax objectives fail before any remote create until the directive can supply and validate the required AssetGroup/AssetGroupAssets roles; this prevents stranded resources but **does not complete PMax provisioning acceptance**. This issue remains OPEN pending that work, branch CI, and live platform validation.
 - **Severity:** 🟠 HIGH
 - **Module:** Ad Execution Adapters (`packages/firebase/src/execution/ad-adapters/google-ads.adapter.ts`, `packages/firebase/src/execution/ad-adapters/tiktok.adapter.ts`)
 - **Classification:** Third-party ad platform API contract defect.

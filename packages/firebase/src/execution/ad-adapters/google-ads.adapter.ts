@@ -71,7 +71,7 @@ interface GoogleAdsMutateResponse {
 }
 
 interface GoogleAdsSearchRow {
-    campaign?: { resourceName?: string; id?: string };
+    campaign?: { resourceName?: string; id?: string; campaignBudget?: string };
     campaignBudget?: { resourceName?: string };
     metrics?: {
         costMicros?: string | number;
@@ -218,6 +218,16 @@ export class GoogleAdsAdapter extends BaseAdPlatformAdapter {
         );
         const campaignName = `indii_${valid.assets.isrc}_${valid.objective}_${valid.directiveId}`;
         const channelSpec = GOOGLE_ADS_CHANNEL_MAP[valid.objective];
+        if (channelSpec.advertisingChannelType === 'PERFORMANCE_MAX') {
+            // PMax requires AssetGroup + AssetGroupAssets. This directive has no
+            // verified asset roles, so creating only a budget/campaign would
+            // strand resources and falsely report a provisioned campaign.
+            throw new AdPlatformAdapterError(
+                this.platform,
+                'MISSING_PLATFORM_ASSETS',
+                'Performance Max requires a verified AssetGroup and required image, logo, text, and video asset roles.',
+            );
+        }
 
         // 1. Provision CampaignBudget
         const budgetMutate = await this.requestGoogleAds<GoogleAdsMutateResponse>(
@@ -256,6 +266,7 @@ export class GoogleAdsAdapter extends BaseAdPlatformAdapter {
                             status: 'PAUSED',
                             campaignBudget: budgetResourceName,
                             advertisingChannelType: channelSpec.advertisingChannelType,
+                            advertisingChannelSubType: 'VIDEO_ACTION',
                             biddingStrategyType: channelSpec.biddingStrategyType,
                             startDate: valid.schedule.startTimeIso.slice(0, 10).replace(/-/g, ''),
                             ...(valid.schedule.endTimeIso
@@ -290,7 +301,7 @@ export class GoogleAdsAdapter extends BaseAdPlatformAdapter {
                             name: `${campaignName}_adgroup`,
                             campaign: campaignResourceName,
                             status: 'PAUSED',
-                            type: 'VIDEO_TRUE_VIEW_IN_STREAM',
+                            type: 'VIDEO_RESPONSIVE',
                         },
                     },
                 ],
@@ -390,9 +401,29 @@ export class GoogleAdsAdapter extends BaseAdPlatformAdapter {
         }
 
         const customerId = this.normalizedCustomerId;
-        const budgetResourceName = externalCampaignId.includes('/campaignBudgets/')
+        const campaignResourceName = externalCampaignId.startsWith('customers/')
             ? externalCampaignId
-            : `customers/${customerId}/campaignBudgets/${externalCampaignId.split('/').pop()}`;
+            : `customers/${customerId}/campaigns/${externalCampaignId}`;
+        if (!new RegExp(`^customers/${customerId}/campaigns/[0-9]+$`).test(campaignResourceName)) {
+            throw new AdPlatformAdapterError(
+                this.platform,
+                'INVALID_DIRECTIVE_PAYLOAD',
+                'Google Ads campaign resource must belong to the configured customer.',
+            );
+        }
+        const campaignSearch = await this.requestGoogleAds<GoogleAdsSearchResponse>(
+            `customers/${customerId}/googleAds:search`,
+            { query: `SELECT campaign.resource_name, campaign.campaign_budget FROM campaign WHERE campaign.resource_name = '${campaignResourceName}'` },
+        );
+        const budgetResourceName = campaignSearch.results?.find(row => row.campaign?.resourceName === campaignResourceName)
+            ?.campaign?.campaignBudget;
+        if (!budgetResourceName || !new RegExp(`^customers/${customerId}/campaignBudgets/[0-9]+$`).test(budgetResourceName)) {
+            throw new AdPlatformAdapterError(
+                this.platform,
+                'API_EXECUTION_FAILED',
+                'Google Ads did not return a budget resource owned by this campaign; budget was not changed.',
+            );
+        }
 
         await this.requestGoogleAds<GoogleAdsMutateResponse>(
             `customers/${customerId}/campaignBudgets:mutate`,
