@@ -764,8 +764,8 @@ describe('Jev System One Campaign Judgments & Orchestrator Integration', () => {
                     creative_fit_score: {
                         type: 'score' as const,
                         answer: 5,
-                        score: 4.78,
-                        distribution: { 1: 0.0, 2: 0.0, 3: 0.02, 4: 0.18, 5: 0.8 },
+                        score: 3.78,
+                        distribution: { 0: 0.0, 1: 0.0, 2: 0.02, 3: 0.18, 4: 0.8 },
                     },
                     creative_readiness_confirmed: {
                         type: 'noul' as const,
@@ -795,6 +795,11 @@ describe('Jev System One Campaign Judgments & Orchestrator Integration', () => {
         );
 
         expect(judgment.source).toBe('jev');
+        expect(mockTypesafeClient.judge).toHaveBeenCalledWith(expect.objectContaining({
+            questions: expect.objectContaining({
+                creative_fit_score: expect.objectContaining({ criteria: expect.any(Array) }),
+            }),
+        }));
         expect(judgment.dominantPlatform).toBe('TIKTOK');
         expect(judgment.confidence).toBeCloseTo(0.92, 2);
         expect(judgment.creativeFitScore).toBeCloseTo(4.78, 2);

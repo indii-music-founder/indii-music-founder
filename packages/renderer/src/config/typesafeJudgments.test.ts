@@ -6,6 +6,8 @@
  * the constants file.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
 
 const mocks = vi.hoisted(() => ({
     httpsCallable: vi.fn(),
@@ -111,6 +113,46 @@ const SKILLS = [
     { id: 'legal_affairs', name: 'Legal Affairs', description: 'Contracts, DMCA takedowns, rights.' },
 ];
 
+describe('TypeSafe HTTP question contract', () => {
+    it('defines ordered criteria for every Score and criteria for every Choice', () => {
+        const file = readFileSync('packages/renderer/src/config/typesafeJudgments.ts', 'utf8');
+        const source = ts.createSourceFile('typesafeJudgments.ts', file, ts.ScriptTarget.Latest, true);
+        let scoreCount = 0;
+        let choiceCount = 0;
+        const visit = (node: ts.Node): void => {
+            if (ts.isObjectLiteralExpression(node)) {
+                const get = (name: string) => {
+                    const property = node.properties.find(p => p.name?.getText(source) === name);
+                    return property && ts.isPropertyAssignment(property) ? property.initializer :
+                        property && ts.isShorthandPropertyAssignment(property) ? property.name : undefined;
+                };
+                const type = get('type')?.getText(source);
+                if (type === "'score' as const") {
+                    scoreCount++;
+                    const criteria = get('criteria');
+                    if (criteria && ts.isArrayLiteralExpression(criteria)) {
+                        expect(criteria.elements.length).toBeGreaterThanOrEqual(2);
+                        expect(criteria.elements.length).toBeLessThanOrEqual(10);
+                    } else {
+                        expect(criteria?.getText(source)).toBe('IMPORTANCE_LEVELS');
+                    }
+                    expect(get('levels')).toBeUndefined();
+                    expect(get('range')).toBeUndefined();
+                }
+                if (type === "'choice' as const") {
+                    choiceCount++;
+                    expect(get('criteria'), `Choice at line ${source.getLineAndCharacterOfPosition(node.pos).line + 1}`).toBeDefined();
+                    expect(get('options')).toBeUndefined();
+                }
+            }
+            ts.forEachChild(node, visit);
+        };
+        visit(source);
+        expect(scoreCount).toBeGreaterThanOrEqual(40);
+        expect(choiceCount).toBeGreaterThanOrEqual(40);
+    });
+});
+
 describe('heuristicTransientError (deterministic baseline)', () => {
     it('classifies classic infrastructure failures as transient', () => {
         expect(heuristicTransientError(new Error('Request failed with status 429'))).toBe(true);
@@ -209,12 +251,18 @@ describe('judgeSkillIntent (Choice routing)', () => {
 
     it('returns the chosen candidate id', async () => {
         mocks.enabled.mockReturnValue(true);
+        const call = vi.fn(async () => ({ data: { answers: { skill: { choice: 'digital_distribution' } } } }));
         mocks.httpsCallable.mockImplementation((name: unknown) => {
             expect(name).toBe('typesafeJudge');
-            return async () => ({ data: { answers: { skill: { choice: 'digital_distribution' } } } });
+            return call;
         });
 
         expect(await judgeSkillIntent('get my music on spotify', SKILLS)).toBe('digital_distribution');
+        expect(call).toHaveBeenCalledWith(expect.objectContaining({
+            questions: { skill: expect.objectContaining({
+                criteria: expect.objectContaining({ digital_distribution: expect.any(String), none: 'No skill applies' }),
+            }) },
+        }));
     });
 
     it('maps a none choice to null', async () => {
@@ -2013,7 +2061,7 @@ describe('judgeSessionChunkTriage (Judgment 38)', () => {
                 answers: {
                     action: { choice: 'KEEP_PERFORMANCE' },
                     is_usable: { noul: 0.95 },
-                    hook_energy: { score: 4 },
+                    hook_energy: { score: 3 },
                 },
             },
         }));
@@ -2125,7 +2173,7 @@ describe('judgeLyricVisualPromptSynthesis (Judgment 40)', () => {
                 answers: {
                     category: { choice: 'POETIC_METAPHOR' },
                     avoid_cliche: { noul: 0.91 },
-                    density: { score: 3 },
+                    density: { score: 2 },
                 },
             },
         }));
@@ -2177,7 +2225,7 @@ describe('judgeAudioStemSeparationPriority (Judgment 41)', () => {
                 answers: {
                     recipe: { choice: 'FULL_VOCAL_EXTRACTION' },
                     is_salvageable: { noul: 0.88 },
-                    phase_risk: { score: 2 },
+                    phase_risk: { score: 1 },
                 },
             },
         }));
@@ -2241,7 +2289,7 @@ describe('judgeMusicVideoContinuity (Judgment 42)', () => {
                 answers: {
                     status: { choice: 'READY_TO_RENDER' },
                     coverage: { noul: 0.95 },
-                    flow_score: { score: 5 },
+                    flow_score: { score: 4 },
                 },
             },
         }));
@@ -2289,7 +2337,7 @@ describe('judgeSocialAudioSnippetSelection (Judgment 43)', () => {
                 answers: {
                     section: { choice: 'DROP' },
                     immediate_vocal: { noul: 0.94 },
-                    viral_potential: { score: 5 },
+                    viral_potential: { score: 4 },
                 },
             },
         }));
@@ -2363,7 +2411,7 @@ describe('judgeMerchPrintViability (Judgment 44)', () => {
                 answers: {
                     technique: { choice: 'DTG_DIRECT_TO_GARMENT' },
                     is_safe: { noul: 0.96 },
-                    contrast: { score: 4 },
+                    contrast: { score: 3 },
                 },
             },
         }));
@@ -2421,7 +2469,7 @@ describe('judgeFanCommentModeration (Judgment 45)', () => {
                 answers: {
                     intent: { choice: 'GENUINE_FAN_PRAISE' },
                     approved: { noul: 0.99 },
-                    vibe: { score: 5 },
+                    vibe: { score: 4 },
                 },
             },
         }));
@@ -2476,7 +2524,7 @@ describe('judgeSyncLicensingMoodFit (Judgment 46)', () => {
                 answers: {
                     scene: { choice: 'DARK_THRILLER_SUSPENSE' },
                     hazard: { noul: 0.02 },
-                    fit_score: { score: 5 },
+                    fit_score: { score: 4 },
                 },
             },
         }));
@@ -2534,7 +2582,7 @@ describe('judgeCameraAngleContinuity (Judgment 47)', () => {
                 answers: {
                     next_angle: { choice: 'DUTCH_TILT_TENSION' },
                     jump_violation: { noul: 0.05 },
-                    diversity_score: { score: 5 },
+                    diversity_score: { score: 4 },
                 },
             },
         }));
@@ -2590,7 +2638,7 @@ describe('judgeVideoColorGradeMood (Judgment 48)', () => {
                 answers: {
                     preset: { choice: 'TEAL_AND_ORANGE_BLOCKBUSTER' },
                     clash_hazard: { noul: 0.08 },
-                    synergy_score: { score: 5 },
+                    synergy_score: { score: 4 },
                 },
             },
         }));
@@ -2676,7 +2724,7 @@ describe('judgeStatementCatalogDisambiguation (Judgment 49)', () => {
                 answers: {
                     match: { choice: 'trk-102' },
                     master_certainty: { noul: 0.98 },
-                    confidence_score: { score: 5 },
+                    confidence_score: { score: 4 },
                 },
             },
         }));
@@ -2757,7 +2805,7 @@ describe('judgeSplitSheetRightsClearance (Judgment 50)', () => {
                 answers: {
                     rights_stream: { choice: 'BOTH_EQUAL_SYNCED' },
                     needs_contract: { noul: 0.05 },
-                    dispute_score: { score: 5 },
+                    dispute_score: { score: 4 },
                 },
             },
         }));
@@ -2819,7 +2867,7 @@ describe('judgeUniversalErrorRemediation (Judgment 51)', () => {
                 answers: {
                     remedy: { choice: 'RELOAD_MODULE_CACHE' },
                     transient: { noul: 0.95 },
-                    severity_score: { score: 3 },
+                    severity_score: { score: 2 },
                 },
             },
         }));
@@ -2880,7 +2928,7 @@ describe('judgeLikenessEnrolmentSuitability (Judgment 52)', () => {
                 answers: {
                     status: { choice: 'READY_FOR_TRAINING' },
                     obstructed: { noul: 0.02 },
-                    clarity_score: { score: 5 },
+                    clarity_score: { score: 4 },
                 },
             },
         }));
@@ -2939,7 +2987,7 @@ describe('judgePersonaPosturePreset (Judgment 53)', () => {
             data: {
                 answers: {
                     preset: { choice: 'SCRAPPY_INDIE_DIY' },
-                    alignment: { score: 5 },
+                    alignment: { score: 4 },
                 },
             },
         }));
@@ -2999,7 +3047,7 @@ describe('judgeTaxFormCompliance (Judgment 54)', () => {
                 answers: {
                     status: { choice: 'VALID_W8BEN_COMPLETE' },
                     missing_tin: { noul: 0.01 },
-                    compliance_score: { score: 5 },
+                    compliance_score: { score: 4 },
                 },
             },
         }));
@@ -3065,7 +3113,7 @@ describe('judgeDistributionBlocker (Judgment 55)', () => {
             data: {
                 answers: {
                     blocker: { choice: 'READY_FOR_DELIVERY' },
-                    readiness_score: { score: 5 },
+                    readiness_score: { score: 4 },
                 },
             },
         }));
@@ -3124,7 +3172,7 @@ describe('judgeDdexGenreAndSubculture (Judgment 56)', () => {
             data: {
                 answers: {
                     primary_genre: { choice: 'Hip-Hop/Rap' },
-                    fit_score: { score: 5 },
+                    fit_score: { score: 4 },
                 },
             },
         }));
@@ -3182,7 +3230,7 @@ describe('judgeAudioDrivenMerchSku (Judgment 57)', () => {
             data: {
                 answers: {
                     recommended_sku: { choice: 'LIMITED_VINYL_RECORD' },
-                    conversion_score: { score: 5 },
+                    conversion_score: { score: 4 },
                 },
             },
         }));
@@ -3315,7 +3363,7 @@ describe('judgeTargetSpecialistAgent (Judgment 59)', () => {
             data: {
                 answers: {
                     target_agent: { choice: 'producer' },
-                    confidence_score: { score: 5 },
+                    confidence_score: { score: 4 },
                 },
             },
         }));
@@ -3356,7 +3404,7 @@ describe('judgePromptActionability (Judgment 60)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    specificity: { score: 5 },
+                    specificity: { score: 4 },
                     has_deliverable: { probability: 0.98 },
                 },
             },
@@ -3399,7 +3447,7 @@ describe('judgeArtistDnaOnboarding (Judgment 61)', () => {
                 answers: {
                     archetype_choice: { choice: 'sync_composer' },
                     aesthetic_choice: { choice: 'dark_moody_cinematic' },
-                    maturity_score: { score: 4 },
+                    maturity_score: { score: 3 },
                 },
             },
         }));
@@ -3456,7 +3504,7 @@ describe('judgeStemSeparationAcousticPurity (Judgment 62)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    purity_rating: { score: 4 },
+                    purity_rating: { score: 3 },
                     severe_phase_hazard: { probability: 0.1 },
                 },
             },
@@ -3519,7 +3567,7 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             data: {
                 answers: {
                     pace_status: { choice: 'FAST_TRACK' },
-                    underwater_risk_score: { score: 1 },
+                    underwater_risk_score: { score: 0 },
                 },
             },
         }));
@@ -3578,7 +3626,7 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    open_rate_potential: { score: 4 },
+                    open_rate_potential: { score: 3 },
                     spam_filter_risk: { probability: 0.05 },
                 },
             },
@@ -3712,7 +3760,7 @@ describe('Judgment 66: Video Chunk Quality & Usability Gate (judgeVideoChunkQual
             data: {
                 answers: {
                     class: { choice: 'KEEP_LEAD_TAKE' },
-                    score: { score: 5 },
+                    score: { score: 4 },
                 },
             },
         }));
@@ -3729,6 +3777,25 @@ describe('Judgment 66: Video Chunk Quality & Usability Gate (judgeVideoChunkQual
         expect(result.classification).toBe('KEEP_LEAD_TAKE');
         expect(result.isKeep).toBe(true);
         expect(result.usableScore).toBe(5);
+    });
+
+    it('maps Jev level zero to the lowest one-based quality score', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { class: { choice: 'DISCARD_SHAKY' }, score: { score: 0 } } },
+        }));
+
+        const result = await judgeVideoChunkQuality({
+            chunkId: 'chunk_unusable',
+            startSeconds: 0,
+            endSeconds: 5,
+            hasSubjectInFrame: true,
+            averageMotionScore: 15,
+            brightnessScore: 60,
+        });
+
+        expect(result.usableScore).toBe(1);
+        expect(result.isKeep).toBe(false);
     });
 });
 
@@ -3751,7 +3818,7 @@ describe('Judgment 67: Image Variation Batch Pre-Selector (judgeTopImageVariatio
             data: {
                 answers: {
                     best_pick: { choice: 'var_2' },
-                    score: { score: 5 },
+                    score: { score: 4 },
                 },
             },
         }));
@@ -3798,7 +3865,7 @@ describe('Judgment 68: Contextual Next-Best Module Navigation (judgeNextBestModu
             data: {
                 answers: {
                     best_action: { choice: 'review_earnings' },
-                    urgency: { score: 4 },
+                    urgency: { score: 3 },
                 },
             },
         }));
@@ -3910,7 +3977,7 @@ describe('Judgment 70: Expense Deductibility & Schedule C Tax Classification (ju
             data: {
                 answers: {
                     tax_cat: { choice: 'MARKETING_PROMO' },
-                    audit_strength: { score: 5 },
+                    audit_strength: { score: 4 },
                 },
             },
         }));
@@ -3961,7 +4028,7 @@ describe('Judgment 71: Tour Stop Feasibility & Turnaround Gate (judgeTourStopFea
             data: {
                 answers: {
                     hop_status: { choice: 'TIGHT_TURNAROUND' },
-                    feasibility: { score: 2 },
+                    feasibility: { score: 1 },
                 },
             },
         }));
@@ -4010,7 +4077,7 @@ describe('judgeMotionIntensityPreset (Judgment 72)', () => {
             data: {
                 answers: {
                     preset: { choice: 'DYNAMIC_TRACKING' },
-                    intensity: { score: 3.8 },
+                    intensity: { score: 2.8 },
                 },
             },
         }));
@@ -4060,7 +4127,7 @@ describe('judgeStemSeparationRecipe (Judgment 73)', () => {
             data: {
                 answers: {
                     recipe: { choice: 'FOUR_STEM_CLASSIC' },
-                    confidence: { score: 4.6 },
+                    confidence: { score: 3.6 },
                 },
             },
         }));
@@ -4161,7 +4228,7 @@ describe('judgeCatalogCollisionRisk (Judgment 75)', () => {
             data: {
                 answers: {
                     disposition: { choice: 'DELUXE_EDITION' },
-                    confidence: { score: 4.8 },
+                    confidence: { score: 3.8 },
                 },
             },
         }));
@@ -4185,7 +4252,7 @@ describe('judgeCatalogCollisionRisk (Judgment 75)', () => {
             data: {
                 answers: {
                     disposition: 'DELUXE_EDITION',
-                    confidence: 4,
+                    confidence: 3,
                 },
             },
         }));
