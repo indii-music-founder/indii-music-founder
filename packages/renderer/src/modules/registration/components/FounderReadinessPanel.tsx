@@ -208,7 +208,9 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
                     <button
                       onClick={() => handleToggleVerified(item.id)}
                       className="text-neutral-400 hover:text-white transition-colors"
-                      title={state.verified ? 'Mark pending' : 'Mark verified'}
+                      aria-label={`${state.verified ? 'Mark pending' : 'Mark verified'}: ${item.title}`}
+                      aria-pressed={state.verified}
+                      title={`${state.verified ? 'Mark pending' : 'Mark verified'}: ${item.title}`}
                     >
                       {state.verified ? (
                         <CheckCircle2 size={18} className="text-emerald-400" />
