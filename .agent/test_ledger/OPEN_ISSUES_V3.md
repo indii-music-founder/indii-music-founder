@@ -4729,6 +4729,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** CI compilation/test evidence does not validate the declared root runtime. Firebase's supported deployment runtime is a separate constraint.
 - **Fix:** Align root CI with the intentional engine requirement; retain separately documented supported Functions runtime; verify lockfile installs and dependency drift/integrity.
 - **Acceptance:** Clean installs and required gates pass on the declared root runtime; backend runtime compatibility is independently tested and documented.
+- **2026-10-24 follow-up:** The deployment workflow's seven CI host jobs now request Node 24 and use a Node-24-specific `node_modules` cache key. The Firebase Functions package still declares its separate Node 22 runtime. Exact-SHA CI and clean-install evidence remain pending; this issue is not closed.
 
 ### ISSUE-1516: Mainline branch protection and required-check ruleset are disabled
 
