@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Keyboard, Command } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface KeyboardShortcutsProps {
     isOpen: boolean;
@@ -48,11 +49,18 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 ];
 
 export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ isOpen, onClose }) => {
+    const dialogRef = useModalAccessibility(isOpen, onClose);
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-lg bg-neutral-900 rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="merch-shortcuts-title"
+                className="w-full max-w-lg bg-neutral-900 rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-white/10">
                     <div className="flex items-center gap-3">
@@ -60,12 +68,13 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ isOpen, on
                             <Keyboard size={18} />
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold text-white">Keyboard Shortcuts</h2>
+                            <h2 id="merch-shortcuts-title" className="text-sm font-bold text-white">Keyboard Shortcuts</h2>
                             <p className="text-xs text-neutral-400">Speed up your workflow</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
+                        aria-label="Close keyboard shortcuts"
                         className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                     >
                         <X size={18} />
@@ -87,8 +96,7 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ isOpen, on
                                     <span className="text-sm text-neutral-300">{shortcut.description}</span>
                                     <div className="flex items-center gap-1">
                                         {shortcut.keys.map((key, j) => (
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            <React.Fragment {...({ key: j } as any)}>
+                                            <React.Fragment key={`${shortcut.description}-${j}`}>
                                                 <kbd className="px-2 py-1 bg-neutral-800 border border-neutral-700 rounded text-xs font-mono text-neutral-300">
                                                     {key}
                                                 </kbd>
