@@ -50,6 +50,23 @@ export interface ResolvedCommandAttachment {
     dataUrl?: string;
 }
 
+export function formatRemoteMediaReferences(attachments: ResolvedCommandAttachment[], userId: string): string {
+    const references = attachments
+        .filter(att => !att.base64 && att.url && /^(audio|video)\//.test(att.mimeType))
+        .map(att => {
+            const url = new URL(att.url!);
+            const objectKey = decodeURIComponent(url.pathname.split('/o/')[1] ?? '');
+            if (url.protocol !== 'https:' || url.hostname !== 'firebasestorage.googleapis.com' ||
+                !objectKey.startsWith(`users/${userId}/`)) {
+                throw new Error('Remote media attachment is not an owned Firebase Storage object.');
+            }
+            return `- ${att.mimeType}: ${url.href}`;
+        });
+    return references.length > 0
+        ? `\n\nAttached media references (not yet analyzed; inspect the source before making claims):\n${references.join('\n')}`
+        : '';
+}
+
 function readBlobAsDataUrl(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
         if (typeof FileReader !== 'undefined') {
@@ -488,11 +505,14 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
 
             case 'chat': {
                 const text = parsed.text;
+                const resolvedAttachments = await resolveCommandAttachments(command);
+                const mediaReferences = formatRemoteMediaReferences(resolvedAttachments, auth.currentUser?.uid ?? '');
+                const messageWithMedia = `${text}${mediaReferences}`;
                 const startedAt = Date.now();
                 logger.info(`[RemoteAdapter] 💬 Agent chat: "${text.substring(0, 50)}"`);
                 await respond('Processing in desktop studio…', { agentId: command.targetAgentId, isStreaming: true });
 
-                const commandResult = await entryCommandService.handleInput(text, {
+                const commandResult = mediaReferences ? { handled: false } : await entryCommandService.handleInput(text, {
                     source: 'mobile',
                     includeUserMessage: true,
                     remoteCommandId: command.id,
@@ -505,12 +525,11 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
                     };
                 }
 
-                const resolvedAttachments = await resolveCommandAttachments(command);
                 const agentAttachments = resolvedAttachments
                     .filter(att => Boolean(att.base64))
                     .map(att => ({ mimeType: att.mimeType, base64: att.base64 }));
                 const sendDisposition = await agentService.sendMessage(
-                    text,
+                    messageWithMedia,
                     agentAttachments.length > 0 ? agentAttachments : undefined,
                     command.targetAgentId,
                     {
