@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { resolveCommandAttachments } from '../rendererExecutionAdapter';
+import { formatRemoteMediaReferences, resolveCommandAttachments } from '../rendererExecutionAdapter';
 import { useStore } from '@/core/store';
 import type { RemoteCommandAttachment } from '@/services/agent/RemoteRelayService';
 
@@ -99,5 +99,14 @@ describe('Remote Media Attachment Bridge (ISSUE-1528)', () => {
         expect(resolvedAudio).toHaveLength(1);
         expect(resolvedAudio[0].mimeType).toBe('audio/mp4');
         expect(resolvedAudio[0].dataUrl).toBeUndefined();
+    });
+
+    it('passes an owned video Storage reference to agent text without claiming it was analyzed', () => {
+        const url = 'https://firebasestorage.googleapis.com/v0/b/indii.appspot.com/o/users%2Fuser-1%2Fassets%2Fclip.mp4?alt=media&token=sample';
+        const text = formatRemoteMediaReferences([{ url, mimeType: 'video/mp4', base64: '' }], 'user-1');
+        expect(text).toContain(url);
+        expect(text).toContain('not yet analyzed');
+        expect(() => formatRemoteMediaReferences([{ url, mimeType: 'video/mp4', base64: '' }], 'user-2'))
+            .toThrow(/not an owned Firebase Storage object/);
     });
 });

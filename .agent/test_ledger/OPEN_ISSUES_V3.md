@@ -5292,6 +5292,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   2. Recording a `capturedAudioBlob` renders the `"Send to Video Editor"` button and dispatches `assetType: 'audio'`.
   3. Sending a `video/mp4` attachment via `handleSendToBoardroom` delivers the video reference to `agentService.sendMessage` rather than stripping it.
 
+- **Progress (2026-10-24):** Current source no longer dispatches Boardroom captures through the relay; it uploads them, records an Encounter, and navigates to chat, so the old Boardroom relay-cleanup claim is historical. The editor path now removes uploads only when task creation is rejected; once a task is accepted, timeout cleanup would destroy media a still-running desktop may need. Audio exposes the Video Editor action, receipt/document Encounter types are retained, and owned Firebase Storage audio/video URLs are added to the agent request as unexamined references instead of silently disappearing. Focused structural tests pass; genuine mobile-to-desktop media acceptance and branch CI remain pending.
+
 ---
 
 ## Session 2026-10-16 (Round 2) — Jev-Assisted Codebase Bug Hunt (`jev-latest` / `jev-1.13.0`)
