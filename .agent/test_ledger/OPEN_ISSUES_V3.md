@@ -3593,6 +3593,7 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Impact:** Artists and assistive tech identify individual asset actions, dismiss controls, recover from filtered queries, and access prerequisites via actionable setup links.
 - **Fix:** Provided specific accessible names on gallery cards and drawer buttons, separated empty catalog from no search matches with clear action, and added interactive setup/upload triggers for empty likeness and brand compliance states.
 - **Acceptance:** Structural tests cover labels and prerequisite controls. Genuine keyboard/screen-reader navigation and owner setup acceptance remain unverified.
+- **Additional code progress (2026-10-23):** Merchandise Keyboard Shortcuts now exposes a named modal dialog and close control, traps/restores keyboard focus through the shared modal hook, and no longer spreads a React key through props. Founder Registration's seven prerequisite toggles now announce the specific prerequisite and pressed state. Focused semantic interaction tests pass; a genuine screen-reader pass and owner setup remain outstanding, so this issue stays PARTIAL.
 
 ### Investigation notes — not confirmed defects / not completed acceptance
 
