@@ -290,7 +290,7 @@ export async function evaluateCampaignAllocationWithJev(
 
         let creativeReadinessConfirmed = baseline.creativeReadinessConfirmed;
         if (isPlainObject(readinessRaw) && typeof readinessRaw['noul'] === 'number') {
-            creativeReadinessConfirmed = readinessRaw['noul'] >= 0.35;
+            creativeReadinessConfirmed = readinessRaw['noul'] >= 0.65;
         }
 
         const refinedSplitPercentages =

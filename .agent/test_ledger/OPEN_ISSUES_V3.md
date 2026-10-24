@@ -5209,6 +5209,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   2. After computing `allocations` from `refinedSplitPercentages` in `CampaignOrchestrator.executeDirective`, verify every active platform satisfies `allocations[platform] >= adapter.minBudgetCents` (clamping or falling back to `initialAllocations` if violated) and reconcile rounding remainders on the largest platform share so ` sum(allocations) === directive.totalBudgetCents`.
 - **Acceptance:** Unit tests verify 3-platform Jev-refined allocations always sum to ` exactly directive.totalBudgetCents`, never drop below `adapter.minBudgetCents`, and do not shift budget when `creative_readiness_noul < 0.65`.
 
+- **Progress (2026-10-24):** Source review found exact-cent allocation already uses floor plus remainder, so the 101% rounding claim above is historical. The remaining fix raises readiness confirmation to 0.65 and validates absolute per-platform cent minimums before reservation; a refined split below the minimum falls back to the original valid split. Focused tests cover 0.64 readiness, exact-cent totals, and a below-minimum refined split. Live JEV allocation remains blocked by ISSUE-1538's request-schema defects, and branch CI/deployed acceptance are pending.
+
 ---
 
 ### ISSUE-1540: `GoogleAdsAdapter` and `TikTokAdAdapter` corrupt budget/campaign resources on update and fail PMax provisioning
