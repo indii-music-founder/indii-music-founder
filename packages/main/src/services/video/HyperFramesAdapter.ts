@@ -33,6 +33,15 @@ const TIMEOUT_DEFAULT_MS = 15 * 60 * 1000;
 /** Writable HOME for the CLI (its cache dirs must not hit read-only volumes). */
 const CLI_HOME = process.env.HYPERFRAMES_HOME || '/tmp/hyperframes-home';
 
+/** Keep the CLI opt-out in the same isolated HOME used by packaged renders. */
+export const hyperFramesCliEnv = (baseEnv: NodeJS.ProcessEnv = process.env, home = CLI_HOME): NodeJS.ProcessEnv => ({
+    ...baseEnv,
+    ELECTRON_RUN_AS_NODE: '1',
+    HOME: home,
+    XDG_CACHE_HOME: `${home}/.cache`,
+    HYPERFRAMES_NO_TELEMETRY: '1',
+});
+
 interface InternalJob {
     renderId: string;
     projectId: string;
@@ -107,15 +116,9 @@ export class HyperFramesAdapter implements VideoRendererContract {
                 [entry, 'render', '--output', config.outputLocation],
                 {
                     cwd: projectDir,
-                    env: {
-                        ...process.env,
-                        // In a packaged app process.execPath is the Electron
-                        // binary. This makes that binary execute the vendored
-                        // CLI as Node instead of starting another GUI app.
-                        ELECTRON_RUN_AS_NODE: '1',
-                        HOME: CLI_HOME,
-                        XDG_CACHE_HOME: `${CLI_HOME}/.cache`,
-                    },
+                    // In a packaged app process.execPath is the Electron
+                    // binary. This makes it run the vendored CLI as Node.
+                    env: hyperFramesCliEnv(),
                     stdio: ['ignore', 'pipe', 'pipe'],
                 },
             );

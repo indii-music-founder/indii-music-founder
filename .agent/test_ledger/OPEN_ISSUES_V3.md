@@ -4775,6 +4775,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1519: HyperFrames telemetry opt-out is not proven across all isolated execution environments
 
 - **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **2026-10-24 progress:** The `codex/issue-1519-hyperframes-telemetry` branch passes `HYPERFRAMES_NO_TELEMETRY=1` into the adapter's isolated CLI process and the build, deploy, and weekly audit workflows. A focused probe runs the pinned CLI's own `telemetry status` inside an isolated HOME and verifies `disabled` with that environment source. This proves the local override path; network egress and packaged production rendering remain unverified.
 - **Recovered from:** Original audit ISSUE-1460; current ISSUE-1460 concerns unrelated UI work.
 - **October 12 recheck:** Weekly workflow disables telemetry, but deployment jobs and HyperFramesAdapter's separate CLI HOME/cache have no proven opt-out coverage. Passing renders or unrelated telemetry output do not prove HyperFrames egress or privacy.
 - **Severity:** MEDIUM
