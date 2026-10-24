@@ -11,6 +11,7 @@
  */
 
 import * as admin from 'firebase-admin';
+import { HttpsError } from 'firebase-functions/v2/https';
 import {
     type PlatformCampaignReceipt,
 } from '../../types/ad-execution.types';
@@ -97,6 +98,9 @@ export class FirestoreFinanceRecoupmentLedger implements IFinanceRecoupmentLedge
                     | FinanceRecoupmentLedgerEntry
                     | undefined;
                 if (existingData && existingData.status !== 'RELEASED') {
+                    if (existingData.artistId !== input.artistId || existingData.ledgerAccountId !== input.ledgerAccountId) {
+                        throw new HttpsError('permission-denied', 'Campaign reservation does not belong to this artist and ledger.');
+                    }
                     return existingData;
                 }
             }
@@ -108,6 +112,9 @@ export class FirestoreFinanceRecoupmentLedger implements IFinanceRecoupmentLedge
             }
 
             const ledgerData = ledgerSnap.data() ?? {};
+            if (typeof ledgerData.artistId !== 'string' || ledgerData.artistId !== input.artistId) {
+                throw new HttpsError('permission-denied', 'Recoupment ledger does not belong to the authenticated artist.');
+            }
             const availableCents =
                 typeof ledgerData.availableBalanceCents === 'number'
                     ? ledgerData.availableBalanceCents

@@ -42,7 +42,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22.x'
+          node-version: '24.x'
           cache: 'npm'
 
       - name: Cache node_modules
@@ -52,7 +52,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -119,7 +119,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22.x'
+          node-version: '24.x'
 
       - name: Restore node_modules cache
         uses: actions/cache@v4
@@ -127,7 +127,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Expose pinned FFmpeg tools
         shell: bash
@@ -170,7 +170,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22.x'
+          node-version: '24.x'
 
       - name: Setup Java for Firebase emulators
         uses: actions/setup-java@v5
@@ -184,7 +184,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Build shared package
         run: npx tsc -b packages/shared packages/video-compiler
@@ -215,7 +215,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22.x'
+          node-version: '24.x'
 
       - name: Restore node_modules cache
         uses: actions/cache@v4
@@ -223,7 +223,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       # Item 252: Security audit — non-blocking
       - name: Audit dependencies for vulnerabilities (Item 252)
@@ -364,7 +364,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22.x'
+          node-version: '24.x'
 
       - name: Restore node_modules cache
         uses: actions/cache@v4
@@ -372,7 +372,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -460,7 +460,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22.x'
+          node-version: '24.x'
 
       - name: Restore node_modules cache
         uses: actions/cache@v4
@@ -468,7 +468,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Cache Playwright browsers
         id: playwright-cache
@@ -522,7 +522,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '22.x'
+          node-version: '24.x'
 
       - name: Restore node_modules cache
         uses: actions/cache@v4
@@ -530,7 +530,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4

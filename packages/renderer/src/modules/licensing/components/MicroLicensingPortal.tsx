@@ -227,8 +227,9 @@ export function MicroLicensingPortal() {
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="col-span-2">
-                            <label className={labelClass}>Track Title *</label>
+                            <label htmlFor="lease-track-title" className={labelClass}>Track Title *</label>
                             <input
+                                id="lease-track-title"
                                 type="text"
                                 value={form.trackTitle}
                                 onChange={e => update('trackTitle', e.target.value)}
@@ -237,8 +238,9 @@ export function MicroLicensingPortal() {
                             />
                         </div>
                         <div>
-                            <label className={labelClass}>ISRC</label>
+                            <label htmlFor="lease-isrc" className={labelClass}>ISRC</label>
                             <input
+                                id="lease-isrc"
                                 type="text"
                                 value={form.isrc}
                                 onChange={e => update('isrc', e.target.value)}
@@ -247,10 +249,11 @@ export function MicroLicensingPortal() {
                             />
                         </div>
                         <div>
-                            <label className={labelClass}>Price (USD)</label>
+                            <label htmlFor="lease-price" className={labelClass}>Price (USD)</label>
                             <div className="relative">
                                 <DollarSign size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                                 <input
+                                    id="lease-price"
                                     type="number"
                                     min="0"
                                     step="0.01"
@@ -265,46 +268,50 @@ export function MicroLicensingPortal() {
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className={labelClass}>Licensor Legal Name *</label>
-                            <input value={form.licensorLegalName} onChange={e => update('licensorLegalName', e.target.value)} placeholder="Legal name granting rights" className={inputClass} />
+                            <label htmlFor="lease-licensor-name" className={labelClass}>Licensor Legal Name *</label>
+                            <input id="lease-licensor-name" value={form.licensorLegalName} onChange={e => update('licensorLegalName', e.target.value)} placeholder="Legal name granting rights" className={inputClass} />
                         </div>
                         <div>
-                            <label className={labelClass}>Licensee Legal Name *</label>
-                            <input value={form.licenseeLegalName} onChange={e => update('licenseeLegalName', e.target.value)} placeholder="Legal name receiving rights" className={inputClass} />
+                            <label htmlFor="lease-licensee-name" className={labelClass}>Licensee Legal Name *</label>
+                            <input id="lease-licensee-name" value={form.licenseeLegalName} onChange={e => update('licenseeLegalName', e.target.value)} placeholder="Legal name receiving rights" className={inputClass} />
                         </div>
                         <div>
-                            <label className={labelClass}>Master Owner *</label>
-                            <input value={form.masterOwner} onChange={e => update('masterOwner', e.target.value)} placeholder="Verified master owner" className={inputClass} />
+                            <label htmlFor="lease-master-owner" className={labelClass}>Master Owner *</label>
+                            <input id="lease-master-owner" value={form.masterOwner} onChange={e => update('masterOwner', e.target.value)} placeholder="Verified master owner" className={inputClass} />
                         </div>
                         <div>
-                            <label className={labelClass}>Composition Owner *</label>
-                            <input value={form.compositionOwner} onChange={e => update('compositionOwner', e.target.value)} placeholder="Verified composition owner" className={inputClass} />
+                            <label htmlFor="lease-composition-owner" className={labelClass}>Composition Owner *</label>
+                            <input id="lease-composition-owner" value={form.compositionOwner} onChange={e => update('compositionOwner', e.target.value)} placeholder="Verified composition owner" className={inputClass} />
                         </div>
                         <div>
-                            <label className={labelClass}>Licensor Publishing Share % *</label>
-                            <input type="number" min="0" max="100" step="0.01" value={form.producerPublishingShare} onChange={e => update('producerPublishingShare', e.target.value)} placeholder="No inferred split" className={inputClass} />
+                            <label htmlFor="lease-publishing-share" className={labelClass}>Licensor Publishing Share % *</label>
+                            <input id="lease-publishing-share" type="number" min="0" max="100" step="0.01" value={form.producerPublishingShare} onChange={e => update('producerPublishingShare', e.target.value)} placeholder="No inferred split" className={inputClass} />
                         </div>
                         <div>
-                            <label className={labelClass}>Governing Jurisdiction *</label>
-                            <input value={form.governingJurisdiction} onChange={e => update('governingJurisdiction', e.target.value)} placeholder="e.g. Michigan, USA" className={inputClass} />
+                            <label htmlFor="lease-jurisdiction" className={labelClass}>Governing Jurisdiction *</label>
+                            <input id="lease-jurisdiction" value={form.governingJurisdiction} onChange={e => update('governingJurisdiction', e.target.value)} placeholder="e.g. Michigan, USA" className={inputClass} />
                         </div>
                         <div className="col-span-2">
-                            <label className={labelClass}>Rights Evidence Reference *</label>
-                            <input value={form.rightsEvidenceReference} onChange={e => update('rightsEvidenceReference', e.target.value)} placeholder="Agreement, split sheet, registration, or source record" className={inputClass} />
+                            <label htmlFor="lease-rights-evidence" className={labelClass}>Rights Evidence Reference *</label>
+                            <input id="lease-rights-evidence" value={form.rightsEvidenceReference} onChange={e => update('rightsEvidenceReference', e.target.value)} placeholder="Agreement, split sheet, registration, or source record" className={inputClass} />
                         </div>
                     </div>
 
                     {/* Lease Type Toggle */}
                     <div>
-                        <label className={labelClass}>Lease Type</label>
-                        <div className="flex rounded-lg overflow-hidden border border-white/10">
+                        <span id="lease-type-label" className={labelClass}>Lease Type</span>
+                        <div role="group" aria-labelledby="lease-type-label" className="flex rounded-lg overflow-hidden border border-white/10">
                             <button
+                                type="button"
+                                aria-pressed={form.leaseType === 'non-exclusive'}
                                 onClick={() => update('leaseType', 'non-exclusive')}
                                 className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${form.leaseType === 'non-exclusive' ? 'bg-emerald-500 text-white' : 'bg-white/[0.02] text-gray-500 hover:text-gray-300'}`}
                             >
                                 Non-Exclusive
                             </button>
                             <button
+                                type="button"
+                                aria-pressed={form.leaseType === 'exclusive'}
                                 onClick={() => update('leaseType', 'exclusive')}
                                 className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${form.leaseType === 'exclusive' ? 'bg-amber-500 text-white' : 'bg-white/[0.02] text-gray-500 hover:text-gray-300'}`}
                             >
@@ -323,10 +330,11 @@ export function MicroLicensingPortal() {
                     {/* Territory & Term */}
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className={labelClass}>
+                            <label htmlFor="lease-territory" className={labelClass}>
                                 <Globe size={10} className="inline mr-1" />Territory
                             </label>
                             <select
+                                id="lease-territory"
                                 value={form.territory}
                                 onChange={e => update('territory', e.target.value)}
                                 className={inputClass}
@@ -341,10 +349,11 @@ export function MicroLicensingPortal() {
                             </select>
                         </div>
                         <div>
-                            <label className={labelClass}>
+                            <label htmlFor="lease-term" className={labelClass}>
                                 <Clock size={10} className="inline mr-1" />Term
                             </label>
                             <select
+                                id="lease-term"
                                 value={form.term}
                                 onChange={e => update('term', e.target.value as LeaseForm['term'])}
                                 className={inputClass}

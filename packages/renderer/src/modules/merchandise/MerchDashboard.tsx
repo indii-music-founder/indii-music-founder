@@ -253,7 +253,7 @@ function MerchWorkspaceCenter({
                         <div className={`mb-6 flex gap-4 ${isFocused ? 'flex-col items-start' : 'items-center justify-between'}`}>
                             <div>
                                 <h2 className={`${isFocused ? 'text-2xl' : 'text-3xl'} mb-1 font-bold text-white`}>Morning, {displayName?.split(' ')[0] || 'Chief'}</h2>
-                                <p className="text-neutral-400">Your merchandise empire is thriving.</p>
+                                <p className="text-neutral-400">{products.length > 0 ? 'Review your merchandise catalog and sales.' : 'Start building your merchandise catalog.'}</p>
                             </div>
                             <MerchButton onClick={onDesignClick} glow size="lg" className="rounded-full" data-testid="new-design-btn">
                                 <Plus size={18} /> New Design
@@ -273,7 +273,7 @@ function MerchWorkspaceCenter({
                                     <h3 className="mb-2 text-lg font-bold text-white" data-testid="trend-score-title">Trend Score</h3>
                                     <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-3xl' : 'text-4xl'} font-black text-[#FFE135]`}>{stats.trendScore}</span><span className="mb-1 text-sm text-neutral-400">/ 100</span></div>
                                     <div className="mb-2 h-2 w-full rounded-full bg-white/10"><div className="h-2 rounded-full bg-[#FFE135] transition-all duration-500" style={{ width: `${stats.trendScore}%` }} /></div>
-                                    <p className="text-xs text-neutral-500">{stats.trendScore > 80 ? 'Trending fresh. 2 new viral signals detected.' : stats.trendScore > 0 ? 'Design engagement is steady.' : 'No trend data available yet.'}</p>
+                                    <p className="text-xs text-neutral-500">{stats.trendScore > 80 ? 'Design engagement is high.' : stats.trendScore > 0 ? 'Design engagement is measured.' : 'No trend data available yet.'}</p>
                                 </div>
                             </MerchCard>
                             <MerchCard className={`${isFocused ? 'p-4' : 'p-6'} relative overflow-hidden`}>
@@ -282,7 +282,7 @@ function MerchWorkspaceCenter({
                                     <h3 className="mb-2 text-lg font-bold text-white" data-testid="production-performance-title">Production Velocity</h3>
                                     <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-3xl' : 'text-4xl'} font-black ${stats.productionVelocity >= 0 ? 'text-green-400' : 'text-red-400'}`}>{stats.productionVelocity > 0 ? `+${stats.productionVelocity}%` : `${stats.productionVelocity}%`}</span><span className="mb-1 text-sm text-neutral-400">vs last week</span></div>
                                     <div className="mb-2 flex h-2 gap-1"><div className="flex-1 overflow-hidden rounded-full bg-white/10"><div className={`h-full ${stats.productionVelocity >= 0 ? 'bg-green-500' : 'bg-red-500'} transition-all duration-500`} style={{ width: `${Math.min(Math.abs(stats.productionVelocity), 100)}%` }} /></div></div>
-                                    <p className="text-xs text-neutral-500">{stats.productionVelocity > 0 ? 'Efficiency up. Global logistics optimal.' : stats.productionVelocity < 0 ? 'Throughput decreased this week.' : 'Production pace is stable.'}</p>
+                                    <p className="text-xs text-neutral-500">{stats.productionVelocity > 0 ? 'Production pace increased this week.' : stats.productionVelocity < 0 ? 'Production pace decreased this week.' : 'No production pace change reported.'}</p>
                                 </div>
                             </MerchCard>
                         </div>
@@ -291,7 +291,7 @@ function MerchWorkspaceCenter({
                             <h3 className="mb-4 text-xl font-bold text-white">Top Performing Products</h3>
                             <div className={`grid gap-4 ${productGrid}`}>
                                 {topSellingProducts.length > 0 ? topSellingProducts.map(product => <TopSellingProductItem key={product.id} product={product} />) : (
-                                    <div className="col-span-full rounded-lg border border-dashed border-white/10 p-8 text-center"><p className="mb-4 text-neutral-500">No sales yet. Time to market!</p><MerchButton size="sm" variant="outline" onClick={onDesignClick}>Start Selling</MerchButton></div>
+                                    <div className="col-span-full rounded-lg border border-dashed border-white/10 p-8 text-center"><p className="mb-4 text-neutral-500">No product sales data available yet.</p><MerchButton size="sm" variant="outline" onClick={onDesignClick}>Create Design</MerchButton></div>
                                 )}
                             </div>
                         </div>
@@ -404,14 +404,14 @@ function TrendingProductsWidget({ topSellingProducts }: { topSellingProducts: Ar
 }
 
 function NewDesignsWidget({ products, onDesignClick }: { products: Array<{ id: string; title?: string; category?: string }>; onDesignClick: () => void }) {
-    const pending = products.filter(p => p.category === 'standard');
+    const standardProducts = products.filter(p => p.category === 'standard');
     return (
         <div className="rounded-xl bg-[#FFE135]/5 border border-[#FFE135]/10 p-3">
             <h3 className="text-[10px] font-bold text-[#FFE135] uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
-                <Sparkles size={10} /> New Designs
+                <Sparkles size={10} /> Catalog Designs
             </h3>
             <p className="text-[11px] text-neutral-400 px-1 mb-2">
-                {pending.length > 0 ? `${pending.length} designs awaiting review` : 'All designs approved'}
+                {standardProducts.length > 0 ? `${standardProducts.length} standard products in your catalog` : 'No standard products in your catalog yet'}
             </p>
             <button
                 onClick={onDesignClick}

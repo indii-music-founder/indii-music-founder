@@ -46,12 +46,16 @@ class FakeMediaRecorder {
     }
 }
 
-const { mockError, mockSuccess, mockDispatchTask, mockAddNote } = vi.hoisted(() => ({
+const { mockError, mockSuccess, mockDispatchTask, mockAddNote, mockUploadFile, mockDeleteFile } = vi.hoisted(() => ({
     mockError: vi.fn(),
     mockSuccess: vi.fn(),
     mockDispatchTask: vi.fn(),
     mockAddNote: vi.fn(),
+    mockUploadFile: vi.fn(),
+    mockDeleteFile: vi.fn(async () => undefined),
 }));
+
+vi.mock('@/services/firebase', () => ({ auth: { currentUser: { uid: 'user-1' } } }));
 
 vi.mock('@/core/store', () => ({
     useStore: { getState: () => ({ addNote: mockAddNote }) },
@@ -68,12 +72,14 @@ vi.mock('@/core/context/ToastContext', () => ({
 vi.mock('@/services/agent/RemoteRelayService', () => ({
     remoteRelayService: {
         dispatchTask: mockDispatchTask,
+        waitForDispatchConfirmation: vi.fn(async () => ({ status: 'completed' })),
     },
 }));
 
 vi.mock('@/services/StorageService', () => ({
     StorageService: {
-        uploadFile: vi.fn(),
+        uploadFile: mockUploadFile,
+        deleteFile: mockDeleteFile,
     },
 }));
 
@@ -385,6 +391,38 @@ describe('QuickCaptureView — voice memo MIME/validity guards (ISSUE-987)', () 
             expect(mockError).not.toHaveBeenCalled();
             expect(screen.getByText(/review before saving/i)).toBeInTheDocument();
             expect(screen.getByText(/captured voice memo/i)).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /open & edit in studio video editor/i })).toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('removes an editor upload when relay task creation fails', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(1_000);
+        mockUploadFile.mockResolvedValueOnce('https://firebasestorage.googleapis.com/v0/b/indii.appspot.com/o/users%2Fuser-1%2Feditor.m4a');
+        mockDispatchTask.mockRejectedValueOnce(new Error('Relay unavailable'));
+        try {
+            render(<QuickCaptureView isPaired={true} />);
+            await startRecording();
+            const recorder = FakeMediaRecorder.instances[0]!;
+            recorder.mimeType = 'audio/mp4';
+            recorder.emitData(new Blob(['audio-bytes'], { type: 'audio/mp4' }));
+            vi.setSystemTime(2_000);
+            await act(async () => {
+                fireEvent.click(screen.getByRole('button', { name: /stop recording/i }));
+                await Promise.resolve();
+                await Promise.resolve();
+            });
+            await act(async () => {
+                fireEvent.click(screen.getByRole('button', { name: /open & edit in studio video editor/i }));
+                await Promise.resolve();
+            });
+            expect(mockDispatchTask).toHaveBeenCalledWith(expect.objectContaining({
+                type: 'editor_import',
+                payload: expect.objectContaining({ mediaType: 'audio' }),
+            }));
+            expect(mockDeleteFile).toHaveBeenCalledWith(expect.stringMatching(/^users\/user-1\/assets\/editor_intake\/editor_audio_/));
         } finally {
             vi.useRealTimers();
         }

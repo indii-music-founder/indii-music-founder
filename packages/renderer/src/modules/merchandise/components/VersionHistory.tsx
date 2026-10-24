@@ -6,6 +6,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface DesignVersion {
     id: string;
@@ -29,6 +30,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     onRestoreVersion,
     currentDesignId
 }) => {
+    const dialogRef = useModalAccessibility(isOpen, onClose);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { userProfile, currentOrganizationId, currentProjectId } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
@@ -137,7 +139,13 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-4xl max-h-[85vh] bg-neutral-900 rounded-2xl border border-white/10 shadow-2xl flex overflow-hidden">
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="merch-version-history-title"
+                className="w-full max-w-4xl max-h-[85vh] bg-neutral-900 rounded-2xl border border-white/10 shadow-2xl flex overflow-hidden"
+            >
                 {/* Left Panel - Version List */}
                 <div className="w-80 border-r border-white/10 flex flex-col">
                     {/* Header */}
@@ -147,7 +155,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                 <History size={18} />
                             </div>
                             <div>
-                                <h2 className="text-sm font-bold text-white">Version History</h2>
+                                <h2 id="merch-version-history-title" className="text-sm font-bold text-white">Version History</h2>
                                 <p className="text-xs text-neutral-400">{versions.length} saved versions</p>
                             </div>
                         </div>
@@ -175,6 +183,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                         {/* Date Header */}
                                         <button
                                             onClick={() => toggleDateExpanded(dateKey)}
+                                            aria-expanded={expandedDates.has(dateKey)}
                                             className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-neutral-400 hover:text-white transition-colors"
                                         >
                                             <Calendar size={12} />
@@ -228,6 +237,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                         </div>
                         <button
                             onClick={onClose}
+                            aria-label="Close version history"
                             className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                         >
                             <X size={20} />

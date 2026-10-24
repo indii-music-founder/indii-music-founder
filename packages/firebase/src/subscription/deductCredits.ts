@@ -52,7 +52,11 @@ export const deductCredits = onCall({
 
   try {
     const result = await db.runTransaction(async (transaction) => {
-      const walletSnap = await transaction.get(walletRef);
+      // Firestore requires every transaction read before the first write.
+      const [walletSnap, legacySnap] = await Promise.all([
+        transaction.get(walletRef),
+        transaction.get(legacyCreditsRef),
+      ]);
       const walletData = walletSnap.exists ? walletSnap.data() : null;
       const currentBalance = typeof walletData?.balanceCredits === 'number'
         ? walletData.balanceCredits
@@ -106,7 +110,6 @@ export const deductCredits = onCall({
       }
 
       // Synchronize legacy user_credits if document exists
-      const legacySnap = await transaction.get(legacyCreditsRef);
       if (legacySnap.exists) {
         const legacyBal = legacySnap.data()?.balance || 0;
         transaction.update(legacyCreditsRef, {

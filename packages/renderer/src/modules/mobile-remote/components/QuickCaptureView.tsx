@@ -542,6 +542,8 @@ export default function QuickCaptureView({
 
         setIsDispatching(true);
         triggerHaptic([40, 80]);
+        let uploadedPath: string | null = null;
+        let dispatchAccepted = false;
 
         try {
             const { auth } = await import('@/services/firebase');
@@ -556,6 +558,7 @@ export default function QuickCaptureView({
             const path = `users/${userId}/assets/editor_intake/${filename}`;
 
             const downloadUrl = await StorageService.uploadFile(sourceFile, path);
+            uploadedPath = path;
 
             const taskId = await remoteRelayService.dispatchTask({
                 type: 'editor_import',
@@ -568,6 +571,7 @@ export default function QuickCaptureView({
                     title: `Field ${mediaKind === 'video' ? 'Footage' : mediaKind === 'image' ? 'Photo' : 'Audio Memo'}`,
                 },
             });
+            dispatchAccepted = true;
 
             const outcome = await waitForDispatchConfirmation(taskId);
             if (outcome.status === 'failed') {
@@ -579,6 +583,13 @@ export default function QuickCaptureView({
             clearCapture();
             triggerHaptic([50, 100, 50]);
         } catch (error) {
+            // A rejected dispatch has no desktop consumer. Once the relay
+            // accepts a task, preserve the blob even if confirmation times out.
+            if (uploadedPath && !dispatchAccepted) {
+                await StorageService.deleteFile(uploadedPath).catch((cleanupError) => {
+                    logger.warn('[QuickCapture] Could not remove unreferenced editor upload:', cleanupError);
+                });
+            }
             logger.error('[QuickCapture] Failed to open media in editor:', error);
             toast.error(error instanceof Error ? error.message : 'Failed to open in editor');
             triggerHaptic([100, 200, 100]);
@@ -602,7 +613,8 @@ export default function QuickCaptureView({
 
             const isVideo = !!capturedVideoBlob;
             const ext = (sourceFile as File).name?.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
-            const filename = `${isVideo ? 'video' : 'selfie'}_${Date.now()}.${ext}`;
+            const captureType = isVideo ? 'video' : capturedImageBlob?.type ?? 'photo';
+            const filename = `${captureType}_${Date.now()}.${ext}`;
             const path = `users/${userId}/assets/boardroom_attachments/${filename}`;
 
             const downloadUrl = await StorageService.uploadFile(sourceFile, path);
@@ -611,7 +623,7 @@ export default function QuickCaptureView({
             // Durable Encounter doc for cloud synchronization
             await EncounterService.createEncounter({
                 assets: [{
-                    type: isVideo ? 'video' : 'photo',
+                    type: captureType,
                     storagePath: uploadedPath || '',
                     downloadUrl: downloadUrl,
                     mimeType: (sourceFile as File).type || (isVideo ? 'video/mp4' : 'image/jpeg'),
@@ -889,7 +901,7 @@ export default function QuickCaptureView({
                             )}
 
                             {/* Direct Video Editor Pipeline Action for Media */}
-                            {(capturedVideoBlob || (capturedImageBlob && capturedImageBlob.type === 'photo')) && (
+                            {(capturedVideoBlob || capturedAudioBlob || (capturedImageBlob && capturedImageBlob.type === 'photo')) && (
                                 <button
                                     onClick={() => void handleSendToEditor('video')}
                                     disabled={isDispatching}

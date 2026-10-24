@@ -433,7 +433,7 @@ export class TikTokAdAdapter extends BaseAdPlatformAdapter {
 
     async dispatchConversionEvent(
         event: UnifiedAttributionEvent,
-    ): Promise<{ success: boolean; externalTraceId?: string }> {
+    ): Promise<{ success: boolean; externalTraceId?: string; errorMessage?: string }> {
         this.assertConfig();
         const valid = this.validateAttributionEvent(event);
 
@@ -495,8 +495,13 @@ export class TikTokAdAdapter extends BaseAdPlatformAdapter {
                 success: true,
                 externalTraceId: res.requestId,
             };
-        } catch {
-            return { success: false };
+        } catch (error) {
+            return {
+                success: false,
+                errorMessage: error instanceof AdPlatformAdapterError
+                    ? `TikTok Events API failed (${error.code}, HTTP ${error.details?.status ?? 'unknown'}).`
+                    : 'TikTok Events API request failed.',
+            };
         }
     }
 }

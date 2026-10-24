@@ -5,12 +5,16 @@ import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorS
 import {
     loadVideoProject,
     saveVideoProject,
+    type TimelineLoad,
     type WriteToken,
 } from '@/modules/creative/video/services/VideoProjectPersistenceService';
 import { logger } from '@/utils/logger';
 
 const AUTOSAVE_DEBOUNCE_MS = 5000;
 const AUTOSAVE_INTERVAL_MS = 30000;
+const LOAD_TIMEOUT_MS = 30000;
+
+class TimelineLoadTimeoutError extends Error {}
 
 /**
  * ISSUE-1147: keys the video editor's persisted document to the app's currently
@@ -137,7 +141,15 @@ export function useVideoProjectPersistence() {
         store.setProjectSaveError(null);
         store.setIsLoadingProject(true);
 
-        loadVideoProject(currentProjectId, user.uid)
+        let timeoutId: ReturnType<typeof setTimeout>;
+        const timeout = new Promise<TimelineLoad>((resolve) => {
+            timeoutId = setTimeout(() => resolve({
+                status: 'error',
+                error: new TimelineLoadTimeoutError('Timeline load timed out.'),
+            }), LOAD_TIMEOUT_MS);
+        });
+
+        Promise.race([loadVideoProject(currentProjectId, user.uid), timeout])
             .then(result => {
                 if (cancelled) return;
                 const s = useVideoEditorStore.getState();
@@ -145,9 +157,9 @@ export function useVideoProjectPersistence() {
                 if (result.status === 'error') {
                     // Do NOT reset the store. We do not know what is stored, so the
                     // only safe posture is read-only with a visible error.
-                    s.setProjectLoadError(
-                        'Could not load this project’s timeline. Your saved work has not been changed. Retry before editing.'
-                    );
+                    s.setProjectLoadError(result.error instanceof TimelineLoadTimeoutError
+                        ? 'Loading this project’s timeline timed out. Your saved work has not been changed. Retry before editing.'
+                        : 'Could not load this project’s timeline. Your saved work has not been changed. Retry before editing.');
                     s.setIsLoadingProject(false);
                     return;
                 }
@@ -173,7 +185,8 @@ export function useVideoProjectPersistence() {
                 const s = useVideoEditorStore.getState();
                 s.setProjectLoadError('Could not load this project’s timeline.');
                 s.setIsLoadingProject(false);
-            });
+            })
+            .finally(() => clearTimeout(timeoutId));
 
         return () => {
             cancelled = true;

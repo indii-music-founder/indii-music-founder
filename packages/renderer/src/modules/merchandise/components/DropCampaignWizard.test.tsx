@@ -36,6 +36,17 @@ describe('DropCampaignWizard', () => {
         });
     });
 
+    it('names its close control and explains the empty product prerequisite', () => {
+        const onClose = vi.fn();
+        render(<DropCampaignWizard isOpen onClose={onClose} products={[]} />);
+
+        expect(screen.getByRole('dialog', { name: 'Create limited drop draft' })).toBeInTheDocument();
+        expect(screen.getByText(/Product creation is not available in this workspace yet/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Next/i })).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: 'Close drop campaign wizard' }));
+        expect(onClose).toHaveBeenCalledOnce();
+    });
+
     it('persists a draft and never claims the drop is live or fans were notified', async () => {
         render(<DropCampaignWizard isOpen onClose={vi.fn()} products={products} />);
         await advanceToAudience();

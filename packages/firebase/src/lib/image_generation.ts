@@ -811,6 +811,18 @@ const service = new GeminiImageService();
 
 const MAX_LEGACY_EDIT_REQUEST_BYTES = 14 * 1024 * 1024;
 
+function assertLegacyGenerateRequestSize(data: GenerateImageRequest): void {
+    if (Buffer.byteLength(JSON.stringify(data), 'utf8') > MAX_LEGACY_EDIT_REQUEST_BYTES) {
+        throw new HttpsError('invalid-argument', `Image generation input exceeds the ${MAX_LEGACY_EDIT_REQUEST_BYTES} byte safety limit.`);
+    }
+}
+
+function estimateLegacyImageGenerationCost(data: GenerateImageRequest): number {
+    const proModel = data.model === 'pro';
+    const highResolution = data.imageSize === '4k' || data.imageSize === '2k';
+    return (proModel || highResolution ? 0.12 : 0.04) * (proModel ? 1 : (data.count ?? 1));
+}
+
 /**
  * Legacy edit payloads may carry an inline image for compatibility, but every
  * durable source URI must be an object in this project bucket and under the
@@ -865,7 +877,7 @@ export const generateImageV3Fn = () => onCall(
         concurrency: 1,
     },
     async (request) => {
-        await requireVerifiedCreativeAdmission(request, 'legacy-generate-image');
+        const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'legacy-generate-image');
 
         // 2. Validate Input
         const validation = GenerateImageRequestSchema.safeParse(request.data);
@@ -876,8 +888,35 @@ export const generateImageV3Fn = () => onCall(
             );
         }
 
-        // 3. Delegate to Service
-        return await service.generate(validation.data);
+        assertLegacyGenerateRequestSize(validation.data);
+        const reservation = await checkOperationBudget({
+            userId,
+            entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
+            operationType: 'image',
+            estimatedCost: estimateLegacyImageGenerationCost(validation.data),
+            operationId: `legacy-image-generate-${crypto.randomUUID()}`,
+            metadata: {
+                legacyCompatibility: true,
+                imageSize: validation.data.imageSize ?? '1k',
+                model: validation.data.model ?? 'fast',
+                count: validation.data.count ?? 1,
+            },
+        });
+        if (!reservation.allowed || !reservation.operationId) {
+            throw new HttpsError('resource-exhausted', 'Image generation is unavailable because the account budget or safety limit has been reached.');
+        }
+
+        // Once the provider call starts, settle the reservation even if it fails;
+        // requests rejected before provider execution never reserve capacity.
+        let result: GenerateResponse;
+        try {
+            result = await service.generate(validation.data);
+        } catch (error) {
+            await finalizeOperationReservation({ userId, operationId: reservation.operationId, outcome: 'SETTLED' });
+            throw error;
+        }
+        await finalizeOperationReservation({ userId, operationId: reservation.operationId, outcome: 'SETTLED' });
+        return result;
     });
 
 /**

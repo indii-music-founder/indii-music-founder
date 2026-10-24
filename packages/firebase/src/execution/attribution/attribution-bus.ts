@@ -187,6 +187,9 @@ export class AttributionBus {
                             ...(outcome.externalTraceId
                                 ? { externalTraceId: outcome.externalTraceId }
                                 : {}),
+                            ...(!outcome.success && outcome.errorMessage
+                                ? { errorMessage: outcome.errorMessage }
+                                : {}),
                         },
                     ];
                 } catch (err) {
@@ -218,7 +221,13 @@ export class AttributionBus {
             results,
         };
 
-        await this.dedupStore.markProcessed(valid.eventId, receipt);
+        // Only a fully delivered fan-out is terminal. A partial failure must
+        // remain retryable; adapters send the same eventId on each attempt so
+        // platform-side event deduplication can suppress successful replays.
+        const attempted = Object.values(results).filter((result) => result.attempted);
+        if (attempted.length > 0 && attempted.every((result) => result.success)) {
+            await this.dedupStore.markProcessed(valid.eventId, receipt);
+        }
         return receipt;
     }
 }
