@@ -207,6 +207,7 @@ export async function handleIngestUnifiedAttributionEvent(
     const dedupStore =
         deps?.dedupStore ??
         new FirestoreAttributionDeduplicationStore({
+            artistId: authenticatedUid,
             db: admin.firestore() as unknown as FirestoreLikeDb,
         });
 

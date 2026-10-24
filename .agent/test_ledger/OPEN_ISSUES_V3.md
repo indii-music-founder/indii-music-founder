@@ -5160,6 +5160,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   2. Namespace attribution deduplication receipts by tenant (`marketingAttributionReceipts/{artistId}_{eventId}` or subcollection `users/{artistId}/marketingAttributionReceipts/{eventId}`) and validate `artistId` ownership before marking processed.
 - **Acceptance:** Unit and security tests prove that passing a `ledgerAccountId` owned by `artist-B` when authenticated as `artist-A` rejects with `permission-denied` and leaves `artist-B`'s balance untouched, and identical `eventId` values across two different `artistId`s do not collide.
 
+- **Progress (2026-10-24):** Reservation now checks ledger `artistId` in the same transaction before spending and rejects a mismatched existing reservation. Firestore attribution receipts are scoped under the authenticated artist's user path, so identical event IDs in different tenants do not collide. Focused tests cover unchanged cross-tenant balance and independent event receipts. Ledgers without an authoritative `artistId` now fail closed; inventory/backfill and genuine deployed acceptance remain outstanding.
+
 ---
 
 ### ISSUE-1538: Systemic HTTP 422 schema violations and 1-indexed Score misparsing across 45+ TypeSafe System One (`jev-latest`) judgment call sites

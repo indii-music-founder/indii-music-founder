@@ -551,31 +551,32 @@ describe('FirestoreAttributionDeduplicationStore', () => {
     } {
         const store = new Map<string, Record<string, unknown>>();
         const db: FirestoreLikeDb = {
-            collection() {
+            collection(collectionPath: string) {
                 return {
                     doc(docId: string) {
+                        const key = `${collectionPath}/${docId}`;
                         return {
                             async get() {
-                                const existing = store.get(docId);
+                                const existing = store.get(key);
                                 return {
                                     exists: existing !== undefined,
                                     data: () => existing,
                                 };
                             },
                             async set(data: Record<string, unknown>, options?: { merge?: boolean }) {
-                                if (options?.merge && store.has(docId)) {
-                                    store.set(docId, { ...store.get(docId), ...data });
+                                if (options?.merge && store.has(key)) {
+                                    store.set(key, { ...store.get(key), ...data });
                                 } else {
-                                    store.set(docId, { ...data });
+                                    store.set(key, { ...data });
                                 }
                             },
                             async create(data: Record<string, unknown>) {
-                                if (store.has(docId)) {
+                                if (store.has(key)) {
                                     const err = new Error('Document already exists') as Error & { code?: number };
                                     err.code = 6; // gRPC ALREADY_EXISTS
                                     throw err;
                                 }
-                                store.set(docId, { ...data });
+                                store.set(key, { ...data });
                             },
                         };
                     },
@@ -587,8 +588,9 @@ describe('FirestoreAttributionDeduplicationStore', () => {
 
     it('persists processed eventIds in Firestore and prevents duplicate AttributionBus replay across instances', async () => {
         const { db, store } = createMockDb();
-        const dedupStoreA = new FirestoreAttributionDeduplicationStore({ db });
-        const dedupStoreB = new FirestoreAttributionDeduplicationStore({ db });
+        const dedupStoreA = new FirestoreAttributionDeduplicationStore({ db, artistId: 'artist_detroit_01' });
+        const dedupStoreB = new FirestoreAttributionDeduplicationStore({ db, artistId: 'artist_detroit_01' });
+        const otherArtistStore = new FirestoreAttributionDeduplicationStore({ db, artistId: 'artist_detroit_02' });
 
         const metaAdapter = new MetaAdAdapter(
             {
@@ -624,12 +626,16 @@ describe('FirestoreAttributionDeduplicationStore', () => {
         const firstDispatch = await busInstance1.dispatch(event);
         expect(firstDispatch.deduplicated).toBe(false);
         expect(firstDispatch.results['META']?.success).toBe(true);
-        expect(store.has('evt_fs_durable_01')).toBe(true);
+        expect(store.has('users/artist_detroit_01/marketingAttributionReceipts/evt_fs_durable_01')).toBe(true);
 
         // Second dispatch on a separate AttributionBus instance backed by the same Firestore collection
         const secondDispatch = await busInstance2.dispatch(event);
         expect(secondDispatch.deduplicated).toBe(true);
         expect(secondDispatch.results['META']?.skippedReason).toBe('DUPLICATE_EVENT');
+        expect(await otherArtistStore.hasProcessed(event.eventId)).toBe(false);
+        const otherArtistReceipt = await new AttributionBus([metaAdapter], otherArtistStore).dispatch(event);
+        expect(otherArtistReceipt.deduplicated).toBe(false);
+        expect(store.has('users/artist_detroit_02/marketingAttributionReceipts/evt_fs_durable_01')).toBe(true);
     });
 });
 
@@ -641,7 +647,7 @@ describe('FirestoreFinanceRecoupmentLedger', () => {
     } {
         const accounts = new Map<string, Record<string, unknown>>();
         for (const [id, balance] of Object.entries(initialBalances)) {
-            accounts.set(id, { availableBalanceCents: balance });
+            accounts.set(id, { artistId: 'artist_detroit_01', availableBalanceCents: balance });
         }
         const reservations = new Map<string, Record<string, unknown>>();
 
@@ -741,6 +747,24 @@ describe('FirestoreFinanceRecoupmentLedger', () => {
         await ledger.releaseCampaignBudget(secondEntry.reservationId, 'Simulated adapter outage');
         expect(accounts.get('ledger_fs_01')?.availableBalanceCents).toBe(120_000);
         expect(reservations.get(secondEntry.reservationId)?.status).toBe('RELEASED');
+    });
+
+    it('rejects another artist\'s recoupment ledger before changing its balance', async () => {
+        const { db, accounts, reservations } = createMockRecoupmentFirestore({ ledger_b: 100_000 });
+        accounts.get('ledger_b')!.artistId = 'artist_B';
+        const ledger = new FirestoreFinanceRecoupmentLedger({ db });
+
+        await expect(ledger.reserveCampaignBudget({
+            ledgerAccountId: 'ledger_b',
+            directiveId: 'dir_artist_a',
+            artistId: 'artist_A',
+            releaseId: 'rel_artist_a',
+            isrc: 'US-S1Z-26-00412',
+            amountCents: 50_000,
+            currency: 'USD',
+        })).rejects.toMatchObject({ code: 'permission-denied' });
+        expect(accounts.get('ledger_b')?.availableBalanceCents).toBe(100_000);
+        expect(reservations.size).toBe(0);
     });
 });
 
@@ -900,7 +924,7 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
     it('executes handleExecuteUnifiedCampaignDirective and handleIngestUnifiedAttributionEvent end-to-end', async () => {
         const persistedResults: unknown[] = [];
         const accounts = new Map<string, Record<string, unknown>>([
-            ['ledger_recoup_01', { availableBalanceCents: 200_000 }],
+            ['ledger_recoup_01', { artistId: 'artist_detroit_01', availableBalanceCents: 200_000 }],
         ]);
         const reservations = new Map<string, Record<string, unknown>>();
 
@@ -1008,7 +1032,7 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
             },
             {
                 adapters: [metaAdapter],
-                dedupStore: new FirestoreAttributionDeduplicationStore({ db: dedupDb }),
+                dedupStore: new FirestoreAttributionDeduplicationStore({ db: dedupDb, artistId: 'artist_detroit_01' }),
             },
         );
 
