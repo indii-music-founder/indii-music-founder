@@ -26,12 +26,13 @@ export interface SkillCandidate {
 
 export const SKILL_INTENT_NONE = 'none';
 
-function skillIntentQuestion(candidateCount: number) {
+function skillIntentQuestion(candidates: SkillCandidate[]) {
     return {
         type: 'choice' as const,
         instructions:
             'A music-business agent received the user query below. Pick the ONE bundled playbook that best ' +
-            `serves the query's actual intent from the ${candidateCount} candidate ids. If none plausibly serves it, pick 'none'.`,
+            `serves the query's actual intent from the ${candidates.length} candidate ids. If none plausibly serves it, pick 'none'.`,
+        criteria: { ...Object.fromEntries(candidates.map(c => [c.id, c.name])), [SKILL_INTENT_NONE]: 'No skill applies' },
     };
 }
 
@@ -59,10 +60,7 @@ export async function judgeSkillIntent(
                 candidates: candidates.map(c => ({ id: c.id, name: c.name, description: c.description.slice(0, 160) })),
             },
             questions: {
-                skill: {
-                    ...skillIntentQuestion(candidates.length),
-                    options: { ...Object.fromEntries(candidates.map(c => [c.id, c.name])), [SKILL_INTENT_NONE]: 'No skill applies' },
-                },
+                skill: skillIntentQuestion(candidates),
             },
         });
 
@@ -186,6 +184,14 @@ export function __resetJudgmentCooldownForTests(): void {
 }
 export function typesafeJudgmentsEnabled(): boolean {
     return featureFlags.isEnabled(FEATURE_FLAG_NAMES.TYPESAFE_JUDGMENTS);
+}
+
+/** TypeSafe Score returns zero-based weighted levels; these consumers expose a 1–5 scale. */
+function oneIndexedScore(answer: unknown, fallback: number): number {
+    const raw = typeof answer === 'number' ? answer : (answer as { score?: unknown } | null)?.score;
+    return typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 && raw <= 4
+        ? raw + 1
+        : fallback;
 }
 
 // ---------------------------------------------------------------------------
@@ -391,17 +397,17 @@ const MEMORY_IMPORTANCE_QUESTIONS = {
     actionability: {
         type: 'score' as const,
         instructions: 'How actionable is this information — does it demand or enable a concrete next step?',
-        levels: IMPORTANCE_LEVELS,
+        criteria: IMPORTANCE_LEVELS,
     },
     business_criticality: {
         type: 'score' as const,
         instructions: 'How business-critical is this information for an independent artist\'s career (money, rights, deadlines, relationships)?',
-        levels: IMPORTANCE_LEVELS,
+        criteria: IMPORTANCE_LEVELS,
     },
     permanence: {
         type: 'score' as const,
         instructions: 'How permanent is this information — will it still matter weeks from now, or is it ephemeral?',
-        levels: IMPORTANCE_LEVELS,
+        criteria: IMPORTANCE_LEVELS,
     },
 };
 
@@ -1143,7 +1149,7 @@ export const STREAM_DSP_PENALTY_HAZARD_QUESTION = {
 export const STREAM_ANOMALY_SEVERITY_QUESTION = {
     type: 'score' as const,
     instructions: 'Score the financial and business severity of this anomaly for the artist career.',
-    levels: [
+    criteria: [
         'Informational — benign organic growth or minor reporting delay',
         'Low — noteworthy promotional surge; monitor playlist retention',
         'Medium — significant variance or potential distributor fee deduction requiring audit',
@@ -1378,7 +1384,7 @@ export const COPYRIGHT_RISK_QUESTIONS = {
     documentation_provenance: {
         type: 'score' as const,
         instructions: 'Score the completeness and authenticity of the track credits and rights ownership documentation.',
-        levels: [
+        criteria: [
             'Suspicious / Zero documentation — blank credits, disposable anonymous account',
             'Incomplete — basic track title but missing songwriter or contributor declarations',
             'Sufficient — verified artist profile with clear songwriting / production credits',
@@ -1873,6 +1879,7 @@ export const VIDEO_AESTHETIC_SCORE_QUESTION = {
     instructions:
         'Score the visual and cinematic quality of this clip based on the director critique. ' +
         '0 = unusable/glitched, 1 = low quality/flawed, 2 = solid/acceptable, 3 = broadcast/cinematic masterpiece.',
+    criteria: ['Unusable or glitched.', 'Low quality with visible flaws.', 'Solid and acceptable.', 'Broadcast-quality cinematic work.'],
 };
 
 export const VIDEO_DEFECT_CHOICE_QUESTION = {
@@ -2083,6 +2090,7 @@ export const SPLIT_RISK_SCORE_QUESTION = {
     instructions:
         'Score the legal and financial dispute risk of this split sheet. ' +
         '0 = crystal clear industry-standard splits, 1 = minor ambiguity, 2 = missing roles or unverified shares, 3 = severe dispute hazard.',
+    criteria: ['Clear industry-standard splits.', 'Minor ambiguity.', 'Missing roles or unverified shares.', 'Severe dispute hazard.'],
 };
 
 export async function judgeSplitSheetVerification(
@@ -2174,6 +2182,7 @@ export const CAMPAIGN_CONFIDENCE_SCORE_QUESTION = {
     type: 'score' as const,
     instructions:
         'Score the statistical confidence of this campaign adjustment decision (0 = low data/uncertain, 3 = statistically decisive).',
+    criteria: ['Insufficient data or uncertain.', 'Early directional evidence.', 'Strong evidence with adequate sample.', 'Statistically decisive evidence.'],
 };
 
 export async function judgeCampaignBidAction(
@@ -2791,6 +2800,7 @@ export async function judgeVisualQualityInspection(
                     instructions:
                         'Rate the overall artistic and production quality of this visual on a 4-level scale. ' +
                         '0 = broken/unusable, 1 = rough amateurish, 2 = standard commercial release quality, 3 = exceptional major-label editorial polish.',
+                    criteria: ['Broken or unusable.', 'Rough amateur quality.', 'Commercial release quality.', 'Exceptional editorial polish.'],
                 },
                 recommendation: {
                     type: 'choice' as const,
@@ -2893,6 +2903,7 @@ export async function judgeSoftBrandAestheticAlignment(
                     instructions:
                         `Rate how authentically this creative matches the artist's brand aesthetic and vibe ("${input.brandVibe || 'Authentic Indie'}"). ` +
                         '0 = jarring mismatch/off-brand, 1 = neutral/generic, 2 = well-aligned with artist identity, 3 = signature brand aesthetic embodiment.',
+                    criteria: ['Jarring off-brand mismatch.', 'Neutral or generic.', 'Well aligned with artist identity.', 'Signature brand aesthetic.'],
                 },
             },
         });
@@ -3122,6 +3133,7 @@ export async function judgeStatementAnomalyTriage(
                     instructions:
                         'Score the platform/distributor takedown or strike risk on a 0 to 3 scale: ' +
                         '0 = safe/organic, 1 = minor clawback, 2 = elevated warning, 3 = severe takedown hazard.',
+                    criteria: ['Safe organic activity.', 'Minor clawback risk.', 'Elevated warning risk.', 'Severe takedown hazard.'],
                 },
                 action: {
                     type: 'choice' as const,
@@ -3516,13 +3528,13 @@ export async function judgeSessionChunkTriage(
                 hook_energy: {
                     type: 'score' as const,
                     instructions: 'Rate the visual and performance intensity of this clip from 1 (flat/static) to 5 (peak charisma/energy).',
-                    levels: {
-                        1: 'Static, flat, unengaging or unusable.',
-                        2: 'Low energy background action.',
-                        3: 'Standard engaging performance or clean b-roll.',
-                        4: 'High energy, dynamic movement or intense vocal delivery.',
-                        5: 'Peak emotional or visual climax suitable for chorus drops.',
-                    },
+                    criteria: [
+                        'Static, flat, unengaging or unusable.',
+                        'Low energy background action.',
+                        'Standard engaging performance or clean b-roll.',
+                        'High energy, dynamic movement or intense vocal delivery.',
+                        'Peak emotional or visual climax suitable for chorus drops.',
+                    ],
                 },
             },
         });
@@ -3536,9 +3548,7 @@ export async function judgeSessionChunkTriage(
         const resolvedUsableNoul = typeof usableAns === 'number'
             ? usableAns
             : Number((usableAns as { noul?: unknown })?.noul ?? (fallbackUsable ? 0.8 : 0.2));
-        const resolvedHook = typeof hookAns === 'number'
-            ? hookAns
-            : Number((hookAns as { score?: unknown })?.score ?? fallbackHook);
+        const resolvedHook = oneIndexedScore(hookAns, fallbackHook);
 
         return {
             action: resolvedAction,
@@ -3798,13 +3808,13 @@ export async function judgeLyricVisualPromptSynthesis(
                 density: {
                     type: 'score' as const,
                     instructions: 'Rate the visual density for this visual setup from 1 (sparse negative space) to 5 (elaborate maximalist set).',
-                    levels: {
-                        1: 'Sparse negative space, single isolated element.',
-                        2: 'Clean minimalist composition.',
-                        3: 'Balanced narrative framing.',
-                        4: 'Rich atmospheric detail with layered depth.',
-                        5: 'Intricate maximalist set design with high element complexity.',
-                    },
+                    criteria: [
+                        'Sparse negative space, single isolated element.',
+                        'Clean minimalist composition.',
+                        'Balanced narrative framing.',
+                        'Rich atmospheric detail with layered depth.',
+                        'Intricate maximalist set design with high element complexity.',
+                    ],
                 },
             },
         });
@@ -3818,9 +3828,7 @@ export async function judgeLyricVisualPromptSynthesis(
         const clicheProb = typeof clicheAns === 'number'
             ? clicheAns
             : Number((clicheAns as { noul?: unknown })?.noul ?? (fallbackAvoidCliche ? 0.75 : 0.25));
-        const resolvedDensity = typeof densAns === 'number'
-            ? densAns
-            : Number((densAns as { score?: unknown })?.score ?? fallbackDensity);
+        const resolvedDensity = oneIndexedScore(densAns, fallbackDensity);
 
         return {
             category: resolvedCat,
@@ -3931,13 +3939,13 @@ export async function judgeAudioStemSeparationPriority(
                 phase_risk: {
                     type: 'score' as const,
                     instructions: 'Rate the phase cancellation risk when summed with the canonical studio master from 1 (zero risk) to 5 (destructive phase comb-filtering).',
-                    levels: {
-                        1: 'No audible phase interaction (muted or uncorrelated).',
-                        2: 'Minor comb filtering masked by master track.',
-                        3: 'Audible hollow coloration requiring phase inversion.',
-                        4: 'Severe low-end cancellation and vocal smearing.',
-                        5: 'Destructive phase cancellation making audio unlistenable.',
-                    },
+                    criteria: [
+                        'No audible phase interaction (muted or uncorrelated).',
+                        'Minor comb filtering masked by master track.',
+                        'Audible hollow coloration requiring phase inversion.',
+                        'Severe low-end cancellation and vocal smearing.',
+                        'Destructive phase cancellation making audio unlistenable.',
+                    ],
                 },
             },
         });
@@ -3951,9 +3959,7 @@ export async function judgeAudioStemSeparationPriority(
         const salvProb = typeof salvAns === 'number'
             ? salvAns
             : Number((salvAns as { noul?: unknown })?.noul ?? (fallbackSalvageable ? 0.8 : 0.2));
-        const resolvedPhase = typeof phaseAns === 'number'
-            ? phaseAns
-            : Number((phaseAns as { score?: unknown })?.score ?? fallbackPhaseRisk);
+        const resolvedPhase = oneIndexedScore(phaseAns, fallbackPhaseRisk);
 
         return {
             recipe: resolvedRecipe,
@@ -4107,13 +4113,13 @@ export async function judgeMusicVideoContinuity(
                 flow_score: {
                     type: 'score' as const,
                     instructions: 'Rate the visual editing flow from 1 (disjointed/stuttery) to 5 (cinematic masterpiece rhythm).',
-                    levels: {
-                        1: 'Disjointed and visually jarring.',
-                        2: 'Awkward cut timing or monotonous angles.',
-                        3: 'Standard acceptable music video edit.',
-                        4: 'Dynamic, engaging variety and rhythmic cuts.',
-                        5: 'Flawless pacing, peak emotional climax alignment.',
-                    },
+                    criteria: [
+                        'Disjointed and visually jarring.',
+                        'Awkward cut timing or monotonous angles.',
+                        'Standard acceptable music video edit.',
+                        'Dynamic, engaging variety and rhythmic cuts.',
+                        'Flawless pacing, peak emotional climax alignment.',
+                    ],
                 },
             },
         });
@@ -4127,9 +4133,7 @@ export async function judgeMusicVideoContinuity(
         const resolvedCov = typeof covAns === 'number'
             ? covAns
             : Number((covAns as { noul?: unknown })?.noul ?? (fallbackCoverage ? 0.8 : 0.2));
-        const resolvedScore = typeof flowAns === 'number'
-            ? flowAns
-            : Number((flowAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedScore = oneIndexedScore(flowAns, fallbackScore);
 
         return {
             status: resolvedStatus,
@@ -4246,13 +4250,13 @@ export async function judgeSocialAudioSnippetSelection(
                 viral_potential: {
                     type: 'score' as const,
                     instructions: 'Rate the viral social media engagement potential of this hook from 1 (unsuitable) to 5 (explosive trend potential).',
-                    levels: {
-                        1: 'Low energy or confusing context.',
-                        2: 'Standard song excerpt with low standalone impact.',
-                        3: 'Good melodic hook suitable for fan clips.',
-                        4: 'High replay value and strong emotional resonance.',
-                        5: 'Irresistible earworm or punchline hook primed for viral dance/lip-sync trends.',
-                    },
+                    criteria: [
+                        'Low energy or confusing context.',
+                        'Standard song excerpt with low standalone impact.',
+                        'Good melodic hook suitable for fan clips.',
+                        'High replay value and strong emotional resonance.',
+                        'Irresistible earworm or punchline hook primed for viral dance/lip-sync trends.',
+                    ],
                 },
             },
         });
@@ -4270,9 +4274,7 @@ export async function judgeSocialAudioSnippetSelection(
         const vocProb = typeof vocAns === 'number'
             ? vocAns
             : Number((vocAns as { noul?: unknown })?.noul ?? (fallbackImmediateVocal ? 0.8 : 0.2));
-        const resolvedScore = typeof virAns === 'number'
-            ? virAns
-            : Number((virAns as { score?: unknown })?.score ?? fallbackPotential);
+        const resolvedScore = oneIndexedScore(virAns, fallbackPotential);
 
         return {
             recommendedSection: resolvedSec,
@@ -4392,13 +4394,13 @@ export async function judgeMerchPrintViability(
                 contrast: {
                     type: 'score' as const,
                     instructions: 'Rate the visual contrast between the artwork and the fabric background from 1 (unreadable) to 5 (punchy high contrast).',
-                    levels: {
-                        1: 'Near invisible, dark on dark or light on light.',
-                        2: 'Low contrast, hard to read from 3 feet away.',
-                        3: 'Acceptable commercial contrast.',
-                        4: 'Strong, clear contrast with high visual pop.',
-                        5: 'Maximum stark contrast with exceptional legibility.',
-                    },
+                    criteria: [
+                        'Near invisible, dark on dark or light on light.',
+                        'Low contrast, hard to read from 3 feet away.',
+                        'Acceptable commercial contrast.',
+                        'Strong, clear contrast with high visual pop.',
+                        'Maximum stark contrast with exceptional legibility.',
+                    ],
                 },
             },
         });
@@ -4412,9 +4414,7 @@ export async function judgeMerchPrintViability(
         const safeProb = typeof safeAns === 'number'
             ? safeAns
             : Number((safeAns as { noul?: unknown })?.noul ?? (fallbackSafe ? 0.9 : 0.1));
-        const resolvedContrast = typeof contAns === 'number'
-            ? contAns
-            : Number((contAns as { score?: unknown })?.score ?? fallbackContrast);
+        const resolvedContrast = oneIndexedScore(contAns, fallbackContrast);
 
         const isSafe = safeProb >= 0.5 && resolvedContrast >= 2;
 
@@ -4528,13 +4528,13 @@ export async function judgeFanCommentModeration(
                 vibe: {
                     type: 'score' as const,
                     instructions: 'Rate the cultural contribution of this comment from 1 (toxic/spam) to 5 (deep artistic appreciation).',
-                    levels: {
-                        1: 'Spam, bot comment, or toxic trolling.',
-                        2: 'Low-effort generic noise.',
-                        3: 'Standard friendly reaction or emoji.',
-                        4: 'Warm supportive fan interaction.',
-                        5: 'Inspiring, deep cultural engagement celebrating the art.',
-                    },
+                    criteria: [
+                        'Spam, bot comment, or toxic trolling.',
+                        'Low-effort generic noise.',
+                        'Standard friendly reaction or emoji.',
+                        'Warm supportive fan interaction.',
+                        'Inspiring, deep cultural engagement celebrating the art.',
+                    ],
                 },
             },
         });
@@ -4548,9 +4548,7 @@ export async function judgeFanCommentModeration(
         const appProb = typeof appAns === 'number'
             ? appAns
             : Number((appAns as { noul?: unknown })?.noul ?? (fallbackApproved ? 0.9 : 0.1));
-        const resolvedVibe = typeof vibAns === 'number'
-            ? vibAns
-            : Number((vibAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedVibe = oneIndexedScore(vibAns, fallbackScore);
 
         const isApproved = appProb >= 0.5 && resolvedIntent !== 'SPAM_PROMOTION' && resolvedIntent !== 'HARASSMENT_TOXIC';
 
@@ -4672,13 +4670,13 @@ export async function judgeSyncLicensingMoodFit(
                 fit_score: {
                     type: 'score' as const,
                     instructions: 'Rate the creative alignment between this song and the supervisor scene brief from 1 (unrelated) to 5 (perfect synchronization lock).',
-                    levels: {
-                        1: 'Clashing mood or tempo.',
-                        2: 'Plausible background filler with low emotional synergy.',
-                        3: 'Solid placement matching tempo and genre expectations.',
-                        4: 'Strong thematic resonance that elevates the scene.',
-                        5: 'Spot-on cultural match that feels scored directly to the picture.',
-                    },
+                    criteria: [
+                        'Clashing mood or tempo.',
+                        'Plausible background filler with low emotional synergy.',
+                        'Solid placement matching tempo and genre expectations.',
+                        'Strong thematic resonance that elevates the scene.',
+                        'Spot-on cultural match that feels scored directly to the picture.',
+                    ],
                 },
             },
         });
@@ -4692,9 +4690,7 @@ export async function judgeSyncLicensingMoodFit(
         const hazProb = typeof hazAns === 'number'
             ? hazAns
             : Number((hazAns as { noul?: unknown })?.noul ?? (input.hasExplicitLyrics ? 0.9 : 0.1));
-        const resolvedFit = typeof fitAns === 'number'
-            ? fitAns
-            : Number((fitAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedFit = oneIndexedScore(fitAns, fallbackScore);
 
         return {
             recommendedScene: resolvedScene,
@@ -4826,13 +4822,13 @@ export async function judgeCameraAngleContinuity(
                 diversity_score: {
                     type: 'score' as const,
                     instructions: 'Rate the cinematic composition diversity and angle progression from 1 (flat/monotonous) to 5 (masterful dynamic variety).',
-                    levels: {
-                        1: 'Monotonous single-angle stagnation.',
-                        2: 'Predictable cuts with repetitive angle usage.',
-                        3: 'Standard competent multi-camera coverage.',
-                        4: 'Dynamic, engaging variation that elevates pacing.',
-                        5: 'Masterful cinematic rhythm with purposeful psychological angle shifts.',
-                    },
+                    criteria: [
+                        'Monotonous single-angle stagnation.',
+                        'Predictable cuts with repetitive angle usage.',
+                        'Standard competent multi-camera coverage.',
+                        'Dynamic, engaging variation that elevates pacing.',
+                        'Masterful cinematic rhythm with purposeful psychological angle shifts.',
+                    ],
                 },
             },
         });
@@ -4846,9 +4842,7 @@ export async function judgeCameraAngleContinuity(
         const jumpProb = typeof jumpAns === 'number'
             ? jumpAns
             : Number((jumpAns as { noul?: unknown })?.noul ?? (hasJumpAngleViolation ? 0.85 : 0.15));
-        const resolvedDiversity = typeof divAns === 'number'
-            ? divAns
-            : Number((divAns as { score?: unknown })?.score ?? fallbackDiversityScore);
+        const resolvedDiversity = oneIndexedScore(divAns, fallbackDiversityScore);
 
         return {
             recommendedNextAngle: resolvedAngle,
@@ -4969,13 +4963,13 @@ export async function judgeVideoColorGradeMood(
                 synergy_score: {
                     type: 'score' as const,
                     instructions: 'Score the aesthetic synergy between the music track and the chosen color palette from 1 (severe mismatch) to 5 (audiovisual perfection).',
-                    levels: {
-                        1: 'Jarring emotional dissonance.',
-                        2: 'Generic or slightly mismatched tone.',
-                        3: 'Standard fitting genre palette.',
-                        4: 'Compelling evocative mood alignment.',
-                        5: 'Profound audiovisual lock that elevates listener emotional immersion.',
-                    },
+                    criteria: [
+                        'Jarring emotional dissonance.',
+                        'Generic or slightly mismatched tone.',
+                        'Standard fitting genre palette.',
+                        'Compelling evocative mood alignment.',
+                        'Profound audiovisual lock that elevates listener emotional immersion.',
+                    ],
                 },
             },
         });
@@ -4989,9 +4983,7 @@ export async function judgeVideoColorGradeMood(
         const clashProb = typeof claAns === 'number'
             ? claAns
             : Number((claAns as { noul?: unknown })?.noul ?? (clashingHazard ? 0.75 : 0.1));
-        const resolvedSynergy = typeof synAns === 'number'
-            ? synAns
-            : Number((synAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedSynergy = oneIndexedScore(synAns, fallbackScore);
 
         return {
             recommendedPreset: resolvedPreset,
@@ -5130,13 +5122,13 @@ export async function judgeStatementCatalogDisambiguation(
                 confidence_score: {
                     type: 'score' as const,
                     instructions: 'Rate the confidence of this catalog match from 1 (unmatched/guess) to 5 (ironclad metadata lock).',
-                    levels: {
-                        1: 'No match or wild guess.',
-                        2: 'Plausible title similarity with conflicting artist/version.',
-                        3: 'Good match with minor title suffix differences (e.g. Club Mix / Radio Edit).',
-                        4: 'Strong title and artist match with corroborating distributor reporting.',
-                        5: 'Perfect match with identical ISRC, title, and artist.',
-                    },
+                    criteria: [
+                        'No match or wild guess.',
+                        'Plausible title similarity with conflicting artist/version.',
+                        'Good match with minor title suffix differences (e.g. Club Mix / Radio Edit).',
+                        'Strong title and artist match with corroborating distributor reporting.',
+                        'Perfect match with identical ISRC, title, and artist.',
+                    ],
                 },
             },
         });
@@ -5151,9 +5143,7 @@ export async function judgeStatementCatalogDisambiguation(
         const cerProb = typeof cerAns === 'number'
             ? cerAns
             : Number((cerAns as { noul?: unknown })?.noul ?? (fallbackCertainty ? 0.9 : 0.1));
-        const resolvedConf = typeof conAns === 'number'
-            ? conAns
-            : Number((conAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedConf = oneIndexedScore(conAns, fallbackScore);
 
         return {
             matchedTrackId: isMatched ? resolvedChoice : null,
@@ -5284,13 +5274,13 @@ export async function judgeSplitSheetRightsClearance(
                 dispute_score: {
                     type: 'score' as const,
                     instructions: 'Rate the dispute resistance and legal clarity of this split arrangement from 1 (severe dispute trap) to 5 (airtight legal clarity).',
-                    levels: {
-                        1: 'Severe dispute trap; missing critical release agreements or ambiguous ownership.',
-                        2: 'High risk of publishing claim conflicts or royalty clawbacks.',
-                        3: 'Standard informal split sheet with baseline risk.',
-                        4: 'Clear role delineation with documented agreed shares.',
-                        5: 'Airtight documentation with signed work-for-hire releases and verified PRO credentials.',
-                    },
+                    criteria: [
+                        'Severe dispute trap; missing critical release agreements or ambiguous ownership.',
+                        'High risk of publishing claim conflicts or royalty clawbacks.',
+                        'Standard informal split sheet with baseline risk.',
+                        'Clear role delineation with documented agreed shares.',
+                        'Airtight documentation with signed work-for-hire releases and verified PRO credentials.',
+                    ],
                 },
             },
         });
@@ -5304,9 +5294,7 @@ export async function judgeSplitSheetRightsClearance(
         const needsContractProb = typeof conAns === 'number'
             ? conAns
             : Number((conAns as { noul?: unknown })?.noul ?? (fallbackRequiresProducerAgreement ? 0.9 : 0.1));
-        const resolvedDispute = typeof disAns === 'number'
-            ? disAns
-            : Number((disAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedDispute = oneIndexedScore(disAns, fallbackScore);
 
         return {
             rightsStream: resolvedStream,
@@ -5444,13 +5432,13 @@ export async function judgeUniversalErrorRemediation(
                 severity_score: {
                     type: 'score' as const,
                     instructions: 'Rate the severity and workflow disruption of this crash from 1 (minor cosmetic hiccup) to 5 (catastrophic blocking crash).',
-                    levels: {
-                        1: 'Minor cosmetic glitch with zero data risk.',
-                        2: 'Transient network blip that resolves automatically.',
-                        3: 'Module halted but unblockable with single action button.',
-                        4: 'Significant workflow blockage requiring workspace reload.',
-                        5: 'Catastrophic project failure requiring support intervention.',
-                    },
+                    criteria: [
+                        'Minor cosmetic glitch with zero data risk.',
+                        'Transient network blip that resolves automatically.',
+                        'Module halted but unblockable with single action button.',
+                        'Significant workflow blockage requiring workspace reload.',
+                        'Catastrophic project failure requiring support intervention.',
+                    ],
                 },
             },
         });
@@ -5464,9 +5452,7 @@ export async function judgeUniversalErrorRemediation(
         const traProb = typeof traAns === 'number'
             ? traAns
             : Number((traAns as { noul?: unknown })?.noul ?? (fallbackTransient ? 0.9 : 0.2));
-        const resolvedSev = typeof sevAns === 'number'
-            ? sevAns
-            : Number((sevAns as { score?: unknown })?.score ?? fallbackSeverity);
+        const resolvedSev = oneIndexedScore(sevAns, fallbackSeverity);
 
         const actionButtons: Record<SelfHealingAction, string> = {
             RETRY_NETWORK: 'Retry Connection',
@@ -5595,13 +5581,13 @@ export async function judgeLikenessEnrolmentSuitability(
                 clarity_score: {
                     type: 'score' as const,
                     instructions: 'Rate the facial fidelity and training suitability from 1 (unusable) to 5 (flawless reference portrait).',
-                    levels: {
-                        1: 'Unusable image without recognizable clear facial geometry.',
-                        2: 'Low quality with significant artifacts or blur.',
-                        3: 'Acceptable reference with minor lighting/angle imperfections.',
-                        4: 'High-quality clear portrait with good contrast.',
-                        5: 'Studio-grade reference with perfect clarity and neutral lighting.',
-                    },
+                    criteria: [
+                        'Unusable image without recognizable clear facial geometry.',
+                        'Low quality with significant artifacts or blur.',
+                        'Acceptable reference with minor lighting/angle imperfections.',
+                        'High-quality clear portrait with good contrast.',
+                        'Studio-grade reference with perfect clarity and neutral lighting.',
+                    ],
                 },
             },
         });
@@ -5615,9 +5601,7 @@ export async function judgeLikenessEnrolmentSuitability(
         const obsProb = typeof obsAns === 'number'
             ? obsAns
             : Number((obsAns as { noul?: unknown })?.noul ?? (fallbackObstructed ? 0.85 : 0.15));
-        const resolvedClarity = typeof claAns === 'number'
-            ? claAns
-            : Number((claAns as { score?: unknown })?.score ?? fallbackClarity);
+        const resolvedClarity = oneIndexedScore(claAns, fallbackClarity);
 
         return {
             status: resolvedStatus,
@@ -5735,13 +5719,13 @@ export async function judgePersonaPosturePreset(
                 alignment: {
                     type: 'score' as const,
                     instructions: 'Score how accurately this posture preset matches the artist description from 1 (poor fit) to 5 (flawless alignment).',
-                    levels: {
-                        1: 'Conflicting philosophy and mismatched tone.',
-                        2: 'Plausible generic fit with slight friction.',
-                        3: 'Solid alignment covering the primary communication goals.',
-                        4: 'Strong resonance with the artist career ethos.',
-                        5: 'Spot-on philosophical mirror that completely aligns team guidance.',
-                    },
+                    criteria: [
+                        'Conflicting philosophy and mismatched tone.',
+                        'Plausible generic fit with slight friction.',
+                        'Solid alignment covering the primary communication goals.',
+                        'Strong resonance with the artist career ethos.',
+                        'Spot-on philosophical mirror that completely aligns team guidance.',
+                    ],
                 },
             },
         });
@@ -5751,9 +5735,7 @@ export async function judgePersonaPosturePreset(
         const aliAns = ans?.alignment as { score?: unknown } | number | undefined;
 
         const resolvedPreset = (typeof preAns?.choice === 'string' ? preAns.choice : fallbackPreset) as PersonaPosturePreset;
-        const resolvedAlign = typeof aliAns === 'number'
-            ? aliAns
-            : Number((aliAns as { score?: unknown })?.score ?? 4);
+        const resolvedAlign = oneIndexedScore(aliAns, 4);
 
         return {
             recommendedPreset: resolvedPreset,
@@ -5876,13 +5858,13 @@ export async function judgeTaxFormCompliance(
                 compliance_score: {
                     type: 'score' as const,
                     instructions: 'Score the legal compliance and audit-readiness from 1 (unusable/reject) to 5 (ironclad IRS compliant).',
-                    levels: {
-                        1: 'Unusable or unrelated file.',
-                        2: 'Defective form requiring mandatory correction.',
-                        3: 'Partially filled document requiring manual review.',
-                        4: 'Substantially compliant with minor formatting note.',
-                        5: 'Ironclad compliance ready for immediate disbursement.',
-                    },
+                    criteria: [
+                        'Unusable or unrelated file.',
+                        'Defective form requiring mandatory correction.',
+                        'Partially filled document requiring manual review.',
+                        'Substantially compliant with minor formatting note.',
+                        'Ironclad compliance ready for immediate disbursement.',
+                    ],
                 },
             },
         });
@@ -5896,9 +5878,7 @@ export async function judgeTaxFormCompliance(
         const tinProb = typeof tinAns === 'number'
             ? tinAns
             : Number((tinAns as { noul?: unknown })?.noul ?? (missingTin ? 0.9 : 0.1));
-        const resolvedComp = typeof comAns === 'number'
-            ? comAns
-            : Number((comAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedComp = oneIndexedScore(comAns, fallbackScore);
 
         const approved = resolvedStatus === 'VALID_W9_COMPLETE' || resolvedStatus === 'VALID_W8BEN_COMPLETE';
 
@@ -6039,13 +6019,13 @@ export async function judgeDistributionBlocker(
                 readiness_score: {
                     type: 'score' as const,
                     instructions: 'Rate the release packaging readiness from 1 (unready) to 5 (production ready).',
-                    levels: {
-                        1: 'Missing multiple critical broadcast prerequisites.',
-                        2: 'Major blocker present requiring immediate asset correction.',
-                        3: 'Minor metadata gaps resolvable in 1 click.',
-                        4: 'Substantially complete; awaiting final sign-off.',
-                        5: 'Fully compliant and ready for automated delivery.',
-                    },
+                    criteria: [
+                        'Missing multiple critical broadcast prerequisites.',
+                        'Major blocker present requiring immediate asset correction.',
+                        'Minor metadata gaps resolvable in 1 click.',
+                        'Substantially complete; awaiting final sign-off.',
+                        'Fully compliant and ready for automated delivery.',
+                    ],
                 },
             },
         });
@@ -6055,9 +6035,7 @@ export async function judgeDistributionBlocker(
         const reaAns = ans?.readiness_score as { score?: unknown } | number | undefined;
 
         const resolvedBlocker = (typeof bloAns?.choice === 'string' ? bloAns.choice : fallbackBlocker) as DistributionBlockerType;
-        const resolvedScore = typeof reaAns === 'number'
-            ? reaAns
-            : Number((reaAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedScore = oneIndexedScore(reaAns, fallbackScore);
 
         const urlMap: Record<DistributionBlockerType, string> = {
             MISSING_QC_FINGERPRINT: '#audio-qc',
@@ -6220,13 +6198,13 @@ export async function judgeDdexGenreAndSubculture(
                 fit_score: {
                     type: 'score' as const,
                     instructions: 'Rate the editorial playlist curation alignment from 1 (poor) to 5 (prime spotlight).',
-                    levels: {
-                        1: 'Niche, misaligned with major editorial curation.',
-                        2: 'Marginal playlist compatibility.',
-                        3: 'Solid placement matching tempo and genre expectations.',
-                        4: 'Strong playlist candidate with high listener retention.',
-                        5: 'Prime flagship editorial feature candidate.',
-                    },
+                    criteria: [
+                        'Niche, misaligned with major editorial curation.',
+                        'Marginal playlist compatibility.',
+                        'Solid placement matching tempo and genre expectations.',
+                        'Strong playlist candidate with high listener retention.',
+                        'Prime flagship editorial feature candidate.',
+                    ],
                 },
             },
         });
@@ -6236,9 +6214,7 @@ export async function judgeDdexGenreAndSubculture(
         const fitAns = ans?.fit_score as { score?: unknown } | number | undefined;
 
         const resolvedGenre = (typeof genAns?.choice === 'string' ? genAns.choice : fallbackPrimary) as DdexPrimaryGenre;
-        const resolvedFit = typeof fitAns === 'number'
-            ? fitAns
-            : Number((fitAns as { score?: unknown })?.score ?? 4);
+        const resolvedFit = oneIndexedScore(fitAns, 4);
 
         return {
             ddexPrimaryGenre: resolvedGenre,
@@ -6371,13 +6347,13 @@ export async function judgeAudioDrivenMerchSku(
                 conversion_score: {
                     type: 'score' as const,
                     instructions: 'Score the purchase intent likelihood from 1 (unlikely impulse buy) to 5 (immediate must-have merch).',
-                    levels: {
-                        1: 'Low emotional connection between audio and product.',
-                        2: 'Generic apparel; low conversion velocity.',
-                        3: 'Standard viable band merch offering.',
-                        4: 'Strong aesthetic alignment driving fan impulse buy.',
-                        5: 'Cult grail status; immediate sellout potential.',
-                    },
+                    criteria: [
+                        'Low emotional connection between audio and product.',
+                        'Generic apparel; low conversion velocity.',
+                        'Standard viable band merch offering.',
+                        'Strong aesthetic alignment driving fan impulse buy.',
+                        'Cult grail status; immediate sellout potential.',
+                    ],
                 },
             },
         });
@@ -6387,9 +6363,7 @@ export async function judgeAudioDrivenMerchSku(
         const scAns = ans?.conversion_score as { score?: unknown } | number | undefined;
 
         const resolvedSku = (typeof skuAns?.choice === 'string' ? skuAns.choice : fallbackSku) as MerchSkuRecommendation;
-        const resolvedScore = typeof scAns === 'number'
-            ? scAns
-            : Number((scAns as { score?: unknown })?.score ?? 4);
+        const resolvedScore = oneIndexedScore(scAns, 4);
 
         return {
             recommendedSku: resolvedSku,
@@ -6664,13 +6638,13 @@ export async function judgeTargetSpecialistAgent(
                 confidence_score: {
                     type: 'score' as const,
                     instructions: 'Rate routing confidence from 1 (ambiguous/uncertain) to 5 (undoubted domain match).',
-                    levels: {
-                        1: 'Ambiguous or multi-disciplinary inquiry.',
-                        2: 'Plausible fit with minor cross-domain overlap.',
-                        3: 'Solid domain match with clear standard intent.',
-                        4: 'Strong specialist match with domain terminology.',
-                        5: 'Definitive specialist domain match.',
-                    },
+                    criteria: [
+                        'Ambiguous or multi-disciplinary inquiry.',
+                        'Plausible fit with minor cross-domain overlap.',
+                        'Solid domain match with clear standard intent.',
+                        'Strong specialist match with domain terminology.',
+                        'Definitive specialist domain match.',
+                    ],
                 },
             },
         });
@@ -6680,7 +6654,7 @@ export async function judgeTargetSpecialistAgent(
         const confAns = ans?.confidence_score as { score?: unknown } | number | undefined;
 
         const resolvedTarget = (typeof targetAns?.choice === 'string' ? targetAns.choice : fallbackTarget) as SpecialistAgentTarget;
-        const rawScore = typeof confAns === 'number' ? confAns : Number((confAns as { score?: unknown })?.score ?? 4);
+        const rawScore = oneIndexedScore(confAns, 4);
         const resolvedConf = Math.min(1.0, Math.max(0.2, (rawScore / 5)));
         const finalMisaligned = active !== 'generalist' && active !== resolvedTarget && resolvedTarget !== 'generalist';
 
@@ -6775,13 +6749,13 @@ export async function judgePromptActionability(
                 specificity: {
                     type: 'score' as const,
                     instructions: 'Rate the specificity and operational readiness of this prompt from 1 (vague) to 5 (exhaustive production brief).',
-                    levels: {
-                        1: 'Single words or ambiguous concept with no constraints.',
-                        2: 'Mentions intent but misses format, aesthetic, and context.',
-                        3: 'Acceptable instruction with basic genre/deliverable.',
-                        4: 'Detailed instruction with clear stylistic boundaries.',
-                        5: 'Flawless comprehensive brief ready for zero-shot execution.',
-                    },
+                    criteria: [
+                        'Single words or ambiguous concept with no constraints.',
+                        'Mentions intent but misses format, aesthetic, and context.',
+                        'Acceptable instruction with basic genre/deliverable.',
+                        'Detailed instruction with clear stylistic boundaries.',
+                        'Flawless comprehensive brief ready for zero-shot execution.',
+                    ],
                 },
                 has_deliverable: {
                     type: 'noul' as const,
@@ -6798,7 +6772,7 @@ export async function judgePromptActionability(
         const specAns = ans?.specificity as { score?: unknown } | number | undefined;
         const delAns = ans?.has_deliverable as { probability?: unknown } | undefined;
 
-        const specScore = typeof specAns === 'number' ? specAns : Number((specAns as { score?: unknown })?.score ?? fallbackScore);
+        const specScore = oneIndexedScore(specAns, fallbackScore);
         const delProb = typeof delAns?.probability === 'number' ? delAns.probability : (hasActionVerb ? 0.9 : 0.2);
         const resolvedHasDeliverable = delProb >= 0.5;
 
@@ -6969,13 +6943,13 @@ export async function judgeArtistDnaOnboarding(
                 maturity_score: {
                     type: 'score' as const,
                     instructions: 'Score artist career maturity from 1 (bedroom beginner) to 5 (established headliner).',
-                    levels: {
-                        1: 'Day 1 creator with unreleased demos.',
-                        2: 'Emerging DIY artist with 1-2 singles released.',
-                        3: 'Active independent with regional buzz and regular releases.',
-                        4: 'Established artist with thousands of monthly listeners and tour dates.',
-                        5: 'National/international touring artist with substantial catalog revenue.',
-                    },
+                    criteria: [
+                        'Day 1 creator with unreleased demos.',
+                        'Emerging DIY artist with 1-2 singles released.',
+                        'Active independent with regional buzz and regular releases.',
+                        'Established artist with thousands of monthly listeners and tour dates.',
+                        'National/international touring artist with substantial catalog revenue.',
+                    ],
                 },
             },
         });
@@ -6987,7 +6961,7 @@ export async function judgeArtistDnaOnboarding(
 
         const resolvedArchetype = (typeof arcAns?.choice === 'string' ? arcAns.choice : archetype) as ArtistCareerArchetype;
         const resolvedAesthetic = (typeof aesAns?.choice === 'string' ? aesAns.choice : aesthetic) as AestheticStyleTag;
-        const rawMat = typeof matAns === 'number' ? matAns : Number((matAns as { score?: unknown })?.score ?? maturity);
+        const rawMat = oneIndexedScore(matAns, maturity);
 
         return {
             archetype: resolvedArchetype,
@@ -7075,13 +7049,13 @@ export async function judgeStemSeparationAcousticPurity(
                 purity_rating: {
                     type: 'score' as const,
                     instructions: 'Rate stem acoustic purity and phase integrity from 1 (garbled) to 5 (isolated studio master).',
-                    levels: {
-                        1: 'Heavy phase cancellation, watery artifacts, severe crosstalk bleed.',
-                        2: 'Audible digital chirping and noticeable spill from other instruments.',
-                        3: 'Functional stem suitable for casual remixing with minor EQ required.',
-                        4: 'High fidelity isolation with minimal imperceptible bleed.',
-                        5: 'Commercial studio grade isolation ready for Dolby Atmos stems.',
-                    },
+                    criteria: [
+                        'Heavy phase cancellation, watery artifacts, severe crosstalk bleed.',
+                        'Audible digital chirping and noticeable spill from other instruments.',
+                        'Functional stem suitable for casual remixing with minor EQ required.',
+                        'High fidelity isolation with minimal imperceptible bleed.',
+                        'Commercial studio grade isolation ready for Dolby Atmos stems.',
+                    ],
                 },
                 severe_phase_hazard: {
                     type: 'noul' as const,
@@ -7098,7 +7072,7 @@ export async function judgeStemSeparationAcousticPurity(
         const purAns = ans?.purity_rating as { score?: unknown } | number | undefined;
         const phsAns = ans?.severe_phase_hazard as { probability?: unknown } | undefined;
 
-        const resolvedScore = typeof purAns === 'number' ? purAns : Number((purAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedScore = oneIndexedScore(purAns, fallbackScore);
         const phaseProb = typeof phsAns?.probability === 'number' ? phsAns.probability : (isSeverePhase ? 0.85 : 0.15);
         const finalSeverePhase = phaseProb >= 0.5;
 
@@ -7208,13 +7182,13 @@ export async function judgeContractRecoupmentPace(
                 underwater_risk_score: {
                     type: 'score' as const,
                     instructions: 'Rate financial underwater deal risk from 1 (safe/profitable) to 5 (extreme unrecouped debt trap).',
-                    levels: {
-                        1: 'Zero financial risk — deal already recouped or nearly clear.',
-                        2: 'Low risk — strong streaming velocity ensures comfortable clearance.',
-                        3: 'Moderate risk — reliant on sustained streaming catalog stability.',
-                        4: 'Elevated risk — streaming decay threatens timely debt clearance.',
-                        5: 'Critical risk — artist trapped in perpetual unrecouped ledger balance.',
-                    },
+                    criteria: [
+                        'Zero financial risk — deal already recouped or nearly clear.',
+                        'Low risk — strong streaming velocity ensures comfortable clearance.',
+                        'Moderate risk — reliant on sustained streaming catalog stability.',
+                        'Elevated risk — streaming decay threatens timely debt clearance.',
+                        'Critical risk — artist trapped in perpetual unrecouped ledger balance.',
+                    ],
                 },
             },
         });
@@ -7224,7 +7198,7 @@ export async function judgeContractRecoupmentPace(
         const riskAns = ans?.underwater_risk_score as { score?: unknown } | number | undefined;
 
         const resolvedPace = (typeof paceAns?.choice === 'string' ? paceAns.choice : pace) as ContractRecoupmentVerdict['recoupmentPace'];
-        const resolvedRisk = typeof riskAns === 'number' ? riskAns : Number((riskAns as { score?: unknown })?.score ?? risk);
+        const resolvedRisk = oneIndexedScore(riskAns, risk);
 
         return {
             recoupmentPace: resolvedPace,
@@ -7323,13 +7297,13 @@ export async function judgeDirectToFanEmailSubjectLine(
                 open_rate_potential: {
                     type: 'score' as const,
                     instructions: 'Score the open-rate conversion strength of this email subject line from 1 to 5.',
-                    levels: {
-                        1: 'High probability of spam filter quarantine or aggressive subscriber unsubscriptions.',
-                        2: 'Bland or passive copy with below-average expected open rates.',
-                        3: 'Standard competent notification subject line.',
-                        4: 'Compelling artist-to-fan direct voice with high open anticipation.',
-                        5: 'Exceptional subject line with curiosity gap and authentic high engagement.',
-                    },
+                    criteria: [
+                        'High probability of spam filter quarantine or aggressive subscriber unsubscriptions.',
+                        'Bland or passive copy with below-average expected open rates.',
+                        'Standard competent notification subject line.',
+                        'Compelling artist-to-fan direct voice with high open anticipation.',
+                        'Exceptional subject line with curiosity gap and authentic high engagement.',
+                    ],
                 },
                 spam_filter_risk: {
                     type: 'noul' as const,
@@ -7346,7 +7320,7 @@ export async function judgeDirectToFanEmailSubjectLine(
         const scAns = ans?.open_rate_potential as { score?: unknown } | number | undefined;
         const spAns = ans?.spam_filter_risk as { probability?: unknown } | undefined;
 
-        const resolvedScore = typeof scAns === 'number' ? scAns : Number((scAns as { score?: unknown })?.score ?? fallbackScore);
+        const resolvedScore = oneIndexedScore(scAns, fallbackScore);
         const spamProb = typeof spAns?.probability === 'number' ? spAns.probability : (hasSpamRisk ? 0.8 : 0.1);
         const finalSpam = spamProb >= 0.5;
 
@@ -7582,7 +7556,13 @@ export async function judgeVideoChunkQuality(
                 score: {
                     type: 'score' as const,
                     instructions: 'Rate visual usability for a finished music video from 1 (unusable discard) to 5 (flawless master take).',
-                    range: [1, 5] as [number, number],
+                    criteria: [
+                        'Unusable footage that must be discarded.',
+                        'Weak footage with major defects.',
+                        'Usable footage with ordinary quality.',
+                        'Strong footage ready for the edit.',
+                        'Flawless master take.',
+                    ],
                 },
             },
         });
@@ -7592,7 +7572,7 @@ export async function judgeVideoChunkQuality(
         const scoreAns = ans?.score as { score?: unknown } | undefined;
 
         const resolvedClass = (typeof classAns?.choice === 'string' ? classAns.choice : classification) as VideoChunkVerdict['classification'];
-        const resolvedScore = typeof scoreAns?.score === 'number' ? Math.round(scoreAns.score) : usableScore;
+        const resolvedScore = Math.round(oneIndexedScore(scoreAns, usableScore));
         const resolvedKeep = resolvedClass === 'KEEP_LEAD_TAKE' || resolvedClass === 'KEEP_BROLL';
 
         return {
@@ -7675,7 +7655,13 @@ export async function judgeTopImageVariationCandidate(
                 score: {
                     type: 'score' as const,
                     instructions: 'Rate overall aesthetic alignment and composition quality on a scale of 1 to 5.',
-                    range: [1, 5] as [number, number],
+                    criteria: [
+                        'Poor alignment or composition.',
+                        'Weak aesthetic fit.',
+                        'Acceptable composition and fit.',
+                        'Strong aesthetic fit and composition.',
+                        'Exceptional alignment and composition.',
+                    ],
                 },
             },
         });
@@ -7685,7 +7671,7 @@ export async function judgeTopImageVariationCandidate(
         const scoreAns = ans?.score as { score?: unknown } | undefined;
 
         const resolvedId = typeof bestAns?.choice === 'string' && criteria[bestAns.choice] ? bestAns.choice : fallbackCandidate;
-        const resolvedScore = typeof scoreAns?.score === 'number' ? Math.round(scoreAns.score) : fallbackScore;
+        const resolvedScore = Math.round(oneIndexedScore(scoreAns, fallbackScore));
 
         return {
             topCandidateId: resolvedId,
@@ -7777,7 +7763,13 @@ export async function judgeNextBestModule(
                 urgency: {
                     type: 'score' as const,
                     instructions: 'Rate the urgency of this step from 1 (background hygiene) to 5 (critical blocker or actionable revenue).',
-                    range: [1, 5] as [number, number],
+                    criteria: [
+                        'Background hygiene with no immediate impact.',
+                        'Low-priority useful task.',
+                        'Normal actionable task.',
+                        'Time-sensitive or revenue-relevant task.',
+                        'Critical blocker or immediate revenue opportunity.',
+                    ],
                 },
             },
         });
@@ -7790,7 +7782,7 @@ export async function judgeNextBestModule(
         const chosenCandidate = candidates.find(c => c.id === chosenId) || defaultCandidate;
 
         const resolvedPrio = typeof urgencyAns?.score === 'number'
-            ? Math.max(1, Math.min(5, Math.round(urgencyAns.score)))
+            ? Math.round(oneIndexedScore(urgencyAns, 1))
             : undefined;
 
         return {
@@ -8011,7 +8003,13 @@ export async function judgeExpenseDeductibility(
                 audit_strength: {
                     type: 'score' as const,
                     instructions: 'Rate the audit defense strength of this deduction from 1 (high audit risk) to 5 (bulletproof IRS precedent).',
-                    range: [1, 5] as [number, number],
+                    criteria: [
+                        'High audit risk with little support.',
+                        'Weak deduction support.',
+                        'Plausible support needing review.',
+                        'Strong documentation and precedent.',
+                        'Well-documented deduction with clear precedent.',
+                    ],
                 },
             },
         });
@@ -8021,7 +8019,7 @@ export async function judgeExpenseDeductibility(
         const scoreAns = ans?.audit_strength as { score?: unknown } | undefined;
 
         const resolvedCat = (typeof catAns?.choice === 'string' ? catAns.choice : category) as ExpenseDeductibilityVerdict['category'];
-        const resolvedScore = typeof scoreAns?.score === 'number' ? Math.round(scoreAns.score) : auditScore;
+        const resolvedScore = Math.round(oneIndexedScore(scoreAns, auditScore));
 
         return {
             category: resolvedCat,
@@ -8121,7 +8119,13 @@ export async function judgeTourStopFeasibility(
                 feasibility: {
                     type: 'score' as const,
                     instructions: 'Rate tour hop safety and scheduling sustainability from 1 (unacceptable hazard) to 5 (perfect routing).',
-                    range: [1, 5] as [number, number],
+                    criteria: [
+                        'Unsafe or unsustainable tour hop.',
+                        'Material schedule or safety concerns.',
+                        'Workable with adjustments.',
+                        'Safe and practical routing.',
+                        'Excellent safety and scheduling fit.',
+                    ],
                 },
             },
         });
@@ -8131,7 +8135,7 @@ export async function judgeTourStopFeasibility(
         const feasiAns = ans?.feasibility as { score?: unknown } | undefined;
 
         const resolvedStatus = (typeof statusAns?.choice === 'string' ? statusAns.choice : status) as TourStopFeasibilityVerdict['status'];
-        const resolvedRating = typeof feasiAns?.score === 'number' ? Math.round(feasiAns.score) : rating;
+        const resolvedRating = Math.round(oneIndexedScore(feasiAns, rating));
 
         return {
             status: resolvedStatus,
@@ -8165,6 +8169,10 @@ function upscaleModelQuestion() {
             'classify the visual style and pick the super-resolution model that preserves it best: ' +
             "'realesrgan-x4plus' for photographic / realistic / cinematic imagery with real-world texture, " +
             "'realesrgan-x4plus-anime' for illustration, line art, flat color, anime, graphic or typographic design.",
+        criteria: {
+            'realesrgan-x4plus': 'Photographic, realistic, or cinematic imagery with natural textures.',
+            'realesrgan-x4plus-anime': 'Illustration, line art, flat color, anime, graphic, or typographic design.',
+        },
     };
 }
 
@@ -8188,10 +8196,6 @@ export async function judgeUpscaleModel(prompt: string): Promise<UpscaleModelCho
             questions: {
                 model: {
                     ...upscaleModelQuestion(),
-                    options: {
-                        'realesrgan-x4plus': 'Photographic / realistic / cinematic',
-                        'realesrgan-x4plus-anime': 'Illustration / anime / flat / graphic',
-                    },
                 },
             },
         });
@@ -8279,7 +8283,13 @@ export async function judgeMotionIntensityPreset(
                 intensity: {
                     type: 'score' as const,
                     instructions: 'Score camera movement intensity from 1 (completely subtle/still) to 5 (extreme hyper-kinetic).',
-                    range: [1, 5] as [number, number],
+                    criteria: [
+                        'Still or nearly imperceptible movement.',
+                        'Subtle camera movement.',
+                        'Moderate camera movement.',
+                        'High-energy camera movement.',
+                        'Extreme hyper-kinetic movement.',
+                    ],
                 },
             },
         });
@@ -8289,7 +8299,7 @@ export async function judgeMotionIntensityPreset(
         const intensityAns = ans?.intensity as { score?: unknown } | undefined;
 
         const resolvedPreset = (typeof presetAns?.choice === 'string' ? presetAns.choice : fallbackPreset) as MotionIntensityPreset;
-        const resolvedScore = typeof intensityAns?.score === 'number' ? Math.round(intensityAns.score) : fallbackScore;
+        const resolvedScore = Math.round(oneIndexedScore(intensityAns, fallbackScore));
         const dampingMap: Record<MotionIntensityPreset, number> = {
             SLOW_DRIFT: 0.9,
             DYNAMIC_TRACKING: 0.6,
@@ -8400,7 +8410,13 @@ export async function judgeStemSeparationRecipe(
                 confidence: {
                     type: 'score' as const,
                     instructions: 'Score separation quality confidence from 1 (unreliable artifact risk) to 5 (pristine phase alignment).',
-                    range: [1, 5] as [number, number],
+                    criteria: [
+                        'Unreliable separation with severe artifacts.',
+                        'Significant separation artifacts.',
+                        'Usable separation with audible defects.',
+                        'Strong separation with minor defects.',
+                        'Pristine phase-aligned separation.',
+                    ],
                 },
             },
         });
@@ -8410,7 +8426,7 @@ export async function judgeStemSeparationRecipe(
         const confAns = ans?.confidence as { score?: unknown } | undefined;
 
         const resolvedRecipe = (typeof recipeAns?.choice === 'string' ? recipeAns.choice : fallbackRecipe) as StemSeparationRecipe;
-        const resolvedScore = typeof confAns?.score === 'number' ? Math.round(confAns.score) : fallbackScore;
+        const resolvedScore = Math.round(oneIndexedScore(confAns, fallbackScore));
 
         const modelMap: Record<StemSeparationRecipe, 'htdemucs' | 'mdx_extra' | 'bs_roformer'> = {
             TWO_STEM_VOCAL_INST: 'bs_roformer',
@@ -8689,7 +8705,13 @@ export async function judgeCatalogCollisionRisk(
                 confidence: {
                     type: 'score' as const,
                     instructions: 'Rate disambiguation confidence from 1 (ambiguous) to 5 (ironclad).',
-                    range: [1, 5] as [number, number],
+                    criteria: [
+                        'Ambiguous match without reliable evidence.',
+                        'Weak match with conflicting details.',
+                        'Plausible match needing review.',
+                        'Strong match with corroboration.',
+                        'Ironclad match with decisive identifiers.',
+                    ],
                 },
             },
         });
@@ -8712,7 +8734,7 @@ export async function judgeCatalogCollisionRisk(
 
         const resolvedDisp = (dispChoice ?? disposition) as CatalogCollisionDisposition;
         const resolvedConf = typeof confScore === 'number' && Number.isFinite(confScore)
-            ? Math.round(confScore)
+            ? Math.round(oneIndexedScore(confScore, confidence))
             : confidence;
 
         return {

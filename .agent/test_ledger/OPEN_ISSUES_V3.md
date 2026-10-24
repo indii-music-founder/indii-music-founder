@@ -5173,6 +5173,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1538: Systemic HTTP 422 schema violations and 1-indexed Score misparsing across 45+ TypeSafe System One (`jev-latest`) judgment call sites
 
 - **Status:** 🔴 OPEN (2026-10-16)
+- **2026-10-24 progress:** The focused `codex/issue-1538-typesafe-contract` branch converts the renderer's 44 Score definitions and Choice payloads to ordered `criteria`, adds explicit rubrics where only a range or prose existed, and maps zero-based Jev scores to 1–5 only for consumers that expose that scale. Campaign creative fit now uses ordered criteria and converts the 0–4 response to its documented 1–5 score. The 0–3 consumers remain zero-based. A live `jev-latest` Score request returned HTTP 200 (`req_01a16e8e54037266be38f0cc3db5fb90`); structural and focused unit tests passed. This remains OPEN until branch CI and mainline delivery, with production acceptance still unverified.
 - **Severity:** 🔴 CRITICAL
 - **Module:** TypeSafe System One Judgments (`packages/renderer/src/config/typesafeJudgments.ts`, `packages/firebase/src/orchestration/marketing/campaign-judgments.ts`)
 - **Classification:** Upstream API contract violation and response parsing off-by-one defect.
