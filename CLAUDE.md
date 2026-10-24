@@ -145,17 +145,17 @@ indii-music-founder/
 | Category | Technology | Notes |
 |----------|-----------|-------|
 | Framework | React 18.3.1 | With lazy-loaded modules |
-| Build | Vite 6.4.1 | Port 4242 for dev |
+| Build | Vite ^6.4.3 | Port 4242 for dev |
 | Styling | TailwindCSS 4.1.17 | With tailwind-merge, clsx |
 | State | Zustand 5.0.8 | Slice-based store pattern |
-| Animation | Framer Motion 12.x | |
-| Canvas | Fabric.js 6.9 | Image editing |
+| Animation | Motion 12.23.26 | |
+| Canvas | Fabric.js ^7.2.0 | Image editing |
 | Graph Editor | React Flow 11.11 | Workflow automation |
 | Audio | Wavesurfer.js 7.11.1 + Essentia.js 0.1.3 + Python (YAMNet ONNX) | Local-first analysis & visualization |
-| Video | Remotion 4.0.445 | Video rendering |
+| Video | HyperFrames CLI 0.8.10 + player 0.8.11 | Shared compiler, desktop adapter, web preview, and Cloud Run worker; Remotion is retired |
 | 3D | Three.js 0.182.0 | Via @react-three/fiber |
 | Charts | Recharts 3.6 | Data visualization |
-| Router | React Router 7.11 | URL sync |
+| Router | React Router 7.18.2 | URL sync |
 | UI Kit | Radix UI + Lucide icons | Accessible primitives |
 | Validation | Zod 3.25 | Schema validation |
 
@@ -163,9 +163,9 @@ indii-music-founder/
 
 | Category | Technology | Notes |
 |----------|-----------|-------|
-| Functions | Firebase Functions 7.0.5 (Gen 2) | Node.js 22 runtime |
-| AI | Genkit AI 1.26 (pinned) + @google/genai^1.48.0 | Gemini models |
-| Jobs | Inngest 3.46 | Background job orchestration |
+| Functions | Firebase Functions ^7.2.5 (Gen 2) | Node.js 22 runtime |
+| AI | @google/genai ^2.12.0 + TypeSafe System One | Gemini generation and Jev judgments |
+| Jobs | Inngest ^3.54.2 | Background job orchestration |
 | Payments | Stripe 20.1 | Subscription billing |
 | Database | Firestore | With security rules |
 | Storage | Firebase Storage | With security rules |
@@ -400,7 +400,7 @@ The `build` script runs three steps sequentially:
 
 - **A2A Swarm Protocol** - Decentralized P2P delegation via `A2AClient` and `AgentCard` identity.
 - **Specialist Agents** - Autonomous domain experts that collaborate directly using `consult_specialist`.
-- **Native Execution** - All tools run natively within the Node.js/TypeScript environment with sidecar support.
+- **Native Execution** - Node.js/TypeScript services are the primary execution path. Some DDEX and media utilities still use the optional Python bridge; do not assume a Docker sidecar is running.
 
 ---
 

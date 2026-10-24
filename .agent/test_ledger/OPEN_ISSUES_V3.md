@@ -4762,6 +4762,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1518: Active architecture instructions still identify retired video and sidecar components
 
 - **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **2026-10-24 progress:** The `codex/issue-1518-active-architecture-docs` branch updates active `CLAUDE.md` and tech-stack guidance to the manifest-backed HyperFrames CLI/player and 13 declared workspaces, and describes Python as an optional utility bridge rather than a required Docker sidecar. The npm audit step is correctly labeled advisory. Historical migration records remain untouched; publication and review are pending.
 - **Recovered from:** Original audit ISSUE-1459; current ISSUE-1459 concerns unrelated UI work.
 - **October 12 recheck:** CLAUDE.md:155 and matching instruction mirrors retain Remotion; tech-stack.md:15,58,89 retains retired video/sidecar architecture and describes advisory npm audit as a gate. Preserve labeled roadmap history.
 - **Severity:** MEDIUM
