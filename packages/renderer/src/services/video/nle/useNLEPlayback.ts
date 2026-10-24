@@ -101,7 +101,7 @@ export function useNLEPlayback({
         audioCtxRef.current = null;
       }
       for (const decoder of decoders.values()) {
-        decoder.purgeBefore(BigInt(Number.MAX_SAFE_INTEGER));
+        decoder.close();
       }
       decoders.clear();
     };

@@ -13,12 +13,13 @@ vi.mock('./rateLimit', () => ({
     RATE_LIMITS: { generation: 10 }
 }));
 
-const { mockLegacyAdmission, mockCheckOperationBudget } = vi.hoisted(() => ({
+const { mockLegacyAdmission, mockCheckOperationBudget, mockFinalizeOperationReservation } = vi.hoisted(() => ({
     mockLegacyAdmission: vi.fn(async (request: { auth?: { uid?: string } }) => {
         if (!request.auth?.uid) throw new Error('User must be authenticated.');
         return { userId: request.auth.uid, entitlement: { tier: 'free' } };
     }),
     mockCheckOperationBudget: vi.fn().mockResolvedValue({ allowed: true, operationId: 'legacy-image-op-1' }),
+    mockFinalizeOperationReservation: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../functions/creative/legacyAdmission', () => ({
@@ -26,7 +27,7 @@ vi.mock('../functions/creative/legacyAdmission', () => ({
 }));
 vi.mock('../functions/billing/enforceOperationCost', () => ({
     checkOperationBudget: mockCheckOperationBudget,
-    finalizeOperationReservation: vi.fn().mockResolvedValue(undefined),
+    finalizeOperationReservation: mockFinalizeOperationReservation,
 }));
 vi.mock('../functions/auth/entitlements', () => ({
     entitlementTierToBudgetTier: vi.fn(() => 'free'),
@@ -86,7 +87,8 @@ describe('generateImageV3Fn', () => {
         wrapped = testEnv.wrap(func);
         mockGenerateContent.mockClear();
         mockLegacyAdmission.mockClear();
-        mockCheckOperationBudget.mockClear();
+        mockCheckOperationBudget.mockReset().mockResolvedValue({ allowed: true, operationId: 'legacy-image-op-1' });
+        mockFinalizeOperationReservation.mockClear();
     });
 
     afterAll(() => {
@@ -126,6 +128,42 @@ describe('generateImageV3Fn', () => {
         expect(callArgs.config.responseModalities).toEqual(['TEXT', 'IMAGE']);
         // Grounding tools
         expect(callArgs.config.tools).toEqual([{ googleSearch: {} }]);
+        expect(mockCheckOperationBudget).toHaveBeenCalledWith(expect.objectContaining({
+            userId: 'test-user-id',
+            operationType: 'image',
+            estimatedCost: 0.12,
+        }));
+        expect(mockFinalizeOperationReservation).toHaveBeenCalledWith({
+            userId: 'test-user-id',
+            operationId: 'legacy-image-op-1',
+            outcome: 'SETTLED',
+        });
+    });
+
+    it('does not call the provider when the account budget denies generation', async () => {
+        mockCheckOperationBudget.mockResolvedValueOnce({ allowed: false });
+        await expect(wrapped({ auth: { uid: 'test-user-id' }, data: { prompt: '4k portrait', model: 'pro', imageSize: '4k' } }))
+            .rejects.toMatchObject({ code: 'resource-exhausted' });
+        expect(mockGenerateContent).not.toHaveBeenCalled();
+        expect(mockFinalizeOperationReservation).not.toHaveBeenCalled();
+    });
+
+    it('settles an attempted provider call when generation fails', async () => {
+        mockGenerateContent.mockRejectedValueOnce(new Error('provider unavailable'));
+        await expect(wrapped({ auth: { uid: 'test-user-id' }, data: { prompt: 'portrait' } }))
+            .rejects.toThrow();
+        expect(mockFinalizeOperationReservation).toHaveBeenCalledWith({
+            userId: 'test-user-id',
+            operationId: 'legacy-image-op-1',
+            outcome: 'SETTLED',
+        });
+    });
+
+    it('rejects oversized inline input before budget reservation or provider execution', async () => {
+        await expect(wrapped({ auth: { uid: 'test-user-id' }, data: { prompt: 'portrait', images: [{ mimeType: 'image/png', data: 'x'.repeat(15 * 1024 * 1024) }] } }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
+        expect(mockCheckOperationBudget).not.toHaveBeenCalled();
+        expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
     it('should use fast model with correct defaults', async () => {

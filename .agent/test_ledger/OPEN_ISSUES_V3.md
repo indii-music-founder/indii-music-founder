@@ -3487,6 +3487,7 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Fix:** The selected preset ID is now part of the canonical project model. Applying a preset updates the selected ID, background/seam, and eligible clip settings in one project update so undo restores one coherent prior state. The picker reads the ID from project state and uses a truthful “Choose treatment…” placeholder.
 - **Local validation:** `TreatmentPicker.test.tsx` passes 3/3 tests, including the controlled selected state after project update; repository typecheck passes. Production preview/render behavior and genuine project reload remain unverified.
 - **Acceptance:** With an eligible video clip selected, choosing a named treatment visibly updates selection/state; undo/reload behavior is clear; a real preview/render later confirms the treatment without mock evidence.
+- **Genuine signed-in follow-up (2026-10-23):** In an existing owner timeline with video clips, selecting Vinyl Warm changed the picker from Candy Pop to Vinyl Warm and updated the compiled composition text; Undo restored Candy Pop. The media iframe reported "Unable to play media," so visual treatment output was not verified. After a page reload, the editor remained on "Loading project timeline…" and the saved treatment could not be rechecked. A bounded load timeout with a safe retry error is being delivered separately; this issue remains PARTIAL pending real reload and preview/render proof.
 
 ### ISSUE-1462: History asset View Fullsize has no identifiable preview result
 
@@ -3610,6 +3611,7 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - Run97 (2026-10-06), Merchandise Designer route correctly opens editor. Keyboard Shortcuts help opens and X closes, but help lacks dialog semantics and close-button name (ISSUE-1459). No canvas changes/save/export/generation. Run96 POD rail invites connecting Printify/Gooten despite both being marked in development; unconnected “24h Fulfillment” metric requires provenance/qualification, not an assumption of live service telemetry.
 
 - Run 95 (2026-10-06), Merchandise: empty sales/partners/templates and untracked funnel accurately disclosed, but “empire is thriving,” “Production pace is stable,” and “All designs approved” are misleading empty-state success summaries. Pricing explicitly identifies static starter benchmarks, not live data; connected provider estimates remain unverified. Create Drop opens named wizard, empty products disable Next, but provides no direct product-setup action and close icon is unnamed (ISSUE-1459). Escape dismissal confirmed after delayed UI update. No draft persisted or published. Registration catalog publication prerequisites displayed; enforcement untested.
+- 2026-10-24 follow-up: Merchandise Dashboard wording now reports catalog and sales states without implying sales, approval, viral signals, logistics health, or a live selling path from the design button. Genuine signed-in production copy review remains open.
 
 - Run 94 (2026-10-06), Registration Center: Founder-to-Tracks navigation passed. Empty canonical scan expressly disclaims complete coverage and legacy migration. Seven “Mark verified” controls need credential-specific accessible names (related accessibility finding ISSUE-1459). “Apply at ASCAP / BMI / SESAC (CISAC)” links to `https://www.cisac.org/services/information-services/ipi`, so its application wording does not describe its destination. No identifiers entered, verification asserted, or progress saved; legal prerequisites/fees not audited.
 
@@ -4578,6 +4580,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   5. `9e7eea68c` & `3a2cfbd3f`: Native Electron `video:probe-media` IPC handler with access control, sender validation, path sanitization, and ffprobe child process.
   6. Track scrub canvas (`NLETrackScrubCanvas.tsx`), clip integration (`TimelineClip.tsx`), and tests (`NLETrackScrubCanvas.test.tsx`, `video.security.test.ts`).
 - **Validation:** 100% clean typecheck (`npm run typecheck`), zero ESLint errors, zero pre-commit gate violations, 15/15 test suites and 94/94 NLE tests passing green.
+- **Lifecycle follow-up (2026-10-24):** `useNLEPlayback` now calls `VideoTrackDecoder.close()` on unmount instead of only purging buffered frames, releasing decoder resources and its hardware pool slot. Focused hook/decoder tests pass. ISSUE-1510 remains PARTIAL: the production hook still constructs decoders without a demuxed encoded-frame feed, and real seek/drift/memory/export benchmarks remain unproven.
 
 ---
 
@@ -4728,6 +4731,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** CI compilation/test evidence does not validate the declared root runtime. Firebase's supported deployment runtime is a separate constraint.
 - **Fix:** Align root CI with the intentional engine requirement; retain separately documented supported Functions runtime; verify lockfile installs and dependency drift/integrity.
 - **Acceptance:** Clean installs and required gates pass on the declared root runtime; backend runtime compatibility is independently tested and documented.
+- **2026-10-24 follow-up:** The deployment workflow's seven CI host jobs now request Node 24 and use a Node-24-specific `node_modules` cache key. The Firebase Functions package still declares its separate Node 22 runtime. Exact-SHA CI and clean-install evidence remain pending; this issue is not closed.
 
 ### ISSUE-1516: Mainline branch protection and required-check ruleset are disabled
 
@@ -5163,11 +5167,14 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   2. Namespace attribution deduplication receipts by tenant (`marketingAttributionReceipts/{artistId}_{eventId}` or subcollection `users/{artistId}/marketingAttributionReceipts/{eventId}`) and validate `artistId` ownership before marking processed.
 - **Acceptance:** Unit and security tests prove that passing a `ledgerAccountId` owned by `artist-B` when authenticated as `artist-A` rejects with `permission-denied` and leaves `artist-B`'s balance untouched, and identical `eventId` values across two different `artistId`s do not collide.
 
+- **Progress (2026-10-24):** Reservation now checks ledger `artistId` in the same transaction before spending and rejects a mismatched existing reservation. Firestore attribution receipts are scoped under the authenticated artist's user path, so identical event IDs in different tenants do not collide. Focused tests cover unchanged cross-tenant balance and independent event receipts. Ledgers without an authoritative `artistId` now fail closed; inventory/backfill and genuine deployed acceptance remain outstanding.
+
 ---
 
 ### ISSUE-1538: Systemic HTTP 422 schema violations and 1-indexed Score misparsing across 45+ TypeSafe System One (`jev-latest`) judgment call sites
 
 - **Status:** 🔴 OPEN (2026-10-16)
+- **2026-10-24 progress:** The focused `codex/issue-1538-typesafe-contract` branch converts the renderer's 44 Score definitions and Choice payloads to ordered `criteria`, adds explicit rubrics where only a range or prose existed, and maps zero-based Jev scores to 1–5 only for consumers that expose that scale. Campaign creative fit now uses ordered criteria and converts the 0–4 response to its documented 1–5 score. The 0–3 consumers remain zero-based. A live `jev-latest` Score request returned HTTP 200 (`req_01a16e8e54037266be38f0cc3db5fb90`); structural and focused unit tests passed. This remains OPEN until branch CI and mainline delivery, with production acceptance still unverified.
 - **Severity:** 🔴 CRITICAL
 - **Module:** TypeSafe System One Judgments (`packages/renderer/src/config/typesafeJudgments.ts`, `packages/firebase/src/orchestration/marketing/campaign-judgments.ts`)
 - **Classification:** Upstream API contract violation and response parsing off-by-one defect.
@@ -5211,6 +5218,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   1. Require `readinessProb >= 0.65` (calibrated confirmation threshold) before setting `creativeReadinessConfirmed = true` and shifting platform splits.
   2. After computing `allocations` from `refinedSplitPercentages` in `CampaignOrchestrator.executeDirective`, verify every active platform satisfies `allocations[platform] >= adapter.minBudgetCents` (clamping or falling back to `initialAllocations` if violated) and reconcile rounding remainders on the largest platform share so ` sum(allocations) === directive.totalBudgetCents`.
 - **Acceptance:** Unit tests verify 3-platform Jev-refined allocations always sum to ` exactly directive.totalBudgetCents`, never drop below `adapter.minBudgetCents`, and do not shift budget when `creative_readiness_noul < 0.65`.
+
+- **Progress (2026-10-24):** Source review found exact-cent allocation already uses floor plus remainder, so the 101% rounding claim above is historical. The remaining fix raises readiness confirmation to 0.65 and validates absolute per-platform cent minimums before reservation; a refined split below the minimum falls back to the original valid split. Focused tests cover 0.64 readiness, exact-cent totals, and a below-minimum refined split. Live JEV allocation remains blocked by ISSUE-1538's request-schema defects, and branch CI/deployed acceptance are pending.
 
 ---
 
@@ -5256,6 +5265,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   2. Propagate upstream HTTP status / error details into `platformDispatches[platform].errorMessage` when `result.success === false`.
 - **Acceptance:** Unit test proves that when all configured platform adapters return `{ success: false }` on first attempt, a subsequent retry of the same `eventId` is NOT short-circuited as `DUPLICATE_EVENT` and succeeds once the adapter recovers.
 
+- **Progress (2026-10-24):** The attribution bus now persists a terminal deduplication receipt only after every attempted eligible platform succeeds. Failed and partially failed fan-outs remain retryable with the same platform event ID. Adapter failures carry bounded status/code diagnostics into the receipt; focused tests cover outage recovery and partial fan-out. Publication, exact-SHA CI, and production delivery evidence remain pending.
+
 ---
 
 ### ISSUE-1542: Mobile Remote `QuickCaptureView` leaks orphaned Storage blobs on relay failure, hides the Video Editor bridge for audio captures, and `rendererExecutionAdapter` silently drops video/audio attachments sent to Boardroom
@@ -5282,6 +5293,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   1. Failed `handleSendToVideoEditor` and `handleSendToBoardroom` dispatches delete their uploaded Storage objects.
   2. Recording a `capturedAudioBlob` renders the `"Send to Video Editor"` button and dispatches `assetType: 'audio'`.
   3. Sending a `video/mp4` attachment via `handleSendToBoardroom` delivers the video reference to `agentService.sendMessage` rather than stripping it.
+
+- **Progress (2026-10-24):** Current source no longer dispatches Boardroom captures through the relay; it uploads them, records an Encounter, and navigates to chat, so the old Boardroom relay-cleanup claim is historical. The editor path now removes uploads only when task creation is rejected; once a task is accepted, timeout cleanup would destroy media a still-running desktop may need. Audio exposes the Video Editor action, receipt/document Encounter types are retained, and owned Firebase Storage audio/video URLs are added to the agent request as unexamined references instead of silently disappearing. Focused structural tests pass; genuine mobile-to-desktop media acceptance and branch CI remain pending.
 
 ---
 
@@ -5337,6 +5350,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   1. In `packages/firebase/src/subscription/deductCredits.ts`, move `const legacySnap = await transaction.get(legacyCreditsRef)` to the top of the transaction callback alongside `transaction.get(walletRef)` (`Promise.all([transaction.get(walletRef), transaction.get(legacyCreditsRef)])`) before any `transaction.update` or `transaction.set` call.
   2. In `packages/firebase/src/lib/image_generation.ts` (`generateImageV3Fn`), enforce a request byte-size limit (`MAX_LEGACY_EDIT_REQUEST_BYTES`), reserve budget via `checkOperationBudget` before calling `service.generate(validation.data)`, and settle or void the reservation via `finalizeOperationReservation` in a `try`/`catch` block matching `editImageFn`.
 - **Acceptance:** Unit tests verify `deductCredits` executes all `transaction.get` calls prior to any `transaction.update`/`transaction.set` call and succeeds for funded wallets; `generateImageV3Fn` blocks requests when `checkOperationBudget` returns `allowed: false` and settles/voids reservations on completion/failure.
+
+- **Progress (2026-10-24):** A focused branch moves both wallet and legacy-credit reads ahead of transactional writes, then reserves image budget and caps inline payload size before legacy generation. The callable settles an attempted provider call on both success and failure. Focused structural tests cover funded-wallet read order, budget denial, provider failure settlement, and oversized input; production acceptance and exact-SHA CI remain pending.
 
 ---
 

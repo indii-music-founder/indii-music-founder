@@ -28,6 +28,26 @@ const form: LeaseForm = {
 };
 
 describe('MicroLicensingPortal', () => {
+    it('names lease fields and announces the selected lease type', () => {
+        render(<MicroLicensingPortal />);
+
+        expect(screen.getByRole('textbox', { name: 'Track Title *' })).toBeInTheDocument();
+        expect(screen.getByRole('textbox', { name: 'Rights Evidence Reference *' })).toBeInTheDocument();
+        expect(screen.getByRole('spinbutton', { name: 'Price (USD)' })).toBeInTheDocument();
+        expect(screen.getByRole('spinbutton', { name: 'Licensor Publishing Share % *' })).toBeInTheDocument();
+        expect(screen.getByRole('combobox', { name: 'Territory' })).toBeInTheDocument();
+        expect(screen.getByRole('combobox', { name: 'Term' })).toBeInTheDocument();
+
+        const nonExclusive = screen.getByRole('button', { name: 'Non-Exclusive' });
+        const exclusive = screen.getByRole('button', { name: 'Exclusive' });
+        expect(nonExclusive).toHaveAttribute('aria-pressed', 'false');
+        fireEvent.click(nonExclusive);
+        expect(nonExclusive).toHaveAttribute('aria-pressed', 'true');
+        fireEvent.click(exclusive);
+        expect(nonExclusive).toHaveAttribute('aria-pressed', 'false');
+        expect(exclusive).toHaveAttribute('aria-pressed', 'true');
+    });
+
     it('escapes user-supplied contract fields in downloaded HTML', () => {
         const html = buildContractHTML(form);
 

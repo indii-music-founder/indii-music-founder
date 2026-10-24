@@ -23,6 +23,8 @@ import {
 
 export type AdapterFetch = (url: string, init: RequestInit) => Promise<Response>;
 
+export const MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS = 100;
+
 export type AdAdapterErrorCode =
     | 'INVALID_DIRECTIVE_PAYLOAD'
     | 'INVALID_ATTRIBUTION_EVENT'
@@ -48,7 +50,7 @@ export abstract class BaseAdPlatformAdapter implements IAdPlatformAdapter {
     abstract readonly platform: SupportedAdPlatform;
 
     /** Minimum daily or allocated budget in cents ($1.00 USD / 100 minor units). */
-    protected readonly minBudgetCents = 100;
+    protected readonly minBudgetCents = MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS;
 
     protected readonly fetcher: AdapterFetch;
 
@@ -203,5 +205,5 @@ export abstract class BaseAdPlatformAdapter implements IAdPlatformAdapter {
 
     abstract dispatchConversionEvent(
         event: UnifiedAttributionEvent,
-    ): Promise<{ success: boolean; externalTraceId?: string }>;
+    ): Promise<{ success: boolean; externalTraceId?: string; errorMessage?: string }>;
 }

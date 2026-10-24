@@ -7,6 +7,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import {
+    type IAdPlatformAdapter,
     type UnifiedAttributionEvent,
     type UnifiedCampaignDirective,
     UnifiedAttributionEventSchema,
@@ -361,6 +362,83 @@ describe('GoogleAdsAdapter (REST v17 Video Action / PMax & Enhanced Conversions)
 });
 
 describe('AttributionBus (Server-Side Fan-Out & Deduplication)', () => {
+    it('retries an event after every eligible dispatch fails, then deduplicates only after delivery succeeds', async () => {
+        const fetcher: AdapterFetch = vi.fn()
+            .mockResolvedValueOnce(jsonResponse({ error: { code: 2 } }, 503))
+            .mockResolvedValueOnce(jsonResponse({ events_received: 1, fbtrace_id: 'recovered' }));
+        const adapter = new MetaAdAdapter(
+            {
+                adAccountId: 'act_1',
+                accessToken: 'MOCK_KEY_DO_NOT_USE',
+                facebookPageId: 'page_1',
+                pixelId: 'pixel_1',
+            },
+            fetcher,
+        );
+        const store = new InMemoryAttributionDeduplicationStore();
+        const bus = new AttributionBus([adapter], store);
+        const event: UnifiedAttributionEvent = {
+            eventId: 'evt_retry_after_outage',
+            eventTimestampUnix: 1792152000,
+            eventName: 'DSPOutboundClick',
+            releaseId: 'rel_midnight_express',
+            isrc: 'US-S1Z-26-00412',
+            smartlinkId: 'sl_midnight_01',
+            targetDsp: 'SPOTIFY',
+            clickIdentifiers: { fbclid: 'fb_click_retry' },
+            userData: { clientIpAddress: '198.51.100.12', clientUserAgent: 'Mozilla/5.0' },
+        };
+
+        const failed = await bus.dispatch(event);
+        expect(failed.deduplicated).toBe(false);
+        expect(failed.results.META).toMatchObject({ attempted: true, success: false, errorMessage: 'Meta CAPI rejected the event (HTTP 503, code 2).' });
+        expect(store.getReceipt(event.eventId)).toBeUndefined();
+
+        const recovered = await bus.dispatch(event);
+        expect(recovered.deduplicated).toBe(false);
+        expect(recovered.results.META).toMatchObject({ attempted: true, success: true, externalTraceId: 'recovered' });
+        expect(store.getReceipt(event.eventId)).toEqual(recovered);
+
+        expect((await bus.dispatch(event)).deduplicated).toBe(true);
+        expect(fetcher).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps partial fan-out retryable until each eligible platform succeeds', async () => {
+        const metaFetcher: AdapterFetch = vi.fn(async () => jsonResponse({ events_received: 1 }));
+        const tiktokFetcher: AdapterFetch = vi.fn()
+            .mockResolvedValueOnce(jsonResponse({ code: 500, message: 'unavailable' }, 503))
+            .mockResolvedValueOnce(jsonResponse({ code: 0, data: {} }));
+        const bus = new AttributionBus([
+            new MetaAdAdapter({ adAccountId: 'act_1', accessToken: 'MOCK_KEY_DO_NOT_USE', facebookPageId: 'page_1', pixelId: 'pixel_1' }, metaFetcher),
+            new TikTokAdAdapter({ advertiserId: 'adv_1', accessToken: 'MOCK_KEY_DO_NOT_USE', pixelCode: 'tt_pix_1' }, tiktokFetcher),
+        ]);
+        const event: UnifiedAttributionEvent = {
+            eventId: 'evt_partial_retry',
+            eventTimestampUnix: 1792152000,
+            eventName: 'WaitlistSignup',
+            releaseId: 'rel_midnight_express',
+            isrc: 'US-S1Z-26-00412',
+            smartlinkId: 'sl_midnight_01',
+            clickIdentifiers: {},
+            userData: {
+                clientIpAddress: '198.51.100.12',
+                clientUserAgent: 'Mozilla/5.0',
+                emailSha256: sha256('fan@indii.music'),
+            },
+        };
+
+        const partial = await bus.dispatch(event);
+        expect(partial.results.META.success).toBe(true);
+        expect(partial.results.TIKTOK).toMatchObject({ attempted: true, success: false, errorMessage: 'TikTok Events API failed (API_EXECUTION_FAILED, HTTP 503).' });
+
+        const complete = await bus.dispatch(event);
+        expect(complete.deduplicated).toBe(false);
+        expect(complete.results.TIKTOK.success).toBe(true);
+        expect((await bus.dispatch(event)).deduplicated).toBe(true);
+        expect(metaFetcher).toHaveBeenCalledTimes(2);
+        expect(tiktokFetcher).toHaveBeenCalledTimes(2);
+    });
+
     it('dispatches only to matching click-ID platforms, fans out first-party hashed PII when click IDs are absent, and deduplicates by eventId', async () => {
         const metaFetcher: AdapterFetch = vi.fn(async () =>
             jsonResponse({ events_received: 1, fbtrace_id: 'fb_trace_1' }),
@@ -551,31 +629,32 @@ describe('FirestoreAttributionDeduplicationStore', () => {
     } {
         const store = new Map<string, Record<string, unknown>>();
         const db: FirestoreLikeDb = {
-            collection() {
+            collection(collectionPath: string) {
                 return {
                     doc(docId: string) {
+                        const key = `${collectionPath}/${docId}`;
                         return {
                             async get() {
-                                const existing = store.get(docId);
+                                const existing = store.get(key);
                                 return {
                                     exists: existing !== undefined,
                                     data: () => existing,
                                 };
                             },
                             async set(data: Record<string, unknown>, options?: { merge?: boolean }) {
-                                if (options?.merge && store.has(docId)) {
-                                    store.set(docId, { ...store.get(docId), ...data });
+                                if (options?.merge && store.has(key)) {
+                                    store.set(key, { ...store.get(key), ...data });
                                 } else {
-                                    store.set(docId, { ...data });
+                                    store.set(key, { ...data });
                                 }
                             },
                             async create(data: Record<string, unknown>) {
-                                if (store.has(docId)) {
+                                if (store.has(key)) {
                                     const err = new Error('Document already exists') as Error & { code?: number };
                                     err.code = 6; // gRPC ALREADY_EXISTS
                                     throw err;
                                 }
-                                store.set(docId, { ...data });
+                                store.set(key, { ...data });
                             },
                         };
                     },
@@ -587,8 +666,9 @@ describe('FirestoreAttributionDeduplicationStore', () => {
 
     it('persists processed eventIds in Firestore and prevents duplicate AttributionBus replay across instances', async () => {
         const { db, store } = createMockDb();
-        const dedupStoreA = new FirestoreAttributionDeduplicationStore({ db });
-        const dedupStoreB = new FirestoreAttributionDeduplicationStore({ db });
+        const dedupStoreA = new FirestoreAttributionDeduplicationStore({ db, artistId: 'artist_detroit_01' });
+        const dedupStoreB = new FirestoreAttributionDeduplicationStore({ db, artistId: 'artist_detroit_01' });
+        const otherArtistStore = new FirestoreAttributionDeduplicationStore({ db, artistId: 'artist_detroit_02' });
 
         const metaAdapter = new MetaAdAdapter(
             {
@@ -624,12 +704,16 @@ describe('FirestoreAttributionDeduplicationStore', () => {
         const firstDispatch = await busInstance1.dispatch(event);
         expect(firstDispatch.deduplicated).toBe(false);
         expect(firstDispatch.results['META']?.success).toBe(true);
-        expect(store.has('evt_fs_durable_01')).toBe(true);
+        expect(store.has('users/artist_detroit_01/marketingAttributionReceipts/evt_fs_durable_01')).toBe(true);
 
         // Second dispatch on a separate AttributionBus instance backed by the same Firestore collection
         const secondDispatch = await busInstance2.dispatch(event);
         expect(secondDispatch.deduplicated).toBe(true);
         expect(secondDispatch.results['META']?.skippedReason).toBe('DUPLICATE_EVENT');
+        expect(await otherArtistStore.hasProcessed(event.eventId)).toBe(false);
+        const otherArtistReceipt = await new AttributionBus([metaAdapter], otherArtistStore).dispatch(event);
+        expect(otherArtistReceipt.deduplicated).toBe(false);
+        expect(store.has('users/artist_detroit_02/marketingAttributionReceipts/evt_fs_durable_01')).toBe(true);
     });
 });
 
@@ -641,7 +725,7 @@ describe('FirestoreFinanceRecoupmentLedger', () => {
     } {
         const accounts = new Map<string, Record<string, unknown>>();
         for (const [id, balance] of Object.entries(initialBalances)) {
-            accounts.set(id, { availableBalanceCents: balance });
+            accounts.set(id, { artistId: 'artist_detroit_01', availableBalanceCents: balance });
         }
         const reservations = new Map<string, Record<string, unknown>>();
 
@@ -742,9 +826,88 @@ describe('FirestoreFinanceRecoupmentLedger', () => {
         expect(accounts.get('ledger_fs_01')?.availableBalanceCents).toBe(120_000);
         expect(reservations.get(secondEntry.reservationId)?.status).toBe('RELEASED');
     });
+
+    it('rejects another artist\'s recoupment ledger before changing its balance', async () => {
+        const { db, accounts, reservations } = createMockRecoupmentFirestore({ ledger_b: 100_000 });
+        accounts.get('ledger_b')!.artistId = 'artist_B';
+        const ledger = new FirestoreFinanceRecoupmentLedger({ db });
+
+        await expect(ledger.reserveCampaignBudget({
+            ledgerAccountId: 'ledger_b',
+            directiveId: 'dir_artist_a',
+            artistId: 'artist_A',
+            releaseId: 'rel_artist_a',
+            isrc: 'US-S1Z-26-00412',
+            amountCents: 50_000,
+            currency: 'USD',
+        })).rejects.toMatchObject({ code: 'permission-denied' });
+        expect(accounts.get('ledger_b')?.availableBalanceCents).toBe(100_000);
+        expect(reservations.size).toBe(0);
+    });
 });
 
 describe('Jev System One Campaign Judgments & Orchestrator Integration', () => {
+    it('does not treat a 0.64 readiness probability as confirmation', async () => {
+        __resetCampaignJudgmentCooldownForTests();
+        const client = {
+            judge: vi.fn(async () => ({
+                requestId: 'req_low_readiness',
+                answers: {
+                    dominant_platform: { type: 'choice', choice: 'TIKTOK', confidence: 0.9 },
+                    creative_fit_score: { type: 'score', score: 4 },
+                    creative_readiness_confirmed: { type: 'noul', noul: 0.64 },
+                },
+            })),
+        } as unknown as TypesafeClient;
+        const judgment = await evaluateCampaignAllocationWithJev(buildMockDirective(), [], { client });
+        expect(judgment.creativeReadinessConfirmed).toBe(false);
+    });
+
+    it('keeps exact cents and falls back when a Jev split violates the provider minimum', async () => {
+        const directive = buildMockDirective({
+            budgetAllocation: {
+                currency: 'USD',
+                totalBudgetCents: 1_001,
+                dailyBudgetCents: 500,
+                platformSplitPercentages: { META: 34, TIKTOK: 33, GOOGLE_ADS: 33 },
+            },
+        });
+        const original = CampaignOrchestrator.computePlatformAllocationsCents(directive);
+        expect(Object.values(original).reduce((sum, cents) => sum + cents, 0)).toBe(1_001);
+
+        const provision = vi.fn(async (_directive: UnifiedCampaignDirective, cents: number) => ({
+            platform: 'META' as const,
+            externalCampaignId: 'campaign',
+            externalAdSetOrGroupId: 'group',
+            externalAdIds: ['ad'],
+            status: 'ACTIVE' as const,
+            committedBudgetCents: cents,
+            timestampIso: '2026-10-24T00:00:00.000Z',
+        }));
+        const adapters = directive.platforms.map(platform => ({
+            platform,
+            provisionCampaign: provision,
+        })) as unknown as IAdPlatformAdapter[];
+        const ledger = new InMemoryFinanceRecoupmentLedger({ ledger_recoup_01: 2_000 });
+        const orchestrator = new CampaignOrchestrator({
+            adapters,
+            financeLedger: ledger,
+            campaignJudge: vi.fn(async () => ({
+                dominantPlatform: 'META' as const,
+                refinedSplitPercentages: { META: 90, TIKTOK: 5, GOOGLE_ADS: 5 },
+                creativeFitScore: 5,
+                creativeReadinessConfirmed: true,
+                source: 'jev' as const,
+            })),
+        });
+
+        const result = await orchestrator.executeDirective(directive);
+        expect(result.allocatedPlatformBudgetsCents).toEqual(original);
+        expect(Object.values(result.allocatedPlatformBudgetsCents).reduce((sum, cents) => sum + cents, 0)).toBe(1_001);
+        expect(Math.min(...Object.values(result.allocatedPlatformBudgetsCents))).toBeGreaterThanOrEqual(100);
+        expect(result.allocationJudgment?.refinedSplitPercentages).toEqual(directive.budgetAllocation.platformSplitPercentages);
+    });
+
     it('refines platform split percentages toward Jev dominant platform while enforcing 10% floor and 100% sum', async () => {
         __resetCampaignJudgmentCooldownForTests();
         const directive = buildMockDirective();
@@ -764,8 +927,8 @@ describe('Jev System One Campaign Judgments & Orchestrator Integration', () => {
                     creative_fit_score: {
                         type: 'score' as const,
                         answer: 5,
-                        score: 4.78,
-                        distribution: { 1: 0.0, 2: 0.0, 3: 0.02, 4: 0.18, 5: 0.8 },
+                        score: 3.78,
+                        distribution: { 0: 0.0, 1: 0.0, 2: 0.02, 3: 0.18, 4: 0.8 },
                     },
                     creative_readiness_confirmed: {
                         type: 'noul' as const,
@@ -795,6 +958,11 @@ describe('Jev System One Campaign Judgments & Orchestrator Integration', () => {
         );
 
         expect(judgment.source).toBe('jev');
+        expect(mockTypesafeClient.judge).toHaveBeenCalledWith(expect.objectContaining({
+            questions: expect.objectContaining({
+                creative_fit_score: expect.objectContaining({ criteria: expect.any(Array) }),
+            }),
+        }));
         expect(judgment.dominantPlatform).toBe('TIKTOK');
         expect(judgment.confidence).toBeCloseTo(0.92, 2);
         expect(judgment.creativeFitScore).toBeCloseTo(4.78, 2);
@@ -900,7 +1068,7 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
     it('executes handleExecuteUnifiedCampaignDirective and handleIngestUnifiedAttributionEvent end-to-end', async () => {
         const persistedResults: unknown[] = [];
         const accounts = new Map<string, Record<string, unknown>>([
-            ['ledger_recoup_01', { availableBalanceCents: 200_000 }],
+            ['ledger_recoup_01', { artistId: 'artist_detroit_01', availableBalanceCents: 200_000 }],
         ]);
         const reservations = new Map<string, Record<string, unknown>>();
 
@@ -1008,7 +1176,7 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
             },
             {
                 adapters: [metaAdapter],
-                dedupStore: new FirestoreAttributionDeduplicationStore({ db: dedupDb }),
+                dedupStore: new FirestoreAttributionDeduplicationStore({ db: dedupDb, artistId: 'artist_detroit_01' }),
             },
         );
 
