@@ -238,13 +238,13 @@ export async function evaluateCampaignAllocationWithJev(
             type: 'score',
             instructions:
                 'Rate how complete and native the post-mastering `assetInventory` is for the requested `platforms`.',
-            criteria: {
-                1: 'Only static images are available while video-first networks (TikTok or YouTube) are requested.',
-                2: 'Generic video assets exist without native platform identifiers (no Spark auth codes or YouTube IDs).',
-                3: 'Verified video and image assets cover the requested platforms adequately.',
-                4: 'Strong native coverage including platform-specific Spark auth codes or YouTube video IDs.',
-                5: 'Complete multi-platform asset coverage with verified video teasers, artwork, TikTok Spark auth codes, and YouTube asset IDs.',
-            },
+            criteria: [
+                'Only static images are available while video-first networks (TikTok or YouTube) are requested.',
+                'Generic video assets exist without native platform identifiers (no Spark auth codes or YouTube IDs).',
+                'Verified video and image assets cover the requested platforms adequately.',
+                'Strong native coverage including platform-specific Spark auth codes or YouTube video IDs.',
+                'Complete multi-platform asset coverage with verified video teasers, artwork, TikTok Spark auth codes, and YouTube asset IDs.',
+            ],
         },
         creative_readiness_confirmed: {
             type: 'noul',
@@ -283,14 +283,14 @@ export async function evaluateCampaignAllocationWithJev(
         let creativeFitScore = baseline.creativeFitScore;
         if (isPlainObject(fitScoreRaw) && typeof fitScoreRaw['score'] === 'number') {
             const rawScore = fitScoreRaw['score'];
-            if (Number.isFinite(rawScore) && rawScore >= 1 && rawScore <= 5) {
-                creativeFitScore = Math.round(rawScore * 100) / 100;
+            if (Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4) {
+                creativeFitScore = Math.round((rawScore + 1) * 100) / 100;
             }
         }
 
         let creativeReadinessConfirmed = baseline.creativeReadinessConfirmed;
         if (isPlainObject(readinessRaw) && typeof readinessRaw['noul'] === 'number') {
-            creativeReadinessConfirmed = readinessRaw['noul'] >= 0.35;
+            creativeReadinessConfirmed = readinessRaw['noul'] >= 0.65;
         }
 
         const refinedSplitPercentages =

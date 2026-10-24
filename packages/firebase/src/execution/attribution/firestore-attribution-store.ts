@@ -3,7 +3,7 @@
  *
  * Production Firestore-backed implementation of `AttributionDeduplicationStore`.
  * Persists conversion fan-out receipts under a configurable Firestore collection
- * (default: `marketingAttributionReceipts/{eventId}`) so server-side conversion
+ * (default: `users/{artistId}/marketingAttributionReceipts/{eventId}`) so server-side conversion
  * events (Meta CAPI, TikTok Events API, Google Enhanced Conversions) are
  * durably deduplicated across serverless cold starts and concurrent retries.
  */
@@ -31,15 +31,21 @@ export interface FirestoreLikeDb {
 export class FirestoreAttributionDeduplicationStore implements AttributionDeduplicationStore {
     private readonly dbResolver: () => FirestoreLikeDb;
     private readonly collectionName: string;
+    private readonly artistId: string;
 
-    constructor(options?: {
+    constructor(options: {
+        artistId: string;
         db?: FirestoreLikeDb;
         collectionName?: string;
     }) {
+        if (!options.artistId.trim() || options.artistId.includes('/')) {
+            throw new Error('An authenticated artistId is required for attribution deduplication.');
+        }
+        this.artistId = options.artistId;
         this.dbResolver = options?.db
             ? () => options.db!
             : () => admin.firestore() as unknown as FirestoreLikeDb;
-        this.collectionName = options?.collectionName ?? 'marketingAttributionReceipts';
+        this.collectionName = `users/${this.artistId}/${options.collectionName ?? 'marketingAttributionReceipts'}`;
     }
 
     private sanitizeId(eventId: string): string {
@@ -64,6 +70,7 @@ export class FirestoreAttributionDeduplicationStore implements AttributionDedupl
 
         const docRef = this.dbResolver().collection(this.collectionName).doc(docId);
         const record: Record<string, unknown> = {
+            artistId: this.artistId,
             eventId: receipt.eventId,
             eventName: receipt.eventName,
             releaseId: receipt.releaseId,

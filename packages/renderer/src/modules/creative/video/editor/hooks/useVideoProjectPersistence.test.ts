@@ -170,6 +170,21 @@ describe('useVideoProjectPersistence (legacy structural-only; real persistence u
         });
     });
 
+    it('leaves a stalled timeline untouched and offers retry after a bounded load deadline', async () => {
+        const realWork = { ...blankProjectForId('project-a'), name: 'Saved Timeline' };
+        useVideoEditorStore.setState({ project: realWork });
+        vi.mocked(PersistenceService.loadVideoProject).mockImplementation(() => new Promise(() => {}));
+
+        renderHook(() => useVideoProjectPersistence());
+        expect(useVideoEditorStore.getState().isLoadingProject).toBe(true);
+
+        await vi.advanceTimersByTimeAsync(30000);
+        await vi.waitFor(() => expect(useVideoEditorStore.getState().isLoadingProject).toBe(false));
+        expect(useVideoEditorStore.getState().projectLoadError).toMatch(/timed out/i);
+        expect(useVideoEditorStore.getState().project).toBe(realWork);
+        expect(PersistenceService.saveVideoProject).not.toHaveBeenCalled();
+    });
+
     // Regression: ISSUE-1194 — a guest could build a whole timeline and lose all of
     // it on reload, having never been told. Firestore's isAuthenticated() excludes
     // anonymous sign-ins, so every read and write is denied at the rules layer.

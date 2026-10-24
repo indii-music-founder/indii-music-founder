@@ -402,7 +402,7 @@ export class MetaAdAdapter extends BaseAdPlatformAdapter {
 
     async dispatchConversionEvent(
         event: UnifiedAttributionEvent,
-    ): Promise<{ success: boolean; externalTraceId?: string }> {
+    ): Promise<{ success: boolean; externalTraceId?: string; errorMessage?: string }> {
         this.assertConfig();
         const valid = this.validateAttributionEvent(event);
 
@@ -469,6 +469,7 @@ export class MetaAdAdapter extends BaseAdPlatformAdapter {
             return {
                 success: false,
                 externalTraceId: raw.error?.fbtrace_id,
+                errorMessage: `Meta CAPI rejected the event (HTTP ${response.status}${raw.error?.code ? `, code ${raw.error.code}` : ''}).`,
             };
         }
 
