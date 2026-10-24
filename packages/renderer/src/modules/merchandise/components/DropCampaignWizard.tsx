@@ -144,7 +144,7 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                     {!submitted && <p className="text-[10px] text-neutral-500">Step {step} of 3</p>}
                                 </div>
                             </div>
-                            <button onClick={() => { onClose(); setStep(1); setSubmitted(false); }} className="text-neutral-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5">
+                            <button type="button" aria-label="Close drop campaign wizard" onClick={() => { onClose(); setStep(1); setSubmitted(false); }} className="text-neutral-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5">
                                 <X size={16} />
                             </button>
                         </div>
@@ -190,7 +190,9 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                                     <span className="text-xs text-neutral-500">{p.price}</span>
                                                 </label>
                                             )) : (
-                                                <div className="py-12 text-center text-neutral-600 text-sm">No products found. Add products first.</div>
+                                                <div className="py-12 text-center text-neutral-600 text-sm">
+                                                    No products are available for this drop. Product creation is not available in this workspace yet.
+                                                </div>
                                             )}
                                         </div>
                                     </motion.div>
@@ -199,7 +201,9 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                         <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                                             <Clock size={14} className="text-[#FFE135]" /> Set the Countdown
                                         </h4>
+                                        <label htmlFor="drop-name" className="sr-only">Drop name</label>
                                         <input
+                                            id="drop-name"
                                             type="text"
                                             placeholder="Drop name (e.g. 'Summer Collection')"
                                             value={config.dropName}
