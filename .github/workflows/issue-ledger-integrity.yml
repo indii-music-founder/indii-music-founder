@@ -1,0 +1,41 @@
+name: Issue ledger integrity
+
+on:
+  pull_request:
+    paths:
+      - '.agent/test_ledger/OPEN_ISSUES_V3.md'
+      - 'scripts/issue-ledger-integrity*.mjs'
+      - 'scripts/validate-issue-ledger.mjs'
+      - '.github/workflows/issue-ledger-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.agent/test_ledger/OPEN_ISSUES_V3.md'
+      - 'scripts/issue-ledger-integrity*.mjs'
+      - 'scripts/validate-issue-ledger.mjs'
+      - '.github/workflows/issue-ledger-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.x'
+      - run: node --test scripts/issue-ledger-integrity.test.mjs
+      - name: Compare findings with fresh base
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+            node scripts/validate-issue-ledger.mjs "origin/${{ github.base_ref }}"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            node scripts/validate-issue-ledger.mjs HEAD^
+          fi

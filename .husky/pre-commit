@@ -73,6 +73,11 @@ node scripts/check-test-quality.js || {
   exit 1
 }
 
+if git diff --cached --name-only | grep -Fxq '.agent/test_ledger/OPEN_ISSUES_V3.md'; then
+  echo "  3️⃣ d Checking issue ledger integrity..."
+  node scripts/validate-issue-ledger.mjs HEAD --staged
+fi
+
 # Stage 4: Run affected unit tests (CRITICAL: Closes the pre-commit gap)
 # If any .ts/.tsx source files are staged, run their corresponding tests.
 # This catches broken assertions, type mismatches, mock/stub issues before commit.
