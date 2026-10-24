@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useNLEPlayback } from './useNLEPlayback';
+import { VideoTrackDecoder } from './VideoTrackDecoder';
 import type { IndiiVideoProject } from '@indii/shared';
 
 describe('useNLEPlayback React Hook (Issue #413)', () => {
@@ -171,6 +172,7 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
 
   it('cleans up RAF and resources when unmounted', () => {
     const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame');
+    const closeSpy = vi.spyOn(VideoTrackDecoder.prototype, 'close');
     const { result, unmount } = renderHook(() =>
       useNLEPlayback({
         project: sampleProject,
@@ -179,10 +181,12 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
     );
 
     act(() => {
+      result.current.seekToFrame(1);
       result.current.play();
     });
 
     unmount();
     expect(cancelSpy).toHaveBeenCalled();
+    expect(closeSpy).toHaveBeenCalled();
   });
 });

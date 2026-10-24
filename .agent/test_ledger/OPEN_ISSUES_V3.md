@@ -4578,6 +4578,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   5. `9e7eea68c` & `3a2cfbd3f`: Native Electron `video:probe-media` IPC handler with access control, sender validation, path sanitization, and ffprobe child process.
   6. Track scrub canvas (`NLETrackScrubCanvas.tsx`), clip integration (`TimelineClip.tsx`), and tests (`NLETrackScrubCanvas.test.tsx`, `video.security.test.ts`).
 - **Validation:** 100% clean typecheck (`npm run typecheck`), zero ESLint errors, zero pre-commit gate violations, 15/15 test suites and 94/94 NLE tests passing green.
+- **Lifecycle follow-up (2026-10-24):** `useNLEPlayback` now calls `VideoTrackDecoder.close()` on unmount instead of only purging buffered frames, releasing decoder resources and its hardware pool slot. Focused hook/decoder tests pass. ISSUE-1510 remains PARTIAL: the production hook still constructs decoders without a demuxed encoded-frame feed, and real seek/drift/memory/export benchmarks remain unproven.
 
 ---
 
