@@ -3487,6 +3487,7 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Fix:** The selected preset ID is now part of the canonical project model. Applying a preset updates the selected ID, background/seam, and eligible clip settings in one project update so undo restores one coherent prior state. The picker reads the ID from project state and uses a truthful “Choose treatment…” placeholder.
 - **Local validation:** `TreatmentPicker.test.tsx` passes 3/3 tests, including the controlled selected state after project update; repository typecheck passes. Production preview/render behavior and genuine project reload remain unverified.
 - **Acceptance:** With an eligible video clip selected, choosing a named treatment visibly updates selection/state; undo/reload behavior is clear; a real preview/render later confirms the treatment without mock evidence.
+- **Genuine signed-in follow-up (2026-10-23):** In an existing owner timeline with video clips, selecting Vinyl Warm changed the picker from Candy Pop to Vinyl Warm and updated the compiled composition text; Undo restored Candy Pop. The media iframe reported "Unable to play media," so visual treatment output was not verified. After a page reload, the editor remained on "Loading project timeline…" and the saved treatment could not be rechecked. A bounded load timeout with a safe retry error is being delivered separately; this issue remains PARTIAL pending real reload and preview/render proof.
 
 ### ISSUE-1462: History asset View Fullsize has no identifiable preview result
 
