@@ -203,5 +203,5 @@ export abstract class BaseAdPlatformAdapter implements IAdPlatformAdapter {
 
     abstract dispatchConversionEvent(
         event: UnifiedAttributionEvent,
-    ): Promise<{ success: boolean; externalTraceId?: string }>;
+    ): Promise<{ success: boolean; externalTraceId?: string; errorMessage?: string }>;
 }

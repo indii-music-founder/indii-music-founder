@@ -124,7 +124,7 @@ export interface IAdPlatformAdapter {
     updateBudget(externalCampaignId: string, dailyBudgetCents: number): Promise<void>;
     updateStatus(externalCampaignId: string, status: 'ACTIVE' | 'PAUSED'): Promise<void>;
     fetchTelemetry(externalCampaignId: string, dateRange: { start: string; end: string }): Promise<PlatformTelemetrySnapshot>;
-    dispatchConversionEvent(event: UnifiedAttributionEvent): Promise<{ success: boolean; externalTraceId?: string }>;
+    dispatchConversionEvent(event: UnifiedAttributionEvent): Promise<{ success: boolean; externalTraceId?: string; errorMessage?: string }>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

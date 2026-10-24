@@ -361,6 +361,83 @@ describe('GoogleAdsAdapter (REST v17 Video Action / PMax & Enhanced Conversions)
 });
 
 describe('AttributionBus (Server-Side Fan-Out & Deduplication)', () => {
+    it('retries an event after every eligible dispatch fails, then deduplicates only after delivery succeeds', async () => {
+        const fetcher: AdapterFetch = vi.fn()
+            .mockResolvedValueOnce(jsonResponse({ error: { code: 2 } }, 503))
+            .mockResolvedValueOnce(jsonResponse({ events_received: 1, fbtrace_id: 'recovered' }));
+        const adapter = new MetaAdAdapter(
+            {
+                adAccountId: 'act_1',
+                accessToken: 'MOCK_KEY_DO_NOT_USE',
+                facebookPageId: 'page_1',
+                pixelId: 'pixel_1',
+            },
+            fetcher,
+        );
+        const store = new InMemoryAttributionDeduplicationStore();
+        const bus = new AttributionBus([adapter], store);
+        const event: UnifiedAttributionEvent = {
+            eventId: 'evt_retry_after_outage',
+            eventTimestampUnix: 1792152000,
+            eventName: 'DSPOutboundClick',
+            releaseId: 'rel_midnight_express',
+            isrc: 'US-S1Z-26-00412',
+            smartlinkId: 'sl_midnight_01',
+            targetDsp: 'SPOTIFY',
+            clickIdentifiers: { fbclid: 'fb_click_retry' },
+            userData: { clientIpAddress: '198.51.100.12', clientUserAgent: 'Mozilla/5.0' },
+        };
+
+        const failed = await bus.dispatch(event);
+        expect(failed.deduplicated).toBe(false);
+        expect(failed.results.META).toMatchObject({ attempted: true, success: false, errorMessage: 'Meta CAPI rejected the event (HTTP 503, code 2).' });
+        expect(store.getReceipt(event.eventId)).toBeUndefined();
+
+        const recovered = await bus.dispatch(event);
+        expect(recovered.deduplicated).toBe(false);
+        expect(recovered.results.META).toMatchObject({ attempted: true, success: true, externalTraceId: 'recovered' });
+        expect(store.getReceipt(event.eventId)).toEqual(recovered);
+
+        expect((await bus.dispatch(event)).deduplicated).toBe(true);
+        expect(fetcher).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps partial fan-out retryable until each eligible platform succeeds', async () => {
+        const metaFetcher: AdapterFetch = vi.fn(async () => jsonResponse({ events_received: 1 }));
+        const tiktokFetcher: AdapterFetch = vi.fn()
+            .mockResolvedValueOnce(jsonResponse({ code: 500, message: 'unavailable' }, 503))
+            .mockResolvedValueOnce(jsonResponse({ code: 0, data: {} }));
+        const bus = new AttributionBus([
+            new MetaAdAdapter({ adAccountId: 'act_1', accessToken: 'MOCK_KEY_DO_NOT_USE', facebookPageId: 'page_1', pixelId: 'pixel_1' }, metaFetcher),
+            new TikTokAdAdapter({ advertiserId: 'adv_1', accessToken: 'MOCK_KEY_DO_NOT_USE', pixelCode: 'tt_pix_1' }, tiktokFetcher),
+        ]);
+        const event: UnifiedAttributionEvent = {
+            eventId: 'evt_partial_retry',
+            eventTimestampUnix: 1792152000,
+            eventName: 'WaitlistSignup',
+            releaseId: 'rel_midnight_express',
+            isrc: 'US-S1Z-26-00412',
+            smartlinkId: 'sl_midnight_01',
+            clickIdentifiers: {},
+            userData: {
+                clientIpAddress: '198.51.100.12',
+                clientUserAgent: 'Mozilla/5.0',
+                emailSha256: sha256('fan@indii.music'),
+            },
+        };
+
+        const partial = await bus.dispatch(event);
+        expect(partial.results.META.success).toBe(true);
+        expect(partial.results.TIKTOK).toMatchObject({ attempted: true, success: false, errorMessage: 'TikTok Events API failed (API_EXECUTION_FAILED, HTTP 503).' });
+
+        const complete = await bus.dispatch(event);
+        expect(complete.deduplicated).toBe(false);
+        expect(complete.results.TIKTOK.success).toBe(true);
+        expect((await bus.dispatch(event)).deduplicated).toBe(true);
+        expect(metaFetcher).toHaveBeenCalledTimes(2);
+        expect(tiktokFetcher).toHaveBeenCalledTimes(2);
+    });
+
     it('dispatches only to matching click-ID platforms, fans out first-party hashed PII when click IDs are absent, and deduplicates by eventId', async () => {
         const metaFetcher: AdapterFetch = vi.fn(async () =>
             jsonResponse({ events_received: 1, fbtrace_id: 'fb_trace_1' }),
