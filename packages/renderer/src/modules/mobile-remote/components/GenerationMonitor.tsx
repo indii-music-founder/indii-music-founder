@@ -107,7 +107,7 @@ export function buildGeneratedImagesGallery(
         .slice(0, 24);
 }
 
-export default function GenerationMonitor() {
+export default function GenerationMonitor({ isPaired = true }: { isPaired?: boolean }) {
     const {
         isGenerating,
         prompt: storePrompt,
@@ -125,6 +125,7 @@ export default function GenerationMonitor() {
     const [inputPrompt, setInputPrompt] = useState('');
     const [aspectRatio, setAspectRatio] = useState('1:1');
     const [isSending, setIsSending] = useState(false);
+    const [activeCommandId, setActiveCommandId] = useState<string | null>(null);
     const [localGeneratedImages, setLocalGeneratedImages] = useState<GeneratedImage[]>([]);
     const [relayCommands, setRelayCommands] = useState<RemoteCommand[]>([]);
     const [relayResponses, setRelayResponses] = useState<RemoteResponse[]>([]);
@@ -149,7 +150,7 @@ export default function GenerationMonitor() {
     }, [activeStylePreset, inputPrompt]);
 
     const handleGenerate = useCallback(async () => {
-        if (!inputPrompt.trim() || isSending) return;
+        if (!isPaired || !inputPrompt.trim() || isSending) return;
 
         setIsSending(true);
         setError(null);
@@ -178,6 +179,7 @@ export default function GenerationMonitor() {
                 activeTimeoutRef.current = null;
             }
             activeCommandIdRef.current = commandId;
+            setActiveCommandId(commandId);
 
             activeTimeoutRef.current = setTimeout(async () => {
                 activeTimeoutRef.current = null;
@@ -196,6 +198,7 @@ export default function GenerationMonitor() {
                 // clear or annotate the newer command.
                 if (activeCommandIdRef.current !== commandId) return;
                 activeCommandIdRef.current = null;
+                if (isMountedRef.current) setActiveCommandId(null);
                 if (isMountedRef.current) {
                     setError(cancelled
                         ? 'Generation timed out and was cancelled — no cost incurred.'
@@ -215,6 +218,7 @@ export default function GenerationMonitor() {
                         activeListenerRef.current = null;
                     }
                     activeCommandIdRef.current = null;
+                    setActiveCommandId(null);
                     setIsSending(false);
 
                     if (response.imageUrls && response.imageUrls.length > 0) {
@@ -247,11 +251,33 @@ export default function GenerationMonitor() {
                     logger.warn('[GenerationMonitor] Failed to cancel command after listener setup error:', error);
                 });
                 activeCommandIdRef.current = null;
+                setActiveCommandId(null);
             }
             setError(err instanceof Error ? err.message : 'Pipeline Error');
             setIsSending(false);
         }
-    }, [inputPrompt, aspectRatio, isSending]);
+    }, [inputPrompt, aspectRatio, isSending, isPaired]);
+
+    const handleCancel = useCallback(async () => {
+        const commandId = activeCommandIdRef.current;
+        if (!commandId) return;
+        if (activeTimeoutRef.current) clearTimeout(activeTimeoutRef.current);
+        activeTimeoutRef.current = null;
+        activeListenerRef.current?.();
+        activeListenerRef.current = null;
+        activeCommandIdRef.current = null;
+        setActiveCommandId(null);
+        setIsSending(false);
+        try {
+            const cancelled = await remoteRelayService.cancelCommand(commandId);
+            setError(cancelled
+                ? 'Pending generation cancelled.'
+                : 'Desktop may already be processing this request — check before retrying.');
+        } catch (err) {
+            logger.warn('[GenerationMonitor] Cancellation failed:', err);
+            setError('Cancellation could not be confirmed — check desktop before retrying.');
+        }
+    }, []);
 
     useEffect(() => {
         const unsubCommands = remoteRelayService.onAllCommands(setRelayCommands);
@@ -357,6 +383,11 @@ export default function GenerationMonitor() {
                                     </h4>
                                     <Activity className="w-3 h-3 text-blue-400 animate-pulse" />
                                 </div>
+                                {isSending && (
+                                    <button type="button" onClick={handleCancel} disabled={!activeCommandId} className="min-h-11 px-3 rounded-xl border border-white/20 text-xs text-white disabled:opacity-40">
+                                        Cancel pending request
+                                    </button>
+                                )}
                                 <p className="text-[10px] text-[#8e8e93] font-medium uppercase tracking-widest truncate">
                                     {isSending ? inputPrompt : (storePrompt || 'Processing Creative Directive')}
                                 </p>
@@ -494,13 +525,13 @@ export default function GenerationMonitor() {
                                 if (e.key === 'Enter') handleGenerate();
                             }}
                             placeholder="Describe visual concept…"
-                            disabled={isSending}
+                            disabled={isSending || !isPaired}
                             className="flex-1 bg-transparent text-sm text-white placeholder:text-[#636366] outline-none font-medium"
                         />
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={handleGenerate}
-                            disabled={!inputPrompt.trim() || isSending}
+                            disabled={!isPaired || !inputPrompt.trim() || isSending}
                             className={cn(
                                 "w-12 h-12 rounded-[20px] flex items-center justify-center transition-all shadow-lg cursor-pointer",
                                 inputPrompt.trim() && !isSending 
