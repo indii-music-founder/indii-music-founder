@@ -57,7 +57,7 @@ const PORTAL_METADATA: Record<
   loc_copyright: {
     name: 'U.S. Copyright Office eCO Registration',
     organization: 'Library of Congress',
-    officialUrl: 'https://eco.copyright.gov/ecoms/',
+    officialUrl: 'https://eco.copyright.gov/eService_enu/',
     fee: '$45 Single / $65 Standard filing',
     description: 'Establishes prima facie evidence of sound recording (SR) and composition (PA) ownership under US federal law.',
   },
@@ -71,28 +71,28 @@ const PORTAL_METADATA: Record<
   bmi: {
     name: 'BMI Performing Rights Organization',
     organization: 'Broadcast Music, Inc.',
-    officialUrl: 'https://www.bmi.com/join',
+    officialUrl: 'https://online.bmi.com/',
     fee: 'Free songwriter application',
     description: 'Collects public performance royalties across radio, TV, digital streaming, and live venues.',
   },
   ascap: {
     name: 'ASCAP Performing Rights Organization',
     organization: 'ASCAP',
-    officialUrl: 'https://www.ascap.com/join',
+    officialUrl: 'https://members.ascap.com/',
     fee: '$50 one-time application fee',
     description: 'Collects public performance royalties worldwide for songwriters, composers, and music publishers.',
   },
   soundexchange: {
     name: 'SoundExchange Digital Performance',
     organization: 'SoundExchange',
-    officialUrl: 'https://www.soundexchange.com/register/',
+    officialUrl: 'https://sportal.soundexchange.com/',
     fee: 'Free registration',
     description: 'Collects non-interactive digital radio streaming royalties for featured recording artists and master rights owners.',
   },
   hfa: {
     name: 'Harry Fox Agency / Songfile',
     organization: 'HFA / SESAC',
-    officialUrl: 'https://www.songfile.com/',
+    officialUrl: 'https://www.harryfox.com/',
     fee: 'Free catalog indexing',
     description: 'Administers mechanical licensing, DPDs, and physical reproduction rights in the United States.',
   },
@@ -397,8 +397,9 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
                       <button
                         type="button"
                         onClick={() => void handleExecuteStep(act)}
+                        disabled={!sessionActive || !nativeSessionId}
                         aria-label={`Execute Step ${idx + 1}`}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#ffb800]/15 hover:bg-[#ffb800]/25 text-[#ffb800] border border-[#ffb800]/30 text-[10px] font-bold transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#ffb800]/15 hover:bg-[#ffb800]/25 text-[#ffb800] border border-[#ffb800]/30 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <Play className="w-2.5 h-2.5" />
                         <span>Run</span>

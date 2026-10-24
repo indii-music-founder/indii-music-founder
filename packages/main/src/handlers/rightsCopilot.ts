@@ -330,6 +330,7 @@ class RightsCopilotController {
         status: BrowserCopilotSessionStatus;
         requiresUserAction?: boolean;
         extractedValue?: string;
+        error?: string;
     }> {
         const parsedStep = ExecuteStepSchema.parse(rawInput);
         let { action } = parsedStep;
@@ -390,8 +391,9 @@ class RightsCopilotController {
         }
 
         if (action.type === 'stage_deposit_upload') {
+            this.activeSession.awaitingUser = true;
             notifyStatus('deposit_uploading');
-            return { success: true, status: 'deposit_uploading', requiresUserAction: true };
+            return { success: false, status: 'deposit_uploading', requiresUserAction: true, error: 'Attach the verified deposit yourself in the official portal file dialog and confirm the upload there.' };
         }
 
         if (action.type === 'navigate' && typeof action.value === 'string') {
@@ -430,7 +432,13 @@ class RightsCopilotController {
                 }
                 const mode = ${modeJson};
                 if (mode === 'autofill_input' || mode === 'select_option') {
-                    el.value = ${valueJson};
+                    const value = ${valueJson};
+                    const prototype = el instanceof HTMLInputElement ? HTMLInputElement.prototype
+                        : el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype
+                        : el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : null;
+                    const setter = prototype && Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+                    if (!setter) return { found: false, unsupportedField: true };
+                    setter.call(el, value);
                     el.dispatchEvent(new Event('input', { bubbles: true }));
                     el.dispatchEvent(new Event('change', { bubbles: true }));
                 }
@@ -439,7 +447,7 @@ class RightsCopilotController {
 
             const outcome = await copilotWindow.webContents.executeJavaScript(domScript, true);
             if (!outcome?.found || outcome.blockedCredentialField) throw new Error('Metadata field was not verified');
-            if ((action.type === 'autofill_input' || action.type === 'verify_dom_field') && outcome.currentValue !== String(action.value ?? '')) throw new Error('Field value does not match the reviewed manifest');
+            if ((action.type === 'autofill_input' || action.type === 'select_option' || action.type === 'verify_dom_field') && outcome.currentValue !== String(action.value ?? '')) throw new Error('Field value does not match the reviewed manifest');
             return { success: true, status: 'filling_fields' };
         }
 
