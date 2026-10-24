@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "ad43da3979a167fc893e39a1869b92571e8da14573b367ec2f4a800b3569bc01",
+  "sourceDigest": "5af441be4d41bbca1be171c3cc01093a4bbfa086f2d86a4c0f6eb065c324a2b0",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -1421,9 +1421,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run check:test-quality && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
-      "descriptionHash": "50eb05e9ba59fd5330a35a2461d9c2bf8446ad07d8bda753b26cf44b5f985e76",
-      "contentHash": "565b33d79a95393fabfb6a86ee61488733faf7f1647fab3b095b6c1089009cf8",
+      "description": "npm run check:test-quality && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
+      "descriptionHash": "9d84268415ff3938b83bae53cfc52ad7b6501412d9d4678bf8cf878159849602",
+      "contentHash": "ae7fbcef588b5fdd0c3b62e7e836d0c58a5f6eb50ba6050f1cbd616feed09b0b",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [
