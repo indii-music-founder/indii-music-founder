@@ -5335,6 +5335,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   2. In `packages/firebase/src/lib/image_generation.ts` (`generateImageV3Fn`), enforce a request byte-size limit (`MAX_LEGACY_EDIT_REQUEST_BYTES`), reserve budget via `checkOperationBudget` before calling `service.generate(validation.data)`, and settle or void the reservation via `finalizeOperationReservation` in a `try`/`catch` block matching `editImageFn`.
 - **Acceptance:** Unit tests verify `deductCredits` executes all `transaction.get` calls prior to any `transaction.update`/`transaction.set` call and succeeds for funded wallets; `generateImageV3Fn` blocks requests when `checkOperationBudget` returns `allowed: false` and settles/voids reservations on completion/failure.
 
+- **Progress (2026-10-24):** A focused branch moves both wallet and legacy-credit reads ahead of transactional writes, then reserves image budget and caps inline payload size before legacy generation. The callable settles an attempted provider call on both success and failure. Focused structural tests cover funded-wallet read order, budget denial, provider failure settlement, and oversized input; production acceptance and exact-SHA CI remain pending.
+
 ---
 
 ### ISSUE-1545: Hosted Rights Registration 2-hour `rightsInfrastructure/capacity` session leak, permanent `outcome_unknown` filing deadlock, and unvalidated broker `control_ack` race

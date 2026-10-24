@@ -123,6 +123,10 @@ describe('deductCredits', () => {
     const auth = { uid: 'user-1' };
 
     mocks.mockTransaction.get.mockImplementation(async (ref: any) => {
+      // Match Firestore's read-before-write transaction requirement.
+      if (mocks.mockTransaction.update.mock.calls.length || mocks.mockTransaction.set.mock.calls.length) {
+        throw new Error('Firestore transactions require all reads before all writes');
+      }
       if (ref.path?.includes('wallet/current')) {
         return {
           exists: true,
@@ -146,6 +150,9 @@ describe('deductCredits', () => {
     const auth = { uid: 'user-1' };
 
     mocks.mockTransaction.get.mockImplementation(async (ref: any) => {
+      if (mocks.mockTransaction.update.mock.calls.length || mocks.mockTransaction.set.mock.calls.length) {
+        throw new Error('Firestore transactions require all reads before all writes');
+      }
       if (ref.path?.includes('wallet/current')) {
         return {
           exists: true,
