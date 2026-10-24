@@ -3593,6 +3593,7 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Impact:** Artists and assistive tech identify individual asset actions, dismiss controls, recover from filtered queries, and access prerequisites via actionable setup links.
 - **Fix:** Provided specific accessible names on gallery cards and drawer buttons, separated empty catalog from no search matches with clear action, and added interactive setup/upload triggers for empty likeness and brand compliance states.
 - **Acceptance:** Structural tests cover labels and prerequisite controls. Genuine keyboard/screen-reader navigation and owner setup acceptance remain unverified.
+- **Version History follow-up (2026-10-23):** The Merchandise Version History surface now exposes a named modal dialog, a named close button, focus trap/return and Escape handling through the shared modal hook, and expanded state on date groups. Genuine screen-reader and owner workflow acceptance remain outstanding.
 
 ### Investigation notes — not confirmed defects / not completed acceptance
 
