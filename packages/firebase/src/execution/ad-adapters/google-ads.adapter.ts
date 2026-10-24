@@ -488,7 +488,7 @@ export class GoogleAdsAdapter extends BaseAdPlatformAdapter {
 
     async dispatchConversionEvent(
         event: UnifiedAttributionEvent,
-    ): Promise<{ success: boolean; externalTraceId?: string }> {
+    ): Promise<{ success: boolean; externalTraceId?: string; errorMessage?: string }> {
         this.assertConfig();
         const valid = this.validateAttributionEvent(event);
 
@@ -547,7 +547,10 @@ export class GoogleAdsAdapter extends BaseAdPlatformAdapter {
             );
 
             if (uploadRes.partialFailureError) {
-                return { success: false };
+                return {
+                    success: false,
+                    errorMessage: 'Google Ads conversion upload reported a partial failure.',
+                };
             }
 
             return {
@@ -555,8 +558,13 @@ export class GoogleAdsAdapter extends BaseAdPlatformAdapter {
                 externalTraceId:
                     uploadRes.results?.[0]?.conversionDateTime ?? valid.eventId,
             };
-        } catch {
-            return { success: false };
+        } catch (error) {
+            return {
+                success: false,
+                errorMessage: error instanceof AdPlatformAdapterError
+                    ? `Google Ads conversion upload failed (${error.code}, HTTP ${error.details?.status ?? 'unknown'}).`
+                    : 'Google Ads conversion upload request failed.',
+            };
         }
     }
 }

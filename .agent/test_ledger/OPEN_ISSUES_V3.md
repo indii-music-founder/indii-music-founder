@@ -5259,6 +5259,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   2. Propagate upstream HTTP status / error details into `platformDispatches[platform].errorMessage` when `result.success === false`.
 - **Acceptance:** Unit test proves that when all configured platform adapters return `{ success: false }` on first attempt, a subsequent retry of the same `eventId` is NOT short-circuited as `DUPLICATE_EVENT` and succeeds once the adapter recovers.
 
+- **Progress (2026-10-24):** The attribution bus now persists a terminal deduplication receipt only after every attempted eligible platform succeeds. Failed and partially failed fan-outs remain retryable with the same platform event ID. Adapter failures carry bounded status/code diagnostics into the receipt; focused tests cover outage recovery and partial fan-out. Publication, exact-SHA CI, and production delivery evidence remain pending.
+
 ---
 
 ### ISSUE-1542: Mobile Remote `QuickCaptureView` leaks orphaned Storage blobs on relay failure, hides the Video Editor bridge for audio captures, and `rendererExecutionAdapter` silently drops video/audio attachments sent to Boardroom
