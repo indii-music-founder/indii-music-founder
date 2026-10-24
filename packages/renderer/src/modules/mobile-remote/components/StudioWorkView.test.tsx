@@ -11,14 +11,19 @@ vi.mock('@/core/context/ToastContext', () => ({
 vi.mock('./AgentChat', () => ({
     default: () => <div data-testid="agent-chat-stub">Agent Chat Embedded</div>,
 }));
+vi.mock('./GenerationMonitor', async (importOriginal) => ({
+    ...await importOriginal<typeof import('./GenerationMonitor')>(),
+    default: ({ isPaired }: { isPaired: boolean }) => <div data-testid="generation-monitor">{isPaired ? 'Paired generator' : 'Offline generator'}</div>,
+}));
+vi.mock('./CommandPad', () => ({
+    default: ({ isPaired }: { isPaired: boolean }) => <div data-testid="command-pad">{isPaired ? 'Paired actions' : 'Offline actions'}</div>,
+}));
 
-let mockCommandsCallback: ((cmds: unknown[]) => void) | null = null;
 let mockResponsesCallback: ((resps: unknown[]) => void) | null = null;
 
 vi.mock('@/services/agent/RemoteRelayService', () => ({
     remoteRelayService: {
         onAllCommands: vi.fn((cb) => {
-            mockCommandsCallback = cb;
             cb([]);
             return () => {};
         }),
@@ -34,7 +39,6 @@ vi.mock('@/services/agent/RemoteRelayService', () => ({
 describe('StudioWorkView Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockCommandsCallback = null;
         mockResponsesCallback = null;
     });
 
@@ -77,6 +81,16 @@ describe('StudioWorkView Component', () => {
         await waitFor(() => {
             expect(screen.getByTestId('agent-chat-stub')).toBeDefined();
         });
+    });
+
+    it('exposes generation presets and actions from the studio navigation', async () => {
+        render(<StudioWorkView isPaired={false} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+        await waitFor(() => expect(screen.getByTestId('generation-monitor')).toHaveTextContent('Offline generator'));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+        await waitFor(() => expect(screen.getByTestId('command-pad')).toHaveTextContent('Offline actions'));
     });
 
     it('submits a flyer generation request to desktop studio', async () => {

@@ -5017,6 +5017,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1531: Tactile action grid (CommandPad) and visual generation presets (GenerationMonitor) are orphaned from mobile studio UI
 
+**Progress (2026-10-24):** `codex/issue-1531-mobile-studio-controls` exposes the existing GenerationMonitor and CommandPad behind dedicated Studio subtabs, gates their relay actions on pairing, adds a pending-generation cancellation control, and removes CommandPad's hardcoded CPU/audio/sync claims. Focused structural tests and renderer typecheck pass. Real paired-phone validation of Streetwear + 9:16 metadata, cancellation against a pending desktop command, and Show Me delivery remains required before closing this issue.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / CommandPad / GenerationMonitor / StudioWorkView

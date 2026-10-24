@@ -72,4 +72,13 @@ describe('CommandPad', () => {
             payload: { module: 'road' },
         });
     });
+
+    it('keeps relay shortcuts unavailable while the phone is unpaired', () => {
+        render(<CommandPad onSendCommand={mockSendCommand} isPaired={false} />);
+        const roadButton = screen.getByRole('button', { name: /road mode/i });
+        expect(roadButton).toBeDisabled();
+        fireEvent.click(roadButton);
+        expect(mockSendCommand).not.toHaveBeenCalled();
+        expect(screen.queryByText('CPU 12%')).not.toBeInTheDocument();
+    });
 });

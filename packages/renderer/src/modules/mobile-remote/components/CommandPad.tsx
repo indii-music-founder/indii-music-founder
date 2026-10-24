@@ -17,7 +17,7 @@ import {
   Palette, Video, Music, DollarSign, Calendar, TrendingUp, Bot, Users, Activity, Image as ImageIcon,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   CheckSquare, ThumbsUp, ShoppingBag, MapPin, Sparkles, Mic, LucideIcon, Rocket, Zap,
-  Cpu, Headphones, Share2, Layers, Settings, FileText, Globe, BarChart3, Shield,
+  Layers, Settings, FileText, Globe, BarChart3, Shield,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   MessageSquare, Package, Wand2, Play, Pause, Navigation
 } from 'lucide-react';
@@ -300,6 +300,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
           {quickActions.map((action, idx) => (
             <motion.button
               key={action.id}
+              disabled={!isPaired}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
@@ -307,6 +308,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
               onClick={action.action}
               className={cn(
                 "relative overflow-hidden flex flex-col items-start gap-3 p-4 rounded-[28px] border backdrop-blur-xl transition-all duration-300 shadow-xl cursor-pointer shrink-0 snap-center",
+                !isPaired && 'opacity-40 cursor-not-allowed',
                 action.color,
                 action.glow
               )}
@@ -340,6 +342,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
           {dashboardHubCards.map((card, idx) => (
             <motion.button
               key={card.id}
+              disabled={!isPaired}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + idx * 0.03 }}
@@ -347,6 +350,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
               onClick={() => triggerHubAction(card.moduleId, card.agentPrompt)}
               className={cn(
                 "group relative overflow-hidden flex flex-col items-start p-4.5 rounded-[28px] border border-t-white/10 border-l-white/5 bg-white/[0.01] backdrop-blur-3xl transition-all duration-300 shadow-2xl cursor-pointer text-left",
+                !isPaired && 'opacity-40 cursor-not-allowed',
                 card.color,
                 card.glow
               )}
@@ -380,6 +384,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
           {moduleButtons.map((mod, idx) => (
             <motion.button
               key={mod.id}
+              disabled={!isPaired}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 + (idx * 0.02) }}
@@ -387,6 +392,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
               onClick={() => navigateTo(mod.id as ModuleId)}
               className={cn(
                 "flex flex-col items-center justify-center gap-3 py-4.5 rounded-[24px] bg-white/[0.02] border hover:bg-white/[0.05] border-white/5 hover:border-white/10 transition-all duration-300 cursor-pointer shadow-md",
+                !isPaired && 'opacity-40 cursor-not-allowed',
                 mod.accent
               )}
               style={{ minHeight: '88px', minWidth: '44px' }}
@@ -400,29 +406,6 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
         </div>
       </section>
 
-      {/* ─── Section: Quick Status / Telemetry ─── */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="flex items-center justify-center gap-6 px-6 py-4.5 rounded-[32px] bg-white/[0.02] border border-white/5 shadow-inner"
-        style={{ minHeight: '52px' }}
-      >
-        <div className="flex flex-col items-center gap-1">
-          <Cpu className="w-4 h-4 text-blue-400/50" />
-          <span className="text-[8px] font-bold text-[#8e8e93] uppercase tracking-widest mt-0.5">CPU 12%</span>
-        </div>
-        <div className="w-px h-6 bg-white/5" />
-        <div className="flex flex-col items-center gap-1">
-          <Headphones className="w-4 h-4 text-indigo-400/50" />
-          <span className="text-[8px] font-bold text-[#8e8e93] uppercase tracking-widest mt-0.5">Audio ON</span>
-        </div>
-        <div className="w-px h-6 bg-white/5" />
-        <div className="flex flex-col items-center gap-1">
-          <Share2 className="w-4 h-4 text-emerald-400/50 animate-pulse" />
-          <span className="text-[8px] font-bold text-[#8e8e93] uppercase tracking-widest mt-0.5">Sync OK</span>
-        </div>
-      </motion.div>
     </div>
   );
 }

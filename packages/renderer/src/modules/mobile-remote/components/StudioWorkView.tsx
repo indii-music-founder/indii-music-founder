@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { Sparkles, MessageSquare, Image as ImageIcon, Download, Maximize2, X, Send, Loader2 } from 'lucide-react';
+import { Sparkles, MessageSquare, Image as ImageIcon, Download, Maximize2, X, Send, Loader2, LayoutGrid, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { remoteRelayService, type RemoteCommand, type RemoteResponse } from '@/services/agent/RemoteRelayService';
 import { buildGeneratedImagesGallery } from './GenerationMonitor';
@@ -8,6 +8,8 @@ import { useToast } from '@/core/context/ToastContext';
 import { downloadCapturedMedia } from './QuickCaptureView';
 
 const AgentChat = lazy(() => import('./AgentChat'));
+const GenerationMonitor = lazy(() => import('./GenerationMonitor'));
+const CommandPad = lazy(() => import('./CommandPad'));
 
 interface StudioWorkViewProps {
     pendingChatCommandId?: string | null;
@@ -28,7 +30,7 @@ export default function StudioWorkView({
     onClearPendingAttachment,
 }: StudioWorkViewProps) {
     const toast = useToast();
-    const [subTab, setSubTab] = useState<'outputs' | 'chat'>('outputs');
+    const [subTab, setSubTab] = useState<'outputs' | 'generate' | 'actions' | 'chat'>('outputs');
     const [relayCommands, setRelayCommands] = useState<RemoteCommand[]>([]);
     const [relayResponses, setRelayResponses] = useState<RemoteResponse[]>([]);
     const [selectedImage, setSelectedImage] = useState<{ url: string; prompt: string } | null>(null);
@@ -124,7 +126,7 @@ export default function StudioWorkView({
         <div className="flex flex-col h-full overflow-hidden font-sans">
             {/* Sub-navigation Segmented Control */}
             <div className="flex items-center justify-center px-4 pt-1 pb-3">
-                <div className="flex items-center p-1 bg-white/[0.05] border border-white/10 rounded-2xl w-full max-w-xs shadow-inner">
+                <div className="flex items-center p-1 bg-white/[0.05] border border-white/10 rounded-2xl w-full shadow-inner">
                     <button
                         type="button"
                         onClick={() => {
@@ -139,6 +141,14 @@ export default function StudioWorkView({
                     >
                         <ImageIcon className="w-3.5 h-3.5" />
                         <span>Flyers & Outputs</span>
+                    </button>
+                    <button type="button" onClick={() => { triggerHaptic(30); setSubTab('generate'); }}
+                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${subTab === 'generate' ? 'bg-[#00ff66] text-[#061806]' : 'text-stone-400 hover:text-white'}`}>
+                        <Wand2 className="w-3.5 h-3.5" /><span>Generate</span>
+                    </button>
+                    <button type="button" onClick={() => { triggerHaptic(30); setSubTab('actions'); }}
+                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${subTab === 'actions' ? 'bg-[#00ff66] text-[#061806]' : 'text-stone-400 hover:text-white'}`}>
+                        <LayoutGrid className="w-3.5 h-3.5" /><span>Actions</span>
                     </button>
                     <button
                         type="button"
@@ -170,6 +180,18 @@ export default function StudioWorkView({
                             initialAttachment={pendingChatAttachment}
                             onClearInitialAttachment={onClearPendingAttachment}
                         />
+                    </Suspense>
+                </div>
+            ) : subTab === 'generate' ? (
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-28 custom-scrollbar">
+                    <Suspense fallback={<Loader2 className="w-6 h-6 animate-spin text-[#00ff66]" />}>
+                        <GenerationMonitor isPaired={isPaired} />
+                    </Suspense>
+                </div>
+            ) : subTab === 'actions' ? (
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-28 custom-scrollbar">
+                    <Suspense fallback={<Loader2 className="w-6 h-6 animate-spin text-[#00ff66]" />}>
+                        <CommandPad isPaired={isPaired} onSendCommand={onSendCommand || (() => {})} />
                     </Suspense>
                 </div>
             ) : (
