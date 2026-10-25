@@ -50,6 +50,8 @@ describe('TransportBar playback races', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+        Reflect.deleteProperty(navigator, 'mediaSession');
     });
 
     it('ignores an older track play result after the current track fails', async () => {
@@ -73,5 +75,36 @@ describe('TransportBar playback races', () => {
             await first.promise;
         });
         expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument();
+    });
+
+    it('binds supported lock-screen controls to the active audio element and cleans them up', async () => {
+        const handlers = new Map<string, ((details: { seekTime?: number; fastSeek?: boolean }) => void) | null>();
+        const session = {
+            metadata: null as unknown,
+            playbackState: 'none',
+            setActionHandler: vi.fn((action: string, handler: Parameters<typeof handlers.set>[1]) => handlers.set(action, handler)),
+            setPositionState: vi.fn(),
+        };
+        Object.defineProperty(navigator, 'mediaSession', { configurable: true, value: session });
+        vi.stubGlobal('MediaMetadata', class { constructor(public data: Record<string, unknown>) {} });
+        vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+        const onNext = vi.fn();
+        const onPrevious = vi.fn();
+        const item = { ...track('one', 'https://cdn.example/one.mp3'), prompt: 'Unreleased Mix' };
+        const view = render(<TransportBar track={item} onNext={onNext} onPrevious={onPrevious} />);
+        const audio = view.container.querySelector('audio')!;
+        Object.defineProperty(audio, 'duration', { configurable: true, value: 100 });
+        expect((session.metadata as { data: { title: string } }).data.title).toBe('Unreleased Mix');
+        await act(async () => handlers.get('play')?.({}));
+        expect(session.playbackState).toBe('playing');
+        act(() => handlers.get('seekto')?.({ seekTime: 42 }));
+        expect(audio.currentTime).toBe(42);
+        act(() => handlers.get('nexttrack')?.({}));
+        act(() => handlers.get('previoustrack')?.({}));
+        expect(onNext).toHaveBeenCalledOnce();
+        expect(onPrevious).toHaveBeenCalledOnce();
+        view.unmount();
+        expect(handlers.get('play')).toBeNull();
+        expect(session.metadata).toBeNull();
     });
 });

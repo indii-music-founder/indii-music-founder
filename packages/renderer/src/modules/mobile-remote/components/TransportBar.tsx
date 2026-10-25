@@ -17,6 +17,7 @@ import { logger } from '@/utils/logger';
 interface TransportBarProps {
     track: HistoryItem | null;
     onNext?: () => void;
+    onPrevious?: () => void;
 }
 
 function formatTime(seconds: number): string {
@@ -26,7 +27,7 @@ function formatTime(seconds: number): string {
     return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export default function TransportBar({ track, onNext }: TransportBarProps) {
+export default function TransportBar({ track, onNext, onPrevious }: TransportBarProps) {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const playbackRequestRef = useRef(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -38,8 +39,18 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
         const audio = audioRef.current;
         if (!audio) return;
 
-        const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-        const handleDurationChange = () => setDuration(audio.duration);
+        const updatePosition = () => {
+            if (!('mediaSession' in navigator) || !Number.isFinite(audio.duration) || audio.duration <= 0) return;
+            try {
+                navigator.mediaSession.setPositionState({
+                    duration: audio.duration,
+                    position: Math.min(audio.currentTime, audio.duration),
+                    playbackRate: audio.playbackRate,
+                });
+            } catch { /* Position state is optional on some browsers. */ }
+        };
+        const handleTimeUpdate = () => { setCurrentTime(audio.currentTime); updatePosition(); };
+        const handleDurationChange = () => { setDuration(audio.duration); updatePosition(); };
         const handleEnded = () => {
             playbackRequestRef.current += 1;
             setIsPlaying(false);
@@ -89,6 +100,55 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
             if (playbackRequestRef.current === requestId) playbackRequestRef.current += 1;
         };
     }, [track]);
+
+    useEffect(() => {
+        if (!track?.url || !('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
+        const session = navigator.mediaSession;
+        const audio = audioRef.current;
+        if (!audio) return;
+        const artwork = track.thumbnailUrl && /^https:\/\//.test(track.thumbnailUrl)
+            ? [{ src: track.thumbnailUrl }]
+            : [{ src: '/icon-remote-512.png', sizes: '512x512', type: 'image/png' }];
+        session.metadata = new MediaMetadata({
+            title: track.prompt || track.subject || 'Master Preview',
+            artist: 'indii Vault',
+            album: 'Cloud Vault',
+            artwork,
+        });
+        const handlers: Array<[MediaSessionAction, MediaSessionActionHandler]> = [
+            ['play', () => {
+                const requestId = ++playbackRequestRef.current;
+                void audio.play().then(() => {
+                    if (playbackRequestRef.current === requestId) setIsPlaying(true);
+                }).catch(error => logger.warn('[TransportBar] Lock-screen play failed:', error));
+            }],
+            ['pause', () => { playbackRequestRef.current += 1; audio.pause(); setIsPlaying(false); }],
+            ['seekto', details => {
+                if (!Number.isFinite(details.seekTime) || !Number.isFinite(audio.duration)) return;
+                const position = Math.max(0, Math.min(details.seekTime!, audio.duration));
+                if (details.fastSeek && typeof audio.fastSeek === 'function') audio.fastSeek(position);
+                else audio.currentTime = position;
+            }],
+        ];
+        if (onNext) handlers.push(['nexttrack', onNext]);
+        if (onPrevious) handlers.push(['previoustrack', onPrevious]);
+        for (const [action, handler] of handlers) {
+            try { session.setActionHandler(action, handler); } catch { /* Unsupported OS control. */ }
+        }
+        return () => {
+            for (const [action] of handlers) {
+                try { session.setActionHandler(action, null); } catch { /* Unsupported OS control. */ }
+            }
+            session.metadata = null;
+            session.playbackState = 'none';
+        };
+    }, [track, onNext, onPrevious]);
+
+    useEffect(() => {
+        if ('mediaSession' in navigator && track) {
+            navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+        }
+    }, [isPlaying, track]);
 
     const togglePlay = () => {
         if (!audioRef.current || !track) return;

@@ -29,6 +29,7 @@ import {
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
+import { buildMobileRemoteUrl } from '../routing';
 
 interface SettingsViewProps {
     desktopState: DesktopState | null;
@@ -146,6 +147,16 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
             </div>
 
             {/* ─── Desktop Status + Wake ─────────────────────────────── */}
+            <section className="rounded-[24px] border border-white/10 bg-[#1a1512]/80 p-5">
+                <h3 className="text-sm font-bold text-white">Phone shortcuts</h3>
+                <p className="mt-2 text-xs text-[#a1a1a6]">In Apple Shortcuts or your lock screen launcher, add an Open URL action for one of these links. Your phone will still ask you to tap before opening the camera or microphone.</p>
+                <div className="mt-3 flex flex-col gap-2 text-xs">
+                    <a className="text-cyan-300 underline" href={buildMobileRemoteUrl('?action=photo')}>Photo capture link</a>
+                    <a className="text-cyan-300 underline" href={buildMobileRemoteUrl('?action=voice')}>Voice memo link</a>
+                    <a className="text-cyan-300 underline" href={buildMobileRemoteUrl('?action=vault')}>Vault listening link</a>
+                </div>
+            </section>
+
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

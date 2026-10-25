@@ -36,7 +36,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { getRemoteConnectionPhase } from './RemoteConnectionState';
-import { isIpadOrTabletDevice, isRemoteSurfaceDevice } from './routing';
+import { isIpadOrTabletDevice, isRemoteSurfaceDevice, parseMobileShortcutAction } from './routing';
 import IpadSurfacePrompt, { IPAD_REMOTE_PROMPT_KEY } from './components/IpadSurfacePrompt';
 import { useMobile } from '@/hooks/useMobile';
 
@@ -105,7 +105,8 @@ export default function MobileRemote() {
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'pairing' | 'connected' | 'error'>(() =>
     remoteRelayService.isAuthenticated() ? 'pairing' : 'idle'
   );
-  const [activeTab, setActiveTab] = useState<TabId>('home');
+  const shortcutAction = typeof window !== 'undefined' ? parseMobileShortcutAction(window.location.search) : null;
+  const [activeTab, setActiveTab] = useState<TabId>(shortcutAction === 'vault' ? 'stream' : 'home');
   const [pendingChatCommandId, setPendingChatCommandId] = useState<string | null>(null);
   const [pendingChatAttachment, setPendingChatAttachment] = useState<{ url: string; mimeType: string; name: string } | null>(null);
   const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
@@ -581,7 +582,7 @@ export default function MobileRemote() {
       case 'home':
         return (
           <Suspense fallback={<TabFallback />}>
-            <QuickCaptureView isPaired={isPaired} onNavigateToChat={handleNavigateToChat} />
+            <QuickCaptureView isPaired={isPaired} onNavigateToChat={handleNavigateToChat} shortcutAction={shortcutAction === 'photo' || shortcutAction === 'voice' ? shortcutAction : undefined} />
           </Suspense>
         );
       case 'studio':
