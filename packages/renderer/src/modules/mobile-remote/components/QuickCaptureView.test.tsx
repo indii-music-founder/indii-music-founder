@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import QuickCaptureView, { pickSupportedAudioMimeType, audioExtensionForMimeType, downloadCapturedMedia } from './QuickCaptureView';
 
 /**
@@ -46,14 +46,17 @@ class FakeMediaRecorder {
     }
 }
 
-const { mockError, mockSuccess, mockDispatchTask, mockAddNote, mockUploadFile, mockDeleteFile } = vi.hoisted(() => ({
+const { mockError, mockSuccess, mockDispatchTask, mockAddNote, mockUploadFile, mockDeleteFile, mockCreateEncounter } = vi.hoisted(() => ({
     mockError: vi.fn(),
     mockSuccess: vi.fn(),
     mockDispatchTask: vi.fn(),
     mockAddNote: vi.fn(),
     mockUploadFile: vi.fn(),
     mockDeleteFile: vi.fn(async () => undefined),
+    mockCreateEncounter: vi.fn(async () => 'encounter-1'),
 }));
+
+vi.mock('@/services/encounters/EncounterService', () => ({ EncounterService: { createEncounter: mockCreateEncounter } }));
 
 vi.mock('@/services/firebase', () => ({ auth: { currentUser: { uid: 'user-1' } } }));
 
@@ -126,6 +129,36 @@ describe('QuickCaptureView', () => {
             tags: ['mobile-capture'],
         }));
         expect(mockSuccess).toHaveBeenCalledWith('Live moment saved directly to Notes.');
+    });
+
+    it('sends a receipt to the cloud analysis pipeline without claiming an expense was already recorded', async () => {
+        mockUploadFile.mockResolvedValue('gs://project/users/user-1/assets/receipts/test.png');
+        URL.createObjectURL = vi.fn(() => 'blob:receipt-preview');
+        URL.revokeObjectURL = vi.fn();
+        render(<QuickCaptureView isPaired={true} />);
+        const input = screen.getByTitle('Scan Expense Receipt').nextElementSibling as HTMLInputElement;
+        fireEvent.change(input, { target: { files: [new File(['image'], 'receipt.png', { type: 'image/png' })] } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save for Analysis' }));
+        await waitFor(() => expect(mockCreateEncounter).toHaveBeenCalledWith(expect.objectContaining({
+            assets: [expect.objectContaining({ type: 'receipt' })],
+        })));
+        expect(mockDispatchTask).not.toHaveBeenCalled();
+        expect(mockSuccess).toHaveBeenCalledWith(expect.stringMatching(/analysis is pending/i));
+        expect(mockAddNote).not.toHaveBeenCalled();
+    });
+
+    it('keeps receipt capture retryable and removes its upload when encounter creation fails', async () => {
+        mockUploadFile.mockResolvedValue('gs://project/users/user-1/assets/receipts/test.png');
+        mockCreateEncounter.mockRejectedValueOnce(new Error('Encounter unavailable'));
+        URL.createObjectURL = vi.fn(() => 'blob:receipt-preview');
+        URL.revokeObjectURL = vi.fn();
+        render(<QuickCaptureView isPaired={false} />);
+        const input = screen.getByTitle('Scan Expense Receipt').nextElementSibling as HTMLInputElement;
+        fireEvent.change(input, { target: { files: [new File(['image'], 'receipt.png', { type: 'image/png' })] } });
+        fireEvent.click(screen.getByRole('button', { name: 'Save for Analysis' }));
+        await waitFor(() => expect(mockError).toHaveBeenCalledWith('Encounter unavailable'));
+        expect(mockDeleteFile).toHaveBeenCalled();
+        expect(screen.getByRole('button', { name: 'Save for Analysis' })).toBeEnabled();
     });
 });
 

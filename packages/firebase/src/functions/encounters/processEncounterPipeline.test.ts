@@ -38,4 +38,16 @@ describe('Encounter evidence boundaries (structural)', () => {
         expect(() => parseEncounterAnalysis(JSON.stringify({ summary: 'x', contact: { name: 'Example', confidence: 'high', evidence: { name: ['absent'] } } }), ['asset_0'])).toThrow();
         expect(parseEncounterAnalysis('{"summary":"No contact found","contact":null}', ['asset_0']).contact).toBeUndefined();
     });
+    it('accepts only complete USD receipt fields cited by the receipt image', () => {
+        const receipt = { vendor: 'Venue Parking', date: '2026-10-24', amount: 12.5, currency: 'USD',
+            category: 'Travel', tax: 1.25,
+            evidence: { vendor: ['asset_0'], date: ['asset_0'], amount: ['asset_0'], currency: ['asset_0'], tax: ['asset_0'] } };
+        const raw = JSON.stringify({ summary: 'Parking receipt', contact: null, receipt });
+        expect(parseEncounterAnalysis(raw, ['asset_0'], ['asset_0']).receipt).toMatchObject({ vendor: 'Venue Parking', amount: 12.5, tax: 1.25 });
+        expect(parseEncounterAnalysis(raw, ['asset_0'], []).receipt).toBeUndefined();
+        expect(parseEncounterAnalysis(raw, ['asset_0'], ['asset_1']).receipt).toBeUndefined();
+        expect(parseEncounterAnalysis(JSON.stringify({ summary: 'x', receipt: { ...receipt, currency: 'EUR' } }), ['asset_0'], ['asset_0']).receipt).toBeUndefined();
+        expect(parseEncounterAnalysis(JSON.stringify({ summary: 'x', receipt: { ...receipt, date: '2026-02-30' } }), ['asset_0'], ['asset_0']).receipt).toBeUndefined();
+        expect(parseEncounterAnalysis(JSON.stringify({ summary: 'x', receipt: { vendor: 'partial' } }), ['asset_0'], ['asset_0']).receipt).toBeUndefined();
+    });
 });

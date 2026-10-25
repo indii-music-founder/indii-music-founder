@@ -585,7 +585,7 @@ export default function MobileRemote() {
       case 'road':
         return (
           <Suspense fallback={<TabFallback />}>
-            <RoadMode onSubmitPrompt={handleRoadRequest} />
+            <RoadMode onSubmitPrompt={handleRoadRequest} isPaired={isPaired} />
           </Suspense>
         );
       case 'stream':

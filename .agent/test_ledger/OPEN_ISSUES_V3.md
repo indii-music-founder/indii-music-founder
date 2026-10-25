@@ -5043,6 +5043,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1532: Mobile capture ingestion bypasses AI agent swarm — voice memos lack auto-transcription and receipts lack OCR expense parsing
 
+**Progress (2026-10-24):** The existing cloud Encounter pipeline already transcribes captured audio and creates a durable note, so the prior voice finding was partly stale. `codex/issue-1532-mobile-capture-ingestion` removes the duplicate direct desktop note task for voice/receipt captures and requires a durable Encounter before clearing them. Receipt media now gets evidence-cited OCR fields; complete USD results create a deterministic, unclassified, receipt-attached expense candidate and a reviewable note. Incomplete/unsupported extraction saves the original note without inventing an amount. Road Mode exposes mileage logging; its 2026 estimate follows the published IRS period rates and remains unclassified for review. Focused structural tests and typechecks pass. Genuine captured-media transcription/OCR, expense review, and mobile UI acceptance remain open.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🔴 HIGH
 - **Module:** Mobile Remote / Capture Ingestion / Notes / Finance Agent / Speech-to-Text
