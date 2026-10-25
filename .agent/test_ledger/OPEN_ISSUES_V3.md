@@ -5310,6 +5310,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1543: `ARCJET_PROTECTION_MATRIX.md` 69-file false-compliance gap, unthrottled `mintElectronAppCheckToken` arbitrary `appId` minting, and `issueStudioExecutorLease` auto-enrollment relay hijack
 
 - **Status:** 🔴 OPEN (2026-10-16)
+- **2026-10-24 progress:** The `codex/issue-1543-appcheck-mint` branch narrows token minting to a verified, non-anonymous user and the Electron renderer's configured Firebase app ID, and adds Arcjet admission before token creation. Focused tests cover denied identity, app ID, admission, and allowed minting. This is partial protection: a verified browser session can still request a token for the allowed app ID. Device-bound proof, relay enrollment, the wider Arcjet matrix audit, branch CI, and production acceptance remain open.
 - **Severity:** 🔴 CRITICAL
 - **Module:** Security / Admission & App Check / Studio Remote Relay (`docs/ARCJET_PROTECTION_MATRIX.md`, `packages/firebase/src/functions/auth/mintElectronAppCheckToken.ts`, `packages/firebase/src/functions/remote/issueStudioExecutorLease.ts`, `packages/firebase/src/assets/auditReleaseArtwork.ts`)
 - **Classification:** App Check bypass, remote relay device hijack, and 69-endpoint Arcjet admission gap.
