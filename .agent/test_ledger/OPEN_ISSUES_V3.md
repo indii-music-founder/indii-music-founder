@@ -5376,6 +5376,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1545: Hosted Rights Registration 2-hour `rightsInfrastructure/capacity` session leak, permanent `outcome_unknown` filing deadlock, and unvalidated broker `control_ack` race
 
+- **Progress (2026-10-25):** Current code already releases capacity transactionally on a confirmed worker `ended` event, fences stale `control_ack` generations, and runs a scheduled Cloud Run execution reconciliation before releasing uncertain capacity. The remaining user-facing deadlock is `outcome_unknown`: a focused branch adds an exact-filing, owner-bound artist attestation path to reopen only when no hosted reservation or reported receipt remains, with an audit record and explicit notice that external status is unverified. An unconfirmed launch with no recoverable operation/execution proof still requires operator reconciliation; its capacity cannot safely be released by elapsed time alone. Live portal acceptance remains open.
+
 - **Status:** 🔴 OPEN (2026-10-16)
 - **Severity:** 🟠 HIGH
 - **Module:** Rights Registration & Cloud Run Session Broker (`packages/firebase/src/functions/rights/rightsRegistration.ts`, `packages/rights-session-broker/src/index.ts`)

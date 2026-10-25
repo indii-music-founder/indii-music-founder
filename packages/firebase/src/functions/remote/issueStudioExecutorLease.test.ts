@@ -352,6 +352,8 @@ describe('publishStudioPresence', () => {
         });
         await presence()(req({ deviceId: DEVICE_ID, leaseToken: 'the-real-token', state: { studioInstanceId: INSTANCE, pendingApproval: { ...approval, content: 'x'.repeat(2001) } } }));
         expect(mocks.writes.at(-1)?.data.pendingApproval).toBeNull();
+    });
+
     it('projects bounded playback fields and clears stale track metadata', async () => {
         enroll();
         await presence()(req({
