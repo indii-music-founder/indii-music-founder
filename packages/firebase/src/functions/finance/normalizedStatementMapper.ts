@@ -83,7 +83,8 @@ export function mapNormalizedStatementToEarningsReport(
   const endDate = periods.map(period => period.endDate).sort().at(-1)!;
 
   return {
-    reportId: `statement_${createHash('sha256').update(sourceContent).digest('hex').slice(0, 40)}`,
+    // Canonical transaction multiset keeps a reordered export idempotent.
+    reportId: `statement_${createHash('sha256').update(report.provenance.deterministicHash || sourceContent).digest('hex').slice(0, 40)}`,
     senderId,
     // These distributor flat files do not carry an addressed DDEX recipient.
     // Use the configured platform party ID when available and the established
@@ -102,6 +103,9 @@ export function mapNormalizedStatementToEarningsReport(
       usageType: transactionUsageType(transaction.transactionType),
       usageCount: transaction.quantity,
       revenueAmount: transaction.grossRevenue,
+      distributorFeeAmount: transaction.distributorFee,
+      netRevenueAmount: transaction.netRevenue,
+      sourceHash: transaction.sourceHash,
       currencyCode: transaction.currency,
       // ZZ records that the statement omitted territory instead of inventing one.
       territoryCode: transaction.territory.trim() || 'ZZ',

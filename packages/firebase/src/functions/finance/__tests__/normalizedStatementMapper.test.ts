@@ -89,7 +89,23 @@ describe('mapNormalizedStatementToEarningsReport', () => {
     }));
     expect(() => sanitizeEarningsReport(mapped)).not.toThrow();
     expect(mapNormalizedStatementToEarningsReport(makeStatement(), source).reportId)
-      .not.toBe(mapNormalizedStatementToEarningsReport(makeStatement(), 'different file').reportId);
+      .toBe(mapNormalizedStatementToEarningsReport(makeStatement(), 'reordered equivalent file').reportId);
+  });
+
+  it('preserves fee and net amounts through ledger sanitization', () => {
+    const source = [
+      'Sales Period,Posted Date,Store Name,ISRC,Quantity,Total Earned,Distributor Fee',
+      '2022-01,2022-02-15,Spotify,USABC2200001,10,12.50,2.50',
+    ].join('\n');
+    const parsed = TuneCoreStatementAdapter.parse(source);
+    const mapped = mapNormalizedStatementToEarningsReport(parsed, source);
+    const sanitized = sanitizeEarningsReport(mapped);
+    expect(mapped.summary.totalRevenue).toBe(15);
+    expect(sanitized.transactions[0]).toEqual(expect.objectContaining({
+      revenueMicros: 15_000_000,
+      feeMicros: 2_500_000,
+      netMicros: 12_500_000,
+    }));
   });
 
   it('maps downloads and honors a configured recipient party ID', () => {

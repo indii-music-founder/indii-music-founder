@@ -6,6 +6,7 @@ import {
 } from '../types.js';
 import { DecimalMoney } from '../DecimalMoney.js';
 import { parseMoneyAmount } from '../parseMoney.js';
+import { hashText, parseDelimitedRows, rowIdentity } from './statementRows.js';
 
 export class DistroKidStatementAdapter {
   // Static helpers for external callers
@@ -36,14 +37,9 @@ export class DistroKidStatementAdapter {
    * Deterministically parse raw TSV into canonical NormalizedStatementReport
    */
   parse(rawContent: string, _options: ParseOptions = {}): NormalizedStatementReport {
-    const cleanContent = rawContent.charCodeAt(0) === 0xfeff ? rawContent.slice(1) : rawContent;
-    const lines = cleanContent.split(/\r?\n/).filter((l) => l.trim().length > 0);
-
-    if (lines.length < 2) {
-      throw new Error('DistroKid statement has no data rows');
-    }
-
-    const headers = lines[0]!.split('\t').map((h) => h.trim());
+    const { rows, errors } = parseDelimitedRows(rawContent, '\t');
+    if (rows.length < 2) throw new Error('DistroKid statement has no data rows');
+    const headers = rows[0]!.values.map(h => h.trim());
     const headerMap = new Map<string, number>();
     headers.forEach((h, idx) => headerMap.set(h.toLowerCase(), idx));
 
@@ -53,24 +49,26 @@ export class DistroKidStatementAdapter {
     };
 
     const transactions: NormalizedStatementTransaction[] = [];
-    const quarantinedRows: QuarantinedRow[] = [];
+    const quarantinedRows: QuarantinedRow[] = [...errors];
+    const occurrences = new Map<string, number>();
 
     let grossAcc = DecimalMoney.zero();
     let netAcc = DecimalMoney.zero();
-    const feeAcc = DecimalMoney.zero();
+    let feeAcc = DecimalMoney.zero();
     let totalQuantity = 0;
     let totalStreams = 0;
     let totalDownloads = 0;
     let periodStart: string | undefined;
     let periodEnd: string | undefined;
 
-    for (let lineIndex = 1; lineIndex < lines.length; lineIndex++) {
-      const line = lines[lineIndex]!;
-      const parts = line.split('\t');
+    for (const row of rows.slice(1)) {
+      const lineIndex = row.lineIndex;
+      const line = row.rawContent;
+      const parts = row.values;
 
-      if (parts.length < headers.length * 0.7) {
+      if (parts.length !== headers.length) {
         quarantinedRows.push({
-          lineIndex: lineIndex + 1,
+          lineIndex,
           rawContent: line,
           reason: 'Incomplete row: column count significantly less than header',
           errorCode: 'ERR_INCOMPLETE_ROW',
@@ -89,15 +87,16 @@ export class DistroKidStatementAdapter {
       const earningsStr = getCol(parts, 'Earnings (USD)');
       const country = getCol(parts, 'Country of Sale');
 
-      const quantity = parseInt(quantityStr, 10) || 1;
+      const parsedQuantity = !headerMap.has('quantity') ? 1 : /^[+-]?\d+$/.test(quantityStr) ? Number(quantityStr) : NaN;
+      const quantity = Number.isSafeInteger(parsedQuantity) ? parsedQuantity : null;
       const earnings = parseMoneyAmount(earningsStr);
 
-      if (earnings === null || !isrc || isrc === 'MALFORMED_ISRC') {
+      if (earnings === null || quantity === null || !isrc || isrc === 'MALFORMED_ISRC') {
         quarantinedRows.push({
-          lineIndex: lineIndex + 1,
+          lineIndex,
           rawContent: line,
-          reason: earnings === null ? `Invalid numeric value for Earnings (USD): "${earningsStr}"` : 'Missing or malformed ISRC',
-          errorCode: earnings === null ? 'ERR_INVALID_EARNINGS' : 'ERR_INVALID_ISRC',
+          reason: earnings === null ? `Invalid numeric value for Earnings (USD): "${earningsStr}"` : quantity === null ? 'Invalid quantity' : 'Missing or malformed ISRC',
+          errorCode: earnings === null || quantity === null ? 'ERR_INVALID_NUMERIC' : 'ERR_INVALID_ISRC',
           severity: 'warning',
         });
         continue;
@@ -105,8 +104,14 @@ export class DistroKidStatementAdapter {
 
       // ISSUE-1443: capture a real fee value when the statement carries one;
       // LayeredValidator's reconciliation is vacuous while fees are hardcoded to 0.
-      const rawFee = getCol(parts, 'fee') ?? getCol(parts, 'distributor fee') ?? getCol(parts, 'commission');
-      const distributorFee = parseMoneyAmount(rawFee ?? '') ?? 0;
+      const feeColumn = ['fee', 'distributor fee', 'commission'].find(name => headerMap.has(name));
+      const rawFee = feeColumn ? getCol(parts, feeColumn) : undefined;
+      const parsedFee = rawFee === undefined ? 0 : parseMoneyAmount(rawFee);
+      if (parsedFee === null) {
+        quarantinedRows.push({ lineIndex, rawContent: line, reason: 'Invalid distributor fee', errorCode: 'ERR_INVALID_FEE', severity: 'warning' });
+        continue;
+      }
+      const distributorFee = parsedFee;
       const isDownload = store.toLowerCase().includes('itunes') || store.toLowerCase().includes('download');
       const txnType = isDownload ? 'download' : 'stream';
 
@@ -114,22 +119,26 @@ export class DistroKidStatementAdapter {
       else totalStreams += quantity;
 
       const earningsMoney = DecimalMoney.fromFloat(earnings);
-      grossAcc = grossAcc.add(earningsMoney);
+      const feeMoney = DecimalMoney.fromFloat(distributorFee);
+      const grossMoney = earningsMoney.add(feeMoney);
+      grossAcc = grossAcc.add(grossMoney);
+      feeAcc = feeAcc.add(feeMoney);
       netAcc = netAcc.add(earningsMoney);
       totalQuantity += quantity;
 
-      if (!periodStart && saleMonth) periodStart = saleMonth;
-      if (saleMonth) periodEnd = saleMonth;
+      if (saleMonth && (!periodStart || saleMonth < periodStart)) periodStart = saleMonth;
+      if (saleMonth && (!periodEnd || saleMonth > periodEnd)) periodEnd = saleMonth;
 
       const rawFields: Record<string, string> = {};
       headers.forEach((h, idx) => {
         rawFields[h] = parts[idx] ? parts[idx]!.trim() : '';
       });
 
+      const { sourceHash, transactionId } = rowIdentity(rawFields, occurrences);
       transactions.push({
-        sourceLineIndex: lineIndex + 1,
-        sourceHash: `dk-${lineIndex + 1}-${isrc}`,
-        transactionId: `TX-DK-${lineIndex + 1}`,
+        sourceLineIndex: lineIndex,
+        sourceHash,
+        transactionId,
         isrc,
         upc: upc || undefined,
         trackTitle: title,
@@ -137,7 +146,7 @@ export class DistroKidStatementAdapter {
         dspName: store,
         transactionType: txnType,
         quantity,
-        grossRevenue: earnings,
+        grossRevenue: grossMoney.toFloat(),
         distributorFee,
         netRevenue: earnings,
         currency: 'USD',
@@ -150,7 +159,7 @@ export class DistroKidStatementAdapter {
     return {
       formatId: this.formatId,
       adapterVersion: this.version,
-      reportId: `RPT-DK-${Date.now()}`,
+      reportId: `RPT-DK-${hashText(rawContent).slice(0, 40)}`,
       reportingEntity: 'DistroKid',
       currency: 'USD',
       totalGrossRevenue: grossAcc.toFloat(),
@@ -164,9 +173,9 @@ export class DistroKidStatementAdapter {
       transactions,
       quarantinedRows,
       provenance: {
-        evidenceSha256: 'computed-on-ingest',
+        evidenceSha256: hashText(rawContent),
         parsedAt: new Date().toISOString(),
-        deterministicHash: `det-dk-${transactions.length}-${netAcc.toCents()}`,
+        deterministicHash: hashText(JSON.stringify(transactions.map(transaction => transaction.sourceHash).sort())),
       },
     };
   }
