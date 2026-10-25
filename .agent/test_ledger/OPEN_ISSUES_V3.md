@@ -5058,6 +5058,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1533: Road networking lacks digital contact sharing (QR code / Artist Passport card) and business card camera OCR
 
+**Progress (2026-10-24):** `codex/issue-1533-mobile-contact-sharing` adds a full-screen scannable vCard QR in Contacts, with account email excluded until the artist opts in. It uses a vCard because the alleged public `/p/{artistSlug}` route is not implemented. The Contacts camera action uploads a bounded card image to the existing cloud Encounter pipeline, which extracts cited contact fields for review in the feed instead of silently filling unverified fields. Focused structural tests and renderer typecheck pass. Real QR scanning and business-card OCR/review acceptance remain open.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / Contacts / EncounterFeedView / QuickContactModal / Artist Passport
