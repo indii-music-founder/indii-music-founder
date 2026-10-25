@@ -4979,6 +4979,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1529: Remote Cloud Music Vault (StreamView) unreachable from navigation and lacks desktop Now Playing sync / Car Test player
 
+**Progress (2026-10-24):** `codex/issue-1529-mobile-vault-playback` exposes Cloud Vault in the mobile navigation, projects bounded desktop playback metadata through the lease-backed presence endpoint, shows a persistent paired-only now-playing control, and offers phone-local playback when the desktop track exists in the user's Cloud Vault. The relay carries the track ID, not its media URL. Focused unit tests and renderer/Firebase typechecks pass. Desktop-to-phone live playback and transport acceptance remain open; desktop skip remains unavailable because the current audio player has no queue/next action.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🔴 HIGH
 - **Module:** Mobile Remote / Audio Streaming / TransportBar / DesktopState Sync

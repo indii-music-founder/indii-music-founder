@@ -66,7 +66,7 @@ vi.mock('@/services/agent/RemoteRelayService', () => ({
             } : null);
             return vi.fn();
         }),
-        sendCommand: vi.fn(),
+        sendCommand: vi.fn().mockResolvedValue('command-id'),
     },
 }));
 
@@ -320,6 +320,7 @@ describe('MobileRemote', () => {
         const rooms = [
             { name: 'Capture', content: 'Quick Capture' },
             { name: 'Studio', content: 'Studio Work & Chat' },
+            { name: 'Vault', content: 'Stream View' },
             { name: 'Contacts', content: 'Encounter Feed' },
             { name: 'Road', content: 'Road Mode Surface' },
             { name: 'More', content: 'Settings View' },
@@ -334,6 +335,25 @@ describe('MobileRemote', () => {
             expect(await screen.findByText(room.content)).toBeInTheDocument();
             expect(roomButton).toHaveAttribute('aria-current', 'page');
         }
+    });
+
+    it('shows desktop playback and sends pause through the paired relay', async () => {
+        renderController();
+        act(() => {
+            relayMocks.desktopStateCallback?.({
+                currentModule: 'creative', isAgentProcessing: false, activeSessionId: 'session',
+                online: true, role: 'studio', studioInstanceId: 'studio-1', listenerReady: true,
+                timestamp: { toMillis: () => Date.now() },
+                activeTrackId: 'track-1', activeTrackTitle: 'New Master', isPlaying: true,
+                nowPlayingPositionSec: 31, nowPlayingDurationSec: 180,
+            });
+        });
+        const pause = await screen.findByRole('button', { name: 'Pause desktop playback' });
+        expect(screen.getByText('New Master')).toBeInTheDocument();
+        fireEvent.click(pause);
+        expect(remoteRelayService.sendCommand).toHaveBeenCalledWith(
+            '[DAW_CONTROL] pause', undefined, undefined, 'studio'
+        );
     });
 
 });

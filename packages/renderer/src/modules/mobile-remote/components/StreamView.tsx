@@ -12,8 +12,9 @@ import { Music, Play, Loader2, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
 import { logger } from '@/utils/logger';
+import type { DesktopState } from '@/services/agent/RemoteRelayService';
 
-export default function StreamView() {
+export default function StreamView({ desktopState }: { desktopState?: DesktopState | null }) {
     const [tracks, setTracks] = useState<HistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export default function StreamView() {
     const activeTrack = useMemo(() => {
         return tracks.find(t => t.id === activeTrackId) || null;
     }, [tracks, activeTrackId]);
+    const desktopTrack = tracks.find(track => track.id === desktopState?.activeTrackId);
 
     const handlePlayTrack = (track: HistoryItem) => {
         triggerHaptic(30);
@@ -67,6 +69,16 @@ export default function StreamView() {
                     </p>
                 </div>
             </div>
+
+            {desktopState?.activeTrackId && (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 flex items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-bold text-white">Desktop: {desktopState.activeTrackTitle || 'Current track'}</p>
+                        <p className="text-[10px] text-stone-400">{desktopTrack ? 'Available for phone playback' : 'This track is not in Cloud Vault'}</p>
+                    </div>
+                    {desktopTrack && <button type="button" onClick={() => handlePlayTrack(desktopTrack)} className="min-h-11 rounded-xl bg-[#00ff66] px-3 text-xs font-bold text-black">Stream to Phone</button>}
+                </div>
+            )}
 
             <div className="flex-1 bg-[#1a1512]/80 backdrop-blur-md border border-white/10 rounded-3xl p-4 min-h-[300px] shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
                 {isLoading ? (

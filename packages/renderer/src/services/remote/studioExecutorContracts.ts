@@ -71,6 +71,12 @@ export interface StudioExecutionAdapter {
         currentModule: string;
         isAgentProcessing: boolean;
         activeSessionId: string;
+        activeTrackTitle?: string;
+        activeTrackId?: string;
+        activeTrackArtist?: string;
+        isPlaying?: boolean;
+        nowPlayingPositionSec?: number;
+        nowPlayingDurationSec?: number;
         sleepMode: boolean;
         capabilities: StudioCapabilities;
     };

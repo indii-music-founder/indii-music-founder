@@ -703,6 +703,11 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
                 currentModule: s.currentModule || 'dashboard',
                 isAgentProcessing: s.isAgentProcessing,
                 activeSessionId: s.activeSessionId || '',
+                ...(s.currentTrack?.prompt || s.currentTrack?.subject ? { activeTrackTitle: s.currentTrack.prompt || s.currentTrack.subject } : {}),
+                ...(s.currentTrack?.id ? { activeTrackId: s.currentTrack.id } : {}),
+                isPlaying: s.isPlaying,
+                nowPlayingPositionSec: s.currentTime,
+                nowPlayingDurationSec: s.duration,
                 sleepMode: s.isSleeping,
                 // Phase 5 capability advertisement: presence ≠ capability.
                 // Only surfaces that actually exist on this host advertise true.

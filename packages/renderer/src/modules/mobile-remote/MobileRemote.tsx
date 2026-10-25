@@ -31,7 +31,7 @@ import { logger } from '@/utils/logger';
 import {
   Navigation,
   LucideIcon, WifiOff, AlertCircle, RefreshCw,
-  Settings, Sparkles, Mic, Users
+  Settings, Sparkles, Mic, Users, Music2, Pause, Play
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -67,6 +67,7 @@ interface Tab {
 const TABS: Tab[] = [
   { id: 'home', icon: Mic, label: 'Capture' },
   { id: 'studio', icon: Sparkles, label: 'Studio' },
+  { id: 'stream', icon: Music2, label: 'Vault' },
   { id: 'encounters', icon: Users, label: 'Contacts' },
   { id: 'road', icon: Navigation, label: 'Road' },
   { id: 'settings', icon: Settings, label: 'More' },
@@ -590,7 +591,7 @@ export default function MobileRemote() {
       case 'stream':
         return (
           <Suspense fallback={<TabFallback />}>
-            <StreamView />
+            <StreamView desktopState={desktopState} />
           </Suspense>
         );
       case 'settings':
@@ -742,8 +743,11 @@ export default function MobileRemote() {
           className={cn(
             "max-w-md mx-auto w-full relative",
             activeTab === 'home' || activeTab === 'capture'
-              ? "h-full flex flex-col p-2 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]"
-              : "p-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+              ? "h-full flex flex-col p-2"
+              : "p-4",
+            isPaired && desktopState?.activeTrackTitle
+              ? "pb-[calc(10rem+env(safe-area-inset-bottom,0px))]"
+              : "pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
           )}
         >
           
@@ -793,7 +797,7 @@ export default function MobileRemote() {
             )}
           </AnimatePresence>
 
-          {handoffError || (!isPaired && (connectionStatus === 'idle' || connectionStatus === 'error') && !isReconnecting && activeTab !== 'encounters' && activeTab !== 'capture' && activeTab !== 'settings' && activeTab !== 'studio') ? (
+          {handoffError || (!isPaired && (connectionStatus === 'idle' || connectionStatus === 'error') && !isReconnecting && activeTab !== 'encounters' && activeTab !== 'capture' && activeTab !== 'settings' && activeTab !== 'studio' && activeTab !== 'stream') ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -862,6 +866,19 @@ export default function MobileRemote() {
         </div>
       </main>
 
+      {isPaired && desktopState?.activeTrackTitle && (
+        <div className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] z-40 max-w-md mx-auto flex items-center gap-2 rounded-2xl border border-white/15 bg-[#181411]/95 p-2 shadow-xl" aria-label="Desktop now playing">
+          <button type="button" onClick={() => setActiveTab('stream')} className="min-w-0 flex-1 text-left px-2 min-h-11">
+            <span className="block truncate text-xs font-bold text-white">{desktopState.activeTrackTitle}</span>
+            <span className="block truncate text-[10px] text-stone-400">{desktopState.activeTrackArtist || 'Desktop Studio'} · {desktopState.isPlaying ? 'Playing' : 'Paused'}</span>
+          </button>
+          <button type="button" aria-label={desktopState.isPlaying ? 'Pause desktop playback' : 'Resume desktop playback'}
+            onClick={() => sendCommand({ type: 'daw_control', payload: { action: desktopState.isPlaying ? 'pause' : 'resume' } })}
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#00ff66] text-black">
+            {desktopState.isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+          </button>
+        </div>
+      )}
       <nav
         aria-label="Mobile Remote rooms"
         className="fixed bottom-0 inset-x-0 z-40 px-3 pointer-events-none pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]"
@@ -873,7 +890,7 @@ export default function MobileRemote() {
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             // Field-independent tabs (Encounters, Capture, Settings, Studio) can function standalone in the field
-            const isFieldReadyTab = tab.id === 'encounters' || tab.id === 'capture' || tab.id === 'settings' || tab.id === 'studio' || isPaired;
+            const isFieldReadyTab = tab.id === 'encounters' || tab.id === 'capture' || tab.id === 'settings' || tab.id === 'studio' || tab.id === 'stream' || isPaired;
             return (
                 <button
                 key={tab.id}
