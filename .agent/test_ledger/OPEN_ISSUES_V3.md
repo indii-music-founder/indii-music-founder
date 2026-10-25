@@ -4842,6 +4842,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1524: Audit ledger findings were deleted and issue identifiers reused
 
 - **Status:** 🔴 OPEN (2026-10-13; October 12 audit intake)
+- **2026-10-24 progress:** The `codex/issue-1524-ledger-integrity` branch adds a pre-commit and GitHub Actions comparison against the prior ledger revision. It preserves historical duplicate entries while rejecting newly removed/renamed findings, reused IDs, expanded duplicates, and resolved statuses without newly added commit and CI evidence. Focused parser tests cover each boundary; branch CI and enforcement after merge remain pending.
 - **Severity:** HIGH
 - **Module:** Issue ledger / Agent coordination
 - **Classification:** Structural source defect; historical commit evidence or authenticated CI evidence where stated. Genuine customer impact/acceptance remains Conditional.
