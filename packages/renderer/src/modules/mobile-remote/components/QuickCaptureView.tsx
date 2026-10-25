@@ -436,10 +436,9 @@ export default function QuickCaptureView({
                 const path = `users/${userId}/voice_memos/${filename}`;
                 downloadUrl = await StorageService.uploadFile(capturedAudioBlob, path);
                 uploadedPath = path;
-                if (isPaired) {
-                    taskId = await remoteRelayService.dispatchTask({ type: 'voice_memo', payload: { audioUrl: downloadUrl } });
-                    dispatchAccepted = true;
-                }
+                // The cloud Encounter pipeline transcribes this media and writes
+                // one durable note. A parallel desktop task only created a raw
+                // duplicate and could report completion before analysis.
             } else if (capturedImageBlob) {
                 const file = capturedImageBlob.file;
                 const isReceipt = capturedImageBlob.type === 'receipt';
@@ -447,7 +446,7 @@ export default function QuickCaptureView({
                 const path = `users/${userId}/assets/${isReceipt ? 'receipts' : 'captured_media'}/${filename}`;
                 downloadUrl = await StorageService.uploadFile(file, path);
                 uploadedPath = path;
-                if (isPaired) {
+                if (isPaired && !isReceipt) {
                     taskId = await remoteRelayService.dispatchTask({
                         type: isReceipt ? 'receipt_log' : capturedImageBlob.type === 'document' ? 'document_scan' : 'media_capture',
                         payload: {
@@ -482,6 +481,7 @@ export default function QuickCaptureView({
                                 ? 'document'
                                 : 'photo';
 
+                const requiresAnalysis = assetType === 'audio' || assetType === 'receipt';
                 await EncounterService.createEncounter({
                     assets: [{
                         type: assetType,
@@ -491,7 +491,10 @@ export default function QuickCaptureView({
                         filename: uploadedPath ? uploadedPath.split('/').pop() : undefined,
                     }],
                     clientContext: momentText.trim() || undefined,
+                }).then(() => {
+                    if (requiresAnalysis) dispatchAccepted = true;
                 }).catch((err) => {
+                    if (requiresAnalysis) throw err;
                     logger.warn('[QuickCapture] Non-blocking encounter doc creation notice:', err);
                 });
             }
@@ -503,17 +506,16 @@ export default function QuickCaptureView({
                 if (outcome.status === 'failed') {
                     throw new Error(outcome.error?.message || 'Failed to save to Notes');
                 }
+            } else if (capturedAudioBlob || capturedImageBlob?.type === 'receipt') {
+                toast.success('Capture saved to Encounters. AI analysis is pending; review the result there.');
             } else {
-                const isReceipt = capturedImageBlob?.type === 'receipt';
                 useStore.getState().addNote({
-                    title: isReceipt ? `Expense Receipt — ${new Date().toLocaleDateString()}` : `Mobile capture — ${new Date().toLocaleString()}`,
-                    content: isReceipt
-                        ? `Gear / Tour Expense Receipt captured via indiiREMOTE.\nReceipt Asset: ${downloadUrl || 'attached'}\nRecorded: ${new Date().toISOString()}`
-                        : reviewKind ? `Captured ${reviewKind} from mobile web.` : 'Captured from mobile web.',
+                    title: `Mobile capture — ${new Date().toLocaleString()}`,
+                    content: reviewKind ? `Captured ${reviewKind} from mobile web.` : 'Captured from mobile web.',
                     attachments: downloadUrl ? [downloadUrl] : [],
-                    tags: isReceipt ? ['receipt', 'expense', 'finance', 'mobile-capture'] : ['mobile-capture'],
+                    tags: ['mobile-capture'],
                 });
-                toast.success(isReceipt ? 'Receipt recorded directly to Expenses & Notes.' : 'Capture saved and synced to Encounters.');
+                toast.success('Capture saved and synced to Encounters.');
             }
 
             clearCapture();
@@ -846,7 +848,11 @@ export default function QuickCaptureView({
                             <div className="flex items-start justify-between gap-4">
                                 <div className="min-w-0">
                                     <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#00ff66] font-mono">Review before saving</p>
-                                    <p className="mt-1.5 text-sm font-semibold text-stone-100 font-display">Uploads to your vault, then writes it into Notes for the team.</p>
+                                    <p className="mt-1.5 text-sm font-semibold text-stone-100 font-display">
+                                        {capturedAudioBlob || capturedImageBlob?.type === 'receipt'
+                                            ? 'Uploads to your vault for AI analysis. Review the result in Encounters.'
+                                            : 'Uploads to your vault, then writes it into Notes for the team.'}
+                                    </p>
                                     <p className="mt-1 text-[11px] text-stone-400">
                                         {reviewKind ? `Captured ${reviewKind}` : 'Captured media'}
                                     </p>
@@ -940,7 +946,7 @@ export default function QuickCaptureView({
                                             Sending
                                         </span>
                                     ) : (
-                                        'Save to Notes'
+                                        capturedAudioBlob || capturedImageBlob?.type === 'receipt' ? 'Save for Analysis' : 'Save to Notes'
                                     )}
                                 </button>
                             </div>

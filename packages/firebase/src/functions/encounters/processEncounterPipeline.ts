@@ -32,6 +32,21 @@ export interface EncounterPipelineResult {
     transcript?: string;
 }
 
+/** A receipt OCR result is an unclassified expense candidate, never a paid or verified charge. */
+export function buildEncounterReceiptExpense(userId: string, encounterId: string,
+    receipt: NonNullable<ReturnType<typeof parseEncounterAnalysis>['receipt']>, receiptUrl?: string) {
+    return {
+        id: `expense_encounter_${userId}_${encounterId}`,
+        data: {
+            userId, vendor: receipt.vendor, date: receipt.date, amount: receipt.amount,
+            category: receipt.category,
+            description: `Mobile receipt encounter ${encounterId}${receipt.tax !== undefined ? `; extracted tax USD ${receipt.tax.toFixed(2)}` : ''}. Review against attached receipt.`,
+            paymentStatus: 'unclassified', evidenceStatus: 'receipt_attached',
+            receiptUrl: receiptUrl || null, encounterId,
+        },
+    };
+}
+
 export const processEncounterPipeline = onDocumentCreated(
     {
         document: "users/{userId}/encounters/{encounterId}",
@@ -81,6 +96,7 @@ export const processEncounterPipeline = onDocumentCreated(
             const assets: EncounterMediaAsset[] = encounterData.assets || [];
             const audioAsset = assets.find((a) => a.type === "audio");
             const imageAsset = assets.find((a) => a.type === "photo");
+            const receiptAsset = assets.find((a) => a.type === "receipt");
             const videoAsset = assets.find((a) => a.type === "video");
             const location = encounterData.location;
 
@@ -125,7 +141,9 @@ export const processEncounterPipeline = onDocumentCreated(
                 if (asset.downloadUrl) noteAttachments.push(asset.downloadUrl);
             }
 
-            const noteTitle = analysis.contact?.name
+            const noteTitle = analysis.receipt
+                ? `Receipt: ${analysis.receipt.vendor}`
+                : analysis.contact?.name
                 ? `Encounter: ${analysis.contact.name}${analysis.contact.organization ? ` (${analysis.contact.organization})` : ""}`
                 : `Field Encounter — ${new Date().toLocaleString()}`;
 
@@ -134,6 +152,11 @@ export const processEncounterPipeline = onDocumentCreated(
             if (analysis.contact) noteContent += "**Review required:** Check extracted contact details against the attached evidence before use.\n\n";
             if (analysis.transcript) {
                 noteContent += `**Voice Memo Transcript:**\n"${analysis.transcript}"\n\n`;
+            }
+            if (receiptAsset) {
+                noteContent += analysis.receipt
+                    ? `**Receipt review:** ${analysis.receipt.vendor} · ${analysis.receipt.date} · USD ${analysis.receipt.amount.toFixed(2)}. Verify the attached receipt before accounting use.\n\n`
+                    : '**Receipt review:** Automatic extraction was incomplete or unsupported. Check the attached receipt and enter the expense manually.\n\n';
             }
             if (analysis.contact?.name) {
                 noteContent += `**Contact Extracted:**\n- Name: ${analysis.contact.name}\n`;
@@ -153,12 +176,24 @@ export const processEncounterPipeline = onDocumentCreated(
                 title: noteTitle,
                 content: noteContent,
                 attachments: noteAttachments,
-                tags: ["encounter", "mobile-remote", ...(analysis.contact?.name ? ["contact"] : [])],
+                tags: ["encounter", "mobile-remote", ...(analysis.contact?.name ? ["contact"] : []), ...(receiptAsset ? ['receipt', 'expense'] : [])],
                 createdAt: Date.now(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 encounterId,
                 contactId: createdContactId || null,
             });
+
+            // Deterministic ID keeps a retried encounter from creating a second expense.
+            // OCR is evidence attached for review, not a verified payment or tax claim.
+            const expense = analysis.receipt
+                ? buildEncounterReceiptExpense(userId, encounterId, analysis.receipt, receiptAsset?.downloadUrl)
+                : null;
+            if (expense) {
+                await DB().doc(`expenses/${expense.id}`).set({
+                    ...expense.data,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            }
 
             // 5. Finalize Encounter Document
             await encounterRef.update({
@@ -171,6 +206,7 @@ export const processEncounterPipeline = onDocumentCreated(
                 contactEvidence: analysis.evidence || null,
                 contactId: createdContactId || null,
                 noteId,
+                expenseId: expense?.id || null,
                 completedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
@@ -205,6 +241,7 @@ export async function analyzeEncounterWithGemini(params: {
     const bucket = admin.storage().bucket();
     const parts: Part[] = [];
     const sourceIds: string[] = [];
+    const receiptSourceIds: string[] = [];
     let totalBytes = 0;
     for (const [index, asset] of params.assets.entries()) {
         const objectPath = resolveEncounterAsset(asset, params.userId, bucket.name);
@@ -214,6 +251,7 @@ export async function analyzeEncounterWithGemini(params: {
         if (totalBytes > MAX_ENCOUNTER_BYTES) throw new Error('Combined encounter media exceeds 50 MB.');
         const sourceId = `asset_${index}`;
         sourceIds.push(sourceId);
+        if (asset.type === 'receipt') receiptSourceIds.push(sourceId);
         parts.push({ text: `Evidence source: ${sourceId} (${asset.type}).` });
         parts.push(buildEncounterMediaPart(asset.type, `gs://${bucket.name}/${objectPath}`, metadata.contentType || '', size));
     }
@@ -225,7 +263,8 @@ export async function analyzeEncounterWithGemini(params: {
 Transcribe supplied audio (including audible speech in video), read visible business cards/badges/documents, and summarize the encounter in two sentences.
 Video is limited to its first ${VIDEO_ANALYSIS_SECONDS} seconds with representative frames at 1 FPS. Do not claim the entire video was analyzed.
 Do not infer identity, phone, email, role, or organization from appearance or location. Omit unreadable, ambiguous, or unsupported fields. Contact may be null.
-Return JSON: {"summary":"...","transcript":"... or null","contact":{"name":"...","phone":"... or null","email":"... or null","organization":"... or null","role":"musician|promoter|venue_staff|engineer|manager|fan|industry|media|other","notes":"... or null","confidence":"high|uncertain","evidence":{"name":["asset_0"],"phone":["asset_0"]}}}.
+For receipt media, extract only visibly supported fields. Return receipt null if vendor, date, total amount, or currency cannot be read. Do not treat a subtotal as the total. For non-receipt media, receipt must be null.
+Return JSON: {"summary":"...","transcript":"... or null","contact":{"name":"...","phone":"... or null","email":"... or null","organization":"... or null","role":"musician|promoter|venue_staff|engineer|manager|fan|industry|media|other","notes":"... or null","confidence":"high|uncertain","evidence":{"name":["asset_0"],"phone":["asset_0"]}},"receipt":{"vendor":"...","date":"YYYY-MM-DD","amount":12.34,"currency":"USD","category":"Travel|Equipment|Marketing|Services|Other","tax":0.00,"evidence":{"vendor":["asset_0"],"date":["asset_0"],"amount":["asset_0"],"currency":["asset_0"],"tax":["asset_0"]}}}.
 Every included contact field requires its own evidence source IDs from: ${sourceIds.join(', ')}. Mark uncertain contacts for review; never fill gaps with guesses.
 Location context (not identity evidence): ${params.locationContext || 'Not supplied'}` });
     const response = await getVertexAIClient().models.generateContent({
@@ -236,5 +275,5 @@ Location context (not identity evidence): ${params.locationContext || 'Not suppl
     if (!response.text?.trim() || response.candidates?.some(candidate => candidate.finishReason && candidate.finishReason !== 'STOP')) {
         throw new Error('Encounter analysis did not complete.');
     }
-    return parseEncounterAnalysis(response.text, sourceIds);
+    return parseEncounterAnalysis(response.text, sourceIds, receiptSourceIds);
 }

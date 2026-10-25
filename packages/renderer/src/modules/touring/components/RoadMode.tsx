@@ -21,7 +21,9 @@ import {
     X,
     ArrowLeft,
     LucideIcon,
+    Car,
 } from 'lucide-react';
+import MobileMileageModal from '@/modules/mobile-remote/components/MobileMileageModal';
 import { useVoice } from '@/core/context/VoiceContext';
 import { useTouring } from '../hooks/useTouring';
 import { useStore } from '@/core/store';
@@ -223,7 +225,7 @@ function NearbyResultsView({ results, action, onClose, onNavigate }: NearbyResul
 // RoadMode Main Component
 // ============================================================================
 
-export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<void> }> = ({ onSubmitPrompt }) => {
+export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<void>; isPaired?: boolean }> = ({ onSubmitPrompt, isPaired = false }) => {
     const { t } = useTranslation();
     const { isListening, toggleListening, transcript } = useVoice();
     const { currentItinerary: itinerary } = useTouring();
@@ -240,6 +242,7 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
     const [searchResults, setSearchResults] = useState<NearbySearchResult | null>(null);
     const [activeAction, setActiveAction] = useState<QuickAction | null>(null);
     const [searchError, setSearchError] = useState<string | null>(null);
+    const [mileageOpen, setMileageOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Grab GPS on mount
@@ -437,6 +440,9 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
                         <div className="w-1.5 h-1.5 rounded-full bg-[#00ff66] animate-pulse ml-1" />
                     </div>
                 )}
+                <button type="button" onClick={() => setMileageOpen(true)} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-xs font-bold text-white">
+                    <Car size={16} /> Log mileage or travel expense
+                </button>
             </div>
 
             {/* ═══════════════════════════════════════════════════════════ */}
@@ -602,6 +608,7 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
                     </motion.div>
                 )}
             </div>
+            <MobileMileageModal isOpen={mileageOpen} onClose={() => setMileageOpen(false)} isPaired={isPaired} />
         </div>
     );
 };

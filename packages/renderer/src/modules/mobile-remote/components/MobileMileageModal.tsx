@@ -1,7 +1,7 @@
 /**
  * MobileMileageModal — Quick on-the-go mileage and travel expense tracking for indiiREMOTEv1.
  * Supports artists traveling to gear stores, rehearsals, and gig venues.
- * Calculates standard IRS mileage deduction ($0.67/mile) and persists to Notes & Expenses.
+ * Records miles with a date-bounded optional business-rate estimate for review.
  */
 
 import React, { useState } from "react";
@@ -15,8 +15,8 @@ import { auth } from "@/services/firebase";
 import { remoteRelayService } from "@/services/agent/RemoteRelayService";
 import { useToast } from "@/core/context/ToastContext";
 import { logger } from "@/utils/logger";
+import { businessMileageRate } from './mileageRate';
 
-const IRS_MILEAGE_RATE = 0.67; // $0.67 / mile standard business deduction
 
 const COMMON_DESTINATIONS = [
   "Guitar Center",
@@ -50,7 +50,8 @@ export default function MobileMileageModal({
 
   const rawMiles = parseFloat(miles) || 0;
   const totalMiles = isRoundTrip ? rawMiles * 2 : rawMiles;
-  const taxDeduction = (totalMiles * IRS_MILEAGE_RATE).toFixed(2);
+  const mileageRate = businessMileageRate(new Date());
+  const mileageEstimate = mileageRate === null ? null : (totalMiles * mileageRate).toFixed(2);
 
   const handleSave = async (andSnapReceipt: boolean = false) => {
     if (!destination.trim()) {
@@ -65,35 +66,34 @@ export default function MobileMileageModal({
     setIsSaving(true);
     triggerHaptic(50);
 
-    const tripSummary = `${isRoundTrip ? "Round-trip" : "One-way"} drive to ${destination}: ${totalMiles.toFixed(1)} miles @ $${IRS_MILEAGE_RATE}/mi = $${taxDeduction} tax deduction.${purpose ? " Purpose: " + purpose : ""}`;
+    const tripSummary = `${isRoundTrip ? "Round-trip" : "One-way"} drive to ${destination}: ${totalMiles.toFixed(1)} miles.${mileageEstimate ? ` Optional business-rate estimate: $${mileageEstimate} at $${mileageRate}/mi; review eligibility.` : ' Current business mileage rate unavailable; no amount estimated.'}${purpose ? " Purpose: " + purpose : ""}`;
 
     try {
       const userId = auth.currentUser?.uid;
       const today = new Date().toISOString().split("T")[0]!;
 
-      // 1. Persist to Finance Expenses if authenticated
-      if (userId) {
-        try {
+      if (!userId) throw new Error('Sign in before logging mileage.');
+
+      // Keep this unclassified for review; it is an optional mileage estimate,
+      // not proof of payment or tax eligibility.
+      if (userId && mileageEstimate) {
           const financeService = new FinanceService();
           await financeService.addExpense({
             userId,
             vendor: destination,
-            amount: parseFloat(taxDeduction),
+            amount: parseFloat(mileageEstimate),
             category: "Travel",
             date: today,
             description: `[Mileage] ${tripSummary}`,
-            paymentStatus: "paid",
-            evidenceStatus: "verified",
+            paymentStatus: "unclassified",
+            evidenceStatus: "unverified",
           });
-        } catch (financeError) {
-          logger.warn("[MobileMileage] Could not save directly to expenses collection:", financeError);
-        }
       }
 
       // 2. Persist to local / synchronized Notes
       useStore.getState().addNote({
         title: `Mileage: ${destination} (${totalMiles.toFixed(1)} mi)`,
-        content: `${tripSummary}\nRecorded on: ${new Date().toLocaleString()}\nStatus: Auto-logged for tax deduction`,
+        content: `${tripSummary}\nRecorded on: ${new Date().toLocaleString()}\nStatus: Review mileage and business eligibility before tax use`,
         attachments: [],
         tags: ["mileage", "travel", "tax-deduction", "expense", "mobile-capture"],
       });
@@ -111,7 +111,7 @@ export default function MobileMileageModal({
       }
 
       triggerHaptic([50, 50, 50]);
-      toast.success(`Logged ${totalMiles.toFixed(1)} miles ($${taxDeduction} deduction)`);
+      toast.success(`Logged ${totalMiles.toFixed(1)} miles for review`);
 
       // Reset state
       setDestination("");
@@ -149,7 +149,7 @@ export default function MobileMileageModal({
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white tracking-tight">Track Miles & Run</h3>
-                <p className="text-xs text-white/50 font-medium">Auto-deductible at $0.67/mi</p>
+                <p className="text-xs text-white/50 font-medium">Business mileage estimate for review</p>
               </div>
             </div>
             <button
@@ -248,9 +248,9 @@ export default function MobileMileageModal({
                   <DollarSign className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs text-white/60">Estimated Tax Deduction</p>
+                  <p className="text-xs text-white/60">Optional business-rate estimate</p>
                   <p className="text-lg font-bold text-amber-300 font-mono">
-                    $${taxDeduction}{" "}
+                    {mileageEstimate === null ? 'Rate unavailable' : `$${mileageEstimate}`}{" "}
                     <span className="text-xs font-normal text-white/40">
                       (${totalMiles.toFixed(1)} mi total)
                     </span>
@@ -284,7 +284,7 @@ export default function MobileMileageModal({
               className="w-full py-3.5 px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm tracking-tight flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(245,158,11,0.2)]"
             >
               <Check className="w-4 h-4" />
-              <span>{isSaving ? "Logging Trip..." : "Log Mileage & Save Deduction"}</span>
+              <span>{isSaving ? "Logging Trip..." : "Log Mileage for Review"}</span>
             </button>
 
             {onOpenReceiptCapture && (
