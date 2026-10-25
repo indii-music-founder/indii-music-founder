@@ -57,6 +57,13 @@ export default function StreamView() {
         setActiveTrackId(tracks[nextIndex].id);
     };
 
+    const handlePrevious = () => {
+        if (!activeTrackId || tracks.length <= 1) return;
+        const currentIndex = tracks.findIndex(t => t.id === activeTrackId);
+        if (currentIndex === -1) return;
+        setActiveTrackId(tracks[(currentIndex - 1 + tracks.length) % tracks.length].id);
+    };
+
     return (
         <div className="flex flex-col space-y-6 pt-4 min-h-[60vh]">
             <div className="flex items-center justify-between px-2">
@@ -134,6 +141,7 @@ export default function StreamView() {
             <TransportBar 
                 track={activeTrack} 
                 onNext={tracks.length > 1 ? handleNext : undefined} 
+                onPrevious={tracks.length > 1 ? handlePrevious : undefined}
             />
         </div>
     );

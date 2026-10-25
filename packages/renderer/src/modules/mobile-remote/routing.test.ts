@@ -7,10 +7,17 @@ import {
     isMobileRemotePath,
     isRemoteSurfaceDevice,
     isStudioExecutorSurface,
+    parseMobileShortcutAction,
     shouldUseMobileRemoteSurface,
 } from './routing';
 
 describe('mobile remote routing contract', () => {
+    it('accepts only recognized quick capture and vault actions', () => {
+        expect(parseMobileShortcutAction('?action=photo')).toBe('photo');
+        expect(parseMobileShortcutAction('?action=voice')).toBe('voice');
+        expect(parseMobileShortcutAction('?code=abc&action=vault')).toBe('vault');
+        expect(parseMobileShortcutAction('?action=delete')).toBeNull();
+    });
     it('uses app.indii.music as the canonical Controller origin', () => {
         expect(buildMobileRemoteUrl()).toBe('https://app.indii.music/mobile-remote');
         expect(buildMobileRemoteUrl('?code=abc', '#pair')).toBe(

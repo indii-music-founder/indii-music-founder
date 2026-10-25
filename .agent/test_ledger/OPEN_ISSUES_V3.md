@@ -5123,6 +5123,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1536: Lock Screen MediaSession Playback Control and Quick-Capture Deep-Links
 
+**Progress (2026-10-24):** `codex/issue-1536-mobile-lockscreen-capture` binds supported Media Session play, pause, seek, previous, and next actions to the phone's active Vault audio, with bounded position state and track metadata. The canonical `app.indii.music/mobile-remote` route accepts `?action=photo`, `voice`, or `vault`; Settings exposes shortcut links. Browser camera/microphone APIs require a tap after the deep link, so the capture shortcut presents a prominent launch control rather than claiming automatic access. Locked-device iOS/Android acceptance remains required before closing this issue.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / TransportBar / StreamView / MediaSession / Deep Linking

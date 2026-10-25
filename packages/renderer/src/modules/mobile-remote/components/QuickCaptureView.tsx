@@ -71,9 +71,11 @@ const MIN_RECORDING_DURATION_MS = 300;
 export default function QuickCaptureView({
     isPaired,
     onNavigateToChat,
+    shortcutAction,
 }: {
     isPaired: boolean;
     onNavigateToChat?: (attachment: QuickCaptureAttachment) => void;
+    shortcutAction?: 'photo' | 'voice';
 }) {
     const toast = useToast();
     const [isRecording, setIsRecording] = useState(false);
@@ -669,6 +671,16 @@ export default function QuickCaptureView({
                     <h2 className="text-xl font-bold text-stone-100 tracking-tight font-display">Live Capture</h2>
                     <p className="text-stone-400 text-xs font-medium">Capture notes, media, and contacts to desktop</p>
                 </div>
+
+                {shortcutAction && (
+                    <button
+                        type="button"
+                        onClick={() => shortcutAction === 'photo' ? photoInputRef.current?.click() : void handleMicTap()}
+                        className="w-full rounded-2xl border border-cyan-400/40 bg-cyan-400/10 px-4 py-3 text-sm font-bold text-cyan-200"
+                    >
+                        {shortcutAction === 'photo' ? 'Open camera' : 'Start voice memo'}
+                    </button>
+                )}
 
                 {/* Primary Action: Acoustic Mic Ring */}
                 <div className="relative flex items-center justify-center py-1">

@@ -3,6 +3,13 @@ import type { MobileState } from '@/hooks/useMobile';
 export const MOBILE_REMOTE_ORIGIN = 'https://app.indii.music';
 export const MOBILE_REMOTE_PATH = '/mobile-remote';
 
+export type MobileShortcutAction = 'photo' | 'voice' | 'vault';
+
+export function parseMobileShortcutAction(search: string): MobileShortcutAction | null {
+    const action = new URLSearchParams(search).get('action');
+    return action === 'photo' || action === 'voice' || action === 'vault' ? action : null;
+}
+
 /**
  * Detects whether the device is an iPad or a tablet.
  * iPadOS 13+ Safari presents as `MacIntel` with multi-touch support (`navigator.maxTouchPoints > 1`).
