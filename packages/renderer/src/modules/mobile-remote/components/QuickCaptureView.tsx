@@ -11,6 +11,7 @@ import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
 import { EncounterService } from '@/services/encounters/EncounterService';
 import QuickContactModal from './QuickContactModal';
+import CameraViewfinderModal from './CameraViewfinderModal';
 
 export interface QuickCaptureAttachment {
     url: string;
@@ -95,6 +96,7 @@ export default function QuickCaptureView({
     const [reviewUrl, setReviewUrl] = useState<string | null>(null);
     const [geoError, setGeoError] = useState<string | null>(null);
     const [showContactModal, setShowContactModal] = useState(false);
+    const [cameraMode, setCameraMode] = useState<'photo' | 'video' | null>(null);
     
     const photoInputRef = useRef<HTMLInputElement>(null);
     const selfieInputRef = useRef<HTMLInputElement>(null);
@@ -746,7 +748,7 @@ export default function QuickCaptureView({
 
                     <button
                         type="button"
-                        onClick={() => photoInputRef.current?.click()}
+                        onClick={() => setCameraMode('photo')}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center justify-center gap-1 p-1 min-h-[54px] min-w-[38px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                         title="Take Photo"
@@ -770,7 +772,7 @@ export default function QuickCaptureView({
 
                     <button
                         type="button"
-                        onClick={() => videoInputRef.current?.click()}
+                        onClick={() => setCameraMode('video')}
                         disabled={isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center justify-center gap-1 p-1 min-h-[54px] min-w-[38px] rounded-2xl border border-white/10 bg-[#1a1512]/70 text-stone-400 hover:text-stone-100 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                         title="Record Video"
@@ -846,6 +848,19 @@ export default function QuickCaptureView({
                 isOpen={showContactModal}
                 onClose={() => setShowContactModal(false)}
             />
+            {cameraMode && <CameraViewfinderModal
+                mode={cameraMode}
+                onClose={() => setCameraMode(null)}
+                onFallback={() => cameraMode === 'photo' ? photoInputRef.current?.click() : videoInputRef.current?.click()}
+                onPhoto={file => {
+                    clearMediaState();
+                    setCapturedImageBlob({ file, type: 'photo' });
+                }}
+                onVideo={file => {
+                    clearMediaState();
+                    setCapturedVideoBlob(file);
+                }}
+            />}
 
             {/* Floating Review Card for Media */}
             <AnimatePresence>

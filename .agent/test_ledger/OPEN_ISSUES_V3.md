@@ -5105,6 +5105,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1535: In-App Camera Viewfinder with Hardware Controls and Creator Composition Overlays
 
+**Progress (2026-10-24):** `codex/issue-1535-mobile-camera-viewfinder` adds a tap-opened in-app photo/video viewfinder with front/rear switching, hardware torch/zoom/exposure controls when supported, social crop guides, a thirds grid, optional device-orientation level, and a video microphone meter. Photo snapshots are cropped to the selected aspect ratio before entering the existing review/send flow; recorded video enters the same review flow, while its ratio grid is a framing guide rather than a video crop. Camera and microphone tracks stop on close, backgrounding, or switching, with the native picker retained as fallback. Structural tests pass; real iOS/Android camera hardware, permissions, torch, exposure, and video acceptance remain required before closing the issue.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / QuickCaptureView / In-App Camera / WebRTC MediaStream
