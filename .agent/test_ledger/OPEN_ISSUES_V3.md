@@ -5389,6 +5389,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1546: Desktop `RightsCopilotModal` and `rightsCopilot.ts` launch marketing `/join` URLs instead of portals, silently report failed DOM steps as `completed`, reset React controlled inputs, and no-op `stage_deposit_upload`
 
 - **Status:** 🔴 OPEN (2026-10-16)
+- **2026-10-24 progress:** The `codex/issue-1546-rights-copilot` branch sends the modal to the member portals used by the native controller, disables native Run actions until a session ID exists, uses native DOM value setters for controlled fields, and keeps deposit attachment explicitly in the artist's hands because the reviewed manifest has no trusted local file path or verified portal upload result. Missing or blocked fields already fail closed; a manual deposit step now cannot report completion. Focused tests and local type checks pass. Signed-in portal acceptance and actual deposit submission remain open.
 - **Severity:** 🟠 HIGH
 - **Module:** Desktop Rights Registration Copilot (`packages/renderer/src/modules/registration/components/RightsCopilotModal.tsx`, `packages/main/src/handlers/rightsCopilot.ts`)
 - **Classification:** Broken Electron DOM automation, silent failure reporting, and unimplemented upload step.

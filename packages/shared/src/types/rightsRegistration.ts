@@ -272,9 +272,9 @@ export function generateCopilotActionPlan(manifest: RightsRegistrationManifest, 
       actions.push({
         id: 'loc-6',
         type: 'stage_deposit_upload',
-        description: `Stage deposit copy for upload: ${manifest.depositAssets[0].filename} (SHA-256: ${manifest.depositAssets[0].sha256Checksum.slice(0, 8)}...)`,
+        description: `Attach the deposit in the official portal file dialog: ${manifest.depositAssets[0].filename} (SHA-256: ${manifest.depositAssets[0].sha256Checksum.slice(0, 8)}...). Confirm the upload in the portal before continuing.`,
         value: manifest.depositAssets[0].filename,
-        requiresUserAction: false,
+        requiresUserAction: true,
       });
     }
 

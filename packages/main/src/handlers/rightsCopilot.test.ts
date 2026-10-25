@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     rightsCopilotController,
     PORTAL_ALLOWED_DOMAINS,
     PORTAL_DEFAULT_URLS,
 } from './rightsCopilot';
-import type { PortalTarget } from '@indii/shared';
+import type { CopilotAction, PortalTarget } from '@indii/shared';
 
 vi.mock('electron-log', () => ({
     default: {
@@ -14,6 +14,12 @@ vi.mock('electron-log', () => ({
     },
 }));
 
+vi.mock('electron', () => ({
+    BrowserWindow: class BrowserWindow {},
+    ipcMain: { handle: vi.fn() },
+    shell: { openExternal: vi.fn() },
+}));
+
 vi.mock('../utils/ipc-security', () => ({
     validateSender: vi.fn(),
 }));
@@ -21,6 +27,9 @@ vi.mock('../utils/ipc-security', () => ({
 describe('RightsCopilotController', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+    afterEach(() => {
+        (rightsCopilotController as unknown as { activeSession: unknown }).activeSession = null;
     });
 
     describe('isUrlAllowedForPortal (Security Gate)', () => {
@@ -216,6 +225,43 @@ describe('RightsCopilotController', () => {
     });
 
     describe('executeActionStep', () => {
+        const activeStep = (action: CopilotAction, outcomes: unknown[]) => {
+            const executeJavaScript = vi.fn();
+            for (const outcome of outcomes) executeJavaScript.mockResolvedValueOnce(outcome);
+            const sender = { id: 17, isDestroyed: () => false, send: vi.fn() };
+            (rightsCopilotController as unknown as { activeSession: unknown }).activeSession = {
+                sessionId: 'session-1', senderId: 17, portalTarget: 'loc_copyright',
+                status: 'idle', awaitingUser: false, actions: [action],
+                overlayContext: { portalTarget: 'loc_copyright' },
+                window: { isDestroyed: () => false, webContents: { executeJavaScript } },
+            };
+            return { executeJavaScript, sender, input: { sessionId: 'session-1', action } };
+        };
+
+        it('rejects a missing portal field instead of reporting a completed step', async () => {
+            const action: CopilotAction = { id: 'title', type: 'autofill_input', description: 'Title', targetSelector: '#workTitle', value: 'Midnight Sun', requiresUserAction: false };
+            const { sender, input } = activeStep(action, [undefined, { found: false }]);
+            await expect(rightsCopilotController.executeActionStep({ sender } as never, input)).rejects.toThrow('Metadata field was not verified');
+        });
+
+        it('rejects a portal option that did not retain the reviewed value', async () => {
+            const action: CopilotAction = { id: 'form', type: 'select_option', description: 'Form', targetSelector: '#formType', value: 'Form_SR', requiresUserAction: false };
+            const { sender, input } = activeStep(action, [undefined, { found: true, currentValue: 'Form_PA' }]);
+            await expect(rightsCopilotController.executeActionStep({ sender } as never, input)).rejects.toThrow('Field value does not match');
+        });
+
+        it('uses the native value setter for controlled portal inputs', async () => {
+            const action: CopilotAction = { id: 'title', type: 'autofill_input', description: 'Title', targetSelector: '#workTitle', value: 'Midnight Sun', requiresUserAction: false };
+            const { executeJavaScript, sender, input } = activeStep(action, [undefined, { found: true, currentValue: 'Midnight Sun' }]);
+            await expect(rightsCopilotController.executeActionStep({ sender } as never, input)).resolves.toMatchObject({ success: true });
+            expect(executeJavaScript.mock.calls[1][0]).toContain("Object.getOwnPropertyDescriptor(prototype, 'value')?.set");
+        });
+
+        it('requires a user to attach the deposit instead of claiming an upload', async () => {
+            const action: CopilotAction = { id: 'deposit', type: 'stage_deposit_upload', description: 'Attach deposit', value: 'master.wav', requiresUserAction: true };
+            const { sender, input } = activeStep(action, [undefined]);
+            await expect(rightsCopilotController.executeActionStep({ sender } as never, input)).resolves.toMatchObject({ success: false, requiresUserAction: true });
+        });
         it('fails closed immediately if a step targets a sensitive credential or payment selector', async () => {
             await expect(
                 rightsCopilotController.executeActionStep(null, {

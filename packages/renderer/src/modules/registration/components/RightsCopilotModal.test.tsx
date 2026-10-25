@@ -88,7 +88,7 @@ describe('RightsCopilotModal (ISSUE-1511)', () => {
     fireEvent.click(launchBtn);
 
     expect(openSpy).toHaveBeenCalledWith(
-      'https://eco.copyright.gov/ecoms/',
+      'https://eco.copyright.gov/eService_enu/',
       '_blank',
       'noopener,noreferrer',
     );
@@ -139,7 +139,7 @@ describe('RightsCopilotModal (ISSUE-1511)', () => {
     expect(launchSessionMock).toHaveBeenCalledWith(
       expect.objectContaining({
         portalTarget: 'loc_copyright',
-        targetUrl: 'https://eco.copyright.gov/ecoms/',
+        targetUrl: 'https://eco.copyright.gov/eService_enu/',
         workTitle: 'Midnight Echoes',
         artistLegalName: 'Jane Doe',
       })
@@ -148,6 +148,23 @@ describe('RightsCopilotModal (ISSUE-1511)', () => {
 
     window.electronAPI = originalElectronAPI;
     openSpy.mockRestore();
+  });
+
+  it.each([
+    ['bmi', 'https://online.bmi.com/'],
+    ['ascap', 'https://members.ascap.com/'],
+    ['soundexchange', 'https://sportal.soundexchange.com/'],
+  ] as const)('opens the %s member portal for assisted registration', async (portalTarget, targetUrl) => {
+    const originalElectronAPI = window.electronAPI;
+    const launchSession = vi.fn().mockResolvedValue({ success: true, sessionId: 'member-session' });
+    window.electronAPI = { ...((originalElectronAPI || {}) as any), rightsCopilot: { launchSession } } as any;
+    try {
+      render(<RightsCopilotModal {...defaultProps} portalTarget={portalTarget} />);
+      fireEvent.click(screen.getByRole('button', { name: /Launch Assisted Registration/i }));
+      await waitFor(() => expect(launchSession).toHaveBeenCalledWith(expect.objectContaining({ targetUrl })));
+    } finally {
+      window.electronAPI = originalElectronAPI;
+    }
   });
 
   it('executes autofill step via Electron IPC and records official confirmation receipt', async () => {
@@ -162,7 +179,7 @@ describe('RightsCopilotModal (ISSUE-1511)', () => {
     window.electronAPI = {
       ...((originalElectronAPI || {}) as any),
       rightsCopilot: {
-        launchSession: vi.fn().mockResolvedValue({ success: true }),
+        launchSession: vi.fn().mockResolvedValue({ success: true, sessionId: 'native-session-1' }),
         executeStep: executeStepMock,
         closeSession: vi.fn(),
         getSessionStatus: vi.fn(),
@@ -172,8 +189,11 @@ describe('RightsCopilotModal (ISSUE-1511)', () => {
 
     render(<RightsCopilotModal {...defaultProps} onFilingRecorded={onFilingRecorded} />);
 
-    // Click the first "Execute Step 1" button
+    // A step can only run after the native portal session has opened.
     const executeStepBtn = screen.getByRole('button', { name: /Execute Step 1/i });
+    expect(executeStepBtn).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /Launch Assisted Registration/i }));
+    await waitFor(() => expect(executeStepBtn).toBeEnabled());
     fireEvent.click(executeStepBtn);
 
     await waitFor(() => {
