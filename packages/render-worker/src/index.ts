@@ -12,15 +12,16 @@
 
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
 
 import { initializeApp, cert, applicationDefault, getApps } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
 import { executeRenderJob } from './job.js';
-import type { ArtifactUploader, JobStore } from './job.js';
+import type { ArtifactUploader } from './job.js';
 import type { MediaFetcher } from './stage.js';
+import { downloadOwnedRenderMedia } from './mediaSource.js';
+import { createFirestoreJobStore } from './firestoreJobStore.js';
 
 const PORT = Number(process.env.PORT ?? 8080);
 const SECRET = process.env.RENDER_WORKER_SECRET ?? '';
@@ -38,20 +39,13 @@ if (getApps().length === 0) {
 const db = getFirestore();
 const bucket = () => getStorage().bucket();
 
-const fetchToFile: MediaFetcher = async (url: string, destination: string) => {
-    // https:// signed URLs and gs:// objects both resolve through the admin
-    // storage API; plain http(s) URLs go through fetch.
-    if (url.startsWith('gs://')) {
-        const file = getStorage().bucket(url.split('/')[2]).file(url.slice(`gs://${url.split('/')[2]}/`.length));
-        await file.download({ destination });
-        return;
-    }
-    const response = await fetch(url, { redirect: 'follow' });
-    if (!response.ok || !response.body) {
-        throw new Error(`media fetch failed (${response.status}) for ${url}`);
-    }
-    const buffer = Buffer.from(await response.arrayBuffer());
-    writeFileSync(destination, buffer);
+const mediaFetcherFor = (jobPath: string): MediaFetcher => {
+    const uid = /^users\/([^/]+)\/videoRenderJobs\/[A-Za-z0-9_-]{1,128}$/.exec(jobPath)?.[1];
+    if (!uid) throw new Error('Invalid render job owner path.');
+    let remainingBytes = 2 * 1024 * 1024 * 1024;
+    return async (url, destination) => {
+        remainingBytes -= await downloadOwnedRenderMedia(url, destination, uid, remainingBytes);
+    };
 };
 
 const uploadArtifact: ArtifactUploader = async (localPath, jobPath, outputName) => {
@@ -67,45 +61,6 @@ const uploadArtifact: ArtifactUploader = async (localPath, jobPath, outputName) 
     return { url, generation };
 };
 
-const firestoreStore: JobStore = {
-    async getJob(jobPath) {
-        const jobSnapshot = await db.doc(jobPath).get();
-        const data = jobSnapshot.data();
-        if (!jobSnapshot.exists || !data) throw new Error(`job ${jobPath} not found`);
-        let project = data.projectSnapshot;
-        if (!project) {
-            const projectRef = db.collection('users').doc(data.userId as string).collection('videoProjects').doc(data.projectId as string);
-            const snapshot = await projectRef.get(); project = snapshot.data()?.project;
-            if (!snapshot.exists || !project) throw new Error(`project ${data.projectId} not found for job ${jobPath}`);
-        }
-        if (project.id !== data.projectId) throw new Error('Render snapshot does not match its project.');
-        return {
-            data: {
-                status: data.status as 'queued' | 'running' | 'completed' | 'failed',
-                projectId: data.projectId as string,
-                userId: data.userId as string,
-                ...(typeof data.outputName === 'string' ? { outputName: data.outputName } : {}),
-            },
-            project: project as never,
-        };
-    },
-    async setRunning(jobPath) {
-        await db.doc(jobPath).update({ status: 'running', executor: 'cloud-worker', updatedAt: FieldValue.serverTimestamp() });
-    },
-    async setCompleted(jobPath, artifactUrl, generation) {
-        await db.doc(jobPath).update({
-            status: 'completed',
-            artifactUrl,
-            artifactGeneration: generation,
-            error: null,
-            updatedAt: FieldValue.serverTimestamp(),
-        });
-    },
-    async setFailed(jobPath, error) {
-        await db.doc(jobPath).update({ status: 'failed', error, updatedAt: FieldValue.serverTimestamp() });
-    },
-};
-
 const json = (res: import('node:http').ServerResponse, status: number, body: unknown) => {
     res.writeHead(status, { 'content-type': 'application/json' });
     res.end(JSON.stringify(body));
@@ -114,7 +69,12 @@ const json = (res: import('node:http').ServerResponse, status: number, body: unk
 const readBody = (req: import('node:http').IncomingMessage): Promise<Record<string, unknown>> =>
     new Promise((resolve, reject) => {
         const chunks: Buffer[] = [];
-        req.on('data', chunk => chunks.push(Buffer.from(chunk)));
+        let length = 0;
+        req.on('data', chunk => {
+            length += chunk.length;
+            if (length > 16_384) { reject(new Error('render request body exceeds 16 KB')); req.destroy(); return; }
+            chunks.push(Buffer.from(chunk));
+        });
         req.on('end', () => {
             try {
                 resolve(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}') as Record<string, unknown>);
@@ -130,7 +90,7 @@ const jobPathFromEnv = process.env.JOB_PATH || process.argv[2];
 if (jobPathFromEnv) {
     if (/^users\/[^/]+\/videoRenderJobs\/[A-Za-z0-9_-]{1,128}$/.test(jobPathFromEnv)) {
         console.log(`[render-worker-job] Executing Cloud Run Job for ${jobPathFromEnv}`);
-        executeRenderJob(jobPathFromEnv, { store: firestoreStore, fetchToFile, uploadArtifact })
+        executeRenderJob(jobPathFromEnv, { store: createFirestoreJobStore(db), fetchToFile: mediaFetcherFor(jobPathFromEnv), uploadArtifact })
             .then(result => {
                 console.log(`[render-worker-job] Render completed successfully:`, result);
                 process.exit(0);
@@ -157,27 +117,25 @@ if (jobPathFromEnv) {
             json(res, 401, { error: 'unauthorized' });
             return;
         }
+        let jobPath = '';
         try {
             const body = await readBody(req);
-            const jobPath = typeof body.jobPath === 'string' ? body.jobPath : '';
+            jobPath = typeof body.jobPath === 'string' ? body.jobPath : '';
             if (!/^users\/[^/]+\/videoRenderJobs\/[A-Za-z0-9_-]{1,128}$/.test(jobPath)) {
                 json(res, 400, { error: 'jobPath must be a users/{uid}/videoRenderJobs/{jobId} path' });
                 return;
             }
 
-            const isAsync = req.headers['prefer'] === 'respond-async' || body.async === true;
-            if (isAsync) {
-                json(res, 202, { status: 'accepted', jobPath });
-                executeRenderJob(jobPath, { store: firestoreStore, fetchToFile, uploadArtifact }).catch(error => {
-                    console.error(`[render-worker] Background execution failed for ${jobPath}:`, error);
-                });
-                return;
-            }
-
-            const result = await executeRenderJob(jobPath, { store: firestoreStore, fetchToFile, uploadArtifact });
+            const result = await executeRenderJob(jobPath, { store: createFirestoreJobStore(db), fetchToFile: mediaFetcherFor(jobPath), uploadArtifact });
             json(res, 200, result);
         } catch (error) {
-            json(res, 500, { error: error instanceof Error ? error.message : String(error) });
+            console.error('[render-worker] Render attempt failed', { jobPath, error });
+            const status = jobPath ? (await db.doc(jobPath).get().catch(() => undefined))?.data()?.status : undefined;
+            if (status === 'completed' || status === 'failed') {
+                json(res, 200, { status });
+            } else {
+                json(res, 500, { error: 'RENDER_RETRYABLE' });
+            }
         }
     });
 

@@ -17,6 +17,7 @@ import { stageMedia, type MediaFetcher } from './stage.js';
 
 export interface RenderJobRecord {
     status: 'queued' | 'running' | 'completed' | 'failed';
+    leaseExpiresAtMs?: number;
     projectId: string;
     userId: string;
     outputName?: string;
@@ -48,8 +49,9 @@ const REQUIRED_TRANSITIONS = {
 
 export async function executeRenderJob(jobPath: string, deps: ExecuteJobDependencies): Promise<{ url: string }> {
     const { data, project } = await deps.store.getJob(jobPath);
-    if (!REQUIRED_TRANSITIONS.running.includes(data.status as never)) {
-        throw new Error(`job ${jobPath} is ${data.status}; only queued jobs can be executed`);
+    const retryableLease = data.status === 'running' && Number.isFinite(data.leaseExpiresAtMs) && data.leaseExpiresAtMs! <= Date.now();
+    if (!REQUIRED_TRANSITIONS.running.includes(data.status as never) && !retryableLease) {
+        throw new Error(`job ${jobPath} is ${data.status}; only queued or expired-lease jobs can be executed`);
     }
 
     await deps.store.setRunning(jobPath);

@@ -63,11 +63,12 @@ describe('stageMedia', () => {
 });
 
 describe('executeRenderJob', () => {
-    function harness(initialStatus: string) {
+    function harness(initialStatus: string, leaseExpiresAtMs?: number) {
         const store: JobStore = {
             getJob: vi.fn(async () => ({
                 data: {
                     status: initialStatus as never,
+                    ...(leaseExpiresAtMs !== undefined ? { leaseExpiresAtMs } : {}),
                     projectId: 'proj-1',
                     userId: 'user-1',
                     outputName: 'final.mp4',
@@ -123,6 +124,14 @@ describe('executeRenderJob', () => {
         const { store, deps } = harness('running');
         await expect(executeRenderJob('users/user-1/videoRenderJobs/job-1', deps)).rejects.toThrow(/only queued/);
         expect(store.setRunning).not.toHaveBeenCalled();
+    });
+
+    it('reclaims an expired worker lease but never a live one', async () => {
+        const expired = harness('running', Date.now() - 1);
+        await expect(executeRenderJob('users/user-1/videoRenderJobs/job-1', expired.deps)).resolves.toEqual({ url: 'gs://out/final.mp4' });
+        expect(expired.store.setRunning).toHaveBeenCalledTimes(1);
+        const live = harness('running', Date.now() + 60_000);
+        await expect(executeRenderJob('users/user-1/videoRenderJobs/job-1', live.deps)).rejects.toThrow(/expired-lease/);
     });
 });
 
