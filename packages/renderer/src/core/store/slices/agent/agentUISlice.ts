@@ -27,6 +27,7 @@ export interface ApprovalRequest {
     content: string;
     type: string;
     timestamp: number;
+    expiresAt: number;
     resolve: (approved: boolean) => void;
 }
 
@@ -57,7 +58,7 @@ export interface AgentUISlice {
 
     pendingApproval: ApprovalRequest | null;
     requestApproval: (content: string, type: string) => Promise<boolean>;
-    resolveApproval: (approved: boolean) => void;
+    resolveApproval: (approved: boolean, approvalId?: string) => void;
 
     rightPanelView: 'messages' | 'archives';
     setRightPanelView: (view: 'messages' | 'archives') => void;
@@ -160,21 +161,29 @@ export function buildAgentUIState(
 
         requestApproval: (content: string, type: string): Promise<boolean> => {
             return new Promise((resolve) => {
+                get().pendingApproval?.resolve(false);
+                const timestamp = Date.now();
                 const request: ApprovalRequest = {
-                    id: `approval-${Date.now()}`,
+                    id: crypto.randomUUID(),
                     content,
                     type,
-                    timestamp: Date.now(),
+                    timestamp,
+                    expiresAt: timestamp + 120_000,
                     resolve,
                 };
                 set({ pendingApproval: request });
+                setTimeout(() => {
+                    if (get().pendingApproval?.id === request.id) {
+                        get().resolveApproval(false, request.id);
+                    }
+                }, 120_000);
             });
         },
 
-        resolveApproval: (approved: boolean) => {
+        resolveApproval: (approved: boolean, approvalId?: string) => {
             const { pendingApproval } = get();
-            if (pendingApproval) {
-                pendingApproval.resolve(approved);
+            if (pendingApproval && (!approvalId || pendingApproval.id === approvalId)) {
+                pendingApproval.resolve(approved && Date.now() < pendingApproval.expiresAt);
                 set({ pendingApproval: null });
             }
         },

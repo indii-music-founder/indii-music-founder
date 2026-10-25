@@ -332,6 +332,28 @@ describe('publishStudioPresence', () => {
         expect(write?.data['capabilities']).not.toHaveProperty('sudo');
     });
 
+    it('projects only bounded approval details and clears invalid approvals', async () => {
+        enroll();
+        const approval = {
+            id: '123e4567-e89b-42d3-a456-426614174000',
+            content: 'Approve draft action',
+            type: 'tool',
+            timestamp: Date.now(),
+            expiresAt: Date.now() + 60_000,
+            resolve: 'must never leave Studio',
+        };
+        await presence()(req({ deviceId: DEVICE_ID, leaseToken: 'the-real-token', state: { studioInstanceId: INSTANCE, pendingApproval: approval } }));
+        expect(mocks.writes.at(-1)?.data.pendingApproval).toEqual({
+            id: approval.id,
+            content: approval.content,
+            type: approval.type,
+            timestamp: approval.timestamp,
+            expiresAt: approval.expiresAt,
+        });
+        await presence()(req({ deviceId: DEVICE_ID, leaseToken: 'the-real-token', state: { studioInstanceId: INSTANCE, pendingApproval: { ...approval, content: 'x'.repeat(2001) } } }));
+        expect(mocks.writes.at(-1)?.data.pendingApproval).toBeNull();
+    });
+
     it('applies safe defaults for absent fields and slices overlong strings', async () => {
         enroll();
         await presence()(req({
@@ -371,7 +393,7 @@ describe('releaseStudioPresence', () => {
         await release()(req({ deviceId: DEVICE_ID, leaseToken: 'the-real-token', studioInstanceId: INSTANCE }));
 
         const write = mocks.writes.find(w => w.path === statePath);
-        expect(write?.data).toEqual({ online: false, listenerReady: false, timestamp: mocks.SERVER_TS });
+        expect(write?.data).toEqual({ online: false, listenerReady: false, pendingApproval: null, timestamp: mocks.SERVER_TS });
     });
 
     it('never clobbers a NEWER Studio instance that took over presence', async () => {

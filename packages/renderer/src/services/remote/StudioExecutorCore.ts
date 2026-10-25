@@ -74,6 +74,7 @@ export class StudioExecutorCore {
                 currentModule: snapshot.currentModule || 'dashboard',
                 isAgentProcessing: snapshot.isAgentProcessing,
                 activeSessionId: snapshot.activeSessionId,
+                pendingApproval: snapshot.pendingApproval,
                 online: true,
                 sleepMode: snapshot.sleepMode,
                 role: 'studio',

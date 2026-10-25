@@ -50,6 +50,7 @@ const EncounterFeedView = lazy(() => import('./components/EncounterFeedView'));
 const StreamView = lazy(() => import('./components/StreamView'));
 const SettingsView = lazy(() => import('./components/SettingsView'));
 const StudioWorkView = lazy(() => import('./components/StudioWorkView'));
+const ApprovalQueue = lazy(() => import('./components/ApprovalQueue'));
 const RoadMode = lazy(() =>
   import('@/modules/touring/components/RoadMode').then(module => ({ default: module.RoadMode }))
 );
@@ -107,6 +108,27 @@ export default function MobileRemote() {
   const [pendingChatCommandId, setPendingChatCommandId] = useState<string | null>(null);
   const [pendingChatAttachment, setPendingChatAttachment] = useState<{ url: string; mimeType: string; name: string } | null>(null);
   const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
+  const visibleApproval = isPaired && isFreshStudioState(desktopState) &&
+    desktopState?.pendingApproval && Date.now() < desktopState.pendingApproval.expiresAt
+    ? desktopState.pendingApproval : null;
+  const lastAlertedApprovalRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (visibleApproval && lastAlertedApprovalRef.current !== visibleApproval.id) {
+      triggerHaptic(80);
+      lastAlertedApprovalRef.current = visibleApproval.id;
+    }
+  }, [visibleApproval]);
+
+  const sendApprovalDecision = useCallback(async (action: 'approve' | 'reject', approvalId: string) => {
+    if (!isPaired || !isFreshStudioState(desktopStateRef.current) ||
+      desktopStateRef.current?.pendingApproval?.id !== approvalId) {
+      throw new Error('Studio approval is unavailable.');
+    }
+    const commandId = await remoteRelayService.sendCommand(
+      `[AGENT_ACTION] ${action}:${approvalId}`, undefined, undefined, 'studio',
+    );
+    if (!commandId) throw new Error('Studio did not accept the approval command.');
+  }, [isPaired]);
   const [handoffError, setHandoffError] = useState<string | null>(null);
   const controllerBuild = (import.meta.env.VITE_BUILD_SHA || 'development').slice(0, 9);
 
@@ -738,6 +760,13 @@ export default function MobileRemote() {
         onTouchEnd={handleTouchEnd}
         className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-smooth relative z-10 custom-scrollbar"
       >
+        {visibleApproval && (
+          <div className="sticky top-0 z-30 mx-auto max-w-md p-3" role="region" aria-label="Studio approval request">
+            <Suspense fallback={<TabFallback />}>
+              <ApprovalQueue key={visibleApproval.id} approval={visibleApproval} onDecision={sendApprovalDecision} />
+            </Suspense>
+          </div>
+        )}
         <div
           className={cn(
             "max-w-md mx-auto w-full relative",

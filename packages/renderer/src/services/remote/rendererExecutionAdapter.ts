@@ -466,6 +466,19 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
                 const action = parsed.action;
                 logger.info(`[RemoteAdapter] 🤖 Agent Action: "${action}"`);
 
+                const approvalMatch = /^(approve|reject):([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(action);
+                if (approvalMatch) {
+                    const pending = useStore.getState().pendingApproval;
+                    if (!pending || pending.id !== approvalMatch[2] || Date.now() >= pending.expiresAt) {
+                        return { relays: [{ text: 'Approval request is no longer available. Refresh the phone and try again.' }], queuedBehindActiveRun: false };
+                    }
+                    useStore.getState().resolveApproval(approvalMatch[1] === 'approve', pending.id);
+                    return { relays: [{ text: approvalMatch[1] === 'approve' ? 'Approval accepted by Studio.' : 'Approval declined by Studio.' }], queuedBehindActiveRun: false };
+                }
+                if (action.startsWith('approve') || action.startsWith('reject')) {
+                    return { relays: [{ text: 'Invalid approval request.' }], queuedBehindActiveRun: false };
+                }
+
                 if (action === 'open_chat') {
                     // RightPanel only mounts at ≥768px — fall back to agent module on narrow viewports
                     const canMountPanel = typeof window !== 'undefined' && window.innerWidth >= 768;
@@ -703,6 +716,13 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
                 currentModule: s.currentModule || 'dashboard',
                 isAgentProcessing: s.isAgentProcessing,
                 activeSessionId: s.activeSessionId || '',
+                pendingApproval: s.pendingApproval ? {
+                    id: s.pendingApproval.id,
+                    content: s.pendingApproval.content,
+                    type: s.pendingApproval.type,
+                    timestamp: s.pendingApproval.timestamp,
+                    expiresAt: s.pendingApproval.expiresAt,
+                } : null,
                 sleepMode: s.isSleeping,
                 // Phase 5 capability advertisement: presence ≠ capability.
                 // Only surfaces that actually exist on this host advertise true.

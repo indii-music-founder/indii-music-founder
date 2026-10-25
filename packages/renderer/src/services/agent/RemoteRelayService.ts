@@ -121,6 +121,13 @@ export interface DesktopState {
     currentModule: string;
     isAgentProcessing: boolean;
     activeSessionId: string;
+    pendingApproval?: {
+        id: string;
+        content: string;
+        type: string;
+        timestamp: number;
+        expiresAt: number;
+    } | null;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     online: boolean;
     /** Presence must come from a Studio executor, never the Controller. */
