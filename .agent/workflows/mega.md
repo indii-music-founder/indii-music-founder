@@ -398,6 +398,6 @@ After both `/go` and `/ci-validate` pass:
 ```bash
 git add <mega-session-files>
 git commit -m "chore: mega menu sweep <DATE> — <PASS>✅ <FAIL>❌ <NEW_ISSUE_COUNT> issues"
-git push origin HEAD:main
+git push origin HEAD:<task-branch>
 ```
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.

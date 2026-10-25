@@ -1,5 +1,5 @@
 ---
-description: Flagship closure workflow. Reconciles every promised acceptance criterion, runs proportional final proof and observational /ci-validate, delivers one coherent main commit when authorized, and verifies exact-SHA CI without post-gate edits.
+description: Flagship closure workflow. Reconciles every promised acceptance criterion, runs proportional final proof and observational /ci-validate, publishes one coherent task branch PR, and verifies exact-SHA CI without post-gate edits.
 ---
 
 # /end — Closure
@@ -33,11 +33,12 @@ When the tree is clean for this objective and local validation passes:
 
 1. stage only explicitly listed task files;
 2. inspect the complete staged diff;
-3. create one conventional task commit on `main`;
-4. push only with `git push origin HEAD:main`;
-5. locate the remote CI run for that exact SHA;
-6. wait for its final result and inspect actual failed logs if red;
-7. repair only logged root causes through `/middle` until the successor SHA is green.
+3. create one conventional task commit on the focused branch;
+4. push with an explicit branch refspec and open a PR targeting `main`;
+5. verify the remote branch and PR head SHA, then locate CI for that exact SHA;
+6. inspect actual failed logs if red;
+7. repair only logged root causes through `/middle` until the successor SHA is green;
+8. merge only with the required review, check, and user authorization in [`branch-safety.md`](branch-safety.md).
 
 Missing GitHub credentials require the official `gh auth login` flow. Never harvest a PAT from `.env` or switch identities.
 
@@ -56,4 +57,4 @@ AUTHENTICITY: <structural | simulated | local-real | production-real>
 REMAINING: <none or exact blocker>
 ```
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.

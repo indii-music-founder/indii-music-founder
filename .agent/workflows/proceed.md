@@ -20,7 +20,7 @@ Downgrade any completion claim that current state does not prove. Do not let a s
 
 ## 2. Reconcile repository state
 
-Before code, git, CI, or push actions, read [`branch-safety.md`](branch-safety.md). Fetch `origin`, require `main`, compare `origin/main...HEAD`, and inspect the dirty tree. Separate current-task files from unrelated work. Never auto-stash, auto-branch, rebase, stage, commit, or overwrite someone else's files.
+Before code, git, CI, or push actions, read [`branch-safety.md`](branch-safety.md). Fetch `origin`, inspect the task branch against `origin/main`, and inspect the dirty tree. Separate current-task files from unrelated work. Never auto-stash, rebase, stage, commit, or overwrite someone else's files without the task requiring it.
 
 ## 3. Recheck authority and prerequisites
 
@@ -43,4 +43,4 @@ AUTHORITY / PREREQUISITES: <state>
 NEXT: <coherent verification unit or exact blocker>
 ```
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.

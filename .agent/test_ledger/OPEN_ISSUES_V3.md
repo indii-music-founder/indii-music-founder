@@ -4739,6 +4739,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1516: Mainline branch protection and required-check ruleset are disabled
 
 - **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **2026-10-25 progress:** Repository admin confirmed ruleset `16587669` still disabled, with no bypass actors, one approving review, and required `test` check. The user explicitly chose PR protection and a matching policy update. The policy change and read-only conversion of `git_monitor_sync.js` are being delivered in a focused PR; enforcement remains unverified until the ruleset is enabled and its effective state is read back from GitHub.
 - **Recovered from:** Original audit ISSUE-1457; current ISSUE-1457 concerns unrelated UI work.
 - **October 12 recheck:** Branch main is unprotected and repository ruleset main-branch-protection (16587669) enforcement is disabled. Earlier ruleset uncertainty is resolved; administrative remediation requires appropriate authorization.
 - **Severity:** HIGH

@@ -44,7 +44,7 @@ Your job: **run the tests, find the bugs, and write them to the ledger as clean,
 - When the user signs out, continue the background polling/test loop. Assume no handoff is needed unless the user explicitly changes the task.
 
 ## 2. Swarm Coordination (The ABCD Protocol)
-- **Role Definition:** **A-Engine is the FINDER** — runs tests, finds bugs, writes issues. **B-Engine fixes** those issues in one coherent commit on `main`. **C-Engine ships** and guarantees CI goes green for the exact pushed `main` SHA. **D-Engine verifies** fixes independently and re-opens fake or incomplete work. Stay in the finder lane: **test and write, never fix.**
+- **Role Definition:** **A-Engine is the FINDER** — runs tests, finds bugs, writes issues. **B-Engine fixes** those issues in one coherent task-branch commit. **C-Engine publishes a PR** and verifies exact head-SHA CI. **D-Engine verifies** fixes independently and re-opens fake or incomplete work. Stay in the finder lane: **test and write, never fix.**
 - **Conflict Avoidance:** The ledger is written by several agents. Before the bounded work cycle, require a clean tree and run `git fetch origin && git merge --ff-only origin/main`. Keep all related ledger additions in the task's single coherent commit; do not create immediate micro-commits. Prefer a namespaced ID (`ISSUE-A-NNN`) and never rewrite the whole file from a stale snapshot.
 - **Handoff:** every bug you find becomes an `⏳ OPEN` issue. In a team, B picks it up; solo, it simply waits in the ledger for the next fixer pass. Either way you do NOT set `IN PROGRESS` or `FIXED` — you are the finder, not the fixer.
 - **Solo mode:** if A is the only engine running, skip the inter-agent claiming/handoff niceties and just do the loop — test, find, write. The ledger is your complete output.
@@ -93,4 +93,4 @@ Every failure/bug → append a NEW issue to `.agent/test_ledger/OPEN_ISSUES_V2.m
 - When you finish an iteration, do NOT stop.
 - Keep the ledger current with only durable findings; do not churn the file with speculative entries.
 - Tell the user "A-Engine (Finder) is online," wait for the background cron to fire, and immediately resume the cycle when it does.
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.

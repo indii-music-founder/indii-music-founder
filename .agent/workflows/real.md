@@ -515,4 +515,4 @@ Output files:
   .agent/test_ledger/REAL_TEST_HISTORY.md    ← Coverage ledger
   artifacts/<persona>_<date>_results.md      ← Session report
 ```
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
