@@ -5002,6 +5002,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1530: Remote human-in-the-loop authorization (ApprovalQueue) is orphaned and disconnected from Cloud Relay state
 
+**Progress (2026-10-24):** `codex/issue-1530-mobile-approval-relay` projects a bounded local `requestApproval` record through the leased Studio presence, renders the request on the paired phone, and sends an ID-bound decision through the existing relay. Studio rejects stale or mismatched IDs; local requests expire after two minutes. Focused tests and typechecks pass. This covers the local agent UI approval promise; Firestore `ToolApprovalService` remains a separate approval path. Genuine paired-phone acceptance is still required before closing the issue.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🔴 HIGH
 - **Module:** Mobile Remote / Agent Guardrails / Approval Queue / Cloud Relay

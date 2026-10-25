@@ -94,6 +94,7 @@ describe('account-bound root store', () => {
                 content: 'private action',
                 type: 'tool',
                 timestamp: Date.now(),
+                expiresAt: Date.now() + 120_000,
                 resolve: resolveApproval,
             },
         } as Partial<ReturnType<typeof useStore.getState>>);

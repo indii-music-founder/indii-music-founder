@@ -82,6 +82,23 @@ export const publishStudioPresence = onCall({ region: 'us-central1', cors: true,
     capabilities[key] = rawCaps[key] === true;
   }
 
+  const rawApproval = state.pendingApproval && typeof state.pendingApproval === 'object'
+    ? state.pendingApproval as Record<string, unknown> : null;
+  const pendingApproval = rawApproval &&
+    typeof rawApproval.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(rawApproval.id) &&
+    typeof rawApproval.content === 'string' && rawApproval.content.length <= 2000 &&
+    typeof rawApproval.type === 'string' && rawApproval.type.length <= 80 &&
+    typeof rawApproval.timestamp === 'number' && Number.isFinite(rawApproval.timestamp) &&
+    typeof rawApproval.expiresAt === 'number' && Number.isFinite(rawApproval.expiresAt) &&
+    rawApproval.expiresAt > Date.now() && rawApproval.expiresAt - Date.now() <= 120_000
+    ? {
+      id: rawApproval.id,
+      content: rawApproval.content,
+      type: rawApproval.type,
+      timestamp: rawApproval.timestamp,
+      expiresAt: rawApproval.expiresAt,
+    } : null;
+
   await admin.firestore().doc(`users/${request.auth.uid}/remote-relay/state`).set({
     currentModule: typeof state.currentModule === 'string' ? state.currentModule.slice(0, 80) : 'dashboard',
     isAgentProcessing: state.isAgentProcessing === true,
@@ -102,6 +119,7 @@ export const publishStudioPresence = onCall({ region: 'us-central1', cors: true,
     protocolVersion: REMOTE_RELAY_PROTOCOL_VERSION,
     listenerReady: true,
     capabilities,
+    pendingApproval,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
   return { ok: true };
@@ -116,7 +134,7 @@ export const releaseStudioPresence = onCall({ region: 'us-central1', cors: true,
   await admin.firestore().runTransaction(async tx => {
     const state = await tx.get(stateRef);
     if (state.exists && state.get('studioInstanceId') === input.studioInstanceId && state.get('executorDeviceId') === input.deviceId) {
-      tx.update(stateRef, { online: false, listenerReady: false, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+      tx.update(stateRef, { online: false, listenerReady: false, pendingApproval: null, timestamp: admin.firestore.FieldValue.serverTimestamp() });
     }
   });
   return { ok: true };

@@ -92,6 +92,7 @@ function makeAdapter(over: Partial<StudioExecutionAdapter> = {}) {
         }),
         isAgentBusy: vi.fn(() => false),
         presenceSnapshot: vi.fn(() => ({
+            pendingApproval: null,
             currentModule: 'dashboard',
             isAgentProcessing: false,
             activeSessionId: 'sess-1',

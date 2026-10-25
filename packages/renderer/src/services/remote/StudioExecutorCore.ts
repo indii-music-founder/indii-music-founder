@@ -74,6 +74,7 @@ export class StudioExecutorCore {
                 currentModule: snapshot.currentModule || 'dashboard',
                 isAgentProcessing: snapshot.isAgentProcessing,
                 activeSessionId: snapshot.activeSessionId,
+                pendingApproval: snapshot.pendingApproval,
                 ...(snapshot.activeTrackTitle ? { activeTrackTitle: snapshot.activeTrackTitle } : {}),
                 ...(snapshot.activeTrackId ? { activeTrackId: snapshot.activeTrackId } : {}),
                 ...(snapshot.activeTrackArtist ? { activeTrackArtist: snapshot.activeTrackArtist } : {}),
