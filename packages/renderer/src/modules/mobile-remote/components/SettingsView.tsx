@@ -30,6 +30,7 @@ import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
 import { buildMobileRemoteUrl } from '../routing';
+import { pushNotificationService } from '@/services/notifications/PushNotificationService';
 
 interface SettingsViewProps {
     desktopState: DesktopState | null;
@@ -50,6 +51,8 @@ function timeoutLabel(minutes: number): string {
 export default function SettingsView({ desktopState, isPaired }: SettingsViewProps) {
     const [settings, setSettings] = useState<RemoteSleepSettings>(DEFAULT_REMOTE_SLEEP_SETTINGS);
     const [isWaking, setIsWaking] = useState(false);
+    const [pushStatus, setPushStatus] = useState<string | null>(null);
+    const [isEnablingPush, setIsEnablingPush] = useState(false);
     const wakeResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const status = resolveStatus(desktopState);
 
@@ -120,6 +123,19 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
         }
     };
 
+    const enablePush = async () => {
+        if (isEnablingPush) return;
+        setIsEnablingPush(true);
+        try {
+            const token = await pushNotificationService.requestPermissionAndGetToken();
+            setPushStatus(token ? 'Notifications enabled for this device.' : 'Notifications are unavailable or permission was not granted on this device.');
+        } catch {
+            setPushStatus('Notifications could not be enabled. Please retry.');
+        } finally {
+            setIsEnablingPush(false);
+        }
+    };
+
     const statusMeta: Record<DesktopStatus, { label: string; dot: string; copy: string }> = {
         active: {
             label: 'Active',
@@ -155,6 +171,12 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                     <a className="text-cyan-300 underline" href={buildMobileRemoteUrl('?action=voice')}>Voice memo link</a>
                     <a className="text-cyan-300 underline" href={buildMobileRemoteUrl('?action=vault')}>Vault listening link</a>
                 </div>
+            </section>
+            <section className="rounded-[24px] border border-white/10 bg-[#1a1512]/80 p-5">
+                <h3 className="text-sm font-bold text-white">Background notifications</h3>
+                <p className="mt-2 text-xs text-[#a1a1a6]">Get a phone alert when a Studio image or video is ready or an agent approval needs you. On iPhone, add this site to your Home Screen before enabling web push.</p>
+                <button type="button" onClick={() => void enablePush()} disabled={isEnablingPush} className="mt-3 rounded-xl bg-cyan-400 px-4 py-2 text-xs font-bold text-black disabled:opacity-50">{isEnablingPush ? 'Enabling…' : 'Enable notifications'}</button>
+                {pushStatus && <p role="status" className="mt-2 text-xs text-[#a1a1a6]">{pushStatus}</p>}
             </section>
 
             <motion.div

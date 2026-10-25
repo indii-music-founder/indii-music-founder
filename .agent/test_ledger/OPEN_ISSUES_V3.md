@@ -5087,6 +5087,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1534: Mobile Remote lacks background push notifications for completed renders and agent approval requests
 
+**Progress (2026-10-25):** `codex/issue-1534-mobile-push-notifications` repairs the existing FCM registration path with the configured VAPID key and explicit service worker, adds an opt-in control on the phone, sends generic push events for completed visual relay responses, and sends deduplicated approval alerts from the leased Studio presence callable. Notifications open the canonical mobile route or Studio tab. Approval alerts depend on ISSUE-1530's pending-approval projection. The branch does not claim notifications for unrelated render systems, and real installed iOS/Android PWA push acceptance remains required before closing the issue.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / Push Notifications / FCM / Service Worker

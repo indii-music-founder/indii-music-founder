@@ -1,33 +1,33 @@
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
+// This worker receives FCM web push through an explicit registration. No
+// Firebase configuration or user credentials are embedded in the worker.
+self.addEventListener('push', event => {
+    let message;
+    try { message = event.data?.json(); } catch { return; }
+    const data = message?.data ?? message;
+    if (!data || typeof data.title !== 'string' || typeof data.body !== 'string') return;
+    let target;
+    try { target = new URL(data.url || '/mobile-remote', self.location.origin); } catch { return; }
+    if (target.origin !== self.location.origin || target.pathname !== '/mobile-remote') return;
+    event.waitUntil(self.registration.showNotification(data.title.slice(0, 100), {
+        body: data.body.slice(0, 200),
+        icon: '/icon-remote-192.png',
+        badge: '/favicon-remote.svg',
+        tag: typeof data.tag === 'string' ? data.tag.slice(0, 100) : undefined,
+        data: { url: target.href },
+    }));
+});
 
-const firebaseConfig = {
-    apiKey: "", // REMOVED HARDCODED KEY - Inject via build or env
-    authDomain: "indii-music-founder.firebaseapp.com",
-    projectId: "indii-music-founder",
-    storageBucket: "indii-alpha-electron",
-    messagingSenderId: "148015878263",
-    appId: "1:148015878263:web:febc76c0bd56f28cdbb672",
-    measurementId: "G-KNWPRGE5JK"
-};
-
-try {
-    firebase.initializeApp(firebaseConfig);
-    const messaging = firebase.messaging();
-
-    messaging.onBackgroundMessage((payload) => {
-        console.log('[firebase-messaging-sw.js] Received background message ', payload);
-
-        // Customize notification handling here if needed
-        const notificationTitle = payload.notification.title;
-        const notificationOptions = {
-            body: payload.notification.body,
-            icon: '/icons/icon-192x192.png',
-            data: payload.data
-        };
-
-        self.registration.showNotification(notificationTitle, notificationOptions);
-    });
-} catch (error) {
-    console.error('Firebase messaging verification failed', error);
-}
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    let target;
+    try { target = new URL(event.notification.data?.url || '/mobile-remote', self.location.origin); } catch { return; }
+    if (target.origin !== self.location.origin || target.pathname !== '/mobile-remote') return;
+    event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async clients => {
+        const existing = clients.find(client => new URL(client.url).origin === target.origin);
+        if (existing) {
+            await existing.navigate(target.href);
+            return existing.focus();
+        }
+        return self.clients.openWindow(target.href);
+    }));
+});

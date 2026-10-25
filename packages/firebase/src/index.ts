@@ -266,6 +266,7 @@ export { auditReleaseArtworkForDelivery } from './assets/auditReleaseArtwork';
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
 export { issueStudioExecutorLease, publishStudioPresence, releaseStudioPresence, claimStudioCommand, publishStudioResponse, completeStudioCommand } from './functions/remote/issueStudioExecutorLease';
+export { notifyMobileVisualResult } from './functions/remote/mobilePushNotifications';
 
 // TypeSafe System One judgments — server-side proxy (API key never leaves functions)
 export { typesafeJudge } from './functions/intelligence/typesafeJudge';
