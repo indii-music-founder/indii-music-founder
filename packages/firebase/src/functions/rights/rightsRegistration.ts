@@ -20,11 +20,12 @@ import { prepareSoundExchangeBulk } from '@indii/shared';
 import { createCanonicalMusicCatalogStore } from '../music/canonicalMusicCatalogStore';
 import { validateRightsEntityReferences, CanonicalMusicEntitySchema, RightsEntityId, COPYRIGHT_PORTAL_HOSTS, canApproveCwrExport, publicRightsSession } from '@indii/shared';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { canReopenUncertainFiling } from './rightsFilingReconciliation';
 
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const db = () => getFirestore();
 const root = (uid: string) => db().collection('users').doc(uid);
-const Request = z.object({ action: z.enum(['capabilities', 'resolve_cwr_transfer', 'society_delivery_status', 'save_society_onboarding', 'configure_society_transport', 'revoke_society_transport', 'reconcile_cwr_transfer', 'fetch_cwr_ack', 'prepare_society_work', 'get_cwr_export', 'get_cwr_ack', 'list_sessions', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
+const Request = z.object({ action: z.enum(['capabilities', 'resolve_cwr_transfer', 'society_delivery_status', 'save_society_onboarding', 'configure_society_transport', 'revoke_society_transport', 'reconcile_cwr_transfer', 'fetch_cwr_ack', 'prepare_society_work', 'get_cwr_export', 'get_cwr_ack', 'list_sessions', 'catalog_entities', 'create_entity', 'save_case', 'prepare_deposit', 'record_evidence', 'reconcile_filing', 'build_cwr', 'prepare_soundexchange', 'deliver_cwr', 'approve_cwr', 'import_ack', 'start_session', 'connect_ticket', 'take_control', 'return_control', 'execute_action', 'select_deposits', 'end_session', 'remember_login', 'forget_login']), payload: z.record(z.unknown()) }).strict();
 const CaseId = z.object({ caseId: RightsId }).passthrough();
 const SessionId = z.object({ sessionId: RightsId }).passthrough();
 const gc = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
@@ -195,6 +196,20 @@ export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSecond
         if (!['submitted', 'accepted', 'registered', 'rejected'].includes(current.data()?.state)) tx.update(ref, { state: 'outcome_unknown', evidenceSource: 'user_report', reportedExternalId: input.evidence.externalId });
       });
       return { filingId: input.filingId ?? filing.filingId, saved: true, source: 'user_report' };
+    }
+    if (action === 'reconcile_filing') {
+      const input = z.object({ caseId: RightsId, filingId: RightsId, manifestHash: z.string().regex(/^[a-f0-9]{64}$/), attestedNoSubmission: z.literal(true) }).strict().parse(payload);
+      const owned = await ownedCase(uid, input.caseId);
+      if (owned.filingId !== input.filingId || owned.manifestHash !== input.manifestHash) throw new HttpsError('failed-precondition', 'Reload the exact saved filing before reconciliation.');
+      const filingRef = root(uid).collection('rightsFilings').doc(input.filingId);
+      await db().runTransaction(async tx => {
+        const capacity = (await tx.get(db().doc('rightsInfrastructure/capacity'))).data()?.active ?? {};
+        const filing = (await tx.get(filingRef)).data();
+        if (!canReopenUncertainFiling(filing, capacity, { uid, caseId: input.caseId, manifestHash: input.manifestHash })) throw new HttpsError('failed-precondition', 'This filing needs a confirmed browser stop and no reported receipt before it can be reopened.');
+        tx.update(filingRef, { state: 'ready', reconciliation: { kind: 'artist_attested_no_submission', actorUid: uid, at: FieldValue.serverTimestamp() } });
+        tx.create(filingRef.collection('reconciliations').doc(), { kind: 'artist_attested_no_submission', actorUid: uid, manifestHash: input.manifestHash, at: FieldValue.serverTimestamp() });
+      });
+      return { filingId: input.filingId, state: 'ready', verifiedExternalOutcome: false };
     }
     if (action === 'resolve_cwr_transfer') return resolveCwrTransfer(uid, request.auth.token.admin === true, payload);
     if (['society_delivery_status', 'save_society_onboarding', 'configure_society_transport', 'revoke_society_transport'].includes(action)) return societyOnboarding(uid, request.auth.token.admin === true, action, payload);

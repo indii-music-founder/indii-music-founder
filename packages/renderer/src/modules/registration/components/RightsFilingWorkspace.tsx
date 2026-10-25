@@ -37,6 +37,7 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState('');
+  const [attestedNoSubmission, setAttestedNoSubmission] = useState(false);
   const receiptReport = useRef<{ key: string; evidence: { evidenceId: string; kind: 'user_report'; externalId: string; observedAt: string } }>();
   const reportedEvidence = () => {
     const key = JSON.stringify([caseId, savedFilingId, receipt]);
@@ -106,7 +107,7 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
   const loadCase = (record: Record<string, any>) => {
     const restored = restoreRightsCase(record, userId);
     const value = restored.manifest;
-    setSessionId(''); setReceipt(''); receiptReport.current = undefined;
+    setSessionId(''); setReceipt(''); setAttestedNoSubmission(false); receiptReport.current = undefined;
     setCaseId(value.caseId); setRevision(value.revision); setKind(value.applicationKind); setScope(value.claimScope);
     setParties(value.parties); setWorks(value.works); setCertifier(value.certifierPartyId); setAuthority(value.authority);
     setAuthorityEvidence(value.authorityEvidence ?? ''); setSavedFilingId(restored.filingId); setSavedHash(restored.manifestHash);
@@ -191,6 +192,16 @@ export function RightsFilingWorkspace({ userId, tracks }: { userId: string; trac
       }} /></label>
     </section>
     <section><h3>Filing history</h3>{filings.map(f => <p key={f.id} className="text-sm">{f.id} · {String(f.state).replaceAll('_', ' ')} · {f.evidenceSource ?? 'legacy evidence not verified'} <button disabled={busy} onClick={() => void run(async () => loadCase({ ...f, filingId: f.id }))}>Open filing revision</button></p>)}</section>
+    {filings.some(f => f.id === savedFilingId && f.state === 'outcome_unknown' && (!f.evidenceSource || f.evidenceSource === 'none')) && <section className="space-y-2 rounded border border-amber-400/40 p-3">
+      <h3 className="font-semibold">Reconcile uncertain filing</h3>
+      <p className="text-sm">Check the official Copyright Office portal first. Reopen this preparation only if no application was submitted. If you have a confirmation or are unsure, preserve this filing and contact support.</p>
+      <label className="block text-sm"><input type="checkbox" checked={attestedNoSubmission} onChange={event => setAttestedNoSubmission(event.target.checked)} /> I checked the official portal and confirm no application was submitted.</label>
+      <button disabled={busy || !attestedNoSubmission || !savedHash} onClick={() => void run(async () => {
+        await rightsOperation('reconcile_filing', { caseId, filingId: savedFilingId, manifestHash: savedHash, attestedNoSubmission: true });
+        setAttestedNoSubmission(false);
+        setMessage('The saved preparation is ready to reopen. This does not verify any external filing outcome.');
+      })}>Reopen this preparation</button>
+    </section>}
     {message && <p role="status" className="text-sm text-amber-200">{message}</p>}
   </div>;
 }
