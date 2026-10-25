@@ -1,20 +1,20 @@
 # indii — Tech Stack
 
-> **Verified against** root `package.json`, `packages/*/package.json`, `electron.vite.config.ts`, `firebase.json`, `tsconfig.json`, and `.github/workflows/deploy.yml` at v1.55.3.
+> **Verified against** root and workspace manifests, `packages/main/src/services/video/HyperFramesAdapter.ts`, and `.github/workflows/deploy.yml` on 2026-10-24. Dated migration plans remain historical records.
 
 ## Monorepo
 
-- **Root:** `indii-monorepo` v1.55.3
+- **Root:** `indii.music` v1.82.0
 - **Type:** ES module
 - **Node engine:** `>=24.0.0`
-- **Workspaces (6 packages):**
+- **Workspaces (13 packages):**
 
 | Package | Purpose | Runtime |
 |---|---|---|
-| `packages/main` | Electron main process, IPC, ffmpeg / ffprobe, keytar, SFTP, WebSocket, ngrok tunnel | Node 22 (CJS) |
-| `packages/renderer` | React 18 UI, Tailwind, Zustand, Remotion, Three.js, Yjs CRDT — the bulk of the app | ESM / Vite |
-| `packages/firebase` | Cloud Functions, Firestore rules, BigQuery, Vertex AI, Stripe, Inngest, Genkit | Node 22 Gen 2 |
-| `packages/shared` | Zod schemas and cross-workspace types (type-only, no runtime) | ESM |
+| `packages/main` | Electron main process, IPC, ffmpeg / ffprobe, keytar, SFTP, WebSocket, ngrok tunnel, HyperFrames CLI adapter | Electron / CJS |
+| `packages/renderer` | React 18 UI, Tailwind, Zustand, HyperFrames player, Three.js, Yjs CRDT — the bulk of the app | ESM / Vite |
+| `packages/firebase` | Cloud Functions, Firestore rules, BigQuery, Vertex AI, Stripe, Inngest, TypeSafe judgments | Node 22 Gen 2 |
+| `packages/shared` | Zod schemas, runtime validation, and cross-workspace types | ESM |
 | `packages/landing` | Marketing site (separate React + Vite app) | ESM / Vite |
 | `packages/mcp-server-local` | Model Context Protocol server | Node |
 | `packages/render-worker` | Cloud render worker for HyperFrames compositions (Cloud Run) | Node |
@@ -22,14 +22,17 @@
 | `packages/admin-dashboard` | Internal admin console | ESM / Vite |
 | `packages/mcp-server-harness` | indii harness MCP server (`indii-harness-mcp`) | Node |
 | `packages/sdk` | Official TypeScript SDK for the indii REST API (`@indii/sdk`, beta) | ESM |
-| `packages/engine-dsp` | DSP engine workspace (scaffold — no package.json yet) | — |
+| `packages/rights-browser-worker` | Hosted rights browser worker | Node |
+| `packages/rights-session-broker` | Hosted rights session broker | Node |
+
+`packages/engine-dsp` is a scaffold outside the declared workspace list.
 
 ## Languages and compilation
 
 | Tool | Version | Notes |
 |---|---|---|
 | TypeScript | 5.8.2 | strict, ES2022 target, bundler module resolution, JSX `react-jsx` |
-| Vite | 6.4.1 (renderer), 6.2.0 (landing) | Tailwind CSS plugin, chunk size warning 1000 KB |
+| Vite | 6.4.3 (root/renderer); see landing manifest for its independent version | Tailwind CSS plugin |
 | electron-vite | 5.0.0 | Orchestrates main / preload / renderer builds |
 | esbuild | 0.25.12 | |
 | Lightning CSS | 1.30.2 | |
@@ -45,17 +48,17 @@
 | Category | Library | Version |
 |---|---|---|
 | Framework | React + ReactDOM | 18.3.1 |
-| Router | React Router DOM | 7.14.0 |
+| Router | React Router DOM | 7.18.2 |
 | State | Zustand | 5.0.8 (primary, 23 slices) |
 | State (legacy) | Redux Toolkit + React-Redux | 2.11.2 / 9.2.0 |
 | Styling | TailwindCSS | 4.1.17 (via `@tailwindcss/vite`) |
 | Utilities | clsx, classnames, tailwind-merge | 2.1.1 / 2.5.1 / 3.4.0 |
 | UI primitives | Radix UI | dialog, dropdown, tooltip, progress, context-menu |
 | Icons | lucide-react | 0.555.0 |
-| Animation | Framer Motion | 12.35.1 |
+| Animation | Motion | 12.23.26 |
 | Canvas | Fabric.js | 7.2.0 |
 | 3D | Three.js + @react-three/fiber + @react-three/drei | 0.182.0 / 8.18.0 / 9.122.0 |
-| Video | Remotion (core, cloudrun, renderer, bundler, player) | 4.0.445 |
+| Video | HyperFrames CLI (desktop/worker) + `@hyperframes/player` (renderer) | 0.8.10 / 0.8.11 |
 | Audio waveform | wavesurfer.js | 7.11.1 |
 | Audio analysis | essentia.js + Python (YAMNet ONNX) | 0.1.3 |
 | OCR | tesseract.js | 6.0.1 |
@@ -78,28 +81,23 @@
 
 | Layer | Library | Version |
 |---|---|---|
-| Gemini JS client (renderer + functions) | @google/genai | 1.48.0+ |
+| Gemini JS client (renderer + functions) | @google/genai | ^2.12.0 |
 | Vertex AI (functions) | @google-cloud/vertexai | 1.10.0 |
-| Genkit AI framework | @genkit-ai/firebase + @genkit-ai/google-cloud | 1.26.0 (pinned) |
+| Structured judgments | TypeSafe System One / Jev | Server-side callable; see `packages/firebase/src/functions/intelligence/` |
 | Provider-agnostic adapter | @ai-sdk/google | 3.0.60 |
 | Workflow agents | Mastra | 1.24.1 / 1.4.2 |
 | Serverless workflow jobs | Inngest | 3.46.0 (renderer) / 3.22.12 (functions) |
 | Agent gateway (future) | Gemini Enterprise Agent Platform (GEAP) | Phase 1 complete — see `docs/GEMINI_ENTERPRISE_AGENT_PLATFORM.md` |
 
-## Python sidecar
+## Optional Python utilities
 
-- **Service:** `indii-agent` (Docker Compose)
-- **Ports:** 50080 (HTTP API), 8880 (UI proxy)
-- **Working dir:** `/a0`
-- **Protocol:** HTTP REST; renderer-side bridge via `MCPClientService`; main-process spawn via `python-bridge.ts`
-- **MCP SDK:** `@modelcontextprotocol/sdk` 1.25.2+
-- **Tools:** 92 custom tools under `python/tools/` — audio forensics, image / video generation, legal drafters, DDEX utilities, campaign generators, browser automation
+The default desktop path is native Node.js/TypeScript. `packages/main/src/utils/python-bridge.ts` and `AgentSupervisor.ts` still provide a host-Python bridge for selected utilities. Do not treat the retired `indii-agent` Docker Compose service or its ports as a required runtime dependency; check the specific caller before relying on Python.
 
 ## Electron desktop (packages/main)
 
 | Component | Version | Purpose |
 |---|---|---|
-| Electron | 41.1.1 | Chromium + Node.js runtime |
+| Electron | ^41.10.4 | Chromium + Node.js runtime |
 | Electron Forge | 7.8 | Packaging |
 | Electron Builder | 26.8.1 | DMG / NSIS / AppImage distribution |
 | electron-log | 5.4.3 | IPC + main-process logging |
@@ -149,8 +147,8 @@
 
 | Tool | Version | Use |
 |---|---|---|
-| Vitest | 4.0.18 | Unit tests (jsdom), 4-way shard in CI, coverage via v8 |
-| @vitest/ui | 4.0.18 | Interactive runner |
+| Vitest | ^4.1.10 | Unit tests (jsdom), CI shards, coverage via v8 |
+| @vitest/ui | 4.1.10 | Interactive runner |
 | Testing Library (react + dom + jest-dom) | 16.3.0 / 10.4.1 / 6.9.1 | Component tests |
 | Playwright | 1.58.2 | E2E tests, chromium only, 1 worker, `e2e/` dir |
 | @axe-core/playwright + jest-axe + vitest-axe | 4.11.1 / 10.0.0 / 0.1.0 | Accessibility |
@@ -166,9 +164,9 @@
 **GitHub Actions** — `.github/workflows/deploy.yml`:
 
 1. Secret scan (gitleaks-action)
-2. npm audit (high severity gate)
+2. npm audit (high severity advisory; currently `continue-on-error`)
 3. Lint + typecheck
-4. Vitest — 4-way shard parallel, 15 min timeout
+4. Vitest — parallel CI shards
 5. Playwright (chromium)
 6. Build landing + app
 7. Firebase deploy (hosting + functions)
@@ -208,8 +206,8 @@ Critical `VITE_` vars (see `.env.example`):
 - **Backend services:** `VITE_FUNCTIONS_URL`, `VITE_RAG_PROXY_URL`, `VITE_API_BASE_URL`, `VITE_USE_FUNCTIONS_EMULATOR`
 - **Feature flags:** `VITE_SKIP_ONBOARDING`, `VITE_USE_MOCK_API`, `VITE_USE_REMOTE_STORAGE`, `VITE_USE_FINE_TUNED_AGENTS`
 - **Integrations:** `VITE_STRIPE_*`, `VITE_PRINTFUL_API_KEY`, `VITE_ALCHEMY_API_KEY`, `VITE_WALLETCONNECT_*`, `VITE_DOCUSIGN_*`, `VITE_NOTARIZE_API_KEY`, `VITE_SPOTIFY_CLIENT_ID`, `VITE_APPLE_MUSIC_DEV_TOKEN`, `VITE_TIKTOK_CLIENT_KEY`, `VITE_GOOGLE_MAPS_API_KEY`, `VITE_GOOGLE_OAUTH_CLIENT_ID`
-- **Distribution:** `VITE_DDEX_DPID_*`, `VITE_REMOTION_*`
-- **Python sidecar:** `VITE_A0_AUTH_LOGIN`, `VITE_A0_AUTH_PASSWORD`, `VITE_A0_BASE_URL`, `VITE_A0_RUNTIME_ID`
+- **Distribution:** `VITE_DDEX_DPID_*`; video rendering uses the HyperFrames packages above.
+- **Legacy optional bridge configuration:** `VITE_A0_AUTH_LOGIN`, `VITE_A0_AUTH_PASSWORD`, `VITE_A0_BASE_URL`, `VITE_A0_RUNTIME_ID` remain in the renderer env schema. They do not establish a default Docker service.
 - **Observability:** `VITE_SENTRY_DSN`, `VITE_DEBUG_SENTRY`
 - **Realtime:** `VITE_WEBSOCKET_URL`
 
