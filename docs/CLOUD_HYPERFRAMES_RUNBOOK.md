@@ -4,8 +4,8 @@
 **Goal:** make the in-app video render pipeline available to every user
 (web included) by deploying the cloud render worker built in MIG-010.
 
-The code is complete and on `main`. This runbook provisions ONLY the GCP
-resources; every step is copy-pasteable and idempotent where possible.
+The worker and dispatcher must be deployed together after the Cloud Tasks queue
+exists. Provision the queue before enabling the new dispatcher.
 
 ## 1. Architecture recap
 
@@ -14,6 +14,9 @@ Studio (web) ──queueCloudVideoRender──▶ users/{uid}/videoRenderJobs/{j
                                               │  onDocumentCreated trigger
                                               ▼
                         dispatchCloudVideoRender (Firebase function)
+                                              │  deterministic Cloud Task
+                                              ▼
+                        video-render-jobs queue (durable retries)
                                               │  POST /v1/render (Bearer secret)
                                               ▼
                         Cloud Run: indii-render-worker (chromium + ffmpeg)
@@ -22,7 +25,7 @@ Studio (web) ──queueCloudVideoRender──▶ users/{uid}/videoRenderJobs/{j
                         job → completed (signed URL)
 ```
 
-Nothing in this runbook changes application code. Secrets:
+Secrets:
 
 | Secret | Held by | Purpose |
 |---|---|---|
@@ -60,7 +63,7 @@ gcloud config set project $PROJECT
 
 ```bash
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com \
-  cloudbuild.googleapis.com secretmanager.googleapis.com --project $PROJECT
+  cloudbuild.googleapis.com secretmanager.googleapis.com cloudtasks.googleapis.com --project $PROJECT
 ```
 
 ## 4. Create the worker service account
@@ -140,7 +143,30 @@ printf 'https://indii-render-worker-<hash>-uc.a.run.app' \
 (Use the exact URL from step 7. If the secret already exists:
 `gcloud secrets versions add RENDER_WORKER_URL --data-file=-`.)
 
-## 9. Deploy the Firebase functions
+## 9. Provision durable dispatch before the function rollout
+
+```bash
+gcloud tasks queues create video-render-jobs --location "$REGION" \
+  --max-concurrent-dispatches=5 --max-dispatches-per-second=1 \
+  --max-attempts=-1 --max-retry-duration=86400s \
+  --min-backoff=60s --max-backoff=600s --project "$PROJECT"
+```
+
+If the queue already exists, inspect its rate/retry settings and use
+`gcloud tasks queues update` with the same values. Grant `roles/cloudtasks.enqueuer`
+on this queue to the **actual Gen2 service account** for
+`dispatchCloudVideoRender`. Read that identity from the deployed function's
+`serviceConfig.serviceAccountEmail`; do not assume it is the worker account.
+The function needs permission to create tasks, and the queue must be in
+`us-central1` in the same project. Confirm both before deploying the new
+dispatcher. A missing queue or permission leaves the Firestore job queued and
+causes the trigger to retry; it must never be described as a completed render.
+
+The worker accepts only owner-scoped objects in the configured project Storage
+bucket. Existing projects with arbitrary external preview URLs must upload or
+resolve those assets to owned Storage objects before cloud rendering.
+
+## 10. Deploy the Firebase functions
 
 `queueCloudVideoRender` and `dispatchCloudVideoRender` are already exported
 from `packages/firebase/src/index.ts`. Deploy either way:
@@ -149,12 +175,15 @@ from `packages/firebase/src/index.ts`. Deploy either way:
   deploys functions to production.
 - **CLI:** `firebase deploy --only functions:queueCloudVideoRender,functions:dispatchCloudVideoRender`
 
-## 10. Verify end-to-end
+## 11. Verify end-to-end
 
 1. Open the Studio editor in a **web** browser (not the desktop app) and
    click **Render Video** on a project with clips.
-2. In Firestore, watch `users/{uid}/videoRenderJobs/{jobId}`:
-   `queued` → `running` → `completed` with `artifactUrl`.
+2. In Firestore, watch `users/{uid}/videoRenderJobs/{jobId}` gain
+   `dispatchTaskName`, then move `queued` → `running` → `completed` with
+   `artifactUrl`. Confirm the named task exists in `video-render-jobs` before
+   the worker starts. A 2xx task response follows terminal execution, never
+   an in-process background launch.
 3. Open `artifactUrl` — it must play as an MP4.
 4. Confirm the editor preview updated automatically.
 
@@ -166,22 +195,25 @@ gcloud logging read 'resource.type=cloud_run_revision AND
   resource.labels.service_name=indii-render-worker' --limit 50
 ```
 
-## 11. Cost and safety rails
+## 12. Cost and safety rails
 
 - Cloud Run bills per vCPU-second and GiB-second. A 78s 1080p render on
   2 vCPU / 4 GiB costs roughly $0.02–0.05.
-- Rails already in place: `--max-instances 5`, `--concurrency 1`,
-  `--timeout 1200`, the job protocol's one-hop transitions, and the worker's
-  fail-closed artifact check.
+- Rails: `--max-instances 5`, `--concurrency 1`, `--timeout 1200`, queue
+  concurrency five, generation-pinned owned media (512 MB per object, 2 GB per
+  job), and a 31-minute fenced worker lease. Repeated provider failures still
+  require operator review after the queue's retry window.
 - Optional extra rail: a billing alert on the Cloud Run service.
 
-## 12. Rollback
+## 13. Rollback
+
+Pause the queue before replacing a broken worker or dispatcher, inspect pending
+tasks and Firestore job states, then resume after repair:
 
 ```bash
-gcloud run services delete indii-render-worker --region $REGION
-gcloud secrets delete RENDER_WORKER_URL   # then redeploy functions without it —
-                                          # dispatcher logs and jobs stay queued
+gcloud tasks queues pause video-render-jobs --location "$REGION" --project "$PROJECT"
+gcloud tasks queues resume video-render-jobs --location "$REGION" --project "$PROJECT"
 ```
 
-The queue callable and the renderer web path keep working either way —
-without the worker, jobs simply wait in `queued` until it returns.
+Do not delete the queue or worker while tasks are pending. Preserve the
+Firestore jobs and their task names for recovery.

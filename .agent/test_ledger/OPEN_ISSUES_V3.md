@@ -4682,6 +4682,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1512: Cloud rendering acknowledges work before durable enqueue and lacks bounded ownership-safe downloads
 
+- **Progress (2026-10-25):** A focused branch replaces the worker's in-process HTTP 202 path with a deterministically named Cloud Task created before dispatch success, retries enqueue failures, and uses a fenced Firestore lease so an expired worker can be reclaimed without a stale completion write. Media staging now uses generation-pinned, owner-scoped project Storage objects with type, size, total-job, timeout and checksum limits; arbitrary external URLs and redirects are refused. The Cloud Tasks queue and enqueuer IAM must be provisioned before deploying this branch. Local tests and builds are structural proof only; credentialed staging, crash recovery and genuine render delivery remain required before closing the issue.
+
 - **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
 - **Recovered from:** Original audit ISSUE-1453; current ISSUE-1453 concerns unrelated UI work.
 - **October 12 recheck:** Worker still returns HTTP 202 before durable execution and follows arbitrary redirects into unbounded arrayBuffer downloads (index.ts:41–54,168–173).
