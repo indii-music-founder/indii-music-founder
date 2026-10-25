@@ -14,6 +14,7 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
+        "@noble/hashes": "2.2.0",
         "fast-xml-parser": "^5.10.1",
         "zod": "3.25.76"
     },

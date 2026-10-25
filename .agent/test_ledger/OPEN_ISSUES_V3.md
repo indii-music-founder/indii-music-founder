@@ -4705,6 +4705,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** Reimports/reordered statements are not proven idempotent; quoted fields and fee totals can be wrong. Persistent duplicate-event behavior is Unknown.
 - **Fix:** Make shared adapters canonical; parse CSV/TSV correctly; hash original bytes with SHA-256; use stable normalized identities with legitimate duplicate occurrence handling; preserve lineage and fixed-point amounts through persistence; quarantine malformed rows.
 - **Acceptance:** Provider-shaped fixtures prove same-file zero-new-event reimport, documented reorder semantics, genuine duplicate preservation, quoted multiline parsing, exact per-currency gross/net/fee reconciliation and matching renderer/shared output.
+- **2026-10-25 follow-up:** Shared adapters now parse quoted CSV/TSV, use stable row identities and report hashes, reconcile gross/fee/net, and are re-exported by renderer. The mapper uses a canonical row multiset for reorder-stable ledger receipts; ingestion persists fee/net amounts and source hashes. Focused local tests cover structural behavior. Real provider files, deployed same-file reimport, and genuine-user acceptance remain unverified, so this issue remains OPEN pending those gates.
 
 ### ISSUE-1514: Dependency security advisories remain advisory without documented reachability triage
 

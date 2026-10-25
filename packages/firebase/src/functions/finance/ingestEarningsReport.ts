@@ -17,6 +17,9 @@ interface EarningsTransaction {
     usageType: string;
     usageCount: number;
     revenueMicros: number;
+    feeMicros: number;
+    netMicros: number;
+    sourceHash?: string;
     currencyCode: string;
     territoryCode: string;
     serviceName?: string;
@@ -158,6 +161,11 @@ export function sanitizeEarningsReport(raw: unknown): SanitizedEarningsReport {
             throw new HttpsError('invalid-argument', `report.transactions[${index}].usageCount must be an integer.`);
         }
         const revenueAmount = finiteNumber(transaction.revenueAmount, `report.transactions[${index}].revenueAmount`, -1_000_000_000, 1_000_000_000);
+        const feeAmount = transaction.distributorFeeAmount === undefined ? 0 : finiteNumber(transaction.distributorFeeAmount, `report.transactions[${index}].distributorFeeAmount`, -1_000_000_000, 1_000_000_000);
+        const netAmount = transaction.netRevenueAmount === undefined ? revenueAmount - feeAmount : finiteNumber(transaction.netRevenueAmount, `report.transactions[${index}].netRevenueAmount`, -1_000_000_000, 1_000_000_000);
+        if (Math.abs(toMicros(revenueAmount) - toMicros(feeAmount) - toMicros(netAmount)) > 1) {
+            throw new HttpsError('invalid-argument', `report.transactions[${index}] gross, fee and net do not reconcile.`);
+        }
         const rowCurrency = requiredString(transaction.currencyCode, `report.transactions[${index}].currencyCode`, 3).toUpperCase();
         if (rowCurrency !== currencyCode) {
             throw new HttpsError('invalid-argument', `report.transactions[${index}] currency does not match report currency.`);
@@ -169,6 +177,9 @@ export function sanitizeEarningsReport(raw: unknown): SanitizedEarningsReport {
             usageType,
             usageCount,
             revenueMicros: toMicros(revenueAmount),
+            feeMicros: toMicros(feeAmount),
+            netMicros: toMicros(netAmount),
+            sourceHash: typeof transaction.sourceHash === 'string' && /^[0-9a-f]{64}$/.test(transaction.sourceHash) ? transaction.sourceHash : undefined,
             currencyCode: rowCurrency,
             territoryCode: requiredString(transaction.territoryCode, `report.transactions[${index}].territoryCode`, 8).toUpperCase(),
             serviceName: typeof transaction.serviceName === 'string' ? transaction.serviceName.trim().slice(0, 160) : undefined,
@@ -270,6 +281,9 @@ export async function processEarningsReport(
         streams: number;
         downloads: number;
         grossRevenueMicros: number;
+        distributorFeeMicros: number;
+        netRevenueMicros: number;
+        sourceHashes: string[];
         track: { id: string; data: Record<string, unknown> };
     }
     const aggregates = new Map<string, Aggregate>();
@@ -281,6 +295,9 @@ export async function processEarningsReport(
             streams: 0,
             downloads: 0,
             grossRevenueMicros: 0,
+            distributorFeeMicros: 0,
+            netRevenueMicros: 0,
+            sourceHashes: [],
             track,
         };
         if (transaction.usageType === 'OnDemandStream' || transaction.usageType === 'ProgrammedStream') {
@@ -289,6 +306,9 @@ export async function processEarningsReport(
             aggregate.downloads += transaction.usageCount;
         }
         aggregate.grossRevenueMicros += transaction.revenueMicros;
+        aggregate.distributorFeeMicros += transaction.feeMicros;
+        aggregate.netRevenueMicros += transaction.netMicros;
+        if (transaction.sourceHash) aggregate.sourceHashes.push(transaction.sourceHash);
         aggregates.set(transaction.isrc, aggregate);
     });
 
@@ -314,9 +334,10 @@ export async function processEarningsReport(
             streams: aggregate.streams,
             downloads: aggregate.downloads,
             grossRevenue: fromMicros(aggregate.grossRevenueMicros),
-            distributorFee: 0,
+            distributorFee: fromMicros(aggregate.distributorFeeMicros),
             platformFee: 0,
-            netRevenue: fromMicros(aggregate.grossRevenueMicros),
+            netRevenue: fromMicros(aggregate.netRevenueMicros),
+            sourceHashes: aggregate.sourceHashes.sort(),
             currencyCode: report.currencyCode,
             sourceReceiptId: batchId,
             sourceTrust: 'user_uploaded_unverified',
@@ -360,7 +381,8 @@ export async function processEarningsReport(
         royaltiesSummary: {
             count: aggregates.size,
             totalGrossRevenue: [...aggregates.values()].reduce((total, aggregate) => total + fromMicros(aggregate.grossRevenueMicros), 0),
-            totalNetRevenue: [...aggregates.values()].reduce((total, aggregate) => total + fromMicros(aggregate.grossRevenueMicros), 0),
+            totalNetRevenue: [...aggregates.values()].reduce((total, aggregate) => total + fromMicros(aggregate.netRevenueMicros), 0),
+            totalDistributorFees: [...aggregates.values()].reduce((total, aggregate) => total + fromMicros(aggregate.distributorFeeMicros), 0),
         },
         processedAt: timestamp,
         createdAt: timestamp,

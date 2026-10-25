@@ -100,7 +100,12 @@ describe('processEarningsReport', () => {
             })),
         };
 
-        const result = await processEarningsReport('owner-1', makeReport(), firestore as never);
+        const report = makeReport();
+        const transactionWithFee = report.transactions[0] as typeof report.transactions[number] & { distributorFeeAmount: number; netRevenueAmount: number; sourceHash: string };
+        transactionWithFee.distributorFeeAmount = 2.5;
+        transactionWithFee.netRevenueAmount = 10;
+        transactionWithFee.sourceHash = 'a'.repeat(64);
+        const result = await processEarningsReport('owner-1', report, firestore as never);
 
         expect(result).toEqual(expect.objectContaining({
             success: true,
@@ -114,7 +119,9 @@ describe('processEarningsReport', () => {
             userId: 'owner-1',
             isrc: 'USABC2600001',
             grossRevenue: 12.5,
-            netRevenue: 12.5,
+            distributorFee: 2.5,
+            netRevenue: 10,
+            sourceHashes: ['a'.repeat(64)],
             sourceReceiptId: result.batchId,
             sourceTrust: 'user_uploaded_unverified',
             reconciliationStatus: 'pending_review',

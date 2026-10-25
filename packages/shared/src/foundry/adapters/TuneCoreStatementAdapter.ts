@@ -6,6 +6,7 @@ import {
 } from '../types.js';
 import { DecimalMoney } from '../DecimalMoney.js';
 import { parseMoneyAmount } from '../parseMoney.js';
+import { hashText, parseDelimitedRows, rowIdentity } from './statementRows.js';
 
 export class TuneCoreStatementAdapter {
   // Static helpers for external callers
@@ -29,14 +30,9 @@ export class TuneCoreStatementAdapter {
   }
 
   parse(rawContent: string, _options: ParseOptions = {}): NormalizedStatementReport {
-    const cleanContent = rawContent.charCodeAt(0) === 0xfeff ? rawContent.slice(1) : rawContent;
-    const lines = cleanContent.split(/\r?\n/).filter((l) => l.trim().length > 0);
-
-    if (lines.length < 2) {
-      throw new Error('TuneCore statement has no data rows');
-    }
-
-    const headers = lines[0]!.split(',').map((h) => h.trim());
+    const { rows, errors } = parseDelimitedRows(rawContent, ',');
+    if (rows.length < 2) throw new Error('TuneCore statement has no data rows');
+    const headers = rows[0]!.values.map(h => h.trim());
     const headerMap = new Map<string, number>();
     headers.forEach((h, idx) => headerMap.set(h.toLowerCase(), idx));
 
@@ -46,10 +42,12 @@ export class TuneCoreStatementAdapter {
     };
 
     const transactions: NormalizedStatementTransaction[] = [];
-    const quarantinedRows: QuarantinedRow[] = [];
+    const quarantinedRows: QuarantinedRow[] = [...errors];
+    const occurrences = new Map<string, number>();
 
     let grossAcc = DecimalMoney.zero();
     let netAcc = DecimalMoney.zero();
+    let feeAcc = DecimalMoney.zero();
     let totalQuantity = 0;
     let totalStreams = 0;
     let totalDownloads = 0;
@@ -57,11 +55,15 @@ export class TuneCoreStatementAdapter {
     let periodStart: string | undefined;
     let periodEnd: string | undefined;
 
-    const dataLines = lines.slice(1);
-    for (let i = 0; i < dataLines.length; i++) {
-      const lineIndex = i + 2;
-      const line = dataLines[i]!;
-      const parts = line.split(',').map((p) => p.replace(/^"|"$/g, '').trim());
+    for (const row of rows.slice(1)) {
+      const lineIndex = row.lineIndex;
+      const line = row.rawContent;
+      const parts = row.values;
+
+      if (parts.length !== headers.length) {
+        quarantinedRows.push({ lineIndex, rawContent: line, reason: 'Column count differs from header', errorCode: 'ERR_INCOMPLETE_ROW', severity: 'warning' });
+        continue;
+      }
 
       const isrc = getCol(parts, 'isrc');
       const upc = getCol(parts, 'upc');
@@ -95,8 +97,14 @@ export class TuneCoreStatementAdapter {
 
       // ISSUE-1443: capture a real fee value when the statement carries one;
       // LayeredValidator's reconciliation is vacuous while fees are hardcoded to 0.
-      const rawFee = getCol(parts, 'fee') ?? getCol(parts, 'distributor fee') ?? getCol(parts, 'commission');
-      const distributorFee = parseMoneyAmount(rawFee ?? '') ?? 0;
+      const feeColumn = ['fee', 'distributor fee', 'commission'].find(name => headerMap.has(name));
+      const rawFee = feeColumn ? getCol(parts, feeColumn) : undefined;
+      const parsedFee = rawFee === undefined ? 0 : parseMoneyAmount(rawFee);
+      if (parsedFee === null) {
+        quarantinedRows.push({ lineIndex, rawContent: line, reason: 'Invalid distributor fee', errorCode: 'ERR_INVALID_FEE', severity: 'warning' });
+        continue;
+      }
+      const distributorFee = parsedFee;
       const isDownload = store.toLowerCase().includes('itunes') || store.toLowerCase().includes('download');
       const txnType = isDownload ? 'download' : 'stream';
 
@@ -104,22 +112,26 @@ export class TuneCoreStatementAdapter {
       else totalStreams += quantity;
 
       const earningsMoney = DecimalMoney.fromFloat(earnings);
-      grossAcc = grossAcc.add(earningsMoney);
+      const feeMoney = DecimalMoney.fromFloat(distributorFee);
+      const grossMoney = earningsMoney.add(feeMoney);
+      grossAcc = grossAcc.add(grossMoney);
+      feeAcc = feeAcc.add(feeMoney);
       netAcc = netAcc.add(earningsMoney);
       totalQuantity += quantity;
 
-      if (!periodStart && salesPeriod) periodStart = salesPeriod;
-      if (salesPeriod) periodEnd = salesPeriod;
+      if (salesPeriod && (!periodStart || salesPeriod < periodStart)) periodStart = salesPeriod;
+      if (salesPeriod && (!periodEnd || salesPeriod > periodEnd)) periodEnd = salesPeriod;
 
       const rawFields: Record<string, string> = {};
       headers.forEach((h, idx) => {
         rawFields[h] = parts[idx] ? parts[idx]!.trim() : '';
       });
 
+      const { sourceHash, transactionId } = rowIdentity(rawFields, occurrences);
       transactions.push({
         sourceLineIndex: lineIndex,
-        sourceHash: `tc-${lineIndex}-${isrc}`,
-        transactionId: `TX-TC-${lineIndex}`,
+        sourceHash,
+        transactionId,
         isrc,
         upc: upc || undefined,
         trackTitle: songTitle,
@@ -128,7 +140,7 @@ export class TuneCoreStatementAdapter {
         dspName: store,
         transactionType: txnType,
         quantity,
-        grossRevenue: earnings,
+        grossRevenue: grossMoney.toFloat(),
         distributorFee,
         netRevenue: earnings,
         currency: 'USD',
@@ -141,11 +153,11 @@ export class TuneCoreStatementAdapter {
     return {
       formatId: this.formatId,
       adapterVersion: this.version,
-      reportId: `RPT-TC-${Date.now()}`,
+      reportId: `RPT-TC-${hashText(rawContent).slice(0, 40)}`,
       reportingEntity: 'TuneCore',
       currency: 'USD',
       totalGrossRevenue: grossAcc.toFloat(),
-      totalDistributorFees: 0,
+      totalDistributorFees: feeAcc.toFloat(),
       totalNetRevenue: netAcc.toFloat(),
       totalQuantity,
       totalStreams,
@@ -155,9 +167,9 @@ export class TuneCoreStatementAdapter {
       transactions,
       quarantinedRows,
       provenance: {
-        evidenceSha256: 'computed-on-ingest',
+        evidenceSha256: hashText(rawContent),
         parsedAt: new Date().toISOString(),
-        deterministicHash: `det-tc-${transactions.length}-${netAcc.toCents()}`,
+        deterministicHash: hashText(JSON.stringify(transactions.map(transaction => transaction.sourceHash).sort())),
       },
     };
   }
