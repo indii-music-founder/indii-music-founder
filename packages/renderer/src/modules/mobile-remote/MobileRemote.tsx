@@ -106,7 +106,11 @@ export default function MobileRemote() {
     remoteRelayService.isAuthenticated() ? 'pairing' : 'idle'
   );
   const shortcutAction = typeof window !== 'undefined' ? parseMobileShortcutAction(window.location.search) : null;
-  const [activeTab, setActiveTab] = useState<TabId>(shortcutAction === 'vault' ? 'stream' : 'home');
+  const [activeTab, setActiveTab] = useState<TabId>(() =>
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'studio'
+      ? 'studio'
+      : shortcutAction === 'vault' ? 'stream' : 'home'
+  );
   const [pendingChatCommandId, setPendingChatCommandId] = useState<string | null>(null);
   const [pendingChatAttachment, setPendingChatAttachment] = useState<{ url: string; mimeType: string; name: string } | null>(null);
   const [desktopState, setDesktopState] = useState<DesktopState | null>(null);

@@ -37,19 +37,20 @@ export class PushNotificationService {
      * Saves the token to the user's Firestore profile to enable targeted backend push.
      */
     public async requestPermissionAndGetToken(): Promise<string | null> {
-        const messaging = await this.ensureMessaging();
-        if (!messaging) return null;
+        if (!this.vapidKey || !('serviceWorker' in navigator) || typeof Notification === 'undefined') return null;
 
         try {
             const permission = await Notification.requestPermission();
 
             if (permission === 'granted') {
-                const token = await getToken(messaging, { vapidKey: this.vapidKey });
+                const messaging = await this.ensureMessaging();
+                if (!messaging) return null;
+                const serviceWorkerRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+                const token = await getToken(messaging, { vapidKey: this.vapidKey, serviceWorkerRegistration });
 
                 if (token) {
                     logger.info('[PushNotificationService] Retrieved FCM token successfully.');
-                    await this.saveTokenToDatabase(token);
-                    return token;
+                    return await this.saveTokenToDatabase(token) ? token : null;
                 } else {
                     logger.warn('[PushNotificationService] No registration token available.');
                     return null;
@@ -122,13 +123,13 @@ export class PushNotificationService {
     /**
      * Saves the FCM token to Firestore so the backend can send targeted push notifications.
      */
-    private async saveTokenToDatabase(token: string): Promise<void> {
+    private async saveTokenToDatabase(token: string): Promise<boolean> {
         const auth = getAuth(app);
         const user = auth.currentUser;
 
         if (!user) {
             logger.debug('[PushNotificationService] User not authenticated, skipping token save.');
-            return;
+            return false;
         }
 
         try {
@@ -138,8 +139,10 @@ export class PushNotificationService {
                 updatedAt: serverTimestamp(),
             }, { merge: true });
             logger.debug('[PushNotificationService] Saved FCM token to Firestore.');
+            return true;
         } catch (error: unknown) {
             logger.error('[PushNotificationService] Failed to save FCM token to Firestore:', error);
+            return false;
         }
     }
 

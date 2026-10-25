@@ -195,6 +195,7 @@ export default defineConfig({
         envPrefix: [
             'VITE_E2E',
             'VITE_FIREBASE_',
+            'VITE_FCM_',
             'VITE_VERTEX_',
             'VITE_FUNCTIONS_',
             'VITE_USE_',

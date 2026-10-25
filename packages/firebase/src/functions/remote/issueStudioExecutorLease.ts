@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { createHash, randomBytes } from 'crypto';
+import { notifyNewMobileApproval } from './mobilePushNotifications';
 
 const LEASE_MS = 10 * 60 * 1000;
 const DEVICE_ID = /^[A-Za-z0-9_-]{16,128}$/;
@@ -122,6 +123,15 @@ export const publishStudioPresence = onCall({ region: 'us-central1', cors: true,
     pendingApproval,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
+  if (state.pendingApproval) {
+    try {
+      await notifyNewMobileApproval(request.auth.uid, state.pendingApproval);
+    } catch (error) {
+      // Push cannot take the Studio heartbeat offline; the phone can still
+      // see the pending approval through the regular relay presence channel.
+      console.warn('Mobile approval push failed', error);
+    }
+  }
   return { ok: true };
 });
 
